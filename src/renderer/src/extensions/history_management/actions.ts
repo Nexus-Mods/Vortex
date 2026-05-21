@@ -20,7 +20,4 @@ export const markHistoryReverted = safeCreateAction(
   (stack: string, event: IHistoryEvent) => ({ stack, event }),
 );
 
-export const showHistory = safeCreateAction(
-  "HISTORY_SHOW",
-  (stack: string) => stack,
-);
+export const showHistory = safeCreateAction("HISTORY_SHOW", (stack: string) => stack);

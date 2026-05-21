@@ -1,14 +1,13 @@
-import { ComponentEx } from "../ComponentEx";
-import type { TFunction } from "../../util/i18n";
-import type { IActionDefinitionEx } from "../ActionControl";
-import ContextMenu from "../ContextMenu";
-import Icon from "../Icon";
-
-import { TD, TR } from "./MyTable";
-
 import i18next from "i18next";
 import * as React from "react";
 import * as Redux from "redux";
+
+import type { TFunction } from "../../util/i18n";
+import type { IActionDefinitionEx } from "../ActionControl";
+import { ComponentEx } from "../ComponentEx";
+import ContextMenu from "../ContextMenu";
+import Icon from "../Icon";
+import { TD, TR } from "./MyTable";
 
 export const EMPTY_ID = "<Unspecified>";
 

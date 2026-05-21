@@ -1,7 +1,6 @@
 import { createSelector } from "reselect";
 
 import type { IState } from "../../types/IState";
-
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { hasConfidentialWithNexus, hasPersistentWithNexus } from "./guards";
@@ -60,20 +59,14 @@ export const nexusIdsFromDownloadId = createSelector(
   (state: IState, downloadId: string) => downloadId,
   (files, downloadId) => {
     const dl = files[downloadId];
-    if (
-      dl?.modInfo?.nexus?.ids?.gameId == null &&
-      dl?.modInfo?.meta?.gameId == null
-    ) {
+    if (dl?.modInfo?.nexus?.ids?.gameId == null && dl?.modInfo?.meta?.gameId == null) {
       return undefined;
     }
     const numericGameId = nexusGames().find(
-      (g) =>
-        g.domain_name ===
-        (dl.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName),
+      (g) => g.domain_name === (dl.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName),
     );
     return {
-      gameDomainName:
-        dl?.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName,
+      gameDomainName: dl?.modInfo?.nexus?.ids?.gameId || dl?.modInfo?.meta?.domainName,
       fileId: dl?.modInfo?.nexus?.ids?.fileId?.toString(),
       modId: dl?.modInfo?.nexus?.ids?.modId?.toString(),
       numericGameId: numericGameId?.id || parseInt(dl?.modInfo?.meta?.gameId),

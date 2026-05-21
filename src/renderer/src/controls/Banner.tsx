@@ -1,12 +1,13 @@
-import type { IBannerOptions } from "../types/IBannerOptions";
-import type { IExtensibleProps } from "../types/IExtensionProvider";
-import { connect } from "./ComponentEx";
-import { extend } from "../ExtensionProvider";
-import { truthy } from "../util/util";
+import { setInterval } from "timers";
 
 import * as _ from "lodash";
 import * as React from "react";
-import { setInterval } from "timers";
+
+import { extend } from "../ExtensionProvider";
+import type { IBannerOptions } from "../types/IBannerOptions";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
+import { truthy } from "../util/util";
+import { connect } from "./ComponentEx";
 
 interface IBannerDefinition {
   component: React.ComponentClass<any>;
@@ -30,10 +31,7 @@ interface IConnectedProps {
   };
 }
 
-type IProps = IBaseProps &
-  IConnectedProps &
-  IExtensionProps &
-  React.HTMLAttributes<any>;
+type IProps = IBaseProps & IConnectedProps & IExtensionProps & React.HTMLAttributes<any>;
 
 class Banner extends React.Component<IProps, {}> {
   private mRef: Element;
@@ -48,9 +46,7 @@ class Banner extends React.Component<IProps, {}> {
     const { bannerProps, className, objects, style } = this.props;
 
     this.mBanners = objects.filter(
-      (obj, idx) =>
-        obj.options.condition === undefined ||
-        obj.options.condition(bannerProps[idx]),
+      (obj, idx) => obj.options.condition === undefined || obj.options.condition(bannerProps[idx]),
     );
 
     const classes = className !== undefined ? className.split(" ") : [];
@@ -65,10 +61,7 @@ class Banner extends React.Component<IProps, {}> {
 
   private renderBanner = (banner: IBannerDefinition, idx: number) => {
     return (
-      <div
-        key={idx}
-        className={idx === this.mCurrentBanner ? "active" : undefined}
-      >
+      <div key={idx} className={idx === this.mCurrentBanner ? "active" : undefined}>
         <banner.component />
       </div>
     );
@@ -106,10 +99,7 @@ function registerBanner(
   }
 }
 
-export type ExportType = IBaseProps &
-  IExtensibleProps &
-  React.HTMLAttributes<any> &
-  any;
+export type ExportType = IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any;
 
 let lastBannerProps: { [idx: number]: any };
 

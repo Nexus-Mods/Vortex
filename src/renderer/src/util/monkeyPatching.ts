@@ -1,4 +1,5 @@
 import type * as pathT from "path";
+
 import { unknownToError } from "@vortex/shared";
 
 /**
@@ -7,21 +8,14 @@ import { unknownToError } from "@vortex/shared";
  * applying this crowbar-approach may actually be safer.
  */
 
-function monkeyPatch(
-  clazz: any,
-  functionName: string,
-  wrapper: (orig, ...args: any[]) => any,
-) {
+function monkeyPatch(clazz: any, functionName: string, wrapper: (orig, ...args: any[]) => any) {
   const orig = clazz.prototype[functionName];
   clazz.prototype[functionName] = function (...args: any[]) {
     return wrapper.apply(this, [orig, ...args]);
   };
 }
 
-function fallbackDateFormat(
-  locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
-) {
+function fallbackDateFormat(locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
   // adapted from https://github.com/GoogleChrome/lighthouse/issues/1056
   let formatter;
   let tz;
@@ -46,11 +40,7 @@ function applyMonkeyPatches() {
   monkeyPatch(
     Date,
     "toLocaleString",
-    function (
-      orig,
-      locales?: string | string[],
-      options?: Intl.DateTimeFormatOptions,
-    ) {
+    function (orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
       try {
         return orig.apply(this, [locales, options]);
       } catch (err) {
@@ -81,11 +71,7 @@ function applyMonkeyPatches() {
   monkeyPatch(
     Date,
     "toLocaleDateString",
-    function (
-      orig,
-      locales?: string | string[],
-      options?: Intl.DateTimeFormatOptions,
-    ) {
+    function (orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
       try {
         return orig.apply(this, [locales, options]);
       } catch (err) {
@@ -112,11 +98,7 @@ function applyMonkeyPatches() {
   monkeyPatch(
     Date,
     "toLocaleTimeString",
-    function (
-      orig,
-      locales?: string | string[],
-      options?: Intl.DateTimeFormatOptions,
-    ) {
+    function (orig, locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
       try {
         return orig.apply(this, [locales, options]);
       } catch (err) {

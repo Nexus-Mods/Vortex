@@ -1,15 +1,14 @@
-import { setSettingsPage } from "../../../actions/session";
-import ErrorBoundary from "../../../controls/ErrorBoundary";
-import type { IState } from "../../../types/IState";
-import { ComponentEx, connect } from "../../../controls/ComponentEx";
-import { bytesToString, truthy } from "../../../util/util";
-
-import { NUM_SPEED_DATA_POINTS } from "../reducers/state";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
 import ResizeDetector from "react-resize-detector";
 import * as recharts from "recharts";
+
+import { setSettingsPage } from "../../../actions/session";
+import { ComponentEx, connect } from "../../../controls/ComponentEx";
+import ErrorBoundary from "../../../controls/ErrorBoundary";
+import type { IState } from "../../../types/IState";
+import { bytesToString, truthy } from "../../../util/util";
+import { NUM_SPEED_DATA_POINTS } from "../reducers/state";
 
 interface IBaseProps {
   t: TFunction;
@@ -45,11 +44,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
 
     let showLimit: boolean = false;
     let maxData = Math.max(...speeds);
-    if (
-      maxBandwidth !== 0 &&
-      maxBandwidth !== null &&
-      maxData * 1.5 > maxBandwidth
-    ) {
+    if (maxBandwidth !== 0 && maxBandwidth !== null && maxData * 1.5 > maxBandwidth) {
       maxData = maxBandwidth * 1.2;
       showLimit = true;
     }
@@ -61,8 +56,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
       maxRounded,
     ];
 
-    const { Area, AreaChart, CartesianGrid, Label, ReferenceLine, YAxis } =
-      recharts;
+    const { Area, AreaChart, CartesianGrid, Label, ReferenceLine, YAxis } = recharts;
 
     // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
     return (
@@ -114,11 +108,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     api.events.emit("show-main-page", "application_settings");
     api.store.dispatch(setSettingsPage("Download"));
 
-    api.highlightControl(
-      "#download-bandwidth-limit",
-      5000,
-      "This limits your download speed.",
-    );
+    api.highlightControl("#download-bandwidth-limit", 5000, "This limits your download speed.");
   };
 
   private onResize = (width: number, height: number) => {

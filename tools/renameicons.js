@@ -56,12 +56,7 @@ const nameMap = {
 };
 
 // fix icons that incorrectly have a color set
-const decolorize = new Set([
-  "nc-skew-up",
-  "nc-skew-down",
-  "nc-skew-left",
-  "nc-skew-right",
-]);
+const decolorize = new Set(["nc-skew-up", "nc-skew-down", "nc-skew-left", "nc-skew-right"]);
 
 function transformId(id) {
   return id
@@ -100,9 +95,7 @@ function transformG(g, decol) {
   return res;
 }
 
-const data = fs.readFileSync(
-  path.join("..", "fonts", "myicons", "svg", "img", "nc-icons.svg"),
-);
+const data = fs.readFileSync(path.join("..", "fonts", "myicons", "svg", "img", "nc-icons.svg"));
 
 xml2js.parseString(data.toString(), (err, result) => {
   if (err !== null) {
@@ -119,9 +112,6 @@ xml2js.parseString(data.toString(), (err, result) => {
     return res;
   });
   const builder = new xml2js.Builder();
-  fs.writeFileSync(
-    path.join("..", "assets", "fonts", "vortex.svg"),
-    builder.buildObject(result),
-  );
+  fs.writeFileSync(path.join("..", "assets", "fonts", "vortex.svg"), builder.buildObject(result));
   // console.log('res', require('util').inspect(result, { depth: 1000 }));
 });

@@ -57,9 +57,7 @@ export interface BaseFormFieldProps {
   showRequiredLabel?: boolean;
 }
 
-export interface FormFieldProps
-  extends BaseFormFieldProps,
-    HTMLAttributes<HTMLElement> {
+export interface FormFieldProps extends BaseFormFieldProps, HTMLAttributes<HTMLElement> {
   /**
    * Form element to be rendered
    */
@@ -127,11 +125,7 @@ export const FormField = ({
         <div className="flex justify-between pt-1">
           <div>
             {!!errorMessage && (
-              <Typography
-                appearance="none"
-                className="text-danger-strong"
-                id={`${id}_error`}
-              >
+              <Typography appearance="none" className="text-danger-strong" id={`${id}_error`}>
                 {errorMessage}
               </Typography>
             )}
@@ -140,11 +134,7 @@ export const FormField = ({
               <ul className="flex flex-col gap-y-1" id={`${id}_hints`}>
                 {hints.map((hint) => (
                   <li key={`${id}_${hint}`}>
-                    <Typography
-                      appearance="subdued"
-                      as="span"
-                      typographyType={hintsTypographyType}
-                    >
+                    <Typography appearance="subdued" as="span" typographyType={hintsTypographyType}>
                       {hint}
                     </Typography>
                   </li>

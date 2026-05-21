@@ -6,8 +6,7 @@ export default {
       description: "disallow importing Bluebird as 'Promise'",
     },
     messages: {
-      renamePromise:
-        "Do not import Bluebird as 'Promise'. Rename to 'Bluebird'",
+      renamePromise: "Do not import Bluebird as 'Promise'. Rename to 'Bluebird'",
     },
     schema: [],
   },
@@ -19,9 +18,7 @@ export default {
         if (source !== "bluebird") return;
 
         const defaultSpecified = node.specifiers.find(
-          (spec) =>
-            spec.type === "ImportDefaultSpecifier" &&
-            spec.local.name === "Promise",
+          (spec) => spec.type === "ImportDefaultSpecifier" && spec.local.name === "Promise",
         );
 
         if (!defaultSpecified) return;

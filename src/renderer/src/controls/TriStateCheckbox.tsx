@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { ComponentEx, translate } from "./ComponentEx";
 
 export type CheckboxState = "enabled" | "disabled" | "locked";
@@ -8,10 +9,7 @@ export interface ITriCheckboxProps {
   indeterminate: boolean;
   classNames?: string[];
   disabled: boolean;
-  onChangeCB?: (
-    evt: React.ChangeEvent<HTMLInputElement>,
-    value: CheckboxState,
-  ) => void;
+  onChangeCB?: (evt: React.ChangeEvent<HTMLInputElement>, value: CheckboxState) => void;
   onContextMenu?: (checkboxState: CheckboxState) => void;
 }
 
@@ -19,20 +17,13 @@ interface ITriCheckboxState {
   checkboxState: CheckboxState;
 }
 
-class TriStateCheckbox extends ComponentEx<
-  ITriCheckboxProps,
-  ITriCheckboxState
-> {
+class TriStateCheckbox extends ComponentEx<ITriCheckboxProps, ITriCheckboxState> {
   private mRef = null;
   constructor(props: ITriCheckboxProps) {
     super(props);
 
     this.initState({
-      checkboxState: !!props?.indeterminate
-        ? "locked"
-        : !!props?.checked
-          ? "enabled"
-          : "disabled",
+      checkboxState: !!props?.indeterminate ? "locked" : !!props?.checked ? "enabled" : "disabled",
     });
   }
 

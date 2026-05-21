@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  type FC,
-  type ReactNode,
-} from "react";
+import React, { createContext, useCallback, useContext, type FC, type ReactNode } from "react";
 import { useDispatch } from "react-redux";
 
 import { useMainContext } from "../../../contexts";
@@ -40,7 +34,5 @@ export const ToolsProvider: FC<ToolsProviderProps> = ({ children }) => {
 
   const value = useTools(onShowError, api);
 
-  return (
-    <ToolsContext.Provider value={value}>{children}</ToolsContext.Provider>
-  );
+  return <ToolsContext.Provider value={value}>{children}</ToolsContext.Provider>;
 };

@@ -1,3 +1,9 @@
+import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import * as _ from "lodash";
+import type { RuleType } from "modmeta-db";
+
 import { startActivity, stopActivity } from "../../actions/session";
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
@@ -16,23 +22,28 @@ import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { downloadPathForGame } from "../../util/selectors";
+import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
-import { knownGames } from "../../util/selectors";
-
 import type { IDownload } from "../download_management/types/IDownload";
-import { activeGameId, activeProfile } from "../profile_management/selectors";
+import getDownloadGames from "../download_management/util/getDownloadGames";
+import { getGame } from "../gamemode_management/util/getGame";
+import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
-
+import { setModsEnabled } from "../profile_management/actions/profiles";
+import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { setDeploymentNecessary } from "./actions/deployment";
 import { addMod, removeMod } from "./actions/mods";
 import { setActivator } from "./actions/settings";
+import { setInstallPath } from "./actions/settings";
+import type InstallManager from "./InstallManager";
+import { currentActivator, installPath, installPathForGame } from "./selectors";
+import { ensureStagingDirectory } from "./stagingDirectory";
 import type { IDeploymentManifest } from "./types/IDeploymentManifest";
-import type {
-  IDeployedFile,
-  IDeploymentMethod,
-} from "./types/IDeploymentMethod";
+import type { IDeployedFile, IDeploymentMethod } from "./types/IDeploymentMethod";
+import type { IInstallOptions } from "./types/IInstallOptions";
 import type { IMod, IModRule } from "./types/IMod";
+import type { IRemoveModOptions } from "./types/IRemoveModOptions";
 import {
   getManifest,
   loadActivation,
@@ -40,34 +51,16 @@ import {
   saveActivation,
   withActivationLock,
 } from "./util/activationStore";
+import allTypesSupported from "./util/allTypesSupported";
+import { genSubDirFunc, purgeMods } from "./util/deploy";
 import {
   getCurrentActivator,
   getSelectedActivator,
   getSupportedActivators,
 } from "./util/deploymentMethods";
-
-import getDownloadGames from "../download_management/util/getDownloadGames";
-import { getGame } from "../gamemode_management/util/getGame";
-import { getModType } from "../gamemode_management/util/modTypeExtensions";
-import { setModsEnabled } from "../profile_management/actions/profiles";
-
-import { setInstallPath } from "./actions/settings";
-import type { IInstallOptions } from "./types/IInstallOptions";
-import type { IRemoveModOptions } from "./types/IRemoveModOptions";
-import allTypesSupported from "./util/allTypesSupported";
-import { genSubDirFunc, purgeMods } from "./util/deploy";
 import modName from "./util/modName";
 import queryGameId from "./util/queryGameId";
 import refreshMods from "./util/refreshMods";
-
-import type InstallManager from "./InstallManager";
-import { currentActivator, installPath, installPathForGame } from "./selectors";
-import { ensureStagingDirectory } from "./stagingDirectory";
-
-import * as _ from "lodash";
-import type { RuleType } from "modmeta-db";
-import * as path from "path";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 async function checkStagingGame(
   api: IExtensionApi,
@@ -107,22 +100,13 @@ async function checkStagingFolder(
   const t = api.translate;
 
   // manifestPath can be undefined if the manifest is older
-  const normalize = manifestPath !== undefined
-    ? await getNormalizeFunc(manifestPath)
-    : undefined;
+  const normalize = manifestPath !== undefined ? await getNormalizeFunc(manifestPath) : undefined;
 
-  if (
-    manifestPath !== undefined &&
-    normalize(manifestPath) !== normalize(configuredPath)
-  ) {
-    log(
-      "error",
-      "staging folder stored in manifest differs from configured one",
-      {
-        configured: configuredPath,
-        manifest: manifestPath,
-      },
-    );
+  if (manifestPath !== undefined && normalize(manifestPath) !== normalize(configuredPath)) {
+    log("error", "staging folder stored in manifest differs from configured one", {
+      configured: configuredPath,
+      manifest: manifestPath,
+    });
     const result: IDialogResult = await api.showDialog(
       "error",
       "Staging folder changed",
@@ -159,10 +143,7 @@ async function checkStagingFolder(
       getApplication().quit();
       // resolve never
       return new Promise<never>(() => {});
-    } else if (
-      result.action === "Use selected" &&
-      result.input.manifest
-    ) {
+    } else if (result.action === "Use selected" && result.input.manifest) {
       return true;
     }
     return false;
@@ -206,22 +187,16 @@ async function purgeOldMethod(
         // turned into real files, the regular purge op wouldn't clean up anything
         if (
           manifests[typeId].targetPath !== undefined &&
-          normalize(modPaths[typeId]) !==
-            normalize(manifests[typeId].targetPath) &&
+          normalize(modPaths[typeId]) !== normalize(manifests[typeId].targetPath) &&
           oldActivator.isFallbackPurgeSafe
         ) {
-          log(
-            "warn",
-            "using manifest-based purge because deployment path changed",
-            { from: manifests[typeId].targetPath, to: modPaths[typeId] },
-          );
+          log("warn", "using manifest-based purge because deployment path changed", {
+            from: manifests[typeId].targetPath,
+            to: modPaths[typeId],
+          });
           await purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
         } else {
-          await oldActivator.purge(
-            instPath,
-            modPaths[typeId],
-            profile.gameId,
-          );
+          await oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
         }
       }
       // save (empty) activation - parallel is fine here, no ordering dependency
@@ -246,11 +221,9 @@ async function purgeOldMethod(
       return;
     }
     if (err instanceof TemporaryError) {
-      api.showErrorNotification(
-        "Purge failed, please try again",
-        err.message,
-        { allowReport: false },
-      );
+      api.showErrorNotification("Purge failed, please try again", err.message, {
+        allowReport: false,
+      });
       return;
     }
     api.showErrorNotification("Purge failed", err, {
@@ -259,10 +232,7 @@ async function purgeOldMethod(
   }
 }
 
-export async function updateDeploymentMethod(
-  api: IExtensionApi,
-  profile: IProfile,
-) {
+export async function updateDeploymentMethod(api: IExtensionApi, profile: IProfile) {
   const store = api.store;
   const state: IState = store.getState();
   const gameId = profile.gameId;
@@ -298,11 +268,7 @@ export function onGameModeActivated(
   // this is either the configured activator or the default one if none is configured.
   // might be undefined if the game isn't properly discovered or the configured activator
   // is no longer supported
-  let activatorToUse: IDeploymentMethod = getCurrentActivator(
-    state,
-    newGame,
-    true,
-  );
+  let activatorToUse: IDeploymentMethod = getCurrentActivator(state, newGame, true);
   const profile: IProfile = activeProfile(state);
   const gameId = profile.gameId;
   if (gameId !== newGame) {
@@ -368,9 +334,7 @@ export function onGameModeActivated(
                 log("info", "also reverting the deployment method", {
                   method: manifest.deploymentMethod,
                 });
-                api.store.dispatch(
-                  setActivator(gameId, manifest.deploymentMethod),
-                );
+                api.store.dispatch(setActivator(gameId, manifest.deploymentMethod));
                 state = api.store.getState();
               }
               supported = getSupportedActivators(state);
@@ -383,7 +347,9 @@ export function onGameModeActivated(
           });
       })
       .then(() => ensureStagingDirectory(api, instPath, gameId))
-      .then((updatedPath) => { instPath = updatedPath; });
+      .then((updatedPath) => {
+        instPath = updatedPath;
+      });
 
   const configuredActivatorId = currentActivator(state);
 
@@ -392,16 +358,12 @@ export function onGameModeActivated(
     // if compatibility of the activator has changed
 
     changeActivator = true;
-    const oldActivator = activators.find(
-      (iter) => iter.id === configuredActivatorId,
-    );
+    const oldActivator = activators.find((iter) => iter.id === configuredActivatorId);
     const modPaths = game.getModPaths(gameDiscovery.path);
 
     const safeFB =
       oldActivator !== undefined
-        ? supported.find((method) =>
-            (method.compatible ?? []).includes(oldActivator.id),
-          )
+        ? supported.find((method) => (method.compatible ?? []).includes(oldActivator.id))
         : undefined;
 
     // TODO: at this point we may also want to take into consideration the deployment
@@ -473,14 +435,7 @@ export function onGameModeActivated(
           oldInit()
             .then(() =>
               safeFB === undefined
-                ? purgeOldMethod(
-                    api,
-                    oldActivator,
-                    profile,
-                    gameId,
-                    instPath,
-                    modPaths,
-                  )
+                ? purgeOldMethod(api, oldActivator, profile, gameId, instPath, modPaths)
                 : Promise.resolve(),
             )
             .catch((err) => {
@@ -497,9 +452,7 @@ export function onGameModeActivated(
             // by this point the flag may have been reset
             if (changeActivator) {
               if (supported.length > 0) {
-                api.store.dispatch(
-                  setActivator(gameId, (safeFB ?? supported[0]).id),
-                );
+                api.store.dispatch(setActivator(gameId, (safeFB ?? supported[0]).id));
               }
             }
           });
@@ -516,11 +469,7 @@ export function onGameModeActivated(
     });
   }
 
-  const knownMods: { [modId: string]: IMod } = getSafe(
-    state,
-    ["persistent", "mods", gameId],
-    {},
-  );
+  const knownMods: { [modId: string]: IMod } = getSafe(state, ["persistent", "mods", gameId], {});
   initProm()
     .then(() =>
       refreshMods(
@@ -533,9 +482,7 @@ export function onGameModeActivated(
         },
         (modNames: string[]) => {
           modNames.forEach((name: string) => {
-            if (
-              ["downloaded", "installed"].indexOf(knownMods[name].state) !== -1
-            ) {
+            if (["downloaded", "installed"].indexOf(knownMods[name].state) !== -1) {
               api.store.dispatch(removeMod(gameId, name));
             }
           });
@@ -554,9 +501,7 @@ export function onGameModeActivated(
       }
       const error: any = err as any;
       const allowReport =
-        error.allowReport !== undefined
-          ? error.allowReport
-          : !["ENOENT"].includes(error.code);
+        error.allowReport !== undefined ? error.allowReport : !["ENOENT"].includes(error.code);
       showError(store.dispatch, "Failed to refresh mods", err, { allowReport });
     });
 }
@@ -580,9 +525,7 @@ export function onPathsChanged(
       (mod: IMod) => store.dispatch(addMod(gameMode, mod)),
       (modNames: string[]) => {
         modNames.forEach((name: string) => {
-          if (
-            ["downloaded", "installed"].indexOf(knownMods[name].state) !== -1
-          ) {
+          if (["downloaded", "installed"].indexOf(knownMods[name].state) !== -1) {
             store.dispatch(removeMod(gameMode, name));
           }
         });
@@ -615,30 +558,19 @@ function loadOrderRulesChanged(before: IModRule[], after: IModRule[]): boolean {
   return !_.isEqual(normalizeRules(before), normalizeRules(after));
 }
 
-export function onModsChanged(
-  api: IExtensionApi,
-  previous: IModTable,
-  current: IModTable,
-) {
+export function onModsChanged(api: IExtensionApi, previous: IModTable, current: IModTable) {
   const { store } = api;
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 
-  const empty = (input) =>
-    !input || (Array.isArray(input) && input.length === 0);
+  const empty = (input) => !input || (Array.isArray(input) && input.length === 0);
   const different = (lhs, rhs) => (!empty(lhs) || !empty(rhs)) && lhs !== rhs;
   const changed = (modId: string, attribute: string) =>
-    different(
-      previous[gameMode][modId][attribute],
-      current[gameMode][modId][attribute],
-    );
+    different(previous[gameMode][modId][attribute], current[gameMode][modId][attribute]);
 
   const rulesOrOverridesChanged = (modId) =>
     getSafe(previous, [gameMode, modId], undefined) !== undefined &&
-    (loadOrderRulesChanged(
-      previous[gameMode][modId].rules,
-      current[gameMode][modId].rules,
-    ) ||
+    (loadOrderRulesChanged(previous[gameMode][modId].rules, current[gameMode][modId].rules) ||
       changed(modId, "fileOverrides") ||
       changed(modId, "type"));
 
@@ -646,9 +578,7 @@ export function onModsChanged(
     previous[gameMode] !== current[gameMode] &&
     !state.persistent.deployment.needToDeploy[gameMode]
   ) {
-    if (
-      Object.keys(current[gameMode]).find(rulesOrOverridesChanged) !== undefined
-    ) {
+    if (Object.keys(current[gameMode]).find(rulesOrOverridesChanged) !== undefined) {
       // Don't set deployment necessary during collection installation
       const installingDeps = getSafe(
         state,
@@ -660,10 +590,7 @@ export function onModsChanged(
         ["session", "collections", "activeSession"],
         undefined,
       );
-      if (
-        installingDeps.length === 0 &&
-        activeCollectionInstall === undefined
-      ) {
+      if (installingDeps.length === 0 && activeCollectionInstall === undefined) {
         store.dispatch(setDeploymentNecessary(gameMode, true));
       }
     }
@@ -711,9 +638,7 @@ async function undeploy(
     activatorId !== undefined
       ? activators.find((act) => act.id === activatorId)
       : activators.find(
-          (act) =>
-            allTypesSupported(act, state, gameMode, modTypes).errors.length ===
-            0,
+          (act) => allTypesSupported(act, state, gameMode, modTypes).errors.length === 0,
         );
 
   if (activator === undefined) {
@@ -722,16 +647,13 @@ async function undeploy(
 
   const stagingPath = installPathForGame(state, gameMode);
 
-  const byModTypes: { [typeId: string]: IMod[] } = mods.reduce(
-    (prev, mod: IMod) => {
-      if (prev[mod.type] === undefined) {
-        prev[mod.type] = [];
-      }
-      prev[mod.type].push(mod);
-      return prev;
-    },
-    {},
-  );
+  const byModTypes: { [typeId: string]: IMod[] } = mods.reduce((prev, mod: IMod) => {
+    if (prev[mod.type] === undefined) {
+      prev[mod.type] = [];
+    }
+    prev[mod.type].push(mod);
+    return prev;
+  }, {});
 
   try {
     await Promise.all(
@@ -845,9 +767,7 @@ export function onRemoveMods(
   const state: IState = store.getState();
 
   if (gameId === undefined) {
-    return callback(
-      new ProcessCanceled("No game id assigned to remove mods from"),
-    );
+    return callback(new ProcessCanceled("No game id assigned to remove mods from"));
   }
 
   modIds = modIds.filter((modId) => truthy(modId));
@@ -856,21 +776,13 @@ export function onRemoveMods(
 
   // reject trying to remove mods that are actively being installed/downloaded
   const notInstalled = modIds.find((modId) => {
-    const modState = getSafe(
-      state,
-      ["persistent", "mods", gameId, modId, "state"],
-      undefined,
-    );
-    return (
-      modState !== undefined && !["downloaded", "installed"].includes(modState)
-    );
+    const modState = getSafe(state, ["persistent", "mods", gameId, modId, "state"], undefined);
+    return modState !== undefined && !["downloaded", "installed"].includes(modState);
   });
 
   if (options?.ignoreInstalling !== true && notInstalled !== undefined) {
     if (callback !== undefined) {
-      callback(
-        new ProcessCanceled("Can't delete mod during download or install"),
-      );
+      callback(new ProcessCanceled("Can't delete mod during download or install"));
     }
     return;
   }
@@ -893,9 +805,7 @@ export function onRemoveMods(
   const installationPath = installPathForGame(state, gameId);
 
   const mods = state.persistent.mods[gameId];
-  const removeMods: IMod[] = modIds
-    .map((modId) => mods[modId])
-    .filter((mod) => mod !== undefined);
+  const removeMods: IMod[] = modIds.map((modId) => mods[modId]).filter((mod) => mod !== undefined);
 
   // TODO: no indication anything is happening until undeployment was successful.
   //   we used to remove the mod right away but then if undeployment failed the mod was gone
@@ -919,35 +829,20 @@ export function onRemoveMods(
         removeMods.map(async (mod: IMod) => {
           const forwardOptions = { ...(options || {}), modData: { ...mod } };
           try {
-            await api.emitAndAwait(
-              "will-remove-mod",
-              gameId,
-              mod.id,
-              forwardOptions,
-            );
+            await api.emitAndAwait("will-remove-mod", gameId, mod.id, forwardOptions);
             if (truthy(mod) && truthy(mod.installationPath)) {
-              const fullModPath = path.join(
-                installationPath,
-                mod.installationPath,
-              );
+              const fullModPath = path.join(installationPath, mod.installationPath);
               log("debug", "removing files for mod", {
                 game: gameId,
                 mod: mod.id,
               });
-              await fs
-                .removeAsync(fullModPath)
-                .catch((err) => {
-                  if (err.code !== "ENOENT") {
-                    throw err;
-                  }
-                });
+              await fs.removeAsync(fullModPath).catch((err) => {
+                if (err.code !== "ENOENT") {
+                  throw err;
+                }
+              });
             }
-            await api.emitAndAwait(
-              "did-remove-mod",
-              gameId,
-              mod.id,
-              forwardOptions,
-            );
+            await api.emitAndAwait("did-remove-mod", gameId, mod.id, forwardOptions);
 
             // Tell the deployment flow this removal is expected, so the
             // next external-changes scan auto-resolves the now-srcdeleted
@@ -1016,15 +911,7 @@ export function onRemoveMod(
     callback?.(null);
     return;
   }
-  return onRemoveMods(
-    api,
-    activators,
-    installManager,
-    gameId,
-    [modId],
-    callback,
-    options,
-  );
+  return onRemoveMods(api, activators, installManager, gameId, [modId], callback, options);
 }
 
 export function onAddMod(
@@ -1096,8 +983,7 @@ export async function onStartInstallDownload(
   const knownGamesList = knownGames(state);
   const convertedGameId =
     downloadGames.length > 0
-      ? convertGameIdReverse(knownGamesList, downloadGames[0]) ||
-        downloadGames[0]
+      ? convertGameIdReverse(knownGamesList, downloadGames[0]) || downloadGames[0]
       : downloadGames[0];
 
   const activeGameIdValue = activeGameId(state);

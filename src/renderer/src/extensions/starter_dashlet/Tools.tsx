@@ -1,58 +1,42 @@
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type PromiseBB from "bluebird";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
 import * as React from "react";
 import { Media } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { generate as shortid } from "shortid";
-
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-  IDialogResult,
-} from "../../types/IDialog";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IMod, IRunningTool } from "../../types/IState";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../gamemode_management/types/IGameStored";
-import type { IToolStored } from "../gamemode_management/types/IToolStored";
-import type { IReducerAction, StateReducerType } from "./types";
 
 import { showDialog } from "../../actions/notifications";
 import Dashlet from "../../controls/Dashlet";
 import DynDiv from "../../controls/DynDiv";
 import EmptyPlaceholder from "../../controls/EmptyPlaceholder";
 import FlexLayout from "../../controls/FlexLayout";
+import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../../types/IDialog";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IMod, IRunningTool } from "../../types/IState";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";
+import type { IStarterInfo } from "../../util/StarterInfo";
 import StarterInfo from "../../util/StarterInfo";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { MainContext } from "../../views/MainWindow";
-import {
-  addDiscoveredTool,
-  setToolVisible,
-} from "../gamemode_management/actions/settings";
+import { addDiscoveredTool, setToolVisible } from "../gamemode_management/actions/settings";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
+import type { IToolStored } from "../gamemode_management/types/IToolStored";
 import { setPrimaryTool, setToolOrder } from "./actions";
 import AddToolButton from "./AddToolButton";
 import Tool from "./Tool";
 import ToolEditDialog from "./ToolEditDialog";
+import type { IReducerAction, StateReducerType } from "./types";
 import { propOf, updateJumpList } from "./util";
 
 interface IBaseProps {
-  onGetValidTools: (
-    starters: IStarterInfo[],
-    gameMode: string,
-  ) => PromiseBB<string[]>;
+  onGetValidTools: (starters: IStarterInfo[], gameMode: string) => PromiseBB<string[]>;
 }
 
 interface IConnectedProps {
@@ -86,10 +70,7 @@ const initialState: IWelcomeScreenState = {
   discovering: false,
 };
 
-const welcomeScreenStateReducer = (
-  state: IWelcomeScreenState,
-  actions: IReducerAction<any>[],
-) => {
+const welcomeScreenStateReducer = (state: IWelcomeScreenState, actions: IReducerAction<any>[]) => {
   const newState = { ...state };
   for (const action of actions) {
     newState[action.type] = action.value;
@@ -98,11 +79,7 @@ const welcomeScreenStateReducer = (
 };
 
 interface IActionProps {
-  onAddDiscoveredTool: (
-    gameId: string,
-    toolId: string,
-    result: IDiscoveredTool,
-  ) => void;
+  onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (
@@ -125,8 +102,9 @@ export default function Tools(props: IStarterProps) {
   const { t } = useTranslation();
   const { onGetValidTools } = props;
   const context = React.useContext(MainContext);
-  const { onShowError, onSetToolVisible, onSetPrimary, onSetToolOrder } =
-    mapDispatchToProps(context.api.store.dispatch);
+  const { onShowError, onSetToolVisible, onSetPrimary, onSetToolOrder } = mapDispatchToProps(
+    context.api.store.dispatch,
+  );
   const connectedProps: IConnectedProps = useSelector(mapStateToProps);
   const {
     discoveredGames,
@@ -196,29 +174,19 @@ export default function Tools(props: IStarterProps) {
         );
         return;
       }
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Tools",
-        "Manually ran tool",
-      );
+      context.api.events.emit("analytics-track-click-event", "Tools", "Manually ran tool");
       StarterInfo.run(info, context.api, onShowError);
     },
     [onShowError],
   );
 
   const editTool = React.useCallback((starter: StarterInfo) => {
-    dispatch([
-      { type: propOf<IWelcomeScreenState>("editTool"), value: starter },
-    ]);
+    dispatch([{ type: propOf<IWelcomeScreenState>("editTool"), value: starter }]);
   }, []);
 
   const removeTool = React.useCallback(
     (starter: StarterInfo) => {
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Tools",
-        "Removed tool",
-      );
+      context.api.events.emit("analytics-track-click-event", "Tools", "Removed tool");
       onSetToolVisible(starter.gameId, starter.id, false);
     },
     [onSetToolVisible],
@@ -263,14 +231,7 @@ export default function Tools(props: IStarterProps) {
     };
     onStateUpdate();
     updateValidTools(state.tools);
-  }, [
-    discoveredGames,
-    gameMode,
-    knownGames,
-    toolsOrder,
-    mods,
-    deploymentCounter,
-  ]);
+  }, [discoveredGames, gameMode, knownGames, toolsOrder, mods, deploymentCounter]);
 
   React.useEffect(() => {
     if (toolsOrder.length === 0 && state.tools.length > 0) {
@@ -290,9 +251,7 @@ export default function Tools(props: IStarterProps) {
       <EmptyPlaceholder
         fill={true}
         icon="game"
-        text={t(
-          "When you are managing a game, supported tools will appear here",
-        )}
+        text={t("When you are managing a game, supported tools will appear here")}
       />
     );
   } else {
@@ -367,10 +326,7 @@ function ToolIcons(props: IToolIconsProps): JSX.Element {
     setPrimary,
     startTool,
   } = props;
-  if (
-    game === undefined &&
-    getSafe(discoveredGame, ["id"], undefined) === undefined
-  ) {
+  if (game === undefined && getSafe(discoveredGame, ["id"], undefined) === undefined) {
     return null;
   }
 
@@ -402,11 +358,7 @@ function ToolIcons(props: IToolIconsProps): JSX.Element {
         />
       ))}
 
-      <AddToolButton
-        tools={tools}
-        onAddNewTool={addNewTool}
-        onSetToolOrder={applyOrder}
-      />
+      <AddToolButton tools={tools} onAddNewTool={addNewTool} onSetToolOrder={applyOrder} />
     </div>
   );
 }
@@ -433,12 +385,8 @@ function generateGameStarter(props: IConnectedProps): StarterInfo {
   return null;
 }
 
-function generateToolStarters(
-  props: IConnectedProps,
-  gameStarterId: string,
-): StarterInfo[] {
-  const { discoveredGames, discoveredTools, gameMode, knownGames, toolsOrder } =
-    props;
+function generateToolStarters(props: IConnectedProps, gameStarterId: string): StarterInfo[] {
+  const { discoveredGames, discoveredTools, gameMode, knownGames, toolsOrder } = props;
 
   const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
   const discoveredGame: IDiscoveryResult = discoveredGames[gameMode];
@@ -456,9 +404,7 @@ function generateToolStarters(
   // add the tools provided by the game extension (whether they are found or not)
   knownTools.forEach((tool: IToolStored) => {
     try {
-      starters.push(
-        new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]),
-      );
+      starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
     } catch (err) {
       log("warn", "invalid tool", { err });
     }
@@ -474,14 +420,7 @@ function generateToolStarters(
     })
     .forEach((toolId) => {
       try {
-        starters.push(
-          new StarterInfo(
-            game,
-            discoveredGame,
-            undefined,
-            discoveredTools[toolId],
-          ),
-        );
+        starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
       } catch (err) {
         log("error", "tool configuration invalid", {
           gameId,
@@ -509,16 +448,8 @@ function mapStateToProps(state: any): IConnectedProps {
 
   const res = {
     gameMode,
-    addToTitleBar: getSafe(
-      state,
-      ["settings", "interface", "tools", "addToolsToTitleBar"],
-      false,
-    ),
-    toolsOrder: getSafe(
-      state,
-      ["settings", "interface", "tools", "order", gameMode],
-      emptyArray,
-    ),
+    addToTitleBar: getSafe(state, ["settings", "interface", "tools", "addToolsToTitleBar"], false),
+    toolsOrder: getSafe(state, ["settings", "interface", "tools", "order", gameMode], emptyArray),
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(
@@ -526,15 +457,10 @@ function mapStateToProps(state: any): IConnectedProps {
       ["settings", "gameMode", "discovered", gameMode, "tools"],
       emptyObj,
     ),
-    primaryTool: getSafe(
-      state,
-      ["settings", "interface", "primaryTool", gameMode],
-      undefined,
-    ),
+    primaryTool: getSafe(state, ["settings", "interface", "primaryTool", gameMode], undefined),
     toolsRunning: state.session.base.toolsRunning,
     mods: getSafe(state, ["persistent", "mods", gameMode], emptyObj),
-    deploymentCounter:
-      state.persistent?.deployment?.deploymentCounter?.[gameMode] ?? 0,
+    deploymentCounter: state.persistent?.deployment?.deploymentCounter?.[gameMode] ?? 0,
   };
 
   const keys = Object.keys(res);
@@ -547,15 +473,9 @@ function mapStateToProps(state: any): IConnectedProps {
   return lastConnected;
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onAddDiscoveredTool: (
-      gameId: string,
-      toolId: string,
-      result: IDiscoveredTool,
-    ) => {
+    onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
       dispatch(addDiscoveredTool(gameId, toolId, result, true));
     },
     onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => {
@@ -565,9 +485,7 @@ function mapDispatchToProps(
       showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onSetPrimary: (gameId: string, toolId: string) =>
-      dispatch(setPrimaryTool(gameId, toolId)),
-    onSetToolOrder: (gameId: string, order: string[]) =>
-      dispatch(setToolOrder(gameId, order)),
+    onSetPrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
+    onSetToolOrder: (gameId: string, order: string[]) => dispatch(setToolOrder(gameId, order)),
   };
 }

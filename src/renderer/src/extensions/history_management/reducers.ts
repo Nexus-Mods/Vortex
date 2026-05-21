@@ -1,12 +1,6 @@
 import type { IReducerSpec } from "../../types/IExtensionContext";
 import { addReducer } from "../../types/IExtensionContext";
-import {
-  getSafe,
-  pushSafe,
-  setDefaultArray,
-  setSafe,
-} from "../../util/storeHelper";
-
+import { getSafe, pushSafe, setDefaultArray, setSafe } from "../../util/storeHelper";
 import * as actions from "./actions";
 import type { IHistoryEvent } from "./types";
 
@@ -26,22 +20,14 @@ const persistentReducer: IReducerSpec<IHistoryPersistent> = {
       const idx = state.historyStacks[payload.stack].findIndex(
         (evt) => evt.id === payload.event.id,
       );
-      const copy = setSafe(
-        state,
-        ["historyStacks", payload.stack, idx],
-        payload.event,
-      );
+      const copy = setSafe(state, ["historyStacks", payload.stack, idx], payload.event);
       return copy;
     }),
     ...addReducer(actions.markHistoryReverted, (state, payload) => {
       const idx = state.historyStacks[payload.stack].findIndex(
         (evt) => evt.id === payload.event.id,
       );
-      const copy = setSafe(
-        state,
-        ["historyStacks", payload.stack, idx, "reverted"],
-        true,
-      );
+      const copy = setSafe(state, ["historyStacks", payload.stack, idx, "reverted"], true);
       return copy;
     }),
   },

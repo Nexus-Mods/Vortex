@@ -1,10 +1,7 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-import type {
-  ICategory,
-  ICategoryDictionary,
-} from "../types/ICategoryDictionary";
-
 import * as reduxAct from "redux-act";
+
+import safeCreateAction from "../../../actions/safeCreateAction";
+import type { ICategory, ICategoryDictionary } from "../types/ICategoryDictionary";
 
 export const loadCategories = safeCreateAction(
   "LOAD_CATEGORIES",
@@ -23,10 +20,10 @@ export const setCategory = safeCreateAction(
   }),
 );
 
-export const removeCategory = safeCreateAction(
-  "REMOVE_CATEGORY",
-  (gameId: string, id: string) => ({ gameId, id }),
-);
+export const removeCategory = safeCreateAction("REMOVE_CATEGORY", (gameId: string, id: string) => ({
+  gameId,
+  id,
+}));
 
 export const setCategoryOrder = safeCreateAction(
   "SET_CATEGORY_ORDER",

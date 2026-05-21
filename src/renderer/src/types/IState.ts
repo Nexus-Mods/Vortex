@@ -1,5 +1,5 @@
-import type { DownloadCheckpoint } from "@vortex/shared/download";
 import type { IParameters } from "@vortex/shared/cli";
+import type { DownloadCheckpoint } from "@vortex/shared/download";
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
 import type { ICollectionInstallState } from "../extensions/collections_integration/types";
@@ -8,10 +8,7 @@ import type { IDiscoveryResult } from "../extensions/gamemode_management/types/I
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
 import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
-import type {
-  IHistoryPersistent,
-  IHistoryState,
-} from "../extensions/history_management/reducers";
+import type { IHistoryPersistent, IHistoryState } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type { IAvailableExtension, IExtension } from "./extensions";

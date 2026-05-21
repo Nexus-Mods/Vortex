@@ -1,13 +1,18 @@
+import * as path from "path";
+import * as util from "util";
+
+import PromiseBB from "bluebird";
+import type { TFunction } from "i18next";
+import type { IEntry } from "turbowalk";
+import turbowalk from "turbowalk";
+import * as winapi from "winapi-bindings";
+
 import { setSettingsPage } from "../../actions/session";
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
-
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IDeployment } from "../mod_management/LinkingDeployment";
@@ -18,14 +23,6 @@ import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
-
-import PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import type { IEntry } from "turbowalk";
-import turbowalk from "turbowalk";
-import * as util from "util";
-import * as winapi from "winapi-bindings";
 
 const LNK_EXT = ".vortex_lnk";
 
@@ -71,13 +68,8 @@ class DeploymentMethod extends LinkingDeployment {
     );
   }
 
-  public isSupported(
-    state: any,
-    gameId: string,
-    typeId: string,
-  ): IUnavailableReason {
-    const discovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[gameId];
+  public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
+    const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
     if (discovery === undefined || discovery.path === undefined) {
       return { description: (t) => t("Game not discovered.") };
     }
@@ -87,13 +79,9 @@ class DeploymentMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
-    if (
-      game.details?.supportsMoveActivator === false ||
-      game.compatible?.moveActivator === false
-    ) {
+    if (game.details?.supportsMoveActivator === false || game.compatible?.moveActivator === false) {
       return {
-        description: (t) =>
-          t("Game doesn't support the move deployment method"),
+        description: (t) => t("Game doesn't support the move deployment method"),
       };
     }
 
@@ -125,8 +113,7 @@ class DeploymentMethod extends LinkingDeployment {
         // actually we could support this but it would be so slow it wouldn't make sense
 
         return {
-          description: (t) =>
-            t("Works only if mods are installed on the same drive as the game"),
+          description: (t) => t("Works only if mods are installed on the same drive as the game"),
           order: 8,
           solution: (t) => {
             let displayPath = modPaths[typeId];
@@ -167,8 +154,7 @@ class DeploymentMethod extends LinkingDeployment {
         err: util.inspect(err),
       });
       return {
-        description: (t) =>
-          t("Game not fully initialized yet, this should disappear soon."),
+        description: (t) => t("Game not fully initialized yet, this should disappear soon."),
       };
     }
 
@@ -192,9 +178,7 @@ class DeploymentMethod extends LinkingDeployment {
         [{ label: "Cancel" }, { label: "Continue" }],
       )
       .then((result) =>
-        result.action === "Cancel"
-          ? PromiseBB.reject(new UserCanceled())
-          : PromiseBB.resolve(),
+        result.action === "Cancel" ? PromiseBB.reject(new UserCanceled()) : PromiseBB.resolve(),
       );
   }
 
@@ -214,8 +198,7 @@ class DeploymentMethod extends LinkingDeployment {
             0,
             relPath.length - extLen,
           );
-          prev[relPath.substr(0, relPath.length - extLen)] =
-            deployment[relPath];
+          prev[relPath.substr(0, relPath.length - extLen)] = deployment[relPath];
         } else {
           prev[relPath] = deployment[relPath];
         }
@@ -227,11 +210,7 @@ class DeploymentMethod extends LinkingDeployment {
     return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
-  public deactivate(
-    sourcePath: string,
-    dataPath: string,
-    sourceName: string,
-  ): PromiseBB<void> {
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): PromiseBB<void> {
     return turbowalk(sourcePath, (entries) => {
       if (this.context === undefined) {
         return;
@@ -261,41 +240,28 @@ class DeploymentMethod extends LinkingDeployment {
     return input;
   }
 
-  protected purgeLinks(
-    installationPath: string,
-    dataPath: string,
-  ): PromiseBB<void> {
+  protected purgeLinks(installationPath: string, dataPath: string): PromiseBB<void> {
     let links: IEntry[] = [];
 
     // find lnk files in our mods directory
     return turbowalk(
       installationPath,
       (entries) => {
-        links = links.concat(
-          entries.filter((entry) => path.extname(entry.filePath) === LNK_EXT),
-        );
+        links = links.concat(entries.filter((entry) => path.extname(entry.filePath) === LNK_EXT));
       },
       {
         details: true,
       },
-    ).then(() =>
-      PromiseBB.map(links, (entry) => this.restoreLink(entry.filePath)),
-    );
+    ).then(() => PromiseBB.map(links, (entry) => this.restoreLink(entry.filePath)));
   }
 
-  protected linkFile(
-    linkPath: string,
-    sourcePath: string,
-    dirTags?: boolean,
-  ): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     if (path.extname(sourcePath) === LNK_EXT) {
       // sanity check, don't link the links
       return Promise.resolve();
     }
     const basePath = path.dirname(linkPath);
-    return this.ensureDir(basePath).then(() =>
-      this.createLink(sourcePath, linkPath),
-    );
+    return this.ensureDir(basePath).then(() => this.createLink(sourcePath, linkPath));
   }
 
   protected unlinkFile(linkPath: string, sourcePath: string): PromiseBB<void> {
@@ -313,11 +279,7 @@ class DeploymentMethod extends LinkingDeployment {
           return false;
         }
       })
-      .catch((err) =>
-        err.code === "ENOENT"
-          ? PromiseBB.resolve(false)
-          : PromiseBB.reject(err),
-      );
+      .catch((err) => (err.code === "ENOENT" ? PromiseBB.resolve(false) : PromiseBB.reject(err)));
   }
 
   protected canRestore(): boolean {
@@ -328,9 +290,7 @@ class DeploymentMethod extends LinkingDeployment {
     return fs
       .statAsync(filePath)
       .catch((err) =>
-        err.code === "ENOENT"
-          ? this.statVortexLink(filePath)
-          : PromiseBB.reject(err),
+        err.code === "ENOENT" ? this.statVortexLink(filePath) : PromiseBB.reject(err),
       );
   }
 
@@ -339,28 +299,24 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private readLink(filePath: string): PromiseBB<ILinkData> {
-    return fs
-      .readFileAsync(filePath + LNK_EXT, { encoding: "utf-8" })
-      .then((data) => {
-        try {
-          const obj: ILinkData = JSON.parse(data);
-          if (obj.target === undefined) {
-            throw new Error("target missing");
-          }
-          return PromiseBB.resolve(obj);
-        } catch (err) {
-          const error: any = new Error("Invalid link");
-          error.code = "ENOENT";
-          error.path = filePath;
-          return PromiseBB.reject(error);
+    return fs.readFileAsync(filePath + LNK_EXT, { encoding: "utf-8" }).then((data) => {
+      try {
+        const obj: ILinkData = JSON.parse(data);
+        if (obj.target === undefined) {
+          throw new Error("target missing");
         }
-      });
+        return PromiseBB.resolve(obj);
+      } catch (err) {
+        const error: any = new Error("Invalid link");
+        error.code = "ENOENT";
+        error.path = filePath;
+        return PromiseBB.reject(error);
+      }
+    });
   }
 
   private statVortexLink(filePath: string): PromiseBB<fs.Stats> {
-    return this.readLink(filePath).then((linkInfo) =>
-      fs.statAsync(linkInfo.target),
-    );
+    return this.readLink(filePath).then((linkInfo) => fs.statAsync(linkInfo.target));
   }
 
   private createLink(sourcePath: string, linkPath: string): PromiseBB<void> {
@@ -372,9 +328,7 @@ class DeploymentMethod extends LinkingDeployment {
     return fs
       .statAsync(sourcePath)
       .catch({ code: "ENOENT" }, () =>
-        fs
-          .statAsync(sourcePath + LNK_EXT)
-          .then(() => this.restoreLink(sourcePath + LNK_EXT)),
+        fs.statAsync(sourcePath + LNK_EXT).then(() => this.restoreLink(sourcePath + LNK_EXT)),
       )
       .then(() =>
         fs.writeFileAsync(sourcePath + LNK_EXT, linkInfo, {
@@ -387,11 +341,7 @@ class DeploymentMethod extends LinkingDeployment {
           //   The alternative would be to store mtime in the linkInfo and then use that when
           //   checking if the content has changed (not that that could happen with move
           //   deployment anyway)
-          fs.utimesAsync(
-            sourcePath + LNK_EXT,
-            stat.atime as any,
-            stat.mtime as any,
-          ),
+          fs.utimesAsync(sourcePath + LNK_EXT, stat.atime as any, stat.mtime as any),
         ),
       )
       .then(() => fs.renameAsync(sourcePath, linkPath));

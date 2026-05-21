@@ -1,0 +1,36 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "exe-version",
+  "version": "3.0.0",
+  "description": "Read version info from Windows PE executables via pure TS parsing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "typecheck": "pnpm tsc -p ./tsconfig.json",
+    "test": "pnpm vitest run"
+  },
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "devDependencies": {
+    "pe-resources": "workspace:*"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs"
+      },
+      "./package.json": "./package.json"
+    }
+  }
+}

@@ -1,6 +1,6 @@
-import Icon from "./Icon";
-
 import * as React from "react";
+
+import Icon from "./Icon";
 
 export interface IToggleProps {
   dataId?: string;

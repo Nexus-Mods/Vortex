@@ -1,16 +1,13 @@
+import _ from "lodash";
+import * as React from "react";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import type { ButtonType } from "../../../controls/IconBar";
 import ToolbarIcon from "../../../controls/ToolbarIcon";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
-
 import type { IProfileMod } from "../../profile_management/types/IProfile";
-
 import type { IMod } from "../types/IMod";
-
-import _ from "lodash";
-
-import * as React from "react";
 import updateState from "../util/modUpdateState";
 
 export type IModWithState = IMod & IProfileMod;
@@ -83,9 +80,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     });
   };
 
-  private dispatchCheckModsVersionEvent = async (
-    force: boolean,
-  ): Promise<string[]> => {
+  private dispatchCheckModsVersionEvent = async (force: boolean): Promise<string[]> => {
     const { gameMode } = this.props;
     try {
       const mods = this.props.selectionOnly
@@ -104,10 +99,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         .reduce((prev: string[], iter: string[]) => [...prev, ...iter], []);
       return Promise.resolve(modIds);
     } catch (error) {
-      this.context.api.showErrorNotification(
-        "Error checking for mod updates",
-        error,
-      );
+      this.context.api.showErrorNotification("Error checking for mod updates", error);
       return Promise.resolve([]);
     }
   };
@@ -180,16 +172,8 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     mods: modsWithState,
     gameMode,
-    updateRunning: getSafe(
-      state,
-      ["session", "mods", "updatingMods", gameMode],
-      false,
-    ),
-    isPremium: getSafe(
-      state,
-      ["persistent", "nexus", "userInfo", "isPremium"],
-      false,
-    ),
+    updateRunning: getSafe(state, ["session", "mods", "updatingMods", gameMode], false),
+    isPremium: getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false),
   };
 }
 

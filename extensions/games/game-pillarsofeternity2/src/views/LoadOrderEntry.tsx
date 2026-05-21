@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ListGroupItem } from "react-bootstrap";
+
 import { ILoadOrderDisplayItem } from "../types";
 
 export interface IPluginEntryProps {
@@ -18,9 +19,7 @@ class PluginEntry extends React.Component<IProps, {}> {
       classes = classes.concat(className.split(" "));
     }
 
-    return (
-      <ListGroupItem className={classes.join(" ")}>{item.name}</ListGroupItem>
-    );
+    return <ListGroupItem className={classes.join(" ")}>{item.name}</ListGroupItem>;
   }
 }
 

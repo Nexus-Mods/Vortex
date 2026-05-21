@@ -1,7 +1,8 @@
-import FeedParser from "feedparser";
 import type { IncomingMessage } from "http";
 import { get } from "https";
 import * as url from "url";
+
+import FeedParser from "feedparser";
 
 export interface IEnclosure {
   length?: string;

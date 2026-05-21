@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React from "react";
 import { useTranslation } from "react-i18next";
+
 import FormInput from "../../../controls/FormInput";
 
 interface IProps {
@@ -10,10 +11,7 @@ interface IProps {
 
 const FilterBox: React.FC<IProps> = ({ currentFilterValue, setFilter }) => {
   const [t] = useTranslation("common");
-  const applyFilter = React.useCallback(
-    (value: string) => setFilter(value),
-    [setFilter],
-  );
+  const applyFilter = React.useCallback((value: string) => setFilter(value), [setFilter]);
   return (
     <FormInput
       type="search"

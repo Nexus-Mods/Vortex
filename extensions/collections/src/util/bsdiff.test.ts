@@ -1,8 +1,9 @@
-import { describe, it, expect, afterAll } from "vitest";
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as crypto from "crypto";
+
+import { describe, it, expect, afterAll } from "vitest";
 
 import { createPatch, applyPatch, diffFiles, patchFiles } from "./bsdiff";
 
@@ -20,11 +21,7 @@ function generateBytes(size: number, seed: number): Buffer {
   return buf;
 }
 
-function modifyBytes(
-  buf: Buffer,
-  changePercent: number,
-  seed: number,
-): Buffer {
+function modifyBytes(buf: Buffer, changePercent: number, seed: number): Buffer {
   const result = Buffer.from(buf);
   let state = seed;
   const numChanges = Math.max(1, Math.floor(buf.length * changePercent));
@@ -116,9 +113,7 @@ describe("bsdiff WASM worker - native cross-compatibility", () => {
   function hasNativeBaseline(): boolean {
     return (
       fs.existsSync(path.join(TEST_DATA_DIR, "native-baseline.json")) &&
-      TEST_CASES.every((tc) =>
-        fs.existsSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`)),
-      )
+      TEST_CASES.every((tc) => fs.existsSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`)))
     );
   }
 
@@ -128,18 +123,13 @@ describe("bsdiff WASM worker - native cross-compatibility", () => {
   }
 
   const baseline = JSON.parse(
-    fs.readFileSync(
-      path.join(TEST_DATA_DIR, "native-baseline.json"),
-      "utf8",
-    ),
+    fs.readFileSync(path.join(TEST_DATA_DIR, "native-baseline.json"), "utf8"),
   );
 
   for (const tc of TEST_CASES) {
     it(`applies native patch for ${tc.name}`, async () => {
       const { oldBuf, newBuf } = makeTestPair(tc);
-      const nativePatch = fs.readFileSync(
-        path.join(TEST_DATA_DIR, `${tc.name}-native.diff`),
-      );
+      const nativePatch = fs.readFileSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`));
 
       const result = await applyPatch(oldBuf, nativePatch);
       expect(md5(result)).toBe(md5(newBuf));
@@ -151,10 +141,7 @@ describe("bsdiff WASM worker - native cross-compatibility", () => {
 // --- Performance comparison ---
 
 describe("bsdiff WASM worker - performance", () => {
-  const wasmResults: Record<
-    string,
-    { diffMs: number; patchMs: number; patchSize: number }
-  > = {};
+  const wasmResults: Record<string, { diffMs: number; patchMs: number; patchSize: number }> = {};
 
   for (const tc of TEST_CASES) {
     it(`benchmarks ${tc.name}`, async () => {
@@ -179,9 +166,7 @@ describe("bsdiff WASM worker - performance", () => {
   afterAll(() => {
     const baselinePath = path.join(TEST_DATA_DIR, "native-baseline.json");
     const hasBaseline = fs.existsSync(baselinePath);
-    const baseline = hasBaseline
-      ? JSON.parse(fs.readFileSync(baselinePath, "utf8"))
-      : null;
+    const baseline = hasBaseline ? JSON.parse(fs.readFileSync(baselinePath, "utf8")) : null;
 
     console.log("\n=== bsdiff Performance: Native vs WASM (worker_threads) ===");
     console.log(

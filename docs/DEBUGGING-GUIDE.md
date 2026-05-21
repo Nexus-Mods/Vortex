@@ -576,10 +576,7 @@ If a native module crashes:
 export default React.memo(MyComponent);
 
 // Use useMemo for expensive calculations
-const sortedMods = useMemo(
-    () => mods.sort((a, b) => a.name.localeCompare(b.name)),
-    [mods],
-);
+const sortedMods = useMemo(() => mods.sort((a, b) => a.name.localeCompare(b.name)), [mods]);
 
 // Use useCallback for callback functions
 const handleClick = useCallback(() => {

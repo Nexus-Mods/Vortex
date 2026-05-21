@@ -1,16 +1,13 @@
-import Bluebird from "bluebird";
 import { createHash } from "crypto";
-import {
-  ICollectionPermission,
-  CollectionPermission,
-} from "@nexusmods/nexus-api";
-import type { types } from "vortex-api";
+
+import { CollectionPermission, ICollectionPermission } from "@nexusmods/nexus-api";
+import type { types } from "@nexusmods/vortex-api";
+import Bluebird from "bluebird";
+
 import type { ICollectionModRuleEx } from "../types/ICollection";
 import type { IModEx } from "../types/IModEx";
 
-export function hasEditPermissions(
-  permissions: ICollectionPermission[],
-): boolean {
+export function hasEditPermissions(permissions: ICollectionPermission[]): boolean {
   if (!permissions) {
     return false;
   }
@@ -20,9 +17,7 @@ export function hasEditPermissions(
   return allPermissions.includes("collection:edit");
 }
 
-export function bbProm<T>(
-  func: (...args: any[]) => Promise<T>,
-): (...args: any[]) => Bluebird<T> {
+export function bbProm<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
@@ -59,15 +54,12 @@ export function isRelevant(mod: IModEx) {
 
 export type IModWithRule = types.IMod & { collectionRule: types.IModRule };
 
-export function calculateCollectionSize(mods: {
-  [id: string]: IModWithRule;
-}): number {
+export function calculateCollectionSize(mods: { [id: string]: IModWithRule }): number {
   return Object.values(mods).reduce((prev: number, mod: IModEx) => {
     if (!isRelevant(mod)) {
       return prev;
     }
-    const size =
-      mod.attributes?.fileSize ?? mod.collectionRule.reference.fileSize ?? 0;
+    const size = mod.attributes?.fileSize ?? mod.collectionRule.reference.fileSize ?? 0;
     return prev + size;
   }, 0);
 }

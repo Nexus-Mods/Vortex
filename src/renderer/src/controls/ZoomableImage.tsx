@@ -1,12 +1,11 @@
-import { setSafe } from "../util/storeHelper";
-
-import Icon from "./Icon";
-
 import * as _ from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Image } from "react-bootstrap";
 import { Portal } from "react-overlays";
+
+import { setSafe } from "../util/storeHelper";
+import Icon from "./Icon";
 
 function PopoverImage(props: any) {
   return (
@@ -26,10 +25,7 @@ export interface IZoomableImageProps {
   overlayClass?: string;
 }
 
-class ZoomableImage extends React.Component<
-  IZoomableImageProps,
-  { showOverlay: boolean }
-> {
+class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: boolean }> {
   public static contextTypes: React.ValidationMap<any> = {
     menuLayer: PropTypes.object,
   };
@@ -55,20 +51,12 @@ class ZoomableImage extends React.Component<
     return (
       <div className={className}>
         {url !== undefined ? (
-          <Image
-            className="zoomable-image"
-            src={url}
-            onClick={this.toggleOverlay}
-          />
+          <Image className="zoomable-image" src={url} onClick={this.toggleOverlay} />
         ) : (
           <Icon name="placeholder-image" />
         )}
         {showOverlay ? (
-          <Portal
-            container={
-              container !== undefined ? container : this.context.menuLayer
-            }
-          >
+          <Portal container={container !== undefined ? container : this.context.menuLayer}>
             <div className={classes.join(" ")}>
               <PopoverImage src={url} onClick={this.toggleOverlay} />
             </div>
@@ -80,9 +68,7 @@ class ZoomableImage extends React.Component<
   }
 
   private toggleOverlay = () => {
-    this.setState(
-      setSafe(this.state, ["showOverlay"], !this.state.showOverlay),
-    );
+    this.setState(setSafe(this.state, ["showOverlay"], !this.state.showOverlay));
   };
 }
 

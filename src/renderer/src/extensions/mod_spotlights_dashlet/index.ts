@@ -1,21 +1,16 @@
+import https from "https";
+import path from "path";
+import url from "url";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { ParserError } from "../announcement_dashlet/types";
-
-import path from "path";
-import url from "url";
-import https from "https";
-
-import type {
-  IMOTMEntry,
-  ModSpotlightEntry,
-  ModSpotlightEntryExt,
-  VideoEntryType,
-} from "./types";
 import ModSpotlightsDashlet from "./ModSpotlightsDashlet";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { IMOTMEntry, ModSpotlightEntry, ModSpotlightEntryExt, VideoEntryType } from "./types";
 
 // Can be used for debugging.
 const DEBUG_MODE: boolean = false;
@@ -35,8 +30,7 @@ const FileMap = {
   modspotlights: MOD_SPOTLIGHTS_FILENAME,
 };
 
-const getLocalFilePath = (type: VideoEntryType) =>
-  path.join(__dirname, FileMap[type]);
+const getLocalFilePath = (type: VideoEntryType) => path.join(__dirname, FileMap[type]);
 
 const getFileLink = (type: VideoEntryType) => {
   return `https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/${FileMap[type]}`;
@@ -91,9 +85,7 @@ function getHTTPData<T>(link: string): Promise<T[]> {
   });
 }
 
-function decorateData<T extends ModSpotlightEntry>(
-  data: T[],
-): ModSpotlightEntryExt[] {
+function decorateData<T extends ModSpotlightEntry>(data: T[]): ModSpotlightEntryExt[] {
   const decorated: any[] = [];
   for (const entry of data) {
     decorated.push({

@@ -1,9 +1,11 @@
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as fs from "fs";
 import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
+import { log } from "../logging";
 import { getRealNodeModulePaths } from "./webpack-hacks";
 
 declare const __non_webpack_require__: NodeJS.Require;
@@ -27,6 +29,39 @@ function elevatedMain(
   main: (ipc: IElevatedIpc, req: NodeJS.Require) => void | PromiseLike<void>,
 ) {
   let client;
+
+  // stderr from the elevated child goes nowhere visible (issue #23043), so
+  // failures need to land in vortex.log to be diagnosable. userData comes
+  // from ELECTRON_USERDATA, set by the outer elevated Vortex.exe when
+  // spawning this inner Node child.
+  const logError = (message: string, error: unknown) => {
+    try {
+      const fs = __non_webpack_require__("fs");
+      const path = __non_webpack_require__("path");
+      const userData = process.env.ELECTRON_USERDATA;
+      if (!userData) return;
+      const detail =
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+              code: (error as { code?: unknown }).code,
+            }
+          : { value: String(error) };
+      const line =
+        new Date().toISOString() +
+        " [ERROR] [ELEVATED] " +
+        message +
+        " " +
+        JSON.stringify({ pid: process.pid, ipcPath, ...detail }) +
+        "\n";
+      fs.appendFileSync(path.join(userData, "vortex.log"), line);
+    } catch {
+      // diagnostics must never throw
+    }
+  };
+
   const syntaxErrors = ["ReferenceError"];
   const handleError = (error: any) => {
     const testIfScriptInvalid = () => {
@@ -37,7 +72,7 @@ function elevatedMain(
         }
       });
     };
-    console.error("Elevated code failed", error.stack);
+    logError("Elevated code failed", error);
     if (client !== undefined) {
       testIfScriptInvalid();
     }
@@ -69,7 +104,7 @@ function elevatedMain(
     })
     .on("error", (err) => {
       if (err.code !== "EPIPE") {
-        console.error("Connection failed", err.message);
+        logError("Connection failed", err);
       }
     });
 }
@@ -104,86 +139,91 @@ export function runElevated(
   args?: Record<string, unknown>,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    tmp.file(
-      { postfix: ".js" },
-      (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
-        if (err) {
-          return reject(err);
-        }
+    tmp.file({ postfix: ".js" }, (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
+      if (err) {
+        return reject(err);
+      }
 
-        const modulePaths = getRealNodeModulePaths(process.cwd())
-          .map((p) => p.split("\\").join("/"));
+      const modulePaths = getRealNodeModulePaths(process.cwd()).map((p) => p.split("\\").join("/"));
 
-        let mainBody = elevatedMain.toString();
-        mainBody = mainBody.slice(
-          mainBody.indexOf("{") + 1,
-          mainBody.lastIndexOf("}"),
+      // In production builds the elevated Node child runs with
+      // ELECTRON_RUN_AS_NODE, which disables Electron's asar resolution.
+      // Asar-unpacked deps (e.g. json-socket) live under
+      // resources/app.asar.unpacked/node_modules and must be on the
+      // require search path explicitly. In dev the path doesn't exist
+      // and is harmless. See issue #23043.
+      if (process.resourcesPath) {
+        modulePaths.unshift(
+          path
+            .join(process.resourcesPath, "app.asar.unpacked", "node_modules")
+            .split("\\")
+            .join("/"),
         );
+      }
 
-        // The elevatedMain function body is serialized via .toString() and executed
-        // in a separate Node process. We use __non_webpack_require__ in the function
-        // so webpack doesn't transform the calls, but that global doesn't exist in
-        // plain Node — so we alias it here. __webpack_require__ is also aliased in
-        // case the caller's serialized func callback contains webpack-transformed requires.
-        let prog = `
+      let mainBody = elevatedMain.toString();
+      mainBody = mainBody.slice(mainBody.indexOf("{") + 1, mainBody.lastIndexOf("}"));
+
+      // The elevatedMain function body is serialized via .toString() and executed
+      // in a separate Node process. We use __non_webpack_require__ in the function
+      // so webpack doesn't transform the calls, but that global doesn't exist in
+      // plain Node — so we alias it here. __webpack_require__ is also aliased in
+      // case the caller's serialized func callback contains webpack-transformed requires.
+      let prog = `
         const __non_webpack_require__ = require;\n
         const __webpack_require__ = require;\n
         let moduleRoot = ${JSON.stringify(modulePaths)};\n
         let ipcPath = '${ipcPath}';\n
       `;
 
-        if (args !== undefined) {
-          for (const argKey of Object.keys(args)) {
-            if (Object.prototype.hasOwnProperty.call(args, argKey)) {
-              prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
-            }
+      if (args !== undefined) {
+        for (const argKey of Object.keys(args)) {
+          if (Object.prototype.hasOwnProperty.call(args, argKey)) {
+            prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
           }
         }
+      }
 
-        prog += `
+      prog += `
         let main = ${func.toString()};\n
         ${mainBody}\n
       `;
 
-        fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
-          if (writeErr) {
-            try {
-              cleanup();
-            } catch (cleanupErr) {
-              const errorMessage = getErrorMessageOrDefault(cleanupErr);
-              console.error(
-                "failed to clean up temporary script",
-                errorMessage,
-              );
-            }
-            return reject(writeErr);
-          }
-
+      fs.write(fd, prog, (writeErr: Error, _written: number, _str: string) => {
+        if (writeErr) {
           try {
-            fs.closeSync(fd);
-          } catch (closeErr) {
-            const err = unknownToError(closeErr);
-            const errCode = getErrorCode(err);
-            if (errCode !== "EBADF") {
-              return reject(err);
-            }
-          }
-
-          try {
-            winapi.ShellExecuteEx({
-              verb: "runas",
-              file: process.execPath,
-              parameters: `--run ${tmpPath}`,
-              directory: path.dirname(process.execPath),
-              show: "shownormal",
+            cleanup();
+          } catch (cleanupErr) {
+            log("warn", "failed to clean up temporary script", {
+              error: getErrorMessageOrDefault(cleanupErr),
             });
-            return resolve(tmpPath);
-          } catch (shellErr) {
-            return reject(unknownToError(shellErr));
           }
-        });
-      },
-    );
+          return reject(writeErr);
+        }
+
+        try {
+          fs.closeSync(fd);
+        } catch (closeErr) {
+          const err = unknownToError(closeErr);
+          const errCode = getErrorCode(err);
+          if (errCode !== "EBADF") {
+            return reject(err);
+          }
+        }
+
+        try {
+          winapi.ShellExecuteEx({
+            verb: "runas",
+            file: process.execPath,
+            parameters: `--run ${tmpPath}`,
+            directory: path.dirname(process.execPath),
+            show: "shownormal",
+          });
+          return resolve(tmpPath);
+        } catch (shellErr) {
+          return reject(unknownToError(shellErr));
+        }
+      });
+    });
   });
 }
-

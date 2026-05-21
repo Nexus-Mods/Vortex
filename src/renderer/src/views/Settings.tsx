@@ -3,16 +3,15 @@ import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IBaseProps } from "../extensions/settings_interface/SettingsInterface";
-import type { PropsCallbackTyped } from "../types/IExtensionContext";
-import type { IState } from "../types/IState";
-import type startupSettingsT from "../util/startupSettings";
-
 import { setSettingsPage } from "../actions/session";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import { useExtensionObjects } from "../ExtensionProvider";
+import type { IBaseProps } from "../extensions/settings_interface/SettingsInterface";
+import type { PropsCallbackTyped } from "../types/IExtensionContext";
+import type { IState } from "../types/IState";
 import lazyRequire from "../util/lazyRequire";
 import makeReactive from "../util/makeReactive";
+import type startupSettingsT from "../util/startupSettings";
 import MainPage from "./MainPage";
 
 const startupSettings = lazyRequire<typeof startupSettingsT>(
@@ -54,9 +53,7 @@ export const Settings: React.FC = () => {
   // Get extension objects using the hook instead of HOC
   const allSettingPages = useExtensionObjects<ISettingsPage>(registerSettings);
 
-  const useModernLayout = useSelector(
-    (state: IState) => state.settings.window.useModernLayout,
-  );
+  const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
 
   // In Modern UI, game-specific settings (those with a visible callback) are shown
   // in the dedicated Game Settings page, so exclude them here to avoid duplication.
@@ -64,9 +61,7 @@ export const Settings: React.FC = () => {
     ? allSettingPages.filter((page) => page.visible === undefined)
     : allSettingPages;
 
-  const settingsPage = useSelector(
-    (state: IState) => state.session.base.settingsPage || undefined,
-  );
+  const settingsPage = useSelector((state: IState) => state.session.base.settingsPage || undefined);
 
   const startupSettingsRef = React.useRef(makeReactive(startupSettings));
 
@@ -83,10 +78,7 @@ export const Settings: React.FC = () => {
     [dispatch],
   );
 
-  const sortByPriority = (
-    lhs: ICombinedSettingsPage,
-    rhs: ICombinedSettingsPage,
-  ) => {
+  const sortByPriority = (lhs: ICombinedSettingsPage, rhs: ICombinedSettingsPage) => {
     return lhs.priority - rhs.priority;
   };
 
@@ -131,39 +123,27 @@ export const Settings: React.FC = () => {
     );
   };
 
-  const combined = settingPages.reduce(
-    (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
-      const result = prev.slice();
-      const existingPage = prev.find(
-        (ele: ICombinedSettingsPage) => ele.title === current.title,
-      );
-      if (existingPage === undefined) {
-        result.push({
-          title: current.title,
-          elements: [current],
-          priority: current.priority,
-        });
-      } else {
-        existingPage.elements.push(current);
-        if (
-          existingPage.priority === undefined ||
-          current.priority < existingPage.priority
-        ) {
-          existingPage.priority = current.priority;
-        }
+  const combined = settingPages.reduce((prev: ICombinedSettingsPage[], current: ISettingsPage) => {
+    const result = prev.slice();
+    const existingPage = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
+    if (existingPage === undefined) {
+      result.push({
+        title: current.title,
+        elements: [current],
+        priority: current.priority,
+      });
+    } else {
+      existingPage.elements.push(current);
+      if (existingPage.priority === undefined || current.priority < existingPage.priority) {
+        existingPage.priority = current.priority;
       }
-      return result;
-    },
-    [],
-  );
+    }
+    return result;
+  }, []);
 
   // Filter out tabs that have no visible elements and sort by priority
   const visibleTabs = combined
-    .filter((tabPage) =>
-      tabPage.elements.some(
-        (ele) => ele.visible === undefined || ele.visible(),
-      ),
-    )
+    .filter((tabPage) => tabPage.elements.some((ele) => ele.visible === undefined || ele.visible()))
     .sort(sortByPriority);
 
   const page =

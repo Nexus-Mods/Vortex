@@ -1,11 +1,10 @@
-import type { IModLookupInfo } from "../mod_management/util/testModReference";
-import type { IState } from "../../types/IState";
-import { activeGameId } from "../profile_management/selectors";
-import { getSafe } from "../../util/storeHelper";
-
 import * as _ from "lodash";
 import { createSelector } from "reselect";
 
+import type { IState } from "../../types/IState";
+import { getSafe } from "../../util/storeHelper";
+import type { IModLookupInfo } from "../mod_management/util/testModReference";
+import { activeGameId } from "../profile_management/selectors";
 import { profileById } from "../profile_management/selectors";
 
 const allMods = (state: IState) => state.persistent.mods;
@@ -27,9 +26,8 @@ export const currentGameMods = createSelector(
   (inMods, gameId) => inMods[gameId] ?? {},
 );
 
-export const currentModStateForProfile = createSelector(
-  profileById,
-  (profile) => (profile ? profile.modState : {}),
+export const currentModStateForProfile = createSelector(profileById, (profile) =>
+  profile ? profile.modState : {},
 );
 
 let lastLookupInfo: IModLookupInfo[];

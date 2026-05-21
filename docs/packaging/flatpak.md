@@ -1,5 +1,3 @@
-
-
 # Flatpak Packaging
 
 Use this page when you need to build, install, or bundle the Flatpak package.

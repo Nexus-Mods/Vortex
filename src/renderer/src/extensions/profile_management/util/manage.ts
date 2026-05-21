@@ -1,5 +1,6 @@
-import Bluebird from "bluebird";
 import * as path from "path";
+
+import Bluebird from "bluebird";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import * as fs from "../../../util/fs";
@@ -7,20 +8,11 @@ import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import * as actions from "../actions/profiles";
 import { clearLastActiveProfile, setNextProfile } from "../actions/settings";
-import {
-  activeProfile,
-  lastActiveProfileForGame,
-  profileById,
-} from "../selectors";
+import { activeProfile, lastActiveProfileForGame, profileById } from "../selectors";
 import type { IProfile } from "../types/IProfile";
 
 export function profilePath(profile: IProfile): string {
-  return path.join(
-    getVortexPath("userData"),
-    profile.gameId,
-    "profiles",
-    profile.id,
-  );
+  return path.join(getVortexPath("userData"), profile.gameId, "profiles", profile.id);
 }
 
 async function removeProfileImpl(api: IExtensionApi, profile: IProfile) {
@@ -76,10 +68,8 @@ export function removeProfile(api: IExtensionApi, profileId: string): boolean {
   }
 
   if (removeProfilePP === undefined) {
-    removeProfilePP = api.withPrePost(
-      "remove-profile",
-      (profileInner: IProfile) =>
-        Bluebird.resolve(removeProfileImpl(api, profileInner)),
+    removeProfilePP = api.withPrePost("remove-profile", (profileInner: IProfile) =>
+      Bluebird.resolve(removeProfileImpl(api, profileInner)),
     );
   }
 

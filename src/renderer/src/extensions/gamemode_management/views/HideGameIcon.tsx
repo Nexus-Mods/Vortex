@@ -1,15 +1,13 @@
-import type { ButtonType } from "../../../controls/IconBar";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
-import { ComponentEx, connect } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-
-import { setGameHidden } from "../actions/settings";
-
 import * as React from "react";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { ComponentEx, connect } from "../../../controls/ComponentEx";
+import type { ButtonType } from "../../../controls/IconBar";
+import ToolbarIcon from "../../../controls/ToolbarIcon";
+import { getSafe } from "../../../util/storeHelper";
+import { setGameHidden } from "../actions/settings";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
 export interface IBaseProps {
   instanceId: string;
@@ -55,12 +53,9 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onSetGameHidden: (gameId: string, hidden: boolean) =>
-      dispatch(setGameHidden(gameId, hidden)),
+    onSetGameHidden: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
   };
 }
 

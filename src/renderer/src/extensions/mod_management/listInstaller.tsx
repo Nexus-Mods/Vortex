@@ -1,3 +1,7 @@
+import * as path from "path";
+
+import { XXHash64 } from "xxhash-addon";
+
 import { fileMD5 } from "../../util/checksum";
 import * as fs from "../../util/fs";
 import type { IInstruction } from "./types/IInstallResult";
@@ -5,9 +9,6 @@ import type { IFileListItem } from "./types/IMod";
 import type { ISupportedInstaller } from "./types/IModInstaller";
 import type { ProgressDelegate } from "./types/InstallFunc";
 import type { ISupportedResult } from "./types/TestSupported";
-
-import * as path from "path";
-import { XXHash64 } from "xxhash-addon";
 
 function testSupported(): Promise<ISupportedResult> {
   return Promise.resolve({
@@ -33,17 +34,14 @@ function makeListInstaller(
   extractList: IFileListItem[],
   basePath: string,
 ): Promise<ISupportedInstaller> {
-  let lookupFunc: (filePath: string) => Promise<string> = (
-    filePath: string,
-  ) => Promise.resolve(fileMD5(filePath));
+  let lookupFunc: (filePath: string) => Promise<string> = (filePath: string) =>
+    Promise.resolve(fileMD5(filePath));
 
   let idxId = "md5";
 
   // TODO: this is awkward. We expect the entire list to use the same checksum algorithm
   if (
-    extractList.find(
-      (iter) => iter.md5 !== undefined || iter.xxh64 === undefined,
-    ) === undefined
+    extractList.find((iter) => iter.md5 !== undefined || iter.xxh64 === undefined) === undefined
   ) {
     lookupFunc = makeXXHash64();
     idxId = "xxh64";

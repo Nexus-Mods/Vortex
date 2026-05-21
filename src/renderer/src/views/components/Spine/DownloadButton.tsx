@@ -4,17 +4,12 @@ import { useSelector } from "react-redux";
 
 import type { DownloadState } from "../../../extensions/download_management/types/IDownload";
 import type { IState } from "../../../types/IState";
-
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { useSpineContext } from "./SpineContext";
 
-const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
-  "init",
-  "started",
-  "finalizing",
-];
+const ACTIVE_DOWNLOAD_STATES: DownloadState[] = ["init", "started", "finalizing"];
 
 interface DownloadProgress {
   isDownloading: boolean;
@@ -30,9 +25,7 @@ function useDownloadProgress(): DownloadProgress {
     const speed = state.persistent.downloads?.speed ?? 0;
     const allDownloads = Object.values(files);
 
-    const activeDownloads = allDownloads.filter((dl) =>
-      ACTIVE_DOWNLOAD_STATES.includes(dl.state),
-    );
+    const activeDownloads = allDownloads.filter((dl) => ACTIVE_DOWNLOAD_STATES.includes(dl.state));
     const pausedDownloads = allDownloads.filter((dl) => dl.state === "paused");
 
     // If there are no active or paused downloads, nothing is happening
@@ -53,10 +46,7 @@ function useDownloadProgress(): DownloadProgress {
       (sum, dl) => sum + Math.max(1, dl.size ?? 0, dl.received),
       0,
     );
-    const totalReceived = relevantDownloads.reduce(
-      (sum, dl) => sum + dl.received,
-      0,
-    );
+    const totalReceived = relevantDownloads.reduce((sum, dl) => sum + dl.received, 0);
 
     const progress = totalSize > 0 ? (totalReceived * 100) / totalSize : 0;
 
@@ -92,11 +82,7 @@ const ProgressRing: FC<{
   const offset = circumference - (progress / 100) * circumference;
 
   return (
-    <svg
-      className="pointer-events-none absolute inset-0 -rotate-90"
-      height={size}
-      width={size}
-    >
+    <svg className="pointer-events-none absolute inset-0 -rotate-90" height={size} width={size}>
       {/* Background circle */}
       <circle
         className="stroke-stroke-weak"
@@ -134,8 +120,7 @@ export const DownloadButton: FC = () => {
 
   const isActive = selection.type === "downloads";
 
-  const { isDownloading, isPaused, progress, speedMBps, estimatedMins } =
-    useDownloadProgress();
+  const { isDownloading, isPaused, progress, speedMBps, estimatedMins } = useDownloadProgress();
 
   // TODO: Add mechanism to toggle between speed and time display
   const isTime = false;
@@ -174,11 +159,7 @@ export const DownloadButton: FC = () => {
             {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
           </span>
 
-          <ProgressRing
-            isActive={isActive}
-            isPaused={isPaused}
-            progress={progress}
-          />
+          <ProgressRing isActive={isActive} isPaused={isPaused} progress={progress} />
         </>
       ) : (
         <Icon className="transition-colors" path={mdiDownload} size="lg" />

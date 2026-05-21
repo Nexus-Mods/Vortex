@@ -1,8 +1,8 @@
-import type { TFunction } from "../../util/i18n";
-
 import { Tag } from "bbcode-to-react";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
+
+import type { TFunction } from "../../util/i18n";
 
 interface ISpoilerProps {
   t: TFunction;
@@ -34,9 +34,7 @@ class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
   };
 }
 
-const SpoilerTrans = withTranslation(["common"])(
-  Spoiler,
-) as React.ComponentClass<any>;
+const SpoilerTrans = withTranslation(["common"])(Spoiler) as React.ComponentClass<any>;
 
 class SpoilerTag extends Tag {
   public toHTML(): string[] {
@@ -44,9 +42,7 @@ class SpoilerTag extends Tag {
   }
 
   public toReact() {
-    return (
-      <SpoilerTrans content={this.getComponents()} label={this.params.label} />
-    );
+    return <SpoilerTrans content={this.getComponents()} label={this.params.label} />;
   }
 }
 

@@ -1,8 +1,8 @@
-import Icon from "../../../controls/Icon";
-import type { TFunction } from "../../../util/i18n";
-
 import * as React from "react";
 import { Button } from "react-bootstrap";
+
+import Icon from "../../../controls/Icon";
+import type { TFunction } from "../../../util/i18n";
 
 export interface IProps {
   t: TFunction;
@@ -22,11 +22,7 @@ function FixedItem(props: React.PropsWithChildren<IProps>): JSX.Element {
     }
   }, [id, onDismiss]);
 
-  const classes = [
-    "fixed-item",
-    `packery-height-${height}`,
-    `fixed-width-${width}`,
-  ];
+  const classes = ["fixed-item", `packery-height-${height}`, `fixed-width-${width}`];
 
   if (editable) {
     classes.push("packery-editmode");

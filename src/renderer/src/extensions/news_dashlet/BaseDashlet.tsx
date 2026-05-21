@@ -1,5 +1,6 @@
 import React from "react";
 import { Alert, ListGroup, ListGroupItem } from "react-bootstrap";
+
 import Dashlet from "../../controls/Dashlet";
 import EmptyPlaceholder from "../../controls/EmptyPlaceholder";
 import Icon from "../../controls/Icon";
@@ -59,11 +60,7 @@ function NewsItem(props: INewsItemProps) {
 
   const openMore = React.useCallback(
     (evt: React.MouseEvent<any>) => {
-      context.api.events.emit(
-        "analytics-track-click-event",
-        "Dashboard",
-        `View ${title}`,
-      );
+      context.api.events.emit("analytics-track-click-event", "Dashboard", `View ${title}`);
       evt.preventDefault();
       opn(link).catch((err) => undefined);
     },
@@ -119,11 +116,7 @@ function BaseDashlet(props: IBaseDashletProps) {
           ))}
         </ListGroup>
       ) : (
-        <EmptyPlaceholder
-          icon="layout-list"
-          text={emptyText}
-          subtext={t("*crickets chirp*")}
-        />
+        <EmptyPlaceholder icon="layout-list" text={emptyText} subtext={t("*crickets chirp*")} />
       )}
     </Dashlet>
   );

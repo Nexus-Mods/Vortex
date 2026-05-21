@@ -1,18 +1,13 @@
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
-import type { IState } from "../../../types/IState";
-import type { IMod } from "../types/IMod";
-
-import { getSafe } from "../../../util/storeHelper";
-import { activeGameId } from "../../profile_management/selectors";
-
-import updateState, { isIdValid } from "./modUpdateState";
-
 import * as React from "react";
 import { connect } from "react-redux";
 import Select from "react-select";
+
+import type { IState } from "../../../types/IState";
+import type { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import { getSafe } from "../../../util/storeHelper";
+import { activeGameId } from "../../profile_management/selectors";
+import type { IMod } from "../types/IMod";
+import updateState, { isIdValid } from "./modUpdateState";
 
 const PRESET_OPTIONS = [
   { value: "has-update", label: "Update available" },
@@ -65,9 +60,7 @@ class VersionFilterComponent extends React.Component<IProps, {}> {
 
   private changeFilter = (value: Array<{ value: string; label: string }>) => {
     const { attributeId, onSetFilter } = this.props;
-    const values = [...new Set(
-      (Array.isArray(value) ? value : []).map((v) => v.value),
-    )];
+    const values = [...new Set((Array.isArray(value) ? value : []).map((v) => v.value))];
     onSetFilter(attributeId, values.length > 0 ? values : undefined);
   };
 }
@@ -79,9 +72,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-const VersionFilterComponentConn = connect(mapStateToProps)(
-  VersionFilterComponent,
-) as any;
+const VersionFilterComponentConn = connect(mapStateToProps)(VersionFilterComponent) as any;
 
 class VersionFilter implements ITableFilter {
   public component = VersionFilterComponentConn;
@@ -101,10 +92,7 @@ class VersionFilter implements ITableFilter {
       return true;
     }
 
-    if (
-      filter.includes("has-update") &&
-      updateState(value.attributes) !== "current"
-    ) {
+    if (filter.includes("has-update") && updateState(value.attributes) !== "current") {
       return true;
     }
 
@@ -113,8 +101,7 @@ class VersionFilter implements ITableFilter {
       .map((f: string) => f.slice(2));
 
     if (versionFilters.length > 0) {
-      const version: string =
-        getSafe(value, ["attributes", "version"], "") ?? "";
+      const version: string = getSafe(value, ["attributes", "version"], "") ?? "";
       if (versionFilters.includes(version)) {
         return true;
       }

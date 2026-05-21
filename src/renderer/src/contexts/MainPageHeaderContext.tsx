@@ -10,8 +10,7 @@ const defaultValue: IPageHeaderContext = {
   page: "",
 };
 
-export const PageHeaderContext =
-  createContext<IPageHeaderContext>(defaultValue);
+export const PageHeaderContext = createContext<IPageHeaderContext>(defaultValue);
 
 export const PageHeaderProvider = PageHeaderContext.Provider;
 export const PageHeaderConsumer = PageHeaderContext.Consumer;

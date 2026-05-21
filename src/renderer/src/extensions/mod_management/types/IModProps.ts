@@ -1,6 +1,5 @@
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
-
 import type { IMod } from "./IMod";
 
 export interface IModProps {

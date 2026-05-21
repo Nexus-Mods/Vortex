@@ -1,10 +1,11 @@
-import Icon from "./Icon";
+import { pathToFileURL } from "url";
 
 import * as React from "react";
 import { Image } from "react-bootstrap";
-import { pathToFileURL } from "url";
-import { IconButton } from "./TooltipControls";
+
 import type { TFunction } from "../util/i18n";
+import Icon from "./Icon";
+import { IconButton } from "./TooltipControls";
 
 export interface IItemProps {
   name: string;
@@ -32,9 +33,7 @@ const ToolIcon = (props: IToolIconProps) => {
     }
     iconImage = <Image src={src} className={"tool-icon " + validClass} />;
   } else {
-    iconImage = (
-      <Icon name="executable" className={"tool-icon " + validClass} />
-    );
+    iconImage = <Icon name="executable" className={"tool-icon " + validClass} />;
   }
 
   const classes = props.classes ?? [];

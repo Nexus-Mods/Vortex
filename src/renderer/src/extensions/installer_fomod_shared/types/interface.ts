@@ -13,12 +13,7 @@ export type GroupType =
   | "SelectAll"
   | "SelectAny";
 
-export type PluginType =
-  | "Required"
-  | "Optional"
-  | "Recommended"
-  | "NotUsable"
-  | "CouldBeUsable";
+export type PluginType = "Required" | "Optional" | "Recommended" | "NotUsable" | "CouldBeUsable";
 
 export interface IPlugin {
   id: number;

@@ -27,9 +27,7 @@ function getExtensionName(pkgInfo) {
  * @returns {import('vortex-api').types.IExtension} an extensionInfo object
  */
 function extractExtensionInfo(extPath) {
-  const pkgInfo = JSON.parse(
-    fs.readFileSync(path.join(extPath, "package.json")).toString(),
-  );
+  const pkgInfo = JSON.parse(fs.readFileSync(path.join(extPath, "package.json")).toString());
 
   return {
     name: getExtensionName(pkgInfo),

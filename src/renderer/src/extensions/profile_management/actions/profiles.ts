@@ -1,7 +1,7 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-
 import Bluebird from "bluebird";
 import * as reduxAct from "redux-act";
+
+import safeCreateAction from "../../../actions/safeCreateAction";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { batchDispatch } from "../../../util/util";
 import type { IProfile } from "../types/IProfile";
@@ -9,20 +9,11 @@ import type { IProfile } from "../types/IProfile";
 /**
  * add or edit a profile
  */
-export const setProfile = safeCreateAction(
-  "SET_PROFILE",
-  (profile: IProfile) => profile,
-);
+export const setProfile = safeCreateAction("SET_PROFILE", (profile: IProfile) => profile);
 
-export const removeProfile = safeCreateAction(
-  "REMOVE_PROFILE",
-  (profileId) => profileId,
-);
+export const removeProfile = safeCreateAction("REMOVE_PROFILE", (profileId) => profileId);
 
-export const willRemoveProfile = safeCreateAction(
-  "WILL_REMOVE_PROFILE",
-  (profileId) => profileId,
-);
+export const willRemoveProfile = safeCreateAction("WILL_REMOVE_PROFILE", (profileId) => profileId);
 
 /**
  * enable or disable a mod in a profile
@@ -81,12 +72,7 @@ const setModsEnabled = (() => {
     if (ppFunc === undefined) {
       ppFunc = api.withPrePost(
         "enable-mods",
-        (
-          profileId: string,
-          modIds: string[],
-          enable: boolean,
-          options: IEnableOptions,
-        ) => {
+        (profileId: string, modIds: string[], enable: boolean, options: IEnableOptions) => {
           if (modIds.length > 0) {
             const profile: IProfile = profileById(api.getState(), profileId);
             if (profile !== undefined) {
@@ -94,13 +80,7 @@ const setModsEnabled = (() => {
                 api.store,
                 modIds.map((id) => setModEnabled(profileId, id, enable)),
               );
-              api.events.emit(
-                "mods-enabled",
-                modIds,
-                enable,
-                profile.gameId,
-                options,
-              );
+              api.events.emit("mods-enabled", modIds, enable, profile.gameId, options);
             }
           }
 
@@ -117,11 +97,9 @@ const setModsEnabled = (() => {
       const willChange = modIdsIn.filter(
         (id) => (profile.modState?.[id]?.enabled ?? false) !== enableIn,
       );
-      return ppFunc(profileIdIn, willChange, enableIn, optionsIn).catch(
-        (err) => {
-          api.showErrorNotification("Failed to enable/disable mod", err);
-        },
-      );
+      return ppFunc(profileIdIn, willChange, enableIn, optionsIn).catch((err) => {
+        api.showErrorNotification("Failed to enable/disable mod", err);
+      });
     }
   };
 })();

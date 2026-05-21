@@ -48,7 +48,7 @@ The [API](https://code.visualstudio.com/api/references/vscode-api) provides many
 Every path is represented as a [`vscode.Uri`](https://code.visualstudio.com/api/references/vscode-api#Uri) and every file system API requires the input to be of type `Uri` instead of `string`. An example:
 
 ```typescript
-const path = vscode.Uri.joinPath(workspaceFolder.uri, 'src', 'index.ts');
+const path = vscode.Uri.joinPath(workspaceFolder.uri, "src", "index.ts");
 
 const bytes: Uint8Array = await vscode.workspace.fs.readFile(path);
 const text = new TextDecoder().decode(bytes);
@@ -77,4 +77,3 @@ Extensions are unable to access and modify the VS Code UI directly. Instead, VS 
 Extensions can create a webview and use it to render custom HTML content and run JavaScript libraries like React. The webview has strict isolation and sandboxing with CSP and communication can only be done via the VS Code API. Since VS Code themes are largely just CSS variables, if the extension uses those CSS variables it will be themed correctly according to the theme selected by the user.
 
 [UX Guidelines](https://code.visualstudio.com/api/ux-guidelines/overview) exist for extension authors to develop UIs that feel native to VS Code.
-

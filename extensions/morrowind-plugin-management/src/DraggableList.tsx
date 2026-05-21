@@ -1,3 +1,4 @@
+import { ComponentEx, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as React from "react";
 import { ListGroup } from "react-bootstrap";
@@ -15,7 +16,6 @@ import {
   DropTargetSpec,
 } from "react-dnd";
 import * as ReactDOM from "react-dom";
-import { ComponentEx, util } from "vortex-api";
 
 interface IItemBaseProps {
   index: number;
@@ -120,12 +120,7 @@ const entryTarget: DropTargetSpec<IItemProps> = {
       return;
     }
 
-    props.onChangeIndex(
-      index,
-      hoverIndex,
-      containerId !== props.containerId,
-      take,
-    );
+    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, take);
 
     (monitor.getItem() as any).index = hoverIndex;
     if (containerId !== props.containerId) {
@@ -251,16 +246,12 @@ const containerTarget: DropTargetSpec<IProps> = {
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = (list) =>
-        (component as any).take(item, list);
+      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
     }
   },
 };
 
-function containerCollect(
-  connect: DropTargetConnector,
-  monitor: DropTargetMonitor,
-) {
+function containerCollect(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };

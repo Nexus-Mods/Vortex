@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import type { IExtensionApi, IState } from "../../types/api";
-import type { IModRule } from "./types/IMod";
-
 import InstallManager from "./InstallManager";
+import type { IModRule } from "./types/IMod";
 
 // Mock dependencies
 vi.mock("./util/dependencies");
@@ -17,11 +16,7 @@ vi.mock("../../util/log", () => {
 interface IInstallManagerTestable {
   ensurePhaseState(sourceModId: string): void;
   maybeAdvancePhase(sourceModId: string, api: IExtensionApi): void;
-  markPhaseDownloadsFinished(
-    sourceModId: string,
-    phase: number,
-    api: IExtensionApi,
-  ): void;
+  markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi): void;
   mInstallPhaseState: Map<
     string,
     {
@@ -82,10 +77,7 @@ describe("Phased Installer", () => {
       registerInstaller: vi.fn(),
     } as unknown as IExtensionApi;
 
-    installManager = new InstallManager(
-      mockApi,
-      vi.fn(),
-    ) as unknown as IInstallManagerTestable;
+    installManager = new InstallManager(mockApi, vi.fn()) as unknown as IInstallManagerTestable;
   });
 
   afterEach(() => {
@@ -184,17 +176,13 @@ describe("Phased Installer", () => {
       status: string;
     }
 
-    function detectHighestCompletedPhase(
-      mods: Record<string, CollectionMod>,
-    ): number {
+    function detectHighestCompletedPhase(mods: Record<string, CollectionMod>): number {
       const allMods = Object.values(mods);
       const allPhases = new Set(allMods.map((m) => m.phase ?? 0));
       let highest = -1;
 
       for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
-        const required = allMods.filter(
-          (m) => (m.phase ?? 0) === phase && m.type === "requires",
-        );
+        const required = allMods.filter((m) => (m.phase ?? 0) === phase && m.type === "requires");
         const completed = required.filter((m) =>
           ["installed", "failed", "skipped"].includes(m.status),
         );

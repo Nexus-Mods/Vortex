@@ -1,9 +1,10 @@
+import * as path from "path";
+
+import format from "string-template";
+
 import getVortexPath from "../../../util/getVortexPath";
 import makeCI from "../../../util/makeCaseInsensitive";
 import { getSafe } from "../../../util/storeHelper";
-
-import * as path from "path";
-import format from "string-template";
 
 export type PathKey = "base" | "download" | "install";
 
@@ -13,11 +14,7 @@ export const pathDefaults = {
   install: path.join("{base}", "mods"),
 };
 
-function resolvePath(
-  key: PathKey,
-  paths: { [gameId: string]: any },
-  gameMode: string,
-): string {
+function resolvePath(key: PathKey, paths: { [gameId: string]: any }, gameMode: string): string {
   if (gameMode === undefined) {
     return undefined;
   }

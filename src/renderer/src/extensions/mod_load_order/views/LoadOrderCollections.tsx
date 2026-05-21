@@ -4,17 +4,11 @@ import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import {
-  EmptyPlaceholder,
-  FlexLayout,
-  Icon,
-  Usage,
-} from "../../../controls/api";
+import { EmptyPlaceholder, FlexLayout, Icon, Usage } from "../../../controls/api";
+import { ComponentEx } from "../../../controls/ComponentEx";
 import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
-import { ComponentEx } from "../../../controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
-
 import type { IGameSpecificInterfaceProps } from "../types/collections";
 import type { ILoadOrder, ILoadOrderEntry } from "../types/types";
 import { genCollectionLoadOrder } from "../util";
@@ -38,10 +32,7 @@ type IProps = IActionProps & IGameSpecificInterfaceProps & IConnectedProps;
 type IComponentState = IBaseState;
 
 class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
-  public static getDerivedStateFromProps(
-    newProps: IProps,
-    state: IComponentState,
-  ) {
+  public static getDerivedStateFromProps(newProps: IProps, state: IComponentState) {
     const { loadOrder, mods, collection } = newProps;
     const sortedMods = genCollectionLoadOrder(loadOrder, mods, collection);
     return sortedMods !== state.sortedMods ? { sortedMods } : null;
@@ -57,11 +48,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     const { loadOrder, mods, collection } = this.props;
-    this.nextState.sortedMods = genCollectionLoadOrder(
-      loadOrder,
-      mods,
-      collection,
-    );
+    this.nextState.sortedMods = genCollectionLoadOrder(loadOrder, mods, collection);
   }
 
   public render(): JSX.Element {
@@ -138,9 +125,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
     return (
       <EmptyPlaceholder
         icon="sort-none"
-        text={t(
-          "You have no load order entries (for the current mods in the collection)",
-        )}
+        text={t("You have no load order entries (for the current mods in the collection)")}
         subtext={this.renderOpenLOButton()}
       />
     );
@@ -163,18 +148,11 @@ class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
 }
 
 const empty = {};
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
   let loadOrder: ILoadOrder = {};
   if (!!profile?.gameId) {
-    loadOrder = util.getSafe(
-      state,
-      ["persistent", "loadOrder", profile.id],
-      empty,
-    );
+    loadOrder = util.getSafe(state, ["persistent", "loadOrder", profile.id], empty);
   }
 
   return {

@@ -1,18 +1,11 @@
-import type {
-  CheckFunction,
-  IExtensionApi,
-} from "../../../types/IExtensionContext";
-import type {
-  IHealthCheckResult,
-  ILegacyTestAdapter,
-} from "../../../types/IHealthCheck";
-import type { HealthCheckRegistry } from "./HealthCheckRegistry";
-
+import type { CheckFunction, IExtensionApi } from "../../../types/IExtensionContext";
+import type { IHealthCheckResult, ILegacyTestAdapter } from "../../../types/IHealthCheck";
 import {
   HealthCheckCategory,
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../../../types/IHealthCheck";
+import type { HealthCheckRegistry } from "./HealthCheckRegistry";
 
 export class LegacyTestAdapter {
   private mRegistry: HealthCheckRegistry;
@@ -23,42 +16,26 @@ export class LegacyTestAdapter {
     this.mApi = api;
   }
 
-  private generateHealthCheckId(
-    legacyId: string,
-    extensionName: string,
-  ): string {
+  private generateHealthCheckId(legacyId: string, extensionName: string): string {
     return `legacy.${extensionName}.${legacyId}`;
   }
 
   private generateDisplayName(id: string): string {
-    return id
-      .replace(/[-_]/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+    return id.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   private generateDescription(id: string, extensionName: string): string {
     return `Legacy test "${id}" from ${extensionName} extension`;
   }
 
-  private inferCategory(
-    id: string,
-    extensionName: string,
-  ): HealthCheckCategory {
+  private inferCategory(id: string, extensionName: string): HealthCheckCategory {
     const idLower = id.toLowerCase();
     const extLower = extensionName.toLowerCase();
 
-    if (
-      idLower.includes("plugin") ||
-      idLower.includes("master") ||
-      extLower.includes("plugin")
-    ) {
+    if (idLower.includes("plugin") || idLower.includes("master") || extLower.includes("plugin")) {
       return HealthCheckCategory.Game;
     }
-    if (
-      idLower.includes("mod") ||
-      idLower.includes("staging") ||
-      idLower.includes("duplicate")
-    ) {
+    if (idLower.includes("mod") || idLower.includes("staging") || idLower.includes("duplicate")) {
       return HealthCheckCategory.Mods;
     }
     if (
@@ -99,11 +76,7 @@ export class LegacyTestAdapter {
     ) {
       return HealthCheckCategory.Tools;
     }
-    if (
-      extLower.includes("fomod") ||
-      extLower.includes("ini") ||
-      extLower.includes("test-setup")
-    ) {
+    if (extLower.includes("fomod") || extLower.includes("ini") || extLower.includes("test-setup")) {
       return HealthCheckCategory.System;
     }
 
@@ -113,34 +86,13 @@ export class LegacyTestAdapter {
   private mapEventTypeToTriggers(eventType: string): HealthCheckTrigger[] {
     const mapping: { [key: string]: HealthCheckTrigger[] } = {
       startup: [HealthCheckTrigger.Startup, HealthCheckTrigger.Manual],
-      "gamemode-activated": [
-        HealthCheckTrigger.GameChanged,
-        HealthCheckTrigger.Manual,
-      ],
-      "profile-did-change": [
-        HealthCheckTrigger.ProfileChanged,
-        HealthCheckTrigger.Manual,
-      ],
-      "settings-changed": [
-        HealthCheckTrigger.SettingsChanged,
-        HealthCheckTrigger.Manual,
-      ],
-      "mod-installed": [
-        HealthCheckTrigger.ModsChanged,
-        HealthCheckTrigger.Manual,
-      ],
-      "mod-activated": [
-        HealthCheckTrigger.ModsChanged,
-        HealthCheckTrigger.Manual,
-      ],
-      "plugins-changed": [
-        HealthCheckTrigger.PluginsChanged,
-        HealthCheckTrigger.Manual,
-      ],
-      "loot-info-updated": [
-        HealthCheckTrigger.LootUpdated,
-        HealthCheckTrigger.Manual,
-      ],
+      "gamemode-activated": [HealthCheckTrigger.GameChanged, HealthCheckTrigger.Manual],
+      "profile-did-change": [HealthCheckTrigger.ProfileChanged, HealthCheckTrigger.Manual],
+      "settings-changed": [HealthCheckTrigger.SettingsChanged, HealthCheckTrigger.Manual],
+      "mod-installed": [HealthCheckTrigger.ModsChanged, HealthCheckTrigger.Manual],
+      "mod-activated": [HealthCheckTrigger.ModsChanged, HealthCheckTrigger.Manual],
+      "plugins-changed": [HealthCheckTrigger.PluginsChanged, HealthCheckTrigger.Manual],
+      "loot-info-updated": [HealthCheckTrigger.LootUpdated, HealthCheckTrigger.Manual],
     };
 
     return mapping[eventType] || [HealthCheckTrigger.Manual];
@@ -216,9 +168,7 @@ export class LegacyTestAdapter {
     }
   }
 
-  private mapLegacySeverity(
-    severity: "warning" | "error" | "fatal",
-  ): HealthCheckSeverity {
+  private mapLegacySeverity(severity: "warning" | "error" | "fatal"): HealthCheckSeverity {
     switch (severity) {
       case "warning":
         return HealthCheckSeverity.Warning;
@@ -242,9 +192,7 @@ export class LegacyTestAdapter {
           return extensionMatch[1];
         }
 
-        const srcExtensionMatch = line.match(
-          /src[/\\]extensions[/\\]([^/\\]+)[/\\]/,
-        );
+        const srcExtensionMatch = line.match(/src[/\\]extensions[/\\]([^/\\]+)[/\\]/);
         if (srcExtensionMatch) {
           return srcExtensionMatch[1];
         }

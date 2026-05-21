@@ -1,11 +1,11 @@
 import React from "react";
 import { Button, Checkbox } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { Modal } from "../../../controls/api";
-
-import { activeGameId } from "../../../util/selectors";
 import { useSelector } from "react-redux";
+
+import { Modal } from "../../../controls/api";
 import { renderModName } from "../../../util/api";
+import { activeGameId } from "../../../util/selectors";
 
 export interface IDuplicatesMap {
   duplicates: { [modName: string]: string[] };
@@ -26,14 +26,8 @@ interface IBaseProps {
 }
 
 export default function DuplicatesDialog(props: IBaseProps) {
-  const {
-    visible,
-    onHide,
-    onGetDuplicates,
-    onRemoveMods,
-    openDuplicateLocation,
-    getModInfo,
-  } = props;
+  const { visible, onHide, onGetDuplicates, onRemoveMods, openDuplicateLocation, getModInfo } =
+    props;
   const [t] = useTranslation();
   const gameMode = useSelector(activeGameId);
   const [checked, setChecked] = React.useState([]);
@@ -50,9 +44,7 @@ export default function DuplicatesDialog(props: IBaseProps) {
 
   const removeMods = React.useCallback(() => {
     const removeMap = checked.reduce((accum, iter) => {
-      const modName = Object.keys(duplicates).find((id) =>
-        duplicates[id]?.includes(iter),
-      );
+      const modName = Object.keys(duplicates).find((id) => duplicates[id]?.includes(iter));
       if (modName === undefined) {
         return accum;
       }
@@ -130,14 +122,7 @@ interface ISegmentProps {
 }
 
 function DuplicateSegment(props: ISegmentProps) {
-  const {
-    modName,
-    entries,
-    checked,
-    onSetCheckbox,
-    openDuplicateLocation,
-    getModInfo,
-  } = props;
+  const { modName, entries, checked, onSetCheckbox, openDuplicateLocation, getModInfo } = props;
   const [modData, setModData] = React.useState({});
   const onChange = React.useCallback(
     (evt) => {
@@ -171,12 +156,7 @@ function DuplicateSegment(props: ISegmentProps) {
           <a data-id={modId} onClick={onOpenFolder}>
             {modId}
           </a>
-          <Checkbox
-            key={modId}
-            checked={checked.includes(modId)}
-            value={modId}
-            onChange={onChange}
-          >
+          <Checkbox key={modId} checked={checked.includes(modId)} value={modId} onChange={onChange}>
             {modData[modId]}
           </Checkbox>
         </div>

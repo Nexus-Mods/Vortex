@@ -1,19 +1,13 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "files": [
-    "lib/api.d.ts"
-  ],
+  "files": ["lib/api.d.ts"],
   "compilerOptions": {
     "declaration": true,
     "noEmit": true,
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "noImplicitAny": false,
     "noImplicitOverride": false,
     "noImplicitThis": false,

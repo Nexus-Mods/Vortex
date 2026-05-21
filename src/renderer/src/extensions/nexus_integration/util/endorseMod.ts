@@ -20,11 +20,7 @@ function endorseMod(
   endorseStatus: string,
 ): PromiseBB<string> {
   endorseStatus = endorseStatus.toLowerCase();
-  if (
-    endorseStatus === "undecided" ||
-    endorseStatus === "abstained" ||
-    endorseStatus === ""
-  ) {
+  if (endorseStatus === "undecided" || endorseStatus === "abstained" || endorseStatus === "") {
     endorseStatus = "endorse";
   } else if (endorseStatus === "endorsed") {
     endorseStatus = "abstain";
@@ -42,19 +38,13 @@ function endorseCollection(
   endorseStatus: string,
 ) {
   endorseStatus = endorseStatus.toLowerCase();
-  if (
-    endorseStatus === "undecided" ||
-    endorseStatus === "abstained" ||
-    endorseStatus === ""
-  ) {
+  if (endorseStatus === "undecided" || endorseStatus === "abstained" || endorseStatus === "") {
     endorseStatus = "endorse";
   } else if (endorseStatus === "endorsed") {
     endorseStatus = "abstain";
   }
 
-  return PromiseBB.resolve(
-    nexus.endorseCollection(collectionId, endorseStatus as any, gameId),
-  );
+  return PromiseBB.resolve(nexus.endorseCollection(collectionId, endorseStatus as any, gameId));
 }
 
 export { endorseCollection, endorseMod };

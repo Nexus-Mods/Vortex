@@ -1,7 +1,7 @@
 # NixOS Setup
 
-NixOS `flake.nix` provides all the dependencies you need out of the box,
-skipping the Volta and Corepack flow.
+NixOS `flake.nix` provides all deps out of box, matching repo Node/Electron.
+It skips Volta/Corepack flow.
 
 Validated on 13 April 2026. If any step is out of date, please open a [PR] or [issue].
 
@@ -58,6 +58,24 @@ pnpm run start
 
 - Start VS Code from a shell activated by `direnv`
 - Use `Debug Electron (System Electron)`
+
+## Troubleshooting
+
+### Git GUI clients and formatting hooks
+
+The pre-commit hook runs formatting through `pnpm`. On NixOS, `pnpm` is
+provided by the repository dev shell. If you start a Git GUI client such as
+GitKraken outside the repository, the hook may fail because the client cannot
+find `pnpm`.
+
+You can fix this in either of these ways:
+
+- Install `pnpm` globally so your GUI client can find it.
+- Restart the GUI client from inside the repository after `direnv allow`:
+
+```bash
+gitkraken .
+```
 
 ## Extra Resources
 

@@ -4,10 +4,7 @@ export interface IDecoded {
   rethrowAs: string;
 }
 
-export function decodeSystemError(
-  err: Error,
-  filePath: string,
-): IDecoded | undefined {
+export function decodeSystemError(err: Error, filePath: string): IDecoded | undefined {
   const code = err["systemCode"] ?? err["nativeCode"];
 
   if (code === undefined || process.platform !== "win32") {
@@ -20,9 +17,7 @@ export function decodeSystemError(
       message: 'Your Anti-Virus Software has blocked access to "{{filePath}}".',
       rethrowAs: "EBUSY",
     };
-  } else if (
-    [21, 59, 67, 483, 793, 1005, 1006, 1127, 1392, 1920, 6800].includes(code)
-  ) {
+  } else if ([21, 59, 67, 483, 793, 1005, 1006, 1127, 1392, 1920, 6800].includes(code)) {
     return {
       title: `I/O Error (${code})`,
       message:
@@ -38,7 +33,7 @@ export function decodeSystemError(
     return {
       title: `I/O Error (${code})`,
       message:
-        'Accessing "{{filePath}} failed with an error that indicates ' +
+        'Accessing "{{filePath}}" failed with an error that indicates ' +
         "file system corruption. If this isn't a temporary problem " +
         "you may want to run chkdsk or similar software to check for problems. " +
         "It may also help to reinstall the software that this file belongs to.",

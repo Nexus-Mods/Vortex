@@ -201,9 +201,7 @@
         //@include border-bottom-radius(0);
     }
 }
-.btn-group-vertical
-    > .btn-group:last-child:not(:first-child)
-    > .btn:first-child {
+.btn-group-vertical > .btn-group:last-child:not(:first-child) > .btn:first-child {
     //@include border-top-radius(0);
 }
 

@@ -1,4 +1,4 @@
-import { mdiCogOutline, mdiClose } from "@mdi/js";
+import { mdiEyeOff, mdiClose } from "@mdi/js";
 import React, { type FC, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -30,7 +30,7 @@ export const NotificationControls: FC<NotificationControlsProps> = ({
       {allowSuppress && (
         <Button
           buttonType="tertiary"
-          leftIconPath={mdiCogOutline}
+          leftIconPath={mdiEyeOff}
           size="xs"
           title={t("Never show again")}
           onClick={onSuppress}

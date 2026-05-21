@@ -54,9 +54,7 @@
 
             transition-property: color, fill, stroke;
             transition-duration: var(--default-transition-duration);
-            transition-timing-function: var(
-                --default-transition-timing-function
-            );
+            transition-timing-function: var(--default-transition-timing-function);
 
             &:hover {
                 color: var(--color-neutral-moderate);

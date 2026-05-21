@@ -20,11 +20,13 @@ Ask: "What feature/extension does this string belong to?"
 Use the format: `namespace:section.key` (standard i18next format)
 
 **Examples:**
+
 - `collection:browse.loading` → "Loading collections..."
 - `mod_management:actions.install` → "Install Mod"
 - `common:actions.close` → "Close"
 
 **Key naming rules:**
+
 - Use camelCase for keys: `searchPlaceholder`, not `search_placeholder`
 - Group related strings: `browse.title`, `browse.loading`, `browse.error`
 - Use semantic names: `selectGame` not `text1`
@@ -37,9 +39,9 @@ Edit `locales/en/{namespace}.json`:
 
 ```json
 {
-  "section": {
-    "key": "English text here"
-  }
+    "section": {
+        "key": "English text here"
+    }
 }
 ```
 
@@ -66,6 +68,7 @@ const { t } = useTranslation(['collection', 'common']);
 See `src/extensions/browse_nexus/views/BrowseNexusPage.tsx` for a complete working example.
 
 **Before:**
+
 ```typescript
 const { t } = useTranslation(['collections', 'common']);
 <p>{t('Loading collections...')}</p>
@@ -73,6 +76,7 @@ const { t } = useTranslation(['collections', 'common']);
 ```
 
 **After:**
+
 ```typescript
 const { t } = useTranslation(['collection', 'common']);
 <p>{t('collection:browse.loading', { isNamespaceKey: true })}</p>
@@ -119,15 +123,15 @@ To add a new language:
 1. Copy `locales/en/` → `locales/{your-language}/`
 2. Translate the **values** only (keep keys unchanged)
 3. Example:
-   ```json
-   // locales/de/collection.json
-   {
-     "browse": {
-       "title": "Sammlungen durchsuchen ({{total}})",  // Was: "Browse Collections ({{total}})"
-       "loading": "Sammlungen werden geladen..."      // Was: "Loading collections..."
-     }
-   }
-   ```
+    ```json
+    // locales/de/collection.json
+    {
+        "browse": {
+            "title": "Sammlungen durchsuchen ({{total}})", // Was: "Browse Collections ({{total}})"
+            "loading": "Sammlungen werden geladen..." // Was: "Loading collections..."
+        }
+    }
+    ```
 4. Submit PR with your `locales/{language}/` folder
 
 The structure provides context - you don't need to read code!

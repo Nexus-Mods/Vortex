@@ -1,14 +1,9 @@
-import type {
-  IExtensionApi,
-  IRunParameters,
-} from "../../types/IExtensionContext";
+import type { IExtensionApi, IRunParameters } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
-import onceCB from "../../util/onceCB";
-
-import { needToDeploy } from "./selectors";
-
-import getText from "./texts";
 import { UserCanceled } from "../../util/CustomErrors";
+import onceCB from "../../util/onceCB";
+import { needToDeploy } from "./selectors";
+import getText from "./texts";
 
 type DeployResult = "auto" | "yes" | "skip" | "cancel";
 
@@ -85,10 +80,7 @@ function checkDeploy(api: IExtensionApi): Promise<void> {
   });
 }
 
-function preStartDeployHook(
-  api: IExtensionApi,
-  input: IRunParameters,
-): Promise<IRunParameters> {
+function preStartDeployHook(api: IExtensionApi, input: IRunParameters): Promise<IRunParameters> {
   return input.options.suggestDeploy === true
     ? checkDeploy(api).then(() => input)
     : Promise.resolve(input);

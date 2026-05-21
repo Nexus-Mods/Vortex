@@ -1,23 +1,13 @@
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-  IDialogResult,
-} from "../types/IDialog";
-import type {
-  INotification,
-  NotificationDismiss,
-} from "../types/INotification";
-import local from "../util/local";
-import { log } from "../util/log";
 import { getErrorMessageOrDefault } from "@vortex/shared";
-
-import safeCreateAction from "./safeCreateAction";
-
 import PromiseBB from "bluebird";
 import { ipcMain, ipcRenderer } from "electron";
-
 import { generate as shortid } from "shortid";
+
+import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
+import type { INotification, NotificationDismiss } from "../types/INotification";
+import local from "../util/local";
+import { log } from "../util/log";
+import safeCreateAction from "./safeCreateAction";
 
 export * from "../types/IDialog";
 
@@ -72,16 +62,10 @@ export const addDialog = safeCreateAction(
  */
 export const dismissDialog = safeCreateAction("DISMISS_MODAL_DIALOG", identity);
 
-const timers = local<{ [id: string]: NodeJS.Timeout }>(
-  "notification-timers",
-  {},
-);
+const timers = local<{ [id: string]: NodeJS.Timeout }>("notification-timers", {});
 
 type NotificationFunc = (dismiss: NotificationDismiss) => void;
-const notificationActions = local<{ [id: string]: NotificationFunc[] }>(
-  "notification-actions",
-  {},
-);
+const notificationActions = local<{ [id: string]: NotificationFunc[] }>("notification-actions", {});
 const notificationDismissHandlers = local<{ [id: string]: () => void }>(
   "notification-dismiss-handlers",
   {},
@@ -106,11 +90,7 @@ export function fireNotificationAction(
   } else {
     // assumption is that notification actions are only triggered by the ui
     // TODO: have to send synchronously because we need to know if we should dismiss
-    const res: boolean = ipcRenderer.sendSync(
-      "fire-notification-action",
-      notiId,
-      action,
-    );
+    const res: boolean = ipcRenderer.sendSync("fire-notification-action", notiId, action);
     if (res) {
       dismiss();
     }
@@ -118,32 +98,26 @@ export function fireNotificationAction(
 }
 
 if (ipcMain !== undefined) {
-  ipcMain.on(
-    "fire-notification-action",
-    (event: any, notiId: string, action: number) => {
-      const func = notificationActions[notiId]?.[action];
-      let res = false;
-      if (func !== undefined) {
-        func(() => {
-          res = true;
-        });
-      }
+  ipcMain.on("fire-notification-action", (event: any, notiId: string, action: number) => {
+    const func = notificationActions[notiId]?.[action];
+    let res = false;
+    if (func !== undefined) {
+      func(() => {
+        res = true;
+      });
+    }
 
-      event.returnValue = res;
-    },
-  );
+    event.returnValue = res;
+  });
 
-  ipcMain.on(
-    "fire-dialog-action",
-    (event: any, dialogId: string, action: string, input: any) => {
-      const func = DialogCallbacks.instance()[dialogId];
-      if (func !== undefined) {
-        func(action, input);
-        delete DialogCallbacks.instance()[dialogId];
-      }
-      event.returnValue = true;
-    },
-  );
+  ipcMain.on("fire-dialog-action", (event: any, dialogId: string, action: string, input: any) => {
+    const func = DialogCallbacks.instance()[dialogId];
+    if (func !== undefined) {
+      func(action, input);
+      delete DialogCallbacks.instance()[dialogId];
+    }
+    event.returnValue = true;
+  });
 }
 
 let suppressNotification: (id: string) => boolean = () => false;
@@ -226,10 +200,7 @@ export function dismissAllNotifications() {
   return (dispatch) =>
     new PromiseBB<void>((resolve, reject) => {
       const ids = Array.from(
-        new Set<string>([
-          ...Object.keys(timers),
-          ...Object.keys(notificationActions),
-        ]),
+        new Set<string>([...Object.keys(timers), ...Object.keys(notificationActions)]),
       );
       ids.forEach((id) => {
         delete timers[id];
@@ -276,8 +247,7 @@ export function showDialog(
     return new PromiseBB<IDialogResult>((resolve, reject) => {
       const id = inId || shortid();
       const defaultAction = actions.find((iter) => iter.default === true);
-      const defaultLabel =
-        defaultAction !== undefined ? defaultAction.label : undefined;
+      const defaultLabel = defaultAction !== undefined ? defaultAction.label : undefined;
       dispatch(
         addDialog(
           id,

@@ -11,12 +11,7 @@ interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isActive?: boolean;
 }
 
-export const MenuButton: FC<MenuButtonProps> = ({
-  children,
-  iconPath,
-  isActive,
-  ...props
-}) => {
+export const MenuButton: FC<MenuButtonProps> = ({ children, iconPath, isActive, ...props }) => {
   const { menuIsCollapsed } = useWindowContext();
 
   return (
@@ -24,9 +19,7 @@ export const MenuButton: FC<MenuButtonProps> = ({
       className={joinClasses([
         "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-mid hover:text-neutral-moderate",
         "focus-visible:z-1",
-        isActive
-          ? "bg-surface-low text-neutral-moderate"
-          : "text-neutral-subdued",
+        isActive ? "bg-surface-low text-neutral-moderate" : "text-neutral-subdued",
       ])}
       {...(menuIsCollapsed ? { title: children } : {})}
       {...props}

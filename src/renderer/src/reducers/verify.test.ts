@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
 import type { IStateVerifier } from "../types/IExtensionContext";
-
 import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
 import { verify, verifyElement } from "./verify";
 
@@ -58,33 +57,33 @@ describe("verifyElement", () => {
 
   describe("noEmpty", () => {
     it("rejects empty array", () => {
-      expect(
-        verifyElement({ description: desc(""), type: "array", noEmpty: true }, []),
-      ).toBe(false);
+      expect(verifyElement({ description: desc(""), type: "array", noEmpty: true }, [])).toBe(
+        false,
+      );
     });
 
     it("rejects empty object", () => {
-      expect(
-        verifyElement({ description: desc(""), type: "object", noEmpty: true }, {}),
-      ).toBe(false);
+      expect(verifyElement({ description: desc(""), type: "object", noEmpty: true }, {})).toBe(
+        false,
+      );
     });
 
     it("rejects empty string", () => {
-      expect(
-        verifyElement({ description: desc(""), type: "string", noEmpty: true }, ""),
-      ).toBe(false);
+      expect(verifyElement({ description: desc(""), type: "string", noEmpty: true }, "")).toBe(
+        false,
+      );
     });
 
     it("accepts non-empty values", () => {
-      expect(
-        verifyElement({ description: desc(""), type: "array", noEmpty: true }, [1]),
-      ).toBe(true);
+      expect(verifyElement({ description: desc(""), type: "array", noEmpty: true }, [1])).toBe(
+        true,
+      );
       expect(
         verifyElement({ description: desc(""), type: "object", noEmpty: true }, { a: 1 }),
       ).toBe(true);
-      expect(
-        verifyElement({ description: desc(""), type: "string", noEmpty: true }, "x"),
-      ).toBe(true);
+      expect(verifyElement({ description: desc(""), type: "string", noEmpty: true }, "x")).toBe(
+        true,
+      );
     });
   });
 

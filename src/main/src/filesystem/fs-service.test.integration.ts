@@ -1,30 +1,26 @@
 /**
  * End-to-end test for the filesystem RPC path: the real
- * `createFileSystemClient` polyfill from `@vortex/fs` talks through the
+ * `createFileSystemClient` polyfill from `@nexusmods/adaptor-api/fs` talks through the
  * real `createRpcTransport` from the adaptor host over a `MessageChannel`,
  * against the real `createFileSystemServiceHandler` wrapping a real
  * `FileSystemBackendImpl`. No Worker, no bundle — just the same wiring
  * `bootstrap.ts` would do at runtime, driven from the test process.
  */
 
-import type { IMethodMessage } from "@nexusmods/adaptor-api";
-
-import { FileSystemError, QualifiedPath } from "@vortex/fs";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MessageChannel } from "node:worker_threads";
+
+import type { IMethodMessage } from "@nexusmods/adaptor-api";
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { FileSystemServiceHandler } from "./fs-service.js";
-
-import {
-  createRpcTransport,
-  type IRpcTransport,
-} from "../node-adaptor-host/transport.js";
+import { createRpcTransport, type IRpcTransport } from "../node-adaptor-host/transport.js";
 import { NodeFileSystemBackendImpl } from "./backend";
 import { createFileSystemClient } from "./client";
 import { NodeFileSystemImpl } from "./filesystem-impl";
+import type { FileSystemServiceHandler } from "./fs-service.js";
 import { createFileSystemServiceHandler } from "./fs-service.js";
 import { PathResolverRegistryImpl } from "./path-resolver-registry";
 import { nativeToQP, platformResolver } from "./testing.js";
@@ -156,10 +152,7 @@ describe("filesystem RPC end-to-end", () => {
 
     const first = await iterator.next();
     expect(first.done).toBe(false);
-    const [qp, status] = first.value as [
-      QualifiedPath,
-      { isFile: boolean; size: number },
-    ];
+    const [qp, status] = first.value as [QualifiedPath, { isFile: boolean; size: number }];
     expect(qp).toBeInstanceOf(QualifiedPath);
     expect(qp.basename).toBe("a.txt");
     expect(status.isFile).toBe(true);

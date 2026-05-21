@@ -1,13 +1,12 @@
-import * as React from "react";
-
-import type { IComponentContext } from "../types/IComponentContext";
-
-import { deleteOrNop, setSafe } from "../util/storeHelper";
+import { clearImmediate, setImmediate } from "timers";
 
 import * as PropTypes from "prop-types";
+import * as React from "react";
 import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
-import { clearImmediate, setImmediate } from "timers";
+
+import type { IComponentContext } from "../types/IComponentContext";
+import { deleteOrNop, setSafe } from "../util/storeHelper";
 import { truthy } from "../util/util";
 export { connect } from "react-redux";
 export { extend } from "../ExtensionProvider";
@@ -99,11 +98,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   }
 
   private derive(obj: T, key: PropertyKey) {
-    if (
-      typeof obj[key] !== "object" ||
-      typeof key !== "string" ||
-      !truthy(obj[key])
-    ) {
+    if (typeof obj[key] !== "object" || typeof key !== "string" || !truthy(obj[key])) {
       return obj[key];
     }
 
@@ -156,13 +151,7 @@ export class ComponentEx<P, S extends object> extends React.Component<
   protected initState(value: S, delayed: boolean = false) {
     this.state = JSON.parse(JSON.stringify(value));
 
-    const proxyHandler = new StateProxyHandler(
-      this,
-      value,
-      undefined,
-      [],
-      delayed,
-    );
+    const proxyHandler = new StateProxyHandler(this, value, undefined, [], delayed);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
   }
@@ -185,13 +174,7 @@ export class PureComponentEx<P, S extends object> extends React.PureComponent<
   protected initState(value: S, delayed: boolean = false) {
     this.state = JSON.parse(JSON.stringify(value));
 
-    const proxyHandler = new StateProxyHandler(
-      this,
-      value,
-      undefined,
-      [],
-      delayed,
-    );
+    const proxyHandler = new StateProxyHandler(this, value, undefined, [], delayed);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
   }

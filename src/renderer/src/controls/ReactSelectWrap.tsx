@@ -5,11 +5,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  OptionValues,
-  ReactCreatableSelectProps,
-  ReactSelectProps,
-} from "react-select";
+import type { OptionValues, ReactCreatableSelectProps, ReactSelectProps } from "react-select";
 import Select, { Creatable } from "react-select";
 
 export * from "react-select";
@@ -27,9 +23,7 @@ function SelectWrap<TValue = OptionValues>(props: ReactSelectProps<TValue>) {
   return <Select {...props} />;
 }
 
-function CreatableWrap<TValue = OptionValues>(
-  props: ReactCreatableSelectProps<TValue>,
-) {
+function CreatableWrap<TValue = OptionValues>(props: ReactCreatableSelectProps<TValue>) {
   const { t } = useTranslation();
 
   if (props.placeholder === undefined) {

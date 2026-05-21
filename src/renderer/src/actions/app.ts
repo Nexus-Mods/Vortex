@@ -1,15 +1,11 @@
 import * as reduxAct from "redux-act";
 
-import safeCreateAction from "./safeCreateAction";
-
 import type { VortexInstallType } from "../types/VortexInstallType";
+import safeCreateAction from "./safeCreateAction";
 
 const id = (input) => input;
 
-export const setStateVersion = safeCreateAction(
-  "SET_STATE_VERSION",
-  (version) => version,
-);
+export const setStateVersion = safeCreateAction("SET_STATE_VERSION", (version) => version);
 
 export const setApplicationVersion = safeCreateAction(
   "SET_APPLICATION_VERSION",

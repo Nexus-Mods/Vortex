@@ -1,18 +1,18 @@
-import type { IMessageHandler } from "@nexusmods/adaptor-api";
-import type { GameInfo } from "@nexusmods/adaptor-api/contracts/game-info";
-import type { IPingService } from "@nexusmods/adaptor-api/contracts/ping";
-import type { StorePathSnapshot } from "@nexusmods/adaptor-api/stores/lib";
-import type { IFileSystem, PathResolver } from "@vortex/fs";
-import type { Serializable } from "@vortex/shared/ipc";
-
-import { Base, OS, Store } from "@nexusmods/adaptor-api/stores/lib";
-import { QualifiedPath } from "@vortex/fs";
-import type exeVersionT from "exe-version";
-import { ipcMain } from "electron";
 import * as fs from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { posix as pathPosix } from "node:path";
+
+import type { IMessageHandler } from "@nexusmods/adaptor-api";
+import type { StorePathSnapshot } from "@nexusmods/adaptor-api";
+import { Base, OS, Store } from "@nexusmods/adaptor-api";
+import type { GameInfo } from "@nexusmods/adaptor-api/contracts/game-info";
+import type { IPingService } from "@nexusmods/adaptor-api/contracts/ping";
+import type { FileSystem, PathResolver } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import type { Serializable } from "@vortex/shared/ipc";
+import { ipcMain } from "electron";
+import type exeVersionT from "exe-version";
 
 import { NodeFileSystemBackendImpl } from "./filesystem/backend";
 import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
@@ -50,9 +50,7 @@ const HOST_SERVICES: Record<string, HostService> = {
       return Promise.resolve({ status: "ok" as const });
     }
 
-    return Promise.reject(
-      new Error(`Unknown method on ping service: ${method as string}`),
-    );
+    return Promise.reject(new Error(`Unknown method on ping service: ${method as string}`));
   },
 };
 
@@ -83,7 +81,7 @@ function registerFilesystemService(): void {
 
   const backend = new NodeFileSystemBackendImpl();
   const registry = new PathResolverRegistryImpl([resolver]);
-  const filesystem: IFileSystem = new NodeFileSystemImpl(backend, registry);
+  const filesystem: FileSystem = new NodeFileSystemImpl(backend, registry);
 
   HOST_SERVICES["vortex:host/filesystem"] = {
     perWorker() {
@@ -111,24 +109,17 @@ function discoverAdaptors(): string[] {
     return [];
   }
 
-  return entries.filter(
-    (name) => name.startsWith("adaptor-") && !INFRA_PACKAGES.has(name),
-  );
+  return entries.filter((name) => name.startsWith("adaptor-") && !INFRA_PACKAGES.has(name));
 }
 
 /**
  * Resolves the bundle path for an adaptor package by reading its package.json
  * `main` field. Returns the absolute path to the built bundle.
  */
-function resolveAdaptorBundle(
-  packageDir: string,
-  pkgJson: { main?: string },
-): string {
+function resolveAdaptorBundle(packageDir: string, pkgJson: { main?: string }): string {
   const main = pkgJson.main;
   if (!main) {
-    throw new Error(
-      `Adaptor package.json at ${packageDir} has no "main" field`,
-    );
+    throw new Error(`Adaptor package.json at ${packageDir} has no "main" field`);
   }
   return path.resolve(packageDir, main);
 }
@@ -182,11 +173,7 @@ function nativeToQualifiedPath(nativePath: string, os: OS): QualifiedPath {
  * `windows:///C/Users/foo` → `C:\Users\foo`
  * `linux:///home/user/game` → `/home/user/game`
  */
-function qualifiedPathToNative(qp: {
-  value?: string;
-  scheme?: string;
-  path?: string;
-}): string {
+function qualifiedPathToNative(qp: { value?: string; scheme?: string; path?: string }): string {
   const value = qp.value;
   if (typeof value !== "string") {
     throw new Error("qualifiedPathToNative: missing .value on QualifiedPath");
@@ -217,8 +204,7 @@ function qualifiedPathToNative(qp: {
  */
 function resolveWindowsBases(): Map<Base, QualifiedPath> {
   const home = homedir();
-  const toWin = (p: string): QualifiedPath =>
-    nativeToQualifiedPath(p, OS.Windows);
+  const toWin = (p: string): QualifiedPath => nativeToQualifiedPath(p, OS.Windows);
   const out = new Map<Base, QualifiedPath>();
   out.set(Base.Home, toWin(home));
   out.set(Base.Temp, toWin(tmpdir()));
@@ -238,8 +224,7 @@ function resolveLinuxBases(): Map<Base, QualifiedPath> {
     const env = process.env[envName];
     return env && env.length > 0 ? env : pathPosix.join(home, relative);
   };
-  const toLin = (p: string): QualifiedPath =>
-    nativeToQualifiedPath(p, OS.Linux);
+  const toLin = (p: string): QualifiedPath => nativeToQualifiedPath(p, OS.Linux);
   const out = new Map<Base, QualifiedPath>();
   out.set(Base.Home, toLin(home));
   out.set(Base.Temp, toLin(tmpdir()));
@@ -255,9 +240,7 @@ function resolveLinuxBases(): Map<Base, QualifiedPath> {
 function detectHostOS(): OS {
   if (process.platform === "win32") return OS.Windows;
   if (process.platform === "linux") return OS.Linux;
-  throw new Error(
-    `Adaptor host does not support platform "${process.platform}"`,
-  );
+  throw new Error(`Adaptor host does not support platform "${process.platform}"`);
 }
 
 const KNOWN_STORES: ReadonlySet<string> = new Set(Object.values(Store));
@@ -271,10 +254,7 @@ const KNOWN_STORES: ReadonlySet<string> = new Set(Object.values(Store));
  * the same (Proton support will later translate this through the Wine
  * prefix).
  */
-function buildStorePathSnapshot(
-  store: Store,
-  gamePath: string,
-): StorePathSnapshot {
+function buildStorePathSnapshot(store: Store, gamePath: string): StorePathSnapshot {
   const baseOS = detectHostOS();
   // TODO: detect Proton on Steam/Linux and set gameOS = OS.Windows, plus
   // resolve the game-side bases out of the Wine prefix. For now the game
@@ -284,8 +264,7 @@ function buildStorePathSnapshot(
   const bases = new Map<OS, ReadonlyMap<Base, QualifiedPath>>();
   const platforms: OS[] = baseOS === gameOS ? [baseOS] : [baseOS, gameOS];
   for (const os of platforms) {
-    const inner =
-      os === OS.Windows ? resolveWindowsBases() : resolveLinuxBases();
+    const inner = os === OS.Windows ? resolveWindowsBases() : resolveLinuxBases();
     inner.set(Base.Game, nativeToQualifiedPath(gamePath, os));
     bases.set(os, inner);
   }
@@ -302,9 +281,7 @@ function buildStorePathSnapshot(
 export async function initAdaptorHost(): Promise<void> {
   const bootstrapPath = path.join(getVortexPath("base"), "bootstrap.mjs");
   registerFilesystemService();
-  const host = createAdaptorHost(HOST_SERVICES, bootstrapPath, (level, msg) =>
-    log(level, msg),
-  );
+  const host = createAdaptorHost(HOST_SERVICES, bootstrapPath, (level, msg) => log(level, msg));
   _adaptorHost = host;
 
   registerIpcHandlers();
@@ -353,37 +330,23 @@ export async function initAdaptorHost(): Promise<void> {
 
       // Eagerly fetch game info so it's available synchronously to the
       // renderer bridge during extension init.
-      const infoUri = m.provides.find((u) =>
-        /^vortex:adaptor\/[^/]+\/info$/.test(u),
-      );
+      const infoUri = m.provides.find((u) => /^vortex:adaptor\/[^/]+\/info$/.test(u));
       if (infoUri) {
         try {
-          const info = (await adaptor.call(
-            infoUri,
-            "getGameInfo",
-            [],
-          )) as GameInfo;
+          const info = (await adaptor.call(infoUri, "getGameInfo", [])) as GameInfo;
           cachedGameInfo.set(name, info);
         } catch (err: unknown) {
-          log(
-            "warn",
-            "[adaptor-host] Failed to pre-fetch game info for {{name}}: {{error}}",
-            {
-              name,
-              error: err instanceof Error ? err.message : "Unknown error",
-            },
-          );
+          log("warn", "[adaptor-host] Failed to pre-fetch game info for {{name}}: {{error}}", {
+            name,
+            error: err instanceof Error ? err.message : "Unknown error",
+          });
         }
       }
     } catch (err: unknown) {
-      log(
-        "warn",
-        "[adaptor-host] Failed to load adaptor {{package}}: {{error}}",
-        {
-          package: packageName,
-          error: err instanceof Error ? err.message : "Unknown error",
-        },
-      );
+      log("warn", "[adaptor-host] Failed to load adaptor {{package}}: {{error}}", {
+        package: packageName,
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
     }
   }
 
@@ -489,9 +452,7 @@ function registerIpcHandlers(): void {
       }
       if (typeof gamePath !== "string" || gamePath.trim().length === 0) {
         return Promise.reject(
-          new Error(
-            "adaptors:build-snapshot: gamePath must be a non-empty string",
-          ),
+          new Error("adaptors:build-snapshot: gamePath must be a non-empty string"),
         );
       }
       return Promise.resolve(
@@ -507,10 +468,7 @@ function registerIpcHandlers(): void {
    */
   betterIpcMain.handle(
     "adaptors:detect-version",
-    (
-      _event: unknown,
-      source: { type: string; path: { value: string }; regex?: string },
-    ) => {
+    (_event: unknown, source: { type: string; path: { value: string }; regex?: string }) => {
       const nativePath = qualifiedPathToNative(source.path);
 
       switch (source.type) {

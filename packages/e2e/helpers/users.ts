@@ -17,3 +17,12 @@ export const freeUser: NexusUser = {
     return requireEnvVar("E2E_NEXUS_FREE_USER_PASSWORD");
   },
 };
+
+export const premiumUser: NexusUser = {
+  get username() {
+    return requireEnvVar("E2E_NEXUS_PREMIUM_USER_USERNAME");
+  },
+  get password() {
+    return requireEnvVar("E2E_NEXUS_PREMIUM_USER_PASSWORD");
+  },
+};

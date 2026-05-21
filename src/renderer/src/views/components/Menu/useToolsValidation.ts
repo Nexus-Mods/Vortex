@@ -1,5 +1,6 @@
 import * as fs from "fs/promises";
 import path from "path";
+
 import { useEffect, useMemo, useState } from "react";
 
 import type { IStarterInfo } from "../../../util/StarterInfo";
@@ -51,9 +52,7 @@ export const useToolsValidation = (
   discoveryPath: string | undefined,
   deploymentCounter: number = 0,
 ): UseToolsValidationResult => {
-  const [validToolIds, setValidToolIds] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [validToolIds, setValidToolIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     let cancelled = false;

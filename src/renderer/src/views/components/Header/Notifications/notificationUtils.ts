@@ -13,8 +13,7 @@ export const addWordBreakOpportunities = (text: string): string[] => {
  * Used for notification action buttons (dismiss, suppress, etc).
  */
 export const createNotificationHandler =
-  (id: string | undefined, callback: (id: string) => void) =>
-  (e: MouseEvent) => {
+  (id: string | undefined, callback: (id: string) => void) => (e: MouseEvent) => {
     e.stopPropagation();
     if (id) {
       callback(id);

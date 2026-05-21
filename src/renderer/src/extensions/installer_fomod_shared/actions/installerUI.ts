@@ -9,19 +9,13 @@ export const startDialog = createAction(
   }),
 );
 
-export const endDialog = createAction(
-  "END_FOMOD_DIALOG",
-  (instanceId: string) => ({
-    instanceId,
-  }),
-);
+export const endDialog = createAction("END_FOMOD_DIALOG", (instanceId: string) => ({
+  instanceId,
+}));
 
-export const clearDialog = createAction(
-  "CLEAR_FOMOD_DIALOG",
-  (instanceId: string) => ({
-    instanceId,
-  }),
-);
+export const clearDialog = createAction("CLEAR_FOMOD_DIALOG", (instanceId: string) => ({
+  instanceId,
+}));
 
 export const setDialogState = createAction(
   "SET_FOMOD_DIALOG_STATE",

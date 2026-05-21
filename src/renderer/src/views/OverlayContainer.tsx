@@ -1,10 +1,9 @@
 import React, { type FC } from "react";
 
-import type { PropsCallback } from "../types/IExtensionContext";
-
 import ErrorBoundary from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
 import { useExtensionObjects } from "../ExtensionProvider";
+import type { PropsCallback } from "../types/IExtensionContext";
 
 interface IExtOverlay {
   id: string;

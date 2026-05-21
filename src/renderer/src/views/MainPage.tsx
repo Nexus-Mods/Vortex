@@ -32,11 +32,7 @@ const MainPageInner = forwardRef<HTMLDivElement, IBaseProps>(
     );
 
     return (
-      <div
-        className={(className || "") + " main-page-inner"}
-        id={id}
-        ref={setRef}
-      >
+      <div className={(className || "") + " main-page-inner"} id={id} ref={setRef}>
         {children}
       </div>
     );

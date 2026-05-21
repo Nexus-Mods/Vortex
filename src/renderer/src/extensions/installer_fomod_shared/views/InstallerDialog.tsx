@@ -1,26 +1,5 @@
-import FlexLayout from "../../../controls/FlexLayout";
-import Modal from "../../../controls/Modal";
-import Spinner from "../../../controls/Spinner";
-import { IconButton } from "../../../controls/TooltipControls";
-import ZoomableImage from "../../../controls/ZoomableImage";
-import type { IState } from "../../../types/api";
-import {
-  connect,
-  PureComponentEx,
-  translate,
-} from "../../../controls/ComponentEx";
-import { pushSafe, removeValue } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
-
-import type {
-  GroupType,
-  IGroup,
-  IInstallerInfo,
-  IInstallerState,
-  IInstallStep,
-  IPlugin,
-  OrderType,
-} from "../types/interface";
+import path from "path";
+import { pathToFileURL } from "url";
 
 import type { TFunction } from "i18next";
 import update from "immutability-helper";
@@ -35,9 +14,26 @@ import {
   ProgressBar,
   Radio,
 } from "react-bootstrap";
-import { pathToFileURL } from "url";
+
+import { connect, PureComponentEx, translate } from "../../../controls/ComponentEx";
+import FlexLayout from "../../../controls/FlexLayout";
+import Modal from "../../../controls/Modal";
+import Spinner from "../../../controls/Spinner";
+import { IconButton } from "../../../controls/TooltipControls";
+import ZoomableImage from "../../../controls/ZoomableImage";
+import type { IState } from "../../../types/api";
+import { pushSafe, removeValue } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
+import type {
+  GroupType,
+  IGroup,
+  IInstallerInfo,
+  IInstallerState,
+  IInstallStep,
+  IPlugin,
+  OrderType,
+} from "../types/interface";
 import { hasSessionFOMOD } from "../utils/guards";
-import path from "path";
 
 interface IGroupProps {
   t: TFunction;
@@ -45,10 +41,7 @@ interface IGroupProps {
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
-  onShowDescription: (
-    image: string | undefined,
-    description: string | undefined,
-  ) => void;
+  onShowDescription: (image: string | undefined, description: string | undefined) => void;
 }
 
 interface IGroupState {
@@ -64,9 +57,7 @@ interface IGroupState {
 const nop = () => undefined;
 
 class Group extends React.PureComponent<IGroupProps, IGroupState> {
-  private mValidate: (selected: number[]) => string | undefined = (
-    selected: number[],
-  ) => undefined;
+  private mValidate: (selected: number[]) => string | undefined = (selected: number[]) => undefined;
   constructor(props: IGroupProps) {
     super(props);
     this.state = {
@@ -79,8 +70,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
   public componentDidUpdate(oldProps: IGroupProps, oldState: IGroupState) {
     const { group, onSelect } = this.props;
-    const { confirmedUpdate, localUpdate, sentUpdate, selectedPlugins } =
-      this.state;
+    const { confirmedUpdate, localUpdate, sentUpdate, selectedPlugins } = this.state;
     const valid = this.validateFunc(group.type)(selectedPlugins);
     if (
       selectedPlugins !== oldState.selectedPlugins &&
@@ -144,22 +134,17 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private getSelectedPlugins(props: IGroupProps) {
-    return props.group.options
-      .filter((plugin) => plugin.selected)
-      .map((plugin) => plugin.id);
+    return props.group.options.filter((plugin) => plugin.selected).map((plugin) => plugin.id);
   }
 
-  private validateFunc(
-    type: GroupType,
-  ): (selected: number[]) => string | undefined {
+  private validateFunc(type: GroupType): (selected: number[]) => string | undefined {
     const { t } = this.props;
     switch (type) {
       case "SelectAtLeastOne":
         return (selected: number[]) =>
           selected.length === 0 ? t("Select at least one") : undefined;
       case "SelectAtMostOne":
-        return (selected: number[]) =>
-          selected.length > 1 ? t("Select at most one") : undefined;
+        return (selected: number[]) => (selected.length > 1 ? t("Select at most one") : undefined);
       case "SelectExactlyOne":
         return (selected: number[]) =>
           selected.length !== 1 ? t("Select exactly one") : undefined;
@@ -201,11 +186,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const readOnly = plugin.type === "Required";
 
     const content = (
-      <a
-        className="fake-link"
-        data-value={plugin.id}
-        onMouseOver={this.showDescription}
-      >
+      <a className="fake-link" data-value={plugin.id} onMouseOver={this.showDescription}>
         {plugin.name}
         {plugin.preset ? ` (${t("Preset")})` : ""}
       </a>
@@ -295,9 +276,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       this.setState(
         update(this.state, {
           selectedPlugins: {
-            $set: Array<number>().concat(this.state.selectedPlugins, [
-              pluginId,
-            ]),
+            $set: Array<number>().concat(this.state.selectedPlugins, [pluginId]),
           },
           localUpdate: { $set: Date.now() },
         }),
@@ -306,9 +285,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       this.setState(
         update(this.state, {
           selectedPlugins: {
-            $set: this.state.selectedPlugins.filter(
-              (iter) => iter !== pluginId,
-            ),
+            $set: this.state.selectedPlugins.filter((iter) => iter !== pluginId),
           },
           localUpdate: { $set: Date.now() },
         }),
@@ -329,10 +306,7 @@ interface IStepProps {
   t: TFunction;
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
-  onShowDescription: (
-    image: string | undefined,
-    description: string | undefined,
-  ) => void;
+  onShowDescription: (image: string | undefined, description: string | undefined) => void;
   disabled: boolean;
 }
 
@@ -389,14 +363,12 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   public componentDidUpdate(prevProps: IProps) {
     if (
       // when initiating the dialog
-      (prevProps.installerState === undefined &&
-        this.props.installerState !== undefined) ||
+      (prevProps.installerState === undefined && this.props.installerState !== undefined) ||
       // and any time we change to a different page (forward or backwards)
       (prevProps.installerState !== undefined &&
         this.props.installerState !== undefined &&
         (prevProps.installerInfo !== this.props.installerInfo ||
-          prevProps.installerState.currentStep !==
-            this.props.installerState.currentStep))
+          prevProps.installerState.currentStep !== this.props.installerState.currentStep))
     ) {
       // fully update the description
       this.setState(this.initDescription(this.props));
@@ -416,9 +388,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     const hasImage = installerInfo?.image?.path;
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
-    const nextVisible = steps.find(
-      (step: IInstallStep, i: number) => i > idx && step.visible,
-    );
+    const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
     let lastVisible: IInstallStep | undefined;
     steps.forEach((step: IInstallStep, i: number) => {
       if (i < idx && step.visible) {
@@ -455,15 +425,11 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
                 disabled={waiting}
               />
             </FlexLayout.Flex>
-            <FlexLayout.Fixed
-              style={{ maxWidth: "60%", minWidth: "40%", overflowY: "auto" }}
-            >
+            <FlexLayout.Fixed style={{ maxWidth: "60%", minWidth: "40%", overflowY: "auto" }}>
               <FlexLayout type="column">
                 <FlexLayout.Flex>{this.renderImage()}</FlexLayout.Flex>
                 <FlexLayout.Flex fill className="description">
-                  <ControlLabel readOnly={true}>
-                    {currentDescription}
-                  </ControlLabel>
+                  <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
                 </FlexLayout.Flex>
               </FlexLayout>
             </FlexLayout.Fixed>
@@ -555,10 +521,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     return ret(selOption || undefined);
   }
 
-  private showDescription = (
-    image: string | undefined,
-    description: string | undefined,
-  ) => {
+  private showDescription = (image: string | undefined, description: string | undefined) => {
     this.setState(
       update(this.state, {
         currentDescription: { $set: description || "" },
@@ -593,9 +556,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
 
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
-    const nextVisible = steps.find(
-      (step: IInstallStep, i: number) => i > idx && step.visible,
-    );
+    const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
     const direction = nextVisible ? "forward" : "finish";
     events.emit(
       `fomod-installer-continue-${activeInstanceId}`,
@@ -620,10 +581,8 @@ function mapStateToProps(state: IState): IConnectedProps {
   }
 
   // Use instance-specific state if available, fall back to legacy state for compatibility
-  const activeInstanceId =
-    state.session.fomod.installer?.dialog?.activeInstanceId;
-  const instanceData =
-    state.session.fomod.installer?.dialog?.instances?.[activeInstanceId];
+  const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
+  const instanceData = state.session.fomod.installer?.dialog?.instances?.[activeInstanceId];
 
   return {
     installerInfo: instanceData?.info,

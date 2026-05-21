@@ -6,6 +6,7 @@
 //
 
 import path from "path";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
@@ -20,36 +21,22 @@ async function setDownloadGames(
   api: IExtensionApi,
   dlId: string,
   gameIds: string[],
-  withAddInProgress: (
-    fileName: string,
-    cb: () => PromiseLike<void>,
-  ) => PromiseLike<void>,
+  withAddInProgress: (fileName: string, cb: () => PromiseLike<void>) => PromiseLike<void>,
   bypassProgressTracking: boolean = false,
 ) {
   const state = api.getState();
   const download = state.persistent.downloads.files[dlId];
   gameIds = gameIds.filter((x) => truthy(x));
-  if (
-    download?.localPath === undefined ||
-    gameIds.length === 0 ||
-    gameIds[0] === undefined
-  ) {
+  if (download?.localPath === undefined || gameIds.length === 0 || gameIds[0] === undefined) {
     return;
   }
 
-  const fromGameId = Array.isArray(download.game)
-    ? download.game[0]
-    : download.game;
+  const fromGameId = Array.isArray(download.game) ? download.game[0] : download.game;
 
   if (fromGameId !== gameIds[0]) {
     try {
       const moveOperation = async () => {
-        const filePath = await moveDownload(
-          state,
-          download.localPath,
-          fromGameId,
-          gameIds[0],
-        );
+        const filePath = await moveDownload(state, download.localPath, fromGameId, gameIds[0]);
         // game may be undefined if the download is recognized but it's for a
         // game Vortex doesn't support
         const batched = [setCompatibleGames(dlId, gameIds)];
@@ -104,14 +91,10 @@ async function moveDownload(
   toGameId: string,
 ): Promise<string> {
   // removing the main game, have to move the download then
-  const oldPath = truthy(fromGameId)
-    ? downloadPathForGame(state, fromGameId)
-    : downloadPath(state);
+  const oldPath = truthy(fromGameId) ? downloadPathForGame(state, fromGameId) : downloadPath(state);
   const newPath = downloadPathForGame(state, toGameId);
   if (newPath === undefined) {
-    return Promise.reject(
-      new ProcessCanceled(`No download path for game ${toGameId}`),
-    );
+    return Promise.reject(new ProcessCanceled(`No download path for game ${toGameId}`));
   }
 
   const normalize = await getNormalizeFunc(oldPath);
@@ -127,11 +110,7 @@ async function moveDownload(
   try {
     const oStat = await fs
       .statAsync(oldPath)
-      .catch((err) =>
-        err.code === "ENOENT"
-          ? Promise.resolve(undefined)
-          : Promise.reject(err),
-      );
+      .catch((err) => (err.code === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err)));
     const nStat = await fs.statAsync(newPath);
     if (!!oStat && oStat.ino === nStat.ino) {
       const err = new ProcessCanceled("source same as destination");
@@ -146,9 +125,7 @@ async function moveDownload(
   }
   return fs
     .moveRenameAsync(source, dest)
-    .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve(dest) : Promise.reject(err),
-    );
+    .catch((err) => (err.code === "ENOENT" ? Promise.resolve(dest) : Promise.reject(err)));
 }
 
 export default setDownloadGames;

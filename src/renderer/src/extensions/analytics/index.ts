@@ -1,36 +1,27 @@
 import * as os from "os";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type { IExtensionContext } from "../../types/IExtensionContext";
-import { analyticsLog } from "./utils/analyticsLog";
 import { getCPUArch } from "../../util/nativeArch";
 import { setAnalytics } from "./actions/analytics.action";
+import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import {
-  AppLaunchedEvent,
-  ModsInstallationCompletedEvent,
-} from "./mixpanel/MixpanelEvents";
-import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
+import { AppLaunchedEvent, ModsInstallationCompletedEvent } from "./mixpanel/MixpanelEvents";
 import settingsReducer from "./reducers/settings.reducer";
+import { analyticsLog } from "./utils/analyticsLog";
 import SettingsAnalytics from "./views/SettingsAnalytics";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 let ignoreNextAnalyticsStateChange = false;
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
-  context.registerSettings(
-    "Vortex",
-    SettingsAnalytics,
-    undefined,
-    undefined,
-    110,
-  );
+  context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
 
   context.once(() => {
-    const enabled = () =>
-      context.api.store.getState().settings.analytics.enabled;
-    const getUserInfo = () =>
-      context.api.store.getState().persistent.nexus.userInfo;
+    const enabled = () => context.api.store.getState().settings.analytics.enabled;
+    const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ["settings", "analytics", "enabled"];
@@ -47,23 +38,20 @@ function init(context: IExtensionContext): boolean {
     });
 
     // Check for user login
-    context.api.onStateChange(
-      ["persistent", "nexus", "userInfo"],
-      (previous, current) => {
-        //showConsentDialog();
+    context.api.onStateChange(["persistent", "nexus", "userInfo"], (previous, current) => {
+      //showConsentDialog();
 
-        if (enabled() && current) {
-          // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
-          startAnalytics();
-        } else if (enabled() === undefined && !!current) {
-          // If I was not logged it, and the tracking is undefined ask me for the tracking
-          showConsentDialog();
-        } else if (!current) {
-          // If logging out, disable tracking
-          stopAnalytics();
-        }
-      },
-    );
+      if (enabled() && current) {
+        // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
+        startAnalytics();
+      } else if (enabled() === undefined && !!current) {
+        // If I was not logged it, and the tracking is undefined ask me for the tracking
+        showConsentDialog();
+      } else if (!current) {
+        // If logging out, disable tracking
+        stopAnalytics();
+      }
+    });
 
     // EVENTS THAT WE NEED TO HUNT DOWN IN CODEBASE
     // 'analytics-track-navigation'
@@ -74,12 +62,9 @@ function init(context: IExtensionContext): boolean {
     // Extra listener in case I need to set a custom navigation,
 
     // Mixpanel specific event
-    context.api.events.on(
-      "analytics-track-mixpanel-event",
-      (event: MixpanelEvent) => {
-        AnalyticsMixpanel.trackEvent(event);
-      },
-    );
+    context.api.events.on("analytics-track-mixpanel-event", (event: MixpanelEvent) => {
+      AnalyticsMixpanel.trackEvent(event);
+    });
 
     async function startAnalytics() {
       if (AnalyticsMixpanel.isUserSet()) {
@@ -89,10 +74,7 @@ function init(context: IExtensionContext): boolean {
       try {
         const userInfo = getUserInfo();
         if (userInfo === undefined) {
-          analyticsLog(
-            "warn",
-            "Tried to start analytics but user not logged in",
-          );
+          analyticsLog("warn", "Tried to start analytics but user not logged in");
           return;
         }
 

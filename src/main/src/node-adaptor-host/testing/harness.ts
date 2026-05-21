@@ -1,13 +1,13 @@
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
 import type {
   IAdaptorManifest,
   IMessageHandler,
   IMethodMessage,
   URI,
 } from "@nexusmods/adaptor-api";
-
 import { uri } from "@nexusmods/adaptor-api";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
 
 import { createMessageIdAllocator } from "../runtime.js";
 import { createRpcTransport } from "../transport.js";
@@ -27,16 +27,13 @@ export async function createTestHarness(
   bootstrapPath?: string,
 ): Promise<ITestHarness> {
   const resolvedBootstrap =
-    bootstrapPath ??
-    path.resolve(import.meta.dirname, "../../dist/bootstrap.mjs");
+    bootstrapPath ?? path.resolve(import.meta.dirname, "../../build/bootstrap.mjs");
 
   const handle = createNodeWorker(resolvedBootstrap);
   const transport = createRpcTransport(handle.worker);
   const nextMsgId = createMessageIdAllocator();
 
-  const hostHandlerMap = new Map<string, IMessageHandler>(
-    Object.entries(services ?? {}),
-  );
+  const hostHandlerMap = new Map<string, IMessageHandler>(Object.entries(services ?? {}));
 
   transport.onCall(async (msg: IMethodMessage) => {
     const handler = hostHandlerMap.get(msg.uri);
@@ -69,11 +66,7 @@ export async function createTestHarness(
 
   return {
     manifest,
-    call(
-      serviceUri: string,
-      method: string,
-      args: unknown[],
-    ): Promise<unknown> {
+    call(serviceUri: string, method: string, args: unknown[]): Promise<unknown> {
       return transport.call({ uri: serviceUri, method, args });
     },
     registeredHandlers(): URI[] {

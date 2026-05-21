@@ -1,4 +1,5 @@
 import type { Serializable } from "@vortex/shared/ipc";
+
 import { log } from "../logging";
 import type QueryRegistry from "./QueryRegistry";
 
@@ -85,10 +86,7 @@ class QueryWatcher {
       }
 
       try {
-        const current = await this.#mRegistry.executeQuery(
-          entry.queryName,
-          entry.params,
-        );
+        const current = await this.#mRegistry.executeQuery(entry.queryName, entry.params);
 
         const previousJson = JSON.stringify(entry.previous);
         const currentJson = JSON.stringify(current);

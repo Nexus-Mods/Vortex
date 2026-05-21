@@ -1,8 +1,7 @@
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import * as React from "react";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 import type {
   DialogActions,
@@ -10,19 +9,18 @@ import type {
   IDialogContent,
   IDialogResult,
 } from "../../../actions/notifications";
-import type { INotificationAction } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
-import type { IDeploymentMethod } from "../types/IDeploymentMethod";
-
 import { addNotification, showDialog } from "../../../actions/notifications";
 import { setSettingsPage } from "../../../actions/session";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import ToolbarIcon from "../../../controls/ToolbarIcon";
+import type { INotificationAction } from "../../../types/INotification";
+import type { IState } from "../../../types/IState";
 import { TemporaryError, UserCanceled } from "../../../util/CustomErrors";
 import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { setConfirmPurge } from "../actions/settings";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";
 
 interface IConnectedProps {
@@ -31,11 +29,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onShowError: (
-    message: string,
-    details?: string | any,
-    allowReport?: boolean,
-  ) => void;
+  onShowError: (message: string, details?: string | any, allowReport?: boolean) => void;
   onShowDialog: (
     type: DialogType,
     title: string,
@@ -43,11 +37,7 @@ interface IActionProps {
     actions: DialogActions,
   ) => Promise<IDialogResult>;
   onSetConfirmPurge: (enabled: boolean) => void;
-  onShowWarning: (
-    message: string,
-    dialogAction: INotificationAction,
-    id: string,
-  ) => void;
+  onShowWarning: (message: string, dialogAction: INotificationAction, id: string) => void;
   onSetSettingsPage: (pageId: string) => void;
 }
 
@@ -76,8 +66,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
 
   private activate = () => {
     const { confirmPurge, onShowError } = this.props;
-    const prom =
-      confirmPurge !== false ? this.confirmPurge() : Promise.resolve();
+    const prom = confirmPurge !== false ? this.confirmPurge() : Promise.resolve();
     prom
       .then(
         () =>
@@ -103,30 +92,22 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
           return;
         }
         if (err instanceof TemporaryError) {
-          onShowError(
-            "Failed to purge mods, please try again",
-            err.message,
-            false,
-          );
+          onShowError("Failed to purge mods, please try again", err.message, false);
           return;
         }
         if (err instanceof NoDeployment) {
-          onShowError(
-            "You need to select a deployment method in settings",
-            undefined,
-            false,
-          );
+          onShowError("You need to select a deployment method in settings", undefined, false);
           return;
         }
 
         const errCode = getErrorCode(err);
-        if (errCode == null && (err as {errno?: number}).errno !== undefined) {
+        if (errCode == null && (err as { errno?: number }).errno !== undefined) {
           // unresolved windows error code
           onShowError(
             "Failed to purge mods",
             {
               error: err,
-              ErrorCode: (err as {errno?: number}).errno,
+              ErrorCode: (err as { errno?: number }).errno,
             },
             true,
           );
@@ -153,10 +134,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
       {
         title: "Fix",
         action: (dismiss: () => void) => {
-          this.context.api.events.emit(
-            "show-main-page",
-            "application_settings",
-          );
+          this.context.api.events.emit("show-main-page", "application_settings");
           onSetSettingsPage("Mods");
           dismiss();
         },
@@ -177,9 +155,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
           "restored.\n" +
           "Use this operation to force a complete re-deployment or to restore the game " +
           "directory to an unmodded-state.",
-        checkboxes: [
-          { id: "confirm_purge", text: "Don't ask again", value: false },
-        ],
+        checkboxes: [{ id: "confirm_purge", text: "Don't ask again", value: false }],
       },
       [{ label: "Cancel" }, { label: "Continue" }],
     ).then((result) => {
@@ -197,16 +173,10 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const gameId = activeGameId(state);
-  const activatorId = getSafe(
-    state,
-    ["settings", "mods", "activator", gameId],
-    undefined,
-  );
+  const activatorId = getSafe(state, ["settings", "mods", "activator", gameId], undefined);
   let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
-    activator = ownProps
-      .getActivators()
-      .find((act: IDeploymentMethod) => act.id === activatorId);
+    activator = ownProps.getActivators().find((act: IDeploymentMethod) => act.id === activatorId);
   }
   return {
     activator,
@@ -214,9 +184,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),
@@ -224,11 +192,7 @@ function mapDispatchToProps(
       // showDialog thunk returns Bluebird — see comment in notifications.ts
       Promise.resolve(dispatch(showDialog(type, title, content, dialogActions))),
     onSetConfirmPurge: (enabled: boolean) => dispatch(setConfirmPurge(enabled)),
-    onShowWarning: (
-      message: string,
-      dialogAction: INotificationAction,
-      id: string,
-    ) =>
+    onShowWarning: (message: string, dialogAction: INotificationAction, id: string) =>
       dispatch(
         addNotification({
           id,

@@ -1,6 +1,5 @@
 import * as actions from "../actions/tables";
 import type { IReducerSpec } from "../types/IExtensionContext";
-
 import { pushSafe, removeValue, setSafe } from "../util/storeHelper";
 
 /**
@@ -10,28 +9,16 @@ export const tableReducer: IReducerSpec = {
   reducers: {
     [actions.setAttributeVisible as any]: (state, payload) => {
       const { tableId, attributeId, visible } = payload;
-      return setSafe(
-        state,
-        [tableId, "attributes", attributeId, "enabled"],
-        visible,
-      );
+      return setSafe(state, [tableId, "attributes", attributeId, "enabled"], visible);
     },
     [actions.setAttributeSort as any]: (state, payload) => {
       const { tableId, attributeId, direction } = payload;
       // ensure sorting for other columns is reset because we don't support sorting by multiple
       // attributes atm
       Object.keys(state[tableId]?.attributes ?? {}).forEach((iter) => {
-        state = setSafe(
-          state,
-          [tableId, "attributes", iter, "sortDirection"],
-          "none",
-        );
+        state = setSafe(state, [tableId, "attributes", iter, "sortDirection"], "none");
       });
-      return setSafe(
-        state,
-        [tableId, "attributes", attributeId, "sortDirection"],
-        direction,
-      );
+      return setSafe(state, [tableId, "attributes", attributeId, "sortDirection"], direction);
     },
     [actions.setAttributeFilter as any]: (state, payload) => {
       const { tableId, attributeId, filter } = payload;

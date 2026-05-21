@@ -1,9 +1,8 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-
-import * as actions from "../actions/account";
-
 import update from "immutability-helper";
+
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { setSafe } from "../../../util/storeHelper";
+import * as actions from "../actions/account";
 
 /**
  * reducer for changes to the authentication
@@ -16,8 +15,7 @@ export const accountReducer: IReducerSpec = {
       setSafe(state, ["OAuthCredentials"], undefined),
     [actions.setOAuthCredentials as any]: (state, payload) =>
       update(state, { OAuthCredentials: { $set: { ...payload } } }),
-    [actions.setForcedLogout as any]: (state, value) =>
-      setSafe(state, ["ForcedLogout"], value),
+    [actions.setForcedLogout as any]: (state, value) => setSafe(state, ["ForcedLogout"], value),
   },
   defaults: {
     APIKey: undefined,

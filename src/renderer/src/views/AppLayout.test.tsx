@@ -1,6 +1,5 @@
 import type * as ReactTypes from "react";
 import type * as ReactReduxTypes from "react-redux";
-
 import { vi, it, expect } from "vitest";
 
 vi.mock("../ExtensionProvider", async () => {
@@ -51,8 +50,7 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-redux", async () => {
-  const actual =
-    await vi.importActual<typeof ReactReduxTypes>("react-redux");
+  const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
   return {
     ...actual,
     useDispatch: () => vi.fn(),

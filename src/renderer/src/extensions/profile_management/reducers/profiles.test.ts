@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 
 import type { IProfile } from "../types/IProfile";
-
 import { profilesReducer } from "./profiles";
 
 type ProfilesState = { [profileId: string]: IProfile };

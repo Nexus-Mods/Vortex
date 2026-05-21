@@ -24,8 +24,7 @@ export function vortexAdaptorPlugin(aliases: Record<string, string>): Plugin {
         const imports = `import { getContainer } from "@nexusmods/adaptor-api";\nconst __container = getContainer();\n`;
         const exports = Object.entries(aliases)
           .map(
-            ([name, uri]) =>
-              `export const ${name} = __container.resolve(${JSON.stringify(uri)});`,
+            ([name, uri]) => `export const ${name} = __container.resolve(${JSON.stringify(uri)});`,
           )
           .join("\n");
         return imports + exports;

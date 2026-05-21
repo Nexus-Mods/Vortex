@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { winapiState } = vi.hoisted(() => {
@@ -39,20 +40,10 @@ let mockTmpFileReportError: string | undefined = undefined;
 vi.mock("tmp", () => ({
   file: (
     _opts: Record<string, unknown>,
-    callback: (
-      err: Error | null,
-      path: string,
-      fd: number,
-      cleanup: () => void,
-    ) => void,
+    callback: (err: Error | null, path: string, fd: number, cleanup: () => void) => void,
   ) => {
     if (mockTmpFileReportError) {
-      return callback(
-        new Error(mockTmpFileReportError),
-        "",
-        0,
-        () => undefined,
-      );
+      return callback(new Error(mockTmpFileReportError), "", 0, () => undefined);
     }
     mockTmpFileCalls += 1;
     callback(null, "/tmp/xyz", 42, () => undefined);

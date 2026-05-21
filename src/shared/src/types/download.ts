@@ -17,10 +17,7 @@ export type Chunk = {
  * Gets invoked to create chunks from a resource. Return an empty array
  * if chunking isn't supported.
  */
-export type Chunker<T> = (
-  size: number,
-  resource: T,
-) => Chunk[] | Promise<Chunk[]>;
+export type Chunker<T> = (size: number, resource: T) => Chunk[] | Promise<Chunk[]>;
 
 /** Creates a chunker that splits into n same-sized chunks */
 export function staticChunker(
@@ -93,13 +90,7 @@ export type ChunkProgress = Progress & {
   chunkRange: ByteRange;
 };
 
-export type DownloadStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "paused"
-  | "canceled"
-  | "failed";
+export type DownloadStatus = "queued" | "running" | "completed" | "paused" | "canceled" | "failed";
 
 export type DownloadProgress = Progress & {
   /** Size of the file being downloaded. This can be null when the server returns no size. */
@@ -117,10 +108,7 @@ export type DownloadCheckpoint<T = unknown> = {
 };
 
 export type DownloadState = DownloadProgress &
-  (
-    | { status: Exclude<DownloadStatus, "failed"> }
-    | { status: "failed"; error: DownloadError }
-  );
+  ({ status: Exclude<DownloadStatus, "failed"> } | { status: "failed"; error: DownloadError });
 
 export type PauseResult<T = unknown> =
   | (DownloadState & { status: "paused"; checkpoint: DownloadCheckpoint<T> })

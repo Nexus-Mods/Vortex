@@ -1,8 +1,8 @@
+import { log, selectors, types } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 import * as React from "react";
 import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { connect } from "react-redux";
-import { log, selectors, types } from "vortex-api";
 
 interface IBaseProps {
   plugins: string[];
@@ -45,16 +45,12 @@ class PluginList extends React.Component<IProps, IComponentState> {
     const { plugins } = this.props;
 
     const pluginsSet = new Set(plugins);
-    return (
-      <ListGroup>{Array.from(pluginsSet).map(this.renderPlugin)}</ListGroup>
-    );
+    return <ListGroup>{Array.from(pluginsSet).map(this.renderPlugin)}</ListGroup>;
   }
 
   private renderPlugin = (pluginName: string): JSX.Element => {
     const { installedESPs } = this.state;
-    const isInstalled =
-      installedESPs === undefined ||
-      installedESPs.has(pluginName.toLowerCase());
+    const isInstalled = installedESPs === undefined || installedESPs.has(pluginName.toLowerCase());
     return (
       <ListGroupItem
         style={{ padding: 5 }}
@@ -92,6 +88,4 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(
-  PluginList,
-) as unknown as React.ComponentClass<IBaseProps>;
+export default connect(mapStateToProps)(PluginList) as unknown as React.ComponentClass<IBaseProps>;

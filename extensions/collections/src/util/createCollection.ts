@@ -1,6 +1,6 @@
-import { MOD_TYPE } from "../constants";
+import { types } from "@nexusmods/vortex-api";
 
-import { types } from "vortex-api";
+import { MOD_TYPE } from "../constants";
 
 export async function createCollection(
   api: types.IExtensionApi,

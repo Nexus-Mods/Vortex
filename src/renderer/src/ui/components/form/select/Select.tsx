@@ -5,15 +5,13 @@
  * Provides a styled select dropdown with custom icon and validation support.
  */
 
-import type { Ref, SelectHTMLAttributes } from "react";
-
 import { mdiMenuDown } from "@mdi/js";
+import type { Ref, SelectHTMLAttributes } from "react";
 import * as React from "react";
-
-import type { BaseFormFieldProps } from "../formfield/FormField";
 
 import { joinClasses } from "../../../utils/joinClasses";
 import { Icon } from "../../icon/Icon";
+import type { BaseFormFieldProps } from "../formfield/FormField";
 import { FormField } from "../formfield/FormField";
 
 export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> &
@@ -57,11 +55,7 @@ export const Select = ({
         <select
           {...props}
           aria-describedby={
-            errorMessage
-              ? `${id}_error`
-              : hints.length > 0
-                ? `${id}_hints`
-                : undefined
+            errorMessage ? `${id}_error` : hints.length > 0 ? `${id}_hints` : undefined
           }
           aria-invalid={!!errorMessage || undefined}
           className={joinClasses([

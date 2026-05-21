@@ -1,12 +1,7 @@
 import type { IMethodMessage } from "@nexusmods/adaptor-api";
-
 import { describe, expect, it } from "vitest";
 
-import {
-  createMessageIdAllocator,
-  createPidAllocator,
-  createServiceProxy,
-} from "./runtime.js";
+import { createMessageIdAllocator, createPidAllocator, createServiceProxy } from "./runtime.js";
 
 // --- Allocators ---
 
@@ -41,10 +36,7 @@ describe("createMessageIdAllocator", () => {
 describe("createServiceProxy", () => {
   it("is not thenable (can be safely awaited without dispatching)", () => {
     const send = (msg: IMethodMessage) => Promise.resolve(msg.args);
-    const proxy = createServiceProxy<{ foo(): Promise<string> }>(
-      "test:svc",
-      send,
-    );
+    const proxy = createServiceProxy<{ foo(): Promise<string> }>("test:svc", send);
     expect((proxy as Record<string, unknown>)["then"]).toBeUndefined();
   });
 
@@ -54,10 +46,7 @@ describe("createServiceProxy", () => {
       received.push(msg);
       return Promise.resolve("result");
     };
-    const proxy = createServiceProxy<{ foo(x: string): Promise<string> }>(
-      "test:svc",
-      send,
-    );
+    const proxy = createServiceProxy<{ foo(x: string): Promise<string> }>("test:svc", send);
     const result = await proxy.foo("bar");
     expect(result).toBe("result");
     expect(received).toHaveLength(1);

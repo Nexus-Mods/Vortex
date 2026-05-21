@@ -1,9 +1,9 @@
 // IMPORTANT: This file is included from elevated code, it can't include electron stuff
 
-import * as fs from "fs-extra";
+import * as path from "path";
 
 import PromiseBB from "bluebird";
-import * as path from "path";
+import * as fs from "fs-extra";
 
 function walk(
   target: string,
@@ -35,9 +35,7 @@ function walk(
         }
       });
       return PromiseBB.all(
-        cbPromises.concat(
-          PromiseBB.mapSeries(subDirs, (subDir) => walk(subDir, callback)),
-        ),
+        cbPromises.concat(PromiseBB.mapSeries(subDirs, (subDir) => walk(subDir, callback))),
       );
     })
     .then(() => null);

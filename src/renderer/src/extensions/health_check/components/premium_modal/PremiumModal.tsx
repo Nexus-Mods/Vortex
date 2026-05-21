@@ -7,21 +7,12 @@ import { Icon } from "../../../../ui/components/icon/Icon";
 import { Modal } from "../../../../ui/components/modal/Modal";
 import { Typography } from "../../../../ui/components/typography/Typography";
 import { opn } from "../../../../util/api";
-import {
-  Campaign,
-  Content,
-  Section,
-  nexusModsURL,
-} from "../../../../util/util";
+import { Campaign, Content, Section, nexusModsURL } from "../../../../util/util";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
 
 const ListItem = ({ children }: { children: ReactNode }) => (
   <li className="flex gap-x-1">
-    <Icon
-      className="mt-0.5 shrink-0 text-premium-strong"
-      path={mdiCheck}
-      size="xs"
-    />
+    <Icon className="mt-0.5 shrink-0 text-premium-strong" path={mdiCheck} size="xs" />
 
     {children}
   </li>
@@ -50,12 +41,7 @@ export const PremiumModal = ({
 
   return (
     <Modal isOpen={isOpen} title={t("premium::modal::title")} onClose={onClose}>
-      <Typography
-        appearance="subdued"
-        as="div"
-        className="space-y-2"
-        typographyType="body-sm"
-      >
+      <Typography appearance="subdued" as="div" className="space-y-2" typographyType="body-sm">
         <p>{t("premium::modal::description")}</p>
 
         <p>{t("premium::modal::benefits_title")}</p>

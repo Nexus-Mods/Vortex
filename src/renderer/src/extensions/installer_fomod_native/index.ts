@@ -1,11 +1,12 @@
 import { method as toBluebird } from "bluebird";
-import { testSupported } from "./tester";
-import { install } from "./installer";
-import { VortexModInstallerLogger } from "./utils/VortexModInstallerLogger";
-import { VortexModInstallerFileSystem } from "./utils/VortexModInstallerFileSystem";
-import type { ITestSupportedDetails } from "../mod_management/types/TestSupported";
+
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
+import type { ITestSupportedDetails } from "../mod_management/types/TestSupported";
+import { install } from "./installer";
+import { testSupported } from "./tester";
+import { VortexModInstallerFileSystem } from "./utils/VortexModInstallerFileSystem";
+import { VortexModInstallerLogger } from "./utils/VortexModInstallerLogger";
 
 let logger: VortexModInstallerLogger | null = null;
 let fileSystem: VortexModInstallerFileSystem | null = null;

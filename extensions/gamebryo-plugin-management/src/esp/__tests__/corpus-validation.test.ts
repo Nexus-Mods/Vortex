@@ -6,7 +6,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
+
 import { describe, it, expect } from "vitest";
+
 import { ESPFile } from "../ESPFile";
 
 const CORPUS_DIR = path.join(__dirname, "corpus");
@@ -27,9 +29,7 @@ interface ParsedOutput {
   parseError?: string;
 }
 
-const expectedOutputs: ParsedOutput[] = JSON.parse(
-  fs.readFileSync(expectedPath, "utf-8"),
-);
+const expectedOutputs: ParsedOutput[] = JSON.parse(fs.readFileSync(expectedPath, "utf-8"));
 
 describe("ESP parser corpus validation", () => {
   for (const expected of expectedOutputs) {
@@ -81,9 +81,7 @@ describe("ESP parser corpus validation", () => {
       it("masterList matches", () => {
         // The original native parser used std::set (sorted order), TS parser preserves file order.
         // Compare sorted to validate content regardless of order.
-        expect([...esp.masterList].sort()).toEqual(
-          [...expected.masterList].sort(),
-        );
+        expect([...esp.masterList].sort()).toEqual([...expected.masterList].sort());
       });
 
       it("revision matches", () => {
@@ -97,9 +95,7 @@ describe("setLightFlag round-trip", () => {
   const nonLight = expectedOutputs.find(
     (e) => !e.isLight && !e.parseError && e.gameId === "skyrimse",
   );
-  const isLight = expectedOutputs.find(
-    (e) => e.isLight && !e.parseError,
-  );
+  const isLight = expectedOutputs.find((e) => e.isLight && !e.parseError);
 
   if (nonLight) {
     it(`enables light flag on ${nonLight.file}`, async () => {
@@ -117,9 +113,7 @@ describe("setLightFlag round-trip", () => {
         expect(esp2.isLight).toBe(true);
         expect(esp2.isMaster).toBe(nonLight.isMaster);
         expect(esp2.author).toBe(nonLight.author);
-        expect([...esp2.masterList].sort()).toEqual(
-          [...nonLight.masterList].sort(),
-        );
+        expect([...esp2.masterList].sort()).toEqual([...nonLight.masterList].sort());
       } finally {
         fs.unlinkSync(tmpPath);
       }
@@ -142,9 +136,7 @@ describe("setLightFlag round-trip", () => {
         expect(esp2.isLight).toBe(false);
         expect(esp2.isMaster).toBe(isLight.isMaster);
         expect(esp2.author).toBe(isLight.author);
-        expect([...esp2.masterList].sort()).toEqual(
-          [...isLight.masterList].sort(),
-        );
+        expect([...esp2.masterList].sort()).toEqual([...isLight.masterList].sort());
       } finally {
         fs.unlinkSync(tmpPath);
       }

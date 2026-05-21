@@ -83,16 +83,9 @@ function withFlatpakHostArgs(commandArgs: string[]): string[] {
  * Read the current desktop-id associated with a URL scheme on Linux.
  * In Flatpak, uses flatpak-spawn to query the host's settings.
  */
-export function getDefaultUrlSchemeHandler(
-  protocol: string,
-): string | undefined {
+export function getDefaultUrlSchemeHandler(protocol: string): string | undefined {
   const args = isFlatpak()
-    ? withFlatpakHostArgs([
-        "xdg-settings",
-        "get",
-        "default-url-scheme-handler",
-        protocol,
-      ])
+    ? withFlatpakHostArgs(["xdg-settings", "get", "default-url-scheme-handler", protocol])
     : ["get", "default-url-scheme-handler", protocol];
   const command = isFlatpak() ? "flatpak-spawn" : "xdg-settings";
   const result = runCommand(command, args);
@@ -111,10 +104,7 @@ export function getDefaultUrlSchemeHandler(
  * In Flatpak, uses flatpak-spawn to modify the host's settings.
  * ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/RuntimeDependency/XDGSettingsDependency.cs#L22-L34
  */
-export function setDefaultUrlSchemeHandler(
-  protocol: string,
-  desktopId: string,
-): void {
+export function setDefaultUrlSchemeHandler(protocol: string, desktopId: string): void {
   const args = isFlatpak()
     ? withFlatpakHostArgs([
         "xdg-settings",
@@ -126,15 +116,9 @@ export function setDefaultUrlSchemeHandler(
     : ["set", "default-url-scheme-handler", protocol, desktopId];
   const command = isFlatpak() ? "flatpak-spawn" : "xdg-settings";
   const fullCommand = [command, ...args].join(" ");
-  log(
-    "info",
-    isFlatpak()
-      ? "flatpak-spawn: setting nxm handler on host"
-      : "setting nxm handler",
-    {
-      command: fullCommand,
-    },
-  );
+  log("info", isFlatpak() ? "flatpak-spawn: setting nxm handler on host" : "setting nxm handler", {
+    command: fullCommand,
+  });
   const result = runCommand(command, args);
 
   // Log the result regardless of success/failure for debugging
@@ -179,11 +163,7 @@ function runCommand(command: string, args: string[]): ICommandResult {
   };
 }
 
-function logCommandFailure(
-  command: string,
-  args: string[],
-  result: ICommandResult,
-): void {
+function logCommandFailure(command: string, args: string[], result: ICommandResult): void {
   if (result.error !== undefined) {
     if (result.error.code !== "ENOENT") {
       log("debug", "linux protocol command failed", {

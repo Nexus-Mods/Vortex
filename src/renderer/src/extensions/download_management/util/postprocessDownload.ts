@@ -1,6 +1,12 @@
+import path from "path";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { IHashResult } from "modmeta-db";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { delayed, toPromise } from "../../../util/util";
 import { log } from "../../../util/log";
+import { delayed, toPromise } from "../../../util/util";
+import { batchDispatch } from "../../../util/util";
 import {
   finalizingDownload,
   finalizingProgress,
@@ -9,16 +15,8 @@ import {
   setDownloadHashByFile,
 } from "../actions/state";
 import queryInfo from "./queryDLInfo";
-import { batchDispatch } from "../../../util/util";
-import path from "path";
-import type { IHashResult } from "modmeta-db";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
-export function finalizeDownload(
-  api: IExtensionApi,
-  id: string,
-  filePath: string,
-) {
+export function finalizeDownload(api: IExtensionApi, id: string, filePath: string) {
   api.store.dispatch(finalizingDownload(id));
 
   let lastProgress: number = 0;
@@ -40,11 +38,7 @@ export function finalizeDownload(
     })
     .then((result: IHashResult) => {
       const batched = [
-        setDownloadHashByFile(
-          path.basename(filePath),
-          result.md5sum,
-          result.numBytes,
-        ),
+        setDownloadHashByFile(path.basename(filePath), result.md5sum, result.numBytes),
         finishDownload(id, "finished", undefined),
       ];
       batchDispatch(api.store, batched);
@@ -53,11 +47,7 @@ export function finalizeDownload(
       // Run metadata lookup asynchronously without blocking download completion
       queryInfo(api, [id], false).catch((err) => {
         // Log error but don't fail the download
-        log(
-          "warn",
-          "Failed to query download metadata",
-          getErrorMessageOrDefault(err),
-        );
+        log("warn", "Failed to query download metadata", getErrorMessageOrDefault(err));
       });
       return Promise.resolve();
     })

@@ -1,10 +1,10 @@
-import Icon from "./Icon";
-import Spinner from "./Spinner";
-
 import classNames from "classnames";
 import * as _ from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
+
+import Icon from "./Icon";
+import Spinner from "./Spinner";
 
 export interface IFormFeedbackProps {
   pending?: boolean;
@@ -30,10 +30,7 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
 
     const elementProps = _.omit(this.props, ["pending", "bsRole"]);
 
-    const icon: JSX.Element = this.icon(
-      formGroup && formGroup.validationState,
-      pending,
-    );
+    const icon: JSX.Element = this.icon(formGroup && formGroup.validationState, pending);
     if (icon === undefined) {
       return null;
     } else {

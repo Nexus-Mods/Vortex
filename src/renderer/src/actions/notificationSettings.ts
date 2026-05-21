@@ -8,7 +8,4 @@ export const suppressNotification = safeCreateAction(
   (id: string, suppress: boolean) => ({ id, suppress }),
 );
 
-export const resetSuppression = safeCreateAction(
-  "RESET_SUPPRESSION",
-  () => null,
-);
+export const resetSuppression = safeCreateAction("RESET_SUPPRESSION", () => null);

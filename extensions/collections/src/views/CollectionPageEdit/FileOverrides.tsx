@@ -1,8 +1,8 @@
-/* eslint-disable */
-import { useSelector } from "react-redux";
+import { Overlay, Toggle, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, ListGroup, Popover, Table } from "react-bootstrap";
-import { Overlay, Toggle, selectors, types, util } from "vortex-api";
+/* eslint-disable */
+import { useSelector } from "react-redux";
 
 export interface IPathTools {
   relative(lhs: string, rhs: string): string;
@@ -73,8 +73,7 @@ function FileOverrides(props: IFileOverridesProps) {
   }, [container.current]);
 
   const mod = mods[showOverlay];
-  const toRelPath = (filePath: string) =>
-    pathTool.relative(discovery.path, filePath);
+  const toRelPath = (filePath: string) => pathTool.relative(discovery.path, filePath);
   const popover =
     showOverlay === undefined ? (
       <Popover />
@@ -88,14 +87,9 @@ function FileOverrides(props: IFileOverridesProps) {
       </Popover>
     );
 
-  const isEnabled = (id: string) =>
-    collection.attributes?.collection?.fileOverrides?.[id] ?? false;
+  const isEnabled = (id: string) => collection.attributes?.collection?.fileOverrides?.[id] ?? false;
   return (
-    <div
-      ref={container}
-      id="collection-file-overrides"
-      className="collection-file-overrides"
-    >
+    <div ref={container} id="collection-file-overrides" className="collection-file-overrides">
       <ControlLabel>
         <p>
           {t(
@@ -124,11 +118,7 @@ function FileOverrides(props: IFileOverridesProps) {
           {modsWithOverrides.map((mod) => (
             <tr key={mod.id}>
               <td>
-                <Toggle
-                  checked={isEnabled(mod.id)}
-                  dataId={mod.id}
-                  onToggle={toggleOverride}
-                >
+                <Toggle checked={isEnabled(mod.id)} dataId={mod.id} onToggle={toggleOverride}>
                   {util.renderModName(mod)}
                   &nbsp;
                   <Overlay

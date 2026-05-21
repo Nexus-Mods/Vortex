@@ -12,12 +12,7 @@ const WINDOW_SIZE = 5;
 function makeThrottle(getBPS: () => number) {
   let chunks: IChunk[] = [];
 
-  function transform(
-    this: Transform,
-    chunk: any,
-    encoding: string,
-    callback: TransformCallback,
-  ) {
+  function transform(this: Transform, chunk: any, encoding: string, callback: TransformCallback) {
     const bps = getBPS();
     if (bps === 0) {
       return callback(null, chunk);
@@ -25,9 +20,7 @@ function makeThrottle(getBPS: () => number) {
 
     const now = Date.now();
     chunks.push({ size: chunk.length, time: now });
-    const idx = chunks.findIndex(
-      (iter) => iter.time > now - WINDOW_SIZE * 1000,
-    );
+    const idx = chunks.findIndex((iter) => iter.time > now - WINDOW_SIZE * 1000);
     if (idx !== 0) {
       chunks = chunks.slice(idx);
     }

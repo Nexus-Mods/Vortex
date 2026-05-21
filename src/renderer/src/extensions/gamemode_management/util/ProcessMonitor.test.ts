@@ -1,14 +1,14 @@
 import * as path from "path";
-import { it, expect, vi } from "vitest";
 
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import type { IProcessInfo, IProcessProvider } from "./processProvider";
+import { it, expect, vi } from "vitest";
 
 import { setToolPid, setToolStopped } from "../../../actions";
 import { makeExeId } from "../../../reducers/session";
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import ProcessMonitor from "./ProcessMonitor";
+import type { IProcessInfo, IProcessProvider } from "./processProvider";
 
 const gameId = "test-game";
 const profileId = "profile-1";
@@ -17,9 +17,7 @@ const gameExe = "Game.exe";
 const gameExePath = path.join(gamePath, gameExe);
 const toolPath = "/games/test/Tool.exe";
 
-const buildTool = (
-  overrides: Partial<IDiscoveredTool> = {},
-): IDiscoveredTool => ({
+const buildTool = (overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool => ({
   id: "tool-1",
   name: "Tool",
   executable: () => "Tool.exe",
@@ -88,10 +86,7 @@ const createMonitor = (state: IState, processes: IProcessInfo[]) => {
   const processProvider: IProcessProvider = {
     list: vi.fn().mockResolvedValue(processes),
   };
-  const monitor = new ProcessMonitor(
-    { store } as unknown as IExtensionApi,
-    processProvider,
-  );
+  const monitor = new ProcessMonitor({ store } as unknown as IExtensionApi, processProvider);
   return {
     monitor: monitor as unknown as { doCheck(): Promise<void> },
     store,
@@ -114,9 +109,7 @@ it("dispatches setToolPid for matching child process", async () => {
 
   await monitor.doCheck();
 
-  expect(store.dispatch).toHaveBeenCalledWith(
-    setToolPid(toolPath, 3001, false),
-  );
+  expect(store.dispatch).toHaveBeenCalledWith(setToolPid(toolPath, 3001, false));
 });
 
 it("dispatches setToolStopped when no matching process exists", async () => {
@@ -160,10 +153,7 @@ it("matches detached game but filters non-child tools", async () => {
 
   await monitor.doCheck();
 
-  expect(store.dispatch).toHaveBeenNthCalledWith(
-    1,
-    setToolPid(gameExePath, 6001, true),
-  );
+  expect(store.dispatch).toHaveBeenNthCalledWith(1, setToolPid(gameExePath, 6001, true));
   expect(store.dispatch).toHaveBeenNthCalledWith(2, setToolStopped(toolPath));
 });
 
@@ -187,9 +177,7 @@ it("parses unquoted cmd paths with spaces", async () => {
 
   await monitor.doCheck();
 
-  expect(store.dispatch).toHaveBeenCalledWith(
-    setToolPid(spacedGameExePath, 8001, true),
-  );
+  expect(store.dispatch).toHaveBeenCalledWith(setToolPid(spacedGameExePath, 8001, true));
 });
 
 it("skips dispatch when known pid still exists", async () => {

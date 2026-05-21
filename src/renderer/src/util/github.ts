@@ -1,11 +1,12 @@
-import { log } from "./log";
+import * as https from "https";
+import * as url from "url";
 
 import PromiseBB from "bluebird";
-import * as https from "https";
 import * as _ from "lodash";
 import * as semver from "semver";
-import * as url from "url";
+
 import { DataInvalid } from "./CustomErrors";
+import { log } from "./log";
 
 export interface IGitHubUser {
   login: string;
@@ -112,17 +113,11 @@ class GitHub {
   }
 
   public fetchConfig(config: string): PromiseBB<any> {
-    return this.query(
-      GitHub.rawUrl(),
-      `${GitHub.CONFIG_BRANCH}/${config}.json`,
-    );
+    return this.query(GitHub.rawUrl(), `${GitHub.CONFIG_BRANCH}/${config}.json`);
   }
 
   private query(baseUrl: string, request: string): PromiseBB<any> {
-    if (
-      this.mRatelimitReset !== undefined &&
-      this.mRatelimitReset > Date.now()
-    ) {
+    if (this.mRatelimitReset !== undefined && this.mRatelimitReset > Date.now()) {
       return PromiseBB.reject(new RateLimitExceeded());
     }
     const stackErr = new Error();
@@ -141,13 +136,9 @@ class GitHub {
       https
         .get(options, (res) => {
           res.setEncoding("utf-8");
-          const callsRemaining = parseInt(
-            res.headers["x-ratelimit-remaining"] as string,
-            10,
-          );
+          const callsRemaining = parseInt(res.headers["x-ratelimit-remaining"] as string, 10);
           if (res.statusCode === 403 && callsRemaining === 0) {
-            const resetDate =
-              parseInt(res.headers["x-ratelimit-reset"] as string, 10) * 1000;
+            const resetDate = parseInt(res.headers["x-ratelimit-reset"] as string, 10) * 1000;
             log("info", "GitHub rate limit exceeded", {
               reset_at: new Date(resetDate).toString(),
             });
@@ -177,24 +168,16 @@ class GitHub {
   }
 
   private queryReleases(): PromiseBB<IGitHubRelease[]> {
-    return this.query(GitHub.repoUrl(), "releases").then(
-      (releases: IGitHubRelease[]) => {
-        if (!Array.isArray(releases)) {
-          return PromiseBB.reject(
-            new DataInvalid("expected array of github releases"),
-          );
-        }
-        const current = releases
-          .filter(
-            (rel) =>
-              semver.valid(rel.name) &&
-              semver.gte(rel.name, GitHub.RELEASE_CUTOFF),
-          )
-          .sort((lhs, rhs) => semver.compare(lhs.name, rhs.name));
+    return this.query(GitHub.repoUrl(), "releases").then((releases: IGitHubRelease[]) => {
+      if (!Array.isArray(releases)) {
+        return PromiseBB.reject(new DataInvalid("expected array of github releases"));
+      }
+      const current = releases
+        .filter((rel) => semver.valid(rel.name) && semver.gte(rel.name, GitHub.RELEASE_CUTOFF))
+        .sort((lhs, rhs) => semver.compare(lhs.name, rhs.name));
 
-        return PromiseBB.resolve(current);
-      },
-    );
+      return PromiseBB.resolve(current);
+    });
   }
 }
 

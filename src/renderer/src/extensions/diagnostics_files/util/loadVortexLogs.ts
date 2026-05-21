@@ -1,11 +1,11 @@
-import * as fs from "../../../util/fs";
-import type { LogLevel } from "../../../util/log";
-
-import type { ILog, ISession } from "../types/ISession";
+import * as path from "path";
 
 import PromiseBB from "bluebird";
-import * as path from "path";
+
+import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
+import type { LogLevel } from "../../../util/log";
+import type { ILog, ISession } from "../types/ISession";
 
 // New format: timestamp [LEVEL] [PROCESS] message
 const lineRE = /^(\S+) \[([A-Z]*)\] \[([A-Z]*)\] (.*)\r?/;
@@ -50,9 +50,7 @@ export function loadVortexLogs(): PromiseBB<ISession[]> {
   return PromiseBB.resolve(fs.readdirAsync(logPath))
     .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)
     .then((logFileNames: string[]) => {
-      logFileNames = logFileNames.sort((lhs: string, rhs: string) =>
-        rhs.localeCompare(lhs),
-      );
+      logFileNames = logFileNames.sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
       return PromiseBB.mapSeries(logFileNames, (logFileName: string) =>
         fs.readFileAsync(path.join(logPath, logFileName), "utf8"),
       );
@@ -72,9 +70,7 @@ export function loadVortexLogs(): PromiseBB<ISession[]> {
           logElements.length > 1
             ? {
                 from: new Date(Date.parse(logElements[0].time)),
-                to: new Date(
-                  Date.parse(logElements[logElements.length - 1].time),
-                ),
+                to: new Date(Date.parse(logElements[logElements.length - 1].time)),
                 logs: logElements,
               }
             : undefined

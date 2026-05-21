@@ -1,7 +1,7 @@
+import type PromiseBB from "bluebird";
+
 import type { IChunk } from "./IChunk";
 import type { IDownloadOptions } from "./IDownload";
-
-import type PromiseBB from "bluebird";
 
 /**
  * Represents a download job with precise semantics for chunk positioning and progress tracking.

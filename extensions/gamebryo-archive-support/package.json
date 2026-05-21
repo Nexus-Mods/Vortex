@@ -4,8 +4,7 @@
   "description": "Support for Gamebryo/Bethesda archives (BSA and BA2)",
   "scripts": {
     "_build": "node build.mjs && pnpm extractInfo",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs out)",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs dist)",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build)",
     "typecheck": "pnpm tsc"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -23,6 +22,27 @@
     "lz4js": "^0.2.0",
     "rimraf": "catalog:",
     "tmp": "catalog:",
-    "vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "vortex:extension"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      },
+      "typecheck": {
+        "inputs": [
+          "default",
+          "typescript",
+          "vortex-api"
+        ]
+      }
+    }
   }
 }

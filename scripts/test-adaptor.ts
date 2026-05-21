@@ -20,7 +20,7 @@
  * should not be wired into CI as-is.
  *
  * Prerequisites: `pnpm build` must have produced
- *   src/main/out/bootstrap.mjs
+ *   src/main/build/bootstrap.mjs
  *   packages/adaptors/<name>/dist/index.mjs
  * The CLI fails fast with a clear message if either is missing.
  */
@@ -31,22 +31,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import Table from "cli-table3";
 
-import type {
-  GameInfo,
-  NexusModsEntry,
-} from "../packages/adaptor-api/src/contracts/game-info.js";
+import type { GameInfo, NexusModsEntry } from "../packages/adaptor-api/src/contracts/game-info.js";
 import type { InstallMapping } from "../packages/adaptor-api/src/contracts/game-installer.js";
 import type { StorePathSnapshot } from "../packages/adaptor-api/src/stores/providers.js";
-import {
-  Base,
-  OS,
-  Store,
-} from "../packages/adaptor-api/src/stores/providers.js";
+import { Base, OS, Store } from "../packages/adaptor-api/src/stores/providers.js";
 import { QualifiedPath } from "../packages/fs/src/browser/paths.js";
-import type {
-  IAdaptorHost,
-  ILoadedAdaptor,
-} from "../src/main/src/node-adaptor-host/loader.js";
+import type { IAdaptorHost, ILoadedAdaptor } from "../src/main/src/node-adaptor-host/loader.js";
 import { createAdaptorHost } from "../src/main/src/node-adaptor-host/loader.js";
 
 // ---------------------------------------------------------------------------
@@ -55,19 +45,12 @@ import { createAdaptorHost } from "../src/main/src/node-adaptor-host/loader.js";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
-const BOOTSTRAP_PATH = path.join(
-  REPO_ROOT,
-  "src",
-  "main",
-  "out",
-  "bootstrap.mjs",
-);
+const BOOTSTRAP_PATH = path.join(REPO_ROOT, "src", "main", "out", "bootstrap.mjs");
 const ADAPTORS_DIR = path.join(REPO_ROOT, "packages", "adaptors");
 
 const NEXUS_GAMES_URL = "https://data.nexusmods.com/file/nexus-data/games.json";
 const NEXUS_GRAPHQL_URL = "https://api.nexusmods.com/v2/graphql";
-const NEXUS_FILE_META_BASE =
-  "https://file-metadata.nexusmods.com/file/nexus-files-s3-meta";
+const NEXUS_FILE_META_BASE = "https://file-metadata.nexusmods.com/file/nexus-files-s3-meta";
 
 // ---------------------------------------------------------------------------
 // External API types (mirror Nexus endpoints)
@@ -122,9 +105,7 @@ export function parseNexusUrl(input: string): {
   }
   const match = /^\/([^/]+)\/mods\/(\d+)/.exec(url.pathname);
   if (!match) {
-    throw new Error(
-      `URL path does not match /<domain>/mods/<id>: "${url.pathname}"`,
-    );
+    throw new Error(`URL path does not match /<domain>/mods/<id>: "${url.pathname}"`);
   }
   return { domain: match[1]!, modId: Number(match[2]!) };
 }
@@ -141,9 +122,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
     );
   }
   if (!response.ok) {
-    throw new Error(
-      `${url} returned ${response.status} ${response.statusText}`,
-    );
+    throw new Error(`${url} returned ${response.status} ${response.statusText}`);
   }
   return (await response.json()) as T;
 }
@@ -158,10 +137,7 @@ const MOD_FILES_QUERY = `query($modId: ID!, $gameId: ID!) {
   }
 }`;
 
-export async function fetchModFiles(
-  gameId: number,
-  modId: number,
-): Promise<NexusModFile[]> {
+export async function fetchModFiles(gameId: number, modId: number): Promise<NexusModFile[]> {
   const apiKey = process.env.NEXUS_API_KEY;
   const result = await fetchJson<{
     data?: { modFiles: NexusModFile[] };
@@ -178,9 +154,7 @@ export async function fetchModFiles(
     }),
   });
   if (result.errors?.length) {
-    throw new Error(
-      `GraphQL modFiles error: ${result.errors.map((e) => e.message).join("; ")}`,
-    );
+    throw new Error(`GraphQL modFiles error: ${result.errors.map((e) => e.message).join("; ")}`);
   }
   if (!result.data?.modFiles) {
     throw new Error("GraphQL modFiles returned no data");
@@ -245,9 +219,7 @@ async function discoverAdaptorForDomain(
 ): Promise<{ adaptor: ILoadedAdaptor; info: GameInfo }> {
   const candidates = await listAdaptorCandidates();
   if (candidates.length === 0) {
-    throw new Error(
-      `No built adaptors found under ${ADAPTORS_DIR}. Run \`pnpm build\` first.`,
-    );
+    throw new Error(`No built adaptors found under ${ADAPTORS_DIR}. Run \`pnpm build\` first.`);
   }
 
   for (const candidate of candidates) {
@@ -263,9 +235,7 @@ async function discoverAdaptorForDomain(
       continue;
     }
     const info = (await loaded.call(infoUri, "getGameInfo", [])) as GameInfo;
-    const match = info.nexusMods?.find(
-      (entry: NexusModsEntry) => entry.domain === domain,
-    );
+    const match = info.nexusMods?.find((entry: NexusModsEntry) => entry.domain === domain);
     if (match) {
       return { adaptor: loaded, info };
     }
@@ -283,16 +253,10 @@ export function buildSyntheticSnapshot(): StorePathSnapshot {
   const windowsBases = new Map<Base, QualifiedPath>([
     [Base.Game, QualifiedPath.parse("windows:///C/Games/TestGame")],
     [Base.Home, QualifiedPath.parse("windows:///C/Users/Test")],
-    [
-      Base.Temp,
-      QualifiedPath.parse("windows:///C/Users/Test/AppData/Local/Temp"),
-    ],
+    [Base.Temp, QualifiedPath.parse("windows:///C/Users/Test/AppData/Local/Temp")],
     [Base.AppData, QualifiedPath.parse("windows:///C/Users/Test/AppData")],
     [Base.Documents, QualifiedPath.parse("windows:///C/Users/Test/Documents")],
-    [
-      Base.MyGames,
-      QualifiedPath.parse("windows:///C/Users/Test/Documents/My Games"),
-    ],
+    [Base.MyGames, QualifiedPath.parse("windows:///C/Users/Test/Documents/My Games")],
   ]);
   return {
     store: Store.Steam,
@@ -306,10 +270,7 @@ export function buildSyntheticSnapshot(): StorePathSnapshot {
 // Table rendering
 // ---------------------------------------------------------------------------
 
-function renderTable(
-  mappings: readonly InstallMapping[],
-  allFiles: readonly string[],
-): void {
+function renderTable(mappings: readonly InstallMapping[], allFiles: readonly string[]): void {
   const mappedSources = new Set<string>(mappings.map((m) => m.source));
   const unmapped = allFiles.filter((f) => !mappedSources.has(f));
   const perAnchor = new Map<string, number>();
@@ -383,21 +344,13 @@ export async function main(argv: string[]): Promise<void> {
     const { adaptor, info } = await discoverAdaptorForDomain(host, domain);
 
     const snapshot = buildSyntheticSnapshot();
-    const pathsUri = adaptor.manifest.provides.find((u) =>
-      u.endsWith("/paths"),
-    );
-    const installerUri = adaptor.manifest.provides.find((u) =>
-      u.endsWith("/installer"),
-    );
+    const pathsUri = adaptor.manifest.provides.find((u) => u.endsWith("/paths"));
+    const installerUri = adaptor.manifest.provides.find((u) => u.endsWith("/installer"));
     if (!pathsUri) {
-      throw new Error(
-        `Adaptor ${adaptor.manifest.name} provides no /paths service`,
-      );
+      throw new Error(`Adaptor ${adaptor.manifest.name} provides no /paths service`);
     }
     if (!installerUri) {
-      throw new Error(
-        `Adaptor ${adaptor.manifest.name} provides no /installer service`,
-      );
+      throw new Error(`Adaptor ${adaptor.manifest.name} provides no /installer service`);
     }
 
     const paths = await adaptor.call(pathsUri, "paths", [snapshot]);
@@ -406,17 +359,10 @@ export async function main(argv: string[]): Promise<void> {
     if (modFiles.length === 0) {
       throw new Error(`Mod ${domain}/${modId} has no files`);
     }
-    const mainFiles = modFiles
-      .filter((f) => f.category === "MAIN")
-      .sort((a, b) => b.date - a.date);
-    const defaultFile =
-      mainFiles[0] ?? modFiles.sort((a, b) => b.date - a.date)[0]!;
+    const mainFiles = modFiles.filter((f) => f.category === "MAIN").sort((a, b) => b.date - a.date);
+    const defaultFile = mainFiles[0] ?? modFiles.sort((a, b) => b.date - a.date)[0]!;
 
-    const manifest = await fetchArchiveManifest(
-      game.id,
-      modId,
-      defaultFile.uri,
-    );
+    const manifest = await fetchArchiveManifest(game.id, modId, defaultFile.uri);
     const files = flattenManifest(manifest);
 
     const mappings = (await adaptor.call(installerUri, "install", [

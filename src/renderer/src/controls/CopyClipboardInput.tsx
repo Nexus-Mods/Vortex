@@ -1,9 +1,9 @@
+import { clipboard } from "electron";
+import * as React from "react";
 import { FormControl, FormGroup, InputGroup } from "react-bootstrap";
 
-import * as React from "react";
-import { IconButton } from "./TooltipControls";
-import { clipboard } from "electron";
 import { MainContext } from "../views/MainWindow";
+import { IconButton } from "./TooltipControls";
 
 export interface ICopyClipboardInputProps {
   inputValue: string;

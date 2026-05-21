@@ -1,18 +1,15 @@
-import InstallerDialog from "./views/InstallerDialog";
-import { installerUIReducer } from "./reducers/installerUI";
-import { initGameSupport } from "./utils/gameSupport";
-import type { IChoiceType } from "./types/interface";
 import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IMod } from "../mod_management/types/IMod";
 import { getSafe } from "../../util/storeHelper";
+import type { IMod } from "../mod_management/types/IMod";
+import { installerUIReducer } from "./reducers/installerUI";
+import type { IChoiceType } from "./types/interface";
+import { initGameSupport } from "./utils/gameSupport";
+import InstallerDialog from "./views/InstallerDialog";
 
 function init(context: IExtensionContext): boolean {
   initGameSupport(context.api);
 
-  context.registerReducer(
-    ["session", "fomod", "installer", "dialog"],
-    installerUIReducer,
-  );
+  context.registerReducer(["session", "fomod", "installer", "dialog"], installerUIReducer);
 
   context.registerDialog("fomod-installer", InstallerDialog);
 
@@ -35,8 +32,7 @@ function init(context: IExtensionContext): boolean {
         (step?.groups ?? [])
           .filter((group) => group.choices.length > 0)
           .map(
-            (group) =>
-              `${group.name} = ${group.choices.map((choice) => choice.name).join(", ")}`,
+            (group) => `${group.name} = ${group.choices.map((choice) => choice.name).join(", ")}`,
           ),
       );
       if (options.length === 0) {

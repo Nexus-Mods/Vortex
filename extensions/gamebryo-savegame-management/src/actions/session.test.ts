@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 
 import type { ISavegame } from "../types/ISavegame";
-
 import * as sessionActions from "./session";
 
 describe("setSavegames", () => {
@@ -41,13 +40,7 @@ describe("updateSavegame", () => {
 
 describe("setSavegameAttribute", () => {
   it("creates the correct action", () => {
-    expect(
-      sessionActions.setSavegameAttribute(
-        "savegame1",
-        "attribute1",
-        "new value",
-      ),
-    ).toEqual({
+    expect(sessionActions.setSavegameAttribute("savegame1", "attribute1", "new value")).toEqual({
       error: false,
       type: "SET_SAVEGAME_ATTRIBUTE",
       payload: { id: "savegame1", attribute: "attribute1", value: "new value" },

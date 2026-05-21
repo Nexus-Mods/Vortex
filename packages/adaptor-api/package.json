@@ -6,21 +6,18 @@
   "type": "module",
   "scripts": {
     "build": "pnpm tsdown",
-    "dist": "pnpm tsdown",
-    "typecheck": "pnpm tsc",
+    "typecheck": "pnpm tsc -p ./tsconfig.json",
     "test": "pnpm vitest run",
-    "lint": "pnpm eslint --concurrency auto .",
-    "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
-  },
-  "dependencies": {
-    "@vortex/fs": "workspace:*"
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto ."
   },
   "peerDependencies": {
     "rolldown": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "rolldown": "catalog:"
+    "rolldown": "catalog:",
+    "vite-plugin-doctest": "catalog:"
   },
   "exports": {
     ".": {
@@ -63,20 +60,35 @@
       "import": "./dist/contracts/glob.js",
       "require": "./dist/contracts/glob.cjs"
     },
+    "./contracts/load-order": {
+      "development": "./src/contracts/load-order.ts",
+      "import": "./dist/contracts/load-order.js",
+      "require": "./dist/contracts/load-order.cjs"
+    },
+    "./contracts/mod-files": {
+      "development": "./src/contracts/mod-files.ts",
+      "import": "./dist/contracts/mod-files.js",
+      "require": "./dist/contracts/mod-files.cjs"
+    },
     "./contracts/ping": {
       "development": "./src/contracts/ping.ts",
       "import": "./dist/contracts/ping.js",
       "require": "./dist/contracts/ping.cjs"
     },
+    "./contracts/prelaunch": {
+      "development": "./src/contracts/prelaunch.ts",
+      "import": "./dist/contracts/prelaunch.js",
+      "require": "./dist/contracts/prelaunch.cjs"
+    },
+    "./fs": {
+      "development": "./src/fs/lib.ts",
+      "import": "./dist/fs/index.js",
+      "require": "./dist/fs/index.cjs"
+    },
     "./plugin": {
       "development": "./src/plugin.ts",
       "import": "./dist/plugin.js",
       "require": "./dist/plugin.cjs"
-    },
-    "./stores/lib": {
-      "development": "./src/stores/lib.ts",
-      "import": "./dist/stores/lib.js",
-      "require": "./dist/stores/lib.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -114,17 +126,29 @@
         "import": "./dist/contracts/glob.js",
         "require": "./dist/contracts/glob.cjs"
       },
+      "./contracts/load-order": {
+        "import": "./dist/contracts/load-order.js",
+        "require": "./dist/contracts/load-order.cjs"
+      },
+      "./contracts/mod-files": {
+        "import": "./dist/contracts/mod-files.js",
+        "require": "./dist/contracts/mod-files.cjs"
+      },
       "./contracts/ping": {
         "import": "./dist/contracts/ping.js",
         "require": "./dist/contracts/ping.cjs"
       },
+      "./contracts/prelaunch": {
+        "import": "./dist/contracts/prelaunch.js",
+        "require": "./dist/contracts/prelaunch.cjs"
+      },
+      "./fs": {
+        "import": "./dist/fs/index.js",
+        "require": "./dist/fs/index.cjs"
+      },
       "./plugin": {
         "import": "./dist/plugin.js",
         "require": "./dist/plugin.cjs"
-      },
-      "./stores/lib": {
-        "import": "./dist/stores/lib.js",
-        "require": "./dist/stores/lib.cjs"
       },
       "./package.json": "./package.json"
     }

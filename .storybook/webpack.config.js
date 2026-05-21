@@ -25,12 +25,7 @@ module.exports = ({ config, mode }) => {
         options: {
           debug: true,
           join: (fileName, options) => {
-            const bsRoot = path.join(
-              "node_modules",
-              "bootstrap-sass",
-              "assets",
-              "stylesheets",
-            );
+            const bsRoot = path.join("node_modules", "bootstrap-sass", "assets", "stylesheets");
 
             return (uri) => {
               if (uri.indexOf("fonts/bootstrap") !== -1) {
@@ -45,10 +40,7 @@ module.exports = ({ config, mode }) => {
         loader: "sass-loader",
         options: {
           sassOptions: {
-            includePaths: [
-              `../assets`,
-              path.join(__dirname, "..", "node_modules"),
-            ],
+            includePaths: [`../assets`, path.join(__dirname, "..", "node_modules")],
           },
         },
       },

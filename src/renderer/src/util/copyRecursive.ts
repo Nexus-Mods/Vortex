@@ -1,6 +1,7 @@
-import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
+
+import PromiseBB from "bluebird";
 
 const MAX_PARALLEL_DIR = 16;
 const MAX_PARALLEL_FILE = 4;
@@ -11,11 +12,7 @@ interface IQueueEntry {
   isDir: boolean;
 }
 
-function copyFile(
-  source: string,
-  destination: string,
-  callback: (err: Error | null) => void,
-) {
+function copyFile(source: string, destination: string, callback: (err: Error | null) => void) {
   const readStream = fs.createReadStream(source, {
     highWaterMark: BUFFER_SIZE,
   } as any);
@@ -137,10 +134,7 @@ function copyRecursive(source: string, destination: string): PromiseBB<void> {
       while (slots["file"] > 0 && queue["file"].length > 0) {
         next("file");
       }
-      if (
-        slots["dir"] === MAX_PARALLEL_DIR &&
-        slots["file"] === MAX_PARALLEL_FILE
-      ) {
+      if (slots["dir"] === MAX_PARALLEL_DIR && slots["file"] === MAX_PARALLEL_FILE) {
         return resolve();
       }
     }

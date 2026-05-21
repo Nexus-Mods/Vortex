@@ -6,19 +6,13 @@
   "type": "module",
   "scripts": {
     "build": "node ./build.mjs",
-    "dist": "node ./build.mjs",
     "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
   },
   "module": "./dist/index.mjs",
   "vortex:requires": [
     "vortex:host/filesystem"
   ],
-  "devDependencies": {
-    "@nexusmods/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*"
-  },
   "peerDependencies": {
-    "@nexusmods/adaptor-api": "workspace:*",
-    "@vortex/fs": "workspace:*"
+    "@nexusmods/adaptor-api": "workspace:*"
   }
 }

@@ -1,6 +1,4 @@
 {
-  "This collection has {{count}} optional mods which are not required to complete the installation but have been recommended by the curator. To view these mods, click the button below.":
-    "This collection has an optional mod which is not required to complete the installation but has been recommended by the curator. To view this mod, click the button below.",
-  "This collection has {{count}} optional mods which are not required to complete the installation but have been recommended by the curator. To view these mods, click the button below._plural":
-    "This collection has {{count}} optional mods which are not required to complete the installation but have been recommended by the curator. To view these mods, click the button below."
+  "This collection has {{count}} optional mods which are not required to complete the installation but have been recommended by the curator. To view these mods, click the button below.": "This collection has an optional mod which is not required to complete the installation but has been recommended by the curator. To view this mod, click the button below.",
+  "This collection has {{count}} optional mods which are not required to complete the installation but have been recommended by the curator. To view these mods, click the button below._plural": "This collection has {{count}} optional mods which are not required to complete the installation but have been recommended by the curator. To view these mods, click the button below."
 }

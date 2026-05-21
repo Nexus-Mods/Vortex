@@ -1,6 +1,8 @@
 import * as path from "path";
-import * as fs from "../fs";
+
 import { parse } from "simple-vdf";
+
+import * as fs from "../fs";
 import { log } from "../log";
 
 export interface IProtonInfo {
@@ -12,10 +14,7 @@ export interface IProtonInfo {
 /**
  * Check if a game uses Proton by looking for its compatdata folder
  */
-export async function detectProtonUsage(
-  steamAppsPath: string,
-  appId: string,
-): Promise<boolean> {
+export async function detectProtonUsage(steamAppsPath: string, appId: string): Promise<boolean> {
   const compatDataPath = path.join(steamAppsPath, "compatdata", appId);
   try {
     await fs.statAsync(compatDataPath);
@@ -28,10 +27,7 @@ export async function detectProtonUsage(
 /**
  * Get the compatdata path for a game
  */
-export function getCompatDataPath(
-  steamAppsPath: string,
-  appId: string,
-): string {
+export function getCompatDataPath(steamAppsPath: string, appId: string): string {
   return path.join(steamAppsPath, "compatdata", appId);
 }
 
@@ -53,8 +49,7 @@ export async function getConfiguredProtonName(
   try {
     const configData = await fs.readFileAsync(configPath, "utf8");
     const config = parse(configData.toString()) as any;
-    const mapping =
-      config?.InstallConfigStore?.Software?.Valve?.Steam?.CompatToolMapping;
+    const mapping = config?.InstallConfigStore?.Software?.Valve?.Steam?.CompatToolMapping;
     return mapping?.[appId]?.name;
   } catch (err: any) {
     log("debug", "Could not read Steam config.vdf", { error: err?.message });
@@ -139,11 +134,7 @@ export async function resolveProtonPath(
 ): Promise<string | undefined> {
   // 1. Check custom compatibility tools directory (GE-Proton, etc.)
   // Custom tools use their config name as the folder name directly
-  const customToolPath = path.join(
-    steamPath,
-    "compatibilitytools.d",
-    protonName,
-  );
+  const customToolPath = path.join(steamPath, "compatibilitytools.d", protonName);
   if (await pathExists(customToolPath)) {
     return customToolPath;
   }
@@ -161,9 +152,7 @@ export async function resolveProtonPath(
   if (keyword) {
     try {
       const entries = await fs.readdirAsync(commonPath);
-      const protonDirs = entries.filter((e) =>
-        e.toLowerCase().startsWith("proton"),
-      );
+      const protonDirs = entries.filter((e) => e.toLowerCase().startsWith("proton"));
 
       for (const dir of protonDirs) {
         if (folderMatchesKeyword(dir, keyword)) {
@@ -183,9 +172,7 @@ export async function resolveProtonPath(
 /**
  * Find the latest installed Proton version (fallback)
  */
-export async function findLatestProton(
-  steamPath: string,
-): Promise<string | undefined> {
+export async function findLatestProton(steamPath: string): Promise<string | undefined> {
   const commonPath = path.join(steamPath, "steamapps", "common");
   try {
     const entries = await fs.readdirAsync(commonPath);

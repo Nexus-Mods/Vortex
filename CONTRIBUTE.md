@@ -17,7 +17,7 @@ Before you start, make sure you have:
     - [Windows setup]
     - Linux:
         - [Arch-based setup] (Arch, CachyOS, Manjaro)
-        - [Debian-based setup] (Debian, Ubuntu, Pop!_OS, Linux Mint)
+        - [Debian-based setup] (Debian, Ubuntu, Pop!\_OS, Linux Mint)
         - [Fedora setup]
         - [NixOS setup]
     - If your distribution is not listed, try [Generic Installation Instructions].

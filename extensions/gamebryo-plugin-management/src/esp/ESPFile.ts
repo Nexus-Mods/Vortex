@@ -1,4 +1,5 @@
 import * as fs from "fs";
+
 // Schema definitions in ./schemas.ts serve as the declarative format spec.
 // This module reads directly from the Buffer for performance.
 import {
@@ -11,11 +12,7 @@ import {
 import { InvalidFileError, InvalidRecordError } from "./errors";
 
 /** Read a null-terminated ASCII string from a buffer region. */
-function readNullTermString(
-  buf: Buffer,
-  offset: number,
-  maxLen: number,
-): string {
+function readNullTermString(buf: Buffer, offset: number, maxLen: number): string {
   const limit = offset + maxLen;
   const nullPos = buf.indexOf(0, offset);
   const end = nullPos >= 0 && nullPos < limit ? nullPos : limit;
@@ -143,10 +140,7 @@ export class ESPFile {
       sizeOverride = 0;
 
       if (offset + payloadSize > buf.length) {
-        throw new InvalidRecordError(
-          "sub-record incomplete",
-          this._filePath,
-        );
+        throw new InvalidRecordError("sub-record incomplete", this._filePath);
       }
 
       switch (tag) {
@@ -160,9 +154,7 @@ export class ESPFile {
         }
         case TAG_MAST: {
           if (payloadSize > 0) {
-            this._masters.push(
-              readNullTermString(buf, offset, payloadSize),
-            );
+            this._masters.push(readNullTermString(buf, offset, payloadSize));
           }
           break;
         }
@@ -174,11 +166,7 @@ export class ESPFile {
         }
         case TAG_SNAM: {
           if (payloadSize > 0) {
-            this._description = readNullTermString(
-              buf,
-              offset,
-              payloadSize,
-            );
+            this._description = readNullTermString(buf, offset, payloadSize);
           }
           break;
         }
@@ -242,8 +230,7 @@ export class ESPFile {
       await fh.read(flagBuf, 0, 4, 8);
       let flags = flagBuf.readUInt32LE(0);
 
-      const flagBit =
-        this._gameMode === "starfield" ? SF_FLAG_LIGHT : FLAG_LIGHT;
+      const flagBit = this._gameMode === "starfield" ? SF_FLAG_LIGHT : FLAG_LIGHT;
       flags = enabled ? flags | flagBit : flags & ~flagBit;
 
       flagBuf.writeUInt32LE(flags, 0);

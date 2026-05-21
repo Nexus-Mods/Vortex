@@ -2,10 +2,10 @@
  * Helper functions when working with immutable state (or immutable objects in general)
  */
 
-import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
+
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IProfile } from "../types/api";
 
 function clone<T>(input: T): T {
@@ -23,11 +23,7 @@ function clone<T>(input: T): T {
  * @param {T} fallback
  * @returns {T}
  */
-export function getSafe<T>(
-  state: any,
-  path: Array<string | number | undefined>,
-  fallback: T,
-): T {
+export function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T {
   if (!path || path.length === 0) {
     return state ?? fallback;
   }
@@ -44,20 +40,14 @@ export function getSafe<T>(
 /**
  * case insensitive variant of getSafe
  */
-export function getSafeCI<T>(
-  state: any,
-  path: Array<string | number>,
-  fallback: T,
-): T {
+export function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T {
   let current = state;
   const getCaseCorrected = (obj: any, prop: string | number) => {
     if (typeof prop === "number") {
       return obj[prop] !== undefined ? prop : undefined;
     }
     const keys = Object.keys(obj);
-    const idx = keys
-      .map((key) => key.toLowerCase())
-      .indexOf(prop.toLowerCase());
+    const idx = keys.map((key) => key.toLowerCase()).indexOf(prop.toLowerCase());
     if (idx === -1) {
       return undefined;
     }
@@ -78,11 +68,7 @@ export function getSafeCI<T>(
   return current;
 }
 
-export function mutateSafe<T>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-) {
+export function mutateSafe<T>(state: T, path: Array<string | number>, value: any) {
   const firstElement = path[0];
   if (path.length === 1) {
     state[firstElement] = value;
@@ -104,11 +90,7 @@ export function mutateSafe<T>(
  * @param {*} value
  * @returns {T}
  */
-export function setSafe<T extends object>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
+export function setSafe<T extends object>(state: T, path: Array<string | number>, value: any): T {
   if (path.length === 0) {
     return { ...value };
   }
@@ -168,11 +150,7 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  * @param {*} value
  * @returns {T}
  */
-export function changeOrNop<T>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
+export function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T {
   const firstElement: string | number = path[0];
   let result = state;
   if (path.length === 1) {
@@ -225,36 +203,22 @@ export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   return result;
 }
 
-export function setDefaultArray<T>(
-  state: T,
-  path: Array<string | number>,
-  fallback: any[],
-): T {
+export function setDefaultArray<T>(state: T, path: Array<string | number>, fallback: any[]): T {
   const firstElement = path[0];
   const copy = Array.isArray(state) ? state.slice() : { ...(state as any) };
 
   if (path.length === 0) {
-    return copy !== undefined && Array.isArray(copy)
-      ? (copy as T)
-      : (fallback as T);
+    return copy !== undefined && Array.isArray(copy) ? (copy as T) : (fallback as T);
   } else if (path.length === 1) {
     copy[firstElement] =
-      !Object.hasOwnProperty.call(copy, firstElement) ||
-      !Array.isArray(copy[firstElement])
+      !Object.hasOwnProperty.call(copy, firstElement) || !Array.isArray(copy[firstElement])
         ? fallback
         : copy[firstElement].slice();
   } else {
-    if (
-      !Object.hasOwnProperty.call(copy, firstElement) ||
-      typeof copy[firstElement] !== "object"
-    ) {
+    if (!Object.hasOwnProperty.call(copy, firstElement) || typeof copy[firstElement] !== "object") {
       copy[firstElement] = {};
     }
-    copy[firstElement] = setDefaultArray(
-      copy[firstElement],
-      path.slice(1),
-      fallback,
-    );
+    copy[firstElement] = setDefaultArray(copy[firstElement], path.slice(1), fallback);
   }
   return copy;
 }
@@ -266,11 +230,7 @@ export function setDefaultArray<T>(
  * @param path path to the item to update
  * @param value the value to add.
  */
-export function pushSafe<T>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
+export function pushSafe<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
   getSafe(copy, path, Array<unknown>())?.push(value);
   return copy;
@@ -282,11 +242,7 @@ export function pushSafe<T>(
  * @param path path to the item to update
  * @param value the value to add.
  */
-export function addUniqueSafe<T>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
+export function addUniqueSafe<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
   const arr = getSafe(copy, path, Array<unknown>());
   if (arr.indexOf(value) !== -1) {
@@ -306,11 +262,7 @@ export function addUniqueSafe<T>(
  * @param {*} value
  * @returns {T}
  */
-export function removeValue<T>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
+export function removeValue<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
   const list = getSafe(copy, path, Array<unknown>());
   const idx = list.indexOf(value);
@@ -353,11 +305,7 @@ export function removeValueIf<T extends object>(
  * @param {Object} value
  * @returns {T}
  */
-export function merge<T extends object>(
-  state: T,
-  path: Array<string | number>,
-  value: any,
-): T {
+export function merge<T extends object>(state: T, path: Array<string | number>, value: any): T {
   const newVal = { ...getSafe(state, path, {}), ...value };
   return setSafe(state, path, newVal);
 }
@@ -371,15 +319,10 @@ export function rehydrate<T extends object>(
 ): T {
   const inState = getSafe(inbound, path, undefined);
 
-  return inState !== undefined
-    ? merge(replace ? defaults : state, [], inState)
-    : state;
+  return inState !== undefined ? merge(replace ? defaults : state, [], inState) : state;
 }
 
-function waitUntil(
-  predicate: () => boolean,
-  interval: number = 100,
-): PromiseBB<void> {
+function waitUntil(predicate: () => boolean, interval: number = 100): PromiseBB<void> {
   return new PromiseBB<void>((resolve, reject) => {
     setTimeout(() => {
       if (predicate()) {

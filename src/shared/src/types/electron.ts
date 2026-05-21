@@ -138,11 +138,7 @@ export interface WebPreferences {
   spellcheck?: boolean;
   textAreasAreResizable?: boolean;
   transparent?: boolean;
-  v8CacheOptions?:
-    | "none"
-    | "code"
-    | "bypassHeatCheck"
-    | "bypassHeatCheckAndEagerCompile";
+  v8CacheOptions?: "none" | "code" | "bypassHeatCheck" | "bypassHeatCheckAndEagerCompile";
   webgl?: boolean;
   webSecurity?: boolean;
   webviewTag?: boolean;
@@ -271,14 +267,7 @@ export type MenuItemRole =
 
 export interface MenuItemConstructorOptions {
   role?: MenuItemRole;
-  type?:
-    | "normal"
-    | "separator"
-    | "submenu"
-    | "checkbox"
-    | "radio"
-    | "header"
-    | "palette";
+  type?: "normal" | "separator" | "submenu" | "checkbox" | "radio" | "header" | "palette";
   label?: string;
   sublabel?: string;
   toolTip?: string;
@@ -320,11 +309,7 @@ export interface LoginItemSettings {
 export interface Settings {
   openAtLogin?: boolean;
   openAsHidden?: boolean;
-  type?:
-    | "mainAppService"
-    | "agentService"
-    | "daemonService"
-    | "loginItemService";
+  type?: "mainAppService" | "agentService" | "daemonService" | "loginItemService";
   serviceName?: string;
   path?: string;
   args?: string[];

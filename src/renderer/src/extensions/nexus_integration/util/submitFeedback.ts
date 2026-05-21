@@ -1,10 +1,10 @@
-import * as fs from "../../../util/fs";
-
 import type { IFeedbackResponse } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";
 import type ZipT from "node-7z";
 import { tmpName } from "tmp";
+
+import * as fs from "../../../util/fs";
 
 function zipFiles(files: string[]): PromiseBB<string> {
   if (files.length === 0) {
@@ -20,9 +20,7 @@ function zipFiles(files: string[]): PromiseBB<string> {
       },
       (err, tmpPath: string) => (err !== null ? reject(err) : resolve(tmpPath)),
     );
-  }).then((tmpPath) =>
-    task.add(tmpPath, files, { ssw: true }).then(() => tmpPath),
-  );
+  }).then((tmpPath) => task.add(tmpPath, files, { ssw: true }).then(() => tmpPath));
 }
 
 function submitFeedback(

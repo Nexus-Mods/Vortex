@@ -22,4 +22,3 @@ Valid runtime identifiers:
 
 - Windows: `win-x64`
 - Linux: `linux-x64`
-

@@ -1,9 +1,8 @@
+import update from "immutability-helper";
+
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import type { ISettingsAutomation } from "../../../types/IState";
-
 import * as actions from "../actions/automation";
-
-import update from "immutability-helper";
 
 /**
  * reducer for changes to automation settings
@@ -16,8 +15,7 @@ const automationReducer: IReducerSpec<ISettingsAutomation> = {
       update(state, { install: { $set: payload } }),
     [actions.setAutoEnable as any]: (state, payload) =>
       update(state, { enable: { $set: payload } }),
-    [actions.setAutoStart as any]: (state, payload) =>
-      update(state, { start: { $set: payload } }),
+    [actions.setAutoStart as any]: (state, payload) => update(state, { start: { $set: payload } }),
     [actions.setStartMinimized as any]: (state, payload) =>
       update(state, { minimized: { $set: payload } }),
   },

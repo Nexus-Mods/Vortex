@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useDispatch } from "react-redux";
+
 import FlexLayout from "../../../controls/FlexLayout";
 import FormInput from "../../../controls/FormInput";
 import { IconButton } from "../../../controls/TooltipControls";
@@ -42,11 +43,7 @@ function URLInput(props: IURLInputProps) {
 
   return (
     <FlexLayout type="row">
-      <FormInput
-        style={{ flex: "1 1 0" }}
-        value={mod.attributes?.url}
-        onChange={updateURL}
-      />
+      <FormInput style={{ flex: "1 1 0" }} value={mod.attributes?.url} onChange={updateURL} />
       <IconButton
         icon="open-in-browser"
         disabled={!isURLValid(mod.attributes?.url)}

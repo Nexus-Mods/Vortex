@@ -1,16 +1,16 @@
-import Icon from "../../../controls/Icon";
-import { ComponentEx } from "../../../controls/ComponentEx";
-import type { TFunction } from "../../../util/i18n";
-import lazyRequire from "../../../util/lazyRequire";
-import { log } from "../../../util/log";
-
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import type * as DraggabillyT from "draggabilly";
 import type * as PackeryT from "packery";
 import type { ResizeDirection } from "re-resizable";
 import { Resizable } from "re-resizable";
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+
+import { ComponentEx } from "../../../controls/ComponentEx";
+import Icon from "../../../controls/Icon";
+import type { TFunction } from "../../../util/i18n";
+import lazyRequire from "../../../util/lazyRequire";
+import { log } from "../../../util/log";
 
 const Draggabilly = lazyRequire<typeof DraggabillyT>(() => ({
   default: require("draggabilly"),
@@ -89,9 +89,7 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
     });
   }
 
-  public UNSAFE_componentWillReceiveProps(
-    newProps: React.PropsWithChildren<IPackeryItemProps>,
-  ) {
+  public UNSAFE_componentWillReceiveProps(newProps: React.PropsWithChildren<IPackeryItemProps>) {
     if (!newProps.fixed && newProps.packery !== this.props.packery) {
       this.mPackeryItem = undefined;
       this.makeDraggable(newProps);
@@ -149,10 +147,7 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
           <div key="drag-handle" className="drag-handle" />
           <div className="packery-buttons">
             {editable && closable ? (
-              <Button
-                className="dashlet-close-button"
-                onClick={this.dismissWidget}
-              >
+              <Button className="dashlet-close-button" onClick={this.dismissWidget}>
                 <Icon name="close" />
               </Button>
             ) : null}
@@ -173,10 +168,7 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
     this.mResizeRef = x;
   };
 
-  private resizeStart = (
-    e: React.MouseEvent<HTMLElement>,
-    dir: ResizeDirection,
-  ) => {
+  private resizeStart = (e: React.MouseEvent<HTMLElement>, dir: ResizeDirection) => {
     try {
       this.packeryItem.enablePlacing();
       this.nextState.resizing = true;

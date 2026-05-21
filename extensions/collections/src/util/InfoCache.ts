@@ -1,16 +1,14 @@
-import {
-  updateCollectionInfo,
-  updateRevisionInfo,
-} from "../actions/persistent";
+import * as path from "path";
+
+import { ICollection, IRevision } from "@nexusmods/nexus-api";
+import { log, selectors, types, util } from "@nexusmods/vortex-api";
+
+import { updateCollectionInfo, updateRevisionInfo } from "../actions/persistent";
 import { CACHE_EXPIRE_MS, MOD_TYPE } from "../constants";
 import { ICollectionModRule } from "../types/ICollection";
 import { IStateEx } from "../types/IStateEx";
 import { computeCacheEvictions } from "./cacheEvictions";
 import { readCollection } from "./readCollection";
-
-import { ICollection, IRevision } from "@nexusmods/nexus-api";
-import * as path from "path";
-import { log, selectors, types, util } from "vortex-api";
 
 /**
  * manages caching of collection and revision info
@@ -22,40 +20,27 @@ class InfoCache {
   private mApi: types.IExtensionApi;
   private mCacheRevRequests: { [revId: string]: Promise<IRevision> } = {};
   private mCacheColRequests: { [revId: string]: Promise<ICollection> } = {};
-  private mCacheColRules: { [revId: string]: Promise<ICollectionModRule[]> } =
-    {};
+  private mCacheColRules: { [revId: string]: Promise<ICollectionModRule[]> } = {};
 
   constructor(api: types.IExtensionApi) {
     this.mApi = api;
   }
 
-  public async getCollectionModRules(
-    revisionId: number,
-    collection: types.IMod,
-    gameId: string,
-  ) {
+  public async getCollectionModRules(revisionId: number, collection: types.IMod, gameId: string) {
     const cacheId = revisionId ?? collection.id;
     if (this.mCacheColRules[cacheId] === undefined) {
-      this.mCacheColRules[cacheId] = this.cacheCollectionModRules(
-        revisionId,
-        collection,
-        gameId,
-      );
+      this.mCacheColRules[cacheId] = this.cacheCollectionModRules(revisionId, collection, gameId);
     }
 
     return this.mCacheColRules[cacheId];
   }
 
-  public async getCollectionInfo(
-    slug: string,
-    forceFetch?: boolean,
-  ): Promise<ICollection> {
+  public async getCollectionInfo(slug: string, forceFetch?: boolean): Promise<ICollection> {
     const { store } = this.mApi;
     if (slug === undefined) {
       return;
     }
-    const collections =
-      store.getState().persistent.collections.collections ?? {};
+    const collections = store.getState().persistent.collections.collections ?? {};
     if (
       forceFetch ||
       collections[slug]?.timestamp === undefined ||
@@ -85,9 +70,7 @@ class InfoCache {
       });
       util.batchDispatch(
         store,
-        collectionDrops.map((coll) =>
-          updateCollectionInfo(coll, undefined, undefined),
-        ),
+        collectionDrops.map((coll) => updateCollectionInfo(coll, undefined, undefined)),
       );
     }
 
@@ -97,9 +80,7 @@ class InfoCache {
       });
       util.batchDispatch(
         store,
-        revisionDrops.map((rev) =>
-          updateRevisionInfo(Number(rev), undefined, undefined),
-        ),
+        revisionDrops.map((rev) => updateRevisionInfo(Number(rev), undefined, undefined)),
       );
     }
   }
@@ -127,15 +108,9 @@ class InfoCache {
     if (
       fetchBehavior === "force" ||
       revisions[revisionId]?.timestamp === undefined ||
-      (Date.now() - revisions[revisionId].timestamp > CACHE_EXPIRE_MS &&
-        fetchBehavior === "allow")
+      (Date.now() - revisions[revisionId].timestamp > CACHE_EXPIRE_MS && fetchBehavior === "allow")
     ) {
-      this.fetchRevisionInfo(
-        revisions,
-        revisionId,
-        collectionSlug,
-        revisionNumber,
-      );
+      this.fetchRevisionInfo(revisions, revisionId, collectionSlug, revisionNumber);
       return this.mCacheRevRequests[revisionId];
     }
 
@@ -143,9 +118,7 @@ class InfoCache {
       return Promise.resolve(undefined);
     }
 
-    const collectionInfo = await this.getCollectionInfo(
-      revisions[revisionId].info.collection.slug,
-    );
+    const collectionInfo = await this.getCollectionInfo(revisions[revisionId].info.collection.slug);
 
     return {
       ...revisions[revisionId].info,
@@ -190,8 +163,7 @@ class InfoCache {
     const colMod =
       collection ??
       Object.values(mods).find(
-        (iter) =>
-          iter.type === MOD_TYPE && iter.attributes?.revisionId === revisionId,
+        (iter) => iter.type === MOD_TYPE && iter.attributes?.revisionId === revisionId,
       );
     if (colMod?.installationPath === undefined) {
       return [];
@@ -205,21 +177,15 @@ class InfoCache {
       return collectionInfo.modRules;
     } catch (err) {
       if (err.code !== "ENOENT") {
-        this.mApi.showErrorNotification(
-          "Failed to cache collection mod rules",
-          err,
-          {
-            allowReport: false,
-          },
-        );
+        this.mApi.showErrorNotification("Failed to cache collection mod rules", err, {
+          allowReport: false,
+        });
       }
       return [];
     }
   }
 
-  private async cacheCollectionInfo(
-    collectionSlug: string,
-  ): Promise<ICollection> {
+  private async cacheCollectionInfo(collectionSlug: string): Promise<ICollection> {
     const { store } = this.mApi;
 
     const collectionInfo: ICollection = (
@@ -227,11 +193,7 @@ class InfoCache {
     )[0];
     if (!!collectionInfo?.id) {
       store.dispatch(
-        updateCollectionInfo(
-          collectionInfo.id.toString(),
-          collectionInfo,
-          Date.now(),
-        ),
+        updateCollectionInfo(collectionInfo.id.toString(), collectionInfo, Date.now()),
       );
       delete this.mCacheColRequests[collectionInfo.id.toString()];
     }
@@ -247,11 +209,7 @@ class InfoCache {
     // we cache revision info and collection info separately to reduce duplication
     // in the application state
     store.dispatch(
-      updateCollectionInfo(
-        revisionInfo.collection.id.toString(),
-        revisionInfo.collection,
-        now,
-      ),
+      updateCollectionInfo(revisionInfo.collection.id.toString(), revisionInfo.collection, now),
     );
     store.dispatch(
       updateRevisionInfo(
@@ -282,11 +240,7 @@ class InfoCache {
     }
 
     const revisionInfo = (
-      await this.mApi.emitAndAwait(
-        "get-nexus-collection-revision",
-        collectionSlug,
-        revisionNumber,
-      )
+      await this.mApi.emitAndAwait("get-nexus-collection-revision", collectionSlug, revisionNumber)
     )[0];
     const now = Date.now();
 

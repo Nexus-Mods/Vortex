@@ -65,10 +65,7 @@ function globBodyToRegex(glob: string): string {
       i += 3;
       continue;
     }
-    if (
-      glob.startsWith("/**", i) &&
-      (i + 3 === glob.length || glob[i + 3] === "/")
-    ) {
+    if (glob.startsWith("/**", i) && (i + 3 === glob.length || glob[i + 3] === "/")) {
       out += "(?:/.*)?";
       i += 3;
       continue;

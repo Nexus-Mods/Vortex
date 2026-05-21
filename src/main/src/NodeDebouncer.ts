@@ -11,13 +11,6 @@ export default class Debouncer extends GenericDebouncer<
     reset?: boolean,
     triggerImmediately: boolean = false,
   ) {
-    super(
-      setTimeout,
-      clearTimeout,
-      func,
-      debounceMS,
-      reset,
-      triggerImmediately,
-    );
+    super(setTimeout, clearTimeout, func, debounceMS, reset, triggerImmediately);
   }
 }

@@ -1,6 +1,7 @@
-import Promise from "bluebird";
 import * as path from "path";
-import { fs } from "vortex-api";
+
+import { fs } from "@nexusmods/vortex-api";
+import Promise from "bluebird";
 
 /**
  * find all files in a directory that match a certain name filter and are newer
@@ -31,9 +32,7 @@ function filesNewer(
       );
     })
     .then((fileStats: Array<{ name: string; stats: fs.Stats }>) =>
-      fileStats
-        .filter((file) => file.stats.mtime > minAge)
-        .map((file) => file.name),
+      fileStats.filter((file) => file.stats.mtime > minAge).map((file) => file.name),
     );
 }
 

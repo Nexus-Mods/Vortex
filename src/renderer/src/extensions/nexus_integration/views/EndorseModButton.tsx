@@ -1,10 +1,10 @@
+import type { TFunction } from "i18next";
+import * as React from "react";
+
+import { ComponentEx } from "../../../controls/ComponentEx";
 import Icon from "../../../controls/Icon";
 import Spinner from "../../../controls/Spinner";
 import { IconButton } from "../../../controls/TooltipControls";
-import { ComponentEx } from "../../../controls/ComponentEx";
-
-import type { TFunction } from "i18next";
-import * as React from "react";
 
 export interface IProps {
   gameId: string;

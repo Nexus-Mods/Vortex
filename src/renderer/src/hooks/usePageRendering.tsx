@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useReducer } from "react";
 import { useSelector } from "react-redux";
 
 import type { IMainPage } from "../types/IMainPage";
-
 import {
   mainPage as mainPageSelector,
   secondaryPage as secondaryPageSelector,
@@ -14,8 +13,7 @@ export const usePageRendering = () => {
   const secondaryPage = useSelector(secondaryPageSelector);
 
   const [loadedPages, setLoadedPages] = useReducer(
-    (prev: string[], pageId: string) =>
-      prev.includes(pageId) ? prev : [...prev, pageId],
+    (prev: string[], pageId: string) => (prev.includes(pageId) ? prev : [...prev, pageId]),
     mainPage ? [mainPage] : [],
   );
 

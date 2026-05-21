@@ -1,3 +1,20 @@
+import * as path from "path";
+
+import { AlreadyDownloaded } from "@vortex/shared/errors";
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import SevenZip from "node-7z";
+import { SemVer } from "semver";
+import { generate as shortid } from "shortid";
+
+import type {
+  ExtensionType,
+  IAvailableExtension,
+  IExtension,
+  IExtensionDownloadInfo,
+  IExtensionManifest,
+  ISelector,
+} from "../../types/extensions";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IDownload, IState } from "../../types/IState";
 import {
@@ -13,31 +30,10 @@ import { log } from "../../util/log";
 import { jsonRequest, rawRequest } from "../../util/network";
 import { getSafe } from "../../util/storeHelper";
 import { INVALID_FILENAME_RE, truthy } from "../../util/util";
-
-import {
-  addLocalDownload,
-  setDownloadModInfo,
-} from "../download_management/actions/state";
-import { AlreadyDownloaded } from "@vortex/shared/errors";
+import { addLocalDownload, setDownloadModInfo } from "../download_management/actions/state";
 import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
-
 import installExtension from "./installExtension";
-import type {
-  ExtensionType,
-  IAvailableExtension,
-  IExtension,
-  IExtensionDownloadInfo,
-  IExtensionManifest,
-  ISelector,
-} from "../../types/extensions";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import SevenZip from "node-7z";
-import * as path from "path";
-import { SemVer } from "semver";
-import { generate as shortid } from "shortid";
 
 const caches: {
   __availableExtensions?: PromiseBB<{
@@ -96,12 +92,7 @@ function getAllDirectories(searchPath: string): PromiseBB<string[]> {
     .catch({ code: "ENOENT" }, () => []);
 }
 
-function applyExtensionInfo(
-  id: string,
-  bundled: boolean,
-  values: any,
-  fallback: any,
-): IExtension {
+function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback: any): IExtension {
   const res = {
     name: values.name || fallback.name || id,
     author: values.author || fallback.author || "Unknown",
@@ -126,19 +117,13 @@ function applyExtensionInfo(
   return res;
 }
 
-export function selectorMatch(
-  ext: IAvailableExtension,
-  selector: ISelector,
-): boolean {
+export function selectorMatch(ext: IAvailableExtension, selector: ISelector): boolean {
   if (selector === undefined) {
     return false;
   } else if (truthy(selector.modId)) {
     return ext.modId === selector.modId;
   } else if (truthy(selector.githubRawPath)) {
-    return (
-      ext.github === selector.github &&
-      ext.githubRawPath === selector.githubRawPath
-    );
+    return ext.github === selector.github && ext.githubRawPath === selector.githubRawPath;
   } else {
     return ext.github === selector.github;
   }
@@ -184,9 +169,7 @@ function readExtensionDir(
     .map((fullPath: string) => readExtensionInfo(fullPath, bundled));
 }
 
-export function readExtensions(
-  force: boolean,
-): PromiseBB<{ [extId: string]: IExtension }> {
+export function readExtensions(force: boolean): PromiseBB<{ [extId: string]: IExtension }> {
   if (caches.__installedExtensions === undefined || force) {
     caches.__installedExtensions = doReadExtensions();
   }
@@ -212,28 +195,20 @@ export function fetchAvailableExtensions(
   forceCache: boolean,
   forceDownload: boolean = false,
 ): PromiseBB<{ time: Date; extensions: IAvailableExtension[] }> {
-  if (
-    caches.__availableExtensions === undefined ||
-    forceCache ||
-    forceDownload
-  ) {
+  if (caches.__availableExtensions === undefined || forceCache || forceDownload) {
     caches.__availableExtensions = doFetchAvailableExtensions(forceDownload);
   }
   return caches.__availableExtensions;
 }
 
-function downloadExtensionList(
-  cachePath: string,
-): PromiseBB<IAvailableExtension[]> {
+function downloadExtensionList(cachePath: string): PromiseBB<IAvailableExtension[]> {
   log("info", "downloading extension list", { url: EXTENSION_URL });
   return PromiseBB.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
     .then((manifest) => {
       log("debug", "extension list received");
       return manifest.extensions.filter((ext) => ext.name !== undefined);
     })
-    .tap((extensions) =>
-      writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2)),
-    )
+    .tap((extensions) => writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2)))
     .tapCatch((err) => log("error", "failed to download extension list", err));
 }
 
@@ -268,9 +243,7 @@ function doFetchAvailableExtensions(
               return JSON.parse(data).extensions;
             } catch (err) {
               return PromiseBB.reject(
-                new DataInvalid(
-                  "Extension cache invalid, please try again later",
-                ),
+                new DataInvalid("Extension cache invalid, please try again later"),
               );
             }
           });
@@ -316,54 +289,35 @@ export function downloadAndInstallExtension(
         return PromiseBB.reject(new ProcessCanceled("No download found"));
       }
       api.store.dispatch(setDownloadModInfo(dlIds[0], "internal", true));
-      download = getSafe(
-        state,
-        ["persistent", "downloads", "files", dlIds[0]],
-        undefined,
-      );
+      download = getSafe(state, ["persistent", "downloads", "files", dlIds[0]], undefined);
       if (download === undefined) {
         return PromiseBB.reject(new Error("Download not found"));
       }
 
       return fetchAvailableExtensions(false);
     })
-    .then(
-      (availableExtensions: {
-        time: Date;
-        extensions: IAvailableExtension[];
-      }) => {
-        const extDetail = availableExtensions.extensions.find(
-          (iter) =>
-            (ext.modId === undefined || iter.modId === ext.modId) &&
-            (ext.fileId === undefined || iter.fileId === ext.fileId) &&
-            ext.name === iter.name,
-        );
+    .then((availableExtensions: { time: Date; extensions: IAvailableExtension[] }) => {
+      const extDetail = availableExtensions.extensions.find(
+        (iter) =>
+          (ext.modId === undefined || iter.modId === ext.modId) &&
+          (ext.fileId === undefined || iter.fileId === ext.fileId) &&
+          ext.name === iter.name,
+      );
 
-        const info: IExtension =
-          extDetail !== undefined
-            ? {
-                ..._.pick(extDetail, [
-                  "id",
-                  "name",
-                  "author",
-                  "version",
-                  "type",
-                ]),
-                bundled: false,
-                description: extDetail.description.short,
-                modId: ext.modId,
-              }
-            : undefined;
+      const info: IExtension =
+        extDetail !== undefined
+          ? {
+              ..._.pick(extDetail, ["id", "name", "author", "version", "type"]),
+              bundled: false,
+              description: extDetail.description.short,
+              modId: ext.modId,
+            }
+          : undefined;
 
-        const state: IState = api.store.getState();
-        const downloadPath = downloadPathForGame(state, SITE_ID);
-        return installExtension(
-          api,
-          path.join(downloadPath, download.localPath),
-          info,
-        );
-      },
-    )
+      const state: IState = api.store.getState();
+      const downloadPath = downloadPathForGame(state, SITE_ID);
+      return installExtension(api, path.join(downloadPath, download.localPath), info);
+    })
     .then(() => PromiseBB.resolve(true))
     .catch(UserCanceled, () => null)
     .catch(ProcessCanceled, () => {
@@ -468,9 +422,7 @@ export function downloadGithubRelease(
               (iter) => downloads[iter].localPath === err.fileName,
             );
 
-            return existingId !== undefined
-              ? resolve([existingId])
-              : reject(err);
+            return existingId !== undefined ? resolve([existingId]) : reject(err);
           }
           return reject(err);
         } else {
@@ -483,9 +435,7 @@ export function downloadGithubRelease(
   }).catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
     const state = api.getState();
     const downloads = state.persistent.downloads.files;
-    const dlId = Object.keys(downloads).find(
-      (iter) => downloads[iter].localPath === err.fileName,
-    );
+    const dlId = Object.keys(downloads).find((iter) => downloads[iter].localPath === err.fileName);
     return [dlId];
   });
 }
@@ -496,54 +446,41 @@ export function downloadFile(url: string, outputPath: string): PromiseBB<void> {
   );
 }
 
-function downloadGithubRawRecursive(
-  repo: string,
-  source: string,
-  destination: string,
-) {
-  const apiUrl =
-    githubApiUrl(repo, "contents", source) + "?ref=" + GAMES_BRANCH;
+function downloadGithubRawRecursive(repo: string, source: string, destination: string) {
+  const apiUrl = githubApiUrl(repo, "contents", source) + "?ref=" + GAMES_BRANCH;
 
-  return PromiseBB.resolve(rawRequest(apiUrl, { encoding: "utf8" })).then(
-    (content: string) => {
-      const data = JSON.parse(content);
-      if (!Array.isArray(data)) {
-        if (typeof data === "object" && data.message !== undefined) {
-          return PromiseBB.reject(
-            new ServiceTemporarilyUnavailable(data.message),
-          );
-        } else {
-          log("info", "unexpected response from github", content);
-          return PromiseBB.reject(
-            new Error("Unexpected response from github (see log file)"),
-          );
-        }
+  return PromiseBB.resolve(rawRequest(apiUrl, { encoding: "utf8" })).then((content: string) => {
+    const data = JSON.parse(content);
+    if (!Array.isArray(data)) {
+      if (typeof data === "object" && data.message !== undefined) {
+        return PromiseBB.reject(new ServiceTemporarilyUnavailable(data.message));
+      } else {
+        log("info", "unexpected response from github", content);
+        return PromiseBB.reject(new Error("Unexpected response from github (see log file)"));
       }
+    }
 
-      const repoFiles: string[] = data
-        .filter((iter) => iter.type === "file")
-        .map((iter) => iter.name);
+    const repoFiles: string[] = data
+      .filter((iter) => iter.type === "file")
+      .map((iter) => iter.name);
 
-      const repoDirs: string[] = data
-        .filter((iter) => iter.type === "dir")
-        .map((iter) => iter.name);
+    const repoDirs: string[] = data.filter((iter) => iter.type === "dir").map((iter) => iter.name);
 
-      return PromiseBB.map(repoFiles, (fileName) =>
-        downloadFile(
-          githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
-          path.join(destination, fileName),
-        ),
-      ).then(() =>
-        PromiseBB.map(repoDirs, (fileName) => {
-          const sourcePath = `${source}/${fileName}`;
-          const outPath = path.join(destination, fileName);
-          return fs
-            .mkdirAsync(outPath)
-            .then(() => downloadGithubRawRecursive(repo, sourcePath, outPath));
-        }),
-      );
-    },
-  );
+    return PromiseBB.map(repoFiles, (fileName) =>
+      downloadFile(
+        githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
+        path.join(destination, fileName),
+      ),
+    ).then(() =>
+      PromiseBB.map(repoDirs, (fileName) => {
+        const sourcePath = `${source}/${fileName}`;
+        const outPath = path.join(destination, fileName);
+        return fs
+          .mkdirAsync(outPath)
+          .then(() => downloadGithubRawRecursive(repo, sourcePath, outPath));
+      }),
+    );
+  });
 }
 
 export function downloadGithubRaw(
@@ -557,9 +494,7 @@ export function downloadGithubRaw(
 
   const { files } = state.persistent.downloads;
   const existing = Object.keys(files).find(
-    (dlId) =>
-      (files[dlId].game ?? []).includes(SITE_ID) &&
-      files[dlId].localPath === archiveName,
+    (dlId) => (files[dlId].game ?? []).includes(SITE_ID) && files[dlId].localPath === archiveName,
   );
 
   // the only plausible reason the file could already exist is if a previous install failed
@@ -596,27 +531,19 @@ export function downloadGithubRaw(
         )
         .then(() => {
           const archiveId = shortid();
-          api.store.dispatch(
-            addLocalDownload(archiveId, SITE_ID, archiveName, 0),
-          );
+          api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
           return [archiveId];
         });
     }),
   );
 }
 
-export function readExtensibleDir(
-  extType: ExtensionType,
-  bundledPath: string,
-  customPath: string,
-) {
+export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
   const readBaseDir = (baseName: string): PromiseBB<string[]> => {
     return fs
       .readdirAsync(baseName)
       .filter((name: string) =>
-        fs
-          .statAsync(path.join(baseName, name))
-          .then((stats) => stats.isDirectory()),
+        fs.statAsync(path.join(baseName, name)).then((stats) => stats.isDirectory()),
       )
       .map((name: string) => path.join(baseName, name))
       .catch({ code: "ENOENT" }, () => []);

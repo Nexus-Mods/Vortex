@@ -1,40 +1,25 @@
-import type msgpackT from "@msgpack/msgpack";
-
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
 import * as path from "path";
+
+import type msgpackT from "@msgpack/msgpack";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { sync as writeAtomicSync } from "write-file-atomic";
 
+import { showDialog } from "../../../actions/notifications";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import type { IState } from "../../../types/IState";
-import type { TFunction } from "../../../util/i18n";
-import type {
-  IDeploymentManifest,
-  ManifestFormat,
-} from "../types/IDeploymentManifest";
-import type {
-  IDeployedFile,
-  IDeploymentMethod,
-} from "../types/IDeploymentMethod";
-
-import { showDialog } from "../../../actions/notifications";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { writeFileAtomic } from "../../../util/fsAtomic";
 import getVortexPath from "../../../util/getVortexPath";
+import type { TFunction } from "../../../util/i18n";
 import { log } from "../../../util/log";
-import {
-  activeGameId,
-  discoveryByGame,
-  installPathForGame,
-} from "../../../util/selectors";
+import { activeGameId, discoveryByGame, installPathForGame } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { deBOM, makeQueue, truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
+import type { IDeploymentManifest, ManifestFormat } from "../types/IDeploymentManifest";
+import type { IDeployedFile, IDeploymentMethod } from "../types/IDeploymentMethod";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import format_1 from "./manifest_formats/format_1";
 
@@ -65,23 +50,20 @@ function repairManifest(input: IDeploymentManifest): IDeploymentManifest {
     input.instance = "";
   }
 
-  input.files = input.files.reduce(
-    (prev: IDeployedFile[], file: IDeployedFile) => {
-      if (
-        file !== null &&
-        file.relPath !== undefined &&
-        file.relPath !== null &&
-        file.source !== undefined &&
-        file.source !== null &&
-        file.time !== undefined &&
-        file.time !== null
-      ) {
-        prev.push(file);
-      }
-      return prev;
-    },
-    [] as IDeployedFile[],
-  );
+  input.files = input.files.reduce((prev: IDeployedFile[], file: IDeployedFile) => {
+    if (
+      file !== null &&
+      file.relPath !== undefined &&
+      file.relPath !== null &&
+      file.source !== undefined &&
+      file.source !== null &&
+      file.time !== undefined &&
+      file.time !== null
+    ) {
+      prev.push(file);
+    }
+    return prev;
+  }, [] as IDeployedFile[]);
 
   return input;
 }
@@ -95,12 +77,9 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
 
   let parsed: IDeploymentManifest;
   try {
-    parsed =
-      typeof data === "string" ? JSON.parse(deBOM(data)) : msgpack.decode(data);
+    parsed = typeof data === "string" ? JSON.parse(deBOM(data)) : msgpack.decode(data);
   } catch (err) {
-    const newErr = new Error(
-      `Failed to parse manifest: "${getErrorMessageOrDefault(err)}"`,
-    );
+    const newErr = new Error(`Failed to parse manifest: "${getErrorMessageOrDefault(err)}"`);
     // invalid input data, not a bug
     newErr["allowReport"] = false;
     throw newErr;
@@ -111,9 +90,7 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
     parsed = formats[parsed.version || 1](parsed);
     if (parsed.version === lastVersion && parsed.version < CURRENT_VERSION) {
       // this should not happen!
-      throw new Error(
-        `unsupported format upgrade ${parsed.version} -> ${CURRENT_VERSION}`,
-      );
+      throw new Error(`unsupported format upgrade ${parsed.version} -> ${CURRENT_VERSION}`);
     }
     lastVersion = parsed.version;
   }
@@ -123,55 +100,54 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
   return repairManifest(parsed);
 }
 
-export function purgeDeployedFiles(
-  basePath: string,
-  files: IDeployedFile[],
-): Promise<void> {
-  return Promise.all(files.map((file) => {
-    const fullPath = path.join(basePath, file.relPath);
-    return fs
-      .statAsync(fullPath)
-      .then((stats) => {
-        // the timestamp from stat has ms precision but the one from the manifest doesn't
-        return stats.mtime.getTime() - file.time < 1000
-          ? fs.unlinkAsync(fullPath)
-          : Promise.resolve();
-      })
-      .catch((err: unknown) => {
-        if (getErrorCode(err) !== "ENOENT") {
-          return Promise.reject(err);
-        } // otherwise ignore
-      });
-  })).then(() => undefined);
+export function purgeDeployedFiles(basePath: string, files: IDeployedFile[]): Promise<void> {
+  return Promise.all(
+    files.map((file) => {
+      const fullPath = path.join(basePath, file.relPath);
+      return fs
+        .statAsync(fullPath)
+        .then((stats) => {
+          // the timestamp from stat has ms precision but the one from the manifest doesn't
+          return stats.mtime.getTime() - file.time < 1000
+            ? fs.unlinkAsync(fullPath)
+            : Promise.resolve();
+        })
+        .catch((err: unknown) => {
+          if (getErrorCode(err) !== "ENOENT") {
+            return Promise.reject(err);
+          } // otherwise ignore
+        });
+    }),
+  ).then(() => undefined);
 }
 
 function queryPurgeTextSafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
-    "If you switch between different instances (or between shared and " +
-    "single-user mode) it's better if you purge mods before switching.\n\n" +
-    "Vortex can try to clean up now but this is less reliable (*) than doing it " +
-    "from the instance that deployed the files in the first place.\n\n" +
-    "If you modified any files in the game directory you should back them up " +
-    "before continuing.\n\n" +
-    "(*) This purge relies on a manifest of deployed files, created by that other " +
-    "instance. Files that have been changed since that manifest was created " +
-    "won't be removed to prevent data loss. If the manifest is damaged or " +
-    'outdated the purge may be incomplete. When purging from the "right" instance ' +
-    "the manifest isn't required, it can reliably deduce which files need to " +
-    "be removed.",
+      "If you switch between different instances (or between shared and " +
+      "single-user mode) it's better if you purge mods before switching.\n\n" +
+      "Vortex can try to clean up now but this is less reliable (*) than doing it " +
+      "from the instance that deployed the files in the first place.\n\n" +
+      "If you modified any files in the game directory you should back them up " +
+      "before continuing.\n\n" +
+      "(*) This purge relies on a manifest of deployed files, created by that other " +
+      "instance. Files that have been changed since that manifest was created " +
+      "won't be removed to prevent data loss. If the manifest is damaged or " +
+      'outdated the purge may be incomplete. When purging from the "right" instance ' +
+      "the manifest isn't required, it can reliably deduce which files need to " +
+      "be removed.",
   );
 }
 
 function queryPurgeTextUnsafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
-    "Vortex can only proceed by purging the mods from that other instance.\n\n" +
-    "This will irreversibly **destroy** the mod installations from that other " +
-    "instance!\n\n" +
-    "You should instead cancel now, open that other vortex instance and purge " +
-    "from there. This can also be caused by switching between shared and " +
-    "single-user mode.",
+      "Vortex can only proceed by purging the mods from that other instance.\n\n" +
+      "This will irreversibly **destroy** the mod installations from that other " +
+      "instance!\n\n" +
+      "You should instead cancel now, open that other vortex instance and purge " +
+      "from there. This can also be caused by switching between shared and " +
+      "single-user mode.",
   );
 }
 
@@ -183,8 +159,8 @@ function queryPurge(
 ): Promise<void> {
   const t = api.translate;
   const text = safe ? queryPurgeTextSafe(t) : queryPurgeTextUnsafe(t);
-  return Promise.resolve(api.store
-    .dispatch(
+  return Promise.resolve(
+    api.store.dispatch(
       showDialog(
         "info",
         t("Purge files from different instance?"),
@@ -193,19 +169,19 @@ function queryPurge(
         },
         [{ label: "Cancel" }, { label: "Purge" }],
       ),
-    ))
-    .then((result) => {
-      if (result.action === "Purge") {
-        return purgeDeployedFiles(basePath, files).catch((err: unknown) => {
-          api.showErrorNotification("Purging failed", err, {
-            allowReport: false,
-          });
-          return Promise.reject(new UserCanceled());
+    ),
+  ).then((result) => {
+    if (result.action === "Purge") {
+      return purgeDeployedFiles(basePath, files).catch((err: unknown) => {
+        api.showErrorNotification("Purging failed", err, {
+          allowReport: false,
         });
-      } else {
         return Promise.reject(new UserCanceled());
-      }
-    });
+      });
+    } else {
+      return Promise.reject(new UserCanceled());
+    }
+  });
 }
 
 function readManifestFile(filePath: string): Promise<any> {
@@ -288,9 +264,7 @@ function getManifestImpl(
           return Promise.reject(errObj);
         });
     })
-    .then((manifest) =>
-      manifest !== undefined ? manifest : emptyManifest(instanceId),
-    );
+    .then((manifest) => (manifest !== undefined ? manifest : emptyManifest(instanceId)));
 }
 
 export function fallbackPurgeType(
@@ -302,34 +276,21 @@ export function fallbackPurgeType(
   stagingPath: string,
 ): Promise<void> {
   const state: IState = api.store.getState();
-  const typeTag =
-    modType !== undefined && modType.length > 0 ? modType + "." : "";
+  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
   const tagFileName = `vortex.deployment.${typeTag}json`;
   const tagFilePath = path.join(deployPath, tagFileName);
   const tagBackupPath = path.join(stagingPath, tagFileName);
-  const tagBackup2Path = path.join(
-    stagingPath,
-    `vortex.deployment.backup.${typeTag}msgpack`,
-  );
+  const tagBackup2Path = path.join(stagingPath, `vortex.deployment.backup.${typeTag}msgpack`);
   const instanceId = state.app.instanceId;
 
-  return getManifestImpl(
-    api,
-    instanceId,
-    tagFilePath,
-    tagBackupPath,
-    tagBackup2Path,
-  )
+  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
     .then((tagObject) => {
       let result: Promise<void>;
       if (tagObject.files.length > 0) {
         let safe = true;
         if (tagObject.deploymentMethod !== undefined) {
           const previousActivator = getActivator(tagObject.deploymentMethod);
-          if (
-            previousActivator !== undefined &&
-            !previousActivator.isFallbackPurgeSafe
-          ) {
+          if (previousActivator !== undefined && !previousActivator.isFallbackPurgeSafe) {
             safe = false;
           }
         }
@@ -357,10 +318,7 @@ export function fallbackPurgeType(
 /**
  * purge files using information from the manifest
  */
-export async function fallbackPurge(
-  api: IExtensionApi,
-  gameId?: string,
-): Promise<void> {
+export async function fallbackPurge(api: IExtensionApi, gameId?: string): Promise<void> {
   const state: IState = api.store.getState();
   if (gameId === undefined) {
     gameId = activeGameId(state);
@@ -375,23 +333,13 @@ export async function fallbackPurge(
   const activator = getCurrentActivator(state, gameId, false);
 
   for (const typeId of Object.keys(modPaths)) {
-    await fallbackPurgeType(
-      api,
-      activator,
-      gameId,
-      typeId,
-      modPaths[typeId],
-      stagingPath,
-    );
+    await fallbackPurgeType(api, activator, gameId, typeId, modPaths[typeId], stagingPath);
   }
 }
 
 const activationQueue = makeQueue();
 
-export function withActivationLock(
-  func: () => PromiseLike<any>,
-  tryOnly: boolean = false,
-) {
+export function withActivationLock(func: () => PromiseLike<any>, tryOnly: boolean = false) {
   return activationQueue(func, tryOnly);
 }
 
@@ -426,11 +374,7 @@ export function getManifest(
     }
 
     const game = getGame(gameId);
-    const discovery = getSafe(
-      state,
-      ["settings", "gameMode", "discovered", gameId],
-      undefined,
-    );
+    const discovery = getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
     if (discovery?.path === undefined || game === undefined) {
       return Promise.resolve(emptyManifest(instanceId));
     }
@@ -441,23 +385,13 @@ export function getManifest(
       return Promise.resolve(emptyManifest(instanceId));
     }
 
-    const typeTag =
-      modType !== undefined && modType.length > 0 ? modType + "." : "";
+    const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
     const tagFileName = `vortex.deployment.${typeTag}json`;
     const tagFilePath = path.join(deployPath, tagFileName);
     const tagBackupPath = path.join(stagingPath, tagFileName);
-    const tagBackup2Path = path.join(
-      stagingPath,
-      `vortex.deployment.${typeTag}msgpack`,
-    );
+    const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
 
-    return getManifestImpl(
-      api,
-      instanceId,
-      tagFilePath,
-      tagBackupPath,
-      tagBackup2Path,
-    );
+    return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
   } catch (err) {
     return Promise.reject(err);
   }
@@ -474,54 +408,43 @@ export function loadActivation(
   if (deployPath === undefined) {
     return Promise.resolve([]);
   }
-  const typeTag =
-    modType !== undefined && modType.length > 0 ? modType + "." : "";
+  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
   const tagFileName = `vortex.deployment.${typeTag}json`;
   const tagFilePath = path.join(deployPath, tagFileName);
   const tagBackupPath = path.join(stagingPath, tagFileName);
-  const tagBackup2Path = path.join(
-    stagingPath,
-    `vortex.deployment.${typeTag}msgpack`,
-  );
+  const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
-  return getManifestImpl(
-    api,
-    instanceId,
-    tagFilePath,
-    tagBackupPath,
-    tagBackup2Path,
-  ).then((tagObject) => {
-    let result: Promise<IDeployedFile[]>;
-    if (tagObject.instance !== instanceId && tagObject.files.length > 0) {
-      let safe = true;
-      if (tagObject.deploymentMethod !== undefined) {
-        const previousActivator = getActivator(tagObject.deploymentMethod);
-        if (
-          previousActivator !== undefined &&
-          !previousActivator.isFallbackPurgeSafe
-        ) {
-          safe = false;
+  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path).then(
+    (tagObject) => {
+      let result: Promise<IDeployedFile[]>;
+      if (tagObject.instance !== instanceId && tagObject.files.length > 0) {
+        let safe = true;
+        if (tagObject.deploymentMethod !== undefined) {
+          const previousActivator = getActivator(tagObject.deploymentMethod);
+          if (previousActivator !== undefined && !previousActivator.isFallbackPurgeSafe) {
+            safe = false;
+          }
         }
+        result = queryPurge(api, deployPath, tagObject.files, safe)
+          .then(() =>
+            saveActivation(
+              gameId,
+              modType,
+              state.app.instanceId,
+              deployPath,
+              stagingPath,
+              [],
+              activator.id,
+            ),
+          )
+          .then(() => Promise.resolve([]));
+      } else {
+        result = Promise.resolve(tagObject.files);
       }
-      result = queryPurge(api, deployPath, tagObject.files, safe)
-        .then(() =>
-          saveActivation(
-            gameId,
-            modType,
-            state.app.instanceId,
-            deployPath,
-            stagingPath,
-            [],
-            activator.id,
-          ),
-        )
-        .then(() => Promise.resolve([]));
-    } else {
-      result = Promise.resolve(tagObject.files);
-    }
-    return result;
-  });
+      return result;
+    },
+  );
 }
 
 export function saveActivation(
@@ -533,8 +456,7 @@ export function saveActivation(
   activation: IDeployedFile[],
   activatorId?: string,
 ) {
-  const typeTag =
-    modType !== undefined && modType.length > 0 ? modType + "." : "";
+  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
   const dataRaw = {
     instance,
     version: CURRENT_VERSION,
@@ -559,10 +481,7 @@ export function saveActivation(
   }
   const tagFileName = `vortex.deployment.${typeTag}json`;
   const tagFilePath = path.join(gamePath, tagFileName);
-  const tagBackupPath = path.join(
-    stagingPath,
-    `vortex.deployment.${typeTag}msgpack`,
-  );
+  const tagBackupPath = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
 
   if (activation.length > 0) {
     // write backup synchronously
@@ -570,11 +489,7 @@ export function saveActivation(
       const msgpack: typeof msgpackT = require("@msgpack/msgpack");
       writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
     } catch (err) {
-      log(
-        "error",
-        "Failed to write manifest backup",
-        getErrorMessageOrDefault(err),
-      );
+      log("error", "Failed to write manifest backup", getErrorMessageOrDefault(err));
     }
   } else {
     try {
@@ -582,26 +497,19 @@ export function saveActivation(
     } catch (err) {
       const code = getErrorCode(err);
       if (code !== "ENOENT") {
-        log(
-          "error",
-          "failed to remove manifest backup",
-          getErrorMessageOrDefault(err),
-        );
+        log("error", "failed to remove manifest backup", getErrorMessageOrDefault(err));
       }
     }
   }
 
   return activation.length === 0
     ? fs.removeAsync(tagFilePath).catch(() => undefined)
-    : writeFileAtomic(tagFilePath, dataJSON)
-      .then(() =>
-        fs
-          .removeAsync(path.join(stagingPath, tagFileName))
-          .catch((err: unknown) => {
-            if (getErrorCode(err) === "ENOENT") {
-              return null;
-            }
-            throw err;
-          }),
+    : writeFileAtomic(tagFilePath, dataJSON).then(() =>
+        fs.removeAsync(path.join(stagingPath, tagFileName)).catch((err: unknown) => {
+          if (getErrorCode(err) === "ENOENT") {
+            return null;
+          }
+          throw err;
+        }),
       );
 }

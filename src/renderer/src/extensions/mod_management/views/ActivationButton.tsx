@@ -1,21 +1,20 @@
+import * as React from "react";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { addNotification } from "../../../actions/notifications";
 import { setSettingsPage } from "../../../actions/session";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import ToolbarIcon from "../../../controls/ToolbarIcon";
 import type { INotificationAction } from "../../../types/INotification";
 import type { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { showError } from "../../../util/message";
 import onceCB from "../../../util/onceCB";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
-
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";
-
-import * as React from "react";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
@@ -24,16 +23,8 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onShowError: (
-    message: string,
-    details?: string,
-    allowReport?: boolean,
-  ) => void;
-  onShowWarning: (
-    message: string,
-    dialogAction: INotificationAction,
-    id: string,
-  ) => void;
+  onShowError: (message: string, details?: string, allowReport?: boolean) => void;
+  onShowWarning: (message: string, dialogAction: INotificationAction, id: string) => void;
   onSetSettingsPage: (pageId: string) => void;
 }
 
@@ -68,10 +59,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
       {
         title: "Fix",
         action: (dismiss: () => void) => {
-          this.context.api.events.emit(
-            "show-main-page",
-            "application_settings",
-          );
+          this.context.api.events.emit("show-main-page", "application_settings");
           onSetSettingsPage("Mods");
           dismiss();
         },
@@ -115,17 +103,11 @@ class ActivationButton extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const gameId = selectors.activeGameId(state);
-  const activatorId = getSafe(
-    state,
-    ["settings", "mods", "activator", gameId],
-    undefined,
-  );
+  const activatorId = getSafe(state, ["settings", "mods", "activator", gameId], undefined);
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
   let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
-    activator = ownProps
-      .getActivators()
-      .find((act: IDeploymentMethod) => act.id === activatorId);
+    activator = ownProps.getActivators().find((act: IDeploymentMethod) => act.id === activatorId);
   }
   return {
     profileId,
@@ -134,17 +116,11 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<IState, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),
-    onShowWarning: (
-      message: string,
-      dialogAction: INotificationAction,
-      id: string,
-    ) =>
+    onShowWarning: (message: string, dialogAction: INotificationAction, id: string) =>
       dispatch(
         addNotification({
           id,

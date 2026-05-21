@@ -1,5 +1,4 @@
 import { getSafe } from "../../../util/storeHelper";
-
 import type { IMod, IModReference } from "../types/IMod";
 
 export interface INameOptions {
@@ -7,10 +6,7 @@ export interface INameOptions {
   variant?: boolean;
 }
 
-export function modNameFromAttributes(
-  mod: { [key: string]: any },
-  options?: INameOptions,
-): string {
+export function modNameFromAttributes(mod: { [key: string]: any }, options?: INameOptions): string {
   const fields = [];
   fields.push(
     getSafe(mod, ["customFileName"], "") ||
@@ -50,11 +46,7 @@ export interface IRenderOptions {
   version?: boolean;
 }
 
-export function renderModReference(
-  ref?: IModReference,
-  mod?: IMod,
-  options?: IRenderOptions,
-) {
+export function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions) {
   const version = options === undefined || options.version !== false;
 
   if (mod !== undefined) {

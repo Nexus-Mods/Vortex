@@ -29,10 +29,7 @@ describe("objDiff", () => {
     });
   });
   it("supports nested", () => {
-    const res = util.objDiff(
-      { outer: { chng: "a" } },
-      { outer: { chng: "b" } },
-    );
+    const res = util.objDiff({ outer: { chng: "a" } }, { outer: { chng: "b" } });
     expect(res).toEqual({
       outer: {
         "-chng": "a",
@@ -54,10 +51,7 @@ describe("objDiff", () => {
     });
   });
   it("doesn't fail if object has overloaded hasOwnProperty", () => {
-    const res = util.objDiff(
-      { hasOwnProperty: 1, foo: 42 },
-      { hasOwnProperty: 2, foo: 42 },
-    );
+    const res = util.objDiff({ hasOwnProperty: 1, foo: 42 }, { hasOwnProperty: 2, foo: 42 });
     expect(res).toEqual({
       "-hasOwnProperty": 1,
       "+hasOwnProperty": 2,
@@ -277,14 +271,7 @@ describe("isFilenameValid", () => {
   it("allows valid names", () => {
     const validNames =
       process.platform === "win32"
-        ? [
-            "foobar.txt",
-            "foo.bar.txt",
-            "foo%bar.txt",
-            "fööbär.txt",
-            "null.txt",
-            "..foobar.txt",
-          ]
+        ? ["foobar.txt", "foo.bar.txt", "foo%bar.txt", "fööbär.txt", "null.txt", "..foobar.txt"]
         : [];
 
     validNames.forEach((name) => {
@@ -293,28 +280,17 @@ describe("isFilenameValid", () => {
   });
 });
 
-const describeOnWindows =
-  process.platform === "win32" ? describe : describe.skip;
+const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
 
 describeOnWindows("isPathValid", () => {
   it("reports invalid path", () => {
-    const invalidNames = [
-      "foo\\b/ar.txt",
-      "con\\bar.txt",
-      "foo\\..\\bar.txt",
-      "\\foo\\bar",
-    ];
+    const invalidNames = ["foo\\b/ar.txt", "con\\bar.txt", "foo\\..\\bar.txt", "\\foo\\bar"];
     invalidNames.forEach((name) => {
       expect(util.isPathValid(name)).toBe(false);
     });
   });
   it("allows valid names", () => {
-    const validNames = [
-      "foo\\bar.txt",
-      "c:\\conx\\bar.txt",
-      "\\\\server\\foo\\bar",
-      "foo\\bar\\",
-    ];
+    const validNames = ["foo\\bar.txt", "c:\\conx\\bar.txt", "\\\\server\\foo\\bar", "foo\\bar\\"];
     validNames.forEach((name) => {
       expect(util.isPathValid(name)).toBe(true);
     });
@@ -359,19 +335,15 @@ describeOnWindows("sanitizeFilename", () => {
 
 describe("nexusModsURL", () => {
   it("creates basic urls", () => {
-    expect(util.nexusModsURL(["foo", "bar"])).toBe(
-      "https://www.nexusmods.com/foo/bar",
-    );
+    expect(util.nexusModsURL(["foo", "bar"])).toBe("https://www.nexusmods.com/foo/bar");
   });
   it("supports different subdomains", () => {
-    expect(
-      util.nexusModsURL(["foo", "bar"], { section: util.Section.Users }),
-    ).toBe("https://users.nexusmods.com/foo/bar");
+    expect(util.nexusModsURL(["foo", "bar"], { section: util.Section.Users })).toBe(
+      "https://users.nexusmods.com/foo/bar",
+    );
   });
   it("supports tracking campaigns", () => {
-    expect(
-      util.nexusModsURL(["foo", "bar"], { campaign: util.Campaign.BuyPremium }),
-    ).toBe(
+    expect(util.nexusModsURL(["foo", "bar"], { campaign: util.Campaign.BuyPremium })).toBe(
       "https://www.nexusmods.com/foo/bar?utm_source=vortex&utm_medium=app&utm_campaign=buy_premium",
     );
   });

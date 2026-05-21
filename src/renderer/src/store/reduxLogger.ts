@@ -1,6 +1,6 @@
-import { objDiff } from "../util/util";
-
 import type * as Redux from "redux";
+
+import { objDiff } from "../util/util";
 
 interface IActionLog {
   before: any;
@@ -54,10 +54,7 @@ export function getReduxLog(): Promise<ILog[]> {
     actions.map((action: IActionLog, idx: number) => {
       const res: ILog = {
         action: action.action,
-        delta:
-          action.after !== undefined
-            ? objDiff(action.before, action.after)
-            : {},
+        delta: action.after !== undefined ? objDiff(action.before, action.after) : {},
       };
       return res;
     }),

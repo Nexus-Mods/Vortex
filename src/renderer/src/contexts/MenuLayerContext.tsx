@@ -28,12 +28,9 @@ export interface IMenuLayerProviderProps {
   children: ReactNode;
 }
 
-export const MenuLayerProvider: FC<IMenuLayerProviderProps> = ({
-  children,
-}) => {
+export const MenuLayerProvider: FC<IMenuLayerProviderProps> = ({ children }) => {
   const [menuLayerOpen, setMenuLayerOpen] = useState(false);
-  const [menuLayerElement, setMenuLayerElement] =
-    useState<HTMLDivElement | null>(null);
+  const [menuLayerElement, setMenuLayerElement] = useState<HTMLDivElement | null>(null);
   const menuObserverRef = useRef<MutationObserver | undefined>(undefined);
 
   const setMenuLayerRef = useCallback((ref: HTMLDivElement | null) => {
@@ -77,11 +74,7 @@ export const MenuLayerProvider: FC<IMenuLayerProviderProps> = ({
     [menuLayerElement, menuLayerOpen, setMenuLayerRef],
   );
 
-  return (
-    <MenuLayerContext.Provider value={contextValue}>
-      {children}
-    </MenuLayerContext.Provider>
-  );
+  return <MenuLayerContext.Provider value={contextValue}>{children}</MenuLayerContext.Provider>;
 };
 
 export const MenuLayerConsumer = MenuLayerContext.Consumer;

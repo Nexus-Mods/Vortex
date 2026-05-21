@@ -3,7 +3,6 @@ import { describe, it, expect } from "vitest";
 import type { IDialog } from "../types/IDialog";
 import type { INotification } from "../types/INotification";
 import type { INotificationState } from "../types/IState";
-
 import { notificationsReducer } from "./notifications";
 
 const reduce = notificationsReducer.reducers as {
@@ -11,18 +10,9 @@ const reduce = notificationsReducer.reducers as {
     state: INotificationState,
     payload: Partial<INotification>,
   ) => INotificationState;
-  STOP_NOTIFICATION: (
-    state: INotificationState,
-    payload: string,
-  ) => INotificationState;
-  SHOW_MODAL_DIALOG: (
-    state: INotificationState,
-    payload: IDialog,
-  ) => INotificationState;
-  DISMISS_MODAL_DIALOG: (
-    state: INotificationState,
-    payload: string,
-  ) => INotificationState;
+  STOP_NOTIFICATION: (state: INotificationState, payload: string) => INotificationState;
+  SHOW_MODAL_DIALOG: (state: INotificationState, payload: IDialog) => INotificationState;
+  DISMISS_MODAL_DIALOG: (state: INotificationState, payload: string) => INotificationState;
 };
 
 describe("startNotification", () => {

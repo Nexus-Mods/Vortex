@@ -1,11 +1,3 @@
-import { ILoadOrder, ILoadOrderDisplayItem } from "../types";
-
-import DraggableList from "./DraggableList";
-import LoadOrderEntry from "./LoadOrderEntry";
-
-import * as React from "react";
-import { Panel } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
 import {
   ComponentEx,
   DNDContainer,
@@ -13,7 +5,14 @@ import {
   MainPage,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as React from "react";
+import { Panel } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+
+import { ILoadOrder, ILoadOrderDisplayItem } from "../types";
+import DraggableList from "./DraggableList";
+import LoadOrderEntry from "./LoadOrderEntry";
 
 const PanelX: any = Panel;
 
@@ -43,12 +42,9 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
       const { enabled, disabled } = this.state;
       const newOrder: ILoadOrder = {};
       const numEnabled = enabled.length;
-      enabled.forEach(
-        (item, idx) => (newOrder[item.id] = { pos: idx, enabled: true }),
-      );
+      enabled.forEach((item, idx) => (newOrder[item.id] = { pos: idx, enabled: true }));
       disabled.forEach(
-        (item, idx) =>
-          (newOrder[item.id] = { pos: numEnabled + idx, enabled: false }),
+        (item, idx) => (newOrder[item.id] = { pos: numEnabled + idx, enabled: false }),
       );
 
       this.props.onSetLoadOrder(newOrder);
@@ -125,9 +121,7 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
 
     const sorted = Object.keys(loadOrder || {})
       .filter(
-        (lo) =>
-          mods[lo] !== undefined &&
-          util.getSafe(profile, ["modState", lo, "enabled"], false),
+        (lo) => mods[lo] !== undefined && util.getSafe(profile, ["modState", lo, "enabled"], false),
       )
       .sort((lhs, rhs) => loadOrder[lhs].pos - loadOrder[rhs].pos);
 
@@ -136,9 +130,7 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
       name: util.renderModName(mods[id]),
     });
 
-    this.nextState.enabled = sorted
-      .filter((id) => loadOrder[id].enabled)
-      .map(mapToItem);
+    this.nextState.enabled = sorted.filter((id) => loadOrder[id].enabled).map(mapToItem);
 
     // disabled list should also include mods that currently have no load order assigned
     this.nextState.disabled = []

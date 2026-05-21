@@ -1,5 +1,5 @@
+import { types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
-import { types, util } from "vortex-api";
 
 export function testDownloadReference(
   download: types.IDownload,
@@ -9,8 +9,5 @@ export function testDownloadReference(
     return false;
   }
 
-  return util.testModReference(
-    (util as any).lookupFromDownload(download),
-    reference,
-  );
+  return util.testModReference((util as any).lookupFromDownload(download), reference);
 }

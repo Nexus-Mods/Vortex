@@ -1,8 +1,12 @@
-import getDownloadPath from "../extensions/download_management/util/getDownloadPath";
-import resolvePath, {
-  pathDefaults,
-} from "../extensions/mod_management/util/resolvePath";
-import type { IState } from "../types/IState";
+import * as path from "path";
+
+import { getErrorCode } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import type { BrowserWindow } from "electron";
+import { dialog } from "electron";
+import type * as Redux from "redux";
+import * as semver from "semver";
+import format from "string-template";
 
 import {
   clearOAuthCredentials,
@@ -15,21 +19,14 @@ import {
   setUserAPIKey,
   setUserInfo,
 } from "../actions";
-import * as fs from "./fs";
-import makeCI from "./makeCaseInsensitive";
-
+import getDownloadPath from "../extensions/download_management/util/getDownloadPath";
+import resolvePath, { pathDefaults } from "../extensions/mod_management/util/resolvePath";
+import type { IState } from "../types/IState";
 import { UserCanceled } from "./CustomErrors";
+import * as fs from "./fs";
 import { log } from "./log";
-
-import PromiseBB from "bluebird";
-import type { BrowserWindow } from "electron";
-import { dialog } from "electron";
-import * as path from "path";
-import type * as Redux from "redux";
-import * as semver from "semver";
-import format from "string-template";
-import { getErrorCode } from "@vortex/shared";
-import { batchDispatch } from './util';
+import makeCI from "./makeCaseInsensitive";
+import { batchDispatch } from "./util";
 
 interface IMigration {
   id: string;
@@ -37,10 +34,7 @@ interface IMigration {
   maySkip: boolean;
   doQuery: boolean;
   description: string;
-  apply: (
-    window: BrowserWindow | null,
-    store: Redux.Store<IState>,
-  ) => PromiseBB<void>;
+  apply: (window: BrowserWindow | null, store: Redux.Store<IState>) => PromiseBB<void>;
 }
 
 function selectDirectory(
@@ -67,17 +61,12 @@ function selectDirectory(
         .catch((err) => {
           const code = getErrorCode(err);
           return code === "ENOENT"
-            ? fs
-                .ensureDirWritableAsync(filePaths[0], () => PromiseBB.resolve())
-                .then(() => [])
+            ? fs.ensureDirWritableAsync(filePaths[0], () => PromiseBB.resolve()).then(() => [])
             : PromiseBB.reject(err);
         })
         .then((files) => {
           if (files.length > 0) {
-            dialog.showErrorBox(
-              "Invalid path selected",
-              "The directory needs to be empty",
-            );
+            dialog.showErrorBox("Invalid path selected", "The directory needs to be empty");
             return selectDirectory(window, defaultPathPattern);
           } else {
             return PromiseBB.resolve(filePaths[0]);
@@ -90,33 +79,24 @@ function transferPath(from: string, to: string): PromiseBB<void> {
   return PromiseBB.join(
     fs.statAsync(from),
     fs.statAsync(to),
-    (statOld: fs.Stats, statNew: fs.Stats) =>
-      PromiseBB.resolve(statOld.dev === statNew.dev),
+    (statOld: fs.Stats, statNew: fs.Stats) => PromiseBB.resolve(statOld.dev === statNew.dev),
   )
     .then((sameVolume: boolean) => {
       const func = sameVolume ? fs.renameAsync : fs.copyAsync;
       return PromiseBB.resolve(fs.readdirAsync(from))
         .map((fileName: string) =>
-          func(path.join(from, fileName), path.join(to, fileName)).catch(
-            (err) =>
-              getErrorCode(err) === "EXDEV"
-                ? // EXDEV implies we tried to rename when source and destination are
-                  // not in fact on the same volume. This is what comparing the stat.dev
-                  // was supposed to prevent.
-                  fs.copyAsync(
-                    path.join(from, fileName),
-                    path.join(to, fileName),
-                  )
-                : PromiseBB.reject(err),
+          func(path.join(from, fileName), path.join(to, fileName)).catch((err) =>
+            getErrorCode(err) === "EXDEV"
+              ? // EXDEV implies we tried to rename when source and destination are
+                // not in fact on the same volume. This is what comparing the stat.dev
+                // was supposed to prevent.
+                fs.copyAsync(path.join(from, fileName), path.join(to, fileName))
+              : PromiseBB.reject(err),
           ),
         )
         .then(() => fs.removeAsync(from));
     })
-    .catch((err) =>
-      getErrorCode(err) === "ENOENT"
-        ? PromiseBB.resolve()
-        : PromiseBB.reject(err),
-    );
+    .catch((err) => (getErrorCode(err) === "ENOENT" ? PromiseBB.resolve() : PromiseBB.reject(err)));
 }
 
 function dialogProm(
@@ -148,22 +128,15 @@ function forceLogoutForOauth_1_9(
 
   const loggedIn = apiKey !== undefined || oauthCred !== undefined;
 
-  log(
-    "info",
-    "forceLogoutForOauth_1_9() migration function for pre-oauth (1.9) versions",
-    {
-      apiKey: apiKey,
-      oauthCred: oauthCred,
-      loggedIn: loggedIn,
-    },
-  );
+  log("info", "forceLogoutForOauth_1_9() migration function for pre-oauth (1.9) versions", {
+    apiKey: apiKey,
+    oauthCred: oauthCred,
+    loggedIn: loggedIn,
+  });
 
   // we only care about forcing re-authing if they are logged in already
   if (!loggedIn) {
-    log(
-      "warn",
-      "forceLogoutForOauth_1_9() not logged in so skipping migration",
-    );
+    log("warn", "forceLogoutForOauth_1_9() not logged in so skipping migration");
     return PromiseBB.resolve();
   }
 
@@ -178,10 +151,7 @@ function forceLogoutForOauth_1_9(
   return PromiseBB.resolve();
 }
 
-function moveDownloads_0_16(
-  window: BrowserWindow,
-  store: Redux.Store<IState>,
-): PromiseBB<void> {
+function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): PromiseBB<void> {
   const state = store.getState();
   log("info", "importing downloads from pre-0.16.0 version");
   return dialogProm(
@@ -195,24 +165,17 @@ function moveDownloads_0_16(
     .then(() => selectDirectory(window, state.settings.downloads.path))
     .then((downloadPath) => {
       store.dispatch(setDownloadPath(downloadPath));
-      return PromiseBB.map(
-        Object.keys(state.settings.gameMode.discovered),
-        (gameId) => {
-          const resolvedPath = path.join(downloadPath, gameId);
-          return fs
-            .ensureDirAsync(resolvedPath)
-            .then(() =>
-              transferPath(
-                resolvePath(
-                  "download",
-                  (state.settings.mods as any).paths,
-                  gameId,
-                ),
-                resolvedPath,
-              ),
-            );
-        },
-      ).then(() => {});
+      return PromiseBB.map(Object.keys(state.settings.gameMode.discovered), (gameId) => {
+        const resolvedPath = path.join(downloadPath, gameId);
+        return fs
+          .ensureDirAsync(resolvedPath)
+          .then(() =>
+            transferPath(
+              resolvePath("download", (state.settings.mods as any).paths, gameId),
+              resolvedPath,
+            ),
+          );
+      }).then(() => {});
     });
 }
 
@@ -250,10 +213,7 @@ function enableModernLayout_2_0(
   _window: BrowserWindow,
   store: Redux.Store<IState>,
 ): PromiseBB<void> {
-  batchDispatch(store, [
-    setUseModernLayout(true),
-    setProfilesVisible(true),
-  ]);
+  batchDispatch(store, [setUseModernLayout(true), setProfilesVisible(true)]);
   return PromiseBB.resolve();
 }
 
@@ -281,8 +241,7 @@ const migrations: IMigration[] = [
     minVersion: "1.9.0",
     maySkip: false,
     doQuery: false,
-    description:
-      "forcing logout for anything pre-oauth, and deprecating apikey logins",
+    description: "forcing logout for anything pre-oauth, and deprecating apikey logins",
     apply: forceLogoutForOauth_1_9,
   },
   {
@@ -295,17 +254,12 @@ const migrations: IMigration[] = [
   },
 ];
 
-function queryMigration(
-  window: BrowserWindow | null,
-  migration: IMigration,
-): PromiseBB<boolean> {
+function queryMigration(window: BrowserWindow | null, migration: IMigration): PromiseBB<boolean> {
   if (!migration.doQuery) {
     return PromiseBB.resolve(true);
   }
   return new PromiseBB((resolve, reject) => {
-    const buttons = migration.maySkip
-      ? ["Cancel", "Skip", "Continue"]
-      : ["Cancel", "Continue"];
+    const buttons = migration.maySkip ? ["Cancel", "Skip", "Continue"] : ["Cancel", "Continue"];
     dialog
       .showMessageBox(window, {
         type: "info",
@@ -323,10 +277,7 @@ function queryMigration(
   });
 }
 
-function queryContinue(
-  window: BrowserWindow | null,
-  err: Error,
-): PromiseBB<void> {
+function queryContinue(window: BrowserWindow | null, err: Error): PromiseBB<void> {
   return dialogProm(
     window,
     "error",
@@ -334,15 +285,10 @@ function queryContinue(
     "A migration step failed. You should quit now and resolve the cause of the issue.\n" +
       err.stack || err.message,
     ["Ignore", "Quit"],
-  ).then((selection) =>
-    selection === "Ignore" ? PromiseBB.resolve() : PromiseBB.reject(err),
-  );
+  ).then((selection) => (selection === "Ignore" ? PromiseBB.resolve() : PromiseBB.reject(err)));
 }
 
-function migrate(
-  store: Redux.Store<IState>,
-  window: BrowserWindow | null,
-): PromiseBB<void> {
+function migrate(store: Redux.Store<IState>, window: BrowserWindow | null): PromiseBB<void> {
   const state = store.getState();
   const oldVersion = state.app.appVersion || "0.0.0";
   const neccessaryMigrations = migrations
@@ -350,9 +296,7 @@ function migrate(
     .filter((mig) => state.app.migrations.indexOf(mig.id) === -1);
   return PromiseBB.each(neccessaryMigrations, (migration) =>
     queryMigration(window, migration)
-      .then((proceed: boolean) =>
-        proceed ? migration.apply(window, store) : PromiseBB.resolve(),
-      )
+      .then((proceed: boolean) => (proceed ? migration.apply(window, store) : PromiseBB.resolve()))
       .then(() => {
         store.dispatch(completeMigration(migration.id));
         return PromiseBB.resolve();

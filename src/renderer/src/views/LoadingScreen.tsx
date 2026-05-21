@@ -1,8 +1,7 @@
 import React from "react";
 
-import type ExtensionManager from "../ExtensionManager";
-
 import ProgressBar from "../controls/ProgressBar";
+import type ExtensionManager from "../ExtensionManager";
 
 export interface ILoadingScreenProps {
   extensions: ExtensionManager;

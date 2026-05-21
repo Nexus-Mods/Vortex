@@ -1,6 +1,6 @@
-import * as actions from "./actions";
+import { types, util } from "@nexusmods/vortex-api";
 
-import { types, util } from "vortex-api";
+import * as actions from "./actions";
 
 const persistentReducer: types.IReducerSpec = {
   reducers: {

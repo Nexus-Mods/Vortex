@@ -44,10 +44,7 @@ Example: user enables "Manage SDV mod configuration files"
 ### Step 1: Add an action in `actions.ts`
 
 ```ts
-export const setExampleFlag = createAction(
-    "SET_SDV_EXAMPLE_FLAG",
-    (enabled: boolean) => enabled,
-);
+export const setExampleFlag = createAction("SET_SDV_EXAMPLE_FLAG", (enabled: boolean) => enabled);
 ```
 
 ### Step 2: Handle it in `reducers.ts`

@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 
+import { Database } from "./Database";
 import type LevelPersist from "./LevelPersist";
 import type QueryInvalidator from "./QueryInvalidator";
-
-import { Database } from "./Database";
 import { Table } from "./Table";
 import { View } from "./View";
 

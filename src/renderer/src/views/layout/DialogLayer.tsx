@@ -1,9 +1,8 @@
 import React, { useCallback, type FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
-
 import { setDialogVisible } from "../../actions/session";
+import type { IState } from "../../types/IState";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
 import { OverlayContainer } from "../OverlayContainer";
@@ -27,10 +26,7 @@ export const DialogLayer: FC = (): JSX.Element => {
     <>
       <Dialog />
 
-      <DialogContainer
-        visibleDialog={visibleDialog}
-        onHideDialog={onHideDialog}
-      />
+      <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
 
       <OverlayContainer />
     </>

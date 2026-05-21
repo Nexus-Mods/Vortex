@@ -1,12 +1,12 @@
-import { Button } from "../TooltipControls";
-import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
-import { ComponentEx } from "../ComponentEx";
-import { getDateFormat, getLocale } from "../../datelocales";
-import { truthy } from "../../util/util";
-
 import * as React from "react";
 import { InputGroup } from "react-bootstrap";
 import ReactDatePicker from "react-datepicker";
+
+import { getDateFormat, getLocale } from "../../datelocales";
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
+import { truthy } from "../../util/util";
+import { ComponentEx } from "../ComponentEx";
+import { Button } from "../TooltipControls";
 
 export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   private currentComparison: "eq" | "ge" | "le";
@@ -39,9 +39,7 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
 
-    const filt = this.hasValidComparison(filter)
-      ? filter
-      : { comparison: "eq", value: "" };
+    const filt = this.hasValidComparison(filter) ? filter : { comparison: "eq", value: "" };
 
     const currentComparison = this.comparisons[filt.comparison];
 

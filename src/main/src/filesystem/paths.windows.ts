@@ -1,18 +1,18 @@
+import { access } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
+import { win32 as pathWin32 } from "node:path";
+
 import type {
   QualifiedPath,
   ResolvedPath,
   WindowsPathBase,
   WindowsPathProvider,
-} from "@vortex/fs";
-
+} from "@nexusmods/adaptor-api/fs";
 import {
   PathProviderError,
   PathResolverError,
   QualifiedPath as QP,
-} from "@vortex/fs";
-import { access } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
-import { win32 as pathWin32 } from "node:path";
+} from "@nexusmods/adaptor-api/fs";
 
 /**
  * Node-backed implementation of {@link WindowsPathProvider}.
@@ -60,9 +60,7 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
     const drive = driveMatch[1].toUpperCase();
     const tail = nativePath.slice(root.length).replace(/\\/g, "/");
     const value =
-      tail.length > 0
-        ? `${this.scheme}:///${drive}/${tail}`
-        : `${this.scheme}:///${drive}`;
+      tail.length > 0 ? `${this.scheme}:///${drive}/${tail}` : `${this.scheme}:///${drive}`;
     return Promise.resolve(QP.parse(value));
   }
 
@@ -81,29 +79,21 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
     } else if (base === "documents") {
       return this.#create(pathWin32.join(this.#home(), "Documents"));
     } else if (base === "my games") {
-      return this.#create(
-        pathWin32.join(this.#home(), "Documents", "My Games"),
-      );
+      return this.#create(pathWin32.join(this.#home(), "Documents", "My Games"));
     }
 
     const exhausted: never = base;
-    return Promise.reject(
-      new PathProviderError(`Unknown base '${exhausted as string}'`),
-    );
+    return Promise.reject(new PathProviderError(`Unknown base '${exhausted as string}'`));
   }
 
   resolve(path: QualifiedPath): Promise<ResolvedPath> {
     if (path.scheme !== this.scheme) {
-      return Promise.reject(
-        new PathResolverError(`Unsupported scheme '${path.scheme}'`),
-      );
+      return Promise.reject(new PathResolverError(`Unsupported scheme '${path.scheme}'`));
     }
     const p = path.path;
     if (!p.startsWith("/")) {
       return Promise.reject(
-        new PathResolverError(
-          `Invalid windows path '${path.value}': must be rooted (leading '/')`,
-        ),
+        new PathResolverError(`Invalid windows path '${path.value}': must be rooted (leading '/')`),
       );
     }
     const rest = p.slice(1);

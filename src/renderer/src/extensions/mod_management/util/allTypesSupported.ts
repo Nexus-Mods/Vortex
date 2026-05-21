@@ -1,15 +1,10 @@
+import * as _ from "lodash";
+
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
-
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";
-
-import type {
-  IDeploymentMethod,
-  IUnavailableReason,
-} from "../types/IDeploymentMethod";
-
-import * as _ from "lodash";
+import type { IDeploymentMethod, IUnavailableReason } from "../types/IDeploymentMethod";
 
 function allTypesSupported(
   activator: IDeploymentMethod,
@@ -40,9 +35,7 @@ function allTypesSupported(
         const { deploymentEssential } = getSafe(typeInfo, ["options"], {
           deploymentEssential: true,
         });
-        prev[deploymentEssential === false ? "warnings" : "errors"].push(
-          reason,
-        );
+        prev[deploymentEssential === false ? "warnings" : "errors"].push(reason);
       }
       return prev;
     },

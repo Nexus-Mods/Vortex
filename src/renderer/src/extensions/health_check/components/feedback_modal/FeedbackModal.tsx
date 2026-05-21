@@ -26,12 +26,7 @@ export const FeedbackModal = ({
   const [checkedOptions, setCheckedOptions] = useState<string[]>([]);
 
   return (
-    <Modal
-      isOpen={isOpen}
-      size="sm"
-      title={t("detail::feedback_modal::title")}
-      onClose={onClose}
-    >
+    <Modal isOpen={isOpen} size="sm" title={t("detail::feedback_modal::title")} onClose={onClose}>
       <Typography appearance="subdued" typographyType="body-sm">
         {t("detail::feedback_modal::description")}
       </Typography>
@@ -54,13 +49,7 @@ export const FeedbackModal = ({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-x-2">
-        <Button
-          buttonType="tertiary"
-          className="w-full"
-          filled="weak"
-          size="sm"
-          onClick={onClose}
-        >
+        <Button buttonType="tertiary" className="w-full" filled="weak" size="sm" onClick={onClose}>
           {t("detail::feedback_modal::buttons::cancel")}
         </Button>
 

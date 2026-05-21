@@ -6,25 +6,16 @@
 export type { Normalize } from "./getNormalizeFunc.ts";
 export * from "./message";
 
-import bbcodeToReact, {
-  bbcodeToHTML,
-  preProcess as bbcodePreProcess,
-} from "../controls/bbcode";
+import bbcodeToReact, { bbcodeToHTML, preProcess as bbcodePreProcess } from "../controls/bbcode";
 import { installIconSet } from "../controls/Icon";
 import {
   resolveCategoryName,
   resolveCategoryPath,
 } from "../extensions/category_management/util/retrieveCategoryPath";
-import {
-  generateCollectionSessionId,
-  modRuleId,
-} from "../extensions/collections_integration/util";
+import { generateCollectionSessionId, modRuleId } from "../extensions/collections_integration/util";
 import { readExtensibleDir } from "../extensions/extension_manager/util";
 import getDriveList from "../extensions/gamemode_management/util/getDriveList";
-import {
-  getGame,
-  getGames,
-} from "../extensions/gamemode_management/util/getGame";
+import { getGame, getGames } from "../extensions/gamemode_management/util/getGame";
 import { getModType } from "../extensions/gamemode_management/util/modTypeExtensions";
 import deriveModInstallName from "../extensions/mod_management/modIdManager";
 import { getManifest } from "../extensions/mod_management/util/activationStore";
@@ -39,14 +30,9 @@ import {
 } from "../extensions/mod_management/util/deploymentMethods";
 import { findModByRef } from "../extensions/mod_management/util/findModByRef";
 import { isFuzzyVersion } from "../extensions/mod_management/util/isFuzzyVersion";
-import renderModName, {
-  renderModReference,
-} from "../extensions/mod_management/util/modName";
+import renderModName, { renderModReference } from "../extensions/mod_management/util/modName";
 import { makeModReference } from "../extensions/mod_management/util/modReference";
-import {
-  getModSource,
-  getModSources,
-} from "../extensions/mod_management/util/modSource";
+import { getModSource, getModSources } from "../extensions/mod_management/util/modSource";
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
@@ -81,7 +67,7 @@ import {
   withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import GameStoreHelper from "./GameStoreHelper";
+import GameStoreHelper, { normalizeStoreQuery } from "./GameStoreHelper";
 
 /**
  * @deprecated Use window.api for IPC communication from renderer to main process.
@@ -94,16 +80,22 @@ function makeRemoteCall(): never {
   );
 }
 
-import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
-import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
-export * from "./network";
-import type { TFunction } from "./i18n";
-
 import LazyComponent from "../controls/LazyComponent";
+import {
+  buildCopyInstructions,
+  compileStopPatterns,
+  declareInstallers,
+  findCommonRootDir,
+  makeInstallerFromSpec,
+  matchesAnyStopPattern,
+} from "../extensions/mod_management/util/installerHelpers";
 import ReduxProp from "../ReduxProp";
 import { getReduxLog } from "../store/reduxLogger";
+import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
+import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 import github from "./github";
+import type { TFunction } from "./i18n";
 import { getCurrentLanguage } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import local from "./local";
@@ -160,6 +152,7 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
+export * from "./network";
 export * from "./storeHelper";
 export {
   Archive,
@@ -168,16 +161,19 @@ export {
   bbcodePreProcess,
   bbcodeToHTML,
   bbcodeToReact,
+  buildCopyInstructions,
   bytesToString,
   calculateFolderSize,
   Campaign,
   checksum,
   convertGameIdReverse,
+  compileStopPatterns,
   copyFileAtomic,
   copyRecursive,
   ConcurrencyLimiter,
   Content,
   CycleError,
+  declareInstallers,
   DataInvalid,
   Debouncer,
   deBOM,
@@ -188,10 +184,12 @@ export {
   // extend is renderer-only, available via renderer/controls/ComponentEx
   extractExeIcon,
   fileMD5,
+  findCommonRootDir,
   findDownloadByRef,
   findModByRef,
   GameNotFound,
   GameStoreHelper,
+  normalizeStoreQuery,
   generateCollectionSessionId,
   getActivator,
   getApplication,
@@ -218,6 +216,7 @@ export {
   lazyRequire,
   local,
   lookupFromDownload,
+  makeInstallerFromSpec,
   makeModReference,
   coerceToSemver,
   makeNormalizingDict,

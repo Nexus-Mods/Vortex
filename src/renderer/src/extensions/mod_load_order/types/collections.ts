@@ -1,9 +1,5 @@
-import type {
-  ICollectionInfo,
-  IRevision,
-  SourceType,
-  UpdatePolicy,
-} from "@nexusmods/nexus-api";
+import type { ICollectionInfo, IRevision, SourceType, UpdatePolicy } from "@nexusmods/nexus-api";
+
 import type * as types from "../../../types/api";
 import type { ILoadOrder } from "./types";
 
@@ -49,13 +45,7 @@ export interface ICollectionMod {
   details?: ICollectionModDetails;
 }
 
-export type RuleType =
-  | "before"
-  | "after"
-  | "requires"
-  | "conflicts"
-  | "recommends"
-  | "provides";
+export type RuleType = "before" | "after" | "requires" | "conflicts" | "recommends" | "provides";
 export interface ICollectionModRule {
   source: types.IModReference;
   type: RuleType;
@@ -85,11 +75,7 @@ export interface ICollectionsGameSupportEntry {
     mods: { [modId: string]: types.IMod },
   ) => Promise<any>;
 
-  parser: (
-    api: types.IExtensionApi,
-    gameId: string,
-    collection: ICollection,
-  ) => Promise<void>;
+  parser: (api: types.IExtensionApi, gameId: string, collection: ICollection) => Promise<void>;
 
   interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
 }

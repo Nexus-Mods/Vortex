@@ -1,5 +1,4 @@
 import type { IMessageHandler } from "@nexusmods/adaptor-api";
-
 import { adaptorName, semVer, uri } from "@nexusmods/adaptor-api";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 

@@ -1,25 +1,25 @@
+import * as path from "path";
+import { pathToFileURL } from "url";
+
+import * as React from "react";
+import { Button } from "react-bootstrap";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { setDialogVisible } from "../../../actions/session";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Image from "../../../controls/Image";
 import Spinner from "../../../controls/Spinner";
 import { IconButton } from "../../../controls/TooltipControls";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import { UserCanceled } from "../../../util/CustomErrors";
 import getVortexPath from "../../../util/getVortexPath";
 import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import { setUserInfo } from "../actions/persistent";
-import type { IValidateKeyData } from "../types/IValidateKeyData";
-
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from "../constants";
-
-import * as path from "path";
-import * as React from "react";
-import { Button } from "react-bootstrap";
-import type { WithTranslation } from "react-i18next";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import { pathToFileURL } from "url";
+import type { IValidateKeyData } from "../types/IValidateKeyData";
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
@@ -65,15 +65,8 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
               "on the Nexus Mods website to get the best experience!",
           )}
         </div>
-        <Button
-          onClick={this.login}
-          disabled={requested || loginId !== undefined}
-        >
-          {requested || loginId !== undefined ? (
-            <Spinner />
-          ) : (
-            t("Log In or Register")
-          )}
+        <Button onClick={this.login} disabled={requested || loginId !== undefined}>
+          {requested || loginId !== undefined ? <Spinner /> : t("Log In or Register")}
         </Button>
       </div>
     );
@@ -82,9 +75,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
   private renderLoggedIn(userInfo: IValidateKeyData): JSX.Element {
     const { t } = this.props;
 
-    const fallback = pathToFileURL(
-      path.join(getVortexPath("assets"), "..", FALLBACK_AVATAR),
-    ).href;
+    const fallback = pathToFileURL(path.join(getVortexPath("assets"), "..", FALLBACK_AVATAR)).href;
 
     const profileIcon =
       truthy(userInfo) && truthy(userInfo.profileUrl)
@@ -111,11 +102,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
           </div>
         </div>
         <div>
-          <IconButton
-            icon="logout"
-            onClick={this.logout}
-            tooltip={t("Logout")}
-          />
+          <IconButton icon="logout" onClick={this.logout} tooltip={t("Logout")} />
         </div>
       </div>
     );
@@ -126,14 +113,10 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
     this.context.api.events.emit("request-nexus-login", (err: Error) => {
       this.nextState.requested = false;
       if (err !== null && !(err instanceof UserCanceled)) {
-        this.context.api.showErrorNotification(
-          "Failed to get access key",
-          err,
-          {
-            id: "failed-get-nexus-key",
-            allowReport: false,
-          },
-        );
+        this.context.api.showErrorNotification("Failed to get access key", err, {
+          id: "failed-get-nexus-key",
+          allowReport: false,
+        });
       }
     });
     // this.props.onSetDialogVisible('login-dialog');
@@ -159,9 +142,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey?: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
@@ -170,7 +151,4 @@ function mapDispatchToProps(
   };
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(translate(["common"])(DashboardBanner));
+export default connect(mapStateToProps, mapDispatchToProps)(translate(["common"])(DashboardBanner));

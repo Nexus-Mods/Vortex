@@ -1,4 +1,4 @@
-@source inline('{xs:,sm:,md:,lg:,xl:,2xl:,}text-{body,title,heading}-{xs,sm,md,lg,xl,2xl}');
+@source inline("{xs:,sm:,md:,lg:,xl:,2xl:,}text-{body,title,heading}-{xs,sm,md,lg,xl,2xl}");
 
 @theme {
     /* Body */

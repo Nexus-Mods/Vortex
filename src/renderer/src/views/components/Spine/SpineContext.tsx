@@ -11,15 +11,14 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IMainPage } from "../../../types/IMainPage";
-import type { IState } from "../../../types/IState";
-
 import {
   setDownloadGameFilter as setDownloadGameFilterAction,
   setOpenMainPage,
 } from "../../../actions/session";
 import { useMainContext, usePagesContext } from "../../../contexts";
 import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
+import type { IMainPage } from "../../../types/IMainPage";
+import type { IState } from "../../../types/IState";
 import {
   activeGameId as activeGameIdSelector,
   activeProfileId as activeProfileIdSelector,
@@ -63,9 +62,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const { mainPages } = usePagesContext();
   const dispatch = useDispatch();
 
-  const profilesVisible = useSelector(
-    (state: IState) => state.settings.interface.profilesVisible,
-  );
+  const profilesVisible = useSelector((state: IState) => state.settings.interface.profilesVisible);
   const lastActiveProfile = useSelector(lastActiveProfilesSelector);
   const activeProfileId = useSelector(activeProfileIdSelector);
   const activeGameId = useSelector(activeGameIdSelector);
@@ -79,8 +76,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   // restart. Typed as `any` because this path lives in the gamebryo-plugin-
   // management extension and isn't in core IState.
   const pluginManagementEnabled = useSelector(
-    (state: IStateWithPlugins) =>
-      state.settings.plugins?.pluginManagementEnabled,
+    (state: IStateWithPlugins) => state.settings.plugins?.pluginManagementEnabled,
   );
 
   // Tracks the gameId that was active when the user navigated to home.
@@ -138,10 +134,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const gamePages: IMainPage[] = useMemo(
     () =>
       mainPages.filter(
-        (page) =>
-          page.group === "per-game" &&
-          page.id !== "game-downloads" &&
-          isPageVisible(page),
+        (page) => page.group === "per-game" && page.id !== "game-downloads" && isPageVisible(page),
       ),
     [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
   );
@@ -153,10 +146,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
 
   // Downloads mode shows a single "Downloads" page
   const downloadsPages: IMainPage[] = useMemo(
-    () =>
-      mainPages.filter(
-        (page) => page.id === "Downloads" && isPageVisible(page),
-      ),
+    () => mainPages.filter((page) => page.id === "Downloads" && isPageVisible(page)),
     [mainPages, isPageVisible],
   );
 
@@ -188,9 +178,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   mainPageRef.current = mainPage;
 
   useEffect(() => {
-    const currentPageValid = visiblePages.some(
-      (p) => p.id === mainPageRef.current,
-    );
+    const currentPageValid = visiblePages.some((p) => p.id === mainPageRef.current);
     if (currentPageValid) {
       return;
     }
@@ -224,8 +212,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     (gameId: string) => {
       const profileId = lastActiveProfile[gameId];
       const profileExists =
-        profileId !== undefined &&
-        profileByIdSelector(api.getState(), profileId) !== undefined;
+        profileId !== undefined && profileByIdSelector(api.getState(), profileId) !== undefined;
 
       setIsDownloadsMode(false);
       setHomeForGameId(null);
@@ -303,9 +290,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     };
   }, [api, gamePages, activeGameId]);
 
-  return (
-    <SpineContext.Provider value={value}>{children}</SpineContext.Provider>
-  );
+  return <SpineContext.Provider value={value}>{children}</SpineContext.Provider>;
 };
 
 export const useSpineContext = () => {

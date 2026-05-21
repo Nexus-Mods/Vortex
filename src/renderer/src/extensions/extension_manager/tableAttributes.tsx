@@ -1,26 +1,20 @@
-import TableTextFilter from "../../controls/table/TextFilter";
-import type { IExtensionLoadFailure } from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import { getSafe } from "../../util/storeHelper";
-
-import { SITE_ID } from "../gamemode_management/constants";
-import type { EndorseMod } from "../nexus_integration/attributes";
-import EndorseModButton from "../nexus_integration/views/EndorseModButton";
-
-import type { IExtensionWithState } from "../../types/extensions";
-
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 
+import TableTextFilter from "../../controls/table/TextFilter";
+import type { IExtensionWithState } from "../../types/extensions";
+import type { IExtensionLoadFailure } from "../../types/IState";
+import type { ITableAttribute } from "../../types/ITableAttribute";
+import { getSafe } from "../../util/storeHelper";
+import { SITE_ID } from "../gamemode_management/constants";
+import type { EndorseMod } from "../nexus_integration/attributes";
+import EndorseModButton from "../nexus_integration/views/EndorseModButton";
+
 interface IAttributesContext {
   onSetExtensionEnabled: (extensionName: string, enabled: boolean) => void;
   onToggleExtensionEnabled: (extensionName: string) => void;
-  onEndorseMod: (
-    gameId: string,
-    modId: string,
-    endorsed: EndorsedStatus,
-  ) => void;
+  onEndorseMod: (gameId: string, modId: string, endorsed: EndorsedStatus) => void;
 }
 
 function renderLoadFailure(t: TFunction, fail: IExtensionLoadFailure) {
@@ -40,11 +34,7 @@ function renderLoadFailure(t: TFunction, fail: IExtensionLoadFailure) {
   return t(pattern, { replace: fail.args });
 }
 
-function createEndorsedIcon(
-  ext: IExtensionWithState,
-  onEndorse: EndorseMod,
-  t: TFunction,
-) {
+function createEndorsedIcon(ext: IExtensionWithState, onEndorse: EndorseMod, t: TFunction) {
   const endorsed: string = ext.endorsed || "Undecided";
   return (
     <EndorseModButton
@@ -88,10 +78,7 @@ function getTableAttributes(
         onChangeValue: (extension: IExtensionWithState, value: string) =>
           value === undefined
             ? context.onToggleExtensionEnabled(extension.name)
-            : context.onSetExtensionEnabled(
-                extension.name,
-                value === "enabled",
-              ),
+            : context.onSetExtensionEnabled(extension.name, value === "enabled"),
       },
       isSortable: false,
       isGroupable: true,
@@ -114,14 +101,8 @@ function getTableAttributes(
       description: "Endorsement state on Nexus",
       icon: "star",
       calc: (extension) => extension.endorsed,
-      customRenderer: (
-        extension: IExtensionWithState,
-        detail: boolean,
-        t: TFunction,
-      ) =>
-        !!extension.modId
-          ? createEndorsedIcon(extension, context.onEndorseMod, t)
-          : null,
+      customRenderer: (extension: IExtensionWithState, detail: boolean, t: TFunction) =>
+        !!extension.modId ? createEndorsedIcon(extension, context.onEndorseMod, t) : null,
       placement: "table",
       isToggleable: true,
       edit: {},
@@ -146,11 +127,7 @@ function getTableAttributes(
       description: "Extension Description",
       placement: "detail",
       customRenderer: (extension: IExtensionWithState) => (
-        <textarea
-          className="textarea-details"
-          value={extension.description}
-          readOnly={true}
-        />
+        <textarea className="textarea-details" value={extension.description} readOnly={true} />
       ),
       calc: (extension) => extension.description,
       edit: {},
@@ -173,19 +150,11 @@ function getTableAttributes(
       icon: "bug",
       placement: "detail",
       calc: (extension, t) =>
-        extension.loadFailures
-          .map((fail) => renderLoadFailure(t, fail))
-          .join("\n"),
-      customRenderer: (
-        extension: IExtensionWithState,
-        detailCell: boolean,
-        t: TFunction,
-      ) => (
+        extension.loadFailures.map((fail) => renderLoadFailure(t, fail)).join("\n"),
+      customRenderer: (extension: IExtensionWithState, detailCell: boolean, t: TFunction) => (
         <textarea
           className="textarea-details"
-          value={extension.loadFailures
-            .map((fail) => renderLoadFailure(t, fail))
-            .join("\n")}
+          value={extension.loadFailures.map((fail) => renderLoadFailure(t, fail)).join("\n")}
           readOnly={true}
         />
       ),

@@ -1,7 +1,7 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { hasSessionFOMOD } from "./guards";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import type { IChoices, IGroupList } from "../types/interface";
+import { hasSessionFOMOD } from "./guards";
 
 // Helper function to check if there's an active FOMOD dialog
 export function hasActiveFomodDialog(api: IExtensionApi): boolean {
@@ -10,22 +10,17 @@ export function hasActiveFomodDialog(api: IExtensionApi): boolean {
     return false;
   }
 
-  const activeInstanceId =
-    state.session.fomod.installer?.dialog?.activeInstanceId;
+  const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
   return !!activeInstanceId;
 }
 
-export const getChoicesFromState = (
-  api: IExtensionApi,
-  instanceId: string,
-): IChoices => {
+export const getChoicesFromState = (api: IExtensionApi, instanceId: string): IChoices => {
   const state = api.getState();
   if (!state || !hasSessionFOMOD(state.session)) {
     throw new ProcessCanceled("FOMOD state missing after installation");
   }
 
-  const dialogState =
-    state.session.fomod.installer?.dialog?.instances?.[instanceId]?.state;
+  const dialogState = state.session.fomod.installer?.dialog?.instances?.[instanceId]?.state;
   const choices =
     dialogState?.installSteps === undefined
       ? undefined

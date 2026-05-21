@@ -1,8 +1,7 @@
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Toggle from "../../../controls/Toggle";
@@ -28,14 +27,8 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
         <FormGroup controlId="analytics">
           <ControlLabel>{t("Data & Privacy")}</ControlLabel>
 
-          <Toggle
-            checked={analytics}
-            disabled={!userInfo}
-            onToggle={this.toggleAnalytics}
-          >
-            {t(
-              "Allow this app to collect usage data to improve your experience",
-            )}
+          <Toggle checked={analytics} disabled={!userInfo} onToggle={this.toggleAnalytics}>
+            {t("Allow this app to collect usage data to improve your experience")}
           </Toggle>
 
           <HelpBlock>
@@ -69,9 +62,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAnalytics: (analytics: boolean): void => {
       dispatch(setAnalytics(analytics));

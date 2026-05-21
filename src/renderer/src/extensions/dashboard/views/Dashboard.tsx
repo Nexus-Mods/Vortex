@@ -1,32 +1,25 @@
-import DropdownButton from "../../../controls/DropdownButton";
-import FlexLayout from "../../../controls/FlexLayout";
-import Icon from "../../../controls/Icon";
-import { IconButton } from "../../../controls/TooltipControls";
-import type { IDashletSettings, IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import Debouncer from "../../../util/Debouncer";
-import { getWindowId } from "../../../util/preloadAccess";
-import { getSafe } from "../../../util/storeHelper";
-import MainPage from "../../../views/MainPage";
-
-import {
-  setDashletEnabled,
-  setDashletHeight,
-  setDashletWidth,
-  setLayout,
-} from "../actions";
-import type { IDashletProps } from "../types/IDashletProps";
-
-import FixedItem from "./FixedItem";
-import PackeryGrid from "./PackeryGrid";
-import type { IPackeryItemProps } from "./PackeryItem";
-import PackeryItem from "./PackeryItem";
-
 import * as _ from "lodash";
 import * as React from "react";
 import { Button, MenuItem } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import DropdownButton from "../../../controls/DropdownButton";
+import FlexLayout from "../../../controls/FlexLayout";
+import Icon from "../../../controls/Icon";
+import { IconButton } from "../../../controls/TooltipControls";
+import type { IDashletSettings, IState } from "../../../types/IState";
+import Debouncer from "../../../util/Debouncer";
+import { getWindowId } from "../../../util/preloadAccess";
+import { getSafe } from "../../../util/storeHelper";
+import MainPage from "../../../views/MainPage";
+import { setDashletEnabled, setDashletHeight, setDashletWidth, setLayout } from "../actions";
+import type { IDashletProps } from "../types/IDashletProps";
+import FixedItem from "./FixedItem";
+import PackeryGrid from "./PackeryGrid";
+import type { IPackeryItemProps } from "./PackeryItem";
+import PackeryItem from "./PackeryItem";
 
 const UPDATE_FREQUENCY_MS = 1000;
 
@@ -49,9 +42,7 @@ interface IActionProps {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-function BackgroundGrid(
-  props: Partial<IPackeryItemProps> & { editMode: boolean },
-) {
+function BackgroundGrid(props: Partial<IPackeryItemProps> & { editMode: boolean }) {
   return props.editMode ? (
     <div key="background-grid" className="dashboard-background-grid" />
   ) : (
@@ -125,13 +116,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     const state = this.context.api.store.getState();
 
-    const layoutMap: { [key: string]: number } = layout.reduce(
-      (prev, key, idx) => {
-        prev[key] = idx + 1;
-        return prev;
-      },
-      {},
-    );
+    const layoutMap: { [key: string]: number } = layout.reduce((prev, key, idx) => {
+      prev[key] = idx + 1;
+      return prev;
+    }, {});
 
     // Dashlets not in the layout (e.g. just re-enabled) are appended after
     // all existing items so Packery places them in the first available gap
@@ -142,8 +130,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       .filter(
         (dash: IDashletProps) =>
           (dash.isVisible === undefined || dash.isVisible(state)) &&
-          (!dash.closable ||
-            getSafe(dashletSettings, [dash.title, "enabled"], true)),
+          (!dash.closable || getSafe(dashletSettings, [dash.title, "enabled"], true)),
       )
       .sort(
         (lhs: IDashletProps, rhs: IDashletProps) =>
@@ -152,29 +139,20 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       );
     const { fixed, dynamic } = sorted.reduce(
       (prev, dash) => {
-        const isFixed = getSafe(
-          dashletSettings,
-          [dash.title, "fixed"],
-          dash.fixed,
-        );
+        const isFixed = getSafe(dashletSettings, [dash.title, "fixed"], dash.fixed);
         prev[isFixed ? "fixed" : "dynamic"].push(dash);
         return prev;
       },
       { fixed: [], dynamic: [] },
     );
 
-    const classes = [
-      "page-dashboard",
-      editMode ? "dashboard-edit" : "dashboard-view",
-    ];
+    const classes = ["page-dashboard", editMode ? "dashboard-edit" : "dashboard-view"];
 
     return (
       <MainPage id="page-dashboard" className={classes.join(" ")}>
         <MainPage.Body style={{ display: "flex", flexDirection: "column" }}>
           <div className="dashboard-editbar">{this.renderEditBar()}</div>
-          <div className="fixed-dashlets">
-            {fixed.map(this.renderFixedItem)}
-          </div>
+          <div className="fixed-dashlets">{fixed.map(this.renderFixedItem)}</div>
           <div className="dynamic-dashlets">
             <PackeryGrid
               totalWidth={3}
@@ -206,15 +184,9 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         <FlexLayout.Fixed>
           <DropdownButton id="add-widget-button" title={t("Add Dashlet")}>
             {dashlets
-              .filter(
-                (dash) => dash.closable && dash.isVisible?.(state) !== false,
-              )
+              .filter((dash) => dash.closable && dash.isVisible?.(state) !== false)
               .map((dash) => (
-                <MenuItem
-                  onClick={this.toggleMenuItem}
-                  data-id={dash.title}
-                  key={dash.title}
-                >
+                <MenuItem onClick={this.toggleMenuItem} data-id={dash.title} key={dash.title}>
                   <Icon
                     name={
                       dashletSettings[dash.title]?.enabled === false
@@ -231,11 +203,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       </FlexLayout>
     ) : (
       <div className="dashlet-customize-btn">
-        <IconButton
-          icon="edit"
-          tooltip={t("Customize your dashboard")}
-          onClick={this.toggleEdit}
-        >
+        <IconButton icon="edit" tooltip={t("Customize your dashboard")} onClick={this.toggleEdit}>
           {t("Customize your dashboard")}
         </IconButton>
       </div>
@@ -278,10 +246,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     //   testing
 
     this.mUpdateTimer = setTimeout(() => {
-      if (
-        this.mWindowFocused &&
-        process.env["DEBUG_REACT_RENDERS"] !== "true"
-      ) {
+      if (this.mWindowFocused && process.env["DEBUG_REACT_RENDERS"] !== "true") {
         this.nextState.counter++;
       }
       this.startUpdateCycle();
@@ -303,11 +268,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         editable={editMode}
         onDismiss={dash.closable ? this.dismissDashlet : undefined}
       >
-        <dash.component
-          t={this.props.t}
-          {...componentProps}
-          counter={counter}
-        />
+        <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </FixedItem>
     );
   };
@@ -331,11 +292,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         onDismiss={dash.closable ? this.dismissDashlet : undefined}
         fixed={dash.fixed}
       >
-        <dash.component
-          t={this.props.t}
-          {...componentProps}
-          counter={counter}
-        />
+        <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </PackeryItem>
     );
   };
@@ -362,9 +319,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetLayout: (items: string[]) => dispatch(setLayout(items)),
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>

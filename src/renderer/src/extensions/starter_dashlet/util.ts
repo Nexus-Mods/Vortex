@@ -1,19 +1,18 @@
-import PromiseBB from "bluebird";
-import _ from "lodash";
-import Debouncer from "../../util/Debouncer";
-import { nativeImage } from "electron";
-import * as fs from "../../util/fs";
 import path from "path";
-import extractExeIcon from "../../util/exeIcon";
-import { ProcessCanceled } from "../../util/CustomErrors";
+
+import PromiseBB from "bluebird";
+import { nativeImage } from "electron";
+import _ from "lodash";
 
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IEditStarterInfo } from "./types";
-
+import { ProcessCanceled } from "../../util/CustomErrors";
+import Debouncer from "../../util/Debouncer";
+import extractExeIcon from "../../util/exeIcon";
+import * as fs from "../../util/fs";
 import type { IStarterInfo } from "../../util/StarterInfo";
 import StarterInfo from "../../util/StarterInfo";
-
 import { truthy } from "../../util/util";
+import type { IEditStarterInfo } from "./types";
 
 export const propOf = <T>(name: keyof T) => name;
 
@@ -75,9 +74,7 @@ export function updateJumpList(starters: IStarterInfo[]) {
 
   const userTasks: Electron.JumpListItem[] = starters
     .filter(
-      (starter) =>
-        truthy(starter.exePath) &&
-        Object.keys(starter.environment || {}).length === 0,
+      (starter) => truthy(starter.exePath) && Object.keys(starter.environment || {}).length === 0,
     )
     .map((starter) => {
       const task: Electron.Task = {
@@ -133,10 +130,7 @@ export function toToolDiscovery(tool: IEditStarterInfo): IDiscoveredTool {
 }
 
 function toPNG(inputPath: string, outputPath: string): PromiseBB<void> {
-  return fs.writeFileAsync(
-    outputPath,
-    nativeImage.createFromPath(inputPath).toPNG(),
-  );
+  return fs.writeFileAsync(outputPath, nativeImage.createFromPath(inputPath).toPNG());
 }
 
 const updateImageDebouncer = new Debouncer(
@@ -144,11 +138,7 @@ const updateImageDebouncer = new Debouncer(
   2000,
 );
 
-export function updateImage(
-  tool: IStarterInfo,
-  filePath: string,
-  cb: (err?: Error) => void,
-) {
+export function updateImage(tool: IStarterInfo, filePath: string, cb: (err?: Error) => void) {
   updateImageDebouncer.schedule(cb, tool, filePath);
 }
 

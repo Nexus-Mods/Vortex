@@ -1,3 +1,6 @@
+import i18next from "i18next";
+import type * as Redux from "redux";
+
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { TFunction } from "../../util/i18n";
@@ -5,11 +8,10 @@ import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { setModAttribute } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/types/IModProps";
-
+import { isLoggedIn } from "../nexus_integration/selectors";
 import { loadCategories, updateCategories } from "./actions/category";
 import { showCategoriesDialog } from "./actions/session";
 import { categoryReducer } from "./reducers/category";
@@ -18,15 +20,8 @@ import { allCategories } from "./selectors";
 import type { ICategoryDictionary } from "./types/ICategoryDictionary";
 import type { ICategoriesTree } from "./types/ITrees";
 import CategoryFilter from "./util/CategoryFilter";
-import {
-  resolveCategoryName,
-  resolveCategoryPath,
-} from "./util/retrieveCategoryPath";
+import { resolveCategoryName, resolveCategoryPath } from "./util/retrieveCategoryPath";
 import CategoryDialog from "./views/CategoryDialog";
-
-import i18next from "i18next";
-import type * as Redux from "redux";
-import { isLoggedIn } from "../nexus_integration/selectors";
 
 // export for api
 export { resolveCategoryName, resolveCategoryPath };
@@ -48,9 +43,7 @@ function getCategoryChoices(state: IState) {
   return [{ key: "", text: "" }].concat(
     Object.keys(categories)
       .map((id) => ({ key: id, text: resolveCategoryPath(id, state) }))
-      .sort(
-        (lhs, rhs) => categories[lhs.key].order - categories[rhs.key].order,
-      ),
+      .sort((lhs, rhs) => categories[lhs.key].order - categories[rhs.key].order),
   );
 }
 
@@ -101,16 +94,9 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["session", "categories"], sessionReducer);
 
   context.registerDialog("categories", CategoryDialog);
-  context.registerAction(
-    "mod-icons",
-    80,
-    "categories",
-    {},
-    "Categories",
-    () => {
-      context.api.store.dispatch(showCategoriesDialog(true));
-    },
-  );
+  context.registerAction("mod-icons", 80, "categories", {}, "Categories", () => {
+    context.api.store.dispatch(showCategoriesDialog(true));
+  });
 
   context.registerTableAttribute("mods", {
     id: "category",
@@ -124,21 +110,10 @@ function init(context: IExtensionContext): boolean {
     edit: {},
     isSortable: true,
     isGroupable: (mod: IModWithState, t: TFunction) =>
-      resolveCategoryName(getModCategory(mod), context.api.store.getState()) ||
-      t("<No category>"),
+      resolveCategoryName(getModCategory(mod), context.api.store.getState()) || t("<No category>"),
     filter: new CategoryFilter(),
-    sortFuncRaw: (
-      lhs: IModWithState,
-      rhs: IModWithState,
-      locale: string,
-    ): number =>
-      sortCategories(
-        lhs,
-        rhs,
-        getCollator(locale),
-        context.api.store.getState(),
-        sortDirection,
-      ),
+    sortFuncRaw: (lhs: IModWithState, rhs: IModWithState, locale: string): number =>
+      sortCategories(lhs, rhs, getCollator(locale), context.api.store.getState(), sortDirection),
   });
 
   context.registerTableAttribute("mods", {
@@ -155,22 +130,17 @@ function init(context: IExtensionContext): boolean {
         const gameMode = activeGameId(context.api.store.getState());
         rows.forEach((row) => {
           if (row.state === "downloaded") {
-            context.api.store.dispatch(
-              setDownloadModInfo(row.id, "custom.category", newValue),
-            );
+            context.api.store.dispatch(setDownloadModInfo(row.id, "custom.category", newValue));
           } else {
-            context.api.store.dispatch(
-              setModAttribute(gameMode, row.id, "category", newValue),
-            );
+            context.api.store.dispatch(setModAttribute(gameMode, row.id, "category", newValue));
           }
         });
       },
     },
     externalData: (onChanged: () => void) => {
-      context.api.onStateChange(
-        ["settings", "interface", "hideTopLevelCategory"],
-        () => { onChanged(); },
-      );
+      context.api.onStateChange(["settings", "interface", "hideTopLevelCategory"], () => {
+        onChanged();
+      });
     },
     placement: "detail",
     isToggleable: false,
@@ -180,37 +150,31 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
-    context.api.onStateChange(
-      ["settings", "tables", "mods"],
-      (oldState, newState) => {
-        const newSortDirection = getSafe(
-          newState,
-          ["attributes", "category", "sortDirection"],
-          "none",
-        );
-
-        const oldSortDirection = getSafe(
-          oldState,
-          ["attributes", "category", "sortDirection"],
-          "none",
-        );
-
-        if (newSortDirection !== oldSortDirection) {
-          sortDirection = newSortDirection;
-        }
-      },
-    );
-    try {
-      context.api.events.on(
-        "update-categories",
-        (gameId, categories, isUpdate) => {
-          if (isUpdate) {
-            context.api.store.dispatch(updateCategories(gameId, categories));
-          } else {
-            context.api.store.dispatch(loadCategories(gameId, categories));
-          }
-        },
+    context.api.onStateChange(["settings", "tables", "mods"], (oldState, newState) => {
+      const newSortDirection = getSafe(
+        newState,
+        ["attributes", "category", "sortDirection"],
+        "none",
       );
+
+      const oldSortDirection = getSafe(
+        oldState,
+        ["attributes", "category", "sortDirection"],
+        "none",
+      );
+
+      if (newSortDirection !== oldSortDirection) {
+        sortDirection = newSortDirection;
+      }
+    });
+    try {
+      context.api.events.on("update-categories", (gameId, categories, isUpdate) => {
+        if (isUpdate) {
+          context.api.store.dispatch(updateCategories(gameId, categories));
+        } else {
+          context.api.store.dispatch(loadCategories(gameId, categories));
+        }
+      });
 
       context.api.events.on("gamemode-activated", (gameMode: string) => {
         const categories: ICategoriesTree[] = getSafe(

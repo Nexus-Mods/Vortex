@@ -1,9 +1,6 @@
 import semver from "semver";
-import {
-  IAvailableDownloads,
-  INexusDownloadInfo,
-  IUMMGameConfig,
-} from "./types";
+
+import { IAvailableDownloads, INexusDownloadInfo, IUMMGameConfig } from "./types";
 
 export const NEXUS = "www.nexusmods.com";
 export const UMM_EXE = "UnityModManager.exe";
@@ -56,8 +53,7 @@ export const getLatestVersion = (): string => {
 
 export const getDownload = (gameConf: IUMMGameConfig): INexusDownloadInfo => {
   const download: INexusDownloadInfo =
-    gameConf.ummVersion !== undefined &&
-    Object.keys(AVAILABLE).includes(gameConf.ummVersion)
+    gameConf.ummVersion !== undefined && Object.keys(AVAILABLE).includes(gameConf.ummVersion)
       ? AVAILABLE[gameConf.ummVersion]
       : AVAILABLE[getLatestVersion()];
   return {

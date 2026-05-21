@@ -16,7 +16,6 @@ import React, {
 } from "react";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-
 import Debouncer from "../../../util/Debouncer";
 import { isCollectionModPresent } from "../../../util/selectors";
 import { delayed } from "../../../util/util";
@@ -55,10 +54,7 @@ export interface CollectionTileProps {
   className?: string;
 }
 
-const Stat = ({
-  children,
-  iconPath,
-}: PropsWithChildren<{ iconPath: string }>) => (
+const Stat = ({ children, iconPath }: PropsWithChildren<{ iconPath: string }>) => (
   <div className="flex items-center gap-x-1">
     <Icon className="text-neutral-subdued" path={iconPath} size="sm" />
 
@@ -97,10 +93,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
       return;
     }
 
-    const collectionModInstalled = isCollectionModPresent(
-      state,
-      collection.slug,
-    );
+    const collectionModInstalled = isCollectionModPresent(state, collection.slug);
     setCanBeAdded(!collectionModInstalled && isLoggedIn);
   }, [api, collection.slug, pending, isHovered, isLoggedIn]);
 
@@ -148,9 +141,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
               >
                 <Icon path={mdiStar} size="xs" />
 
-                <span title={easyInstallBadge.description}>
-                  {easyInstallBadge.name}
-                </span>
+                <span title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
               </Typography>
             </div>
           )}
@@ -158,10 +149,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
 
         <div className="flex min-w-0 grow flex-col gap-y-1.5">
           <div className="flex flex-col gap-y-1">
-            <Typography
-              className="truncate font-semibold wrap-break-word"
-              typographyType="body-lg"
-            >
+            <Typography className="truncate font-semibold wrap-break-word" typographyType="body-lg">
               {collection.name}
             </Typography>
 
@@ -185,11 +173,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
           </div>
 
           <div className="flex items-center gap-x-1.5 border-t border-stroke-weak pt-1.5">
-            <Typography
-              appearance="none"
-              className="text-info-strong"
-              typographyType="body-sm"
-            >
+            <Typography appearance="none" className="text-info-strong" typographyType="body-sm">
               {collection.category?.name}
             </Typography>
 
@@ -209,17 +193,11 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
           </div>
 
           <div className="flex items-center gap-x-5 border-t border-stroke-weak pt-1.5">
-            <Stat iconPath={mdiThumbUp}>
-              {numeral(collection.endorsements).format("0 a")}
-            </Stat>
+            <Stat iconPath={mdiThumbUp}>{numeral(collection.endorsements).format("0 a")}</Stat>
 
-            <Stat iconPath={nxmFileSize}>
-              {numeral(revision.totalSize).format("0.0 b")}
-            </Stat>
+            <Stat iconPath={nxmFileSize}>{numeral(revision.totalSize).format("0.0 b")}</Stat>
 
-            <Stat iconPath={nxmMod}>
-              {numeral(revision.modCount).format("0,0")}
-            </Stat>
+            <Stat iconPath={nxmMod}>{numeral(revision.modCount).format("0,0")}</Stat>
           </div>
 
           <Typography
@@ -249,12 +227,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
           </Button>
         )}
 
-        <Button
-          buttonType="tertiary"
-          leftIconPath={mdiOpenInNew}
-          size="xs"
-          onClick={onViewPage}
-        >
+        <Button buttonType="tertiary" leftIconPath={mdiOpenInNew} size="xs" onClick={onViewPage}>
           View page
         </Button>
       </div>

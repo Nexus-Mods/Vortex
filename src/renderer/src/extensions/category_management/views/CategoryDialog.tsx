@@ -1,12 +1,10 @@
-import Modal from "../../../controls/Modal";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-
-import { showCategoriesDialog } from "../actions/session";
-
-import CategoryList from "./CategoryList";
-
 import * as React from "react";
 import type * as Redux from "redux";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import Modal from "../../../controls/Modal";
+import { showCategoriesDialog } from "../actions/session";
+import CategoryList from "./CategoryList";
 
 interface IConnectedProps {
   showDialog: boolean;

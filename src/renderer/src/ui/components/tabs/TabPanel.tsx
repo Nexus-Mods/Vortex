@@ -7,13 +7,7 @@ import { useTabContext } from "./tabs.context";
  * Tab Content component acts as a wrapper that shows/hides content
  * depending on whether the tab is selected
  */
-export const TabPanel = ({
-  children,
-  name,
-}: {
-  children: ReactNode;
-  name: string;
-}) => {
+export const TabPanel = ({ children, name }: { children: ReactNode; name: string }) => {
   const { selectedTab } = useTabContext();
   const tabId = getTabId(name);
 

@@ -1,4 +1,5 @@
 import { getErrorMessage, unknownToError } from "@vortex/shared";
+
 import { delay } from "./util";
 
 const RETRIES = 5;
@@ -47,10 +48,7 @@ class ConcurrencyLimiter {
     return this.process(cb, tries);
   }
 
-  private async process<T>(
-    cb: () => PromiseLike<T>,
-    tries: number,
-  ): Promise<T> {
+  private async process<T>(cb: () => PromiseLike<T>, tries: number): Promise<T> {
     // reduce limit while processing
     --this.mLimit;
     try {
@@ -59,11 +57,7 @@ class ConcurrencyLimiter {
     } catch (unknownError) {
       const err = unknownToError(unknownError);
 
-      if (
-        this.mRepeatTest !== undefined &&
-        tries > 0 &&
-        this.mRepeatTest(err)
-      ) {
+      if (this.mRepeatTest !== undefined && tries > 0 && this.mRepeatTest(err)) {
         return await delay(100).then(() => this.do(cb));
       } else {
         return Promise.reject(err);

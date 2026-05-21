@@ -1,4 +1,4 @@
-import type { types } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 export function makeProgressFunction(api: types.IExtensionApi) {
   const notificationId = api.sendNotification({

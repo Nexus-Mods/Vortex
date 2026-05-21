@@ -97,6 +97,9 @@ export interface Api {
 
   /** Downloader APIs */
   downloader: DownloaderApi;
+
+  /** Diagnostic APIs */
+  diag: Diag;
 }
 
 export interface Example {
@@ -110,6 +113,13 @@ export interface Shell {
 
   /** Opens the file using the default application for the file extension */
   openFile(filePath: string): void;
+}
+
+export interface Diag {
+  /** Synchronously append one line to vortex.log. Blocks until main has
+   *  flushed the line, so it survives the caller dying or main crashing in
+   *  the same message-loop tick. Sync IPC; reserve for fatal diagnostics. */
+  fatal(message: string): void;
 }
 
 export interface Dialog {
@@ -297,9 +307,7 @@ export interface Menu {
 
 export interface ContentTracing {
   /** Start recording performance trace */
-  startRecording(
-    options: TraceCategoriesAndOptions | TraceConfig,
-  ): Promise<void>;
+  startRecording(options: TraceCategoriesAndOptions | TraceConfig): Promise<void>;
 
   /** Stop recording and save to file, returns the path to the trace file */
   stopRecording(resultPath: string): Promise<string>;
@@ -323,9 +331,7 @@ export interface Clipboard {
 
 export interface PowerSaveBlocker {
   /** Start blocking power save mode */
-  start(
-    type: "prevent-app-suspension" | "prevent-display-sleep",
-  ): Promise<number>;
+  start(type: "prevent-app-suspension" | "prevent-display-sleep"): Promise<number>;
 
   /** Stop blocking power save mode */
   stop(id: number): Promise<void>;
@@ -366,9 +372,7 @@ export interface PersistApi {
    * The renderer applies these via __persist_push, which is excluded from
    * persistDiffMiddleware to prevent feedback loops.
    */
-  onPush(
-    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
-  ): void;
+  onPush(callback: (hive: PersistedHive, operations: DiffOperation[]) => void): void;
 }
 
 /** API for requesting extension main process initialization */
@@ -404,12 +408,7 @@ export interface AdaptorsApi {
     gameInfo: unknown;
   }>;
   /** Calls a service method on a loaded adaptor. */
-  call(
-    adaptorName: string,
-    serviceUri: string,
-    method: string,
-    args: unknown[],
-  ): Promise<unknown>;
+  call(adaptorName: string, serviceUri: string, method: string, args: unknown[]): Promise<unknown>;
   /**
    * Builds a store-path snapshot for a discovered game. The returned
    * value is a `StorePathSnapshot` from `@nexusmods/adaptor-api/stores/lib`
@@ -422,11 +421,7 @@ export interface AdaptorsApi {
    * process side. The source describes what to read (PE header, text
    * file, etc.) and where.
    */
-  detectVersion(source: {
-    type: string;
-    path: { value: string };
-    regex?: string;
-  }): Promise<string>;
+  detectVersion(source: { type: string; path: { value: string }; regex?: string }): Promise<string>;
 }
 
 /** API for querying update status from main process */
@@ -487,9 +482,7 @@ export interface DownloaderApi {
    * The `collationId` maps to the download started via `start()`.
    * Returns an unsubscribe function.
    */
-  onResolve(
-    handler: (collationId: number) => Promise<WireResolvedResource>,
-  ): () => void;
+  onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

@@ -1,108 +1,108 @@
 {
-    "skyrim" : [
-      {
-          "type" : "attribute",
-          "key" : "scriptExtender",
-          "value" : true
-      }
+  "skyrim": [
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
-  "skyrimse" : [
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        }
+  "skyrimse": [
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
-  "skyrimvr" : [
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        }
+  "skyrimvr": [
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
-  "fallout4" : [
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        }
+  "fallout4": [
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
   "fallout4vr": [
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        }
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
   "falloutnv": [
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        }
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
-  "fallout3" : [
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        }
+  "fallout3": [
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    }
   ],
-  "oblivion" : [
-              {
-            "type" : "attribute",
-            "key" : "allowRating",
-            "value" : false
-        },
-        {
-            "type" : "attribute",
-            "key" : "logicalFileName",
-            "value" : "Oblivion Script Extender (OBSE)"
-        },
-        {
-            "type" : "attribute",
-            "key" : "url",
-            "value" : "https://github.com/llde/xOBSE"
-        },
-        {
-            "type": "attribute",
-            "key": "source",
-            "value": "website"
-        },
-        {
-            "type" : "attribute",
-            "key" : "pictureUrl",
-            "value" : "https://staticdelivery.nexusmods.com/mods/101/images/thumbnails/37952-1-1369833903.png" 
-        },
-        {
-            "type" : "attribute",
-            "key" : "scriptExtender",
-            "value" : true
-        },
-        {
-            "type" : "attribute",
-            "key" : "downloadGame",
-            "value" : "oblivion"
-        },
-        {
-            "type" : "attribute",
-            "key" : "author",
-            "value" : "OBSE Team"
-        },
-        {
-            "type" : "attribute",
-            "key" : "category",
-            "value" : 39
-        },
-        {
-            "type" : "attribute",
-            "key" : "shortDescription",
-            "value" : "OBSE extends the scripting capabilities of Oblivion."
-        },
-        {
-            "type" : "attribute",
-            "key" : "modId",
-            "value" : "obse"
-        }
+  "oblivion": [
+    {
+      "type": "attribute",
+      "key": "allowRating",
+      "value": false
+    },
+    {
+      "type": "attribute",
+      "key": "logicalFileName",
+      "value": "Oblivion Script Extender (OBSE)"
+    },
+    {
+      "type": "attribute",
+      "key": "url",
+      "value": "https://github.com/llde/xOBSE"
+    },
+    {
+      "type": "attribute",
+      "key": "source",
+      "value": "website"
+    },
+    {
+      "type": "attribute",
+      "key": "pictureUrl",
+      "value": "https://staticdelivery.nexusmods.com/mods/101/images/thumbnails/37952-1-1369833903.png"
+    },
+    {
+      "type": "attribute",
+      "key": "scriptExtender",
+      "value": true
+    },
+    {
+      "type": "attribute",
+      "key": "downloadGame",
+      "value": "oblivion"
+    },
+    {
+      "type": "attribute",
+      "key": "author",
+      "value": "OBSE Team"
+    },
+    {
+      "type": "attribute",
+      "key": "category",
+      "value": 39
+    },
+    {
+      "type": "attribute",
+      "key": "shortDescription",
+      "value": "OBSE extends the scripting capabilities of Oblivion."
+    },
+    {
+      "type": "attribute",
+      "key": "modId",
+      "value": "obse"
+    }
   ]
 }

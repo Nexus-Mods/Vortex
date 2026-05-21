@@ -5,13 +5,37 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm cross-env NODE_ENV=development pnpm webpack --config ./webpack.config.cjs",
-    "dist": "pnpm cross-env NODE_ENV=production pnpm webpack --config ./webpack.config.cjs",
+    "build": "pnpm webpack --config ./webpack.config.cjs",
     "typecheck": "pnpm tsc -p tsconfig.json",
-    "lint": "pnpm eslint --concurrency auto .",
-    "lint:quiet": "pnpm eslint --concurrency auto --quiet .",
-    "api:build": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json",
-    "api:docs": "pnpm api-extractor run --local"
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto .",
+    "api": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json && pnpm api-extractor run --local"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "outputs": [
+          "{workspaceRoot}/src/main/build/renderer.js",
+          "{workspaceRoot}/src/main/build/renderer.js.map",
+          "{workspaceRoot}/src/main/build/splash.js",
+          "{workspaceRoot}/src/main/build/splash.js.map"
+        ]
+      },
+      "api": {
+        "dependsOn": [
+          "^build"
+        ],
+        "cache": true,
+        "inputs": [
+          "default",
+          "typescript",
+          "{projectRoot}/api-extractor.json"
+        ],
+        "outputs": [
+          "{workspaceRoot}/packages/vortex-api/lib/api.d.ts"
+        ]
+      }
+    }
   },
   "devDependencies": {
     "@babel/polyfill": "catalog:",
@@ -24,6 +48,8 @@
     "@mdi/js": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",
+    "@nexusmods/fomod-installer-ipc": "catalog:",
+    "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/context-zone": "catalog:",
@@ -45,8 +71,6 @@
     "@types/d3": "catalog:",
     "@types/draggabilly": "catalog:",
     "@types/encoding-down": "catalog:",
-    "@types/enzyme": "catalog:",
-    "@types/enzyme-adapter-react-16": "catalog:",
     "@types/fs-extra": "catalog:",
     "@types/graphlib": "catalog:",
     "@types/json-socket": "catalog:",
@@ -62,7 +86,6 @@
     "@types/react-redux": "catalog:",
     "@types/react-select": "catalog:",
     "@types/react-sortable-tree": "catalog:",
-    "@types/react-test-renderer": "catalog:",
     "@types/react-transition-group": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-devtools-log-monitor": "catalog:",
@@ -89,13 +112,11 @@
     "commander": "catalog:",
     "content-disposition": "catalog:",
     "content-type": "catalog:",
-    "crash-dump": "catalog:",
     "csstype": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",
     "dayjs": "catalog:",
     "dequal": "catalog:",
-    "diskusage": "catalog:",
     "dnd-core": "catalog:",
     "draggabilly": "catalog:",
     "drivelist": "catalog:",
@@ -104,12 +125,9 @@
     "electron-redux": "catalog:",
     "electron-updater": "catalog:",
     "encoding-down": "catalog:",
-    "enzyme": "catalog:",
-    "enzyme-adapter-react-16": "catalog:",
-    "exe-version": "catalog:",
+    "exe-version": "workspace:*",
+    "icon-extract": "workspace:*",
     "feedparser": "catalog:",
-    "@nexusmods/fomod-installer-ipc": "catalog:",
-    "@nexusmods/fomod-installer-native": "catalog:",
     "fs-extra": "catalog:",
     "fuzzball": "catalog:",
     "glob": "catalog:",
@@ -129,7 +147,6 @@
     "minimatch": "catalog:",
     "mixpanel-browser": "catalog:",
     "modmeta-db": "catalog:",
-    "native-errors": "catalog:",
     "node-7z": "catalog:",
     "normalize-url": "catalog:",
     "numeral": "catalog:",
@@ -183,5 +200,8 @@
     "xml2js": "catalog:",
     "xxhash-addon": "catalog:",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@cyclonedx/cyclonedx-library": "catalog:"
   }
 }

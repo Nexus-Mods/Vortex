@@ -1,16 +1,10 @@
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
-
 import * as React from "react";
 import Select from "react-select";
+
+import type { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
 import type { DownloadState } from "../types/IDownload";
 
-export class DownloadSelectionFilterComponent extends React.Component<
-  IFilterProps,
-  {}
-> {
+export class DownloadSelectionFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
     const { t, filter } = this.props;
 

@@ -112,8 +112,7 @@ export const TypographyDemo = () => (
         </Typography>
 
         <Typography appearance="moderate">
-          <span className="font-semibold">Moderate:</span> Moderate text
-          emphasis
+          <span className="font-semibold">Moderate:</span> Moderate text emphasis
         </Typography>
 
         <Typography appearance="subdued">
@@ -139,8 +138,8 @@ export const TypographyDemo = () => (
           lg: "body-2xl",
         }}
       >
-        This text is responsive: body-sm on mobile, body-lg on tablets, body-2xl
-        on desktop. Resize your window to see it change.
+        This text is responsive: body-sm on mobile, body-lg on tablets, body-2xl on desktop. Resize
+        your window to see it change.
       </Typography>
     </div>
   </div>

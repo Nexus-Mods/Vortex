@@ -1,17 +1,16 @@
-import { displayGroup } from "../actions/session";
-import type { IState } from "../types/IState";
-import { ComponentEx, connect, translate } from "./ComponentEx";
-import { getSafe } from "../util/storeHelper";
-
-import Icon from "./Icon";
-import ToolbarIcon from "./ToolbarIcon";
-import { Button } from "./TooltipControls";
-
 import update from "immutability-helper";
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { displayGroup } from "../actions/session";
+import type { IState } from "../types/IState";
+import { getSafe } from "../util/storeHelper";
+import { ComponentEx, connect, translate } from "./ComponentEx";
+import Icon from "./Icon";
+import ToolbarIcon from "./ToolbarIcon";
+import { Button } from "./TooltipControls";
 
 export interface IBaseProps {
   id: string;
@@ -47,16 +46,7 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const {
-      t,
-      buttonType,
-      displayGroups,
-      groupId,
-      icon,
-      iconGroup,
-      id,
-      tooltip,
-    } = this.props;
+    const { t, buttonType, displayGroups, groupId, icon, iconGroup, id, tooltip } = this.props;
     if (getSafe(displayGroups, [groupId], undefined) !== id) {
       return (
         <ToolbarIcon
@@ -80,18 +70,10 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
               onKeyPress={this.handleKeypress}
             />
           </div>
-          <Button
-            id="accept-input"
-            tooltip={t("Confirm")}
-            onClick={this.confirmInput}
-          >
+          <Button id="accept-input" tooltip={t("Confirm")} onClick={this.confirmInput}>
             <Icon name="input-confirm" />
           </Button>
-          <Button
-            id="cancel-input"
-            tooltip={t("Cancel")}
-            onClick={this.closeInput}
-          >
+          <Button id="cancel-input" tooltip={t("Cancel")} onClick={this.closeInput}>
             <Icon name="input-cancel" />
           </Button>
         </div>
@@ -141,9 +123,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSelectDisplayGroup: (groupId: string, itemId: string) =>
       dispatch(displayGroup(groupId, itemId)),

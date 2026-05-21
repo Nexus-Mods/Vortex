@@ -4,8 +4,10 @@
  * to another installer.
  */
 
-import PromiseBB from "bluebird";
 import * as path from "path";
+
+import PromiseBB from "bluebird";
+
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -64,16 +66,7 @@ function init(context: IExtensionContext): boolean {
       progress: ProgressDelegate,
       choicesIn?: any,
       unattended?: boolean,
-    ) =>
-      install(
-        context.api,
-        files,
-        destinationPath,
-        gameId,
-        choicesIn,
-        unattended,
-        progress,
-      ),
+    ) => install(context.api, files, destinationPath, gameId, choicesIn, unattended, progress),
   );
   return true;
 }

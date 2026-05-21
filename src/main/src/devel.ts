@@ -10,32 +10,13 @@ export async function installDevelExtensions(): Promise<void> {
   if (process.env.NODE_ENV !== "development") return;
   if (process.env.VORTEX_E2E === "1") return;
 
-  const {
-    default: install,
-    REACT_DEVELOPER_TOOLS,
-    REDUX_DEVTOOLS,
-  } = await import("electron-devtools-installer");
-
-  const options = {
-    loadExtensionOptions: { allowFileAccess: true },
-  };
+  const { installExtension, REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS } =
+    await import("electron-extension-installer");
 
   try {
-    // Cast needed: TS resolves `default` from dynamic CJS import as the module
-    // namespace rather than the actual default export (the install function).
-    // Alternatively we could just use double default import, but meh.
-    type ExtensionRef = { id: string; electron: string };
-    type InstallFn = (
-      ref: ExtensionRef | string | Array<ExtensionRef | string>,
-      options?:
-        | {
-            forceDownload?: boolean;
-            loadExtensionOptions?: Record<string, unknown>;
-          }
-        | boolean,
-    ) => Promise<string>;
-    await (install as unknown as InstallFn)(REACT_DEVELOPER_TOOLS, options);
-    await (install as unknown as InstallFn)(REDUX_DEVTOOLS, options);
+    await installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
+      loadExtensionOptions: { allowFileAccess: true },
+    });
   } catch (err) {
     log("error", "error installing dev tools", getErrorMessageOrDefault(err));
   }

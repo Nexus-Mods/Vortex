@@ -1,6 +1,6 @@
-import { IconButton } from "./TooltipControls";
-
 import * as React from "react";
+
+import { IconButton } from "./TooltipControls";
 
 export interface ICollapseIconProps {
   position: "topleft" | "topright" | "bottomleft" | "bottomright";

@@ -1,5 +1,6 @@
-import { getErrorCode } from "@vortex/shared";
 import * as path from "path";
+
+import { getErrorCode } from "@vortex/shared";
 
 import { log } from "../logging";
 import * as fs from "./fs";
@@ -38,10 +39,7 @@ async function walk(
     }
 
     const statResults = await Promise.all<fs.Stats | null>(
-      fileNames.map((statPath) =>
-        fs.lstatAsync(path.join(target, statPath))
-          .catch(() => null),
-      ),
+      fileNames.map((statPath) => fs.lstatAsync(path.join(target, statPath)).catch(() => null)),
     );
 
     const subDirs: string[] = [];
@@ -67,8 +65,7 @@ async function walk(
     const code = getErrorCode(err);
     if (
       opt.ignoreErrors !== undefined &&
-      (opt.ignoreErrors === true ||
-        (code && opt.ignoreErrors.indexOf(code) !== -1))
+      (opt.ignoreErrors === true || (code && opt.ignoreErrors.indexOf(code) !== -1))
     ) {
       return;
     }

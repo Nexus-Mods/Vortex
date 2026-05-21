@@ -1,8 +1,6 @@
-import type * as Redux from "redux";
-
-import { isEqual } from "lodash";
-
 import { unknownToError } from "@vortex/shared";
+import { isEqual } from "lodash";
+import type * as Redux from "redux";
 
 const select = (state: any, selector: string[]) =>
   selector.reduce((prev: any, current: string) => prev[current], state);
@@ -34,10 +32,7 @@ class ReduxWatcher<T> {
   private mWatchList: { [key: string]: IWatch<T, any> } = {};
   private mLastState: T;
 
-  constructor(
-    store: Redux.Store<T>,
-    onError: (err: Error, selector: string[]) => void,
-  ) {
+  constructor(store: Redux.Store<T>, onError: (err: Error, selector: string[]) => void) {
     this.mLastState = store.getState();
 
     store.subscribe(() => {

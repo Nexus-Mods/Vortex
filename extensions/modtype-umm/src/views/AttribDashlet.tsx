@@ -1,6 +1,6 @@
+import { Dashlet, PureComponentEx, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
-import { Dashlet, PureComponentEx, util } from "vortex-api";
 
 const DOWNLOAD_PAGE = "https://github.com/newman55/unity-mod-manager";
 
@@ -9,9 +9,7 @@ class UMMAttribDashlet extends PureComponentEx<{}, {}> {
     const { t } = this.props;
     return (
       <Dashlet
-        title={t(
-          "Support for this game is made possible using the Unity Mod Manager tool (UMM)",
-        )}
+        title={t("Support for this game is made possible using the Unity Mod Manager tool (UMM)")}
         className="dashlet-umm"
       >
         <div>

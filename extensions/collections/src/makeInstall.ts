@@ -1,14 +1,14 @@
-/* eslint-disable */
-import { ICollection } from "./types/ICollection";
-import { collectionModToRule } from "./util/transformCollection";
+import * as path from "path";
+
+import { selectors, types } from "@nexusmods/vortex-api";
 
 import { BUNDLED_PATH, MOD_TYPE } from "./constants";
-
-import * as path from "path";
-import { selectors, types } from "vortex-api";
-import { readCollection } from "./util/readCollection";
+/* eslint-disable */
+import { ICollection } from "./types/ICollection";
 import { ICollectionConfig } from "./types/ICollectionConfig";
 import { parseConfig } from "./util/collectionConfig";
+import { readCollection } from "./util/readCollection";
+import { collectionModToRule } from "./util/transformCollection";
 
 /**
  * installer function to be used with registerInstaller
@@ -26,23 +26,20 @@ export function makeInstall(api: types.IExtensionApi) {
     );
 
     const config: ICollectionConfig = await parseConfig({ collection, gameId });
-    const configInstructions: types.IInstruction[] = Object.entries(
-      config,
-    ).reduce((accum, [key, value]) => {
-      const instr: types.IInstruction = { type: "attribute", key, value };
-      accum.push(instr);
-      return accum;
-    }, []);
+    const configInstructions: types.IInstruction[] = Object.entries(config).reduce(
+      (accum, [key, value]) => {
+        const instr: types.IInstruction = { type: "attribute", key, value };
+        accum.push(instr);
+        return accum;
+      },
+      [],
+    );
     const filesToCopy = files.filter(
-      (filePath) =>
-        !filePath.endsWith(path.sep) &&
-        filePath.split(path.sep)[0] !== BUNDLED_PATH,
+      (filePath) => !filePath.endsWith(path.sep) && filePath.split(path.sep)[0] !== BUNDLED_PATH,
     );
 
     const bundled = files.filter(
-      (filePath) =>
-        !filePath.endsWith(path.sep) &&
-        filePath.split(path.sep)[0] === BUNDLED_PATH,
+      (filePath) => !filePath.endsWith(path.sep) && filePath.split(path.sep)[0] === BUNDLED_PATH,
     );
 
     const knownGames = selectors.knownGames(api.getState());

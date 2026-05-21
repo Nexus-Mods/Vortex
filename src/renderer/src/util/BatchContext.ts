@@ -86,10 +86,7 @@ function makeKey(id: string, key: string) {
   return `${id}-${key}`;
 }
 
-function previousBatch(
-  keys: string[],
-  context: BatchContext,
-): BatchContext | undefined {
+function previousBatch(keys: string[], context: BatchContext): BatchContext | undefined {
   for (const key of keys) {
     if (contexts[key] !== undefined && contexts[key][0] !== context) {
       return contexts[key][0];

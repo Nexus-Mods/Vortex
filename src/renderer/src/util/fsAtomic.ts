@@ -1,11 +1,12 @@
+import { createHash } from "crypto";
+
 import { getErrorCode, unknownToError } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import { file } from "tmp";
+
 import { checksum } from "./checksum";
 import * as fs from "./fs";
 import { log } from "./log";
-
-import PromiseBB from "bluebird";
-import { createHash } from "crypto";
-import { file } from "tmp";
 
 export function writeFileAtomic(filePath: string, input: string | Buffer) {
   return writeFileAtomicImpl(filePath, input, 3);
@@ -68,9 +69,7 @@ function writeFileAtomicImpl(
       } else {
         return fs.renameAsync(tmpPath, filePath).catch({ code: "EEXIST" }, () =>
           // renameAsync is supposed to overwrite so this is likely to fail as well
-          fs
-            .removeAsync(filePath)
-            .then(() => fs.renameAsync(tmpPath, filePath)),
+          fs.removeAsync(filePath).then(() => fs.renameAsync(tmpPath, filePath)),
         );
       }
     })
@@ -96,10 +95,7 @@ function writeFileAtomicImpl(
  * @param {string} destPath
  * @returns {PromiseBB<void>}
  */
-export function copyFileAtomic(
-  srcPath: string,
-  destPath: string,
-): PromiseBB<void> {
+export function copyFileAtomic(srcPath: string, destPath: string): PromiseBB<void> {
   let cleanup: () => void;
   let tmpPath: string;
   return new PromiseBB((resolve, reject) => {
@@ -133,16 +129,8 @@ export function copyFileAtomic(
         }
       }),
     )
-    .catch((err) =>
-      getErrorCode(err) === "ENOENT"
-        ? PromiseBB.resolve()
-        : PromiseBB.reject(err),
-    )
-    .then(() =>
-      tmpPath !== undefined
-        ? fs.renameAsync(tmpPath, destPath)
-        : PromiseBB.resolve(),
-    )
+    .catch((err) => (getErrorCode(err) === "ENOENT" ? PromiseBB.resolve() : PromiseBB.reject(err)))
+    .then(() => (tmpPath !== undefined ? fs.renameAsync(tmpPath, destPath) : PromiseBB.resolve()))
     .catch((unknownErr) => {
       const err = unknownToError(unknownErr);
       log("info", "failed to copy", { srcPath, destPath, err: err.stack });

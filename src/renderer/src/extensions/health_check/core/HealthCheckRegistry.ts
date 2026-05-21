@@ -4,16 +4,18 @@ import type {
   IHealthCheckEntry,
   IHealthCheckResult,
   ILegacyTestAdapter,
+  IModHealthCheck,
 } from "../../../types/IHealthCheck";
-import type { HealthCheckId } from "../types";
-
 import {
   HealthCheckCategory,
   HealthCheckTrigger,
   HealthCheckSeverity,
+  isModHealthCheck,
 } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
 import { setHealthCheckResult } from "../actions/session";
+import type { HealthCheckId } from "../types";
+import { runPerModCheck } from "./perModRunner";
 
 export class HealthCheckRegistry {
   private mHealthChecks: Map<HealthCheckId, IHealthCheckEntry> = new Map();
@@ -34,7 +36,7 @@ export class HealthCheckRegistry {
   /**
    * Register a new health check
    */
-  public register(healthCheck: IHealthCheck | ILegacyTestAdapter): void {
+  public register(healthCheck: IHealthCheck | IModHealthCheck | ILegacyTestAdapter): void {
     const entry: IHealthCheckEntry = {
       healthCheck,
       enabled: true,
@@ -74,9 +76,7 @@ export class HealthCheckRegistry {
    * Get health checks by category
    */
   public getByCategory(category: HealthCheckCategory): IHealthCheckEntry[] {
-    return this.getAll().filter(
-      (entry) => entry.healthCheck.category === category,
-    );
+    return this.getAll().filter((entry) => entry.healthCheck.category === category);
   }
 
   /**
@@ -90,10 +90,7 @@ export class HealthCheckRegistry {
 
     return Array.from(triggerSet)
       .map((id) => this.mHealthChecks.get(id))
-      .filter(
-        (entry): entry is IHealthCheckEntry =>
-          entry !== undefined && entry.enabled,
-      );
+      .filter((entry): entry is IHealthCheckEntry => entry !== undefined && entry.enabled);
   }
 
   /**
@@ -150,12 +147,7 @@ export class HealthCheckRegistry {
     }
 
     // Check if result is cached (unless force is true)
-    if (
-      !force &&
-      entry.cachedUntil &&
-      entry.lastResult &&
-      new Date() < entry.cachedUntil
-    ) {
+    if (!force && entry.cachedUntil && entry.lastResult && new Date() < entry.cachedUntil) {
       log("debug", "Using cached result for health check", { id: checkId });
       return entry.lastResult;
     }
@@ -174,28 +166,19 @@ export class HealthCheckRegistry {
       log("debug", "Executing health check", { id: checkId, timeout });
 
       const timeoutPromise = new Promise<IHealthCheckResult>((_, reject) => {
-        setTimeout(
-          () => reject(new Error(`Health check timed out after ${timeout}ms`)),
-          timeout,
-        );
+        setTimeout(() => reject(new Error(`Health check timed out after ${timeout}ms`)), timeout);
       });
 
-      const result = await Promise.race([
-        entry.healthCheck.check(api),
-        timeoutPromise,
-      ]);
+      const hc = entry.healthCheck;
+      const checkPromise = isModHealthCheck(hc) ? runPerModCheck(hc, api) : hc.check(api);
+      const result = await Promise.race([checkPromise, timeoutPromise]);
 
       result.checkId = checkId;
       result.timestamp = new Date();
       result.executionTime = Date.now() - startTime;
 
-      if (
-        entry.healthCheck.cacheDuration &&
-        entry.healthCheck.cacheDuration > 0
-      ) {
-        entry.cachedUntil = new Date(
-          Date.now() + entry.healthCheck.cacheDuration,
-        );
+      if (entry.healthCheck.cacheDuration && entry.healthCheck.cacheDuration > 0) {
+        entry.cachedUntil = new Date(Date.now() + entry.healthCheck.cacheDuration);
       }
 
       entry.lastResult = result;
@@ -262,34 +245,24 @@ export class HealthCheckRegistry {
     });
 
     const results = await Promise.all(
-      checks.map((entry) =>
-        this.runHealthCheck(entry.healthCheck.id as HealthCheckId, api),
-      ),
+      checks.map((entry) => this.runHealthCheck(entry.healthCheck.id as HealthCheckId, api)),
     );
 
-    return results.filter(
-      (result): result is IHealthCheckResult => result !== undefined,
-    );
+    return results.filter((result): result is IHealthCheckResult => result !== undefined);
   }
 
   /**
    * Execute all registered health checks
    */
-  public async runAllHealthChecks(
-    api: IExtensionApi,
-  ): Promise<IHealthCheckResult[]> {
+  public async runAllHealthChecks(api: IExtensionApi): Promise<IHealthCheckResult[]> {
     const checks = this.getAll().filter((entry) => entry.enabled);
     log("debug", "Executing all health checks", { count: checks.length });
 
     const results = await Promise.all(
-      checks.map((entry) =>
-        this.runHealthCheck(entry.healthCheck.id as HealthCheckId, api),
-      ),
+      checks.map((entry) => this.runHealthCheck(entry.healthCheck.id as HealthCheckId, api)),
     );
 
-    return results.filter(
-      (result): result is IHealthCheckResult => result !== undefined,
-    );
+    return results.filter((result): result is IHealthCheckResult => result !== undefined);
   }
 
   /**

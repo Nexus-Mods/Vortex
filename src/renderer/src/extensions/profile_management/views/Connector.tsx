@@ -1,10 +1,9 @@
-import Line from "./Line";
+import * as React from "react";
+import { connect } from "react-redux";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
-
-import * as React from "react";
-import { connect } from "react-redux";
+import Line from "./Line";
 
 interface ICoord {
   x: number;
@@ -45,16 +44,8 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
 function mapStateToProps(state: any): IConnectorProps {
   return {
-    source: getSafe(
-      state,
-      ["session", "profileTransfer", "connection", "source"],
-      undefined,
-    ),
-    target: getSafe(
-      state,
-      ["session", "profileTransfer", "connection", "target"],
-      undefined,
-    ),
+    source: getSafe(state, ["session", "profileTransfer", "connection", "source"], undefined),
+    target: getSafe(state, ["session", "profileTransfer", "connection", "target"], undefined),
   };
 }
 

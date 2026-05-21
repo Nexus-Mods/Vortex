@@ -6,8 +6,8 @@
  * - runtime handlers for Vortex events,
  * - and settings-driven revert behavior.
  */
-import { selectors } from "vortex-api";
-import type { types } from "vortex-api";
+import { selectors } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "../common";
 import type { IFileEntry } from "../types";
@@ -45,10 +45,7 @@ export async function onWillEnableMods(
 }
 
 /** Restores tracked config files from the synthetic config mod to owning mods. */
-export async function onRevertFiles(
-  api: types.IExtensionApi,
-  profileId: string,
-): Promise<void> {
+export async function onRevertFiles(api: types.IExtensionApi, profileId: string): Promise<void> {
   return onRevertFilesImpl(api, profileId);
 }
 

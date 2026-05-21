@@ -1,15 +1,16 @@
+import { unknownToError } from "@vortex/shared";
 import React from "react";
 import { Button, Modal } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
+
 import Usage from "../../controls/Usage";
 import type { IState } from "../../types/IState";
 import type { TFunction } from "../../util/i18n";
 import relativeTime from "../../util/relativeTime";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IHistoryEvent, IHistoryStack } from "./types";
-import { unknownToError } from "@vortex/shared";
 
 interface IDialogProps {
   onClose: () => void;
@@ -48,9 +49,7 @@ function HistoryItem(props: IHistoryItemProps) {
 
   const onClick = React.useCallback(() => {
     onReverted(stackId, evt);
-    stack
-      .revert(evt)
-      .catch((err) => onError(unknownToError(err), stackId, evt));
+    stack.revert(evt).catch((err) => onError(unknownToError(err), stackId, evt));
   }, []);
 
   const game = getGame(evt.gameId);
@@ -59,9 +58,7 @@ function HistoryItem(props: IHistoryItemProps) {
 
   return (
     <tr key={evt.id} className={classes.join(" ")}>
-      <td className="history-event-time">
-        {relativeTime(new Date(evt.timestamp), t)}
-      </td>
+      <td className="history-event-time">{relativeTime(new Date(evt.timestamp), t)}</td>
       <td className="history-event-game">
         {game !== undefined ? (game.shortName ?? game.name) : null}
       </td>
@@ -78,8 +75,7 @@ function HistoryItem(props: IHistoryItemProps) {
 }
 
 function HistoryDialog(props: IDialogProps & WithTranslation) {
-  const { t, events, onClose, onReverted, onError, stacks, stackToShow } =
-    props;
+  const { t, events, onClose, onReverted, onError, stacks, stackToShow } = props;
 
   const stack = stacks[stackToShow];
 
@@ -130,12 +126,8 @@ function mapPropsToState(state: IState) {
   return {
     stackToShow,
     events:
-      stackToShow !== undefined
-        ? state.persistent.history.historyStacks[stackToShow]
-        : undefined,
+      stackToShow !== undefined ? state.persistent.history.historyStacks[stackToShow] : undefined,
   };
 }
 
-export default connect(mapPropsToState)(
-  withTranslation(["common"])(HistoryDialog as any),
-);
+export default connect(mapPropsToState)(withTranslation(["common"])(HistoryDialog as any));

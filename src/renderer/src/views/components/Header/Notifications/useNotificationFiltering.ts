@@ -1,13 +1,6 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-// This hook requires direct setState calls in effects due to its architecture:
-// - updateFiltered() schedules future updates via setTimeout when timers fire
-// - quickUpdate() performs incremental updates for performance
-// This pattern matches the Classic implementation and is correct for this use case.
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { INotification } from "../../../../types/INotification";
-
 import Debouncer from "../../../../util/Debouncer";
 
 const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
@@ -21,6 +14,13 @@ const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
 const displayTime = (item: INotification): number | null => {
   if (item.displayMS !== undefined) {
     return item.displayMS;
+  }
+
+  // A notification with actions but no explicit displayMS requires the
+  // user to choose. Auto-hiding it would silently strand the choice
+  // (see INotification displayMS contract).
+  if (item.actions !== undefined && item.actions.length > 0) {
+    return null;
   }
 
   return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
@@ -63,9 +63,7 @@ export const useNotificationFiltering = ({
           return true;
         }
 
-        const timeout =
-          (item.type === "activity" ? item.createdTime : item.updatedTime) +
-          dispTime;
+        const timeout = (item.type === "activity" ? item.createdTime : item.updatedTime) + dispTime;
         if (timeout > now) {
           if (nextTimeout === null || timeout < nextTimeout) {
             nextTimeout = timeout;
@@ -85,10 +83,7 @@ export const useNotificationFiltering = ({
           clearTimeout(updateTimerRef.current);
         }
         if (nextTimeout !== null) {
-          updateTimerRef.current = setTimeout(
-            () => updateFiltered(),
-            nextTimeout - now + 100,
-          );
+          updateTimerRef.current = setTimeout(() => updateFiltered(), nextTimeout - now + 100);
         }
       }
     }
@@ -110,10 +105,7 @@ export const useNotificationFiltering = ({
         continue;
       }
       const ref = notis.find((n) => n?.id === item.id);
-      if (
-        ref !== undefined &&
-        (item.message !== ref.message || item.progress !== ref.progress)
-      ) {
+      if (ref !== undefined && (item.message !== ref.message || item.progress !== ref.progress)) {
         updates.push({ ...item, message: ref.message, progress: ref.progress });
       }
     }
@@ -121,9 +113,7 @@ export const useNotificationFiltering = ({
     if (updates.length > 0) {
       setFiltered((prev) => {
         const byId = new Map(updates.map((u) => [u.id, u]));
-        return prev.map((item) =>
-          item?.id !== undefined ? (byId.get(item.id) ?? item) : item,
-        );
+        return prev.map((item) => (item?.id !== undefined ? (byId.get(item.id) ?? item) : item));
       });
     }
   }, []);

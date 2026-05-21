@@ -2,12 +2,10 @@ import { randomBytes } from "node:crypto";
 import { readFile, mkdtemp, mkdir, rm, access } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+
+import { staticChunker, type DownloadCheckpoint } from "@vortex/shared/download";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
-import {
-  staticChunker,
-  type DownloadCheckpoint,
-} from "@vortex/shared/download";
 import { DownloadManager } from "./manager";
 import { urlResolver } from "./resolver";
 import {
@@ -32,9 +30,7 @@ beforeAll(async () => {
   ]);
 });
 
-afterAll(() =>
-  Promise.all([server.close(), rm(tmpDir, { recursive: true, force: true })]),
-);
+afterAll(() => Promise.all([server.close(), rm(tmpDir, { recursive: true, force: true })]));
 
 let dirCounter = 0;
 
@@ -53,9 +49,7 @@ async function makeTmpDir(): Promise<TmpDir> {
 
 describe("DownloadManager", () => {
   it("downloads a file and resolves the handle promise", async () => {
-    using route = server.route(
-      serveFile({ body: SMALL_FILE, acceptRanges: false }),
-    );
+    using route = server.route(serveFile({ body: SMALL_FILE, acceptRanges: false }));
     await using tmp = await makeTmpDir();
     const manager = new DownloadManager({ concurrency: 3 });
     const dest = path.join(tmp.dir, "output");
@@ -87,20 +81,15 @@ describe("DownloadManager", () => {
   });
 
   it("runs multiple downloads concurrently when concurrency allows", async () => {
-    const files = Array.from({ length: 6 }, () =>
-      randomBytes(20 * 1024 * 1024),
-    );
-    const routes = files.map((file) =>
-      server.route(serveFile({ body: file, acceptRanges: true })),
-    );
+    const files = Array.from({ length: 6 }, () => randomBytes(20 * 1024 * 1024));
+    const routes = files.map((file) => server.route(serveFile({ body: file, acceptRanges: true })));
     try {
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 3 });
       await Promise.all(
         routes.map(
           ({ url }, i) =>
-            manager.download(url, path.join(tmp.dir, `file-${i}`), urlResolver)
-              .promise,
+            manager.download(url, path.join(tmp.dir, `file-${i}`), urlResolver).promise,
         ),
       );
       for (const [i, file] of files.entries()) {
@@ -113,55 +102,32 @@ describe("DownloadManager", () => {
   });
 
   it("reports zero progress before the download starts", async () => {
-    using route = server.route(
-      serveFile({ body: LARGE_FILE, acceptRanges: true }),
-    );
+    using route = server.route(serveFile({ body: LARGE_FILE, acceptRanges: true }));
     await using tmp = await makeTmpDir();
     const manager = new DownloadManager({ concurrency: 3 });
-    const handle = manager.download(
-      route.url,
-      path.join(tmp.dir, "output"),
-      urlResolver,
-    );
+    const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
     expect(handle.getState().bytesReceived).toBe(0);
     await handle.promise;
   });
 
   it("reports bytesReceived equal to file size on completion", async () => {
-    using route = server.route(
-      serveFile({ body: LARGE_FILE, acceptRanges: false }),
-    );
+    using route = server.route(serveFile({ body: LARGE_FILE, acceptRanges: false }));
     await using tmp = await makeTmpDir();
     const manager = new DownloadManager({ concurrency: 3 });
-    const handle = manager.download(
-      route.url,
-      path.join(tmp.dir, "output"),
-      urlResolver,
-    );
+    const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
     await handle.promise;
     expect(handle.getState().bytesReceived).toBe(LARGE_FILE.length);
   });
 
   it("reflects numPending and numRunning correctly", async () => {
     using route = server.route(
-      withHooks(
-        serveFile({ body: LARGE_FILE, acceptRanges: true }),
-        delayAt("onRequest", 100),
-      ),
+      withHooks(serveFile({ body: LARGE_FILE, acceptRanges: true }), delayAt("onRequest", 100)),
     );
     await using tmp = await makeTmpDir();
     const manager = new DownloadManager({ concurrency: 1 });
 
-    const h1 = manager.download(
-      route.url,
-      path.join(tmp.dir, "file-1"),
-      urlResolver,
-    );
-    const h2 = manager.download(
-      route.url,
-      path.join(tmp.dir, "file-2"),
-      urlResolver,
-    );
+    const h1 = manager.download(route.url, path.join(tmp.dir, "file-1"), urlResolver);
+    const h2 = manager.download(route.url, path.join(tmp.dir, "file-2"), urlResolver);
 
     expect(manager.numRunning).toBe(1);
     expect(manager.numPending).toBe(1);
@@ -216,11 +182,7 @@ describe("DownloadManager", () => {
       expect(pauseResult.status).toBe("paused");
       if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      const resumed = manager.resume(
-        pauseResult.checkpoint,
-        urlResolver,
-        staticChunker(),
-      );
+      const resumed = manager.resume(pauseResult.checkpoint, urlResolver, staticChunker());
       await resumed.promise;
 
       const result = await readFile(dest);
@@ -228,9 +190,7 @@ describe("DownloadManager", () => {
     });
 
     it("throws when resuming with checkpoint for non-existent dest", async () => {
-      using route = server.route(
-        serveFile({ body: SMALL_FILE, acceptRanges: true }),
-      );
+      using route = server.route(serveFile({ body: SMALL_FILE, acceptRanges: true }));
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
 
@@ -276,11 +236,7 @@ describe("DownloadManager", () => {
       expect(pauseResult.status).toBe("paused");
       if (pauseResult.status !== "paused") throw new Error("expected paused");
 
-      const resumed = manager.resume(
-        pauseResult.checkpoint,
-        urlResolver,
-        staticChunker(),
-      );
+      const resumed = manager.resume(pauseResult.checkpoint, urlResolver, staticChunker());
       await resumed.pause();
 
       expect(manager.numRunning).toBe(0);
@@ -291,18 +247,11 @@ describe("DownloadManager", () => {
   describe("pause", () => {
     it("resolves the handle promise without throwing after pause", async () => {
       using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayAt("onRequest", 50),
-        ),
+        withHooks(serveFile({ body: LARGE_FILE, acceptRanges: true }), delayAt("onRequest", 50)),
       );
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
-      const handle = manager.download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        urlResolver,
-      );
+      const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
 
       await handle.pause();
 
@@ -313,10 +262,7 @@ describe("DownloadManager", () => {
 
     it("returns a checkpoint whose resource and dest match the original arguments", async () => {
       using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayAt("onRequest", 50),
-        ),
+        withHooks(serveFile({ body: LARGE_FILE, acceptRanges: true }), delayAt("onRequest", 50)),
       );
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
@@ -344,11 +290,7 @@ describe("DownloadManager", () => {
       );
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
-      const handle = manager.download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        urlResolver,
-      );
+      const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
 
       // poll until the downloader has written at least one byte, then pause
       await vi.waitFor(
@@ -373,18 +315,11 @@ describe("DownloadManager", () => {
 
     it("returns one completedRange per finished chunk for a chunked download", async () => {
       using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayAt("onRequest", 200),
-        ),
+        withHooks(serveFile({ body: LARGE_FILE, acceptRanges: true }), delayAt("onRequest", 200)),
       );
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
-      const handle = manager.download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        urlResolver,
-      );
+      const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
 
       const pauseResult = await handle.pause();
       expect(pauseResult.status).toBe("paused");
@@ -399,31 +334,21 @@ describe("DownloadManager", () => {
 
     it("returns an empty completedRanges when paused before the download starts", async () => {
       using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayAt("onRequest", 200),
-        ),
+        withHooks(serveFile({ body: LARGE_FILE, acceptRanges: true }), delayAt("onRequest", 200)),
       );
       await using tmp = await makeTmpDir();
       // concurrency=1 with a queued download keeps the target pending
       const manager = new DownloadManager({ concurrency: 1 });
       // blocker occupies the single slot
       using blockerRoute = server.route(
-        withHooks(
-          serveFile({ body: SMALL_FILE, acceptRanges: false }),
-          delayAt("onRequest", 200),
-        ),
+        withHooks(serveFile({ body: SMALL_FILE, acceptRanges: false }), delayAt("onRequest", 200)),
       );
       const _blocker = manager.download(
         blockerRoute.url,
         path.join(tmp.dir, "blocker"),
         urlResolver,
       );
-      const handle = manager.download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        urlResolver,
-      );
+      const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
 
       // handle is still pending in the queue
       expect(manager.numPending).toBe(1);
@@ -445,16 +370,10 @@ describe("DownloadManager", () => {
     });
 
     it("does not throw when pause is called after the download has already completed", async () => {
-      using route = server.route(
-        serveFile({ body: SMALL_FILE, acceptRanges: false }),
-      );
+      using route = server.route(serveFile({ body: SMALL_FILE, acceptRanges: false }));
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
-      const handle = manager.download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        urlResolver,
-      );
+      const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
 
       await handle.promise;
 
@@ -463,18 +382,11 @@ describe("DownloadManager", () => {
 
     it("decrements numRunning after pause settles", async () => {
       using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: true }),
-          delayAt("onRequest", 50),
-        ),
+        withHooks(serveFile({ body: LARGE_FILE, acceptRanges: true }), delayAt("onRequest", 50)),
       );
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 3 });
-      const handle = manager.download(
-        route.url,
-        path.join(tmp.dir, "output"),
-        urlResolver,
-      );
+      const handle = manager.download(route.url, path.join(tmp.dir, "output"), urlResolver);
 
       await handle.pause();
 

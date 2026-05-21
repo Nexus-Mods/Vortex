@@ -1,12 +1,12 @@
-import Promise from "bluebird";
 import * as path from "path";
-import { types, util } from "vortex-api";
+
+import { types, util } from "@nexusmods/vortex-api";
+import Promise from "bluebird";
 
 function testSupported(files: string[]): Promise<types.ISupportedResult> {
   const supported =
-    files.find(
-      (filePath) => path.basename(filePath).toLowerCase() === "enbseries.ini",
-    ) !== undefined;
+    files.find((filePath) => path.basename(filePath).toLowerCase() === "enbseries.ini") !==
+    undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -29,9 +29,7 @@ function install(
   progressDelegate: types.ProgressDelegate,
 ): Promise<types.IInstallResult> {
   const baseDirs = files
-    .filter(
-      (filePath) => path.basename(filePath).toLowerCase() === "enbseries.ini",
-    )
+    .filter((filePath) => path.basename(filePath).toLowerCase() === "enbseries.ini")
     .map(path.dirname);
 
   const refFile = files.find(
@@ -52,10 +50,10 @@ function install(
 
 function gameSupported(gameId: string) {
   const game = util.getGame(gameId);
-  if (
-    game.compatible?.deployToGameDirectory === false ||
-    game.compatible?.enb === false
-  ) {
+  if (game === undefined) {
+    return false;
+  }
+  if (game.compatible?.deployToGameDirectory === false || game.compatible?.enb === false) {
     return false;
   }
   return !["factorio", "microsoftflightsimulator"].includes(gameId);
@@ -69,14 +67,8 @@ function init(context: types.IExtensionContext) {
   };
 
   const testEnb = (instructions: types.IInstruction[]) => {
-    if (
-      instructions.find((inst) => inst.destination === "enbseries.ini") !==
-      undefined
-    ) {
-      if (
-        instructions.find((inst) => inst.destination === "d3d11.dll") !==
-        undefined
-      ) {
+    if (instructions.find((inst) => inst.destination === "enbseries.ini") !== undefined) {
+      if (instructions.find((inst) => inst.destination === "d3d11.dll") !== undefined) {
         return context.api
           .showDialog(
             "question",
@@ -104,17 +96,10 @@ function init(context: types.IExtensionContext) {
     }
   };
 
-  context.registerModType(
-    "enb",
-    100,
-    gameSupported,
-    getPath,
-    () => Promise.resolve(false),
-    {
-      mergeMods: true,
-      name: "ENB",
-    },
-  );
+  context.registerModType("enb", 100, gameSupported, getPath, () => Promise.resolve(false), {
+    mergeMods: true,
+    name: "ENB",
+  });
   // context.registerInstaller('enb', 50, testSupported, install);
 
   return true;

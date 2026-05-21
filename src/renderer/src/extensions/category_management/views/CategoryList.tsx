@@ -1,5 +1,21 @@
+import { unknownToError } from "@vortex/shared";
+import type PromiseBB from "bluebird";
+import * as React from "react";
+import { FormControl } from "react-bootstrap";
+import type * as SortableTreeT from "react-sortable-tree";
+import type {
+  OnDragPreviousAndNextLocation,
+  OnMovePreviousAndNextLocation,
+  NodeData,
+  FullTree,
+} from "react-sortable-tree";
+import SortableTree from "react-sortable-tree";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { showDialog } from "../../../actions/notifications";
 import ActionDropdown from "../../../controls/ActionDropdown";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Icon from "../../../controls/Icon";
 import IconBar from "../../../controls/IconBar";
 import { IconButton } from "../../../controls/TooltipControls";
@@ -15,41 +31,14 @@ import type {
 } from "../../../types/IDialog";
 import type { IErrorOptions } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import lazyRequire from "../../../util/lazyRequire";
 import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
-
 import type { IMod } from "../../mod_management/types/IMod";
-
-import {
-  removeCategory,
-  renameCategory,
-  setCategory,
-  setCategoryOrder,
-} from "../actions/category";
-import type {
-  ICategory,
-  ICategoryDictionary,
-} from "../types/ICategoryDictionary";
+import { removeCategory, renameCategory, setCategory, setCategoryOrder } from "../actions/category";
+import type { ICategory, ICategoryDictionary } from "../types/ICategoryDictionary";
 import type { ICategoriesTree } from "../types/ITrees";
 import createTreeDataObject from "../util/createTreeDataObject";
-
-import type PromiseBB from "bluebird";
-import * as React from "react";
-import { FormControl } from "react-bootstrap";
-import type * as SortableTreeT from "react-sortable-tree";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-
-import type {
-  OnDragPreviousAndNextLocation,
-  OnMovePreviousAndNextLocation,
-  NodeData,
-  FullTree,
-} from "react-sortable-tree";
-import SortableTree from "react-sortable-tree";
-import { unknownToError } from "@vortex/shared";
 
 const nop = () => undefined;
 
@@ -66,23 +55,11 @@ interface INodeExtraArgs {
 }
 
 interface IActionProps {
-  onShowError: (
-    message: string,
-    details: string | Error,
-    options: IErrorOptions,
-  ) => void;
-  onSetCategory: (
-    gameId: string,
-    categoryId: string,
-    category: ICategory,
-  ) => void;
+  onShowError: (message: string, details: string | Error, options: IErrorOptions) => void;
+  onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
   onRemoveCategory: (gameId: string, categoryId: string) => void;
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
-  onRenameCategory: (
-    activeGameId: string,
-    categoryId: string,
-    newCategory: {},
-  ) => void;
+  onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (
     type: DialogType,
     title: string,
@@ -173,12 +150,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t } = this.props;
-    const {
-      expandedTreeData,
-      searchString,
-      searchFocusIndex,
-      searchFoundCount,
-    } = this.state;
+    const { expandedTreeData, searchString, searchFocusIndex, searchFoundCount } = this.state;
 
     return (
       <div className="categories-dialog">
@@ -257,8 +229,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     searchQuery: any;
   }) => {
     return (
-      searchQuery.length > 0 &&
-      node.title.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1
+      searchQuery.length > 0 && node.title.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1
     );
   };
 
@@ -272,10 +243,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private getNonEmptyCategories(
-    treeData: ICategoriesTree[],
-    ancestry: string[],
-  ): string[] {
+  private getNonEmptyCategories(treeData: ICategoriesTree[], ancestry: string[]): string[] {
     let res: string[] = [];
     treeData.forEach((category) => {
       if (category.modCount > 0) {
@@ -283,10 +251,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         res = res.concat(ancestry);
       }
       res = res.concat(
-        this.getNonEmptyCategories(
-          category.children,
-          [].concat(ancestry, [category.categoryId]),
-        ),
+        this.getNonEmptyCategories(category.children, [].concat(ancestry, [category.categoryId])),
       );
     });
     return res;
@@ -299,9 +264,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     categories: ICategoryDictionary,
   ): ICategoriesTree[] {
     const filtered: Set<string> = new Set(
-      showEmpty
-        ? Object.keys(categories)
-        : this.getNonEmptyCategories(treeData, []),
+      showEmpty ? Object.keys(categories) : this.getNonEmptyCategories(treeData, []),
     );
 
     return treeData
@@ -311,12 +274,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         }
         const copy: ICategoriesTree = { ...obj };
         copy.expanded = expanded.has(copy.categoryId);
-        copy.children = this.applyExpand(
-          copy.children,
-          showEmpty,
-          expanded,
-          categories,
-        );
+        copy.children = this.applyExpand(copy.children, showEmpty, expanded, categories);
         return copy;
       })
       .filter((obj) => obj !== undefined);
@@ -332,30 +290,22 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       this.nextState.showEmpty = !showEmpty;
       this.updateExpandedTreeData(categories);
     } catch (err) {
-      onShowError(
-        "An error occurred hiding/showing the empty categories",
-        unknownToError(err),
-        { allowReport: false },
-      );
+      onShowError("An error occurred hiding/showing the empty categories", unknownToError(err), {
+        allowReport: false,
+      });
     }
   };
 
   private sortAlphabetically = () => {
-    const { t, gameMode, categories, mods, onShowError, onSetCategoryOrder } =
-      this.props;
+    const { t, gameMode, categories, mods, onShowError, onSetCategoryOrder } = this.props;
 
     try {
-      const newTree: ICategoriesTree[] = createTreeDataObject(
-        t,
-        categories,
-        mods,
-        (a, b) => categories[a].name.localeCompare(categories[b].name),
+      const newTree: ICategoriesTree[] = createTreeDataObject(t, categories, mods, (a, b) =>
+        categories[a].name.localeCompare(categories[b].name),
       );
 
       const newOrder = (base: ICategoriesTree[]): string[] => {
-        return [].concat(
-          ...base.map((node) => [node.categoryId, ...newOrder(node.children)]),
-        );
+        return [].concat(...base.map((node) => [node.categoryId, ...newOrder(node.children)]));
       };
 
       onSetCategoryOrder(gameMode, newOrder(newTree));
@@ -456,9 +406,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       : undefined;
   };
 
-  private validateCategoryDialog = (
-    content: IDialogContent,
-  ): IConditionResult[] => {
+  private validateCategoryDialog = (content: IDialogContent): IConditionResult[] => {
     const results: IConditionResult[] = [];
     content.input.forEach((inp) => {
       results.push(this.hasEmptyInput(inp));
@@ -471,8 +419,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   };
 
   private addRootCategory = () => {
-    const { categories, gameMode, onSetCategory, onShowDialog, onShowError } =
-      this.props;
+    const { categories, gameMode, onSetCategory, onShowDialog, onShowError } = this.props;
     const lastIndex = this.searchLastRootId(categories);
 
     onShowDialog(
@@ -516,8 +463,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private selectPrevMatch = () => {
     const { searchFocusIndex, searchFoundCount } = this.state;
 
-    this.nextState.searchFocusIndex =
-      (searchFoundCount + searchFocusIndex - 1) % searchFoundCount;
+    this.nextState.searchFocusIndex = (searchFoundCount + searchFocusIndex - 1) % searchFoundCount;
   };
 
   private selectNextMatch = () => {
@@ -550,8 +496,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     if (this.state.searchFoundCount !== matches.length) {
       this.nextState.searchFoundCount = matches.length;
     }
-    const newFocusIndex =
-      matches.length > 0 ? searchFocusIndex % matches.length : 0;
+    const newFocusIndex = matches.length > 0 ? searchFocusIndex % matches.length : 0;
     if (this.state.searchFocusIndex !== newFocusIndex) {
       this.nextState.searchFocusIndex = newFocusIndex;
     }
@@ -562,9 +507,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     let userConfirmed = false;
     id = Array.isArray(id) ? id[0] : id;
     const catKeys = Object.keys(categories);
-    const childrenIds = catKeys.filter(
-      (key) => categories[key].parentCategory === id,
-    );
+    const childrenIds = catKeys.filter((key) => categories[key].parentCategory === id);
     const removeCat = () => {
       childrenIds.forEach((iterId) => this.removeCategory(iterId));
       onRemoveCategory(gameMode, id);
@@ -595,9 +538,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
   };
 
-  private generateNodeProps = (
-    rowInfo: SortableTreeT.ExtendedNodeData<{ categoryId: string }>,
-  ) => {
+  private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData<{ categoryId: string }>) => {
     const { t } = this.props;
     const actions: IActionDefinition[] = [
       {
@@ -641,9 +582,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     if (args.expanded) {
       this.nextState.expanded.push(args.node.categoryId);
     } else {
-      this.nextState.expanded.splice(
-        this.nextState.expanded.indexOf(args.node.categoryId),
-      );
+      this.nextState.expanded.splice(this.nextState.expanded.indexOf(args.node.categoryId));
     }
 
     this.updateExpandedTreeData(this.props.categories);
@@ -654,9 +593,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     return !(nextPath ?? []).slice(0, -1).includes(node["categoryId"]);
   };
 
-  private moveNode = (
-    data: NodeData & FullTree & OnMovePreviousAndNextLocation,
-  ) => {
+  private moveNode = (data: NodeData & FullTree & OnMovePreviousAndNextLocation) => {
     const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
     const { path, node, treeData } = data;
     if (path[path.length - 2] !== node["parentId"]) {
@@ -667,9 +604,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       });
     } else {
       const newOrder = (base: ICategoriesTree[]): string[] => {
-        return [].concat(
-          ...base.map((node) => [node.categoryId, ...newOrder(node.children)]),
-        );
+        return [].concat(...base.map((node) => [node.categoryId, ...newOrder(node.children)]));
       };
       onSetCategoryOrder(gameMode, newOrder(treeData as ICategoriesTree[]));
     }
@@ -688,26 +623,18 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<IState, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
-    onRenameCategory: (
-      gameId: string,
-      categoryId: string,
-      newCategory: string,
-    ) => dispatch(renameCategory(gameId, categoryId, newCategory)),
+    onRenameCategory: (gameId: string, categoryId: string, newCategory: string) =>
+      dispatch(renameCategory(gameId, categoryId, newCategory)),
     onSetCategory: (gameId: string, categoryId: string, category: ICategory) =>
       dispatch(setCategory(gameId, categoryId, category)),
     onRemoveCategory: (gameId: string, categoryId: string) =>
       dispatch(removeCategory(gameId, categoryId)),
     onSetCategoryOrder: (gameId: string, categoryIds: string[]) =>
       dispatch(setCategoryOrder(gameId, categoryIds)),
-    onShowError: (
-      message: string,
-      details: string | Error,
-      options: IErrorOptions,
-    ) => showError(dispatch, message, details, options),
+    onShowError: (message: string, details: string | Error, options: IErrorOptions) =>
+      showError(dispatch, message, details, options),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };

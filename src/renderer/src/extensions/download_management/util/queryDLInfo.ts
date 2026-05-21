@@ -1,9 +1,8 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import Bluebird from "bluebird";
 import type { Action } from "redux";
-import type {
-  IExtensionApi,
-  ILookupResult,
-} from "../../../types/IExtensionContext";
+
+import type { IExtensionApi, ILookupResult } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
 import { batchDispatch } from "../../../util/util";
@@ -14,7 +13,6 @@ import { convertNXMIdReverse } from "../../nexus_integration/util/convertGameId"
 import { activeGameId } from "../../profile_management/selectors";
 import { setDownloadModInfo } from "../actions/state";
 import { downloadPathForGame } from "../selectors";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 // Queue management for metadata lookups
 interface IMetadataRequest {
@@ -47,11 +45,7 @@ class MetadataLookupQueue {
     return MetadataLookupQueue.instance;
   }
 
-  public enqueue(
-    api: IExtensionApi,
-    dlIds: string[],
-    ignoreCache: boolean,
-  ): Promise<void> {
+  public enqueue(api: IExtensionApi, dlIds: string[], ignoreCache: boolean): Promise<void> {
     const promises = dlIds.map((dlId) => {
       const cacheKey = `${dlId}_${ignoreCache}`;
       if (this.recentLookups.has(cacheKey)) {
@@ -121,11 +115,7 @@ class MetadataLookupQueue {
   }
 }
 
-function queryInfoInternal(
-  api: IExtensionApi,
-  dlId: string,
-  ignoreCache: boolean,
-): Bluebird<void> {
+function queryInfoInternal(api: IExtensionApi, dlId: string, ignoreCache: boolean): Bluebird<void> {
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
@@ -228,12 +218,7 @@ function queryInfoInternal(
           // Run game assignment asynchronously without blocking metadata lookup completion
           // Pass extra parameter to indicate this is from metadata lookup
           return api
-            .emitAndAwait(
-              "set-download-games",
-              dlId,
-              [metaGameId, gameId],
-              true,
-            )
+            .emitAndAwait("set-download-games", dlId, [metaGameId, gameId], true)
             .catch((err) => {
               log("warn", "failed to set download games", {
                 dlId,
@@ -259,11 +244,7 @@ function queryInfoInternal(
 }
 
 // Public interface that uses the queue
-function queryInfo(
-  api: IExtensionApi,
-  dlIds: string[],
-  ignoreCache: boolean,
-): Promise<void> {
+function queryInfo(api: IExtensionApi, dlIds: string[], ignoreCache: boolean): Promise<void> {
   const queue = MetadataLookupQueue.getInstance();
   return queue.enqueue(api, dlIds, ignoreCache);
 }

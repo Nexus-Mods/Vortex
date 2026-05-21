@@ -1,9 +1,9 @@
 import { provides } from "@nexusmods/adaptor-api";
-import { QualifiedPath } from "@vortex/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { fs } from "virtual:services";
 
 /**
- * Adaptor-facing test service that exercises the host `IFileSystem`
+ * Adaptor-facing test service that exercises the host `FileSystem`
  * service from inside the sandboxed Worker. Each method takes serialised
  * `QualifiedPath`s (plain `{ value, scheme, path }` objects crossing the
  * RPC boundary), rebuilds `QualifiedPath` instances, and drives the
@@ -26,10 +26,7 @@ export interface IFsProbe {
 
 @provides("vortex:adaptor/fs-test/probe")
 export class FsProbeService implements IFsProbe {
-  async writeRead(
-    rawPath: QualifiedPath,
-    contents: number[],
-  ): Promise<number[]> {
+  async writeRead(rawPath: QualifiedPath, contents: number[]): Promise<number[]> {
     const path = rehydrate(rawPath);
     await fs.writeFile(path, new Uint8Array(contents));
     const bytes = await fs.readFile(path);
@@ -48,7 +45,7 @@ export class FsProbeService implements IFsProbe {
     } catch (err: unknown) {
       // Cannot use `err instanceof Error` here: the adaptor runs inside a
       // VM sandbox whose `Error` global is a different constructor from
-      // the one `@vortex/fs` uses on the host side. Duck-type instead.
+      // the one `@nexusmods/adaptor-api/fs` uses on the host side. Duck-type instead.
       if (err !== null && typeof err === "object") {
         const e = err as {
           name?: unknown;

@@ -1,4 +1,5 @@
 import type { ILookupResult, IModInfo } from "modmeta-db";
+
 import type { IFileListItem, IMod, IModReference } from "./IMod";
 
 export interface IModInfoEx extends IModInfo {

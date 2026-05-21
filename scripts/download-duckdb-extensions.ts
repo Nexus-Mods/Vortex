@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
-import * as path from "node:path";
 import * as https from "node:https";
-import * as zlib from "node:zlib";
+import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import * as zlib from "node:zlib";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -61,9 +61,7 @@ export function buildExtensionUrl(opts: BuildUrlOptions): string {
 
   if (type === "http") {
     if (!repository) {
-      throw new Error(
-        `Extension "${name}" has type "http" but is missing a "repository" field.`,
-      );
+      throw new Error(`Extension "${name}" has type "http" but is missing a "repository" field.`);
     }
     return `${repository}/${version}/${platform}/${name}.duckdb_extension.gz`;
   }
@@ -127,9 +125,7 @@ function downloadFile(url: string, destPath: string): Promise<void> {
 
 async function main(): Promise<void> {
   const configPath = path.resolve(__dirname, "duckdb-extensions.json");
-  const config: ExtensionConfig = JSON.parse(
-    fs.readFileSync(configPath, "utf8"),
-  );
+  const config: ExtensionConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
   // Detect DuckDB version from the installed @duckdb/node-api package
   const nodeApiPkgPath = path.resolve(
@@ -178,8 +174,7 @@ async function main(): Promise<void> {
 
 // Only run when executed directly (not when imported for testing)
 const isMain =
-  typeof process.argv[1] === "string" &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+  typeof process.argv[1] === "string" && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isMain) {
   main().catch((err: unknown) => {

@@ -1,5 +1,5 @@
+import { types } from "@nexusmods/vortex-api";
 import { createAction } from "redux-act";
-import { types } from "vortex-api";
 
 export const setDisplayBatchHighlight = createAction(
   "SET_DISPLAY_BATCH_HIGHLIGHTER",

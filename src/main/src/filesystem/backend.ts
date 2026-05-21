@@ -1,5 +1,4 @@
-import type { BigIntStats, ReadStream, WriteStream } from "node:fs";
-
+import type { BigIntStats } from "node:fs";
 import {
   cp,
   link,
@@ -15,6 +14,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join, dirname } from "node:path";
+import { Readable, Writable } from "node:stream";
 
 import type {
   DirectoryStatus,
@@ -23,11 +23,10 @@ import type {
   StatResult,
   Status,
   StatusTime,
-} from "@vortex/fs";
-import type { Pattern, ResolvedPath } from "@vortex/fs";
-import type { FileSystemBackend as NodeFileSystemBackend } from "@vortex/fs";
-
-import { FileSystemError, matches } from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
+import type { Pattern, ResolvedPath } from "@nexusmods/adaptor-api/fs";
+import type { FileSystemBackend as NodeFileSystemBackend } from "@nexusmods/adaptor-api/fs";
+import { FileSystemError, matches } from "@nexusmods/adaptor-api/fs";
 
 interface ParsedNodeError {
   code: FileSystemErrorCode;
@@ -94,7 +93,7 @@ function parseNodeError(err: unknown): ParsedNodeError {
 /**
  * Node-backed implementation of {@link NodeFileSystemBackend}. Operates on
  * native {@link ResolvedPath} values; path resolution from
- * {@link QualifiedPath} is the responsibility of the {@link IFileSystem}
+ * {@link QualifiedPath} is the responsibility of the {@link FileSystem}
  * that wraps this backend.
  *
  * @public
@@ -150,7 +149,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
 
     const overwrite = options?.overwrite ?? false;
     if (!overwrite) {
-      let targetExists = false;
+      let targetExists: boolean;
 
       try {
         await stat(target);
@@ -285,22 +284,22 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     path: ResolvedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream>;
+  ): Promise<ReadableStream>;
   createStream(
     path: ResolvedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WriteStream>;
+  ): Promise<WritableStream>;
   createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream>;
+  ): Promise<ReadableStream | WritableStream>;
   async createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream> {
+  ): Promise<ReadableStream | WritableStream> {
     if (mode === "w") {
       await this.createDirectory(dirname(path));
     }
@@ -309,18 +308,20 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       if (mode === "r") {
         // 'r': Open file for reading. An exception occurs if the file does not exist.
         const fd = await open(path, "r");
-        return fd.createReadStream({
+        const node = fd.createReadStream({
           autoClose: true,
           start: options?.start,
           end: options?.end,
         });
+        return Readable.toWeb(node) as ReadableStream;
       } else if (mode === "w") {
         // 'w': Open file for writing. The file is created (if it does not exist) or truncated (if it exists).
         const fd = await open(path, "w");
-        return fd.createWriteStream({
+        const node = fd.createWriteStream({
           autoClose: true,
           start: options?.start,
         });
+        return Writable.toWeb(node) as WritableStream;
       }
     } catch (err) {
       const { code, isTransient } = parseNodeError(err);
@@ -337,15 +338,10 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       throw new FileSystemError(code, message, err, isTransient);
     }
 
-    throw new Error(
-      `Cannot create stream for '${path}': unknown mode'${mode}'`,
-    );
+    throw new Error(`Cannot create stream for '${path}': unknown mode'${mode}'`);
   }
 
-  async stat(
-    path: ResolvedPath,
-    options?: { parseSymLink: boolean },
-  ): Promise<StatResult> {
+  async stat(path: ResolvedPath, options?: { parseSymLink: boolean }): Promise<StatResult> {
     const parseSymLink = options?.parseSymLink ?? false;
 
     try {
@@ -381,12 +377,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         return { exists: false };
       }
 
-      throw new FileSystemError(
-        code,
-        `Failed to stat ${path}`,
-        err,
-        isTransient,
-      );
+      throw new FileSystemError(code, `Failed to stat ${path}`, err, isTransient);
     }
   }
 
@@ -500,10 +491,7 @@ function parseTime(stats: BigIntStats): StatusTime {
   return times;
 }
 
-function parseNodeStats(
-  path: ResolvedPath,
-  stats: BigIntStats,
-): FileStatus | DirectoryStatus {
+function parseNodeStats(path: ResolvedPath, stats: BigIntStats): FileStatus | DirectoryStatus {
   const times = parseTime(stats);
 
   if (stats.isFile()) {

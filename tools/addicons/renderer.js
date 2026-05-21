@@ -79,8 +79,7 @@ function sanitizeName(name) {
 function addFile(file) {
   let found = false;
   locations.forEach((loc) => {
-    const locPath =
-      basePath + path.sep + format(loc, config.variables) + file.name;
+    const locPath = basePath + path.sep + format(loc, config.variables) + file.name;
     try {
       const stat = fs.statSync(locPath);
       found = true;

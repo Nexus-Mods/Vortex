@@ -1,13 +1,13 @@
+import { actions, types, util } from "@nexusmods/vortex-api";
+import * as _ from "lodash";
+import * as Redux from "redux";
+import { generate as shortid } from "shortid";
+
 import { MOD_TYPE } from "../constants";
 import { importTweaks } from "../initweaks";
 import { IINITweak } from "../types/IINITweak";
 import { createCollection } from "./createCollection";
 import { makeCollectionId, validateName } from "./transformCollection";
-
-import * as _ from "lodash";
-import * as Redux from "redux";
-import { generate as shortid } from "shortid";
-import { actions, types, util } from "vortex-api";
 
 async function createTweaksFromProfile(
   api: types.IExtensionApi,
@@ -48,14 +48,9 @@ function createRulesFromProfile(
       const oldRule = existingRules.find((iter) =>
         util.testModReference(mods[modId], iter.reference),
       );
-      if (
-        oldRule !== undefined &&
-        oldRule.reference.versionMatch !== undefined
-      ) {
+      if (oldRule !== undefined && oldRule.reference.versionMatch !== undefined) {
         versionMatch =
-          oldRule.reference.versionMatch === "*"
-            ? "*"
-            : mods[modId].attributes.version;
+          oldRule.reference.versionMatch === "*" ? "*" : mods[modId].attributes.version;
       }
 
       if (isQuickCollection) {
@@ -98,9 +93,7 @@ function updateCollection(
   util.batchDispatch(
     api.store,
     newRules.reduce((prev: Redux.Action[], rule: types.IModRule) => {
-      if (
-        (mod.rules ?? []).find((iter) => _.isEqual(rule, iter)) === undefined
-      ) {
+      if ((mod.rules ?? []).find((iter) => _.isEqual(rule, iter)) === undefined) {
         prev.push(actions.addModRule(gameId, mod.id, rule));
       }
       return prev;
@@ -164,10 +157,7 @@ export async function createCollectionFromProfile(
         ],
         condition: (content) => validateName(t, content),
       },
-      [
-        { label: "Cancel" },
-        { label: forceName ? uploadLabel : "Create", default: true },
-      ],
+      [{ label: "Cancel" }, { label: forceName ? uploadLabel : "Create", default: true }],
     );
 
     const cancelled = result.action === "Cancel";
@@ -179,19 +169,12 @@ export async function createCollectionFromProfile(
 
     name = result.input["name"];
     await createCollection(api, profile.gameId, id, name, rules);
-    await createTweaksFromProfile(
-      api,
-      profile,
-      state.persistent.mods[profile.gameId] ?? {},
-      id,
-    );
+    await createTweaksFromProfile(api, profile, state.persistent.mods[profile.gameId] ?? {}, id);
 
     const userInfo = state.persistent["nexus"]?.userInfo;
     if (userInfo?.userId) {
       const game = util.getGame(profile.gameId);
-      const creationMethod = isQuickCollection
-        ? "quick_collection"
-        : "from_profile";
+      const creationMethod = isQuickCollection ? "quick_collection" : "from_profile";
       api.events.emit("analytics-track-mixpanel-event", {
         eventName: "collection_drafted",
         properties: {

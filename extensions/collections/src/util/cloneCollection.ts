@@ -1,10 +1,11 @@
+import * as path from "path";
+
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
+
 import { MOD_TYPE } from "../constants";
 import { ICollection, ICollectionAttributes } from "../types/ICollection";
 import { findExtensions, IExtensionFeature } from "./extension";
 import { hasEditPermissions } from "./util";
-
-import * as path from "path";
-import { fs, selectors, types, util } from "vortex-api";
 
 function deduceCollectionAttributes(
   collectionMod: types.IMod,
@@ -75,11 +76,7 @@ export async function cloneCollection(
 
   try {
     const collectionData = await fs.readFileAsync(
-      path.join(
-        stagingPath,
-        existingCollection.installationPath,
-        "collection.json",
-      ),
+      path.join(stagingPath, existingCollection.installationPath, "collection.json"),
       { encoding: "utf-8" },
     );
     collection = JSON.parse(collectionData);
@@ -119,8 +116,7 @@ export async function cloneCollection(
     existingCollection.attributes?.permissions || [],
   );
   let ownCollection: boolean =
-    userInfo?.userId != null &&
-    existingCollection.attributes?.uploaderId === userInfo.userId;
+    userInfo?.userId != null && existingCollection.attributes?.uploaderId === userInfo.userId;
   if (editPermissions && !ownCollection) {
     const result: types.IDialogResult = await api.showDialog(
       "question",
@@ -144,30 +140,20 @@ export async function cloneCollection(
     }
   }
 
-  const shouldCopyAttributes = () =>
-    !isCloning && (ownCollection || isContributing);
+  const shouldCopyAttributes = () => !isCloning && (ownCollection || isContributing);
   const cloneFileName = t("Copy of {{name}}", {
     replace: { name: existingCollection.attributes?.customFileName },
   });
   const existingFileName = existingCollection.attributes?.customFileName;
-  const customFileName = shouldCopyAttributes()
-    ? existingFileName
-    : cloneFileName;
+  const customFileName = shouldCopyAttributes() ? existingFileName : cloneFileName;
 
   const ownCollectionAttributes = shouldCopyAttributes()
     ? {
         pictureUrl: existingCollection.attributes.pictureUrl,
-        uploader:
-          existingCollection.attributes.uploader ??
-          userInfo?.name ??
-          "Anonymous",
+        uploader: existingCollection.attributes.uploader ?? userInfo?.name ?? "Anonymous",
         uploaderAvatar: existingCollection.attributes.uploaderAvatar,
-        author:
-          existingCollection.attributes?.author ??
-          userInfo?.name ??
-          "Anonymous",
-        uploaderId:
-          existingCollection.attributes?.uploaderId ?? userInfo?.userId,
+        author: existingCollection.attributes?.author ?? userInfo?.name ?? "Anonymous",
+        uploaderId: existingCollection.attributes?.uploaderId ?? userInfo?.userId,
         permissions: existingCollection.attributes?.permissions,
       }
     : {};
@@ -178,9 +164,7 @@ export async function cloneCollection(
     state: "installed",
     attributes: {
       customFileName,
-      version: shouldCopyAttributes()
-        ? existingCollection.attributes?.version
-        : "0",
+      version: shouldCopyAttributes() ? existingCollection.attributes?.version : "0",
       installTime: new Date().toString(),
       author: userInfo?.name ?? "Anonymous",
       uploader: userInfo?.name ?? "Anonymous",
@@ -189,20 +173,14 @@ export async function cloneCollection(
       collectionId: shouldCopyAttributes()
         ? existingCollection.attributes?.collectionId
         : undefined,
-      revisionId: shouldCopyAttributes()
-        ? existingCollection.attributes?.revisionId
-        : undefined,
+      revisionId: shouldCopyAttributes() ? existingCollection.attributes?.revisionId : undefined,
       collectionSlug: shouldCopyAttributes()
         ? existingCollection.attributes?.collectionSlug
         : undefined,
       revisionNumber: shouldCopyAttributes()
         ? existingCollection.attributes?.revisionNumber + 1
         : undefined,
-      collection: deduceCollectionAttributes(
-        existingCollection,
-        collection,
-        mods,
-      ),
+      collection: deduceCollectionAttributes(existingCollection, collection, mods),
       ...ownCollectionAttributes,
     },
     installationPath: id,
@@ -224,10 +202,7 @@ export async function cloneCollection(
     const clonePath = path.join(deployPath, id);
     const files: string[] = await fs.readdirAsync(sourcePath);
     for (const file of files) {
-      await fs.copyAsync(
-        path.join(sourcePath, file),
-        path.join(clonePath, file),
-      );
+      await fs.copyAsync(path.join(sourcePath, file), path.join(clonePath, file));
     }
 
     const exts: IExtensionFeature[] = findExtensions(api.getState(), gameId);

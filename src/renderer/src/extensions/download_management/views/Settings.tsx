@@ -1,7 +1,28 @@
+import * as path from "path";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import * as React from "react";
+import {
+  Button as BSButton,
+  ControlLabel,
+  FormControl,
+  FormGroup,
+  HelpBlock,
+  InputGroup,
+  Jumbotron,
+  Modal,
+  ProgressBar,
+} from "react-bootstrap";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import { showDialog } from "../../../actions/notifications";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import FlexLayout from "../../../controls/FlexLayout";
 import FormInput from "../../../controls/FormInput";
 import Icon from "../../../controls/Icon";
+import Image from "../../../controls/Image";
 import More from "../../../controls/More";
 import Spinner from "../../../controls/Spinner";
 import Toggle from "../../../controls/Toggle";
@@ -14,7 +35,6 @@ import type {
 } from "../../../types/IDialog";
 import type { IDownload, IState } from "../../../types/IState";
 import type { ValidationState } from "../../../types/ITableAttribute";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import {
   CleanupFailedException,
   InsufficientDiskSpace,
@@ -26,16 +46,13 @@ import {
 import { withTrackedActivity } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
+import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
 import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
-import {
-  cleanFailedTransfer,
-  testPathTransfer,
-  transferPath,
-} from "../../../util/transferPath";
+import { cleanFailedTransfer, testPathTransfer, transferPath } from "../../../util/transferPath";
 import {
   Campaign,
   ciEqual,
@@ -56,36 +73,9 @@ import {
   setCollectionConcurrency,
 } from "../actions/settings";
 import { setTransferDownloads } from "../actions/transactions";
-
-import {
-  DOWNLOADS_DIR_TAG,
-  writeDownloadsTag,
-} from "../util/downloadDirectory";
-import getDownloadPath, {
-  getDownloadPathPattern,
-} from "../util/getDownloadPath";
-
 import getText from "../texts";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import * as React from "react";
-import {
-  Button as BSButton,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  HelpBlock,
-  InputGroup,
-  Jumbotron,
-  Modal,
-  ProgressBar,
-} from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import getVortexPath from "../../../util/getVortexPath";
-import Image from "../../../controls/Image";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { DOWNLOADS_DIR_TAG, writeDownloadsTag } from "../util/downloadDirectory";
+import getDownloadPath, { getDownloadPathPattern } from "../util/getDownloadPath";
 
 const MB = 1024 * 1024;
 
@@ -153,30 +143,18 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const {
-      t,
-      copyOnIFF,
-      downloads,
-      isPremium,
-      maxBandwidth,
-      parallelDownloads,
-    } = this.props;
+    const { t, copyOnIFF, downloads, isPremium, maxBandwidth, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
     const pathPreview = getDownloadPath(downloadPath);
-    const changed = !ciEqual(
-      getDownloadPath(this.props.downloadPath),
-      pathPreview,
-    );
+    const changed = !ciEqual(getDownloadPath(this.props.downloadPath), pathPreview);
     const validationState = this.validateDownloadPath(pathPreview);
 
     const pathValid = validationState.state !== "error";
     const electricBoltIconPath = "assets/icons/electric-bolt.svg";
 
     const hasActivity =
-      Object.keys(downloads).find(
-        (dlId) => downloads[dlId].state === "started",
-      ) !== undefined;
+      Object.keys(downloads).find((dlId) => downloads[dlId].state === "started") !== undefined;
 
     return (
       // Supressing default form submission event.
@@ -200,10 +178,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     onKeyPress={changed && pathValid ? this.keyPressEvt : null}
                   />
                   <InputGroup.Button className="inset-btn">
-                    <Button
-                      tooltip={t("Browse")}
-                      onClick={this.browseDownloadPath}
-                    >
+                    <Button tooltip={t("Browse")} onClick={this.browseDownloadPath}>
                       <Icon name="browse" />
                     </Button>
                   </InputGroup.Button>
@@ -212,11 +187,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               <FlexLayout.Fixed>
                 <InputGroup.Button>
                   <BSButton
-                    disabled={
-                      !changed ||
-                      validationState.state === "error" ||
-                      hasActivity
-                    }
+                    disabled={!changed || validationState.state === "error" || hasActivity}
                     onClick={this.onApply}
                   >
                     {hasActivity ? <Spinner /> : t("Apply")}
@@ -238,11 +209,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   <div className="container">
                     <h2>{this.state.busy}</h2>
                     {progressFile !== undefined ? <p>{progressFile}</p> : null}
-                    <ProgressBar
-                      style={{ height: "1.5em" }}
-                      now={progress}
-                      max={100}
-                    />
+                    <ProgressBar style={{ height: "1.5em" }} now={progress} max={100} />
                   </div>
                 </Jumbotron>
               </Modal.Body>
@@ -353,18 +320,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { modsInstallPath } = this.props;
 
     if (modsInstallPath !== undefined) {
-      const normalizedInstallPath = path.normalize(
-        modsInstallPath.toLowerCase(),
-      );
+      const normalizedInstallPath = path.normalize(modsInstallPath.toLowerCase());
       const normalizedInput = path.normalize(input.toLowerCase());
-      if (
-        normalizedInstallPath === normalizedInput ||
-        isChildPath(input, modsInstallPath)
-      ) {
+      if (normalizedInstallPath === normalizedInput || isChildPath(input, modsInstallPath)) {
         return {
           state: "error",
-          reason:
-            "Download folder can't be a subdirectory of the mods staging folder",
+          reason: "Download folder can't be a subdirectory of the mods staging folder",
         };
       }
     }
@@ -379,16 +340,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (isChildPath(input, getVortexPath("application"))) {
       return {
         state: "error",
-        reason:
-          "Download folder can't be a subdirectory of the Vortex application folder.",
+        reason: "Download folder can't be a subdirectory of the Vortex application folder.",
       };
     }
 
     if (input.length > 100) {
       return {
         state: input.length > 200 ? "error" : "warning",
-        reason:
-          "Download path shouldn't be too long, otherwise downloads may fail.",
+        reason: "Download path shouldn't be too long, otherwise downloads may fail.",
       };
     }
 
@@ -430,8 +389,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   };
 
   private onApply = () => {
-    getNormalizeFunc(getDownloadPath(this.state.downloadPath)).then(
-      (normalize) => this.apply(normalize),
+    getNormalizeFunc(getDownloadPath(this.state.downloadPath)).then((normalize) =>
+      this.apply(normalize),
     );
   };
 
@@ -472,8 +431,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   };
 
   private apply = (normalize: (input: string) => string) => {
-    const { t, onSetDownloadPath, onShowDialog, onShowError, onSetTransfer } =
-      this.props;
+    const { t, onSetDownloadPath, onShowDialog, onShowError, onSetTransfer } = this.props;
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
 
@@ -511,10 +469,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       );
     }
 
-    if (
-      !path.isAbsolute(newPath) ||
-      isChildPath(newPath, vortexPath, normalize)
-    ) {
+    if (!path.isAbsolute(newPath) || isChildPath(newPath, vortexPath, normalize)) {
       return onShowDialog(
         "error",
         "Invalid path selected",
@@ -573,9 +528,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           .then(() => {
             if (oldPath !== newPath) {
               this.nextState.busy = t("Moving download folder");
-              return this.transferPath().then(() =>
-                writeDownloadsTag(this.context.api, newPath),
-              );
+              return this.transferPath().then(() => writeDownloadsTag(this.context.api, newPath));
             } else {
               return PromiseBB.resolve();
             }
@@ -607,10 +560,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             );
 
             if (!(err.errorObject instanceof UserCanceled)) {
-              this.context.api.showErrorNotification(
-                "Clean-up failed",
-                err.errorObject,
-              );
+              this.context.api.showErrorNotification("Clean-up failed", err.errorObject);
             }
           })
           .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
@@ -654,10 +604,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   false,
                   true,
                 );
-              } else if (
-                err.code === "UNKNOWN" &&
-                err?.["nativeCode"] === 1392
-              ) {
+              } else if (err.code === "UNKNOWN" && err?.["nativeCode"] === 1392) {
                 // The file or directory is corrupted and unreadable.
                 onShowError(
                   "Failed to move directories",
@@ -671,11 +618,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   false,
                 );
               } else {
-                onShowError(
-                  "Failed to move directories",
-                  err,
-                  !(err instanceof ProcessCanceled),
-                );
+                onShowError("Failed to move directories", err, !(err instanceof ProcessCanceled));
               }
             }
           })
@@ -691,10 +634,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               "transfer",
               "downloads",
             ];
-            if (
-              getSafe(state, pendingTransfer, undefined) !== undefined &&
-              deleteOldDestination
-            ) {
+            if (getSafe(state, pendingTransfer, undefined) !== undefined && deleteOldDestination) {
               return cleanFailedTransfer(newPath)
                 .then(() => {
                   onSetTransfer(undefined);
@@ -740,9 +680,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       },
       [{ label: "Cancel" }, { label: "Create as Administrator" }],
     ).then((result) =>
-      result.action === "Cancel"
-        ? PromiseBB.reject(new UserCanceled())
-        : PromiseBB.resolve(),
+      result.action === "Cancel" ? PromiseBB.reject(new UserCanceled()) : PromiseBB.resolve(),
     );
   };
 
@@ -762,10 +700,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         })
         .then(() => {
           if (hasDownloadTag) {
-            const downloadTagPath = path.join(
-              newDownloadPath,
-              DOWNLOADS_DIR_TAG,
-            );
+            const downloadTagPath = path.join(newDownloadPath, DOWNLOADS_DIR_TAG);
             return fs.readFileAsync(downloadTagPath).then((tagData) => {
               try {
                 tagInstance = JSON.parse(tagData).instance;
@@ -851,9 +786,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  error cases pop up.
         sourceIsMissing = ["ENOENT", "UNKNOWN"].indexOf(err.code) !== -1;
         log("warn", "Transfer failed - missing source directory", err);
-        return sourceIsMissing
-          ? PromiseBB.resolve(undefined)
-          : PromiseBB.reject(err);
+        return sourceIsMissing ? PromiseBB.resolve(undefined) : PromiseBB.reject(err);
       })
       .then((stats) => {
         const queryReset =
@@ -885,25 +818,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
         return queryReset.then(() => {
           onSetTransfer(newPath);
-          return transferPath(
-            oldPath,
-            newPath,
-            (from: string, to: string, progress: number) => {
-              log("debug", "transfer downloads", { from, to });
-              if (progress > this.state.progress) {
-                this.nextState.progress = progress;
-              }
-              if (
-                this.state.progressFile !== from &&
-                Date.now() - this.mLastFileUpdate > 1000
-              ) {
-                this.nextState.progressFile = path.basename(from);
-              }
-            },
-          ).catch((err) =>
-            sourceIsMissing && err.path === oldPath
-              ? PromiseBB.resolve()
-              : PromiseBB.reject(err),
+          return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+            log("debug", "transfer downloads", { from, to });
+            if (progress > this.state.progress) {
+              this.nextState.progress = progress;
+            }
+            if (this.state.progressFile !== from && Date.now() - this.mLastFileUpdate > 1000) {
+              this.nextState.progressFile = path.basename(from);
+            }
+          }).catch((err) =>
+            sourceIsMissing && err.path === oldPath ? PromiseBB.resolve() : PromiseBB.reject(err),
           );
         });
       });
@@ -912,15 +836,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   const modsInstallPath = selectors.installPath(state);
-  const isPremium = getSafe(
-    state,
-    ["persistent", "nexus", "userInfo", "isPremium"],
-    false,
-  );
+  const isPremium = getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false);
   return {
-    parallelDownloads: isPremium
-      ? state.settings.downloads.maxParallelDownloads
-      : 1,
+    parallelDownloads: isPremium ? state.settings.downloads.maxParallelDownloads : 1,
     // TODO: this breaks encapsulation
     isPremium,
     downloadPath: state.settings.downloads.path,
@@ -929,14 +847,11 @@ function mapStateToProps(state: IState): IConnectedProps {
     instanceId: state.app.instanceId,
     copyOnIFF: state.settings.downloads.copyOnIFF,
     maxBandwidth: state.settings.downloads.maxBandwidth,
-    collectionsInstallWhileDownloading:
-      state.settings.downloads.collectionsInstallWhileDownloading,
+    collectionsInstallWhileDownloading: state.settings.downloads.collectionsInstallWhileDownloading,
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetDownloadPath: (newPath: string) => dispatch(setDownloadPath(newPath)),
     onSetMaxDownloads: (value: number) => dispatch(setMaxDownloads(value)),
@@ -951,8 +866,7 @@ function mapDispatchToProps(
     ): void => showError(dispatch, message, details, { allowReport, isBBCode }),
     onSetCopyOnIFF: (enabled: boolean) => dispatch(setCopyOnIFF(enabled)),
     onSetMaxBandwidth: (bps: number) => dispatch(setMaxBandwidth(bps)),
-    onSetCollectionConcurrency: (enabled: boolean) =>
-      dispatch(setCollectionConcurrency(enabled)),
+    onSetCollectionConcurrency: (enabled: boolean) => dispatch(setCollectionConcurrency(enabled)),
   };
 }
 

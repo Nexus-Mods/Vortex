@@ -1,18 +1,15 @@
+import PromiseBB from "bluebird";
+import * as React from "react";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Dashlet from "../../../controls/Dashlet";
 import Placeholder from "../../../controls/EmptyPlaceholder";
 import type { IProfile, IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
-
 import { activeGameId } from "../../profile_management/selectors";
-
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
-
 import GameThumbnail from "./GameThumbnail";
-
-import PromiseBB from "bluebird";
-import * as React from "react";
 
 export interface IBaseProps {}
 
@@ -30,21 +27,10 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class RecentlyManaged extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const {
-      t,
-      discoveredGames,
-      gameMode,
-      lastActiveProfile,
-      knownGames,
-      profiles,
-    } = this.props;
+    const { t, discoveredGames, gameMode, lastActiveProfile, knownGames, profiles } = this.props;
 
     const lastManaged = (id: string) =>
-      getSafe(
-        profiles,
-        [getSafe(lastActiveProfile, [id], undefined), "lastActivated"],
-        0,
-      );
+      getSafe(profiles, [getSafe(lastActiveProfile, [id], undefined), "lastActivated"], 0);
 
     const games: IGameStored[] = knownGames
       .filter(
@@ -60,11 +46,7 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
     if (games.length === 0) {
       // nothing recently managed
       content = (
-        <Placeholder
-          icon="game"
-          text={t("You don't have any recently managed games")}
-          fill
-        />
+        <Placeholder icon="game" text={t("You don't have any recently managed games")} fill />
       );
     } else {
       content = (
@@ -89,21 +71,14 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
     }
 
     return (
-      <Dashlet
-        title={t("Recently Managed")}
-        className="dashlet-recently-managed"
-      >
+      <Dashlet title={t("Recently Managed")} className="dashlet-recently-managed">
         {content}
       </Dashlet>
     );
   }
 
   private analyticsTrack = () => {
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Dashboard",
-      "Recent game",
-    );
+    this.context.api.events.emit("analytics-track-click-event", "Dashboard", "Recent game");
   };
 
   private refreshGameInfo = (gameId) => {

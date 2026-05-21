@@ -1,4 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
+import type { QualifiedPath } from "../fs/paths";
 
 /**
  * Storefronts Vortex can discover a game from.
@@ -156,6 +156,4 @@ export interface LinuxStorePathProvider {
  * compile-time safety for OS-specific bases.
  *
  * @public */
-export type StorePathProvider =
-  | WindowsStorePathProvider
-  | LinuxStorePathProvider;
+export type StorePathProvider = WindowsStorePathProvider | LinuxStorePathProvider;

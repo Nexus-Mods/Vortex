@@ -1,4 +1,4 @@
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
 
@@ -12,8 +12,7 @@ const sessionReducer: types.IReducerSpec = {
       // If the tutorial id has changed; it's safe to assume that the user
       //  has clicked a new tutorial and he wants it displayed; reason why
       //  we force the isOpen variable to true.
-      const vidOpen =
-        state.currentTutorial.tutorialId !== payload.tutorialId ? true : isOpen;
+      const vidOpen = state.currentTutorial.tutorialId !== payload.tutorialId ? true : isOpen;
 
       return util.setSafe(state, ["currentTutorial"], {
         tutorialId,

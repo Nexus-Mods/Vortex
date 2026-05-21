@@ -4,9 +4,8 @@
  * both Linux and Windows.
  */
 
-import type { PathResolver } from "@vortex/fs";
-
-import { QualifiedPath } from "@vortex/fs";
+import type { PathResolver } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 import { LinuxPathProviderImpl } from "./paths.linux";
 import { WindowsPathProviderImpl } from "./paths.windows";
@@ -16,9 +15,7 @@ import { WindowsPathProviderImpl } from "./paths.windows";
  * production implementations.
  */
 export function platformResolver(): PathResolver {
-  return process.platform === "win32"
-    ? new WindowsPathProviderImpl()
-    : new LinuxPathProviderImpl();
+  return process.platform === "win32" ? new WindowsPathProviderImpl() : new LinuxPathProviderImpl();
 }
 
 /**

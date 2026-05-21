@@ -21,8 +21,8 @@ ignore:
 
 !macro customInstall
   SetOutPath "$TEMP"
-  File "${PROJECT_DIR}\build\VC_redist.x64.exe"
-  File "${PROJECT_DIR}\build\windowsdesktop-runtime-win-x64.exe"
+  File "${PROJECT_DIR}\temp\VC_redist.x64.exe"
+  File "${PROJECT_DIR}\temp\windowsdesktop-runtime-win-x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
   ExecWait '"$TEMP\\windowsdesktop-runtime-win-x64.exe" /install /quiet /norestart'
 

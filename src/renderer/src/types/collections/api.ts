@@ -1,5 +1,5 @@
-import type { IGameSpecificInterfaceProps } from "./IGameSpecificInterfaceProps";
 import type * as types from "../api";
+import type { IGameSpecificInterfaceProps } from "./IGameSpecificInterfaceProps";
 
 export interface ICollectionsGameSupportEntry {
   gameId: string;
@@ -11,11 +11,7 @@ export interface ICollectionsGameSupportEntry {
     mods: { [modId: string]: types.IMod },
   ) => Promise<any>;
 
-  parser: (
-    api: types.IExtensionApi,
-    gameId: string,
-    collection: any,
-  ) => Promise<void>;
+  parser: (api: types.IExtensionApi, gameId: string, collection: any) => Promise<void>;
 
   interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
 }

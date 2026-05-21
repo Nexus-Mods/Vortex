@@ -17,10 +17,7 @@ import {
   removeDefaultProtocolClient,
   setDefaultProtocolClient,
 } from "./electron";
-import {
-  deregisterLinuxProtocolHandler,
-  registerLinuxProtocolHandler,
-} from "./linux";
+import { deregisterLinuxProtocolHandler, registerLinuxProtocolHandler } from "./linux";
 import type { IProtocolRegistrationOptions } from "./types";
 
 export type { IProtocolRegistrationOptions } from "./types";

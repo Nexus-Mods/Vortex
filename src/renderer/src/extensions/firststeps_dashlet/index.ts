@@ -1,13 +1,10 @@
-import type {
-  IExtensionContext,
-  ToDoType,
-} from "../../types/IExtensionContext";
+import type { TFunction } from "i18next";
+
+import type { IExtensionContext, ToDoType } from "../../types/IExtensionContext";
 import Dashlet from "./Dashlet";
 import type { IToDo } from "./IToDo";
 import settingsReducer from "./reducers";
 import todos from "./todos";
-
-import type { TFunction } from "i18next";
 
 const extTodos: IToDo[] = [];
 

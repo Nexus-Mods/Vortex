@@ -1,17 +1,3 @@
-import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
-import InstallDriver from "../../util/InstallDriver";
-
-import CollectionThumbnail from "../CollectionTile";
-
-import YouCuratedTag from "./YouCuratedThisTag";
-
-import * as React from "react";
-import { Button, Media } from "react-bootstrap";
-import { withTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import Select from "react-select";
-import * as Redux from "redux";
-import { generate as shortid } from "shortid";
 import {
   actions,
   ComponentEx,
@@ -21,8 +7,21 @@ import {
   Toggle,
   types,
   util,
-} from "vortex-api";
+} from "@nexusmods/vortex-api";
+import * as React from "react";
+import { Button, Media } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
+import { connect } from "react-redux";
+import Select from "react-select";
+import * as Redux from "redux";
+import { generate as shortid } from "shortid";
+
+import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
+import { isGamebryoGame } from "../../util/gameSupport";
+import InstallDriver from "../../util/InstallDriver";
+import CollectionThumbnail from "../CollectionTile";
+import YouCuratedTag from "./YouCuratedThisTag";
 
 interface IInstallDialogProps {
   onHide: () => void;
@@ -44,17 +43,8 @@ interface IConnectedProps {
 interface IActionProps {
   onAddProfile: (profile: types.IProfile) => void;
   onSetCollectionConcurrency: (enabled: boolean) => void;
-  onSetModAttribute: (
-    gameId: string,
-    modId: string,
-    key: string,
-    value: any,
-  ) => void;
-  onSetModAttributes: (
-    gameId: string,
-    modId: string,
-    attributes: { [key: string]: any },
-  ) => void;
+  onSetModAttribute: (gameId: string, modId: string, key: string, value: any) => void;
+  onSetModAttributes: (gameId: string, modId: string, attributes: { [key: string]: any }) => void;
   onAddRule: (gameId: string, modId: string, rule: types.IModRule) => void;
   onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) => void;
   onSetProfilesVisible: () => void;
@@ -84,14 +74,8 @@ interface IInstallDialogSelectProfileProps {
 }
 
 function InstallDialogSelectProfile(props: IInstallDialogSelectProfileProps) {
-  const {
-    t,
-    allProfiles,
-    onSelectProfile,
-    profile,
-    selectedProfile,
-    recommendedNewProfile,
-  } = props;
+  const { t, allProfiles, onSelectProfile, profile, selectedProfile, recommendedNewProfile } =
+    props;
 
   const profileOptions = Object.keys(allProfiles)
     .filter((profId) => allProfiles[profId].gameId === profile.gameId)
@@ -106,18 +90,14 @@ function InstallDialogSelectProfile(props: IInstallDialogSelectProfileProps) {
       value: "__new",
       label: t("Create new profile{{recommended}}", {
         replace: {
-          recommended: recommendedNewProfile
-            ? t(" (Recommended by curator)")
-            : "",
+          recommended: recommendedNewProfile ? t(" (Recommended by curator)") : "",
         },
       }),
     });
 
   return (
     <FlexLayout type="row" id="collections-profile-select">
-      <FlexLayout.Fixed>
-        {t("Install this collection to profile") + ":"}
-      </FlexLayout.Fixed>
+      <FlexLayout.Fixed>{t("Install this collection to profile") + ":"}</FlexLayout.Fixed>
       <FlexLayout.Flex>
         <Select
           options={profileOptions}
@@ -176,10 +156,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
   }
 
   static getDerivedStateFromProps(props: IProps, state: IInstallDialogState) {
-    if (
-      !state.selectedProfile &&
-      !!props.driver?.collection?.attributes?.recommendNewProfile
-    ) {
+    if (!state.selectedProfile && !!props.driver?.collection?.attributes?.recommendNewProfile) {
       return {
         recommendedNewProfile: true,
         selectedProfile: "__new",
@@ -218,8 +195,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     }
 
     let installInstructions =
-      driver.collection?.attributes?.installInstructions ||
-      t(DEFAULT_INSTRUCTIONS);
+      driver.collection?.attributes?.installInstructions || t(DEFAULT_INSTRUCTIONS);
 
     // used to convert a \n into something that react-markdown can use to detect paragraphs properly
     installInstructions = installInstructions.replace(/\r?\n/g, "  \r\n");
@@ -227,14 +203,10 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     const game = util.getGame(profile.gameId);
 
     const ownCollection: boolean =
-      userInfo?.userId !== undefined &&
-      driver.collectionInfo?.user?.memberId === userInfo?.userId;
+      userInfo?.userId !== undefined && driver.collectionInfo?.user?.memberId === userInfo?.userId;
     const collectionName = util.renderModName(driver.collection);
     return (
-      <Modal
-        show={driver.collection !== undefined && driver.step === "query"}
-        onHide={nop}
-      >
+      <Modal show={driver.collection !== undefined && driver.step === "query"} onHide={nop}>
         <Modal.Header>
           <Modal.Title>
             {t("{{gameName}} collection added", {
@@ -275,11 +247,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
               {t(
                 "Profiles allow you to have multiple mod set-ups for a game at once and quickly switch between them.",
               )}
-              <More
-                id="more-profile-instcollection"
-                name={t("Profiles")}
-                wikiId="profiles"
-              >
+              <More id="more-profile-instcollection" name={t("Profiles")} wikiId="profiles">
                 {util.getText("profile" as any, "profiles", t)}
               </More>
             </p>
@@ -289,9 +257,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
               t={t}
               collectionName={collectionName}
               selectedProfile={
-                selectedProfile === "__new"
-                  ? undefined
-                  : allProfiles[selectedProfile]
+                selectedProfile === "__new" ? undefined : allProfiles[selectedProfile]
               }
             />
           ) : (
@@ -310,22 +276,18 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
           >
             {t("Install mods during collection downloads")}
           </Toggle>
-          <Toggle
-            checked={this.state.skipPluginRules}
-            onToggle={this.toggleSkipPluginRules}
-          >
-            {t("Skip plugin rules")}
-            <More
-              id="install-skip-plugin-rules"
-              name={t("Skip plugin rules")}
-            >
-              {t(
-                "If enabled, custom LOOT plugin rules and groups included in this collection "
-                + "will not be applied. This can help prevent inherited plugin rules from "
-                + "causing conflicts.",
-              )}
-            </More>
-          </Toggle>
+          {isGamebryoGame(profile.gameId) ? (
+            <Toggle checked={this.state.skipPluginRules} onToggle={this.toggleSkipPluginRules}>
+              {t("Skip plugin rules")}
+              <More id="install-skip-plugin-rules" name={t("Skip plugin rules")}>
+                {t(
+                  "If enabled, custom LOOT plugin rules and groups included in this collection " +
+                    "will not be applied. This can help prevent inherited plugin rules from " +
+                    "causing conflicts.",
+                )}
+              </More>
+            </Toggle>
+          ) : null}
         </Modal.Body>
         <Modal.Footer>
           {this.state.confirmProfile ? (
@@ -354,12 +316,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     this.nextState.skipPluginRules = checked;
     const { driver, onSetModAttribute } = this.props;
     if (driver?.collection !== undefined) {
-      onSetModAttribute(
-        driver.profile.gameId,
-        driver.collection.id,
-        "skipPluginRules",
-        checked,
-      );
+      onSetModAttribute(driver.profile.gameId, driver.collection.id, "skipPluginRules", checked);
     }
   };
 
@@ -374,8 +331,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       this.state.selectedProfile !== this.props.driver?.profile?.id
     ) {
       if (this.state.selectedProfile === "__new") {
-        const { driver, onAddProfile, onShowProfilesPage, useModernLayout } =
-          this.props;
+        const { driver, onAddProfile, onShowProfilesPage, useModernLayout } = this.props;
         const { profile } = driver;
 
         const profileId = shortid();
@@ -422,18 +378,11 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
 
 const emptyObject = {};
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IInstallDialogProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IInstallDialogProps): IConnectedProps {
   const { editCollectionId } = (state.session as any).collections;
   const gameMode = ownProps.driver?.profile?.gameId;
 
-  const isPremium = util.getSafe(
-    state,
-    ["persistent", "nexus", "userInfo", "isPremium"],
-    false,
-  );
+  const isPremium = util.getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false);
   const collectionsInstallWhileDownloading = util.getSafe(
     state,
     ["settings", "downloads", "collectionsInstallWhileDownloading"],
@@ -442,10 +391,7 @@ function mapStateToProps(
   const { userInfo } = state.persistent["nexus"] ?? {};
   return {
     allProfiles: state.persistent.profiles,
-    mods:
-      editCollectionId !== undefined
-        ? state.persistent.mods[gameMode]
-        : emptyObject,
+    mods: editCollectionId !== undefined ? state.persistent.mods[gameMode] : emptyObject,
     isPremium,
     userInfo,
     nextProfileId: state.settings.profiles.nextProfileId,
@@ -456,31 +402,20 @@ function mapStateToProps(
 
 function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
-    onSetModAttribute: (
-      gameId: string,
-      modId: string,
-      key: string,
-      value: any,
-    ) => dispatch(actions.setModAttribute(gameId, modId, key, value)),
-    onSetModAttributes: (
-      gameId: string,
-      modId: string,
-      attributes: { [key: string]: any },
-    ) => dispatch(actions.setModAttributes(gameId, modId, attributes)),
+    onSetModAttribute: (gameId: string, modId: string, key: string, value: any) =>
+      dispatch(actions.setModAttribute(gameId, modId, key, value)),
+    onSetModAttributes: (gameId: string, modId: string, attributes: { [key: string]: any }) =>
+      dispatch(actions.setModAttributes(gameId, modId, attributes)),
     onAddRule: (gameId: string, modId: string, rule: types.IModRule) =>
       dispatch(actions.addModRule(gameId, modId, rule)),
     onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) =>
       dispatch(actions.removeModRule(gameId, modId, rule)),
-    onAddProfile: (profile: types.IProfile) =>
-      dispatch(actions.setProfile(profile)),
+    onAddProfile: (profile: types.IProfile) => dispatch(actions.setProfile(profile)),
     onSetProfilesVisible: () => dispatch(actions.setProfilesVisible(true)),
     onShowProfilesPage: (useModernLayout: boolean) =>
       util.batchDispatch(dispatch, [
         actions.setProfilesVisible(true),
-        actions.setOpenMainPage(
-          useModernLayout ? "game-profiles" : "Profiles",
-          false,
-        ),
+        actions.setOpenMainPage(useModernLayout ? "game-profiles" : "Profiles", false),
       ]),
     onSetCollectionConcurrency: (enabled: boolean) =>
       dispatch(actions.setCollectionConcurrency(enabled)),
@@ -488,8 +423,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
 }
 
 export default withTranslation(["common", NAMESPACE])(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps,
-  )(React.memo(InstallDialog)) as any,
+  connect(mapStateToProps, mapDispatchToProps)(React.memo(InstallDialog)) as any,
 ) as React.ComponentClass<IInstallDialogProps>;

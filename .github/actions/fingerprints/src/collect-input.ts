@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+
 import { CollectResult, FINGERPRINT_RE, STATUSES, isStatus } from "./types";
 
 /**
@@ -13,9 +14,7 @@ export const collectFromInput = (): CollectResult => {
   const remove = core.getBooleanInput("remove");
   const rawStatus = core.getInput("status");
   if (!isStatus(rawStatus)) {
-    throw new Error(
-      `Invalid status "${rawStatus}" — must be one of: ${STATUSES.join(", ")}`,
-    );
+    throw new Error(`Invalid status "${rawStatus}" — must be one of: ${STATUSES.join(", ")}`);
   }
   const status = rawStatus;
   const releaseVersion = core.getInput("release-version");

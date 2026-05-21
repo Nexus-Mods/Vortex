@@ -1,27 +1,22 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-
 import * as reduxAct from "redux-act";
+
+import safeCreateAction from "../../../actions/safeCreateAction";
 
 /**
  * change the user interface language
  */
-export const setLanguage = safeCreateAction(
-  "SET_USER_LANGUAGE",
-  (lang: string) => lang,
-);
+export const setLanguage = safeCreateAction("SET_USER_LANGUAGE", (lang: string) => lang);
 
 /**
  * enable or disable advanced mode
  */
-export const setAdvancedMode = safeCreateAction(
-  "SET_ADVANCED_MODE",
-  (advanced: boolean) => ({ advanced }),
-);
+export const setAdvancedMode = safeCreateAction("SET_ADVANCED_MODE", (advanced: boolean) => ({
+  advanced,
+}));
 
-export const setProfilesVisible = safeCreateAction(
-  "SET_PROFILES_VISIBLE",
-  (visible: boolean) => ({ visible }),
-);
+export const setProfilesVisible = safeCreateAction("SET_PROFILES_VISIBLE", (visible: boolean) => ({
+  visible,
+}));
 
 export const setDesktopNotifications = safeCreateAction(
   "SET_DESKTOP_NOTIFICATIONS",
@@ -43,7 +38,4 @@ export const setRelativeTimes = safeCreateAction(
   (enabled: boolean) => enabled,
 );
 
-export const setForegroundDL = safeCreateAction(
-  "SET_FOREGROUND_DL",
-  (enabled: boolean) => enabled,
-);
+export const setForegroundDL = safeCreateAction("SET_FOREGROUND_DL", (enabled: boolean) => enabled);

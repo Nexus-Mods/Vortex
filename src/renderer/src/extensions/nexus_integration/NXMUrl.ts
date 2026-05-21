@@ -1,10 +1,9 @@
-import { DataInvalid } from "../../util/CustomErrors";
-
 import { URL } from "url";
 
+import { DataInvalid } from "../../util/CustomErrors";
+
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
-const sCollectionUrlExpression =
-  /\/collections\/(\w+)\/revisions\/(\d+|latest)/i;
+const sCollectionUrlExpression = /\/collections\/(\w+)\/revisions\/(\d+|latest)/i;
 
 export enum NXMType {
   Mod,
@@ -85,9 +84,7 @@ class NXMUrl {
     this.mUserId = userId !== undefined ? parseInt(userId, 10) : undefined;
     const view = parsed.searchParams.get("view") ?? "0";
     this.mView =
-      view !== undefined
-        ? view.toLowerCase() === "true" || parseInt(view, 10) > 0
-        : undefined;
+      view !== undefined ? view.toLowerCase() === "true" || parseInt(view, 10) > 0 : undefined;
 
     for (const entry of parsed.searchParams.entries()) {
       this.mExtraParams[entry[0]] = entry[1];
@@ -99,10 +96,7 @@ class NXMUrl {
       return "oauth";
     } else if (this.mPremium) {
       return "premium";
-    } else if (
-      this.mCollectionId !== undefined ||
-      this.mCollectionSlug !== undefined
-    ) {
+    } else if (this.mCollectionId !== undefined || this.mCollectionSlug !== undefined) {
       return "collection";
     } else {
       return "mod";

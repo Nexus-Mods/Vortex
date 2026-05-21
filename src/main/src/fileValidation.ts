@@ -1,13 +1,12 @@
-import { getErrorMessageOrDefault } from "@vortex/shared";
-import fs from "fs-extra";
 import * as crypto from "node:crypto";
 import * as path from "node:path";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import fs from "fs-extra";
+
 import { log } from "./logging";
 
-async function readHashList(
-  basePath: string,
-): Promise<{ [name: string]: string }> {
+async function readHashList(basePath: string): Promise<{ [name: string]: string }> {
   const data = await fs.readFile(path.join(basePath, "md5sums.csv"), {
     encoding: "utf-8",
   });

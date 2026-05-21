@@ -1,5 +1,5 @@
+import { FlexLayout, tooltip, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { FlexLayout, tooltip, types, util } from "vortex-api";
 
 interface IBaseProps {
   modId: string;
@@ -49,9 +49,7 @@ function CollectionCount(props: { collectionNames: string[]; modId: string }) {
 function CollectionModsPageAttributeRenderer(props: IProps) {
   const { collections, detailCell, modId } = props;
 
-  const collectionNames = collections.map((collection) =>
-    util.renderModName(collection),
-  );
+  const collectionNames = collections.map((collection) => util.renderModName(collection));
 
   const count = collectionNames.length;
   return count > 0 ? (

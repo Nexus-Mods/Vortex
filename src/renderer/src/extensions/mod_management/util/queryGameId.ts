@@ -2,17 +2,9 @@ import { showDialog } from "../../../actions";
 import type { ThunkStore } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { UserCanceled } from "../../../util/CustomErrors";
-import {
-  activeGameId,
-  discoveryByGame,
-  gameName,
-  knownGames,
-} from "../../../util/selectors";
+import { activeGameId, discoveryByGame, gameName, knownGames } from "../../../util/selectors";
 import { SITE_ID } from "../../gamemode_management/constants";
-import {
-  convertGameIdReverse,
-  nexusGameId,
-} from "../../nexus_integration/util/convertGameId";
+import { convertGameIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
 
 /**
  * Determine which game to install a download for.
@@ -46,9 +38,7 @@ function queryGameId(
   const currentGame = games.find((game) => game.id === gameMode);
   if (currentGame) {
     // Check if any downloadGameIds match when converted to internal IDs
-    const convertedDownloadIds = downloadGameIds.map((id) =>
-      convertGameIdReverse(games, id),
-    );
+    const convertedDownloadIds = downloadGameIds.map((id) => convertGameIdReverse(games, id));
     if (convertedDownloadIds.indexOf(gameMode) !== -1) {
       return Promise.resolve(gameMode);
     }
@@ -69,24 +59,18 @@ function queryGameId(
 
   const profiles = state.persistent.profiles;
   const profileGames = new Set<string>(
-    Object.keys(profiles).map(
-      (profileId: string) => profiles[profileId].gameId,
-    ),
+    Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId),
   );
 
   // we only offer to install for games that are managed because for others the user
   // doesn't have a direct way to configure the install directory
   const managed = downloadGameIds.filter(
-    (gameId) =>
-      profileGames.has(gameId) &&
-      discoveryByGame(state, gameId)?.path !== undefined,
+    (gameId) => profileGames.has(gameId) && discoveryByGame(state, gameId)?.path !== undefined,
   );
 
   // ask the user
   return new Promise<string>((resolve, reject) => {
-    const options = [
-      { label: "Cancel", action: () => reject(new UserCanceled()) },
-    ];
+    const options = [{ label: "Cancel", action: () => reject(new UserCanceled()) }];
     if (gameMode !== undefined) {
       options.push({
         label: gameName(state, gameMode),

@@ -1,12 +1,7 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-
-import {
-  discoveryFinished,
-  discoveryProgress,
-  setPhaseCount,
-} from "../actions/discovery";
-
 import update from "immutability-helper";
+
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { discoveryFinished, discoveryProgress, setPhaseCount } from "../actions/discovery";
 
 /**
  * reducer for changes to the known mods

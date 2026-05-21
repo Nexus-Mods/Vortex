@@ -1,7 +1,7 @@
 /**
  * Registers Stardew Valley extension diagnostics with Vortex.
  */
-import type { types } from "vortex-api";
+import type { types } from "@nexusmods/vortex-api";
 
 import type ModManifestCache from "../manifests/ModManifestCache";
 import { testSMAPIOutdated } from "../tests";

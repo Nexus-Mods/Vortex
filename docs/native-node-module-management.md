@@ -8,19 +8,23 @@ This document explains how to manage all C++ and C# projects in the Vortex solut
 The Vortex project includes multiple types of projects maintained as separate repositories:
 
 ### **Core .NET Projects**
+
 - **dotnetprobe** - Local C# utility for .NET detection (part of main Vortex repository)
 
-### **FOMOD Installer (.NET Libraries)**  
+### **FOMOD Installer (.NET Libraries)**
+
 - **fomod-installer** - Complete FOMOD installer framework with 8 C# projects
-  - FomodInstaller.Interface, ModInstaller, ModInstallerIPC, Utils
-  - Scripting, XmlScript, CSharpScript, AntlrUtil
+    - FomodInstaller.Interface, ModInstaller, ModInstallerIPC, Utils
+    - Scripting, XmlScript, CSharpScript, AntlrUtil
 
 ### **Native C++ Addon Projects**
+
 - **winapi-bindings** - Windows API bindings for Node.js
 - **xxhash-addon** - xxHash algorithm implementation (third-party)
 
 ### **Gamebryo Extension C++ Projects**
-- **bsatk** - BSA (Bethesda Softworks Archive) toolkit  
+
+- **bsatk** - BSA (Bethesda Softworks Archive) toolkit
 - **loot** - LOOT (Load Order Optimization Tool) bindings
 - **gamebryo-savegame** - Gamebryo savegame management library
 
@@ -57,7 +61,7 @@ yarn modules:status
 # Check only C++ projects
 yarn modules:cpp
 
-# Check only C# projects  
+# Check only C# projects
 yarn modules:csharp
 ```
 
@@ -97,17 +101,19 @@ When you install Vortex dependencies with `yarn install`, the native modules are
 ### Conversion Process
 
 The conversion process:
+
 1. **Creates automatic backups** of existing npm packages
 2. **Removes** the npm-installed versions
 3. **Clones** the actual Git repositories
 4. **Checks out** the correct branch (if specified)
-5. **Reinstalls** dependencies with `npm install`  
+5. **Reinstalls** dependencies with `npm install`
 6. **Rebuilds** native modules if needed
 7. **Cleans up** backups on success
 
 ### Step-by-Step Conversion
 
 #### 1. Preview Changes
+
 ```bash
 # See what would be converted for C++ projects
 node scripts/convert-to-git.js dry-run cpp
@@ -117,6 +123,7 @@ yarn modules:convert-dry
 ```
 
 #### 2. Convert Projects
+
 ```bash
 # Convert C++ projects only (recommended first step)
 node scripts/convert-to-git.js convert cpp
@@ -132,6 +139,7 @@ node scripts/convert-to-git.js convert nexus
 ```
 
 #### 3. Verify Conversion
+
 ```bash
 # Check that projects are now Git repositories
 yarn modules:status
@@ -142,6 +150,7 @@ yarn modules:status
 ### Conversion Examples
 
 #### Example 1: Convert All C++ Projects
+
 ```bash
 # 1. Preview what will be converted
 node scripts/convert-to-git.js dry-run cpp
@@ -157,6 +166,7 @@ node scripts/manage-node-modules.js workflow "Add missing header files" cpp
 ```
 
 #### Example 2: Convert Only Nexus-Mods Projects
+
 ```bash
 # 1. Convert only Nexus-Mods repositories (exclude third-party)
 node scripts/convert-to-git.js convert nexus
@@ -170,15 +180,15 @@ node scripts/manage-node-modules.js workflow "Vortex integration updates" nexus
 
 ### What Gets Converted
 
-| Project | From | To | Notes |
-|---------|------|----|----- |
-| winapi-bindings | npm package | Git clone | Nexus-Mods repository |
-| xxhash-addon | npm package | Git clone | Third-party repository |
-| bsatk | npm package | Git clone | Nexus-Mods repository |
-| loot | npm package | Git clone | Nexus-Mods repository |
-| gamebryo-savegame | npm package | Git clone | Nexus-Mods repository |
-| fomod-installer | npm package | Git clone | Nexus-Mods repository |
-| dotnetprobe | N/A | N/A | Already local project |
+| Project           | From        | To        | Notes                  |
+| ----------------- | ----------- | --------- | ---------------------- |
+| winapi-bindings   | npm package | Git clone | Nexus-Mods repository  |
+| xxhash-addon      | npm package | Git clone | Third-party repository |
+| bsatk             | npm package | Git clone | Nexus-Mods repository  |
+| loot              | npm package | Git clone | Nexus-Mods repository  |
+| gamebryo-savegame | npm package | Git clone | Nexus-Mods repository  |
+| fomod-installer   | npm package | Git clone | Nexus-Mods repository  |
+| dotnetprobe       | N/A         | N/A       | Already local project  |
 
 ### Safety Features
 
@@ -208,6 +218,7 @@ yarn modules:setup      # Sets up remotes
 ### Troubleshooting Conversion
 
 #### If Conversion Fails
+
 ```bash
 # Check what failed
 yarn modules:status
@@ -221,6 +232,7 @@ node scripts/convert-to-git.js convert cpp
 ```
 
 #### Build Issues After Conversion
+
 ```bash
 # Rebuild native modules
 cd node_modules/module-name
@@ -236,19 +248,20 @@ yarn install
 
 All commands support filtering by project type:
 
-| Filter | Description | Projects Included |
-|--------|-------------|------------------|
-| `all` | All projects (default) | All 9 projects |
-| `git` | Only Git repositories | All except dotnetprobe |
-| `local` | Local projects only | dotnetprobe |
-| `csharp` | C# projects | dotnetprobe, fomod-installer |
-| `cpp` | C++ projects | All native addons |
-| `nexus` | Nexus-Mods repos only | Excludes xxhash-addon |
-| `third-party` | Third-party libraries | xxhash-addon |
+| Filter        | Description            | Projects Included            |
+| ------------- | ---------------------- | ---------------------------- |
+| `all`         | All projects (default) | All 9 projects               |
+| `git`         | Only Git repositories  | All except dotnetprobe       |
+| `local`       | Local projects only    | dotnetprobe                  |
+| `csharp`      | C# projects            | dotnetprobe, fomod-installer |
+| `cpp`         | C++ projects           | All native addons            |
+| `nexus`       | Nexus-Mods repos only  | Excludes xxhash-addon        |
+| `third-party` | Third-party libraries  | xxhash-addon                 |
 
 ### Available Commands
 
 #### Project Overview
+
 ```bash
 # Complete project summary with statistics
 node scripts/manage-node-modules.js summary
@@ -262,8 +275,9 @@ yarn modules:csharp   # C# projects only
 ```
 
 #### Repository Conversion
+
 ```bash
-# Convert npm packages to Git repositories  
+# Convert npm packages to Git repositories
 node scripts/convert-to-git.js convert [filter]
 
 # Dry run to see what would be converted
@@ -275,6 +289,7 @@ yarn modules:convert        # Convert all Git repositories
 ```
 
 #### Repository Management
+
 ```bash
 # Setup Git remotes
 node scripts/manage-node-modules.js setup-remotes [filter]
@@ -302,6 +317,7 @@ node scripts/manage-node-modules.js pr-links "branch-name" [filter]
 ```
 
 #### Complete Workflows
+
 ```bash
 # Complete workflow (branch + commit + push + PR links)
 node scripts/manage-node-modules.js workflow "commit message" [filter]
@@ -371,15 +387,15 @@ yarn modules:workflow "Update Visual Studio integration"
 
 ### Git Repository Mapping
 
-| Project | Type | Repository | Branch |
-|---------|------|------------|--------|
-| dotnetprobe | Local C# | N/A (local) | N/A |
-| fomod-installer | C# | Nexus-Mods/fomod-installer | master |
-| winapi-bindings | C++ | Nexus-Mods/node-winapi-bindings | master |
-| xxhash-addon | C++ | jdarpinian/xxhash-addon | master |
-| bsatk | C++ | Nexus-Mods/node-bsatk | master |
-| loot | C++ | Nexus-Mods/node-loot | master |
-| gamebryo-savegame | C++ | Nexus-Mods/node-gamebryo-savegames | master |
+| Project           | Type     | Repository                         | Branch |
+| ----------------- | -------- | ---------------------------------- | ------ |
+| dotnetprobe       | Local C# | N/A (local)                        | N/A    |
+| fomod-installer   | C#       | Nexus-Mods/fomod-installer         | master |
+| winapi-bindings   | C++      | Nexus-Mods/node-winapi-bindings    | master |
+| xxhash-addon      | C++      | jdarpinian/xxhash-addon            | master |
+| bsatk             | C++      | Nexus-Mods/node-bsatk              | master |
+| loot              | C++      | Nexus-Mods/node-loot               | master |
+| gamebryo-savegame | C++      | Nexus-Mods/node-gamebryo-savegames | master |
 
 ### Visual Studio Integration
 
@@ -401,7 +417,7 @@ yarn modules:convert         # Convert npm packages to Git repos
 
 # Quick status checks
 yarn modules:status          # All projects
-yarn modules:cpp             # C++ projects only  
+yarn modules:cpp             # C++ projects only
 yarn modules:csharp          # C# projects only
 yarn modules:summary         # Project overview
 
@@ -419,7 +435,7 @@ yarn modules:push            # Push changes
 ```bash
 # Multiple operations with specific filters
 node scripts/manage-node-modules.js create-branch "feature-x" nexus
-node scripts/manage-node-modules.js commit "Add feature X" nexus  
+node scripts/manage-node-modules.js commit "Add feature X" nexus
 node scripts/manage-node-modules.js push nexus
 
 # Check third-party dependencies
@@ -431,6 +447,7 @@ node scripts/manage-node-modules.js status third-party
 The repository management system provides comprehensive branch operations:
 
 #### Creating Branches
+
 ```bash
 # Create branch across all Git repositories
 yarn modules:create-branch "feature-name"
@@ -440,7 +457,8 @@ node scripts/manage-node-modules.js create-branch "cpp-fixes" cpp
 node scripts/manage-node-modules.js create-branch "csharp-updates" csharp
 ```
 
-#### Deleting Branches  
+#### Deleting Branches
+
 ```bash
 # Safe delete (fails if branch has unmerged changes)
 yarn modules:delete-branch "old-feature"
@@ -459,12 +477,14 @@ node scripts/manage-node-modules.js delete-branch "test-branch" nexus --force
 ```
 
 #### Branch Deletion Options
+
 - **No flags**: Safe delete - will fail if branch has unmerged changes
-- **--force**: Force delete - removes branch even if it has unmerged changes  
+- **--force**: Force delete - removes branch even if it has unmerged changes
 - **--remote**: Also delete the branch from remote repository
 - **Combine flags**: `--force --remote` to force delete both local and remote
 
 #### Branch Management Workflow
+
 ```bash
 # 1. Create feature branch
 yarn modules:create-branch "new-feature"
@@ -505,26 +525,29 @@ node scripts/update-package-branches.js generate my-feature-branch
 ### Testing Workflow
 
 1. **Create feature branches in repositories:**
-   ```bash
-   yarn modules:workflow "Create feature branch" cpp
-   # Follow the workflow to create branches and push changes
-   ```
+
+    ```bash
+    yarn modules:workflow "Create feature branch" cpp
+    # Follow the workflow to create branches and push changes
+    ```
 
 2. **Update package.json to use feature branches:**
-   ```bash
-   yarn modules:update-branch my-feature-branch
-   ```
+
+    ```bash
+    yarn modules:update-branch my-feature-branch
+    ```
 
 3. **Test your changes:**
-   ```bash
-   yarn start
-   # Test your application with the feature branch dependencies
-   ```
+
+    ```bash
+    yarn start
+    # Test your application with the feature branch dependencies
+    ```
 
 4. **Restore original dependencies when done:**
-   ```bash
-   yarn modules:restore-deps
-   ```
+    ```bash
+    yarn modules:restore-deps
+    ```
 
 ### Branch Management Commands
 
@@ -572,14 +595,17 @@ yarn modules:reinstall
 ## Important Notes
 
 ### Project Types
+
 - **Local projects** (dotnetprobe) are part of the main Vortex repository
 - **Git repositories** can be modified and pushed back to their origins
 - **Third-party libraries** (xxhash-addon) should be forked before modification
 
 ### Branch Strategy
+
 - Feature branches are created from the appropriate default branch
 
 ### Integration Benefits
+
 - Seamless Visual Studio development experience
 - Centralized management of all project dependencies
 - Automated workflow for contributing back to upstream repositories

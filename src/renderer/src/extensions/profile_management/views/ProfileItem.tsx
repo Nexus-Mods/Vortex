@@ -1,24 +1,22 @@
+import * as path from "path";
+import { pathToFileURL } from "url";
+
+import { nativeImage } from "electron";
+import type { TFunction } from "i18next";
+import * as React from "react";
+
 import { ActionDropdown } from "../../../controls/api";
+import { ComponentEx } from "../../../controls/ComponentEx";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IMod } from "../../../types/IState";
-import { ComponentEx } from "../../../controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
-
 import { getGame } from "../../gamemode_management/util/getGame";
-
 import type { IProfile } from "../types/IProfile";
 import type { IProfileFeature } from "../types/IProfileFeature";
-
 import TransferIcon from "./TransferIcon";
-
-import { nativeImage } from "electron";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import * as React from "react";
-import { pathToFileURL } from "url";
 
 export interface IProps {
   t: TFunction;
@@ -84,29 +82,20 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, active, available, features, highlightGameId, mods, profile } =
-      this.props;
+    const { t, active, available, features, highlightGameId, mods, profile } = this.props;
     const { counter, hasProfileImage } = this.state;
 
     const modState = getSafe(profile, ["modState"], {});
 
-    const enabledMods = Object.keys(modState).reduce(
-      (prev: number, key: string): number => {
-        return modState[key]?.enabled && mods[key] !== undefined
-          ? prev + 1
-          : prev;
-      },
-      0,
-    );
+    const enabledMods = Object.keys(modState).reduce((prev: number, key: string): number => {
+      return modState[key]?.enabled && mods[key] !== undefined ? prev + 1 : prev;
+    }, 0);
 
     // TODO: not using ListGroupItem because it puts the content into
     //       <p>-tags so it doesn't support 'complex' content
 
     const classes = ["profile-item"];
-    if (
-      (highlightGameId !== undefined && highlightGameId !== profile.gameId) ||
-      !available
-    ) {
+    if ((highlightGameId !== undefined && highlightGameId !== profile.gameId) || !available) {
       classes.push("disabled");
     } else if (active) {
       classes.push("active");
@@ -233,10 +222,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     return this.renderFeatureWithValue(feature, value);
   };
 
-  private renderFeatureWithValue(
-    feature: IProfileFeature,
-    value: any,
-  ): JSX.Element {
+  private renderFeatureWithValue(feature: IProfileFeature, value: any): JSX.Element {
     const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
@@ -246,9 +232,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
             {t(feature.label, { ns: feature.namespace })}
           </a>
         </div>
-        <div className="profile-feature-value">
-          {this.renderFeatureValue(feature.type, value)}
-        </div>
+        <div className="profile-feature-value">{this.renderFeatureValue(feature.type, value)}</div>
       </React.Fragment>
     );
   }
@@ -294,13 +278,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
   private get imagePath(): string {
     const { profile } = this.props;
-    return path.join(
-      this.mUserData,
-      profile.gameId,
-      "profiles",
-      profile.id,
-      "banner.png",
-    );
+    return path.join(this.mUserData, profile.gameId, "profiles", profile.id, "banner.png");
   }
 
   private cloneProfile = () => {

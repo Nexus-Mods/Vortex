@@ -9,10 +9,7 @@ async function start() {
     const assets = await fs.readdir(assetPath);
     for (const asset of assets) {
       try {
-        await fs.copyFile(
-          path.join(assetPath, asset),
-          path.join(destPath, asset),
-        );
+        await fs.copyFile(path.join(assetPath, asset), path.join(destPath, asset));
       } catch (err) {
         console.error("Error copying asset", { asset, err });
       }

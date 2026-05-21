@@ -1,18 +1,14 @@
+import * as React from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+
+import { makeExeId } from "../../reducers/session";
+import type { IRunningTool } from "../../types/IState";
+import { activeGameId } from "../../util/selectors";
+import type { IStarterInfo } from "../../util/StarterInfo";
+import { getSafe } from "../../util/storeHelper";
 import { BoxWithHandle } from "./BoxWithHandle";
 import ToolButton from "./ToolButton";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import { makeExeId } from "../../reducers/session";
-
-import { getSafe } from "../../util/storeHelper";
-
-import * as React from "react";
-import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-
-import { activeGameId } from "../../util/selectors";
-
-import type { IRunningTool } from "../../types/IState";
-
 import { useDebouncedCallback } from "./useDebouncedCallback";
 
 interface IConnectedProps {
@@ -50,8 +46,7 @@ function Tool(props: IToolProps) {
   } = props;
 
   const running =
-    starter.exePath !== undefined &&
-    toolsRunning[makeExeId(starter.exePath)] !== undefined;
+    starter.exePath !== undefined && toolsRunning[makeExeId(starter.exePath)] !== undefined;
 
   const moveItem = useDebouncedCallback(
     (srcId: string, destId: string) => {
@@ -69,13 +64,7 @@ function Tool(props: IToolProps) {
   );
 
   return (
-    <BoxWithHandle
-      index={idx}
-      key={starter.id}
-      item={starter}
-      onMoveItem={moveItem}
-      {...props}
-    >
+    <BoxWithHandle index={idx} key={starter.id} item={starter} onMoveItem={moveItem} {...props}>
       <ToolButton
         t={t}
         valid={validToolIds.includes(starter.id)}
@@ -97,11 +86,7 @@ function mapStateToProps(state: any): IConnectedProps {
   const gameMode: string = activeGameId(state);
 
   return {
-    primaryTool: getSafe(
-      state,
-      ["settings", "interface", "primaryTool", gameMode],
-      undefined,
-    ),
+    primaryTool: getSafe(state, ["settings", "interface", "primaryTool", gameMode], undefined),
     toolsRunning: state.session.base.toolsRunning,
   };
 }

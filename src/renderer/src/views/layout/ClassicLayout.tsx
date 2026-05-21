@@ -1,10 +1,9 @@
 import React, { type FC } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
-
 import FlexLayout from "../../controls/FlexLayout";
 import { useSwitchingProfile } from "../../hooks";
+import type { IState } from "../../types/IState";
 import { WindowControls } from "../WindowControls";
 import { DialogLayer } from "./DialogLayer";
 import { LayoutContainer } from "./LayoutContainer";
@@ -15,9 +14,7 @@ import { Toolbar } from "./Toolbar";
 import { UIBlocker } from "./UIBlocker";
 
 export const ClassicLayout: FC = () => {
-  const customTitlebar = useSelector(
-    (state: IState) => state.settings.window.customTitlebar,
-  );
+  const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
   const switchingProfile = useSwitchingProfile();
 
   return (

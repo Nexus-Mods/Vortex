@@ -56,9 +56,7 @@ class RepositoryConverter {
    */
   isGitRepo(dirPath) {
     const fullPath = path.join(this.rootDir, dirPath);
-    return (
-      fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"))
-    );
+    return fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"));
   }
 
   /**
@@ -129,27 +127,19 @@ class RepositoryConverter {
       }
 
       // Install dependencies if package.json exists
-      const packageJsonPath = path.join(
-        this.rootDir,
-        config.path,
-        "package.json",
-      );
+      const packageJsonPath = path.join(this.rootDir, config.path, "package.json");
       if (fs.existsSync(packageJsonPath)) {
         console.log(`📦 Installing dependencies...`);
         this.execInDir(config.path, "yarn install", { ignoreErrors: true });
       }
 
       // If there's a build process, run it
-      const hasBinding = fs.existsSync(
-        path.join(this.rootDir, config.path, "binding.gyp"),
-      );
+      const hasBinding = fs.existsSync(path.join(this.rootDir, config.path, "binding.gyp"));
       if (hasBinding && config.type === "cpp") {
         console.log(`🔨 Building native module...`);
-        this.execInDir(
-          config.path,
-          "yarn rebuild || yarn run prebuild || node-gyp rebuild",
-          { ignoreErrors: true },
-        );
+        this.execInDir(config.path, "yarn rebuild || yarn run prebuild || node-gyp rebuild", {
+          ignoreErrors: true,
+        });
       }
 
       console.log(`✅ ${moduleName}: Successfully converted to Git repository`);
@@ -214,16 +204,12 @@ class RepositoryConverter {
 
     console.log(`⚠️  Skipped: ${results.skipped.length}`);
     if (results.skipped.length > 0) {
-      results.skipped.forEach((item) =>
-        console.log(`   • ${item.name} (${item.reason})`),
-      );
+      results.skipped.forEach((item) => console.log(`   • ${item.name} (${item.reason})`));
     }
 
     console.log(`❌ Failed: ${results.failed.length}`);
     if (results.failed.length > 0) {
-      results.failed.forEach((item) =>
-        console.log(`   • ${item.name}: ${item.error}`),
-      );
+      results.failed.forEach((item) => console.log(`   • ${item.name}: ${item.error}`));
     }
 
     return results;
@@ -253,9 +239,7 @@ class RepositoryConverter {
         continue;
       }
 
-      console.log(
-        `🔄 ${moduleName}: Would convert from npm package to Git repo`,
-      );
+      console.log(`🔄 ${moduleName}: Would convert from npm package to Git repo`);
       console.log(`   Path: ${config.path}`);
       console.log(`   Repository: ${config.repository}`);
       if (config.branch) {

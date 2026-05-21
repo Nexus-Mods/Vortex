@@ -6,16 +6,16 @@
 @supports selector(::-webkit-scrollbar) {
     .modern-layout {
         & ::-webkit-scrollbar {
-            max-width: calc(var(--spacing) * 1);
-            max-height: calc(var(--spacing) * 1);
+            width: calc(var(--spacing) * 2);
+            height: calc(var(--spacing) * 2);
         }
 
         & ::-webkit-scrollbar-thumb {
             border-radius: calc(infinity * 1px);
-            background-color: var(--color-surface-mid);
+            background-color: var(--color-surface-high);
 
             &:hover {
-                background-color: var(--color-surface-high);
+                background-color: var(--color-zinc-500);
             }
         }
 

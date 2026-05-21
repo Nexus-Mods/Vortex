@@ -1,31 +1,23 @@
 import { inspect } from "util";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type { IGame } from "../../../types/IGame";
 import { log } from "../../../util/log";
 import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
-import type {
-  IGameStored,
-  IGameStoredExt,
-} from "../../gamemode_management/types/IGameStored";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { IGameStored, IGameStoredExt } from "../../gamemode_management/types/IGameStored";
 
 /**
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-export function nexusGameId(
-  game: IGameStored | IGame,
-  fallbackGameId?: string,
-): string {
+export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string): string {
   if (game === undefined && fallbackGameId === undefined) {
     return undefined;
   }
 
-  if (
-    truthy(game) &&
-    game.details !== undefined &&
-    game.details.nexusPageId !== undefined
-  ) {
+  if (truthy(game) && game.details !== undefined && game.details.nexusPageId !== undefined) {
     return game.details.nexusPageId;
   }
 
@@ -54,10 +46,7 @@ export function nexusGameId(
 /**
  * get our internal game id for a nexus page id
  */
-export function convertGameIdReverse(
-  knownGames: IGameStored[],
-  input: string,
-): string {
+export function convertGameIdReverse(knownGames: IGameStored[], input: string): string {
   if (input?.toLowerCase === undefined) {
     return undefined;
   }
@@ -91,17 +80,12 @@ export function convertGameIdReverse(
 /**
  * get our internal game id for a nxm link id
  */
-export function convertNXMIdReverse(
-  knownGames: IGameStored[],
-  input: string,
-): string {
+export function convertNXMIdReverse(knownGames: IGameStored[], input: string): string {
   if (input === undefined) {
     return undefined;
   }
 
-  const clearGameMatch = knownGames.find(
-    (iter) => iter.id === input.toLowerCase(),
-  );
+  const clearGameMatch = knownGames.find((iter) => iter.id === input.toLowerCase());
   if (clearGameMatch) {
     return clearGameMatch.id;
   }

@@ -11,19 +11,9 @@ type DropdownItemProps = { children?: string; customContent?: ReactNode } & XOr<
 > &
   XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
 
-const DropdownItemIcon = ({
-  icon,
-  path,
-}: {
-  icon?: ReactNode;
-  path?: string;
-}) => {
+const DropdownItemIcon = ({ icon, path }: { icon?: ReactNode; path?: string }) => {
   if (icon) {
-    return (
-      <span className="nxm-dropdown-item-icon flex items-center justify-center">
-        {icon}
-      </span>
-    );
+    return <span className="nxm-dropdown-item-icon flex items-center justify-center">{icon}</span>;
   }
 
   if (path) {
@@ -43,8 +33,7 @@ export const DropdownItem = ({
   rightIconPath,
   onClick,
   ...props
-}: ComponentProps<typeof Menu.Item> &
-  DropdownItemProps & { onClick?: () => void }) => (
+}: ComponentProps<typeof Menu.Item> & DropdownItemProps & { onClick?: () => void }) => (
   <Menu.Item {...props}>
     {({ active, disabled }) => (
       <button
@@ -58,9 +47,7 @@ export const DropdownItem = ({
           <>
             <DropdownItemIcon icon={leftIcon} path={leftIconPath} />
 
-            {!!children && (
-              <span className="nxm-dropdown-item-label">{children}</span>
-            )}
+            {!!children && <span className="nxm-dropdown-item-label">{children}</span>}
 
             <DropdownItemIcon icon={rightIcon} path={rightIconPath} />
           </>

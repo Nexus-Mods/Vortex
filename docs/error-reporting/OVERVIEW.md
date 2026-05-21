@@ -37,26 +37,32 @@ Tied to the **Analytics** toggle in Vortex preferences.
 ### Non-Critical (reported silently, app continues)
 
 **Downloads**
+
 - Download start or resume failure (SSL mismatch, timeout, disk error, data corruption)
 - Download path move fails (permissions, I/O, corrupted files)
 
 **Mod installation and deployment**
+
 - Deploy or purge fails (filesystem errors, no deployment method configured)
 
 **Network and authentication**
+
 - OAuth login failure
 - NXM protocol handler registration fails
 
 **UI and settings**
+
 - Theme cloning fails
 - Category sorting or visibility change fails
 - Tool or game missing/misconfigured when launching
 
 **Diagnostics**
+
 - Failed to read or write log files
 - Feedback attachment too large or submission fails
 
 **Savegame management**
+
 - Failed to load or refresh savegame list
 
 Not all of these are reported — see [When Reporting Is Suppressed](#when-reporting-is-suppressed). For file locations see [non-critical-errors.md](non-critical-errors.md).
@@ -64,6 +70,7 @@ Not all of these are reported — see [When Reporting Is Suppressed](#when-repor
 ### Critical (dialog shown, app exits)
 
 **Main process**
+
 - Unhandled exception or promise rejection during startup or normal operation
 - Startup failure that isn't a known recoverable condition (locked database, missing Documents path, etc.)
 - Disk full — detected when the state persistence layer fails to write
@@ -71,12 +78,14 @@ Not all of these are reported — see [When Reporting Is Suppressed](#when-repor
 - Renderer emits a console error but the window never appears within 15 seconds
 
 **Renderer process**
+
 - Unhandled exception or promise rejection (global handler)
 - Redux state sanity check fails
 - Attempt to mutate application state in a way that would duplicate or lose data
 - Gamebryo plugin userlist file exists but cannot be read
 
 **Exits without a dialog** (no chance to report)
+
 - Very early startup failure before Electron is fully initialised — shows a native OS error box only
 - User cancels during startup
 - Window reference is lost at the moment Vortex tries to display it

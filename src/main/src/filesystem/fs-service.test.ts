@@ -1,9 +1,9 @@
-import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
-import type { StatResult } from "@vortex/fs";
-
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import type { IMessage, IMessageHandler } from "@nexusmods/adaptor-api";
+import type { StatResult } from "@nexusmods/adaptor-api/fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";
@@ -21,11 +21,7 @@ function stripPrototype<T>(value: T): T {
   return structuredClone(value);
 }
 
-function invoke(
-  handler: IMessageHandler,
-  method: string,
-  args: unknown[],
-): Promise<unknown> {
+function invoke(handler: IMessageHandler, method: string, args: unknown[]): Promise<unknown> {
   const message: IMessage<{ method: string; args: unknown[] }> = {
     type: "vortex:host/filesystem" as never,
     id: "msg:1" as never,
@@ -57,21 +53,14 @@ describe("createFileSystemServiceHandler", () => {
 
   it("readFile / writeFile roundtrip", async () => {
     const path = rootQP.join("hello.txt");
-    await invoke(service.handler, "writeFile", [
-      stripPrototype(path),
-      new Uint8Array([1, 2, 3]),
-    ]);
-    const bytes = (await invoke(service.handler, "readFile", [
-      stripPrototype(path),
-    ])) as Uint8Array;
+    await invoke(service.handler, "writeFile", [stripPrototype(path), new Uint8Array([1, 2, 3])]);
+    const bytes = (await invoke(service.handler, "readFile", [stripPrototype(path)])) as Uint8Array;
     expect(Array.from(bytes)).toEqual([1, 2, 3]);
   });
 
   it("stat reports non-existence without throwing", async () => {
     const path = rootQP.join("missing");
-    const result = (await invoke(service.handler, "stat", [
-      stripPrototype(path),
-    ])) as StatResult;
+    const result = (await invoke(service.handler, "stat", [stripPrototype(path)])) as StatResult;
     expect(result.exists).toBe(false);
   });
 
@@ -104,15 +93,14 @@ describe("createFileSystemServiceHandler", () => {
       expect(open.batch).toHaveLength(2);
       expect(open.done).toBe(false);
 
-      const next = (await invoke(service.handler, "enumerateNext", [
-        open.cursorId,
-      ])) as { batch: unknown[]; done: boolean };
+      const next = (await invoke(service.handler, "enumerateNext", [open.cursorId])) as {
+        batch: unknown[];
+        done: boolean;
+      };
 
       expect(next.done).toBe(true);
       const collected = [...open.batch, ...next.batch];
-      const values = collected
-        .map((e) => (e as { value: string }).value)
-        .sort();
+      const values = collected.map((e) => (e as { value: string }).value).sort();
       expect(values).toEqual([
         rootQP.join("a.txt").value,
         rootQP.join("b.txt").value,
@@ -120,9 +108,10 @@ describe("createFileSystemServiceHandler", () => {
       ]);
 
       // Cursor should already be forgotten — next call on it is empty+done.
-      const after = (await invoke(service.handler, "enumerateNext", [
-        open.cursorId,
-      ])) as { batch: unknown[]; done: boolean };
+      const after = (await invoke(service.handler, "enumerateNext", [open.cursorId])) as {
+        batch: unknown[];
+        done: boolean;
+      };
       expect(after).toEqual({ batch: [], done: true });
     });
 
@@ -140,9 +129,10 @@ describe("createFileSystemServiceHandler", () => {
 
       await invoke(service.handler, "enumerateClose", [open.cursorId]);
 
-      const after = (await invoke(service.handler, "enumerateNext", [
-        open.cursorId,
-      ])) as { batch: unknown[]; done: boolean };
+      const after = (await invoke(service.handler, "enumerateNext", [open.cursorId])) as {
+        batch: unknown[];
+        done: boolean;
+      };
       expect(after).toEqual({ batch: [], done: true });
     });
 
@@ -181,23 +171,22 @@ describe("createFileSystemServiceHandler", () => {
 
       await service.closeAll();
 
-      const after = (await invoke(service.handler, "enumerateNext", [
-        open1.cursorId,
-      ])) as { batch: unknown[]; done: boolean };
+      const after = (await invoke(service.handler, "enumerateNext", [open1.cursorId])) as {
+        batch: unknown[];
+        done: boolean;
+      };
       expect(after).toEqual({ batch: [], done: true });
     });
   });
 
   it("rejects unknown methods", async () => {
-    await expect(invoke(service.handler, "nope", [])).rejects.toThrow(
-      /Unknown filesystem method/,
-    );
+    await expect(invoke(service.handler, "nope", [])).rejects.toThrow(/Unknown filesystem method/);
   });
 
   it("rejects malformed path arguments", async () => {
-    await expect(
-      invoke(service.handler, "readFile", ["not a qualified path"]),
-    ).rejects.toThrow(/Expected QualifiedPath/);
+    await expect(invoke(service.handler, "readFile", ["not a qualified path"])).rejects.toThrow(
+      /Expected QualifiedPath/,
+    );
   });
 
   it("resolves QualifiedPath inputs back to the native path", async () => {

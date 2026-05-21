@@ -1,6 +1,5 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { setSafe } from "../../../util/storeHelper";
-
 import { setAssociatedWithNXMURLs } from "../actions/settings";
 
 /**

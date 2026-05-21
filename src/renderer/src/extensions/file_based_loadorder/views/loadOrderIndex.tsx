@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import type { ILoadOrderEntry } from "../../../types/api";
 import type { IExtensionApi, LoadOrder } from "../../../types/api";
 
@@ -14,8 +15,7 @@ interface IProps {
 }
 
 export function LoadOrderIndexInput(props: IProps) {
-  const { item, loadOrder, currentPosition, lockedEntriesCount, onApplyIndex } =
-    props;
+  const { item, loadOrder, currentPosition, lockedEntriesCount, onApplyIndex } = props;
 
   // Valid ranges.
   const startIndex = lockedEntriesCount + 1;

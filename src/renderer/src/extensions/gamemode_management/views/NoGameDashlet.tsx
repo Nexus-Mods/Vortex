@@ -1,15 +1,13 @@
-import type { IState } from "../../../types/IState";
-import { IDiscoveryState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-import type { IGameStored } from "../types/IGameStored";
-
-import GameThumbnail from "./GameThumbnail";
-
 import PromiseBB from "bluebird";
 import * as React from "react";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import type { IState } from "../../../types/IState";
+import { IDiscoveryState } from "../../../types/IState";
+import { getSafe } from "../../../util/storeHelper";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
+import GameThumbnail from "./GameThumbnail";
 
 export interface IBaseProps {}
 
@@ -47,8 +45,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     const { more } = this.state;
 
     const games: IGameStored[] = knownGames.filter(
-      (game) =>
-        getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined,
+      (game) => getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined,
     );
 
     return (
@@ -95,8 +92,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     }
 
     const more =
-      this.mInnerRef.getBoundingClientRect().width >
-      this.mRef.getBoundingClientRect().width;
+      this.mInnerRef.getBoundingClientRect().width > this.mRef.getBoundingClientRect().width;
     if (more !== this.state.more) {
       this.nextState.more = more;
     }

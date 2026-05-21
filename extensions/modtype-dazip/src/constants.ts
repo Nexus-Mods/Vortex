@@ -1,5 +1,6 @@
 import path from "path";
-import { selectors, types, util } from "vortex-api";
+
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 interface IDAGame {
   id: string;
@@ -11,11 +12,7 @@ interface IDAGame {
 export const DA_GAMES: { [gameName: string]: IDAGame } = {
   DragonAge1: {
     id: "dragonage",
-    modPath: path.join(
-      util.getVortexPath("documents"),
-      "BioWare",
-      "Dragon Age",
-    ),
+    modPath: path.join(util.getVortexPath("documents"), "BioWare", "Dragon Age"),
   },
   DragonAge2: {
     id: "dragonage2",

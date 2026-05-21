@@ -1,8 +1,9 @@
-import Promise from "bluebird";
 import * as os from "os";
 import * as path from "path";
 import { inspect } from "util";
-import { fs, util } from "vortex-api";
+
+import { fs, util } from "@nexusmods/vortex-api";
+import Promise from "bluebird";
 
 class TraceImport {
   private mPath: string;
@@ -44,15 +45,10 @@ class TraceImport {
     this.mLogFile = undefined;
   }
 
-  public log(
-    level: "info" | "warn" | "error",
-    message: string,
-    extra?: any,
-  ): void {
+  public log(level: "info" | "warn" | "error", message: string, extra?: any): void {
     let fullMessage = message;
     if (extra !== undefined) {
-      fullMessage +=
-        " (" + inspect(extra, { depth: null }).replace("\n", os.EOL) + ")";
+      fullMessage += " (" + inspect(extra, { depth: null }).replace("\n", os.EOL) + ")";
     }
     this.mLogFile.write(fullMessage + os.EOL);
   }

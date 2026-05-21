@@ -26,9 +26,7 @@ export interface IFlexProps {
 const Flex = (props: IFlexProps & React.HTMLAttributes<HTMLDivElement>) => {
   let outerClasses = ["layout-flex"];
   if (props.className) {
-    outerClasses = outerClasses.concat(
-      props.className.split(" ").map((cl) => cl + "-outer"),
-    );
+    outerClasses = outerClasses.concat(props.className.split(" ").map((cl) => cl + "-outer"));
   }
   const classes = ["layout-flex-inner"];
   if (props.fill === true) {

@@ -1,7 +1,7 @@
-import * as actions from "../actions/persistent";
-
+import type { types } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
-import type { types } from "vortex-api";
+
+import * as actions from "../actions/persistent";
 
 const persistentReducer: types.IReducerSpec = {
   reducers: {

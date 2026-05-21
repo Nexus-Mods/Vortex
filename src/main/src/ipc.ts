@@ -7,7 +7,6 @@ import type {
   CallbackChannels,
   MainCallbackChannels,
 } from "@vortex/shared/ipc";
-
 import { ipcMain, type WebContents } from "electron";
 
 import { log } from "./logging";
@@ -74,28 +73,22 @@ function mainCallback<C extends keyof CallbackChannels>(
   const collationId = args[0];
 
   let resolve:
-    | ((
-        value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
-      ) => void)
+    | ((value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>) => void)
     | undefined = undefined;
   let reject: ((reason?: Error) => void) | undefined = undefined;
 
-  const promise = new Promise<
-    AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>
-  >((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
+  const promise = new Promise<AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>>(
+    (res, rej) => {
+      resolve = res;
+      reject = rej;
+    },
+  );
 
   const timer = setTimeout(() => {
     if (reject) {
       resolve = undefined;
 
-      reject(
-        new Error(
-          `Callback for channel '${channel}' timed out after ${timeout}ms`,
-        ),
-      );
+      reject(new Error(`Callback for channel '${channel}' timed out after ${timeout}ms`));
 
       reject = undefined;
     }
@@ -111,9 +104,7 @@ function mainCallback<C extends keyof CallbackChannels>(
     const result = args[1];
     if (resolve) {
       reject = undefined;
-      resolve(
-        result as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>,
-      );
+      resolve(result as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>);
       resolve = undefined;
     }
   });
@@ -135,14 +126,11 @@ function mainHandle<C extends keyof InvokeChannels>(
     | AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>,
   logOptions: LogOptions = false,
 ): void {
-  ipcMain.handle(
-    channel,
-    (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
-      ipcLogger(logOptions, channel, event, args);
-      assertTrustedSender(event);
-      return listener(event, ...args);
-    },
-  );
+  ipcMain.handle(channel, (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
+    ipcLogger(logOptions, channel, event, args);
+    assertTrustedSender(event);
+    return listener(event, ...args);
+  });
 }
 
 function mainSend<C extends keyof MainChannels>(
@@ -153,9 +141,7 @@ function mainSend<C extends keyof MainChannels>(
   webContents.send(channel, ...args);
 }
 
-function assertTrustedSender(
-  event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
-) {
+function assertTrustedSender(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent) {
   // NOTE(erri120): https://www.electronjs.org/docs/latest/tutorial/security#17-validate-the-sender-of-all-ipc-messages
 
   const { senderFrame } = event;
@@ -165,8 +151,7 @@ function assertTrustedSender(
   const url = parseURL(rawUrl);
   if (!url) throw new Error(`Invalid url: ${rawUrl}`);
 
-  if (!isTrustedProtocol(url))
-    throw new Error(`URL is not a trusted protocol: ${rawUrl}`);
+  if (!isTrustedProtocol(url)) throw new Error(`URL is not a trusted protocol: ${rawUrl}`);
 }
 
 function isTrustedProtocol(url: URL): boolean {

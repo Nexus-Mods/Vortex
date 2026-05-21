@@ -12,28 +12,23 @@
  * the download button on google drive. (as of Electron 15.1.1)
  */
 
-import { log } from "../util/log";
-import { truthy } from "../util/util";
-import {
-  closeBrowserView,
-  makeBrowserView,
-  positionBrowserView,
-  updateViewURL,
-} from "../webview";
+import { clearInterval } from "timers";
 
 import { ipcRenderer } from "electron";
 import { omit } from "lodash";
 import * as React from "react";
 import ReactDOM from "react-dom";
-import { clearInterval } from "timers";
+
+import { log } from "../util/log";
+import { truthy } from "../util/util";
+import { closeBrowserView, makeBrowserView, positionBrowserView, updateViewURL } from "../webview";
 
 const RESIZE_EVENTS = ["scroll", "resize"];
 
-export interface IWebView
-  extends React.DetailedHTMLProps<
-    React.WebViewHTMLAttributes<HTMLWebViewElement>,
-    HTMLWebViewElement
-  > {
+export interface IWebView extends React.DetailedHTMLProps<
+  React.WebViewHTMLAttributes<HTMLWebViewElement>,
+  HTMLWebViewElement
+> {
   src?: string;
   style?: any;
   autosize?: boolean;
@@ -92,8 +87,7 @@ function BrowserView(props: IBrowserViewProps) {
         const y2 = bounds.current.y + bounds.current.height * 0.66;
         const ele1 = document.elementFromPoint(x, y1);
         const ele2 = document.elementFromPoint(x, y2);
-        const isVisible =
-          ele1 === container.current && ele2 === container.current;
+        const isVisible = ele1 === container.current && ele2 === container.current;
         if (wasVisible !== isVisible) {
           positionBrowserView(
             viewId.current,
@@ -114,18 +108,14 @@ function BrowserView(props: IBrowserViewProps) {
 
   React.useEffect(() => {
     const impl = async () => {
-      viewId.current = await makeBrowserView(
-        props.src,
-        Object.keys(props.events),
-        {
-          webPreferences: {
-            // Use separate partition to isolate cookies from main window
-            // This prevents external site cookies (e.g., moddb.com) from being
-            // sent to CDN downloads that use signed URLs for authentication
-            partition: "persist:webview",
-          },
+      viewId.current = await makeBrowserView(props.src, Object.keys(props.events), {
+        webPreferences: {
+          // Use separate partition to isolate cookies from main window
+          // This prevents external site cookies (e.g., moddb.com) from being
+          // sent to CDN downloads that use signed URLs for authentication
+          partition: "persist:webview",
         },
-      );
+      });
 
       RESIZE_EVENTS.forEach((evtId) => {
         window.addEventListener(evtId, updateViewBounds);
@@ -166,10 +156,7 @@ function BrowserView(props: IBrowserViewProps) {
 
 const emptyObject = {};
 
-export class WebviewOverlay extends React.Component<
-  IWebviewProps & IWebView,
-  { src: string }
-> {
+export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { src: string }> {
   constructor(props: IWebviewProps & IWebView) {
     super(props);
 
@@ -250,10 +237,7 @@ export class WebviewOverlay extends React.Component<
   };
 }
 
-export class WebviewEmbed extends React.Component<
-  IWebviewProps & IWebView,
-  {}
-> {
+export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> {
   private mNode: HTMLWebViewElement;
 
   public componentDidMount() {
@@ -285,24 +269,13 @@ export class WebviewEmbed extends React.Component<
     this.mNode.removeEventListener("did-stop-loading", this.stopLoad);
     this.mNode.removeEventListener("console-message", this.logMessage);
     // this.mNode.removeEventListener('new-window', this.newWindow);
-    this.mNode.removeEventListener(
-      "enter-html-full-screen",
-      this.enterFullscreen,
-    );
-    this.mNode.removeEventListener(
-      "leave-html-full-screen",
-      this.leaveFullscreen,
-    );
+    this.mNode.removeEventListener("enter-html-full-screen", this.enterFullscreen);
+    this.mNode.removeEventListener("leave-html-full-screen", this.leaveFullscreen);
   }
 
   public render(): JSX.Element {
     return React.createElement("webview", {
-      ...omit(this.props, [
-        "onLoading",
-        "onNewWindow",
-        "onFullscreen",
-        "events",
-      ]),
+      ...omit(this.props, ["onLoading", "onNewWindow", "onFullscreen", "events"]),
       allowpopups: "true",
     });
   }

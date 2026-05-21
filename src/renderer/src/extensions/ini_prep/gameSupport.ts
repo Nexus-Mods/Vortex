@@ -1,9 +1,10 @@
-import getVortexPath from "../../util/getVortexPath";
-
 import * as path from "path";
+
 import format from "string-template";
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+
+import getVortexPath from "../../util/getVortexPath";
 import { makeOverlayableDictionary } from "../../util/util";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 
 interface IGameSupport {
   iniFiles: string[];
@@ -94,14 +95,7 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
     },
     oblivionremastered: {
       iniFiles: [
-        path.join(
-          "{mygames}",
-          "Oblivion Remastered",
-          "Saved",
-          "Config",
-          "Windows",
-          "Altar.ini",
-        ),
+        path.join("{mygames}", "Oblivion Remastered", "Saved", "Config", "Windows", "Altar.ini"),
       ],
       iniFormat: "winapi",
     },
@@ -115,27 +109,15 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
       skyrimse: {
         iniFiles: [
           path.join("{mygames}", "Skyrim Special Edition GOG", "Skyrim.ini"),
-          path.join(
-            "{mygames}",
-            "Skyrim Special Edition GOG",
-            "SkyrimPrefs.ini",
-          ),
-          path.join(
-            "{mygames}",
-            "Skyrim Special Edition GOG",
-            "SkyrimCustom.ini",
-          ),
+          path.join("{mygames}", "Skyrim Special Edition GOG", "SkyrimPrefs.ini"),
+          path.join("{mygames}", "Skyrim Special Edition GOG", "SkyrimCustom.ini"),
         ],
         iniFormat: "winapi",
       },
       enderalspecialedition: {
         iniFiles: [
           path.join("{mygames}", "Enderal Special Edition GOG", "Enderal.ini"),
-          path.join(
-            "{mygames}",
-            "Enderal Special Edition GOG",
-            "EnderalPrefs.ini",
-          ),
+          path.join("{mygames}", "Enderal Special Edition GOG", "EnderalPrefs.ini"),
         ],
         iniFormat: "winapi",
       },
@@ -144,16 +126,8 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
       skyrimse: {
         iniFiles: [
           path.join("{mygames}", "Skyrim Special Edition EPIC", "Skyrim.ini"),
-          path.join(
-            "{mygames}",
-            "Skyrim Special Edition EPIC",
-            "SkyrimPrefs.ini",
-          ),
-          path.join(
-            "{mygames}",
-            "Skyrim Special Edition EPIC",
-            "SkyrimCustom.ini",
-          ),
+          path.join("{mygames}", "Skyrim Special Edition EPIC", "SkyrimPrefs.ini"),
+          path.join("{mygames}", "Skyrim Special Edition EPIC", "SkyrimCustom.ini"),
         ],
         iniFormat: "winapi",
       },
@@ -170,16 +144,8 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
       skyrimse: {
         iniFiles: [
           path.join("{mygames}", "Skyrim Special Edition MS", "Skyrim.ini"),
-          path.join(
-            "{mygames}",
-            "Skyrim Special Edition MS",
-            "SkyrimPrefs.ini",
-          ),
-          path.join(
-            "{mygames}",
-            "Skyrim Special Edition MS",
-            "SkyrimCustom.ini",
-          ),
+          path.join("{mygames}", "Skyrim Special Edition MS", "SkyrimPrefs.ini"),
+          path.join("{mygames}", "Skyrim Special Edition MS", "SkyrimCustom.ini"),
         ],
         iniFormat: "winapi",
       },

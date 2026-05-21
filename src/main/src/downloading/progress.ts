@@ -29,10 +29,7 @@ export class ProgressReporter {
     return this.#isChunked;
   }
 
-  public initChunked(
-    chunks: Chunk[],
-    size: number,
-  ): Map<number, ChunkProgress> {
+  public initChunked(chunks: Chunk[], size: number): Map<number, ChunkProgress> {
     this.size = size;
     this.#isChunked = true;
 
@@ -63,16 +60,12 @@ export class ProgressReporter {
   }
 
   public getProgress(): DownloadProgress {
-    let bytesReceived = 0;
-    let bytesWritten = 0;
+    let bytesReceived: number;
+    let bytesWritten: number;
 
     if (this.#isChunked) {
-      bytesReceived = this.#chunkProgress
-        .values()
-        .reduce((sum, c) => sum + c.bytesReceived, 0);
-      bytesWritten = this.#chunkProgress
-        .values()
-        .reduce((sum, c) => sum + c.bytesWritten, 0);
+      bytesReceived = this.#chunkProgress.values().reduce((sum, c) => sum + c.bytesReceived, 0);
+      bytesWritten = this.#chunkProgress.values().reduce((sum, c) => sum + c.bytesWritten, 0);
     } else {
       bytesReceived = this.#progress.bytesReceived;
       bytesWritten = this.#progress.bytesWritten;

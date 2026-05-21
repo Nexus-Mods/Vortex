@@ -8,17 +8,7 @@ import React from "react";
 import { Typography } from "../typography/Typography";
 import { Pictogram, type PictogramName } from "./Pictogram";
 
-const sizes = [
-  "4xs",
-  "3xs",
-  "2xs",
-  "xs",
-  "sm",
-  "md",
-  "lg",
-  "xl",
-  "2xl",
-] as const;
+const sizes = ["4xs", "3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl"] as const;
 
 const themes = ["primary", "premium", "creator", "info", "none"] as const;
 
@@ -30,9 +20,8 @@ export const PictogramDemo = () => (
       </Typography>
 
       <Typography appearance="subdued">
-        Decorative SVG pictograms loaded from assets/pictograms/. Used for
-        illustrative purposes in empty states, onboarding, and feature
-        highlights.
+        Decorative SVG pictograms loaded from assets/pictograms/. Used for illustrative purposes in
+        empty states, onboarding, and feature highlights.
       </Typography>
     </div>
 

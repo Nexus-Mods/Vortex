@@ -1,23 +1,20 @@
+import dayjs from "dayjs";
+import relativeTimePlugin from "dayjs/plugin/relativeTime"; // import plugin
 import type { TFunction } from "i18next";
 import * as React from "react";
 import type { WithTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 
-import { matchesGameMode, matchesVersion } from "./util";
-
+import { EmptyPlaceholder, FlexLayout } from "../../controls/api";
+import { ComponentEx, translate } from "../../controls/ComponentEx";
 import Dashlet from "../../controls/Dashlet";
 import { Icon, IconButton } from "../../controls/TooltipControls";
 import { getApplication } from "../../util/application";
-import { ComponentEx, translate } from "../../controls/ComponentEx";
 import opn from "../../util/opn";
 import * as selectors from "../../util/selectors";
-
-import { EmptyPlaceholder, FlexLayout } from "../../controls/api";
 import type { AnnouncementSeverity, IAnnouncement } from "./types";
-import ReactMarkdown from "react-markdown";
-
-import dayjs from "dayjs";
-import relativeTimePlugin from "dayjs/plugin/relativeTime"; // import plugin
+import { matchesGameMode, matchesVersion } from "./util";
 
 dayjs.extend(relativeTimePlugin);
 
@@ -43,18 +40,12 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const filtered = announcements
       .filter(
         (announce) =>
-          matchesGameMode(announce, gameMode, true) &&
-          matchesVersion(announce, this.mAppVersion),
+          matchesGameMode(announce, gameMode, true) && matchesVersion(announce, this.mAppVersion),
       )
-      .sort(
-        (lhs, rhs) =>
-          new Date(rhs.date).getTime() - new Date(lhs.date).getTime(),
-      );
+      .sort((lhs, rhs) => new Date(rhs.date).getTime() - new Date(lhs.date).getTime());
     return (
       <Dashlet className="dashlet-announcement" title={t("Announcements")}>
-        {filtered.length > 0
-          ? this.renderContent(filtered)
-          : this.renderPlaceholder()}
+        {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
       </Dashlet>
     );
   }
@@ -78,10 +69,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   private renderIcon(announcement: IAnnouncement): JSX.Element {
     const { t } = this.props;
-    const sev =
-      announcement.severity !== undefined
-        ? announcement.severity
-        : "information";
+    const sev = announcement.severity !== undefined ? announcement.severity : "information";
     const icon = this.severityToIcon(sev);
     if (icon !== undefined) {
       return (
@@ -106,10 +94,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     return undefined;
   }
 
-  private severityToTooltip(
-    t: TFunction,
-    severity: AnnouncementSeverity,
-  ): string {
+  private severityToTooltip(t: TFunction, severity: AnnouncementSeverity): string {
     switch (severity) {
       case "warning":
         return t("Warning");
@@ -136,9 +121,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     };
 
     const renderDate = (): JSX.Element => (
-      <div title={dayjs(announcement.date).toString()}>
-        {dayjs().to(announcement.date)}
-      </div>
+      <div title={dayjs(announcement.date).toString()}>{dayjs().to(announcement.date)}</div>
     );
 
     const renderTitle = (): JSX.Element => (
@@ -168,10 +151,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     return (
       <FlexLayout type="row" className="announcement-description">
-        <ReactMarkdown
-          allowedElements={["p", "a", "em", "strong"]}
-          unwrapDisallowed={true}
-        >
+        <ReactMarkdown allowedElements={["p", "a", "em", "strong"]} unwrapDisallowed={true}>
           {announcement.description}
         </ReactMarkdown>
       </FlexLayout>
@@ -200,6 +180,4 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(
-  translate(["common"])(AnnouncementDashlet),
-);
+export default connect(mapStateToProps)(translate(["common"])(AnnouncementDashlet));

@@ -1,6 +1,6 @@
-import safeCreateAction from "../../actions/safeCreateAction";
-
 import type { Action } from "redux";
+
+import safeCreateAction from "../../actions/safeCreateAction";
 
 type ShowUrlFunc = (
   url: string,
@@ -16,12 +16,12 @@ type ShowUrlFunc = (
 
 export const showURL: ShowUrlFunc = safeCreateAction(
   "SHOW_URL",
-  (
-    url: string,
-    instructions?: string,
-    subscriber?: string,
-    skippable?: boolean,
-  ) => ({ url, instructions, subscriber, skippable: skippable ?? false }),
+  (url: string, instructions?: string, subscriber?: string, skippable?: boolean) => ({
+    url,
+    instructions,
+    subscriber,
+    skippable: skippable ?? false,
+  }),
 ) as any;
 
 export const closeBrowser = safeCreateAction("CLOSE_BROWSER");

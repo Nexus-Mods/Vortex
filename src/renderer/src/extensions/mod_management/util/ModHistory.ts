@@ -4,11 +4,7 @@ import type { TFunction } from "../../../util/i18n";
 import { log } from "../../../util/log";
 import { profileById } from "../../../util/selectors";
 import { midClip } from "../../../util/util";
-import type {
-  IHistoryEvent,
-  IHistoryStack,
-  Revertability,
-} from "../../history_management/types";
+import type { IHistoryEvent, IHistoryStack, Revertability } from "../../history_management/types";
 import { setModEnabled } from "../../profile_management/actions/profiles";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setDeploymentNecessary } from "../actions/deployment";
@@ -63,13 +59,11 @@ class ModHistory implements IHistoryStack {
     this.mEventTypes = {
       "mod-enabled": {
         describe: (evt) =>
-          api.translate(
-            "Mod was enabled: {{ name }} (Profile: {{ profileName }})",
-            { replace: evt.data },
-          ),
+          api.translate("Mod was enabled: {{ name }} (Profile: {{ profileName }})", {
+            replace: evt.data,
+          }),
         revert: {
-          describe: (evt) =>
-            api.translate("Disable mod", { replace: evt.data }),
+          describe: (evt) => api.translate("Disable mod", { replace: evt.data }),
           possible: (evt) => {
             const state = api.getState();
             const { id, profileId } = evt.data;
@@ -86,9 +80,7 @@ class ModHistory implements IHistoryStack {
           },
           do: (evt) => {
             const profile = profileById(api.getState(), evt.data.profileId);
-            api.store.dispatch(
-              setModEnabled(evt.data.profileId, evt.data.id, false),
-            );
+            api.store.dispatch(setModEnabled(evt.data.profileId, evt.data.id, false));
             api.store.dispatch(setDeploymentNecessary(profile.gameId, true));
             return Promise.resolve();
           },
@@ -96,10 +88,9 @@ class ModHistory implements IHistoryStack {
       },
       "mod-disabled": {
         describe: (evt) =>
-          api.translate(
-            "Mod was disabled: {{ name }} (Profile: {{ profileName }})",
-            { replace: evt.data },
-          ),
+          api.translate("Mod was disabled: {{ name }} (Profile: {{ profileName }})", {
+            replace: evt.data,
+          }),
         revert: {
           describe: (evt) => api.translate("Enable mod", { replace: evt.data }),
           possible: (evt) => {
@@ -117,9 +108,7 @@ class ModHistory implements IHistoryStack {
           },
           do: (evt) => {
             const profile = profileById(api.getState(), evt.data.profileId);
-            api.store.dispatch(
-              setModEnabled(evt.data.profileId, evt.data.id, true),
-            );
+            api.store.dispatch(setModEnabled(evt.data.profileId, evt.data.id, true));
             api.store.dispatch(setDeploymentNecessary(profile.gameId, true));
             return Promise.resolve();
           },
@@ -132,19 +121,15 @@ class ModHistory implements IHistoryStack {
           }),
       },
       "mod-installed": {
-        describe: (evt) =>
-          api.translate("Mod was installed: {{ name }}", { replace: evt.data }),
+        describe: (evt) => api.translate("Mod was installed: {{ name }}", { replace: evt.data }),
         revert: {
-          describe: (evt) =>
-            api.translate("Uninstall mod", { replace: evt.data }),
+          describe: (evt) => api.translate("Uninstall mod", { replace: evt.data }),
           possible: (evt) => {
             const state = api.getState();
             const { id } = evt.data;
             const mod = state.persistent.mods[evt.gameId]?.[id];
             const modState =
-              mod !== undefined
-                ? state.persistent.mods[evt.gameId][id].state
-                : undefined;
+              mod !== undefined ? state.persistent.mods[evt.gameId][id].state : undefined;
             const isStateValid = ["installed"].includes(modState);
             return isStateValid;
           },
@@ -153,15 +138,12 @@ class ModHistory implements IHistoryStack {
       },
       "mod-attribute-changed": {
         describe: (evt) =>
-          api.translate(
-            'Mod "{{ name }}" attribute "{{ attribute }}" set: {{ to }}',
-            {
-              replace: {
-                ...evt.data,
-                to: shorten(api.translate, evt.data.to),
-              },
+          api.translate('Mod "{{ name }}" attribute "{{ attribute }}" set: {{ to }}', {
+            replace: {
+              ...evt.data,
+              to: shorten(api.translate, evt.data.to),
             },
-          ),
+          }),
         revert: {
           describe: (evt) =>
             api.translate("Revert to {{ from }}", {
@@ -173,19 +155,10 @@ class ModHistory implements IHistoryStack {
           possible: (evt) => {
             const state = api.getState();
             const { attribute, id, to } = evt.data;
-            return (
-              state.persistent.mods[evt.gameId]?.[id]?.attributes?.[
-                attribute
-              ] === to
-            );
+            return state.persistent.mods[evt.gameId]?.[id]?.attributes?.[attribute] === to;
           },
           do: (evt) =>
-            this.setModAttribute(
-              evt.gameId,
-              evt.data.id,
-              evt.data.attribute,
-              evt.data.from,
-            ),
+            this.setModAttribute(evt.gameId, evt.data.id, evt.data.attribute, evt.data.from),
         },
       },
       "will-deploy": {
@@ -200,8 +173,7 @@ class ModHistory implements IHistoryStack {
   public init() {
     const state: IState = undefined;
 
-    const addToHistory: (stack: string, entry: IHistoryEvent) => void =
-      this.mApi.ext.addToHistory;
+    const addToHistory: (stack: string, entry: IHistoryEvent) => void = this.mApi.ext.addToHistory;
 
     this.mApi.onStateChange<typeof state.persistent.profiles>(
       ["persistent", "profiles"],
@@ -230,10 +202,7 @@ class ModHistory implements IHistoryStack {
                 return;
               }
 
-              if (
-                prevMod?.state !== currentMod?.state &&
-                currentMod?.state === "installed"
-              ) {
+              if (prevMod?.state !== currentMod?.state && currentMod?.state === "installed") {
                 addToHistory("mods", {
                   type: "mod-installed",
                   gameId,
@@ -244,10 +213,7 @@ class ModHistory implements IHistoryStack {
                 });
               }
 
-              if (
-                prevMod?.state === currentMod?.state &&
-                currentMod?.state === "installed"
-              ) {
+              if (prevMod?.state === currentMod?.state && currentMod?.state === "installed") {
                 // only tracking attribute changes for installed mods, not
                 // for the ones set during installation
                 const prevAttributes = prevMod?.attributes;
@@ -283,10 +249,7 @@ class ModHistory implements IHistoryStack {
             Object.keys(prev[gameId] ?? {}).forEach((modId) => {
               const oldState = prev[gameId]?.[modId]?.state;
 
-              if (
-                current[gameId]?.[modId] === undefined &&
-                oldState === "installed"
-              ) {
+              if (current[gameId]?.[modId] === undefined && oldState === "installed") {
                 addToHistory("mods", {
                   type: "mod-uninstalled",
                   gameId,
@@ -357,8 +320,7 @@ class ModHistory implements IHistoryStack {
   }
 
   private triggerEnabledEvents(before: IProfile, after: IProfile) {
-    const addToHistory: (stack: string, entry: IHistoryEvent) => void =
-      this.mApi.ext.addToHistory;
+    const addToHistory: (stack: string, entry: IHistoryEvent) => void = this.mApi.ext.addToHistory;
 
     Object.keys(after.modState ?? {}).forEach((modId) => {
       const enabled = after.modState?.[modId]?.enabled;
@@ -392,12 +354,7 @@ class ModHistory implements IHistoryStack {
     });
   }
 
-  private setModAttribute(
-    gameId: string,
-    modId: string,
-    attr: string,
-    value: any,
-  ): Promise<void> {
+  private setModAttribute(gameId: string, modId: string, attr: string, value: any): Promise<void> {
     this.mApi.store.dispatch(setModAttribute(gameId, modId, attr, value));
     return Promise.resolve();
   }

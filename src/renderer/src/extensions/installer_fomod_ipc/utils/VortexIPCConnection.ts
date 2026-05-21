@@ -1,13 +1,15 @@
+import path from "path";
+
 import type { ConnectionStrategy, TimeoutOptions } from "@nexusmods/fomod-installer-ipc";
 import { BaseIPCConnection } from "@nexusmods/fomod-installer-ipc";
-import type { ISupportedResult } from "../../mod_management/types/TestSupported";
-import type { IInstallResult } from "../../mod_management/types/IInstallResult";
-import { statAsync } from "../../../util/fs";
+
 import type { IExtensionApi } from "../../../types/api";
+import { statAsync } from "../../../util/fs";
+import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import type { IChoices } from "../../installer_fomod_shared/types/interface";
-import path from "path";
-import getVortexPath from "../../../util/getVortexPath";
+import type { IInstallResult } from "../../mod_management/types/IInstallResult";
+import type { ISupportedResult } from "../../mod_management/types/TestSupported";
 
 /**
  * Vortex-specific IPC connection implementation
@@ -99,11 +101,7 @@ export class VortexIPCConnection extends BaseIPCConnection {
   /**
    * Implement logging using Vortex log system
    */
-  protected log(
-    level: "debug" | "info" | "warn" | "error",
-    message: string,
-    metadata?: any,
-  ): void {
+  protected log(level: "debug" | "info" | "warn" | "error", message: string, metadata?: any): void {
     log(level, message, metadata);
   }
 
@@ -122,10 +120,7 @@ export class VortexIPCConnection extends BaseIPCConnection {
   /**
    * Send TestSupported command to check if files are supported by a FOMOD installer
    */
-  public async testSupported(
-    files: string[],
-    allowedTypes: string[],
-  ): Promise<ISupportedResult> {
+  public async testSupported(files: string[], allowedTypes: string[]): Promise<ISupportedResult> {
     const response = await this.sendCommand("TestSupported", {
       files,
       allowedTypes,

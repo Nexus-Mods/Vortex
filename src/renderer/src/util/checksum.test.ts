@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createHash } from "crypto";
-import * as path from "path";
 import * as os from "os";
+import * as path from "path";
+
 import * as fsExtra from "fs-extra";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { checksum, fileMD5 } from "./checksum";
 

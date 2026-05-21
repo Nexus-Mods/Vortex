@@ -1,14 +1,14 @@
 import * as path from "node:path";
+
 import { defineConfig } from "vitest/config";
 
-const mock = (name: string) =>
-  path.resolve(import.meta.dirname, `__mocks__/${name}.ts`);
+const mock = (name: string) => path.resolve(import.meta.dirname, `__mocks__/${name}.ts`);
 
 export default defineConfig({
   resolve: {
     alias: {
       "original-fs": "fs",
-      "vortex-api": mock("vortex-api"),
+      "@nexusmods/vortex-api": mock("vortex-api"),
     },
   },
   test: {

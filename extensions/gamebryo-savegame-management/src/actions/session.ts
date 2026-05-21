@@ -1,10 +1,10 @@
 import { createAction } from "redux-act";
+
 import { ISavegame } from "../types/ISavegame";
 
 export const setSavegames = createAction(
   "SET_SAVEGAMES",
-  (savegames: { [id: string]: ISavegame }, truncated: boolean) =>
-    ({ savegames, truncated }),
+  (savegames: { [id: string]: ISavegame }, truncated: boolean) => ({ savegames, truncated }),
 );
 
 export const setSavegameAttribute = createAction(

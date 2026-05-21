@@ -1,8 +1,8 @@
-import * as nodeUtil from 'util';
-import * as child_process from 'child_process';
-import * as fs from 'fs/promises';
+import * as child_process from "child_process";
+import * as fs from "fs/promises";
+import * as nodeUtil from "util";
 
-import type { DivineAction, IDivineOptions, IDivineOutput } from './types';
+import type { DivineAction, IDivineOptions, IDivineOutput } from "./types";
 
 const exec = nodeUtil.promisify(child_process.exec);
 
@@ -10,29 +10,29 @@ export const DEFAULT_TIMEOUT_MS = 10000;
 
 export class DivineExecMissing extends Error {
   constructor() {
-    super('Divine executable is missing');
-    this.name = 'DivineExecMissing';
+    super("Divine executable is missing");
+    this.name = "DivineExecMissing";
   }
 }
 
 export class DivineMissingDotNet extends Error {
   constructor() {
-    super('LSLib requires .NET 8 Desktop Runtime to be installed.');
-    this.name = 'DivineMissingDotNet';
+    super("LSLib requires .NET 8 Desktop Runtime to be installed.");
+    this.name = "DivineMissingDotNet";
   }
 }
 
 export class DivineTimedOut extends Error {
   constructor() {
-    super('Divine process timed out');
-    this.name = 'DivineTimedOut';
+    super("Divine process timed out");
+    this.name = "DivineTimedOut";
   }
 }
 
 export class DivineAborted extends Error {
   constructor() {
-    super('Divine operation was aborted');
-    this.name = 'DivineAborted';
+    super("Divine operation was aborted");
+    this.name = "DivineAborted";
   }
 }
 
@@ -40,7 +40,7 @@ export class DivinePakInvalid extends Error {
   public readonly details: string;
   constructor(details: string) {
     super(`divine.exe reported pak is invalid: ${details}`);
-    this.name = 'DivinePakInvalid';
+    this.name = "DivinePakInvalid";
     this.details = details;
   }
 }
@@ -63,16 +63,20 @@ export function buildDivineArgs(action: DivineAction, opts: IDivineOptions): str
   // stdout — the exit-code path alone doesn't distinguish "empty pak" from
   // "unreadable pak" for the list-package action.
   const args = [
-    '--action', action,
-    '--source', `"${opts.source}"`,
-    '--game', 'bg3',
-    '--loglevel', opts.loglevel ?? 'error',
+    "--action",
+    action,
+    "--source",
+    `"${opts.source}"`,
+    "--game",
+    "bg3",
+    "--loglevel",
+    opts.loglevel ?? "error",
   ];
   if (opts.destination !== undefined) {
-    args.push('--destination', `"${opts.destination}"`);
+    args.push("--destination", `"${opts.destination}"`);
   }
   if (opts.expression !== undefined) {
-    args.push('--expression', `"${opts.expression}"`);
+    args.push("--expression", `"${opts.expression}"`);
   }
   return args;
 }
@@ -100,18 +104,18 @@ export function translateDivineError(
   if (signalAborted) {
     return new DivineAborted();
   }
-  if (err.code === 'ENOENT') {
+  if (err.code === "ENOENT") {
     return new DivineExecMissing();
   }
-  if (err.message?.includes('You must install or update .NET')) {
+  if (err.message?.includes("You must install or update .NET")) {
     return new DivineMissingDotNet();
   }
-  if (err.signal === 'SIGTERM') {
+  if (err.signal === "SIGTERM") {
     return new DivineTimedOut();
   }
 
-  const stderrStr = typeof err.stderr === 'string' ? err.stderr : '';
-  const stdoutStr = typeof err.stdout === 'string' ? err.stdout : '';
+  const stderrStr = typeof err.stderr === "string" ? err.stderr : "";
+  const stdoutStr = typeof err.stdout === "string" ? err.stdout : "";
 
   const pakInvalid = classifyPakInvalid(stdoutStr, stderrStr);
   if (pakInvalid !== undefined) {
@@ -121,9 +125,9 @@ export function translateDivineError(
   const stderrTrim = stderrStr.trim();
   const stdoutTrim = stdoutStr.trim();
   const parts: string[] = [`action=${action}`];
-  if (typeof err.code === 'number') {
+  if (typeof err.code === "number") {
     parts.push(`exitCode=${err.code}`);
-  } else if (typeof err.code === 'string') {
+  } else if (typeof err.code === "string") {
     parts.push(`code=${err.code}`);
   }
   if (err.signal) {
@@ -135,15 +139,15 @@ export function translateDivineError(
   if (stdoutTrim) {
     parts.push(`stdout=${stdoutTrim}`);
   }
-  const detail = parts.length > 1 ? parts.join('; ') : (err.message ?? 'unknown');
+  const detail = parts.length > 1 ? parts.join("; ") : (err.message ?? "unknown");
   return new Error(`divine.exe failed: ${detail}`);
 }
 
 export function parsePackageListOutput(stdout: string): string[] {
   return stdout
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
 }
 
 export async function runDivineCore(
@@ -158,14 +162,14 @@ export async function runDivineCore(
   try {
     await fs.stat(exePath);
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       throw new DivineExecMissing();
     }
     throw e;
   }
 
   const args = buildDivineArgs(action, opts);
-  const command = `"${exePath}" ${args.join(' ')}`;
+  const command = `"${exePath}" ${args.join(" ")}`;
   const execOpts: child_process.ExecOptions = {
     timeout: runOpts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     signal: runOpts.signal,
@@ -175,14 +179,10 @@ export async function runDivineCore(
   let stderr: string;
   try {
     const result = await exec(command, execOpts);
-    stdout = typeof result.stdout === 'string' ? result.stdout : result.stdout?.toString() ?? '';
-    stderr = typeof result.stderr === 'string' ? result.stderr : result.stderr?.toString() ?? '';
+    stdout = typeof result.stdout === "string" ? result.stdout : (result.stdout?.toString() ?? "");
+    stderr = typeof result.stderr === "string" ? result.stderr : (result.stderr?.toString() ?? "");
   } catch (e) {
-    throw translateDivineError(
-      e as IExecErrorShape,
-      action,
-      runOpts.signal?.aborted ?? false,
-    );
+    throw translateDivineError(e as IExecErrorShape, action, runOpts.signal?.aborted ?? false);
   }
 
   // exec succeeded (exit 0) but divine may still have reported a problem:
@@ -196,8 +196,8 @@ export async function runDivineCore(
     // Non-bracketed stderr on exit 0 — unusual but surface it anyway.
     throw new Error(`divine.exe failed: ${stderr.trim()}`);
   }
-  if (!stdout && action !== 'list-package') {
-    return { stdout: '', returnCode: 2 };
+  if (!stdout && action !== "list-package") {
+    return { stdout: "", returnCode: 2 };
   }
   return { stdout, returnCode: 0 };
 }
@@ -207,7 +207,7 @@ export async function listPackageCore(
   pakPath: string,
   runOpts: IDivineRunOptions = {},
 ): Promise<string[]> {
-  const res = await runDivineCore(exePath, 'list-package', { source: pakPath }, runOpts);
+  const res = await runDivineCore(exePath, "list-package", { source: pakPath }, runOpts);
   return parsePackageListOutput(res.stdout);
 }
 
@@ -220,7 +220,7 @@ export async function extractPakCore(
 ): Promise<IDivineOutput> {
   return runDivineCore(
     exePath,
-    'extract-package',
+    "extract-package",
     { source: pakPath, destination: destPath, expression: pattern },
     runOpts,
   );

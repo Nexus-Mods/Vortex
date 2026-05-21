@@ -1,21 +1,18 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import * as React from "react";
+
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import type { ButtonType } from "../../../controls/IconBar";
 import ToolbarIcon from "../../../controls/ToolbarIcon";
 import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
-
 import { activeGameId } from "../../../util/selectors";
 import { batchDispatch } from "../../../util/util";
-
+import NXMUrl from "../../nexus_integration/NXMUrl";
 import { setModAttribute } from "../actions/mods";
 import metaLookupMatch from "../util/metaLookupMatch";
-
-import NXMUrl from "../../nexus_integration/NXMUrl";
-
-import * as React from "react";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface IBaseProps {
   buttonType: ButtonType;

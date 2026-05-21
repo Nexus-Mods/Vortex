@@ -1,18 +1,15 @@
+import * as React from "react";
+
 import DateTimeFilter from "../../controls/table/DateTimeFilter";
 import ZoomableImage from "../../controls/ZoomableImage";
+import type { IExtensionApi } from "../../types/api";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import { getCurrentLanguage } from "../../util/i18n";
 import { userFriendlyTime } from "../../util/relativeTime";
 import { getSafe } from "../../util/storeHelper";
-
 import type { IModWithState } from "./types/IModProps";
 
-import * as React from "react";
-import type { IExtensionApi } from "../../types/api";
-
-export const ENABLED_TIME = (
-  locale: () => string,
-): ITableAttribute<IModWithState> => {
+export const ENABLED_TIME = (locale: () => string): ITableAttribute<IModWithState> => {
   return {
     id: "enabledTime",
     name: "Enabled Time",
@@ -33,9 +30,7 @@ export const ENABLED_TIME = (
         if (timeStamp === undefined) {
           return <span>{t("Never")}</span>;
         }
-        return (
-          <span>{userFriendlyTime(new Date(timeStamp), t, locale())}</span>
-        );
+        return <span>{userFriendlyTime(new Date(timeStamp), t, locale())}</span>;
       }
     },
     calc: (mod: IModWithState) => new Date(mod.enabledTime),
@@ -44,15 +39,12 @@ export const ENABLED_TIME = (
     isDefaultVisible: false,
     edit: {},
     isSortable: true,
-    sortFunc: (lhs: Date, rhs: Date) =>
-      (lhs.getTime() || 0) - (rhs.getTime() || 0),
+    sortFunc: (lhs: Date, rhs: Date) => (lhs.getTime() || 0) - (rhs.getTime() || 0),
     filter: new DateTimeFilter(),
   };
 };
 
-export const INSTALL_TIME = (
-  locale: () => string,
-): ITableAttribute<IModWithState> => {
+export const INSTALL_TIME = (locale: () => string): ITableAttribute<IModWithState> => {
   return {
     id: "installTime",
     name: "Installation Time",
@@ -73,27 +65,21 @@ export const INSTALL_TIME = (
         if (timeString === undefined) {
           return <span>{t("Not installed")}</span>;
         }
-        return (
-          <span>{userFriendlyTime(new Date(timeString), t, locale())}</span>
-        );
+        return <span>{userFriendlyTime(new Date(timeString), t, locale())}</span>;
       }
     },
-    calc: (mod: IModWithState) =>
-      new Date(getSafe(mod.attributes, ["installTime"], 0)),
+    calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ["installTime"], 0)),
     placement: "both",
     isToggleable: true,
     isDefaultVisible: false,
     edit: {},
     isSortable: true,
-    sortFunc: (lhs: Date, rhs: Date) =>
-      (lhs.getTime() || 0) - (rhs.getTime() || 0),
+    sortFunc: (lhs: Date, rhs: Date) => (lhs.getTime() || 0) - (rhs.getTime() || 0),
     filter: new DateTimeFilter(),
   };
 };
 
-export const DOWNLOAD_TIME = (
-  getApi: () => IExtensionApi,
-): ITableAttribute<IModWithState> => {
+export const DOWNLOAD_TIME = (getApi: () => IExtensionApi): ITableAttribute<IModWithState> => {
   return {
     id: "downloadTime",
     name: "Downloaded Time",
@@ -123,11 +109,7 @@ export const DOWNLOAD_TIME = (
         if (timeString === undefined) {
           return <span>{t("Unknown")}</span>;
         }
-        return (
-          <span>
-            {userFriendlyTime(new Date(timeString), t, getApi().locale())}
-          </span>
-        );
+        return <span>{userFriendlyTime(new Date(timeString), t, getApi().locale())}</span>;
       }
     },
     calc: (mod: IModWithState) => {
@@ -147,8 +129,7 @@ export const DOWNLOAD_TIME = (
     edit: {},
     isSortable: true,
     sortFunc: (lhs: Date, rhs: Date) =>
-      (lhs.getTime() || new Date(0).getTime()) -
-      (rhs.getTime() || new Date(0).getTime()),
+      (lhs.getTime() || new Date(0).getTime()) - (rhs.getTime() || new Date(0).getTime()),
     filter: new DateTimeFilter(),
   };
 };

@@ -1,12 +1,12 @@
+import * as React from "react";
+import { FormControl } from "react-bootstrap";
+import { useDispatch } from "react-redux";
+
 import { Button, IconButton } from "../../../controls/TooltipControls";
 import type { TFunction } from "../../../util/i18n";
 import { truthy } from "../../../util/util";
 import { setModAttributes } from "../actions/mods";
 import type { IModWithState } from "../types/IModProps";
-
-import * as React from "react";
-import { FormControl } from "react-bootstrap";
-import { useDispatch } from "react-redux";
 
 function Input(props: { value: string; onChange: (newValue: string) => void }) {
   const onChange = React.useCallback(
@@ -15,9 +15,7 @@ function Input(props: { value: string; onChange: (newValue: string) => void }) {
     },
     [props.onChange],
   );
-  return (
-    <FormControl type="text" value={props.value ?? ""} onChange={onChange} />
-  );
+  return <FormControl type="text" value={props.value ?? ""} onChange={onChange} />;
 }
 
 function Author(props: { t: TFunction; gameId: string; mod: IModWithState }) {
@@ -95,10 +93,7 @@ function Author(props: { t: TFunction; gameId: string; mod: IModWithState }) {
     if (truthy(mod.attributes?.author)) {
       authors.push(mod.attributes.author);
     }
-    if (
-      truthy(mod.attributes?.uploader) &&
-      mod.attributes?.uploader !== mod.attributes?.author
-    ) {
+    if (truthy(mod.attributes?.uploader) && mod.attributes?.uploader !== mod.attributes?.author) {
       authors.push(mod.attributes.uploader);
     }
 
@@ -120,12 +115,7 @@ function Author(props: { t: TFunction; gameId: string; mod: IModWithState }) {
       >
         {authorP}{" "}
         {mod.state === "installed" ? (
-          <IconButton
-            icon="edit"
-            tooltip={t("Edit")}
-            onClick={startEdit}
-            className="btn-embed"
-          />
+          <IconButton icon="edit" tooltip={t("Edit")} onClick={startEdit} className="btn-embed" />
         ) : null}
       </div>
     );

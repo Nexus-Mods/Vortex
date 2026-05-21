@@ -27,25 +27,17 @@ export class LoginPage {
     this.authLoginForm = page.locator("form#new_user");
     this.usernameInput = page.locator("#user_login");
     this.passwordInput = page.locator('input[name="user[password]"]');
-    this.submitLoginButton = page
-      .getByRole("button", { name: /log in/i })
-      .first();
+    this.submitLoginButton = page.getByRole("button", { name: /log in/i }).first();
     this.oauthPermissionTitle = page.locator("p.oauth__title", {
       hasText: /Vortex\s+would like to:/i,
     });
-    this.authoriseButton = page
-      .locator('input[type="submit"][value="Authorise"]')
-      .first();
+    this.authoriseButton = page.locator('input[type="submit"][value="Authorise"]').first();
     this.authorisationSuccessTitle = page.locator("p.oauth__title", {
       hasText: /Authorisation successful!/i,
     });
     this.profileButton = page
-      .locator(
-        "button[title='Profile'], button[title='Log in'], button:has(img[alt])",
-      )
+      .locator("button[title='Profile'], button[title='Log in'], button:has(img[alt])")
       .first();
-    this.loggedInMenuItem = page
-      .getByText(/view profile on web|logout/i)
-      .first();
+    this.loggedInMenuItem = page.getByText(/view profile on web|logout/i).first();
   }
 }

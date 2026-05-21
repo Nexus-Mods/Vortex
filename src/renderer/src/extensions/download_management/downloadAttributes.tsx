@@ -1,14 +1,9 @@
-import type { TFunction } from "i18next";
-
-import PromiseBB from "bluebird";
 import * as path from "path";
-import * as React from "react";
 import * as url from "url";
 
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import type { IDownload } from "./types/IDownload";
-import type { IDownloadViewProps } from "./views/DownloadView";
+import PromiseBB from "bluebird";
+import type { TFunction } from "i18next";
+import * as React from "react";
 
 import { SITE_GAME_NAME } from "../../controls/constants";
 import ProgressBar from "../../controls/ProgressBar";
@@ -17,16 +12,20 @@ import DateTimeFilter from "../../controls/table/DateTimeFilter";
 import GameFilter from "../../controls/table/GameFilter";
 import TextFilter from "../../controls/table/TextFilter";
 import { Icon } from "../../controls/TooltipControls";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { ITableAttribute } from "../../types/ITableAttribute";
 import * as fs from "../../util/fs";
 import { getCurrentLanguage } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";
 import { bytesToString, truthy } from "../../util/util";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameName } from "../gamemode_management/selectors";
+import type { IDownload } from "./types/IDownload";
 import getDownloadGames from "./util/getDownloadGames";
 import setDownloadGames from "./util/setDownloadGames";
 import DownloadGameList from "./views/DownloadGameList";
 import DownloadProgressFilter from "./views/DownloadProgressFilter";
+import type { IDownloadViewProps } from "./views/DownloadView";
 import FileTime from "./views/FileTime";
 
 function progress(props: { t: TFunction; download: IDownload }) {
@@ -73,9 +72,7 @@ function progress(props: { t: TFunction; download: IDownload }) {
           {!download.pausable ? (
             <Icon
               name="feedback-warning"
-              tooltip={t(
-                "The download server doesn't support resuming downloads ",
-              )}
+              tooltip={t("The download server doesn't support resuming downloads ")}
             />
           ) : null}
         </div>
@@ -101,9 +98,7 @@ function calc(props) {
 }
 
 function downloadTime(download: IDownload) {
-  return download.fileTime !== undefined
-    ? new Date(download.fileTime)
-    : undefined;
+  return download.fileTime !== undefined ? new Date(download.fileTime) : undefined;
 }
 
 function nameFromUrl(input: string) {
@@ -126,10 +121,7 @@ function nameFromUrl(input: string) {
 function createColumns(
   api: IExtensionApi,
   props: () => IDownloadViewProps,
-  withAddInProgress: (
-    fileName: string,
-    cb: () => PromiseLike<void>,
-  ) => PromiseLike<void>,
+  withAddInProgress: (fileName: string, cb: () => PromiseLike<void>) => PromiseLike<void>,
 ): Array<ITableAttribute<IDownload>> {
   const state = api.getState();
   const isModernLayout = state.settings.window.useModernLayout;
@@ -146,9 +138,7 @@ function createColumns(
   };
 
   const onSetDownloadGames = (dlId: string, games: string[]) => {
-    return PromiseBB.resolve(
-      setDownloadGames(api, dlId, games, withAddInProgress),
-    );
+    return PromiseBB.resolve(setDownloadGames(api, dlId, games, withAddInProgress));
   };
 
   return [
@@ -158,8 +148,7 @@ function createColumns(
       description: "Filename of the download",
       icon: "",
       calc: (attributes: IDownload) =>
-        attributes.localPath ||
-        nameFromUrl(getSafe(attributes, ["urls", 0], undefined)),
+        attributes.localPath || nameFromUrl(getSafe(attributes, ["urls", 0], undefined)),
       placement: "both",
       isToggleable: true,
       edit: {},
@@ -193,17 +182,11 @@ function createColumns(
         "when managing those games as well.",
       icon: "game",
       isDefaultVisible: !isModernLayout,
-      customRenderer: (
-        download: IDownload,
-        detailCell: boolean,
-        t: TFunction,
-      ) => {
+      customRenderer: (download: IDownload, detailCell: boolean, t: TFunction) => {
         const { downloads, knownGames } = props();
         const { store } = api;
         // TODO: awkward!
-        const id = Object.keys(downloads).find(
-          (dlId) => downloads[dlId] === download,
-        );
+        const id = Object.keys(downloads).find((dlId) => downloads[dlId] === download);
         if (detailCell) {
           return (
             <DownloadGameList
@@ -217,9 +200,7 @@ function createColumns(
         } else {
           const games = getDownloadGames(download);
           const name =
-            games[0] === SITE_ID
-              ? t(SITE_GAME_NAME)
-              : gameName(store.getState(), games[0]);
+            games[0] === SITE_ID ? t(SITE_GAME_NAME) : gameName(store.getState(), games[0]);
           const more = games.length > 1 ? "..." : "";
           return (
             <div>
@@ -251,8 +232,7 @@ function createColumns(
 
         if (
           time === undefined &&
-          (getDownloadGames(attributes)[0] !== gameMode ||
-            attributes.localPath === undefined)
+          (getDownloadGames(attributes)[0] !== gameMode || attributes.localPath === undefined)
         ) {
           return null;
         }
@@ -275,18 +255,13 @@ function createColumns(
           return time;
         }
 
-        if (
-          getDownloadGames(attributes)[0] !== gameMode ||
-          attributes.localPath === undefined
-        ) {
+        if (getDownloadGames(attributes)[0] !== gameMode || attributes.localPath === undefined) {
           return null;
         }
         return fs
           .statAsync(path.join(downloadPath, attributes.localPath))
           .then((stat) => {
-            const id = Object.keys(downloads).find(
-              (key) => downloads[key] === attributes,
-            );
+            const id = Object.keys(downloads).find((key) => downloads[key] === attributes);
             onSetAttribute(id, stat.mtimeMs);
             return PromiseBB.resolve(stat.mtime);
           })
@@ -304,14 +279,8 @@ function createColumns(
       name: "File Size",
       description: "Total size of the file",
       icon: "chart-bars",
-      customRenderer: (
-        download: IDownload,
-        detailCell: boolean,
-        t: TFunction,
-      ) => (
-        <span>
-          {download.size !== undefined ? bytesToString(download.size) : "???"}
-        </span>
+      customRenderer: (download: IDownload, detailCell: boolean, t: TFunction) => (
+        <span>{download.size !== undefined ? bytesToString(download.size) : "???"}</span>
       ),
       calc: (download: IDownload) => download.size,
       placement: "table",
@@ -324,18 +293,14 @@ function createColumns(
       name: "Progress",
       description: "Download progress",
       icon: "clock-o",
-      customRenderer: (
-        download: IDownload,
-        detailCell: boolean,
-        t: TFunction,
-      ) => progress({ download, t }),
+      customRenderer: (download: IDownload, detailCell: boolean, t: TFunction) =>
+        progress({ download, t }),
       calc: (download: IDownload, t: TFunction) => calc({ download, t }),
       placement: "table",
       isToggleable: true,
       edit: {},
       isSortable: true,
-      isGroupable: (download: IDownload, t: TFunction) =>
-        t(capitalize(download.state ?? "init")),
+      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state ?? "init")),
       filter: new DownloadProgressFilter(),
     },
   ];

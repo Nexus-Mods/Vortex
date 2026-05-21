@@ -20,13 +20,13 @@ Multiple labels can be used on a single PR to cherry-pick into several branches.
 
 ## Behavior
 
-| Scenario | Result |
-|---|---|
-| Clean cherry-pick | Branch pushed, PR created |
-| Cherry-pick with conflicts | Branch pushed, **draft** PR created with warning |
-| Target branch doesn't exist | Skipped with a warning |
-| Branch already exists remotely | Force-pushed, existing PR reused |
-| No `pick:` labels | Workflow exits early |
+| Scenario                       | Result                                           |
+| ------------------------------ | ------------------------------------------------ |
+| Clean cherry-pick              | Branch pushed, PR created                        |
+| Cherry-pick with conflicts     | Branch pushed, **draft** PR created with warning |
+| Target branch doesn't exist    | Skipped with a warning                           |
+| Branch already exists remotely | Force-pushed, existing PR reused                 |
+| No `pick:` labels              | Workflow exits early                             |
 
 ## Cherry-pick branches
 

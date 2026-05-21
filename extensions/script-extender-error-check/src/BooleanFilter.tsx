@@ -1,5 +1,5 @@
+import { Toggle, types } from "@nexusmods/vortex-api";
 import * as React from "react";
-import { Toggle, types } from "vortex-api";
 
 class BooleanFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {

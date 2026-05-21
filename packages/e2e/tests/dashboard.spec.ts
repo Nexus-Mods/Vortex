@@ -6,9 +6,7 @@ import { test, expect } from "../fixtures/vortex-app";
 import { DashboardPage } from "../selectors/dashboard";
 
 test.describe("Dashboard", () => {
-  test('"Lets get you setup" area is visible on fresh dashboard', async ({
-    vortexWindow,
-  }) => {
+  test('"Lets get you setup" area is visible on fresh dashboard', async ({ vortexWindow }) => {
     await test.step("Verify dashboard has content", async () => {
       const bodyText = await vortexWindow.locator("body").innerText();
       expect(bodyText.length).toBeGreaterThan(0);

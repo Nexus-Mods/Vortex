@@ -1,19 +1,19 @@
-import path from "path";
 import type { Dirent } from "node:fs";
 import { readdirSync, readFileSync } from "node:fs";
 import type { FileHandle } from "node:fs/promises";
 import { open, readdir } from "node:fs/promises";
-import lazyRequire from "../../../util/lazyRequire";
+import path from "path";
+
 import type * as fomodT from "@nexusmods/fomod-installer-native";
+
+import lazyRequire from "../../../util/lazyRequire";
 
 export class VortexModInstallerFileSystem {
   private fomod: typeof fomodT;
   private mFileSystem: fomodT.NativeFileSystem;
 
   public constructor() {
-    this.fomod = lazyRequire<typeof fomodT>(() =>
-      require("@nexusmods/fomod-installer-native"),
-    );
+    this.fomod = lazyRequire<typeof fomodT>(() => require("@nexusmods/fomod-installer-native"));
     this.mFileSystem = new this.fomod.NativeFileSystem(
       this.readFileContent,
       this.readDirectoryFileList,
@@ -46,10 +46,7 @@ export class VortexModInstallerFileSystem {
         //const fd = fs.openSync(filePath, 'r');
         //const buffer = Buffer.alloc(length);
         //fs.readSync(fd, buffer, offset, length, 0);
-        return new Uint8Array(readFileSync(filePath)).slice(
-          offset,
-          offset + length,
-        );
+        return new Uint8Array(readFileSync(filePath)).slice(offset, offset + length);
       } else {
         return null;
       }
@@ -100,8 +97,7 @@ export class VortexModInstallerFileSystem {
           const stats = await fileHandle.stat();
           length = stats.size;
         }
-        const buffer =
-          this.fomod.allocWithoutOwnership(length) ?? new Uint8Array(length);
+        const buffer = this.fomod.allocWithoutOwnership(length) ?? new Uint8Array(length);
         await fileHandle.read(buffer, 0, length, offset);
         return buffer;
       } finally {
@@ -121,9 +117,7 @@ export class VortexModInstallerFileSystem {
   /**
    * Callback
    */
-  private readDirectoryFileListAsync = async (
-    directoryPath: string,
-  ): Promise<string[] | null> => {
+  private readDirectoryFileListAsync = async (directoryPath: string): Promise<string[] | null> => {
     try {
       const dirs = await readdir(directoryPath, { withFileTypes: true });
       const res = dirs
@@ -144,9 +138,7 @@ export class VortexModInstallerFileSystem {
   /**
    * Callback
    */
-  private readDirectoryListAsync = async (
-    directoryPath: string,
-  ): Promise<string[] | null> => {
+  private readDirectoryListAsync = async (directoryPath: string): Promise<string[] | null> => {
     try {
       const dirs = await readdir(directoryPath, { withFileTypes: true });
       const res = dirs

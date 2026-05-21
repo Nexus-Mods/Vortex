@@ -1,6 +1,6 @@
-import type PromiseBB from "bluebird";
-
 import * as path from "path";
+
+import type PromiseBB from "bluebird";
 
 import type { IArchiveHandler } from "../types/IExtensionContext";
 
@@ -57,9 +57,7 @@ export class Archive {
   /**
    * list files at the specified path
    */
-  public get readDir():
-    | ((archivePath: string) => PromiseBB<string[]>)
-    | undefined {
+  public get readDir(): ((archivePath: string) => PromiseBB<string[]>) | undefined {
     return this.mHandler.readDir
       ? (archivePath: string) => this.mHandler.readDir(archivePath)
       : undefined;
@@ -68,9 +66,7 @@ export class Archive {
   /**
    * read a file at the specified path via a stream
    */
-  public get readFile():
-    | ((filePath: string) => NodeJS.ReadableStream)
-    | undefined {
+  public get readFile(): ((filePath: string) => NodeJS.ReadableStream) | undefined {
     return this.mHandler.readFile
       ? (filePath: string) => this.mHandler.readFile(filePath)
       : undefined;
@@ -83,17 +79,14 @@ export class Archive {
     | ((filePath: string, outputPath: string) => PromiseBB<void>)
     | undefined {
     return this.mHandler.extractFile
-      ? (filePath: string, outputPath: string) =>
-          this.mHandler.extractFile(filePath, outputPath)
+      ? (filePath: string, outputPath: string) => this.mHandler.extractFile(filePath, outputPath)
       : undefined;
   }
 
   /**
    * extract the entire archive
    */
-  public get extractAll():
-    | ((outputPath: string) => PromiseBB<void>)
-    | undefined {
+  public get extractAll(): ((outputPath: string) => PromiseBB<void>) | undefined {
     return this.mHandler.extractAll
       ? (outputPath: string) => this.mHandler.extractAll(outputPath)
       : undefined;
@@ -111,12 +104,9 @@ export class Archive {
   /**
    * add a single file to the archive
    */
-  public get addFile():
-    | ((filePath: string, sourcePath: string) => PromiseBB<void>)
-    | undefined {
+  public get addFile(): ((filePath: string, sourcePath: string) => PromiseBB<void>) | undefined {
     return this.mHandler.addFile
-      ? (filePath: string, sourcePath: string) =>
-          this.mHandler.addFile(filePath, sourcePath)
+      ? (filePath: string, sourcePath: string) => this.mHandler.addFile(filePath, sourcePath)
       : undefined;
   }
 

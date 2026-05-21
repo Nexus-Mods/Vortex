@@ -6,18 +6,12 @@
  */
 
 import * as React from "react";
-import type {
-  AllHTMLAttributes,
-  AnchorHTMLAttributes,
-  ReactNode,
-  Ref,
-} from "react";
+import type { AllHTMLAttributes, AnchorHTMLAttributes, ReactNode, Ref } from "react";
 import { createElement } from "react";
 
+import { joinClasses } from "../../utils/joinClasses";
 import type { ResponsiveScreenSizes, XOr } from "../../utils/types";
 import type { IconSize } from "../icon/Icon";
-
-import { joinClasses } from "../../utils/joinClasses";
 import { Icon } from "../icon/Icon";
 
 export type TypographyTypes =
@@ -115,23 +109,12 @@ export const Typography = ({
   typographyType,
   ...props
 }: TypographyProps) => {
-  const appearanceClasses: Record<
-    Exclude<TypographyProps["appearance"], undefined>,
-    string
-  > = {
+  const appearanceClasses: Record<Exclude<TypographyProps["appearance"], undefined>, string> = {
     none: "",
-    inverted: isTranslucent
-      ? "text-translucent-dark-950"
-      : "text-neutral-inverted",
-    moderate: isTranslucent
-      ? "text-neutral-translucent-moderate"
-      : "text-neutral-moderate",
-    strong: isTranslucent
-      ? "text-neutral-translucent-strong"
-      : "text-neutral-strong",
-    subdued: isTranslucent
-      ? "text-neutral-translucent-subdued"
-      : "text-neutral-subdued",
+    inverted: isTranslucent ? "text-translucent-dark-950" : "text-neutral-inverted",
+    moderate: isTranslucent ? "text-neutral-translucent-moderate" : "text-neutral-moderate",
+    strong: isTranslucent ? "text-neutral-translucent-strong" : "text-neutral-strong",
+    subdued: isTranslucent ? "text-neutral-translucent-subdued" : "text-neutral-subdued",
     weak: isTranslucent ? "text-neutral-translucent-weak" : "text-neutral-weak",
   };
 
@@ -157,9 +140,7 @@ type TypographyLinkAnchorProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   ref?: Ref<HTMLAnchorElement>;
 };
 
-type TypographyLinkButtonProps = AllHTMLAttributes<
-  HTMLAnchorElement | HTMLButtonElement
-> & {
+type TypographyLinkButtonProps = AllHTMLAttributes<HTMLAnchorElement | HTMLButtonElement> & {
   as: "button";
   disabled?: boolean;
   href?: never;
@@ -176,21 +157,11 @@ type TypographyLinkTypeObject = TypographyLinkTypeObjectDefault & {
   [key in Exclude<ResponsiveScreenSizes, "default">]?: TypographyLinkTypes;
 };
 
-export type TypographyLinkProps = (
-  | TypographyLinkAnchorProps
-  | TypographyLinkButtonProps
-) & {
+export type TypographyLinkProps = (TypographyLinkAnchorProps | TypographyLinkButtonProps) & {
   /**
    * The text colour
    */
-  appearance?:
-    | "info"
-    | "premium"
-    | "primary"
-    | "moderate"
-    | "strong"
-    | "subdued"
-    | "none";
+  appearance?: "info" | "premium" | "primary" | "moderate" | "strong" | "subdued" | "none";
   iconSize?: IconSize;
   leftIconPath?: string;
   rightIconPath?: string;
@@ -207,15 +178,11 @@ const LinkContent = ({
   label?: string;
 }) => (
   <>
-    {!!leftIconPath && (
-      <Icon className="shrink-0" path={leftIconPath} size={iconSize} />
-    )}
+    {!!leftIconPath && <Icon className="shrink-0" path={leftIconPath} size={iconSize} />}
 
     {label}
 
-    {!!rightIconPath && (
-      <Icon className="shrink-0" path={rightIconPath} size={iconSize} />
-    )}
+    {!!rightIconPath && <Icon className="shrink-0" path={rightIconPath} size={iconSize} />}
   </>
 );
 
@@ -237,20 +204,14 @@ export const TypographyLink = ({
   variant = "primary",
   ...props
 }: TypographyLinkProps) => {
-  const variantClasses: Record<
-    Exclude<TypographyLinkProps["variant"], undefined>,
-    string
-  > = {
+  const variantClasses: Record<Exclude<TypographyLinkProps["variant"], undefined>, string> = {
     none: "",
     primary: "nxm-link-variant-primary",
     secondary: "nxm-link-variant-secondary",
   };
 
   /* eslint-disable sort-keys */
-  const appearanceClasses: Record<
-    Exclude<TypographyLinkProps["appearance"], undefined>,
-    string
-  > = {
+  const appearanceClasses: Record<Exclude<TypographyLinkProps["appearance"], undefined>, string> = {
     none: "",
     info: "nxm-link-info",
     premium: "nxm-link-premium",
@@ -274,8 +235,7 @@ export const TypographyLink = ({
       additionalClasses,
     ],
     {
-      "nxm-link-disabled":
-        ariaDisabled === true || ariaDisabled === "true" || disabled,
+      "nxm-link-disabled": ariaDisabled === true || ariaDisabled === "true" || disabled,
     },
   );
 

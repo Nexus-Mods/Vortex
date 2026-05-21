@@ -2,10 +2,7 @@ import { unknownToError } from "./errors";
 
 type Callback = (err: Error | null) => void;
 
-export type SetTimeoutFunc<Timeout> = (
-  callback: () => void,
-  delay: number,
-) => Timeout;
+export type SetTimeoutFunc<Timeout> = (callback: () => void, delay: number) => Timeout;
 export type ClearTimeoutFunc<Timeout> = (timeout: Timeout) => void;
 
 /**
@@ -140,10 +137,7 @@ export class GenericDebouncer<
    *
    * @memberOf Debouncer
    */
-  public wait(
-    callback: (err: Error | null) => void,
-    immediately: boolean = false,
-  ): void {
+  public wait(callback: (err: Error | null) => void, immediately: boolean = false): void {
     if (this.mTimer === undefined && !this.mRunning) {
       // not scheduled
       callback(null);

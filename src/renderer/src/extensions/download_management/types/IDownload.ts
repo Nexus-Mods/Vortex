@@ -1,5 +1,3 @@
-import type { IChunk } from "./IChunk";
-
 export type RedownloadMode = "always" | "never" | "ask" | "replace";
 
 export type DownloadState =
@@ -71,6 +69,14 @@ export interface IModInfo {
       revisionId?: number;
       revisionNumber?: number;
     };
+    /**
+     * Id of the collection that triggered this download as a dependency, when the
+     * download is a mod installed as part of a collection. Kept distinct from
+     * `ids.collectionId` (which marks the download as being the collection archive
+     * itself) so it doesn't propagate into the installed mod's attributes via the
+     * install attribute extractor. Consumed by Mixpanel mod download analytics.
+     */
+    parentCollectionId?: string;
     [key: string]: any;
   };
   referenceTag?: string;
@@ -186,11 +192,6 @@ export interface IDownload {
    * number of bytes hashed during finalizing
    */
   verified: number;
-
-  /**
-   * for paused downloads, this contains the list segments that are still missing
-   */
-  chunks?: IChunk[];
 
   /**
    * whether the download server supports resuming downloads

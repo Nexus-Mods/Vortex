@@ -1,14 +1,10 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
-import type {
-  ActionFunc,
-  IActionDefinition,
-  IActionOptions,
-} from "../types/IActionDefinition";
-import type { IRegisteredExtension } from "../types/extensions";
-import { extend } from "../ExtensionProvider";
-
 import * as _ from "lodash";
 import * as React from "react";
+
+import { extend } from "../ExtensionProvider";
+import type { IRegisteredExtension } from "../types/extensions";
+import type { ActionFunc, IActionDefinition, IActionOptions } from "../types/IActionDefinition";
 
 export interface IActionControlProps {
   instanceId?: string | string[];
@@ -47,10 +43,7 @@ export interface IActionDefinitionEx extends IActionDefinition {
  *
  * @class IconBar
  */
-class ActionControl extends React.Component<
-  IProps,
-  { actions: IActionDefinitionEx[] }
-> {
+class ActionControl extends React.Component<IProps, { actions: IActionDefinitionEx[] }> {
   constructor(props: IProps) {
     super(props);
     this.state = {
@@ -82,8 +75,7 @@ class ActionControl extends React.Component<
 
   private actionsToShow(props: IProps): IActionDefinitionEx[] {
     const { filter, instanceId, objects, showAll } = props;
-    const instanceIds =
-      typeof instanceId === "string" ? [instanceId] : instanceId;
+    const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
     const checkCondition = (def: IActionDefinition): boolean | string => {
       if (def.condition === undefined) {
         return true;
@@ -95,9 +87,7 @@ class ActionControl extends React.Component<
       }
     };
 
-    const transformActions = (
-      items: IActionDefinition[] | ActionFunc,
-    ): IActionDefinitionEx[] => {
+    const transformActions = (items: IActionDefinition[] | ActionFunc): IActionDefinitionEx[] => {
       if (!Array.isArray(items)) {
         items = items(instanceId);
       }
@@ -111,10 +101,7 @@ class ActionControl extends React.Component<
     const convert = (input: IActionDefinition): IActionDefinitionEx => ({
       ...input,
       show: checkCondition(input),
-      subMenus:
-        input.subMenus === undefined
-          ? undefined
-          : () => transformActions(input.subMenus),
+      subMenus: input.subMenus === undefined ? undefined : () => transformActions(input.subMenus),
     });
 
     return transformActions(objects);

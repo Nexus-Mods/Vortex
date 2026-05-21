@@ -7,14 +7,12 @@
 
 import React, { useState, type InputHTMLAttributes, type Ref } from "react";
 
-import type { BaseFormFieldProps } from "../formfield/FormField";
-
 import { joinClasses } from "../../../utils/joinClasses";
+import type { BaseFormFieldProps } from "../formfield/FormField";
 import { FormField } from "../formfield/FormField";
 
 export interface InputProps
-  extends BaseFormFieldProps,
-    Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+  extends BaseFormFieldProps, Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   /**
    * Restrict default value to string | number as we don't use this component for checkbox
    */
@@ -79,11 +77,7 @@ export const Input = ({
       <input
         {...props}
         aria-describedby={
-          errorMessage
-            ? `${id}_error`
-            : hints.length > 0
-              ? `${id}_hints`
-              : undefined
+          errorMessage ? `${id}_error` : hints.length > 0 ? `${id}_hints` : undefined
         }
         aria-invalid={!!errorMessage || undefined}
         className={joinClasses(["nxm-input", className], {

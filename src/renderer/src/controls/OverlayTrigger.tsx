@@ -46,12 +46,7 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
 
   public render() {
     const { placement } = this.state;
-    const relayProps: any = _.omit(this.props, [
-      "getBounds",
-      "placement",
-      "onEnter",
-      "triggerRef",
-    ]);
+    const relayProps: any = _.omit(this.props, ["getBounds", "placement", "onEnter", "triggerRef"]);
     return (
       <OverlayTrigger
         placement={placement}
@@ -68,16 +63,12 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
     if (this.mNode) {
       const bounds: ClientRect = this.props.getBounds();
       if (this.props.orientation === "horizontal") {
-        const rightOfMid =
-          this.mNode.getBoundingClientRect().left >
-          bounds.left + bounds.width / 2;
+        const rightOfMid = this.mNode.getBoundingClientRect().left > bounds.left + bounds.width / 2;
         this.setState({
           placement: rightOfMid ? "left" : "right",
         });
       } else {
-        const belowMid =
-          this.mNode.getBoundingClientRect().top >
-          bounds.top + bounds.height / 2;
+        const belowMid = this.mNode.getBoundingClientRect().top > bounds.top + bounds.height / 2;
         this.setState({
           placement: belowMid ? "top" : "bottom",
         });

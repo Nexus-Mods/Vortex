@@ -163,11 +163,7 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  isSupported: (
-    state: any,
-    gameId: string,
-    modTypeId: string,
-  ) => IUnavailableReason;
+  isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
 
   /**
    * if mod deployment in some way requires user interaction we should give the user control
@@ -234,11 +230,7 @@ export interface IDeploymentMethod {
    * If this is not defined, nothing gets called. In this case the deployment method can't have any
    * state set up in prepare that would cause issues if finalize doesn't get called.
    */
-  cancel?: (
-    gameId: string,
-    dataPath: string,
-    installationPath: string,
-  ) => PromiseLike<void>;
+  cancel?: (gameId: string, dataPath: string, installationPath: string) => PromiseLike<void>;
 
   /**
    * activate the specified mod in the specified location
@@ -266,11 +258,7 @@ export interface IDeploymentMethod {
    * @todo sorry about the stupid parameter order, sourceName was added after release so to
    *   remain backwards compatible we have to append it
    */
-  deactivate: (
-    sourcePath: string,
-    dataPath: string,
-    sourceName: string,
-  ) => PromiseLike<void>;
+  deactivate: (sourcePath: string, dataPath: string, sourceName: string) => PromiseLike<void>;
 
   /**
    * called before mods are being purged. If multiple mod types are going to be purged,
@@ -338,9 +326,5 @@ export interface IDeploymentMethod {
    * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
    */
-  isDeployed: (
-    installPath: string,
-    dataPath: string,
-    file: IDeployedFile,
-  ) => PromiseLike<boolean>;
+  isDeployed: (installPath: string, dataPath: string, file: IDeployedFile) => PromiseLike<boolean>;
 }

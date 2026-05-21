@@ -1,12 +1,11 @@
 import type {
   FileSystemErrorCode,
-  IFileSystem,
+  FileSystem,
   StatResult,
   Status,
-} from "@vortex/fs";
-import type { Pattern } from "@vortex/fs";
-
-import { FileSystemError, QualifiedPath } from "@vortex/fs";
+} from "@nexusmods/adaptor-api/fs";
+import type { Pattern } from "@nexusmods/adaptor-api/fs";
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 /**
  * Send function shape used by the client polyfill. The caller provides a
@@ -18,15 +17,12 @@ import { FileSystemError, QualifiedPath } from "@vortex/fs";
  *
  * @public
  */
-export type FileSystemSendFn = (
-  method: string,
-  args: readonly unknown[],
-) => Promise<unknown>;
+export type FileSystemSendFn = (method: string, args: readonly unknown[]) => Promise<unknown>;
 
 /**
  * Wire-level enumeration options. This is an implementation detail of
  * the RPC layer: the real consumer sees the options type declared on
- * `IFileSystem["enumerateDirectory"]`. Kept internal so callers are not
+ * `FileSystem["enumerateDirectory"]`. Kept internal so callers are not
  * tempted to program against it.
  */
 interface EnumerateWireOptions {
@@ -49,18 +45,15 @@ interface EnumerateNextResult {
 }
 
 /**
- * Creates an object that implements {@link IFileSystem} by routing every
+ * Creates an object that implements {@link FileSystem} by routing every
  * call through {@link FileSystemSendFn}. Intended for use inside
  * environments (adaptor Workers, renderers) that cannot touch the real
  * fs directly.
  *
  * @public
  */
-export function createFileSystemClient(send: FileSystemSendFn): IFileSystem {
-  const call = async <T>(
-    method: string,
-    args: readonly unknown[],
-  ): Promise<T> => {
+export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
+  const call = async <T>(method: string, args: readonly unknown[]): Promise<T> => {
     try {
       return (await send(method, args)) as T;
     } catch (err) {
@@ -75,21 +68,23 @@ export function createFileSystemClient(send: FileSystemSendFn): IFileSystem {
     Promise.resolve(createEnumerationIterator(call, path, options));
 
   return {
-    copy: (source, target, options) =>
-      call<void>("copy", [source, target, options]),
-    move: (source, target, options) =>
-      call<void>("move", [source, target, options]),
+    copy: (source, target, options) => call<void>("copy", [source, target, options]),
+    move: (source, target, options) => call<void>("move", [source, target, options]),
     readFile: (path) => call<Uint8Array>("readFile", [path]),
     writeFile: (path, contents) => call<void>("writeFile", [path, contents]),
     createDirectory: (path) => call<void>("createDirectory", [path]),
     delete: (path) => call<void>("delete", [path]),
     deleteRecursive: (path) => call<void>("deleteRecursive", [path]),
     stat: (path, options) => call<StatResult>("stat", [path, options]),
-    // The three enumerateDirectory overloads on IFileSystem all funnel
+    // The three enumerateDirectory overloads on FileSystem all funnel
     // into the same polyfill; the cast is safe because each call site
     // narrows by `options.includeStatus` which the iterator forwards
     // unchanged to the host.
-    enumerateDirectory: enumerateDirectory as IFileSystem["enumerateDirectory"],
+    enumerateDirectory: enumerateDirectory as FileSystem["enumerateDirectory"],
+    createStream: ((..._args: unknown[]) => {
+      throw new Error("createStream is not yet supported over the RPC client polyfill");
+    }) as FileSystem["createStream"],
+    createLink: (from, to, type) => call<void>("createLink", [from, to, type]),
   };
 }
 
@@ -111,10 +106,7 @@ function createEnumerationIterator(
     if (done || queue.length > 0) return;
 
     if (!opened) {
-      const res = await call<EnumerateOpenResult>("enumerateOpen", [
-        path,
-        options,
-      ]);
+      const res = await call<EnumerateOpenResult>("enumerateOpen", [path, options]);
       cursorId = res.cursorId;
       queue = res.batch.map(rehydrateEntry);
       done = res.done;
@@ -175,12 +167,7 @@ function rehydrateEntry(raw: unknown): QualifiedPath | [QualifiedPath, Status] {
 
 function rehydrateQualifiedPath(raw: unknown): QualifiedPath {
   if (raw instanceof QualifiedPath) return raw;
-  if (
-    raw !== null &&
-    typeof raw === "object" &&
-    "value" in raw &&
-    typeof (raw as { value: unknown }).value === "string"
-  ) {
+  if (raw !== null && typeof raw === "object" && "value" in raw && typeof raw.value === "string") {
     return QualifiedPath.parse((raw as { value: string }).value);
   }
   throw new Error("Cannot rehydrate QualifiedPath: missing `value`");

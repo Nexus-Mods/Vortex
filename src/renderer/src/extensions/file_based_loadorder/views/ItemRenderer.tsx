@@ -2,26 +2,15 @@ import * as React from "react";
 import { Checkbox, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import { ComponentEx } from "../../../controls/ComponentEx";
-
-import type {
-  IItemRendererProps,
-  ILoadOrderEntry,
-  LoadOrder,
-} from "../types/types";
 
 import { Icon, tooltip } from "../../../controls/api";
+import { ComponentEx } from "../../../controls/ComponentEx";
 import type { IProfile, IState } from "../../../types/api";
-
 import * as selectors from "../../../util/selectors";
-
 import { setFBLoadOrder, setFBLoadOrderEntry } from "../actions/loadOrder";
-
+import { currentLoadOrderForProfile, currentModStateForProfile } from "../selectors";
+import type { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
 import { LoadOrderIndexInput } from "./loadOrderIndex";
-import {
-  currentLoadOrderForProfile,
-  currentModStateForProfile,
-} from "../selectors";
 
 interface IConnectedProps {
   modState: any;
@@ -54,9 +43,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     const { invalidEntries, loEntry } = this.props.item;
     const invalidEntry =
       invalidEntries !== undefined
-        ? invalidEntries.find(
-            (inv) => inv.id.toLowerCase() === loEntry.id.toLowerCase(),
-          )
+        ? invalidEntries.find((inv) => inv.id.toLowerCase() === loEntry.id.toLowerCase())
         : undefined;
     return invalidEntry !== undefined ? (
       <tooltip.Icon
@@ -77,10 +64,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     ) : null;
   }
 
-  private renderDraggable(
-    item: ILoadOrderEntry,
-    displayCheckboxes: boolean,
-  ): JSX.Element {
+  private renderDraggable(item: ILoadOrderEntry, displayCheckboxes: boolean): JSX.Element {
     const { loadOrder, className } = this.props;
     const key = !!item.name ? `${item.name}` : `${item.id}`;
 
@@ -104,16 +88,10 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       ) : null;
 
     const lock = () =>
-      this.isLocked(item) ? (
-        <Icon className="locked-entry-logo" name="locked" />
-      ) : null;
+      this.isLocked(item) ? <Icon className="locked-entry-logo" name="locked" /> : null;
 
     return (
-      <ListGroupItem
-        key={key}
-        className={classes.join(" ")}
-        ref={this.props.item.setRef}
-      >
+      <ListGroupItem key={key} className={classes.join(" ")} ref={this.props.item.setRef}>
         <Icon className="drag-handle-icon" name="drag-handle" />
         <LoadOrderIndexInput
           className="load-order-index"
@@ -191,10 +169,8 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
-    onSetLoadOrderEntry: (profileId, entry) =>
-      dispatch(setFBLoadOrderEntry(profileId, entry)),
-    onSetLoadOrder: (profileId, loadOrder) =>
-      dispatch(setFBLoadOrder(profileId, loadOrder)),
+    onSetLoadOrderEntry: (profileId, entry) => dispatch(setFBLoadOrderEntry(profileId, entry)),
+    onSetLoadOrder: (profileId, loadOrder) => dispatch(setFBLoadOrder(profileId, loadOrder)),
   };
 }
 

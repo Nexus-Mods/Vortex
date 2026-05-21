@@ -60,21 +60,18 @@ describe("matchGlob — ** (any segments)", () => {
     expect(matchGlob("archive/pc/mod/**", "archive/pc/mod/foo.archive")).toBe(
       "archive/pc/mod/foo.archive",
     );
-    expect(
-      matchGlob("archive/pc/mod/**", "archive/pc/mod/sub/deep/foo.archive"),
-    ).toBe("archive/pc/mod/sub/deep/foo.archive");
+    expect(matchGlob("archive/pc/mod/**", "archive/pc/mod/sub/deep/foo.archive")).toBe(
+      "archive/pc/mod/sub/deep/foo.archive",
+    );
   });
 
   it("captures the stable suffix when wrapper-stripped", () => {
-    expect(
-      matchGlob(
-        "**/archive/pc/mod/*.archive",
-        "wrapper/archive/pc/mod/foo.archive",
-      ),
-    ).toBe("archive/pc/mod/foo.archive");
-    expect(
-      matchGlob("**/archive/pc/mod/*.archive", "archive/pc/mod/foo.archive"),
-    ).toBe("archive/pc/mod/foo.archive");
+    expect(matchGlob("**/archive/pc/mod/*.archive", "wrapper/archive/pc/mod/foo.archive")).toBe(
+      "archive/pc/mod/foo.archive",
+    );
+    expect(matchGlob("**/archive/pc/mod/*.archive", "archive/pc/mod/foo.archive")).toBe(
+      "archive/pc/mod/foo.archive",
+    );
   });
 });
 
@@ -86,15 +83,12 @@ describe("matchGlob — {a,b,c} alternation", () => {
   });
 
   it("supports alternation inside larger patterns", () => {
-    expect(
-      matchGlob("archive/pc/{mod,patch}/*.archive", "archive/pc/mod/x.archive"),
-    ).toBe("archive/pc/mod/x.archive");
-    expect(
-      matchGlob(
-        "archive/pc/{mod,patch}/*.archive",
-        "archive/pc/patch/x.archive",
-      ),
-    ).toBe("archive/pc/patch/x.archive");
+    expect(matchGlob("archive/pc/{mod,patch}/*.archive", "archive/pc/mod/x.archive")).toBe(
+      "archive/pc/mod/x.archive",
+    );
+    expect(matchGlob("archive/pc/{mod,patch}/*.archive", "archive/pc/patch/x.archive")).toBe(
+      "archive/pc/patch/x.archive",
+    );
   });
 
   it("throws on unterminated alternation", () => {
@@ -105,9 +99,9 @@ describe("matchGlob — {a,b,c} alternation", () => {
 describe("matchGlob — case insensitivity and regex-meta literals", () => {
   it("matches case-insensitively", () => {
     expect(matchGlob("foo.archive", "FOO.ARCHIVE")).toBe("FOO.ARCHIVE");
-    expect(
-      matchGlob("Archive/PC/Mod/*.archive", "archive/pc/mod/a.ARCHIVE"),
-    ).toBe("archive/pc/mod/a.ARCHIVE");
+    expect(matchGlob("Archive/PC/Mod/*.archive", "archive/pc/mod/a.ARCHIVE")).toBe(
+      "archive/pc/mod/a.ARCHIVE",
+    );
   });
 
   it("treats regex metacharacters as literals", () => {

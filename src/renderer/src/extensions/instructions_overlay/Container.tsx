@@ -1,10 +1,9 @@
-import type { IOverlay, IState } from "../../types/IState";
-
-import InstructionsOverlay from "./InstructionsOverlay";
-
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
+import type { IOverlay, IState } from "../../types/IState";
+import InstructionsOverlay from "./InstructionsOverlay";
 
 function Container(props: { onClose: (id: string) => void }) {
   const { t } = useTranslation();

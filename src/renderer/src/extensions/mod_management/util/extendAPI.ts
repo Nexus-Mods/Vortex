@@ -1,17 +1,14 @@
-import type InstallManager from "../InstallManager";
 import type { IExtensionApi } from "../../../types/api";
+import { log } from "../../../util/log";
 import {
   getCollectionActiveSession,
   getCollectionCurrentPhase,
 } from "../../collections_integration/selectors";
-import type { IModsAPIExtension } from "../types/IModsAPIExtension";
-import { log } from "../../../util/log";
+import type InstallManager from "../InstallManager";
 import type { IDeployOptions } from "../types/IDeployOptions";
+import type { IModsAPIExtension } from "../types/IModsAPIExtension";
 
-function extendAPI(
-  api: IExtensionApi,
-  installManager: InstallManager,
-): IModsAPIExtension {
+function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPIExtension {
   const activeCollection = () => {
     const state = api.getState();
     return getCollectionActiveSession(state);
@@ -65,13 +62,7 @@ function extendAPI(
             resolve();
           }
         };
-        api.events.emit(
-          "deploy-mods",
-          callback,
-          profileId,
-          progressCB,
-          deployOptions,
-        );
+        api.events.emit("deploy-mods", callback, profileId, progressCB, deployOptions);
       });
     },
   };

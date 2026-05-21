@@ -1,4 +1,4 @@
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/settings";
 
@@ -13,11 +13,7 @@ export const settingsReducer: types.IReducerSpec = {
       util.setSafe(state, ["autoEnable"], payload),
     [actions.setPluginManagementEnabled as any]: (state, payload) => {
       const { profileId, enabled } = payload;
-      return util.setSafe(
-        state,
-        ["pluginManagementEnabled", profileId],
-        enabled,
-      );
+      return util.setSafe(state, ["pluginManagementEnabled", profileId], enabled);
     },
   },
   defaults: {

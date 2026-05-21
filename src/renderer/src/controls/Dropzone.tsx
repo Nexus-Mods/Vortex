@@ -1,3 +1,12 @@
+import * as url from "url";
+
+import type PromiseBB from "bluebird";
+import { webUtils } from "electron";
+import * as React from "react";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import type {
   DialogActions,
   DialogType,
@@ -7,21 +16,10 @@ import type {
   IInput,
 } from "../actions/notifications";
 import { showDialog } from "../actions/notifications";
-
 import type { IState } from "../types/IState";
-import { ComponentEx, connect, translate } from "./ComponentEx";
 import { truthy } from "../util/util";
-
+import { ComponentEx, connect, translate } from "./ComponentEx";
 import Icon from "./Icon";
-
-import type PromiseBB from "bluebird";
-import { webUtils } from "electron";
-
-import * as React from "react";
-import type { WithTranslation } from "react-i18next";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import * as url from "url";
 
 export type DropType = "urls" | "files";
 
@@ -102,11 +100,8 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
         onClick={clickable !== false ? this.onClick : undefined}
         style={{ ...style, position: "relative" }}
       >
-        {React.Children.count(this.props.children) > 0
-          ? this.props.children
-          : this.renderContent()}
-        {dragOverlay !== undefined &&
-        ["no", "invalid"].indexOf(this.state.dropActive) === -1 ? (
+        {React.Children.count(this.props.children) > 0 ? this.props.children : this.renderContent()}
+        {dragOverlay !== undefined && ["no", "invalid"].indexOf(this.state.dropActive) === -1 ? (
           <div className="drag-overlay">{dragOverlay}</div>
         ) : null}
       </div>
@@ -124,8 +119,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       }[mode];
     });
 
-    const clickMode =
-      accept[0] === "urls" ? t("enter URL") : t("browse for file");
+    const clickMode = accept[0] === "urls" ? t("enter URL") : t("browse for file");
 
     return (
       <div className="dropzone-content">
@@ -181,8 +175,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     }
 
     try {
-      evt.dataTransfer.dropEffect =
-        this.state.dropActive === "url" ? "link" : "copy";
+      evt.dataTransfer.dropEffect = this.state.dropActive === "url" ? "link" : "copy";
     } catch (err) {
       // continue regardless of error
     }
@@ -216,9 +209,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     if (evt.dataTransfer.files.length > 0 && accept.indexOf("files") !== -1) {
       const fileList: string[] = [];
       for (let i = 0; i < evt.dataTransfer.files.length; ++i) {
-        const filePath = webUtils.getPathForFile(
-          evt.dataTransfer.files.item(i),
-        );
+        const filePath = webUtils.getPathForFile(evt.dataTransfer.files.item(i));
         fileList.push(filePath);
       }
       drop("files", fileList);
@@ -310,9 +301,7 @@ function mapStateToProps(state): IConnectedProps {
   return {};
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowDialog: (
       type: DialogType,
@@ -324,8 +313,5 @@ function mapDispatchToProps(
 }
 
 export default translate(["common"])(
-  connect<{}, IActionProps, IBaseProps, IState>(
-    mapStateToProps,
-    mapDispatchToProps,
-  )(Dropzone),
+  connect<{}, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(Dropzone),
 ) as React.ComponentClass<IBaseProps>;

@@ -1,6 +1,6 @@
-import type { Level } from "@vortex/shared";
-
 import path from "path";
+
+import type { Level } from "@vortex/shared";
 import winston from "winston";
 
 import { betterIpcMain } from "./ipc";
@@ -25,10 +25,7 @@ function customFormatter(options: FormatOptions, forConsole: boolean): string {
   // NOTE(erri120): looks weird but is correct, config.colorize is mistyped in 2.x
   // https://github.com/winstonjs/winston/blob/b8baf4c6797d652f882e61a8a3bd8d00875e5596/lib/winston/config.js#L21
   const logLevel = forConsole
-    ? winston.config.colorize(
-        options.level as unknown as number,
-        formattedLogLevel,
-      )
+    ? winston.config.colorize(options.level as unknown as number, formattedLogLevel)
     : formattedLogLevel;
 
   const message = options.message ?? "";
@@ -55,10 +52,8 @@ function formatLogLevel(level: string): string {
 
 const LOG_MAX_SIZE = 1024 * 1024 * 10; // 10 MB
 const timestamp = () => new Date().toISOString();
-const fileFormatter = (options: unknown) =>
-  customFormatter(options as FormatOptions, false);
-const consoleFormatter = (options: unknown) =>
-  customFormatter(options as FormatOptions, true);
+const fileFormatter = (options: unknown) => customFormatter(options as FormatOptions, false);
+const consoleFormatter = (options: unknown) => customFormatter(options as FormatOptions, true);
 
 function createFileTransport(basePath: string): winston.FileTransportInstance {
   return new winston.transports.File({
@@ -73,10 +68,7 @@ function createFileTransport(basePath: string): winston.FileTransportInstance {
   });
 }
 
-function setupLogger(
-  basePath: string,
-  useConsole: boolean,
-): winston.LoggerInstance {
+function setupLogger(basePath: string, useConsole: boolean): winston.LoggerInstance {
   const fileTransport = createFileTransport(basePath);
 
   const consoleTransport = useConsole

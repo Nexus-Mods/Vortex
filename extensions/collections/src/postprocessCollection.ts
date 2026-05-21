@@ -1,10 +1,9 @@
-import { ICollection } from "./types/ICollection";
+import { actions, log, types, util } from "@nexusmods/vortex-api";
+import * as _ from "lodash";
 
+import { ICollection } from "./types/ICollection";
 import { findExtensions, IExtensionFeature } from "./util/extension";
 import { parseGameSpecifics } from "./util/gameSupport";
-
-import * as _ from "lodash";
-import { actions, log, types, util } from "vortex-api";
 
 function applyCollectionRules(
   api: types.IExtensionApi,
@@ -31,9 +30,7 @@ function applyCollectionRules(
           if (!exists && _.isEqual(copy, rule)) {
             exists = true;
           } else {
-            prev.push(
-              actions.removeModRule(gameId, sourceMod.id, exSourceRule),
-            );
+            prev.push(actions.removeModRule(gameId, sourceMod.id, exSourceRule));
           }
         });
         const exDestRules = (destMod.rules ?? []).filter(

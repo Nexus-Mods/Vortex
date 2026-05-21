@@ -1,11 +1,6 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { deleteOrNop, setSafe } from "../../../util/storeHelper";
-
-import {
-  clearLastActiveProfile,
-  setCurrentProfile,
-  setNextProfile,
-} from "../actions/settings";
+import { clearLastActiveProfile, setCurrentProfile, setNextProfile } from "../actions/settings";
 
 export const settingsReducer: IReducerSpec = {
   reducers: {

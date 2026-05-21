@@ -1,10 +1,9 @@
+import type { Status } from "@nexusmods/adaptor-api/fs";
+import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { describe, expect, it, vi } from "vitest";
 
 import type { FileSystemSendFn } from "./client";
-import type { Status } from "@vortex/fs";
-
 import { createFileSystemClient } from "./client";
-import { FileSystemError, QualifiedPath } from "@vortex/fs";
 
 const ROOT = QualifiedPath.parse("linux:///tmp/fs-client-test");
 const FILE = ROOT.join("hello.txt");
@@ -39,10 +38,7 @@ describe("createFileSystemClient", () => {
 
       await fs.writeFile(FILE, new Uint8Array([9]));
 
-      expect(send).toHaveBeenCalledWith("writeFile", [
-        FILE,
-        new Uint8Array([9]),
-      ]);
+      expect(send).toHaveBeenCalledWith("writeFile", [FILE, new Uint8Array([9])]);
     });
 
     it.each([
@@ -63,16 +59,8 @@ describe("createFileSystemClient", () => {
       await fs.copy(FILE, FILE, { overwrite: true });
       await fs.move(FILE, FILE, { overwrite: false });
 
-      expect(send).toHaveBeenCalledWith("copy", [
-        FILE,
-        FILE,
-        { overwrite: true },
-      ]);
-      expect(send).toHaveBeenCalledWith("move", [
-        FILE,
-        FILE,
-        { overwrite: false },
-      ]);
+      expect(send).toHaveBeenCalledWith("copy", [FILE, FILE, { overwrite: true }]);
+      expect(send).toHaveBeenCalledWith("move", [FILE, FILE, { overwrite: false }]);
     });
 
     it("forwards stat options and returns the result", async () => {

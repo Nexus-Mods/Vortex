@@ -27,9 +27,7 @@ if (!fs.existsSync(extensionPath)) {
   process.exit(0);
 }
 
-console.log(
-  `🔨 Found extension ${extensionPath}, building using "${buildScript}" script`,
-);
+console.log(`🔨 Found extension ${extensionPath}, building using "${buildScript}" script`);
 console.log(`🔨 Building...`);
 
 const exe = "yarn.cmd";

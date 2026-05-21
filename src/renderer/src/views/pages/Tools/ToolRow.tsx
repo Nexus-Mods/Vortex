@@ -1,3 +1,5 @@
+import { pathToFileURL } from "url";
+
 import { Menu } from "@headlessui/react";
 import {
   mdiArrowDown,
@@ -14,9 +16,8 @@ import {
 import React, { type FC } from "react";
 import { Image } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { pathToFileURL } from "url";
 
-import { Button } from '@/ui/components/button/Button';
+import { Button } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
@@ -86,21 +87,15 @@ export const ToolRow: FC<ToolRowProps> = ({
           <Image src={iconSrc} />
         ) : (
           <Typography appearance="moderate" className="uppercase" typographyType="body-lg">
-            {starterInfo.name?.charAt(0) || 'T'}
+            {starterInfo.name?.charAt(0) || "T"}
           </Typography>
         )}
       </div>
 
       <Typography as="div" className="flex min-w-0 grow items-center gap-x-2">
-        <span className="truncate">
-          {starterInfo.name}
-        </span>
+        <span className="truncate">{starterInfo.name}</span>
 
-        {isRunning && (
-          <span className="shrink-0 text-neutral-subdued">
-            {t("Running...")}
-          </span>
-        )}
+        {isRunning && <span className="shrink-0 text-neutral-subdued">{t("Running...")}</span>}
       </Typography>
 
       <div className="flex shrink-0 items-center gap-x-4">
@@ -157,10 +152,7 @@ export const ToolRow: FC<ToolRowProps> = ({
             />
 
             <DropdownItems>
-              <DropdownItem
-                leftIconPath={mdiPencil}
-                onClick={() => onEdit(starterInfo)}
-              >
+              <DropdownItem leftIconPath={mdiPencil} onClick={() => onEdit(starterInfo)}>
                 {t("Edit")}
               </DropdownItem>
 
@@ -169,9 +161,7 @@ export const ToolRow: FC<ToolRowProps> = ({
                 leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
                 onClick={() => onSetPrimary(starterInfo)}
               >
-                {isPrimary
-                  ? t("Remove default launcher")
-                  : t("Set as default launcher")}
+                {isPrimary ? t("Remove default launcher") : t("Set as default launcher")}
               </DropdownItem>
 
               {!starter.isGame && (

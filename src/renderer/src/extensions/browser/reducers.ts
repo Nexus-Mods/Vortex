@@ -1,6 +1,5 @@
 import type { IReducerSpec } from "../../types/IExtensionContext";
 import { merge, setSafe } from "../../util/storeHelper";
-
 import * as actions from "./actions";
 
 /**
@@ -12,8 +11,7 @@ export const sessionReducer: IReducerSpec = {
       const { url, instructions, subscriber, skippable } = payload;
       return merge(state, [], { url, instructions, subscriber, skippable });
     },
-    [actions.closeBrowser as any]: (state, payload) =>
-      setSafe(state, ["url"], undefined),
+    [actions.closeBrowser as any]: (state, payload) => setSafe(state, ["url"], undefined),
   },
   defaults: {
     url: undefined,

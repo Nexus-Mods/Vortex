@@ -1,9 +1,10 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
+
 import Dashlet from "../../controls/Dashlet";
 import EmptyPlaceholder from "../../controls/EmptyPlaceholder";
-import type { ModSpotlightEntryExt } from "./types";
 import { Button } from "../../controls/TooltipControls";
-import { useTranslation } from "react-i18next";
+import type { ModSpotlightEntryExt } from "./types";
 
 interface IBaseProps {
   update: () => ModSpotlightEntryExt[];
@@ -55,9 +56,7 @@ function NavButton(props: IButtonProps) {
   const { entry, dir, onClick } = props;
   const [t] = useTranslation(["common"]);
   const classes =
-    dir === "left"
-      ? ["btn-ghost", "left", "smaller"]
-      : ["btn-ghost", "right", "smaller"];
+    dir === "left" ? ["btn-ghost", "left", "smaller"] : ["btn-ghost", "right", "smaller"];
   return !entry ? null : (
     <Button
       className={classes.join(" ")}
@@ -110,20 +109,10 @@ export default function TopModsDashlet(props: IBaseProps) {
   return (
     <Dashlet title="Mods Spotlight" className="dashlet-mod-spotlights">
       {loaded && renderInfo(t, entries?.[currentIdx])}
-      {loaded
-        ? renderWebView({ entry: entries?.[currentIdx] })
-        : renderPlaceholder()}
+      {loaded ? renderWebView({ entry: entries?.[currentIdx] }) : renderPlaceholder()}
       <div className="dashlet-mod-spotlights-button-container">
-        <NavButton
-          entry={entries?.[currentIdx - 1]}
-          dir="left"
-          onClick={back}
-        />
-        <NavButton
-          entry={entries?.[currentIdx + 1]}
-          dir="right"
-          onClick={forward}
-        />
+        <NavButton entry={entries?.[currentIdx - 1]} dir="left" onClick={back} />
+        <NavButton entry={entries?.[currentIdx + 1]} dir="right" onClick={forward} />
       </div>
     </Dashlet>
   );

@@ -1,5 +1,4 @@
 import type { ResolvedEndpoint } from "@vortex/shared/download";
-
 import { DownloadError } from "@vortex/shared/errors";
 import { TimeoutError, HTTPError, RequestError, AbortError } from "got";
 
@@ -12,19 +11,12 @@ export function isCancellation(err: unknown): boolean {
   return err instanceof DOMException && err.name === "AbortError";
 }
 
-export function toNetworkError(
-  endpoint: URL | ResolvedEndpoint,
-  err: unknown,
-): DownloadError {
+export function toNetworkError(endpoint: URL | ResolvedEndpoint, err: unknown): DownloadError {
   const url = endpoint instanceof URL ? endpoint : endpoint.url;
 
   if (err instanceof DownloadError) return err;
   if (err instanceof TimeoutError)
-    return new DownloadError(
-      { code: "network-timeout", url },
-      "Request timed out",
-      err,
-    );
+    return new DownloadError({ code: "network-timeout", url }, "Request timed out", err);
   if (err instanceof HTTPError) {
     if (err.response.statusCode === 412) {
       return new DownloadError(
@@ -41,14 +33,6 @@ export function toNetworkError(
     );
   }
   if (err instanceof RequestError)
-    return new DownloadError(
-      { code: "network-error", url },
-      "Network request failed",
-      err,
-    );
-  return new DownloadError(
-    { code: "network-error", url },
-    "Unknown network error",
-    err,
-  );
+    return new DownloadError({ code: "network-error", url }, "Network request failed", err);
+  return new DownloadError({ code: "network-error", url }, "Unknown network error", err);
 }

@@ -1,9 +1,10 @@
+import * as path from "path";
+
+import PromiseBB from "bluebird";
+
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { deBOM, truthy } from "../../../util/util";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
 
 /**
  * return the path where chrome stores its settings regarding disabled schemes

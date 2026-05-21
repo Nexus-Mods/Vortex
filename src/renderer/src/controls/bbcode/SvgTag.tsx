@@ -1,7 +1,7 @@
-import Icon from "../Icon";
-
 import { Tag } from "bbcode-to-react";
 import * as React from "react";
+
+import Icon from "../Icon";
 
 class SvgTag extends Tag {
   public toHTML(): string[] {

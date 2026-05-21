@@ -1,4 +1,5 @@
 import * as zlib from "zlib";
+
 import * as lz4 from "lz4js";
 
 /**
@@ -32,9 +33,7 @@ export class BinaryReader {
   skip(bytes: number): void {
     this.offset += bytes;
     if (this.offset > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (skip of ${bytes} bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (skip of ${bytes} bytes)`);
     }
   }
 
@@ -63,9 +62,7 @@ export class BinaryReader {
 
   readUint8(): number {
     if (this.offset + 1 > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of 1 byte)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of 1 byte)`);
     }
     const val = this.buf.readUInt8(this.offset);
     this.offset += 1;
@@ -75,9 +72,7 @@ export class BinaryReader {
 
   readUint16(): number {
     if (this.offset + 2 > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of 2 bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of 2 bytes)`);
     }
     const val = this.buf.readUInt16LE(this.offset);
     this.offset += 2;
@@ -87,9 +82,7 @@ export class BinaryReader {
 
   readUint32(): number {
     if (this.offset + 4 > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of 4 bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of 4 bytes)`);
     }
     const val = this.buf.readUInt32LE(this.offset);
     this.offset += 4;
@@ -99,9 +92,7 @@ export class BinaryReader {
 
   readInt32(): number {
     if (this.offset + 4 > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of 4 bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of 4 bytes)`);
     }
     const val = this.buf.readInt32LE(this.offset);
     this.offset += 4;
@@ -111,9 +102,7 @@ export class BinaryReader {
 
   readInt64(): bigint {
     if (this.offset + 8 > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of 8 bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of 8 bytes)`);
     }
     const val = this.buf.readBigInt64LE(this.offset);
     this.offset += 8;
@@ -123,9 +112,7 @@ export class BinaryReader {
 
   readFloat(): number {
     if (this.offset + 4 > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of 4 bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of 4 bytes)`);
     }
     const val = this.buf.readFloatLE(this.offset);
     this.offset += 4;
@@ -183,9 +170,7 @@ export class BinaryReader {
   /** Read raw bytes into a Buffer */
   readBytes(length: number): Buffer {
     if (this.offset + length > this.buf.length) {
-      throw new Error(
-        `Unexpected end of file at ${this.offset} (read of ${length} bytes)`,
-      );
+      throw new Error(`Unexpected end of file at ${this.offset} (read of ${length} bytes)`);
     }
     const result = this.buf.subarray(this.offset, this.offset + length);
     this.offset += length;
@@ -244,8 +229,7 @@ export class BinaryReader {
     const plugins: string[] = [];
     for (let i = 0; i < count; i++) {
       const name = bStrings ? this.readBString() : this.readString();
-      if (name.length > 256)
-        throw new Error(`Invalid plugin name at offset ${this.offset}`);
+      if (name.length > 256) throw new Error(`Invalid plugin name at offset ${this.offset}`);
       plugins.push(name);
     }
     return plugins;
@@ -257,8 +241,7 @@ export class BinaryReader {
     const plugins: string[] = [];
     for (let i = 0; i < count; i++) {
       const name = this.readString();
-      if (name.length > 256)
-        throw new Error(`Invalid light plugin name at offset ${this.offset}`);
+      if (name.length > 256) throw new Error(`Invalid light plugin name at offset ${this.offset}`);
       plugins.push(name);
     }
     return plugins;
@@ -268,11 +251,7 @@ export class BinaryReader {
    * Switch the buffer to decompressed content from the current offset.
    * format 1 = zlib, format 2 = LZ4.
    */
-  setCompression(
-    format: number,
-    compressedSize: number,
-    uncompressedSize: number,
-  ): void {
+  setCompression(format: number, compressedSize: number, uncompressedSize: number): void {
     const compressed = this.readBytes(compressedSize);
 
     let decompressed: Buffer;

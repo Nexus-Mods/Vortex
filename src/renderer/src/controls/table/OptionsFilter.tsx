@@ -1,8 +1,8 @@
-import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
-import { truthy } from "../../util/util";
-
 import * as React from "react";
 import Select from "react-select";
+
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
+import { truthy } from "../../util/util";
 
 type IProps = IFilterProps;
 
@@ -60,9 +60,7 @@ function OptionsFilterComponent(props: IProps & IBoundProps) {
     (newFilter: { value: any; label: string }) => {
       onSetFilter(
         attributeId,
-        newFilter !== undefined && newFilter !== null
-          ? newFilter.value
-          : undefined,
+        newFilter !== undefined && newFilter !== null ? newFilter.value : undefined,
       );
     },
     [attributeId, onSetFilter],
@@ -106,11 +104,7 @@ class OptionsFilter implements ITableFilter {
 
   private mMulti: boolean;
 
-  constructor(
-    options: Options | (() => Options),
-    multi: boolean,
-    raw?: boolean,
-  ) {
+  constructor(options: Options | (() => Options), multi: boolean, raw?: boolean) {
     this.component = WrappedOptionsFilterComponent({ options, multi });
     this.mMulti = multi;
     this.raw = raw !== false;
@@ -122,9 +116,7 @@ class OptionsFilter implements ITableFilter {
     }
 
     const filtUnsane = this.mMulti
-      ? new Set(
-          (filter || []).map((filt) => (filt === dummy ? undefined : filt)),
-        )
+      ? new Set((filter || []).map((filt) => (filt === dummy ? undefined : filt)))
       : filter;
 
     if (Array.isArray(value)) {

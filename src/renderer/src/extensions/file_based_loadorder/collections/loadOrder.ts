@@ -1,26 +1,19 @@
 import * as React from "react";
+
 import type * as types from "../../../types/api";
 import * as selectors from "../../../util/selectors";
-
 import { setFBLoadOrder } from "../actions/loadOrder";
-
+import { findGameEntry } from "../gameSupport";
 import type {
   ICollection,
   ICollectionLoadOrder,
   IGameSpecificInterfaceProps,
 } from "../types/collections";
-import {
-  CollectionGenerateError,
-  CollectionParseError,
-} from "../types/collections";
-
+import { CollectionGenerateError, CollectionParseError } from "../types/collections";
 import type { ILoadOrderGameInfoExt } from "../types/types";
-
-import { findGameEntry } from "../gameSupport";
-import { genCollectionLoadOrder, toExtendedLoadOrderEntry } from "../util";
-
-import LoadOrderCollections from "../views/LoadOrderCollections";
 import type UpdateSet from "../UpdateSet";
+import { genCollectionLoadOrder, toExtendedLoadOrderEntry } from "../util";
+import LoadOrderCollections from "../views/LoadOrderCollections";
 
 export async function generate(
   api: types.IExtensionApi,
@@ -37,10 +30,7 @@ export async function generate(
 
   let loadOrder;
   try {
-    const profileId = selectors.lastActiveProfileForGame(
-      api.getState(),
-      gameEntry.gameId,
-    );
+    const profileId = selectors.lastActiveProfileForGame(api.getState(), gameEntry.gameId);
     if (profileId === undefined) {
       throw new CollectionGenerateError("Invalid profile");
     }
@@ -50,12 +40,7 @@ export async function generate(
       }
       return accum;
     }, {});
-    loadOrder = await genCollectionLoadOrder(
-      api,
-      gameEntry,
-      includedMods,
-      profileId,
-    );
+    loadOrder = await genCollectionLoadOrder(api, gameEntry, includedMods, profileId);
   } catch (err) {
     return Promise.reject(err);
   }
@@ -72,15 +57,10 @@ export async function parser(
 
   const profileId = selectors.lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
-    return Promise.reject(
-      new CollectionParseError(collection, "Invalid profile id"),
-    );
+    return Promise.reject(new CollectionParseError(collection, "Invalid profile id"));
   }
 
-  updateSet.init(
-    gameId,
-    (collection.loadOrder ?? []).map(toExtendedLoadOrderEntry(api)),
-  );
+  updateSet.init(gameId, (collection.loadOrder ?? []).map(toExtendedLoadOrderEntry(api)));
   api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
   return Promise.resolve(undefined);
 }

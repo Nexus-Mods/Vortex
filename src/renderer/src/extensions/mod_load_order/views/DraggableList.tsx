@@ -13,18 +13,12 @@ import type {
   DropTargetSpec,
 } from "react-dnd";
 import { DragSource, DropTarget } from "react-dnd";
-
 import * as ReactDOM from "react-dom";
 
 import { ContextMenu } from "../../../controls/api";
-
-import * as util from "../../../util/api";
 import { ComponentEx } from "../../../controls/ComponentEx";
-import type {
-  IDnDConditionResult,
-  ILoadOrder,
-  ILoadOrderDisplayItem,
-} from "../types/types";
+import * as util from "../../../util/api";
+import type { IDnDConditionResult, ILoadOrder, ILoadOrderDisplayItem } from "../types/types";
 
 interface IItemBaseProps {
   index: number;
@@ -122,8 +116,7 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
 
 const entryTarget: DropTargetSpec<IItemProps> = {
   hover(props: IItemProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take, isLocked } =
-      monitor.getItem() as any;
+    const { containerId, index, item, take, isLocked } = monitor.getItem() as any;
     const hoverIndex = props.index;
 
     if (index === hoverIndex || !!isLocked || !!props.isLocked) {
@@ -261,8 +254,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
       return;
     }
 
-    const itemLocked = (idx) =>
-      !!ordered[idx]?.locked || !!loadOrder[ordered[idx]?.id]?.locked;
+    const itemLocked = (idx) => !!ordered[idx]?.locked || !!loadOrder[ordered[idx]?.id]?.locked;
 
     if (itemLocked(newIndex) === true) {
       return;
@@ -273,23 +265,14 @@ class DraggableList extends ComponentEx<IProps, IState> {
     const replacedItem = ordered[newIndex];
     copy.splice(newIndex, 0, currentItem);
 
-    const conditions = [currentItem?.condition, replacedItem?.condition].filter(
-      (cond) => !!cond,
-    );
-    const failedConditions: IDnDConditionResult[] = conditions.reduce(
-      (accum, cond) => {
-        const condRes: IDnDConditionResult = cond(
-          currentItem,
-          replacedItem,
-          copy,
-        );
-        if (condRes !== undefined && !condRes.success) {
-          accum.push(condRes);
-        }
-        return accum;
-      },
-      [],
-    );
+    const conditions = [currentItem?.condition, replacedItem?.condition].filter((cond) => !!cond);
+    const failedConditions: IDnDConditionResult[] = conditions.reduce((accum, cond) => {
+      const condRes: IDnDConditionResult = cond(currentItem, replacedItem, copy);
+      if (condRes !== undefined && !condRes.success) {
+        accum.push(condRes);
+      }
+      return accum;
+    }, []);
 
     if (failedConditions.length > 0) {
       // TODO: need to write a custom drag layer to display
@@ -327,11 +310,8 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
   private onHide = () => {
     this.nextState.contextMenuVisible =
-      this.state.contextHistory.current === this.state.contextHistory.previous
-        ? false
-        : true;
-    this.nextState.contextHistory.previous =
-      this.nextState.contextHistory.current;
+      this.state.contextHistory.current === this.state.contextHistory.previous ? false : true;
+    this.nextState.contextHistory.previous = this.nextState.contextHistory.current;
   };
 
   private onContextMenu = (evt: any) => {
@@ -340,10 +320,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
     this.nextState.offset = { x: evt.clientX, y: evt.clientY };
   };
 
-  private take = (
-    item: ILoadOrderDisplayItem,
-    list: ILoadOrderDisplayItem[],
-  ) => {
+  private take = (item: ILoadOrderDisplayItem, list: ILoadOrderDisplayItem[]) => {
     const { ordered } = this.nextState;
     let res = item;
     const index = ordered.findIndex((entry) => entry.id === item.id);
@@ -373,16 +350,12 @@ const containerTarget: DropTargetSpec<IProps> = {
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = (list) =>
-        (component as any).take(item, list);
+      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
     }
   },
 };
 
-function containerCollect(
-  connect: DropTargetConnector,
-  monitor: DropTargetMonitor,
-) {
+function containerCollect(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };

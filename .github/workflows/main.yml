@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-    branches: [master]
+    branches: [master, release/*]
   pull_request:
-    branches: [master]
+    branches: [master, release/*]
   workflow_dispatch:
 
 concurrency:
@@ -36,12 +36,9 @@ jobs:
         with:
           cache: true
 
-      - name: Configure node-gyp for VS 2022
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
-          echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
+      - name: Fix pnpm node-gyp permissions
+        if: runner.os == 'Linux'
+        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
@@ -52,10 +49,7 @@ jobs:
         run: pnpm install
 
       - name: Build
-        run: pnpm run build:all
-
-      - name: Lint
-        run: pnpm run lint:ci
+        run: pnpm run build
 
       - name: Test
         run: pnpm run test

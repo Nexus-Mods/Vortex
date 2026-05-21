@@ -1,9 +1,21 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "vortex-api",
+  "name": "@nexusmods/vortex-api",
   "version": "1.0.0",
-  "main": "index.js",
-  "private": true,
+  "license": "GPL-3.0-only",
+  "author": {
+    "name": "Black Tree Gaming Ltd.",
+    "url": "https://nexusmods.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nexus-Mods/Vortex.git",
+    "directory": "packages/vortex-api"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "types": "./src/index.ts",
   "bin": {
@@ -11,16 +23,46 @@
   },
   "exports": {
     ".": {
-      "types": "./lib/api.d.ts",
-      "default": "./lib/api.js"
+      "types": "./lib/api.d.ts"
     }
   },
   "files": [
     "lib",
-    "bin"
+    "bin",
+    "README.md",
+    "docs"
   ],
   "scripts": {
     "typecheck": "pnpm tsc -p tsconfig.lib.json"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "nx:noop",
+        "dependsOn": [
+          {
+            "target": "api",
+            "projects": "@vortex/renderer"
+          }
+        ],
+        "cache": false,
+        "outputs": [
+          "{projectRoot}/lib/api.d.ts"
+        ]
+      },
+      "typecheck": {
+        "dependsOn": [
+          "build"
+        ],
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/lib/api.d.ts",
+          "{projectRoot}/tsconfig.lib.json"
+        ],
+        "outputs": []
+      }
+    }
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",
@@ -35,7 +77,8 @@
     "re-reselect": "catalog:",
     "react": "catalog:",
     "redux": "catalog:",
-    "reselect": "catalog:"
+    "reselect": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@types/bluebird": "catalog:",

@@ -3,9 +3,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { activeGameId } from "../../profile_management/selectors";
-
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
-
 import allTypesSupported from "./allTypesSupported";
 
 const activators: IDeploymentMethod[] = [];
@@ -40,19 +38,13 @@ export function getSupportedActivators(state: IState): IDeploymentMethod[] {
     return [];
   }
   const modPaths = game.getModPaths(discovery.path);
-  const modTypes = Object.keys(modPaths).filter((typeId) =>
-    truthy(modPaths[typeId]),
-  );
+  const modTypes = Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
   return activators.filter(
-    (act) =>
-      allTypesSupported(act, state, gameId, modTypes).errors.length === 0,
+    (act) => allTypesSupported(act, state, gameId, modTypes).errors.length === 0,
   );
 }
 
-export function getSelectedActivator(
-  state: IState,
-  gameId: string,
-): IDeploymentMethod {
+export function getSelectedActivator(state: IState, gameId: string): IDeploymentMethod {
   const activatorId = state.settings.mods.activator[gameId];
 
   return activatorId !== undefined
@@ -67,11 +59,7 @@ export function getCurrentActivator(
 ): IDeploymentMethod {
   let activator: IDeploymentMethod = getSelectedActivator(state, gameId);
 
-  const gameDiscovery = getSafe(
-    state,
-    ["settings", "gameMode", "discovered", gameId],
-    undefined,
-  );
+  const gameDiscovery = getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
   if (gameDiscovery?.path === undefined) {
     // activator for a game that's not discovered doesn't really make sense
     return undefined;
@@ -83,9 +71,7 @@ export function getCurrentActivator(
     return undefined;
   }
   const modPaths = game.getModPaths(gameDiscovery.path);
-  const types = Object.keys(modPaths).filter((typeId) =>
-    truthy(modPaths[typeId]),
-  );
+  const types = Object.keys(modPaths).filter((typeId) => truthy(modPaths[typeId]));
 
   // if no activator has been selected for the game, allow using a default
   if (allowDefault && activator === undefined) {

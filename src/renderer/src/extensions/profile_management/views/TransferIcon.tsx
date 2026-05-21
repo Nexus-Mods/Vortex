@@ -1,14 +1,3 @@
-import * as tooltip from "../../../controls/TooltipControls";
-import type { IState } from "../../../types/IState";
-import { ComponentEx } from "../../../controls/ComponentEx";
-import {
-  setCreateTransfer,
-  setSource,
-  setTarget,
-} from "../actions/transferSetup";
-import * as selectors from "../selectors";
-import type { IProfile } from "../types/IProfile";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
@@ -27,6 +16,13 @@ import { DragSource, DropTarget } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import { connect } from "react-redux";
+
+import { ComponentEx } from "../../../controls/ComponentEx";
+import * as tooltip from "../../../controls/TooltipControls";
+import type { IState } from "../../../types/IState";
+import { setCreateTransfer, setSource, setTarget } from "../actions/transferSetup";
+import * as selectors from "../selectors";
+import type { IProfile } from "../types/IProfile";
 
 export interface IBaseProps {
   profile: IProfile;
@@ -63,11 +59,7 @@ interface IDropProps {
   sourceId: string;
 }
 
-type IProps = IBaseProps &
-  IConnectedProps &
-  IActionProps &
-  IDragProps &
-  IDropProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & IDragProps & IDropProps;
 
 interface IDragInfo {
   onUpdateLine: (targetX: number, targetY: number, isConnect: boolean) => void;
@@ -95,9 +87,7 @@ function updateCursorPos(
 ) {
   if (monitor.getClientOffset() !== null) {
     const curPos = monitor.getClientOffset();
-    const dist =
-      Math.abs(curPos.x - lastUpdatePos.x) +
-      Math.abs(curPos.y - lastUpdatePos.y);
+    const dist = Math.abs(curPos.x - lastUpdatePos.x) + Math.abs(curPos.y - lastUpdatePos.y);
     if (dist > 2) {
       lastUpdatePos = curPos;
       onSetTarget(null, curPos);
@@ -148,10 +138,7 @@ const transferTarget: DropTargetSpec<IProps> = {
   },
 };
 
-function collectDrag(
-  dragConnect: DragSourceConnector,
-  monitor: DragSourceMonitor,
-): IDragProps {
+function collectDrag(dragConnect: DragSourceConnector, monitor: DragSourceMonitor): IDragProps {
   return {
     connectDragSource: dragConnect.dragSource(),
     connectDragPreview: dragConnect.dragPreview(),
@@ -159,10 +146,7 @@ function collectDrag(
   };
 }
 
-function collectDrop(
-  dropConnect: DropTargetConnector,
-  monitor: DropTargetMonitor,
-): IDropProps {
+function collectDrop(dropConnect: DropTargetConnector, monitor: DropTargetMonitor): IDropProps {
   const item: any = monitor.getItem();
   return {
     connectDropTarget: dropConnect.dropTarget(),
@@ -203,8 +187,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
       if (
         this.props.profile.id !== nextProps.sourceId &&
         nextProps.sourceId !== undefined &&
-        this.props.profile.gameId ===
-          this.props.profiles[nextProps.sourceId].gameId
+        this.props.profile.gameId === this.props.profiles[nextProps.sourceId].gameId
       ) {
         let pos;
         if (nextProps.isOver) {
@@ -216,8 +199,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, connectDragSource, connectDropTarget, disabled, profile } =
-      this.props;
+    const { t, connectDragSource, connectDropTarget, disabled, profile } = this.props;
 
     const classes = ["btn-embed"];
 
@@ -259,9 +241,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     );
 
     return connectDropTarget(
-      <div style={{ textAlign: "center", display: "inline-block" }}>
-        {connectorIcon}
-      </div>,
+      <div style={{ textAlign: "center", display: "inline-block" }}>{connectorIcon}</div>,
     );
   }
 
@@ -297,8 +277,7 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetSource: (id, pos) => dispatch(setSource(id, pos)),
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
-    onEditDialog: (gameId, source, target) =>
-      dispatch(setCreateTransfer(gameId, source, target)),
+    onEditDialog: (gameId, source, target) => dispatch(setCreateTransfer(gameId, source, target)),
   };
 }
 

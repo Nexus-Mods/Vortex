@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import {
   addNotification,
   dismissNotification,
@@ -18,15 +20,12 @@ import {
   ModsInstallationFailedEvent,
   ModsInstallationStartedEvent,
 } from "../analytics/mixpanel/MixpanelEvents";
-
 import { setDownloadInstalled } from "../download_management/actions/state";
-import type { NotificationAggregator } from "./NotificationAggregator";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import NXMUrl from "../nexus_integration/NXMUrl";
 import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
 import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
 import { setModsEnabled } from "../profile_management/actions/profiles";
-
 import {
   addMod,
   removeMod,
@@ -35,21 +34,16 @@ import {
   setModState,
   setModType,
 } from "./actions/mods";
+import type { NotificationAggregator } from "./NotificationAggregator";
 import type { IInstallContext, InstallOutcome } from "./types/IInstallContext";
 import type { IMod, ModState } from "./types/IMod";
 import getModName from "./util/modName";
-
-import * as path from "path";
 
 class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;
   private mRemoveMod: (modId: string) => void;
   private mAddNotification: (notification: INotification) => void;
-  private mUpdateNotification: (
-    id: string,
-    progress: number,
-    message: string,
-  ) => void;
+  private mUpdateNotification: (id: string, progress: number, message: string) => void;
   private mDismissNotification: (id: string) => void;
   private mShowError: (
     message: string,
@@ -58,18 +52,11 @@ class InstallContext implements IInstallContext {
     replace?: { [key: string]: string },
   ) => void;
   private mSetModState: (id: string, state: ModState) => void;
-  private mSetModAttributes: (
-    id: string,
-    attributes: { [key: string]: any },
-  ) => void;
+  private mSetModAttributes: (id: string, attributes: { [key: string]: any }) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
   private mSetModType: (id: string, modType: string) => void;
   private mEnableMod: (modId: string) => void;
-  private mSetDownloadInstalled: (
-    archiveId: string,
-    gameId: string,
-    modId: string,
-  ) => void;
+  private mSetDownloadInstalled: (archiveId: string, gameId: string, modId: string) => void;
   private mStartActivity: (activityId: string) => void;
   private mStopActivity: (activityId: string) => void;
   private mAddedId: string;
@@ -115,19 +102,13 @@ class InstallContext implements IInstallContext {
     };
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
-    this.mAddNotification = (notification) =>
-      api.sendNotification(notification);
-    this.mUpdateNotification = (
-      id: string,
-      progress: number,
-      message: string,
-    ) => dispatch(updateNotification(id, progress, message));
+    this.mAddNotification = (notification) => api.sendNotification(notification);
+    this.mUpdateNotification = (id: string, progress: number, message: string) =>
+      dispatch(updateNotification(id, progress, message));
     this.mDismissNotification = (id) => dispatch(dismissNotification(id));
-    this.mStartActivity = (activity: string) =>
-      dispatch(startActivity("mods", "installing"));
+    this.mStartActivity = (activity: string) => dispatch(startActivity("mods", "installing"));
 
-    this.mStopActivity = (activity: string) =>
-      dispatch(stopActivity("mods", "installing"));
+    this.mStopActivity = (activity: string) => dispatch(stopActivity("mods", "installing"));
     this.mShowError = (message, details?, allowReport?, replace?) => {
       this.mDidReportError = true;
       return showError(dispatch, message, details, {
@@ -144,8 +125,7 @@ class InstallContext implements IInstallContext {
       });
     };
     this.mLastProgress = 0;
-    this.mSetModState = (id, state) =>
-      doDispatch(setModState(gameMode, id, state));
+    this.mSetModState = (id, state) => doDispatch(setModState(gameMode, id, state));
     this.mSetModAttributes = (modId, attributes) => {
       Object.keys(attributes).forEach((attributeId) => {
         if (attributes[attributeId] === undefined) {
@@ -158,8 +138,7 @@ class InstallContext implements IInstallContext {
     };
     this.mSetModInstallationPath = (id, installPath) =>
       dispatch(setModInstallationPath(gameMode, id, installPath));
-    this.mSetModType = (id, modType) =>
-      dispatch(setModType(gameMode, id, modType));
+    this.mSetModType = (id, modType) => dispatch(setModType(gameMode, id, modType));
     this.mEnableMod = (modId: string) => {
       const state: IState = store.getState();
       const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
@@ -179,11 +158,7 @@ class InstallContext implements IInstallContext {
       const state: IState = store.getState();
       return (
         archiveId !== null &&
-        getSafe(
-          state,
-          ["persistent", "downloads", "files", archiveId],
-          undefined,
-        ) !== undefined
+        getSafe(state, ["persistent", "downloads", "files", archiveId], undefined) !== undefined
       );
     };
     this.mSilent = silent ?? false;
@@ -219,7 +194,7 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification("install_" + this.mIndicatorId);
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
-    new Promise(resolve => setTimeout(resolve, 50)).then(() => {
+    new Promise((resolve) => setTimeout(resolve, 50)).then(() => {
       if (!this.mDidReportError) {
         this.mDidReportError = true;
         const noti: INotification = this.outcomeNotification(
@@ -287,8 +262,7 @@ class InstallContext implements IInstallContext {
 
     const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), archiveId);
 
-    const isCollection =
-      nexusIds?.collectionSlug != null && nexusIds?.revisionId != null;
+    const isCollection = nexusIds?.collectionSlug != null && nexusIds?.revisionId != null;
 
     if (nexusIds?.fileId != null && !isCollection) {
       const { modUID, fileUID } = makeModAndFileUIDs(
@@ -337,11 +311,7 @@ class InstallContext implements IInstallContext {
       });
 
       if (this.mIsDownload(this.mArchiveId)) {
-        this.mSetDownloadInstalled(
-          this.mArchiveId,
-          this.mGameId,
-          this.mAddedId,
-        );
+        this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
       }
     } else {
       this.mFailReason = reason;
@@ -416,18 +386,13 @@ class InstallContext implements IInstallContext {
   ): INotification {
     const type = mod !== undefined ? getModType(mod.type) : undefined;
     const typeName =
-      type !== undefined &&
-      type.options !== undefined &&
-      type.options.name !== undefined
+      type !== undefined && type.options !== undefined && type.options.name !== undefined
         ? type.options.name
         : "Mod";
 
     const nexusIds =
-      mod?.archiveId != null
-        ? nexusIdsFromDownloadId(this.mApi.getState(), mod.archiveId)
-        : null;
-    const isCollection =
-      nexusIds?.collectionSlug != null && nexusIds?.revisionId != null;
+      mod?.archiveId != null ? nexusIdsFromDownloadId(this.mApi.getState(), mod.archiveId) : null;
+    const isCollection = nexusIds?.collectionSlug != null && nexusIds?.revisionId != null;
 
     switch (outcome) {
       case "success":

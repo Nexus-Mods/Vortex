@@ -1,5 +1,4 @@
 import type { URI } from "./types/branded";
-
 import { uri as validateUri } from "./types/branded";
 
 type Constructor = new (...args: unknown[]) => unknown;

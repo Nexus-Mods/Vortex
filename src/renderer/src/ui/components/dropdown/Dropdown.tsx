@@ -5,13 +5,6 @@ import { joinClasses } from "../../utils/joinClasses";
 
 // needs updating to headless v2 so we can have dynamic positioning and proper z-index usage
 
-export const Dropdown = ({
-  className,
-  ...props
-}: ComponentProps<typeof Menu>) => (
-  <Menu
-    as="div"
-    className={joinClasses(["nxm-dropdown", className])}
-    {...props}
-  />
+export const Dropdown = ({ className, ...props }: ComponentProps<typeof Menu>) => (
+  <Menu as="div" className={joinClasses(["nxm-dropdown", className])} {...props} />
 );

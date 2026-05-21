@@ -1,7 +1,7 @@
-import type { VortexPaths } from "@vortex/shared/ipc";
-
-import { app, type App } from "electron";
 import * as path from "node:path";
+
+import type { VortexPaths } from "@vortex/shared/ipc";
+import { app, type App } from "electron";
 
 // If running as a forked child process, read Electron app info from environment variables
 const electronAppInfoEnv: { [key: string]: string | undefined } =
@@ -38,22 +38,16 @@ const electronAppInfoEnv: { [key: string]: string | undefined } =
  * when running from unit tests, app may not be defined at all, in that case we use __dirname
  * after all
  */
-let basePath =
-  app !== undefined ? app.getAppPath() : path.resolve(__dirname, "..", "..");
+let basePath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, "..", "..");
 const isDevelopment = path.basename(basePath, ".asar") !== "app";
 const isAsar = !isDevelopment && path.extname(basePath) === ".asar";
-const applicationPath = isDevelopment
-  ? basePath
-  : path.resolve(path.dirname(basePath), "..");
+const applicationPath = isDevelopment ? basePath : path.resolve(path.dirname(basePath), "..");
 
 if (isDevelopment) {
-  // In Electron 37, app.getAppPath() may already point to the 'out' directory
-  // Check if basePath already ends with 'out' to avoid double 'out/out'
-  if (path.basename(basePath) === "out") {
-    // basePath is already correct (points to out directory)
-    // Don't modify it
-  } else {
-    basePath = path.join(applicationPath, "out");
+  // In Electron 37, app.getAppPath() may already point to the 'build' directory
+  // Check if basePath already ends with 'build' to avoid double 'build/build'
+  if (path.basename(basePath) !== "build") {
+    basePath = path.join(applicationPath, "build");
   }
 }
 
@@ -82,9 +76,7 @@ function getBundledPluginsPath(): string {
 
 function getLocalesPath(): string {
   // in production builds the locales are not inside the app(.asar) directory but alongside it
-  return isDevelopment
-    ? path.join(basePath, "locales")
-    : path.resolve(basePath, "..", "locales");
+  return isDevelopment ? path.join(basePath, "locales") : path.resolve(basePath, "..", "locales");
 }
 
 /**
@@ -122,10 +114,7 @@ function cachedAppPath(id: ElectronPathId) {
 }
 
 function localAppData(): string {
-  return (
-    process.env.LOCALAPPDATA ||
-    path.resolve(cachedAppPath("appData"), "..", "Local")
-  );
+  return process.env.LOCALAPPDATA || path.resolve(cachedAppPath("appData"), "..", "Local");
 }
 
 export function setVortexPath(id: ElectronPathId, value: string) {

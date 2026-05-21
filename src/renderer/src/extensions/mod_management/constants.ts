@@ -1,7 +1,6 @@
 import * as path from "path";
 
-export const VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME =
-  "vortex_override_instructions.json";
+export const VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME = "vortex_override_instructions.json";
 
 export const DEPLOY_BLACKLIST: string[] = [
   path.join("**", ".git", "**", "*"),

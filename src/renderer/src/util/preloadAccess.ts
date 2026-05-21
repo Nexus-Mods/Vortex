@@ -22,9 +22,7 @@ export function getPreloadApi(): Api {
 export function getWindowId(): number {
   const windowId = ApplicationData.instance.windowId;
   if (windowId === undefined) {
-    throw new Error(
-      "ApplicationData not initialized. Call ApplicationData.init() first.",
-    );
+    throw new Error("ApplicationData not initialized. Call ApplicationData.init() first.");
   }
   return windowId;
 }
@@ -35,9 +33,7 @@ export function getWindowId(): number {
 export function getAppName(): string {
   const name = ApplicationData.instance.name;
   if (name === undefined) {
-    throw new Error(
-      "ApplicationData not initialized. Call ApplicationData.init() first.",
-    );
+    throw new Error("ApplicationData not initialized. Call ApplicationData.init() first.");
   }
   return name;
 }
@@ -48,9 +44,7 @@ export function getAppName(): string {
 export function getAppVersion(): string {
   const version = ApplicationData.instance.version;
   if (version === undefined) {
-    throw new Error(
-      "ApplicationData not initialized. Call ApplicationData.init() first.",
-    );
+    throw new Error("ApplicationData not initialized. Call ApplicationData.init() first.");
   }
   return version;
 }

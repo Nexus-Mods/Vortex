@@ -1,20 +1,15 @@
-import { describe, it, expect } from "vitest";
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import * as crypto from "crypto";
+
+import { describe, it, expect } from "vitest";
+
 import type { SaveGameData } from "../src/savegame/GamebryoSaveGame";
 import { parseSaveGame } from "../src/savegame/GamebryoSaveGame";
 
 const SAVES_DIR = path.join(__dirname, "saves");
 const EXPECTED_DIR = path.join(__dirname, "expected");
-const GAME_DIRS = [
-  "oblivion",
-  "skyrim",
-  "skyrimse",
-  "fallout3",
-  "falloutnv",
-  "fallout4",
-];
+const GAME_DIRS = ["oblivion", "skyrim", "skyrimse", "fallout3", "falloutnv", "fallout4"];
 const SAVE_EXTENSIONS = [".ess", ".fos"];
 
 interface ExpectedData {
@@ -60,21 +55,14 @@ for (const game of GAME_DIRS) {
       const expectedPath = path.join(EXPECTED_DIR, game, `${baseName}.json`);
 
       if (!fs.existsSync(expectedPath)) continue;
-      const expected: ExpectedData = JSON.parse(
-        fs.readFileSync(expectedPath, "utf8"),
-      );
+      const expected: ExpectedData = JSON.parse(fs.readFileSync(expectedPath, "utf8"));
       if (expected.error) continue;
 
       describe(file, () => {
         it("quick read", () => {
-          const quick: SaveGameData = parseSaveGame(
-            path.join(saveDir, file),
-            true,
-          );
+          const quick: SaveGameData = parseSaveGame(path.join(saveDir, file), true);
           const eq = expected.quick;
-          expect(trimAtNull(quick.characterName)).toBe(
-            trimAtNull(eq.characterName),
-          );
+          expect(trimAtNull(quick.characterName)).toBe(trimAtNull(eq.characterName));
           expect(quick.characterLevel).toBe(eq.characterLevel);
           expect(trimAtNull(quick.location)).toBe(trimAtNull(eq.location));
           expect(quick.saveNumber).toBe(eq.saveNumber);
@@ -84,14 +72,9 @@ for (const game of GAME_DIRS) {
         });
 
         it("full read", () => {
-          const full: SaveGameData = parseSaveGame(
-            path.join(saveDir, file),
-            false,
-          );
+          const full: SaveGameData = parseSaveGame(path.join(saveDir, file), false);
           const ef = expected.full;
-          expect(trimAtNull(full.characterName)).toBe(
-            trimAtNull(ef.characterName),
-          );
+          expect(trimAtNull(full.characterName)).toBe(trimAtNull(ef.characterName));
           expect(full.characterLevel).toBe(ef.characterLevel);
           expect(trimAtNull(full.location)).toBe(trimAtNull(ef.location));
           expect(full.saveNumber).toBe(ef.saveNumber);
@@ -104,10 +87,7 @@ for (const game of GAME_DIRS) {
           }
 
           if (ef.screenshotHash) {
-            const hash = crypto
-              .createHash("sha256")
-              .update(full.screenshot)
-              .digest("hex");
+            const hash = crypto.createHash("sha256").update(full.screenshot).digest("hex");
             expect(hash).toBe(ef.screenshotHash);
             expect(full.screenshot.length).toBe(ef.screenshotLength);
           }

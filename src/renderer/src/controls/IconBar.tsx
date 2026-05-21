@@ -1,8 +1,14 @@
+import update from "immutability-helper";
+import * as _ from "lodash";
+import * as PropTypes from "prop-types";
+import * as React from "react";
+import { ButtonGroup, Dropdown, MenuItem } from "react-bootstrap";
+import ReactDOM from "react-dom";
+
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
 import type { TFunction } from "../util/i18n";
 import { setdefault } from "../util/util";
-
 import type { IActionControlProps, IActionDefinitionEx } from "./ActionControl";
 import ActionControl from "./ActionControl";
 import { HOVER_DELAY } from "./constants";
@@ -11,13 +17,6 @@ import PortalMenu from "./PortalMenu";
 import ToolbarDropdown from "./ToolbarDropdown";
 import ToolbarIcon from "./ToolbarIcon";
 import { IconButton } from "./TooltipControls";
-
-import update from "immutability-helper";
-import * as _ from "lodash";
-import * as PropTypes from "prop-types";
-import * as React from "react";
-import { ButtonGroup, Dropdown, MenuItem } from "react-bootstrap";
-import ReactDOM from "react-dom";
 
 export type ButtonType = "text" | "icon" | "both" | "menu";
 
@@ -64,9 +63,7 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
         title={genTooltip(t, action.show, action.options?.namespace)}
       >
         <Icon name={action.icon} />
-        <div className="button-text">
-          {t(action.title, { ns: action.options?.namespace })}
-        </div>
+        <div className="button-text">{t(action.title, { ns: action.options?.namespace })}</div>
       </MenuItem>
     );
   }
@@ -74,8 +71,7 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   private trigger = () => {
     const { action, instanceId } = this.props;
 
-    const instanceIds =
-      typeof instanceId === "string" ? [instanceId] : instanceId;
+    const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
 
     action.action(instanceIds);
   };
@@ -95,8 +91,7 @@ function nop() {
 }
 
 function IconBarIcon(props: IIconBarIconProps) {
-  const { t, actionId, buttonType, icon, instanceIds, tooltipPlacement } =
-    props;
+  const { t, actionId, buttonType, icon, instanceIds, tooltipPlacement } = props;
 
   // stuff for submenus
   const [open, setOpenMenu] = React.useState(false);
@@ -127,15 +122,11 @@ function IconBarIcon(props: IIconBarIconProps) {
     setOpen(false);
   }, [setOpen]);
 
-  const hasIcon =
-    buttonType === undefined || ["icon", "both", "menu"].includes(buttonType);
-  const hasText =
-    buttonType === undefined || ["text", "both", "menu"].includes(buttonType);
+  const hasIcon = buttonType === undefined || ["icon", "both", "menu"].includes(buttonType);
+  const hasText = buttonType === undefined || ["text", "both", "menu"].includes(buttonType);
 
   const tooltip =
-    typeof icon.show === "string"
-      ? icon.show
-      : t(icon.title, { ns: icon.options?.namespace });
+    typeof icon.show === "string" ? icon.show : t(icon.title, { ns: icon.options?.namespace });
 
   const setItemRef = (ref) => {
     itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
@@ -148,9 +139,7 @@ function IconBarIcon(props: IIconBarIconProps) {
       className={actionId}
       instanceId={instanceIds}
       icon={hasIcon ? icon.icon : undefined}
-      text={
-        hasText ? t(icon.title, { ns: icon.options?.namespace }) : undefined
-      }
+      text={hasText ? t(icon.title, { ns: icon.options?.namespace }) : undefined}
       tooltip={tooltip}
       onClick={trigger}
       placement={tooltipPlacement}
@@ -158,12 +147,7 @@ function IconBarIcon(props: IIconBarIconProps) {
       stroke={icon.options?.hollowIcon === true}
       hollow={icon.options?.hollowIcon === true}
     >
-      <PortalMenu
-        open={open}
-        target={itemRef.current}
-        onClose={setOpenFalse}
-        onClick={nop}
-      >
+      <PortalMenu open={open} target={itemRef.current} onClose={setOpenFalse} onClick={nop}>
         {(subMenus ?? []).map((subMenu) => (
           <MenuAction
             t={t}
@@ -212,16 +196,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const {
-      actions,
-      collapse,
-      icon,
-      id,
-      groupByIcon,
-      orientation,
-      className,
-      style,
-    } = this.props;
+    const { actions, collapse, icon, id, groupByIcon, orientation, className, style } = this.props;
 
     const classes: string[] = [];
     if (className) {
@@ -235,11 +210,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       const unCollapsed: IActionDefinitionEx[] = [];
 
       actions.forEach((action) => {
-        if (
-          collapse === "force" ||
-          action.options === undefined ||
-          !action.options.noCollapse
-        ) {
+        if (collapse === "force" || action.options === undefined || !action.options.noCollapse) {
           collapsed.push(action);
         } else {
           unCollapsed.push(action);
@@ -278,22 +249,18 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </ButtonGroup>
       );
     } else {
-      const groupedByIcon: { [key: string]: IActionDefinition[] } =
-        actions.reduce(
-          (prev: { [key: string]: IActionDefinition[] }, action, idx) => {
-            if (action.icon !== undefined && groupByIcon !== false) {
-              setdefault(prev, action.icon, []).push(action);
-            } else {
-              prev[idx.toString()] = [action];
-            }
-            return prev;
-          },
-          {},
-        );
-      const byFirstPrio = (
-        lhs: IActionDefinition[],
-        rhs: IActionDefinition[],
-      ) => {
+      const groupedByIcon: { [key: string]: IActionDefinition[] } = actions.reduce(
+        (prev: { [key: string]: IActionDefinition[] }, action, idx) => {
+          if (action.icon !== undefined && groupByIcon !== false) {
+            setdefault(prev, action.icon, []).push(action);
+          } else {
+            prev[idx.toString()] = [action];
+          }
+          return prev;
+        },
+        {},
+      );
+      const byFirstPrio = (lhs: IActionDefinition[], rhs: IActionDefinition[]) => {
         return lhs[0].position - rhs[0].position;
       };
 
@@ -310,9 +277,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         return prev;
       };
 
-      const grouped = Object.values(groupedByIcon)
-        .sort(byFirstPrio)
-        .reduce(groupByGroup, {});
+      const grouped = Object.values(groupedByIcon).sort(byFirstPrio).reduce(groupByGroup, {});
 
       return (
         <ButtonGroup
@@ -349,15 +314,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
 
     if (icon.icon !== undefined) {
-      return (
-        <MenuAction
-          key={id}
-          id={id}
-          action={icon}
-          instanceId={instanceId}
-          t={t}
-        />
-      );
+      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} t={t} />;
     } else {
       return (
         <MenuItem
@@ -395,8 +352,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   private renderIconGroup = (icons: IActionDefinition[], index: number) => {
     const { t, instanceId, orientation, buttonType } = this.props;
 
-    const instanceIds =
-      typeof instanceId === "string" ? [instanceId] : instanceId;
+    const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
 
     const id = `${instanceId || "1"}_${index}`;
 
@@ -420,12 +376,9 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   ) => {
     const { t, instanceId, tooltipPlacement } = this.props;
 
-    const instanceIds =
-      typeof instanceId === "string" ? [instanceId] : instanceId;
+    const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
 
-    let actionId = (icon.title || index.toString())
-      .toLowerCase()
-      .replace(/ /g, "-");
+    let actionId = (icon.title || index.toString()).toLowerCase().replace(/ /g, "-");
     actionId = `action-${actionId}`;
     if (icon.component === undefined) {
       return (
@@ -457,19 +410,16 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       "objects",
       "children",
     ];
-    const unknownProps = Object.keys(this.props).reduce(
-      (prev: any, current: string) => {
-        if (knownProps.indexOf(current) === -1) {
-          return {
-            ...prev,
-            [current]: this.props[current],
-          };
-        } else {
-          return prev;
-        }
-      },
-      {},
-    );
+    const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+      if (knownProps.indexOf(current) === -1) {
+        return {
+          ...prev,
+          [current]: this.props[current],
+        };
+      } else {
+        return prev;
+      }
+    }, {});
     const staticProps = {
       ...unknownProps,
       key: id,
@@ -478,9 +428,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     };
     if (icon.props !== undefined) {
       const addProps = icon.props();
-      return (
-        <icon.component {...staticProps} {...addProps} parentType="iconbar" />
-      );
+      return <icon.component {...staticProps} {...addProps} parentType="iconbar" />;
     } else {
       return <icon.component {...staticProps} parentType="iconbar" />;
     }
@@ -500,8 +448,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private updateBGClick() {
     const { actions, clickAnywhere, instanceId } = this.props;
-    const instanceIds =
-      typeof instanceId === "string" ? [instanceId] : instanceId;
+    const instanceIds = typeof instanceId === "string" ? [instanceId] : instanceId;
     this.mBackgroundClick =
       clickAnywhere === true && actions.length === 1
         ? (evt: React.MouseEvent<ButtonGroup>) => {
@@ -515,28 +462,16 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 }
 
-type ExportType = IBaseProps &
-  IActionControlProps &
-  IExtensibleProps &
-  React.HTMLAttributes<any>;
+type ExportType = IBaseProps & IActionControlProps & IExtensibleProps & React.HTMLAttributes<any>;
 
 class ActionIconBar extends React.Component<ExportType> {
-  private static ACTION_PROPS = [
-    "filter",
-    "group",
-    "instanceId",
-    "showAll",
-    "staticElements",
-  ];
+  private static ACTION_PROPS = ["filter", "group", "instanceId", "showAll", "staticElements"];
   public render() {
     const actionProps: IActionControlProps = _.pick(
       this.props,
       ActionIconBar.ACTION_PROPS,
     ) as IActionControlProps;
-    const barProps: IBaseProps = _.omit(
-      this.props,
-      ActionIconBar.ACTION_PROPS,
-    ) as any;
+    const barProps: IBaseProps = _.omit(this.props, ActionIconBar.ACTION_PROPS) as any;
     return (
       <ActionControl {...actionProps}>
         <IconBar {...barProps} />

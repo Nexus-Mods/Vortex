@@ -1,10 +1,10 @@
+import { PureComponentEx, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { withTranslation } from "react-i18next";
-import { PureComponentEx, util } from "vortex-api";
 
 const DOWNLOAD_PAGE = "https://aluigi.altervista.org/quickbms.htm";
 
-import * as api from "vortex-api";
+import * as api from "@nexusmods/vortex-api";
 const { Dashlet } = api as any;
 
 class QBMSAttribDashlet extends PureComponentEx<{}, {}> {

@@ -1,17 +1,15 @@
+import * as _ from "lodash";
+import * as React from "react";
+
 import type { IAttributeState } from "../../types/IAttributeState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import type { SortDirection } from "../../types/SortDirection";
 import type { TFunction } from "../../util/i18n";
 import { preT } from "../../util/i18n";
-
+import More from "../More";
 import { IconButton } from "../TooltipControls";
-
 import { TH } from "./MyTable";
 import SortIndicator from "./SortIndicator";
-
-import * as _ from "lodash";
-import * as React from "react";
-import More from "../More";
 
 export interface IHeaderProps {
   className: string;
@@ -78,10 +76,7 @@ class HeaderCell extends React.Component<IProps, {}> {
             <div style={{ margin: 0, display: "flex", alignItems: "center" }}>
               {preT(t, attribute.name)}
               {attribute.help !== undefined ? (
-                <More
-                  id={`more-${attribute.name}`}
-                  name={preT(t, attribute.name)}
-                >
+                <More id={`more-${attribute.name}`} name={preT(t, attribute.name)}>
                   {preT(t, attribute.help)}
                 </More>
               ) : null}
@@ -124,9 +119,7 @@ class HeaderCell extends React.Component<IProps, {}> {
     const { state } = this.props;
     const direction = state?.sortDirection ?? "none";
 
-    return (
-      <SortIndicator direction={direction} onSetDirection={this.setDirection} />
-    );
+    return <SortIndicator direction={direction} onSetDirection={this.setDirection} />;
   }
 
   private setRef = (ref: HTMLDivElement) => {

@@ -28,9 +28,12 @@
  * Further event types can be triggered by extensions
  */
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+
 import type { DialogActions } from "../../actions/notifications";
 import { showDialog } from "../../actions/notifications";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 import type {
   CheckFunction,
   IExtensionApi,
@@ -44,9 +47,6 @@ import { log } from "../../util/log";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { setdefault } from "../../util/util";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
 
 interface ICheckEntry {
   id: string;
@@ -152,9 +152,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
               title: "Check again",
               action: () => {
                 const preCheck =
-                  result.onRecheck !== undefined
-                    ? result.onRecheck()
-                    : PromiseBB.resolve();
+                  result.onRecheck !== undefined ? result.onRecheck() : PromiseBB.resolve();
                 return preCheck.then(() => runCheck(api, check));
               },
             });
@@ -198,11 +196,9 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
   triggerDelays[event] = setTimeout(() => {
     const eventChecks = getSafe(checks, [event], []);
     log("debug", "running checks", { event, count: eventChecks.length });
-    PromiseBB.map(eventChecks, (par: ICheckEntry) => runCheck(api, par)).then(
-      () => {
-        log("debug", "all checks completed", { event });
-      },
-    );
+    PromiseBB.map(eventChecks, (par: ICheckEntry) => runCheck(api, par)).then(() => {
+      log("debug", "all checks completed", { event });
+    });
   }, delay || 500);
 }
 
@@ -233,12 +229,9 @@ function init(context: IExtensionContext): boolean {
   context.registerAPI("withSuppressedTests", withSuppressedTests, {});
 
   context.once(() => {
-    context.api.events.on(
-      "trigger-test-run",
-      (eventType: string, delay?: number) => {
-        runChecks(context.api, eventType, delay);
-      },
-    );
+    context.api.events.on("trigger-test-run", (eventType: string, delay?: number) => {
+      runChecks(context.api, eventType, delay);
+    });
 
     context.api.events.on("gamemode-activated", () => {
       runChecks(context.api, "gamemode-activated");
@@ -261,32 +254,21 @@ function init(context: IExtensionContext): boolean {
       if (gameMode === undefined) {
         return;
       }
-      if (
-        !_.isEqual(
-          Object.keys(prevMods[gameMode] || {}),
-          Object.keys(newMods[gameMode] || {}),
-        )
-      ) {
+      if (!_.isEqual(Object.keys(prevMods[gameMode] || {}), Object.keys(newMods[gameMode] || {}))) {
         runChecks(context.api, "mod-installed", 5000);
       }
     });
 
-    context.api.onStateChange(
-      ["persistent", "profiles"],
-      (prevProfiles, newProfiles) => {
-        const currentProfile = activeProfile(context.api.store.getState());
-        if (currentProfile === undefined) {
-          // nop
-          return;
-        }
-        if (
-          prevProfiles[currentProfile.id].modState !==
-          newProfiles[currentProfile.id].modState
-        ) {
-          runChecks(context.api, "mod-activated", 5000);
-        }
-      },
-    );
+    context.api.onStateChange(["persistent", "profiles"], (prevProfiles, newProfiles) => {
+      const currentProfile = activeProfile(context.api.store.getState());
+      if (currentProfile === undefined) {
+        // nop
+        return;
+      }
+      if (prevProfiles[currentProfile.id].modState !== newProfiles[currentProfile.id].modState) {
+        runChecks(context.api, "mod-activated", 5000);
+      }
+    });
   });
 
   return true;

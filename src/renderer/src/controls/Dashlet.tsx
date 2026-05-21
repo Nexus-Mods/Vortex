@@ -1,6 +1,6 @@
-import { truthy } from "../util/util";
-
 import * as React from "react";
+
+import { truthy } from "../util/util";
 
 export interface IDashletProps {
   className: string;

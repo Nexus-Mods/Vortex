@@ -22,8 +22,7 @@
                     sass($bootstrap-sass-asset-helper): twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.eot?#iefix"
                         )
-                        ;
-                        else: "#{$icon-font-path}#{$icon-font-name}.eot?#iefix"
+                        ; else: "#{$icon-font-path}#{$icon-font-name}.eot?#iefix"
                 ))
                 format("embedded-opentype"),
             url(if(
@@ -51,9 +50,7 @@
                     sass($bootstrap-sass-asset-helper): twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.svg##{$icon-font-svg-id}"
                         )
-                        ;
-                        else:
-                        "#{$icon-font-path}#{$icon-font-name}.svg##{$icon-font-svg-id}"
+                        ; else: "#{$icon-font-path}#{$icon-font-name}.svg##{$icon-font-svg-id}"
                 ))
                 format("svg");
     }

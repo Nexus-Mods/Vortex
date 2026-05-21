@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
+
 import { setOpenMainPage } from "../../actions";
 import Dashlet from "../../controls/Dashlet";
 import Icon from "../../controls/Icon";
@@ -34,8 +35,7 @@ function OnBoardingCard(props: {
 }) {
   const { t } = useTranslation();
 
-  const { count, desc, img, length, onClick, title, video, id, isCompleted } =
-    props;
+  const { count, desc, img, length, onClick, title, video, id, isCompleted } = props;
 
   const openModal = () => {
     onClick({
@@ -75,10 +75,7 @@ function CounterWithCheckbox(props: { isChecked: boolean; count: number }) {
   return (
     <span className={className}>
       {isChecked ? (
-        <Icon
-          className="onboarding-card-counter-checked-icon"
-          name="completed"
-        />
+        <Icon className="onboarding-card-counter-checked-icon" name="completed" />
       ) : (
         count
       )}
@@ -100,8 +97,7 @@ function OnBoardingDashletWrapper(props: {
   const completedStepsValues = Object.values(completedSteps);
 
   const isFullyCompleted =
-    steps.length === completedStepsValues.length &&
-    completedStepsValues.every((x) => x === true);
+    steps.length === completedStepsValues.length && completedStepsValues.every((x) => x === true);
   return (
     <>
       {isFullyCompleted ? (
@@ -109,9 +105,7 @@ function OnBoardingDashletWrapper(props: {
       ) : (
         <Dashlet title={t("Get Started")} className="dashlet-onboarding">
           <p className="onboarding-subtitle">
-            {t(
-              "Watch these videos to guide you on how to start modding your favorite games.",
-            )}
+            {t("Watch these videos to guide you on how to start modding your favorite games.")}
           </p>
           <div className="onboarding-card-list">
             {steps.map((step, i) => (
@@ -151,9 +145,7 @@ function CompletedOnBoardingDashlet(props: { getMoreMods: () => {} }) {
     <Dashlet title="" className="dashlet-onboarding-completed">
       <div className="onboarding-completed-header">
         <h1>&#127881; {t("Congratulations, you've made it!")}</h1>
-        <h4>
-          {t("Now you are all set up to enjoy Vortex and start modding!")}
-        </h4>
+        <h4>{t("Now you are all set up to enjoy Vortex and start modding!")}</h4>
       </div>
       <div className="onboarding-completed-body">
         <div className="onboarding-completed-body-button">

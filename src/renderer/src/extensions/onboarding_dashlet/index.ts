@@ -39,8 +39,7 @@ function init(context: IExtensionContext): boolean {
           desc,
           url: video,
           id,
-          isCompleted:
-            context.api.store.getState().settings.onboardingsteps?.steps[id],
+          isCompleted: context.api.store.getState().settings.onboardingsteps?.steps[id],
           closeOverlay: () => context.api.ext.dismissOverlay(id),
         };
 
@@ -55,9 +54,9 @@ function init(context: IExtensionContext): boolean {
       getMoreMods: () => {
         currentGame(context.api.store).then((game) => {
           const nxsGameId = nexusGameId(game);
-          opn(
-            `${NEXUS_BASE_URL}/${nxsGameId !== "__placeholder" ? nxsGameId : "mods"}`,
-          ).catch((err) => undefined);
+          opn(`${NEXUS_BASE_URL}/${nxsGameId !== "__placeholder" ? nxsGameId : "mods"}`).catch(
+            (err) => undefined,
+          );
         });
       },
       steps: STEPS,

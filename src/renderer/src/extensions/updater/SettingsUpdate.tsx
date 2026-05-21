@@ -1,22 +1,13 @@
+import * as React from "react";
+import { Alert, Button, ControlLabel, FormControl, FormGroup, InputGroup } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import * as React from "react";
-import {
-  Alert,
-  Button,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  InputGroup,
-} from "react-bootstrap";
-
-import type { UpdateChannel, IState } from "../../types/IState";
-import type { VortexInstallType } from "../../types/VortexInstallType";
-
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
+import type { UpdateChannel, IState } from "../../types/IState";
 import { UPDATE_CHANNELS } from "../../types/IState";
+import type { VortexInstallType } from "../../types/VortexInstallType";
 import Debouncer from "../../util/Debouncer";
 import { log } from "../../util/log";
 import { setUpdateChannel } from "./actions";
@@ -96,9 +87,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
           <div>
             <ControlLabel>
               <Alert>
-                {t(
-                  "Vortex is running in preview mode and using the hidden 'next' update channel.",
-                )}
+                {t("Vortex is running in preview mode and using the hidden 'next' update channel.")}
               </Alert>
             </ControlLabel>
           </div>
@@ -187,8 +176,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
   private checkNow = () => {
     // send what updateChannel you are on, unless it's none, then send stable. manual check as well
-    const channel =
-      this.props.updateChannel === "none" ? "stable" : this.props.updateChannel;
+    const channel = this.props.updateChannel === "none" ? "stable" : this.props.updateChannel;
     window.api.updater.checkForUpdates(channel, true);
   };
 
@@ -254,9 +242,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetUpdateChannel: (channel: UpdateChannel): void => {
       dispatch(setUpdateChannel(channel));

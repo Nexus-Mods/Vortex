@@ -1,5 +1,5 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
 import LazyComponent from "../../controls/LazyComponent";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import {} from "./SettingsVortex";
 
 function init(context: IExtensionContext): boolean {

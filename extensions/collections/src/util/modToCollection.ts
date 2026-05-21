@@ -1,8 +1,10 @@
-import {
-  BUNDLED_PATH,
-  MOD_TYPE,
-  PATCHES_PATH,
-} from "../constants";
+import * as path from "path";
+
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
+import { generate as shortid } from "shortid";
+import turbowalk, { IEntry } from "turbowalk";
+
+import { BUNDLED_PATH, MOD_TYPE, PATCHES_PATH } from "../constants";
 import {
   ICollection,
   ICollectionAttributes,
@@ -11,7 +13,6 @@ import {
   ICollectionModRule,
   ICollectionModRuleEx,
 } from "../types/ICollection";
-
 import { scanForDiffs } from "./binaryPatching";
 import { matchChecksums } from "./checksumMatcher";
 import { generateConfig } from "./collectionConfig";
@@ -19,18 +20,9 @@ import { ReplicateHashMismatchError } from "./errors";
 import { findExtensions, IExtensionFeature } from "./extension";
 import { generateGameSpecifics } from "./gameSupport";
 import { renderReference } from "./renderReference";
-import {
-  deduceSource,
-  makeBiDirRule,
-  makeTransferrable,
-} from "./transformCollection";
+import { deduceSource, makeBiDirRule, makeTransferrable } from "./transformCollection";
 import { ruleId } from "./util";
 import { fileMD5Async } from "./walk";
-
-import * as path from "path";
-import { generate as shortid } from "shortid";
-import turbowalk, { IEntry } from "turbowalk";
-import { fs, selectors, types, util } from "vortex-api";
 
 interface IResolvedRule {
   mod: types.IMod;
@@ -81,16 +73,11 @@ async function rulesToCollectionMods(
       // we can't store the md5 hash for a bundled file because they are recompressed
       // during collection install and then the hash won't match
       const refMD5: string =
-        collectionInfo.source?.[mod.id]?.type === "bundle"
-          ? undefined
-          : mod.attributes?.fileMD5;
+        collectionInfo.source?.[mod.id]?.type === "bundle" ? undefined : mod.attributes?.fileMD5;
 
       const meta = await api.lookupModMeta({
         fileName,
-        filePath:
-          fileName !== undefined
-            ? path.join(downloadPath, fileName)
-            : undefined,
+        filePath: fileName !== undefined ? path.join(downloadPath, fileName) : undefined,
         fileMD5: refMD5,
         fileSize: mod.attributes?.fileSize,
         gameId: game.id,
@@ -113,8 +100,7 @@ async function rulesToCollectionMods(
 
         let entries: IEntry[] = [];
 
-        const installMode: string =
-          collectionInfo.installMode?.[mod.id] ?? "fresh";
+        const installMode: string = collectionInfo.installMode?.[mod.id] ?? "fresh";
 
         const modPath = path.join(stagingPath, mod.installationPath);
 
@@ -151,23 +137,13 @@ async function rulesToCollectionMods(
         if (collectionInfo.saveEdits?.[mod.id] === true) {
           const destPath = path.join(collectionPath, PATCHES_PATH, modName);
           await fs.ensureDirWritableAsync(destPath);
-          patches = await scanForDiffs(
-            api,
-            game.id,
-            mod.id,
-            destPath,
-            onProgress,
-          );
+          patches = await scanForDiffs(api, game.id, mod.id, destPath, onProgress);
         }
 
         if (collectionInfo.source?.[mod.id]?.type === "bundle") {
           const tlFiles = await fs.readdirAsync(modPath);
           const generatedName: string = `Bundled - ${util.sanitizeFilename(util.renderModName(mod, { version: true }))}`;
-          const destPath = path.join(
-            collectionPath,
-            BUNDLED_PATH,
-            generatedName,
-          );
+          const destPath = path.join(collectionPath, BUNDLED_PATH, generatedName);
           try {
             await fs.removeAsync(destPath);
           } catch (err) {
@@ -177,10 +153,7 @@ async function rulesToCollectionMods(
           }
           await Promise.all(
             tlFiles.map(async (name) => {
-              await fs.copyAsync(
-                path.join(modPath, name),
-                path.join(destPath, name),
-              );
+              await fs.copyAsync(path.join(modPath, name), path.join(destPath, name));
             }),
           );
 
@@ -189,11 +162,7 @@ async function rulesToCollectionMods(
           let totalSize: number = 0;
           await turbowalk(
             destPath,
-            (items) =>
-              (totalSize += items.reduce(
-                (sub: number, entry) => sub + entry.size,
-                0,
-              )),
+            (items) => (totalSize += items.reduce((sub: number, entry) => sub + entry.size, 0)),
           );
 
           // source.fileSize = (await fs.statAsync(destPath)).size;
@@ -209,9 +178,7 @@ async function rulesToCollectionMods(
 
         // workaround where Vortex has no support for the game this download came from
         const domainName =
-          dlGame !== undefined
-            ? util.nexusGameId(dlGame)
-            : mod.attributes?.downloadGame;
+          dlGame !== undefined ? util.nexusGameId(dlGame) : mod.attributes?.downloadGame;
 
         const res: ICollectionMod = {
           name: modName,
@@ -231,9 +198,7 @@ async function rulesToCollectionMods(
             type: mod.type,
           },
           phase: rule.extra?.["phase"] ?? 0,
-          fileOverrides: fileOverridesIds.has(mod.id)
-            ? mod.fileOverrides
-            : undefined,
+          fileOverrides: fileOverridesIds.has(mod.id) ? mod.fileOverrides : undefined,
         };
 
         return res;
@@ -281,9 +246,7 @@ async function rulesToCollectionMods(
     }),
   );
 
-  return result.filter(
-    (mod) => mod !== undefined && Object.keys(mod.source).length > 0,
-  );
+  return result.filter((mod) => mod !== undefined && Object.keys(mod.source).length > 0);
 }
 
 function ruleEnabled(
@@ -323,9 +286,7 @@ function extractModRules(
 
         // ok, this gets a bit complex now. If the referenced mod gets updated, also make sure
         // the rules referencing it apply to newer versions
-        const mpRule = collection.rules.find((iter) =>
-          util.testModReference(mod, iter.reference),
-        );
+        const mpRule = collection.rules.find((iter) => util.testModReference(mod, iter.reference));
         if (
           mpRule !== undefined &&
           (mpRule.reference.versionMatch === undefined ||
@@ -373,11 +334,7 @@ function extractModRules(
             // to compare the references as they are locally. Yes, this is super awkward code...
             if (
               targetRule === undefined ||
-              !ruleEnabled(
-                makeBiDirRule(sourceOrig, targetRule),
-                mods,
-                collection,
-              )
+              !ruleEnabled(makeBiDirRule(sourceOrig, targetRule), mods, collection)
             ) {
               return undefined;
             }
@@ -404,9 +361,7 @@ export async function modToCollection(
 
   if (selectors.activeGameId(state) !== gameId) {
     // this would be a bug
-    return Promise.reject(
-      new Error("Can only export collection for the active profile"),
-    );
+    return Promise.reject(new Error("Can only export collection for the active profile"));
   }
 
   const includedMods = (collection.rules as types.IModRule[])
@@ -424,33 +379,21 @@ export async function modToCollection(
 
   const missing = includedMods.find((modId) => mods[modId] === undefined);
   if (missing !== undefined) {
-    return Promise.reject(
-      new Error("Can only export collections that are fully installed"),
-    );
+    return Promise.reject(new Error("Can only export collections that are fully installed"));
   }
 
   const exts: IExtensionFeature[] = findExtensions(state, gameId);
   const extData: any = {};
   for (const ext of exts) {
-    Object.assign(
-      extData,
-      await ext.generate(gameId, includedMods, collection),
-    );
+    Object.assign(extData, await ext.generate(gameId, includedMods, collection));
   }
 
-  const gameSpecific = await generateGameSpecifics(
-    state,
-    gameId,
-    stagingPath,
-    includedMods,
-    mods,
-  );
+  const gameSpecific = await generateGameSpecifics(state, gameId, stagingPath, includedMods, mods);
 
   const game = util.getGame(gameId);
   const discovery = selectors.discoveryByGame(state, gameId);
 
-  const gameVersions =
-    game !== undefined ? [await game.getInstalledVersion(discovery)] : [];
+  const gameVersions = game !== undefined ? [await game.getInstalledVersion(discovery)] : [];
 
   const collectionAttributes = collection.attributes?.collection ?? {};
   const collectionConfig = await generateConfig({
@@ -478,37 +421,27 @@ export async function modToCollection(
   // The reason we're not using the tags for everything is that there is a chance
   // (miniscule but not 0) that different curators get the same ids generated by shortid.
   // we could be using uuid but then the tags would have a different format and it'd be a mess
-  const bundleTags: { [modId: string]: string } = includedMods.reduce(
-    (prev, modId) => {
-      prev[modId] = shortid();
-      return prev;
-    },
-    {},
-  );
+  const bundleTags: { [modId: string]: string } = includedMods.reduce((prev, modId) => {
+    prev[modId] = shortid();
+    return prev;
+  }, {});
 
-  const resolvedRules = collection.rules.reduce<IResolvedRule[]>(
-    (prev, rule: types.IModRule) => {
-      const mod =
-        rule.reference.id !== undefined
-          ? mods[rule.reference.id]
-          : util.findModByRef(rule.reference, mods);
+  const resolvedRules = collection.rules.reduce<IResolvedRule[]>((prev, rule: types.IModRule) => {
+    const mod =
+      rule.reference.id !== undefined
+        ? mods[rule.reference.id]
+        : util.findModByRef(rule.reference, mods);
 
-      if (mod === undefined) {
-        onError(
-          'Not packaging mod that isn\'t installed: "{{id}}"',
-          { id: rule.reference.id },
-          true,
-        );
-      } else if (mod.type === MOD_TYPE) {
-        // don't include the collection itself (or any other collection for that matter,
-        // nested collections aren't allowed)
-      } else {
-        prev.push({ mod, rule });
-      }
-      return prev;
-    },
-    [],
-  );
+    if (mod === undefined) {
+      onError('Not packaging mod that isn\'t installed: "{{id}}"', { id: rule.reference.id }, true);
+    } else if (mod.type === MOD_TYPE) {
+      // don't include the collection itself (or any other collection for that matter,
+      // nested collections aren't allowed)
+    } else {
+      prev.push({ mod, rule });
+    }
+    return prev;
+  }, []);
 
   const modRules = extractModRules(
     resolvedRules,

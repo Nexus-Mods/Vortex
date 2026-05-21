@@ -1,31 +1,24 @@
+import { coerce, compare, valid } from "semver";
+
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import type { IModWithState } from "../types/IModProps";
 
-import { coerce, compare, valid } from "semver";
-
 function byModId(input: IModWithState[]): IModWithState[][] {
-  const grouped = input.reduce(
-    (prev: { [modId: string]: IModWithState[] }, value) => {
-      const modId =
-        value?.attributes?.modId ?? value?.attributes?.collectionSlug;
-      if (prev[modId] === undefined) {
-        prev[modId] = [];
-      }
-      prev[modId].push(value);
-      return prev;
-    },
-    {},
-  );
+  const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) => {
+    const modId = value?.attributes?.modId ?? value?.attributes?.collectionSlug;
+    if (prev[modId] === undefined) {
+      prev[modId] = [];
+    }
+    prev[modId].push(value);
+    return prev;
+  }, {});
   return Object.keys(grouped).map((modId) => grouped[modId]);
 }
 
 function logicalName(attributes: any) {
-  if (
-    attributes.logicalFileName === undefined ||
-    attributes.version === undefined
-  ) {
+  if (attributes.logicalFileName === undefined || attributes.version === undefined) {
     return attributes.logicalFileName;
   }
   return attributes.logicalFileName.replace(attributes.version, "").trim();
@@ -110,9 +103,7 @@ function byEnabled(input: IModWithState[]): IModWithState[][] {
     return [input];
   }
   // disabled mods are only added to the group with the highest version enabled mod
-  const primaryGroup = groups.sort((lhs, rhs) =>
-    newestFirst(lhs[0], rhs[0]),
-  )[0];
+  const primaryGroup = groups.sort((lhs, rhs) => newestFirst(lhs[0], rhs[0]))[0];
   input.filter((mod) => !mod.enabled).forEach((mod) => primaryGroup.push(mod));
   return groups;
 }
@@ -132,8 +123,7 @@ function group(
   groupFunc: (input: IModWithState[]) => IModWithState[][],
 ): IModWithState[][] {
   return input.reduce(
-    (prev: IModWithState[][], value: IModWithState[]) =>
-      [].concat(prev, groupFunc(value)),
+    (prev: IModWithState[][], value: IModWithState[]) => [].concat(prev, groupFunc(value)),
     [],
   );
 }
@@ -143,16 +133,11 @@ export interface IGroupingOptions {
   groupBy: "modId" | "file";
 }
 
-function groupMods(
-  mods: IModWithState[],
-  options: IGroupingOptions,
-): IModWithState[][] {
+function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithState[][] {
   const modList: IModWithState[][] = [mods];
 
   let temp: IModWithState[][] =
-    options.groupBy === "modId"
-      ? group(modList, byModId)
-      : group(group(modList, byModId), byFile);
+    options.groupBy === "modId" ? group(modList, byModId) : group(group(modList, byModId), byFile);
 
   if (!options.multipleEnabled) {
     temp = group(temp, byEnabled);

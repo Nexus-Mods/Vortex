@@ -1,4 +1,5 @@
-import { fs, types } from "vortex-api";
+import { fs, types } from "@nexusmods/vortex-api";
+
 import { ICollection } from "../types/ICollection";
 import { validateICollection } from "../validationCode/validation";
 import { postProcessRule } from "./postProcessRule";
@@ -32,9 +33,7 @@ export async function readCollection(
       readErrors.map(validationMessage));
     */
   }
-  collection.modRules = (collection.modRules ?? []).map((rule) =>
-    postProcessRule(rule),
-  );
+  collection.modRules = (collection.modRules ?? []).map((rule) => postProcessRule(rule));
 
   return collection;
 }

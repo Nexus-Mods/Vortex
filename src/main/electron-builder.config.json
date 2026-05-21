@@ -4,8 +4,8 @@
   "includeSubNodeModules": false,
   "directories": {
     "buildResources": "./nsis",
-    "app": "./dist",
-    "output": "../../dist"
+    "app": "./build",
+    "output": "../../../dist"
   },
   "win": {
     "target": "nsis",
@@ -37,7 +37,7 @@
   },
   "linux": {
     "target": ["zip"],
-    "icon": "../../assets/images/vortex.png",
+    "icon": "../../../assets/images/vortex.png",
     "category": "Network;Development;Game;",
     "synopsis": "Mod Manager",
     "description": "The elegant, powerful, and open-source mod manager from Nexus Mods.",
@@ -45,11 +45,11 @@
     "mimeTypes": ["x-scheme-handler/nxm"]
   },
   "extraResources": [
-    "./build/VC_redist.x64.exe",
-    "./build/windowsdesktop-runtime-win-x64.exe",
+    "./temp/VC_redist.x64.exe",
+    "./temp/windowsdesktop-runtime-win-x64.exe",
     "./nsis/**/*",
     {
-      "from": "../../locales",
+      "from": "../../../locales",
       "to": "locales"
     }
   ],
@@ -60,6 +60,7 @@
     "bundledPlugins",
     "node_modules/7z-bin",
     "node_modules/bootstrap-sass/assets/stylesheets",
+    "node_modules/json-socket",
     "node_modules/react-select/scss",
     "node_modules/@nexusmods/fomod-installer-native/dist/*.dll",
     "node_modules/@nexusmods/fomod-installer-ipc/dist/*.exe",

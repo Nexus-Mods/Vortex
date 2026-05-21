@@ -1,7 +1,6 @@
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-
 import * as path from "path";
+
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as React from "react";
 import {
   Alert,
@@ -16,19 +15,9 @@ import {
   Panel,
   ProgressBar,
 } from "react-bootstrap";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import * as winapi from "winapi-bindings";
-
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-  IDialogResult,
-} from "../../../types/IDialog";
-import type { InstallPathMode, IState } from "../../../types/IState";
-import type { ValidationState } from "../../../types/ITableAttribute";
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../gamemode_management/types/IGameStored";
-import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 
 import { showDialog } from "../../../actions/notifications";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
@@ -39,6 +28,14 @@ import More from "../../../controls/More";
 import Spinner from "../../../controls/Spinner";
 import Toggle from "../../../controls/Toggle";
 import { Button } from "../../../controls/TooltipControls";
+import type {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+  IDialogResult,
+} from "../../../types/IDialog";
+import type { InstallPathMode, IState } from "../../../types/IState";
+import type { ValidationState } from "../../../types/ITableAttribute";
 import {
   CleanupFailedException,
   InsufficientDiskSpace,
@@ -57,32 +54,18 @@ import { showError } from "../../../util/message";
 import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
-import {
-  cleanFailedTransfer,
-  testPathTransfer,
-  transferPath,
-} from "../../../util/transferPath";
-import {
-  ciEqual,
-  isChildPath,
-  isPathValid,
-  isReservedDirectory,
-} from "../../../util/util";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import {
-  currentGame,
-  currentGameDiscovery,
-} from "../../gamemode_management/selectors";
+import { cleanFailedTransfer, testPathTransfer, transferPath } from "../../../util/transferPath";
+import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from "../../../util/util";
+import { currentGame, currentGameDiscovery } from "../../gamemode_management/selectors";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import { setDeploymentNecessary } from "../actions/deployment";
-import {
-  setActivator,
-  setInstallPath,
-  setInstallPathMode,
-} from "../actions/settings";
+import { setActivator, setInstallPath, setInstallPathMode } from "../actions/settings";
 import { setTransferMods } from "../actions/transactions";
 import { modPathsForGame } from "../selectors";
 import { STAGING_DIR_TAG } from "../stagingDirectory";
 import getText from "../texts";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { getSupportedActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
 import getInstallPath, { getInstallPathPattern } from "../util/getInstallPath";
@@ -159,15 +142,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     const activators = this.supportedActivators();
     this.nextState.supportedActivators = activators;
-    if (
-      activators.find((act) => act.id === this.state.currentActivator) ===
-      undefined
-    ) {
+    if (activators.find((act) => act.id === this.state.currentActivator) === undefined) {
       // Configured activator isn't supported anymore, update selection.
       // Some games such as Skyrim may have no supported activators at all,
       //  in which case we set the current activator to undefined.
-      this.nextState.currentActivator =
-        activators.length > 0 ? activators[0].id : undefined;
+      this.nextState.currentActivator = activators.length > 0 ? activators[0].id : undefined;
     }
 
     // Load the app path for validation
@@ -198,20 +177,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discovery, game, installPathMode, suggestInstallPathDirectory } =
-      this.props;
-    const { currentActivator, progress, progressFile, supportedActivators } =
-      this.state;
+    const { t, discovery, game, installPathMode, suggestInstallPathDirectory } = this.props;
+    const { currentActivator, progress, progressFile, supportedActivators } = this.state;
 
     const panels: React.ReactNode[] = [
       <Panel key="defaults">
         <Panel.Body>
           <ControlLabel>{t("Defaults")}</ControlLabel>
 
-          <Toggle
-            checked={installPathMode === "suggested"}
-            onToggle={this.toggleInstallPathMode}
-          >
+          <Toggle checked={installPathMode === "suggested"} onToggle={this.toggleInstallPathMode}>
             {t("Automatically use suggested path for staging folder")}
 
             <More id="staging_path_mode" name="Staging Path Mode">
@@ -235,11 +209,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     ];
 
     if (game !== undefined && discovery?.path !== undefined) {
-      let gameName = getSafe(
-        discovery,
-        ["name"],
-        getSafe(game, ["name"], undefined),
-      );
+      let gameName = getSafe(discovery, ["name"], getSafe(game, ["name"], undefined));
       if (gameName !== undefined) {
         gameName = gameName
           .split("\t")
@@ -290,12 +260,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       panels.push(
         <EmptyPlaceholder
           icon="settings"
-          subtext={t(
-            "Most settings here can be configured for each game individually.",
-          )}
-          text={t(
-            "This screen will have more options once you start managing a game.",
-          )}
+          subtext={t("Most settings here can be configured for each game individually.")}
+          text={t("This screen will have more options once you start managing a game.")}
         />,
       );
     }
@@ -321,9 +287,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private toggleInstallPathMode = () => {
     const { installPathMode, onSetInstallPathMode } = this.props;
-    onSetInstallPathMode(
-      installPathMode === "userData" ? "suggested" : "userData",
-    );
+    onSetInstallPathMode(installPathMode === "userData" ? "suggested" : "userData");
   };
 
   /**
@@ -432,15 +396,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyPaths = (normalize: (input: string) => string) => {
-    const {
-      t,
-      discovery,
-      gameMode,
-      onSetInstallPath,
-      onShowDialog,
-      onShowError,
-      onSetTransfer,
-    } = this.props;
+    const { t, discovery, gameMode, onSetInstallPath, onShowDialog, onShowError, onSetTransfer } =
+      this.props;
 
     if (discovery === undefined || discovery.path === undefined) {
       return onShowDialog(
@@ -455,14 +412,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       );
     }
 
-    const newInstallPath: string = getInstallPath(
-      this.state.installPath,
-      gameMode,
-    );
-    const oldInstallPath: string = getInstallPath(
-      this.props.installPath,
-      gameMode,
-    );
+    const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
+    const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
     log("info", "changing staging directory", {
       from: oldInstallPath,
       to: newInstallPath,
@@ -630,10 +581,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           );
 
           if (!(err.errorObject instanceof UserCanceled)) {
-            this.context.api.showErrorNotification(
-              "Clean-up failed",
-              err.errorObject,
-            );
+            this.context.api.showErrorNotification("Clean-up failed", err.errorObject);
           }
           return;
         }
@@ -700,11 +648,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               false,
             );
           } else {
-            onShowError(
-              "Failed to move directories",
-              err,
-              !(err instanceof ProcessCanceled),
-            );
+            onShowError("Failed to move directories", err, !(err instanceof ProcessCanceled));
           }
         }
       })
@@ -714,16 +658,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Check if we still have the transfer state populated,
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
-        const pendingTransfer: string[] = [
-          "persistent",
-          "transactions",
-          "transfer",
-          gameMode,
-        ];
-        if (
-          getSafe(state, pendingTransfer, undefined) !== undefined &&
-          deleteOldDestination
-        ) {
+        const pendingTransfer: string[] = ["persistent", "transactions", "transfer", gameMode];
+        if (getSafe(state, pendingTransfer, undefined) !== undefined && deleteOldDestination) {
           return cleanFailedTransfer(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);
@@ -891,9 +827,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             [{ label: "Cancel" }, { label: "Continue" }],
           )
           .then((result) =>
-            result.action === "Cancel"
-              ? Promise.reject(new UserCanceled())
-              : Promise.resolve(),
+            result.action === "Cancel" ? Promise.reject(new UserCanceled()) : Promise.resolve(),
           );
       })
       .then(() => {
@@ -910,21 +844,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           return;
         }
         if (err instanceof TemporaryError) {
-          onShowError(
-            "Failed to purge previous deployment, please try again",
-            err,
-            false,
-          );
+          onShowError("Failed to purge previous deployment, please try again", err, false);
           return;
         }
         const errCode = getErrorCode(err);
-        if (errCode === null && (err as {errno?: number}).errno !== undefined) {
+        if (errCode === null && (err as { errno?: number }).errno !== undefined) {
           // unresolved windows error code
           onShowError(
             "Failed to purge previous deployment",
             {
               error: err,
-              ErrorCode: (err as {errno?: number}).errno,
+              ErrorCode: (err as { errno?: number }).errno,
             },
             true,
           );
@@ -968,14 +898,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       const downPath = path.dirname(downloadsPath);
       const normalizedDownloadsPath = path.normalize(downPath.toLowerCase());
       const normalizedInput = path.normalize(input.toLowerCase());
-      if (
-        normalizedInput === normalizedDownloadsPath ||
-        isChildPath(input, downPath)
-      ) {
+      if (normalizedInput === normalizedDownloadsPath || isChildPath(input, downPath)) {
         return {
           state: "error",
-          reason:
-            "Staging folder can't be a subdirectory of the Vortex downloads folder.",
+          reason: "Staging folder can't be a subdirectory of the Vortex downloads folder.",
         };
       }
     }
@@ -990,16 +916,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (appPath !== undefined && isChildPath(input, appPath)) {
       return {
         state: "error",
-        reason:
-          "Staging folder can't be a subdirectory of the Vortex application folder.",
+        reason: "Staging folder can't be a subdirectory of the Vortex application folder.",
       };
     }
 
     if (input.length > 100) {
       return {
         state: input.length > 200 ? "error" : "warning",
-        reason:
-          "Staging path shouldn't be too long, otherwise mod installers may fail.",
+        reason: "Staging path shouldn't be too long, otherwise mod installers may fail.",
       };
     }
 
@@ -1029,10 +953,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  private renderPathCtrl(
-    label: string,
-    activators: IDeploymentMethod[],
-  ): JSX.Element {
+  private renderPathCtrl(label: string, activators: IDeploymentMethod[]): JSX.Element {
     const { t, gameMode, modActivity } = this.props;
     const { installPath } = this.state;
 
@@ -1042,9 +963,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const hasModActivity = modActivity.length > 0;
 
     const applyDisabled =
-      !this.pathsChanged() ||
-      validationState.state === "error" ||
-      hasModActivity;
+      !this.pathsChanged() || validationState.state === "error" || hasModActivity;
 
     return (
       <FormGroup id="install-path-form" validationState={validationState.state}>
@@ -1065,9 +984,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 value={getInstallPathPattern(installPath)}
                 onChange={this.changePathEvt}
                 onKeyPress={
-                  this.pathsChanged() && validationState.state !== "error"
-                    ? this.keyPressEvt
-                    : null
+                  this.pathsChanged() && validationState.state !== "error" ? this.keyPressEvt : null
                 }
               />
 
@@ -1103,9 +1020,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </a>
         </HelpBlock>
 
-        {validationState.reason ? (
-          <ControlLabel>{t(validationState.reason)}</ControlLabel>
-        ) : null}
+        {validationState.reason ? <ControlLabel>{t(validationState.reason)}</ControlLabel> : null}
       </FormGroup>
     );
   }
@@ -1131,9 +1046,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // may not exist yet (e.g. first-time setup), but we only need the device id
       const [modPathStats, userDataStats] = await Promise.all([
         fs.statAsync(path.parse(modPaths[""]).root),
-        window.api.app
-          .getPath("userData")
-          .then((userDataPath) => fs.statAsync(userDataPath)),
+        window.api.app.getPath("userData").then((userDataPath) => fs.statAsync(userDataPath)),
       ]);
 
       let suggestion: string;
@@ -1174,10 +1087,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     });
   };
 
-  private renderActivators(
-    activators: IDeploymentMethod[],
-    currentActivator: string,
-  ): JSX.Element {
+  private renderActivators(activators: IDeploymentMethod[], currentActivator: string): JSX.Element {
     const { t } = this.props;
     const { changingActivator } = this.state;
 
@@ -1188,9 +1098,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (activators !== undefined && activators.length > 0) {
       if (currentActivator !== undefined) {
-        activatorIdx = activators.findIndex(
-          (activator) => activator.id === currentActivator,
-        );
+        activatorIdx = activators.findIndex((activator) => activator.id === currentActivator);
       }
 
       content = (
@@ -1208,30 +1116,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       content = (
         <ControlLabel>
           <Alert bsStyle="danger">
-            <h4 style={{ marginBottom: 0 }}>
-              {t("No deployment method available.")}
-            </h4>
+            <h4 style={{ marginBottom: 0 }}>{t("No deployment method available.")}</h4>
 
-            <p style={{ marginTop: 0 }}>
-              {t("See notification for more information.")}
-            </p>
+            <p style={{ marginTop: 0 }}>{t("See notification for more information.")}</p>
           </Alert>
         </ControlLabel>
       );
     }
 
     return (
-      <FormGroup
-        validationState={activators !== undefined ? undefined : "error"}
-      >
+      <FormGroup validationState={activators !== undefined ? undefined : "error"}>
         <InputGroup>
           {content}
 
           <InputGroup.Button>
-            <BSButton
-              disabled={!changed || changingActivator}
-              onClick={this.applyActivator}
-            >
+            <BSButton disabled={!changed || changingActivator} onClick={this.applyActivator}>
               {changingActivator ? <Spinner /> : t("Apply")}
             </BSButton>
           </InputGroup.Button>
@@ -1241,10 +1140,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <HelpBlock>
             {t(activators[activatorIdx].description)}
 
-            <More
-              id="more-activator-detail"
-              name={activators[activatorIdx].name}
-            >
+            <More id="more-activator-detail" name={activators[activatorIdx].name}>
               {activators[activatorIdx].detailedDescription(t)}
             </More>
           </HelpBlock>
@@ -1253,9 +1149,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderActivatorOption = (
-    activator: IDeploymentMethod,
-  ): JSX.Element => {
+  private renderActivatorOption = (activator: IDeploymentMethod): JSX.Element => {
     const { t } = this.props;
     return (
       <option key={activator.id} value={activator.id}>
@@ -1285,28 +1179,17 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     installPath: state.settings.mods.installPath[gameMode],
     downloadsPath,
-    currentActivator: getSafe(
-      state,
-      ["settings", "mods", "activator", gameMode],
-      undefined,
-    ),
-    modActivity: getSafe(
-      state,
-      ["session", "base", "activity", "mods"],
-      emptyArray,
-    ),
+    currentActivator: getSafe(state, ["settings", "mods", "activator", gameMode], undefined),
+    modActivity: getSafe(state, ["session", "base", "activity", "mods"], emptyArray),
     modPaths: modPathsForGame(state, gameMode),
     instanceId: state.app.instanceId,
     installPathMode: state.settings.mods.installPathMode,
-    suggestInstallPathDirectory:
-      state.settings.mods.suggestInstallPathDirectory,
+    suggestInstallPathDirectory: state.settings.mods.suggestInstallPathDirectory,
     useModernLayout: state.settings.window.useModernLayout,
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetInstallPath: (gameMode: string, newPath: string): void => {
       if (newPath !== undefined) {

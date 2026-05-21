@@ -1,15 +1,14 @@
-import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import type { IGameInfoEntry, IState } from "../../../types/IState";
-import { ComponentEx, connect } from "../../../controls/ComponentEx";
-import opn from "../../../util/opn";
-import { bytesToString } from "../../../util/util";
-
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
-import type { IGameStored } from "../types/IGameStored";
-
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
+
+import { ComponentEx, connect } from "../../../controls/ComponentEx";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import type { IGameInfoEntry, IState } from "../../../types/IState";
+import opn from "../../../util/opn";
+import { bytesToString } from "../../../util/util";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 
 export interface IBaseProps {
   t: TFunction;
@@ -70,30 +69,17 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
 
   public render(): JSX.Element {
     const { t } = this.props;
-    const gameInfo: { [key: string]: IGameInfoEntry } =
-      this.props.gameInfo || {};
+    const gameInfo: { [key: string]: IGameInfoEntry } = this.props.gameInfo || {};
 
     const keysToRender = Object.keys(gameInfo)
-      .sort(
-        (lhs, rhs) =>
-          (gameInfo[lhs].priority ?? 100) - (gameInfo[rhs].priority ?? 100),
-      )
+      .sort((lhs, rhs) => (gameInfo[lhs].priority ?? 100) - (gameInfo[rhs].priority ?? 100))
       .filter((key) => gameInfo[key].value !== null);
 
     if (keysToRender.length === 0) {
-      return (
-        <EmptyPlaceholder
-          icon="layout-list"
-          text={t("No Information about this game")}
-        />
-      );
+      return <EmptyPlaceholder icon="layout-list" text={t("No Information about this game")} />;
     }
 
-    return (
-      <div className="game-info-grid">
-        {keysToRender.map(this.renderGameInfo)}
-      </div>
-    );
+    return <div className="game-info-grid">{keysToRender.map(this.renderGameInfo)}</div>;
   }
 
   private renderGameInfo = (key: string) => {

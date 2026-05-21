@@ -1,9 +1,8 @@
-import type { IGameListEntry } from '@nexusmods/nexus-api';
-
-import type { IModRepoId } from "../../mod_management/types/IMod";
+import type { IGameListEntry } from "@nexusmods/nexus-api";
 
 import { log } from "../../../logging";
 import { getGame } from "../../gamemode_management/util/getGame";
+import type { IModRepoId } from "../../mod_management/types/IMod";
 import { nexusGames } from "../util";
 import { nexusGameId } from "./convertGameId";
 

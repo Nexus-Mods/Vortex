@@ -35,10 +35,7 @@ export interface ISMAPIIOQuery {
 export type SdvModTypeId = "SMAPI" | "sdv-configuration-mod" | "sdvrootfolder";
 
 /** All installer ids registered by this extension. */
-export type SdvInstallerId =
-  | "smapi-installer"
-  | "sdvrootfolder"
-  | "stardew-valley-installer";
+export type SdvInstallerId = "smapi-installer" | "sdvrootfolder" | "stardew-valley-installer";
 
 /** Standard installer test response consumed by Vortex. */
 export interface IInstallerTestResult {

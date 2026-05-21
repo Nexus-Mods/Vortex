@@ -1,12 +1,7 @@
 import React, { type FC } from "react";
 
 import { IconButton } from "../controls/TooltipControls";
-import {
-  close,
-  minimize,
-  toggleMaximize,
-  useIsMaximized,
-} from "../hooks/windowControls";
+import { close, minimize, toggleMaximize, useIsMaximized } from "../hooks/windowControls";
 
 export const WindowControls: FC = () => {
   const isMaximized = useIsMaximized();

@@ -17,9 +17,7 @@ export class ThemeToCSS {
   private static transformRules(rules: CSSStyleRule[]): { [id: string]: any } {
     return rules
       .filter(
-        (rule) =>
-          rule.selectorText !== undefined &&
-          rule.selectorText.startsWith("#variable"),
+        (rule) => rule.selectorText !== undefined && rule.selectorText.startsWith("#variable"),
       )
       .reduce((prev, rule) => {
         const [id, type, key] = rule.selectorText.split(" ");

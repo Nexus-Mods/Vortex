@@ -13,11 +13,10 @@
 import type { PersistedHive, PersistedState } from "@vortex/shared/state";
 import type { WebContents } from "electron";
 
-import type ReduxPersistorIPC from "./ReduxPersistorIPC";
-
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
 import { registerAllPersistedHives } from "./mainPersistence";
+import type ReduxPersistorIPC from "./ReduxPersistorIPC";
 
 /**
  * Set up IPC handlers for persistence operations.

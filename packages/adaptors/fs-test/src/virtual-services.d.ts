@@ -1,4 +1,4 @@
 declare module "virtual:services" {
-  import type { IFileSystem } from "@vortex/fs";
-  export const fs: IFileSystem;
+  import type { FileSystem } from "@nexusmods/adaptor-api/fs";
+  export const fs: FileSystem;
 }

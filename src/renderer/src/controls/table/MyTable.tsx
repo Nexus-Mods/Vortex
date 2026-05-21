@@ -9,9 +9,7 @@ import * as React from "react";
 import type { TableProps } from "react-bootstrap";
 
 export function Table(props: TableProps) {
-  const classes = ["table", "xtable"].concat(
-    (props.className || "").split(" "),
-  );
+  const classes = ["table", "xtable"].concat((props.className || "").split(" "));
   if (props.condensed === true) {
     classes.push("table-condensed");
   }
@@ -33,15 +31,9 @@ export function THead(
     domRef?: (instance: any | null) => any;
   },
 ) {
-  const classes = ["table-header", "xthead"].concat(
-    (props.className || "").split(" "),
-  );
+  const classes = ["table-header", "xthead"].concat((props.className || "").split(" "));
   return (
-    <thead
-      style={{ ...props.style }}
-      className={classes.join(" ")}
-      ref={props.domRef}
-    >
+    <thead style={{ ...props.style }} className={classes.join(" ")} ref={props.domRef}>
       {props.children}
     </thead>
   );
@@ -54,11 +46,7 @@ export function TBody(
 ) {
   const classes = ["xtbody"].concat((props.className || "").split(" "));
   return (
-    <tbody
-      style={{ ...props.style }}
-      className={classes.join(" ")}
-      ref={props.domRef}
-    >
+    <tbody style={{ ...props.style }} className={classes.join(" ")} ref={props.domRef}>
       {props.children}
     </tbody>
   );
@@ -71,9 +59,7 @@ type THProps = DProps<HTMLTableHeaderCellElement> & {
 export class TH extends React.Component<THProps, {}> {
   public render() {
     const { children, className, domRef, style } = this.props;
-    const classes = ["table-header-cell", "xth"].concat(
-      (className || "").split(" "),
-    );
+    const classes = ["table-header-cell", "xth"].concat((className || "").split(" "));
     return (
       <th
         style={{ ...style }}

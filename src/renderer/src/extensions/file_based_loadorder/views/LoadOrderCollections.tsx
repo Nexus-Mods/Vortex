@@ -5,18 +5,15 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
 import { EmptyPlaceholder, FlexLayout, Icon } from "../../../controls/api";
+import { ComponentEx } from "../../../controls/ComponentEx";
 import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
-import { ComponentEx } from "../../../controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
-
-import type { IGameSpecificInterfaceProps } from "../types/collections";
-import type { ILoadOrderEntry, LoadOrder } from "../types/types";
-
-import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../util";
-
 import { findGameEntry } from "../gameSupport";
 import { currentGameMods, currentLoadOrderForProfile } from "../selectors";
+import type { IGameSpecificInterfaceProps } from "../types/collections";
+import type { ILoadOrderEntry, LoadOrder } from "../types/types";
+import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../util";
 
 const NAMESPACE: string = "generic-load-order-extension";
 
@@ -35,16 +32,12 @@ interface IConnectedProps {
 type IProps = IGameSpecificInterfaceProps & IConnectedProps;
 
 class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
-  public static getDerivedStateFromProps(
-    newProps: IProps,
-    prevState: IBaseState,
-  ) {
+  public static getDerivedStateFromProps(newProps: IProps, prevState: IBaseState) {
     const { mods, collection } = newProps;
     const filtered = newProps.loadOrder
       .filter((entry) =>
         collection !== undefined
-          ? isValidMod(mods[entry.modId]) &&
-            isModInCollection(collection, mods[entry.modId])
+          ? isValidMod(mods[entry.modId]) && isModInCollection(collection, mods[entry.modId])
           : isValidMod(mods[entry.modId]),
       )
       .map((entry) => entry.modId);
@@ -75,9 +68,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
           )}
         </p>
         {this.renderLoadOrderEditInfo()}
-        <ListGroup id="collections-load-order-list">
-          {loadOrder.map(this.renderModEntry)}
-        </ListGroup>
+        <ListGroup id="collections-load-order-list">{loadOrder.map(this.renderModEntry)}</ListGroup>
       </div>
     ) : (
       this.renderPlaceholder()
@@ -168,9 +159,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     return (
       <EmptyPlaceholder
         icon="sort-none"
-        text={t(
-          "You have no load order entries (for the current mods in the collection)",
-        )}
+        text={t("You have no load order entries (for the current mods in the collection)")}
         subtext={this.renderOpenLOButton()}
       />
     );
@@ -196,10 +185,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   };
 }
 
-function mapStateToProps(
-  state: types.IState,
-  ownProps: IProps,
-): IConnectedProps {
+function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state);
   return {
     gameId: selectors.activeGameId(state),

@@ -1,9 +1,8 @@
+import type { TFunction } from "i18next";
+
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-
 import type { IMod } from "../../mod_management/types/IMod";
-
-import type { TFunction } from "i18next";
 
 /**
  * generate the category's subtitle
@@ -21,14 +20,10 @@ function generateSubtitle(
 ) {
   const modsCount = getSafe(mods, [categoryId], []).length;
   let subt: string =
-    modsCount === 0
-      ? t("Empty")
-      : t("{{ count }} mods installed", { count: modsCount });
+    modsCount === 0 ? t("Empty") : t("{{ count }} mods installed", { count: modsCount });
 
   if (totalChildModCount !== undefined && totalChildModCount > 0) {
-    subt =
-      subt +
-      t(" ({{ count }} mods in sub-categories)", { count: totalChildModCount });
+    subt = subt + t(" ({{ count }} mods in sub-categories)", { count: totalChildModCount });
   }
 
   return subt;

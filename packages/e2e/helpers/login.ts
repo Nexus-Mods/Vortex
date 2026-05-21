@@ -7,18 +7,51 @@ import {
 } from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
-import { freeUser, type NexusUser } from "./users";
 import { LoginPage } from "../selectors/loginPage";
+import { freeUser, type NexusUser } from "./users";
+
+export interface LoginToNexusOptions {
+  /**
+   * When true, the auth browser is left open after login completes and is
+   * returned to the caller. The caller is then responsible for closing it.
+   * Defaults to false (browser is closed once login succeeds).
+   */
+  keepBrowser?: boolean;
+  /**
+   * Override headless mode for the auth browser. Defaults to !PWDEBUG.
+   * Set to false when the caller needs to navigate Cloudflare-protected
+   * pages on www.nexusmods.com after login — Cloudflare's JS challenge
+   * generally blocks headless browsers.
+   */
+  headless?: boolean;
+  /**
+   * Path to a Playwright storage-state file (cookies + localStorage) to
+   * preload into the auth browser context. Use this to skip credential
+   * entry — if Nexus session cookies are already valid, the OAuth URL
+   * will land directly on the consent screen.
+   *
+   * Generate with `pnpm -F @vortex/e2e auth:capture`.
+   * The file location is gitignored (`packages/e2e/.auth/`); never commit it.
+   */
+  storageStatePath?: string;
+}
+
+export interface LoginToNexusResult {
+  browser: Browser;
+  page: Page;
+}
 
 export async function loginToNexus(
   vortexApp: ElectronApplication,
   vortexWindow: Page,
   user: NexusUser = freeUser,
-): Promise<void> {
+  options: LoginToNexusOptions = {},
+): Promise<LoginToNexusResult | null> {
   const { username, password } = user;
   let loginPage: Page | null = null;
   let authBrowser: Browser | null = null;
   let authPage: Page | null = null;
+  let leakBrowser = false;
 
   const vortexLoginPage = new LoginPage(vortexWindow);
 
@@ -49,10 +82,29 @@ export async function loginToNexus(
         await expect(loginPage).toHaveURL(/nexusmods|users\./i);
       }
 
-      authBrowser = await chromium.launch({
-        headless: !process.env.PWDEBUG,
+      // Match the browser fingerprint used by scripts/capture-auth-state.mjs
+      // so that Cloudflare's cf_clearance cookie (saved into storage state)
+      // remains valid. Real Chrome + AutomationControlled disabled +
+      // navigator.webdriver spoof matches what was cleared during warmup.
+      const headless = options.headless ?? !process.env.PWDEBUG;
+      const launchArgs = ["--disable-blink-features=AutomationControlled"];
+      try {
+        authBrowser = await chromium.launch({
+          headless,
+          channel: "chrome",
+          args: launchArgs,
+        });
+      } catch {
+        authBrowser = await chromium.launch({ headless, args: launchArgs });
+      }
+      const authContext = await authBrowser.newContext(
+        options.storageStatePath !== undefined
+          ? { storageState: options.storageStatePath }
+          : undefined,
+      );
+      await authContext.addInitScript(() => {
+        Object.defineProperty(navigator, "webdriver", { get: () => false });
       });
-      const authContext = await authBrowser.newContext();
       authPage = await authContext.newPage();
 
       await authPage.goto(oauthUrl, {
@@ -60,32 +112,60 @@ export async function loginToNexus(
         timeout: 60000,
       });
       await expect(authPage).toHaveURL(/nexusmods|users\./i);
-
-      const nexusLoginPage = new LoginPage(authPage);
-      await expect(nexusLoginPage.authLoginHeading).toBeVisible();
     });
 
-    await test.step("Login with FreeUser credentials", async () => {
-      if (authPage === null) {
-        throw new Error("Auth page was not available for login.");
-      }
+    // If we loaded a storage state with valid Nexus cookies, the OAuth URL
+    // lands directly on the consent screen and the login form is skipped.
+    const skipCredentials =
+      options.storageStatePath !== undefined &&
+      authPage !== null &&
+      (await new LoginPage(authPage).oauthPermissionTitle
+        .isVisible({ timeout: 10_000 })
+        .catch(() => false));
 
-      const nexusLoginPage = new LoginPage(authPage);
+    if (!skipCredentials) {
+      await test.step("Login with Nexus Mods credentials", async () => {
+        if (authPage === null) {
+          throw new Error("Auth page was not available for login.");
+        }
 
-      await test.step("Enter username", async () => {
-        await nexusLoginPage.usernameInput.fill(username);
+        const nexusLoginPage = new LoginPage(authPage);
+
+        await test.step("Enter username", async () => {
+          await nexusLoginPage.usernameInput.fill(username);
+        });
+        await test.step("Enter password", async () => {
+          await nexusLoginPage.passwordInput.fill(password);
+        });
+        await test.step("Submit login form", async () => {
+          await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
+          await nexusLoginPage.submitLoginButton.click();
+        });
+        await test.step("Verify OAuth permission screen", async () => {
+          try {
+            await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
+          } catch (err) {
+            // On failure (rejected creds, captcha, 2FA, site change), drop a
+            // screenshot into test-results/ so the cause is obvious. The
+            // test-results directory is gitignored and cleaned each run.
+            if (authPage !== null) {
+              await authPage
+                .screenshot({
+                  path: `test-results/auth-page-failure-${Date.now()}.png`,
+                  fullPage: true,
+                })
+                .catch(() => undefined);
+              console.error(
+                `[loginToNexus] OAuth permission screen never appeared. URL=${authPage.url()} Title=${await authPage
+                  .title()
+                  .catch(() => "(no title)")}. See test-results/auth-page-failure-*.png.`,
+              );
+            }
+            throw err;
+          }
+        });
       });
-      await test.step("Enter password", async () => {
-        await nexusLoginPage.passwordInput.fill(password);
-      });
-      await test.step("Submit login form", async () => {
-        await expect(nexusLoginPage.submitLoginButton).toBeEnabled();
-        await nexusLoginPage.submitLoginButton.click();
-      });
-      await test.step("Verify OAuth permission screen", async () => {
-        await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
-      });
-    });
+    }
 
     await test.step("Click Authorise", async () => {
       if (authPage === null) {
@@ -99,13 +179,16 @@ export async function loginToNexus(
 
       await expect(nexusLoginPage.authorisationSuccessTitle).toBeVisible();
     });
-  } finally {
-    const browserToClose = authBrowser as Browser | null;
-    authBrowser = null;
-    authPage = null;
 
-    if (browserToClose !== null) {
-      await browserToClose.close();
+    leakBrowser = options.keepBrowser === true;
+  } finally {
+    if (!leakBrowser) {
+      const browserToClose = authBrowser as Browser | null;
+      authBrowser = null;
+      authPage = null;
+      if (browserToClose !== null) {
+        await browserToClose.close();
+      }
     }
   }
 
@@ -117,9 +200,7 @@ export async function loginToNexus(
 
     await vortexWindow.bringToFront();
 
-    if (
-      await vortexLoginPage.vortexLoginDialog.isVisible().catch(() => false)
-    ) {
+    if (await vortexLoginPage.vortexLoginDialog.isVisible().catch(() => false)) {
       await vortexWindow.keyboard.press("Escape").catch(() => undefined);
     }
 
@@ -128,4 +209,9 @@ export async function loginToNexus(
     await vortexLoginPage.profileButton.click();
     await expect(vortexLoginPage.loggedInMenuItem).toBeVisible();
   });
+
+  if (leakBrowser && authBrowser !== null && authPage !== null) {
+    return { browser: authBrowser, page: authPage };
+  }
+  return null;
 }

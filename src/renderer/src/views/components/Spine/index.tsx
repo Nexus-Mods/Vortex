@@ -1,12 +1,5 @@
 import { mdiHome, mdiPlus } from "@mdi/js";
-import React, {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import {
@@ -18,7 +11,7 @@ import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
-import { getGameImageUrls } from "./utils";
+import { formatGameDisplayName, getGameImageUrls } from "./utils";
 
 export const Spine: FC = () => {
   const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
@@ -29,7 +22,6 @@ export const Spine: FC = () => {
   const knownGames = useSelector(knownGamesSelector);
   const discoveredGames = useSelector(discoveredGamesSelector);
   const allProfiles = useSelector(profilesSelector);
-
 
   const handleGlobalPageClick = useCallback(
     (pageId: string) => {
@@ -51,15 +43,12 @@ export const Spine: FC = () => {
     return knownGames.filter((game) => {
       const discovery = discoveredGames[game.id];
       return (
-        profileGameIds.has(game.id) &&
-        discovery?.path !== undefined &&
-        discovery?.hidden !== true
+        profileGameIds.has(game.id) && discovery?.path !== undefined && discovery?.hidden !== true
       );
     });
   }, [knownGames, discoveredGames, profileGameIds]);
 
-  const onScroll = (event: Event) =>
-    setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
+  const onScroll = (event: Event) => setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
 
   useEffect(() => {
     if (!scrollRef.current) {
@@ -77,6 +66,7 @@ export const Spine: FC = () => {
         className="border-2"
         iconPath={mdiHome}
         isActive={selection.type === "home"}
+        title="Home"
         onClick={selectHome}
       />
 
@@ -85,10 +75,7 @@ export const Spine: FC = () => {
           <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
         )}
 
-        <div
-          className="min-h-0 w-full overflow-y-auto pt-1 pl-3"
-          ref={scrollRef}
-        >
+        <div className="min-h-0 w-full overflow-y-auto pt-1 pl-3" ref={scrollRef}>
           <div className="flex flex-col gap-y-3 pb-6">
             {managedGames.map((game) => {
               const { cacheKey, sources, preferred } = getGameImageUrls(
@@ -98,15 +85,12 @@ export const Spine: FC = () => {
               return (
                 <GameButton
                   cacheKey={cacheKey}
-                  isActive={
-                    selection.type === "game" &&
-                    selection.gameId === game.id
-                  }
+                  isActive={selection.type === "game" && selection.gameId === game.id}
                   key={game.id}
                   preferred={preferred}
                   sources={sources}
                   store={discoveredGames[game.id]?.store}
-                  title={game.name}
+                  title={formatGameDisplayName(game.name)}
                   onClick={() => selectGame(game.id)}
                 />
               );

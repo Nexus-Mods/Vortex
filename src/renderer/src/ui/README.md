@@ -75,8 +75,8 @@ The `joinClasses` utility handles conditional classes:
 
 ```tsx
 joinClasses(["nxm-button", className], {
-  "nxm-button-disabled": disabled,
-  "nxm-button-selected": selected,
+    "nxm-button-disabled": disabled,
+    "nxm-button-selected": selected,
 });
 ```
 
@@ -159,21 +159,21 @@ import { TabPanel } from "../../ui/components/tabs/TabPanel";
 import { TabProvider } from "../../ui/components/tabs/tabs.context";
 
 function MyTabs() {
-  const [selectedTab, setSelectedTab] = useState("overview");
+    const [selectedTab, setSelectedTab] = useState("overview");
 
-  return (
-    <TabProvider tab={selectedTab} tabListId="my-tabs" onSetSelectedTab={setSelectedTab}>
-      <TabBar>
-        <TabButton name="Overview" />
-        <TabButton name="Files" count={42} />
-        <TabButton name="Settings" disabled />
-      </TabBar>
+    return (
+        <TabProvider tab={selectedTab} tabListId="my-tabs" onSetSelectedTab={setSelectedTab}>
+            <TabBar>
+                <TabButton name="Overview" />
+                <TabButton name="Files" count={42} />
+                <TabButton name="Settings" disabled />
+            </TabBar>
 
-      <TabPanel name="Overview">Overview content</TabPanel>
-      <TabPanel name="Files">Files content</TabPanel>
-      <TabPanel name="Settings">Settings content</TabPanel>
-    </TabProvider>
-  );
+            <TabPanel name="Overview">Overview content</TabPanel>
+            <TabPanel name="Files">Files content</TabPanel>
+            <TabPanel name="Settings">Settings content</TabPanel>
+        </TabProvider>
+    );
 }
 ```
 
@@ -265,7 +265,7 @@ import { Modal, ModalWrapper, ModalPanel } from "../../ui/components/modal/Modal
   <p>Are you sure?</p>
 
   <Button onClick={handleClose}>Cancel</Button>
-  <Button onClick={handleConfirm}>Confirm</Button>  
+  <Button onClick={handleConfirm}>Confirm</Button>
 </Modal>
 
 // Custom size, no close button

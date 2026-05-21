@@ -5,9 +5,8 @@ import type {
   IExtensionContext,
   PropsCallback,
 } from "../../types/IExtensionContext";
-import type { IDashletProps } from "./types/IDashletProps";
-
 import settingsReducer from "./reducer";
+import type { IDashletProps } from "./types/IDashletProps";
 import Dashboard from "./views/Dashboard";
 import Settings from "./views/Settings";
 
@@ -48,13 +47,7 @@ function init(context: IExtensionContext): boolean {
     mdi: mdiViewDashboard,
   });
 
-  context.registerSettings(
-    "Interface",
-    Settings,
-    () => ({ dashlets }),
-    undefined,
-    1000,
-  );
+  context.registerSettings("Interface", Settings, () => ({ dashlets }), undefined, 1000);
 
   context.registerDashlet = registerDashlet;
 

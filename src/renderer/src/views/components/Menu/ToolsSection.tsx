@@ -1,13 +1,13 @@
+import { pathToFileURL } from "url";
+
 import { mdiPlay } from "@mdi/js";
 import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { pathToFileURL } from "url";
-
-import type { IStarterInfo } from "../../../util/StarterInfo";
 
 import { useWindowContext } from "../../../contexts";
 import { Button } from "../../../ui/components/button/Button";
 import { joinClasses } from "../../../ui/utils/joinClasses";
+import type { IStarterInfo } from "../../../util/StarterInfo";
 import StarterInfo from "../../../util/StarterInfo";
 import { useSpineContext } from "../Spine/SpineContext";
 import { ToolButton } from "./ToolButton";
@@ -43,11 +43,7 @@ const PlayButton: FC<PlayButtonProps> = ({
     return undefined;
   }, [primaryStarter, isCollapsed]);
 
-  const label = !isCollapsed
-    ? isPrimaryRunning
-      ? t("Running...")
-      : t("Play")
-    : undefined;
+  const label = !isCollapsed ? (isPrimaryRunning ? t("Running...") : t("Play")) : undefined;
 
   return (
     <div className="relative w-full">
@@ -64,11 +60,7 @@ const PlayButton: FC<PlayButtonProps> = ({
 
       {launcherIconSrc && (
         <div className="pointer-events-none absolute inset-0 z-2 flex items-center p-1">
-          <img
-            alt=""
-            className="size-7 rounded-xs object-cover"
-            src={launcherIconSrc}
-          />
+          <img alt="" className="size-7 rounded-xs object-cover" src={launcherIconSrc} />
         </div>
       )}
     </div>
@@ -111,9 +103,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
           className={joinClasses([
             "flex flex-wrap items-center gap-1.5 transition-[translate,opacity]",
             menuIsCollapsed ? "w-8" : "w-46",
-            isAnimating
-              ? "translate-y-6 opacity-0 duration-0"
-              : "duration-200",
+            isAnimating ? "translate-y-6 opacity-0 duration-0" : "duration-200",
           ])}
         >
           {visibleTools.map((starter) => (

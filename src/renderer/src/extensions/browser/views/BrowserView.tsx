@@ -1,17 +1,6 @@
-import { addNotification } from "../../../actions";
-import Modal from "../../../controls/Modal";
-import Spinner from "../../../controls/Spinner";
-import { IconButton } from "../../../controls/TooltipControls";
-import { WebviewEmbed, WebviewOverlay } from "../../../controls/Webview";
-import type { INotification } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import Debouncer from "../../../util/Debouncer";
-import { log } from "../../../util/log";
-import { truthy } from "../../../util/util";
-import { Notification } from "../../../views/Notification";
-import { closeBrowser } from "../actions";
+import * as nodeUrl from "url";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
 import * as _ from "lodash";
@@ -20,19 +9,27 @@ import { Breadcrumb, Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import * as nodeUrl from "url";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+
+import { addNotification } from "../../../actions";
+import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
+import Modal from "../../../controls/Modal";
+import Spinner from "../../../controls/Spinner";
+import { IconButton } from "../../../controls/TooltipControls";
+import { WebviewEmbed, WebviewOverlay } from "../../../controls/Webview";
+import type { INotification } from "../../../types/INotification";
+import type { IState } from "../../../types/IState";
+import Debouncer from "../../../util/Debouncer";
+import { log } from "../../../util/log";
+import { truthy } from "../../../util/util";
+import { Notification } from "../../../views/Notification";
+import { closeBrowser } from "../actions";
 
 export type SubscriptionResult = "close" | "continue" | "ignore";
 
 export interface IBaseProps {
   onHide: () => void;
   onNavigate: (url: string) => void;
-  onEvent: (
-    subscriber: string,
-    eventId: string,
-    value: any,
-  ) => SubscriptionResult;
+  onEvent: (subscriber: string, eventId: string, value: any) => SubscriptionResult;
   overlay: boolean;
 }
 
@@ -106,11 +103,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         this.nextState.url = newUrl;
         this.props.onEvent(this.props.subscriber, "navigate", newUrl);
         if (newUrl !== this.nextState.history[this.nextState.historyIdx]) {
-          this.nextState.history.splice(
-            this.nextState.historyIdx + 1,
-            9999,
-            newUrl,
-          );
+          this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, newUrl);
           ++this.nextState.historyIdx;
         }
       },
@@ -178,8 +171,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, overlay, instructions, skippable } = this.props;
-    const { confirmed, filtered, history, historyIdx, loading, url } =
-      this.state;
+    const { confirmed, filtered, history, historyIdx, loading, url } = this.state;
     const referrer = history.length > 0 ? history[historyIdx - 1] : undefined;
 
     const Webview = overlay ? WebviewOverlay : WebviewEmbed;
@@ -197,9 +189,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
           />
         </Modal.Header>
         <Modal.Body>
-          {instructions !== undefined ? (
-            <p id="browser-instructions">{instructions}</p>
-          ) : null}
+          {instructions !== undefined ? <p id="browser-instructions">{instructions}</p> : null}
           {confirmed ? (
             <Webview
               id="browser-webview"
@@ -213,9 +203,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
           ) : (
             this.renderConfirm()
           )}
-          <div className="browser-notifications">
-            {filtered.map(this.renderNotification)}
-          </div>
+          <div className="browser-notifications">{filtered.map(this.renderNotification)}</div>
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={this.close}>{t("Cancel")}</Button>
@@ -225,23 +213,18 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderNotification = (
-    notification: INotification,
-    idx: number,
-  ): JSX.Element => {
+  private renderNotification = (notification: INotification, idx: number): JSX.Element => {
     const { t } = this.props;
 
     const translated: INotification = { ...notification };
     translated.title =
       translated.title !== undefined &&
-      (notification.localize === undefined ||
-        notification.localize.title !== false)
+      (notification.localize === undefined || notification.localize.title !== false)
         ? t(translated.title, { replace: translated.replace })
         : translated.title;
 
     translated.message =
-      notification.localize === undefined ||
-      notification.localize.message !== false
+      notification.localize === undefined || notification.localize.message !== false
         ? t(translated.message, { replace: translated.replace })
         : translated.message;
 
@@ -282,9 +265,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       return null;
     }
     const parsed = nodeUrl.parse(input);
-    const segments = (parsed.pathname ?? "")
-      .split("/")
-      .filter((seg) => seg.length > 0);
+    const segments = (parsed.pathname ?? "").split("/").filter((seg) => seg.length > 0);
     const Item: any = Breadcrumb.Item;
     return (
       <Breadcrumb>
@@ -365,10 +346,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const now = Date.now();
 
     const filtered = notifications.filter((item) => {
-      if (
-        ["activity", "silent"].includes(item.type) ||
-        item.createdTime < opened
-      ) {
+      if (["activity", "silent"].includes(item.type) || item.createdTime < opened) {
         return false;
       }
       const displayTime = this.displayTime(item);
@@ -553,13 +531,10 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<IState, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onClose: () => dispatch(closeBrowser()),
-    onNotification: (notification: INotification) =>
-      dispatch(addNotification(notification)),
+    onNotification: (notification: INotification) => dispatch(addNotification(notification)),
   };
 }
 

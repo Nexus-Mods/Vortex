@@ -1,18 +1,11 @@
-import FormFeedback from "./FormFeedback";
-import { IconButton } from "./TooltipControls";
-
 import type { TFunction } from "i18next";
 import * as React from "react";
-import {
-  Checkbox,
-  Col,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  InputGroup,
-} from "react-bootstrap";
+import { Checkbox, Col, ControlLabel, FormControl, FormGroup, InputGroup } from "react-bootstrap";
+
 import { ComponentEx } from "./ComponentEx";
+import FormFeedback from "./FormFeedback";
 import FormInput from "./FormInput";
+import { IconButton } from "./TooltipControls";
 
 export interface IFormItemProps {
   t: TFunction;
@@ -30,23 +23,14 @@ export interface IFormItemProps {
 
 export class FormTextItem extends React.Component<IFormItemProps, {}> {
   public render() {
-    const { controlId, label, maxLength, placeholder, readOnly, style, value } =
-      this.props;
+    const { controlId, label, maxLength, placeholder, readOnly, style, value } = this.props;
 
     const validation = value !== undefined ? this.validationState() : undefined;
     const validationState =
-      validation === undefined
-        ? undefined
-        : validation === null
-          ? "success"
-          : "error";
+      validation === undefined ? undefined : validation === null ? "success" : "error";
 
     return (
-      <FormGroup
-        controlId={controlId}
-        validationState={validationState}
-        style={style}
-      >
+      <FormGroup controlId={controlId} validationState={validationState} style={style}>
         <Col componentClass={ControlLabel} sm={3}>
           {label}
         </Col>
@@ -104,23 +88,14 @@ export interface IFormPathProps extends IFormItemProps {
 
 export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
   public render(): JSX.Element {
-    const { t, controlId, label, placeholder, readOnly, style, value } =
-      this.props;
+    const { t, controlId, label, placeholder, readOnly, style, value } = this.props;
 
     const validation = value !== undefined ? this.validationState() : undefined;
     const validationState =
-      validation === undefined
-        ? undefined
-        : validation === null
-          ? "success"
-          : "error";
+      validation === undefined ? undefined : validation === null ? "success" : "error";
 
     return (
-      <FormGroup
-        controlId={controlId}
-        validationState={validationState}
-        style={style}
-      >
+      <FormGroup controlId={controlId} validationState={validationState} style={style}>
         <Col componentClass={ControlLabel} sm={3}>
           {label}
         </Col>
@@ -164,11 +139,8 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
   };
 
   private handleChangePath = () => {
-    const { directory, extensions, onChangeValue, stateKey, value } =
-      this.props;
-    const func = directory
-      ? this.context.api.selectDir
-      : this.context.api.selectFile;
+    const { directory, extensions, onChangeValue, stateKey, value } = this.props;
+    const func = directory ? this.context.api.selectDir : this.context.api.selectFile;
 
     func({
       defaultPath: value,

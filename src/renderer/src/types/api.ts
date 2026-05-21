@@ -7,6 +7,8 @@ export * from "./IComponentContext";
 export * from "./IDialog";
 export * from "./IExtensionContext";
 export * from "./IGame";
+export * from "./IHealthCheck";
+export * from "../extensions/mod_management/types/IInstallerSpec";
 export * from "./IModifiers";
 export * from "./INotification";
 export * from "./IState";
@@ -19,14 +21,10 @@ export type { ITool } from "./ITool";
 export type { TFunction } from "../util/i18n";
 export type { IDiscoveredTool } from "./IDiscoveredTool";
 export type { IExecInfo } from "./IExecInfo";
-export type { IStoreQuery } from "../util/GameStoreHelper";
+export type { IQueryArgEntry, IStoreQuery } from "../util/GameStoreHelper";
 export type { IGameStoreEntry } from "./IGameStoreEntry";
 export { GameEntryNotFound, GameStoreNotFound } from "./IGameStore";
-export type {
-  ICustomExecutionInfo,
-  IGameStore,
-  GameLaunchType,
-} from "./IGameStore.ts";
+export type { ICustomExecutionInfo, IGameStore, GameLaunchType } from "./IGameStore.ts";
 export type { IStarterInfo } from "../util/StarterInfo";
 
 export type { IRegisteredExtension } from "./extensions";
@@ -84,10 +82,7 @@ export type {
   IHistoryStack,
   Revertability,
 } from "../extensions/history_management/types";
-export type {
-  IProfile,
-  IProfileMod,
-} from "../extensions/profile_management/types/IProfile";
+export type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 export type { IEnableOptions } from "../extensions/profile_management/actions/profiles";
 export type { IValidateKeyData } from "../extensions/nexus_integration/types/IValidateKeyData";
 export type {

@@ -1,4 +1,4 @@
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 export function toStarterInfo(
   game: types.IGameStored,
@@ -21,9 +21,7 @@ export function starterMemoizer(
         return undefined;
       }
 
-      const tool = game.supportedTools.find(
-        (iter) => iter.id === toolDiscovery.id,
-      );
+      const tool = game.supportedTools.find((iter) => iter.id === toolDiscovery.id);
       try {
         return toStarterInfo(game, discovery, tool, toolDiscovery);
       } catch (err) {

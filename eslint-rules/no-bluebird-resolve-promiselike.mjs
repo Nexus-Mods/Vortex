@@ -5,8 +5,7 @@ export default {
   meta: {
     type: "problem",
     docs: {
-      description:
-        "disallow Bluebird.resolve() when passed a PromiseLike<T> value",
+      description: "disallow Bluebird.resolve() when passed a PromiseLike<T> value",
     },
     messages: {
       noPromiseLike:
@@ -28,8 +27,7 @@ export default {
         callee.type === AST_NODE_TYPES.MemberExpression &&
         !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
-        (callee.object.name === "Bluebird" ||
-          callee.object.name === "PromiseBB") &&
+        (callee.object.name === "Bluebird" || callee.object.name === "PromiseBB") &&
         callee.property.type === AST_NODE_TYPES.Identifier &&
         callee.property.name === "resolve"
       );
@@ -64,10 +62,7 @@ export default {
         return false;
       }
 
-      const thenType = checker.getTypeOfSymbolAtLocation(
-        thenProperty,
-        declaration,
-      );
+      const thenType = checker.getTypeOfSymbolAtLocation(thenProperty, declaration);
 
       return thenType.getCallSignatures().length > 0;
     }

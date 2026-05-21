@@ -1,4 +1,4 @@
-import type { QualifiedPath } from "@vortex/fs";
+import type { QualifiedPath } from "../fs/paths";
 
 /**
  * Declarative version detection strategies. The adaptor declares which
@@ -7,9 +7,7 @@ import type { QualifiedPath } from "@vortex/fs";
  *
  * @public
  */
-export type VersionSource =
-  | PEHeaderVersionSource
-  | TextFileVersionSource;
+export type VersionSource = PEHeaderVersionSource | TextFileVersionSource;
 
 /** Reads the version resource embedded in a Windows PE executable. */
 export interface PEHeaderVersionSource {
@@ -34,9 +32,6 @@ export function peHeader(path: QualifiedPath): PEHeaderVersionSource {
 }
 
 /** Shorthand: detect version from a text file, optionally with a regex. */
-export function textFile(
-  path: QualifiedPath,
-  regex?: string,
-): TextFileVersionSource {
+export function textFile(path: QualifiedPath, regex?: string): TextFileVersionSource {
   return { type: "text-file", path, regex };
 }

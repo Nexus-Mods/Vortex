@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
-import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
+import * as path from "path";
+
+import { describe, it, expect } from "vitest";
 
 import { loadBSA, calculateBSAHash } from "./bsa";
 
@@ -13,9 +14,7 @@ interface ExpectedArchive {
 }
 
 function loadExpected(): Record<string, ExpectedArchive> {
-  return JSON.parse(
-    fs.readFileSync(path.join(TEST_DATA_DIR, "expected-bsa.json"), "utf8"),
-  );
+  return JSON.parse(fs.readFileSync(path.join(TEST_DATA_DIR, "expected-bsa.json"), "utf8"));
 }
 
 const SYNTHETIC_BSAS = [
@@ -35,15 +34,11 @@ describe("BSA hash algorithm", () => {
 
   it("handles case insensitivity", () => {
     expect(calculateBSAHash("Test.TXT")).toBe(calculateBSAHash("test.txt"));
-    expect(calculateBSAHash("MESHES\\WEAPON.NIF")).toBe(
-      calculateBSAHash("meshes\\weapon.nif"),
-    );
+    expect(calculateBSAHash("MESHES\\WEAPON.NIF")).toBe(calculateBSAHash("meshes\\weapon.nif"));
   });
 
   it("normalizes forward slashes to backslashes", () => {
-    expect(calculateBSAHash("meshes/weapon.nif")).toBe(
-      calculateBSAHash("meshes\\weapon.nif"),
-    );
+    expect(calculateBSAHash("meshes/weapon.nif")).toBe(calculateBSAHash("meshes\\weapon.nif"));
   });
 
   it("applies extension-specific flags", () => {
@@ -82,12 +77,8 @@ describe("BSA parser", () => {
 
       it("matches expected file list", async () => {
         const archive = await loadBSA(bsaPath);
-        const expectedPaths = new Set(
-          Object.keys(exp.files).map((p) => p.toLowerCase()),
-        );
-        const actualPaths = new Set(
-          archive.fileList.map((f) => f.fullPath.toLowerCase()),
-        );
+        const expectedPaths = new Set(Object.keys(exp.files).map((p) => p.toLowerCase()));
+        const actualPaths = new Set(archive.fileList.map((f) => f.fullPath.toLowerCase()));
         expect(actualPaths).toEqual(expectedPaths);
       });
 
@@ -109,9 +100,7 @@ describe("BSA parser", () => {
 
       it("extractFile produces correct content", async () => {
         const archive = await loadBSA(bsaPath);
-        const tmpDir = fs.mkdtempSync(
-          path.join(os.tmpdir(), "bsa-single-test-"),
-        );
+        const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsa-single-test-"));
 
         try {
           for (const file of archive.fileList) {
@@ -147,10 +136,7 @@ describe("error handling", () => {
 
 // --- Helpers ---
 
-function verifyExtractedContent(
-  tmpDir: string,
-  expectedFiles: Record<string, string>,
-): void {
+function verifyExtractedContent(tmpDir: string, expectedFiles: Record<string, string>): void {
   const extractedMap = new Map<string, string>();
   function walk(dir: string, prefix: string) {
     for (const entry of fs.readdirSync(dir)) {

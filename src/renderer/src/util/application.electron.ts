@@ -1,10 +1,9 @@
-import type { BrowserWindow } from "electron";
-
 import os from "node:os";
 
-import type { IApplication } from "./application";
+import type { BrowserWindow } from "electron";
 
 import { ApplicationData } from "../applicationData";
+import type { IApplication } from "./application";
 import { setApplication } from "./application";
 import { getPreloadWindow } from "./preloadAccess";
 

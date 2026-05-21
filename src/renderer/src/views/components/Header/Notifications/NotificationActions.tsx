@@ -2,7 +2,6 @@ import React, { type FC, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { INotificationAction } from "../../../../types/INotification";
-
 import { Button } from "../../../../ui/components/button/Button";
 
 interface NotificationActionsProps {
@@ -39,12 +38,7 @@ export const NotificationActions: FC<NotificationActionsProps> = ({
       ))}
 
       {collapsed > 1 && onExpand && (
-        <Button
-          buttonType="tertiary"
-          filled="weak"
-          size="xs"
-          onClick={onExpand}
-        >
+        <Button buttonType="tertiary" filled="weak" size="xs" onClick={onExpand}>
           {t("{{ count }} More", { count: collapsed - 1 })}
         </Button>
       )}

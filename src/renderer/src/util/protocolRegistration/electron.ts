@@ -5,20 +5,14 @@ import { getPreloadApi } from "../preloadAccess";
 /**
  * Register Vortex as the default handler for a protocol via Electron.
  */
-export function setDefaultProtocolClient(
-  protocol: string,
-  userDataPath?: string,
-): Promise<void> {
+export function setDefaultProtocolClient(protocol: string, userDataPath?: string): Promise<void> {
   return getPreloadApi().app.setProtocolClient(protocol, userDataPath ?? "");
 }
 
 /**
  * Check whether Vortex is currently the default handler for a protocol.
  */
-export function isDefaultProtocolClient(
-  protocol: string,
-  userDataPath?: string,
-): Promise<boolean> {
+export function isDefaultProtocolClient(protocol: string, userDataPath?: string): Promise<boolean> {
   return getPreloadApi().app.isProtocolClient(protocol, userDataPath ?? "");
 }
 

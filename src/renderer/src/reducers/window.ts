@@ -7,14 +7,10 @@ import { setSafe } from "../util/storeHelper";
  */
 export const windowReducer: IReducerSpec = {
   reducers: {
-    [actions.setWindowSize as any]: (state, payload) =>
-      setSafe(state, ["size"], payload),
-    [actions.setWindowPosition as any]: (state, payload) =>
-      setSafe(state, ["position"], payload),
-    [actions.setMaximized as any]: (state, payload) =>
-      setSafe(state, ["maximized"], payload),
-    [actions.setZoomFactor as any]: (state, payload) =>
-      setSafe(state, ["zoomFactor"], payload),
+    [actions.setWindowSize as any]: (state, payload) => setSafe(state, ["size"], payload),
+    [actions.setWindowPosition as any]: (state, payload) => setSafe(state, ["position"], payload),
+    [actions.setMaximized as any]: (state, payload) => setSafe(state, ["maximized"], payload),
+    [actions.setZoomFactor as any]: (state, payload) => setSafe(state, ["zoomFactor"], payload),
     [actions.setTabsMinimized as any]: (state, payload) =>
       setSafe(state, ["tabsMinimized"], payload),
     [actions.setCustomTitlebar as any]: (state, payload) =>

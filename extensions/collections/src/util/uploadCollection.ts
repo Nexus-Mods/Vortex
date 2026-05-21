@@ -1,4 +1,4 @@
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { doExportToAPI } from "../collectionExport";
 import { TOS_URL } from "../constants";
@@ -13,11 +13,7 @@ export async function uploadCollection(
   }
   const state = api.getState();
   const profile = selectors.profileById(state, profileId);
-  const userInfo = util.getSafe(
-    state,
-    ["persistent", "nexus", "userInfo"],
-    undefined,
-  );
+  const userInfo = util.getSafe(state, ["persistent", "nexus", "userInfo"], undefined);
   if (userInfo === undefined) {
     api.showErrorNotification(
       "Not logged in",
@@ -55,11 +51,7 @@ export async function uploadCollection(
     return;
   }
 
-  api.events.emit(
-    "analytics-track-click-event",
-    "Collections",
-    "Upload collection",
-  );
+  api.events.emit("analytics-track-click-event", "Collections", "Upload collection");
 
   const missing = (mods[collectionId]?.rules ?? []).filter(
     (rule) =>
@@ -76,9 +68,7 @@ export async function uploadCollection(
           "If you have removed mods that were part of this collection you may want to remove " +
           "them from the collection as well. If this collection is connected to a " +
           "profile you can simply update from that.",
-        message: missing
-          .map((rule) => util.renderModReference(rule.reference))
-          .join("\n"),
+        message: missing.map((rule) => util.renderModReference(rule.reference)).join("\n"),
       },
       [{ label: "Close" }],
     );
@@ -122,13 +112,7 @@ export async function uploadCollection(
                 const game = selectors.gameById(api.getState(), profile.gameId);
                 const domainName = util.nexusGameId(game);
                 const url = util.nexusModsURL(
-                  [
-                    domainName,
-                    "collections",
-                    slug,
-                    "revisions",
-                    revisionNumber.toString(),
-                  ],
+                  [domainName, "collections", slug, "revisions", revisionNumber.toString()],
                   {
                     campaign: util.Campaign.GeneralNavigation,
                     section: util.Section.Collections,
@@ -141,10 +125,7 @@ export async function uploadCollection(
         });
       }
     } catch (err) {
-      if (
-        !(err instanceof util.UserCanceled) &&
-        !(err instanceof util.ProcessCanceled)
-      ) {
+      if (!(err instanceof util.UserCanceled) && !(err instanceof util.ProcessCanceled)) {
         api.showErrorNotification("Failed to upload to API", err, {
           allowReport: false,
         });

@@ -12,6 +12,9 @@
 
 @import "tailwindcss";
 
+/* Explicit source paths so detection doesn't depend on the CLI's cwd. */
+@source "../renderer/src/**/*.{ts,tsx,html}";
+
 /* Import design system */
 @import "./ui/theme";
 @import "./ui/elements";
@@ -22,8 +25,8 @@
  * - container: Tailwind's responsive container conflicts with Bootstrap's grid container
  * - collapse: Tailwind's `visibility: collapse` overrides Bootstrap's collapse component
  */
-@source not inline('container');
-@source not inline('collapse');
+@source not inline("container");
+@source not inline("collapse");
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);

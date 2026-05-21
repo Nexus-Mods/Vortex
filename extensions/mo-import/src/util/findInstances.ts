@@ -1,8 +1,9 @@
-import parseMOIni from "./parseMOIni";
-
-import Promise from "bluebird";
 import * as path from "path";
-import { fs, types } from "vortex-api";
+
+import { fs, types } from "@nexusmods/vortex-api";
+import Promise from "bluebird";
+
+import parseMOIni from "./parseMOIni";
 
 export function instancesPath(): string {
   return path.resolve(process.env["LOCALAPPDATA"], "ModOrganizer");

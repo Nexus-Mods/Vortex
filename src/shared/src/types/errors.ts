@@ -41,10 +41,7 @@ function captureStackTrace<T extends Error>(
   self: T,
   constructor?: new (...args: unknown[]) => T,
 ): void {
-  if (
-    "captureStackTrace" in Error &&
-    typeof Error.captureStackTrace === "function"
-  ) {
+  if ("captureStackTrace" in Error && typeof Error.captureStackTrace === "function") {
     Error.captureStackTrace(self, constructor);
   }
 }
@@ -89,9 +86,7 @@ export class CleanupFailedException extends Error {
 
 export class ServiceTemporarilyUnavailable extends Error {
   constructor(service: string) {
-    super(
-      `${service} service is temporarily unavailable. Please try again later.`,
-    );
+    super(`${service} service is temporarily unavailable. Please try again later.`);
     this.name = this.constructor.name;
   }
 }
@@ -235,9 +230,7 @@ export class ThirdPartyError extends Error {
 
 export class SelfCopyCheckError extends Error {
   constructor(src: string, dest: string, ino: bigint) {
-    super(
-      `Source "${src}" and destination "${dest}" are the same file (id "${ino}").`,
-    );
+    super(`Source "${src}" and destination "${dest}" are the same file (id "${ino}").`);
     this.name = this.constructor.name;
   }
 }
@@ -296,4 +289,12 @@ export class DownloadIsHTML extends Error {
   public get url(): string {
     return this.mUrl;
   }
+}
+
+/**
+ * Returns true if the error represents a user cancellation (e.g. the user
+ * clicked Cancel on a dialog).
+ */
+export function isUserCanceled(err: unknown): boolean {
+  return err instanceof UserCanceled;
 }

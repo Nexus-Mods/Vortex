@@ -14,31 +14,15 @@ export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
  * Standard tab component, implemented as a button. Clicking it will reveal the
  * content for the selected tab.
  */
-export const TabButton = ({
-  className,
-  count,
-  disabled,
-  name,
-  ...props
-}: TabButtonProps) => {
+export const TabButton = ({ className, count, disabled, name, ...props }: TabButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null!);
-  const {
-    onKeyDown,
-    onTabClick,
-    registerTab,
-    selectedTab,
-    tabListId,
-    tabType,
-  } = useTabContext();
+  const { onKeyDown, onTabClick, registerTab, selectedTab, tabListId, tabType } = useTabContext();
 
   const tabId = getTabId(name);
   const selected = selectedTab === getTabId(name);
 
   // Register the tab ref with the parent tab bar to set focus on keydown
-  useEffect(
-    () => registerTab({ disabled, name: tabId, ref }),
-    [disabled, tabId, registerTab],
-  );
+  useEffect(() => registerTab({ disabled, name: tabId, ref }), [disabled, tabId, registerTab]);
 
   return (
     <button

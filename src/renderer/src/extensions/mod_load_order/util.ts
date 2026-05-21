@@ -7,11 +7,7 @@ export function isModInCollection(collection: types.IMod, mod: types.IMod) {
     return false;
   }
 
-  return (
-    collection.rules.find((rule) =>
-      util.testModReference(mod, rule.reference),
-    ) !== undefined
-  );
+  return collection.rules.find((rule) => util.testModReference(mod, rule.reference)) !== undefined;
 }
 
 export function isValidMod(mod: types.IMod) {

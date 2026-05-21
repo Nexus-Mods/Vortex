@@ -6,10 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "pnpm tsdown",
-    "dist": "pnpm run build",
     "typecheck": "pnpm tsc",
-    "lint": "pnpm eslint --concurrency auto .",
-    "lint:quiet": "pnpm eslint --concurrency auto --quiet ."
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto ."
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

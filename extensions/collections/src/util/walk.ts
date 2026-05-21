@@ -1,5 +1,5 @@
+import { util } from "@nexusmods/vortex-api";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
-import { util } from "vortex-api";
 
 import { IEntryEx } from "../types/IEntryEx";
 
@@ -7,10 +7,7 @@ export async function fileMD5Async(fileName: string): Promise<string> {
   return util.fileMD5(fileName);
 }
 
-export async function walkPath(
-  dirPath: string,
-  walkOptions?: IWalkOptions,
-): Promise<IEntryEx[]> {
+export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Promise<IEntryEx[]> {
   walkOptions = walkOptions || {
     skipLinks: true,
     skipHidden: true,
@@ -29,9 +26,7 @@ export async function walkPath(
         return Promise.resolve();
       },
       walkOptions,
-    ).catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
-    );
+    ).catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)));
     return resolve(walkResults);
   });
 }

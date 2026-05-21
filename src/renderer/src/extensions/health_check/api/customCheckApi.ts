@@ -16,10 +16,7 @@ import type { HealthCheckId } from "../types";
 export interface ICustomCheckApi {
   register: (healthCheck: IHealthCheck) => void;
   unregister: (checkId: HealthCheckId) => void;
-  run: (
-    checkId: HealthCheckId,
-    force?: boolean,
-  ) => Promise<IHealthCheckResult | undefined>;
+  run: (checkId: HealthCheckId, force?: boolean) => Promise<IHealthCheckResult | undefined>;
   runByTrigger: (trigger: HealthCheckTrigger) => Promise<IHealthCheckResult[]>;
   getAll: () => IHealthCheckEntry[];
 }

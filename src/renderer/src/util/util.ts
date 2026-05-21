@@ -1,15 +1,13 @@
-import type * as Redux from "redux";
+import { spawn } from "child_process";
+import * as path from "path";
 
 import Bluebird from "bluebird";
-import { spawn } from "child_process";
 import { dequal } from "dequal";
 import * as _ from "lodash";
-import * as path from "path";
+import type * as Redux from "redux";
 import { batch } from "redux-act";
 import * as semver from "semver";
 import * as tmp from "tmp";
-
-import type { Normalize } from "./getNormalizeFunc";
 
 import {
   NEXUS_DOMAIN,
@@ -20,6 +18,7 @@ import {
 } from "../extensions/nexus_integration/constants";
 import { log } from "../logging";
 import { TimeoutError } from "./CustomErrors";
+import type { Normalize } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 
 /**
@@ -31,10 +30,7 @@ import getVortexPath from "./getVortexPath";
  * @param {(value: T) => boolean} predicate
  * @returns {number}
  */
-export function countIf<T>(
-  container: T[],
-  predicate: (value: T) => boolean,
-): number {
+export function countIf<T>(container: T[], predicate: (value: T) => boolean): number {
   return container.reduce((count: number, value: T): number => {
     return count + (predicate(value) ? 1 : 0);
   }, 0);
@@ -48,10 +44,7 @@ export function countIf<T>(
  * @returns {number}
  */
 export function sum(container: number[]): number {
-  return container.reduce(
-    (total: number, value: number): number => total + value,
-    0,
-  );
+  return container.reduce((total: number, value: number): number => total + value, 0);
 }
 
 /**
@@ -59,11 +52,7 @@ export function sum(container: number[]): number {
  * returns the attribute "key" from "obj". If that attribute doesn't exist
  * on obj, it will be set to the default value and that is returned.
  */
-export function setdefault<T, K extends keyof T>(
-  obj: T,
-  key: K,
-  def: T[K],
-): T[K] {
+export function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K] {
   if (!Object.prototype.hasOwnProperty.call(obj, key)) {
     obj[key] = def;
   }
@@ -85,9 +74,7 @@ export function midClip(input: string, maxLength: number): string {
   }
 
   const half = maxLength / 2;
-  return (
-    input.substr(0, half - 2) + "..." + input.substr(input.length - (half - 1))
-  );
+  return input.substr(0, half - 2) + "..." + input.substr(input.length - (half - 1));
 }
 
 /**
@@ -121,11 +108,7 @@ function isPlainObject(obj: any): boolean {
  * @param rhs the right, "after", object
  * @param skip properties to skip in the diff, string array
  */
-export function objDiff(
-  lhs: any,
-  rhs: any,
-  skip: string[] = [],
-): Record<string, any> {
+export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string, any> {
   // The current objDiff implementation only performs deep diffs between plain objects.
   //  Arrays and other non-plain-object inputs are treated as non-comparable types.
   //  - If both inputs are the same reference or deeply equal arrays, objDiff returns an empty object `{}`.
@@ -221,9 +204,7 @@ export function makeQueue<T>() {
       //  DownloadManager.
       Bluebird.resolve(processing.func())
         .then(processing.resolve)
-        .catch((err) =>
-          processing?.reject(restackErr(err, processing.stackErr)),
-        )
+        .catch((err) => processing?.reject(restackErr(err, processing.stackErr)))
         .finally(() => {
           tick();
         });
@@ -277,9 +258,7 @@ export function bytesToString(bytes: number): string {
     bytes /= 1024;
   }
   try {
-    return (
-      bytes.toFixed(Math.max(0, labelIdx - 1)) + " " + BYTE_LABELS[labelIdx]
-    );
+    return bytes.toFixed(Math.max(0, labelIdx - 1)) + " " + BYTE_LABELS[labelIdx];
   } catch (err) {
     return "???";
   }
@@ -302,9 +281,7 @@ export function largeNumToString(num: number): string {
 
 export function pad(value: number, padding: string, width: number) {
   const temp = `${value}`;
-  return temp.length >= width
-    ? temp
-    : new Array(width - temp.length + 1).join(padding) + temp;
+  return temp.length >= width ? temp : new Array(width - temp.length + 1).join(padding) + temp;
 }
 
 export function timeToString(seconds: number): string {
@@ -379,16 +356,10 @@ export function getAllPropertyNames(obj: object): string[] {
  * @param child path of the presumed sub-directory
  * @param parent path of the presumed parent directory
  */
-export function isChildPath(
-  child: string,
-  parent: string,
-  normalize?: Normalize,
-): boolean {
+export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
   if (normalize === undefined) {
     normalize = (input) =>
-      process.platform === "win32"
-        ? path.normalize(input.toUpperCase())
-        : path.normalize(input);
+      process.platform === "win32" ? path.normalize(input.toUpperCase()) : path.normalize(input);
   }
 
   const childNorm = normalize(child);
@@ -398,30 +369,19 @@ export function isChildPath(
   }
 
   const tokens = parentNorm.split(path.sep).filter((token) => token.length > 0);
-  const childTokens = childNorm
-    .split(path.sep)
-    .filter((token) => token.length > 0);
+  const childTokens = childNorm.split(path.sep).filter((token) => token.length > 0);
 
-  return tokens.every(
-    (token: string, idx: number) => childTokens[idx] === token,
-  );
+  return tokens.every((token: string, idx: number) => childTokens[idx] === token);
 }
 
-export function isReservedDirectory(
-  dirPath: string,
-  normalize?: Normalize,
-): boolean {
+export function isReservedDirectory(dirPath: string, normalize?: Normalize): boolean {
   if (normalize === undefined) {
     normalize = (input) =>
-      process.platform === "win32"
-        ? path.normalize(input.toUpperCase())
-        : path.normalize(input);
+      process.platform === "win32" ? path.normalize(input.toUpperCase()) : path.normalize(input);
   }
 
   const normalized = normalize(dirPath);
-  const trimmed = normalized.endsWith(path.sep)
-    ? normalized.slice(0, -1)
-    : normalized;
+  const trimmed = normalized.endsWith(path.sep) ? normalized.slice(0, -1) : normalized;
 
   const vortexAppData = getVortexPath("userData");
   const invalidDirs = [
@@ -446,10 +406,7 @@ export function isReservedDirectory(
 }
 
 export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
-  return (
-    (lhs ?? "").localeCompare(rhs ?? "", locale, { sensitivity: "accent" }) ===
-    0
-  );
+  return (lhs ?? "").localeCompare(rhs ?? "", locale, { sensitivity: "accent" }) === 0;
 }
 
 const sanitizeRE = /[ .#()]/g;
@@ -529,10 +486,7 @@ export function timeout<T>(
     }
   };
 
-  return Bluebird.race<T>([
-    prom,
-    Bluebird.delay(delayMS).then(onTimeExpired),
-  ]).finally(() => {
+  return Bluebird.race<T>([prom, Bluebird.delay(delayMS).then(onTimeExpired)]).finally(() => {
     resolved = true;
     if (timedOut && options?.cancel === true) {
       prom.cancel();
@@ -561,10 +515,7 @@ const INVALID_FILEPATH_CHARACTERS =
  */
 const INVALID_FILENAME_CHARACTERS = [...INVALID_FILEPATH_CHARACTERS, path.sep];
 
-const INVALID_FILENAME_RE = new RegExp(
-  `[${escapeRE(INVALID_FILENAME_CHARACTERS.join(""))}]`,
-  "g",
-);
+const INVALID_FILENAME_RE = new RegExp(`[${escapeRE(INVALID_FILENAME_CHARACTERS.join(""))}]`, "g");
 
 const RESERVED_NAMES = new Set(
   process.platform === "win32"
@@ -601,15 +552,10 @@ export function isFilenameValid(input: string): boolean {
   if (input.length === 0) {
     return false;
   }
-  if (
-    RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())
-  ) {
+  if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
     return false;
   }
-  if (
-    process.platform === "win32" &&
-    (input.endsWith(" ") || input.endsWith("."))
-  ) {
+  if (process.platform === "win32" && (input.endsWith(" ") || input.endsWith("."))) {
     // Although Windows' underlying file system may support
     //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
     return false;
@@ -628,31 +574,20 @@ export function sanitizeFilename(input: string): string {
   if (input.length === 0) {
     return "_empty_";
   }
-  if (
-    RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())
-  ) {
+  if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
     return path.join(path.dirname(input), "_reserved_" + path.basename(input));
   }
-  if (
-    process.platform === "win32" &&
-    (input.endsWith(" ") || input.endsWith("."))
-  ) {
+  if (process.platform === "win32" && (input.endsWith(" ") || input.endsWith("."))) {
     // Although Windows' underlying file system may support
     //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
     return input + "_";
   }
-  return input.replace(
-    INVALID_FILENAME_RE,
-    (invChar) => `_${invChar.charCodeAt(0)}_`,
-  );
+  return input.replace(INVALID_FILENAME_RE, (invChar) => `_${invChar.charCodeAt(0)}_`);
 }
 
 const trimTrailingSep = new RegExp(`\\${path.sep}*$`, "g");
 
-export function isPathValid(
-  input: string,
-  allowRelative: boolean = false,
-): boolean {
+export function isPathValid(input: string, allowRelative: boolean = false): boolean {
   if (process.platform === "win32" && input.startsWith("\\\\")) {
     // UNC path, skip the leading \\ for validation
     input = input.slice(2);
@@ -673,11 +608,7 @@ export function isPathValid(
   return found === undefined;
 }
 
-export {
-  INVALID_FILEPATH_CHARACTERS,
-  INVALID_FILENAME_RE,
-  INVALID_FILENAME_CHARACTERS,
-};
+export { INVALID_FILEPATH_CHARACTERS, INVALID_FILENAME_RE, INVALID_FILENAME_CHARACTERS };
 
 export interface IFlattenParameters {
   // maximum length of arrays. If this is not set the result object may become *huge*!
@@ -706,18 +637,11 @@ export function flatten(obj: any, options?: IFlattenParameters): any {
   return flattenInner(obj, options.baseKey, [], options);
 }
 
-function flattenInner(
-  obj: any,
-  key: string[],
-  objStack: any[],
-  options: IFlattenParameters,
-): any {
+function flattenInner(obj: any, key: string[], objStack: any[], options: IFlattenParameters): any {
   if (obj.length !== undefined && obj.length > 10) {
     return { [key.join(options.separator)]: "<long array cut>" };
   }
-  const getKeys = options.nonEnumerable
-    ? Object.getOwnPropertyNames
-    : Object.keys;
+  const getKeys = options.nonEnumerable ? Object.getOwnPropertyNames : Object.keys;
   return getKeys(obj).reduce((prev, attr: string) => {
     if (objStack.indexOf(obj[attr]) !== -1) {
       return prev;
@@ -725,12 +649,7 @@ function flattenInner(
     if (typeof obj[attr] === "object" && obj[attr] !== null) {
       prev = {
         ...prev,
-        ...flattenInner(
-          obj[attr],
-          [...key, attr],
-          [...objStack, obj[attr]],
-          options,
-        ),
+        ...flattenInner(obj[attr], [...key, attr], [...objStack, obj[attr]], options),
       };
     } else {
       // POD
@@ -851,17 +770,11 @@ function removeLeadingZeros(input: string): string {
     .join(".");
 }
 
-export function semverCoerce(
-  input: string,
-  options?: semver.CoerceOptions,
-): semver.SemVer {
+export function semverCoerce(input: string, options?: semver.CoerceOptions): semver.SemVer {
   let res = semver.coerce(removeLeadingZeros(input), options);
 
   if (res === null) {
-    res =
-      input === ""
-        ? new semver.SemVer("0.0.0")
-        : new semver.SemVer(`0.0.0-${input}`);
+    res = input === "" ? new semver.SemVer("0.0.0") : new semver.SemVer(`0.0.0-${input}`);
   }
 
   return res;
@@ -913,9 +826,7 @@ function calculateChunkSize(actions: Redux.Action[]): number {
   const TARGET_CHUNK_SIZE_CHARS = TARGET_CHUNK_SIZE_MB * 1024 * 1024;
 
   // Calculate how many actions fit in target size
-  const calculatedChunkSize = Math.floor(
-    TARGET_CHUNK_SIZE_CHARS / avgActionSize,
-  );
+  const calculatedChunkSize = Math.floor(TARGET_CHUNK_SIZE_CHARS / avgActionSize);
 
   // Clamp between reasonable bounds
   // Min 10: Avoid too many chunks for very large actions
@@ -933,10 +844,7 @@ function calculateChunkSize(actions: Redux.Action[]): number {
       totalActions: actions.length,
       avgActionSizeKB: (avgActionSize / 1024).toFixed(2),
       chunkSize,
-      estimatedChunkSizeMB: (
-        (chunkSize * avgActionSize) /
-        (1024 * 1024)
-      ).toFixed(2),
+      estimatedChunkSizeMB: ((chunkSize * avgActionSize) / (1024 * 1024)).toFixed(2),
       cached: false,
     });
   }
@@ -945,10 +853,7 @@ function calculateChunkSize(actions: Redux.Action[]): number {
 }
 
 // TODO: support thunk actions?
-export function batchDispatch(
-  store: Redux.Dispatch | Redux.Store,
-  actions: Redux.Action[],
-) {
+export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Action[]) {
   const dispatch = store["dispatch"] ?? store;
   if (actions.length === 0) {
     return;
@@ -1107,10 +1012,7 @@ function sectionHost(section?: Section) {
   }
 }
 
-export function nexusModsURL(
-  reqPath: string[],
-  options?: INexusURLOptions,
-): string {
+export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
   // Build the base URL
   const url = new URL(`${NEXUS_PROTOCOL}//${sectionHost(options?.section)}`);
 
@@ -1210,9 +1112,7 @@ export class Overlayable<KeyT extends string | number | symbol, ObjT> {
     if (layer === undefined) {
       return this.mBaseData[key]?.[attr] as ValT;
     }
-    return (
-      (this.mLayers[layer]?.[key]?.[attr] as any) ?? this.mBaseData[key]?.[attr]
-    );
+    return (this.mLayers[layer]?.[key]?.[attr] as any) ?? this.mBaseData[key]?.[attr];
   }
 
   public get baseData() {
@@ -1250,10 +1150,7 @@ const proxyHandler: ProxyHandler<Overlayable<any, any>> = {
  * @param deduceLayer determine the layer to be used for a given key. If this returns
  * @returns
  */
-export function makeOverlayableDictionary<
-  KeyT extends string | number | symbol,
-  ValueT,
->(
+export function makeOverlayableDictionary<KeyT extends string | number | symbol, ValueT>(
   baseData: Record<KeyT, ValueT>,
   layers: { [layerId: string]: Record<KeyT, Partial<ValueT>> },
   deduceLayer: (key: KeyT, extraArg: any) => string,

@@ -1,14 +1,13 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-
 import * as reduxAct from "redux-act";
+
+import safeCreateAction from "../../../actions/safeCreateAction";
 
 /**
  * sets a profile to be activated
  */
-export const setNextProfile = safeCreateAction(
-  "SET_NEXT_PROFILE",
-  (profileId: string) => ({ profileId }),
-);
+export const setNextProfile = safeCreateAction("SET_NEXT_PROFILE", (profileId: string) => ({
+  profileId,
+}));
 
 /**
  * change current profile

@@ -1,6 +1,7 @@
-import Promise from "bluebird";
 import * as path from "path";
-import { log, types, util } from "vortex-api";
+
+import { log, types, util } from "@nexusmods/vortex-api";
+import Promise from "bluebird";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 interface IIniSpec {

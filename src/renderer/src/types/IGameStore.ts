@@ -1,8 +1,8 @@
+import type PromiseBB from "bluebird";
+
 import type { IExecInfo } from "./IExecInfo";
 import type { IExtensionApi } from "./IExtensionContext";
 import type { IGameStoreEntry } from "./IGameStoreEntry";
-
-import type PromiseBB from "bluebird";
 
 export type GameLaunchType = "gamestore" | "commandline";
 
@@ -179,10 +179,7 @@ export interface IGameStore {
    *  This functor allows game stores to define their own custom start up logic
    *  if needed. e.g. gamestore-xbox
    */
-  launchGameStore?: (
-    api: IExtensionApi,
-    parameters?: string[],
-  ) => PromiseBB<void>;
+  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => PromiseBB<void>;
 
   /**
    * Allows game stores to provide functionality to reload/refresh their

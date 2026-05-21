@@ -1,11 +1,10 @@
+import * as path from "path";
+
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { INotification } from "../types/INotification";
 import type { IState } from "../types/IState";
-
-import { log } from "./log";
 import getVortexPath from "./getVortexPath";
-
-import * as path from "path";
+import { log } from "./log";
 
 class GlobalNotifications {
   private mCurrentId: string | undefined;
@@ -23,8 +22,7 @@ class GlobalNotifications {
 
         if (this.mCurrentId !== undefined) {
           currentNotification = this.mKnownNotifications.find(
-            (notification: INotification) =>
-              notification.id === this.mCurrentId,
+            (notification: INotification) => notification.id === this.mCurrentId,
           );
           if (currentNotification === undefined) {
             log("debug", "notification no longer exists", this.mCurrentId);
@@ -52,8 +50,7 @@ class GlobalNotifications {
             this.showNotification(currentNotification);
           }
         } else {
-          currentNotification =
-            this.mKnownNotifications[this.mKnownNotifications.length - 1];
+          currentNotification = this.mKnownNotifications[this.mKnownNotifications.length - 1];
           if (
             currentNotification &&
             this.mCurrentId !== currentNotification.id &&
@@ -63,11 +60,7 @@ class GlobalNotifications {
             // using the js Notification api shows an application id and I'm not sure if I can/how to
             // get rid of it. The electron api works fine for the moment
             // this.showNotification(currentNotification);
-            api.events.emit(
-              "show-balloon",
-              currentNotification.title,
-              currentNotification.message,
-            );
+            api.events.emit("show-balloon", currentNotification.title, currentNotification.message);
             this.mCurrentId = currentNotification.id;
           }
         }
@@ -86,9 +79,7 @@ class GlobalNotifications {
     try {
       this.mCurrentNotification = new Notification(notification.title!, {
         tag: notification.id,
-        icon:
-          notification.icon ||
-          path.resolve(getVortexPath("assets"), "images", "vortex.ico"),
+        icon: notification.icon || path.resolve(getVortexPath("assets"), "images", "vortex.ico"),
         body: notification.message,
         requireInteraction: true,
         silent: true,

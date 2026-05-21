@@ -1,17 +1,12 @@
-import Icon from "../../../controls/Icon";
-import ProgressBar from "../../../controls/ProgressBar";
-import {
-  connect,
-  PureComponentEx,
-  translate,
-} from "../../../controls/ComponentEx";
-import { bytesToString } from "../../../util/util";
-
 import * as React from "react";
-import type { IState } from "../../../types/IState";
-import type { DownloadState, IDownload } from "../types/IDownload";
 
 import { setAttributeFilter } from "../../../actions/tables";
+import { connect, PureComponentEx, translate } from "../../../controls/ComponentEx";
+import Icon from "../../../controls/Icon";
+import ProgressBar from "../../../controls/ProgressBar";
+import type { IState } from "../../../types/IState";
+import { bytesToString } from "../../../util/util";
+import type { DownloadState, IDownload } from "../types/IDownload";
 
 export interface IBaseProps {
   slim: boolean;
@@ -56,9 +51,7 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
         <div className="active-downloads-container">
           <span>{t("Active Downloads")}</span>
           {activeDownloads.slice(0, 2).map(this.renderDownload)}
-          {activeDownloads.length > 2 ? (
-            <a onClick={this.openDownloads}>{t("More...")}</a>
-          ) : null}
+          {activeDownloads.length > 2 ? <a onClick={this.openDownloads}>{t("More...")}</a> : null}
           <span>
             <Icon name="download-speed" /> {bytesToString(speed)}/s
           </span>
@@ -69,9 +62,7 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
 
   private openDownloads = () => {
     this.context.api.events.emit("show-main-page", "Downloads");
-    this.context.api.store.dispatch(
-      setAttributeFilter("downloads", "progress", "In Progress"),
-    );
+    this.context.api.store.dispatch(setAttributeFilter("downloads", "progress", "In Progress"));
   };
 
   private renderDownload = (download: IDownload) => {

@@ -1,8 +1,6 @@
-import { selectors, types, util } from "vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
-export async function showQuickCollectionRestrictionsDialog(
-  api: types.IExtensionApi,
-) {
+export async function showQuickCollectionRestrictionsDialog(api: types.IExtensionApi) {
   const t = api.translate;
   const state: types.IState = api.store.getState();
   const profileId = selectors.activeProfile(state)?.id;

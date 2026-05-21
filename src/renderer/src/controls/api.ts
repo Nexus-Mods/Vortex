@@ -1,3 +1,4 @@
+import { LoadOrderIndexInput } from "../extensions/file_based_loadorder/views/loadOrderIndex";
 import ActionContextMenu from "./ActionContextMenu";
 import ActionDropdown from "./ActionDropdown";
 import Advanced from "./Advanced";
@@ -27,11 +28,7 @@ import RadialProgress from "./RadialProgress";
 import SelectUpDown from "./SelectUpDown";
 import Spinner from "./Spinner";
 import Steps from "./Steps";
-import Table, {
-  type ChangeDataHandler,
-  type ITableRowAction,
-  makeGetSelection,
-} from "./Table";
+import Table, { type ChangeDataHandler, type ITableRowAction, makeGetSelection } from "./Table";
 import TableDateTimeFilter from "./table/DateTimeFilter";
 import TableNumericFilter from "./table/NumericFilter";
 import OptionsFilter from "./table/OptionsFilter";
@@ -46,8 +43,6 @@ import Usage from "./Usage";
 import VisibilityProxy from "./VisibilityProxy";
 import Webview from "./Webview";
 import ZoomableImage from "./ZoomableImage";
-
-import { LoadOrderIndexInput } from "../extensions/file_based_loadorder/views/loadOrderIndex";
 
 export {
   ActionContextMenu,

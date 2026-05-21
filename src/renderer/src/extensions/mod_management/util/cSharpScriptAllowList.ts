@@ -9,14 +9,8 @@ const allowList = new Map<IAllowListKey, Set<string>>([
     { domainName: "newvegas", numericGameId: 130, internalId: "falloutnv" },
     new Set(["42507", "67870"]),
   ],
-  [
-    { domainName: "fallout3", numericGameId: 120, internalId: "fallout3" },
-    new Set([]),
-  ],
-  [
-    { domainName: "oblivion", numericGameId: 101, internalId: "oblivion" },
-    new Set([]),
-  ],
+  [{ domainName: "fallout3", numericGameId: 120, internalId: "fallout3" }, new Set([])],
+  [{ domainName: "oblivion", numericGameId: 101, internalId: "oblivion" }, new Set([])],
 ]);
 
 /**
@@ -24,9 +18,7 @@ const allowList = new Map<IAllowListKey, Set<string>>([
  * @param gameId internal game id (i.e. falloutnv)
  * @returns a set of allowed mod IDs
  */
-export const getCSharpScriptAllowListForGame = (
-  gameId: string,
-): Set<string> => {
+export const getCSharpScriptAllowListForGame = (gameId: string): Set<string> => {
   const result = new Set<string>();
   for (const [key, value] of allowList.entries()) {
     if (key.internalId === gameId) {

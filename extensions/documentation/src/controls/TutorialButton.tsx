@@ -1,3 +1,4 @@
+import { ComponentEx, Icon, Overlay, tooltip, util } from "@nexusmods/vortex-api";
 import { TFunction } from "i18next";
 import * as React from "react";
 import { Popover } from "react-bootstrap";
@@ -9,8 +10,6 @@ import * as Redux from "redux";
 import { setTutorialOpen } from "../actions/session";
 import getEmbedLink from "../tutorialManager";
 import { IYoutubeInfo } from "../types/YoutubeInfo";
-
-import { ComponentEx, Icon, Overlay, tooltip, util } from "vortex-api";
 
 export const VIDEO_WIDTH = 560;
 export const VIDEO_HEIGHT = 315;
@@ -61,8 +60,7 @@ class TutorialButton extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { dropdown, children, video, t, tutorialId, orientation, isOpen } =
-      this.props;
+    const { dropdown, children, video, t, tutorialId, orientation, isOpen } = this.props;
 
     if (video === undefined) {
       return null;
@@ -115,9 +113,7 @@ class TutorialButton extends ComponentEx<IProps, {}> {
             {t("Playing this video will store cookies on your device")}
           </p>
           {children
-            ? children
-                .split("\n\n")
-                .map((paragraph) => <p key={video.id}>{paragraph}</p>)
+            ? children.split("\n\n").map((paragraph) => <p key={video.id}>{paragraph}</p>)
             : null}
         </div>
         <div className="tutorial-footer">
@@ -165,19 +161,13 @@ class TutorialButton extends ComponentEx<IProps, {}> {
   };
 
   private renderTodo(): JSX.Element {
-    return (
-      <div className="tutorial-link tutorial-link-todo" ref={this.setRef} />
-    );
+    return <div className="tutorial-link tutorial-link-todo" ref={this.setRef} />;
   }
 
   private renderDropdownButton(t: TFunction, name: string): JSX.Element {
     const { container } = this.props;
     return (
-      <a
-        ref={container !== undefined ? null : this.setRef}
-        onClick={this.show}
-        role="menuitem"
-      >
+      <a ref={container !== undefined ? null : this.setRef} onClick={this.show} role="menuitem">
         {t(name)}
       </a>
     );

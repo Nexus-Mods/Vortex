@@ -28,20 +28,14 @@ describe("Button", () => {
     });
 
     it("renders customContent instead of children when provided", () => {
-      render(
-        <Button customContent={<div data-testid="custom">custom</div>}>
-          ignored
-        </Button>,
-      );
+      render(<Button customContent={<div data-testid="custom">custom</div>}>ignored</Button>);
       expect(screen.getByTestId("custom")).toBeInTheDocument();
       expect(screen.queryByText("ignored")).not.toBeInTheDocument();
     });
 
     it("renders nothing inside button when neither children nor customContent", () => {
       render(<Button aria-label="empty" />);
-      expect(
-        screen.getByRole("button", { name: /empty/i }),
-      ).toBeEmptyDOMElement();
+      expect(screen.getByRole("button", { name: /empty/i })).toBeEmptyDOMElement();
     });
   });
 
@@ -198,9 +192,7 @@ describe("Button", () => {
     });
 
     it("renders left icon from ReactNode", () => {
-      render(
-        <Button leftIcon={<span data-testid="left-icon" />}>Click</Button>,
-      );
+      render(<Button leftIcon={<span data-testid="left-icon" />}>Click</Button>);
       expect(screen.getByTestId("left-icon")).toBeInTheDocument();
     });
 
@@ -210,9 +202,7 @@ describe("Button", () => {
     });
 
     it("renders right icon from ReactNode", () => {
-      render(
-        <Button rightIcon={<span data-testid="right-icon" />}>Click</Button>,
-      );
+      render(<Button rightIcon={<span data-testid="right-icon" />}>Click</Button>);
       expect(screen.getByTestId("right-icon")).toBeInTheDocument();
     });
   });
@@ -263,10 +253,7 @@ describe("Button", () => {
           Click
         </Button>,
       );
-      expect(screen.getByTestId("my-button")).toHaveAttribute(
-        "aria-label",
-        "submit",
-      );
+      expect(screen.getByTestId("my-button")).toHaveAttribute("aria-label", "submit");
     });
 
     it("respects an explicit type override", () => {

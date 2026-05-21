@@ -1,6 +1,5 @@
-import { createAction } from "redux-act";
-
 import type { IParameters } from "@vortex/shared/cli";
+import { createAction } from "redux-act";
 
 const uiOnlyMeta = () => ({ forward: false, scope: "local" });
 
@@ -8,20 +7,16 @@ const uiOnlyMeta = () => ({ forward: false, scope: "local" });
  * action to choose which item in a group to display (all other items in the
  * group will be hidden). the itemId can be undefined to hide them all.
  */
-export const displayGroup = createAction(
-  "DISPLAY_GROUP",
-  (groupId: string, itemId: string) => ({ groupId, itemId }),
-);
+export const displayGroup = createAction("DISPLAY_GROUP", (groupId: string, itemId: string) => ({
+  groupId,
+  itemId,
+}));
 
-export const setDialogVisible = createAction(
-  "SET_DIALOG_VISIBLE",
-  (dialogId: string) => ({ dialogId }),
-);
+export const setDialogVisible = createAction("SET_DIALOG_VISIBLE", (dialogId: string) => ({
+  dialogId,
+}));
 
-export const setSettingsPage = createAction(
-  "SET_SETTINGS_PAGE",
-  (pageId: string) => ({ pageId }),
-);
+export const setSettingsPage = createAction("SET_SETTINGS_PAGE", (pageId: string) => ({ pageId }));
 
 export const setOpenMainPage = createAction(
   "SET_OPEN_MAINPAGE",
@@ -68,10 +63,7 @@ export const setToolPid = createAction(
   }),
 );
 
-export const setToolStopped = createAction(
-  "SET_TOOL_STOPPED",
-  (exePath: string) => ({ exePath }),
-);
+export const setToolStopped = createAction("SET_TOOL_STOPPED", (exePath: string) => ({ exePath }));
 
 export const setExtensionLoadFailures = createAction(
   "SET_EXT_LOAD_FAILURES",
@@ -88,20 +80,14 @@ export const setUIBlocker = createAction(
   }),
 );
 
-export const clearUIBlocker = createAction(
-  "CLEAR_UI_BLOCKER",
-  (id: string) => id,
-);
+export const clearUIBlocker = createAction("CLEAR_UI_BLOCKER", (id: string) => id);
 
 export const setNetworkConnected = createAction(
   "SET_NETWORK_CONNECTED",
   (connected: boolean) => connected,
 );
 
-export const setCommandLine = createAction(
-  "SET_COMMAND_LINE",
-  (args: IParameters) => args,
-);
+export const setCommandLine = createAction("SET_COMMAND_LINE", (args: IParameters) => args);
 
 export const setDownloadGameFilter = createAction(
   "SET_DOWNLOAD_GAME_FILTER",

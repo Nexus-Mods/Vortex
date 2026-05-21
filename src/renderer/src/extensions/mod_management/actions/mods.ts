@@ -1,23 +1,19 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-
-import type { IMod, IModReference, IModRule, ModState } from "../types/IMod";
-
 import * as reduxAct from "redux-act";
 
-export const addMod = safeCreateAction(
-  "ADD_MOD",
-  (gameId: string, mod: IMod) => ({ gameId, mod }),
-);
+import safeCreateAction from "../../../actions/safeCreateAction";
+import type { IMod, IModReference, IModRule, ModState } from "../types/IMod";
 
-export const addMods = safeCreateAction(
-  "ADD_MODS",
-  (gameId: string, mods: IMod[]) => ({ gameId, mods }),
-);
+export const addMod = safeCreateAction("ADD_MOD", (gameId: string, mod: IMod) => ({ gameId, mod }));
 
-export const removeMod = safeCreateAction(
-  "REMOVE_MOD",
-  (gameId: string, modId: string) => ({ gameId, modId }),
-);
+export const addMods = safeCreateAction("ADD_MODS", (gameId: string, mods: IMod[]) => ({
+  gameId,
+  mods,
+}));
+
+export const removeMod = safeCreateAction("REMOVE_MOD", (gameId: string, modId: string) => ({
+  gameId,
+  modId,
+}));
 
 export const setModArchiveId = safeCreateAction(
   "SET_MOD_ARCHIVEID",
@@ -72,11 +68,11 @@ export const setModAttribute = safeCreateAction(
  */
 export const setModAttributes = safeCreateAction(
   "SET_MOD_ATTRIBUTES",
-  (
-    gameId: string,
-    modId: string,
-    attributes: { [attribute: string]: any },
-  ) => ({ gameId, modId, attributes }),
+  (gameId: string, modId: string, attributes: { [attribute: string]: any }) => ({
+    gameId,
+    modId,
+    attributes,
+  }),
 );
 
 /**
@@ -114,12 +110,12 @@ export const removeModRule = safeCreateAction(
  */
 export const cacheModReference = safeCreateAction(
   "CACHE_MOD_REFERENCE",
-  (
-    gameId: string,
-    modId: string,
-    reference: IModReference,
-    refModId: string,
-  ) => ({ gameId, modId, reference, refModId }),
+  (gameId: string, modId: string, reference: IModReference, refModId: string) => ({
+    gameId,
+    modId,
+    reference,
+    refModId,
+  }),
 );
 
 export const setINITweakEnabled = safeCreateAction(

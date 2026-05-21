@@ -1,3 +1,9 @@
+import * as React from "react";
+import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from "react-bootstrap";
+import * as semver from "semver";
+
+import bbcode from "../../controls/bbcode";
+import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import FlexLayout from "../../controls/FlexLayout";
 import FormInput from "../../controls/FormInput";
 import Icon from "../../controls/Icon";
@@ -5,31 +11,13 @@ import Modal from "../../controls/Modal";
 import Spinner from "../../controls/Spinner";
 import { IconButton } from "../../controls/TooltipControls";
 import ZoomableImage from "../../controls/ZoomableImage";
-import { NEXUS_BASE_URL } from "../nexus_integration/constants";
-
+import type { IAvailableExtension, IExtension, ISelector } from "../../types/extensions";
 import type { IState } from "../../types/IState";
-import bbcode from "../../controls/bbcode";
-import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
+import { getApplication } from "../../util/application";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
-
-import type {
-  IAvailableExtension,
-  IExtension,
-  ISelector,
-} from "../../types/extensions";
+import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
-
-import * as React from "react";
-import {
-  Button,
-  FormControl,
-  ListGroup,
-  ListGroupItem,
-  ModalHeader,
-} from "react-bootstrap";
-import * as semver from "semver";
-import { getApplication } from "../../util/application";
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 const GITHUB_BASE_URL: string = "https://www.github.com";
@@ -106,8 +94,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (
-      nextProps.localState.preselectModId !==
-        this.props.localState.preselectModId &&
+      nextProps.localState.preselectModId !== this.props.localState.preselectModId &&
       nextProps.localState.preselectModId !== undefined
     ) {
       this.nextState.selected = {
@@ -119,15 +106,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   public render() {
-    const {
-      t,
-      availableExtensions,
-      language,
-      onHide,
-      onRefreshExtensions,
-      updateTime,
-      visible,
-    } = this.props;
+    const { t, availableExtensions, language, onHide, onRefreshExtensions, updateTime, visible } =
+      this.props;
     const { searchTerm, selected, sort } = this.state;
 
     const ext =
@@ -138,12 +118,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const updatedAt = new Date(updateTime);
 
     return (
-      <Modal
-        id="browse-extensions-dialog"
-        show={visible}
-        onHide={nop}
-        ref={this.mModalRef}
-      >
+      <Modal id="browse-extensions-dialog" show={visible} onHide={nop} ref={this.mModalRef}>
         <ModalHeader>
           <h3>{t("Browse Extensions")}</h3>
         </ModalHeader>
@@ -165,11 +140,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                   <FlexLayout type="row" className="extension-sort-container">
                     <FlexLayout.Fixed>{t("Sort by")}</FlexLayout.Fixed>
                     <FlexLayout.Flex>
-                      <FormControl
-                        componentClass="select"
-                        onChange={this.changeSort}
-                        value={sort}
-                      >
+                      <FormControl componentClass="select" onChange={this.changeSort} value={sort}>
                         <option key={"name"} value={"name"}>
                           {t("Name")}
                         </option>
@@ -244,16 +215,12 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return (
       test.name?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1 ||
       test.author?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1 ||
-      test.description?.short?.toUpperCase?.().indexOf?.(searchTermNorm) !==
-        -1 ||
+      test.description?.short?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1 ||
       test.description?.long?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1
     );
   };
 
-  private extensionSort = (
-    lhs: IAvailableExtension,
-    rhs: IAvailableExtension,
-  ): number => {
+  private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
     switch (this.state.sort) {
       case "downloads":
         return (rhs.downloads || 0) - (lhs.downloads || 0);
@@ -474,15 +441,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         }
       })
       .catch((err) => {
-        this.context.api.showErrorNotification(
-          "Failed to install extension",
-          err,
-        );
+        this.context.api.showErrorNotification("Failed to install extension", err);
       })
       .finally(() => {
-        this.nextState.installing = this.state.installing.filter(
-          (name) => name !== ext.name,
-        );
+        this.nextState.installing = this.state.installing.filter((name) => name !== ext.name);
       });
   };
 
@@ -522,6 +484,4 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default translate(["common"])(
-  connect(mapStateToProps)(BrowseExtensions),
-);
+export default translate(["common"])(connect(mapStateToProps)(BrowseExtensions));

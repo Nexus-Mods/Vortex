@@ -159,14 +159,7 @@ const schema11 = {
     },
     RuleType: {
       type: "string",
-      enum: [
-        "before",
-        "after",
-        "requires",
-        "conflicts",
-        "recommends",
-        "provides",
-      ],
+      enum: ["before", "after", "requires", "conflicts", "recommends", "provides"],
     },
   },
   exported: ["ICollection"],
@@ -812,10 +805,7 @@ function validate12(
           rootData,
         })
       ) {
-        vErrors =
-          vErrors === null
-            ? validate13.errors
-            : vErrors.concat(validate13.errors);
+        vErrors = vErrors === null ? validate13.errors : vErrors.concat(validate13.errors);
         errors = vErrors.length;
       }
     }
@@ -827,9 +817,7 @@ function validate12(
           if (typeof data6 !== "string") {
             const err9 = {
               instancePath:
-                instancePath +
-                "/patches/" +
-                key0.replace(/~/g, "~0").replace(/\//g, "~1"),
+                instancePath + "/patches/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"),
               schemaPath: "#/properties/patches/additionalProperties/type",
               keyword: "type",
               params: { type: "string" },
@@ -915,8 +903,7 @@ function validate12(
           if (typeof data10 !== "string") {
             const err13 = {
               instancePath: instancePath + "/details/type",
-              schemaPath:
-                "#/definitions/ICollectionModDetails/properties/type/type",
+              schemaPath: "#/definitions/ICollectionModDetails/properties/type/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -937,8 +924,7 @@ function validate12(
           if (typeof data11 !== "string") {
             const err14 = {
               instancePath: instancePath + "/details/category",
-              schemaPath:
-                "#/definitions/ICollectionModDetails/properties/category/type",
+              schemaPath: "#/definitions/ICollectionModDetails/properties/category/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1191,8 +1177,7 @@ function validate16(
           if (!(typeof data2 == "number" && isFinite(data2))) {
             const err4 = {
               instancePath: instancePath + "/source/fileSize",
-              schemaPath:
-                "#/definitions/IModReference/properties/fileSize/type",
+              schemaPath: "#/definitions/IModReference/properties/fileSize/type",
               keyword: "type",
               params: { type: "number" },
               message: "must be number",
@@ -1234,8 +1219,7 @@ function validate16(
           if (typeof data4 !== "string") {
             const err6 = {
               instancePath: instancePath + "/source/versionMatch",
-              schemaPath:
-                "#/definitions/IModReference/properties/versionMatch/type",
+              schemaPath: "#/definitions/IModReference/properties/versionMatch/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1256,8 +1240,7 @@ function validate16(
           if (typeof data5 !== "string") {
             const err7 = {
               instancePath: instancePath + "/source/logicalFileName",
-              schemaPath:
-                "#/definitions/IModReference/properties/logicalFileName/type",
+              schemaPath: "#/definitions/IModReference/properties/logicalFileName/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1278,8 +1261,7 @@ function validate16(
           if (typeof data6 !== "string") {
             const err8 = {
               instancePath: instancePath + "/source/fileExpression",
-              schemaPath:
-                "#/definitions/IModReference/properties/fileExpression/type",
+              schemaPath: "#/definitions/IModReference/properties/fileExpression/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1384,8 +1366,7 @@ function validate16(
           if (typeof data11 !== "string") {
             const err13 = {
               instancePath: instancePath + "/source/archiveId",
-              schemaPath:
-                "#/definitions/IModReference/properties/archiveId/type",
+              schemaPath: "#/definitions/IModReference/properties/archiveId/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1407,8 +1388,7 @@ function validate16(
             if (data12.fileId === undefined) {
               const err14 = {
                 instancePath: instancePath + "/source/repo",
-                schemaPath:
-                  "#/definitions/IModReference/properties/repo/required",
+                schemaPath: "#/definitions/IModReference/properties/repo/required",
                 keyword: "required",
                 params: { missingProperty: "fileId" },
                 message: "must have required property '" + "fileId" + "'",
@@ -1426,8 +1406,7 @@ function validate16(
             if (data12.repository === undefined) {
               const err15 = {
                 instancePath: instancePath + "/source/repo",
-                schemaPath:
-                  "#/definitions/IModReference/properties/repo/required",
+                schemaPath: "#/definitions/IModReference/properties/repo/required",
                 keyword: "required",
                 params: { missingProperty: "repository" },
                 message: "must have required property '" + "repository" + "'",
@@ -1447,8 +1426,7 @@ function validate16(
               if (typeof data13 !== "string") {
                 const err16 = {
                   instancePath: instancePath + "/source/repo/gameId",
-                  schemaPath:
-                    "#/definitions/IModReference/properties/repo/properties/gameId/type",
+                  schemaPath: "#/definitions/IModReference/properties/repo/properties/gameId/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -1469,8 +1447,7 @@ function validate16(
               if (typeof data14 !== "string") {
                 const err17 = {
                   instancePath: instancePath + "/source/repo/modId",
-                  schemaPath:
-                    "#/definitions/IModReference/properties/repo/properties/modId/type",
+                  schemaPath: "#/definitions/IModReference/properties/repo/properties/modId/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -1491,8 +1468,7 @@ function validate16(
               if (typeof data15 !== "string") {
                 const err18 = {
                   instancePath: instancePath + "/source/repo/fileId",
-                  schemaPath:
-                    "#/definitions/IModReference/properties/repo/properties/fileId/type",
+                  schemaPath: "#/definitions/IModReference/properties/repo/properties/fileId/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -1576,8 +1552,7 @@ function validate16(
           if (typeof data18 !== "string") {
             const err22 = {
               instancePath: instancePath + "/source/description",
-              schemaPath:
-                "#/definitions/IModReference/properties/description/type",
+              schemaPath: "#/definitions/IModReference/properties/description/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1598,8 +1573,7 @@ function validate16(
           if (typeof data19 !== "string") {
             const err23 = {
               instancePath: instancePath + "/source/instructions",
-              schemaPath:
-                "#/definitions/IModReference/properties/instructions/type",
+              schemaPath: "#/definitions/IModReference/properties/instructions/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1711,8 +1685,7 @@ function validate16(
           if (!(typeof data23 == "number" && isFinite(data23))) {
             const err28 = {
               instancePath: instancePath + "/reference/fileSize",
-              schemaPath:
-                "#/definitions/IModReference/properties/fileSize/type",
+              schemaPath: "#/definitions/IModReference/properties/fileSize/type",
               keyword: "type",
               params: { type: "number" },
               message: "must be number",
@@ -1754,8 +1727,7 @@ function validate16(
           if (typeof data25 !== "string") {
             const err30 = {
               instancePath: instancePath + "/reference/versionMatch",
-              schemaPath:
-                "#/definitions/IModReference/properties/versionMatch/type",
+              schemaPath: "#/definitions/IModReference/properties/versionMatch/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1776,8 +1748,7 @@ function validate16(
           if (typeof data26 !== "string") {
             const err31 = {
               instancePath: instancePath + "/reference/logicalFileName",
-              schemaPath:
-                "#/definitions/IModReference/properties/logicalFileName/type",
+              schemaPath: "#/definitions/IModReference/properties/logicalFileName/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1798,8 +1769,7 @@ function validate16(
           if (typeof data27 !== "string") {
             const err32 = {
               instancePath: instancePath + "/reference/fileExpression",
-              schemaPath:
-                "#/definitions/IModReference/properties/fileExpression/type",
+              schemaPath: "#/definitions/IModReference/properties/fileExpression/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1904,8 +1874,7 @@ function validate16(
           if (typeof data32 !== "string") {
             const err37 = {
               instancePath: instancePath + "/reference/archiveId",
-              schemaPath:
-                "#/definitions/IModReference/properties/archiveId/type",
+              schemaPath: "#/definitions/IModReference/properties/archiveId/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -1927,8 +1896,7 @@ function validate16(
             if (data33.fileId === undefined) {
               const err38 = {
                 instancePath: instancePath + "/reference/repo",
-                schemaPath:
-                  "#/definitions/IModReference/properties/repo/required",
+                schemaPath: "#/definitions/IModReference/properties/repo/required",
                 keyword: "required",
                 params: { missingProperty: "fileId" },
                 message: "must have required property '" + "fileId" + "'",
@@ -1946,8 +1914,7 @@ function validate16(
             if (data33.repository === undefined) {
               const err39 = {
                 instancePath: instancePath + "/reference/repo",
-                schemaPath:
-                  "#/definitions/IModReference/properties/repo/required",
+                schemaPath: "#/definitions/IModReference/properties/repo/required",
                 keyword: "required",
                 params: { missingProperty: "repository" },
                 message: "must have required property '" + "repository" + "'",
@@ -1967,8 +1934,7 @@ function validate16(
               if (typeof data34 !== "string") {
                 const err40 = {
                   instancePath: instancePath + "/reference/repo/gameId",
-                  schemaPath:
-                    "#/definitions/IModReference/properties/repo/properties/gameId/type",
+                  schemaPath: "#/definitions/IModReference/properties/repo/properties/gameId/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -1989,8 +1955,7 @@ function validate16(
               if (typeof data35 !== "string") {
                 const err41 = {
                   instancePath: instancePath + "/reference/repo/modId",
-                  schemaPath:
-                    "#/definitions/IModReference/properties/repo/properties/modId/type",
+                  schemaPath: "#/definitions/IModReference/properties/repo/properties/modId/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -2011,8 +1976,7 @@ function validate16(
               if (typeof data36 !== "string") {
                 const err42 = {
                   instancePath: instancePath + "/reference/repo/fileId",
-                  schemaPath:
-                    "#/definitions/IModReference/properties/repo/properties/fileId/type",
+                  schemaPath: "#/definitions/IModReference/properties/repo/properties/fileId/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -2096,8 +2060,7 @@ function validate16(
           if (typeof data39 !== "string") {
             const err46 = {
               instancePath: instancePath + "/reference/description",
-              schemaPath:
-                "#/definitions/IModReference/properties/description/type",
+              schemaPath: "#/definitions/IModReference/properties/description/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -2118,8 +2081,7 @@ function validate16(
           if (typeof data40 !== "string") {
             const err47 = {
               instancePath: instancePath + "/reference/instructions",
-              schemaPath:
-                "#/definitions/IModReference/properties/instructions/type",
+              schemaPath: "#/definitions/IModReference/properties/instructions/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -2270,10 +2232,8 @@ function validate11(
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
-                  schema:
-                    schema12.properties.plugins.items.properties.name.type,
-                  parentSchema:
-                    schema12.properties.plugins.items.properties.name,
+                  schema: schema12.properties.plugins.items.properties.name.type,
+                  parentSchema: schema12.properties.plugins.items.properties.name,
                   data: data2,
                 };
                 if (vErrors === null) {
@@ -2289,15 +2249,12 @@ function validate11(
               if (typeof data3 !== "boolean") {
                 const err5 = {
                   instancePath: instancePath + "/plugins/" + i0 + "/enabled",
-                  schemaPath:
-                    "#/properties/plugins/items/properties/enabled/type",
+                  schemaPath: "#/properties/plugins/items/properties/enabled/type",
                   keyword: "type",
                   params: { type: "boolean" },
                   message: "must be boolean",
-                  schema:
-                    schema12.properties.plugins.items.properties.enabled.type,
-                  parentSchema:
-                    schema12.properties.plugins.items.properties.enabled,
+                  schema: schema12.properties.plugins.items.properties.enabled.type,
+                  parentSchema: schema12.properties.plugins.items.properties.enabled,
                   data: data3,
                 };
                 if (vErrors === null) {
@@ -2377,16 +2334,12 @@ function validate11(
                 if (data6.name === undefined) {
                   const err9 = {
                     instancePath: instancePath + "/pluginRules/plugins/" + i1,
-                    schemaPath:
-                      "#/properties/pluginRules/properties/plugins/items/required",
+                    schemaPath: "#/properties/pluginRules/properties/plugins/items/required",
                     keyword: "required",
                     params: { missingProperty: "name" },
                     message: "must have required property '" + "name" + "'",
-                    schema:
-                      schema12.properties.pluginRules.properties.plugins.items
-                        .required,
-                    parentSchema:
-                      schema12.properties.pluginRules.properties.plugins.items,
+                    schema: schema12.properties.pluginRules.properties.plugins.items.required,
+                    parentSchema: schema12.properties.pluginRules.properties.plugins.items,
                     data: data6,
                   };
                   if (vErrors === null) {
@@ -2400,19 +2353,17 @@ function validate11(
                   let data7 = data6.name;
                   if (typeof data7 !== "string") {
                     const err10 = {
-                      instancePath:
-                        instancePath + "/pluginRules/plugins/" + i1 + "/name",
+                      instancePath: instancePath + "/pluginRules/plugins/" + i1 + "/name",
                       schemaPath:
                         "#/properties/pluginRules/properties/plugins/items/properties/name/type",
                       keyword: "type",
                       params: { type: "string" },
                       message: "must be string",
                       schema:
-                        schema12.properties.pluginRules.properties.plugins.items
-                          .properties.name.type,
+                        schema12.properties.pluginRules.properties.plugins.items.properties.name
+                          .type,
                       parentSchema:
-                        schema12.properties.pluginRules.properties.plugins.items
-                          .properties.name,
+                        schema12.properties.pluginRules.properties.plugins.items.properties.name,
                       data: data7,
                     };
                     if (vErrors === null) {
@@ -2427,19 +2378,17 @@ function validate11(
                   let data8 = data6.group;
                   if (typeof data8 !== "string") {
                     const err11 = {
-                      instancePath:
-                        instancePath + "/pluginRules/plugins/" + i1 + "/group",
+                      instancePath: instancePath + "/pluginRules/plugins/" + i1 + "/group",
                       schemaPath:
                         "#/properties/pluginRules/properties/plugins/items/properties/group/type",
                       keyword: "type",
                       params: { type: "string" },
                       message: "must be string",
                       schema:
-                        schema12.properties.pluginRules.properties.plugins.items
-                          .properties.group.type,
+                        schema12.properties.pluginRules.properties.plugins.items.properties.group
+                          .type,
                       parentSchema:
-                        schema12.properties.pluginRules.properties.plugins.items
-                          .properties.group,
+                        schema12.properties.pluginRules.properties.plugins.items.properties.group,
                       data: data8,
                     };
                     if (vErrors === null) {
@@ -2459,22 +2408,18 @@ function validate11(
                       if (typeof data10 !== "string") {
                         const err12 = {
                           instancePath:
-                            instancePath +
-                            "/pluginRules/plugins/" +
-                            i1 +
-                            "/after/" +
-                            i2,
+                            instancePath + "/pluginRules/plugins/" + i1 + "/after/" + i2,
                           schemaPath:
                             "#/properties/pluginRules/properties/plugins/items/properties/after/items/type",
                           keyword: "type",
                           params: { type: "string" },
                           message: "must be string",
                           schema:
-                            schema12.properties.pluginRules.properties.plugins
-                              .items.properties.after.items.type,
+                            schema12.properties.pluginRules.properties.plugins.items.properties
+                              .after.items.type,
                           parentSchema:
-                            schema12.properties.pluginRules.properties.plugins
-                              .items.properties.after.items,
+                            schema12.properties.pluginRules.properties.plugins.items.properties
+                              .after.items,
                           data: data10,
                         };
                         if (vErrors === null) {
@@ -2487,19 +2432,17 @@ function validate11(
                     }
                   } else {
                     const err13 = {
-                      instancePath:
-                        instancePath + "/pluginRules/plugins/" + i1 + "/after",
+                      instancePath: instancePath + "/pluginRules/plugins/" + i1 + "/after",
                       schemaPath:
                         "#/properties/pluginRules/properties/plugins/items/properties/after/type",
                       keyword: "type",
                       params: { type: "array" },
                       message: "must be array",
                       schema:
-                        schema12.properties.pluginRules.properties.plugins.items
-                          .properties.after.type,
+                        schema12.properties.pluginRules.properties.plugins.items.properties.after
+                          .type,
                       parentSchema:
-                        schema12.properties.pluginRules.properties.plugins.items
-                          .properties.after,
+                        schema12.properties.pluginRules.properties.plugins.items.properties.after,
                       data: data9,
                     };
                     if (vErrors === null) {
@@ -2513,16 +2456,12 @@ function validate11(
               } else {
                 const err14 = {
                   instancePath: instancePath + "/pluginRules/plugins/" + i1,
-                  schemaPath:
-                    "#/properties/pluginRules/properties/plugins/items/type",
+                  schemaPath: "#/properties/pluginRules/properties/plugins/items/type",
                   keyword: "type",
                   params: { type: "object" },
                   message: "must be object",
-                  schema:
-                    schema12.properties.pluginRules.properties.plugins.items
-                      .type,
-                  parentSchema:
-                    schema12.properties.pluginRules.properties.plugins.items,
+                  schema: schema12.properties.pluginRules.properties.plugins.items.type,
+                  parentSchema: schema12.properties.pluginRules.properties.plugins.items,
                   data: data6,
                 };
                 if (vErrors === null) {
@@ -2558,24 +2497,16 @@ function validate11(
             const len3 = data11.length;
             for (let i3 = 0; i3 < len3; i3++) {
               let data12 = data11[i3];
-              if (
-                data12 &&
-                typeof data12 == "object" &&
-                !Array.isArray(data12)
-              ) {
+              if (data12 && typeof data12 == "object" && !Array.isArray(data12)) {
                 if (data12.name === undefined) {
                   const err16 = {
                     instancePath: instancePath + "/pluginRules/groups/" + i3,
-                    schemaPath:
-                      "#/properties/pluginRules/properties/groups/items/required",
+                    schemaPath: "#/properties/pluginRules/properties/groups/items/required",
                     keyword: "required",
                     params: { missingProperty: "name" },
                     message: "must have required property '" + "name" + "'",
-                    schema:
-                      schema12.properties.pluginRules.properties.groups.items
-                        .required,
-                    parentSchema:
-                      schema12.properties.pluginRules.properties.groups.items,
+                    schema: schema12.properties.pluginRules.properties.groups.items.required,
+                    parentSchema: schema12.properties.pluginRules.properties.groups.items,
                     data: data12,
                   };
                   if (vErrors === null) {
@@ -2589,19 +2520,17 @@ function validate11(
                   let data13 = data12.name;
                   if (typeof data13 !== "string") {
                     const err17 = {
-                      instancePath:
-                        instancePath + "/pluginRules/groups/" + i3 + "/name",
+                      instancePath: instancePath + "/pluginRules/groups/" + i3 + "/name",
                       schemaPath:
                         "#/properties/pluginRules/properties/groups/items/properties/name/type",
                       keyword: "type",
                       params: { type: "string" },
                       message: "must be string",
                       schema:
-                        schema12.properties.pluginRules.properties.groups.items
-                          .properties.name.type,
+                        schema12.properties.pluginRules.properties.groups.items.properties.name
+                          .type,
                       parentSchema:
-                        schema12.properties.pluginRules.properties.groups.items
-                          .properties.name,
+                        schema12.properties.pluginRules.properties.groups.items.properties.name,
                       data: data13,
                     };
                     if (vErrors === null) {
@@ -2616,19 +2545,17 @@ function validate11(
                   let data14 = data12.group;
                   if (typeof data14 !== "string") {
                     const err18 = {
-                      instancePath:
-                        instancePath + "/pluginRules/groups/" + i3 + "/group",
+                      instancePath: instancePath + "/pluginRules/groups/" + i3 + "/group",
                       schemaPath:
                         "#/properties/pluginRules/properties/groups/items/properties/group/type",
                       keyword: "type",
                       params: { type: "string" },
                       message: "must be string",
                       schema:
-                        schema12.properties.pluginRules.properties.groups.items
-                          .properties.group.type,
+                        schema12.properties.pluginRules.properties.groups.items.properties.group
+                          .type,
                       parentSchema:
-                        schema12.properties.pluginRules.properties.groups.items
-                          .properties.group,
+                        schema12.properties.pluginRules.properties.groups.items.properties.group,
                       data: data14,
                     };
                     if (vErrors === null) {
@@ -2647,23 +2574,18 @@ function validate11(
                       let data16 = data15[i4];
                       if (typeof data16 !== "string") {
                         const err19 = {
-                          instancePath:
-                            instancePath +
-                            "/pluginRules/groups/" +
-                            i3 +
-                            "/after/" +
-                            i4,
+                          instancePath: instancePath + "/pluginRules/groups/" + i3 + "/after/" + i4,
                           schemaPath:
                             "#/properties/pluginRules/properties/groups/items/properties/after/items/type",
                           keyword: "type",
                           params: { type: "string" },
                           message: "must be string",
                           schema:
-                            schema12.properties.pluginRules.properties.groups
-                              .items.properties.after.items.type,
+                            schema12.properties.pluginRules.properties.groups.items.properties.after
+                              .items.type,
                           parentSchema:
-                            schema12.properties.pluginRules.properties.groups
-                              .items.properties.after.items,
+                            schema12.properties.pluginRules.properties.groups.items.properties.after
+                              .items,
                           data: data16,
                         };
                         if (vErrors === null) {
@@ -2676,19 +2598,17 @@ function validate11(
                     }
                   } else {
                     const err20 = {
-                      instancePath:
-                        instancePath + "/pluginRules/groups/" + i3 + "/after",
+                      instancePath: instancePath + "/pluginRules/groups/" + i3 + "/after",
                       schemaPath:
                         "#/properties/pluginRules/properties/groups/items/properties/after/type",
                       keyword: "type",
                       params: { type: "array" },
                       message: "must be array",
                       schema:
-                        schema12.properties.pluginRules.properties.groups.items
-                          .properties.after.type,
+                        schema12.properties.pluginRules.properties.groups.items.properties.after
+                          .type,
                       parentSchema:
-                        schema12.properties.pluginRules.properties.groups.items
-                          .properties.after,
+                        schema12.properties.pluginRules.properties.groups.items.properties.after,
                       data: data15,
                     };
                     if (vErrors === null) {
@@ -2702,16 +2622,12 @@ function validate11(
               } else {
                 const err21 = {
                   instancePath: instancePath + "/pluginRules/groups/" + i3,
-                  schemaPath:
-                    "#/properties/pluginRules/properties/groups/items/type",
+                  schemaPath: "#/properties/pluginRules/properties/groups/items/type",
                   keyword: "type",
                   params: { type: "object" },
                   message: "must be object",
-                  schema:
-                    schema12.properties.pluginRules.properties.groups.items
-                      .type,
-                  parentSchema:
-                    schema12.properties.pluginRules.properties.groups.items,
+                  schema: schema12.properties.pluginRules.properties.groups.items.type,
+                  parentSchema: schema12.properties.pluginRules.properties.groups.items,
                   data: data12,
                 };
                 if (vErrors === null) {
@@ -2858,8 +2774,7 @@ function validate11(
           if (typeof data18 !== "string") {
             const err29 = {
               instancePath: instancePath + "/info/author",
-              schemaPath:
-                "#/definitions/ICollectionInfo/properties/author/type",
+              schemaPath: "#/definitions/ICollectionInfo/properties/author/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -2880,8 +2795,7 @@ function validate11(
           if (typeof data19 !== "string") {
             const err30 = {
               instancePath: instancePath + "/info/authorUrl",
-              schemaPath:
-                "#/definitions/ICollectionInfo/properties/authorUrl/type",
+              schemaPath: "#/definitions/ICollectionInfo/properties/authorUrl/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -2923,8 +2837,7 @@ function validate11(
           if (typeof data21 !== "string") {
             const err32 = {
               instancePath: instancePath + "/info/description",
-              schemaPath:
-                "#/definitions/ICollectionInfo/properties/description/type",
+              schemaPath: "#/definitions/ICollectionInfo/properties/description/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -2945,8 +2858,7 @@ function validate11(
           if (typeof data22 !== "string") {
             const err33 = {
               instancePath: instancePath + "/info/domainName",
-              schemaPath:
-                "#/definitions/ICollectionInfo/properties/domainName/type",
+              schemaPath: "#/definitions/ICollectionInfo/properties/domainName/type",
               keyword: "type",
               params: { type: "string" },
               message: "must be string",
@@ -2971,8 +2883,7 @@ function validate11(
               if (typeof data24 !== "string") {
                 const err34 = {
                   instancePath: instancePath + "/info/gameVersions/" + i5,
-                  schemaPath:
-                    "#/definitions/ICollectionInfo/properties/gameVersions/items/type",
+                  schemaPath: "#/definitions/ICollectionInfo/properties/gameVersions/items/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -2991,8 +2902,7 @@ function validate11(
           } else {
             const err35 = {
               instancePath: instancePath + "/info/gameVersions",
-              schemaPath:
-                "#/definitions/ICollectionInfo/properties/gameVersions/type",
+              schemaPath: "#/definitions/ICollectionInfo/properties/gameVersions/type",
               keyword: "type",
               params: { type: "array" },
               message: "must be array",
@@ -3040,10 +2950,7 @@ function validate11(
               rootData,
             })
           ) {
-            vErrors =
-              vErrors === null
-                ? validate12.errors
-                : vErrors.concat(validate12.errors);
+            vErrors = vErrors === null ? validate12.errors : vErrors.concat(validate12.errors);
             errors = vErrors.length;
           }
         }
@@ -3079,10 +2986,7 @@ function validate11(
               rootData,
             })
           ) {
-            vErrors =
-              vErrors === null
-                ? validate16.errors
-                : vErrors.concat(validate16.errors);
+            vErrors = vErrors === null ? validate16.errors : vErrors.concat(validate16.errors);
             errors = vErrors.length;
           }
         }
@@ -3143,8 +3047,7 @@ function validate10(
       rootData,
     })
   ) {
-    vErrors =
-      vErrors === null ? validate11.errors : vErrors.concat(validate11.errors);
+    vErrors = vErrors === null ? validate11.errors : vErrors.concat(validate11.errors);
     errors = vErrors.length;
   }
   var _valid0 = _errs1 === errors;

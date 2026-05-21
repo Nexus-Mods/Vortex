@@ -1,11 +1,11 @@
-import Icon from "../../../controls/Icon";
-import bbcode from "../../../controls/bbcode";
-import { truthy } from "../../../util/util";
-
 import type { TFunction } from "i18next";
 import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
+
+import bbcode from "../../../controls/bbcode";
+import Icon from "../../../controls/Icon";
+import { truthy } from "../../../util/util";
 
 interface IBaseProps {
   t: TFunction;

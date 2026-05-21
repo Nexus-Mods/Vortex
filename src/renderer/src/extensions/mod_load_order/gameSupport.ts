@@ -1,5 +1,4 @@
 import { log } from "../../util/log";
-
 import type { IGameLoadOrderEntry } from "./types/types";
 
 const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
@@ -10,15 +9,10 @@ export function addGameEntry(gameEntry: IGameLoadOrderEntry) {
   }
 
   const isDuplicate: boolean =
-    SUPPORTED_GAMES.find((game) => game.gameId === gameEntry.gameId) !==
-    undefined;
+    SUPPORTED_GAMES.find((game) => game.gameId === gameEntry.gameId) !== undefined;
 
   if (isDuplicate) {
-    log(
-      "debug",
-      "attempted to add duplicate gameEntry to load order extension",
-      gameEntry.gameId,
-    );
+    log("debug", "attempted to add duplicate gameEntry to load order extension", gameEntry.gameId);
     return;
   }
 

@@ -211,11 +211,7 @@ declare module "~redux-persist~redux" {
    */
   export interface StoreCreator {
     <S>(reducer: Reducer<S>, enhancer?: StoreEnhancer<S>): Store<S>;
-    <S>(
-      reducer: Reducer<S>,
-      preloadedState: S,
-      enhancer?: StoreEnhancer<S>,
-    ): Store<S>;
+    <S>(reducer: Reducer<S>, preloadedState: S, enhancer?: StoreEnhancer<S>): Store<S>;
   }
 
   /**
@@ -242,10 +238,7 @@ declare module "~redux-persist~redux" {
   export type GenericStoreEnhancer = <S>(
     next: StoreEnhancerStoreCreator<S>,
   ) => StoreEnhancerStoreCreator<S>;
-  export type StoreEnhancerStoreCreator<S> = (
-    reducer: Reducer<S>,
-    preloadedState?: S,
-  ) => Store<S>;
+  export type StoreEnhancerStoreCreator<S> = (reducer: Reducer<S>, preloadedState?: S) => Store<S>;
 
   /**
    * Creates a Redux store that holds the state tree.
@@ -314,9 +307,7 @@ declare module "~redux-persist~redux" {
    * @param middlewares The middleware chain to be applied.
    * @returns A store enhancer applying the middleware.
    */
-  export function applyMiddleware(
-    ...middlewares: Middleware[]
-  ): GenericStoreEnhancer;
+  export function applyMiddleware(...middlewares: Middleware[]): GenericStoreEnhancer;
 
   /* action creators */
 
@@ -372,10 +363,10 @@ declare module "~redux-persist~redux" {
     dispatch: Dispatch<any>,
   ): A;
 
-  export function bindActionCreators<
-    A extends ActionCreator<any>,
-    B extends ActionCreator<any>,
-  >(actionCreator: A, dispatch: Dispatch<any>): B;
+  export function bindActionCreators<A extends ActionCreator<any>, B extends ActionCreator<any>>(
+    actionCreator: A,
+    dispatch: Dispatch<any>,
+  ): B;
 
   export function bindActionCreators<M extends ActionCreatorsMapObject>(
     actionCreators: M,
@@ -410,25 +401,15 @@ declare module "~redux-persist~redux" {
 
   /* two functions */
   export function compose<A, R>(f1: (b: A) => R, f2: Func0<A>): Func0<R>;
-  export function compose<A, T1, R>(
-    f1: (b: A) => R,
-    f2: Func1<T1, A>,
-  ): Func1<T1, R>;
-  export function compose<A, T1, T2, R>(
-    f1: (b: A) => R,
-    f2: Func2<T1, T2, A>,
-  ): Func2<T1, T2, R>;
+  export function compose<A, T1, R>(f1: (b: A) => R, f2: Func1<T1, A>): Func1<T1, R>;
+  export function compose<A, T1, T2, R>(f1: (b: A) => R, f2: Func2<T1, T2, A>): Func2<T1, T2, R>;
   export function compose<A, T1, T2, T3, R>(
     f1: (b: A) => R,
     f2: Func3<T1, T2, T3, A>,
   ): Func3<T1, T2, T3, R>;
 
   /* three functions */
-  export function compose<A, B, R>(
-    f1: (b: B) => R,
-    f2: (a: A) => B,
-    f3: Func0<A>,
-  ): Func0<R>;
+  export function compose<A, B, R>(f1: (b: B) => R, f2: (a: A) => B, f3: Func0<A>): Func0<R>;
   export function compose<A, B, T1, R>(
     f1: (b: B) => R,
     f2: (a: A) => B,
@@ -484,7 +465,6 @@ declare module "~redux-persist~redux" {
 // Source: https://raw.githubusercontent.com/pellejacobs/typed-redux-persist/78616886cb5ebe7108b4e1b2b7d445abda35e287/index.d.ts
 declare module "~redux-persist/index" {
   import * as constants from "~redux-persist/constants";
-
   import type { Store, StoreEnhancer, Reducer } from "~redux-persist~redux";
 
   interface CreateTransformConfig {
@@ -579,10 +559,7 @@ declare module "~redux-persist/index" {
      * @param [config] Object with configuration
      * @param [callback] Function called on completion
      */
-    function getStoredState<S>(
-      config: PersistStoreConfig<S>,
-      callback?: (err, state) => void,
-    );
+    function getStoredState<S>(config: PersistStoreConfig<S>, callback?: (err, state) => void);
 
     /**
      * Create a persistor for a redux store without automatic rehydration
@@ -592,10 +569,7 @@ declare module "~redux-persist/index" {
      *
      * @returns Persistor object to manipulate the state further
      */
-    function createPersistor<S>(
-      store: Store<S>,
-      config?: PersistStoreConfig<S>,
-    ): Persistor;
+    function createPersistor<S>(store: Store<S>, config?: PersistStoreConfig<S>): Persistor;
   }
 
   export = ReduxPersist;

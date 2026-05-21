@@ -1,4 +1,5 @@
 import type PromiseBB from "bluebird";
+
 import type { IGameStoreEntry } from "./IGameStoreEntry";
 
 /**

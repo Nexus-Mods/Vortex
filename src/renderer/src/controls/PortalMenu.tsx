@@ -1,9 +1,9 @@
-import Dropdown from "./Dropdown";
-
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import type { SelectCallback } from "react-bootstrap";
 import { Overlay } from "react-overlays";
+
+import Dropdown from "./Dropdown";
 
 interface IPortalMenuProps {
   open: boolean;
@@ -20,10 +20,7 @@ function nop() {
   // nop
 }
 
-class PortalMenu extends React.Component<
-  IPortalMenuProps,
-  { x: number; y: number }
-> {
+class PortalMenu extends React.Component<IPortalMenuProps, { x: number; y: number }> {
   public static contextTypes: React.ValidationMap<any> = {
     menuLayer: PropTypes.object,
   };
@@ -69,10 +66,7 @@ class PortalMenu extends React.Component<
               args.props.style.top = useMousePosition.y;
               args.props.style.left = useMousePosition.x;
               delete args.props.style.transform;
-            } else if (
-              args.props.style !== undefined &&
-              args.props.style.transform !== undefined
-            ) {
+            } else if (args.props.style !== undefined && args.props.style.transform !== undefined) {
               // translate3d causes blurry text on "low-res" screens.
               // Newer popper versions seem to account for that but react-popper still
               // relies on an old version at the time of writing

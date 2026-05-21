@@ -7,20 +7,12 @@ import {
   mdiEyeOff,
   mdiRefresh,
 } from "@mdi/js";
-import React, {
-  useCallback,
-  useMemo,
-  useState,
-  type MouseEvent,
-  type KeyboardEvent,
-} from "react";
+import React, { useCallback, useMemo, useState, type MouseEvent, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IModFileInfo, IModRequirementExt } from "../types";
-
 import { setOpenMainPage, setSettingsPage } from "../../../actions/session";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { NoResults } from "../../../ui/components/no_results/NoResults";
@@ -32,11 +24,9 @@ import { TabProvider } from "../../../ui/components/tabs/tabs.context";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { batchDispatch } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
-import {
-  setRequirementHidden,
-  clearAllHiddenRequirements,
-} from "../actions/persistent";
+import { setRequirementHidden, clearAllHiddenRequirements } from "../actions/persistent";
 import { hiddenRequirements, allModRequirements } from "../selectors";
+import type { IModFileInfo, IModRequirementExt } from "../types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
 
 const Mod = ({
@@ -77,9 +67,7 @@ const Mod = ({
         <Typography appearance="subdued" typographyType="body-sm">
           {t("listing::item::description", {
             dependencyModName:
-              requirementInfo.modName ||
-              requirementInfo.modUrl ||
-              requirementInfo.notes,
+              requirementInfo.modName || requirementInfo.modUrl || requirementInfo.notes,
           })}
         </Typography>
       </div>
@@ -96,11 +84,7 @@ const Mod = ({
         }}
       />
 
-      <Icon
-        className="shrink-0 text-translucent-moderate"
-        path={mdiChevronRight}
-        size="lg"
-      />
+      <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
     </div>
   );
 };
@@ -108,23 +92,15 @@ const Mod = ({
 interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
-  onDownloadRequirement?: (
-    mod: IModRequirementExt,
-    file?: IModFileInfo,
-  ) => Promise<void>;
+  onDownloadRequirement?: (mod: IModRequirementExt, file?: IModFileInfo) => Promise<void>;
 }
 
-function HealthCheckPage({
-  api,
-  onRefresh,
-  onDownloadRequirement,
-}: IHealthCheckPageProps) {
+function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [showDetail, setShowDetail] = useState(false);
   const [selectedTab, setSelectedTab] = useState("active");
-  const [selectedRequirement, setSelectedRequirement] =
-    useState<IModRequirementExt | null>(null);
+  const [selectedRequirement, setSelectedRequirement] = useState<IModRequirementExt | null>(null);
 
   const modRequirements: IModRequirementExt[] = useSelector(allModRequirements);
 
@@ -198,11 +174,7 @@ function HealthCheckPage({
 
               <div className="grow">
                 <div className="flex items-center gap-x-1.5">
-                  <Typography
-                    as="h2"
-                    className="m-0"
-                    typographyType="heading-xs"
-                  >
+                  <Typography as="h2" className="m-0" typographyType="heading-xs">
                     {t("listing::title")}
                   </Typography>
 
@@ -215,9 +187,7 @@ function HealthCheckPage({
                   </Typography>
                 </div>
 
-                <Typography appearance="moderate">
-                  {t("listing::subtitle")}
-                </Typography>
+                <Typography appearance="moderate">{t("listing::subtitle")}</Typography>
               </div>
             </div>
 
@@ -253,15 +223,9 @@ function HealthCheckPage({
           >
             <div className="flex items-center justify-between">
               <TabBar>
-                <TabButton
-                  count={activeMods.length}
-                  name={t("common:::active")}
-                />
+                <TabButton count={activeMods.length} name={t("common:::active")} />
 
-                <TabButton
-                  count={hiddenMods.length}
-                  name={t("common:::hidden")}
-                />
+                <TabButton count={hiddenMods.length} name={t("common:::hidden")} />
               </TabBar>
 
               <Button

@@ -12,12 +12,10 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../types/IState";
-
-import type { IComponentContext } from "../types/IComponentContext";
-
 import { setOpenMainPage } from "../actions/session";
 import { useExtensionContext } from "../ExtensionProvider";
+import type { IComponentContext } from "../types/IComponentContext";
+import type { IState } from "../types/IState";
 import { useMenuLayerContext } from "./MenuLayerContext";
 import { useWindowContext } from "./WindowContext";
 
@@ -47,16 +45,12 @@ export const MainProvider: FC<IMainProviderProps> = ({ children }) => {
   const { menuLayerElement } = useMenuLayerContext();
   const { getModifiers } = useWindowContext();
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
-  const useModernLayout = useSelector(
-    (state: IState) => state.settings.window.useModernLayout,
-  );
+  const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
 
   // Set up event listeners for api events
   useEffect(() => {
     const showMainPageHandler = (pageId: string) => {
-      const resolvedId = useModernLayout
-        ? (PAGE_REDIRECTS_MODERN[pageId] ?? pageId)
-        : pageId;
+      const resolvedId = useModernLayout ? (PAGE_REDIRECTS_MODERN[pageId] ?? pageId) : pageId;
       dispatch(setOpenMainPage(resolvedId, false));
     };
 

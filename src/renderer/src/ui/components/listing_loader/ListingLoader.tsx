@@ -19,11 +19,9 @@ export const ListingLoader = ({
       <>
         {append && children}
 
-        {Array.from({ length: skeletonCount }, (_, i) => `skeleton-${i}`).map(
-          (key) => (
-            <SkeletonTile key={key} />
-          ),
-        )}
+        {Array.from({ length: skeletonCount }, (_, i) => `skeleton-${i}`).map((key) => (
+          <SkeletonTile key={key} />
+        ))}
       </>
     ) : (
       children

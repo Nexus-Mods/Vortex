@@ -1,8 +1,10 @@
-import {
-  MAX_COLLECTION_NAME_LENGTH,
-  MIN_COLLECTION_NAME_LENGTH,
-  MOD_TYPE,
-} from "../constants";
+import * as path from "path";
+
+import { log, types, util } from "@nexusmods/vortex-api";
+import type { ILookupResult } from "modmeta-db";
+import { generate as shortid } from "shortid";
+
+import { MAX_COLLECTION_NAME_LENGTH, MIN_COLLECTION_NAME_LENGTH, MOD_TYPE } from "../constants";
 import type {
   ICollection,
   ICollectionInfo,
@@ -10,11 +12,6 @@ import type {
   ICollectionModRule,
   ICollectionSourceInfo,
 } from "../types/ICollection";
-
-import type { ILookupResult } from "modmeta-db";
-import * as path from "path";
-import { generate as shortid } from "shortid";
-import { log, types, util } from "vortex-api";
 
 export function sanitizeExpression(fileName: string): string {
   // drop extension and anything like ".1" or " (1)" at the end which probaby
@@ -61,18 +58,10 @@ export function deduceSource(
 
   if (res.type === "nexus") {
     if (mod.attributes?.source !== "nexus") {
-      throw new Error(
-        `"${util.renderModName(mod)}" doesn't have Nexus as its source`,
-      );
+      throw new Error(`"${util.renderModName(mod)}" doesn't have Nexus as its source`);
     }
-    const modId =
-      mod.type === MOD_TYPE
-        ? mod.attributes?.collectionId
-        : mod.attributes?.modId;
-    const fileId =
-      mod.type === MOD_TYPE
-        ? mod.attributes?.revisionId
-        : mod.attributes?.fileId;
+    const modId = mod.type === MOD_TYPE ? mod.attributes?.collectionId : mod.attributes?.modId;
+    const fileId = mod.type === MOD_TYPE ? mod.attributes?.revisionId : mod.attributes?.fileId;
     // don't accept undefined, 0 or ''
     if (!modId || !fileId || isNaN(modId) || isNaN(fileId)) {
       throw new Error(`"${mod.id}" is missing mod id or file id`);
@@ -107,10 +96,7 @@ export function deduceSource(
   } else {
     if (versionMatcher === "*") {
       assign(res, "updatePolicy", "latest");
-    } else if (
-      versionMatcher !== undefined &&
-      versionMatcher.endsWith("+prefer")
-    ) {
+    } else if (versionMatcher !== undefined && versionMatcher.endsWith("+prefer")) {
       assign(res, "updatePolicy", "prefer");
     } else {
       assign(res, "updatePolicy", "exact");
@@ -176,20 +162,12 @@ export function makeTransferrable(
 
     if (rule.reference.id === undefined) {
       // rule unusable
-      log(
-        "warn",
-        "invalid rule couldn't be included in the collection",
-        JSON.stringify(rule),
-      );
+      log("warn", "invalid rule couldn't be included in the collection", JSON.stringify(rule));
       return undefined;
     }
 
     if (mod === undefined) {
-      log(
-        "warn",
-        "mod enabled in collection isn't installed",
-        JSON.stringify(rule),
-      );
+      log("warn", "mod enabled in collection isn't installed", JSON.stringify(rule));
       return undefined;
     }
 
@@ -199,9 +177,7 @@ export function makeTransferrable(
   // ok, this gets a bit complex now. If the referenced mod gets updated, also make sure
   // the rules referencing it apply to newer versions
   if (mod !== undefined) {
-    const mpRule = collection.rules.find((iter) =>
-      util.testModReference(mod, iter.reference),
-    );
+    const mpRule = collection.rules.find((iter) => util.testModReference(mod, iter.reference));
     if (
       mpRule !== undefined &&
       (mpRule.reference.versionMatch === undefined ||
@@ -241,9 +217,7 @@ export function collectionModToRule(
 
   let versionMatch: string;
   if (updatePolicy === "prefer") {
-    versionMatch = !!coerced
-      ? `>=${coerced ?? "0.0.0"}+prefer`
-      : util.coerceToSemver(mod.version);
+    versionMatch = !!coerced ? `>=${coerced ?? "0.0.0"}+prefer` : util.coerceToSemver(mod.version);
   } else if (updatePolicy === "latest") {
     versionMatch = "*";
   } else {
@@ -253,8 +227,7 @@ export function collectionModToRule(
 
   // we can't use the md5 hash for a bundled file because they are recompressed
   // during collection install and then the hash won't match
-  const refMD5: string =
-    mod.source.type === "bundle" ? undefined : mod.source.md5;
+  const refMD5: string = mod.source.type === "bundle" ? undefined : mod.source.md5;
 
   const fileExpression =
     updatePolicy === "exact" || mod.source.logicalFilename === undefined
@@ -327,10 +300,7 @@ export function validateName(
   content: types.IDialogContent,
 ): types.IConditionResult[] {
   const input = content.input[0].value || "";
-  if (
-    input.length >= MIN_COLLECTION_NAME_LENGTH &&
-    input.length <= MAX_COLLECTION_NAME_LENGTH
-  ) {
+  if (input.length >= MIN_COLLECTION_NAME_LENGTH && input.length <= MAX_COLLECTION_NAME_LENGTH) {
     return [];
   } else {
     return [

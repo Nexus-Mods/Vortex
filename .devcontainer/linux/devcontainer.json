@@ -7,7 +7,7 @@
   "name": "Vortex Linux Build",
   "build": {
     "dockerfile": "../../docker/linux/Dockerfile.devcontainer",
-    "context": "../..",
+    "context": "../.."
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
@@ -17,9 +17,9 @@
   "containerEnv": {
     "ELECTRON_DISABLE_GPU": "true",
     "DISPLAY": "${localEnv:DISPLAY}",
-    "NO_PARALLEL": "true",
+    "NO_PARALLEL": "true"
   },
   "runArgs": ["--init"],
   "forwardPorts": [],
-  "portsAttributes": {},
+  "portsAttributes": {}
 }

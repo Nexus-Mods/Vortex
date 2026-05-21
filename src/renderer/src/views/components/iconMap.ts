@@ -1,6 +1,7 @@
 import {
   mdiCog,
   mdiCommentTextOutline,
+  mdiContentSave,
   mdiDownload,
   mdiEye,
   mdiGamepadSquare,
@@ -9,6 +10,7 @@ import {
   mdiInformationOutline,
   mdiMenu,
   mdiPalette,
+  mdiPowerPlug,
   mdiPuzzle,
   mdiShapeOutline,
   mdiTune,
@@ -32,13 +34,12 @@ const iconMap: Record<string, string> = {
   feedback: mdiCommentTextOutline,
   nexus: mdiWeb,
   palette: mdiPalette,
+  plugins: mdiPowerPlug,
+  savegame: mdiContentSave,
   tools: mdiWrench,
   tune: mdiTune,
 };
 
-export const getIconPath = (
-  iconName: string,
-  fallbackIcon: string = mdiShapeOutline,
-): string => {
+export const getIconPath = (iconName: string, fallbackIcon: string = mdiShapeOutline): string => {
   return iconMap[iconName] ?? fallbackIcon;
 };

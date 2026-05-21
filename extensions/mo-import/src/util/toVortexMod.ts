@@ -1,12 +1,8 @@
+import { types } from "@nexusmods/vortex-api";
+
 import { IModEntry } from "../types/moEntries";
 
-import { types } from "vortex-api";
-
-function toVortexMod(
-  input: IModEntry,
-  md5Hash: string,
-  archiveId: string,
-): types.IMod {
+function toVortexMod(input: IModEntry, md5Hash: string, archiveId: string): types.IMod {
   const attributes: { [id: string]: any } = {
     name: input.modName,
     installTime: new Date(),

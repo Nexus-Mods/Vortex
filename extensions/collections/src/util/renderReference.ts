@@ -1,4 +1,4 @@
-import { types, util } from "vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 export function renderReference(
   ref: types.IModReference,

@@ -1,9 +1,7 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { getSafe, setSafe } from "../../../util/storeHelper";
-
-import type { ILoadOrderEntry } from "../types/types";
-
 import * as actions from "../actions/loadOrder";
+import type { ILoadOrderEntry } from "../types/types";
 
 export const modLoadOrderReducer: IReducerSpec = {
   reducers: {

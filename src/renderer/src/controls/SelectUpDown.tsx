@@ -37,13 +37,7 @@ class SelectUpDown extends React.Component<IProps, ISelectUpDownState> {
     if (this.state.up) {
       classes.push("select-up-down-up");
     }
-    return (
-      <Select
-        {...this.props}
-        className={classes.join(" ")}
-        onOpen={this.onMenuOpen}
-      />
-    );
+    return <Select {...this.props} className={classes.join(" ")} onOpen={this.onMenuOpen} />;
   }
 
   private get bounds(): DOMRect {
@@ -61,9 +55,7 @@ class SelectUpDown extends React.Component<IProps, ISelectUpDownState> {
 
   private onMenuOpen = () => {
     const bounds = this.bounds;
-    const newUp =
-      this.mNode.getBoundingClientRect().bottom >
-      bounds.top + bounds.height / 2;
+    const newUp = this.mNode.getBoundingClientRect().bottom > bounds.top + bounds.height / 2;
     // force redraw to ensure the menu gets rendered too
     this.setState({ up: newUp });
     if (this.props.onOpen !== undefined) {

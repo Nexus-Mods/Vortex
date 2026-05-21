@@ -1,5 +1,4 @@
 import type { BrowserWindow, Cookie as ElectronCookie } from "electron";
-
 import { CookieJar, Cookie, Store } from "tough-cookie";
 
 export function createElectronCookieJar(): CookieJar {
@@ -53,10 +52,7 @@ export class ElectronCookieStore extends Store {
   async putCookie(cookie: Cookie): Promise<void> {
     await this.#electronCookies.set({
       domain: cookie.domain,
-      expirationDate:
-        cookie.expires === "Infinity"
-          ? undefined
-          : cookie.expires.getTime() / 1000,
+      expirationDate: cookie.expires === "Infinity" ? undefined : cookie.expires.getTime() / 1000,
       httpOnly: cookie.httpOnly,
       name: cookie.key,
       path: cookie.path,
@@ -79,9 +75,7 @@ export class ElectronCookieStore extends Store {
 
   async removeCookies(domain: string, path: string): Promise<void> {
     const cookies = await this.findCookies(domain, path);
-    await Promise.all(
-      cookies.map((c) => this.#electronCookies.remove(cookieUrl(c), c.key)),
-    );
+    await Promise.all(cookies.map((c) => this.#electronCookies.remove(cookieUrl(c), c.key)));
   }
 
   removeAllCookies(): Promise<void> {

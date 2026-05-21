@@ -3,11 +3,7 @@
     "type": "general",
     "version": 1,
     "fileCount": 3,
-    "fileList": [
-      "meshes\\weapon\\gun.nif",
-      "scripts\\myscript.pex",
-      "materials\\test.bgsm"
-    ]
+    "fileList": ["meshes\\weapon\\gun.nif", "scripts\\myscript.pex", "materials\\test.bgsm"]
   },
   "dx10": {
     "type": "dx10",

@@ -1,12 +1,11 @@
-import type { SerializableMenuItem } from "@vortex/shared/preload";
-
-import { webFrame } from "electron";
 import * as path from "path";
 
-import type ExtensionManager from "./ExtensionManager";
-import type { IMainPageOptions } from "./types/IExtensionContext";
+import type { SerializableMenuItem } from "@vortex/shared/preload";
+import { webFrame } from "electron";
 
 import { setZoomFactor } from "./actions/window";
+import type ExtensionManager from "./ExtensionManager";
+import type { IMainPageOptions } from "./types/IExtensionContext";
 import { getApplication } from "./util/application";
 import getVortexPath from "./util/getVortexPath";
 import { debugTranslations, getMissingTranslations } from "./util/i18n";
@@ -23,9 +22,7 @@ function generateMenuId(): string {
 }
 
 // Recursively process menu items to assign IDs and store click handlers
-function processMenuTemplate(
-  items: Electron.MenuItemConstructorOptions[],
-): SerializableMenuItem[] {
+function processMenuTemplate(items: Electron.MenuItemConstructorOptions[]): SerializableMenuItem[] {
   return items.map((item): SerializableMenuItem => {
     const processed: Omit<Electron.MenuItemConstructorOptions, "click"> = {
       ...item,
@@ -42,9 +39,7 @@ function processMenuTemplate(
 
     // Recursively process submenus
     if (item.submenu && Array.isArray(item.submenu)) {
-      processed.submenu = processMenuTemplate(
-        item.submenu,
-      );
+      processed.submenu = processMenuTemplate(item.submenu);
     }
 
     return processed as SerializableMenuItem;
@@ -111,12 +106,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     // main pages
     extensions.apply(
       "registerMainPage",
-      (
-        icon: string,
-        title: string,
-        element: any,
-        options: IMainPageOptions,
-      ) => {
+      (icon: string, title: string, element: any, options: IMainPageOptions) => {
         if (options.visible === undefined || options.visible()) {
           let accelerator =
             options.hotkeyRaw !== undefined
@@ -140,9 +130,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
             accelerator,
             click() {
               if (options.visible === undefined || options.visible()) {
-                extensions
-                  .getApi()
-                  .events.emit("show-main-page", options.id || title);
+                extensions.getApi().events.emit("show-main-page", options.id || title);
               }
             },
           });
@@ -154,9 +142,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       label: "Settings",
       accelerator: "CmdOrCtrl+Shift+S",
       click() {
-        extensions
-          .getApi()
-          .events.emit("show-main-page", "application_settings");
+        extensions.getApi().events.emit("show-main-page", "application_settings");
       },
     });
 
@@ -165,8 +151,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu.push({ type: "separator" });
       viewMenu.push({
         label: "Toggle Developer Tools",
-        accelerator:
-          process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I",
+        accelerator: process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I",
         click() {
           // Toggle dev tools via IPC
           void window.api.window.toggleDevTools(getWindowId());
@@ -195,9 +180,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         label: "Copy missing translations to clipboard",
         enabled: recordTranslation,
         click() {
-          window.api.clipboard.writeText(
-            JSON.stringify(getMissingTranslations(), undefined, 2),
-          );
+          window.api.clipboard.writeText(JSON.stringify(getMissingTranslations(), undefined, 2));
         },
       });
     }

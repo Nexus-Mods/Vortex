@@ -1,6 +1,6 @@
 import type { DuckDBConnection, DuckDBValue } from "@duckdb/node-api";
-
 import type { Serializable } from "@vortex/shared/ipc";
+
 import { log } from "../logging";
 import type { ParsedQuery } from "./queryParser";
 
@@ -123,7 +123,7 @@ class QueryRegistry {
       query.sql,
       values as Record<string, DuckDBValue>,
     );
-    return reader.getRowObjectsJson() as Record<string, Serializable>[];
+    return reader.getRowObjectsJson();
   }
 
   /**

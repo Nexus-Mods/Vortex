@@ -35,12 +35,7 @@ export function createLegacyApi(
       check: CheckFunction,
       category?: HealthCheckCategory,
     ) => {
-      const legacyCheck = adapter.createLegacyHealthCheck(
-        id,
-        eventType,
-        check,
-        category,
-      );
+      const legacyCheck = adapter.createLegacyHealthCheck(id, eventType, check, category);
       registry.register(legacyCheck);
     },
   };

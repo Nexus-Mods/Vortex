@@ -1,6 +1,7 @@
 import * as path from "path";
+
+import { selectors, types, util } from "@nexusmods/vortex-api";
 import * as Redux from "redux";
-import { selectors, types, util } from "vortex-api";
 
 interface IGameSupport {
   mygamesPath: string;
@@ -99,12 +100,10 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
   },
 );
 
-let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () =>
-  undefined;
+let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
 
 export function initGameSupport(api: types.IExtensionApi) {
-  discoveryForGame = (gameId: string) =>
-    selectors.discoveryByGame(api.store.getState(), gameId);
+  discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
 }
 
 export function gameSupported(gameMode: string): boolean {

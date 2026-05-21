@@ -1,5 +1,4 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
-
 import { describe, it, vi, expect } from "vitest";
 
 import { View } from "./View";
@@ -14,9 +13,7 @@ type MockConnection = {
   runAndReadAll: ReturnType<typeof vi.fn>;
 };
 
-function createMockConnection(
-  rows: TestRow[] = [],
-): MockConnection & DuckDBConnection {
+function createMockConnection(rows: TestRow[] = []): MockConnection & DuckDBConnection {
   const mock: MockConnection = {
     runAndReadAll: vi.fn().mockResolvedValue({
       getRowObjectsJson: () => rows,
@@ -38,9 +35,7 @@ describe("View", () => {
       const result = await view.all();
 
       expect(result).toEqual(rows);
-      expect(conn.runAndReadAll).toHaveBeenCalledWith(
-        "SELECT * FROM test_table",
-      );
+      expect(conn.runAndReadAll).toHaveBeenCalledWith("SELECT * FROM test_table");
     });
 
     it("returns empty array for empty table", async () => {
@@ -86,9 +81,7 @@ describe("View", () => {
 
       await view.where({});
 
-      expect(conn.runAndReadAll).toHaveBeenCalledWith(
-        "SELECT * FROM test_table",
-      );
+      expect(conn.runAndReadAll).toHaveBeenCalledWith("SELECT * FROM test_table");
     });
   });
 

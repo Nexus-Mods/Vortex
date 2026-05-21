@@ -1,17 +1,29 @@
-import { getErrorCode } from "@vortex/shared";
 import { readFileSync } from "fs";
 import * as path from "path";
-import { useCallback, useEffect, useRef, useState } from "react";
 import * as url from "url";
+
+import { getErrorCode } from "@vortex/shared";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { IDiscoveryResult } from "../../../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
-
 import { nexusGames } from "../../../extensions/nexus_integration/util";
 import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
 import { log } from "../../../logging";
 import { ensureDirWritableAsync, writeFileAsync } from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
+
+// ---------------------------------------------------------------------------
+// Display formatting
+// ---------------------------------------------------------------------------
+
+/**
+ * Some game extensions embed a tab in their `name` (e.g. `'Fallout:\tNew Vegas'`)
+ * as a separator after the colon. DOM text rendering collapses this to a single
+ * space, but HTML `title=` tooltips render whitespace literally, producing a
+ * visible gap. Normalize for display.
+ */
+export const formatGameDisplayName = (name: string): string => name.replace(/\s+/g, " ").trim();
 
 // ---------------------------------------------------------------------------
 // Image cache — persisted to disk, keyed by game ID
@@ -29,11 +41,9 @@ let diskCacheLoaded = false;
 
 const ICON_CACHE_DIR = "icon_cache";
 
-const iconCacheDir = (): string =>
-  path.join(getVortexPath("userData"), ICON_CACHE_DIR);
+const iconCacheDir = (): string => path.join(getVortexPath("userData"), ICON_CACHE_DIR);
 
-const imageCachePath = (): string =>
-  path.join(iconCacheDir(), "game_image_cache.json");
+const imageCachePath = (): string => path.join(iconCacheDir(), "game_image_cache.json");
 
 const ensureDiskCacheLoaded = (): void => {
   if (diskCacheLoaded) return;
@@ -75,10 +85,7 @@ const cachedImagePath = (gameId: string, ext: string = ".jpg"): string =>
   path.join(iconCacheDir(), `${gameId}${ext}`);
 
 /** Download a remote image and save it to the icon cache directory. */
-const downloadImage = async (
-  imageUrl: string,
-  gameId: string,
-): Promise<string> => {
+const downloadImage = async (imageUrl: string, gameId: string): Promise<string> => {
   const response = await fetch(imageUrl);
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -160,12 +167,9 @@ export const useGameImage = (
   ensureDiskCacheLoaded();
 
   const cached = imageCache.get(cacheKey);
-  const isFresh =
-    cached !== undefined && Date.now() - cached.cachedAt < IMAGE_TTL_MS;
+  const isFresh = cached !== undefined && Date.now() - cached.cachedAt < IMAGE_TTL_MS;
 
-  const [src, setSrc] = useState(() =>
-    isFresh ? cached.url : (sources[0] ?? ""),
-  );
+  const [src, setSrc] = useState(() => (isFresh ? cached.url : (sources[0] ?? "")));
   const [exhausted, setExhausted] = useState(false);
   // Next fallback index for onError: 0 when showing a cached URL (sources untried),
   // 1 when already showing sources[0].
@@ -178,8 +182,7 @@ export const useGameImage = (
   if (prevKey.current !== cacheKey) {
     prevKey.current = cacheKey;
     const entry = imageCache.get(cacheKey);
-    const valid =
-      entry !== undefined && Date.now() - entry.cachedAt < IMAGE_TTL_MS;
+    const valid = entry !== undefined && Date.now() - entry.cachedAt < IMAGE_TTL_MS;
     setSrc(valid ? entry.url : (sources[0] ?? ""));
     idx.current = valid ? 0 : 1;
     setExhausted(false);
@@ -203,11 +206,7 @@ export const useGameImage = (
       .catch((err) => {
         log("debug", "Failed to download game image", { cacheKey, error: err });
         // Remote unavailable — refresh TTL on stale entries.
-        if (
-          !cancelled &&
-          entry !== undefined &&
-          Date.now() - entry.cachedAt >= IMAGE_TTL_MS
-        ) {
+        if (!cancelled && entry !== undefined && Date.now() - entry.cachedAt >= IMAGE_TTL_MS) {
           setCacheEntry(cacheKey, entry.url);
         }
       });

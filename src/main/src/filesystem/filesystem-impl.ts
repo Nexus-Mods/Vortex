@@ -1,3 +1,5 @@
+import { isAbsolute, relative, sep as pathSep } from "node:path";
+
 import type {
   FileSystem as NodeFileSystem,
   FileSystemBackend as NodeFileSystemBackend,
@@ -7,11 +9,8 @@ import type {
   ResolvedPath,
   StatResult,
   Status,
-} from "@vortex/fs";
-import type { ReadStream, WriteStream } from "node:fs";
-
-import { FileSystemError } from "@vortex/fs";
-import { isAbsolute, relative, sep as pathSep } from "node:path";
+} from "@nexusmods/adaptor-api/fs";
+import { FileSystemError } from "@nexusmods/adaptor-api/fs";
 
 /**
  * Node-backed implementation of {@link NodeFileSystem}. Composes a
@@ -64,10 +63,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
   }
 
   async writeFile(path: QualifiedPath, contents: Uint8Array): Promise<void> {
-    await this.#backend.writeFile(
-      await this.#resolvers.resolve(path),
-      contents,
-    );
+    await this.#backend.writeFile(await this.#resolvers.resolve(path), contents);
   }
 
   async createDirectory(path: QualifiedPath): Promise<void> {
@@ -82,10 +78,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
     await this.#backend.deleteRecursive(await this.#resolvers.resolve(path));
   }
 
-  async stat(
-    path: QualifiedPath,
-    options?: { parseSymLink: boolean },
-  ): Promise<StatResult> {
+  async stat(path: QualifiedPath, options?: { parseSymLink: boolean }): Promise<StatResult> {
     return this.#backend.stat(await this.#resolvers.resolve(path), options);
   }
 
@@ -139,27 +132,23 @@ export class NodeFileSystemImpl implements NodeFileSystem {
     path: QualifiedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream>;
+  ): Promise<ReadableStream>;
   createStream(
     path: QualifiedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WriteStream>;
+  ): Promise<WritableStream>;
   createStream(
     path: QualifiedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream>;
+  ): Promise<ReadableStream | WritableStream>;
   async createStream(
     path: QualifiedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadStream | WriteStream> {
-    return this.#backend.createStream(
-      await this.#resolvers.resolve(path),
-      mode,
-      options,
-    );
+  ): Promise<ReadableStream | WritableStream> {
+    return this.#backend.createStream(await this.#resolvers.resolve(path), mode, options);
   }
 
   async createLink(
@@ -167,10 +156,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
     to: QualifiedPath,
     type: "hardlink" | "symlink",
   ): Promise<void> {
-    const [f, t] = await Promise.all([
-      this.#resolvers.resolve(from),
-      this.#resolvers.resolve(to),
-    ]);
+    const [f, t] = await Promise.all([this.#resolvers.resolve(from), this.#resolvers.resolve(to)]);
     await this.#backend.createLink(f, t, type);
   }
 }
@@ -194,11 +180,7 @@ function wrapIterator(
       }
       return {
         done: false,
-        value: toQualifiedEntry(
-          rootQP,
-          rootResolved,
-          step.value as ResolvedPath,
-        ),
+        value: toQualifiedEntry(rootQP, rootResolved, step.value as ResolvedPath),
       };
     },
     async return() {

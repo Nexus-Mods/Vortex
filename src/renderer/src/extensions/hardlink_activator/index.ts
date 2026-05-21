@@ -1,31 +1,27 @@
-import type { TFunction } from "i18next";
+import * as path from "path";
+import * as util from "util";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import * as path from "path";
+import type { TFunction } from "i18next";
 import turbowalk from "turbowalk";
-import * as util from "util";
 import * as winapi from "winapi-bindings";
 
-import type {
-  IExtensionApi,
-  IExtensionContext,
-} from "../../types/IExtensionContext";
+import { setSettingsPage } from "../../actions/session";
+import { log } from "../../logging";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IState } from '../../types/IState';
+import type { IState } from "../../types/IState";
+import * as fs from "../../util/fs";
+import { installPathForGame } from "../../util/selectors";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import { getGame } from "../gamemode_management/util/getGame";
+import LinkingDeployment from "../mod_management/LinkingDeployment";
 import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
-
-import { setSettingsPage } from "../../actions/session";
-import { log } from "../../logging";
-import * as fs from "../../util/fs";
-import { installPathForGame } from "../../util/selectors";
-import { getGame } from "../gamemode_management/util/getGame";
-import LinkingDeployment from "../mod_management/LinkingDeployment";
 
 export class FileFound extends Error {
   constructor(name: string) {
@@ -72,13 +68,8 @@ class DeploymentMethod extends LinkingDeployment {
     );
   }
 
-  public isSupported(
-    state: IState,
-    gameId: string,
-    typeId: string,
-  ): IUnavailableReason {
-    const discovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[gameId];
+  public isSupported(state: IState, gameId: string, typeId: string): IUnavailableReason {
+    const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
     if (discovery?.path == null) {
       return {
         description: (t) => t("Game not discovered."),
@@ -95,11 +86,10 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch {
-      log(
-        "info",
-        "hardlink deployment not supported due to lack of write access",
-        { typeId, path: modPaths[typeId] },
-      );
+      log("info", "hardlink deployment not supported due to lack of write access", {
+        typeId,
+        path: modPaths[typeId],
+      });
       return {
         description: (t) => t("Can't write to output directory."),
         order: 3,
@@ -119,15 +109,10 @@ class DeploymentMethod extends LinkingDeployment {
     const installationPath = installPathForGame(state, gameId);
 
     try {
-      if (
-        fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev
-      ) {
+      if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // hard links work only on the same drive
         return {
-          description: (t) =>
-            t(
-              "Works only if mods are installed on the same drive as the game.",
-            ),
+          description: (t) => t("Works only if mods are installed on the same drive as the game."),
           order: 5,
           solution: (t) => {
             let displayPath = modPaths[typeId];
@@ -168,8 +153,7 @@ class DeploymentMethod extends LinkingDeployment {
         err: util.inspect(err),
       });
       return {
-        description: (t) =>
-          t("Game not fully initialized yet, this should disappear soon."),
+        description: (t) => t("Game not fully initialized yet, this should disappear soon."),
       };
     }
 
@@ -183,10 +167,7 @@ class DeploymentMethod extends LinkingDeployment {
       } catch {
         // nop
       }
-      fs.writeFileSync(
-        canary,
-        "Should only exist temporarily, feel free to delete",
-      );
+      fs.writeFileSync(canary, "Should only exist temporarily, feel free to delete");
       fs.linkSync(canary, canary + ".link");
     } catch (err) {
       // EMFILE shouldn't keep us from using hard linking
@@ -271,9 +252,7 @@ class DeploymentMethod extends LinkingDeployment {
         },
       )
         .catch((err) =>
-          ["ENOENT", "ENOTFOUND"].includes(err.code)
-            ? PromiseBB.resolve()
-            : PromiseBB.reject(err),
+          ["ENOENT", "ENOTFOUND"].includes(err.code) ? PromiseBB.resolve() : PromiseBB.reject(err),
         )
         .then(() => PromiseBB.resolve(this.mInstallationFiles));
     }
@@ -293,20 +272,14 @@ class DeploymentMethod extends LinkingDeployment {
         (entries) => {
           queue = queue.then(() =>
             PromiseBB.map(entries, (entry) => {
-              if (
-                entry.linkCount > 1 &&
-                entry.idStr !== undefined &&
-                inos.has(entry.idStr)
-              ) {
+              if (entry.linkCount > 1 && entry.idStr !== undefined && inos.has(entry.idStr)) {
                 ++purged;
                 if (purged % 1000 === 0) {
                   onProgress?.(purged, total);
                 }
                 return fs
                   .unlinkAsync(entry.filePath)
-                  .catch((err) =>
-                    log("warn", "failed to remove", entry.filePath),
-                  );
+                  .catch((err) => log("warn", "failed to remove", entry.filePath));
               } else {
                 return PromiseBB.resolve();
               }
@@ -318,19 +291,13 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
-  protected linkFile(
-    linkPath: string,
-    sourcePath: string,
-    dirTags?: boolean,
-  ): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
       .then(() => fs.linkAsync(sourcePath, linkPath))
       .catch((err: unknown) =>
         getErrorCode(err) !== "EEXIST"
           ? Promise.reject(unknownToError(err))
-          : fs
-              .removeAsync(linkPath)
-              .then(() => fs.linkAsync(sourcePath, linkPath)),
+          : fs.removeAsync(linkPath).then(() => fs.linkAsync(sourcePath, linkPath)),
       );
   }
 
@@ -345,9 +312,7 @@ class DeploymentMethod extends LinkingDeployment {
     sourceStatsIn: fs.Stats,
   ): PromiseBB<boolean> {
     if (linkStatsIn !== undefined && sourceStatsIn !== undefined) {
-      return PromiseBB.resolve(
-        linkStatsIn.nlink > 1 && linkStatsIn.ino === sourceStatsIn.ino,
-      );
+      return PromiseBB.resolve(linkStatsIn.nlink > 1 && linkStatsIn.ino === sourceStatsIn.ino);
     }
 
     return fs
@@ -355,9 +320,7 @@ class DeploymentMethod extends LinkingDeployment {
       .then((linkStats) =>
         linkStats.nlink === 1
           ? PromiseBB.resolve(false)
-          : fs
-              .lstatAsync(sourcePath)
-              .then((sourceStats) => linkStats.ino === sourceStats.ino),
+          : fs.lstatAsync(sourcePath).then((sourceStats) => linkStats.ino === sourceStats.ino),
       )
       .catch((err) =>
         getErrorCode(err) === "ENOENT"

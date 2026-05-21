@@ -7,28 +7,20 @@
  * for persistence to LevelDB.
  */
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import type { DiffOperation } from "@vortex/shared/ipc";
 import type { PersistedHive } from "@vortex/shared/state";
 import type { Middleware, MiddlewareAPI, Dispatch, AnyAction } from "redux";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
-
-import type { IState } from "../types/IState";
-
 import { log } from "../logging";
+import type { IState } from "../types/IState";
 import { computeStateDiff } from "./stateDiff";
 
 /**
  * Core hives that are always persisted to LevelDB.
  * Additional hives can be discovered from the database at startup.
  */
-const CORE_HIVES: PersistedHive[] = [
-  "app",
-  "settings",
-  "persistent",
-  "confidential",
-  "user",
-];
+const CORE_HIVES: PersistedHive[] = ["app", "settings", "persistent", "confidential", "user"];
 
 /**
  * Dynamic set of hives to persist. Starts with core hives,

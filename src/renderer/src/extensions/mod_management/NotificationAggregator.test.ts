@@ -1,7 +1,6 @@
 import { describe, expect, vi, beforeEach, afterEach, test } from "vitest";
 
 import type { IExtensionApi } from "../../types/IExtensionContext";
-
 import { NotificationAggregator } from "./NotificationAggregator";
 
 // Mock API for testing
@@ -14,9 +13,7 @@ describe("NotificationAggregator", () => {
   let aggregator: NotificationAggregator;
 
   beforeEach(() => {
-    aggregator = new NotificationAggregator(
-      mockApi as unknown as IExtensionApi,
-    );
+    aggregator = new NotificationAggregator(mockApi as unknown as IExtensionApi);
     vi.clearAllMocks();
     vi.useFakeTimers();
   });
@@ -26,27 +23,18 @@ describe("NotificationAggregator", () => {
   });
 
   test("should show notifications immediately when aggregation is not active", async () => {
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Test Error",
-      "Test message",
-      "TestMod",
-      { allowReport: false },
-    );
+    aggregator.addNotification("test-session", "error", "Test Error", "Test message", "TestMod", {
+      allowReport: false,
+    });
 
     // Run any pending timers/setImmediate
     await vi.runAllTimersAsync();
 
-    expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
-      "Test Error",
-      "Test message",
-      {
-        message: "TestMod",
-        allowReport: false,
-        actions: undefined,
-      },
-    );
+    expect(mockApi.showErrorNotification).toHaveBeenCalledWith("Test Error", "Test message", {
+      message: "TestMod",
+      allowReport: false,
+      actions: undefined,
+    });
   });
 
   test("should aggregate similar notifications", async () => {
@@ -79,8 +67,11 @@ describe("NotificationAggregator", () => {
     await flushPromise;
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
-    const [title, message, options] = mockApi.showErrorNotification.mock
-      .calls[0] as [string, string, { allowReport: unknown; id: string }];
+    const [title, message, options] = mockApi.showErrorNotification.mock.calls[0] as [
+      string,
+      string,
+      { allowReport: unknown; id: string },
+    ];
     expect(title).toBe("Failed to install dependency (3 dependencies)");
     expect(message).toContain("Affected dependencies: Mod1, Mod2, Mod3");
     expect(options.allowReport).toBeUndefined();
@@ -97,13 +88,7 @@ describe("NotificationAggregator", () => {
       "Connection error",
       "Mod1",
     );
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Invalid URL",
-      "Malformed URL",
-      "Mod2",
-    );
+    aggregator.addNotification("test-session", "error", "Invalid URL", "Malformed URL", "Mod2");
 
     const flushPromise = aggregator.flushAggregation("test-session");
     await vi.runAllTimersAsync();
@@ -130,26 +115,21 @@ describe("NotificationAggregator", () => {
     await flushPromise;
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
-    const [title, message, options] = mockApi.showErrorNotification.mock
-      .calls[0] as [string, string, { allowReport: unknown; id: string }];
+    const [title, message, options] = mockApi.showErrorNotification.mock.calls[0] as [
+      string,
+      string,
+      { allowReport: unknown; id: string },
+    ];
     expect(title).toBe("Failed to install dependency (7 dependencies)");
     expect(message).toContain("and 2 more");
     expect(options.allowReport).toBeUndefined();
-    expect(options.id).toContain(
-      "aggregated-error-Failed to install dependency",
-    );
+    expect(options.id).toContain("aggregated-error-Failed to install dependency");
   });
 
   test("should auto-flush on timeout", async () => {
     aggregator.startAggregation("test-session", 100);
 
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Test Error",
-      "Test message",
-      "TestMod",
-    );
+    aggregator.addNotification("test-session", "error", "Test Error", "Test message", "TestMod");
 
     // Advance timers past the timeout to trigger the auto-flush
     await vi.advanceTimersByTimeAsync(150);
@@ -164,13 +144,7 @@ describe("NotificationAggregator", () => {
 
   test("should stop aggregation and flush notifications", async () => {
     aggregator.startAggregation("test-session", 0);
-    aggregator.addNotification(
-      "test-session",
-      "error",
-      "Test Error",
-      "Test message",
-      "TestMod",
-    );
+    aggregator.addNotification("test-session", "error", "Test Error", "Test message", "TestMod");
 
     const stopPromise = aggregator.stopAggregation("test-session");
     await vi.runAllTimersAsync();

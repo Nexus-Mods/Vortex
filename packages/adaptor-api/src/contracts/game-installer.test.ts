@@ -1,22 +1,15 @@
-import type { RelativePath } from "@vortex/fs";
-
-import { relativePath } from "@vortex/fs";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { StorePathProvider } from "../stores/providers.js";
-import type {
-  IGameInstallerService,
-  InstallMapping,
-  StopPattern,
-} from "./game-installer.js";
-import type { GamePaths } from "./game-paths.js";
-
-import { Base } from "../stores/providers.js";
-import { resolveStopPatterns } from "./game-installer.js";
+import type { RelativePath } from "../fs/paths";
+import { relativePath } from "../fs/paths";
+import type { StorePathProvider } from "../stores/providers";
+import { Base } from "../stores/providers";
+import type { IGameInstallerService, InstallMapping, StopPattern } from "./game-installer";
+import { resolveStopPatterns } from "./game-installer";
+import type { GamePaths } from "./game-paths";
 
 /** Helper to build a RelativePath[] from raw strings in tests. */
-const rel = (...parts: string[]): readonly RelativePath[] =>
-  parts.map((p) => relativePath(p));
+const rel = (...parts: string[]): readonly RelativePath[] => parts.map((p) => relativePath(p));
 
 describe("InstallMapping<T>", () => {
   it("defaults to 'game' as the only anchor when T is empty", () => {
@@ -26,9 +19,7 @@ describe("InstallMapping<T>", () => {
 
   it("admits adaptor-declared anchor keys via T", () => {
     const entry = {} as InstallMapping<"saves" | "preferences">;
-    expectTypeOf(entry.anchor).toEqualTypeOf<
-      "game" | "saves" | "preferences"
-    >();
+    expectTypeOf(entry.anchor).toEqualTypeOf<"game" | "saves" | "preferences">();
   });
 
   it("types source and destination as RelativePath", () => {
@@ -46,9 +37,9 @@ describe("IGameInstallerService", () => {
   });
 
   it("returns Promise<readonly InstallMapping[]>", () => {
-    expectTypeOf<
-      IGameInstallerService["install"]
-    >().returns.resolves.toEqualTypeOf<readonly InstallMapping[]>();
+    expectTypeOf<IGameInstallerService["install"]>().returns.resolves.toEqualTypeOf<
+      readonly InstallMapping[]
+    >();
   });
 
   it("threads T through to both paths and mappings", () => {
@@ -64,9 +55,7 @@ describe("IGameInstallerService", () => {
 
 describe("resolveStopPatterns -- implicit destination", () => {
   it("preserves the whole file path when no wrapper", () => {
-    const patterns: StopPattern[] = [
-      { match: "archive/pc/mod/*.archive", anchor: Base.Game },
-    ];
+    const patterns: StopPattern[] = [{ match: "archive/pc/mod/*.archive", anchor: Base.Game }];
     const files = rel("archive/pc/mod/foo.archive");
     expect(resolveStopPatterns(patterns, files)).toEqual([
       {
@@ -78,13 +67,8 @@ describe("resolveStopPatterns -- implicit destination", () => {
   });
 
   it("strips wrapper dirs with **/ prefix", () => {
-    const patterns: StopPattern[] = [
-      { match: "**/archive/pc/mod/*.archive", anchor: Base.Game },
-    ];
-    const files = rel(
-      "wrapper/archive/pc/mod/foo.archive",
-      "a/b/c/archive/pc/mod/bar.archive",
-    );
+    const patterns: StopPattern[] = [{ match: "**/archive/pc/mod/*.archive", anchor: Base.Game }];
+    const files = rel("wrapper/archive/pc/mod/foo.archive", "a/b/c/archive/pc/mod/bar.archive");
     expect(resolveStopPatterns(patterns, files)).toEqual([
       {
         source: "wrapper/archive/pc/mod/foo.archive",
@@ -100,13 +84,9 @@ describe("resolveStopPatterns -- implicit destination", () => {
   });
 
   it("matches a single file without wrapper", () => {
-    const patterns: StopPattern[] = [
-      { match: "**/archive/pc/mod/*.archive", anchor: Base.Game },
-    ];
+    const patterns: StopPattern[] = [{ match: "**/archive/pc/mod/*.archive", anchor: Base.Game }];
     const files = rel("archive/pc/mod/foo.archive");
-    expect(resolveStopPatterns(patterns, files)[0]?.destination).toBe(
-      "archive/pc/mod/foo.archive",
-    );
+    expect(resolveStopPatterns(patterns, files)[0]?.destination).toBe("archive/pc/mod/foo.archive");
   });
 });
 
@@ -118,9 +98,7 @@ describe("resolveStopPatterns -- first match wins", () => {
       { match: "readme.*", anchor: Base.Game },
     ];
     const out = resolveStopPatterns(patterns, rel("readme.md"));
-    expect(out).toEqual([
-      { source: "readme.md", anchor: "docs", destination: "readme.md" },
-    ]);
+    expect(out).toEqual([{ source: "readme.md", anchor: "docs", destination: "readme.md" }]);
   });
 
   it("routes independent files by their respective first match", () => {
@@ -142,9 +120,7 @@ describe("resolveStopPatterns -- first match wins", () => {
 
 describe("resolveStopPatterns -- unmatched files dropped", () => {
   it("silently omits files that match no pattern", () => {
-    const patterns: StopPattern[] = [
-      { match: "**/archive/pc/mod/*.archive", anchor: Base.Game },
-    ];
+    const patterns: StopPattern[] = [{ match: "**/archive/pc/mod/*.archive", anchor: Base.Game }];
     const files = rel("foo.archive", "readme.txt");
     expect(resolveStopPatterns(patterns, files)).toEqual([]);
   });

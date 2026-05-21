@@ -84,10 +84,7 @@ class RadialProgress extends React.Component<IProps, {}> {
           d={this.mArcGen(bar, idx, arr.length)}
         />
 
-        <path
-          className="radial-rest"
-          d={this.mRestArcGen(bar, idx, arr.length)}
-        />
+        <path className="radial-rest" d={this.mRestArcGen(bar, idx, arr.length)} />
       </g>
     );
   };
@@ -126,21 +123,15 @@ class RadialProgress extends React.Component<IProps, {}> {
       .startAngle(0)
       .endAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
       .cornerRadius(4)
-      .innerRadius((item: IBar, idx: number, count: number) =>
-        inner(false, idx),
-      )
-      .outerRadius((item: IBar, idx: number, count: number) =>
-        outer(false, idx),
-      );
+      .innerRadius((item: IBar, idx: number, count: number) => inner(false, idx))
+      .outerRadius((item: IBar, idx: number, count: number) => outer(false, idx));
 
     this.mRestArcGen = d3
       .arc<any, IBar>()
       .startAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
       .endAngle(2 * Math.PI)
       .innerRadius((item: IBar, idx: number, count: number) => inner(true, idx))
-      .outerRadius((item: IBar, idx: number, count: number) =>
-        outer(true, idx),
-      );
+      .outerRadius((item: IBar, idx: number, count: number) => outer(true, idx));
   }
 }
 

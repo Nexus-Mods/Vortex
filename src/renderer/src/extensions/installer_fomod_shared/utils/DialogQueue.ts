@@ -1,9 +1,7 @@
-import { log } from "../../../util/log";
-
 import type { IExtensionApi } from "../../../types/api";
-
-import { hasActiveFomodDialog } from "./helpers";
+import { log } from "../../../util/log";
 import { hasSessionFOMOD } from "./guards";
+import { hasActiveFomodDialog } from "./helpers";
 
 export interface IDialogManager {
   startDialogImmediate(): void;
@@ -40,8 +38,7 @@ export class DialogQueue {
         return false;
       }
 
-      const activeInstanceId =
-        state.session.fomod.installer?.dialog?.activeInstanceId;
+      const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
       // If the current active dialog is stale, cancel it and remove it from the queue
       // Should only happen if UpdateState wasn't called for some reason
       for (const request of this.queue) {

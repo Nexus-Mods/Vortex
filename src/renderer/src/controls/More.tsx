@@ -1,14 +1,13 @@
-import type { IExtensionApi } from "../types/api";
-import { ComponentEx, translate } from "./ComponentEx";
-
-import Icon from "./Icon";
-import Overlay from "./Overlay";
-import { IconButton } from "./TooltipControls";
-
 import * as React from "react";
 import { Popover } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
+
+import type { IExtensionApi } from "../types/api";
+import { ComponentEx, translate } from "./ComponentEx";
+import Icon from "./Icon";
+import Overlay from "./Overlay";
+import { IconButton } from "./TooltipControls";
 
 const haveKnowledgeBase = (() => {
   let value: boolean;
@@ -140,6 +139,4 @@ class More extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-export default translate(["common"])(
-  React.memo(More),
-) as React.ComponentClass<IMoreProps>;
+export default translate(["common"])(React.memo(More)) as React.ComponentClass<IMoreProps>;

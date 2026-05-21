@@ -1,10 +1,11 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import mixpanel from "mixpanel-browser";
-import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from "../constants";
+
 import { getApplication } from "../../../util/application";
 import type { IValidateKeyDataV2 } from "../../nexus_integration/types/IValidateKeyData";
+import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from "../constants";
 import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 class MixpanelAnalytics {
   private user: number;
@@ -23,15 +24,10 @@ class MixpanelAnalytics {
   public start(userInfo: IValidateKeyDataV2, isProduction: boolean) {
     // Guard against multiple initialization
     if (this.isInitialized) {
-      analyticsServiceLog(
-        "mixpanel",
-        "warn",
-        "start() called but already initialized",
-        {
-          userId: this.user,
-          newUserId: userInfo.userId,
-        },
-      );
+      analyticsServiceLog("mixpanel", "warn", "start() called but already initialized", {
+        userId: this.user,
+        newUserId: userInfo.userId,
+      });
       return;
     }
 
@@ -144,12 +140,9 @@ class MixpanelAnalytics {
     if (!this.isUserSet()) {
       // Silently ignore when analytics is disabled (user opted out)
       // This is expected behavior, not an error condition
-      analyticsServiceLog(
-        "mixpanel",
-        "debug",
-        "Event not tracked (analytics disabled)",
-        { eventName: event.eventName },
-      );
+      analyticsServiceLog("mixpanel", "debug", "Event not tracked (analytics disabled)", {
+        eventName: event.eventName,
+      });
       return;
     }
 

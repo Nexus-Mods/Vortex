@@ -1,7 +1,7 @@
-import { IFeedbackFile } from "../types/IFeedbackFile";
-import { FeedbackTopic, FeedbackType } from "../types/feedbackTypes";
-
 import { createAction } from "redux-act";
+
+import { FeedbackTopic, FeedbackType } from "../types/feedbackTypes";
+import { IFeedbackFile } from "../types/IFeedbackFile";
 
 export const setFeedbackType = createAction(
   "SET_FEEDBACK_TYPE",
@@ -21,15 +21,11 @@ export const setFeedbackMessage = createAction(
   (feedbackMessage: string) => feedbackMessage,
 );
 
-export const setFeedbackHash = createAction(
-  "SET_FEEDBACK_HASH",
-  (hash: string) => hash,
-);
+export const setFeedbackHash = createAction("SET_FEEDBACK_HASH", (hash: string) => hash);
 
-export const addFeedbackFile = createAction(
-  "ADD_FEEDBACK_FILE",
-  (feedbackFile: IFeedbackFile) => ({ feedbackFile }),
-);
+export const addFeedbackFile = createAction("ADD_FEEDBACK_FILE", (feedbackFile: IFeedbackFile) => ({
+  feedbackFile,
+}));
 
 export const removeFeedbackFile = createAction(
   "REMOVE_FEEDBACK_FILE",

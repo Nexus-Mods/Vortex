@@ -1,8 +1,7 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-
-import * as actions from "./actions";
-
 import update from "immutability-helper";
+
+import type { IReducerSpec } from "../../types/IExtensionContext";
+import * as actions from "./actions";
 
 /**
  * reducer for changes to interface settings

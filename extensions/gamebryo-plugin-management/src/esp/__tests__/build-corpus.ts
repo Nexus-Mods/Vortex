@@ -6,10 +6,10 @@
  * Requires: NEXUS_API_KEY environment variable
  */
 
-import * as fs from "fs";
-import * as path from "path";
-import * as https from "https";
 import { execSync } from "child_process";
+import * as fs from "fs";
+import * as https from "https";
+import * as path from "path";
 
 const API_KEY = process.env.NEXUS_API_KEY;
 if (!API_KEY) {
@@ -88,9 +88,7 @@ async function nexusGet<T>(endpoint: string): Promise<T> {
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
           if (res.statusCode !== 200) {
-            reject(
-              new Error(`${res.statusCode} ${res.statusMessage}: ${url}\n${data}`),
-            );
+            reject(new Error(`${res.statusCode} ${res.statusMessage}: ${url}\n${data}`));
             return;
           }
           try {
@@ -110,18 +108,20 @@ async function fetchJson<T>(url: string): Promise<T> {
   await sleep(100);
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : require("http");
-    protocol.get(url, { headers: { "User-Agent": "Vortex2-CorpusBuilder" } }, (res: any) => {
-      let data = "";
-      res.on("data", (chunk: string) => (data += chunk));
-      res.on("end", () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error(`JSON parse error for ${url}: ${e}`));
-        }
-      });
-      res.on("error", reject);
-    }).on("error", reject);
+    protocol
+      .get(url, { headers: { "User-Agent": "Vortex2-CorpusBuilder" } }, (res: any) => {
+        let data = "";
+        res.on("data", (chunk: string) => (data += chunk));
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            reject(new Error(`JSON parse error for ${url}: ${e}`));
+          }
+        });
+        res.on("error", reject);
+      })
+      .on("error", reject);
   });
 }
 
@@ -129,34 +129,38 @@ async function downloadFile(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : require("http");
     const file = fs.createWriteStream(dest);
-    protocol.get(url, { headers: { "User-Agent": "Vortex2-CorpusBuilder" } }, (res: any) => {
-      // Follow redirects
-      if (res.statusCode === 301 || res.statusCode === 302) {
+    protocol
+      .get(url, { headers: { "User-Agent": "Vortex2-CorpusBuilder" } }, (res: any) => {
+        // Follow redirects
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          file.close();
+          fs.unlinkSync(dest);
+          downloadFile(res.headers.location, dest).then(resolve, reject);
+          return;
+        }
+        if (res.statusCode !== 200) {
+          file.close();
+          fs.unlinkSync(dest);
+          reject(new Error(`Download failed: ${res.statusCode} ${url}`));
+          return;
+        }
+        res.pipe(file);
+        file.on("finish", () => {
+          file.close();
+          resolve();
+        });
+        file.on("error", (err: Error) => {
+          fs.unlinkSync(dest);
+          reject(err);
+        });
+      })
+      .on("error", (err: Error) => {
         file.close();
-        fs.unlinkSync(dest);
-        downloadFile(res.headers.location, dest).then(resolve, reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        file.close();
-        fs.unlinkSync(dest);
-        reject(new Error(`Download failed: ${res.statusCode} ${url}`));
-        return;
-      }
-      res.pipe(file);
-      file.on("finish", () => {
-        file.close();
-        resolve();
-      });
-      file.on("error", (err: Error) => {
-        fs.unlinkSync(dest);
+        try {
+          fs.unlinkSync(dest);
+        } catch {}
         reject(err);
       });
-    }).on("error", (err: Error) => {
-      file.close();
-      try { fs.unlinkSync(dest); } catch {}
-      reject(err);
-    });
   });
 }
 
@@ -166,18 +170,12 @@ interface ContentNode {
   children?: ContentNode[];
 }
 
-function findPluginFiles(
-  node: ContentNode,
-  prefix: string = "",
-): { path: string; size: number }[] {
+function findPluginFiles(node: ContentNode, prefix: string = ""): { path: string; size: number }[] {
   const results: { path: string; size: number }[] = [];
   const currentPath = prefix ? `${prefix}/${node.path || ""}` : node.path || "";
 
-  if (
-    node.path &&
-    PLUGIN_EXTENSIONS.some((ext) => node.path!.toLowerCase().endsWith(ext))
-  ) {
-    const sizeNum = typeof node.size === "string" ? parseFloat(node.size) : (node.size || 0);
+  if (node.path && PLUGIN_EXTENSIONS.some((ext) => node.path!.toLowerCase().endsWith(ext))) {
+    const sizeNum = typeof node.size === "string" ? parseFloat(node.size) : node.size || 0;
     results.push({ path: currentPath, size: sizeNum });
   }
 
@@ -228,9 +226,7 @@ function stripToHeader(filePath: string): number {
   return truncateAt;
 }
 
-async function collectPluginsForGame(
-  game: GameConfig,
-): Promise<ManifestEntry[]> {
+async function collectPluginsForGame(game: GameConfig): Promise<ManifestEntry[]> {
   const gameDir = path.join(CORPUS_DIR, game.gameId);
   fs.mkdirSync(gameDir, { recursive: true });
 
@@ -260,8 +256,7 @@ async function collectPluginsForGame(
       for (const file of filesResp.files) {
         if (collected.length >= TARGET_PLUGINS_PER_GAME) break;
         if (file.size_kb > MAX_ARCHIVE_SIZE_KB) continue;
-        if (file.category_name === "DELETED" || file.category_name === "OLD_VERSION")
-          continue;
+        if (file.category_name === "DELETED" || file.category_name === "OLD_VERSION") continue;
 
         // Check archive contents via content preview
         if (!file.content_preview_link) continue;
@@ -317,10 +312,9 @@ async function collectPluginsForGame(
           fs.mkdirSync(extractDir, { recursive: true });
 
           try {
-            execSync(
-              `"${SEVEN_ZIP}" e "${archivePath}" -o"${extractDir}" "${plugin.path}" -y -r`,
-              { stdio: "pipe" },
-            );
+            execSync(`"${SEVEN_ZIP}" e "${archivePath}" -o"${extractDir}" "${plugin.path}" -y -r`, {
+              stdio: "pipe",
+            });
           } catch {
             console.warn(`  Failed to extract: ${plugin.path}`);
             continue;
@@ -333,9 +327,7 @@ async function collectPluginsForGame(
           if (!fs.existsSync(extractedPath)) {
             // Try case-insensitive search
             const files = fs.readdirSync(extractDir);
-            const match = files.find(
-              (f) => f.toLowerCase() === baseName.toLowerCase(),
-            );
+            const match = files.find((f) => f.toLowerCase() === baseName.toLowerCase());
             if (!match) {
               console.warn(`  Extracted file not found: ${baseName}`);
               // Clean up extract dir
@@ -365,9 +357,7 @@ async function collectPluginsForGame(
               extension: ext,
             });
 
-            console.log(
-              `  Collected: ${destName} (${originalSize} → ${strippedSize} bytes)`,
-            );
+            console.log(`  Collected: ${destName} (${originalSize} → ${strippedSize} bytes)`);
 
             fs.rmSync(extractDir, { recursive: true, force: true });
             continue;
@@ -394,9 +384,7 @@ async function collectPluginsForGame(
             extension: ext,
           });
 
-          console.log(
-            `  Collected: ${destName} (${originalSize} → ${strippedSize} bytes)`,
-          );
+          console.log(`  Collected: ${destName} (${originalSize} → ${strippedSize} bytes)`);
 
           // Clean up extract dir
           fs.rmSync(extractDir, { recursive: true, force: true });
@@ -449,11 +437,7 @@ async function main() {
   for (const game of GAMES) {
     const count = manifest.filter((e) => e.gameId === game.gameId).length;
     const exts = [
-      ...new Set(
-        manifest
-          .filter((e) => e.gameId === game.gameId)
-          .map((e) => e.extension),
-      ),
+      ...new Set(manifest.filter((e) => e.gameId === game.gameId).map((e) => e.extension)),
     ];
     console.log(`  ${game.gameId}: ${count} files (${exts.join(", ")})`);
   }

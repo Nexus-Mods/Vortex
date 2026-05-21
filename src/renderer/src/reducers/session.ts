@@ -1,15 +1,8 @@
+import * as path from "path";
+
 import * as actions from "../actions/session";
 import type { IReducerSpec } from "../types/IExtensionContext";
-
-import {
-  addUniqueSafe,
-  deleteOrNop,
-  pushSafe,
-  removeValue,
-  setSafe,
-} from "../util/storeHelper";
-
-import * as path from "path";
+import { addUniqueSafe, deleteOrNop, pushSafe, removeValue, setSafe } from "../util/storeHelper";
 
 export function makeExeId(exePath: string): string {
   // TODO: stripping the path means that we can't distinguish between different installations
@@ -44,11 +37,7 @@ export const sessionReducer: IReducerSpec = {
       if (payload.secondary) {
         return setSafe(state, ["secondaryPage"], payload.page);
       } else {
-        return setSafe(
-          setSafe(state, ["mainPage"], payload.page),
-          ["secondaryPage"],
-          "",
-        );
+        return setSafe(setSafe(state, ["mainPage"], payload.page), ["secondaryPage"], "");
       }
     },
     [actions.setExtensionLoadFailures as any]: (state, payload) =>
@@ -79,8 +68,7 @@ export const sessionReducer: IReducerSpec = {
       deleteOrNop(state, ["uiBlockers", payload]),
     [actions.setNetworkConnected as any]: (state, payload) =>
       setSafe(state, ["networkConnected"], payload),
-    [actions.setCommandLine as any]: (state, payload) =>
-      setSafe(state, ["commandLine"], payload),
+    [actions.setCommandLine as any]: (state, payload) => setSafe(state, ["commandLine"], payload),
     [actions.setDownloadGameFilter as any]: (state, payload) =>
       setSafe(state, ["downloadGameFilter"], payload),
   },

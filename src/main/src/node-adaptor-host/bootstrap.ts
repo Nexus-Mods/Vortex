@@ -1,18 +1,12 @@
-import type { IAdaptorManifest, IMethodMessage } from "@nexusmods/adaptor-api";
-
-import * as adaptorApi from "@nexusmods/adaptor-api";
-import {
-  getProvidedUri,
-  uri as validateUri,
-  adaptorName,
-  semVer,
-} from "@nexusmods/adaptor-api";
-import * as fsApi from "@vortex/fs";
 import vm from "node:vm";
 import { parentPort } from "node:worker_threads";
 
-import { createFileSystemClient } from "../filesystem/client.js";
+import type { IAdaptorManifest, IMethodMessage } from "@nexusmods/adaptor-api";
+import * as adaptorApi from "@nexusmods/adaptor-api";
+import { getProvidedUri, uri as validateUri, adaptorName, semVer } from "@nexusmods/adaptor-api";
+import * as fsApi from "@nexusmods/adaptor-api/fs";
 
+import { createFileSystemClient } from "../filesystem/client.js";
 import { createMethodDispatcher, createServiceProxy } from "./runtime.js";
 import { createRpcTransport } from "./transport.js";
 
@@ -38,14 +32,14 @@ const { bundle, config } = init;
 
 const allowedModules: Record<string, unknown> = {
   "@nexusmods/adaptor-api": adaptorApi,
-  "@vortex/fs": fsApi,
+  "@nexusmods/adaptor-api/fs": fsApi,
 };
 
 // Step 2: Create a service container with proxies for each required URI.
 // Most URIs get a bare Proxy that forwards every method call over RPC;
 // `vortex:host/filesystem` is special-cased because its surface includes
 // AsyncIterator and FileSystemError semantics that do not survive a naive
-// Proxy. The `@vortex/fs` client polyfill fronts the wire contract with
+// Proxy. The `@nexusmods/adaptor-api/fs` client polyfill fronts the wire contract with
 // a real FileSystem instance.
 const container = new Map<string, unknown>();
 for (const requiresUri of config.requires) {
@@ -56,9 +50,7 @@ for (const requiresUri of config.requires) {
     container.set(requiresUri, fsClient);
     continue;
   }
-  const proxy = createServiceProxy(requiresUri, (msg: IMethodMessage) =>
-    transport.call(msg),
-  );
+  const proxy = createServiceProxy(requiresUri, (msg: IMethodMessage) => transport.call(msg));
   container.set(requiresUri, proxy);
 }
 
@@ -67,11 +59,13 @@ for (const requiresUri of config.requires) {
 // sees it) and the worker's globalThis (because `@nexusmods/adaptor-api`'s
 // `getContainer()` is a host-realm function, linked into the VM via
 // SyntheticModule but still retaining its original realm's globalThis).
-(
-  globalThis as { __vortex_service_container?: Map<string, unknown> }
-).__vortex_service_container = container;
+(globalThis as { __vortex_service_container?: Map<string, unknown> }).__vortex_service_container =
+  container;
 const context = vm.createContext({
   __vortex_service_container: container,
+  // Expose standard globals that vm.createContext does not include.
+  TextEncoder,
+  TextDecoder,
 });
 
 const bundleModule = new vm.SourceTextModule(bundle, { context });
@@ -99,10 +93,7 @@ await bundleModule.link((specifier) => {
 await bundleModule.evaluate();
 
 // Step 4: Scan exports for @provides decorated classes
-const dispatchers = new Map<
-  string,
-  (msg: IMethodMessage) => Promise<unknown>
->();
+const dispatchers = new Map<string, (msg: IMethodMessage) => Promise<unknown>>();
 const providedUris: string[] = [];
 
 for (const exportedValue of Object.values(bundleModule.namespace)) {

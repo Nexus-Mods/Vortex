@@ -1,5 +1,6 @@
 import * as path from "path";
-import { fs, types, util } from "vortex-api";
+
+import { fs, types, util } from "@nexusmods/vortex-api";
 
 const LOOT_LIST_REVISION = "v0.26";
 const DOWNLOAD_THROTTLE_MS = 30 * 60 * 1000; // 30 minutes
@@ -67,10 +68,5 @@ export async function masterlistExists(gameId: string) {
 }
 
 export function masterlistFilePath(gameMode: string) {
-  return path.join(
-    util.getVortexPath("userData"),
-    gameMode,
-    "masterlist",
-    "masterlist.yaml",
-  );
+  return path.join(util.getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
 }

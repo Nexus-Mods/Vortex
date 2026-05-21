@@ -1,9 +1,6 @@
 import type { IModRule } from "../mod_management/types/IMod";
 
-export function generateCollectionSessionId(
-  collectionId: string,
-  profileId: string,
-): string {
+export function generateCollectionSessionId(collectionId: string, profileId: string): string {
   if (!profileId || !collectionId) {
     return null;
   }

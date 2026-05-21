@@ -1,11 +1,10 @@
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IModFileInfo, IModRequirementExt } from "./types";
-
 import { getGame, toPromise } from "../../util/api";
 import { nexusGameId } from "../nexus_integration/util/convertGameId";
 import { setModFiles, setModFilesLoading } from "./actions/session";
 import { getModFiles as getModFilesSelector } from "./selectors";
+import type { IModFileInfo, IModRequirementExt } from "./types";
 
 /**
  * Fetch available MAIN files for a mod from Nexus
@@ -106,11 +105,7 @@ export async function onDownloadRequirement(
       return [file];
     }
 
-    const modFiles: IModFileInfo[] = await getModFilesWithCache(
-      api,
-      mod.gameId,
-      mod.modId,
-    );
+    const modFiles: IModFileInfo[] = await getModFilesWithCache(api, mod.gameId, mod.modId);
 
     if (modFiles.length === 0) {
       api.showErrorNotification(
@@ -122,9 +117,7 @@ export async function onDownloadRequirement(
 
     // Find the most recent main file (category_id === 1)
     const mainFiles = modFiles.filter((f) => f.category === 1);
-    const files = mainFiles.sort(
-      (lhs, rhs) => rhs.uploadedTimestamp - lhs.uploadedTimestamp,
-    );
+    const files = mainFiles.sort((lhs, rhs) => rhs.uploadedTimestamp - lhs.uploadedTimestamp);
     return files;
   };
 
