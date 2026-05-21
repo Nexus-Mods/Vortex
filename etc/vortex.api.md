@@ -461,6 +461,8 @@ function bbcodeToHTML(input: string): string;
 function buildCopyInstructions(files: readonly string[], opts: {
     stripCommonRoot: boolean;
     modType?: string;
+    filter?: IInstallerFilter;
+    flatten?: boolean;
 }): IInstallResult;
 
 // @public
@@ -2708,7 +2710,24 @@ interface IInstallationDetails {
 }
 
 // @public
+type IInstallerFilter = {
+    kind: "extensions";
+    list: readonly string[];
+} | {
+    kind: "regex";
+    patterns: readonly RegExp[];
+} | {
+    kind: "filename";
+    names: readonly string[];
+} | {
+    kind: "custom";
+    predicate: (file: string) => boolean;
+};
+
+// @public
 interface IInstallerInstall {
+    filter?: IInstallerFilter;
+    flatten?: boolean;
     stripCommonRoot: boolean;
 }
 
@@ -6184,6 +6203,7 @@ declare namespace types {
         IModHealthCheck,
         InstallerMatchMode,
         IInstallerMatch,
+        IInstallerFilter,
         IInstallerInstall,
         IInstallerSpec,
         InstallerSpecInstallFunc,

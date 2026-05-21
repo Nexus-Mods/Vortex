@@ -24,6 +24,10 @@
   "exports": {
     ".": {
       "types": "./lib/api.d.ts"
+    },
+    "./testing": {
+      "types": "./src/testing/index.ts",
+      "default": "./src/testing/index.ts"
     }
   },
   "files": [
