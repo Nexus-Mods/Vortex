@@ -291,8 +291,8 @@ catalogs:
       specifier: 1.40.0
       version: 1.40.0
     '@playwright/test':
-      specifier: 1.58.2
-      version: 1.58.2
+      specifier: 1.60.0
+      version: 1.60.0
     '@stylistic/eslint-plugin':
       specifier: 5.10.0
       version: 5.10.0
@@ -747,8 +747,8 @@ catalogs:
       specifier: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
       version: 2.1.0
     playwright:
-      specifier: 1.58.2
-      version: 1.58.2
+      specifier: 1.60.0
+      version: 1.60.0
     prop-types:
       specifier: 15.8.1
       version: 15.8.1
@@ -965,9 +965,6 @@ overrides:
   '@types/react-dom': '16'
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
-
-patchedDependencies:
-  playwright-core@1.58.2: d20016d2ebd264257c6e1885fb814dc7d150de5b41b3a46557b431ab8de2cf34
 
 importers:
 
@@ -4054,13 +4051,13 @@ importers:
     devDependencies:
       '@playwright/test':
         specifier: 'catalog:'
-        version: 1.58.2
+        version: 1.60.0
       electron:
         specifier: 'catalog:'
         version: 42.0.0
       playwright:
         specifier: 'catalog:'
-        version: 1.58.2
+        version: 1.60.0
 
   packages/exe-version:
     devDependencies:
@@ -6730,8 +6727,8 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@playwright/test@1.58.2':
-    resolution: {integrity: sha512-akea+6bHYBBfA9uQqSYmlJXn61cTa+jbO87xVLCWbTqbWadRVmhxlXATaOjOgcBaWU4ePo0wB41KMFv3o35IXA==}
+  '@playwright/test@1.60.0':
+    resolution: {integrity: sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -11139,13 +11136,13 @@ packages:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
 
-  playwright-core@1.58.2:
-    resolution: {integrity: sha512-yZkEtftgwS8CsfYo7nm0KE8jsvm6i/PTgVtB8DL726wNf6H2IMsDuxCpJj59KDaxCtSnrWan2AeDqM7JBaultg==}
+  playwright-core@1.60.0:
+    resolution: {integrity: sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.58.2:
-    resolution: {integrity: sha512-vA30H8Nvkq/cPBnNw4Q8TWz1EJyqgpuinBcHET0YVJVFldr8JDNiU9LaWAE1KqSkRYazuaBhTpB5ZzShOezQ6A==}
+  playwright@1.60.0:
+    resolution: {integrity: sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -14537,9 +14534,9 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
-  '@playwright/test@1.58.2':
+  '@playwright/test@1.60.0':
     dependencies:
-      playwright: 1.58.2
+      playwright: 1.60.0
 
   '@polka/url@1.0.0-next.29': {}
 
@@ -19357,11 +19354,11 @@ snapshots:
     dependencies:
       find-up: 4.1.0
 
-  playwright-core@1.58.2(patch_hash=d20016d2ebd264257c6e1885fb814dc7d150de5b41b3a46557b431ab8de2cf34): {}
+  playwright-core@1.60.0: {}
 
-  playwright@1.58.2:
+  playwright@1.60.0:
     dependencies:
-      playwright-core: 1.58.2(patch_hash=d20016d2ebd264257c6e1885fb814dc7d150de5b41b3a46557b431ab8de2cf34)
+      playwright-core: 1.60.0
     optionalDependencies:
       fsevents: 2.3.2
 
