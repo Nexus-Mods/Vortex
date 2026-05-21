@@ -2,6 +2,12 @@ name: E2E Tests
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/e2e.yml
+  schedule:
+    # At 14:15 on every day-of-week from Monday through Thursday.
+    - cron: "15 14 * * 1-4"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -47,9 +53,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm run build
-
       - name: Install Playwright
         run: pnpm -F @vortex/e2e exec playwright install chromium
 
@@ -66,7 +69,6 @@ jobs:
 
       - name: Run E2E tests (Windows)
         if: runner.os == 'Windows'
-        timeout-minutes: 30
         continue-on-error: true
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
@@ -75,7 +77,6 @@ jobs:
 
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
-        timeout-minutes: 30
         continue-on-error: true
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
@@ -89,6 +90,7 @@ jobs:
           name: e2e-report-${{ matrix.os }}
           retention-days: 14
           path: packages/e2e/playwright-report/
+          if-no-files-found: error
 
       - name: Upload test results
         if: failure()
@@ -97,3 +99,4 @@ jobs:
           name: e2e-results-${{ matrix.os }}
           retention-days: 7
           path: packages/e2e/test-results/
+          if-no-files-found: error

@@ -136,8 +136,6 @@ test.describe("Mods - Downloads", () => {
         });
 
         await test.step("Verify SMAPI is installed in Vortex", async () => {
-          await vortexWindow.waitForTimeout(5_000);
-
           const navbar = new NavBar(vortexWindow);
           await navbar.modsLink.click();
 
