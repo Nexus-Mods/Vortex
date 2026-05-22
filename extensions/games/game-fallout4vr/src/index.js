@@ -123,6 +123,11 @@ function prepare(api, discovery) {
   });
 }
 
+const sortAndResolve = (api) => {
+  api.events.emit("autosort-plugins", false);
+  return Promise.resolve();
+};
+
 function main(context) {
   context.registerGame({
     id: GAME_ID,
@@ -149,6 +154,48 @@ function main(context) {
   });
 
   context.registerInstaller("fallout4vr-esl-enabler", 10, testEslEnabler, installEslEnabler);
+
+  context.once(() => {
+    context.api.events.on("gamemode-activated", (gameId) => {
+      if (gameId !== GAME_ID) {
+        context.api.dismissNotification(ESL_NOTIF_ID);
+      }
+    });
+    context.api.onAsync("did-deploy", (profileId, newDeployment) => {
+      const state = context.api.getState();
+      const profile = selectors.profileById(state, profileId);
+      if (profile?.gameId !== GAME_ID) {
+        return Promise.resolve();
+      }
+      const discovery = selectors.discoveryByGame(state, GAME_ID);
+      if (!discovery?.path || discovery?.store === "xbox") {
+        // Fallout 4 VR is currently not on Xbox, but it may be one day!
+        return Promise.resolve();
+      }
+
+      const deployedFiles = newDeployment[""];
+      const modESLEnabler = deployedFiles.find((file) =>
+        file.relPath.toLowerCase().endsWith(ESL_ENABLER_LIB.toLowerCase()),
+      );
+      if (modESLEnabler === undefined) {
+        return sortAndResolve(context.api);
+      }
+
+      const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
+      const mod = Object.values(mods).find((mod) => mod.installationPath === modESLEnabler.source);
+      if (mod === undefined || mod.attributes.eslEnabler === true) {
+        return sortAndResolve(context.api);
+      }
+
+      const modAttributes = {
+        ...mod.attributes,
+        eslEnabler: true,
+      };
+      context.api.store.dispatch(actions.setModAttributes(GAME_ID, mod.id, modAttributes));
+      return sortAndResolve(context.api);
+    });
+  });
+
   return true;
 }
 
