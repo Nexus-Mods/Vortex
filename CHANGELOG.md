@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Conflict Editor "Before All" / "After All" silently doing nothing when a filter was applied to the source mod name ([#23136](https://github.com/Nexus-Mods/Vortex/pull/23136))
 - Fixed inability to manage certain bundled game extensions (Blade and Sorcery, BattleTech, Daggerfall, DragonAge, NWN, Elder Scrolls Online and a few others) ([#23131](https://github.com/Nexus-Mods/Vortex/pull/23131))
 
-## [**2.1.0-beta.1] - 2026-05-13
+## [2.1.0-beta.1] - 2026-05-13
 
 _First beta of the 2.1 release._
 
