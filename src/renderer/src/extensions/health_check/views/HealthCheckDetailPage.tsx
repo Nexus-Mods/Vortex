@@ -1,38 +1,48 @@
 import {
-  mdiAlertCircle,
   mdiArrowLeft,
+  mdiDownload,
   mdiEye,
   mdiEyeOff,
-  mdiLightningBolt,
+  mdiOpenInNew,
   mdiThumbDown,
   mdiThumbUp,
 } from "@mdi/js";
 import { unknownToError } from "@vortex/shared";
 import React, { useState, useEffect } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import { Button } from "../../../ui/components/button/Button";
-import { Icon } from "../../../ui/components/icon/Icon";
-import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { TypographyLink } from "../../../ui/components/typography/TypographyLink";
-import { opn } from "../../../util/api";
-import { log } from "../../../util/log";
-import { shouldShowPremiumAd } from "../../../util/selectors";
-import { Campaign, Content, Section, nexusModsURL } from "../../../util/util";
-import MainPage from "../../../views/MainPage";
+import { PremiumBanner } from "@/extensions/health_check/components/premium_banner/PremiumBanner";
+import {
+  getIssueMessageKey,
+  getMockIssueType,
+  issueTypeSeverityMap,
+} from "@/extensions/health_check/utils/issueMessages";
+import { severityStyleMap } from "@/extensions/health_check/utils/severityStyles";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
+import { Typography } from "@/ui/components/typography/Typography";
+import { TypographyLink } from "@/ui/components/typography/TypographyLink";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import { log } from "@/util/log";
+import { shouldShowPremiumAd } from "@/util/selectors";
+import MainPage from "@/views/MainPage";
+
 import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
-import { PREMIUM_PATH } from "../../nexus_integration/constants";
 import { setRequirementHidden, setFeedbackGiven } from "../actions/persistent";
-import { FeedbackModal } from "../components/feedback_modal";
-import { ModRequirement } from "../components/mod_requirement";
-import { PremiumModal } from "../components/premium_modal";
+import { FeedbackModal } from "../components/feedback_modal/FeedbackModal";
+import {
+  FileRequirement,
+  type IFileRequirementData,
+} from "../components/file_requirement/FileRequirement";
+import { PremiumModal } from "../components/premium_modal/PremiumModal";
 import { getModFiles, hiddenRequirements, feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt, IModFileInfo } from "../types";
-import { getModFilesWithCache } from "../util";
+import { getModFilesWithCache } from "../utils/modFiles";
 
 interface IHealthCheckDetailPageProps {
   mod: IModRequirementExt;
@@ -41,10 +51,27 @@ interface IHealthCheckDetailPageProps {
   onDownloadMod?: (mod: IModRequirementExt, file?: IModFileInfo) => Promise<void>;
 }
 
+// todo delete this
+const makeMockFile = (): IFileRequirementData => ({
+  adultContent: Math.random() < 0.5,
+  modName: "Skyrim Script Extender (SKSE64)",
+  modDescription:
+    "The Skyrim Script Extender (SKSE) is a tool used by many Skyrim mods that expands scripting capabilities and adds additional functionality to the game.",
+  modImageSrc:
+    "https://staticdelivery.nexusmods.com/mods/4187/images/thumbnails/17159/17159-1779372363-780794936.png",
+  fileName: "Skyrim Script Extender (SKSE64) the super long mod name version used to test GOG",
+  fileVersion: "v1.0.0",
+});
+
 function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheckDetailPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  // null = closed; otherwise the scope of the download that triggered the modal
+  // (plus the file to install for the "single" scope)
+  const [premiumModalScope, setPremiumModalScope] = useState<{
+    scope: "single" | "all";
+    file?: IModFileInfo;
+  } | null>(null);
 
   // Check if feedback was already given for this requirement (persisted)
   const feedbackMap = useSelector(feedbackGivenMap);
@@ -75,25 +102,15 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
     });
   }, [api, mod.gameId, mod.modId]);
 
-  // Memoized callback for opening the requiring mod's page
-  const openRequiringModPage = React.useCallback(() => {
-    if (!mod.requiredBy.modUrl) {
-      return;
-    }
-    opn(mod.requiredBy.modUrl).catch(() => null);
-  }, [mod.requiredBy.modUrl]);
-
   // Memoized callback for premium modal download action
   const handleDownload = React.useCallback(
     async (file?: IModFileInfo) => {
-      setShowPremiumModal(false);
+      setPremiumModalScope(null);
       if (!showPremiumAd) {
         await onDownloadMod?.(mod, file);
         onBack();
         // Health check list is refreshed automatically by the debounced
         // did-install-mod / did-enable-mods triggers in api/triggers.ts
-      } else {
-        setShowPremiumModal(true);
       }
     },
     [onDownloadMod, mod, showPremiumAd, onBack],
@@ -135,149 +152,81 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
     onBack();
   }, [api.store, mod.requiredBy.modId, mod.id, isHidden, onBack]);
 
-  // Memoized callback for confirming external requirement installation
-  const handleConfirmInstall = React.useCallback(() => {
-    // Hide this requirement from future checks
-    api.store?.dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
-    // Navigate back to the main health check page
-    onBack();
-  }, [api.store, mod.requiredBy.modId, mod.id, onBack]);
+  // todo delete this — one mock file per requirement so each rolls its own values
+  const mockSingle = React.useMemo(makeMockFile, []);
+  const mockOrA = React.useMemo(makeMockFile, []);
+  const mockOrB = React.useMemo(makeMockFile, []);
+  const mockCurrent = React.useMemo(makeMockFile, []);
+  const mockRequired = React.useMemo(makeMockFile, []);
 
-  const goPremium = React.useCallback(() => {
-    opn(
-      nexusModsURL(PREMIUM_PATH, {
-        section: Section.Users,
-        campaign: Campaign.BuyPremium,
-        content: Content.HealthCheckAd,
-      }),
-    ).catch(() => undefined);
-  }, []);
+  // todo replace with the issue type derived from the requirement/issue data
+  const issueType = React.useMemo(getMockIssueType, []);
+  const severity = issueTypeSeverityMap[issueType];
+  const severityStyle = severityStyleMap[severity];
+
+  // todo derive from real data: true if any requirement group is an "or" choice
+  const hasOrs = true;
 
   return (
     <MainPage id="health-check-detail-page">
       <MainPage.Body>
-        <div className="space-y-6 p-6">
+        <div className="h-full space-y-6 overflow-y-auto p-6">
           <div className="flex items-center justify-between gap-x-6">
             <div className="flex grow items-center gap-x-2">
               <Pictogram name="health-check" size="sm" />
 
               <div className="grow">
                 <div className="flex items-center gap-x-1.5">
-                  <Typography as="h2" className="m-0" typographyType="heading-xs">
-                    {t("detail::title")}
+                  <Typography as="h2" typographyType="heading-xs">
+                    {t(`detail::title::${severity}`)}
                   </Typography>
 
                   <Typography
                     as="div"
-                    className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1 leading-4"
+                    className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1"
                     typographyType="title-xs"
                   >
                     {t("common:::beta")}
                   </Typography>
                 </div>
 
-                <Typography appearance="moderate">{t("detail::subtitle")}</Typography>
+                <Typography appearance="moderate">{t(`detail::subtitle::${severity}`)}</Typography>
               </div>
             </div>
 
-            <div>
-              <Button
-                appearance="moderate"
-                brand="neutral"
-                leftIconPath={mdiArrowLeft}
-                size="sm"
-                onClick={onBack}
-              >
-                {t("common:::view_all")}
-              </Button>
-            </div>
+            <Button brand="neutral" appearance="moderate" leftIconPath={mdiArrowLeft} size="sm" onClick={onBack}>
+              {t("common:::back")}
+            </Button>
           </div>
 
-          {showPremiumAd && (
-            <div className="mb-4 flex items-center justify-between gap-x-6 rounded-sm border border-premium-moderate/23 bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 px-4 py-3 shadow-xs">
-              <div className="flex items-center gap-x-1.5">
-                <Icon className="text-netural-strong shrink-0" path={mdiLightningBolt} />
-
-                <div className="flex grow items-center gap-x-2">
-                  <Typography className="font-semibold">{t("premium::banner::title")}</Typography>
-
-                  <Typography brand="premium">{t("premium::banner::subtitle")}</Typography>
-                </div>
-              </div>
-
-              <Button brand="premium" size="sm" onClick={goPremium}>
-                {t("premium::banner::button")}
-              </Button>
-            </div>
-          )}
-
-          <div className="flex items-start gap-x-3 rounded-lg border border-stroke-weak p-6">
-            <Icon className="mt-0.5 shrink-0 text-info-strong" path={mdiAlertCircle} />
-
-            <div className="grow space-y-4">
-              <div className="flex gap-x-3">
-                <div className="grow">
-                  <Typography className="font-semibold">
-                    {t("detail::item::title", {
-                      modName: mod.requiredBy.modName,
-                    })}
-                  </Typography>
-
-                  <Typography appearance="moderate">
-                    <Trans
-                      components={{
-                        modLink: (
-                          <TypographyLink
-                            brand="primary"
-                            typographyType="inherit"
-                            variant="secondary"
-                            onClick={openRequiringModPage}
-                          />
-                        ),
-                      }}
-                      i18nKey="detail::item::description"
-                      ns="health_check"
-                      values={{ modName: mod.requiredBy.modName }}
-                    />
-                  </Typography>
-                </div>
-
-                <div className="shrink-0">
-                  <Button
-                    appearance="moderate"
-                    brand="neutral"
-                    leftIconPath={isHidden ? mdiEye : mdiEyeOff}
-                    size="sm"
-                    title={isHidden ? t("common:::unhide") : t("common:::hide")}
-                    onClick={handleToggleHide}
-                  />
-                </div>
-              </div>
-
-              <ModRequirement
-                key={mod.uid || `${mod.modId}`}
-                mod={mod}
-                modFiles={modFiles}
-                showPremiumBadge={showPremiumAd}
-                onConfirmInstall={handleConfirmInstall}
-                onShowVortexModal={
-                  !showPremiumAd ? handleDownload : () => setShowPremiumModal(true)
-                }
+          <div className="rounded-lg border border-stroke-weak">
+            <div className="flex min-w-0 items-center gap-x-2 border-b border-stroke-weak p-3">
+              <Icon
+                className={joinClasses(["shrink-0", severityStyle.textClassName])}
+                path={severityStyle.iconPath}
               />
-            </div>
-          </div>
 
-          <div className="flex items-center justify-end gap-x-3">
-            <Typography appearance="subdued">
-              {givenFeedBack
-                ? t("common:::thanks_for_your_feedback")
-                : t("common:::was_this_helpful")}
-            </Typography>
+              <Typography className="flex min-w-0 grow gap-x-1 font-semibold">
+                <span className="shrink-0">{`${t(getIssueMessageKey(issueType))} `}</span>
 
-            <div className="flex shrink-0 gap-x-2">
+                {/* todo this link to the mod within vortex */}
+                <TypographyLink
+                  className="block truncate"
+                  typographyType="inherit"
+                  variant="secondary"
+                  onClick={() => console.log("todo")}
+                >
+                  Apothecary - Lighter Potions and Poisons
+                </TypographyLink>
+              </Typography>
+
+              <Typography appearance="subdued" className="shrink-0" typographyType="body-sm">
+                {t(`detail::was_this_helpful::${severity}`)}
+              </Typography>
+
               <Button
-                appearance="moderate"
                 brand="neutral"
+                appearance="moderate"
                 disabled={givenFeedBack}
                 leftIconPath={mdiThumbUp}
                 size="sm"
@@ -286,23 +235,277 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
               />
 
               <Button
-                appearance="moderate"
                 brand="neutral"
+                appearance="moderate"
                 disabled={givenFeedBack}
                 leftIconPath={mdiThumbDown}
                 size="sm"
                 title={t("common:::not_helpful")}
                 onClick={() => setShowFeedbackModal(true)}
               />
+
+              <div className="w-px self-stretch bg-stroke-weak" />
+
+              <Button
+                brand="neutral"
+                appearance="moderate"
+                leftIconPath={isHidden ? mdiEye : mdiEyeOff}
+                size="sm"
+                title={isHidden ? t("common:::unhide") : t("common:::hide")}
+                onClick={handleToggleHide}
+              />
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4 flex items-center justify-between gap-x-6">
+                <Typography appearance="subdued">
+                  {t("detail::item::requires_files", { count: modFiles.length })}
+                </Typography>
+
+                {!hasOrs && (
+                  <Button
+                    brand="neutral"
+                    appearance="strong"
+                    leftIconPath={mdiDownload}
+                    rightIcon={showPremiumAd && <PremiumBadge />}
+                    size="sm"
+                    onClick={() => {
+                      if (showPremiumAd) {
+                        setPremiumModalScope({ scope: "all" });
+                        return;
+                      }
+
+                      // todo download all files
+                    }}
+                  >
+                    {t("actions::install_all", { count: 2 })}
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                {/* single file requirements */}
+                <FileRequirement
+                  actions={
+                    <>
+                      <Button
+                        brand="neutral"
+                        appearance="moderate"
+                        leftIconPath={mdiOpenInNew}
+                        size="sm"
+                        onClick={() => console.log("todo")}
+                      >
+                        {t("detail::item::install_via_mod_page")}
+                      </Button>
+
+                      {/* Emphasize the download button when "or" choices exist, since there's no "download all" option to fall back on. */}
+                      <Button
+                        brand="neutral"
+                        appearance={hasOrs ? "strong" : "moderate"}
+                        leftIconPath={mdiDownload}
+                        rightIcon={showPremiumAd && <PremiumBadge />}
+                        size="sm"
+                        onClick={() => {
+                          if (showPremiumAd) {
+                            // todo pass the real IModFileInfo once the data source is wired up, take into account premium status
+                            setPremiumModalScope({
+                              scope: "single",
+                              file: mockSingle as unknown as IModFileInfo,
+                            });
+
+                            return;
+                          }
+
+                          // todo download the file
+                        }}
+                      >
+                        {t("detail::item::install_one_click")}
+                      </Button>
+                    </>
+                  }
+                  file={mockSingle}
+                />
+
+                {/* or file requirements */}
+                {/* todo this if logic can be removed, just used for mocking UI */}
+                {hasOrs && (
+                  <div>
+                    <Typography
+                      appearance="moderate"
+                      className="rounded-t-lg bg-surface-mid px-3 py-2 font-semibold"
+                      brand="neutral-translucent"
+                    >
+                      Pick one of these
+                    </Typography>
+
+                    <div className="rounded-b-lg border-x border-b border-stroke-weak p-3">
+                      <FileRequirement
+                        actions={
+                          <>
+                            <Button
+                              brand="neutral"
+                              appearance="moderate"
+                              leftIconPath={mdiOpenInNew}
+                              size="sm"
+                              onClick={() => console.log("todo")}
+                            >
+                              {t("detail::item::install_via_mod_page")}
+                            </Button>
+
+                            <Button
+                              brand="neutral"
+                              appearance="strong"
+                              leftIconPath={mdiDownload}
+                              rightIcon={showPremiumAd && <PremiumBadge />}
+                              size="sm"
+                              onClick={() => {
+                                if (showPremiumAd) {
+                                  // todo pass the real IModFileInfo once the data source is wired up, take into account premium status
+                                  setPremiumModalScope({
+                                    scope: "single",
+                                    file: mockOrA as unknown as IModFileInfo,
+                                  });
+
+                                  return;
+                                }
+
+                                // todo download the file
+                              }}
+                            >
+                              {t("detail::item::install_one_click")}
+                            </Button>
+                          </>
+                        }
+                        file={mockOrA}
+                        isOr={true}
+                      />
+
+                      <FileRequirement
+                        actions={
+                          <>
+                            <Button
+                              brand="neutral"
+                              appearance="moderate"
+                              leftIconPath={mdiOpenInNew}
+                              size="sm"
+                              onClick={() => console.log("todo")}
+                            >
+                              {t("detail::item::install_via_mod_page")}
+                            </Button>
+
+                            <Button
+                              brand="neutral"
+                              appearance="strong"
+                              leftIconPath={mdiDownload}
+                              rightIcon={showPremiumAd && <PremiumBadge />}
+                              size="sm"
+                              onClick={() => {
+                                if (showPremiumAd) {
+                                  // todo pass the real IModFileInfo once the data source is wired up, take into account premium status
+                                  setPremiumModalScope({
+                                    scope: "single",
+                                    file: mockOrB as unknown as IModFileInfo,
+                                  });
+
+                                  return;
+                                }
+
+                                // todo download the file
+                              }}
+                            >
+                              {t("detail::item::install_one_click")}
+                            </Button>
+                          </>
+                        }
+                        file={mockOrB}
+                        isOr={true}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* requires a different version */}
+                <div>
+                  <Typography appearance="subdued">
+                    Requires installing a different version of an existing mod file. Only one
+                    version can be enabled at a time.
+                  </Typography>
+
+                  <Typography appearance="subdued" className="mt-1 mb-2">
+                    Currently enabled version:
+                  </Typography>
+
+                  <FileRequirement
+                    actions={
+                      <Button brand="neutral" appearance="moderate" size="sm" onClick={() => console.log("todo")}>
+                        View in loadout
+                      </Button>
+                    }
+                    file={mockCurrent}
+                  />
+
+                  <Typography appearance="subdued" className="mt-4 mb-2">
+                    Required version:
+                  </Typography>
+
+                  <FileRequirement
+                    actions={
+                      <>
+                        <Button
+                          brand="neutral"
+                          appearance="moderate"
+                          leftIconPath={mdiOpenInNew}
+                          size="sm"
+                          onClick={() => console.log("todo")}
+                        >
+                          {t("detail::item::install_via_mod_page")}
+                        </Button>
+
+                        <Button
+                          brand="neutral"
+                          appearance={hasOrs ? "strong" : "moderate"}
+                          leftIconPath={mdiDownload}
+                          rightIcon={showPremiumAd && <PremiumBadge />}
+                          size="sm"
+                          onClick={() => {
+                            if (showPremiumAd) {
+                              // todo pass the real IModFileInfo once the data source is wired up, take into account premium status
+                              setPremiumModalScope({
+                                scope: "single",
+                                file: mockRequired as unknown as IModFileInfo,
+                              });
+
+                              return;
+                            }
+
+                            // todo download the file
+                          }}
+                        >
+                          {t("detail::item::install_one_click")}
+                        </Button>
+                      </>
+                    }
+                    file={mockRequired}
+                  />
+                </div>
+              </div>
             </div>
           </div>
+
+          <PremiumBanner />
         </div>
       </MainPage.Body>
 
       <PremiumModal
-        isOpen={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        onDownload={handleDownload}
+        downloadScope={premiumModalScope?.scope ?? "single"}
+        isOpen={premiumModalScope !== null}
+        onClose={() => setPremiumModalScope(null)}
+        onDownload={() => {
+          {
+            /* todo the download action changes if single or all scope is set */
+          }
+          void handleDownload(premiumModalScope?.file);
+        }}
       />
 
       <FeedbackModal
