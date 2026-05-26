@@ -243,7 +243,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
       const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
       await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
       await sharedVortexWindow
-        .screenshot()
+        .screenshot({ timeout: 5_000, animations: "disabled", type: "png" })
         .then((buf) => testInfo.attach("screenshot", { body: buf, contentType: "image/png" }))
         .catch(() => {});
     }
