@@ -3,7 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 export class SettingsPage {
   readonly page: Page;
   readonly languageLabel: Locator;
-  readonly englishOption: Locator;
+  readonly languageSelect: Locator;
   readonly checkboxes: Locator;
   readonly darkThemeLabel: Locator;
 
@@ -18,7 +18,7 @@ export class SettingsPage {
   constructor(page: Page) {
     this.page = page;
     this.languageLabel = page.getByText("Language").first();
-    this.englishOption = page.getByText("English").first();
+    this.languageSelect = page.getByRole("combobox", { name: "Language" });
     this.checkboxes = page.getByRole("checkbox");
     this.darkThemeLabel = page.getByText("Dark theme").first();
 

@@ -23,7 +23,7 @@ test.describe("Settings - Interface Tab", () => {
 
     await test.step("Verify English is selected", async () => {
       if (await settings.languageLabel.isVisible()) {
-        await expect(settings.englishOption).toBeVisible();
+        await expect(settings.languageSelect).toHaveValue("en");
       }
     });
   });
