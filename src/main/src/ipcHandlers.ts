@@ -101,10 +101,10 @@ export function init() {
       const appPath = path.resolve(process.argv[1]);
       return [
         process.execPath,
-        [appPath, ...(udPath !== undefined ? ["--userData", udPath] : []), "-d"],
+        [appPath, ...(udPath !== undefined ? ["--user-data", udPath] : []), "-d"],
       ];
     } else {
-      return [process.execPath, [...(udPath !== undefined ? ["--userData", udPath] : []), "-d"]];
+      return [process.execPath, [...(udPath !== undefined ? ["--user-data", udPath] : []), "-d"]];
     }
   }
 
