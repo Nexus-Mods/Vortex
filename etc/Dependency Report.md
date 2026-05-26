@@ -19,7 +19,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/nexus-api | 1.6.2 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.6.1 |
-| @opentelemetry/context-zone | 2.7.0 |
+| @opentelemetry/context-zone | 2.7.1 |
 | @opentelemetry/exporter-trace-otlp-http | 0.57.2 |
 | @opentelemetry/resources | 1.30.1 |
 | @opentelemetry/sdk-trace-base | 1.30.1 |
@@ -55,6 +55,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | graphlib | 2.1.8 |
 | i18next | 19.9.2 |
 | i18next-fs-backend | 2.6.1 |
+| icon-extract | link:../../packages/icon-extract |
 | iconv-lite | 0.5.2 |
 | immutability-helper | 3.1.1 |
 | ini | 6.0.0 |
@@ -68,7 +69,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | lodash | 4.17.23 |
 | memoize-one | 5.2.1 |
 | minimatch | 3.1.5 |
-| mixpanel-browser | 2.77.0 |
+| mixpanel-browser | 2.79.0 |
 | modmeta-db | 0.9.3 |
 | node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
