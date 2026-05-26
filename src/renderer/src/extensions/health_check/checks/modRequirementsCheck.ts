@@ -25,7 +25,7 @@ import type {
   IModRequirementsCheckParams,
   IModRequirementExt,
 } from "../types";
-import { getModFilesWithCache } from "../util";
+import { getModFilesWithCache } from "../utils/modFiles";
 
 export const MOD_REQUIREMENTS_CHECK_ID = "check-nexus-mod-requirements";
 

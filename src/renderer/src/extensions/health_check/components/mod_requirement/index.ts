@@ -1,1 +1,0 @@
-export { ModRequirement } from "./ModRequirement";
