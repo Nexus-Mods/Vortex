@@ -27,6 +27,7 @@
     "search": "Search"
   },
   "view_all": "View all",
+  "back": "Back",
   "refresh": "Refresh",
   "settings": "Settings",
   "beta": "Beta",
@@ -37,7 +38,5 @@
   "active": "Active",
   "hidden": "Hidden",
   "helpful": "Helpful",
-  "not_helpful": "Not helpful",
-  "was_this_helpful": "Was this helpful?",
-  "thanks_for_your_feedback": "Thanks for your feedback"
+  "not_helpful": "Not helpful"
 }
