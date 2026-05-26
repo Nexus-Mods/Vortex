@@ -98,12 +98,14 @@
           "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",
-          "{workspaceRoot}/src/queries/**/*",
-          "{workspaceRoot}/assets/**/*",
+          "{workspaceRoot}/src/queries/",
+          "{workspaceRoot}/assets/",
+          "{workspaceRoot}/locales/",
           "{workspaceRoot}/LICENSE.md"
         ],
         "outputs": [
           "{projectRoot}/build/assets/",
+          "{projectRoot}/build/locales/",
           "{projectRoot}/build/queries/",
           "{projectRoot}/build/index.html",
           "{projectRoot}/build/splash.html",
