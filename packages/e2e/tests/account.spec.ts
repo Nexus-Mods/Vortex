@@ -5,6 +5,7 @@
  */
 import { test, expect } from "../fixtures/vortex-app";
 import { loginToNexus } from "../helpers/login";
+import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser, type NexusUser } from "../helpers/users";
 import { Header } from "../selectors/header";
 
@@ -37,16 +38,14 @@ test.describe("Account - Header Premium badge", () => {
       vortexApp,
       vortexWindow,
     }) => {
-      test.setTimeout(120_000);
-
       await loginToNexus(vortexApp, vortexWindow, user);
 
       const header = new Header(vortexWindow);
       if (expectBadge) {
-        await expect(header.premiumIndicator).toBeVisible({ timeout: 15_000 });
+        await expect(header.premiumIndicator).toBeVisible({ timeout: Timeouts.NETWORK });
         await expect(header.premiumIndicator).toHaveText(/premium/i);
       } else {
-        await expect(header.premiumIndicator).toBeHidden({ timeout: 15_000 });
+        await expect(header.premiumIndicator).toBeHidden({ timeout: Timeouts.NETWORK });
       }
     });
   }

@@ -4,6 +4,7 @@ import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
 import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
+import { Timeouts } from "./timeouts";
 
 // Only auto-discoverable games are supported today. Skyrim SE goes through
 // Vortex's manual-discovery dialog flow which our fake-game install isn't
@@ -24,7 +25,7 @@ export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Pro
     const navbar = new NavBar(vortexWindow);
     const gamesPage = new GamesPage(vortexWindow);
 
-    await expect(navbar.gamesLink).toBeVisible({ timeout: 10_000 });
+    await expect(navbar.gamesLink).toBeVisible();
     await navbar.gamesLink.click();
 
     await vortexWindow.evaluate((path) => {
@@ -39,12 +40,15 @@ export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Pro
     }, fakeGame.gamePath);
 
     const row = gamesPage.gameRow(gameName);
-    await expect(row).toBeVisible({ timeout: 30_000 });
+    await expect(row).toBeVisible({ timeout: Timeouts.NETWORK });
     await row.scrollIntoViewIfNeeded();
     await row.hover();
-    await gamesPage.manageButton(gameName).click({ timeout: 15_000, force: true });
 
-    await expect(navbar.modsLink).toBeVisible({ timeout: 60_000 });
+    const manageButton = gamesPage.manageButton(gameName);
+    await expect(manageButton).toBeVisible();
+    await manageButton.click();
+
+    await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
   });
 
   return fakeGame;

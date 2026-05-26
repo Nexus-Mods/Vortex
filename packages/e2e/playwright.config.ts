@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { defineConfig } from "@playwright/test";
 
+import { GlobalTimeouts } from "./helpers/timeouts";
+
 const envFilePath = path.resolve(import.meta.dirname, ".env");
 
 if (existsSync(envFilePath)) {
@@ -11,10 +13,10 @@ if (existsSync(envFilePath)) {
 
 export default defineConfig({
   testDir: "./tests",
-  globalTimeout: 1000 * 60 * 45,
-  timeout: 60_000,
+  globalTimeout: GlobalTimeouts.GLOBAL,
+  timeout: GlobalTimeouts.TEST,
   expect: {
-    timeout: 5_000,
+    timeout: GlobalTimeouts.EXPECT,
   },
   retries: 1,
   reporter: [
@@ -27,8 +29,8 @@ export default defineConfig({
     ...(process.env.CI ? [["github"] as const] : []),
   ],
   use: {
-    actionTimeout: 5_000,
-    navigationTimeout: 5_000,
+    actionTimeout: GlobalTimeouts.ACTION,
+    navigationTimeout: GlobalTimeouts.NAVIGATION,
     screenshot: "off",
     trace: "on-first-retry",
     video: "on-first-retry",

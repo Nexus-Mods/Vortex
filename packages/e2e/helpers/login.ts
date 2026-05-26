@@ -8,6 +8,7 @@ import {
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
+import { Timeouts } from "./timeouts";
 import { freeUser, type NexusUser } from "./users";
 
 export interface LoginToNexusOptions {
@@ -109,7 +110,7 @@ export async function loginToNexus(
 
       await authPage.goto(oauthUrl, {
         waitUntil: "domcontentloaded",
-        timeout: 60000,
+        timeout: Timeouts.NETWORK,
       });
       await expect(authPage).toHaveURL(/nexusmods|users\./i);
     });
@@ -119,8 +120,9 @@ export async function loginToNexus(
     const skipCredentials =
       options.storageStatePath !== undefined &&
       authPage !== null &&
-      (await new LoginPage(authPage).oauthPermissionTitle
-        .isVisible({ timeout: 10_000 })
+      (await expect(new LoginPage(authPage).oauthPermissionTitle)
+        .toBeVisible()
+        .then(() => true)
         .catch(() => false));
 
     if (!skipCredentials) {
