@@ -15,7 +15,8 @@ release's installer to Nexus Mods.
 
 **Stable releases only.** Beta and alpha releases are distributed via GitHub
 Releases and the Vortex auto-update channel; they are **not** uploaded to
-Nexus Mods.
+Nexus Mods. The script selects the latest **stable** release, skipping newer
+drafts and pre-releases.
 
 ## Step-by-Step Process
 
@@ -56,6 +57,7 @@ Nexus Mods.
 | **Manual dispatch only**       | Workflow runs only when manually triggered.                                      |
 | **Dry-run default**            | Skips upload by default; set `dry-run: false` to enable.                         |
 | **Draft/prerelease rejection** | Workflow rejects draft/prerelease GitHub Releases; only stable releases proceed. |
+| **Stable-release selection**   | Selects the latest stable release, skipping newer drafts and pre-releases.       |
 | **Concurrency control**        | Only one publish run can execute at a time (`publish-nexus` concurrency group).  |
 
 ## What Gets Uploaded
@@ -78,8 +80,11 @@ The `file-group-id` input controls which Nexus Mods page receives the upload:
 
 ## Troubleshooting
 
-- **"Latest release is a draft/prerelease"**: Ensure the GitHub Release has
-  been published as a stable release (not draft, not prerelease).
+- **"Latest release is a draft"**: Publish the draft release first.
+- **"…marked as prerelease but was returned as the latest stable release"**: A
+  release changed while the script was running. Re-run the workflow.
+- **"No stable (non-draft, non-prerelease) releases found"**: No stable
+  release exists. Create and publish a stable release first.
 
 - **"No .exe installer asset found"**: The latest release may not have an
   `.exe` asset. Check that the Package workflow (the build pipeline) completed
@@ -104,8 +109,7 @@ pnpm tsx scripts/publish-release-to-nexus/index.ts \
   --dry-run true --mod-slug site --file-group-id 5293
 ```
 
-Note: the dry-run command requires the `gh` CLI authenticated with repo scope.
-Without auth, the script will fail when calling `gh release view`.
+Note: dry runs require `gh` CLI repo auth; without it, `gh release list` fails.
 
 ## Advanced: Archive Behavior
 

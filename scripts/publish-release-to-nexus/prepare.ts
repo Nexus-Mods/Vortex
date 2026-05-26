@@ -73,7 +73,8 @@ export interface PublishPlan {
  * # Errors
  *
  * Throws if `release.isDraft` is `true` - draft releases cannot be published.
- * Throws if `release.isPrerelease` is `true` - prerelease releases cannot be published.
+ * Throws if `release.isPrerelease` is `true` - indicates a stale or
+ *   inconsistent state on GitHub (the release was already selected as stable).
  */
 export function assertStableRelease(release: GithubRelease): void {
   if (release.isDraft) {
@@ -83,7 +84,7 @@ export function assertStableRelease(release: GithubRelease): void {
   }
   if (release.isPrerelease) {
     throw new Error(
-      `Latest release (${release.tagName}) is a prerelease. Only stable releases can be published.`,
+      `Release ${release.tagName} is marked as prerelease but was returned as the latest stable release — this indicates a stale or inconsistent state on GitHub.`,
     );
   }
 }
@@ -123,9 +124,39 @@ export function versionFromTag(tagName: string): string {
 }
 
 /**
- * Orchestrates release preparation: fetches release JSON via `ghRun`,
- * validates the release, selects the installer, downloads it (unless
- * dry-run), and writes `GITHUB_OUTPUT` keys.
+ * Finds the tag name of the latest stable (non-draft, non-prerelease) GitHub
+ * release by listing releases with exclusion flags.
+ *
+ * @param ghRun - Command runner: executes `gh <args>` and returns stdout.
+ * @returns The tag name of the latest stable release (e.g. `v1.2.3`).
+ *
+ * # Errors
+ *
+ * Throws if no stable releases exist (empty list after exclusions).
+ */
+export function findLatestStableTag(ghRun: (args: string[]) => string): string {
+  const json = ghRun([
+    "release",
+    "list",
+    "--exclude-pre-releases",
+    "--exclude-drafts",
+    "--json",
+    "tagName",
+    "--limit",
+    "1",
+  ]);
+  const releases: Array<{ tagName: string }> = JSON.parse(json);
+  if (releases.length === 0) {
+    throw new Error("No stable (non-draft, non-prerelease) releases found.");
+  }
+  return releases[0].tagName;
+}
+
+/**
+ * Orchestrates release preparation: finds the latest stable release tag
+ * via `ghRun`, fetches full release details, validates the release,
+ * selects the installer, downloads it (unless dry-run), and writes
+ * `GITHUB_OUTPUT` keys.
  *
  * @param options - Configuration including the `ghRun` command runner and
  *   output directory.
@@ -133,16 +164,19 @@ export function versionFromTag(tagName: string): string {
  *
  * # Errors
  *
+ * Throws if no stable releases are found (via {@link findLatestStableTag}).
  * Throws if the release is a draft or prerelease (via {@link assertStableRelease}).
  * Throws if no `.exe` installer asset is found (via {@link findInstallerAsset}).
  * Throws if `gh release view` fails (e.g. `gh` not authenticated or release not found).
  * Throws if `gh release download` fails (e.g. `gh` not authenticated or network error).
  */
 export async function preparePublish(options: PreparePublishOptions): Promise<PublishPlan> {
-  // Fetch release metadata from GitHub
+  // Find the latest stable release tag, then fetch full details
+  const tag = findLatestStableTag(options.ghRun);
   const json = options.ghRun([
     "release",
     "view",
+    tag,
     "--json",
     "tagName,name,body,assets,isDraft,isPrerelease",
   ]);

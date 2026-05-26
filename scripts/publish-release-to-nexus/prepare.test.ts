@@ -7,6 +7,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   assertStableRelease,
   findInstallerAsset,
+  findLatestStableTag,
   versionFromTag,
   preparePublish,
   type GithubRelease,
@@ -42,9 +43,41 @@ describe("assertStableRelease", () => {
     expect(() => assertStableRelease(release)).toThrow();
   });
 
+  it("reports stale/inconsistent state for prerelease", () => {
+    const release = makeRelease({ isPrerelease: true });
+    expect(() => assertStableRelease(release)).toThrow(/marked as prerelease.*inconsistent/);
+  });
+
   it("passes for stable release", () => {
     const stableRelease = makeRelease({ isDraft: false, isPrerelease: false });
     expect(() => assertStableRelease(stableRelease)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// findLatestStableTag
+// ---------------------------------------------------------------------------
+
+describe("findLatestStableTag", () => {
+  it("returns the tag name of the latest stable release", () => {
+    const fakeGhRun = vi.fn().mockReturnValue(JSON.stringify([{ tagName: "v1.2.3" }]));
+    const tag = findLatestStableTag(fakeGhRun);
+    expect(tag).toBe("v1.2.3");
+    expect(fakeGhRun).toHaveBeenCalledWith([
+      "release",
+      "list",
+      "--exclude-pre-releases",
+      "--exclude-drafts",
+      "--json",
+      "tagName",
+      "--limit",
+      "1",
+    ]);
+  });
+
+  it("throws when no stable releases exist", () => {
+    const fakeGhRun = vi.fn().mockReturnValue("[]");
+    expect(() => findLatestStableTag(fakeGhRun)).toThrow(/No stable.*releases found/);
   });
 });
 
@@ -104,14 +137,18 @@ describe("preparePublish", () => {
     { name: "dry-run", dryRun: true },
     { name: "live", dryRun: false },
   ])("returns correct PublishPlan for $name", async ({ dryRun }) => {
-    const fakeGhRun = vi.fn().mockReturnValue(
-      JSON.stringify(
+    const fakeGhRun = vi.fn().mockImplementation((args: string[]) => {
+      if (args[1] === "list") {
+        return JSON.stringify([{ tagName: "v2.0.0" }]);
+      }
+      // release view or release download
+      return JSON.stringify(
         makeRelease({
           tagName: "v2.0.0",
           body: "Changelog content",
         }),
-      ),
-    );
+      );
+    });
     const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), "prepare-test-"));
     const githubOutput = path.join(downloadDir, "output");
 
@@ -137,17 +174,22 @@ describe("preparePublish", () => {
 
     // For dry-run, ghRun should not be called for download
     if (dryRun) {
-      expect(fakeGhRun).toHaveBeenCalledTimes(1); // only release view
+      expect(fakeGhRun).toHaveBeenCalledTimes(2); // release list + release view
       expect(fakeGhRun).not.toHaveBeenCalledWith(expect.arrayContaining(["download"]));
     } else {
-      expect(fakeGhRun).toHaveBeenCalledTimes(2); // release view + download
+      expect(fakeGhRun).toHaveBeenCalledTimes(3); // release list + release view + download
     }
 
     fs.rmSync(downloadDir, { recursive: true });
   });
 
   it("writes GITHUB_OUTPUT keys", async () => {
-    const fakeGhRun = vi.fn().mockReturnValue(JSON.stringify(makeRelease()));
+    const fakeGhRun = vi.fn().mockImplementation((args: string[]) => {
+      if (args[1] === "list") {
+        return JSON.stringify([{ tagName: "v1.2.3" }]);
+      }
+      return JSON.stringify(makeRelease());
+    });
     const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), "prepare-test-"));
     const githubOutput = path.join(downloadDir, "github_output");
 
@@ -171,7 +213,12 @@ describe("preparePublish", () => {
 
   it("writes multiline body with heredoc syntax", async () => {
     const multilineBody = "Line 1\nLine 2\n\nLine 4";
-    const fakeGhRun = vi.fn().mockReturnValue(JSON.stringify(makeRelease({ body: multilineBody })));
+    const fakeGhRun = vi.fn().mockImplementation((args: string[]) => {
+      if (args[1] === "list") {
+        return JSON.stringify([{ tagName: "v1.2.3" }]);
+      }
+      return JSON.stringify(makeRelease({ body: multilineBody }));
+    });
     const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), "prepare-test-"));
     const githubOutput = path.join(downloadDir, "github_output");
 
@@ -193,7 +240,12 @@ describe("preparePublish", () => {
   });
 
   it("skips writing GITHUB_OUTPUT when githubOutput option is omitted", async () => {
-    const fakeGhRun = vi.fn().mockReturnValue(JSON.stringify(makeRelease()));
+    const fakeGhRun = vi.fn().mockImplementation((args: string[]) => {
+      if (args[1] === "list") {
+        return JSON.stringify([{ tagName: "v1.2.3" }]);
+      }
+      return JSON.stringify(makeRelease());
+    });
 
     // Should not throw even without githubOutput
     const plan = await preparePublish({
@@ -208,7 +260,12 @@ describe("preparePublish", () => {
   });
 
   it("throws when ghRun returns draft release JSON", async () => {
-    const fakeGhRun = vi.fn().mockReturnValue(JSON.stringify(makeRelease({ isDraft: true })));
+    const fakeGhRun = vi.fn().mockImplementation((args: string[]) => {
+      if (args[1] === "list") {
+        return JSON.stringify([{ tagName: "v1.2.3" }]);
+      }
+      return JSON.stringify(makeRelease({ isDraft: true }));
+    });
 
     await expect(
       preparePublish({
@@ -222,13 +279,16 @@ describe("preparePublish", () => {
   });
 
   it("throws when release JSON has no .exe asset", async () => {
-    const fakeGhRun = vi.fn().mockReturnValue(
-      JSON.stringify(
+    const fakeGhRun = vi.fn().mockImplementation((args: string[]) => {
+      if (args[1] === "list") {
+        return JSON.stringify([{ tagName: "v1.2.3" }]);
+      }
+      return JSON.stringify(
         makeRelease({
           assets: [{ name: "latest.yml", url: "https://example.com/latest.yml" }],
         }),
-      ),
-    );
+      );
+    });
 
     await expect(
       preparePublish({
