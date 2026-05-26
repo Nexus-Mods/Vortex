@@ -1571,6 +1571,16 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
     driver.start(profile, mod);
   });
 
+  // Keeps the full cleanup path (driver, notification, queued downloads,
+  // InstallManager cancel) owned by this extension instead of forcing
+  // external callers to chain the pieces.
+  api.events.on("pause-collection", (gameId: string, modId: string) => {
+    log("info", "pause collection", { gameId, modId });
+    pauseCollection(api, gameId, modId, true).catch((err) => {
+      log("error", "failed to pause collection", { gameId, modId, error: err.message });
+    });
+  });
+
   api.onStateChange(["persistent", "collections", "collections"], (prev, cur) => {
     // tslint:disable-next-line:no-shadowed-variable
     const state = api.getState();
