@@ -79,7 +79,11 @@
         },
         "dependsOn": [
           {
-            "target": "build",
+            "target": "sass",
+            "projects": "@vortex/stylesheets"
+          },
+          {
+            "target": "tailwind",
             "projects": "@vortex/stylesheets"
           },
           {

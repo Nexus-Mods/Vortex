@@ -8,16 +8,6 @@
   },
   "nx": {
     "targets": {
-      "build": {
-        "executor": "nx:noop",
-        "dependsOn": [
-          "sass",
-          "tailwind"
-        ],
-        "cache": false,
-        "inputs": [],
-        "outputs": []
-      },
       "sass": {
         "cache": true,
         "inputs": [
