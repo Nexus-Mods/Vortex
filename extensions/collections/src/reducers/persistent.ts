@@ -1,5 +1,5 @@
-import { types, util } from "@nexusmods/vortex-api";
-import * as _ from "lodash";
+import type { types } from "@nexusmods/vortex-api";
+import update from "immutability-helper";
 
 import * as actions from "../actions/persistent";
 
@@ -9,49 +9,74 @@ const persistentReducer: types.IReducerSpec = {
       const { collectionId, collectionInfo, timestamp } = payload;
 
       if (collectionInfo === undefined) {
-        return util.deleteOrNop(state, ["collections", collectionId]);
-      } else {
-        return util.setSafe(state, ["collections", collectionId], {
-          timestamp,
-          info: collectionInfo,
-        });
+        if (state.collections?.[collectionId] === undefined) {
+          return state;
+        }
+        return update(state, { collections: { $unset: [collectionId] } });
       }
+
+      return update(state, {
+        collections: {
+          [collectionId]: { $set: { timestamp, info: collectionInfo } },
+        },
+      });
     },
     [actions.updateRevisionInfo as any]: (state, payload) => {
       const { revisionId, revisionInfo, timestamp } = payload;
 
       if (revisionInfo === undefined) {
-        return util.deleteOrNop(state, ["revisions", revisionId]);
-      } else {
-        return util.setSafe(state, ["revisions", revisionId], {
-          timestamp,
-          info: revisionInfo,
-        });
+        if (state.revisions?.[revisionId] === undefined) {
+          return state;
+        }
+        return update(state, { revisions: { $unset: [revisionId] } });
       }
+
+      return update(state, {
+        revisions: {
+          [revisionId]: { $set: { timestamp, info: revisionInfo } },
+        },
+      });
     },
     [actions.updateSuccessRate as any]: (state, payload) => {
       const { revisionId, vote, average, total } = payload;
 
-      const revPath = ["revisions", revisionId, "info"];
-
-      state = util.setSafe(state, [...revPath, "metadata", "ratingValue"], vote);
-      return util.setSafe(state, [...revPath, "rating"], {
-        average,
-        total,
+      return update(state, {
+        revisions: {
+          [revisionId]: {
+            $apply: (rev) =>
+              update(rev ?? {}, {
+                info: {
+                  $apply: (info) =>
+                    update(info ?? {}, {
+                      metadata: {
+                        $apply: (m) => ({ ...(m ?? {}), ratingValue: vote }),
+                      },
+                      rating: { $set: { average, total } },
+                    }),
+                },
+              }),
+          },
+        },
       });
     },
     [actions.setPendingVote as any]: (state, payload) => {
       const { revisionId, collectionSlug, revisionNumber, time } = payload;
 
-      return util.setSafe(state, ["pendingVotes", revisionId], {
-        collectionSlug,
-        revisionNumber,
-        time,
+      return update(state, {
+        pendingVotes: {
+          [revisionId]: {
+            $set: { collectionSlug, revisionNumber, time },
+          },
+        },
       });
     },
     [actions.clearPendingVote as any]: (state, payload) => {
       const { revisionId } = payload;
-      return util.deleteOrNop(state, ["pendingVotes", revisionId]);
+
+      if (state.pendingVotes?.[revisionId] === undefined) {
+        return state;
+      }
+      return update(state, { pendingVotes: { $unset: [revisionId] } });
     },
   },
   defaults: {

@@ -84,6 +84,7 @@ export interface ICollection extends Partial<ICollectionGamebryo> {
   info: ICollectionInfo;
   mods: ICollectionMod[];
   modRules: ICollectionModRule[];
+  collectionConfig?: ICollectionConfig;
 }
 
 export interface ICollectionAttributes {

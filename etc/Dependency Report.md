@@ -24,7 +24,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @opentelemetry/resources | 1.30.1 |
 | @opentelemetry/sdk-trace-base | 1.30.1 |
 | @opentelemetry/semantic-conventions | 1.40.0 |
-| @tailwindcss/cli | 4.2.2 |
+| @tailwindcss/cli | 4.3.0 |
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
 | bbcode-to-react | 0.2.11 |
@@ -51,7 +51,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | fs-extra | 9.1.0 |
 | fuzzball | 1.4.0 |
 | glob | 11.1.0 |
-| got | 15.0.2 |
+| got | 15.0.5 |
 | graphlib | 2.1.8 |
 | i18next | 19.9.2 |
 | i18next-fs-backend | 2.6.1 |
@@ -73,7 +73,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
-| p-queue | 9.1.0 |
+| p-queue | 9.3.0 |
 | packery | 2.1.2 |
 | permissions | 2.1.0 |
 | prop-types | 15.8.1 |
@@ -103,13 +103,13 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | reselect | 4.1.8 |
 | resolve | 1.22.11 |
 | rimraf | 2.6.2 |
-| sass | 1.97.3 |
+| sass | 1.99.0 |
 | semver | 7.7.4 |
 | shortid | 2.2.17 |
 | simple-vdf | 1.1.3 |
 | source-map-support | 0.5.21 |
 | string-template | 1.0.0 |
-| tailwindcss | 4.2.2 |
+| tailwindcss | 4.3.0 |
 | tmp | 0.1.0 |
 | tough-cookie | 6.0.1 |
 | turbowalk | 3.1.1 |
@@ -123,4 +123,4 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | ws | 7.5.10 |
 | xml2js | 0.5.0 |
 | xxhash-addon | 2.1.0 |
-| zod | 4.3.6 |
+| zod | 4.4.3 |

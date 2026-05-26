@@ -5,7 +5,8 @@ import * as React from "react";
 import { ControlLabel, ListGroup, ListGroupItem } from "react-bootstrap";
 
 import { ICollectionModRule, ICollectionModRuleEx } from "../../types/ICollection";
-import { renderReference, ruleId } from "../../util/util";
+import { renderReference } from "../../util/renderReference";
+import { ruleId } from "../../util/util";
 
 export interface IModsPageProps {
   t: TFunction;

@@ -9,8 +9,9 @@ import { dir as tmpDir } from "tmp";
 
 import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
 import { ICollection, ICollectionMod, ICollectionSourceInfo } from "./types/ICollection";
-import { modToCollection as modToCollection } from "./util/transformCollection";
-import { hasEditPermissions, makeProgressFunction } from "./util/util";
+import { makeProgressFunction } from "./util/makeProgressFunction";
+import { modToCollection } from "./util/modToCollection";
+import { hasEditPermissions } from "./util/util";
 
 async function withTmpDir(cb: (tmpPath: string) => Promise<void>): Promise<void> {
   return new Promise<void>((resolve, reject) => {

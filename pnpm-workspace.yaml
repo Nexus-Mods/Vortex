@@ -54,14 +54,14 @@ catalog:
   "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.6.1
-  "@opentelemetry/context-zone": 2.7.0
+  "@opentelemetry/context-zone": 2.7.1
   "@opentelemetry/exporter-trace-otlp-http": 0.57.2
   "@opentelemetry/resources": 1.30.1
   "@opentelemetry/sdk-trace-base": 1.30.1
   "@opentelemetry/semantic-conventions": 1.40.0
-  "@playwright/test": 1.58.2
+  "@playwright/test": 1.60.0
   "@stylistic/eslint-plugin": 5.10.0
-  "@tailwindcss/cli": 4.2.2
+  "@tailwindcss/cli": 4.3.0
   "@testing-library/dom": 10.4.1
   "@testing-library/jest-dom": 6.9.1
   "@testing-library/react": 12.1.5
@@ -123,10 +123,10 @@ catalog:
   "@types/write-file-atomic": 3.0.3
   "@types/ws": 7.4.7
   "@types/xml2js": 0.4.14
-  "@typescript-eslint/utils": 8.59.3
-  "@vitejs/plugin-react": 6.0.1
-  "@vitest/coverage-v8": 4.1.2
-  "@vitest/ui": 4.1.0
+  "@typescript-eslint/utils": 8.59.4
+  "@vitejs/plugin-react": 6.0.2
+  "@vitest/coverage-v8": 4.1.7
+  "@vitest/ui": 4.1.7
   "@welldone-software/why-did-you-render": 10.0.1
   bbcode-to-react: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
@@ -173,10 +173,10 @@ catalog:
   fs-extra: 9.1.0
   fuzzball: 1.4.0
   glob: 11.1.0
-  globals: 17.4.0
-  got: 15.0.2
+  globals: 17.6.0
+  got: 15.0.5
   graphlib: 2.1.8
-  happy-dom: 20.8.8
+  happy-dom: 20.9.0
   husky: 9.1.7
   i18next: 19.9.2
   i18next-fs-backend: 2.6.1
@@ -192,7 +192,7 @@ catalog:
   leveldown: 5.6.0
   levelup: 4.4.0
   limiter: 3.0.0
-  lint-staged: 15.5.2
+  lint-staged: 17.0.5
   lodash: 4.17.23
   loot: git+https://github.com/Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
   lru-cache: 11.2.7
@@ -200,20 +200,20 @@ catalog:
   memoize-one: 5.2.1
   minimatch: 3.1.5
   minimist: 1.2.8
-  mixpanel-browser: 2.77.0
+  mixpanel-browser: 2.79.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
   node: runtime:24.15.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0
   numeral: 2.0.6
-  nx: 22.7.1
-  oxfmt: 0.41.0
+  nx: 22.7.2
+  oxfmt: 0.51.0
   p-limit: 7.3.0
-  p-queue: 9.1.0
+  p-queue: 9.3.0
   packery: 2.1.2
   permissions: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
-  playwright: 1.58.2
+  playwright: 1.60.0
   prop-types: 15.8.1
   ps-list: 7.2.0
   re-reselect: 4.0.1
@@ -244,8 +244,8 @@ catalog:
   reselect: 4.1.8
   resolve: 1.22.11
   rimraf: git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-  rolldown: 1.0.0-rc.9
-  sass: 1.97.3
+  rolldown: 1.0.1
+  sass: 1.99.0
   semver: 7.7.4
   shortid: 2.2.17
   simple-git: 3.33.0
@@ -253,26 +253,26 @@ catalog:
   source-map-loader: 5.0.0
   source-map-support: 0.5.21
   string-template: 1.0.0
-  tailwindcss: 4.2.2
-  terser-webpack-plugin: 5.4.0
+  tailwindcss: 4.3.0
+  terser-webpack-plugin: 5.6.0
   tmp: 0.1.0
   tough-cookie: 6.0.1
-  ts-loader: 9.5.4
+  ts-loader: 9.5.7
   ts-v-gen: 1.0.3
   tsconfig-paths-webpack-plugin: 4.2.0
-  tsdown: 0.21.0-beta.1
-  tsx: 4.22.0
+  tsdown: 0.22.0
+  tsx: 4.22.3
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: 4.3.3
   typescript: 6.0.3
-  typescript-eslint: 8.59.3
+  typescript-eslint: 8.59.4
   universal-analytics: 0.4.23
   uuid: 3.4.0
-  vite: 8.0.3
+  vite: 8.0.13
   vite-plugin-doctest: 2.0.0
-  vitest: 4.1.2
+  vitest: 4.1.7
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  webpack: 5.105.4
+  webpack: 5.106.2
   webpack-cli: 5.1.4
   webpack-node-externals: 3.0.0
   which: 1.3.1
@@ -283,7 +283,7 @@ catalog:
   ws: 7.5.10
   xml2js: 0.5.0
   xxhash-addon: 2.1.0
-  zod: 4.3.6
+  zod: 4.4.3
 
 blockExoticSubdeps: false
 catalogMode: strict
@@ -302,6 +302,3 @@ overrides:
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
-
-patchedDependencies:
-  playwright-core@1.58.2: patches/playwright-core@1.58.2.patch

@@ -3,8 +3,8 @@
 // (excluding log, which is exported separately to give
 //  it a more accessible name)
 
+export type { Normalize } from "./getNormalizeFunc.ts";
 export * from "./message";
-export * from "./storeHelper";
 
 import bbcodeToReact, { bbcodeToHTML, preProcess as bbcodePreProcess } from "../controls/bbcode";
 import { installIconSet } from "../controls/Icon";
@@ -19,24 +19,24 @@ import { getGame, getGames } from "../extensions/gamemode_management/util/getGam
 import { getModType } from "../extensions/gamemode_management/util/modTypeExtensions";
 import deriveModInstallName from "../extensions/mod_management/modIdManager";
 import { getManifest } from "../extensions/mod_management/util/activationStore";
+import { coerceToSemver } from "../extensions/mod_management/util/coerceToSemver";
 import {
   findDownloadByRef,
-  findModByRef,
   lookupFromDownload,
 } from "../extensions/mod_management/util/dependencies";
 import {
   getActivator,
   getCurrentActivator,
 } from "../extensions/mod_management/util/deploymentMethods";
+import { findModByRef } from "../extensions/mod_management/util/findModByRef";
+import { isFuzzyVersion } from "../extensions/mod_management/util/isFuzzyVersion";
 import renderModName, { renderModReference } from "../extensions/mod_management/util/modName";
 import { makeModReference } from "../extensions/mod_management/util/modReference";
 import { getModSource, getModSources } from "../extensions/mod_management/util/modSource";
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
-  coerceToSemver,
   testRefByIdentifiers,
-  isFuzzyVersion,
 } from "../extensions/mod_management/util/testModReference";
 import {
   convertGameIdReverse,
@@ -80,9 +80,6 @@ function makeRemoteCall(): never {
   );
 }
 
-import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
-import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
-export type { Normalize } from "./getNormalizeFunc.ts";
 import LazyComponent from "../controls/LazyComponent";
 import {
   buildCopyInstructions,
@@ -94,6 +91,8 @@ import {
 } from "../extensions/mod_management/util/installerHelpers";
 import ReduxProp from "../ReduxProp";
 import { getReduxLog } from "../store/reduxLogger";
+import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
+import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 import github from "./github";
 import type { TFunction } from "./i18n";
@@ -154,6 +153,7 @@ import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
 export * from "./network";
+export * from "./storeHelper";
 export {
   Archive,
   ArgumentInvalid,

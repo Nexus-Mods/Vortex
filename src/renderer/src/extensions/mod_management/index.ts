@@ -111,7 +111,6 @@ import {
 import allTypesSupported from "./util/allTypesSupported";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
-import { findModByRef } from "./util/dependencies";
 import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
 import {
   getAllActivators,
@@ -124,6 +123,7 @@ import { NoDeployment } from "./util/exceptions";
 import extendApi from "./util/extendAPI";
 import { dealWithExternalChanges } from "./util/externalChanges";
 import { registerAttributeExtractor } from "./util/filterModInfo";
+import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
