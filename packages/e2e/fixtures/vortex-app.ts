@@ -242,14 +242,39 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
     await use(sharedVortexApp);
   },
 
-  vortexWindow: async ({ sharedVortexWindow, sharedUserDataDir }, use, testInfo) => {
+  vortexWindow: async (
+    { sharedVortexApp, sharedVortexWindow, sharedUserDataDir },
+    use,
+    testInfo,
+  ) => {
     await use(sharedVortexWindow);
     if (testInfo.status !== testInfo.expectedStatus) {
       const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
       await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
-      await sharedVortexWindow
-        .screenshot({ timeout: 5_000, animations: "disabled", type: "png" })
-        .then((buf) => testInfo.attach("screenshot", { body: buf, contentType: "image/png" }))
+
+      // Use Electron's webContents.capturePage() instead of page.screenshot().
+      // The e2e build runs with VORTEX_E2E_HEADLESS=1, which prevents the
+      // BrowserWindow from being shown — hidden windows don't produce
+      // compositor frames, so page.screenshot() hangs waiting for one.
+      // capturePage() reads directly from the renderer and works while hidden.
+      await sharedVortexApp
+        .evaluate(async ({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows().find((w) =>
+            w.webContents.getURL().includes("index.html"),
+          );
+          if (!win) return null;
+          const image = await win.webContents.capturePage();
+          return image.toPNG().toBase64();
+        })
+        .then((base64) => {
+          if (!base64) {
+            return Promise.resolve();
+          }
+          return testInfo.attach("screenshot", {
+            body: Buffer.from(base64, "base64"),
+            contentType: "image/png",
+          });
+        })
         .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
     }
   },
