@@ -19,5 +19,4 @@ export async function navigateToGames(page: Page): Promise<void> {
   } else if (await navbar.homeLink.isVisible().catch(() => false)) {
     await navbar.homeLink.click();
   }
-  await page.waitForTimeout(1000);
 }

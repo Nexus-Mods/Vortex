@@ -11,6 +11,8 @@ import {
   type Page,
 } from "@playwright/test";
 
+import { Timeouts } from "../helpers/timeouts";
+
 /** Package root (packages/e2e/) — used for resolving node_modules. */
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -120,7 +122,6 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       }
     }, 500);
 
-    // CI runners can be slow — allow up to 2 minutes for the main window
     setTimeout(() => {
       cleanup();
       const windows = vortexApp.windows();
@@ -130,7 +131,7 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       } else {
         reject(new Error("Timed out waiting for the Vortex main window to appear."));
       }
-    }, 120_000);
+    }, Timeouts.LIFECYCLE);
   });
 }
 
@@ -187,14 +188,13 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
         args: [mainDir],
         env: buildElectronEnv(sharedUserDataDir),
         cwd: mainDir,
-        // CI runners are slower — allow up to 2 minutes for cold start
-        timeout: 120_000,
+        timeout: Timeouts.LIFECYCLE,
       });
 
       await use(app);
       await app.close().catch(() => {});
     },
-    { scope: "worker", timeout: 180_000 },
+    { scope: "worker", timeout: Timeouts.LIFECYCLE },
   ],
 
   sharedVortexWindow: [
@@ -204,17 +204,18 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
       // Register before domcontentloaded — show-window fires after React mounts
       // LoadingScreen, which is after dcl, so this listener is always set up first.
       const showWindowPromise = sharedVortexApp.evaluate(
-        ({ ipcMain }) =>
+        ({ ipcMain }, timeoutMs) =>
           new Promise<void>((resolve, reject) => {
             const timer = setTimeout(
               () => reject(new Error("Timed out waiting for show-window")),
-              120_000,
+              timeoutMs,
             );
             ipcMain.once("show-window", () => {
               clearTimeout(timer);
               resolve();
             });
           }),
+        Timeouts.LIFECYCLE,
       );
 
       // Block unwanted connections that slow down tests:
@@ -234,7 +235,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       await use(mainWindow);
     },
-    { scope: "worker", timeout: 180_000 },
+    { scope: "worker", timeout: Timeouts.LIFECYCLE },
   ],
 
   // Test-scoped aliases that reference the shared worker fixtures

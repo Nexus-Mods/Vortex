@@ -64,7 +64,6 @@ test.describe("Settings - Tab Navigation", () => {
       await test.step(`Click ${tabName} tab`, async () => {
         if (await tab.isVisible()) {
           await tab.click();
-          await vortexWindow.waitForTimeout(500);
         }
       });
 
@@ -82,7 +81,6 @@ test.describe("Settings - Theme Tab", () => {
     const settings = new SettingsPage(vortexWindow);
     if (await settings.themeTab.isVisible()) {
       await settings.themeTab.click();
-      await vortexWindow.waitForTimeout(500);
     }
   });
 
