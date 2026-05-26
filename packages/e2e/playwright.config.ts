@@ -11,6 +11,7 @@ if (existsSync(envFilePath)) {
 
 export default defineConfig({
   testDir: "./tests",
+  globalTimeout: 1000 * 60 * 45,
   timeout: 60_000,
   expect: {
     timeout: 5_000,
