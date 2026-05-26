@@ -184,7 +184,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       const app = await electron.launch({
         executablePath: electronBinary,
-        args: [mainDir, "--disable-gpu", "--disable-software-rasterizer"],
+        args: [mainDir],
         env: buildElectronEnv(sharedUserDataDir),
         cwd: mainDir,
         // CI runners are slower — allow up to 2 minutes for cold start
@@ -217,6 +217,11 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
           }),
       );
 
+      // Block unwanted connections that slow down tests:
+      await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
+        route.fulfill({ status: 204, body: "" }),
+      );
+
       await mainWindow.waitForLoadState("domcontentloaded");
       await showWindowPromise;
 
@@ -245,7 +250,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
       await sharedVortexWindow
         .screenshot({ timeout: 5_000, animations: "disabled", type: "png" })
         .then((buf) => testInfo.attach("screenshot", { body: buf, contentType: "image/png" }))
-        .catch(() => {});
+        .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
     }
   },
 });
