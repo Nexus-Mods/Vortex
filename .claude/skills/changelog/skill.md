@@ -154,11 +154,13 @@ If a single PR genuinely spans categories (e.g. a refactor that also fixes a bug
 
 ### 6. Write bullets (hybrid wording)
 
-- **Verbatim** when the PR title already reads as a user-facing sentence-fragment (e.g. "restored auto-download for patch updates in autoupdater")
-- **Reframe** when the title is developer-flavoured (e.g. "guard undefined currentProfile in install fallback path" → "Mod install crash with undefined `gameId` when the current profile was stale or absent")
-- Use backticks for symbols, file paths, function names, env vars, and short config keys
-- Past tense for fixes ("Crash when ...", "Auto-download not triggering for ..."); imperative or past for added/changed items
-- Keep each bullet to one line wherever possible; if a PR genuinely covers multiple bug fixes (like `#22520` in beta.2), use a sub-list or a single long bullet with semicolons
+**Default to the PR title.** Drop the conventional-commit prefix (`fix:`, `feat:`), drop trailing Linear/JIRA refs (`(LAZ-240)`, `(APP-475)`), capitalise — that's the whole reframe in most cases. The bullet stays close to the title in length and technicality; the link carries the detail. Reframe more aggressively only when the title is genuinely cryptic developer-internal language (e.g. "guard undefined currentProfile in install fallback path"). Keep technical terms (`BrowserWindow`, `--userData`, `nxm://`) — don't translate them into prose.
+
+- **Don't expand from the body.** Implementation detail ("legacy icon names now map to MDI paths", "the CLI parser only accepts kebab-case", "`@nexusmods/nexus-api` bumped to 1.6.2") belongs in the PR, not the bullet.
+- **Bundle, don't enumerate.** When the body lists related sub-fixes, the PR title usually states the umbrella — use it. A 30-word bullet against an 8-word title is almost always wrong.
+- Use backticks for symbols, file paths, function names, env vars, and short config keys.
+- Past tense for fixes ("Crash when ...", "Auto-download not triggering for ..."); imperative or past for added/changed items.
+- One line per bullet. The semicolons/sub-list exception applies only when a _single_ PR delivers multiple _independent_ user-visible fixes (`#22520` in `2.0.0-beta.2` is the canonical example) — not for elaborating one fix into several clauses.
 
 **Strict one PR per bullet. Never bundle multiple PRs into one bullet — under any circumstances.**
 
