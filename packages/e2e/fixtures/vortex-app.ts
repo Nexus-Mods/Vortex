@@ -184,7 +184,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       const app = await electron.launch({
         executablePath: electronBinary,
-        args: [mainDir, "--disable-gpu", "--disable-software-rasterizer"],
+        args: [mainDir],
         env: buildElectronEnv(sharedUserDataDir),
         cwd: mainDir,
         // CI runners are slower — allow up to 2 minutes for cold start
@@ -217,6 +217,11 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
           }),
       );
 
+      // Block unwanted connections that slow down tests:
+      await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
+        route.fulfill({ status: 204, body: "" }),
+      );
+
       await mainWindow.waitForLoadState("domcontentloaded");
       await showWindowPromise;
 
@@ -237,15 +242,40 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
     await use(sharedVortexApp);
   },
 
-  vortexWindow: async ({ sharedVortexWindow, sharedUserDataDir }, use, testInfo) => {
+  vortexWindow: async (
+    { sharedVortexApp, sharedVortexWindow, sharedUserDataDir },
+    use,
+    testInfo,
+  ) => {
     await use(sharedVortexWindow);
     if (testInfo.status !== testInfo.expectedStatus) {
       const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
       await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
-      await sharedVortexWindow
-        .screenshot()
-        .then((buf) => testInfo.attach("screenshot", { body: buf, contentType: "image/png" }))
-        .catch(() => {});
+
+      // Use Electron's webContents.capturePage() instead of page.screenshot().
+      // The e2e build runs with VORTEX_E2E_HEADLESS=1, which prevents the
+      // BrowserWindow from being shown — hidden windows don't produce
+      // compositor frames, so page.screenshot() hangs waiting for one.
+      // capturePage() reads directly from the renderer and works while hidden.
+      await sharedVortexApp
+        .evaluate(async ({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows().find((w) =>
+            w.webContents.getURL().includes("index.html"),
+          );
+          if (!win) return null;
+          const image = await win.webContents.capturePage();
+          return image.toPNG().toBase64();
+        })
+        .then((base64) => {
+          if (!base64) {
+            return Promise.resolve();
+          }
+          return testInfo.attach("screenshot", {
+            body: Buffer.from(base64, "base64"),
+            contentType: "image/png",
+          });
+        })
+        .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
     }
   },
 });
