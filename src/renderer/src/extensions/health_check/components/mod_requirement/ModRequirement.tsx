@@ -1,123 +1,181 @@
-import { mdiCheck, mdiDiamondStone, mdiDownload, mdiOpenInNew, mdiWeb } from "@mdi/js";
-import React from "react";
+import {
+  mdiCallSplit,
+  mdiChevronRight,
+  mdiDownload,
+  mdiEye,
+  mdiEyeOff,
+  mdiThumbDown,
+  mdiThumbUp,
+} from "@mdi/js";
+import React, { type KeyboardEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { Button } from "../../../../ui/components/button/Button";
-import { Icon } from "../../../../ui/components/icon/Icon";
-import { Typography } from "../../../../ui/components/typography/Typography";
-import type { IModFileInfo, IModRequirementExt } from "../../types";
+import type { IModRequirementExt } from "../../types";
+import {
+  getIssueMessageKey,
+  getMockIssueType,
+  issueTypeSeverityMap,
+} from "../../utils/issueMessages";
+import { severityStyleMap } from "../../utils/severityStyles";
+
+interface IModRequirementProps {
+  isHidden?: boolean;
+  requirementInfo: IModRequirementExt;
+  onClick: () => void;
+  onToggleHide?: (e: MouseEvent) => void;
+}
 
 export const ModRequirement = ({
-  mod,
-  modFiles,
-  showPremiumBadge = false,
-  onShowVortexModal,
-  onConfirmInstall,
-}: {
-  mod: IModRequirementExt;
-  modFiles?: IModFileInfo[];
-  showPremiumBadge?: boolean;
-  onShowVortexModal?: (file?: IModFileInfo) => void;
-  onConfirmInstall?: () => void;
-}) => {
-  const { t } = useTranslation(["health_check"]);
+  isHidden,
+  onClick,
+  onToggleHide,
+  requirementInfo,
+}: IModRequirementProps) => {
+  const { t } = useTranslation("health_check");
 
-  const previewImageSrc = modFiles?.[0]?.thumbnailUrl || "";
+  // todo delete, derive the issue type from requirementInfo
+  const issueType = React.useMemo(getMockIssueType, []);
+  const severityStyle = severityStyleMap[issueTypeSeverityMap[issueType]];
+
+  // todo delete, this is a temp var for showing different UI states
+  const isOr = React.useMemo(() => Math.random() < 0.5, []);
 
   return (
-    <div className="space-y-2">
-      <Typography appearance="moderate" as="div" className="space-y-2">
-        <p className="font-semibold">{t("detail::item::missing_mod")}</p>
+    <div
+      className="group hover-overlay-weak flex w-full cursor-pointer items-start gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-subdued"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e: KeyboardEvent) => {
+        if (["Enter", " "].includes(e.key)) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
+      <Icon
+        className={joinClasses(["shrink-0", severityStyle.textClassName])}
+        path={severityStyle.iconPath}
+      />
 
-        {!!mod.notes && <p>{`${t("detail::item::author_note")}: ${mod.notes}`}</p>}
-      </Typography>
+      <div className="min-w-0 grow space-y-0.5 text-left">
+        <div className="flex items-start justify-between gap-x-4">
+          <div className="min-w-0">
+            <Typography brand="neutral-translucent" className="truncate">
+              {`${t(getIssueMessageKey(issueType))} `}
 
-      <div className="space-y-2 rounded-sm bg-surface-mid px-4 py-3">
-        <div className="flex items-center gap-x-2">
-          <div className="flex grow items-center gap-x-2">
-            {!mod.externalRequirement && (
-              <div className="relative flex aspect-video w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-stroke-weak bg-surface-translucent-low">
-                <img alt="" className="absolute max-h-full" src={previewImageSrc} />
-              </div>
-            )}
+              {requirementInfo.requiredBy.modName}
+            </Typography>
 
-            <div>
-              <Typography>{mod.modName || mod.modUrl || mod.notes}</Typography>
+            <Typography appearance="subdued" typographyType="body-sm">
+              {/* todo pass in the correct count */}
+              {t(isOr ? "listing::item::may_require_mods" : "listing::item::requires_mods", {
+                count: 3,
+              })}
 
-              <Typography appearance="subdued" typographyType="body-sm">
-                {t("detail::item::check_the_description")}
-              </Typography>
-            </div>
+              {`:`}
+            </Typography>
           </div>
 
-          <div className="flex shrink-0 gap-x-2">
-            {mod.externalRequirement ? (
-              mod.modUrl ? (
-                <Button
-                  appearance="moderate"
-                  brand="neutral"
-                  leftIconPath={mdiWeb}
-                  rightIconPath={mdiOpenInNew}
-                  size="sm"
-                  onClick={() => window.api.shell.openUrl(mod.modUrl)}
-                >
-                  {t("detail::item::open_external_mod_page")}
-                </Button>
-              ) : null
-            ) : (
-              <>
-                {mod.modUrl ? (
-                  <Button
-                    appearance="moderate"
-                    brand="neutral"
-                    leftIcon={<img alt="" src="assets/images/nexus.svg" />}
-                    size="sm"
-                    onClick={() => window.api.shell.openUrl(mod.modUrl)}
-                  >
-                    {t("detail::item::open_mod_page")}
-                  </Button>
-                ) : null}
+          <div className="invisible flex gap-x-1 group-focus-within:visible group-hover:visible">
+            {/* todo make this button work */}
+            <Button
+              brand="neutral"
+              appearance="weak"
+              // disabled={givenFeedBack}
+              leftIconPath={mdiThumbUp}
+              size="sm"
+              title={t("common:::helpful")}
+              onClick={() => console.log("todo")}
+            />
 
-                <Button
-                  appearance="strong"
-                  brand="neutral"
-                  leftIconPath={mdiDownload}
-                  rightIcon={showPremiumBadge && <PremiumBadge />}
-                  size="sm"
-                  onClick={() => onShowVortexModal?.()}
-                >
-                  {t("detail::item::install_in_app")}
-                </Button>
-              </>
-            )}
+            {/* todo make this button work */}
+            <Button
+              brand="neutral"
+              appearance="weak"
+              // disabled={givenFeedBack}
+              leftIconPath={mdiThumbDown}
+              size="sm"
+              title={t("common:::not_helpful")}
+              onClick={() => console.log("todo")}
+            />
+
+            <Button
+              brand="neutral"
+              appearance="weak"
+              leftIconPath={isHidden ? mdiEye : mdiEyeOff}
+              size="sm"
+              title={isHidden ? t("common:::unhide") : t("common:::hide")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleHide?.(e);
+              }}
+            />
           </div>
         </div>
 
-        {mod.externalRequirement && (
-          <div className="flex items-center rounded-sm bg-info-weak/20 p-3">
-            <Typography
-              as="div"
-              brand="none"
-              className="grow text-info-strong"
-              typographyType="body-sm"
-            >
-              {t("detail::item::after_installing")}
-            </Typography>
+        <Typography
+          appearance="subdued"
+          className="flex items-center gap-x-3"
+          typographyType="body-sm"
+        >
+          {/* todo get the mod page name */}
+          <span className={joinClasses("truncate", { "max-w-1/2": isOr })}>
+            Some long file name the we truncate at a certain point
+          </span>
 
-            <Button
-              appearance="moderate"
-              brand="neutral"
-              leftIconPath={mdiCheck}
-              size="sm"
-              onClick={onConfirmInstall}
-            >
-              {t("detail::item::confirm_install")}
-            </Button>
-          </div>
-        )}
+          {isOr ? (
+            <>
+              <span>or</span>
+
+              {/* todo get the mod page name */}
+              <span className="truncate">
+                Some long file name the we truncate at a certain point
+              </span>
+            </>
+          ) : (
+            <span className="whitespace-nowrap">
+              {/* todo pass in the correct count */}
+              {t("listing::item::more_count", { count: 2 })}
+            </span>
+          )}
+        </Typography>
       </div>
+
+      {/* todo make these button work */}
+      {isOr ? (
+        <Button
+          brand="neutral"
+          appearance="moderate"
+          className="self-start"
+          leftIconPath={mdiCallSplit}
+          size="sm"
+          onClick={() => console.log("todo")}
+        >
+          {t("listing::pick_mod_install")}
+        </Button>
+      ) : (
+        <Button
+          brand="neutral"
+          appearance="moderate"
+          className="self-start"
+          leftIconPath={mdiDownload}
+          rightIcon={<PremiumBadge />}
+          size="sm"
+          onClick={() => console.log("todo")}
+        >
+          {/* todo pass in the correct count */}
+          {t("listing::install_one_click", { count: 3 })}
+        </Button>
+      )}
+
+      <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
     </div>
   );
 };
