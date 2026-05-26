@@ -231,16 +231,21 @@ export async function preparePublish(options: PreparePublishOptions): Promise<Pu
 }
 
 /**
- * Appends a single-line `key=value` entry to a GitHub Actions output file.
+ * Writes a single-line output to the GITHUB_OUTPUT file consumed by
+ * downstream workflow steps (e.g. `steps.prepare.outputs.installer-path`).
+ *
+ * Single-line values only. For values containing newlines, use
+ * `writeGithubOutputMultiline` instead.
  */
 function writeGithubOutput(filePath: string, key: string, value: string): void {
   fs.appendFileSync(filePath, `${key}=${value}\n`);
 }
 
 /**
- * Appends a multiline heredoc entry (`key<<EOF\nvalue\nEOF\n`) to a
- * GitHub Actions output file. Required because single-line `echo` would
- * truncate at the first newline.
+ * Writes a multiline output to the GITHUB_OUTPUT file using heredoc syntax.
+ *
+ * Used for the release body (markdown changelog) which spans multiple lines.
+ * GitHub Actions uses `key<<EOF\nvalue\nEOF` delimiters to capture the full value.
  */
 function writeGithubOutputMultiline(filePath: string, key: string, value: string): void {
   fs.appendFileSync(filePath, `${key}<<EOF\n${value}\nEOF\n`);
