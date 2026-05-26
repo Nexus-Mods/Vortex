@@ -21,7 +21,7 @@ import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { isModRequirementsEnabled } from "./selectors";
 import type { IHealthCheckApi, IModFileInfo, IModRequirementExt } from "./types";
-import { onDownloadRequirement } from "./util";
+import { onDownloadRequirement } from "./utils/onDownloadRequirement";
 import HealthCheckPage from "./views/HealthCheckPage";
 import SettingsHealthCheck from "./views/SettingsHealthCheck";
 

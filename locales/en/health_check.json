@@ -1,10 +1,23 @@
 {
+  "actions": {
+    "install_all": "1-click install all ({{count}})"
+  },
+  "issue_message": {
+    "missing_required_mod": "Missing required mod for:",
+    "possible_missing_required_mod": "Possible missing required mod for:",
+    "low_space": "Not enough disk space for:",
+    "file_corrupted": "Corrupted file detected for:"
+  },
   "listing": {
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "item": {
-      "title": "Additional mod may be required for: {{modName}}",
-      "description": "Missing mod: {{dependencyModName}}"
+      "description": "Missing mod: {{dependencyModName}}",
+      "requires_mods": "Requires {{ count }} mod",
+      "requires_mods_plural": "Requires {{ count }} mods",
+      "may_require_mods": "May require {{ count }} mod",
+      "may_require_mods_plural": "May require {{ count }} mods",
+      "more_count": "+{{ count }} more"
     },
     "no_results_active": {
       "title": "Health check passed",
@@ -12,22 +25,34 @@
     },
     "no_results_hidden": {
       "title": "No hidden items"
+    },
+    "install_one_click": "1-click install ({{count}})",
+    "pick_mod_install": "Pick mod install",
+    "premium_banner": {
+      "description": "Download requirements in 1-click. No page visits or waiting. <premiumLink>Go premium</premiumLink>"
     }
   },
   "detail": {
-    "title": "Health Check Suggestion",
-    "subtitle": "Suggestions may offer improvements to your experience.",
+    "title": {
+      "suggestion": "Suggestion",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "subtitle": {
+      "suggestion": "Changes that could improve your loadout.",
+      "warning": "Issues that may stop parts of your loadout from working.",
+      "error": "Issues will prevent your game from working. Fix before playing."
+    },
+    "was_this_helpful": {
+      "suggestion": "Was this suggestion helpful?",
+      "warning": "Was this warning helpful?",
+      "error": "Was this error helpful?"
+    },
     "item": {
-      "title": "Additional mod may be required for: {{modName}}",
-      "description": "Check <modLink>{{modName}} description</modLink> for details.",
-      "missing_mod": "Missing mod",
-      "author_note": "Author note",
-      "check_the_description": "Check the description before installing.",
-      "open_mod_page": "Open mod page",
-      "open_external_mod_page": "Open external mod page",
-      "install_in_app": "Install in app",
-      "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
-      "confirm_install": "Confirm install"
+      "requires_files": "Requires {{ count }} mod file to be installed to work correctly.",
+      "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
+      "install_via_mod_page": "Install via mod page",
+      "install_one_click": "1-click install"
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",
@@ -50,24 +75,28 @@
     "mod_requirements": "Missing mod requirements suggestions"
   },
   "premium": {
-    "banner": {
-      "title": "Unlock 1-click installs with Premium.",
-      "subtitle": "Skip the website and install instantly.",
-      "button": "Unlock with Premium"
-    },
     "modal": {
-      "title": "Skip the website and install instantly.",
-      "description": "Downloading mods directly in Vortex requires Premium.",
+      "title": {
+        "single": "Skip the website and install instantly.",
+        "all": "Skip the website and install all requirements instantly."
+      },
+      "description": {
+        "single": "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+        "all": "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running."
+      },
       "benefits_title": "With Premium you get:",
       "benefits": {
-        "downloads": "Seamless in app mod downloads and updates",
+        "downloads": "1-click in app downloads and mod updates",
         "collections": "1-click collection installs",
         "speed": "Uncapped download speeds",
         "ad_free": "Ad-free for life, even if you cancel later"
       },
       "buttons": {
-        "download": "Download via website (free)",
-        "premium": "Unlock with Premium"
+        "primary": "Unlock 1-click installs",
+        "secondary": {
+          "single": "Go to mod page (free)",
+          "all": "Return and open mod pages"
+        }
       }
     }
   }
