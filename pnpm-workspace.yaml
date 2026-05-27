@@ -50,7 +50,7 @@ catalog:
   "@microsoft/api-extractor": 7.58.7
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.1
-  "@nexusmods/fomod-installer-native": 0.13.1
+  "@nexusmods/fomod-installer-native": 0.13.2
   "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.6.1
@@ -294,6 +294,8 @@ engineStrict: true
 failIfNoMatch: true
 
 minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@nexusmods/*"
 minimumReleaseAgeIgnoreMissingTime: true
 minimumReleaseAgeStrict: true
 
