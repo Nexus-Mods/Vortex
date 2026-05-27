@@ -1,25 +1,37 @@
 import type * as fomodT from "@nexusmods/fomod-installer-native";
 
-import type { ISupportedResult } from "../../../types/api";
-import lazyRequire from "../../../util/lazyRequire";
+import { log } from "@/logging";
+import type { ISupportedResult } from "@/types/api";
 
 export class VortexModTester {
-  private fomod: typeof fomodT;
+  readonly #fomod: typeof fomodT;
 
-  public constructor() {
-    this.fomod = lazyRequire<typeof fomodT>(() => require("@nexusmods/fomod-installer-native"));
+  static async create(): Promise<VortexModTester | null> {
+    try {
+      const nativeModule = await import("@nexusmods/fomod-installer-native");
+      return new VortexModTester(nativeModule);
+    } catch (err) {
+      log("error", "Failed to load native FOMOD module", err);
+      return null;
+    }
   }
+
+  private constructor(fomod: typeof fomodT) {
+    this.#fomod = fomod;
+  }
+
   /**
    * Calls FOMOD's testSupport and converts the result to Vortex data
    */
   public testSupport = (files: string[], allowedTypes: string[]): ISupportedResult => {
     try {
-      const result = this.fomod.NativeModInstaller.testSupported(files, allowedTypes);
+      const result = this.#fomod.NativeModInstaller.testSupported(files, allowedTypes);
       return {
         supported: result.supported,
         requiredFiles: result.requiredFiles,
       };
-    } catch (error) {
+    } catch (err) {
+      log("error", "Failed to determine FOMOD installer support", err);
       return {
         supported: false,
         requiredFiles: [],
