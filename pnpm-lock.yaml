@@ -264,13 +264,8 @@ catalogs:
       specifier: 0.13.1
       version: 0.13.1
     '@nexusmods/fomod-installer-native':
-<<<<<<< HEAD
-      specifier: 0.13.1
-      version: 0.13.1
-=======
-      specifier: ^0.13.2
+      specifier: 0.13.2
       version: 0.13.2
->>>>>>> 5552e13fb (Merge pull request #23332 from Nexus-Mods/fix/app-483)
     '@nexusmods/nexus-api':
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
       version: 1.6.2
@@ -11529,6 +11524,7 @@ packages:
 
   recharts@1.8.6:
     resolution: {integrity: sha512-UlfSEOnZRAxxaH33Fc86yHEcqN+IRauPP31NfVvlGudtwVZEIb2RFI5b1J3npQo7XyoSnkUodg3Ha6EupkV+SQ==}
+    deprecated: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
     peerDependencies:
       react: ^15.0.0 || ^16.0.0
       react-dom: ^15.0.0 || ^16.0.0
