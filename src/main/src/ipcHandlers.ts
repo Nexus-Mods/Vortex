@@ -91,20 +91,26 @@ export function init() {
 
   /**
    * Returns the executable path and arguments for protocol client registration.
+   *
+   * Matching Vortex 1.x, the handler is registered without a --user-data
+   * argument, so the registry entry is identical regardless of which userdata
+   * directory the running instance was launched with. When a nxm:// link fires
+   * while Vortex is already running, the secondary launch forwards its argv to
+   * the running instance via the single-instance lock (see Application.ts
+   * "second-instance"), so the active profile handles the link rather than
+   * anything baked into the registry. udPath is accepted but intentionally
+   * unused; the surrounding IPC plumbing still carries it.
    */
-  function selfCL(udPath: string | undefined): [string, string[]] {
+  function selfCL(_udPath: string | undefined): [string, string[]] {
     // The "-d" flag is required so that when Windows appends the NXM URL to the command line,
     // it becomes "-d nxm://..." which commander parses as "--download nxm://..."
     if (process.env.NODE_ENV === "development") {
       // Use absolute path for the app entry point - process.argv[1] may be relative (e.g. ".")
       // and would fail when launched from a different working directory (e.g. C:\WINDOWS\system32)
       const appPath = path.resolve(process.argv[1]);
-      return [
-        process.execPath,
-        [appPath, ...(udPath !== undefined ? ["--user-data", udPath] : []), "-d"],
-      ];
+      return [process.execPath, [appPath, "-d"]];
     } else {
-      return [process.execPath, [...(udPath !== undefined ? ["--user-data", udPath] : []), "-d"]];
+      return [process.execPath, ["-d"]];
     }
   }
 
