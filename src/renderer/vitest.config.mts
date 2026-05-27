@@ -12,5 +12,10 @@ export default defineConfig({
   },
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      // original-fs is provided by Electron at runtime and has no node_modules
+      // entry, so under Vite/vitest we resolve it to Node's built-in fs.
+      "original-fs": "node:fs",
+    },
   },
 });
