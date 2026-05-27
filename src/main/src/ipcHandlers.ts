@@ -108,18 +108,9 @@ export function init() {
       // Use absolute path for the app entry point - process.argv[1] may be relative (e.g. ".")
       // and would fail when launched from a different working directory (e.g. C:\WINDOWS\system32)
       const appPath = path.resolve(process.argv[1]);
-<<<<<<< HEAD
-      return [
-        process.execPath,
-        [appPath, ...(udPath !== undefined ? ["--userData", udPath] : []), "-d"],
-      ];
-    } else {
-      return [process.execPath, [...(udPath !== undefined ? ["--userData", udPath] : []), "-d"]];
-=======
       return [process.execPath, [appPath, "-d"]];
     } else {
       return [process.execPath, ["-d"]];
->>>>>>> b17fe5d7b (Merge pull request #23322 from Nexus-Mods/fix/app-479.2)
     }
   }
 
