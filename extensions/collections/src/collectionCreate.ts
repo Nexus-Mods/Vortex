@@ -3,11 +3,9 @@ import * as Redux from "redux";
 
 /* eslint-disable */
 import { MOD_TYPE } from "./constants";
-import {
-  createCollectionFromProfile,
-  showQuickCollectionRestrictionsDialog,
-} from "./util/transformCollection";
-import { uploadCollection } from "./util/util";
+import { createCollectionFromProfile } from "./util/createCollectionFromProfile";
+import { showQuickCollectionRestrictionsDialog } from "./util/showQuickCollectionRestrictionsDialog";
+import { uploadCollection } from "./util/uploadCollection";
 
 export async function initFromProfile(api: types.IExtensionApi, profileId?: string) {
   try {

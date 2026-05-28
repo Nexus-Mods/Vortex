@@ -8,19 +8,14 @@ import * as _ from "lodash";
 
 import * as installActions from "../actions/installTracking";
 import { setPendingVote } from "../actions/persistent";
-import { postprocessCollection } from "../collectionInstall";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
+import { postprocessCollection } from "../postprocessCollection";
 import { ICollection } from "../types/ICollection";
 import { IRevisionEx } from "../types/IRevisionEx";
 import { applyPatches } from "./binaryPatching";
-import { readCollection } from "./importCollection";
 import InfoCache from "./InfoCache";
-import {
-  calculateCollectionSize,
-  getUnfulfilledNotificationId,
-  isRelevant,
-  walkPath,
-} from "./util";
+import { readCollection } from "./readCollection";
+import { calculateCollectionSize, getUnfulfilledNotificationId, isRelevant } from "./util";
 
 export type Step =
   | "prepare"

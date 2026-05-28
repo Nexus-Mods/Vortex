@@ -1,31 +1,70 @@
 # Scripts
 
-Repository management scripts for native module development.
+Standalone build and release scripts. These are not part of any app package
+and are intended for developers maintaining the Vortex repository.
 
-## Repository Commands
+---
 
-- `node scripts/manage-node-modules.js status [filter]` - Check status of managed repositories
-- `node scripts/manage-node-modules.js summary` - Show project overview and statistics
-- `node scripts/manage-node-modules.js setup-remotes` - Set up Git remotes
-- `node scripts/manage-node-modules.js create-branch <name>` - Create feature branch across repos
-- `node scripts/manage-node-modules.js delete-branch <name>` - Delete branch (supports --force --remote)
-- `node scripts/manage-node-modules.js commit "<message>"` - Commit changes across repos
-- `node scripts/manage-node-modules.js push` - Push to remote
-- `node scripts/open-pr-links.js <branch> [filter]` - Open PR creation links in browser
+## Prerequisites
 
-## Filters
-
-- `cpp` - C++ modules: winapi-bindings, bsatk, loot, gamebryo-savegame
-- `csharp` - C# projects: fomod-installer, dotnetprobe
-- `nexus` - Nexus-Mods hosted repos
-- `all` - All managed repositories
-
-## Workflow Example
+Before running any scripts, install dependencies:
 
 ```bash
-node scripts/manage-node-modules.js create-branch feature-name
-# ... make changes ...
-node scripts/manage-node-modules.js commit "Add feature"
-node scripts/manage-node-modules.js push
-node scripts/open-pr-links.js feature-name cpp
+pnpm install
 ```
+
+This also runs the `preinstall` hook which creates `.local.env` with
+`NX_PARALLEL` set to your CPU core count.
+
+---
+
+## How to Run
+
+| Script type                     | Invocation                   |
+| ------------------------------- | ---------------------------- |
+| `.js` (CommonJS)                | `node scripts/<name>.js`     |
+| `.mjs` (ESM/ECMAScript Modules) | `node scripts/<name>.mjs`    |
+| `.ts` (TypeScript)              | `pnpm tsx scripts/<name>.ts` |
+
+Scripts wired into `package.json` can also be called with `pnpm run <name>`.
+
+---
+
+## Build and Assets
+
+- `download-duckdb-extensions.ts` -- downloads platform-specific DuckDB
+  extensions listed in `duckdb-extensions.json`. Run via `pnpm run assets`.
+
+- `dependency-report.mjs` -- generates `etc/Dependency Report.md` listing
+  production dependencies accessible to extensions via Node.js integration
+  (nodeIntegration). Run via `pnpm run assets`.
+
+- `extensions-rolldown.mjs` -- shared Rolldown bundler helpers for bundling
+  in-repo extensions. Keeps core Vortex packages (e.g., `@vortex/*`) external
+  (not inlined into the bundle; resolved at runtime) and remaps native module
+  imports to their runtime paths. Extension build configs import this module;
+  do not run it directly.
+
+- `create-env-file.mjs` -- writes `.local.env` with `NX_PARALLEL` set to the
+  number of CPU cores. Runs automatically on `pnpm install`.
+
+- `generate-query-types.ts` -- generates TypeScript interfaces from SQL query
+  definitions in `src/queries/`. Run via `pnpm run generate:query-types`.
+
+---
+
+## Release and Versioning
+
+- `publish-release-to-nexus/` -- prepares and uploads a Vortex release to
+  Nexus Mods (a mod distribution platform). Run from `index.ts`.
+  Run via `pnpm tsx scripts/publish-release-to-nexus/index.ts`.
+  Selects the latest **stable** release, skipping newer drafts and pre-releases.
+
+---
+
+## TypeScript Editor Support
+
+The `.ts` files in this directory are standalone Node scripts run via
+`pnpm tsx`. They are not part of any app package. `tsconfig.node.json` (repo
+root) provides type checking and includes `"./scripts/**/*.ts"` so the editor
+resolves `node:*` imports.

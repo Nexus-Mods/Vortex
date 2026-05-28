@@ -4,6 +4,7 @@ import { cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game"
  */
 import { test, expect } from "../fixtures/vortex-app";
 import { manageGame, type ManagedGame } from "../helpers/games";
+import { Timeouts } from "../helpers/timeouts";
 import { NavBar } from "../selectors/navbar";
 import { SettingsPage } from "../selectors/settings";
 import { Spine } from "../selectors/spine";
@@ -13,8 +14,6 @@ test.describe("Profiles - Add", () => {
     vortexApp,
     vortexWindow,
   }) => {
-    test.setTimeout(120_000);
-
     const profileName = `QA-113 ${Date.now()}`;
     let managed: ManagedGame | null = null;
 
@@ -28,7 +27,7 @@ test.describe("Profiles - Add", () => {
         await spine.homeButton.click();
 
         const navbar = new NavBar(vortexWindow);
-        await expect(navbar.settingsLink).toBeVisible({ timeout: 10_000 });
+        await expect(navbar.settingsLink).toBeVisible();
         await navbar.settingsLink.click();
 
         const settings = new SettingsPage(vortexWindow);
@@ -37,10 +36,10 @@ test.describe("Profiles - Add", () => {
         const toggleRow = vortexWindow.locator(".toggle-container", {
           hasText: "Enable Profile Management",
         });
-        await expect(toggleRow).toBeVisible({ timeout: 10_000 });
+        await expect(toggleRow).toBeVisible();
 
         const offToggle = toggleRow.locator(".toggle.toggle-off");
-        if (await offToggle.isVisible({ timeout: 1_000 }).catch(() => false)) {
+        if (await offToggle.isVisible().catch(() => false)) {
           await offToggle.click();
         }
       });
@@ -50,17 +49,17 @@ test.describe("Profiles - Add", () => {
         await spine.gameButton(gameName).click();
 
         const navbar = new NavBar(vortexWindow);
-        await expect(navbar.profilesLink).toBeVisible({ timeout: 10_000 });
+        await expect(navbar.profilesLink).toBeVisible();
         await navbar.profilesLink.click();
       });
 
       await test.step("Click Add Profile and enter a name", async () => {
         const addBtn = vortexWindow.getByRole("button", { name: /Add ".+" Profile/i }).first();
-        await expect(addBtn).toBeVisible({ timeout: 10_000 });
+        await expect(addBtn).toBeVisible();
         await addBtn.click();
 
         const nameInput = vortexWindow.locator(".profile-edit-panel input[type=text]");
-        await expect(nameInput).toBeVisible({ timeout: 10_000 });
+        await expect(nameInput).toBeVisible();
         await nameInput.fill(profileName);
 
         const saveBtn = vortexWindow.locator("#__accept");
@@ -70,7 +69,7 @@ test.describe("Profiles - Add", () => {
 
       await test.step("Verify the new profile appears in the list", async () => {
         const newProfile = vortexWindow.getByText(profileName).first();
-        await expect(newProfile).toBeVisible({ timeout: 15_000 });
+        await expect(newProfile).toBeVisible({ timeout: Timeouts.NETWORK });
       });
     } finally {
       if (managed !== null) {

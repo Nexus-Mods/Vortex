@@ -10,7 +10,8 @@ import { getSafe } from "../../../util/storeHelper";
 import { downloadPathForGame } from "../../download_management/selectors";
 import { setModAttribute } from "../actions/mods";
 import type { IMod } from "../types/IMod";
-import testModReference, { isFuzzyVersion } from "./testModReference";
+import { isFuzzyVersion } from "./isFuzzyVersion";
+import testModReference from "./testModReference";
 
 export class CycleError extends Error {
   private mCycles: string[][];

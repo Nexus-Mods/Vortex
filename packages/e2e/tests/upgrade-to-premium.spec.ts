@@ -4,6 +4,7 @@
  */
 import { test, expect } from "../fixtures/vortex-app";
 import { loginToNexus } from "../helpers/login";
+import { Timeouts } from "../helpers/timeouts";
 import { freeUser } from "../helpers/users";
 import { NavBar } from "../selectors/navbar";
 
@@ -12,14 +13,12 @@ test.describe("Account - Upgrade to Premium", () => {
     vortexApp,
     vortexWindow,
   }) => {
-    test.setTimeout(120_000);
-
     await loginToNexus(vortexApp, vortexWindow, freeUser);
 
     await test.step("Wait for userInfo and force Dashboard re-render", async () => {
       await vortexWindow.keyboard.press("Escape").catch(() => undefined);
       const headerGoPremium = vortexWindow.getByRole("button", { name: /Go premium/i }).first();
-      await expect(headerGoPremium).toBeVisible({ timeout: 60_000 });
+      await expect(headerGoPremium).toBeVisible({ timeout: Timeouts.NETWORK });
 
       const navbar = new NavBar(vortexWindow);
       await navbar.gamesLink.click();
@@ -39,7 +38,7 @@ test.describe("Account - Upgrade to Premium", () => {
 
     await test.step("Click the Go Premium dashlet button", async () => {
       const goPremiumBtn = vortexWindow.locator(".dashlet-premium-button");
-      await expect(goPremiumBtn).toBeVisible({ timeout: 30_000 });
+      await expect(goPremiumBtn).toBeVisible({ timeout: Timeouts.NETWORK });
       await goPremiumBtn.click();
     });
 

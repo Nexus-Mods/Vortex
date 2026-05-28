@@ -5,8 +5,10 @@
     "./eslint-rules/*.mjs",
     "./eslint.config.mjs",
     "./scripts/*.mjs",
+    "./scripts/**/*.ts",
     "./ts-to-zod.config.mjs",
     "./vitest.config.ts",
+    "./vitest.base.config.ts",
     "./rolldown.base.mjs"
   ],
   "compilerOptions": {

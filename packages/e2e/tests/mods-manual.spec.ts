@@ -14,6 +14,7 @@ import { test, expect } from "../fixtures/vortex-app";
 import { acceptConsent } from "../helpers/consent";
 import { manageGame, type ManagedGame } from "../helpers/games";
 import { loginToNexus } from "../helpers/login";
+import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { ModsPage } from "../selectors/modsPage";
 import { NavBar } from "../selectors/navbar";
@@ -34,8 +35,6 @@ test.describe("Mods - Manual Downloads", () => {
       vortexApp,
       vortexWindow,
     }) => {
-      test.setTimeout(180_000);
-
       let managed: ManagedGame | null = null;
       let authBrowser: Browser | null = null;
 
@@ -56,13 +55,13 @@ test.describe("Mods - Manual Downloads", () => {
         await test.step("Open the SMAPI mod page", async () => {
           await auth.page.goto(SDV_MOD_URL, {
             waitUntil: "domcontentloaded",
-            timeout: 60_000,
+            timeout: Timeouts.NETWORK,
           });
           await expect(auth.page).toHaveURL(/stardewvalley\/mods\/2400/);
 
           if (await nexusModPage.cloudflareHeading.isVisible().catch(() => false)) {
             await expect(nexusModPage.cloudflareHeading).toBeHidden({
-              timeout: 30_000,
+              timeout: Timeouts.NETWORK,
             });
           }
 
@@ -75,20 +74,22 @@ test.describe("Mods - Manual Downloads", () => {
           // Premium skips the slow-download interstitial — set up the listener
           // first so both paths funnel through the same waitForEvent.
           const downloadPromise = auth.page.waitForEvent("download", {
-            timeout: 120_000,
+            timeout: Timeouts.NETWORK,
           });
 
           await expect(nexusModPage.manualDownloadLink).toBeVisible({
-            timeout: 30_000,
+            timeout: Timeouts.NETWORK,
           });
-          await nexusModPage.manualDownloadLink.click({ timeout: 15_000 });
-          await auth.page.waitForLoadState("load", { timeout: 30_000 }).catch(() => undefined);
+          await nexusModPage.manualDownloadLink.click({ timeout: Timeouts.NETWORK });
+          await auth.page
+            .waitForLoadState("load", { timeout: Timeouts.NETWORK })
+            .catch(() => undefined);
           await acceptConsent(auth.page);
 
-          if (
-            await nexusModPage.slowDownloadButton.isVisible({ timeout: 5_000 }).catch(() => false)
-          ) {
-            await nexusModPage.slowDownloadButton.click({ timeout: 15_000 }).catch(() => undefined);
+          if (await nexusModPage.slowDownloadButton.isVisible().catch(() => false)) {
+            await nexusModPage.slowDownloadButton
+              .click({ timeout: Timeouts.NETWORK })
+              .catch(() => undefined);
           }
 
           const download = await downloadPromise;
@@ -115,15 +116,15 @@ test.describe("Mods - Manual Downloads", () => {
 
           const modsPage = new ModsPage(vortexWindow);
           await expect(modsPage.installFromFileButton).toBeVisible({
-            timeout: 30_000,
+            timeout: Timeouts.NETWORK,
           });
-          await modsPage.installFromFileButton.click({ timeout: 15_000 });
+          await modsPage.installFromFileButton.click({ timeout: Timeouts.NETWORK });
         });
 
         await test.step("Verify SMAPI is installed in Vortex", async () => {
           const modsPage = new ModsPage(vortexWindow);
           await expect(modsPage.modRow(/SMAPI/i)).toBeVisible({
-            timeout: 90_000,
+            timeout: Timeouts.NETWORK,
           });
         });
       } finally {

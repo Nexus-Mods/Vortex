@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { defineConfig } from "@playwright/test";
 
+import { GlobalTimeouts } from "./helpers/timeouts";
+
 const envFilePath = path.resolve(import.meta.dirname, ".env");
 
 if (existsSync(envFilePath)) {
@@ -11,24 +13,25 @@ if (existsSync(envFilePath)) {
 
 export default defineConfig({
   testDir: "./tests",
-  timeout: 60_000,
+  globalTimeout: GlobalTimeouts.GLOBAL,
+  timeout: GlobalTimeouts.TEST,
   expect: {
-    timeout: 5_000,
+    timeout: GlobalTimeouts.EXPECT,
   },
   retries: 1,
-  // Each worker launches its own Electron instance with isolated user data.
-  // CI: Windows runners are slower (1 worker), Linux can handle 2.
-  // Local: 4 workers.
-  workers: process.env.CI ? (process.platform === "win32" ? 1 : 2) : 4,
   reporter: [
     ["list"],
-    ["html", { open: "never" }],
+    [
+      "html",
+      { open: "never", outputFolder: path.resolve(import.meta.dirname, "playwright-report") },
+    ],
     ["junit", { outputFile: "test-results/junit.xml" }],
+    ...(process.env.CI ? [["github"] as const] : []),
   ],
   use: {
-    actionTimeout: 5_000,
-    navigationTimeout: 5_000,
-    screenshot: "only-on-failure",
+    actionTimeout: GlobalTimeouts.ACTION,
+    navigationTimeout: GlobalTimeouts.NAVIGATION,
+    screenshot: "off",
     trace: "on-first-retry",
     video: "on-first-retry",
   },

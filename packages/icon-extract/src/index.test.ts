@@ -11,8 +11,10 @@ const describeOnWindows = process.platform === "win32" ? describe : describe.ski
 const TEST_DATA_DIR = path.resolve(import.meta.dirname, "../test-data");
 const REFERENCE_DIR = path.join(TEST_DATA_DIR, "reference");
 
-// Cross-platform fixture — already committed to the repo
-const DOTNET_PROBE = path.resolve(import.meta.dirname, "../../../assets/dotnetprobe.exe");
+const DOTNET_PROBE = path.resolve(
+  import.meta.dirname,
+  "../../../tools/dotnetprobe/temp/dotnetprobe.exe",
+);
 
 // PNG signature bytes
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -51,6 +53,8 @@ describe("extractIcon (cross-platform)", () => {
   });
 
   it("handles PE without icons gracefully", async () => {
+    expect(fs.existsSync(DOTNET_PROBE)).toBe(true);
+
     // dotnetprobe.exe is a console app — may not have icons
     const result = await extractIcon(DOTNET_PROBE);
     // Either returns a valid icon or undefined, but must not throw
@@ -156,20 +160,4 @@ describeOnWindows("cross-validation with reference data", () => {
       expect(result!.png.length).toBeGreaterThan(100);
     });
   }
-});
-
-describeOnWindows("benchmark", () => {
-  const notepad = "C:\\Windows\\System32\\notepad.exe";
-  const runs = 500;
-
-  it(`extracts ${runs} icons from notepad.exe`, async () => {
-    await extractIcon(notepad);
-
-    const start = performance.now();
-    for (let i = 0; i < runs; i++) await extractIcon(notepad);
-    const elapsed = performance.now() - start;
-    console.log(
-      `\n  TS PE icon extractor: ${runs} extractions in ${elapsed.toFixed(1)}ms (${(elapsed / runs).toFixed(3)}ms/extraction)`,
-    );
-  });
 });

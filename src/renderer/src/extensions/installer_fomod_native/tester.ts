@@ -22,7 +22,8 @@ export const testSupported = async (
   }
 
   if (testerInstance === null) {
-    testerInstance = new VortexModTester();
+    testerInstance = await VortexModTester.create();
+    if (testerInstance === null) return Promise.resolve({ supported: false, requiredFiles: [] });
   }
 
   const result = testerInstance.testSupport(files, isBasic ? ["Basic"] : ["XmlScript"]);

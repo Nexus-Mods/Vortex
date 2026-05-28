@@ -14,12 +14,12 @@ export async function acceptConsent(page: Page): Promise<void> {
     if (
       await locator
         .first()
-        .isVisible({ timeout: 1_000 })
+        .isVisible()
         .catch(() => false)
     ) {
       await locator
         .first()
-        .click({ timeout: 5_000 })
+        .click()
         .catch(() => undefined);
       return;
     }
@@ -27,8 +27,8 @@ export async function acceptConsent(page: Page): Promise<void> {
   // Quantcast can render inside an iframe.
   for (const frame of page.frames()) {
     const acceptInFrame = frame.locator("button#accept-btn, button:has-text('Allow all')").first();
-    if (await acceptInFrame.isVisible({ timeout: 1_000 }).catch(() => false)) {
-      await acceptInFrame.click({ timeout: 5_000 }).catch(() => undefined);
+    if (await acceptInFrame.isVisible().catch(() => false)) {
+      await acceptInFrame.click().catch(() => undefined);
       return;
     }
   }

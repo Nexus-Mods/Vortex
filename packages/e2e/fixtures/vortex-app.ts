@@ -11,6 +11,8 @@ import {
   type Page,
 } from "@playwright/test";
 
+import { Timeouts } from "../helpers/timeouts";
+
 /** Package root (packages/e2e/) — used for resolving node_modules. */
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -120,7 +122,6 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       }
     }, 500);
 
-    // CI runners can be slow — allow up to 2 minutes for the main window
     setTimeout(() => {
       cleanup();
       const windows = vortexApp.windows();
@@ -130,7 +131,7 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       } else {
         reject(new Error("Timed out waiting for the Vortex main window to appear."));
       }
-    }, 120_000);
+    }, Timeouts.LIFECYCLE);
   });
 }
 
@@ -184,29 +185,46 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       const app = await electron.launch({
         executablePath: electronBinary,
-        args: [mainDir, "--disable-gpu", "--disable-software-rasterizer"],
+        args: [mainDir],
         env: buildElectronEnv(sharedUserDataDir),
         cwd: mainDir,
-        // CI runners are slower — allow up to 2 minutes for cold start
-        timeout: 120_000,
+        timeout: Timeouts.LIFECYCLE,
       });
 
       await use(app);
       await app.close().catch(() => {});
     },
-    { scope: "worker", timeout: 180_000 },
+    { scope: "worker", timeout: Timeouts.LIFECYCLE },
   ],
 
   sharedVortexWindow: [
     async ({ sharedVortexApp }, use) => {
       const mainWindow = await waitForMainWindow(sharedVortexApp);
-      await mainWindow.waitForLoadState("domcontentloaded");
 
-      // Wait for the app to actually render — domcontentloaded fires before
-      // React renders anything. On CI with multiple workers this can be slow.
-      await mainWindow.waitForFunction(() => (document.body?.innerText?.length ?? 0) > 0, {
-        timeout: 60_000,
-      });
+      // Register before domcontentloaded — show-window fires after React mounts
+      // LoadingScreen, which is after dcl, so this listener is always set up first.
+      const showWindowPromise = sharedVortexApp.evaluate(
+        ({ ipcMain }, timeoutMs) =>
+          new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error("Timed out waiting for show-window")),
+              timeoutMs,
+            );
+            ipcMain.once("show-window", () => {
+              clearTimeout(timer);
+              resolve();
+            });
+          }),
+        Timeouts.LIFECYCLE,
+      );
+
+      // Block unwanted connections that slow down tests:
+      await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
+        route.fulfill({ status: 204, body: "" }),
+      );
+
+      await mainWindow.waitForLoadState("domcontentloaded");
+      await showWindowPromise;
 
       // Prevent Vortex from handing OAuth (and other external) URLs to the OS
       // default browser. Tests read the OAuth URL from Vortex's in-app field
@@ -217,7 +235,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       await use(mainWindow);
     },
-    { scope: "worker", timeout: 180_000 },
+    { scope: "worker", timeout: Timeouts.LIFECYCLE },
   ],
 
   // Test-scoped aliases that reference the shared worker fixtures
@@ -225,8 +243,41 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
     await use(sharedVortexApp);
   },
 
-  vortexWindow: async ({ sharedVortexWindow }, use) => {
+  vortexWindow: async (
+    { sharedVortexApp, sharedVortexWindow, sharedUserDataDir },
+    use,
+    testInfo,
+  ) => {
     await use(sharedVortexWindow);
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
+      await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
+
+      // Use Electron's webContents.capturePage() instead of page.screenshot().
+      // The e2e build runs with VORTEX_E2E_HEADLESS=1, which prevents the
+      // BrowserWindow from being shown — hidden windows don't produce
+      // compositor frames, so page.screenshot() hangs waiting for one.
+      // capturePage() reads directly from the renderer and works while hidden.
+      await sharedVortexApp
+        .evaluate(async ({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows().find((w) =>
+            w.webContents.getURL().includes("index.html"),
+          );
+          if (!win) return null;
+          const image = await win.webContents.capturePage();
+          return image.toPNG().toBase64();
+        })
+        .then((base64) => {
+          if (!base64) {
+            return Promise.resolve();
+          }
+          return testInfo.attach("screenshot", {
+            body: Buffer.from(base64, "base64"),
+            contentType: "image/png",
+          });
+        })
+        .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
+    }
   },
 });
 
