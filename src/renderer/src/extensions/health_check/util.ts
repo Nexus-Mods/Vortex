@@ -1,7 +1,8 @@
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import { getGame, toPromise } from "../../util/api";
-import { nexusGameId } from "../nexus_integration/util/convertGameId";
+import { knownGames } from "../gamemode_management/selectors";
+import { convertGameIdReverse, nexusGameId } from "../nexus_integration/util/convertGameId";
 import { setModFiles, setModFilesLoading } from "./actions/session";
 import { getModFiles as getModFilesSelector } from "./selectors";
 import type { IModFileInfo, IModRequirementExt } from "./types";
@@ -133,12 +134,16 @@ export async function onDownloadRequirement(
   const game: IGame = getGame(gameId);
   const nexusDomainName = nexusGameId(game, gameId);
   const nxmUrl = `nxm://${nexusDomainName}/mods/${modId}/files/${targetFile.fileId}`;
+  // mod.gameId is the Nexus domain (e.g. "skyrimspecialedition"); the downloader and
+  // download.game records key on the internal id ("skyrimse"). Convert before emitting
+  // so the file lands in the same folder the install handler later looks in.
+  const internalGameId = convertGameIdReverse(knownGames(api.getState()), gameId) || gameId;
 
   const dlId = await toPromise<string>((cb) =>
     api.events.emit(
       "start-download",
       [nxmUrl],
-      { game: gameId, name: targetFile.name, fileId: targetFile.fileId, modId },
+      { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
       undefined,
       cb,
       undefined,
