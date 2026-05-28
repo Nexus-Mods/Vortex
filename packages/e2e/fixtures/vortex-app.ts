@@ -193,17 +193,6 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
       await use(app);
       await app.close().catch(() => {});
-
-      // Emit vortex.log to stdout so it appears in CI job output even when
-      // sharedVortexWindow setup times out (test never runs, vortexWindow
-      // teardown never executes, testInfo.attach is never called).
-      const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
-      try {
-        const logContents = fs.readFileSync(logPath, "utf8");
-        console.log(`[vortex.log]\n${logContents}`);
-      } catch {
-        console.log(`[vortex.log] not found at ${logPath}`);
-      }
     },
     { scope: "worker", timeout: Timeouts.LIFECYCLE },
   ],
