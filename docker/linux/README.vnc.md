@@ -80,14 +80,15 @@ random password and prints it to the container log on startup.
 ## Driving Vortex from Claude Code
 
 `docker/linux/claude-vnc.sh` launches `claude` wired up to the running VNC
-session via a VNC MCP server. Default prompt lives at
-`docker/linux/claude-prompts/check-settings.md` (asks Claude to verify
-Vortex is running and open the Settings page).
+session via a VNC MCP server. With no arguments it runs **every** prompt
+in `docker/linux/claude-prompts/` (non-interactively, one after the other)
+and prints a summary table at the end. Pass a specific prompt file to run
+just that one, or `--no-prompt` for an interactive session.
 
 ```sh
-docker/linux/claude-vnc.sh                                  # default prompt
-docker/linux/claude-vnc.sh docker/linux/claude-prompts/...  # custom prompt
-docker/linux/claude-vnc.sh --no-prompt                      # interactive only
+docker/linux/claude-vnc.sh                                  # run all prompts + summary
+docker/linux/claude-vnc.sh docker/linux/claude-prompts/...  # run a single prompt
+docker/linux/claude-vnc.sh --no-prompt                      # interactive session
 ```
 
 The script resolves the host VNC port and the entrypoint-generated
