@@ -71,6 +71,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         xfonts-75dpi \
         xfonts-100dpi \
         x11-xserver-utils \
+        # Synthesises *held* mouse clicks (mousedown → sleep → mouseup) for
+        # games that poll input per-frame and miss the ~0ms clicks the VNC
+        # MCP server sends. See game-click below.
+        xdotool \
         # noVNC (browser-based VNC) and its websocket bridge
         novnc \
         websockify \
@@ -192,6 +196,11 @@ ENV DISPLAY=:1 \
 
 COPY docker/linux/vnc-entrypoint.sh /usr/local/bin/vnc-entrypoint.sh
 RUN chmod +x /usr/local/bin/vnc-entrypoint.sh
+
+# Held-click helper for in-game (per-frame input polling) clicks. Invoked
+# from the host via `docker exec <container> game-click X Y`.
+COPY docker/linux/game-click /usr/local/bin/game-click
+RUN chmod +x /usr/local/bin/game-click
 
 EXPOSE 5901 6901
 

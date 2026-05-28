@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# game-click — synthesise a *held* mouse click for games that poll input
+# state once per frame (MonoGame/XNA titles such as Stardew Valley).
+#
+# The VNC MCP server (regulad/vnc-mcp) sends an atomic click: a button-down
+# PointerEvent immediately followed by button-up, with no hold and no delay
+# (there is no down/up primitive in its API). A per-frame input sampler
+# (~16.7 ms at 60 fps) can fall entirely between the down and the up and
+# never observe the button as pressed, so the click is silently lost. A
+# human click in a VNC viewer naturally holds for ~100 ms, spanning several
+# frames, which is why those register. This helper reproduces that hold via
+# xdotool, so in-game clicks driven over MCP actually land.
+#
+# Use this ONLY for clicks inside a game render surface that polls input
+# (Stardew's menus, character creation, in-game). Vortex (Electron/Chromium)
+# and Chrome are event-driven and register the MCP click fine, so keep using
+# the MCP click tool there.
+#
+# Usage: game-click X Y [HOLD_SECONDS] [BUTTON] [CLICKS]
+#   X Y           target in framebuffer / X11 pixel coords — the same space
+#                 the MCP screenshot tools report (Xvnc is a single screen)
+#   HOLD_SECONDS  press duration (default 0.12 ≈ 7 frames at 60 fps)
+#   BUTTON        X button number (default 1 = left, 3 = right)
+#   CLICKS        number of held clicks (default 1; pass 2 for a double-click)
+set -euo pipefail
+
+# docker exec inherits the image's ENV (VNC_DISPLAY is declared there), but
+# fall back to :1 so the helper also works from a plain shell.
+export DISPLAY="${DISPLAY:-${VNC_DISPLAY:-:1}}"
+
+if [[ $# -lt 2 ]]; then
+    echo "usage: game-click X Y [HOLD_SECONDS] [BUTTON] [CLICKS]" >&2
+    exit 2
+fi
+
+x="$1"
+y="$2"
+hold="${3:-0.12}"
+button="${4:-1}"
+clicks="${5:-1}"
+
+# Move first (with --sync so the position settles), then press/hold/release.
+# Games track hover position separately, so the pointer must be over the
+# target before the press is sampled.
+xdotool mousemove --sync "$x" "$y"
+
+for ((i = 0; i < clicks; i++)); do
+    xdotool mousedown "$button"
+    sleep "$hold"
+    xdotool mouseup "$button"
+    # Short gap between presses so a double-click reads as two distinct
+    # clicks rather than one long press.
+    if [[ $i -lt $((clicks - 1)) ]]; then
+        sleep 0.06
+    fi
+done

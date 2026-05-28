@@ -387,14 +387,37 @@ the target game so a mod can later be installed against it.
   verify the click landed where you expected.
 - Prefer clicking on the centre of UI elements; the noVNC canvas does
   not expose accessible names.
-- When interacting with controls inside Stardew Valley itself (main
-  menu, character creation, in-game menus) — buttons, text fields,
-  checkboxes, toggles, etc. — default to a double-click rather than a
-  single click. The game's UI sometimes drops the first click
-  depending on focus / animation state, and a double-click is safe on
-  controls that don't take double-click as a distinct action. This
-  applies to all Stardew Valley interactions from step 23 onward, not
-  to clicks inside Vortex, Chrome, or window manager controls.
+- **Clicking inside Stardew Valley uses a different mechanism.** The
+  game (MonoGame) polls the mouse once per frame and only registers a
+  click if it observes the button held down across a frame. The VNC MCP
+  click is instantaneous (button down + up with no hold), so it falls
+  between frames and the game never sees it — MCP clicks, including
+  double-clicks, simply do not register inside the game. For every click
+  on a control inside the Stardew Valley window (main menu, character
+  creation, in-game menus, HUD) — i.e. all Stardew Valley interactions
+  from step 23 onward — issue a *held* click via the Bash tool instead
+  of the MCP click tool:
+
+      docker exec vortex-vnc game-click X Y
+
+  where `X` and `Y` are the same pixel coordinates you read off the MCP
+  screenshot (the X server and the MCP framebuffer share one coordinate
+  space). `game-click` moves the pointer, holds the button ~0.12s, then
+  releases — long enough for the game to sample it. Optional args:
+  `game-click X Y [HOLD_SECONDS] [BUTTON] [CLICKS]` (e.g. append `2` as
+  the 5th arg for a double-click, or `3` as the 4th for right-click).
+  Still screenshot before and after to confirm the click landed.
+  - This applies ONLY to clicks inside the game render surface. Keep
+    using the normal MCP click tool for Vortex, Chrome, and fluxbox /
+    window-manager controls — those are event-driven and register the
+    instantaneous MCP click fine.
+  - Container name: the helper runs in the Vortex VNC container, named
+    `vortex-vnc` by default. If a screenshot or earlier step shows a
+    different container name, substitute it.
+  - Typing into game text fields (farm / farmer / favourite-thing names
+    in step 25) still works through the MCP type/key tools once the
+    field is focused — only the *click* to focus the field needs
+    `game-click`.
 - To switch focus to Vortex, always screenshot first. If any part of
   the Vortex window is visible (a title bar, an edge poking out
   behind another window), click its title bar / window header to
