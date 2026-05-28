@@ -77,6 +77,27 @@ All knobs are environment variables — override them with `-e` on
 inspect`. If you don't pass one, the entrypoint generates a 16-character
 random password and prints it to the container log on startup.
 
+## Driving Vortex from Claude Code
+
+`docker/linux/claude-vnc.sh` launches `claude` wired up to the running VNC
+session via a VNC MCP server. Default prompt lives at
+`docker/linux/claude-prompts/check-settings.md` (asks Claude to verify
+Vortex is running and open the Settings page).
+
+```sh
+docker/linux/claude-vnc.sh                                  # default prompt
+docker/linux/claude-vnc.sh docker/linux/claude-prompts/...  # custom prompt
+docker/linux/claude-vnc.sh --no-prompt                      # interactive only
+```
+
+The script resolves the host VNC port and the entrypoint-generated
+password automatically, writes a temporary MCP config that runs the
+[regulad/vnc-mcp](https://github.com/regulad/vnc-mcp) server image
+(`ghcr.io/regulad/vnc-mcp:latest`) with `--network=host` and the VNC
+connection details passed via environment variables, then launches
+`claude --mcp-config ...`. The temp config is deleted on exit. Override
+the image with `VNC_MCP_IMAGE=...` if you want a pinned digest or a fork.
+
 ## Notes
 
 - The container runs as the non-root user `vortex` (UID 1000). Override

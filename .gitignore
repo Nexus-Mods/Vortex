@@ -64,9 +64,6 @@ log.txt
 # Claude piping into nul file on windows
 nul
 
-# Claude Code directory
-.claude
-
 # direnv
 .direnv/
 

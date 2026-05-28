@@ -62,13 +62,18 @@ chmod +x "${VNC_CONFIG_DIR}/xstartup"
 rm -f "/tmp/.X${DISPLAY_NUM#:}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM#:}" || true
 
 echo "[vnc-entrypoint] Starting Xvnc on ${DISPLAY_NUM} (${GEOMETRY}x${DEPTH})"
+# -AlwaysShared + -DisconnectClients=0 let multiple viewers attach to the
+# same session simultaneously (instead of the default "new connection kicks
+# the previous one").
 vncserver "${DISPLAY_NUM}" \
     -geometry "${GEOMETRY}" \
     -depth "${DEPTH}" \
     -rfbport "${VNC_PORT}" \
     -localhost no \
     -SecurityTypes VncAuth \
-    -PasswordFile "${VNC_CONFIG_DIR}/passwd"
+    -PasswordFile "${VNC_CONFIG_DIR}/passwd" \
+    -AlwaysShared \
+    -DisconnectClients=0
 
 # noVNC bridge -> http://<host>:${NOVNC_PORT}/vnc.html
 NOVNC_DIR=""

@@ -82,10 +82,14 @@ echo
 # wiped after the viewer exits.
 case "${VIEWER}" in
     xtigervncviewer|vncviewer|tigervnc)
+        # -Shared asks the server not to disconnect other viewers when we
+        # attach. The server runs with -AlwaysShared too, so this is just
+        # belt-and-braces (and silences the viewer's "requesting exclusive"
+        # warning).
         if [[ -n "${PASSWD_FILE}" ]]; then
-            "${VIEWER}" -passwd "${PASSWD_FILE}" "localhost:${VNC_PORT}"
+            "${VIEWER}" -Shared -passwd "${PASSWD_FILE}" "localhost:${VNC_PORT}"
         else
-            "${VIEWER}" "localhost:${VNC_PORT}"
+            "${VIEWER}" -Shared "localhost:${VNC_PORT}"
         fi
         ;;
     remmina|realvnc-vncviewer)
