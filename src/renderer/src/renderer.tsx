@@ -813,12 +813,16 @@ async function load(extensions: ExtensionManager): Promise<void> {
 
   // Run version-gated migrations now that bundled extensions have registered
   // their games (so knownGames is populated for domain → internal id lookups).
-  try {
-    await migrate(store, priorAppVersion);
-  } catch (err) {
-    log("warn", "migration sequence failed", {
-      err: getErrorMessageOrDefault(err),
-    });
+  // Skipped in dev: package.json is pinned at 1.0.0, so without this guard a
+  // fresh profile's empty appVersion would trip every version-gated migration.
+  if (process.env.NODE_ENV !== "development") {
+    try {
+      await migrate(store, priorAppVersion);
+    } catch (err) {
+      log("warn", "migration sequence failed", {
+        err: getErrorMessageOrDefault(err),
+      });
+    }
   }
 
   log("info", "activating language", {
