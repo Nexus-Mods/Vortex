@@ -7,6 +7,13 @@ the desktop can be reached from a browser.
 ## Build
 
 ```sh
+docker/linux/build.sh
+```
+
+Pass extra `docker build` args through, e.g. `docker/linux/build.sh --no-cache`.
+The equivalent raw command is:
+
+```sh
 docker build -f docker/linux/Dockerfile.vnc -t vortex-vnc .
 ```
 
@@ -18,17 +25,38 @@ build can fetch DuckDB extensions and the Electron binary.
 ## Run
 
 ```sh
-docker run --rm -it \
-    -p 5901:5901 \
-    -p 6901:6901 \
-    -e VNC_PASSWORD=vortex \
-    vortex-vnc
+docker/linux/run.sh
 ```
 
-Then either:
+This starts the `vortex-vnc` container detached, publishing 5901 (VNC) and
+6901 (noVNC) on the host. Pass extra `docker run` args through, e.g.
+`docker/linux/run.sh -e VNC_PASSWORD=mypass`. The equivalent raw command is:
 
-- Connect a VNC client to `localhost:5901`, or
-- Open `http://localhost:6901/vnc.html` in a browser.
+```sh
+docker run -d --name vortex-vnc -p 5901:5901 -p 6901:6901 vortex-vnc
+```
+
+Then connect with the bundled helper:
+
+```sh
+docker/linux/connect.sh
+```
+
+It resolves the host-side port, prints the (auto-generated) password,
+and launches the first VNC viewer it finds on PATH
+(`xtigervncviewer` / `vncviewer` / `remmina` / ...) pointed at
+`localhost:5901`. Paste the password when prompted. Pass an alternate
+container name as the first argument if you didn't use `--name vortex-vnc`.
+
+Install a viewer if you don't have one:
+
+```sh
+sudo apt install tigervnc-viewer    # Debian/Ubuntu
+```
+
+The container also exposes noVNC on `http://localhost:6901/vnc.html` as a
+browser-based fallback; `docker logs vortex-vnc` shows the password if you
+need to enter it there.
 
 ## Configuration
 

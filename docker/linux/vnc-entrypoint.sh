@@ -2,7 +2,11 @@
 # Boots TigerVNC + Fluxbox, exposes the desktop over noVNC, then runs the
 # supplied command (defaults to `pnpm start`, which launches Vortex via
 # Electron) inside that desktop session.
-set -euo pipefail
+#
+# `pipefail` is intentionally NOT set: we use `head -c N` and `tail` on
+# pipes that legitimately close early (e.g. /dev/urandom), and pipefail
+# would surface those SIGPIPEs as fatal errors under `set -e`.
+set -eu
 
 DISPLAY_NUM="${VNC_DISPLAY:-:1}"
 GEOMETRY="${VNC_GEOMETRY:-1600x1000}"
@@ -12,8 +16,15 @@ NOVNC_PORT="${NOVNC_PORT:-6901}"
 
 # If no password was provided at `docker run` time, mint a random one and log
 # it so the user can still connect. We never bake a default into the image.
+# Standard VncAuth uses an 8-char key (longer values are truncated by
+# vncpasswd), so cap at 8. Use pure bash — no pipes — so we can't hit
+# SIGPIPE on the password-generation step.
 if [[ -z "${VNC_PASSWORD:-}" ]]; then
-    VNC_PASSWORD="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)"
+    chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    VNC_PASSWORD=""
+    for ((i = 0; i < 8; i++)); do
+        VNC_PASSWORD+="${chars:RANDOM%${#chars}:1}"
+    done
     echo "[vnc-entrypoint] No VNC_PASSWORD supplied; generated one: ${VNC_PASSWORD}"
 fi
 
@@ -25,8 +36,12 @@ mkdir -p "${VNC_CONFIG_DIR}" "${HOME}/.local/state/tigervnc"
 
 # Materialise the VNC password file from the env var so the password is not
 # baked into the image. `vncpasswd -f` reads a plain password from stdin and
-# writes the obfuscated form to stdout.
-echo "${VNC_PASSWORD}" | vncpasswd -f >"${VNC_CONFIG_DIR}/passwd"
+# writes the obfuscated form to stdout. Use a here-doc (backed by a temp
+# file, not a pipe) so we can't get SIGPIPE if vncpasswd closes stdin after
+# reading the 8-char limit.
+vncpasswd -f >"${VNC_CONFIG_DIR}/passwd" <<EOF
+${VNC_PASSWORD}
+EOF
 chmod 600 "${VNC_CONFIG_DIR}/passwd"
 unset VNC_PASSWORD
 
@@ -70,6 +85,8 @@ if [[ -n "${NOVNC_DIR}" ]]; then
 else
     echo "[vnc-entrypoint] noVNC web root not found; skipping browser bridge."
 fi
+
+echo "[vnc-entrypoint] Ready. From the host, run: docker/linux/connect.sh"
 
 # Tear everything down cleanly when the container stops.
 shutdown() {
