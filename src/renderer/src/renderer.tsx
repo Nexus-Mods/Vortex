@@ -142,6 +142,7 @@ import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
 import getI18n, { changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
 import { showError } from "./util/message";
+import migrate from "./util/migrate";
 import { readStartupSettings } from "./util/startupSettings";
 import { getSafe } from "./util/storeHelper";
 import { bytesToString, getAllPropertyNames } from "./util/util";
@@ -193,6 +194,10 @@ function sanityCheckCB(err: StateError) {
 }
 
 let store: ThunkStore<IState>;
+// Captured between hydration and `applyAppMetadata` (which overwrites
+// state.app.appVersion with the running version). migrate() reads it to
+// gate version-keyed migrations during an upgrade.
+let priorAppVersion: string = "";
 
 const terminateFromError = (error: any, allowReport?: boolean) => {
   log("warn", "about to report an error", { stack: new Error().stack });
@@ -568,6 +573,12 @@ async function init(): Promise<ExtensionManager | null> {
     });
   }
 
+  // Capture the previously-persisted appVersion before applyAppMetadata
+  // overwrites it with the currently-running version. migrate() reads this
+  // value to decide which version-gated migrations need to run for an
+  // upgrade; once setApplicationVersion fires, the signal is gone.
+  priorAppVersion = store.getState().app?.appVersion ?? "";
+
   // Apply app init metadata (commandLine, version, etc.) before extensions
   // interact with the store — extensions depend on commandLine state
   if (appInitMetadata !== null) {
@@ -799,6 +810,20 @@ async function load(extensions: ExtensionManager): Promise<void> {
 
   extensions.setTranslation(i18n);
   await Promise.resolve(extensions.doOnce());
+
+  // Run version-gated migrations now that bundled extensions have registered
+  // their games (so knownGames is populated for domain → internal id lookups).
+  // Skipped in dev: package.json is pinned at 1.0.0, so without this guard a
+  // fresh profile's empty appVersion would trip every version-gated migration.
+  if (process.env.NODE_ENV !== "development") {
+    try {
+      await migrate(store, priorAppVersion);
+    } catch (err) {
+      log("warn", "migration sequence failed", {
+        err: getErrorMessageOrDefault(err),
+      });
+    }
+  }
 
   log("info", "activating language", {
     lang: store.getState().settings.interface.language,

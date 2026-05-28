@@ -1,9 +1,8 @@
+import { mkdir, readdir, rename, rmdir, stat } from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorCode } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import type { BrowserWindow } from "electron";
-import { dialog } from "electron";
 import type * as Redux from "redux";
 import * as semver from "semver";
 import format from "string-template";
@@ -19,12 +18,18 @@ import {
   setUserAPIKey,
   setUserInfo,
 } from "../actions";
+import { setCompatibleGames } from "../extensions/download_management/actions/state";
+import { downloadPathForGame } from "../extensions/download_management/selectors";
 import getDownloadPath from "../extensions/download_management/util/getDownloadPath";
+import { knownGames } from "../extensions/gamemode_management/selectors";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import resolvePath, { pathDefaults } from "../extensions/mod_management/util/resolvePath";
+import { convertGameIdReverse } from "../extensions/nexus_integration/util/convertGameId";
+import { activeGameId } from "../extensions/profile_management/selectors";
+import { log } from "../logging";
 import type { IState } from "../types/IState";
 import { UserCanceled } from "./CustomErrors";
 import * as fs from "./fs";
-import { log } from "./log";
 import makeCI from "./makeCaseInsensitive";
 import { batchDispatch } from "./util";
 
@@ -34,18 +39,15 @@ interface IMigration {
   maySkip: boolean;
   doQuery: boolean;
   description: string;
-  apply: (window: BrowserWindow | null, store: Redux.Store<IState>) => PromiseBB<void>;
+  apply: (store: Redux.Store<IState>) => PromiseBB<void> | Promise<void>;
 }
 
-function selectDirectory(
-  window: BrowserWindow | null,
-  defaultPathPattern: string,
-): PromiseBB<string> {
+function selectDirectory(defaultPathPattern: string): PromiseBB<string> {
   const defaultPath = getDownloadPath(defaultPathPattern, undefined);
   return fs
     .ensureDirWritableAsync(defaultPath, () => PromiseBB.resolve())
     .then(() =>
-      dialog.showOpenDialog(window, {
+      window.api.dialog.showOpen({
         title: "Select empty directory to store downloads",
         properties: ["openDirectory", "createDirectory", "promptToCreate"],
         defaultPath,
@@ -66,8 +68,11 @@ function selectDirectory(
         })
         .then((files) => {
           if (files.length > 0) {
-            dialog.showErrorBox("Invalid path selected", "The directory needs to be empty");
-            return selectDirectory(window, defaultPathPattern);
+            void window.api.dialog.showErrorBox(
+              "Invalid path selected",
+              "The directory needs to be empty",
+            );
+            return selectDirectory(defaultPathPattern);
           } else {
             return PromiseBB.resolve(filePaths[0]);
           }
@@ -100,14 +105,13 @@ function transferPath(from: string, to: string): PromiseBB<void> {
 }
 
 function dialogProm(
-  window: BrowserWindow | null,
   type: string,
   title: string,
   message: string,
   options: string[],
 ): PromiseBB<string> {
   return PromiseBB.resolve(
-    dialog.showMessageBox(window, {
+    window.api.dialog.showMessageBox({
       type: type as "none" | "info" | "error" | "question" | "warning",
       buttons: options,
       title,
@@ -117,10 +121,7 @@ function dialogProm(
   ).then((result) => options[result.response]);
 }
 
-function forceLogoutForOauth_1_9(
-  window: BrowserWindow,
-  store: Redux.Store<IState>,
-): PromiseBB<void> {
+function forceLogoutForOauth_1_9(store: Redux.Store<IState>): PromiseBB<void> {
   const state = store.getState();
 
   const apiKey = state.confidential.account?.["nexus"]?.["APIKey"];
@@ -151,18 +152,17 @@ function forceLogoutForOauth_1_9(
   return PromiseBB.resolve();
 }
 
-function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): PromiseBB<void> {
+function moveDownloads_0_16(store: Redux.Store<IState>): PromiseBB<void> {
   const state = store.getState();
   log("info", "importing downloads from pre-0.16.0 version");
   return dialogProm(
-    window,
     "info",
     "Moving Downloads",
     "On the next screen, please select an empty directory where all your " +
       "downloads from vortex (for all games) will be placed",
     ["Next"],
   )
-    .then(() => selectDirectory(window, state.settings.downloads.path))
+    .then(() => selectDirectory(state.settings.downloads.path))
     .then((downloadPath) => {
       store.dispatch(setDownloadPath(downloadPath));
       return PromiseBB.map(Object.keys(state.settings.gameMode.discovered), (gameId) => {
@@ -179,10 +179,7 @@ function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): 
     });
 }
 
-function updateInstallPath_0_16(
-  window: BrowserWindow,
-  store: Redux.Store<IState>,
-): PromiseBB<void> {
+function updateInstallPath_0_16(store: Redux.Store<IState>): PromiseBB<void> {
   const state = store.getState();
   const { paths } = state.settings.mods as any;
   return PromiseBB.map(Object.keys(paths || {}), (gameId) => {
@@ -209,12 +206,160 @@ function updateInstallPath_0_16(
   }).then(() => {});
 }
 
-function enableModernLayout_2_0(
-  _window: BrowserWindow,
-  store: Redux.Store<IState>,
-): PromiseBB<void> {
+function enableModernLayout_2_0(store: Redux.Store<IState>): PromiseBB<void> {
   batchDispatch(store, [setUseModernLayout(true), setProfilesVisible(true)]);
   return PromiseBB.resolve();
+}
+
+async function moveDomainFile(src: string, dest: string): Promise<boolean> {
+  try {
+    await stat(dest);
+    // Destination already exists; leave both in place rather than overwrite.
+    return false;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw err;
+    }
+  }
+  try {
+    await stat(src);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return false;
+    }
+    throw err;
+  }
+  await mkdir(path.dirname(dest), { recursive: true });
+  await rename(src, dest);
+  return true;
+}
+
+// Ordered list of loaded game ids that share the same nexusPageId as `domain`.
+// First entry is the preferred internal: active game wins when multiple
+// candidates qualify, otherwise convertGameIdReverse's hardcoded fallback.
+// Empty array means "leave the download alone" (unknown domain).
+function resolveDomainCandidates(
+  games: IGameStored[],
+  activeId: string | undefined,
+  domain: string,
+): string[] {
+  const matches = games.filter(
+    (g) => g.id === domain.toLowerCase() || (g.details && g.details.nexusPageId === domain),
+  );
+  if (matches.length === 0) {
+    const fallback = convertGameIdReverse(games, domain) || domain;
+    return fallback === domain ? [] : [fallback];
+  }
+  let preferred: string | undefined;
+  if (activeId !== undefined) {
+    preferred = matches.find((g) => g.id === activeId)?.id;
+  }
+  if (preferred === undefined) {
+    const fallback = convertGameIdReverse(games, domain);
+    preferred = matches.find((g) => g.id === fallback)?.id ?? matches[0].id;
+  }
+  return Array.from(new Set([preferred, ...matches.map((g) => g.id)]));
+}
+
+// Fixes the v2.1 regression where some callers passed Nexus domains as
+// `modInfo.game`, causing downloads to land in `downloads/<domain>/` while
+// install lookups key on the internal id. Rewrites `download.game` so the
+// preferred internal comes first, moves the file to the matching folder, and
+// sweeps any orphans left behind in domain-named directories.
+async function moveDomainFolders_2_1(store: Redux.Store<IState>): Promise<void> {
+  const state = store.getState();
+  const downloads = state.persistent.downloads?.files ?? {};
+  const games = knownGames(state);
+  const activeId = activeGameId(state);
+
+  const candidatesByDomain = new Map<string, string[]>();
+  const stateActions: Redux.AnyAction[] = [];
+
+  for (const dlId of Object.keys(downloads)) {
+    const dl = downloads[dlId];
+    const first = Array.isArray(dl.game) ? dl.game[0] : undefined;
+    if (!first) continue;
+
+    if (!candidatesByDomain.has(first)) {
+      candidatesByDomain.set(first, resolveDomainCandidates(games, activeId, first));
+    }
+    const candidates = candidatesByDomain.get(first) ?? [];
+    const internal = candidates[0];
+    if (internal === undefined || internal === first) continue;
+
+    if (dl.localPath) {
+      const src = path.join(downloadPathForGame(state, first), dl.localPath);
+      const dest = path.join(downloadPathForGame(state, internal), dl.localPath);
+      try {
+        const moved = await moveDomainFile(src, dest);
+        if (moved) {
+          log("info", "migration: moved download archive", { dlId, src, dest });
+        }
+      } catch (err) {
+        // Keep going: state still gets rewritten so the install handler
+        // points at the right folder once the user re-downloads.
+        log("warn", "migration: failed to move download archive", {
+          dlId,
+          src,
+          dest,
+          err: (err as Error).message,
+        });
+      }
+    }
+
+    // All loaded candidates land in download.game so the install handler can
+    // pick the right one regardless of which game the user is on at install
+    // time. `Set` collapses any overlap with dl.game while preserving order.
+    stateActions.push(setCompatibleGames(dlId, Array.from(new Set([...candidates, ...dl.game]))));
+  }
+
+  // Sweep orphan files left in domain folders (downloads dropped from state
+  // earlier but still present on disk). Only run for domains we actually
+  // remapped above.
+  let folderPairs = 0;
+  for (const [domain, candidates] of candidatesByDomain) {
+    const internal = candidates[0];
+    if (internal === undefined || domain === internal) continue;
+    folderPairs += 1;
+
+    const fromPath = downloadPathForGame(state, domain);
+    const toPath = downloadPathForGame(state, internal);
+    let leftover: string[];
+    try {
+      leftover = await readdir(fromPath);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") continue;
+      log("warn", "migration: failed to scan domain folder", {
+        fromPath,
+        err: (err as Error).message,
+      });
+      continue;
+    }
+    for (const name of leftover) {
+      try {
+        await moveDomainFile(path.join(fromPath, name), path.join(toPath, name));
+      } catch (err) {
+        log("warn", "migration: failed to move orphan file", {
+          src: path.join(fromPath, name),
+          err: (err as Error).message,
+        });
+      }
+    }
+    // Best-effort: folder stays if anything got skipped (collision, perms).
+    try {
+      await rmdir(fromPath);
+    } catch {
+      // ignored
+    }
+  }
+
+  if (stateActions.length > 0) {
+    batchDispatch(store, stateActions);
+  }
+  log("info", "migration: domain folders normalized", {
+    rewroteDownloads: stateActions.length,
+    folderPairs,
+  });
 }
 
 const migrations: IMigration[] = [
@@ -252,16 +397,26 @@ const migrations: IMigration[] = [
     description: "Switch to Modern UI layout for 2.0",
     apply: enableModernLayout_2_0,
   },
+  {
+    id: "moveDomainFolders_2_1",
+    minVersion: "2.1.0",
+    maySkip: false,
+    doQuery: false,
+    description:
+      "Move downloads saved under Nexus domain folders (e.g. skyrimspecialedition) " +
+      "to the internal-id folder (skyrimse) used by the rest of Vortex.",
+    apply: moveDomainFolders_2_1,
+  },
 ];
 
-function queryMigration(window: BrowserWindow | null, migration: IMigration): PromiseBB<boolean> {
+function queryMigration(migration: IMigration): PromiseBB<boolean> {
   if (!migration.doQuery) {
     return PromiseBB.resolve(true);
   }
   return new PromiseBB((resolve, reject) => {
     const buttons = migration.maySkip ? ["Cancel", "Skip", "Continue"] : ["Cancel", "Continue"];
-    dialog
-      .showMessageBox(window, {
+    void window.api.dialog
+      .showMessageBox({
         type: "info",
         buttons,
         title: "Migration necessary",
@@ -277,9 +432,8 @@ function queryMigration(window: BrowserWindow | null, migration: IMigration): Pr
   });
 }
 
-function queryContinue(window: BrowserWindow | null, err: Error): PromiseBB<void> {
+function queryContinue(err: Error): PromiseBB<void> {
   return dialogProm(
-    window,
     "error",
     "Migration failed",
     "A migration step failed. You should quit now and resolve the cause of the issue.\n" +
@@ -288,15 +442,21 @@ function queryContinue(window: BrowserWindow | null, err: Error): PromiseBB<void
   ).then((selection) => (selection === "Ignore" ? PromiseBB.resolve() : PromiseBB.reject(err)));
 }
 
-function migrate(store: Redux.Store<IState>, window: BrowserWindow | null): PromiseBB<void> {
+function migrate(store: Redux.Store<IState>, oldVersion?: string): PromiseBB<void> {
   const state = store.getState();
-  const oldVersion = state.app.appVersion || "0.0.0";
+  // Callers should pass the *prior* persisted appVersion: in v2.x renderer
+  // startup, `state.app.appVersion` is overwritten with the current version
+  // by `applyAppMetadata` before any migration code gets to run, which would
+  // make the semver filter below trivially false.
+  const effectiveOldVersion = oldVersion ?? state.app.appVersion ?? "0.0.0";
+  const alreadyApplied = state.app.migrations ?? [];
+
   const neccessaryMigrations = migrations
-    .filter((mig) => semver.lt(oldVersion, mig.minVersion))
-    .filter((mig) => state.app.migrations.indexOf(mig.id) === -1);
+    .filter((mig) => semver.lt(effectiveOldVersion, mig.minVersion))
+    .filter((mig) => alreadyApplied.indexOf(mig.id) === -1);
   return PromiseBB.each(neccessaryMigrations, (migration) =>
-    queryMigration(window, migration)
-      .then((proceed: boolean) => (proceed ? migration.apply(window, store) : PromiseBB.resolve()))
+    queryMigration(migration)
+      .then((proceed: boolean) => (proceed ? migration.apply(store) : PromiseBB.resolve()))
       .then(() => {
         store.dispatch(completeMigration(migration.id));
         return PromiseBB.resolve();
@@ -305,7 +465,7 @@ function migrate(store: Redux.Store<IState>, window: BrowserWindow | null): Prom
         if (err instanceof UserCanceled) {
           throw err;
         }
-        return queryContinue(window, err);
+        return queryContinue(err);
       }),
   ).then(() => {});
 }
