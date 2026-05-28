@@ -23,10 +23,27 @@ Coordinates returned by screenshot tools are in the desktop's pixel space.
      (you should see tabs like `General`, `Mods`, `Download`, `Interface`,
      `Vortex`, `Advanced`).
 
-3. **Report.** Summarise in 3-5 lines:
+3. **Open the Interface tab and check the automation option.** Click the
+   `Interface` tab at the top of the Settings page.
+   - Wait briefly, then screenshot to confirm Interface settings are now
+     showing.
+   - Scroll if needed and find the **Automation** section (heading is
+     usually `Automation` near the bottom of the page).
+   - Within that section, locate the **Deploy mods when enabled** option
+     (typically a toggle or checkbox; wording may vary slightly between
+     Vortex versions — e.g. "Deploy Mods when Enabled").
+   - Confirm the control exists and is interactable (not greyed out /
+     disabled). Note its current state (enabled or disabled).
+   - Do **not** change its value.
+
+4. **Report.** Summarise in 4-6 lines:
    - Whether Vortex was already running.
    - That the Settings page is now visible.
-   - Which Settings tab is currently selected.
+   - That the Interface tab was opened successfully.
+   - Whether the `Deploy mods when enabled` automation option was found
+     and is interactable, and its current state (enabled / disabled).
+   - If the option could not be found or is disabled/greyed out, say so
+     clearly and describe what was on the Automation section instead.
 
 ## Guidance
 

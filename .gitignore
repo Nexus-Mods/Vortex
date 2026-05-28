@@ -64,6 +64,8 @@ log.txt
 # Claude piping into nul file on windows
 nul
 
+.claude/settings.local.json
+
 # direnv
 .direnv/
 
