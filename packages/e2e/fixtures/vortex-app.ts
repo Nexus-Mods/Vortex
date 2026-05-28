@@ -199,8 +199,6 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
 
   sharedVortexWindow: [
     async ({ sharedVortexApp }, use) => {
-      const mainWindow = await waitForMainWindow(sharedVortexApp);
-
       // Register before domcontentloaded — show-window fires after React mounts
       // LoadingScreen, which is after dcl, so this listener is always set up first.
       const showWindowPromise = sharedVortexApp.evaluate(
@@ -217,6 +215,8 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
           }),
         Timeouts.LIFECYCLE,
       );
+
+      const mainWindow = await waitForMainWindow(sharedVortexApp);
 
       // Block unwanted connections that slow down tests:
       await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
