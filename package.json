@@ -40,9 +40,9 @@
     "format": "pnpm oxfmt",
     "format:check": "pnpm oxfmt --check",
     "format:staged": "git diff --name-only --cached | xargs --no-run-if-empty pnpm oxfmt",
-    "e2e": "pnpm nx run @vortex/e2e:test",
-    "e2e:headed": "pnpm nx run @vortex/e2e:test:headed",
-    "e2e:debug": "pnpm nx run @vortex/e2e:test:debug",
+    "e2e": "pnpm -F @vortex/e2e e2e",
+    "e2e:headed": "pnpm -F @vortex/e2e e2e:headed",
+    "e2e:debug": "pnpm -F @vortex/e2e e2e:debug",
     "generate:query-types": "pnpm tsx scripts/generate-query-types.ts"
   },
   "lint-staged": {
