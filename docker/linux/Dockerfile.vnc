@@ -64,6 +64,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         tigervnc-tools \
         fluxbox \
         xterm \
+        xdg-utils \
+        dbus \
         dbus-x11 \
         xfonts-base \
         xfonts-75dpi \
@@ -137,6 +139,45 @@ RUN pnpm install --no-frozen-lockfile \
 
 # ----- VNC + entrypoint -----
 USER root
+
+# Google Chrome (independent of Electron's bundled Chromium). Installed
+# after the Vortex build so iterating on Chrome config doesn't invalidate
+# the (slow) pnpm install + build:all layer above. Pulled from Google's
+# official apt repo -- a real .deb that installs cleanly inside a
+# container, unlike Ubuntu's snap-based `chromium-browser`. `gnupg`
+# (installed in the base apt layer) supplies `gpg --dearmor` for the
+# signing key.
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/google-chrome.gpg \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+        > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Chrome's setuid + user-namespace sandbox can't acquire the namespaces it
+# needs under Docker's default seccomp profile ("Failed to move to new
+# namespace: Operation not permitted"). A /usr/local/bin shim only catches
+# PATH-based invocations -- xdg-open and .desktop activations resolve the
+# absolute path from the Exec= line and bypass it. Use dpkg-divert to
+# rename the real binary aside and replace it in place with a wrapper, so
+# every entrypoint (direct invocation, xdg-open, .desktop activations,
+# Vortex's shell.openExternal) picks up --no-sandbox.
+RUN dpkg-divert --local --rename --divert /usr/bin/google-chrome-stable.real \
+        --add /usr/bin/google-chrome-stable \
+    && printf '#!/usr/bin/env bash\nexec /usr/bin/google-chrome-stable.real --no-sandbox "$@"\n' \
+        > /usr/bin/google-chrome-stable \
+    && chmod +x /usr/bin/google-chrome-stable
+
+# ----- Optional: bake in the host's ~/.steam directory -----
+# Supplied via `--build-context steam=<path>`. build.sh auto-points this
+# at $HOME/.steam when present, and falls back to docker/linux/steam-stub
+# (effectively a no-op) otherwise. The full tree is needed -- not just
+# steamapps/common -- because Vortex's Linux discovery validates each
+# Steam root by checking for config/libraryfolders.vdf and parses
+# appmanifest_*.acf files to enumerate installed games. Placed after the
+# pnpm build so swapping in a different Steam tree doesn't invalidate it.
+COPY --from=steam --chown=${USER_UID}:${USER_GID} ["./", "/home/vortex/.steam/"]
 
 # Default VNC parameters - override at `docker run` time as needed.
 # VNC_PASSWORD is deliberately NOT baked in here; the entrypoint reads it

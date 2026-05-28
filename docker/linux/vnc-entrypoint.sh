@@ -110,4 +110,6 @@ if [[ "${ELECTRON_DISABLE_SANDBOX:-1}" == "1" ]]; then
 fi
 
 echo "[vnc-entrypoint] Launching: $*"
-exec "$@"
+# Wrap in dbus-run-session so Vortex (Electron, libsecret, libnotify, ...)
+# has a real session bus. The bus lives for the lifetime of the command.
+exec dbus-run-session -- "$@"

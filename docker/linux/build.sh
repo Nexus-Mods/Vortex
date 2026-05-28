@@ -20,8 +20,22 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
-exec docker build \
+# Optional Steam bake-in. Default to the host's ~/.steam if it exists;
+# otherwise use the empty stub so the Dockerfile's COPY is a harmless
+# no-op. Override by exporting STEAM_PATH. The whole .steam tree is
+# copied (not just steamapps/common) because Vortex's Linux discovery
+# needs libraryfolders.vdf and the appmanifest_*.acf files to enumerate
+# installed games.
+DEFAULT_STEAM="${HOME}/.steam"
+STEAM_PATH="${STEAM_PATH:-${DEFAULT_STEAM}}"
+if [[ ! -d "${STEAM_PATH}" ]]; then
+    STEAM_PATH="${SCRIPT_DIR}/steam-stub"
+fi
+echo "Steam build context: ${STEAM_PATH}"
+
+exec docker buildx build \
     -f "${SCRIPT_DIR}/Dockerfile.vnc" \
     -t "${IMAGE}" \
+    --build-context "steam=${STEAM_PATH}" \
     "$@" \
     "${REPO_ROOT}"

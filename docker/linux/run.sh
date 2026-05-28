@@ -23,17 +23,17 @@ if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
     exit 1
 fi
 
-# If a container with this name already exists, handle it. Use `docker
-# container inspect` (exact name match) rather than `docker ps --filter`
-# which uses a regex that older daemons handle inconsistently.
+# If a container with this name already exists, stop and remove it so the
+# run always produces a fresh container. Use `docker container inspect`
+# (exact name match) rather than `docker ps --filter` which uses a regex
+# that older daemons handle inconsistently.
 if docker container inspect "${CONTAINER}" >/dev/null 2>&1; then
     state="$(docker container inspect -f '{{.State.Status}}' "${CONTAINER}")"
     if [[ "${state}" == "running" ]]; then
-        echo "Container '${CONTAINER}' is already running. Connect with:"
-        echo "  docker/linux/connect.sh ${CONTAINER}"
-        exit 0
+        echo "Stopping running container '${CONTAINER}'..."
+        docker stop "${CONTAINER}" >/dev/null
     fi
-    echo "Removing stopped container '${CONTAINER}' (state: ${state})..."
+    echo "Removing existing container '${CONTAINER}' (state was: ${state})..."
     docker rm "${CONTAINER}" >/dev/null
 fi
 
@@ -41,6 +41,7 @@ id="$(docker run -d \
     --name "${CONTAINER}" \
     -p 5901:5901 \
     -p 6901:6901 \
+    --shm-size=2g \
     "$@" \
     "${IMAGE}")"
 
