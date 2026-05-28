@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/e2e.yml
+      - "packages/e2e/**"
   schedule:
     # At 14:15 on every day-of-week from Monday through Thursday.
     - cron: "15 14 * * 1-4"
@@ -23,7 +24,6 @@ jobs:
           - os: ubuntu-latest
 
     runs-on: ${{ matrix.os }}
-    # E2E aren't stable yet. Windows takes too long to execute, Linux is experimental
     continue-on-error: true
     timeout-minutes: 60
 
@@ -55,6 +55,10 @@ jobs:
 
       - name: Install Playwright
         run: pnpm -F @vortex/e2e exec playwright install chromium
+
+      # NOTE(erri120): https://www.electronjs.org/blog/electron-42-0#electron-no-longer-downloads-itself-via-postinstall-script
+      - name: Pre-warm electron
+        run: pnpm -F @vortex/e2e exec install-electron
 
       # Fix chrome-sandbox permissions for Electron on Linux
       # The SUID sandbox requires the binary to be owned by root with mode 4755

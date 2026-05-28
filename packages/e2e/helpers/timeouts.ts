@@ -1,5 +1,4 @@
-const isCI = !!process.env.CI;
-
+const isCI = process.env.CI && (process.env.CI === "1" || process.env.CI === "true");
 const scalingFactor = isCI ? 2 : 1;
 
 /** Global defaults applied via playwright.config.ts. */
@@ -21,7 +20,7 @@ export const Timeouts = {
   /** For assertions or actions that depend on a network round-trip. */
   NETWORK: sec(30) * scalingFactor,
   /** Cold-start and worker fixture setup. */
-  LIFECYCLE: min(1) * scalingFactor,
+  LIFECYCLE: min(3) * scalingFactor,
 } as const;
 
 function min(x: number): number {
