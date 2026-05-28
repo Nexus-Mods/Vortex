@@ -77,6 +77,7 @@ jobs:
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
           E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
+          DEBUG: pw:api
         run: pnpm e2e
 
       - name: Run E2E tests (Linux)
@@ -85,6 +86,7 @@ jobs:
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
           E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
+          DEBUG: pw:api
         run: xvfb-run pnpm e2e
 
       - name: Upload test report
