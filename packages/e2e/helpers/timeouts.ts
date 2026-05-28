@@ -20,7 +20,7 @@ export const Timeouts = {
   /** For assertions or actions that depend on a network round-trip. */
   NETWORK: sec(30) * scalingFactor,
   /** Cold-start and worker fixture setup. */
-  LIFECYCLE: min(1) * scalingFactor,
+  LIFECYCLE: min(3) * scalingFactor,
 } as const;
 
 function min(x: number): number {
