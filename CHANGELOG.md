@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### **Fixed**
 
-- Beta.4 download-path regression causing `ENOENT` on auto-install of collection requirements; a 2.1 migration relocates affected files ([#23344](https://github.com/Nexus-Mods/Vortex/pull/23344))
+- Beta.4 download-path regression causing `ENOENT` on auto-install of mod requirements; a 2.1 migration relocates affected files ([#23344](https://github.com/Nexus-Mods/Vortex/pull/23344))
 
 ## [2.1.0-beta.4] - 2026-05-27
 
