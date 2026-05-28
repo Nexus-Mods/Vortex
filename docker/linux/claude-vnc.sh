@@ -9,9 +9,15 @@
 #   docker/linux/claude-vnc.sh path/to/prompt.md   # run a single prompt (non-interactive)
 #   docker/linux/claude-vnc.sh --no-prompt         # interactive session, no prompt
 #
+# If invoked from inside a tmux session, Claude's output streams into a
+# side pane (tail -f on a log file) so the main pane stays clean for the
+# banners and summary table. Disable with NO_SPLIT=1.
+#
 # Environment overrides:
 #   CONTAINER       Vortex VNC container name  (default: vortex-vnc)
 #   VNC_MCP_IMAGE   MCP server image           (default: ghcr.io/regulad/vnc-mcp:latest)
+#   NO_SPLIT        set to 1 to disable the tmux side pane
+#   SPLIT_DIR       tmux pane direction: -h (horizontal, default) or -v
 #
 # Prerequisites: the Vortex VNC container must be running
 # (`docker/linux/run.sh`). `claude` and `docker` must be on PATH.
@@ -22,6 +28,36 @@ PROMPTS_DIR="${SCRIPT_DIR}/claude-prompts"
 
 CONTAINER="${CONTAINER:-vortex-vnc}"
 VNC_MCP_IMAGE="${VNC_MCP_IMAGE:-ghcr.io/regulad/vnc-mcp:latest}"
+
+# Capture whether the script's real stdout is a TTY *before* any command
+# substitution. Inside `$(...)` the function's stdout is a pipe, so an
+# `-t 1` test there would always say "not a TTY" and we'd never pick a
+# renderer.
+STDOUT_IS_TTY=0
+[[ -t 1 ]] && STDOUT_IS_TTY=1
+
+# Pick a markdown renderer for prettifying claude's output. Falls back to
+# plain `cat` if none are installed (or NO_RICH=1 is set). Honour the
+# user's choice via $MD_RENDERER if they want to override the auto-pick.
+choose_md_renderer() {
+    if [[ -n "${NO_RICH:-}" || "${STDOUT_IS_TTY}" -ne 1 ]]; then
+        echo "cat"
+        return
+    fi
+    if [[ -n "${MD_RENDERER:-}" ]] && command -v "${MD_RENDERER%% *}" >/dev/null 2>&1; then
+        echo "${MD_RENDERER}"
+        return
+    fi
+    for candidate in "glow -" "mdcat" "bat --style=plain --paging=never --language=md"; do
+        local bin="${candidate%% *}"
+        if command -v "${bin}" >/dev/null 2>&1; then
+            echo "${candidate}"
+            return
+        fi
+    done
+    echo "cat"
+}
+MD_RENDER_CMD="$(choose_md_renderer)"
 
 # Mode: "all" (default) | "single" | "interactive"
 MODE="all"
@@ -76,7 +112,21 @@ fi
 # Materialise a one-shot MCP config pointing claude at the VNC server.
 # Goes under the user's $TMPDIR so it doesn't leak into the repo.
 MCP_CONFIG="$(mktemp -t vortex-vnc-mcp.XXXXXX.json)"
-trap 'rm -f "${MCP_CONFIG}"' EXIT
+
+# Output log used when streaming into a tmux side pane (see further down).
+OUTPUT_LOG=""
+TMUX_PANE_ID=""
+
+cleanup() {
+    rm -f "${MCP_CONFIG}"
+    if [[ -n "${OUTPUT_LOG}" ]]; then
+        rm -f "${OUTPUT_LOG}"
+    fi
+    if [[ -n "${TMUX_PANE_ID}" ]]; then
+        tmux kill-pane -t "${TMUX_PANE_ID}" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
 
 # MCP config launches the regulad/vnc-mcp docker image with --network=host
 # (so localhost:5901 inside the MCP container reaches the host's published
@@ -105,10 +155,28 @@ cat >"${MCP_CONFIG}" <<JSON
 }
 JSON
 
+# If we're inside a tmux session, open a side pane and tail the output log
+# there so the main pane stays clean for banners and the summary table.
+USE_SPLIT=0
+if [[ -z "${NO_SPLIT:-}" && -n "${TMUX:-}" && "${MODE}" != "interactive" ]] \
+        && command -v tmux >/dev/null 2>&1; then
+    OUTPUT_LOG="$(mktemp -t claude-vnc-output.XXXXXX.log)"
+    SPLIT_DIR="${SPLIT_DIR:--h}"
+    # -d: don't switch focus to the new pane. -P -F '#{pane_id}': print
+    # the new pane's id so we can kill it on exit.
+    TMUX_PANE_ID="$(tmux split-window "${SPLIT_DIR}" -d -P -F '#{pane_id}' \
+        "tail -f '${OUTPUT_LOG}'")"
+    USE_SPLIT=1
+fi
+
 echo "VNC       : ${VNC_HOST}:${VNC_PORT}"
 echo "MCP image : ${VNC_MCP_IMAGE}"
 echo "Config    : ${MCP_CONFIG}"
 echo "Mode      : ${MODE}"
+echo "Renderer  : ${MD_RENDER_CMD}"
+if [[ ${USE_SPLIT} -eq 1 ]]; then
+    echo "Output    : tmux pane ${TMUX_PANE_ID} (tail -f ${OUTPUT_LOG})"
+fi
 echo
 
 # Runs claude --print non-interactively on one prompt file, echoing the
@@ -133,7 +201,19 @@ run_one_prompt() {
     out="$(claude --print "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1)"
     rc=$?
     set -e
-    echo "${out}"
+    if [[ ${USE_SPLIT} -eq 1 ]]; then
+        # Side-pane mode: append a banner + the raw output to the log so
+        # the `tail -f` pane shows it. Markdown rendering is skipped here
+        # since `tail -f` doesn't replay buffered chunks well.
+        {
+            printf '\n=== PROMPT: %s ===\n\n' "$(basename "${prompt_file}" .md)"
+            printf '%s\n' "${out}"
+        } >>"${OUTPUT_LOG}"
+        echo "  -> streamed to tmux pane ${TMUX_PANE_ID}"
+    else
+        # Inline mode: render via the chosen markdown formatter.
+        printf '%s\n' "${out}" | eval "${MD_RENDER_CMD}"
+    fi
     RUN_OUTPUT="${out}"
     if [[ ${rc} -eq 0 ]]; then
         RUN_STATUS="ok"

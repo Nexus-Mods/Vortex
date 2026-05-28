@@ -91,6 +91,49 @@ docker/linux/claude-vnc.sh docker/linux/claude-prompts/...  # run a single promp
 docker/linux/claude-vnc.sh --no-prompt                      # interactive session
 ```
 
+Claude's per-prompt output is rendered as rich markdown in the terminal
+when a renderer is available (`glow`, `mdcat`, or `bat` in that order of
+preference; falls back to plain text). Override via `MD_RENDERER='glow -'`
+or disable with `NO_RICH=1`.
+
+### Running inside tmux (recommended for batch runs)
+
+If you launch the script from inside a **tmux session**, the per-prompt
+output streams into a side pane (a `tail -f` on a temp log file) so the
+main pane stays clean for the banners and the summary table. The side
+pane is closed automatically when the script exits.
+
+Three common ways to start it:
+
+```sh
+# 1) Open a tmux session interactively, then run the script in it.
+tmux new -s vortex
+# (now inside tmux)
+docker/linux/claude-vnc.sh
+```
+
+```sh
+# 2) One-liner: start tmux and run the script. Drops you in a shell when
+#    the script finishes so the side pane's contents stay visible.
+tmux new -s vortex 'docker/linux/claude-vnc.sh; exec bash'
+```
+
+```sh
+# 3) Background it and attach later.
+tmux new -d -s vortex 'docker/linux/claude-vnc.sh; exec bash'
+tmux attach -t vortex
+```
+
+Inside tmux: `Ctrl-b d` detaches, `tmux attach -t vortex` reattaches,
+`Ctrl-b o` cycles focus between the main pane and the side pane, and
+`exit` (or `Ctrl-d`) in the last pane kills the session.
+
+Defaults to a horizontal split — set `SPLIT_DIR=-v` for a vertical split,
+or `NO_SPLIT=1` to keep everything inline (no side pane).
+
+If `$TMUX` is not set (you're not inside a tmux session) the script
+silently runs inline; nothing breaks if tmux isn't installed at all.
+
 The script resolves the host VNC port and the entrypoint-generated
 password automatically, writes a temporary MCP config that runs the
 [regulad/vnc-mcp](https://github.com/regulad/vnc-mcp) server image

@@ -45,12 +45,27 @@ Coordinates returned by screenshot tools are in the desktop's pixel space.
      the video starting, but note the indirection.
    - Do not unmute or change volume.
 
-5. **Report.** Summarise in 4-6 lines:
+5. **Close the video.** Once you've confirmed it's playing, stop and
+   close it so the Dashboard returns to its idle state:
+   - **Modal / lightbox player:** click the close (`X`) button in the
+     modal's top-right corner, or press `Esc`.
+   - **Embedded in-app player:** click the pause button, then if there
+     is a separate close/dismiss control use it. If the player is a
+     persistent dashlet widget with no close affordance, pausing is
+     enough — don't navigate away from the Dashboard.
+   - **External browser / YouTube tab:** close that tab or window. The
+     Vortex window should be focused again afterwards.
+   - Screenshot after closing to confirm the video is no longer playing
+     and the Dashboard is back to its normal view.
+
+6. **Report.** Summarise in 5-7 lines:
    - Whether Vortex was already running.
    - That the Dashboard is visible and which dashlets are on it.
    - The exact title of the getting-started guide widget you found.
    - Whether the video started playing, and where (in-app player vs.
      external browser vs. modal).
+   - That the video was closed/stopped successfully and the Dashboard is
+     back to its idle state.
    - If anything failed, the precise step it failed at.
 
 ## Guidance
