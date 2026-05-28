@@ -1,5 +1,4 @@
-const isCI = !!process.env.CI;
-
+const isCI = process.env.CI && (process.env.CI === "1" || process.env.CI === "true");
 const scalingFactor = isCI ? 2 : 1;
 
 /** Global defaults applied via playwright.config.ts. */
