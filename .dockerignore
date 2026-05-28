@@ -1,0 +1,35 @@
+# Keep the build context small and avoid shipping host-built artefacts into
+# the image (the in-container build regenerates everything).
+.git
+.github
+.vscode
+.idea
+
+# Dependency / build outputs
+node_modules
+**/node_modules
+dist
+**/dist
+out
+**/out
+build
+**/build
+coverage
+**/coverage
+.cache
+**/.cache
+
+# Editor & OS junk
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Local environment / Nix outputs
+result
+result-*
+.direnv
+
+# Platform-specific docker contexts (the host's copy isn't needed inside the
+# image we're building).
+docker/windows

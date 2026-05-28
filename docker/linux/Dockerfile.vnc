@@ -1,0 +1,147 @@
+# Vortex Linux + VNC Image
+# See docker/linux/README.vnc.md for build and run instructions.
+
+# Docker tags "latest" to the current Ubuntu LTS release.
+FROM ubuntu:latest
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=Etc/UTC
+
+# Build toolchain + Electron runtime libraries + VNC stack.
+# Package names target Ubuntu 24.04 (noble) and 26.04 (the current LTS).
+# Both ship libasound2t64; the t64 transition packages are picked up
+# automatically.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        gnupg \
+        xz-utils \
+        sudo \
+        locales \
+        tzdata \
+        # Build toolchain for native node modules (node-gyp, leveldown,
+        # xxhash-addon, turbowalk, winapi-bindings stubs, etc.)
+        build-essential \
+        cmake \
+        pkg-config \
+        python3 \
+        python3-setuptools \
+        libfontconfig1-dev \
+        libicu-dev \
+        libsecret-1-dev \
+        # Electron 39 runtime dependencies (GTK 3, NSS, ALSA, X11 shims).
+        libgtk-3-0 \
+        libnotify4 \
+        libnss3 \
+        libxss1 \
+        libxtst6 \
+        libxrandr2 \
+        libxkbfile1 \
+        libsecret-1-0 \
+        libatk1.0-0 \
+        libatk-bridge2.0-0 \
+        libcups2 \
+        libdrm2 \
+        libgbm1 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libcairo2 \
+        libcairo-gobject2 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxshmfence1 \
+        libasound2t64 \
+        libglib2.0-0 \
+        libgdk-pixbuf-2.0-0 \
+        librsvg2-common \
+        # VNC + lightweight desktop
+        tigervnc-standalone-server \
+        tigervnc-common \
+        tigervnc-tools \
+        fluxbox \
+        xterm \
+        dbus-x11 \
+        xfonts-base \
+        xfonts-75dpi \
+        xfonts-100dpi \
+        x11-xserver-utils \
+        # noVNC (browser-based VNC) and its websocket bridge
+        novnc \
+        websockify \
+    && rm -rf /var/lib/apt/lists/*
+
+# .NET SDK 9.0 (required for the fomod-installer native components)
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+    && bash /tmp/dotnet-install.sh --channel 9.0 --install-dir /usr/share/dotnet \
+    && rm /tmp/dotnet-install.sh \
+    && ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+ENV DOTNET_ROOT=/usr/share/dotnet \
+    PATH="/usr/share/dotnet:/usr/share/dotnet/tools:${PATH}"
+
+# Node.js 22 from NodeSource (matches package.json engines.node).
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && corepack enable \
+    && corepack prepare pnpm@10.33.0 --activate
+
+# Non-root user. Electron refuses to run as root without --no-sandbox, and the
+# build itself works happily under an unprivileged user.
+ARG USERNAME=vortex
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/bash ${USERNAME} \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USERNAME}
+
+# ----- Build Vortex -----
+ARG APP_DIR=/home/${USERNAME}/vortex
+WORKDIR ${APP_DIR}
+
+# Copy the workspace. .dockerignore should exclude node_modules and dist
+# directories from the host. If it does not, the COPY is still safe but
+# slower.
+COPY --chown=${USER_UID}:${USER_GID} . ${APP_DIR}
+
+USER ${USERNAME}
+
+# pnpm cache lives in $HOME by default; keep it inside the user's home so the
+# permissions line up.
+ENV PNPM_HOME=/home/${USERNAME}/.local/share/pnpm \
+    PATH=/home/${USERNAME}/.local/share/pnpm:${PATH}
+
+# Install dependencies and build everything Vortex needs to run via `start`:
+# the main/renderer/preload bundles plus the bundled game extensions and
+# downloaded assets. `build:all` chains build -> build:extensions -> build:assets.
+RUN pnpm install --no-frozen-lockfile \
+    && pnpm run build:all \
+    && pnpm -F @vortex/main exec electron --version
+
+# ----- VNC + entrypoint -----
+USER root
+
+# Default VNC parameters - override at `docker run` time as needed.
+# VNC_PASSWORD is deliberately NOT baked in here; the entrypoint reads it
+# from the environment at runtime, or generates a random one if unset.
+ENV DISPLAY=:1 \
+    VNC_DISPLAY=:1 \
+    VNC_PORT=5901 \
+    NOVNC_PORT=6901 \
+    VNC_GEOMETRY=1600x1000 \
+    VNC_DEPTH=24 \
+    ELECTRON_DISABLE_SANDBOX=1
+
+COPY docker/linux/vnc-entrypoint.sh /usr/local/bin/vnc-entrypoint.sh
+RUN chmod +x /usr/local/bin/vnc-entrypoint.sh
+
+EXPOSE 5901 6901
+
+USER ${USERNAME}
+WORKDIR ${APP_DIR}
+
+ENTRYPOINT ["/usr/local/bin/vnc-entrypoint.sh"]
+CMD ["pnpm", "start"]
