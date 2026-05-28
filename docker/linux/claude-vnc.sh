@@ -279,6 +279,7 @@ run_one_prompt() {
         final_file="$(mktemp -t claude-vnc-final.XXXXXX)"
         set +e
         claude --print --output-format=stream-json --verbose \
+            --add-dir "${HOME}" \
             "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1 \
             | tee >(format_stream_event >>"${OUTPUT_LOG}") \
             | extract_final_result >"${final_file}"
@@ -296,7 +297,7 @@ run_one_prompt() {
         # Inline mode: no streaming, just --print and render in place.
         local out
         set +e
-        out="$(claude --print "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1)"
+        out="$(claude --print --add-dir "${HOME}" "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1)"
         rc=$?
         set -e
         printf '%s\n' "${out}" | eval "${MD_RENDER_CMD}"
@@ -312,7 +313,7 @@ run_one_prompt() {
 
 case "${MODE}" in
     interactive)
-        claude "--mcp-config=${MCP_CONFIG}"
+        claude --add-dir "${HOME}" "--mcp-config=${MCP_CONFIG}"
         ;;
     single)
         run_one_prompt "${SINGLE_PROMPT}"

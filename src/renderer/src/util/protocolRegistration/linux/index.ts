@@ -46,7 +46,17 @@ export function registerLinuxProtocolHandler(
   return registerLinuxNxmProtocolHandler({
     setAsDefault: options.setAsDefault,
     executablePath: process.execPath,
-    appPath: getVortexPath("package"),
+    // Electron expects `appPath` to be the directory containing
+    // package.json (or an .asar). In dev mode `getVortexPath("package")`
+    // resolves to .../src/main/out -- the build-output dir, which has no
+    // package.json -- so passing it to electron fails with "unable to
+    // find electron app at ...". Fall back to `getVortexPath("application")`
+    // in dev (the dir containing package.json, which is what `pnpm start`
+    // uses); production keeps "package" so the .asar path is used.
+    appPath:
+      process.env.NODE_ENV === "development"
+        ? getVortexPath("application")
+        : getVortexPath("package"),
   });
 }
 

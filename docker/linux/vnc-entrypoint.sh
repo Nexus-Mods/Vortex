@@ -103,6 +103,18 @@ trap shutdown EXIT INT TERM
 
 export DISPLAY="${DISPLAY_NUM}"
 
+# Start the system D-Bus daemon. Electron / Chromium probes
+# /run/dbus/system_bus_socket on launch and errors with "Failed to
+# connect to the bus" if it's missing. The session bus we get later via
+# dbus-run-session is separate from this. /run is a fresh tmpfs every
+# container start, so this needs to run here -- not at image build time.
+if [[ ! -S /run/dbus/system_bus_socket ]]; then
+    sudo mkdir -p /run/dbus
+    if ! sudo dbus-daemon --system --fork; then
+        echo "[vnc-entrypoint] warning: dbus-daemon --system failed; continuing without a system bus"
+    fi
+fi
+
 # Electron in a container has no usable sandbox; run with --no-sandbox unless
 # the caller has overridden it.
 if [[ "${ELECTRON_DISABLE_SANDBOX:-1}" == "1" ]]; then
