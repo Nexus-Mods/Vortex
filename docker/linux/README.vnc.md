@@ -98,10 +98,21 @@ or disable with `NO_RICH=1`.
 
 ### Running inside tmux (recommended for batch runs)
 
-If you launch the script from inside a **tmux session**, the per-prompt
-output streams into a side pane (a `tail -f` on a temp log file) so the
-main pane stays clean for the banners and the summary table. The side
-pane is closed automatically when the script exits.
+If you launch the script from inside a **tmux session**, the script runs
+claude in streaming mode (`--output-format=stream-json --verbose`) and
+splits the work across two panes:
+
+- **Main pane**: the polished final answer for each prompt (markdown-
+  rendered via `glow` / `mdcat` / `bat`) followed by the summary table.
+- **Side pane**: claude's live working output — one line per event, e.g.
+  `[tool] vnc__click_at_current_position(...)`, `[result] {...}`,
+  `[assistant] I can see Vortex is running...`. Tails a temp log file via
+  `tail -f`, and is closed automatically when the script exits.
+
+Install `jq` for nicely-formatted side-pane events; without it the pane
+shows the raw NDJSON stream (still readable, just busier). `jq` is also
+used to extract the final response for the main pane — if it's missing
+the script falls back to `python3`.
 
 Three common ways to start it:
 

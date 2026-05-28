@@ -59,6 +59,71 @@ choose_md_renderer() {
 }
 MD_RENDER_CMD="$(choose_md_renderer)"
 
+# Format a single claude stream-json NDJSON line as a short human-readable
+# event for the side pane. Falls back to raw passthrough if jq isn't on
+# PATH. The `--unbuffered` flag keeps `tail -f` responsive.
+format_stream_event() {
+    if command -v jq >/dev/null 2>&1; then
+        jq -rR --unbuffered '
+            fromjson? // empty
+            | if .type == "system" then
+                "[system] \(.subtype // "ready")"
+              elif .type == "assistant" then
+                (.message.content // []) | map(
+                    if .type == "text" then
+                        "[assistant] " + ((.text // "") | split("\n")[0])
+                    elif .type == "tool_use" then
+                        "[tool] \(.name)(\(.input | tojson | .[0:120]))"
+                    else "[" + .type + "]" end
+                ) | join("\n")
+              elif .type == "user" then
+                (.message.content // []) | map(
+                    if .type == "tool_result" then
+                        "[result] " + ((.content // "") | tostring | gsub("\\s+"; " ") | .[0:120])
+                    else "[" + .type + "]" end
+                ) | join("\n")
+              elif .type == "result" then
+                "[done] \(.subtype // "")"
+              else "[" + .type + "]" end
+        '
+    else
+        cat
+    fi
+}
+
+# Read claude stream-json NDJSON on stdin, write the final result event's
+# `.result` field (the polished assistant response) to stdout. Returns
+# empty if no result event was seen.
+extract_final_result() {
+    if command -v jq >/dev/null 2>&1; then
+        jq -rRs '
+            split("\n")
+            | map(fromjson? // empty)
+            | map(select(.type == "result"))
+            | last
+            | .result // empty
+        '
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 -c '
+import json, sys
+result = ""
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        ev = json.loads(line)
+    except Exception:
+        continue
+    if ev.get("type") == "result":
+        result = ev.get("result", "") or ""
+sys.stdout.write(result)
+'
+    else
+        cat
+    fi
+}
+
 # Mode: "all" (default) | "single" | "interactive"
 MODE="all"
 SINGLE_PROMPT=""
@@ -196,25 +261,47 @@ run_one_prompt() {
     # to stdout. `--mcp-config=` uses the `=` form to avoid the next
     # positional arg being consumed as another config path. `--` then
     # separates flags from the positional prompt body.
-    local out rc
-    set +e
-    out="$(claude --print "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1)"
-    rc=$?
-    set -e
+    local rc final
     if [[ ${USE_SPLIT} -eq 1 ]]; then
-        # Side-pane mode: append a banner + the raw output to the log so
-        # the `tail -f` pane shows it. Markdown rendering is skipped here
-        # since `tail -f` doesn't replay buffered chunks well.
+        # Banner in the side pane so the user can tell which prompt's
+        # events are flowing.
         {
-            printf '\n=== PROMPT: %s ===\n\n' "$(basename "${prompt_file}" .md)"
-            printf '%s\n' "${out}"
+            printf '\n============================================================\n'
+            printf '  PROMPT: %s\n' "$(basename "${prompt_file}" .md)"
+            printf '============================================================\n\n'
         } >>"${OUTPUT_LOG}"
-        echo "  -> streamed to tmux pane ${TMUX_PANE_ID}"
+
+        # Stream every event to the side pane (via tee → format_stream_event)
+        # while extracting the final assistant response for the main pane.
+        # `--output-format=stream-json --verbose` makes claude emit one
+        # NDJSON event per line.
+        local final_file
+        final_file="$(mktemp -t claude-vnc-final.XXXXXX)"
+        set +e
+        claude --print --output-format=stream-json --verbose \
+            "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1 \
+            | tee >(format_stream_event >>"${OUTPUT_LOG}") \
+            | extract_final_result >"${final_file}"
+        rc=${PIPESTATUS[0]}
+        set -e
+        final="$(cat "${final_file}")"
+        rm -f "${final_file}"
+        [[ -z "${final}" ]] && \
+            final="(no final result extracted — see side pane for events)"
+
+        # Render the polished final response in the main pane.
+        printf '%s\n' "${final}" | eval "${MD_RENDER_CMD}"
+        RUN_OUTPUT="${final}"
     else
-        # Inline mode: render via the chosen markdown formatter.
+        # Inline mode: no streaming, just --print and render in place.
+        local out
+        set +e
+        out="$(claude --print "--mcp-config=${MCP_CONFIG}" -- "$(cat "${prompt_file}")" 2>&1)"
+        rc=$?
+        set -e
         printf '%s\n' "${out}" | eval "${MD_RENDER_CMD}"
+        RUN_OUTPUT="${out}"
     fi
-    RUN_OUTPUT="${out}"
     if [[ ${rc} -eq 0 ]]; then
         RUN_STATUS="ok"
     else
