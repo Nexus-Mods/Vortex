@@ -111,7 +111,6 @@ import {
 import allTypesSupported from "./util/allTypesSupported";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
-import { findModByRef } from "./util/dependencies";
 import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
 import {
   getAllActivators,
@@ -123,7 +122,9 @@ import {
 import { NoDeployment } from "./util/exceptions";
 import extendApi from "./util/extendAPI";
 import { dealWithExternalChanges } from "./util/externalChanges";
+import { attributeExtractor, upgradeExtractor } from "./util/extractors";
 import { registerAttributeExtractor } from "./util/filterModInfo";
+import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
@@ -1114,31 +1115,6 @@ function genValidActivatorCheck(api: IExtensionApi) {
         },
       });
     });
-}
-
-function attributeExtractor(input: any) {
-  return Promise.resolve({
-    version: getSafe(input.meta, ["fileVersion"], undefined),
-    logicalFileName: getSafe(input.meta, ["logicalFileName"], undefined),
-    rules: getSafe(input.meta, ["rules"], undefined),
-    source: input.meta?.source,
-    category: getSafe(input.meta, ["details", "category"], undefined),
-    description: getSafe(input.meta, ["details", "description"], undefined),
-    author: getSafe(input.meta, ["details", "author"], undefined),
-    homepage: getSafe(input.meta, ["details", "homepage"], undefined),
-    variant: getSafe(input.custom, ["variant"], undefined),
-  });
-}
-
-function upgradeExtractor(input: any) {
-  return Promise.resolve({
-    category: getSafe(input.previous, ["category"], undefined),
-    customFileName: getSafe(input.previous, ["customFileName"], undefined),
-    variant: getSafe(input.previous, ["variant"], undefined),
-    notes: getSafe(input.previous, ["notes"], undefined),
-    icon: getSafe(input.previous, ["icon"], undefined),
-    color: getSafe(input.previous, ["color"], undefined),
-  });
 }
 
 function cleanupIncompleteInstalls(api: IExtensionApi) {

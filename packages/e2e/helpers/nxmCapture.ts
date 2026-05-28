@@ -62,27 +62,18 @@ export async function installNxmCapture(page: Page): Promise<void> {
 // DOM scan is the fallback — the slow-download flow writes the nxm:// URL into
 // the rendered DOM (anchor href / data attribute) when the countdown completes.
 export async function waitForNxmUrl(page: Page, timeoutMs: number): Promise<string | null> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const hooked = await page
-      .evaluate(() => (globalThis as { __capturedNxm?: string }).__capturedNxm)
-      .catch(() => undefined);
-    if (typeof hooked === "string" && hooked.startsWith("nxm:")) {
-      return hooked;
-    }
-    const fromDom = await page
-      .evaluate(() => {
-        const doc = (globalThis as { document?: unknown }).document as {
-          documentElement: { outerHTML: string };
-        };
-        const m = doc.documentElement.outerHTML.match(/nxm:\/\/[^"'\s<>]+/i);
-        return m === null ? null : m[0];
-      })
-      .catch(() => null);
-    if (typeof fromDom === "string" && fromDom.startsWith("nxm:")) {
-      return fromDom;
-    }
-    await page.waitForTimeout(500).catch(() => undefined);
+  try {
+    const handle = await page.waitForFunction(
+      () => {
+        const hooked = (globalThis as { __capturedNxm?: string }).__capturedNxm;
+        if (typeof hooked === "string" && hooked.startsWith("nxm:")) return hooked;
+        const m = document.documentElement.outerHTML.match(/nxm:\/\/[^"'\s<>]+/i);
+        return m?.[0] ?? null;
+      },
+      { timeout: timeoutMs },
+    );
+    return (await handle.jsonValue()) as string;
+  } catch {
+    return null;
   }
-  return null;
 }

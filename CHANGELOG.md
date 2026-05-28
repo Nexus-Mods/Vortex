@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0-beta.3] - 2026-05-26
+
+### **Changed**
+
+- Removed the `BrowserWindow` close-handler workaround now that Electron 42 ships the upstream fix for the `NonClientHitTest` use-after-free ([#23258](https://github.com/Nexus-Mods/Vortex/pull/23258))
+
+### **Fixed**
+
+- Witcher 3: `md5cache.json` was not bundled with the extension ([#23306](https://github.com/Nexus-Mods/Vortex/pull/23306))
+- `nxm://` re-launches ignored the userdata directory in the registry — the embedded `--userData` flag was silently dropped because the CLI parser only accepts `--user-data` ([#23305](https://github.com/Nexus-Mods/Vortex/pull/23305))
+- Cancelling a collection install via the free-user download dialog now cleanly tears down the install pipeline, driver state, and notification, instead of leaving canceled sibling downloads as failures in the dialog ([#23304](https://github.com/Nexus-Mods/Vortex/pull/23304))
+- Modern UI: missing sidebar icons (Bethesda plugins, save games) and help menu icons (feedback, bug report) ([#23263](https://github.com/Nexus-Mods/Vortex/pull/23263))
+- Unauthenticated `401` errors from the NXM download resolver now surface as a non-reportable "You are not logged in to Nexus Mods!" notification instead of a `TypeError` crash on undefined OAuth config ([#23262](https://github.com/Nexus-Mods/Vortex/pull/23262))
+
 ## [2.1.0-beta.2] - 2026-05-19
 
 ### **Changed**
@@ -29,7 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Conflict Editor "Before All" / "After All" silently doing nothing when a filter was applied to the source mod name ([#23136](https://github.com/Nexus-Mods/Vortex/pull/23136))
 - Fixed inability to manage certain bundled game extensions (Blade and Sorcery, BattleTech, Daggerfall, DragonAge, NWN, Elder Scrolls Online and a few others) ([#23131](https://github.com/Nexus-Mods/Vortex/pull/23131))
 
-## [**2.1.0-beta.1] - 2026-05-13
+## [2.1.0-beta.1] - 2026-05-13
 
 _First beta of the 2.1 release._
 
@@ -1887,6 +1901,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.1.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.3
 [2.1.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.2
 [2.1.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.1
 [2.0.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.0.2

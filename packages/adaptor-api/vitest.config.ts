@@ -1,13 +1,16 @@
 import { doctest } from "vite-plugin-doctest";
-import { defineConfig, type ViteUserConfig } from "vitest/config";
+import { mergeConfig, defineConfig } from "vitest/config";
 
-const config: ViteUserConfig = defineConfig({
-  plugins: [doctest()],
-  test: {
-    environment: "node",
-    include: ["src/**/*.test.ts"],
-    includeSource: ["src/fs/paths.ts", "src/fs/matcher.ts"],
-  },
-});
+import baseConfig from "../../vitest.base.config";
 
-export default config;
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    plugins: [doctest()],
+    test: {
+      environment: "node",
+      include: ["src/**/*.test.ts"],
+      includeSource: ["src/fs/paths.ts", "src/fs/matcher.ts"],
+    },
+  }),
+);

@@ -231,7 +231,14 @@ try {
             .then((result) => {
               betterIpcRenderer.send("callback:download:resolve", collationId, result);
             })
-            .catch((err) => console.error(err));
+            .catch((err: unknown) => {
+              // The callback wire carries success only; rejections can't be
+              // sent back. Cancellation is driven explicitly elsewhere, so
+              // these are routine on every canceled batch; debug log keeps
+              // vortex.log clean.
+              const message = err instanceof Error ? err.message : String(err);
+              betterIpcRenderer.send("logging:log", "debug", "download resolver rejected", message);
+            });
         };
         ipcRenderer.on("download:resolve", listener);
         return () => ipcRenderer.removeListener("download:resolve", listener);

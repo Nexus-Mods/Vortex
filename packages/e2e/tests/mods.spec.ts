@@ -11,6 +11,7 @@ import { acceptConsent } from "../helpers/consent";
 import { manageGame, type ManagedGame } from "../helpers/games";
 import { loginToNexus } from "../helpers/login";
 import { installNxmCapture, waitForNxmUrl } from "../helpers/nxmCapture";
+import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { NavBar } from "../selectors/navbar";
 
@@ -30,8 +31,6 @@ test.describe("Mods - Downloads", () => {
       vortexApp,
       vortexWindow,
     }) => {
-      test.setTimeout(180_000);
-
       let managed: ManagedGame | null = null;
       let authBrowser: Browser | null = null;
 
@@ -52,7 +51,7 @@ test.describe("Mods - Downloads", () => {
         await test.step("Open the SMAPI mod page", async () => {
           await auth.page.goto(SDV_MOD_URL, {
             waitUntil: "domcontentloaded",
-            timeout: 60_000,
+            timeout: Timeouts.NETWORK,
           });
           await expect(auth.page).toHaveURL(/stardewvalley\/mods\/2400/);
 
@@ -60,7 +59,7 @@ test.describe("Mods - Downloads", () => {
             name: /Performing security verification/i,
           });
           if (await cloudflareHeading.isVisible().catch(() => false)) {
-            await expect(cloudflareHeading).toBeHidden({ timeout: 30_000 });
+            await expect(cloudflareHeading).toBeHidden({ timeout: Timeouts.NETWORK });
           }
 
           await acceptConsent(auth.page);
@@ -72,14 +71,14 @@ test.describe("Mods - Downloads", () => {
           const modManagerLink = auth.page
             .getByRole("link", { name: /mod manager download|vortex/i })
             .first();
-          await expect(modManagerLink).toBeVisible({ timeout: 30_000 });
-          await modManagerLink.click({ timeout: 15_000 });
+          await expect(modManagerLink).toBeVisible({ timeout: Timeouts.NETWORK });
+          await modManagerLink.click({ timeout: Timeouts.NETWORK });
 
           const modal = auth.page
             .locator('.popup, .modal, [role="dialog"], #popup-content')
             .first();
           const modalAppeared = await modal
-            .waitFor({ state: "visible", timeout: 5_000 })
+            .waitFor({ state: "visible" })
             .then(() => true)
             .catch(() => false);
 
@@ -87,14 +86,16 @@ test.describe("Mods - Downloads", () => {
             // Premium users (and dep-free mods) skip this confirmation —
             // the nxm:// URL fires directly without an inner Download link.
             const modalDownloadButton = modal.getByRole("link", { name: /^download$/i }).first();
-            if (await modalDownloadButton.isVisible({ timeout: 3_000 }).catch(() => false)) {
-              await modalDownloadButton.click({ timeout: 15_000 });
+            if (await modalDownloadButton.isVisible().catch(() => false)) {
+              await modalDownloadButton.click({ timeout: Timeouts.NETWORK });
             }
           }
         });
 
         await test.step("Capture the nxm:// URL", async () => {
-          await auth.page.waitForLoadState("load", { timeout: 30_000 }).catch(() => undefined);
+          await auth.page
+            .waitForLoadState("load", { timeout: Timeouts.NETWORK })
+            .catch(() => undefined);
           await acceptConsent(auth.page);
           await installNxmCapture(auth.page);
 
@@ -105,16 +106,16 @@ test.describe("Mods - Downloads", () => {
           if (
             await slowDownloadButton
               .first()
-              .isVisible({ timeout: 5_000 })
+              .isVisible()
               .catch(() => false)
           ) {
             await slowDownloadButton
               .first()
-              .click({ timeout: 15_000 })
+              .click({ timeout: Timeouts.NETWORK })
               .catch(() => undefined);
           }
 
-          nxmUrl = await waitForNxmUrl(auth.page, 60_000);
+          nxmUrl = await waitForNxmUrl(auth.page, Timeouts.NETWORK);
           if (nxmUrl === null) {
             throw new Error("No nxm:// URL appeared in the page after the download click");
           }
@@ -136,13 +137,11 @@ test.describe("Mods - Downloads", () => {
         });
 
         await test.step("Verify SMAPI is installed in Vortex", async () => {
-          await vortexWindow.waitForTimeout(5_000);
-
           const navbar = new NavBar(vortexWindow);
           await navbar.modsLink.click();
 
           const modRow = vortexWindow.getByText(/SMAPI/i).first();
-          await expect(modRow).toBeVisible({ timeout: 60_000 });
+          await expect(modRow).toBeVisible({ timeout: Timeouts.NETWORK });
         });
       } finally {
         if (authBrowser !== null) {

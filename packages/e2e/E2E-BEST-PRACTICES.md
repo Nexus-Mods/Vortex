@@ -292,23 +292,34 @@ The smoke spec watches the renderer console for unexpected errors at startup. Wh
 
 ## Timeouts
 
-Use the `X_000` format for readability:
+All explicit timeouts live in `helpers/timeouts.ts`. Do not hardcode `X_000` literals in tests, helpers, or fixtures.
+
+Rules:
+
+- **Default UI waits use the config defaults** (5s `actionTimeout` / `expect.timeout` / `navigationTimeout`, sourced from `GlobalTimeouts` in `helpers/timeouts.ts` and applied via `playwright.config.ts`). Do not pass an explicit timeout for pure UI assertions/actions. If a UI wait "needs" longer, the test is racing something it should `await` explicitly.
+- **Network-backed waits** (page navigation, API fetch, mod list populating, Cloudflare clear, OAuth flow) use `Timeouts.NETWORK`.
+- **Fixture / launch timeouts** use `Timeouts.LIFECYCLE`.
+- **No per-test `test.setTimeout(...)` overrides.** `GlobalTimeouts.TEST` is sized to cover the slowest test. If a test exceeds it, the test is broken, not the timeout.
+- **Probes** (best-effort "is this element here right now") use `await locator.isVisible().catch(() => false)` with no timeout. Never use 1s/3s "fast probe" timeouts.
 
 ```typescript
-// GOOD
-test.setTimeout(120_000);
-await expect(element).toBeVisible({ timeout: 30_000 });
+// GOOD - UI assertion, relies on the config default
+await expect(saveButton).toBeVisible();
 
-// BAD
-test.setTimeout(120000);
-await expect(element).toBeVisible({ timeout: 30000 });
+// GOOD - network-backed assertion
+await expect(modRow).toBeVisible({ timeout: Timeouts.NETWORK });
+
+// BAD - hardcoded literal, no semantic context
+await expect(modRow).toBeVisible({ timeout: 30_000 });
+
+// BAD - explicit timeout on a pure UI element; bump GlobalTimeouts.EXPECT if the default isn't enough
+await expect(navbar.gamesLink).toBeVisible({ timeout: 10_000 });
+
+// BAD - per-test override; bump GlobalTimeouts.TEST in helpers/timeouts.ts instead
+test.setTimeout(120_000);
 ```
 
-Defaults that match the fixture's expectations:
-
-- Worker-scoped fixtures: 180s (Electron cold start can take ~2 min on slow CI).
-- Renderer-render assertion (`mainWindow.locator('body')` non-empty): 60s.
-- Per-test default: keep under 60s; if you need more, set `test.setTimeout(...)` explicitly.
+Current `Timeouts` / `GlobalTimeouts` values are starting points, not measured. Calibration follow-up is tracked in LAZ-443.
 
 ---
 

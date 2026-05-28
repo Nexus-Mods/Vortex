@@ -1,14 +1,12 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { NavBar } from "../selectors/navbar";
+import { SettingsPage } from "../selectors/settings";
 
-/**
- * Navigate to the Settings/Preferences page via the sidebar.
- */
 export async function navigateToSettings(page: Page): Promise<void> {
   const navbar = new NavBar(page);
   await navbar.settingsLink.click();
-  await page.waitForTimeout(1000);
+  await expect(new SettingsPage(page).interfaceTab).toBeVisible();
 }
 
 /**
@@ -21,5 +19,4 @@ export async function navigateToGames(page: Page): Promise<void> {
   } else if (await navbar.homeLink.isVisible().catch(() => false)) {
     await navbar.homeLink.click();
   }
-  await page.waitForTimeout(1000);
 }
