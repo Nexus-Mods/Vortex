@@ -17,18 +17,22 @@ if [[ -z "${VNC_PASSWORD:-}" ]]; then
     echo "[vnc-entrypoint] No VNC_PASSWORD supplied; generated one: ${VNC_PASSWORD}"
 fi
 
-mkdir -p "${HOME}/.vnc"
+# Modern TigerVNC uses ~/.config/tigervnc; if only ~/.vnc exists it tries to
+# migrate via rename, which fails when ~/.config doesn't exist yet. Write
+# straight to the new layout to sidestep the migration entirely.
+VNC_CONFIG_DIR="${HOME}/.config/tigervnc"
+mkdir -p "${VNC_CONFIG_DIR}" "${HOME}/.local/state/tigervnc"
 
 # Materialise the VNC password file from the env var so the password is not
 # baked into the image. `vncpasswd -f` reads a plain password from stdin and
 # writes the obfuscated form to stdout.
-echo "${VNC_PASSWORD}" | vncpasswd -f >"${HOME}/.vnc/passwd"
-chmod 600 "${HOME}/.vnc/passwd"
+echo "${VNC_PASSWORD}" | vncpasswd -f >"${VNC_CONFIG_DIR}/passwd"
+chmod 600 "${VNC_CONFIG_DIR}/passwd"
 unset VNC_PASSWORD
 
 # Window manager and a terminal, so the user can poke at the session if
 # Vortex itself fails to launch.
-cat >"${HOME}/.vnc/xstartup" <<'EOF'
+cat >"${VNC_CONFIG_DIR}/xstartup" <<'EOF'
 #!/usr/bin/env bash
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
@@ -37,7 +41,7 @@ xsetroot -solid '#202225'
 xterm -geometry 100x24+10+10 &
 exec fluxbox
 EOF
-chmod +x "${HOME}/.vnc/xstartup"
+chmod +x "${VNC_CONFIG_DIR}/xstartup"
 
 # Clean up any stale lock files from a previous container run that crashed.
 rm -f "/tmp/.X${DISPLAY_NUM#:}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM#:}" || true
@@ -49,7 +53,7 @@ vncserver "${DISPLAY_NUM}" \
     -rfbport "${VNC_PORT}" \
     -localhost no \
     -SecurityTypes VncAuth \
-    -PasswordFile "${HOME}/.vnc/passwd"
+    -PasswordFile "${VNC_CONFIG_DIR}/passwd"
 
 # noVNC bridge -> http://<host>:${NOVNC_PORT}/vnc.html
 NOVNC_DIR=""

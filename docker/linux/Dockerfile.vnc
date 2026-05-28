@@ -91,15 +91,30 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
 # Non-root user. Electron refuses to run as root without --no-sandbox, and the
 # build itself works happily under an unprivileged user.
+# Ubuntu 24.04+ base images ship with a pre-existing `ubuntu` user at UID
+# 1000, so drop it (and any colliding group) before creating ours.
 ARG USERNAME=vortex
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
+RUN if id -u ${USER_UID} >/dev/null 2>&1; then \
+        existing_user="$(getent passwd ${USER_UID} | cut -d: -f1)"; \
+        userdel --remove "${existing_user}" 2>/dev/null || userdel "${existing_user}"; \
+    fi \
+    && if getent group ${USER_GID} >/dev/null; then \
+        existing_group="$(getent group ${USER_GID} | cut -d: -f1)"; \
+        groupdel "${existing_group}" || true; \
+    fi \
+    && groupadd --gid ${USER_GID} ${USERNAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/bash ${USERNAME} \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USERNAME}
 
 # ----- Build Vortex -----
 ARG APP_DIR=/home/${USERNAME}/vortex
+
+# Create the workspace owned by the build user up-front. `WORKDIR` would
+# otherwise create it as root, leaving the directory itself unwritable by
+# the `vortex` user even though `COPY --chown` sets the file ownership.
+RUN mkdir -p ${APP_DIR} && chown ${USER_UID}:${USER_GID} ${APP_DIR}
 WORKDIR ${APP_DIR}
 
 # Copy the workspace. .dockerignore should exclude node_modules and dist
@@ -118,8 +133,7 @@ ENV PNPM_HOME=/home/${USERNAME}/.local/share/pnpm \
 # the main/renderer/preload bundles plus the bundled game extensions and
 # downloaded assets. `build:all` chains build -> build:extensions -> build:assets.
 RUN pnpm install --no-frozen-lockfile \
-    && pnpm run build:all \
-    && pnpm -F @vortex/main exec electron --version
+    && pnpm run build:all
 
 # ----- VNC + entrypoint -----
 USER root
@@ -144,4 +158,8 @@ USER ${USERNAME}
 WORKDIR ${APP_DIR}
 
 ENTRYPOINT ["/usr/local/bin/vnc-entrypoint.sh"]
-CMD ["pnpm", "start"]
+# `--` lets pnpm forward the remaining args to the `start` script, which ends
+# in `electron .` — so Electron receives `--no-sandbox`. Containers can't use
+# the SUID sandbox, and disabling it via flag is more reliable than relying
+# on $ELECTRON_DISABLE_SANDBOX alone.
+CMD ["pnpm", "start", "--", "--no-sandbox"]
