@@ -105,7 +105,7 @@ dist/index.js         bundled by @vercel/ncc, committed for runtime
 ```bash
 cd .github/actions/fingerprints
 pnpm install
-pnpm test
+pnpm run test
 pnpm run build
 ```
 

@@ -5,14 +5,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "pnpm playwright test",
-    "test:headed": "pnpm playwright test --headed",
-    "test:debug": "pnpm playwright test --debug",
-    "test:report": "pnpm playwright show-report"
+    "e2e": "pnpm playwright test",
+    "e2e:headed": "pnpm playwright test --headed",
+    "e2e:debug": "pnpm playwright test --debug",
+    "e2e:report": "pnpm playwright show-report"
   },
   "nx": {
     "targets": {
-      "test": {
+      "e2e": {
         "cache": false,
         "continuous": true,
         "dependsOn": [

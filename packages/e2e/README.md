@@ -10,6 +10,21 @@ Automated E2E tests for Vortex using [Playwright for Electron](https://playwrigh
 pnpm -F @vortex/e2e exec playwright install chromium
 ```
 
+## Setup Environment
+
+E2E tests load env from `packages/e2e/.env` automatically. File is gitignored.
+Get Nexus creds from password manager, then add:
+
+```env
+E2E_NEXUS_FREE_USER_USERNAME=NXMMember
+E2E_NEXUS_FREE_USER_PASSWORD=...
+E2E_NEXUS_PREMIUM_USER_USERNAME=NXMPremium
+E2E_NEXUS_PREMIUM_USER_PASSWORD=...
+```
+
+Free-user creds cover login, upgrade, and some smoke tests. Premium-user creds
+are needed for specs that assert premium-only behaviour.
+
 ## Running Tests
 
 ```bash
@@ -31,6 +46,8 @@ pnpm -F @vortex/e2e exec playwright test --grep @smoke
 # Run tests matching a name pattern
 pnpm -F @vortex/e2e exec playwright test -g "Settings"
 ```
+
+Examples above assume `.env` has needed creds.
 
 ## Project Structure
 
@@ -117,7 +134,7 @@ No inline `page.screenshot()` in tests. Diagnostics are handled by the Playwrigh
 View reports after a run:
 
 ```bash
-pnpm -F @vortex/e2e run test:report
+pnpm e2e:report
 ```
 
 ### Fake Game Installations

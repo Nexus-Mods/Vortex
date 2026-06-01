@@ -88,15 +88,20 @@ export async function loginToNexus(
       // remains valid. Real Chrome + AutomationControlled disabled +
       // navigator.webdriver spoof matches what was cleared during warmup.
       const headless = options.headless ?? !process.env.PWDEBUG;
+      const executablePath = process.env.E2E_PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
       const launchArgs = ["--disable-blink-features=AutomationControlled"];
       try {
         authBrowser = await chromium.launch({
           headless,
-          channel: "chrome",
+          ...(executablePath !== undefined ? { executablePath } : { channel: "chrome" }),
           args: launchArgs,
         });
       } catch {
-        authBrowser = await chromium.launch({ headless, args: launchArgs });
+        authBrowser = await chromium.launch({
+          headless,
+          ...(executablePath !== undefined ? { executablePath } : {}),
+          args: launchArgs,
+        });
       }
       const authContext = await authBrowser.newContext(
         options.storageStatePath !== undefined
