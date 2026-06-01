@@ -194,9 +194,7 @@ const FINGERPRINT_FRAME_LIMIT = 5;
  *     context above the throw site varies per invocation).
  *
  * An optional `discriminator` distinguishes error sub-types that share an
- * identical stack (e.g. several download failure categories thrown from the
- * same call site). It must be a stable, low-cardinality, non-PII value; when
- * omitted the fingerprint is unchanged from a pure stack+version hash.
+ * identical frame.
  */
 export const computeErrorFingerprint = (
   stack: string | undefined,

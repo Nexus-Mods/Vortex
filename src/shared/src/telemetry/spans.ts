@@ -52,12 +52,8 @@ export const recordErrorOnSpan = (
 };
 
 /**
- * Stable, low-cardinality tag distinguishing error sub-types that share a
- * stack — e.g. the download failure categories (`network-timeout`, `fs-error`,
- * `network-error`, …) that are all thrown as the same class from the same call
- * site and would otherwise collapse into one fingerprint. Uses the error's
- * string `code` when present; deliberately excludes the message to keep
- * cardinality bounded and avoid leaking PII into the fingerprint.
+ * An error `discriminator` that distinguishes error sub-types that share an
+ * identical stack.
  */
 const errorDiscriminator = (error: Error): string | undefined => {
   const code = (error as { code?: unknown }).code;
