@@ -1,3 +1,4 @@
+import { deserializeError } from "@vortex/shared";
 import type {
   RendererChannels,
   MainChannels,
@@ -6,6 +7,7 @@ import type {
   AssertSerializable,
   CallbackChannels,
   MainCallbackChannels,
+  WireError,
 } from "@vortex/shared/ipc";
 import { ipcMain, type WebContents } from "electron";
 
@@ -101,11 +103,18 @@ function mainCallback<C extends keyof CallbackChannels>(
     const receivedCollationId = args[0];
     if (receivedCollationId !== collationId) return;
 
-    const result = args[1];
-    if (resolve) {
-      reject = undefined;
-      resolve(result as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>);
-      resolve = undefined;
+    // The timer may already have settled this promise; bail if so.
+    if (resolve === undefined || reject === undefined) return;
+    const res = resolve;
+    const rej = reject;
+    resolve = undefined;
+    reject = undefined;
+
+    const result = args[1] as { ok: true; value: unknown } | { ok: false; error: WireError };
+    if ("error" in result) {
+      rej(deserializeError(result.error));
+    } else {
+      res(result.value as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>);
     }
   });
 

@@ -112,6 +112,27 @@ export type WireDownloadState = DownloadProgress & {
 
 export type WireDownloadCheckpoint = DownloadCheckpoint<string>;
 
+/**
+ * Wire representation of an Error, produced by `serializeError` and consumed by
+ * `deserializeError` (both exported from `@vortex/shared`).
+ *
+ * Carries the standard Error fields, the recursive `cause` chain, and any
+ * own-enumerable properties across the IPC boundary. Registered error classes
+ * are rebuilt with their real prototype via the codec registry; all others
+ * rehydrate as a base `Error` carrying the same properties.
+ */
+export type WireError = {
+  name: string;
+  message: string;
+  stack?: string;
+  cause?: WireError;
+  /** Own-enumerable data properties carried verbatim across the boundary. */
+  properties?: { [key: string]: Serializable };
+};
+
+/** A callback reply is either a successful value or a serialized error. */
+export type WireCallbackResult<T> = { ok: true; value: T } | { ok: false; error: WireError };
+
 export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
 
@@ -130,7 +151,7 @@ export type RendererCallbackChannels = {
   [C in keyof CallbackChannels as `callback:${C}`]: CallbackChannels[C] extends (
     ...args: infer _Args
   ) => Promise<infer Return>
-    ? (collationId: number, result: Return) => void
+    ? (collationId: number, result: WireCallbackResult<Return>) => void
     : never;
 };
 
