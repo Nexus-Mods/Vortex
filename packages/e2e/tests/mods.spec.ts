@@ -23,7 +23,7 @@ const TIERS = [
 ] as const;
 
 test.describe("Mods - Downloads", () => {
-  // Fresh Vortex per test so login state and managed game don't leak.
+  test.slow();
   test.describe.configure({ mode: "parallel" });
 
   for (const { tier, user } of TIERS) {
@@ -31,6 +31,7 @@ test.describe("Mods - Downloads", () => {
       vortexApp,
       vortexWindow,
     }) => {
+      test.slow();
       let managed: ManagedGame | null = null;
       let authBrowser: Browser | null = null;
 
