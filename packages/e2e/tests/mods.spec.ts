@@ -39,7 +39,6 @@ test.describe("Mods - Downloads", () => {
         // reliably while no game is active.
         const auth = await loginToNexus(vortexApp, vortexWindow, user, {
           keepBrowser: true,
-          headless: false,
         });
         if (auth === null) {
           throw new Error("loginToNexus did not return a browser handle");

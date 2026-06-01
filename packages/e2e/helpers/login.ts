@@ -19,7 +19,7 @@ export interface LoginToNexusOptions {
    */
   keepBrowser?: boolean;
   /**
-   * Override headless mode for the auth browser. Defaults to !PWDEBUG.
+   * Override headless mode for the auth browser. Defaults to true.
    * Set to false when the caller needs to navigate Cloudflare-protected
    * pages on www.nexusmods.com after login — Cloudflare's JS challenge
    * generally blocks headless browsers.
@@ -91,7 +91,7 @@ export async function loginToNexus(
       // so that Cloudflare's cf_clearance cookie (saved into storage state)
       // remains valid. Real Chrome + AutomationControlled disabled +
       // navigator.webdriver spoof matches what was cleared during warmup.
-      const headless = options.headless ?? !process.env.PWDEBUG;
+      const headless = options.headless ?? true;
       const executablePath = process.env.E2E_PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
       const launchArgs = ["--disable-blink-features=AutomationControlled"];
       try {
