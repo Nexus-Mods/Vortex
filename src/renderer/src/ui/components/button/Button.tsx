@@ -7,7 +7,14 @@
  */
 
 import { mdiCircleOutline, mdiLoading } from "@mdi/js";
-import React, { type ButtonHTMLAttributes, forwardRef, type ReactNode } from "react";
+import React, {
+  type ButtonHTMLAttributes,
+  cloneElement,
+  forwardRef,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -110,8 +117,12 @@ const ButtonIcon = ({
     );
   }
 
-  if (icon) {
-    return <span className="nxm-button-icon flex items-center justify-center">{icon}</span>;
+  if (isValidElement(icon)) {
+    const element = icon as ReactElement<{ className?: string }>;
+
+    return cloneElement(element, {
+      className: joinClasses(["nxm-button-icon", element.props.className]),
+    });
   }
 
   if (path) {

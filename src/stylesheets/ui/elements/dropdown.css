@@ -6,7 +6,7 @@
     .nxm-dropdown-button {
         z-index: 1;
         position: relative;
-        border-radius: calc(var(--spacing) * 1);
+        border-radius: var(--radius-sm);
 
         display: flex;
         align-items: center;
@@ -68,7 +68,7 @@
         min-width: calc(var(--spacing) * 52);
         margin-top: calc(var(--spacing) * 1);
         max-height: calc(var(--spacing) * 128);
-        border-radius: calc(var(--spacing) * 1);
+        border-radius: var(--radius-sm);
         border: 1px solid var(--color-stroke-weak);
         background-color: var(--color-surface-mid);
     }
@@ -88,7 +88,7 @@
 
         column-gap: calc(var(--spacing) * 3);
         color: var(--color-neutral-moderate);
-        border-radius: calc(var(--spacing) * 1);
+        border-radius: var(--radius-sm);
         padding-block: calc(var(--spacing) * 1.5);
         padding-inline: calc(var(--spacing) * 3);
 

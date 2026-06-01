@@ -2,7 +2,7 @@
     .nxm-input {
         width: 100%;
         min-height: calc(var(--spacing) * 9);
-        border-radius: calc(var(--spacing) * 1);
+        border-radius: var(--radius-sm);
         padding-inline: calc(var(--spacing) * 3);
 
         font-size: var(--text-body-lg);

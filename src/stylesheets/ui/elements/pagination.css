@@ -19,7 +19,7 @@
             align-items: center;
             justify-content: center;
             min-height: calc(var(--spacing) * 8);
-            border-radius: calc(var(--spacing) * 0.5);
+            border-radius: var(--radius-xs);
 
             transition-property:
                 color, background-color, border-color, outline-color, fill, stroke, opacity,
