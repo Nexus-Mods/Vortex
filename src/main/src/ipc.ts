@@ -1,4 +1,4 @@
-import { deserializeError } from "@vortex/shared";
+import { rehydrateSerializedError } from "@vortex/shared";
 import type {
   RendererChannels,
   MainChannels,
@@ -7,7 +7,7 @@ import type {
   AssertSerializable,
   CallbackChannels,
   MainCallbackChannels,
-  WireError,
+  SerializedError,
 } from "@vortex/shared/ipc";
 import { ipcMain, type WebContents } from "electron";
 
@@ -110,9 +110,11 @@ function mainCallback<C extends keyof CallbackChannels>(
     resolve = undefined;
     reject = undefined;
 
-    const result = args[1] as { ok: true; value: unknown } | { ok: false; error: WireError };
+    const result = args[1] as unknown as
+      | { ok: true; value: unknown }
+      | { ok: false; error: SerializedError };
     if ("error" in result) {
-      rej(deserializeError(result.error));
+      rej(rehydrateSerializedError(result.error));
     } else {
       res(result.value as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>);
     }

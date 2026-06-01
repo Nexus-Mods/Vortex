@@ -1,9 +1,8 @@
+import { downloadErrorToWire } from "@vortex/shared";
 import type { DownloadState, ResolvedEndpoint, ResolvedResource } from "@vortex/shared/download";
 import { staticChunker } from "@vortex/shared/download";
-import type { DownloadError } from "@vortex/shared/errors";
 import type {
   WireDownloadCheckpoint,
-  WireDownloadError,
   WireEndpoint,
   WireResolvedResource,
 } from "@vortex/shared/ipc";
@@ -12,13 +11,6 @@ import type { WebContents } from "electron";
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
 import type { DownloadManager } from "./manager";
-
-function downloadErrorToWire(err: DownloadError): WireDownloadError {
-  const { payload } = err;
-  const wirePayload =
-    "url" in payload ? { ...payload, url: payload.url.toString() } : { ...payload };
-  return { payload: wirePayload, message: err.message };
-}
 
 function wireToResolvedEndpoint(wire: WireEndpoint): ResolvedEndpoint {
   return { url: new URL(wire.url), headers: wire.headers };
