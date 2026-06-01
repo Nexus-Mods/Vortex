@@ -10,7 +10,6 @@ import { SettingsPage } from "../selectors/settings";
 import { Spine } from "../selectors/spine";
 
 test.describe("Profiles - Add", () => {
-  test.slow();
   test(`[QA-113] user can add a new profile for the current game`, async ({
     vortexApp,
     vortexWindow,

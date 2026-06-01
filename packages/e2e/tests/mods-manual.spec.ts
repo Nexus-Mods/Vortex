@@ -28,15 +28,11 @@ const TIERS = [
 ] as const;
 
 test.describe("Mods - Manual Downloads", () => {
-  test.slow();
-  test.describe.configure({ mode: "parallel" });
-
   for (const { tier, user } of TIERS) {
     test(`[QA-176] ${tier} user can manually download SMAPI and Install From File`, async ({
       vortexApp,
       vortexWindow,
     }) => {
-      test.slow();
       let managed: ManagedGame | null = null;
       let authBrowser: Browser | null = null;
 

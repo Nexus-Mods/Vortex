@@ -9,7 +9,6 @@ import { freeUser } from "../helpers/users";
 import { NavBar } from "../selectors/navbar";
 
 test.describe("Account - Upgrade to Premium", () => {
-  test.slow();
   test(`[QA-96] free user clicking Go Premium opens the upgrade URL`, async ({
     vortexApp,
     vortexWindow,
