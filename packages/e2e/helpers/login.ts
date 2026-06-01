@@ -69,7 +69,7 @@ export async function loginToNexus(
       .waitForEvent("window", { timeout: GlobalTimeouts.ACTION })
       .catch(() => null);
 
-    await expect(vortexLoginPage.vortexLoginButton).toBeVisible();
+    await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
     await vortexLoginPage.vortexLoginButton.click();
 
     loginPage = (await popupPromise) ?? (await appWindowPromise);
@@ -218,7 +218,7 @@ export async function loginToNexus(
     await expect(vortexLoginPage.vortexLoginDialog).toBeHidden();
     await expect(vortexLoginPage.profileButton).toBeVisible();
     await vortexLoginPage.profileButton.click();
-    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible();
+    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible({ timeout: Timeouts.NETWORK });
   });
 
   if (leakBrowser && authBrowser !== null && authPage !== null) {

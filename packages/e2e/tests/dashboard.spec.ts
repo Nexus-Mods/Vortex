@@ -3,6 +3,7 @@
  * Covers test cases: #2.1A - #2.18A
  */
 import { test, expect } from "../fixtures/vortex-app";
+import { Timeouts } from "../helpers/timeouts";
 import { DashboardPage } from "../selectors/dashboard";
 
 test.describe("Dashboard", () => {
@@ -63,7 +64,7 @@ test.describe("Dashboard - Getting Started Videos", () => {
       await test.step("Open video", async () => {
         // A drag-handle overlay intercepts pointer events
         await dashboard.introductionVideo.click({ force: true });
-        await expect(dashboard.videoCloseButton).toBeVisible();
+        await expect(dashboard.videoCloseButton).toBeVisible({ timeout: Timeouts.NETWORK });
       });
 
       await test.step("Close video", async () => {
