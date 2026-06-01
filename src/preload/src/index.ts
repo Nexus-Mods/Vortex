@@ -1,8 +1,10 @@
+import { serializeError } from "@vortex/shared";
 import type {
   AppInitMetadata,
   RendererChannels,
   InvokeChannels,
   MainChannels,
+  CallbackChannels,
   SerializableArgs,
   AssertSerializable,
   Serializable,
@@ -20,6 +22,7 @@ const betterIpcRenderer = {
   send: rendererSend,
   on: rendererOn,
   off: rendererOff,
+  callback: rendererCallback,
 };
 
 try {
@@ -225,24 +228,11 @@ try {
       cancel: (downloadId) => betterIpcRenderer.invoke("download:cancel", downloadId),
       getState: (downloadId) => betterIpcRenderer.invoke("download:getState", downloadId),
       getStates: (downloadIds) => betterIpcRenderer.invoke("download:getStates", downloadIds),
-      onResolve: (handler) => {
-        const listener = (_event: Electron.IpcRendererEvent, collationId: number) => {
-          handler(collationId)
-            .then((result) => {
-              betterIpcRenderer.send("callback:download:resolve", collationId, result);
-            })
-            .catch((err: unknown) => {
-              // The callback wire carries success only; rejections can't be
-              // sent back. Cancellation is driven explicitly elsewhere, so
-              // these are routine on every canceled batch; debug log keeps
-              // vortex.log clean.
-              const message = err instanceof Error ? err.message : String(err);
-              betterIpcRenderer.send("logging:log", "debug", "download resolver rejected", message);
-            });
-        };
-        ipcRenderer.on("download:resolve", listener);
-        return () => ipcRenderer.removeListener("download:resolve", listener);
-      },
+      // A rejection here propagates back to main so download:start rejects
+      // immediately with the real reason instead of waiting out the callback
+      // timeout. Cancellation rejects too, but the install manager drops
+      // aborted downloads, so it won't be reported as a failure.
+      onResolve: (handler) => betterIpcRenderer.callback("download:resolve", handler),
     },
 
     diag: {
@@ -303,4 +293,37 @@ function rendererOff<C extends keyof MainChannels>(
   ) => void,
 ): void {
   ipcRenderer.off(channel, listener);
+}
+
+// Registers a handler for a callback channel. Main sends a request on `channel`
+// with a collation id; the handler produces (or rejects with) a value, which is
+// sent back on `callback:${channel}` wrapped in a WireCallbackResult. Rejections
+// are serialized so main can rehydrate the real error instead of waiting out the
+// callback timeout. Returns an unsubscribe function. This is the renderer-side
+// counterpart to betterIpcMain.callback.
+function rendererCallback<C extends keyof CallbackChannels>(
+  channel: C,
+  handler: (
+    collationId: number,
+    ...args: SerializableArgs<Parameters<CallbackChannels[C]>>
+  ) => Promise<Awaited<ReturnType<CallbackChannels[C]>>>,
+): () => void {
+  const listener = (
+    _event: Electron.IpcRendererEvent,
+    collationId: number,
+    ...args: SerializableArgs<Parameters<CallbackChannels[C]>>
+  ) => {
+    handler(collationId, ...args)
+      .then((value) => {
+        ipcRenderer.send(`callback:${channel}`, collationId, { ok: true, value });
+      })
+      .catch((err: unknown) => {
+        ipcRenderer.send(`callback:${channel}`, collationId, {
+          ok: false,
+          error: serializeError(err),
+        });
+      });
+  };
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
 }

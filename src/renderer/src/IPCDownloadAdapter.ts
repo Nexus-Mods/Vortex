@@ -4,14 +4,8 @@ import { access, mkdir, rename, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 
-import { unknownToError } from "@vortex/shared";
-import {
-  AlreadyDownloaded,
-  DownloadIsHTML,
-  HTTPError,
-  UserCanceled,
-  DownloadError,
-} from "@vortex/shared/errors";
+import { unknownToError, wireToDownloadError } from "@vortex/shared";
+import { AlreadyDownloaded, UserCanceled } from "@vortex/shared/errors";
 import type { WireDownloadState, WireResolvedResource } from "@vortex/shared/ipc";
 import { z } from "zod";
 
@@ -51,18 +45,7 @@ import { batchDispatch, flatten } from "./util/util";
 function rehydrateDownloadError(state: WireDownloadState): Error | null {
   if (state.status === "canceled") return new UserCanceled();
   if (state.status !== "failed" || state.error === null) return null;
-  const { payload, message } = state.error;
-  switch (payload.code) {
-    case "is-html":
-      return new DownloadIsHTML(payload.url);
-    case "network-bad-status":
-      return new HTTPError(payload.statusCode, message, payload.url);
-    default:
-      return new DownloadError(
-        "url" in payload ? { ...payload, url: new URL(payload.url) } : { ...payload },
-        message,
-      );
-  }
+  return wireToDownloadError(state.error);
 }
 
 type ProtocolHandler = (
