@@ -8,7 +8,7 @@ import {
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
-import { Timeouts } from "./timeouts";
+import { GlobalTimeouts, Timeouts } from "./timeouts";
 import { freeUser, type NexusUser } from "./users";
 
 export interface LoginToNexusOptions {
@@ -62,8 +62,12 @@ export async function loginToNexus(
   });
 
   await test.step("Click the login button", async () => {
-    const popupPromise = vortexWindow.waitForEvent("popup").catch(() => null);
-    const appWindowPromise = vortexApp.waitForEvent("window").catch(() => null);
+    const popupPromise = vortexWindow
+      .waitForEvent("popup", { timeout: GlobalTimeouts.ACTION })
+      .catch(() => null);
+    const appWindowPromise = vortexApp
+      .waitForEvent("window", { timeout: GlobalTimeouts.ACTION })
+      .catch(() => null);
 
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible();
     await vortexLoginPage.vortexLoginButton.click();
