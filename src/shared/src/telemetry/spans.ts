@@ -38,11 +38,24 @@ export const recordErrorOnSpan = (
     }
   }
 
-  const fingerprint = computeErrorFingerprint(sanitizedStack, appVersion);
+  const fingerprint = computeErrorFingerprint(
+    sanitizedStack,
+    appVersion,
+    errorDiscriminator(error),
+  );
   if (fingerprint !== undefined) {
     span.setAttribute("error.fingerprint", fingerprint);
   }
 
   span.recordException(sanitized);
   span.setStatus({ code: SpanStatusCode.ERROR, message: sanitizedMessage });
+};
+
+/**
+ * An error `discriminator` that distinguishes error sub-types that share an
+ * identical stack.
+ */
+const errorDiscriminator = (error: Error): string | undefined => {
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
 };
