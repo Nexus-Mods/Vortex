@@ -38,11 +38,28 @@ export const recordErrorOnSpan = (
     }
   }
 
-  const fingerprint = computeErrorFingerprint(sanitizedStack, appVersion);
+  const fingerprint = computeErrorFingerprint(
+    sanitizedStack,
+    appVersion,
+    errorDiscriminator(error),
+  );
   if (fingerprint !== undefined) {
     span.setAttribute("error.fingerprint", fingerprint);
   }
 
   span.recordException(sanitized);
   span.setStatus({ code: SpanStatusCode.ERROR, message: sanitizedMessage });
+};
+
+/**
+ * Stable, low-cardinality tag distinguishing error sub-types that share a
+ * stack — e.g. the download failure categories (`network-timeout`, `fs-error`,
+ * `network-error`, …) that are all thrown as the same class from the same call
+ * site and would otherwise collapse into one fingerprint. Uses the error's
+ * string `code` when present; deliberately excludes the message to keep
+ * cardinality bounded and avoid leaking PII into the fingerprint.
+ */
+const errorDiscriminator = (error: Error): string | undefined => {
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
 };
