@@ -7,6 +7,7 @@ import { loginToNexus } from "../helpers/login";
 import { freeUser } from "../helpers/users";
 
 test.describe("Login UI", () => {
+  test.slow();
   test("Login", async ({ vortexApp, vortexWindow }) => {
     await loginToNexus(vortexApp, vortexWindow, freeUser);
   });

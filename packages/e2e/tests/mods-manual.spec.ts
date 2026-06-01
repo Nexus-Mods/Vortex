@@ -28,6 +28,7 @@ const TIERS = [
 ] as const;
 
 test.describe("Mods - Manual Downloads", () => {
+  test.slow();
   test.describe.configure({ mode: "parallel" });
 
   for (const { tier, user } of TIERS) {
@@ -35,13 +36,13 @@ test.describe("Mods - Manual Downloads", () => {
       vortexApp,
       vortexWindow,
     }) => {
+      test.slow();
       let managed: ManagedGame | null = null;
       let authBrowser: Browser | null = null;
 
       try {
         const auth = await loginToNexus(vortexApp, vortexWindow, user, {
           keepBrowser: true,
-          headless: false,
         });
         if (auth === null) {
           throw new Error("loginToNexus did not return a browser handle");

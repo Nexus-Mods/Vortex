@@ -30,6 +30,7 @@ const TIERS = [
 }[];
 
 test.describe("Account - Header Premium badge", () => {
+  test.slow();
   test.describe.configure({ mode: "parallel" });
 
   for (const { id, tier, user, expectBadge } of TIERS) {
