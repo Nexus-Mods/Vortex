@@ -192,10 +192,14 @@ const FINGERPRINT_FRAME_LIMIT = 5;
  *   - drops the `:column` from each frame (unstable across builds and call sites),
  *   - keeps only the innermost {@link FINGERPRINT_FRAME_LIMIT} frames (calling
  *     context above the throw site varies per invocation).
+ *
+ * An optional `discriminator` distinguishes error sub-types that share an
+ * identical stack.
  */
 export const computeErrorFingerprint = (
   stack: string | undefined,
   appVersion: string,
+  discriminator?: string,
 ): string | undefined => {
   if (stack === undefined) return undefined;
   const frames = stack
@@ -206,7 +210,11 @@ export const computeErrorFingerprint = (
     .map((f) => f.replace(STRIP_COLUMN_RE, "$1"))
     .slice(0, FINGERPRINT_FRAME_LIMIT);
   if (frames.length === 0) return undefined;
-  const input = frames.join("\n") + "\n" + appVersion;
+  const input =
+    frames.join("\n") +
+    "\n" +
+    appVersion +
+    (discriminator !== undefined && discriminator !== "" ? "\n" + discriminator : "");
   return fnv1aHash(input);
 };
 
