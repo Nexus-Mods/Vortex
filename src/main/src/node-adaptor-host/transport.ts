@@ -1,5 +1,12 @@
 import type { IMethodMessage } from "@nexusmods/adaptor-api";
-import { getErrorMessage } from "@vortex/shared";
+import {
+  getErrorMessage,
+  extractErrorFields,
+  serializeCause,
+  rehydrateSerializedError,
+  MAX_CAUSE_DEPTH,
+} from "@vortex/shared";
+import type { SerializedError } from "@vortex/shared/ipc";
 
 // --- Wire protocol types ---
 
@@ -15,26 +22,6 @@ interface ResultMessage {
   value: unknown;
 }
 
-/**
- * Structured error envelope. The transport itself is agnostic to the error
- * classes it carries: the sender serialises `name`, `code`, and any extra
- * own enumerable properties (e.g. `FileSystemError.isTransient`); the
- * receiver rehydrates a generic `Error` with those fields copied back, so
- * contract-specific clients (like `@nexusmods/adaptor-api/fs`'s client polyfill) can
- * branch on `err.name` and reconstruct their concrete error type.
- *
- * `cause` chains are serialised recursively up to {@link MAX_CAUSE_DEPTH}
- * levels. Deeper chains (and non-Error causes) are truncated silently to
- * avoid runaway recursion on circular references.
- */
-interface SerializedError {
-  message: string;
-  name?: string;
-  code?: string;
-  data?: Record<string, unknown>;
-  cause?: SerializedError;
-}
-
 interface ErrorMessage {
   type: "error";
   correlationId: string;
@@ -46,39 +33,6 @@ interface ErrorMessage {
 }
 
 type RpcMessage = CallMessage | ResultMessage | ErrorMessage;
-
-/** Own-property keys that are part of the standard Error surface. */
-const STANDARD_ERROR_KEYS = new Set<string>(["name", "message", "stack", "cause", "code"]);
-
-/** How many levels of `cause` chain to carry across the wire. */
-const MAX_CAUSE_DEPTH = 3;
-
-function extractErrorFields(err: Error): Omit<SerializedError, "cause"> {
-  const result: Omit<SerializedError, "cause"> = { message: err.message };
-  if (err.name && err.name !== "Error") result.name = err.name;
-
-  const errWithCode = err as Error & { code?: unknown };
-  if (typeof errWithCode.code === "string") result.code = errWithCode.code;
-
-  const extras: Record<string, unknown> = {};
-  for (const key of Object.getOwnPropertyNames(err)) {
-    if (STANDARD_ERROR_KEYS.has(key)) continue;
-    const value = (err as unknown as Record<string, unknown>)[key];
-    if (typeof value === "function") continue;
-    extras[key] = value;
-  }
-  if (Object.keys(extras).length > 0) result.data = extras;
-
-  return result;
-}
-
-function serializeCause(value: unknown, depth: number): SerializedError | undefined {
-  if (depth <= 0) return undefined;
-  if (!(value instanceof Error)) return undefined;
-  const fields = extractErrorFields(value);
-  const nested = serializeCause((value as Error & { cause?: unknown }).cause, depth - 1);
-  return nested === undefined ? fields : { ...fields, cause: nested };
-}
 
 function serialiseError(correlationId: string, err: unknown): ErrorMessage {
   const message = getErrorMessage(err);
@@ -94,20 +48,6 @@ function serialiseError(correlationId: string, err: unknown): ErrorMessage {
   if (cause !== undefined) base.cause = cause;
 
   return base;
-}
-
-function rehydrateSerializedError(serialized: SerializedError): Error {
-  const err = new Error(serialized.message, {
-    cause: serialized.cause !== undefined ? rehydrateSerializedError(serialized.cause) : undefined,
-  });
-  if (serialized.name !== undefined) err.name = serialized.name;
-  if (serialized.code !== undefined) {
-    (err as Error & { code?: string }).code = serialized.code;
-  }
-  if (serialized.data !== undefined) {
-    Object.assign(err, serialized.data);
-  }
-  return err;
 }
 
 function deserialiseError(envelope: Record<string, unknown>): Error {
