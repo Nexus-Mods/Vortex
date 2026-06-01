@@ -334,7 +334,7 @@ Don't sprinkle `vortexWindow.screenshot(...)` calls in tests. Playwright config 
 View results:
 
 ```bash
-pnpm -F @vortex/e2e run test:report
+pnpm e2e:report
 ```
 
 ---

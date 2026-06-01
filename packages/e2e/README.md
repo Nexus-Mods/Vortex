@@ -134,7 +134,7 @@ No inline `page.screenshot()` in tests. Diagnostics are handled by the Playwrigh
 View reports after a run:
 
 ```bash
-pnpm -F @vortex/e2e run test:report
+pnpm e2e:report
 ```
 
 ### Fake Game Installations
