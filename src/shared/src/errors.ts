@@ -194,7 +194,7 @@ const FINGERPRINT_FRAME_LIMIT = 5;
  *     context above the throw site varies per invocation).
  *
  * An optional `discriminator` distinguishes error sub-types that share an
- * identical frame.
+ * identical stack.
  */
 export const computeErrorFingerprint = (
   stack: string | undefined,
