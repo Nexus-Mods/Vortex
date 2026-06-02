@@ -20,10 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
-          - os: ubuntu-latest
+          - os-name: vortex-e2e
+          - os-name: public-runner
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os-name }}
+
     continue-on-error: true
     timeout-minutes: 60
 
@@ -55,6 +56,10 @@ jobs:
 
       - name: Install Playwright
         run: pnpm -F @vortex/e2e exec playwright install chromium
+
+      - name: Install Playwright Operating System Dependencies
+        if: runner.os == 'Linux'
+        run: pnpm -F @vortex/e2e exec playwright install-deps chromium
 
       # NOTE(erri120): https://www.electronjs.org/blog/electron-42-0#electron-no-longer-downloads-itself-via-postinstall-script
       - name: Pre-warm electron
@@ -91,7 +96,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-report-${{ matrix.os }}
+          name: e2e-report-${{ matrix.os-name }}
           retention-days: 14
           path: packages/e2e/playwright-report/
           if-no-files-found: error
@@ -100,7 +105,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-results-${{ matrix.os }}
+          name: e2e-results-${{ matrix.os-name }}
           retention-days: 7
           path: packages/e2e/test-results/
           if-no-files-found: error
