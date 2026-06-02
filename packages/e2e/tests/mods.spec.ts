@@ -29,12 +29,13 @@ test.describe("Mods - Downloads", () => {
         vortexApp,
         vortexWindow,
         managedGame: _g,
+        nexusStorageState,
       }) => {
         let authBrowser: Browser | null = null;
 
         try {
           const { browser, page: authPage } = await launchNexusBrowser({
-            storageStatePath: process.env.E2E_AUTH_STORAGE_STATE,
+            storageStatePath: nexusStorageState,
           });
           authBrowser = browser;
 

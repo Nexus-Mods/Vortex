@@ -180,13 +180,23 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
 // Worker-scoped auth snapshot interface
 // ---------------------------------------------------------------------------
 
+interface AuthSnapshot {
+  /** Path to the read-only Vortex user-data snapshot. Callers must copy before use. */
+  snapshotDir: string;
+  /**
+   * Path to a Playwright storage-state JSON file (Nexus website cookies).
+   * Pass to launchNexusBrowser({ storageStatePath }) to get a logged-in browser.
+   * Undefined when the OAuth login did not produce a reusable browser context.
+   */
+  storageStatePath: string | undefined;
+}
+
 interface WorkerAuthSnapshots {
   /**
-   * Returns the path to a snapshot directory for the given user.
-   * Authenticates once per worker per user; subsequent calls return the
-   * cached path. The directory is read-only — callers must copy it before use.
+   * Returns the auth snapshot for the given user.
+   * Authenticates once per worker per user; subsequent calls return the cached result.
    */
-  get(user: NexusUser): Promise<string>;
+  get(user: NexusUser): Promise<AuthSnapshot>;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,6 +212,12 @@ export type VortexTestFixtures = {
   vortexWindow: Page;
   /** Managed fake game installation — set up before the test, cleaned up after. */
   managedGame: ManagedGame;
+  /**
+   * Path to a Playwright storage-state JSON file with Nexus website cookies,
+   * or undefined when nexusUser is null. Pass to launchNexusBrowser({ storageStatePath })
+   * to get a logged-in browser for browsing nexusmods.com.
+   */
+  nexusStorageState: string | undefined;
 };
 
 export type VortexWorkerFixtures = {
@@ -247,12 +263,12 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
 
   workerAuthSnapshots: [
     async ({}, use) => {
-      const snapshots = new Map<string, string>();
-      const pending = new Map<string, Promise<string>>();
+      const snapshots = new Map<string, AuthSnapshot>();
+      const pending = new Map<string, Promise<AuthSnapshot>>();
       const snapshotDirs: string[] = [];
 
       const instance: WorkerAuthSnapshots = {
-        get(user: NexusUser): Promise<string> {
+        get(user: NexusUser): Promise<AuthSnapshot> {
           const key = user.username;
 
           const cached = snapshots.get(key);
@@ -261,7 +277,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
           const inflight = pending.get(key);
           if (inflight !== undefined) return inflight;
 
-          const buildPromise = (async (): Promise<string> => {
+          const buildPromise = (async (): Promise<AuthSnapshot> => {
             const snapshotBase = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-snap-"));
             snapshotDirs.push(snapshotBase);
 
@@ -276,16 +292,30 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
               timeout: Timeouts.SNAPSHOT,
             });
 
+            let storageStatePath: string | undefined;
+
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
-              await loginToNexus(app, window, user, { skipSteps: true });
+              const loginResult = await loginToNexus(app, window, user, {
+                skipSteps: true,
+                keepBrowser: true,
+              });
+              if (loginResult !== null) {
+                // Save the Nexus website session cookies so mods tests can reuse
+                // a logged-in browser without repeating the OAuth flow.
+                const stateFile = path.join(snapshotBase, "nexus-auth.json");
+                await loginResult.page.context().storageState({ path: stateFile });
+                await loginResult.browser.close();
+                storageStatePath = stateFile;
+              }
             } finally {
               // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
               await app.close().catch(() => {});
             }
 
-            snapshots.set(key, snapshotBase);
-            return snapshotBase;
+            const snapshot: AuthSnapshot = { snapshotDir: snapshotBase, storageStatePath };
+            snapshots.set(key, snapshot);
+            return snapshot;
           })();
 
           // Register before awaiting so concurrent callers share the same promise.
@@ -323,8 +353,8 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       // Copy the snapshot (produced by a clean Electron close, so DuckDB is
       // fully flushed) into the fresh test dir. buildElectronEnv will then
       // point ELECTRON_USERDATA/ELECTRON_APPDATA at the copied subdirs.
-      const snapshotBase = await workerAuthSnapshots.get(nexusUser);
-      fs.cpSync(snapshotBase, dir, { recursive: true });
+      const { snapshotDir } = await workerAuthSnapshots.get(nexusUser);
+      fs.cpSync(snapshotDir, dir, { recursive: true });
     }
 
     await use(dir);
@@ -381,6 +411,15 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
         })
         .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
     }
+  },
+
+  nexusStorageState: async ({ workerAuthSnapshots, nexusUser }, use) => {
+    if (nexusUser === null) {
+      await use(undefined);
+      return;
+    }
+    const { storageStatePath } = await workerAuthSnapshots.get(nexusUser);
+    await use(storageStatePath);
   },
 
   managedGame: async (
