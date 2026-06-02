@@ -139,6 +139,43 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
   });
 }
 
+/**
+ * Wait for the main window to be fully ready: show-window IPC fired, DOM
+ * content loaded, YouTube routes blocked, shell.openExternal stubbed.
+ *
+ * The show-window listener must be registered before waitForMainWindow so it
+ * is in place before React mounts the LoadingScreen (which fires the event).
+ * Both the snapshot build and the vortexWindow fixture use this sequence.
+ */
+async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Promise<Page> {
+  const showWindowPromise = app.evaluate(
+    ({ ipcMain }, ms) =>
+      new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("Timed out waiting for show-window")), ms);
+        ipcMain.once("show-window", () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      }),
+    timeoutMs,
+  );
+
+  const mainWindow = await waitForMainWindow(app);
+
+  await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
+    route.fulfill({ status: 204, body: "" }),
+  );
+
+  await mainWindow.waitForLoadState("domcontentloaded");
+  await showWindowPromise;
+
+  await app.evaluate(({ shell }) => {
+    shell.openExternal = async () => undefined;
+  });
+
+  return mainWindow;
+}
+
 // ---------------------------------------------------------------------------
 // Worker-scoped auth snapshot interface
 // ---------------------------------------------------------------------------
@@ -240,10 +277,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             });
 
             try {
-              const window = await waitForMainWindow(app);
-              await app.evaluate(({ shell }) => {
-                shell.openExternal = async () => undefined;
-              });
+              const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               await loginToNexus(app, window, user, { skipSteps: true });
             } finally {
               // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
@@ -314,39 +348,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   },
 
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
-    // Register before domcontentloaded — show-window fires after React mounts
-    // LoadingScreen, which is after dcl, so this listener is always set up first.
-    const showWindowPromise = vortexApp.evaluate(
-      ({ ipcMain }, timeoutMs) =>
-        new Promise<void>((resolve, reject) => {
-          const timer = setTimeout(
-            () => reject(new Error("Timed out waiting for show-window")),
-            timeoutMs,
-          );
-          ipcMain.once("show-window", () => {
-            clearTimeout(timer);
-            resolve();
-          });
-        }),
-      Timeouts.LIFECYCLE,
-    );
-
-    const mainWindow = await waitForMainWindow(vortexApp);
-
-    // Block unwanted connections that slow down tests:
-    await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
-      route.fulfill({ status: 204, body: "" }),
-    );
-
-    await mainWindow.waitForLoadState("domcontentloaded");
-    await showWindowPromise;
-
-    // Prevent Vortex from handing OAuth (and other external) URLs to the OS
-    // default browser. Tests read the OAuth URL from Vortex's in-app field
-    // and drive login in their own Playwright Chromium context.
-    await vortexApp.evaluate(({ shell }) => {
-      shell.openExternal = async () => undefined;
-    });
+    const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
 
     await use(mainWindow);
 
