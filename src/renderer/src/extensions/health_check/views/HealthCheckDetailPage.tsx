@@ -17,7 +17,8 @@ import type { IState } from "../../../types/IState";
 import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
-import { Typography, TypographyLink } from "../../../ui/components/typography/Typography";
+import { Typography } from "../../../ui/components/typography/Typography";
+import { TypographyLink } from "../../../ui/components/typography/TypographyLink";
 import { opn } from "../../../util/api";
 import { log } from "../../../util/log";
 import { shouldShowPremiumAd } from "../../../util/selectors";
@@ -230,7 +231,6 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                         modLink: (
                           <TypographyLink
                             appearance="primary"
-                            as="button"
                             typographyType="inherit"
                             variant="secondary"
                             onClick={openRequiringModPage}

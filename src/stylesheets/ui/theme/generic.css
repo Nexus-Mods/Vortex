@@ -8,6 +8,9 @@
     --z-index-modal: 1050;
     --z-index-toast: 1090;
 
+    --aspect-collection: 4 / 5;
+    --aspect-mod: 16 / 9;
+
     --shadow-sm:
         0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%), 0px 1px 5px rgb(0 0 0 / 20%);
     --shadow-md:

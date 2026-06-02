@@ -2,6 +2,8 @@ import { mdiCheck, mdiDiamondStone, mdiDownload, mdiOpenInNew, mdiWeb } from "@m
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
+
 import { Button } from "../../../../ui/components/button/Button";
 import { Icon } from "../../../../ui/components/icon/Icon";
 import { Typography } from "../../../../ui/components/typography/Typography";
@@ -82,13 +84,7 @@ export const ModRequirement = ({
                   buttonType="secondary"
                   filled="strong"
                   leftIconPath={mdiDownload}
-                  rightIcon={
-                    showPremiumBadge ? (
-                      <span className="-m-1 flex size-5 items-center justify-center rounded-sm bg-premium-moderate text-neutral-strong">
-                        <Icon className="size-4" path={mdiDiamondStone} size="none" />
-                      </span>
-                    ) : undefined
-                  }
+                  rightIcon={showPremiumBadge && <PremiumBadge />}
                   size="sm"
                   onClick={() => onShowVortexModal?.()}
                 >
