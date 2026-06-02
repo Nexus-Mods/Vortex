@@ -3,8 +3,7 @@ import { type Browser, chromium, type Page } from "@playwright/test";
 export interface NexusBrowserOptions {
   /**
    * Override headless mode. Defaults to true (headless).
-   * Set to false for local debugging only. In CI, use storageStatePath with
-   * a pre-captured Cloudflare clearance cookie instead of disabling headless.
+   * Set to false for local debugging only.
    */
   headless?: boolean;
   /**
@@ -23,42 +22,18 @@ export interface NexusBrowserResult {
 }
 
 /**
- * Launch a Chromium browser suitable for navigating nexusmods.com.
- *
- * Matches the fingerprint used by scripts/capture-auth-state.mjs so that
- * Cloudflare's cf_clearance cookie (saved into storage state) remains valid.
+ * Launch a Chromium browser for navigating nexusmods.com.
  * Does not navigate anywhere — call page.goto(url) after receiving the result.
- *
  * The caller is responsible for closing the browser.
  */
 export async function launchNexusBrowser(
   options: NexusBrowserOptions = {},
 ): Promise<NexusBrowserResult> {
-  const headless = options.headless ?? true;
-  const executablePath = process.env.E2E_PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
-  const launchArgs = ["--disable-blink-features=AutomationControlled"];
-
-  let browser: Browser;
-  try {
-    browser = await chromium.launch({
-      headless,
-      ...(executablePath !== undefined ? { executablePath } : { channel: "chrome" }),
-      args: launchArgs,
-    });
-  } catch {
-    browser = await chromium.launch({
-      headless,
-      ...(executablePath !== undefined ? { executablePath } : {}),
-      args: launchArgs,
-    });
-  }
+  const browser = await chromium.launch({ headless: options.headless ?? true });
 
   const context = await browser.newContext(
     options.storageStatePath !== undefined ? { storageState: options.storageStatePath } : undefined,
   );
-  await context.addInitScript(() => {
-    Object.defineProperty(navigator, "webdriver", { get: () => false });
-  });
 
   const page = await context.newPage();
   return { browser, page };

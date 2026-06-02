@@ -14,17 +14,15 @@ export interface LoginToNexusOptions {
    */
   keepBrowser?: boolean;
   /**
-   * Override headless mode for the auth browser. Defaults to true.
-   * Set to false when the caller needs to navigate Cloudflare-protected
-   * pages on www.nexusmods.com after login — Cloudflare's JS challenge
-   * generally blocks headless browsers.
+   * Override headless mode for the auth browser. Defaults to true (headless).
+   * Set to false for local debugging only.
    */
   headless?: boolean;
   /**
    * Path to a Playwright storage-state file (cookies + localStorage) to
-   * preload into the auth browser context. Use this to skip credential
-   * entry — if Nexus session cookies are already valid, the OAuth URL
-   * will land directly on the consent screen.
+   * preload into the auth browser context. When Nexus session cookies are
+   * already valid, the OAuth URL lands directly on the consent screen,
+   * skipping credential entry.
    *
    * Generate with `pnpm -F @vortex/e2e auth:capture`.
    * The file location is gitignored (`packages/e2e/.auth/`); never commit it.

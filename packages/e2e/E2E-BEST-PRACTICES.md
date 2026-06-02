@@ -324,7 +324,7 @@ All explicit timeouts live in `helpers/timeouts.ts`. Do not hardcode `X_000` lit
 Rules:
 
 - **Default UI waits use the config defaults** (5s `actionTimeout` / `expect.timeout` / `navigationTimeout`, sourced from `GlobalTimeouts` in `helpers/timeouts.ts` and applied via `playwright.config.ts`). Do not pass an explicit timeout for pure UI assertions/actions. If a UI wait "needs" longer, the test is racing something it should `await` explicitly.
-- **Network-backed waits** (page navigation, API fetch, mod list populating, Cloudflare clear, OAuth flow) use `Timeouts.NETWORK`.
+- **Network-backed waits** (page navigation, API fetch, mod list populating, OAuth flow) use `Timeouts.NETWORK`.
 - **Fixture / launch timeouts** use `Timeouts.LIFECYCLE`.
 - **No per-test `test.setTimeout(...)` overrides.** `GlobalTimeouts.TEST` is sized to cover the slowest test. If a test exceeds it, the test is broken, not the timeout.
 - **Probes** (best-effort "is this element here right now") use `await locator.isVisible().catch(() => false)` with no timeout. Never use 1s/3s "fast probe" timeouts.

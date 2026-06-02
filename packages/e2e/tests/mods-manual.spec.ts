@@ -51,13 +51,6 @@ test.describe("Mods - Manual Downloads", () => {
               timeout: Timeouts.NETWORK,
             });
             await expect(authPage).toHaveURL(/stardewvalley\/mods\/2400/);
-
-            if (await nexusModPage.cloudflareHeading.isVisible().catch(() => false)) {
-              await expect(nexusModPage.cloudflareHeading).toBeHidden({
-                timeout: Timeouts.NETWORK,
-              });
-            }
-
             await acceptConsent(authPage);
           });
 

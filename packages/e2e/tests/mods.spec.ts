@@ -44,14 +44,6 @@ test.describe("Mods - Downloads", () => {
               timeout: Timeouts.NETWORK,
             });
             await expect(authPage).toHaveURL(/stardewvalley\/mods\/2400/);
-
-            const cloudflareHeading = authPage.getByRole("heading", {
-              name: /Performing security verification/i,
-            });
-            if (await cloudflareHeading.isVisible().catch(() => false)) {
-              await expect(cloudflareHeading).toBeHidden({ timeout: Timeouts.NETWORK });
-            }
-
             await acceptConsent(authPage);
           });
 
