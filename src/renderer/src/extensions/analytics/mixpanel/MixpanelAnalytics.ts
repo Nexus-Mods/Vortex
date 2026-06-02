@@ -40,7 +40,7 @@ class MixpanelAnalytics {
       debug: false, // Disable internal Mixpanel logging (we use our own analyticsServiceLog)
       track_pageview: false, // We're not a web page
       persistence: "localStorage",
-      api_host: "https://api-eu.mixpanel.com",
+      api_host: "https://api.nexusmods.com/events",
       // IP and geolocation are automatically tracked by mixpanel-browser
     });
 
