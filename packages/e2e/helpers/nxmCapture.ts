@@ -67,7 +67,9 @@ export async function waitForNxmUrl(page: Page, timeoutMs: number): Promise<stri
       () => {
         const hooked = (globalThis as { __capturedNxm?: string }).__capturedNxm;
         if (typeof hooked === "string" && hooked.startsWith("nxm:")) return hooked;
-        const m = document.documentElement.outerHTML.match(/nxm:\/\/[^"'\s<>]+/i);
+        const m = (globalThis as any).document.documentElement.outerHTML.match(
+          /nxm:\/\/[^"'\s<>]+/i,
+        );
         return m?.[0] ?? null;
       },
       { timeout: timeoutMs },

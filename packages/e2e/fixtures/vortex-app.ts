@@ -11,7 +11,11 @@ import {
   type Page,
 } from "@playwright/test";
 
+import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
+import { manageGame, type ManagedGame } from "../helpers/games";
+import { loginToNexus } from "../helpers/login";
 import { Timeouts } from "../helpers/timeouts";
+import type { NexusUser } from "../helpers/users";
 
 /** Package root (packages/e2e/) — used for resolving node_modules. */
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
@@ -136,8 +140,20 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
 }
 
 // ---------------------------------------------------------------------------
-// Test-scoped fixtures: each test gets its own Electron instance and isolated
-// user-data directory. Full isolation — no state leaks between tests.
+// Worker-scoped auth snapshot interface
+// ---------------------------------------------------------------------------
+
+interface WorkerAuthSnapshots {
+  /**
+   * Returns the path to a snapshot directory for the given user.
+   * Authenticates once per worker per user; subsequent calls return the
+   * cached path. The directory is read-only — callers must copy it before use.
+   */
+  get(user: NexusUser): Promise<string>;
+}
+
+// ---------------------------------------------------------------------------
+// Fixture types
 // ---------------------------------------------------------------------------
 
 export type VortexTestFixtures = {
@@ -147,6 +163,24 @@ export type VortexTestFixtures = {
   vortexApp: ElectronApplication;
   /** Main Vortex window, past the splash screen — one per test. */
   vortexWindow: Page;
+  /** Managed fake game installation — set up before the test, cleaned up after. */
+  managedGame: ManagedGame;
+};
+
+export type VortexWorkerFixtures = {
+  /** Lazily builds and caches per-role auth snapshots for the lifetime of a worker. */
+  workerAuthSnapshots: WorkerAuthSnapshots;
+};
+
+export type VortexOptions = {
+  /**
+   * The Nexus user to authenticate as. When set, vortexUserDataDir is
+   * pre-seeded from a worker-scoped snapshot so the app starts logged in.
+   * Defaults to null (no login, fresh empty state).
+   *
+   * Set via test.use({ nexusUser: freeUser }) or test.use({ nexusUser: premiumUser }).
+   */
+  nexusUser: NexusUser | null;
 };
 
 /**
@@ -156,13 +190,109 @@ export type VortexTestFixtures = {
  * This guarantees full state isolation — no login state, Redux store, or
  * on-disk data leaks between tests, regardless of worker count.
  *
- * Usage:
+ * Role-based login:
  *   import { test, expect } from '../fixtures/vortex-app';
+ *   import { freeUser } from '../helpers/users';
+ *   test.use({ nexusUser: freeUser });
+ *   test('my test', async ({ vortexWindow }) => { ... });
+ *
+ * Login + managed game:
+ *   test.use({ nexusUser: freeUser });
+ *   test('my test', async ({ vortexWindow, managedGame }) => { ... });
+ *
+ * No login (default):
  *   test('my test', async ({ vortexWindow }) => { ... });
  */
-export const test = base.extend<VortexTestFixtures>({
-  vortexUserDataDir: async ({}, use) => {
+export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorkerFixtures>({
+  // ---------------------------------------------------------------------------
+  // Worker-scoped: auth snapshot cache
+  // ---------------------------------------------------------------------------
+
+  workerAuthSnapshots: [
+    async ({}, use) => {
+      const snapshots = new Map<string, string>();
+      const pending = new Map<string, Promise<string>>();
+      const snapshotDirs: string[] = [];
+
+      const instance: WorkerAuthSnapshots = {
+        get(user: NexusUser): Promise<string> {
+          const key = user.username;
+
+          const cached = snapshots.get(key);
+          if (cached !== undefined) return Promise.resolve(cached);
+
+          const inflight = pending.get(key);
+          if (inflight !== undefined) return inflight;
+
+          const buildPromise = (async (): Promise<string> => {
+            const snapshotBase = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-snap-"));
+            snapshotDirs.push(snapshotBase);
+
+            const mainDir = resolveMainDir();
+            const electronBinary = resolveElectronBinary();
+
+            const app = await electron.launch({
+              executablePath: electronBinary,
+              args: [mainDir],
+              env: buildElectronEnv(snapshotBase),
+              cwd: mainDir,
+              timeout: Timeouts.SNAPSHOT,
+            });
+
+            try {
+              const window = await waitForMainWindow(app);
+              await app.evaluate(({ shell }) => {
+                shell.openExternal = async () => undefined;
+              });
+              await loginToNexus(app, window, user, { skipSteps: true });
+            } finally {
+              // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
+              await app.close().catch(() => {});
+            }
+
+            snapshots.set(key, snapshotBase);
+            return snapshotBase;
+          })();
+
+          // Register before awaiting so concurrent callers share the same promise.
+          pending.set(key, buildPromise);
+
+          return buildPromise.finally(() => {
+            pending.delete(key);
+          });
+        },
+      };
+
+      await use(instance);
+
+      for (const dir of snapshotDirs) {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    },
+    { scope: "worker", timeout: Timeouts.SNAPSHOT },
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Test option: which user role to authenticate as (default: no login)
+  // ---------------------------------------------------------------------------
+
+  nexusUser: [null, { option: true }],
+
+  // ---------------------------------------------------------------------------
+  // Test-scoped fixtures
+  // ---------------------------------------------------------------------------
+
+  vortexUserDataDir: async ({ workerAuthSnapshots, nexusUser }, use) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-"));
+
+    if (nexusUser !== null) {
+      // Copy the snapshot (produced by a clean Electron close, so DuckDB is
+      // fully flushed) into the fresh test dir. buildElectronEnv will then
+      // point ELECTRON_USERDATA/ELECTRON_APPDATA at the copied subdirs.
+      const snapshotBase = await workerAuthSnapshots.get(nexusUser);
+      fs.cpSync(snapshotBase, dir, { recursive: true });
+    }
+
     await use(dir);
     fs.rmSync(dir, { recursive: true, force: true });
   },
@@ -250,6 +380,17 @@ export const test = base.extend<VortexTestFixtures>({
         .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
     }
   },
+
+  managedGame: async (
+    { vortexWindow }: { vortexWindow: Page },
+    use: (game: ManagedGame) => Promise<void>,
+  ) => {
+    const game = await manageGame(vortexWindow, "stardewvalley");
+    await use(game);
+    cleanupFakeGame(game.basePath);
+  },
 });
 
 export { expect };
+export type { ManagedGame } from "../helpers/games";
+export type { NexusUser } from "../helpers/users";

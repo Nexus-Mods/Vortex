@@ -3,18 +3,17 @@
  * the premium upgrade URL.
  */
 import { test, expect } from "../fixtures/vortex-app";
-import { loginToNexus } from "../helpers/login";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser } from "../helpers/users";
 import { NavBar } from "../selectors/navbar";
 
 test.describe("Account - Upgrade to Premium", () => {
+  test.use({ nexusUser: freeUser });
+
   test(`[QA-96] free user clicking Go Premium opens the upgrade URL`, async ({
     vortexApp,
     vortexWindow,
   }) => {
-    await loginToNexus(vortexApp, vortexWindow, freeUser);
-
     await test.step("Wait for userInfo and force Dashboard re-render", async () => {
       await vortexWindow.keyboard.press("Escape").catch(() => undefined);
       const headerGoPremium = vortexWindow.getByRole("button", { name: /Go premium/i }).first();

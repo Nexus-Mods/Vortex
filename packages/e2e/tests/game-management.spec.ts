@@ -5,7 +5,6 @@ import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-s
  * Covers test cases: #8.1A, #8.8A
  */
 import { test, expect } from "../fixtures/vortex-app";
-import { manageGame, type ManagedGame } from "../helpers/games";
 import { navigateToGames } from "../helpers/navigation";
 import { NavBar } from "../selectors/navbar";
 
@@ -24,7 +23,7 @@ test.describe("Game Management", () => {
   test("fake game installation helper works", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const config = GAME_CONFIGS.stardewvalley;
+    const config = GAME_CONFIGS.stardewvalley!;
 
     await test.step("Create fake game installation", async () => {
       const { basePath, gamePath } = setupFakeGame("stardewvalley");
@@ -42,17 +41,9 @@ test.describe("Game Management", () => {
 
   test("can add Stardew Valley to managed games via manageGame helper", async ({
     vortexWindow,
+    managedGame: _g,
   }) => {
-    let managed: ManagedGame | null = null;
-    try {
-      managed = await manageGame(vortexWindow, "stardewvalley");
-
-      const navbar = new NavBar(vortexWindow);
-      await expect(navbar.modsLink).toBeVisible();
-    } finally {
-      if (managed !== null) {
-        cleanupFakeGame(managed.basePath);
-      }
-    }
+    const navbar = new NavBar(vortexWindow);
+    await expect(navbar.modsLink).toBeVisible();
   });
 });
