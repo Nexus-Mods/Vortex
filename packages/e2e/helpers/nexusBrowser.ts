@@ -2,9 +2,9 @@ import { type Browser, chromium, type Page } from "@playwright/test";
 
 export interface NexusBrowserOptions {
   /**
-   * Override headless mode. Defaults to true.
-   * Set to false when navigating Cloudflare-protected pages on www.nexusmods.com
-   * since Cloudflare's JS challenge blocks headless browsers.
+   * Override headless mode. Defaults to true (headless).
+   * Set to false for local debugging only. In CI, use storageStatePath with
+   * a pre-captured Cloudflare clearance cookie instead of disabling headless.
    */
   headless?: boolean;
   /**

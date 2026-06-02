@@ -34,7 +34,6 @@ test.describe("Mods - Downloads", () => {
 
         try {
           const { browser, page: authPage } = await launchNexusBrowser({
-            headless: false,
             storageStatePath: process.env.E2E_AUTH_STORAGE_STATE,
           });
           authBrowser = browser;
