@@ -56,9 +56,7 @@ test("customise button works", async ({ vortexWindow }) => {
 
 - `vortexWindow` — the main `Page` for Vortex's renderer (use this for almost everything).
 - `vortexApp` — the `ElectronApplication` handle (rarely needed; reach for it only when you need IPC, multiple windows, or `app.evaluate(...)`).
-- The Electron app is **launched once per worker** (i.e. once per spec file) and shared across all tests in that file. Each worker has its own isolated temp user-data directory.
-
-Implication: tests within the same spec **share Vortex state**. Isolation across files is automatic; isolation within a file is your responsibility (clean up after yourself, or use file-level `test.describe.configure({ mode: 'serial' })` and order-aware setup).
+- The Electron app is **launched once per test** in its own isolated temp user-data directory. Tests cannot share Vortex state — isolation is guaranteed automatically.
 
 ---
 
@@ -175,14 +173,76 @@ test("settings loads", async ({ vortexWindow }) => {
 
 ---
 
+## Auth Fixtures
+
+Tests that require a logged-in user use the `nexusUser` fixture option. Set it
+via `test.use()` at the describe level — never inside a `test()` body.
+
+```typescript
+import { test, expect } from "../fixtures/vortex-app";
+import { freeUser, premiumUser } from "../helpers/users";
+
+test.describe("premium features", () => {
+    test.use({ nexusUser: premiumUser });
+
+    test("premium badge is visible", async ({ vortexWindow }) => {
+        // vortexWindow is already logged in as premiumUser
+    });
+});
+```
+
+Available users are `freeUser` and `premiumUser` from `helpers/users.ts`, sourced
+from environment variables. The default is `null` (no login, fresh empty state).
+
+### How it works
+
+The first test that needs a given user on a worker triggers a one-time snapshot
+build: a temporary Electron instance authenticates via OAuth, then closes cleanly
+so the DuckDB state file is fully flushed to disk. The resulting directory is
+cached for the rest of the worker's lifetime. Each test that uses that role
+receives a fresh copy of the snapshot as its `vortexUserDataDir`, so the app
+starts authenticated without repeating the OAuth flow.
+
+Snapshot builds run concurrently across workers. If two tests on the same worker
+both need `freeUser`, they share a single build promise — no double login.
+
+### Composing role and game
+
+The `nexusUser` option and the `managedGame` fixture are independent axes.
+Request both to get a logged-in app with a managed game:
+
+```typescript
+test.use({ nexusUser: freeUser });
+
+test("download a mod", async ({ vortexWindow, managedGame }) => {
+    // logged in as freeUser, stardewvalley already managed
+});
+```
+
+---
+
 ## Fake Game Installations
 
-For tests that need a managed game, use the fake-game fixture instead of installing a real game.
+For tests that need a managed game, use the `managedGame` fixture instead of
+calling `manageGame` manually. It handles setup and cleanup automatically.
+
+```typescript
+import { test, expect } from "../fixtures/vortex-app";
+
+test("mod appears after install", async ({ vortexWindow, managedGame }) => {
+    // stardewvalley is already managed; managedGame holds { basePath, gamePath }
+    // cleanup runs automatically after the test
+});
+```
+
+Currently only `"stardewvalley"` is supported — Skyrim SE goes through
+Vortex's manual-discovery dialog flow which our fake-game install isn't
+rich enough to satisfy yet (see TODO in `helpers/games.ts`).
 
 ### Just the on-disk install — `setupFakeGame`
 
 When the test only needs the game's files to exist (e.g. asserting that
-discovery finds them), use `setupFakeGame` directly:
+discovery finds them) without involving Vortex's UI, use `setupFakeGame` directly:
 
 ```typescript
 import { setupFakeGame, cleanupFakeGame } from "../fixtures/game-setup/fake-game";
@@ -198,39 +258,6 @@ test("fake game has expected files", async () => {
 ```
 
 Available configs: `stardewvalley`, `skyrimse`. Add more in `packages/e2e/fixtures/game-setup/fake-game.ts`.
-
-### Adding the game to Vortex's managed list — `manageGame`
-
-For tests that need Vortex itself to be **actively managing** a game
-(downloads, mod installs, profile state, etc.) call the `manageGame`
-helper. It wraps `setupFakeGame`, drives the Games page UI, and uses
-Vortex's built-in `__VORTEX_TEST_GAME_PATH__` test hook to bypass the
-native folder picker:
-
-```typescript
-import { manageGame, type ManagedGame } from "../helpers/games";
-import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
-
-test("mod download lands in the library", async ({ vortexApp, vortexWindow }) => {
-    let managed: ManagedGame | null = null;
-    try {
-        managed = await manageGame(vortexWindow, "stardewvalley");
-    } finally {
-        if (managed !== null) {
-            cleanupFakeGame(managed.basePath);
-        }
-    }
-});
-```
-
-Caller is responsible for calling `cleanupFakeGame(managed.basePath)` —
-typically in a `try/finally` or `test.afterEach`. The helper returns
-`{ basePath, gamePath }` so you can also reach the on-disk install if
-the test needs to inspect or seed mod files there.
-
-Currently only `"stardewvalley"` is supported — Skyrim SE goes through
-Vortex's manual-discovery dialog flow which our fake-game install isn't
-rich enough to satisfy yet (see TODO in `helpers/games.ts`).
 
 ---
 
@@ -297,7 +324,7 @@ All explicit timeouts live in `helpers/timeouts.ts`. Do not hardcode `X_000` lit
 Rules:
 
 - **Default UI waits use the config defaults** (5s `actionTimeout` / `expect.timeout` / `navigationTimeout`, sourced from `GlobalTimeouts` in `helpers/timeouts.ts` and applied via `playwright.config.ts`). Do not pass an explicit timeout for pure UI assertions/actions. If a UI wait "needs" longer, the test is racing something it should `await` explicitly.
-- **Network-backed waits** (page navigation, API fetch, mod list populating, Cloudflare clear, OAuth flow) use `Timeouts.NETWORK`.
+- **Network-backed waits** (page navigation, API fetch, mod list populating, OAuth flow) use `Timeouts.NETWORK`.
 - **Fixture / launch timeouts** use `Timeouts.LIFECYCLE`.
 - **No per-test `test.setTimeout(...)` overrides.** `GlobalTimeouts.TEST` is sized to cover the slowest test. If a test exceeds it, the test is broken, not the timeout.
 - **Probes** (best-effort "is this element here right now") use `await locator.isVisible().catch(() => false)` with no timeout. Never use 1s/3s "fast probe" timeouts.

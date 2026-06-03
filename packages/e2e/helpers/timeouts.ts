@@ -19,6 +19,8 @@ export const Timeouts = {
   NETWORK: sec(30) * scalingFactor,
   /** Cold-start and worker fixture setup. */
   LIFECYCLE: min(3) * scalingFactor,
+  /** Worker-scoped auth snapshot build: cold Electron start + OAuth flow + flush margin. */
+  SNAPSHOT: min(5) * scalingFactor,
 } as const;
 
 function min(x: number): number {

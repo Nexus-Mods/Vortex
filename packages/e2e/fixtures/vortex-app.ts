@@ -11,7 +11,11 @@ import {
   type Page,
 } from "@playwright/test";
 
+import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
+import { manageGame, type ManagedGame } from "../helpers/games";
+import { loginToNexus } from "../helpers/login";
 import { Timeouts } from "../helpers/timeouts";
+import type { NexusUser } from "../helpers/users";
 
 /** Package root (packages/e2e/) — used for resolving node_modules. */
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
@@ -135,9 +139,68 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
   });
 }
 
+/**
+ * Wait for the main window to be fully ready: show-window IPC fired, DOM
+ * content loaded, YouTube routes blocked, shell.openExternal stubbed.
+ *
+ * The show-window listener must be registered before waitForMainWindow so it
+ * is in place before React mounts the LoadingScreen (which fires the event).
+ * Both the snapshot build and the vortexWindow fixture use this sequence.
+ */
+async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Promise<Page> {
+  const showWindowPromise = app.evaluate(
+    ({ ipcMain }, ms) =>
+      new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("Timed out waiting for show-window")), ms);
+        ipcMain.once("show-window", () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      }),
+    timeoutMs,
+  );
+
+  const mainWindow = await waitForMainWindow(app);
+
+  await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
+    route.fulfill({ status: 204, body: "" }),
+  );
+
+  await mainWindow.waitForLoadState("domcontentloaded");
+  await showWindowPromise;
+
+  await app.evaluate(({ shell }) => {
+    shell.openExternal = async () => undefined;
+  });
+
+  return mainWindow;
+}
+
 // ---------------------------------------------------------------------------
-// Test-scoped fixtures: each test gets its own Electron instance and isolated
-// user-data directory. Full isolation — no state leaks between tests.
+// Worker-scoped auth snapshot interface
+// ---------------------------------------------------------------------------
+
+interface AuthSnapshot {
+  /** Path to the read-only Vortex user-data snapshot. Callers must copy before use. */
+  snapshotDir: string;
+  /**
+   * Path to a Playwright storage-state JSON file (Nexus website cookies).
+   * Pass to launchNexusBrowser({ storageStatePath }) to get a logged-in browser.
+   * Undefined when the OAuth login did not produce a reusable browser context.
+   */
+  storageStatePath: string | undefined;
+}
+
+interface WorkerAuthSnapshots {
+  /**
+   * Returns the auth snapshot for the given user.
+   * Authenticates once per worker per user; subsequent calls return the cached result.
+   */
+  get(user: NexusUser): Promise<AuthSnapshot>;
+}
+
+// ---------------------------------------------------------------------------
+// Fixture types
 // ---------------------------------------------------------------------------
 
 export type VortexTestFixtures = {
@@ -147,6 +210,30 @@ export type VortexTestFixtures = {
   vortexApp: ElectronApplication;
   /** Main Vortex window, past the splash screen — one per test. */
   vortexWindow: Page;
+  /** Managed fake game installation — set up before the test, cleaned up after. */
+  managedGame: ManagedGame;
+  /**
+   * Path to a Playwright storage-state JSON file with Nexus website cookies,
+   * or undefined when nexusUser is null. Pass to launchNexusBrowser({ storageStatePath })
+   * to get a logged-in browser for browsing nexusmods.com.
+   */
+  nexusStorageState: string | undefined;
+};
+
+export type VortexWorkerFixtures = {
+  /** Lazily builds and caches per-role auth snapshots for the lifetime of a worker. */
+  workerAuthSnapshots: WorkerAuthSnapshots;
+};
+
+export type VortexOptions = {
+  /**
+   * The Nexus user to authenticate as. When set, vortexUserDataDir is
+   * pre-seeded from a worker-scoped snapshot so the app starts logged in.
+   * Defaults to null (no login, fresh empty state).
+   *
+   * Set via test.use({ nexusUser: freeUser }) or test.use({ nexusUser: premiumUser }).
+   */
+  nexusUser: NexusUser | null;
 };
 
 /**
@@ -156,13 +243,120 @@ export type VortexTestFixtures = {
  * This guarantees full state isolation — no login state, Redux store, or
  * on-disk data leaks between tests, regardless of worker count.
  *
- * Usage:
+ * Role-based login:
  *   import { test, expect } from '../fixtures/vortex-app';
+ *   import { freeUser } from '../helpers/users';
+ *   test.use({ nexusUser: freeUser });
+ *   test('my test', async ({ vortexWindow }) => { ... });
+ *
+ * Login + managed game:
+ *   test.use({ nexusUser: freeUser });
+ *   test('my test', async ({ vortexWindow, managedGame }) => { ... });
+ *
+ * No login (default):
  *   test('my test', async ({ vortexWindow }) => { ... });
  */
-export const test = base.extend<VortexTestFixtures>({
-  vortexUserDataDir: async ({}, use) => {
+export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorkerFixtures>({
+  // ---------------------------------------------------------------------------
+  // Worker-scoped: auth snapshot cache
+  // ---------------------------------------------------------------------------
+
+  workerAuthSnapshots: [
+    async ({}, use) => {
+      const snapshots = new Map<string, AuthSnapshot>();
+      const pending = new Map<string, Promise<AuthSnapshot>>();
+      const snapshotDirs: string[] = [];
+
+      const instance: WorkerAuthSnapshots = {
+        get(user: NexusUser): Promise<AuthSnapshot> {
+          const key = user.username;
+
+          const cached = snapshots.get(key);
+          if (cached !== undefined) return Promise.resolve(cached);
+
+          const inflight = pending.get(key);
+          if (inflight !== undefined) return inflight;
+
+          const buildPromise = (async (): Promise<AuthSnapshot> => {
+            const snapshotBase = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-snap-"));
+            snapshotDirs.push(snapshotBase);
+
+            const mainDir = resolveMainDir();
+            const electronBinary = resolveElectronBinary();
+
+            const app = await electron.launch({
+              executablePath: electronBinary,
+              args: [mainDir],
+              env: buildElectronEnv(snapshotBase),
+              cwd: mainDir,
+              timeout: Timeouts.SNAPSHOT,
+            });
+
+            let storageStatePath: string | undefined;
+
+            try {
+              const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
+              const loginResult = await loginToNexus(app, window, user, {
+                skipSteps: true,
+                keepBrowser: true,
+              });
+              if (loginResult !== null) {
+                // Save the Nexus website session cookies so mods tests can reuse
+                // a logged-in browser without repeating the OAuth flow.
+                const stateFile = path.join(snapshotBase, "nexus-auth.json");
+                await loginResult.page.context().storageState({ path: stateFile });
+                await loginResult.browser.close();
+                storageStatePath = stateFile;
+              }
+            } finally {
+              // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
+              await app.close().catch(() => {});
+            }
+
+            const snapshot: AuthSnapshot = { snapshotDir: snapshotBase, storageStatePath };
+            snapshots.set(key, snapshot);
+            return snapshot;
+          })();
+
+          // Register before awaiting so concurrent callers share the same promise.
+          pending.set(key, buildPromise);
+
+          return buildPromise.finally(() => {
+            pending.delete(key);
+          });
+        },
+      };
+
+      await use(instance);
+
+      for (const dir of snapshotDirs) {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    },
+    { scope: "worker", timeout: Timeouts.SNAPSHOT },
+  ],
+
+  // ---------------------------------------------------------------------------
+  // Test option: which user role to authenticate as (default: no login)
+  // ---------------------------------------------------------------------------
+
+  nexusUser: [null, { option: true }],
+
+  // ---------------------------------------------------------------------------
+  // Test-scoped fixtures
+  // ---------------------------------------------------------------------------
+
+  vortexUserDataDir: async ({ workerAuthSnapshots, nexusUser }, use) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-"));
+
+    if (nexusUser !== null) {
+      // Copy the snapshot (produced by a clean Electron close, so DuckDB is
+      // fully flushed) into the fresh test dir. buildElectronEnv will then
+      // point ELECTRON_USERDATA/ELECTRON_APPDATA at the copied subdirs.
+      const { snapshotDir } = await workerAuthSnapshots.get(nexusUser);
+      fs.cpSync(snapshotDir, dir, { recursive: true });
+    }
+
     await use(dir);
     fs.rmSync(dir, { recursive: true, force: true });
   },
@@ -184,39 +378,7 @@ export const test = base.extend<VortexTestFixtures>({
   },
 
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
-    // Register before domcontentloaded — show-window fires after React mounts
-    // LoadingScreen, which is after dcl, so this listener is always set up first.
-    const showWindowPromise = vortexApp.evaluate(
-      ({ ipcMain }, timeoutMs) =>
-        new Promise<void>((resolve, reject) => {
-          const timer = setTimeout(
-            () => reject(new Error("Timed out waiting for show-window")),
-            timeoutMs,
-          );
-          ipcMain.once("show-window", () => {
-            clearTimeout(timer);
-            resolve();
-          });
-        }),
-      Timeouts.LIFECYCLE,
-    );
-
-    const mainWindow = await waitForMainWindow(vortexApp);
-
-    // Block unwanted connections that slow down tests:
-    await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
-      route.fulfill({ status: 204, body: "" }),
-    );
-
-    await mainWindow.waitForLoadState("domcontentloaded");
-    await showWindowPromise;
-
-    // Prevent Vortex from handing OAuth (and other external) URLs to the OS
-    // default browser. Tests read the OAuth URL from Vortex's in-app field
-    // and drive login in their own Playwright Chromium context.
-    await vortexApp.evaluate(({ shell }) => {
-      shell.openExternal = async () => undefined;
-    });
+    const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
 
     await use(mainWindow);
 
@@ -250,6 +412,26 @@ export const test = base.extend<VortexTestFixtures>({
         .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
     }
   },
+
+  nexusStorageState: async ({ workerAuthSnapshots, nexusUser }, use) => {
+    if (nexusUser === null) {
+      await use(undefined);
+      return;
+    }
+    const { storageStatePath } = await workerAuthSnapshots.get(nexusUser);
+    await use(storageStatePath);
+  },
+
+  managedGame: async (
+    { vortexWindow }: { vortexWindow: Page },
+    use: (game: ManagedGame) => Promise<void>,
+  ) => {
+    const game = await manageGame(vortexWindow, "stardewvalley");
+    await use(game);
+    cleanupFakeGame(game.basePath);
+  },
 });
 
 export { expect };
+export type { ManagedGame } from "../helpers/games";
+export type { NexusUser } from "../helpers/users";

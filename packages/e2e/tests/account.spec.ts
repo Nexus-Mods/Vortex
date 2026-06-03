@@ -3,10 +3,9 @@
  * premium user MUST see it. Pure login + header assertion — no website
  * navigation, no game management.
  */
-import { test, expect } from "../fixtures/vortex-app";
-import { loginToNexus } from "../helpers/login";
+import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { Timeouts } from "../helpers/timeouts";
-import { freeUser, premiumUser, type NexusUser } from "../helpers/users";
+import { freeUser, premiumUser } from "../helpers/users";
 import { Header } from "../selectors/header";
 
 const TIERS = [
@@ -31,20 +30,21 @@ const TIERS = [
 
 test.describe("Account - Header Premium badge", () => {
   for (const { id, tier, user, expectBadge } of TIERS) {
-    const verb = expectBadge ? "sees" : "does NOT see";
-    test(`[${id}] ${tier} user ${verb} the Premium badge in the header`, async ({
-      vortexApp,
-      vortexWindow,
-    }) => {
-      await loginToNexus(vortexApp, vortexWindow, user);
+    test.describe(tier, () => {
+      test.use({ nexusUser: user });
 
-      const header = new Header(vortexWindow);
-      if (expectBadge) {
-        await expect(header.premiumIndicator).toBeVisible({ timeout: Timeouts.NETWORK });
-        await expect(header.premiumIndicator).toHaveText(/premium/i);
-      } else {
-        await expect(header.premiumIndicator).toBeHidden({ timeout: Timeouts.NETWORK });
-      }
+      const verb = expectBadge ? "sees" : "does NOT see";
+      test(`[${id}] ${tier} user ${verb} the Premium badge in the header`, async ({
+        vortexWindow,
+      }) => {
+        const header = new Header(vortexWindow);
+        if (expectBadge) {
+          await expect(header.premiumIndicator).toBeVisible({ timeout: Timeouts.NETWORK });
+          await expect(header.premiumIndicator).toHaveText(/premium/i);
+        } else {
+          await expect(header.premiumIndicator).toBeHidden({ timeout: Timeouts.NETWORK });
+        }
+      });
     });
   }
 });
