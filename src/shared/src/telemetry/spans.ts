@@ -61,7 +61,14 @@ export const recordErrorOnSpan = (
  */
 const errorDiscriminator = (error: Error): string | undefined => {
   const code = (error as { code?: unknown }).code;
-  const parts = [error.constructor?.name, typeof code === "string" ? code : undefined].filter(
+  // `constructor.name` is accurate for live errors but degrades to "Error" for
+  // any error rebuilt from the IPC wire (see error-serialization.ts, which always
+  // mints a plain Error). `error.name` is the serialization-durable type signal,
+  // so fall back to it once `constructor.name` is the generic "Error".
+  const ctorName = error.constructor?.name;
+  const typeName =
+    ctorName !== undefined && ctorName !== "" && ctorName !== "Error" ? ctorName : error.name;
+  const parts = [typeName, typeof code === "string" ? code : undefined].filter(
     (part): part is string => part !== undefined && part !== "" && part !== "Error",
   );
   return parts.length > 0 ? parts.join(":") : undefined;

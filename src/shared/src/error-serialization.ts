@@ -20,7 +20,20 @@ export const MAX_CAUSE_DEPTH = 3;
 
 export function extractErrorFields(err: Error): Omit<SerializedError, "cause"> {
   const result: Omit<SerializedError, "cause"> = { message: err.message };
-  if (err.name && err.name !== "Error") result.name = err.name;
+  // Type identity only exists on the live error and is lost the moment it crosses
+  // the wire (the receiver always mints a plain `Error`). Prefer the explicit
+  // `name` when the author set one; otherwise fall back to the runtime class name
+  // (`constructor.name`) so subclasses that never assign `this.name` — and would
+  // otherwise serialize as a nameless "Error" — keep their type for downstream
+  // consumers (e.g. error fingerprinting that branches on `name`).
+  if (err.name && err.name !== "Error") {
+    result.name = err.name;
+  } else {
+    const ctorName = err.constructor?.name;
+    if (ctorName !== undefined && ctorName !== "" && ctorName !== "Error") {
+      result.name = ctorName;
+    }
+  }
 
   const errWithCode = err as Error & { code?: unknown };
   if (typeof errWithCode.code === "string") result.code = errWithCode.code;

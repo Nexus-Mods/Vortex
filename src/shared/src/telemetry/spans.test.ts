@@ -58,6 +58,21 @@ describe("recordErrorOnSpan fingerprint discriminator", () => {
     expect(attributes["error.fingerprint"]).toBe(expected);
   });
 
+  it("falls back to error.name when constructor.name is the generic Error (IPC-rehydrated)", () => {
+    // Mirrors an error rebuilt by rehydrateSerializedError: a plain Error whose
+    // only type signal is `name` (constructor.name is "Error").
+    const { span, attributes } = fakeSpan();
+    const rehydrated = errorWithStack(new Error("boom"));
+    rehydrated.name = "FileSystemError";
+    recordErrorOnSpan(span, rehydrated, VERSION);
+    const expected = computeErrorFingerprint(
+      ["    at f (src/foo.ts:1:2)", "    at g (src/bar.ts:3:4)"].join("\n"),
+      VERSION,
+      "FileSystemError",
+    );
+    expect(attributes["error.fingerprint"]).toBe(expected);
+  });
+
   it("combines constructor name with the error code", () => {
     const { span, attributes } = fakeSpan();
     const err = errorWithStack(new TypeError("boom")) as TypeError & { code: string };
