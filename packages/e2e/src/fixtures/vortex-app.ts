@@ -26,6 +26,25 @@ const REPO_ROOT = path.resolve(PACKAGE_ROOT, "..", "..");
 // createRequire from the package root so pnpm-linked electron resolves correctly
 const require = createRequire(path.join(PACKAGE_ROOT, "package.json"));
 
+/** Close Electron app; kill process if normal teardown hangs too long. */
+async function closeElectronApp(app: ElectronApplication, timeoutMs = 15_000): Promise<void> {
+  const proc = app.process();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const closePromise = app
+    .close()
+    .then(() => true)
+    .catch(() => true);
+  const timeoutPromise = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), timeoutMs);
+  });
+
+  const closed = await Promise.race([closePromise, timeoutPromise]);
+  if (timer !== undefined) clearTimeout(timer);
+  // Hard-kill works cross-platform via Node ChildProcess.kill().
+  if (!closed) proc.kill("SIGKILL");
+}
+
 function resolveMainDir(): string {
   return path.resolve(REPO_ROOT, "src", "main");
 }
@@ -91,6 +110,7 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
   return new Promise<Page>((resolve, reject) => {
     const cleanup = () => {
       clearInterval(interval);
+      clearTimeout(timeout);
       vortexApp.off("window", onWindow);
       vortexApp.process().off("exit", onExit);
     };
@@ -114,9 +134,6 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       );
     };
 
-    vortexApp.on("window", onWindow);
-    vortexApp.process().on("exit", onExit);
-
     const interval = setInterval(() => {
       for (const win of vortexApp.windows()) {
         if (isMainWindow(win)) {
@@ -127,7 +144,7 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       }
     }, 500);
 
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       cleanup();
       const windows = vortexApp.windows();
       const lastWindow = windows[windows.length - 1];
@@ -137,6 +154,9 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
         reject(new Error("Timed out waiting for the Vortex main window to appear."));
       }
     }, Timeouts.LIFECYCLE);
+
+    vortexApp.on("window", onWindow);
+    vortexApp.process().on("exit", onExit);
   });
 }
 
@@ -312,7 +332,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
               }
             } finally {
               // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
-              await app.close().catch(() => {});
+              await closeElectronApp(app);
             }
 
             const snapshot: AuthSnapshot = { snapshotDir: snapshotBase, storageStatePath };
@@ -376,7 +396,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
     });
 
     await use(app);
-    await app.close().catch(() => {});
+    await closeElectronApp(app);
   },
 
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
