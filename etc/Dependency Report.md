@@ -104,7 +104,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | reselect | 4.1.8 |
 | resolve | 1.22.11 |
 | rimraf | 2.6.2 |
-| sass | 1.99.0 |
+| sass | 1.100.0 |
 | semver | 7.7.4 |
 | shortid | 2.2.17 |
 | simple-vdf | 1.1.3 |
