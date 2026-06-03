@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0-beta.7] - 2026-06-03
+
+### **Changed**
+
+- Error fingerprinting now uses the error type name as an additional discriminator, so distinct errors that happen to share a stack trace are no longer merged into a single report ([#23387](https://github.com/Nexus-Mods/Vortex/pull/23387))
+- Increased the default IPC callback timeout to 45 seconds so underlying callbacks complete before the caller times out ([#23382](https://github.com/Nexus-Mods/Vortex/pull/23382))
+
 ## [2.1.0-beta.6] - 2026-06-02
 
 ### **Fixed**
@@ -1930,6 +1937,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.1.0-beta.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.7
 [2.1.0-beta.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.6
 [2.1.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.5
 [2.1.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.4
