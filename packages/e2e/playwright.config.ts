@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { defineConfig } from "@playwright/test";
 
-import { GlobalTimeouts, Timeouts } from "./helpers/timeouts";
+import { GlobalTimeouts, Timeouts } from "./src/helpers/timeouts";
 
 const envFilePath = path.resolve(import.meta.dirname, ".env");
 
@@ -12,7 +12,7 @@ if (existsSync(envFilePath)) {
 }
 
 export default defineConfig({
-  testDir: "./tests",
+  testDir: "./src/tests",
   globalTimeout: GlobalTimeouts.GLOBAL,
   timeout: Timeouts.LIFECYCLE,
   expect: {
