@@ -271,7 +271,7 @@ catalog:
   vitest: 4.1.8
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   webpack: 5.107.2
-  webpack-cli: 5.1.4
+  webpack-cli: 7.0.3
   webpack-node-externals: 3.0.0
   which: 1.3.1
   wholocks: git+https://github.com/Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af

@@ -921,8 +921,8 @@ catalogs:
       specifier: 5.107.2
       version: 5.107.2
     webpack-cli:
-      specifier: 5.1.4
-      version: 5.1.4
+      specifier: 7.0.3
+      version: 7.0.3
     webpack-node-externals:
       specifier: 3.0.0
       version: 3.0.0
@@ -994,7 +994,7 @@ importers:
         version: 24.12.2
       '@types/webpack-node-externals':
         specifier: 'catalog:'
-        version: 3.0.4(esbuild@0.28.0)(webpack-cli@5.1.4)
+        version: 3.0.4(esbuild@0.28.0)(webpack-cli@7.0.3)
       '@typescript-eslint/utils':
         specifier: 'catalog:'
         version: 8.60.1(eslint@10.4.1)(typescript@6.0.3)
@@ -1096,10 +1096,10 @@ importers:
         version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.8)(@vitest/ui@4.1.8)(happy-dom@20.9.0)(vite@8.0.16)
       webpack:
         specifier: 'catalog:'
-        version: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+        version: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
       webpack-cli:
         specifier: 'catalog:'
-        version: 5.1.4(webpack@5.107.2)
+        version: 7.0.3(webpack@5.107.2)
       webpack-node-externals:
         specifier: 'catalog:'
         version: 3.0.0
@@ -1216,7 +1216,7 @@ importers:
         version: 5.2.1
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       node-7z:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
@@ -1492,7 +1492,7 @@ importers:
         version: 19.9.2
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -2513,7 +2513,7 @@ importers:
         version: 42.0.0
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -2956,7 +2956,7 @@ importers:
         version: 0.5.7
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3013,7 +3013,7 @@ importers:
         version: 0.5.7
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3157,7 +3157,7 @@ importers:
         version: 3.1.5
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3615,7 +3615,7 @@ importers:
         version: 0.5.7
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -4177,7 +4177,7 @@ importers:
         version: 19.9.2
       modmeta-db:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
+        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       node-7z:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
@@ -5848,9 +5848,9 @@ packages:
     resolution: {integrity: sha512-0cp4PsWQ/9avqTVMCtZ+GirikIA36ikvjtHweU4/j8yLtgObI0+JUPhYFScgwlteveGB1rt3Cm8UhN04XayDig==}
     engines: {node: '>= 8.9.0'}
 
-  '@discoveryjs/json-ext@0.5.7':
-    resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
-    engines: {node: '>=10.0.0'}
+  '@discoveryjs/json-ext@1.1.0':
+    resolution: {integrity: sha512-Xc3VhU02wqZ1HvHRJUwL09HkZSTvidqY5Ya0NXBSYOxAp+Ln9dcJr9fySI+CkONzP3PekQo9WdzCv0PGER/mOA==}
+    engines: {node: '>=14.17.0'}
 
   '@duckdb/node-api@1.5.1-r.1':
     resolution: {integrity: sha512-8U8p44ZL4rJtUrgVaSLm2hOMk3XTwEgs5eJoxYiR6iQXKVEr8vi6z3Vrxhb61g9sgsEZIAmckD7e3zZ1lmPHYA==}
@@ -7676,31 +7676,6 @@ packages:
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
 
-  '@webpack-cli/configtest@2.1.1':
-    resolution: {integrity: sha512-wy0mglZpDSiSS0XHrVR+BAdId2+yxPSoJW8fsna3ZpYSlufjvxnP4YbKTCBZnNIcGN4r6ZPXV55X4mYExOfLmw==}
-    engines: {node: '>=14.15.0'}
-    peerDependencies:
-      webpack: 5.x.x
-      webpack-cli: 5.x.x
-
-  '@webpack-cli/info@2.0.2':
-    resolution: {integrity: sha512-zLHQdI/Qs1UyT5UBdWNqsARasIA+AaF8t+4u2aS2nEpBQh2mWIVb8qAklq0eUENnC5mOItrIB4LiS9xMtph18A==}
-    engines: {node: '>=14.15.0'}
-    peerDependencies:
-      webpack: 5.x.x
-      webpack-cli: 5.x.x
-
-  '@webpack-cli/serve@2.0.5':
-    resolution: {integrity: sha512-lqaoKnRYBdo1UgDX8uF24AfGMifWK19TxPmM5FHc2vAGxrJ/qtyUyFBWoY1tISZdelsQ5fBcOusifo5o5wSJxQ==}
-    engines: {node: '>=14.15.0'}
-    peerDependencies:
-      webpack: 5.x.x
-      webpack-cli: 5.x.x
-      webpack-dev-server: '*'
-    peerDependenciesMeta:
-      webpack-dev-server:
-        optional: true
-
   '@welldone-software/why-did-you-render@10.0.1':
     resolution: {integrity: sha512-tMgGkt30iVYeLMUKExNmtm019QgyjLtA7lwB0QAizYNEuihlCG2eoAWBBaz/bDeI7LeqAJ9msC6hY3vX+JB97g==}
     peerDependencies:
@@ -8267,9 +8242,6 @@ packages:
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
 
-  colorette@2.0.20:
-    resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
-
   colors@1.0.3:
     resolution: {integrity: sha512-pFGrxThWcWQ2MsAz6RtgeWe4NK2kUE1WfsrvvlctdII745EW9I0yflqhe7++M5LEc7bV2c/9/5zc8sFcpL0Drw==}
     engines: {node: '>=0.1.90'}
@@ -8281,13 +8253,9 @@ packages:
   comma-separated-tokens@1.0.8:
     resolution: {integrity: sha512-GHuDRO12Sypu2cV70d1dkA2EUmXHgntrzbpvOB+Qy+49ypNfGgFQIC2fhhXbnyrJRynDCAARsT7Ou0M6hirpfw==}
 
-  commander@10.0.1:
-    resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
-    engines: {node: '>=14'}
-
-  commander@13.1.0:
-    resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
-    engines: {node: '>=18'}
+  commander@14.0.3:
+    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
+    engines: {node: '>=20'}
 
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
@@ -9104,10 +9072,6 @@ packages:
 
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
-
-  fastest-levenshtein@1.0.16:
-    resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
-    engines: {node: '>= 4.9.1'}
 
   fd-slicer@1.1.0:
     resolution: {integrity: sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==}
@@ -12404,26 +12368,23 @@ packages:
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
-  webpack-cli@5.1.4:
-    resolution: {integrity: sha512-pIDJHIEI9LR0yxHXQ+Qh95k2EvXpWzZ5l+d+jIo+RdSm9MiHfzazIxwwni/p7+x4eJZuvG1AJwgC4TNQ7NRgsg==}
-    engines: {node: '>=14.15.0'}
+  webpack-cli@7.0.3:
+    resolution: {integrity: sha512-2E2C6A1e2El7791zQgTH7LPIuwLjRliow9OHS/qlJc9pwhZlCoL/uiwqd/1WSlXT83wJfmfDbkcqHXuXoPJZ3g==}
+    engines: {node: '>=20.9.0'}
     hasBin: true
     peerDependencies:
-      '@webpack-cli/generators': '*'
-      webpack: 5.x.x
-      webpack-bundle-analyzer: '*'
-      webpack-dev-server: '*'
+      webpack: ^5.101.0
+      webpack-bundle-analyzer: ^4.0.0 || ^5.0.0
+      webpack-dev-server: ^5.0.0
     peerDependenciesMeta:
-      '@webpack-cli/generators':
-        optional: true
       webpack-bundle-analyzer:
         optional: true
       webpack-dev-server:
         optional: true
 
-  webpack-merge@5.10.0:
-    resolution: {integrity: sha512-+4zXKdx7UnO+1jaN4l2lHVD+mFvnlZQP/6ljaJVb4SZiwIKeUnrT5l0gkT8z+n4hKpC+jpOv6O9R+gLtag7pSA==}
-    engines: {node: '>=10.0.0'}
+  webpack-merge@6.0.1:
+    resolution: {integrity: sha512-hXXvrjtx2PLYx4qruKl+kyRSLc52V+cCvMxRjmKwoA+CBbbF5GfIBtR6kCvl0fYGqTUPKB+1ktVmTHqMOzgCBg==}
+    engines: {node: '>=18.0.0'}
 
   webpack-node-externals@3.0.0:
     resolution: {integrity: sha512-LnL6Z3GGDPht/AigwRh2dvL9PQPFQ8skEpVrWZXLWBYmqcaojHNN0onvHzie6rq7EWKrrBfPYqNEzTJgiwEQDQ==}
@@ -13433,7 +13394,7 @@ snapshots:
       ajv: 6.14.0
       ajv-keywords: 3.5.2(ajv@6.14.0)
 
-  '@discoveryjs/json-ext@0.5.7': {}
+  '@discoveryjs/json-ext@1.1.0': {}
 
   '@duckdb/node-api@1.5.1-r.1':
     dependencies:
@@ -14947,10 +14908,10 @@ snapshots:
   '@types/verror@1.10.11':
     optional: true
 
-  '@types/webpack-node-externals@3.0.4(esbuild@0.28.0)(webpack-cli@5.1.4)':
+  '@types/webpack-node-externals@3.0.4(esbuild@0.28.0)(webpack-cli@7.0.3)':
     dependencies:
       '@types/node': 25.5.0
-      webpack: 5.106.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.106.2(esbuild@0.28.0)(webpack-cli@7.0.3)
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -15346,21 +15307,6 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
-
-  '@webpack-cli/configtest@2.1.1(webpack-cli@5.1.4)(webpack@5.107.2)':
-    dependencies:
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
-      webpack-cli: 5.1.4(webpack@5.107.2)
-
-  '@webpack-cli/info@2.0.2(webpack-cli@5.1.4)(webpack@5.107.2)':
-    dependencies:
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
-      webpack-cli: 5.1.4(webpack@5.107.2)
-
-  '@webpack-cli/serve@2.0.5(webpack-cli@5.1.4)(webpack@5.107.2)':
-    dependencies:
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
-      webpack-cli: 5.1.4(webpack@5.107.2)
 
   '@welldone-software/why-did-you-render@10.0.1(react@16.14.0)':
     dependencies:
@@ -15974,8 +15920,6 @@ snapshots:
 
   color-name@1.1.4: {}
 
-  colorette@2.0.20: {}
-
   colors@1.0.3: {}
 
   combined-stream@1.0.8:
@@ -15984,9 +15928,7 @@ snapshots:
 
   comma-separated-tokens@1.0.8: {}
 
-  commander@10.0.1: {}
-
-  commander@13.1.0: {}
+  commander@14.0.3: {}
 
   commander@2.20.3: {}
 
@@ -17025,8 +16967,6 @@ snapshots:
 
   fast-uri@3.1.0: {}
 
-  fastest-levenshtein@1.0.16: {}
-
   fd-slicer@1.1.0:
     dependencies:
       pend: 1.2.0
@@ -17149,7 +17089,7 @@ snapshots:
       semver: 7.7.4
       tapable: 2.3.2
       typescript: 6.0.3
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
 
   form-data@2.3.3:
     dependencies:
@@ -18247,10 +18187,10 @@ snapshots:
 
   modify-filename@1.1.0: {}
 
-  modmeta-db@https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@13.1.0)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0):
+  modmeta-db@https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0):
     dependencies:
       bluebird: 3.7.2
-      commander: 13.1.0
+      commander: 14.0.3
       encoding-down: 6.3.0
       express: 4.22.1
       leveldown: 5.6.0
@@ -19713,7 +19653,7 @@ snapshots:
     dependencies:
       iconv-lite: 0.6.3
       source-map-js: 1.2.1
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
 
   source-map-support@0.5.21:
     dependencies:
@@ -19909,7 +19849,7 @@ snapshots:
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.1
-      webpack: 5.106.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.106.2(esbuild@0.28.0)(webpack-cli@7.0.3)
     optionalDependencies:
       esbuild: 0.28.0
 
@@ -19919,7 +19859,7 @@ snapshots:
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.1
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
     optionalDependencies:
       esbuild: 0.28.0
 
@@ -19929,7 +19869,7 @@ snapshots:
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.1
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
     optionalDependencies:
       esbuild: 0.28.0
 
@@ -20033,7 +19973,7 @@ snapshots:
       semver: 7.8.1
       source-map: 0.7.6
       typescript: 6.0.3
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
+      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
 
   ts-pattern@5.9.0: {}
 
@@ -20427,24 +20367,19 @@ snapshots:
 
   webidl-conversions@3.0.1: {}
 
-  webpack-cli@5.1.4(webpack@5.107.2):
+  webpack-cli@7.0.3(webpack@5.107.2):
     dependencies:
-      '@discoveryjs/json-ext': 0.5.7
-      '@webpack-cli/configtest': 2.1.1(webpack-cli@5.1.4)(webpack@5.107.2)
-      '@webpack-cli/info': 2.0.2(webpack-cli@5.1.4)(webpack@5.107.2)
-      '@webpack-cli/serve': 2.0.5(webpack-cli@5.1.4)(webpack@5.107.2)
-      colorette: 2.0.20
-      commander: 10.0.1
+      '@discoveryjs/json-ext': 1.1.0
+      commander: 14.0.3
       cross-spawn: 7.0.6
       envinfo: 7.21.0
-      fastest-levenshtein: 1.0.16
       import-local: 3.2.0
       interpret: 3.1.1
       rechoir: 0.8.0
-      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4)
-      webpack-merge: 5.10.0
+      webpack: 5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3)
+      webpack-merge: 6.0.1
 
-  webpack-merge@5.10.0:
+  webpack-merge@6.0.1:
     dependencies:
       clone-deep: 4.0.1
       flat: 5.0.2
@@ -20456,7 +20391,7 @@ snapshots:
 
   webpack-sources@3.5.0: {}
 
-  webpack@5.106.2(esbuild@0.28.0)(webpack-cli@5.1.4):
+  webpack@5.106.2(esbuild@0.28.0)(webpack-cli@7.0.3):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -20483,7 +20418,7 @@ snapshots:
       watchpack: 2.5.1
       webpack-sources: 3.3.4
     optionalDependencies:
-      webpack-cli: 5.1.4(webpack@5.107.2)
+      webpack-cli: 7.0.3(webpack@5.107.2)
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -20498,7 +20433,7 @@ snapshots:
       - postcss
       - uglify-js
 
-  webpack@5.107.2(esbuild@0.28.0)(webpack-cli@5.1.4):
+  webpack@5.107.2(esbuild@0.28.0)(webpack-cli@7.0.3):
     dependencies:
       '@types/estree': 1.0.8
       '@types/json-schema': 7.0.15
@@ -20524,7 +20459,7 @@ snapshots:
       watchpack: 2.5.1
       webpack-sources: 3.5.0
     optionalDependencies:
-      webpack-cli: 5.1.4(webpack@5.107.2)
+      webpack-cli: 7.0.3(webpack@5.107.2)
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
