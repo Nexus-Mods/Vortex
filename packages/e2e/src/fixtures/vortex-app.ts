@@ -263,6 +263,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   // ---------------------------------------------------------------------------
 
   workerAuthSnapshots: [
+    // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
       const snapshots = new Map<string, AuthSnapshot>();
       const pending = new Map<string, Promise<AuthSnapshot>>();
