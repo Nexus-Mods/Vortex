@@ -24,7 +24,6 @@ vi.mock("../logging", () => ({
 
 // Imports must come after vi.mock() so the mocks are applied to the module
 // graph that pulls them in.
-// eslint-disable-next-line import/first
 import migrate from "./migrate";
 
 let tempRoot: string;

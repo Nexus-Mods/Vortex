@@ -1,10 +1,6 @@
-import * as path from "node:path";
-
 import eslintReact from "@eslint-react/eslint-plugin";
 import stylistic from "@stylistic/eslint-plugin";
-import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import betterTailwindcss from "eslint-plugin-better-tailwindcss";
-import importPlugin from "eslint-plugin-import";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 
@@ -31,7 +27,6 @@ export default defineConfig([
     },
     plugins: {
       "@stylistic": stylistic,
-      import: importPlugin,
       vortex: {
         rules: {
           "no-bluebird-promise-alias": noBluebirdPromiseAliasRule,
@@ -52,12 +47,6 @@ export default defineConfig([
           ["joinClasses", [{ match: "objectKeys" }]],
         ],
       },
-      "import/resolverNext": [
-        createTypeScriptImportResolver({
-          alwaysTryTypes: true,
-          project: path.resolve(import.meta.dirname, "tsconfig.json"),
-        }),
-      ],
     },
     rules: {
       // React
