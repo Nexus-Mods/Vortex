@@ -18,7 +18,7 @@ import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
 
 /** Package root (packages/e2e/) — used for resolving node_modules. */
-const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..");
+const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..", "..");
 
 /** Repo root directory. */
 const REPO_ROOT = path.resolve(PACKAGE_ROOT, "..", "..");
