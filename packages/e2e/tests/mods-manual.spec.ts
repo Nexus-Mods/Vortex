@@ -90,10 +90,11 @@ test.describe("Mods - Manual Downloads", () => {
               throw new Error("File path was not captured");
             }
             await vortexApp.evaluate(({ dialog }, filePath) => {
-              dialog.showOpenDialog = async () => ({
-                canceled: false,
-                filePaths: [filePath],
-              });
+              dialog.showOpenDialog = () =>
+                Promise.resolve({
+                  canceled: false,
+                  filePaths: [filePath],
+                });
             }, downloadedFilePath);
           });
 

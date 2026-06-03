@@ -22,7 +22,7 @@ export async function installNxmCapture(page: Page): Promise<void> {
           w.__capturedNxm = s;
           return null;
         }
-        return originalOpen(url as string, ...rest);
+        return originalOpen(url, ...rest);
       };
       const origAssign = w.location.assign?.bind(w.location);
       if (origAssign !== undefined) {
@@ -67,9 +67,11 @@ export async function waitForNxmUrl(page: Page, timeoutMs: number): Promise<stri
       () => {
         const hooked = (globalThis as { __capturedNxm?: string }).__capturedNxm;
         if (typeof hooked === "string" && hooked.startsWith("nxm:")) return hooked;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         const m = (globalThis as any).document.documentElement.outerHTML.match(
           /nxm:\/\/[^"'\s<>]+/i,
         );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
         return m?.[0] ?? null;
       },
       { timeout: timeoutMs },

@@ -31,7 +31,8 @@ function resolveMainDir(): string {
 }
 
 function resolveElectronBinary(): string {
-  return require("electron") as unknown as string;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return require("electron");
 }
 
 /**
@@ -170,7 +171,7 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
   await showWindowPromise;
 
   await app.evaluate(({ shell }) => {
-    shell.openExternal = async () => undefined;
+    shell.openExternal = () => Promise.resolve();
   });
 
   return mainWindow;
@@ -262,7 +263,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   // ---------------------------------------------------------------------------
 
   workerAuthSnapshots: [
-    async ({}, use) => {
+    async (_, use) => {
       const snapshots = new Map<string, AuthSnapshot>();
       const pending = new Map<string, Promise<AuthSnapshot>>();
       const snapshotDirs: string[] = [];
