@@ -20,6 +20,22 @@ describe("serializeError / rehydrateSerializedError", () => {
     expect(out.message).toBe("nope");
   });
 
+  it("recovers the type from constructor.name when the class never sets this.name", () => {
+    class NamelessError extends Error {}
+    const original = new NamelessError("boom");
+    // The live error reports "Error" as its name (no `this.name` assignment), so
+    // the only type signal is the runtime class name.
+    expect(original.name).toBe("Error");
+    expect(roundTrip(original).name).toBe("NamelessError");
+  });
+
+  it("prefers an explicit this.name over constructor.name", () => {
+    class FancyError extends Error {
+      override name = "fancy-error";
+    }
+    expect(roundTrip(new FancyError("boom")).name).toBe("fancy-error");
+  });
+
   it("preserves the code field", () => {
     const out = roundTrip(Object.assign(new Error("denied"), { code: "EACCES" }));
     expect((out as Error & { code?: string }).code).toBe("EACCES");
