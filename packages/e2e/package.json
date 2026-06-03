@@ -8,7 +8,10 @@
     "e2e": "pnpm playwright test",
     "e2e:headed": "pnpm playwright test --headed",
     "e2e:debug": "pnpm playwright test --debug",
-    "e2e:report": "pnpm playwright show-report"
+    "e2e:report": "pnpm playwright show-report",
+    "typecheck": "pnpm tsc",
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto ."
   },
   "nx": {
     "targets": {

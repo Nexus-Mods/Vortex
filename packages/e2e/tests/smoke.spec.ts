@@ -8,7 +8,7 @@ import { NavBar } from "../selectors/navbar";
 
 test.describe("App Launch", () => {
   test("Vortex launches and shows a window @smoke", async ({ vortexApp, vortexWindow }) => {
-    await test.step("Verify window exists", async () => {
+    await test.step("Verify window exists", () => {
       const windows = vortexApp.windows();
       expect(windows.length).toBeGreaterThanOrEqual(1);
     });
@@ -31,7 +31,7 @@ test.describe("App Launch", () => {
     const navbar = new NavBar(vortexWindow);
     await expect(navbar.settingsLink).toBeVisible();
 
-    await test.step("Check for critical errors", async () => {
+    await test.step("Check for critical errors", () => {
       const criticalErrors = errors.filter(
         (e) =>
           !e.includes("DevTools") && !e.includes("electron/js2c") && !e.includes("Autofill.enable"),

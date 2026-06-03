@@ -25,7 +25,7 @@ test.describe("Game Management", () => {
     const path = await import("node:path");
     const config = GAME_CONFIGS.stardewvalley!;
 
-    await test.step("Create fake game installation", async () => {
+    await test.step("Create fake game installation", () => {
       const { basePath, gamePath } = setupFakeGame("stardewvalley");
 
       expect(fs.existsSync(path.join(gamePath, config.executable))).toBe(true);
