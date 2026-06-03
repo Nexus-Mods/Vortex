@@ -53,9 +53,16 @@ export const recordErrorOnSpan = (
 
 /**
  * An error `discriminator` that distinguishes error sub-types that share an
- * identical stack.
+ * identical stack. Combines the runtime class name (`error.constructor.name`,
+ * e.g. `TypeError`, `HttpError`) with the `code` property when present, so
+ * different error types thrown from the same call site don't collapse into one
+ * fingerprint. The generic `Error` class name is omitted to keep plain errors'
+ * fingerprints stable.
  */
 const errorDiscriminator = (error: Error): string | undefined => {
   const code = (error as { code?: unknown }).code;
-  return typeof code === "string" ? code : undefined;
+  const parts = [error.constructor?.name, typeof code === "string" ? code : undefined].filter(
+    (part): part is string => part !== undefined && part !== "" && part !== "Error",
+  );
+  return parts.length > 0 ? parts.join(":") : undefined;
 };
