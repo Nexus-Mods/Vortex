@@ -42,7 +42,7 @@ function buildElectronEnv(userDataDir: string): Record<string, string> {
     }
   }
   env.NODE_ENV = "development";
-  // Fully isolate each worker — separate userData and appData so parallel
+  // Fully isolate each test — separate userData and appData so parallel
   // instances share no data at all.
   const appDataDir = path.join(userDataDir, "appData");
   const userDataSubDir = path.join(userDataDir, "userData");
@@ -136,121 +136,92 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
 }
 
 // ---------------------------------------------------------------------------
-// Worker-scoped fixtures: app launches once per worker (shared across tests
-// in the same file). This is the fast path for CI.
+// Test-scoped fixtures: each test gets its own Electron instance and isolated
+// user-data directory. Full isolation — no state leaks between tests.
 // ---------------------------------------------------------------------------
 
-type VortexWorkerFixtures = {
-  /** Shared Electron app instance — one per worker. */
-  sharedVortexApp: ElectronApplication;
-  /** Shared main window — one per worker. */
-  sharedVortexWindow: Page;
-  /** Path to the isolated temp user-data directory. */
-  sharedUserDataDir: string;
-};
-
 export type VortexTestFixtures = {
-  /** Electron app instance (shared per worker for speed). */
+  /** Path to the isolated temp user-data directory for this test. */
+  vortexUserDataDir: string;
+  /** Electron app instance — one per test. */
   vortexApp: ElectronApplication;
-  /** Main Vortex window, past the splash screen (shared per worker). */
+  /** Main Vortex window, past the splash screen — one per test. */
   vortexWindow: Page;
 };
 
 /**
  * Playwright test with Vortex fixtures.
  *
- * The Electron app is launched once per worker (i.e. once per test file)
- * and reused across all tests in that file. Each worker gets its own
- * isolated temp user-data directory.
+ * Each test gets its own Electron process and isolated user-data directory.
+ * This guarantees full state isolation — no login state, Redux store, or
+ * on-disk data leaks between tests, regardless of worker count.
  *
  * Usage:
  *   import { test, expect } from '../fixtures/vortex-app';
  *   test('my test', async ({ vortexWindow }) => { ... });
  */
-export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
-  // Worker-scoped: launches once, shared across all tests in the file
-  sharedUserDataDir: [
-    async ({}, use) => {
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-"));
-      await use(dir);
-      fs.rmSync(dir, { recursive: true, force: true });
-    },
-    { scope: "worker" },
-  ],
-
-  sharedVortexApp: [
-    async ({ sharedUserDataDir }, use) => {
-      const mainDir = resolveMainDir();
-      const electronBinary = resolveElectronBinary();
-
-      const app = await electron.launch({
-        executablePath: electronBinary,
-        args: [mainDir],
-        env: buildElectronEnv(sharedUserDataDir),
-        cwd: mainDir,
-        timeout: Timeouts.LIFECYCLE,
-      });
-
-      await use(app);
-      await app.close().catch(() => {});
-    },
-    { scope: "worker", timeout: Timeouts.LIFECYCLE },
-  ],
-
-  sharedVortexWindow: [
-    async ({ sharedVortexApp }, use) => {
-      // Register before domcontentloaded — show-window fires after React mounts
-      // LoadingScreen, which is after dcl, so this listener is always set up first.
-      const showWindowPromise = sharedVortexApp.evaluate(
-        ({ ipcMain }, timeoutMs) =>
-          new Promise<void>((resolve, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error("Timed out waiting for show-window")),
-              timeoutMs,
-            );
-            ipcMain.once("show-window", () => {
-              clearTimeout(timer);
-              resolve();
-            });
-          }),
-        Timeouts.LIFECYCLE,
-      );
-
-      const mainWindow = await waitForMainWindow(sharedVortexApp);
-
-      // Block unwanted connections that slow down tests:
-      await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
-        route.fulfill({ status: 204, body: "" }),
-      );
-
-      await mainWindow.waitForLoadState("domcontentloaded");
-      await showWindowPromise;
-
-      // Prevent Vortex from handing OAuth (and other external) URLs to the OS
-      // default browser. Tests read the OAuth URL from Vortex's in-app field
-      // and drive login in their own Playwright Chromium context.
-      await sharedVortexApp.evaluate(({ shell }) => {
-        shell.openExternal = async () => undefined;
-      });
-
-      await use(mainWindow);
-    },
-    { scope: "worker", timeout: Timeouts.LIFECYCLE },
-  ],
-
-  // Test-scoped aliases that reference the shared worker fixtures
-  vortexApp: async ({ sharedVortexApp }, use) => {
-    await use(sharedVortexApp);
+export const test = base.extend<VortexTestFixtures>({
+  vortexUserDataDir: async ({}, use) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-"));
+    await use(dir);
+    fs.rmSync(dir, { recursive: true, force: true });
   },
 
-  vortexWindow: async (
-    { sharedVortexApp, sharedVortexWindow, sharedUserDataDir },
-    use,
-    testInfo,
-  ) => {
-    await use(sharedVortexWindow);
+  vortexApp: async ({ vortexUserDataDir }, use) => {
+    const mainDir = resolveMainDir();
+    const electronBinary = resolveElectronBinary();
+
+    const app = await electron.launch({
+      executablePath: electronBinary,
+      args: [mainDir],
+      env: buildElectronEnv(vortexUserDataDir),
+      cwd: mainDir,
+      timeout: Timeouts.LIFECYCLE,
+    });
+
+    await use(app);
+    await app.close().catch(() => {});
+  },
+
+  vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
+    // Register before domcontentloaded — show-window fires after React mounts
+    // LoadingScreen, which is after dcl, so this listener is always set up first.
+    const showWindowPromise = vortexApp.evaluate(
+      ({ ipcMain }, timeoutMs) =>
+        new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error("Timed out waiting for show-window")),
+            timeoutMs,
+          );
+          ipcMain.once("show-window", () => {
+            clearTimeout(timer);
+            resolve();
+          });
+        }),
+      Timeouts.LIFECYCLE,
+    );
+
+    const mainWindow = await waitForMainWindow(vortexApp);
+
+    // Block unwanted connections that slow down tests:
+    await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
+      route.fulfill({ status: 204, body: "" }),
+    );
+
+    await mainWindow.waitForLoadState("domcontentloaded");
+    await showWindowPromise;
+
+    // Prevent Vortex from handing OAuth (and other external) URLs to the OS
+    // default browser. Tests read the OAuth URL from Vortex's in-app field
+    // and drive login in their own Playwright Chromium context.
+    await vortexApp.evaluate(({ shell }) => {
+      shell.openExternal = async () => undefined;
+    });
+
+    await use(mainWindow);
+
     if (testInfo.status !== testInfo.expectedStatus) {
-      const logPath = path.join(sharedUserDataDir, "userData", "vortex.log");
+      const logPath = path.join(vortexUserDataDir, "userData", "vortex.log");
       await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
 
       // Use Electron's webContents.capturePage() instead of page.screenshot().
@@ -258,7 +229,7 @@ export const test = base.extend<VortexTestFixtures, VortexWorkerFixtures>({
       // BrowserWindow from being shown — hidden windows don't produce
       // compositor frames, so page.screenshot() hangs waiting for one.
       // capturePage() reads directly from the renderer and works while hidden.
-      await sharedVortexApp
+      await vortexApp
         .evaluate(async ({ BrowserWindow }) => {
           const win = BrowserWindow.getAllWindows().find((w) =>
             w.webContents.getURL().includes("index.html"),

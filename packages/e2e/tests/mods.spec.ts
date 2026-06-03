@@ -23,9 +23,6 @@ const TIERS = [
 ] as const;
 
 test.describe("Mods - Downloads", () => {
-  // Fresh Vortex per test so login state and managed game don't leak.
-  test.describe.configure({ mode: "parallel" });
-
   for (const { tier, user } of TIERS) {
     test(`[QA-108] ${tier} user can download SMAPI via the Mod Manager link`, async ({
       vortexApp,
@@ -39,7 +36,6 @@ test.describe("Mods - Downloads", () => {
         // reliably while no game is active.
         const auth = await loginToNexus(vortexApp, vortexWindow, user, {
           keepBrowser: true,
-          headless: false,
         });
         if (auth === null) {
           throw new Error("loginToNexus did not return a browser handle");

@@ -8,7 +8,7 @@ import {
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
-import { Timeouts } from "./timeouts";
+import { GlobalTimeouts, Timeouts } from "./timeouts";
 import { freeUser, type NexusUser } from "./users";
 
 export interface LoginToNexusOptions {
@@ -19,7 +19,7 @@ export interface LoginToNexusOptions {
    */
   keepBrowser?: boolean;
   /**
-   * Override headless mode for the auth browser. Defaults to !PWDEBUG.
+   * Override headless mode for the auth browser. Defaults to true.
    * Set to false when the caller needs to navigate Cloudflare-protected
    * pages on www.nexusmods.com after login — Cloudflare's JS challenge
    * generally blocks headless browsers.
@@ -62,10 +62,14 @@ export async function loginToNexus(
   });
 
   await test.step("Click the login button", async () => {
-    const popupPromise = vortexWindow.waitForEvent("popup").catch(() => null);
-    const appWindowPromise = vortexApp.waitForEvent("window").catch(() => null);
+    const popupPromise = vortexWindow
+      .waitForEvent("popup", { timeout: GlobalTimeouts.ACTION })
+      .catch(() => null);
+    const appWindowPromise = vortexApp
+      .waitForEvent("window", { timeout: GlobalTimeouts.ACTION })
+      .catch(() => null);
 
-    await expect(vortexLoginPage.vortexLoginButton).toBeVisible();
+    await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
     await vortexLoginPage.vortexLoginButton.click();
 
     loginPage = (await popupPromise) ?? (await appWindowPromise);
@@ -87,7 +91,7 @@ export async function loginToNexus(
       // so that Cloudflare's cf_clearance cookie (saved into storage state)
       // remains valid. Real Chrome + AutomationControlled disabled +
       // navigator.webdriver spoof matches what was cleared during warmup.
-      const headless = options.headless ?? !process.env.PWDEBUG;
+      const headless = options.headless ?? true;
       const executablePath = process.env.E2E_PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
       const launchArgs = ["--disable-blink-features=AutomationControlled"];
       try {
@@ -214,7 +218,7 @@ export async function loginToNexus(
     await expect(vortexLoginPage.vortexLoginDialog).toBeHidden();
     await expect(vortexLoginPage.profileButton).toBeVisible();
     await vortexLoginPage.profileButton.click();
-    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible();
+    await expect(vortexLoginPage.loggedInMenuItem).toBeVisible({ timeout: Timeouts.NETWORK });
   });
 
   if (leakBrowser && authBrowser !== null && authPage !== null) {

@@ -5,8 +5,6 @@ const scalingFactor = isCI ? 2 : 1;
 export const GlobalTimeouts = {
   /** Upper bound on the entire `playwright test` run. */
   GLOBAL: isCI ? min(45) : min(10),
-  /** Per-test budget. */
-  TEST: sec(30) * scalingFactor,
   /** Default poll budget for web-first assertions (`expect(locator).toBe...`). */
   EXPECT: sec(5),
   /** Default budget for locator actions (`click`, `fill`, `hover`, ...). */

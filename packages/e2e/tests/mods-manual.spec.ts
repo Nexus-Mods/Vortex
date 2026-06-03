@@ -28,8 +28,6 @@ const TIERS = [
 ] as const;
 
 test.describe("Mods - Manual Downloads", () => {
-  test.describe.configure({ mode: "parallel" });
-
   for (const { tier, user } of TIERS) {
     test(`[QA-176] ${tier} user can manually download SMAPI and Install From File`, async ({
       vortexApp,
@@ -41,7 +39,6 @@ test.describe("Mods - Manual Downloads", () => {
       try {
         const auth = await loginToNexus(vortexApp, vortexWindow, user, {
           keepBrowser: true,
-          headless: false,
         });
         if (auth === null) {
           throw new Error("loginToNexus did not return a browser handle");
