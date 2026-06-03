@@ -1,13 +1,10 @@
 @layer components {
     .nxm-tab-bar {
-        overflow-x: clip;
-        overflow-clip-margin: calc(var(--spacing) * 1);
-
         & .nxm-tab-bar-scroller {
             display: flex;
             overflow-x: auto;
             /* prevents focus outline being cropped by the overflow */
-            margin-inline: calc(var(--spacing) * -1);
+            margin-left: calc(var(--spacing) * -1);
             padding-inline: calc(var(--spacing) * 1);
         }
     }

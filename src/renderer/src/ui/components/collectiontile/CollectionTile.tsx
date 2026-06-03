@@ -15,15 +15,16 @@ import React, {
   useState,
 } from "react";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import Debouncer from "../../../util/Debouncer";
-import { isCollectionModPresent } from "../../../util/selectors";
-import { delayed } from "../../../util/util";
-import { nxmFileSize, nxmMod } from "../../icon-paths";
-import { joinClasses } from "../../utils/joinClasses";
-import { Button } from "../button/Button";
-import { Icon } from "../icon/Icon";
-import { Typography } from "../typography/Typography";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Image } from "@/ui/components/image/Image";
+import { Typography } from "@/ui/components/typography/Typography";
+import { nxmFileSize, nxmMod } from "@/ui/icon-paths";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import Debouncer from "@/util/Debouncer";
+import { isCollectionModPresent } from "@/util/selectors";
+import { delayed } from "@/util/util";
 
 const debouncer = new Debouncer(
   (func: () => void) => {
@@ -125,27 +126,26 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-start gap-x-3.5 p-3">
-        <div className="relative flex aspect-4/5 w-full max-w-35 shrink-0 items-center justify-center overflow-hidden rounded-xs bg-surface-translucent-low">
-          <img
-            alt={collection.name}
-            className="absolute z-1 h-full max-w-none"
-            src={collection.tileImage?.thumbnailUrl}
-          />
-
+        <Image
+          alt={collection.name}
+          className="w-full max-w-35 rounded-xs"
+          fit="cover"
+          imageType="collection"
+          src={collection.tileImage?.thumbnailUrl}
+        >
           {easyInstallBadge && (
-            <div className="absolute inset-x-0 bottom-0 z-2">
-              <Typography
-                appearance="none"
-                className="flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
-                typographyType="title-xs"
-              >
-                <Icon path={mdiStar} size="xs" />
+            <Typography
+              appearance="none"
+              as="div"
+              className="absolute inset-x-0 bottom-0 z-2 flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
+              typographyType="title-xs"
+            >
+              <Icon path={mdiStar} size="xs" />
 
-                <span title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
-              </Typography>
-            </div>
+              <span title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
+            </Typography>
           )}
-        </div>
+        </Image>
 
         <div className="flex min-w-0 grow flex-col gap-y-1.5">
           <div className="flex flex-col gap-y-1">
@@ -159,10 +159,10 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
               typographyType="body-sm"
             >
               <span className="size-4 overflow-hidden rounded-full bg-surface-translucent-low">
-                {collection.user?.avatar && (
+                {!!collection.user?.avatar && (
                   <img
                     alt={collection.user?.name}
-                    className="size-4"
+                    className="size-4 shrink-0"
                     src={collection.user.avatar}
                   />
                 )}
@@ -177,7 +177,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
               {collection.category?.name}
             </Typography>
 
-            {revision.adultContent && (
+            {!!revision.adultContent && (
               <>
                 <div className="size-1 rotate-45 bg-neutral-subdued" />
 
