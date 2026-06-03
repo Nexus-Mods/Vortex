@@ -263,7 +263,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   // ---------------------------------------------------------------------------
 
   workerAuthSnapshots: [
-    async (_, use) => {
+    async ({}, use) => {
       const snapshots = new Map<string, AuthSnapshot>();
       const pending = new Map<string, Promise<AuthSnapshot>>();
       const snapshotDirs: string[] = [];
