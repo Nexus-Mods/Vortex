@@ -306,3 +306,18 @@ export function isErrorOfType<T extends Error>(
 ): err is T {
   return err instanceof ctor || (err instanceof Error && err.name === ctor.name);
 }
+
+/**
+ * Class-identity check that also survives the IPC boundary. An error that
+ * crossed the wire is rebuilt as a plain `Error` (its prototype is lost), so
+ * `instanceof` fails — but `error-serialization` preserves the original type on
+ * `err.name` (falling back to `constructor.name`), so we match on either. Any
+ * custom payload is carried across as own-enumerable properties and reattached,
+ * so callers reading those fields still work on a rehydrated instance.
+ */
+export function isErrorOfType<T extends Error>(
+  err: unknown,
+  ctor: new (...args: never[]) => T,
+): err is T {
+  return err instanceof ctor || (err instanceof Error && err.name === ctor.name);
+}
