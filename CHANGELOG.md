@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
-=======
 ## [2.1.0-beta.6] - 2026-06-02
 
 ### **Fixed**
@@ -35,7 +33,6 @@ _First public beta of the 2.1 release._
 - FOMOD installer initialisation failing due to a `fomod-native` build issue; bumped to the fixed upstream version ([#23332](https://github.com/Nexus-Mods/Vortex/pull/23332))
 - Registered the `nxm://` handler without the `--user-data` switch (matching v1 behaviour), so cold-start downloads (opening an `nxm://` link while Vortex is closed) use the default user-data location ([#23322](https://github.com/Nexus-Mods/Vortex/pull/23322))
 
->>>>>>> 031aaffa7 (Merge pull request #23371 from Nexus-Mods/changelogs/v2.1.0-beta.6)
 ## [2.1.0-beta.3] - 2026-05-26
 
 ### **Changed**
@@ -1933,12 +1930,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
-<<<<<<< HEAD
-=======
 [2.1.0-beta.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.6
 [2.1.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.5
 [2.1.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.4
->>>>>>> 031aaffa7 (Merge pull request #23371 from Nexus-Mods/changelogs/v2.1.0-beta.6)
 [2.1.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.3
 [2.1.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.2
 [2.1.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.1
