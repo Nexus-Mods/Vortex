@@ -129,12 +129,14 @@ export interface SerializedError {
 }
 
 /**
- * A callback reply is either a successful value or a serialized error. The
- * error rides as an opaque {@link Serializable} (a {@link SerializedError}
- * shape at runtime) so it satisfies the IPC serialization contract; the
- * receiver casts and rehydrates it via `rehydrateSerializedError`.
+ * A reply envelope crossing an IPC boundary: either a successful value or a
+ * serialized error. Electron's native invoke serialization would
+ * otherwise reduce it to a generic `Error`, losing its type/name.
+ * The error rides as an opaque {@link Serializable}
+ * (a {@link SerializedError} shape at runtime) so it
+ * satisfies the IPC serialization contract.
  */
-export type WireCallbackResult<T> = { ok: true; value: T } | { ok: false; error: Serializable };
+export type WireResult<T> = { ok: true; value: T } | { ok: false; error: Serializable };
 
 export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
@@ -154,7 +156,7 @@ export type RendererCallbackChannels = {
   [C in keyof CallbackChannels as `callback:${C}`]: CallbackChannels[C] extends (
     ...args: infer _Args
   ) => Promise<infer Return>
-    ? (collationId: number, result: WireCallbackResult<Return>) => void
+    ? (collationId: number, result: WireResult<Return>) => void
     : never;
 };
 
