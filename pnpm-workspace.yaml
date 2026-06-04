@@ -47,12 +47,11 @@ catalog:
   "@hot-updater/bsdiff": 0.30.6
   "@iarna/toml": 2.2.5
   "@mdi/js": 7.4.47
-<<<<<<< HEAD
   "@microsoft/api-extractor": 7.58.7
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.1
   "@nexusmods/fomod-installer-native": 0.13.2
-  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
+  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.6.1
   "@opentelemetry/context-zone": 2.7.1
@@ -71,31 +70,6 @@ catalog:
   "@types/babel__register": 7.17.3
   "@types/bbcode-to-react": 0.2.4
   "@types/big.js": 6.2.2
-=======
-  "@microsoft/api-extractor": ^7.57.6
-  "@msgpack/msgpack": ^2.7.0
-  "@nexusmods/fomod-installer-ipc": ^0.13.1
-  "@nexusmods/fomod-installer-native": ^0.13.2
-  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
-  "@opentelemetry/api": ^1.9.0
-  "@opentelemetry/context-async-hooks": ^2.5.1
-  "@opentelemetry/context-zone": ^2.5.1
-  "@opentelemetry/exporter-trace-otlp-http": ^0.57.0
-  "@opentelemetry/resources": ^1.30.0
-  "@opentelemetry/sdk-trace-base": ^1.30.0
-  "@opentelemetry/semantic-conventions": ^1.30.0
-  "@playwright/test": ^1.58.2
-  "@stylistic/eslint-plugin": ^5.7.1
-  "@tailwindcss/cli": ^4.1.17
-  "@testing-library/dom": ^10.4.1
-  "@testing-library/jest-dom": ^6.9.1
-  "@testing-library/react": ^12.1.5
-  "@testing-library/user-event": ^14.6.1
-  "@types/babel__preset-env": ~7.10.0
-  "@types/babel__register": ~7.17.3
-  "@types/bbcode-to-react": ~0.2.4
-  "@types/big.js": ~6.2.2
->>>>>>> 44f06294f (Merge pull request #23382 from Nexus-Mods/tasks/LAZ-516)
   "@types/bluebird": 3.5.20
   "@types/content-disposition": 0.5.9
   "@types/content-type": 1.1.9

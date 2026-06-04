@@ -1177,14 +1177,10 @@ importers:
         version: 0.30.6
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-=======
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
->>>>>>> 44f06294f (Merge pull request #23382 from Nexus-Mods/tasks/LAZ-516)
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -2499,14 +2495,10 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
-=======
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
->>>>>>> 44f06294f (Merge pull request #23382 from Nexus-Mods/tasks/LAZ-516)
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.2
@@ -2841,14 +2833,10 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-=======
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
->>>>>>> 44f06294f (Merge pull request #23382 from Nexus-Mods/tasks/LAZ-516)
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -3790,14 +3778,10 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-=======
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
->>>>>>> 44f06294f (Merge pull request #23382 from Nexus-Mods/tasks/LAZ-516)
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -4097,7 +4081,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6eb0c3a8c826a881b3c0f001339e8f2a71fc7835
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../vortex-api
