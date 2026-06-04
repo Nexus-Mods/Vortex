@@ -34,7 +34,9 @@ function resourceToUrl(resource: ResolvedResource): string {
 }
 
 export function init(manager: DownloadManager): void {
-  const timeout = 30_000;
+  // Our network timeouts are 30 seconds, which means that we will fail
+  // with the callback before the network could. Give it a bit of extra time to avoid spurious failures.
+  const timeout = 45_000;
 
   const webContentsByDownloadId = new Map<string, WebContents>();
 
