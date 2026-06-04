@@ -123,10 +123,10 @@ catalog:
   "@types/write-file-atomic": 3.0.3
   "@types/ws": 7.4.7
   "@types/xml2js": 0.4.14
-  "@typescript-eslint/utils": 8.59.4
+  "@typescript-eslint/utils": 8.60.1
   "@vitejs/plugin-react": 6.0.2
-  "@vitest/coverage-v8": 4.1.7
-  "@vitest/ui": 4.1.7
+  "@vitest/coverage-v8": 4.1.8
+  "@vitest/ui": 4.1.8
   "@welldone-software/why-did-you-render": 10.0.1
   bbcode-to-react: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
@@ -161,11 +161,9 @@ catalog:
   electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: 4.6.5
   encoding-down: 6.3.0
-  eslint: 10.4.0
+  eslint: 10.4.1
   eslint-config-prettier: 10.1.8
-  eslint-import-resolver-typescript: 4.4.4
   eslint-plugin-better-tailwindcss: 4.5.0
-  eslint-plugin-import: 2.32.0
   eslint-plugin-perfectionist: 5.9.0
   feedparser: 2.3.0
   font-scanner: 0.2.1
@@ -192,7 +190,7 @@ catalog:
   leveldown: 5.6.0
   levelup: 4.4.0
   limiter: 3.0.0
-  lint-staged: 17.0.5
+  lint-staged: 17.0.7
   lodash: 4.17.23
   loot: git+https://github.com/Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
   lru-cache: 11.2.7
@@ -207,8 +205,8 @@ catalog:
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0
   numeral: 2.0.6
-  nx: 22.7.2
-  oxfmt: 0.51.0
+  nx: 22.7.5
+  oxfmt: 0.53.0
   p-limit: 7.3.0
   p-queue: 9.3.0
   packery: 2.1.2
@@ -244,8 +242,8 @@ catalog:
   reselect: 4.1.8
   resolve: 1.22.11
   rimraf: git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-  rolldown: 1.0.1
-  sass: 1.99.0
+  rolldown: 1.0.3
+  sass: 1.100.0
   semver: 7.7.4
   shortid: 2.2.17
   simple-git: 3.33.0
@@ -254,26 +252,26 @@ catalog:
   source-map-support: 0.5.21
   string-template: 1.0.0
   tailwindcss: 4.3.0
-  terser-webpack-plugin: 5.6.0
+  terser-webpack-plugin: 5.6.1
   tmp: 0.1.0
   tough-cookie: 6.0.1
-  ts-loader: 9.5.7
+  ts-loader: 9.6.0
   ts-v-gen: 1.0.3
   tsconfig-paths-webpack-plugin: 4.2.0
-  tsdown: 0.22.0
-  tsx: 4.22.3
+  tsdown: 0.22.1
+  tsx: 4.22.4
   turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: 4.3.3
   typescript: 6.0.3
-  typescript-eslint: 8.59.4
+  typescript-eslint: 8.60.1
   universal-analytics: 0.4.23
   uuid: 3.4.0
-  vite: 8.0.13
+  vite: 8.0.16
   vite-plugin-doctest: 2.0.0
-  vitest: 4.1.7
+  vitest: 4.1.8
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  webpack: 5.106.2
-  webpack-cli: 5.1.4
+  webpack: 5.107.2
+  webpack-cli: 7.0.3
   webpack-node-externals: 3.0.0
   which: 1.3.1
   wholocks: git+https://github.com/Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
