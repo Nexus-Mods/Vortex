@@ -1,10 +1,6 @@
 const Promise = require("bluebird");
 const path = require("path");
-<<<<<<< HEAD
-const { util } = require("@nexusmods/vortex-api");
-=======
-const { fs, util } = require("vortex-api");
->>>>>>> fd54aa379 (Merge pull request #23417 from Nexus-Mods/fix/app-495)
+const { fs, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const BODYSLIDE_DIR = path.join("Data", "CalienteTools", "BodySlide");
