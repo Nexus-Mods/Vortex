@@ -1,6 +1,6 @@
 {
   "platforms": ["windows_amd64", "linux_amd64"],
-  "outputDir": "src/main/build/duckdb-extensions",
+  "outputDir": "build/duckdb-extensions",
   "extensions": [
     {
       "name": "level_pivot",

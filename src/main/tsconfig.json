@@ -4,7 +4,8 @@
   "include": [
     "src/**/*",
     "../../typings.custom/electron.d.ts",
-    "../../typings.custom/promise.d.ts"
+    "../../typings.custom/promise.d.ts",
+    "*.ts"
   ],
   "compilerOptions": {
     "composite": true,

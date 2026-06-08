@@ -1,10 +1,8 @@
 import * as fs from "node:fs";
 import * as https from "node:https";
 import * as path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import * as zlib from "node:zlib";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ---------------------------------------------------------------------------
 // Types
@@ -124,20 +122,20 @@ function downloadFile(url: string, destPath: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  const configPath = path.resolve(__dirname, "duckdb-extensions.json");
+  const configPath = path.resolve(import.meta.dirname, "duckdb-extensions.json");
   const config: ExtensionConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
   // Detect DuckDB version from the installed @duckdb/node-api package
   const nodeApiPkgPath = path.resolve(
-    __dirname,
-    "../src/main/node_modules/@duckdb/node-api/package.json",
+    import.meta.dirname,
+    "node_modules/@duckdb/node-api/package.json",
   );
   const nodeApiPkg = JSON.parse(fs.readFileSync(nodeApiPkgPath, "utf8"));
   const duckdbVersion = parseDuckDBVersion(nodeApiPkg.version as string);
 
   console.log(`DuckDB version: ${duckdbVersion}`);
 
-  const outputDir = path.resolve(__dirname, "..", config.outputDir);
+  const outputDir = path.resolve(import.meta.dirname, config.outputDir);
 
   for (const ext of config.extensions) {
     for (const platform of config.platforms) {
