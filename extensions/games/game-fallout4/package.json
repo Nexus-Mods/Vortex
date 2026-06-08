@@ -1,6 +1,6 @@
 {
   "name": "game-fallout4",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Support for Fallout 4",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
