@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { BulletDemo } from "@/ui/components/bullet/BulletDemo";
 import { ButtonDemo } from "@/ui/components/button/ButtonDemo";
 import { CollectionTileDemo } from "@/ui/components/collectiontile/CollectionTileDemo";
 import { DropdownDemo } from "@/ui/components/dropdown/DropdownDemo";
@@ -152,6 +153,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
                     <TabButton name="Icon" />
 
                     <TabButton name="Premium Badge" />
+
+                    <TabButton name="Bullet" />
                   </TabBar>
 
                   <div className="mt-6">
@@ -161,6 +164,10 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
 
                     <TabPanel name="Premium Badge">
                       <PremiumBadgeDemo />
+                    </TabPanel>
+
+                    <TabPanel name="Bullet">
+                      <BulletDemo />
                     </TabPanel>
                   </div>
                 </TabProvider>

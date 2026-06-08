@@ -7,6 +7,7 @@ Components adapted from the web team's "next" project for use in Vortex.
 ```
 ui/
 ├── components/
+│   ├── bullet/          - Small rotated-square dot used as an inline marker/separator
 │   ├── button/          - Button system (primary, secondary, tertiary, success, premium)
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
@@ -15,7 +16,7 @@ ui/
 │   │   ├── input/       - Text input with validation
 │   │   └── select/      - Select dropdown with custom styling
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
-│   ├── image/           - Image wrapper with aspect ratios and fallback
+│   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
 │   ├── listing/         - List display component
 │   ├── modal/           - Modal dialog (Headless UI Dialog)
@@ -357,6 +358,19 @@ import { Image } from "../../ui/components/image/Image";
 
 **Image types:** `collection` (4:5 portrait), `mod` (16:9 landscape), `other` (sized by container)
 
+#### AdultAwareImage
+
+Wraps `Image` for Nexus content (mods, collections, gallery, …) and blurs adult content according to the logged-in user's `adultBlurImages` preference. When no one is logged in (or the preference is unknown) it blurs by default, so adult content is never shown to a user who hasn't opted into seeing it. The base `Image` stays presentational; this wrapper owns the adult-content policy.
+
+`isAdult` is **required** so the blur decision can never be forgotten at a call site. All other `Image` props (including `imageType`) pass straight through.
+
+```tsx
+import { AdultAwareImage } from "../../ui/components/image/AdultAwareImage";
+
+<AdultAwareImage isAdult={file.adultContent} imageType="mod" alt="Preview" src={url} />
+<AdultAwareImage isAdult={revision.adultContent} imageType="collection" alt="Cover" src={url} />
+```
+
 ### PremiumBadge
 
 Small diamond badge denoting premium membership.
@@ -365,6 +379,20 @@ Small diamond badge denoting premium membership.
 import { PremiumBadge } from "../../ui/components/premium_badge/PremiumBadge";
 
 <PremiumBadge />;
+```
+
+### Bullet
+
+Small rotated-square dot used as an inline marker or separator (e.g. between a label and an "Adult" tag). Defaults (`size-0.75`, 45° rotation, translucent-subdued colour) come from the `.nxm-bullet` class; pass `className` to override any of them — Tailwind utilities sit in a higher layer than `components`, so they win over the defaults.
+
+```tsx
+import { Bullet } from "../../ui/components/bullet/Bullet";
+
+// Default
+<Bullet />
+
+// Override size and colour
+<Bullet className="size-1 bg-neutral-subdued" />
 ```
 
 ## Adding New Components
