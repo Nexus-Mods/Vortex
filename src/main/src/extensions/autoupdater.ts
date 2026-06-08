@@ -47,6 +47,59 @@ export function setupAutoUpdater(installType: string): void {
   const currentVersion = semver.parse(app.getVersion());
   let updateChannel = "stable";
 
+  // Launching the freshly downloaded installer can fail transiently with EBUSY
+  // (and similar lock errors) while antivirus still has the ~360 MB file open.
+  // Retry quitAndInstall a few times with backoff rather than letting a single
+  // transient lock abort the whole update.
+  const MAX_INSTALL_ATTEMPTS = 5;
+  const INSTALL_RETRY_DELAY_MS = 1000;
+  let installAttempts = 0;
+  let installPending = false;
+
+  const isInstallerBusyError = (message: string): boolean =>
+    /EBUSY|ETXTBSY|EPERM|EACCES|resource busy|being used by another/i.test(message);
+
+  // Launch the downloaded installer. quitAndInstall quits the app on success;
+  // on failure it reports via the "error" event (or, rarely, throws), which we
+  // route to handleInstallFailure to decide whether to retry.
+  function attemptInstall(): void {
+    if (process.env.NODE_ENV === "development") {
+      log("info", "Skipping install (dev mode)");
+      return;
+    }
+    installPending = true;
+    installAttempts += 1;
+    // Drop the before-quit warning so retries don't stack duplicate dialogs.
+    app.removeListener("before-quit", showUpdateWarning);
+    log("info", "Installing update", { attempt: installAttempts });
+    try {
+      autoUpdater.quitAndInstall();
+    } catch (unknownErr) {
+      handleInstallFailure(unknownToError(unknownErr));
+    }
+  }
+
+  function handleInstallFailure(err: Error): void {
+    if (!installPending) {
+      return;
+    }
+    if (isInstallerBusyError(err.message) && installAttempts < MAX_INSTALL_ATTEMPTS) {
+      log("warn", "Installer launch failed, retrying", {
+        error: err.message,
+        attempt: installAttempts,
+        retryInMs: INSTALL_RETRY_DELAY_MS,
+      });
+      setTimeout(attemptInstall, INSTALL_RETRY_DELAY_MS);
+    } else {
+      installPending = false;
+      log("error", "Installer launch failed, giving up", {
+        error: err.message,
+        attempts: installAttempts,
+      });
+      updateStatus.error = err.message;
+    }
+  }
+
   // Register invoke handler for status queries
   betterIpcMain.handle("updater:get-status", (): UpdateStatus => {
     return {
@@ -72,10 +125,13 @@ export function setupAutoUpdater(installType: string): void {
 
   // Error handler
   autoUpdater.on("error", (err) => {
-    log("error", "Auto-updater error", {
-      error: getErrorMessageOrDefault(err),
-    });
-    updateStatus.error = getErrorMessageOrDefault(err);
+    const message = getErrorMessageOrDefault(err);
+    log("error", "Auto-updater error", { error: message });
+    updateStatus.error = message;
+    // A failed installer launch surfaces here; retry if it's a transient lock.
+    if (installPending) {
+      handleInstallFailure(unknownToError(err));
+    }
   });
 
   // Update not available
@@ -129,8 +185,7 @@ export function setupAutoUpdater(installType: string): void {
       if (installAfterDownloadFlag) {
         log("info", "Auto-installing after download");
         installAfterDownloadFlag = false;
-        app.removeListener("before-quit", showUpdateWarning);
-        autoUpdater.quitAndInstall();
+        attemptInstall();
       }
     }
   });
@@ -220,6 +275,18 @@ export function setupAutoUpdater(installType: string): void {
       installAfterDownload,
     });
 
+    // Already downloaded: don't re-fetch the full installer. Re-issuing
+    // downloadUpdate when the file is already present can resolve without
+    // re-emitting "update-downloaded", which would strand the install request.
+    // Install directly instead.
+    if (updateStatus.downloaded) {
+      log("info", "Update already downloaded, skipping re-download");
+      if (installAfterDownload) {
+        attemptInstall();
+      }
+      return;
+    }
+
     installAfterDownloadFlag = installAfterDownload;
 
     const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
@@ -243,8 +310,7 @@ export function setupAutoUpdater(installType: string): void {
   betterIpcMain.on("updater:restart-and-install", () => {
     if (process.env.NODE_ENV !== "development") {
       log("info", "Restarting to install update");
-      app.removeListener("before-quit", showUpdateWarning);
-      autoUpdater.quitAndInstall();
+      attemptInstall();
     } else {
       log("info", "Skipping install (dev mode)");
     }
