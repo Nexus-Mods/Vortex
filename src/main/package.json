@@ -37,7 +37,15 @@
           "copy-assets",
           "copy-extensions",
           "download-duckdb-extensions",
-          "^build"
+          "^build",
+          {
+            "target": "build",
+            "projects": "@vortex/renderer"
+          },
+          {
+            "target": "build",
+            "projects": "@vortex/preload"
+          }
         ],
         "cache": true,
         "outputs": [
