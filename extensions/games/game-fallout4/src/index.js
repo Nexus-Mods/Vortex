@@ -1,6 +1,10 @@
 const Promise = require("bluebird");
 const path = require("path");
+<<<<<<< HEAD
 const { util } = require("@nexusmods/vortex-api");
+=======
+const { fs, util } = require("vortex-api");
+>>>>>>> fd54aa379 (Merge pull request #23417 from Nexus-Mods/fix/app-495)
 const winapi = require("winapi-bindings");
 
 /*
@@ -14,6 +18,10 @@ const MS_ID = "BethesdaSoftworks.Fallout4-PC";
 const GOG_ID = "1998527297";
 const EPIC_ID = "61d52ce4d09d41e48800c22784d13ae8";
 const STEAM_ID = "377160";
+
+const BODYSLIDE_DIR = path.join("Data", "Tools", "BodySlide");
+const BODYSLIDE_X64 = path.join(BODYSLIDE_DIR, "BodySlide x64.exe");
+const BODYSLIDE_EXE = path.join(BODYSLIDE_DIR, "BodySlide.exe");
 
 let tools = [
   {
@@ -43,8 +51,18 @@ let tools = [
   {
     id: "bodyslide",
     name: "BodySlide",
-    executable: () => path.join("Data", "Tools", "BodySlide", "BodySlide x64.exe"),
-    requiredFiles: [path.join("Data", "Tools", "BodySlide", "BodySlide x64.exe")],
+    executable: (discoveryPath) => {
+      if (discoveryPath !== undefined) {
+        try {
+          fs.statSync(path.join(discoveryPath, BODYSLIDE_X64));
+          return BODYSLIDE_X64;
+        } catch (err) {
+          return BODYSLIDE_EXE;
+        }
+      }
+      return BODYSLIDE_EXE;
+    },
+    requiredFiles: [BODYSLIDE_EXE],
     relative: true,
     logo: "auto",
   },
