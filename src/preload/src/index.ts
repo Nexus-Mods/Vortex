@@ -279,10 +279,7 @@ async function rendererInvoke<C extends keyof InvokeChannels>(
 
 function isWireResult(value: unknown): value is WireResult<unknown> {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "ok" in value &&
-    typeof (value as { ok: unknown }).ok === "boolean"
+    typeof value === "object" && value !== null && "ok" in value && typeof value.ok === "boolean"
   );
 }
 
