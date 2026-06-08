@@ -14,6 +14,7 @@ import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
 import { GHOST_EXT, NAMESPACE } from "./statics";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
+import { missingGroupFixes } from "./util/groups";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 
 const MAX_RESTARTS = 3;
@@ -300,6 +301,22 @@ class LootInterface {
           }
         }
       } else if (err.message.match(/The group "[^"]*" does not exist/)) {
+        // A collection (or the user) assigned plugins to a LOOT group that no longer exists -
+        // typically a masterlist group that was renamed or removed after the collection was
+        // authored. Rather than failing the entire sort, drop every dangling reference (the
+        // master-/userlist groups are in state) so the affected plugins fall back to their
+        // default group, then re-sort. If there's nothing to reset we can't recover this way,
+        // so just notify.
+        const { missing, actions } = missingGroupFixes(store.getState());
+        if (actions.length > 0) {
+          log("info", "resetting plugins assigned to missing loot group(s)", { missing });
+          util.batchDispatch(store, actions);
+          // invalidate the cached userlist mtime so readLists is forced to reload the updated
+          // userlist from disk, and give the persistor a moment to flush it before re-sorting
+          this.mUserlistTime = undefined;
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          return this.doSort(pluginNames, gameMode, loot);
+        }
         this.mExtensionApi.sendNotification({
           id: "loot-failed",
           type: "warning",
