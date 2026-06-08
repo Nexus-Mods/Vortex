@@ -5,7 +5,7 @@
     "src/**/*",
     "../../typings.custom/electron.d.ts",
     "../../typings.custom/promise.d.ts",
-    "*.ts"
+    "./download-duckdb-extensions.ts"
   ],
   "compilerOptions": {
     "composite": true,
