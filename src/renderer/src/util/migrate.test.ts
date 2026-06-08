@@ -353,9 +353,24 @@ describe("moveDomainFolders_2_1 migration", () => {
     await fs.mkdir(fromDir, { recursive: true });
     await fs.writeFile(path.join(fromDir, "MyMod.7z"), "content");
 
-    await migrate(store, "2.1.0");
+    await migrate(store, "2.1.0-beta.5");
 
     expect((await fs.stat(path.join(fromDir, "MyMod.7z"))).isFile()).toBe(true);
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("fires for users upgrading from the affected 2.1.0-beta.4 to the fix in 2.1.0-beta.5", async () => {
+    const { downloadsRoot, store } = await buildScenario({
+      downloads: { dl1: { localPath: "MyMod.7z", game: ["skyrimspecialedition"] } },
+      knownGames: [skyrimseGame],
+    });
+    const fromDir = path.join(downloadsRoot, "skyrimspecialedition");
+    const toDir = path.join(downloadsRoot, "skyrimse");
+    await fs.mkdir(fromDir, { recursive: true });
+    await fs.writeFile(path.join(fromDir, "MyMod.7z"), "content");
+
+    await migrate(store, "2.1.0-beta.4");
+
+    expect((await fs.stat(path.join(toDir, "MyMod.7z"))).isFile()).toBe(true);
   });
 });

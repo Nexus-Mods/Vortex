@@ -237,7 +237,8 @@ async function moveDomainFile(src: string, dest: string): Promise<boolean> {
 // Ordered list of loaded game ids that share the same nexusPageId as `domain`.
 // First entry is the preferred internal: active game wins when multiple
 // candidates qualify, otherwise convertGameIdReverse's hardcoded fallback.
-// Empty array means "leave the download alone" (unknown domain).
+// Returns `[]` when there's nothing to remap (unknown domain, or the domain
+// is already its own preferred internal).
 function resolveDomainCandidates(
   games: IGameStored[],
   activeId: string | undefined,
@@ -258,7 +259,30 @@ function resolveDomainCandidates(
     const fallback = convertGameIdReverse(games, domain);
     preferred = matches.find((g) => g.id === fallback)?.id ?? matches[0].id;
   }
+  if (preferred === domain) return [];
   return Array.from(new Set([preferred, ...matches.map((g) => g.id)]));
+}
+
+async function tryMoveAndLog(
+  src: string,
+  dest: string,
+  context: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const moved = await moveDomainFile(src, dest);
+    if (moved) {
+      log("info", "migration: moved download archive", { ...context, src, dest });
+    }
+  } catch (err) {
+    // Keep going: state still gets rewritten so the install handler points
+    // at the right folder once the user re-downloads.
+    log("warn", "migration: failed to move download archive", {
+      ...context,
+      src,
+      dest,
+      err: (err as Error).message,
+    });
+  }
 }
 
 // Fixes the v2.1 regression where some callers passed Nexus domains as
@@ -283,28 +307,16 @@ async function moveDomainFolders_2_1(store: Redux.Store<IState>): Promise<void> 
     if (!candidatesByDomain.has(first)) {
       candidatesByDomain.set(first, resolveDomainCandidates(games, activeId, first));
     }
-    const candidates = candidatesByDomain.get(first) ?? [];
+    const candidates = candidatesByDomain.get(first);
+    if (candidates === undefined || candidates.length === 0) continue;
     const internal = candidates[0];
-    if (internal === undefined || internal === first) continue;
 
     if (dl.localPath) {
-      const src = path.join(downloadPathForGame(state, first), dl.localPath);
-      const dest = path.join(downloadPathForGame(state, internal), dl.localPath);
-      try {
-        const moved = await moveDomainFile(src, dest);
-        if (moved) {
-          log("info", "migration: moved download archive", { dlId, src, dest });
-        }
-      } catch (err) {
-        // Keep going: state still gets rewritten so the install handler
-        // points at the right folder once the user re-downloads.
-        log("warn", "migration: failed to move download archive", {
-          dlId,
-          src,
-          dest,
-          err: (err as Error).message,
-        });
-      }
+      await tryMoveAndLog(
+        path.join(downloadPathForGame(state, first), dl.localPath),
+        path.join(downloadPathForGame(state, internal), dl.localPath),
+        { dlId },
+      );
     }
 
     // All loaded candidates land in download.game so the install handler can
@@ -318,8 +330,8 @@ async function moveDomainFolders_2_1(store: Redux.Store<IState>): Promise<void> 
   // remapped above.
   let folderPairs = 0;
   for (const [domain, candidates] of candidatesByDomain) {
+    if (candidates.length === 0) continue;
     const internal = candidates[0];
-    if (internal === undefined || domain === internal) continue;
     folderPairs += 1;
 
     const fromPath = downloadPathForGame(state, domain);
@@ -336,14 +348,7 @@ async function moveDomainFolders_2_1(store: Redux.Store<IState>): Promise<void> 
       continue;
     }
     for (const name of leftover) {
-      try {
-        await moveDomainFile(path.join(fromPath, name), path.join(toPath, name));
-      } catch (err) {
-        log("warn", "migration: failed to move orphan file", {
-          src: path.join(fromPath, name),
-          err: (err as Error).message,
-        });
-      }
+      await tryMoveAndLog(path.join(fromPath, name), path.join(toPath, name), { domain });
     }
     // Best-effort: folder stays if anything got skipped (collision, perms).
     try {
@@ -399,7 +404,10 @@ const migrations: IMigration[] = [
   },
   {
     id: "moveDomainFolders_2_1",
-    minVersion: "2.1.0",
+    // Bug shipped first in 2.1.0-beta.4 (first public 2.1 beta); fix lands in
+    // 2.1.0-beta.5. Targeting the fix version covers the entire affected
+    // cohort (semver: any pre-release < the corresponding release).
+    minVersion: "2.1.0-beta.5",
     maySkip: false,
     doQuery: false,
     description:
