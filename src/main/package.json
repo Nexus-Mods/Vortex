@@ -20,7 +20,8 @@
     "publish": "pnpm exec rimraf ./dist && pnpm cross-env pnpm_config_inject_workspace_packages=true pnpm_config_node_linker=hoisted pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
-    "sbom": "pnpm node ./sbom.mjs"
+    "sbom": "pnpm node ./sbom.mjs",
+    "download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts"
   },
   "nx": {
     "targets": {
@@ -35,6 +36,7 @@
         "dependsOn": [
           "copy-assets",
           "copy-extensions",
+          "download-duckdb-extensions",
           "^build"
         ],
         "cache": true,
@@ -127,6 +129,17 @@
         ],
         "outputs": [
           "{workspaceRoot}/assets/bom.json"
+        ]
+      },
+      "download-duckdb-extensions": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/download-duckdb-extensions.ts",
+          "{projectRoot}/duckdb-extensions.json"
+        ],
+        "outputs": [
+          "{projectRoot}/build/duckdb-extensions/"
         ]
       },
       "copy-extensions": {
