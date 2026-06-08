@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0-beta.8] - 2026-06-08
+
+### **Changed**
+
+- Scoped the `2.1` download-path migration so it no longer runs for users who were never affected by the beta.4 regression (e.g. fresh 2.1-stable installs), avoiding unnecessary file relocation ([#23423](https://github.com/Nexus-Mods/Vortex/pull/23423))
+
+### **Fixed**
+
+- LOOT sort failing with `The group "..." does not exist` when a collection-assigned plugin group was later dropped from the masterlist; the dangling references now reset to the default group and re-sort ([#23428](https://github.com/Nexus-Mods/Vortex/pull/23428))
+- BodySlide tool detection for Skyrim, Skyrim SE, and Fallout 4 after BodySlide 5.8.0 dropped `BodySlide x64.exe` and ships only `BodySlide.exe` ([#23417](https://github.com/Nexus-Mods/Vortex/pull/23417))
+- Auto-update failing to install when a transient installer file lock (`spawn EBUSY`, e.g. antivirus still scanning) interrupted the launch; the install is now retried on lock errors ([#23326](https://github.com/Nexus-Mods/Vortex/pull/23326))
+- Outdated community extension updates not removed correctly, causing duplicate game listings and repeated update notifications ([#23316](https://github.com/Nexus-Mods/Vortex/pull/23316))
+
 ## [2.1.0-beta.7] - 2026-06-03
 
 ### **Changed**
@@ -1937,6 +1950,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.1.0-beta.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.8
 [2.1.0-beta.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.7
 [2.1.0-beta.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.6
 [2.1.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.5
