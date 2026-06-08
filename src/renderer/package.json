@@ -32,7 +32,8 @@
           "{projectRoot}/api-extractor.json"
         ],
         "outputs": [
-          "{workspaceRoot}/packages/vortex-api/lib/api.d.ts"
+          "{workspaceRoot}/packages/vortex-api/lib/api.d.ts",
+          "{workspaceRoot}/etc/vortex.api.md"
         ]
       }
     }
