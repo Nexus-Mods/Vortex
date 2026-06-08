@@ -1,0 +1,9 @@
+@layer components {
+    .nxm-bullet {
+        flex-shrink: 0;
+        width: calc(var(--spacing) * 0.75);
+        height: calc(var(--spacing) * 0.75);
+        rotate: 45deg;
+        background-color: var(--color-translucent-subdued);
+    }
+}

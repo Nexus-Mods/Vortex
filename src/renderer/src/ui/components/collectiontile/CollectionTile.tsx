@@ -16,6 +16,7 @@ import React, {
 } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
@@ -179,7 +180,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
 
             {!!revision.adultContent && (
               <>
-                <div className="size-1 rotate-45 bg-neutral-subdued" />
+                <Bullet />
 
                 <Typography
                   appearance="none"
