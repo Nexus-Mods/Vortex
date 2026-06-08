@@ -15,6 +15,7 @@ ui/
 │   │   ├── input/       - Text input with validation
 │   │   └── select/      - Select dropdown with custom styling
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
+│   ├── image/           - Image wrapper with aspect ratios and fallback
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
 │   ├── listing/         - List display component
 │   ├── modal/           - Modal dialog (Headless UI Dialog)
@@ -23,6 +24,8 @@ ui/
 │   ├── no_results/      - Empty state component
 │   ├── pagination/      - Pagination controls with jump-to-page
 │   ├── picker/          - Picker component
+│   ├── pill/            - Compact rounded label for tags and statuses
+│   ├── premium_badge/   - Premium diamond badge
 │   ├── tabs/            - Tabbed interface with context-based state
 │   └── typography/      - Typography system (heading, title, body)
 ├── lib/
@@ -311,6 +314,57 @@ import { Pictogram } from "../../ui/components/pictogram/Pictogram";
 
 ```tsx
 import { Picker } from "../../ui/components/picker/Picker";
+```
+
+### Pill
+
+Compact, rounded label for tags and statuses. Renders as a non-interactive `div` by default, or as a `button` when given `as="button"`. Accepts an icon via either `iconPath` (an MDI/Nexus path string) or `icon` (a custom node) — not both.
+
+**Defaults:** `pillType="default"`
+
+```tsx
+import { Pill } from "../../ui/components/pill/Pill";
+import { mdiCheckCircleOutline, mdiTag } from "@mdi/js";
+
+// Variants
+<Pill>Default</Pill>
+<Pill pillType="success" iconPath={mdiCheckCircleOutline}>Success</Pill>
+<Pill pillType="none">Unstyled</Pill>
+
+// With an icon (path or custom node)
+<Pill iconPath={mdiTag}>Tagged</Pill>
+<Pill icon={<Icon path={mdiTag} size="none" />}>Custom node</Pill>
+
+// As an interactive button
+<Pill as="button" onClick={handleClick}>Clickable</Pill>
+<Pill as="button" disabled>Disabled</Pill>
+```
+
+**Types:** `default`, `success`, `none` (opts out of styling) — more variants to come
+
+### Image
+
+Image wrapper with predefined aspect ratios, optional blur, and a fallback icon shown when the source fails to load. Resetting `src` clears the previous error state.
+
+**Defaults:** `imageType="other"`
+
+```tsx
+import { Image } from "../../ui/components/image/Image";
+
+<Image alt="Cover" src={url} imageType="collection" />
+<Image alt="Preview" src={url} imageType="mod" isBlurred />
+```
+
+**Image types:** `collection` (4:5 portrait), `mod` (16:9 landscape), `other` (sized by container)
+
+### PremiumBadge
+
+Small diamond badge denoting premium membership.
+
+```tsx
+import { PremiumBadge } from "../../ui/components/premium_badge/PremiumBadge";
+
+<PremiumBadge />;
 ```
 
 ## Adding New Components

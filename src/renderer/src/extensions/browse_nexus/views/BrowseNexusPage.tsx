@@ -9,27 +9,27 @@ import numeral from "numeral";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import { Button } from "../../../ui/components/button/Button";
-import { CollectionTile } from "../../../ui/components/collectiontile/CollectionTile";
-import { CollectionTileSkeleton } from "../../../ui/components/collectiontile/CollectionTileSkeleton";
-import { Input } from "../../../ui/components/form/input/Input";
-import { Listing } from "../../../ui/components/listing/Listing";
-import { NoResults } from "../../../ui/components/no_results/NoResults";
-import { Pagination } from "../../../ui/components/pagination/Pagination";
-import { Picker } from "../../../ui/components/picker/Picker";
-import { TabButton } from "../../../ui/components/tabs/Tab";
-import { TabBar } from "../../../ui/components/tabs/TabBar";
-import { TabPanel } from "../../../ui/components/tabs/TabPanel";
-import { TabProvider } from "../../../ui/components/tabs/tabs.context";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { UserCanceled } from "../../../util/api";
-import { activeGameId } from "../../../util/selectors";
-import MainPage from "../../../views/MainPage";
-import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
-import { getGame } from "../../gamemode_management/util/getGame";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { CollectionsDownloadClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
+import { CollectionTile } from "@/ui/components/collectiontile/CollectionTile";
+import { CollectionTileSkeleton } from "@/ui/components/collectiontile/CollectionTileSkeleton";
+import { Input } from "@/ui/components/form/input/Input";
+import { Listing } from "@/ui/components/listing/Listing";
+import { NoResults } from "@/ui/components/no_results/NoResults";
+import { Pagination } from "@/ui/components/pagination/Pagination";
+import { Picker } from "@/ui/components/picker/Picker";
+import { TabButton } from "@/ui/components/tabs/Tab";
+import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabPanel } from "@/ui/components/tabs/TabPanel";
+import { TabProvider } from "@/ui/components/tabs/tabs.context";
+import { Typography } from "@/ui/components/typography/Typography";
+import { UserCanceled } from "@/util/api";
+import { activeGameId } from "@/util/selectors";
+import MainPage from "@/views/MainPage";
 
 interface IBrowseNexusPageProps {
   api: IExtensionApi;
@@ -248,7 +248,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           tabListId="browse-nexus-tabs"
           onSetSelectedTab={setSelectedTab}
         >
-          <TabBar className="pl-6">
+          <TabBar className="overflow-clip pl-6">
             <TabButton count={allCollectionsTotal} name={t("collection:browse.tabs.collections")} />
 
             <TabButton name={t("collection:browse.tabs.mods")} />
