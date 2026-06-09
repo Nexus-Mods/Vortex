@@ -9,7 +9,6 @@
     "e2e": "pnpm exec playwright test",
     "e2e:headed": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test",
     "e2e:ui": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test --ui",
-    "e2e:report": "pnpm exec playwright show-report",
     "typecheck": "pnpm exec tsc",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm exec eslint --concurrency auto ."
