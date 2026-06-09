@@ -13,6 +13,7 @@ import {
 
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 import { manageGame, type ManagedGame } from "../helpers/games";
+import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
 import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
@@ -186,6 +187,10 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
   await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
     route.fulfill({ status: 204, body: "" }),
   );
+
+  // Serve a single cached empty image instead of fetching mod thumbnails and
+  // other remote images from the server (e.g. staticdelivery.nexusmods.com).
+  await stubRemoteImages(mainWindow);
 
   await mainWindow.waitForLoadState("domcontentloaded");
   await showWindowPromise;
@@ -402,13 +407,11 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
     const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
 
-    await mainWindow
-      .context()
-      .tracing.start({
-        snapshots: true,
-        screenshots: !!process.env.VORTEX_E2E_HEADED,
-        sources: true,
-      });
+    await mainWindow.context().tracing.start({
+      snapshots: true,
+      screenshots: !!process.env.VORTEX_E2E_HEADED,
+      sources: true,
+    });
     await use(mainWindow);
 
     const tracePath = testInfo.outputPath("page-trace.zip");
