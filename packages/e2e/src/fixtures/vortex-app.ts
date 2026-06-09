@@ -349,9 +349,15 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
     const mainDir = resolveMainDir();
     const electronBinary = resolveElectronBinary();
 
+    // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can
+    // attach to this fixture-built app (logged in, managed game, stubs) on
+    // 127.0.0.1:9222 alongside Playwright's own connection. Only one process
+    // can own the port, so inspect runs must use --workers=1.
+    const inspect = !!process.env.VORTEX_E2E_INSPECT;
+
     const app = await electron.launch({
       executablePath: electronBinary,
-      args: [mainDir],
+      args: [...(inspect ? ["--remote-debugging-port=9222"] : []), mainDir],
       env,
       cwd: mainDir,
       timeout: Timeouts.LIFECYCLE,

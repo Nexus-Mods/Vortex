@@ -13,6 +13,7 @@ if (existsSync(envFilePath)) {
 
 export default defineConfig({
   testDir: "./src/tests",
+  grep: process.env.VORTEX_E2E_GREP ? new RegExp(process.env.VORTEX_E2E_GREP) : undefined,
   globalTimeout: GlobalTimeouts.GLOBAL,
   timeout: Timeouts.LIFECYCLE,
   expect: {

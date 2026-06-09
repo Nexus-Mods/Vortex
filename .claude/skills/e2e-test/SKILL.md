@@ -33,36 +33,90 @@ Read the relevant existing files to understand patterns and available building b
 - `packages/e2e/src/fixtures/vortex-app.ts` — available fixtures
 - Source code under `src/renderer/` for UI component structure and text strings
 
-## Step 3 — Inspect the live app (Chrome DevTools MCP)
+## Step 3 — Write a first draft
 
-The Chrome DevTools MCP connects to the Vortex isolated dev instance. It requires `pnpm nx run @vortex/e2e:dev` to be running.
+Follow ALL rules from `E2E-BEST-PRACTICES.md`. It is fine for selectors and
+intermediate steps to be uncertain at this point: the inspector loop in Step 4
+exists to discover and correct them against the live app.
 
-**Check if the dev instance is running first:**
-Use `mcp__chrome-devtools__list_pages` to see available pages. If no Vortex page is listed, tell the user:
+At each step whose selector or behavior you are unsure about, insert a
+breakpoint so the loop can pause there:
 
-> The isolated dev environment is not running. Start it with:
->
-> ```bash
-> pnpm nx run @vortex/e2e:dev
-> ```
->
-> Then re-invoke this skill. You might need to re-start the MCP server using `/mcp` to connect to the new instance.
+```ts
+import { llmBreakpoint } from "../helpers/inspect";
+// ...
+await llmBreakpoint(vortexWindow, "after manage game");
+```
 
-If it is running, use the DevTools MCP to:
+`llmBreakpoint` is a no-op unless `VORTEX_E2E_INSPECT` is set, so the calls are
+safe to leave in the spec while iterating. Strip them once the test is green.
 
-- Use `take_snapshot` for accessibility tree inspection to find roles
-- Inspect element text, roles, and attributes to determine the best locator strategy (prefer `getByRole` > `getByText` > `getByTitle` > `getByTestId`)
-- Navigate through the flow being tested to observe real selector targets
+## Step 4 — Inspector loop (run, walk, fix, repeat)
 
-NEVER take a screenshot unless the user requests it, always prefer snapshots over screenshots.
+The dev inspector runs **the real test** (fixtures: login snapshot, managed
+game, image stubs) headed and single-worker, and launches the app with a fixed
+CDP endpoint on `127.0.0.1:9222` that Chrome DevTools MCP attaches to.
 
-## Step 4 — Write the test
+Resolve the pause-file path the same way `llmBreakpoint` does (running `node`
+guarantees the shell and the test agree on `os.tmpdir()` on every platform),
+clear any stale file from a prior run, then start the single test you are
+authoring (background it so the terminal stays free):
 
-Follow ALL rules from `E2E-BEST-PRACTICES.md`.
+```bash
+PAUSE_FILE="$(node -e 'console.log(require("os").tmpdir())')/vortex-e2e-pause"
+rm -f "$PAUSE_FILE"
+VORTEX_E2E_GREP="<test name>" pnpm nx run @vortex/e2e:dev
+```
+
+`VORTEX_E2E_GREP` is read by `playwright.config.ts` as the test grep, so it must
+match exactly one test. Passing it as an env var (rather than a trailing CLI
+arg) survives forwarding through pnpm and nx cleanly.
+
+When the run reaches an `llmBreakpoint` it creates `$PAUSE_FILE` (containing the
+label) and blocks indefinitely. **Wait for the pause** with a portable
+file-existence poll, backgrounded so you get one notification when it lands:
+
+```bash
+until [ -f "$PAUSE_FILE" ]; do sleep 0.5; done; cat "$PAUSE_FILE"
+```
+
+Uses only `[ -f ]` and `sleep`, so it works on Linux, macOS, and Git Bash on
+Windows. (A `[E2E-PAUSE] <label>` console line is also emitted but is not
+guaranteed to reach stdout, so do not grep for it.)
+
+While paused, drive the live app via the MCP:
+
+- `list_pages` → `select_page` for the `index.html` window
+- `take_snapshot` for the accessibility tree to find roles
+- Inspect element text, roles, and attributes to pick the best locator
+  (prefer `getByRole` > `getByText` > `getByTitle` > `getByTestId`)
+- `click` / `fill` to confirm an action does what the test expects before
+  committing it to the spec
+
+Step forward one breakpoint by resuming via the MCP:
+
+```
+evaluate_script: () => { window.__e2e.resume = true; }
+```
+
+On resume the test removes `$PAUSE_FILE`, re-arming the watcher. Wait for the
+next pause by re-running the same poll before driving the app again:
+
+```bash
+until [ -f "$PAUSE_FILE" ]; do sleep 0.5; done; cat "$PAUSE_FILE"
+```
+
+Walk the whole flow this way. On a wrong selector or failed assertion: stop the
+run, edit the spec with what you learned, and re-run. Repeat until the test
+passes end to end. MCP `click`/`fill` during a pause mutate app state — that is
+expected; use it to _discover_ the correct Playwright steps, then bake them in.
+
+NEVER take a screenshot unless the user requests it, always prefer snapshots.
 
 ## Step 5 — Validate
 
-After writing run the test that was created:
+Remove the `llmBreakpoint` calls, then run the test normally (headless, as CI
+does) to confirm it passes without the inspector:
 
 ```bash
 pnpm -F @vortex/e2e exec playwright test -g "<test name>"
