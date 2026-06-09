@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec tsx ./src/vortex-instance.ts --debug",
     "e2e": "pnpm exec playwright test",
     "e2e:headed": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test",
     "e2e:ui": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test --ui",
@@ -15,7 +16,37 @@
   },
   "nx": {
     "targets": {
+      "dev": {
+        "cache": false,
+        "continuous": true,
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/main"
+          }
+        ]
+      },
       "e2e": {
+        "cache": false,
+        "continuous": true,
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/main"
+          }
+        ]
+      },
+      "e2e:headed": {
+        "cache": false,
+        "continuous": true,
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/main"
+          }
+        ]
+      },
+      "e2e:ui": {
         "cache": false,
         "continuous": true,
         "dependsOn": [
