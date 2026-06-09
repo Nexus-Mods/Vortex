@@ -109,7 +109,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     return (
       <Panel className={classes.join(" ")} bsStyle={active ? "primary" : "default"}>
         <Panel.Body className="game-thumbnail-body">
-          <img className={"thumbnail-img"} src={imgurl} />
+          <img className={"thumbnail-img"} src={imgurl} loading="lazy" decoding="async" />
           <div className="bottom">
             <div className="name">{game.name}</div>
             {modCount !== undefined ? (

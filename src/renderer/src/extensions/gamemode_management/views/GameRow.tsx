@@ -120,7 +120,12 @@ class GameRow extends ComponentEx<IProps, {}> {
         <Media>
           <Media.Left>
             <div className="game-thumbnail-container-list">
-              <img className="game-thumbnail-img-list" src={imgurl} />
+              <img
+                className="game-thumbnail-img-list"
+                src={imgurl}
+                loading="lazy"
+                decoding="async"
+              />
             </div>
           </Media.Left>
 

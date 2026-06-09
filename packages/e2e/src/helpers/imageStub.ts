@@ -18,6 +18,14 @@ function fulfillEmptyImage(route: Route): Promise<void> {
   return route.fulfill({
     status: 200,
     contentType: "image/png",
+    // Strong, immutable cache headers so Chromium serves repeat loads of the
+    // same URL from its HTTP cache. After the first fulfill the route handler
+    // is no longer invoked for that URL, so 1000 <img> of the same src cost a
+    // single interception instead of 1000 round trips through Playwright.
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      ETag: '"vortex-e2e-empty-image"',
+    },
     body: EMPTY_PNG,
   });
 }
