@@ -9,6 +9,7 @@
   "main": "build/main.cjs",
   "scripts": {
     "start": "pnpm electron .",
+    "start:debug": "pnpm electron . --inspect=9229 --remote-debugging-port=9222",
     "postinstall": "node ./postinstall.mjs",
     "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
@@ -26,6 +27,13 @@
   "nx": {
     "targets": {
       "start": {
+        "continuous": true,
+        "cache": false,
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "start:debug": {
         "continuous": true,
         "cache": false,
         "dependsOn": [
