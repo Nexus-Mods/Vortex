@@ -5,13 +5,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "e2e": "pnpm playwright test",
-    "e2e:headed": "pnpm playwright test --headed",
-    "e2e:debug": "pnpm playwright test --debug",
-    "e2e:report": "pnpm playwright show-report",
-    "typecheck": "pnpm tsc",
-    "lint": "pnpm eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm eslint --concurrency auto ."
+    "e2e": "pnpm exec playwright test",
+    "e2e:headed": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test",
+    "e2e:ui": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test --ui",
+    "e2e:report": "pnpm exec playwright show-report",
+    "typecheck": "pnpm exec tsc",
+    "lint": "pnpm exec eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm exec eslint --concurrency auto ."
   },
   "nx": {
     "targets": {
