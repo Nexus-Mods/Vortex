@@ -11,20 +11,18 @@ test.describe("Settings - Interface Tab", () => {
     await navigateToSettings(vortexWindow);
   });
 
-  test("opens on the Interface tab by default", async ({ vortexWindow }) => {
-    await test.step("Verify settings page has content", async () => {
-      const pageContent = await vortexWindow.locator("body").innerText();
-      expect(pageContent).toBeTruthy();
+  test("[QA-127] opens on the Interface tab by default", async ({ vortexWindow }) => {
+    await test.step("Verify the Interface tab is the active tab", async () => {
+      const activeTab = vortexWindow.getByRole("tab", { selected: true });
+      await expect(activeTab).toHaveText("Interface");
     });
   });
 
-  test("default language is set to English", async ({ vortexWindow }) => {
+  test("[QA-128] default language is set to English", async ({ vortexWindow }) => {
     const settings = new SettingsPage(vortexWindow);
 
     await test.step("Verify English is selected", async () => {
-      if (await settings.languageLabel.isVisible()) {
-        await expect(settings.languageSelect).toHaveValue("en");
-      }
+      await expect(settings.languageSelect).toHaveValue("en");
     });
   });
 
