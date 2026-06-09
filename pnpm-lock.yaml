@@ -4086,6 +4086,8 @@ importers:
         specifier: 'catalog:'
         version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.8)(@vitest/ui@4.1.8)(happy-dom@20.9.0)(vite@8.0.16)
 
+  packages/file-dependency-resolver: {}
+
   packages/game-extension-test:
     devDependencies:
       '@nexusmods/nexus-api':
@@ -4775,6 +4777,9 @@ importers:
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
+      '@nexusmods/file-dependency-resolver':
+        specifier: workspace:*
+        version: link:../../packages/file-dependency-resolver
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
         version: 0.13.2
