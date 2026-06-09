@@ -72,9 +72,8 @@
         },
         "cache": true,
         "inputs": [
-          "{workspaceRoot}/scripts/dependency-report.mjs",
-          "{workspaceRoot}/pnpm-lock.yaml",
-          "{projectRoot}/package.json"
+          "default",
+          "{workspaceRoot}/scripts/dependency-report.mjs"
         ],
         "outputs": [
           "{workspaceRoot}/assets/modules.json"
