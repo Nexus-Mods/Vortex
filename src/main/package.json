@@ -64,6 +64,22 @@
           "script": "package:nosign"
         }
       },
+      "dependency-report": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "node ./scripts/dependency-report.mjs",
+          "cwd": "{workspaceRoot}"
+        },
+        "cache": true,
+        "inputs": [
+          "{workspaceRoot}/scripts/dependency-report.mjs",
+          "{workspaceRoot}/pnpm-lock.yaml",
+          "{projectRoot}/package.json"
+        ],
+        "outputs": [
+          "{workspaceRoot}/assets/modules.json"
+        ]
+      },
       "copy-assets": {
         "executor": "nx:run-commands",
         "options": {
@@ -74,13 +90,17 @@
           {
             "target": "build",
             "projects": "@vortex/stylesheets"
-          }
+          },
+          "dependency-report"
         ],
         "cache": true,
         "inputs": [
           "default",
           {
             "dependentTasksOutputFiles": "**/dist/**"
+          },
+          {
+            "dependentTasksOutputFiles": "**/assets/modules.json"
           },
           "{projectRoot}/copy-assets.mjs",
           "{workspaceRoot}/src/stylesheets/**/*.scss",
