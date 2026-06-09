@@ -355,6 +355,13 @@ export interface PersistApi {
   sendDiff(hive: PersistedHive, operations: DiffOperation[]): void;
 
   /**
+   * Synchronously send diff operations to main, blocking until they are queued.
+   * Used only on quit (from a beforeunload handler) so the final debounced batch
+   * is persisted before the renderer process is torn down (GH#23363).
+   */
+  sendDiffSync(hive: PersistedHive, operations: DiffOperation[]): void;
+
+  /**
    * Get all hydration data from main process at startup.
    * Returns persisted state for all hives.
    */

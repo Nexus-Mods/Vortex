@@ -50,6 +50,13 @@ try {
     persist: {
       sendDiff: (hive, operations) => betterIpcRenderer.send("persist:diff", hive, operations),
 
+      // Synchronous variant used only on quit (beforeunload): blocks until main
+      // has queued the ops so the final batch is persisted before teardown.
+      // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
+      sendDiffSync: (hive, operations) => {
+        ipcRenderer.sendSync("persist:diff-sync", hive, operations);
+      },
+
       getHydration: () => betterIpcRenderer.invoke("persist:get-hydration"),
 
       onHydrate: (callback: (hive: PersistedHive, data: Serializable) => void) =>
