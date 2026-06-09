@@ -80,7 +80,7 @@ function buildElectronEnv(userDataDir: string): Record<string, string> {
   // Always set — disables single-instance lock so parallel workers can run
   env.VORTEX_E2E = "1";
   // Hide windows unless debugging with PWDEBUG
-  if (!process.env.PWDEBUG) {
+  if (!process.env.PWDEBUG && !process.env.VORTEX_E2E_HEADED) {
     env.VORTEX_E2E_HEADLESS = "1";
   }
   return env;
@@ -402,7 +402,18 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
     const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
 
+    await mainWindow
+      .context()
+      .tracing.start({
+        snapshots: true,
+        screenshots: !!process.env.VORTEX_E2E_HEADED,
+        sources: true,
+      });
     await use(mainWindow);
+
+    const tracePath = testInfo.outputPath("page-trace.zip");
+    await mainWindow.context().tracing.stop({ path: tracePath });
+    await testInfo.attach("page-trace.zip", { path: tracePath, contentType: "application/zip" });
 
     if (testInfo.status !== testInfo.expectedStatus) {
       const logPath = path.join(vortexUserDataDir, "userData", "vortex.log");

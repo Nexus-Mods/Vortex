@@ -33,9 +33,6 @@ export default defineConfig({
     navigationTimeout: GlobalTimeouts.NAVIGATION,
     screenshot: "off",
     video: "off",
-    trace: {
-      mode: "retain-on-failure",
-      snapshots: true,
-    },
+    trace: "off",
   },
 });
