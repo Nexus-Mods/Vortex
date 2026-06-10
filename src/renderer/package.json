@@ -5,7 +5,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm webpack --config ./webpack.config.cjs",
+    "build": "pnpm webpack --config ./webpack.config.cjs && node ./build-bsdiff-worker.mjs",
     "typecheck": "pnpm tsc -p tsconfig.json",
     "lint": "pnpm eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm eslint --concurrency auto .",
@@ -18,7 +18,9 @@
           "{workspaceRoot}/src/main/build/renderer.js",
           "{workspaceRoot}/src/main/build/renderer.js.map",
           "{workspaceRoot}/src/main/build/splash.js",
-          "{workspaceRoot}/src/main/build/splash.js.map"
+          "{workspaceRoot}/src/main/build/splash.js.map",
+          "{workspaceRoot}/src/main/build/bsdiffWorker.dom.cjs",
+          "{workspaceRoot}/src/main/build/hdiff.wasm"
         ]
       },
       "api": {
@@ -46,6 +48,7 @@
     "@babel/register": "catalog:",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
+    "@hot-updater/bsdiff": "catalog:",
     "@mdi/js": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",
@@ -113,6 +116,7 @@
     "commander": "catalog:",
     "content-disposition": "catalog:",
     "content-type": "catalog:",
+    "crc-32": "catalog:",
     "csstype": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",

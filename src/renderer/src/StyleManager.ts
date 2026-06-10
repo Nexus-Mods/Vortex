@@ -23,6 +23,11 @@ export default class StyleManager {
       { type: "extendable", key: "details" },
       { type: "builtin", file: "thirdparty" },
       { type: "builtin", file: "desktop" },
+      // collections is a core (static) extension; its stylesheet lives in
+      // src/stylesheets/collections.scss and is compiled as a built-in partial
+      // (inserted before "style", matching where the old setStylesheet call
+      // placed the extendable partial).
+      { type: "builtin", file: "collections" },
       { type: "builtin", file: "style" },
       { type: "extendable", key: "style" },
     ];

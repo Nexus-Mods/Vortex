@@ -11,6 +11,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @duckdb/node-api | 1.5.1-r.1 |
 | @electron/remote | 2.1.3 |
 | @headlessui/react | 1.7.19 |
+| @hot-updater/bsdiff | 0.30.6 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
 | @nexusmods/adaptor-api | link:../../packages/adaptor-api |
@@ -35,6 +36,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | commander | 4.1.1 |
 | content-disposition | 0.5.4 |
 | content-type | 1.0.5 |
+| crc-32 | 1.2.2 |
 | d3 | 5.16.0 |
 | date-fns | 2.30.0 |
 | dayjs | 1.11.20 |

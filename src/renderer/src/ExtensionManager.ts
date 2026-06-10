@@ -2968,6 +2968,13 @@ class ExtensionManager {
       null_activator: () => require("./extensions/null_activator/index.ts"),
       onboarding_dashlet: () => require("./extensions/onboarding_dashlet/index.ts"),
       profile_management: () => require("./extensions/profile_management/index.ts"),
+      // NOTE: intentionally placed after its dependencies (mod_management,
+      // download_management, gamemode_management, profile_management,
+      // nexus_integration) rather than alphabetically. The static map is
+      // initialised in insertion order and `once()` callbacks run in that same
+      // order, and collections' once() relies on those extensions being set up
+      // first (cf. gameversion_management before gamemode_management).
+      collections: () => require("./extensions/collections/index.ts"),
       recovery: () => require("./extensions/recovery/index.ts"),
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),
