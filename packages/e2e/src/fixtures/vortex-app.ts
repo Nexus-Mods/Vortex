@@ -8,12 +8,14 @@ import {
   expect,
   type ElectronApplication,
   type Page,
+  type TestInfo,
 } from "@playwright/test";
 
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 import { manageGame, type ManagedGame } from "../helpers/games";
 import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
+import { launchNexusBrowser } from "../helpers/nexusBrowser";
 import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
 import {
@@ -195,10 +197,15 @@ export type VortexTestFixtures = {
   managedGame: ManagedGame;
   /**
    * Path to a Playwright storage-state JSON file with Nexus website cookies,
-   * or undefined when nexusUser is null. Pass to launchNexusBrowser({ storageStatePath })
-   * to get a logged-in browser for browsing nexusmods.com.
+   * or undefined when nexusUser is null. Used internally by the nexusPage fixture.
    */
   nexusStorageState: string | undefined;
+  /**
+   * A logged-in Chromium page pointed at nexusmods.com. Requires nexusUser to be set —
+   * the test is skipped automatically when no user is configured.
+   * Tracing is started on setup and attached to the test report on teardown.
+   */
+  nexusPage: Page;
 };
 
 export type VortexWorkerFixtures = {
@@ -237,6 +244,21 @@ export type VortexOptions = {
  * No login (default):
  *   test('my test', async ({ vortexWindow }) => { ... });
  */
+async function startTracing(
+  page: Page,
+): Promise<(testInfo: TestInfo, traceName: string) => Promise<void>> {
+  await page.context().tracing.start({
+    snapshots: true,
+    screenshots: !!process.env.VORTEX_E2E_HEADED,
+    sources: true,
+  });
+  return async (testInfo, traceName) => {
+    const tracePath = testInfo.outputPath(traceName);
+    await page.context().tracing.stop({ path: tracePath });
+    await testInfo.attach(traceName, { path: tracePath, contentType: "application/zip" });
+  };
+}
+
 export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorkerFixtures>({
   // ---------------------------------------------------------------------------
   // Worker-scoped: auth snapshot cache
@@ -370,16 +392,9 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
     const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
 
-    await mainWindow.context().tracing.start({
-      snapshots: true,
-      screenshots: !!process.env.VORTEX_E2E_HEADED,
-      sources: true,
-    });
+    const stopTracing = await startTracing(mainWindow);
     await use(mainWindow);
-
-    const tracePath = testInfo.outputPath("page-trace.zip");
-    await mainWindow.context().tracing.stop({ path: tracePath });
-    await testInfo.attach("page-trace.zip", { path: tracePath, contentType: "application/zip" });
+    await stopTracing(testInfo, "page-trace.zip");
 
     if (testInfo.status !== testInfo.expectedStatus) {
       const logPath = path.join(vortexUserDataDir, "userData", "vortex.log");
@@ -419,6 +434,18 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
     }
     const { storageStatePath } = await workerAuthSnapshots.get(nexusUser);
     await use(storageStatePath);
+  },
+
+  nexusPage: async ({ nexusStorageState }, use, testInfo) => {
+    if (nexusStorageState === undefined) {
+      testInfo.skip(true, "nexusPage requires a logged-in user — set nexusUser in test.use()");
+      return;
+    }
+    const { page, close } = await launchNexusBrowser({ storageStatePath: nexusStorageState });
+    const stopTracing = await startTracing(page);
+    await use(page);
+    await stopTracing(testInfo, "nexus-browser-trace.zip");
+    await close().catch(() => undefined);
   },
 
   managedGame: async (

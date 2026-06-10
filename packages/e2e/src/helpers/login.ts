@@ -14,11 +14,6 @@ export interface LoginToNexusOptions {
    */
   keepBrowser?: boolean;
   /**
-   * Override headless mode for the auth browser. Defaults to true (headless).
-   * Set to false for local debugging only.
-   */
-  headless?: boolean;
-  /**
    * Path to a Playwright storage-state file (cookies + localStorage) to
    * preload into the auth browser context. When Nexus session cookies are
    * already valid, the OAuth URL lands directly on the consent screen,
@@ -47,7 +42,6 @@ export async function loginToNexus(
   options: LoginToNexusOptions = {},
 ): Promise<LoginToNexusResult | null> {
   const { username, password } = user;
-  let loginPage: Page | null = null;
   let authBrowser: Browser | null = null;
   let authPage: Page | null = null;
   let leakBrowser = false;
@@ -65,17 +59,8 @@ export async function loginToNexus(
   });
 
   await step("Click the login button", async () => {
-    const popupPromise = vortexWindow
-      .waitForEvent("popup", { timeout: GlobalTimeouts.ACTION })
-      .catch(() => null);
-    const appWindowPromise = vortexApp
-      .waitForEvent("window", { timeout: GlobalTimeouts.ACTION })
-      .catch(() => null);
-
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
     await vortexLoginPage.vortexLoginButton.click();
-
-    loginPage = (await popupPromise) ?? (await appWindowPromise);
   });
 
   try {
@@ -85,17 +70,11 @@ export async function loginToNexus(
       const oauthUrl = await vortexLoginPage.oauthUrlField.inputValue();
       expect(oauthUrl).toMatch(/^https?:\/\//i);
 
-      if (loginPage !== null) {
-        await loginPage.waitForLoadState("domcontentloaded");
-        await expect(loginPage).toHaveURL(/nexusmods|users\./i);
-      }
-
-      const { browser, page } = await launchNexusBrowser({
-        headless: options.headless,
+      const nexusBrowser = await launchNexusBrowser({
         storageStatePath: options.storageStatePath,
       });
-      authBrowser = browser;
-      authPage = page;
+      authBrowser = nexusBrowser.browser;
+      authPage = nexusBrowser.page;
 
       await authPage.goto(oauthUrl, {
         waitUntil: "domcontentloaded",

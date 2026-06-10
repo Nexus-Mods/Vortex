@@ -7,11 +7,8 @@ import path from "node:path";
  * has no real launcher). Native file picker is bypassed by overriding
  * dialog.showOpenDialog from the test side.
  */
-import type { Browser } from "@playwright/test";
-
 import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { acceptConsent } from "../helpers/consent";
-import { launchNexusBrowser } from "../helpers/nexusBrowser";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { ModsPage } from "../selectors/modsPage";
@@ -34,90 +31,79 @@ test.describe("Mods - Manual Downloads", () => {
         vortexApp,
         vortexWindow,
         managedGame: _g,
-        nexusStorageState,
+        nexusPage,
       }) => {
-        let authBrowser: Browser | null = null;
+        const nexusModPage = new NexusModPage(nexusPage);
 
-        try {
-          const { browser, page: authPage } = await launchNexusBrowser({
-            storageStatePath: nexusStorageState,
+        await test.step("Open the SMAPI mod page", async () => {
+          await nexusPage.goto(SDV_MOD_URL, {
+            waitUntil: "domcontentloaded",
+            timeout: Timeouts.NETWORK,
           });
-          authBrowser = browser;
+          await expect(nexusPage).toHaveURL(/stardewvalley\/mods\/2400/);
+          await acceptConsent(nexusPage);
+        });
 
-          const nexusModPage = new NexusModPage(authPage);
+        let downloadedFilePath: string | null = null;
 
-          await test.step("Open the SMAPI mod page", async () => {
-            await authPage.goto(SDV_MOD_URL, {
-              waitUntil: "domcontentloaded",
-              timeout: Timeouts.NETWORK,
-            });
-            await expect(authPage).toHaveURL(/stardewvalley\/mods\/2400/);
-            await acceptConsent(authPage);
+        await test.step("Click Manual and capture the download", async () => {
+          // Premium skips the slow-download interstitial — set up the listener
+          // first so both paths funnel through the same waitForEvent.
+          const downloadPromise = nexusPage.waitForEvent("download", {
+            timeout: Timeouts.NETWORK,
           });
 
-          let downloadedFilePath: string | null = null;
+          await expect(nexusModPage.manualDownloadLink).toBeVisible({
+            timeout: Timeouts.NETWORK,
+          });
+          await nexusModPage.manualDownloadLink.click({ timeout: Timeouts.NETWORK });
+          await nexusPage
+            .waitForLoadState("load", { timeout: Timeouts.NETWORK })
+            .catch(() => undefined);
+          await acceptConsent(nexusPage);
 
-          await test.step("Click Manual and capture the download", async () => {
-            // Premium skips the slow-download interstitial — set up the listener
-            // first so both paths funnel through the same waitForEvent.
-            const downloadPromise = authPage.waitForEvent("download", {
-              timeout: Timeouts.NETWORK,
-            });
-
-            await expect(nexusModPage.manualDownloadLink).toBeVisible({
-              timeout: Timeouts.NETWORK,
-            });
-            await nexusModPage.manualDownloadLink.click({ timeout: Timeouts.NETWORK });
-            await authPage
-              .waitForLoadState("load", { timeout: Timeouts.NETWORK })
+          if (await nexusModPage.slowDownloadButton.isVisible().catch(() => false)) {
+            await nexusModPage.slowDownloadButton
+              .click({ timeout: Timeouts.NETWORK })
               .catch(() => undefined);
-            await acceptConsent(authPage);
+          }
 
-            if (await nexusModPage.slowDownloadButton.isVisible().catch(() => false)) {
-              await nexusModPage.slowDownloadButton
-                .click({ timeout: Timeouts.NETWORK })
-                .catch(() => undefined);
-            }
+          const download = await downloadPromise;
+          const filename = download.suggestedFilename();
+          downloadedFilePath = path.join(os.tmpdir(), `qa-e2e-${tier}-${Date.now()}-${filename}`);
+          await download.saveAs(downloadedFilePath);
+        });
 
-            const download = await downloadPromise;
-            const filename = download.suggestedFilename();
-            downloadedFilePath = path.join(os.tmpdir(), `qa-e2e-${tier}-${Date.now()}-${filename}`);
-            await download.saveAs(downloadedFilePath);
+        await test.step("Stub dialog.showOpenDialog to return the saved file", async () => {
+          if (downloadedFilePath === null) {
+            throw new Error("File path was not captured");
+          }
+          await vortexApp.evaluate(({ dialog }, filePath) => {
+            dialog.showOpenDialog = () =>
+              Promise.resolve({
+                canceled: false,
+                filePaths: [filePath],
+              });
+          }, downloadedFilePath);
+        });
+
+        await test.step("Click Install From File in Vortex", async () => {
+          const navbar = new NavBar(vortexWindow);
+          await navbar.modsLink.click();
+
+          const modsPage = new ModsPage(vortexWindow);
+          await expect(modsPage.installFromFileButton).toBeVisible({
+            timeout: Timeouts.NETWORK,
           });
+          await modsPage.installFromFileButton.click({ timeout: Timeouts.NETWORK });
+        });
 
-          await test.step("Stub dialog.showOpenDialog to return the saved file", async () => {
-            if (downloadedFilePath === null) {
-              throw new Error("File path was not captured");
-            }
-            await vortexApp.evaluate(({ dialog }, filePath) => {
-              dialog.showOpenDialog = () =>
-                Promise.resolve({
-                  canceled: false,
-                  filePaths: [filePath],
-                });
-            }, downloadedFilePath);
+        await test.step("Verify SMAPI is installed in Vortex", async () => {
+          const modsPage = new ModsPage(vortexWindow);
+          await expect(modsPage.modRow(/SMAPI/i)).toBeVisible({
+            timeout: Timeouts.NETWORK,
           });
-
-          await test.step("Click Install From File in Vortex", async () => {
-            const navbar = new NavBar(vortexWindow);
-            await navbar.modsLink.click();
-
-            const modsPage = new ModsPage(vortexWindow);
-            await expect(modsPage.installFromFileButton).toBeVisible({
-              timeout: Timeouts.NETWORK,
-            });
-            await modsPage.installFromFileButton.click({ timeout: Timeouts.NETWORK });
-          });
-
-          await test.step("Verify SMAPI is installed in Vortex", async () => {
-            const modsPage = new ModsPage(vortexWindow);
-            await expect(modsPage.modRow(/SMAPI/i)).toBeVisible({
-              timeout: Timeouts.NETWORK,
-            });
-          });
-        } finally {
-          await authBrowser?.close().catch(() => undefined);
-        }
+        });
       });
     });
   }
