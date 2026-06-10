@@ -1,11 +1,85 @@
-// Schema for the file-level requirements check (LAZ-552 / LAZ-473) - TO BE DESIGNED.
+// Schema for the file-level requirements check (LAZ-552 / LAZ-473).
+// Provisional until the V3 endpoints are finalised.
 
-/** Input to a single check pass. TODO: define. */
-export interface FileRequirementsContext {
-  // TODO
+// Server-facing rows returned by the injected ports. camelCase; the Vortex
+// implementation maps the snake_case V3 responses onto these.
+
+export interface CandidateRow {
+  sourceVersionUid: string;
+  definitionId: string;
+  modFileId: string; // update group
+  versionUid: string;
+  position: string;
+  category: number;
+  modStatus: string;
+  modUid: string;
 }
 
-/** Output of a single check pass. TODO: define. */
+export interface FileVersionDetail {
+  uid: string;
+  modUid: string;
+  modFileId: string;
+  name: string;
+  version: string;
+}
+
+export interface ModDetail {
+  modUid: string;
+  name: string;
+  summary?: string;
+  thumbnailUrl?: string;
+  adultContent: boolean;
+}
+
+// Injected so the package stays portable (no HTTP/auth/nexus-api here).
+// Paging lives in the implementation.
+export interface ResolverPorts {
+  fetchCandidates(fileVersionUids: string[]): Promise<CandidateRow[]>;
+  fetchFileVersionDetails(uids: string[]): Promise<FileVersionDetail[]>;
+  fetchModDetails(modUids: string[]): Promise<ModDetail[]>;
+}
+
+export interface InstalledFile {
+  fileUid: string;
+  enabled: boolean;
+}
+
+export interface FileRequirementsContext {
+  // Enabled AND disabled installed files for the active game.
+  installedFiles: InstalledFile[];
+  ports: ResolverPorts;
+}
+
+// The only hydrated payload in the report (a file the user doesn't have).
+export interface Candidate {
+  versionUid: string;
+  modUid: string;
+  modFileId: string;
+  category: number;
+  position: string;
+  fileName: string;
+  version: string;
+  modName: string;
+  modSummary?: string;
+  thumbnailUrl?: string;
+  adultContent: boolean;
+  sizeBytes?: number;
+}
+
+export interface DependencyResult {
+  definitionId: string;
+  satisfyingEnabled: string[];
+  satisfyingDisabled: string[];
+  wrongEnabled: string[];
+  wrongDisabled: string[];
+  recommended: Candidate[];
+}
+
+export interface SourceResult {
+  sourceFileUid: string;
+  dependencies: DependencyResult[];
+}
+
 export interface FileRequirementsReport {
-  // TODO
+  sources: SourceResult[];
 }
