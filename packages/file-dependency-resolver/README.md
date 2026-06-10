@@ -4,24 +4,34 @@ Stub package for the file-to-file dependency resolver. See **[LAZ-552](https://l
 
 ## Purpose
 
-A pure, **platform-agnostic** resolver loop and `resolve()` function that powers the file
+A **portable** `checkFileLevelRequirements()` function that powers the file
 dependency health-check page. The same module is intended to run on the client
 (Vortex) now, with a path to move more of it server-side later, so it must stay
-free of any platform-specific dependencies.
+free of platform-specific dependencies.
+
+The entry point itself is **not pure** - it may make API requests to fetch the
+dependency data it needs. The matching/decision logic that runs over the fetched
+data is factored into a pure helper, but that is an internal implementation
+detail, not part of the public surface.
 
 ## Boundaries
 
-- **No** imports from Vortex, electron, nexus-api, redux, fs, etc.
-- Inputs and outputs are plain serialisable data.
-- This module **computes only**: the caller fetches data and performs the
-  resulting actions (downloads/installs).
+- **Portable**: no coupling to Vortex, electron, redux, fs, etc., so the module
+  can move server-side later.
+- The entry point **may fetch** the dependency data it needs (it is not a no-I/O
+  pure function).
+- The caller still owns the resulting **actions** (downloads / installs); the
+  module only reports what is needed.
 
 ## Shape (to be designed)
 
-- `resolve(request)` - one deterministic resolution pass: input state -> result.
-- `runResolverLoop(request)` - drives `resolve()` until it settles, folding user
-  decisions (clash / choice resolutions) back into each pass.
-- `ResolveRequest` / `ResolveResult` in [`src/types.ts`](src/types.ts) - schema TBD.
+- `checkFileLevelRequirements(context)` - the single entry point. May fetch
+  dependency data, then computes (via a pure internal helper) the report needed
+  to build the health check. Async; no user interaction; no loop.
+- The module never asks the user for anything. When the install set changes (e.g.
+  the user installs a suggested file), the caller rebuilds the context and calls
+  the function again - that is the whole "loop".
+- `FileRequirementsContext` / `FileRequirementsReport` in [`src/types.ts`](src/types.ts) - schema TBD (depends on LAZ-472).
 
 ## Data we expect to need (per dependency target)
 
@@ -67,21 +77,23 @@ and has no `package.json` of its own). So just run `pnpm install` from the repo
 root, then import by package name:
 
 ```ts
-import { runResolverLoop, resolve } from "@nexusmods/file-dependency-resolver";
-import type { ResolveRequest } from "@nexusmods/file-dependency-resolver";
+import { checkFileLevelRequirements } from "@nexusmods/file-dependency-resolver";
+import type { FileRequirementsContext } from "@nexusmods/file-dependency-resolver";
 
 // e.g. inside the mod requirements health check
 // (src/renderer/src/extensions/health_check/checks/modRequirementsCheck.ts)
-const request: ResolveRequest = {
+const context: FileRequirementsContext = {
     // TODO: build from Vortex state + the batch dependency API response
-    //  - installed files (fileUid / modId / fileId / version from mod.attributes)
-    //  - declared requirements returned by the backend
-    //  - any decisions the user already made this session
+    //  - gameDomain for the active game
+    //  - installedFiles (fileUid / modId / fileId / version from mod.attributes)
+    //  - requirements returned by the backend
 };
 
-const result = await runResolverLoop(request);
-// map result -> IModMissingRequirements / health-check page rows,
-// and turn planned download actions into nxm:// downloads via onDownloadRequirement.
+const report = checkFileLevelRequirements(context);
+// map report.missing -> IModMissingRequirements / health-check page rows,
+// and turn each missing target into an nxm:// download via onDownloadRequirement.
+// When the user installs a suggested file, the ModsChanged trigger re-runs the
+// check with the new install set - no loop inside the module.
 ```
 
 Keep Vortex-specific glue (state selectors, nxm download dispatch, UI mapping)

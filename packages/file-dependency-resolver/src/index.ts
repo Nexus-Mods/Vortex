@@ -1,3 +1,2 @@
-export { resolve } from "./resolve";
-export { runResolverLoop } from "./resolverLoop";
-export type { ResolveRequest, ResolveResult } from "./types";
+export { checkFileLevelRequirements } from "./checkFileLevelRequirements";
+export type { FileRequirementsContext, FileRequirementsReport } from "./types";
