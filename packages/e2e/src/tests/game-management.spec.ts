@@ -23,7 +23,7 @@ test.describe("Game Management", () => {
   test("fake game installation helper works", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const config = GAME_CONFIGS.stardewvalley!;
+    const config = GAME_CONFIGS.stardewvalley;
 
     await test.step("Create fake game installation", () => {
       const { basePath, gamePath } = setupFakeGame("stardewvalley");

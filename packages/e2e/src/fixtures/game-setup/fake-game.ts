@@ -16,7 +16,7 @@ export interface GameConfig {
   modFolderPath?: string;
 }
 
-export const GAME_CONFIGS: Record<string, GameConfig> = {
+export const GAME_CONFIGS = {
   stardewvalley: {
     gameId: "stardewvalley",
     gameName: "Stardew Valley",
@@ -34,7 +34,7 @@ export const GAME_CONFIGS: Record<string, GameConfig> = {
       { path: "Content/XACT/FarmerSounds.xwb", content: "FAKE_AUDIO_FILE" },
     ],
     modFolderPath: "Mods",
-  },
+  } satisfies GameConfig,
   skyrimse: {
     gameId: "skyrimse",
     gameName: "Skyrim Special Edition",
@@ -46,8 +46,8 @@ export const GAME_CONFIGS: Record<string, GameConfig> = {
       { path: "Data/Skyrim.esm", content: "TES4\x00\x00\x00\x00" },
     ],
     modFolderPath: "Data",
-  },
-};
+  } satisfies GameConfig,
+} as const;
 
 /** Creates a minimal fake PE executable header that passes file type checks. */
 function createFakeExecutable(): Buffer {
@@ -89,7 +89,10 @@ export function createFakeGameInstallation(gameConfig: GameConfig, basePath: str
 }
 
 /** Creates a temp directory with a fake game installation. Returns both paths for cleanup. */
-export function setupFakeGame(configKey: string): { basePath: string; gamePath: string } {
+export function setupFakeGame(configKey: keyof typeof GAME_CONFIGS): {
+  basePath: string;
+  gamePath: string;
+} {
   const config = GAME_CONFIGS[configKey];
   if (!config) throw new Error(`Unknown game config: ${configKey}`);
 

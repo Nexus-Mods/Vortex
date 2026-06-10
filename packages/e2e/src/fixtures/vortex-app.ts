@@ -422,10 +422,10 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   },
 
   managedGame: async (
-    { vortexWindow }: { vortexWindow: Page },
+    { vortexWindow, vortexApp }: { vortexWindow: Page; vortexApp: ElectronApplication },
     use: (game: ManagedGame) => Promise<void>,
   ) => {
-    const game = await manageGame(vortexWindow, "stardewvalley");
+    const game = await manageGame(vortexWindow, vortexApp, "stardewvalley");
     await use(game);
     cleanupFakeGame(game.basePath);
   },

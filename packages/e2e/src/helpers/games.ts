@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type ElectronApplication, type Page } from "@playwright/test";
 
 import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
@@ -6,10 +6,8 @@ import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
 import { Timeouts } from "./timeouts";
 
-// Only auto-discoverable games are supported today. Skyrim SE goes through
-// Vortex's manual-discovery dialog flow which our fake-game install isn't
-// rich enough to satisfy yet (TODO: add when fake-game produces a real PE
-// header with version info, or expose a stronger Vortex test hook).
+// VORTEX_E2E=1 disables automatic discovery, so all games go through the
+// "Game not discovered" dialog and have their path set via a dialog.showOpenDialog stub.
 export type ManagedGameId = "stardewvalley";
 
 export interface ManagedGame {
@@ -17,9 +15,13 @@ export interface ManagedGame {
   gamePath: string;
 }
 
-export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Promise<ManagedGame> {
+export async function manageGame(
+  vortexWindow: Page,
+  electronApp: ElectronApplication,
+  gameId: ManagedGameId,
+): Promise<ManagedGame> {
   const fakeGame = setupFakeGame(gameId);
-  const gameName = GAME_CONFIGS[gameId]!.gameName;
+  const gameName = GAME_CONFIGS[gameId].gameName;
 
   await test.step(`Manage game: ${gameId}`, async () => {
     const navbar = new NavBar(vortexWindow);
@@ -28,15 +30,8 @@ export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Pro
     await expect(navbar.gamesLink).toBeVisible();
     await navbar.gamesLink.click();
 
-    await vortexWindow.evaluate((path) => {
-      const slot = globalThis as {
-        __VORTEX_TEST_GAME_PATH__?: string;
-        global?: { __VORTEX_TEST_GAME_PATH__?: string };
-      };
-      slot.__VORTEX_TEST_GAME_PATH__ = path;
-      if (slot.global !== undefined) {
-        slot.global.__VORTEX_TEST_GAME_PATH__ = path;
-      }
+    await electronApp.evaluate(({ dialog }, gamePath) => {
+      dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [gamePath] });
     }, fakeGame.gamePath);
 
     const row = gamesPage.gameRow(gameName);
@@ -47,6 +42,10 @@ export async function manageGame(vortexWindow: Page, gameId: ManagedGameId): Pro
     const manageButton = gamesPage.manageButton(gameName);
     await expect(manageButton).toBeVisible();
     await manageButton.click();
+
+    const continueButton = vortexWindow.getByRole("button", { name: "Continue" });
+    await expect(continueButton).toBeVisible();
+    await continueButton.click();
 
     await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
   });
