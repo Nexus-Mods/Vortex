@@ -269,7 +269,7 @@ async function main(): Promise<void> {
   process.on("uncaughtException", handleError);
   process.on("unhandledRejection", handleError);
 
-  const downloadManager = new DownloadManager({ concurrency: 3 });
+  const downloadManager = new DownloadManager({ concurrency: 1 });
 
   initIpcHandlers();
   initDownloadIpc(downloadManager);

@@ -114,6 +114,14 @@ export function init(manager: DownloadManager): void {
     }
     return result;
   });
+
+  betterIpcMain.handle("download:configure", (_event, options) => {
+    manager.configure({
+      concurrency: options.concurrency !== undefined ? Number(options.concurrency) : undefined,
+      bytesPerSecond:
+        options.bytesPerSecond !== undefined ? Number(options.bytesPerSecond) : undefined,
+    });
+  });
 }
 
 function stateToWire(state: DownloadState) {

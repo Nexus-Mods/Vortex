@@ -71,11 +71,12 @@ export type DownloadManagerOptions = {
 
 export class DownloadManager {
   readonly #downloadQueue: PQueue;
-  readonly #rateLimiter: RateLimiter | null;
   readonly #timeout: TimeoutOptions;
   readonly #userAgent: string | undefined;
   readonly #cookieJar: CookieJar | undefined;
   readonly #downloads: Map<string, DownloadHandle> = new Map();
+
+  #rateLimiter: RateLimiter | null;
 
   constructor(options: DownloadManagerOptions) {
     this.#downloadQueue = new PQueue({
@@ -122,6 +123,33 @@ export class DownloadManager {
    */
   getState(downloadId: string): DownloadState | undefined {
     return this.#downloads.get(downloadId)?.getState();
+  }
+
+  /**
+   * Updates concurrency and/or bandwidth limit at runtime.
+   * In-flight downloads are unaffected; new downloads use the updated settings.
+   */
+  configure(options: { concurrency?: number; bytesPerSecond?: number }): void {
+    if (options.concurrency !== undefined) {
+      log("info", "download concurrency changed", {
+        from: this.#downloadQueue.concurrency,
+        to: options.concurrency,
+      });
+      this.#downloadQueue.concurrency = options.concurrency;
+    }
+
+    if (options.bytesPerSecond !== undefined) {
+      if (options.bytesPerSecond > 0 && !isNaN(options.bytesPerSecond)) {
+        log("info", "download bandwidth limit changed", { bytesPerSecond: options.bytesPerSecond });
+        this.#rateLimiter = new RateLimiter({
+          tokensPerInterval: options.bytesPerSecond,
+          interval: "second",
+        });
+      } else {
+        log("info", "download bandwidth limit removed");
+        this.#rateLimiter = null;
+      }
+    }
   }
 
   /**
