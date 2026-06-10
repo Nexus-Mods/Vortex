@@ -1,2 +1,13 @@
 export { checkFileLevelRequirements } from "./checkFileLevelRequirements";
-export type { FileRequirementsContext, FileRequirementsReport } from "./types";
+export type {
+  Candidate,
+  CandidateRow,
+  DependencyResult,
+  FileRequirementsContext,
+  FileRequirementsReport,
+  FileVersionDetail,
+  InstalledFile,
+  ModDetail,
+  ResolverPorts,
+  SourceResult,
+} from "./types";
