@@ -2,9 +2,9 @@ import * as path from "path";
 
 import { createSelector } from "reselect";
 
-import type { IDownload, IMod, IState } from "../../types/IState";
-import { activeDownloads } from "../download_management/selectors";
-import { modsForActiveGame } from "../mod_management/selectors";
+import type { IDownload, IMod, IState } from "../../../types/IState";
+import { activeDownloads } from "../../download_management/selectors";
+import { modsForActiveGame } from "../../mod_management/selectors";
 import type {
   ICollectionInstallState,
   ICollectionInstallSession,

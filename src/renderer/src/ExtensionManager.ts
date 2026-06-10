@@ -2935,7 +2935,6 @@ class ExtensionManager {
       browse_nexus: () => require("./extensions/browse_nexus/index.ts"),
       browser: () => require("./extensions/browser/index.ts"),
       category_management: () => require("./extensions/category_management/index.ts"),
-      collections_integration: () => require("./extensions/collections_integration/index.ts"),
       dashboard: () => require("./extensions/dashboard/index.ts"),
       design_system_dev: () => require("./extensions/design_system_dev/index.ts"),
       diagnostics_files: () => require("./extensions/diagnostics_files/index.ts"),

@@ -1,4 +1,4 @@
-import type { IModRule } from "../mod_management/types/IMod";
+import type { IModRule } from "../../mod_management/types/IMod";
 
 export function generateCollectionSessionId(collectionId: string, profileId: string): string {
   if (!profileId || !collectionId) {

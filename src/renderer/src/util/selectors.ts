@@ -5,5 +5,5 @@ export * from "../extensions/gamemode_management/selectors";
 export * from "../extensions/nexus_integration/selectors";
 export * from "../extensions/analytics/selectors";
 export * from "../telemetry/selectors";
-export * from "../extensions/collections_integration/selectors";
+export * from "../extensions/collections/installSession/selectors";
 export * from "../selectors";

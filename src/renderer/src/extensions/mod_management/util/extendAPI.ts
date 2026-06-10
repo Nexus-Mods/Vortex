@@ -3,7 +3,7 @@ import { log } from "../../../util/log";
 import {
   getCollectionActiveSession,
   getCollectionCurrentPhase,
-} from "../../collections_integration/selectors";
+} from "../../collections/installSession/selectors";
 import type InstallManager from "../InstallManager";
 import type { IDeployOptions } from "../types/IDeployOptions";
 import type { IModsAPIExtension } from "../types/IModsAPIExtension";
