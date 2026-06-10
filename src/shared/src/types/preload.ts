@@ -477,6 +477,9 @@ export interface DownloaderApi {
   /** Returns the current state for multiple downloads in one call. Unknown IDs are omitted. */
   getStates(downloadIds: string[]): Promise<Record<string, WireDownloadState>>;
 
+  /** Updates concurrency and/or bandwidth limit on the main-process DownloadManager. */
+  configure(options: { concurrency?: number; bytesPerSecond?: number }): Promise<void>;
+
   /**
    * Registers a handler invoked by main when it needs the renderer to resolve a download URL.
    * The `collationId` maps to the download started via `start()`.
