@@ -302,21 +302,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void>
   return new PromiseBB<void>((resolve) => {
     const defaultPath = discovery?.path;
 
-    // Check for test path stored in global (for automated testing)
-    const testPath = (global as any).__VORTEX_TEST_GAME_PATH__;
-
-    // If test path is set, use it; otherwise open the dialog
-    const pathPromise =
-      testPath !== undefined
-        ? PromiseBB.resolve(testPath)
-        : api.selectDir(defaultPath !== undefined ? { defaultPath } : {});
-
-    // Clear the global after using it
-    if (testPath !== undefined) {
-      delete (global as any).__VORTEX_TEST_GAME_PATH__;
-    }
-
-    pathPromise.then((result) => {
+    api.selectDir(defaultPath !== undefined ? { defaultPath } : {}).then((result) => {
       if (result !== undefined) {
         findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
           .then((corrected: string) => manualGameStoreSelection(api, corrected))
@@ -385,7 +371,8 @@ function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void>
             }
             resolve();
           })
-          .catch(() => {
+          .catch((err: unknown) => {
+            log("warn", "browseGameLocation: failed to locate game", { gameId, err: err });
             api.store.dispatch(
               showDialog(
                 "error",
@@ -956,19 +943,34 @@ function init(context: IExtensionContext): boolean {
       const discoveredGames = new Set(
         Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
       );
-      $.gameModeManager.startQuickDiscovery().then(() =>
-        removeDisappearedGames(
-          context.api,
-          discoveredGames,
-          $.extensionStubs.reduce((prev, stub) => {
-            prev[stub.game.id] = stub.ext;
-            return prev;
-          }, {}),
-        ),
-      );
+      if (process.env.VORTEX_E2E === "1") {
+        log(
+          "debug",
+          "startup quick discovery disabled: VORTEX_E2E=1, tests manage game paths explicitly to ensure deterministic behaviour across machines",
+        );
+      } else {
+        $.gameModeManager.startQuickDiscovery().then(() =>
+          removeDisappearedGames(
+            context.api,
+            discoveredGames,
+            $.extensionStubs.reduce((prev, stub) => {
+              prev[stub.game.id] = stub.ext;
+              return prev;
+            }, {}),
+          ),
+        );
+      }
     }
 
     context.api.onAsync("discover-game", (gameId: string) => {
+      if (process.env.VORTEX_E2E === "1") {
+        log(
+          "debug",
+          "discover-game suppressed: VORTEX_E2E=1, tests manage game paths explicitly to ensure deterministic behaviour across machines",
+          { gameId },
+        );
+        return PromiseBB.resolve();
+      }
       const game = getGame(gameId);
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
