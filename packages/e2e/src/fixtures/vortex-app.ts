@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 
@@ -17,15 +16,12 @@ import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
 import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
-
-/** Package root (packages/e2e/) — used for resolving node_modules. */
-const PACKAGE_ROOT = path.resolve(import.meta.dirname, "..", "..");
-
-/** Repo root directory. */
-const REPO_ROOT = path.resolve(PACKAGE_ROOT, "..", "..");
-
-// createRequire from the package root so pnpm-linked electron resolves correctly
-const require = createRequire(path.join(PACKAGE_ROOT, "package.json"));
+import {
+  cleanupVortexInstance,
+  prepareVortexInstance,
+  resolveElectronBinary,
+  resolveMainDir,
+} from "../vortex-instance";
 
 /** Close Electron app; kill process if normal teardown hangs too long. */
 async function closeElectronApp(app: ElectronApplication, timeoutMs = 15_000): Promise<void> {
@@ -44,47 +40,6 @@ async function closeElectronApp(app: ElectronApplication, timeoutMs = 15_000): P
   if (timer !== undefined) clearTimeout(timer);
   // Hard-kill works cross-platform via Node ChildProcess.kill().
   if (!closed) proc.kill("SIGKILL");
-}
-
-function resolveMainDir(): string {
-  return path.resolve(REPO_ROOT, "src", "main");
-}
-
-function resolveElectronBinary(): string {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  return require("electron");
-}
-
-/**
- * Build a clean env for the Electron process.
- * Removes ELECTRON_RUN_AS_NODE (set by pnpm) and isolates user data.
- */
-function buildElectronEnv(userDataDir: string): Record<string, string> {
-  const env: Record<string, string> = {};
-  for (const [key, value] of Object.entries(process.env)) {
-    if (key !== "ELECTRON_RUN_AS_NODE" && value !== undefined) {
-      env[key] = value;
-    }
-  }
-  env.NODE_ENV = "development";
-  // Fully isolate each test — separate userData and appData so parallel
-  // instances share no data at all.
-  const appDataDir = path.join(userDataDir, "appData");
-  const userDataSubDir = path.join(userDataDir, "userData");
-  // Pre-create the app name subdirectory that Vortex expects for startup.json.
-  // The app name comes from src/main/package.json ('@vortex/main').
-  const appNameDir = path.join(appDataDir, "@vortex", "main");
-  fs.mkdirSync(appNameDir, { recursive: true });
-  fs.mkdirSync(userDataSubDir, { recursive: true });
-  env.ELECTRON_USERDATA = userDataSubDir;
-  env.ELECTRON_APPDATA = appDataDir;
-  // Always set — disables single-instance lock so parallel workers can run
-  env.VORTEX_E2E = "1";
-  // Hide windows unless debugging with PWDEBUG
-  if (!process.env.PWDEBUG && !process.env.VORTEX_E2E_HEADED) {
-    env.VORTEX_E2E_HEADLESS = "1";
-  }
-  return env;
 }
 
 /**
@@ -308,13 +263,14 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             const snapshotBase = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-snap-"));
             snapshotDirs.push(snapshotBase);
 
+            const { env } = prepareVortexInstance(snapshotBase);
             const mainDir = resolveMainDir();
             const electronBinary = resolveElectronBinary();
 
             const app = await electron.launch({
               executablePath: electronBinary,
               args: [mainDir],
-              env: buildElectronEnv(snapshotBase),
+              env,
               cwd: mainDir,
               timeout: Timeouts.SNAPSHOT,
             });
@@ -357,7 +313,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       await use(instance);
 
       for (const dir of snapshotDirs) {
-        fs.rmSync(dir, { recursive: true, force: true });
+        cleanupVortexInstance(dir);
       }
     },
     { scope: "worker", timeout: Timeouts.SNAPSHOT },
@@ -378,24 +334,31 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
 
     if (nexusUser !== null) {
       // Copy the snapshot (produced by a clean Electron close, so DuckDB is
-      // fully flushed) into the fresh test dir. buildElectronEnv will then
+      // fully flushed) into the fresh test dir. prepareVortexInstance will then
       // point ELECTRON_USERDATA/ELECTRON_APPDATA at the copied subdirs.
       const { snapshotDir } = await workerAuthSnapshots.get(nexusUser);
       fs.cpSync(snapshotDir, dir, { recursive: true });
     }
 
     await use(dir);
-    fs.rmSync(dir, { recursive: true, force: true });
+    cleanupVortexInstance(dir);
   },
 
   vortexApp: async ({ vortexUserDataDir }, use) => {
+    const { env } = prepareVortexInstance(vortexUserDataDir);
     const mainDir = resolveMainDir();
     const electronBinary = resolveElectronBinary();
 
+    // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can
+    // attach to this fixture-built app (logged in, managed game, stubs) on
+    // 127.0.0.1:9222 alongside Playwright's own connection. Only one process
+    // can own the port, so inspect runs must use --workers=1.
+    const inspect = !!process.env.VORTEX_E2E_INSPECT;
+
     const app = await electron.launch({
       executablePath: electronBinary,
-      args: [mainDir],
-      env: buildElectronEnv(vortexUserDataDir),
+      args: [...(inspect ? ["--remote-debugging-port=9222"] : []), mainDir],
+      env,
       cwd: mainDir,
       timeout: Timeouts.LIFECYCLE,
     });

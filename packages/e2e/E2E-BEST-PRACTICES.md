@@ -6,39 +6,53 @@ multiple browser projects, and no remote staging environment.
 
 ## Running Tests
 
-From repo root:
-
 ```bash
-# All e2e tests (headless)
-pnpm e2e
+# All tests
+pnpm nx run @vortex/e2e:e2e
 
-# Visible Electron window (debugging)
-pnpm e2e:headed
-
-# Step-through with Playwright Inspector
-pnpm e2e:debug
-
-# A single spec file
-pnpm -F @vortex/e2e exec playwright test smoke.spec.ts
-
-# By tag
-pnpm -F @vortex/e2e exec playwright test --grep @smoke
+# By tag (eg: smoke tests)
+pnpm -F @vortex/e2e exec playwright test --grep "@smoke"
 
 # By test name
 pnpm -F @vortex/e2e exec playwright test -g "Settings"
 ```
 
-Prerequisite: Vortex must be built before running tests:
+### Debugging
 
 ```bash
-pnpm run build
-pnpm run build:assets
-pnpm run build:extensions   # only needed for extension-dependent tests
+# Launches playwright UI to run individual tests in headed mode
+pnpm nx run @vortex/e2e:ui
+
+# Run individual tests in headed mode
+VORTEX_E2E_HEADED=1 pnpm -F @vortex/e2e exec playwright test -g "Settings"
 ```
 
----
+### Reports and Traces
 
-## Fixtures (vortexWindow / vortexApp)
+Local tests create reports in `./playwright-report`:
+
+```bash
+# Launches playwright UI to show reports
+pnpm -F @vortex/e2e exec playwright show-report
+
+# Launches playwright UI to show a trace
+pnpm -F @vortex/e2e exec playwright show-trace <path to zip file>
+```
+
+Every test creates traces that include page snapshots and screenshots if `VORTEX_E2E_HEADED=1`. These traces are attached to tests as `page-trace.zip` files. Use the previous command to open the trace in the browser.
+
+## Writing Tests
+
+### With LLMs
+
+Skills and MCP servers are already configured for Claude Code to help write E2E tests. Start the isolated dev environment to get started:
+
+```bash
+# start the isolated dev environment
+pnpm nx run @vortex/e2e:dev
+```
+
+### Fixtures
 
 Tests import from `../fixtures/vortex-app`, **not** `@playwright/test`:
 
@@ -58,9 +72,7 @@ test("customise button works", async ({ vortexWindow }) => {
 - `vortexApp` — the `ElectronApplication` handle (rarely needed; reach for it only when you need IPC, multiple windows, or `app.evaluate(...)`).
 - The Electron app is **launched once per test** in its own isolated temp user-data directory. Tests cannot share Vortex state — isolation is guaranteed automatically.
 
----
-
-## Test Steps
+### Test Steps
 
 Use `test.step()` to decompose tests into granular, well-defined actions:
 
@@ -73,7 +85,7 @@ await test.step("Navigate to the games page", async () => {
 });
 ```
 
-## Assertions
+### Assertions
 
 **Every action must have a corresponding assertion** to validate successful execution and pinpoint failures.
 
@@ -98,13 +110,9 @@ Rules:
 - **No assertions in hooks** — `beforeAll`/`afterAll` should only do setup/teardown.
 - **Verify the page rendered** — assert visible elements after navigating between Vortex pages.
 
----
+### Page Object Models (POMs)
 
-## Page Object Models (POMs)
-
-POMs encapsulate selectors and page-specific helpers. Vortex's POMs live in `packages/e2e/selectors/` and are named after the area (e.g. `dashboard.ts`, `navbar.ts`, `settings.ts`). **No `_pom` suffix** — that's a different repo's convention.
-
-### POM Structure
+POMs encapsulate selectors and page-specific helpers. Vortex's POMs live in `packages/e2e/src/selectors/` and are named after the area (e.g. `dashboard.ts`, `navbar.ts`, `settings.ts`). **No `_pom` suffix** — that's a different repo's convention.
 
 ```typescript
 import type { Locator, Page } from "@playwright/test";
@@ -124,8 +132,6 @@ export class DashboardPage {
 }
 ```
 
-### Using POMs in Tests
-
 Initialise POMs **when needed**, not all at the start:
 
 ```typescript
@@ -141,9 +147,7 @@ test("dashboard customise", async ({ vortexWindow }) => {
 
 When a step navigates to a different page, instantiate a new POM for the new page rather than reusing a stale one.
 
----
-
-## Locators (Priority Order)
+### Locators (Priority Order)
 
 Vortex is internationalised, but the existing tests use English strings as the source of truth. Prefer user-facing attributes over implementation details:
 
@@ -156,11 +160,9 @@ Vortex is internationalised, but the existing tests use English strings as the s
 
 Avoid: CSS class selectors, `nth-of-type`, internal React state, anything that changes on a refactor. If text matches multiple elements, narrow with `.first()`, `.filter()`, or a `hasText` constraint rather than reaching for CSS.
 
----
+### Helpers
 
-## Helpers
-
-Shared utilities live in `packages/e2e/helpers/` (e.g. `navigation.ts`). Cross-test operations like "navigate to Settings", "open the games tab", or "wait for sidebar ready" go there — not duplicated in each spec.
+Shared utilities live in `packages/e2e/src/helpers/` (e.g. `navigation.ts`). Cross-test operations like "navigate to Settings", "open the games tab", or "wait for sidebar ready" go there — not duplicated in each spec.
 
 ```typescript
 import { navigateToSettings } from "../helpers/navigation";
@@ -171,9 +173,7 @@ test("settings loads", async ({ vortexWindow }) => {
 });
 ```
 
----
-
-## Auth Fixtures
+### Auth Fixtures
 
 Tests that require a logged-in user use the `nexusUser` fixture option. Set it
 via `test.use()` at the describe level — never inside a `test()` body.
@@ -194,7 +194,7 @@ test.describe("premium features", () => {
 Available users are `freeUser` and `premiumUser` from `helpers/users.ts`, sourced
 from environment variables. The default is `null` (no login, fresh empty state).
 
-### How it works
+#### How it works
 
 The first test that needs a given user on a worker triggers a one-time snapshot
 build: a temporary Electron instance authenticates via OAuth, then closes cleanly
@@ -206,7 +206,7 @@ starts authenticated without repeating the OAuth flow.
 Snapshot builds run concurrently across workers. If two tests on the same worker
 both need `freeUser`, they share a single build promise — no double login.
 
-### Composing role and game
+#### Composing role and game
 
 The `nexusUser` option and the `managedGame` fixture are independent axes.
 Request both to get a logged-in app with a managed game:
@@ -219,9 +219,7 @@ test("download a mod", async ({ vortexWindow, managedGame }) => {
 });
 ```
 
----
-
-## Fake Game Installations
+### Fake Game Installations
 
 For tests that need a managed game, use the `managedGame` fixture instead of
 calling `manageGame` manually. It handles setup and cleanup automatically.
@@ -239,7 +237,7 @@ Currently only `"stardewvalley"` is supported — Skyrim SE goes through
 Vortex's manual-discovery dialog flow which our fake-game install isn't
 rich enough to satisfy yet (see TODO in `helpers/games.ts`).
 
-### Just the on-disk install — `setupFakeGame`
+#### Just the on-disk install — `setupFakeGame`
 
 When the test only needs the game's files to exist (e.g. asserting that
 discovery finds them) without involving Vortex's UI, use `setupFakeGame` directly:
@@ -259,9 +257,7 @@ test("fake game has expected files", async () => {
 
 Available configs: `stardewvalley`, `skyrimse`. Add more in `packages/e2e/fixtures/game-setup/fake-game.ts`.
 
----
-
-## Avoid Hardcoded Waits
+### Avoid Hardcoded Waits
 
 Never use `waitForTimeout()`. Use assertions or locator auto-waiting instead.
 
@@ -275,8 +271,6 @@ await expect(saveButton).toBeEnabled();
 await saveButton.click();
 ```
 
-### Common Replacements
-
 | Instead of                            | Use                                                            |
 | ------------------------------------- | -------------------------------------------------------------- |
 | `waitForTimeout(X)` then click        | `await expect(element).toBeVisible()` then click               |
@@ -286,7 +280,7 @@ await saveButton.click();
 
 ---
 
-## CSP — Don't Pass Strings to `waitForFunction`
+### CSP — Don't Pass Strings to `waitForFunction`
 
 Vortex's renderer ships with a strict Content Security Policy: `script-src 'self' '<sha256...>'` with **no** `'unsafe-eval'`. Playwright evaluates string predicates via `eval`, which the CSP rejects.
 
@@ -303,21 +297,15 @@ await expect(vortexWindow.locator("body")).not.toHaveText("");
 
 Same rule for `page.evaluate(...)`, `locator.evaluate(...)`, and any `evaluateHandle` call: pass a function, not a string.
 
----
-
-## Don't Assert on URLs
+### Don't Assert on URLs
 
 Vortex uses an internal router, not a browser URL bar. `expect(page).toHaveURL(...)` is meaningless here — assert on visible UI state instead (a heading, a sidebar item being active, a panel being mounted).
 
----
-
-## Console Errors
+### Console Errors
 
 The smoke spec watches the renderer console for unexpected errors at startup. When you add tests that exercise new flows, prefer relying on that smoke coverage over sprinkling per-test console listeners. If you do need a per-test listener, attach it before the action and detach in `afterEach` — leaked listeners cause flakes across the worker.
 
----
-
-## Timeouts
+### Timeouts
 
 All explicit timeouts live in `helpers/timeouts.ts`. Do not hardcode `X_000` literals in tests, helpers, or fixtures.
 
@@ -326,7 +314,7 @@ Rules:
 - **Default UI waits use the config defaults** (5s `actionTimeout` / `expect.timeout` / `navigationTimeout`, sourced from `GlobalTimeouts` in `helpers/timeouts.ts` and applied via `playwright.config.ts`). Do not pass an explicit timeout for pure UI assertions/actions. If a UI wait "needs" longer, the test is racing something it should `await` explicitly.
 - **Network-backed waits** (page navigation, API fetch, mod list populating, OAuth flow) use `Timeouts.NETWORK`.
 - **Fixture / launch timeouts** use `Timeouts.LIFECYCLE`.
-- **No per-test `test.setTimeout(...)` overrides.** `GlobalTimeouts.TEST` is sized to cover the slowest test. If a test exceeds it, the test is broken, not the timeout.
+- **No per-test `test.setTimeout(...)` overrides.** The per-test timeout is set in `playwright.config.ts` (`timeout: Timeouts.LIFECYCLE`) and is sized to cover the slowest test. If a test exceeds it, the test is broken, not the timeout.
 - **Probes** (best-effort "is this element here right now") use `await locator.isVisible().catch(() => false)` with no timeout. Never use 1s/3s "fast probe" timeouts.
 
 ```typescript
@@ -347,41 +335,3 @@ test.setTimeout(120_000);
 ```
 
 Current `Timeouts` / `GlobalTimeouts` values are starting points, not measured. Calibration follow-up is tracked in LAZ-443.
-
----
-
-## Pre-Commit Checklist
-
-Do not add code comments unless ABSOLUTELY needed for explaining vague code. If you want to add a comment, try to rewrite the code to be understandable without one.
-
-**Run these BEFORE every commit. The CI `format` job will block your PR if you skip them.**
-
-```bash
-# 1. Format every file you touched (oxfmt — config at oxfmtrc.json).
-#    Source files outside packages/e2e count too if you changed any.
-pnpm exec oxfmt <paths-you-changed>
-
-# 2. Verify nothing is still unformatted. This is what CI runs.
-pnpm run format:check
-
-# 3. Type-check the e2e package.
-pnpm -F @vortex/e2e exec tsc --noEmit
-
-# 4. Run the test you added/changed locally.
-pnpm -F @vortex/e2e exec playwright test <your-spec> --workers=1
-```
-
-If `format:check` reports any file, run `pnpm exec oxfmt <that-file>` and amend the commit. Don't push and rely on CI to tell you — it's a slow feedback loop.
-
-The repo formats with **oxfmt**, not prettier. There is no `.prettierrc`. oxfmt's default is double-quoted strings; some older files in this package still have single quotes from before the formatter switch — when you edit one of those files, oxfmt will convert it. Don't fight it.
-
----
-
-## Reports and Traces
-
-CI uploads reports with traces enabled as encrypted artifacts.
-
-- Show reports: `pnpm exec playwright show-report`
-- Show traces: `pnpm exec playwright show-trace <path to zip file>`
-
-Note that "regular" playwright traces don't work with our electron setup. We manually enable tracing and manually create trace outputs. Those outputs will be attached to the playwright test as `page-trace.zip` files. Use those to view the trace snapshots. Screenshots are only included if `VORTEX_E2E_HEADED=1`.
