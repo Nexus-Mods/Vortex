@@ -10,6 +10,7 @@ export interface IImageProps extends Omit<
 > {
   alt: string;
   className?: string;
+  fit?: "cover" | "contain";
   imageClassName?: string;
   imageType?: "collection" | "mod" | "other";
   isBlurred?: boolean;
@@ -23,7 +24,9 @@ const imageTypeMap: Record<NonNullable<IImageProps["imageType"]>, string> = {
 
 export const Image = ({
   alt,
+  children,
   className,
+  fit = "contain",
   imageClassName,
   imageType = "other",
   isBlurred,
@@ -51,9 +54,16 @@ export const Image = ({
         <img
           {...rest}
           alt={alt}
-          className={joinClasses(["absolute z-1 max-h-full rounded-[inherit]", imageClassName], {
-            "blur-xl": isBlurred,
-          })}
+          className={joinClasses(
+            [
+              "absolute z-1 rounded-[inherit]",
+              fit === "cover" ? "size-full object-cover" : "max-h-full",
+              imageClassName,
+            ],
+            {
+              "blur-xl": isBlurred,
+            },
+          )}
           src={src}
           onError={(event) => {
             setErrored(true);
@@ -64,7 +74,9 @@ export const Image = ({
         <Icon className="text-neutral-subdued" path={mdiImageBroken} title={alt} />
       )}
 
-      <div className="pointer-events-none absolute inset-0 z-2 rounded-[inherit] border border-stroke-weak" />
+      {children}
+
+      <div className="pointer-events-none absolute inset-0 z-5 rounded-[inherit] border border-stroke-weak" />
     </div>
   );
 };

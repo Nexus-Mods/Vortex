@@ -6,27 +6,34 @@
 
 import React, { useState } from "react";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { ButtonDemo } from "../../../ui/components/button/ButtonDemo";
-import { CollectionTileDemo } from "../../../ui/components/collectiontile/CollectionTileDemo";
-import { DropdownDemo } from "../../../ui/components/dropdown/DropdownDemo";
-import { InputDemo } from "../../../ui/components/form/input/InputDemo";
-import { SelectDemo } from "../../../ui/components/form/select/SelectDemo";
-import { IconDemo } from "../../../ui/components/icon/IconDemo";
-import { ListingDemo } from "../../../ui/components/listing/ListingDemo";
-import { PaginationDemo } from "../../../ui/components/pagination/PaginationDemo";
-import { PickerDemo } from "../../../ui/components/picker/PickerDemo";
-import { TabButton } from "../../../ui/components/tabs/Tab";
-import { TabBar } from "../../../ui/components/tabs/TabBar";
-import { TabPanel } from "../../../ui/components/tabs/TabPanel";
-import { TabProvider } from "../../../ui/components/tabs/tabs.context";
-import { TabsDemo } from "../../../ui/components/tabs/TabsDemo";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { TypographyDemo } from "../../../ui/components/typography/TypographyDemo";
-import MainPage from "../../../views/MainPage";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import { BulletDemo } from "@/ui/components/bullet/BulletDemo";
+import { ButtonDemo } from "@/ui/components/button/ButtonDemo";
+import { CollectionTileDemo } from "@/ui/components/collectiontile/CollectionTileDemo";
+import { DropdownDemo } from "@/ui/components/dropdown/DropdownDemo";
+import { InputDemo } from "@/ui/components/form/input/InputDemo";
+import { SelectDemo } from "@/ui/components/form/select/SelectDemo";
+import { IconDemo } from "@/ui/components/icon/IconDemo";
+import { ImageDemo } from "@/ui/components/image/ImageDemo";
+import { ListingDemo } from "@/ui/components/listing/ListingDemo";
+import { PaginationDemo } from "@/ui/components/pagination/PaginationDemo";
+import { PickerDemo } from "@/ui/components/picker/PickerDemo";
+import { PillDemo } from "@/ui/components/pill/PillDemo";
+import { PremiumBadgeDemo } from "@/ui/components/premium_badge/PremiumBadgeDemo";
+import { TabButton } from "@/ui/components/tabs/Tab";
+import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabPanel } from "@/ui/components/tabs/TabPanel";
+import { TabProvider } from "@/ui/components/tabs/tabs.context";
+import { TabsDemo } from "@/ui/components/tabs/TabsDemo";
+import { Typography } from "@/ui/components/typography/Typography";
+import { TypographyDemo } from "@/ui/components/typography/TypographyDemo";
+import { TypographyLinkDemo } from "@/ui/components/typography/TypographyLinkDemo";
+import MainPage from "@/views/MainPage";
 
 export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
   const [selectedTab, setSelectedTab] = useState("button");
+  const [selectedTypographyTab, setSelectedTypographyTab] = useState("typography");
+  const [selectedIconTab, setSelectedIconTab] = useState("icon");
   const [selectedFormTab, setSelectedFormTab] = useState("input");
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
 
@@ -51,6 +58,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
             <TabBar>
               <TabButton name="Button" />
 
+              <TabButton name="Pill" />
+
               <TabButton name="Typography" />
 
               <TabButton name="Form" />
@@ -58,6 +67,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
               <TabButton name="Tabs" />
 
               <TabButton name="Icon" />
+
+              <TabButton name="Image" />
 
               <TabButton name="Dropdown" />
 
@@ -73,8 +84,33 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
                 <ButtonDemo />
               </TabPanel>
 
+              <TabPanel name="Pill">
+                <PillDemo />
+              </TabPanel>
+
               <TabPanel name="Typography">
-                <TypographyDemo />
+                <TabProvider
+                  tab={selectedTypographyTab}
+                  tabListId="typography-demo-tabs"
+                  tabType="secondary"
+                  onSetSelectedTab={setSelectedTypographyTab}
+                >
+                  <TabBar>
+                    <TabButton name="Typography" />
+
+                    <TabButton name="Link" />
+                  </TabBar>
+
+                  <div className="mt-6">
+                    <TabPanel name="Typography">
+                      <TypographyDemo />
+                    </TabPanel>
+
+                    <TabPanel name="Link">
+                      <TypographyLinkDemo />
+                    </TabPanel>
+                  </div>
+                </TabProvider>
               </TabPanel>
 
               <TabPanel name="Form">
@@ -107,7 +143,38 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
               </TabPanel>
 
               <TabPanel name="Icon">
-                <IconDemo />
+                <TabProvider
+                  tab={selectedIconTab}
+                  tabListId="icon-demo-tabs"
+                  tabType="secondary"
+                  onSetSelectedTab={setSelectedIconTab}
+                >
+                  <TabBar>
+                    <TabButton name="Icon" />
+
+                    <TabButton name="Premium Badge" />
+
+                    <TabButton name="Bullet" />
+                  </TabBar>
+
+                  <div className="mt-6">
+                    <TabPanel name="Icon">
+                      <IconDemo />
+                    </TabPanel>
+
+                    <TabPanel name="Premium Badge">
+                      <PremiumBadgeDemo />
+                    </TabPanel>
+
+                    <TabPanel name="Bullet">
+                      <BulletDemo />
+                    </TabPanel>
+                  </div>
+                </TabProvider>
+              </TabPanel>
+
+              <TabPanel name="Image">
+                <ImageDemo />
               </TabPanel>
 
               <TabPanel name="Dropdown">

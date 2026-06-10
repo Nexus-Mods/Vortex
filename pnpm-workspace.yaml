@@ -154,7 +154,7 @@ catalog:
   dnd-core: 9.5.1
   draggabilly: 2.4.1
   drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 42.0.0
+  electron: 42.3.3
   electron-builder: 24.13.3
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1

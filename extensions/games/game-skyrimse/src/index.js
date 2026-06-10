@@ -8,6 +8,10 @@ const MS_ID = "BethesdaSoftworks.SkyrimSE-PC";
 const EPIC_ID = "ac82db5035584c7f8a2c548d98c86b2c";
 const STEAM_ID = "489830";
 
+const BODYSLIDE_DIR = path.join("Data", "CalienteTools", "BodySlide");
+const BODYSLIDE_X64 = path.join(BODYSLIDE_DIR, "BodySlide x64.exe");
+const BODYSLIDE_EXE = path.join(BODYSLIDE_DIR, "BodySlide.exe");
+
 const tools = [
   {
     id: "SSEEdit",
@@ -46,8 +50,18 @@ const tools = [
   {
     id: "bodyslide",
     name: "BodySlide",
-    executable: () => path.join("Data", "CalienteTools", "BodySlide", "BodySlide x64.exe"),
-    requiredFiles: [path.join("Data", "CalienteTools", "BodySlide", "BodySlide x64.exe")],
+    executable: (discoveryPath) => {
+      if (discoveryPath !== undefined) {
+        try {
+          fs.statSync(path.join(discoveryPath, BODYSLIDE_X64));
+          return BODYSLIDE_X64;
+        } catch (err) {
+          return BODYSLIDE_EXE;
+        }
+      }
+      return BODYSLIDE_EXE;
+    },
+    requiredFiles: [BODYSLIDE_EXE],
     relative: true,
     logo: "auto",
   },

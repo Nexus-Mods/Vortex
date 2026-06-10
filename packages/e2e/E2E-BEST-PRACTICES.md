@@ -350,22 +350,6 @@ Current `Timeouts` / `GlobalTimeouts` values are starting points, not measured. 
 
 ---
 
-## Diagnostics
-
-Don't sprinkle `vortexWindow.screenshot(...)` calls in tests. Playwright config already captures:
-
-- **Screenshots** on failure
-- **Traces** on first retry
-- **Video** on first retry
-
-View results:
-
-```bash
-pnpm e2e:report
-```
-
----
-
 ## Pre-Commit Checklist
 
 Do not add code comments unless ABSOLUTELY needed for explaining vague code. If you want to add a comment, try to rewrite the code to be understandable without one.
@@ -390,3 +374,14 @@ pnpm -F @vortex/e2e exec playwright test <your-spec> --workers=1
 If `format:check` reports any file, run `pnpm exec oxfmt <that-file>` and amend the commit. Don't push and rely on CI to tell you — it's a slow feedback loop.
 
 The repo formats with **oxfmt**, not prettier. There is no `.prettierrc`. oxfmt's default is double-quoted strings; some older files in this package still have single quotes from before the formatter switch — when you edit one of those files, oxfmt will convert it. Don't fight it.
+
+---
+
+## Reports and Traces
+
+CI uploads reports with traces enabled as encrypted artifacts.
+
+- Show reports: `pnpm exec playwright show-report`
+- Show traces: `pnpm exec playwright show-trace <path to zip file>`
+
+Note that "regular" playwright traces don't work with our electron setup. We manually enable tracing and manually create trace outputs. Those outputs will be attached to the playwright test as `page-trace.zip` files. Use those to view the trace snapshots. Screenshots are only included if `VORTEX_E2E_HEADED=1`.

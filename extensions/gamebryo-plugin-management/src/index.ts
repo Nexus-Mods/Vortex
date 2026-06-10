@@ -18,7 +18,7 @@ import {
   setPluginList,
   updatePluginWarnings,
 } from "./actions/plugins";
-import { clearUserlist, removeGroupRule, setGroup } from "./actions/userlist";
+import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import LootInterface from "./autosort";
 import { ESPFile } from "./esp/ESPFile";
@@ -51,6 +51,7 @@ import {
   supportsESL,
   supportsMediumMasters,
 } from "./util/gameSupport";
+import { missingGroupFixes } from "./util/groups";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
 import { markdownToBBCode } from "./util/mdtobb";
 import PluginHistory from "./util/PluginHistory";
@@ -975,29 +976,7 @@ function testMissingGroupsImpl(
     return Promise.resolve(undefined);
   }
 
-  const userlistGroups = state.userlist.groups || [];
-
-  // all known groups
-  const groups = new Set<string>(
-    [].concat(
-      (state.masterlist.groups || []).map((group) => group.name),
-      userlistGroups.map((group) => group.name),
-    ),
-  );
-
-  // all used groups
-  const usedGroups = Array.from(
-    new Set(
-      [].concat(
-        ...userlistGroups.map((group) => group.after || []),
-        (state.userlist.plugins || [])
-          .filter((plugin) => plugin.group !== undefined)
-          .map((plugin) => plugin.group),
-      ),
-    ),
-  );
-
-  const missing = usedGroups.filter((group) => !groups.has(group));
+  const { missing, actions } = missingGroupFixes(state);
 
   // nothing found => everything good
   if (missing.length === 0) {
@@ -1021,19 +1000,7 @@ function testMissingGroupsImpl(
     },
     severity: "error",
     automaticFix: () => {
-      const missingSet = new Set<string>(missing);
-      (state.userlist.plugins || [])
-        .filter((plugin) => plugin.group !== undefined && missingSet.has(plugin.group))
-        .forEach((plugin) => {
-          store.dispatch(setGroup(plugin.name, undefined));
-        });
-      userlistGroups.forEach((group) => {
-        (group.after || [])
-          .filter((after) => missingSet.has(after))
-          .forEach((after) => {
-            store.dispatch(removeGroupRule(group.name, after));
-          });
-      });
+      util.batchDispatch(store, actions);
       return Promise.resolve();
     },
   };

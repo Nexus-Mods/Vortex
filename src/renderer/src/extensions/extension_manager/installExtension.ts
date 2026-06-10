@@ -124,6 +124,29 @@ function sanitize(input: string): string {
   }
 }
 
+/**
+ * Clears the post-install `remove: true` flag for entries whose folder the new
+ * install just renamed into place. Entries pointing at distinct, still-on-disk
+ * folders keep their flag so the next startup's cleanup deletes them (#23295).
+ */
+export function clearStaleRemovalFlags(
+  api: IExtensionApi,
+  removedKeys: string[],
+  destPath: string,
+): void {
+  const state: IState = api.store.getState();
+  const { installed } = state.session.extensions;
+  // Compare paths, not key strings: info.json `id` can decouple the state key
+  // from the folder basename, and the archive-name fallback differs again.
+  const normalizedDest = path.normalize(destPath).toLowerCase();
+  removedKeys.forEach((key) => {
+    const prevPath = installed[key]?.path;
+    if (prevPath !== undefined && path.normalize(prevPath).toLowerCase() === normalizedDest) {
+      api.store.dispatch(forgetExtension(key));
+    }
+  });
+}
+
 function removeOldVersion(api: IExtensionApi, info: IExtension): PromiseBB<string[]> {
   const state: IState = api.store.getState();
   const { installed } = state.session.extensions;
@@ -399,10 +422,7 @@ function installExtension(
           })
           .then(() => fs.renameAsync(tempPath, destPath))
           .then(() => {
-            // New files are in place. Clear the `remove: true` flags
-            // dispatched by removeOldVersion so the next ExtensionManager
-            // construction doesn't wipe the freshly-installed folder.
-            removedKeys.forEach((key) => api.store.dispatch(forgetExtension(key)));
+            clearStaleRemovalFlags(api, removedKeys, destPath);
             if (type === "translation") {
               return fs
                 .readdirAsync(destPath)

@@ -49,7 +49,7 @@ jobs:
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev p7zip-full
 
       - name: Install dependencies
         run: pnpm install
@@ -82,6 +82,8 @@ jobs:
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
           E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
+          E2E_NEXUS_PREMIUM_USER_USERNAME: ${{ secrets.E2E_NEXUS_PREMIUM_USER_USERNAME }}
+          E2E_NEXUS_PREMIUM_USER_PASSWORD: ${{ secrets.E2E_NEXUS_PREMIUM_USER_PASSWORD }}
         run: pnpm e2e
 
       - name: Run E2E tests (Linux)
@@ -90,7 +92,16 @@ jobs:
         env:
           E2E_NEXUS_FREE_USER_USERNAME: ${{ secrets.E2E_NEXUS_FREE_USER_USERNAME }}
           E2E_NEXUS_FREE_USER_PASSWORD: ${{ secrets.E2E_NEXUS_FREE_USER_PASSWORD }}
+          E2E_NEXUS_PREMIUM_USER_USERNAME: ${{ secrets.E2E_NEXUS_PREMIUM_USER_USERNAME }}
+          E2E_NEXUS_PREMIUM_USER_PASSWORD: ${{ secrets.E2E_NEXUS_PREMIUM_USER_PASSWORD }}
         run: xvfb-run pnpm e2e
+
+      - name: Encrypt test report
+        if: always()
+        shell: bash
+        env:
+          E2E_ARTIFACT_PASSWORD: ${{ secrets.E2E_ARTIFACT_PASSWORD }}
+        run: 7z a -p"$E2E_ARTIFACT_PASSWORD" -mhe=on playwright-report.7z ./packages/e2e/playwright-report/
 
       - name: Upload test report
         if: always()
@@ -98,8 +109,15 @@ jobs:
         with:
           name: e2e-report-${{ matrix.os-name }}
           retention-days: 14
-          path: packages/e2e/playwright-report/
+          path: playwright-report.7z
           if-no-files-found: error
+
+      - name: Encrypt test results
+        if: failure()
+        shell: bash
+        env:
+          E2E_ARTIFACT_PASSWORD: ${{ secrets.E2E_ARTIFACT_PASSWORD }}
+        run: 7z a -p"$E2E_ARTIFACT_PASSWORD" -mhe=on test-results.7z ./packages/e2e/test-results/
 
       - name: Upload test results
         if: failure()
@@ -107,5 +125,5 @@ jobs:
         with:
           name: e2e-results-${{ matrix.os-name }}
           retention-days: 7
-          path: packages/e2e/test-results/
+          path: test-results.7z
           if-no-files-found: error

@@ -32,7 +32,7 @@ export default defineConfig({
     actionTimeout: GlobalTimeouts.ACTION,
     navigationTimeout: GlobalTimeouts.NAVIGATION,
     screenshot: "off",
-    trace: "on-first-retry",
-    video: "on-first-retry",
+    video: "off",
+    trace: "off",
   },
 });
