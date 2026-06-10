@@ -305,7 +305,17 @@ function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void>
     api.selectDir(defaultPath !== undefined ? { defaultPath } : {}).then((result) => {
       if (result !== undefined) {
         findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
-          .then((corrected: string) => manualGameStoreSelection(api, corrected))
+          .then((corrected: string) => {
+            if (process.env.VORTEX_E2E === "1") {
+              log(
+                "debug",
+                "browseGameLocation: skipping store selection (VORTEX_E2E), store detection is irrelevant in test environments",
+                { gameId },
+              );
+              return PromiseBB.resolve({ corrected, store: undefined as string });
+            }
+            return manualGameStoreSelection(api, corrected);
+          })
           .then(({ corrected, store }) => {
             let executable = game.executable(corrected);
             if (executable === game.executable()) {
