@@ -30,6 +30,7 @@ vi.mock("../../../logging", () => {
 // the live implementation (rather than re-stating the resulting Set inline).
 vi.mock("../util/dependencies");
 vi.mock("../../../util/api");
+vi.mock("../../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
 
 // Capture every payload passed to showExternalChanges so each test can assert
 // what would have been surfaced to the user.
