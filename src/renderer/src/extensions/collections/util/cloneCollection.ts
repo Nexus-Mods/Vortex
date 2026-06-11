@@ -1,5 +1,7 @@
 import * as path from "path";
 
+import { unknownToError } from "@vortex/shared";
+
 import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import * as fs from "../../../util/fs";
@@ -84,7 +86,7 @@ export async function cloneCollection(
     );
     collection = JSON.parse(collectionData);
   } catch (err) {
-    api.showErrorNotification("Failed to clone collection", err);
+    api.showErrorNotification("Failed to clone collection", unknownToError(err));
     return undefined;
   }
 
@@ -218,7 +220,7 @@ export async function cloneCollection(
 
     return id;
   } catch (err) {
-    api.showErrorNotification("Failed to clone collection", err);
+    api.showErrorNotification("Failed to clone collection", unknownToError(err));
     return undefined;
   }
 }

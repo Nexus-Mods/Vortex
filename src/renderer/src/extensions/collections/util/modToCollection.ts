@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
@@ -151,8 +152,8 @@ async function rulesToCollectionMods(
           const destPath = path.join(collectionPath, BUNDLED_PATH, generatedName);
           try {
             await fs.removeAsync(destPath);
-          } catch (err: any) {
-            if (err.code !== "ENOENT") {
+          } catch (err) {
+            if (getErrorCode(err) !== "ENOENT") {
               throw err;
             }
           }
@@ -207,17 +208,17 @@ async function rulesToCollectionMods(
         };
 
         return res;
-      } catch (err: any) {
+      } catch (err) {
         --total;
 
         onError(
           'failed to pack "{{modName}}": {{error}}',
           {
             modName,
-            error: err.message,
-            stack: err.stack,
+            error: getErrorMessageOrDefault(err),
+            stack: err instanceof Error ? err.stack : undefined,
           },
-          err["mayIgnore"] ?? true,
+          (err as { mayIgnore?: boolean }).mayIgnore ?? true,
         );
 
         if (err instanceof ReplicateHashMismatchError) {

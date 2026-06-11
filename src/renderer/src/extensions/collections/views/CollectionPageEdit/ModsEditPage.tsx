@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
@@ -873,8 +874,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
                       await fs.statAsync(path.join(dlPath, archive.localPath));
                       // await scanForDiffs(this.context.api, gameMode, source.mod.id);
                       this.props.onSetCollectionAttribute(["saveEdits", source.mod.id], value);
-                    } catch (err: any) {
-                      if (err.code === "ENOENT") {
+                    } catch (err) {
+                      if (getErrorCode(err) === "ENOENT") {
                         this.context.api.showErrorNotification(
                           'Failed to enable "Local Edits"',
                           "To enable this feature, the corresponding archive has to exist to " +
@@ -884,7 +885,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
                       } else {
                         this.context.api.showErrorNotification(
                           'Failed to enable "Local Edits"',
-                          err,
+                          unknownToError(err),
                         );
                       }
                     }

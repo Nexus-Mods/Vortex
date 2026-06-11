@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import type { ICollection, IDownloadURL, IRevision } from "@nexusmods/nexus-api";
+import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 
 import * as actions from "../../actions";
@@ -81,10 +82,11 @@ async function collectionUpdate(
           { allowInstall: false },
         ),
       );
-    } catch (err: any) {
-      if (err.name === "AlreadyDownloaded") {
+    } catch (err) {
+      const e = err as Error & { fileName?: string };
+      if (e.name === "AlreadyDownloaded") {
         const { files } = api.getState().persistent.downloads;
-        dlId = Object.keys(files).find((iter) => files[iter].localPath === err.fileName);
+        dlId = Object.keys(files).find((iter) => files[iter].localPath === e.fileName);
       }
       if (dlId === undefined) {
         throw err;
@@ -265,7 +267,7 @@ async function collectionUpdate(
     }
   } catch (err) {
     if (!(err instanceof util.UserCanceled)) {
-      api.showErrorNotification("Failed to download collection", err, {
+      api.showErrorNotification("Failed to download collection", unknownToError(err), {
         allowReport: !(err instanceof util.ProcessCanceled),
         warning: err instanceof util.ProcessCanceled,
       });
@@ -298,7 +300,7 @@ export function onCollectionUpdate(
         })
         .catch((err) => {
           if (!(err instanceof util.UserCanceled)) {
-            api.showErrorNotification("Failed to update collection", err);
+            api.showErrorNotification("Failed to update collection", unknownToError(err));
           }
           cb?.(err);
         }),

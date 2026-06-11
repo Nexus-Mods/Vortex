@@ -1,3 +1,4 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as React from "react";
 import type { TFunction } from "react-i18next";
 
@@ -29,12 +30,12 @@ export function SuccessRating(props: ISuccessRatingProps) {
         } else {
           setRating(rev.rating.average);
         }
-      } catch (err: any) {
+      } catch (err) {
         log("error", "failed to get remote info for revision", {
           revisionId,
           collectionSlug,
           revisionNumber,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     })();

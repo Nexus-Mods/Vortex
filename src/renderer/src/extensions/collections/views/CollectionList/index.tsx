@@ -1,4 +1,5 @@
 import type { IRating, IRevision } from "@nexusmods/nexus-api";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
@@ -415,20 +416,20 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     try {
       if (mods[modId]?.attributes?.editable) {
         api.events.emit("analytics-track-click-event", "Collections", "Remove Workshop Collection");
-        return this.removeWorkshop(modId).catch((err: any) => {
+        return this.removeWorkshop(modId).catch((err: unknown) => {
           const allowReport =
-            !["EPERM"].includes(err.code) &&
+            !["EPERM"].includes(getErrorCode(err)) &&
             !(err instanceof util.ProcessCanceled) &&
             !(err instanceof util.UserCanceled);
-          api.showErrorNotification("Failed to remove collection", err, {
+          api.showErrorNotification("Failed to remove collection", unknownToError(err), {
             allowReport,
           });
         });
       } else {
         api.events.emit("analytics-track-click-event", "Collections", "Remove Added Collection");
-        return this.cancel(modId, false).catch((err: any) => {
-          api.showErrorNotification("Failed to remove collection", err, {
-            allowReport: !["EPERM"].includes(err.code),
+        return this.cancel(modId, false).catch((err: unknown) => {
+          api.showErrorNotification("Failed to remove collection", unknownToError(err), {
+            allowReport: !["EPERM"].includes(getErrorCode(err)),
           });
         });
       }
@@ -442,7 +443,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
           message: err.message,
         });
       } else {
-        api.showErrorNotification("Failed to remove collection", err);
+        api.showErrorNotification("Failed to remove collection", unknownToError(err));
       }
     }
   };
@@ -505,11 +506,11 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
 
     eaa(ruleGroups.requires, false)
       .then(() => eaa(ruleGroups.recommends, true))
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (err instanceof util.UserCanceled) {
           return;
         }
-        api.showErrorNotification("Failed to install dependencies", err, {
+        api.showErrorNotification("Failed to install dependencies", unknownToError(err), {
           allowReport: !(err instanceof util.ProcessCanceled),
         });
       });

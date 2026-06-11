@@ -1,6 +1,7 @@
 /* eslint-disable */
 import * as path from "node:path";
 
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import * as React from "react";
 
 import * as actions from "../../actions";
@@ -241,8 +242,8 @@ async function genRemoveIniTweak(
           api.store.dispatch(
             actions.setINITweakEnabled(gameId, collection.id, targetTweak.fileName, false),
           );
-        } catch (err: any) {
-          if (err.code === "ENOENT") {
+        } catch (err) {
+          if (getErrorCode(err) === "ENOENT") {
             // No file, no problem.
             const { gameId, collection } = props;
             api.store.dispatch(
@@ -250,8 +251,8 @@ async function genRemoveIniTweak(
             );
             return;
           }
-          api.showErrorNotification("Failed to remove INI tweak", err, {
-            allowReport: ["EPERM"].includes(err.code),
+          api.showErrorNotification("Failed to remove INI tweak", unknownToError(err), {
+            allowReport: ["EPERM"].includes(getErrorCode(err)),
           });
         }
       }
@@ -312,9 +313,9 @@ async function genEnableIniTweaks(api: types.IExtensionApi, gameId: string, mod:
     if (batched.length > 0) {
       util.batchDispatch(api.store, batched);
     }
-  } catch (err: any) {
-    if (err.code !== "ENOENT") {
-      api.showErrorNotification("Failed to enable collection ini tweaks", err);
+  } catch (err) {
+    if (getErrorCode(err) !== "ENOENT") {
+      api.showErrorNotification("Failed to enable collection ini tweaks", unknownToError(err));
     }
   }
 }

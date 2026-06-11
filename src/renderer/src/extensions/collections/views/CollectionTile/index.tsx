@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { unknownToError } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import memoizeOne from "memoize-one";
 import * as React from "react";
@@ -334,7 +335,10 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
             prom
               .catch((err) => {
                 if (!(err instanceof util.UserCanceled)) {
-                  this.context.api.showErrorNotification("Failed to update collection", err);
+                  this.context.api.showErrorNotification(
+                    "Failed to update collection",
+                    unknownToError(err),
+                  );
                 }
               })
               .finally(() => {

@@ -1,3 +1,5 @@
+import { unknownToError } from "@vortex/shared";
+
 import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import * as selectors from "../../../util/selectors";
@@ -127,7 +129,7 @@ export async function uploadCollection(
       }
     } catch (err) {
       if (!(err instanceof util.UserCanceled) && !(err instanceof util.ProcessCanceled)) {
-        api.showErrorNotification("Failed to upload to API", err, {
+        api.showErrorNotification("Failed to upload to API", unknownToError(err), {
           allowReport: false,
         });
       }

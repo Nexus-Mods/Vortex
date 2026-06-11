@@ -1,5 +1,6 @@
 import * as path from "node:path";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { ControlLabel, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
@@ -89,12 +90,12 @@ async function getIncludedPlugins(
             extensions.has(path.extname(fileName).toLowerCase()),
           );
           includedPlugins.push(...plugins);
-        } catch (err: any) {
+        } catch (err) {
           // failure to read the mod staging folder probably means something changed in parallel,
           // could be the user removing the directory or something.
           // Not really a point reporting this from this extension, if the files are gone the mod
           // contains no plugins, simple as that
-          log("warn", "failed to read plugins included in mod", err.message);
+          log("warn", "failed to read plugins included in mod", getErrorMessageOrDefault(err));
         }
       }
     }),

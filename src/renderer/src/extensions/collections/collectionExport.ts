@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import type { ICreateCollectionResult, IGraphErrorDetail } from "@nexusmods/nexus-api";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
@@ -90,8 +91,8 @@ async function writeCollectionToFile(
         path.join(outputPath, "INI Tweaks", tweak),
       );
     }
-  } catch (err: any) {
-    if (err.code !== "ENOENT") {
+  } catch (err) {
+    if (getErrorCode(err) !== "ENOENT") {
       throw err;
     } // else: no ini tweak, no problem
   }
@@ -102,8 +103,8 @@ async function writeCollectionToFile(
   const zipPath = path.join(modPath, "export", `collection_${mod.attributes?.version ?? "0"}.7z`);
   try {
     await fs.removeAsync(zipPath);
-  } catch (err: any) {
-    if (err.code !== "ENOENT") {
+  } catch (err) {
+    if (getErrorCode(err) !== "ENOENT") {
       throw err;
     }
   }
@@ -330,28 +331,33 @@ export async function doExportToAPI(
       }
     });
     progressEnd();
-  } catch (err: any) {
+  } catch (err) {
     progressEnd();
-    if (err.name === "ModFileNotFound") {
-      const file = info.mods.find((iter) => iter.source.fileId === err.fileId);
+    // These upload errors are matched by name (a string that survives IPC and
+    // module-duplication, unlike instanceof). GraphError/ParameterInvalid set
+    // their `name` to the class name; ModFileNotFound is a name-only error?
+    // TODO: "ModFileNotFound" might be dead code - need to verify.
+    const e = err as Error & { fileId?: number; details?: IGraphErrorDetail[] };
+    if (e.name === "ModFileNotFound") {
+      const file = info.mods.find((iter) => iter.source.fileId === e.fileId);
       api.sendNotification({
         type: "error",
         title:
           "The server can't find one of the files in the collection, " +
           "are mod id and file id for it set correctly?",
-        message: file !== undefined ? file.name : `id: ${err.fileId}`,
+        message: file !== undefined ? file.name : `id: ${e.fileId}`,
       });
       throw new util.ProcessCanceled("Mod file not found");
-    } else if (err.constructor.name === "ParameterInvalid") {
+    } else if (e.name === "ParameterInvalid") {
       api.sendNotification({
         type: "error",
         title: "The server rejected this collection",
-        message: err.message || "<No reason given>",
+        message: e.message || "<No reason given>",
       });
       throw new util.ProcessCanceled("collection rejected");
-    } else if (err.constructor.name === "GraphError") {
-      const message: string = err.message;
-      const details: IGraphErrorDetail[] = err["details"] ?? [];
+    } else if (e.name === "GraphError") {
+      const message: string = e.message;
+      const details: IGraphErrorDetail[] = e.details ?? [];
       api.sendNotification({
         type: "error",
         message: "The server rejected this collection",
@@ -380,7 +386,7 @@ export async function doExportToAPI(
       });
       throw new util.ProcessCanceled("collection rejected");
     } else if (err instanceof util.ProcessCanceled) {
-      api.showErrorNotification("Failed to upload collection", err, {
+      api.showErrorNotification("Failed to upload collection", unknownToError(err), {
         allowReport: false,
       });
     } else {
@@ -446,7 +452,7 @@ export async function doExportToFile(api: types.IExtensionApi, gameId: string, m
       actions: dialogActions,
     });
   } catch (err) {
-    api.showErrorNotification("Failed to export collection", err);
+    api.showErrorNotification("Failed to export collection", unknownToError(err));
   }
   progressEnd();
 }

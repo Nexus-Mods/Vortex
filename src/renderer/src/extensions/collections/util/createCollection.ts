@@ -1,3 +1,5 @@
+import { unknownToError } from "@vortex/shared";
+
 import type * as types from "../../../types/api";
 import { MOD_TYPE } from "../constants";
 
@@ -40,6 +42,6 @@ export async function createCollection(
       });
     });
   } catch (err) {
-    api.showErrorNotification("Failed to create collection", err);
+    api.showErrorNotification("Failed to create collection", unknownToError(err));
   }
 }

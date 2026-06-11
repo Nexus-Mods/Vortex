@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import type { ICollection, IRevision } from "@nexusmods/nexus-api";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type * as types from "../../../types/api";
@@ -178,11 +179,15 @@ class InfoCache {
         path.join(stagingPath, colMod.installationPath, "collection.json"),
       );
       return collectionInfo.modRules;
-    } catch (err: any) {
-      if (err.code !== "ENOENT") {
-        this.mApi.showErrorNotification("Failed to cache collection mod rules", err, {
-          allowReport: false,
-        });
+    } catch (err) {
+      if (getErrorCode(err) !== "ENOENT") {
+        this.mApi.showErrorNotification(
+          "Failed to cache collection mod rules",
+          unknownToError(err),
+          {
+            allowReport: false,
+          },
+        );
       }
       return [];
     }

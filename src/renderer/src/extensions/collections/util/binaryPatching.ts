@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
 
@@ -72,9 +73,13 @@ export function scanForDiffs(
                     try {
                       sourceChecksums[entry.name] = entry["crc"].toUpperCase();
                     } catch (err) {
-                      api.showErrorNotification("Failed to determine checksum for file", err, {
-                        message: entry.name,
-                      });
+                      api.showErrorNotification(
+                        "Failed to determine checksum for file",
+                        unknownToError(err),
+                        {
+                          message: entry.name,
+                        },
+                      );
                     }
                   }
                 }
@@ -183,7 +188,7 @@ export async function applyPatches(
       }
     } catch (err) {
       err["Collection"] = util.renderModName(collection);
-      api.showErrorNotification("failed to patch", err, {
+      api.showErrorNotification("failed to patch", unknownToError(err), {
         message: filePath,
       });
     }

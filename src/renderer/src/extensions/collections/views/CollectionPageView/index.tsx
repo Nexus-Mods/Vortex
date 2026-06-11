@@ -5,6 +5,7 @@ import type {
   IRevision,
   RatingOptions,
 } from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
@@ -431,12 +432,12 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       const { infoCache } = this.props.driver;
       try {
         await infoCache.getRevisionInfo(revisionId, collectionSlug, revisionNumber);
-      } catch (err: any) {
+      } catch (err) {
         log("error", "failed to get remote info for revision", {
           revisionId,
           collectionSlug,
           revisionNumber,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     }
@@ -487,12 +488,12 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             collectionSlug,
             revisionNumber,
           );
-        } catch (err: any) {
+        } catch (err) {
           log("error", "failed to get remote info for revision", {
             revisionId,
             collectionSlug,
             revisionNumber,
-            error: err.message,
+            error: getErrorMessageOrDefault(err),
           });
         }
       }
@@ -1023,7 +1024,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       })
       .catch(util.UserCanceled, () => null)
       .catch((err) => {
-        this.context.api.showErrorNotification("Failed to remove selected mods", err);
+        this.context.api.showErrorNotification(
+          "Failed to remove selected mods",
+          unknownToError(err),
+        );
       });
   };
 

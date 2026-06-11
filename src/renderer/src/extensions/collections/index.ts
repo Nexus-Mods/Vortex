@@ -3,6 +3,7 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -168,7 +169,9 @@ function makeOnUnfulfilledRules(api: types.IExtensionApi) {
           action: (dismiss) => {
             initFromProfile(api, collectionProfile)
               .then(dismiss)
-              .catch((err: any) => api.showErrorNotification("Failed to update collection", err));
+              .catch((err: unknown) =>
+                api.showErrorNotification("Failed to update collection", unknownToError(err)),
+              );
           },
         });
       } else if (profile !== undefined) {
@@ -314,7 +317,7 @@ async function installCollection(api: types.IExtensionApi, revision: IRevision) 
           undefined,
           (err) => {
             if (err !== null && !(err instanceof util.UserCanceled)) {
-              api.showErrorNotification("Failed to download collection", err);
+              api.showErrorNotification("Failed to download collection", unknownToError(err));
             }
           },
           undefined,
@@ -520,7 +523,7 @@ async function removeCollection(
     if (!(err instanceof util.UserCanceled)) {
       // possible reason for ProcessCanceled is that (un-)deployment may
       // not be possible atm, we definitively should report that
-      api.showErrorNotification("Failed to remove mods", err, {
+      api.showErrorNotification("Failed to remove mods", unknownToError(err), {
         message: modName,
         allowReport: !(err instanceof util.ProcessCanceled),
         warning: err instanceof util.ProcessCanceled,
@@ -670,7 +673,7 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
         }
       }
     } catch (err) {
-      api.showErrorNotification("Failed to check collection for update", err);
+      api.showErrorNotification("Failed to check collection for update", unknownToError(err));
     }
   }
 
@@ -922,15 +925,23 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
             try {
               await postprocessCollection(context.api, gameId, mod, collectionInfo, mods);
             } catch (err) {
-              context.api.showErrorNotification("Failed to apply collection rules", err, {
-                message: util.renderModName(mod),
-              });
+              context.api.showErrorNotification(
+                "Failed to apply collection rules",
+                unknownToError(err),
+                {
+                  message: util.renderModName(mod),
+                },
+              );
             }
           })
-          .catch((err: any) => {
-            context.api.showErrorNotification("Failed to read collection info", err, {
-              message: util.renderModName(mod),
-            });
+          .catch((err: unknown) => {
+            context.api.showErrorNotification(
+              "Failed to read collection info",
+              unknownToError(err),
+              {
+                message: util.renderModName(mod),
+              },
+            );
           });
       }
     },
@@ -961,7 +972,7 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
 
   // context.registerAction('global-icons', 100, 'highlight-lab', {}, 'Quick Collection', () => {
   //   initFromProfile(context.api)
-  //     .catch(err => context.api.showErrorNotification('Failed to init collection', err));
+  //     .catch(err => context.api.showErrorNotification('Failed to init collection', unknownToError(err)));
   // }, () => {
   //   const state = context.api.getState();
   //   const activeProfile = selectors.activeProfile(state);
@@ -975,8 +986,8 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
     {},
     "Init Collection",
     (profileIds: string[]) => {
-      initFromProfile(context.api, profileIds[0]).catch((err: any) =>
-        context.api.showErrorNotification("Failed to init collection", err),
+      initFromProfile(context.api, profileIds[0]).catch((err: unknown) =>
+        context.api.showErrorNotification("Failed to init collection", unknownToError(err)),
       );
     },
     (profileIds: string[]) => !profileCollectionExists(context.api, profileIds[0]),
@@ -989,8 +1000,8 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
     {},
     "Update Collection",
     (profileIds: string[]) => {
-      initFromProfile(context.api, profileIds[0]).catch((err: any) =>
-        context.api.showErrorNotification("Failed to update collection", err),
+      initFromProfile(context.api, profileIds[0]).catch((err: unknown) =>
+        context.api.showErrorNotification("Failed to update collection", unknownToError(err)),
       );
     },
     (profileIds: string[]) => profileCollectionExists(context.api, profileIds[0]),
@@ -1005,8 +1016,8 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
     (instanceIds: string[]) => {
       addCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch((err: any) =>
-          context.api.showErrorNotification("failed to add mod to collection", err),
+        .catch((err: unknown) =>
+          context.api.showErrorNotification("failed to add mod to collection", unknownToError(err)),
         );
     },
     (instanceIds: string[]) => addCollectionCondition(context.api, instanceIds),
@@ -1021,8 +1032,8 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
     (instanceIds: string[]) => {
       addCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch((err: any) =>
-          context.api.showErrorNotification("failed to add mod to collection", err),
+        .catch((err: unknown) =>
+          context.api.showErrorNotification("failed to add mod to collection", unknownToError(err)),
         );
     },
     (instanceIds: string[]) => addCollectionCondition(context.api, instanceIds),
@@ -1037,8 +1048,11 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
     (instanceIds: string[]) => {
       removeCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch((err: any) =>
-          context.api.showErrorNotification("failed to remove mod from collection", err),
+        .catch((err: unknown) =>
+          context.api.showErrorNotification(
+            "failed to remove mod from collection",
+            unknownToError(err),
+          ),
         );
     },
     (instanceIds: string[]) => removeCollectionCondition(context.api, instanceIds),
@@ -1053,8 +1067,11 @@ function register(context: types.IExtensionContext, collectionsCB: ICallbackMap)
     (instanceIds: string[]) => {
       removeCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch((err: any) =>
-          context.api.showErrorNotification("failed to remove mod from collection", err),
+        .catch((err: unknown) =>
+          context.api.showErrorNotification(
+            "failed to remove mod from collection",
+            unknownToError(err),
+          ),
         );
     },
     (instanceIds: string[]) => removeCollectionCondition(context.api, instanceIds),
@@ -1286,10 +1303,10 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
               displayMS: 5000,
             });
           })
-          .catch((err: any) => {
+          .catch((err: unknown) => {
             log("error", "Failed to pause collection after logout", {
               modId,
-              error: err.message,
+              error: getErrorMessageOrDefault(err),
             });
           });
       }
@@ -1406,9 +1423,9 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
               }, 100);
             }
           })
-          .catch((err: any) => {
+          .catch((err: unknown) => {
             log("warn", "failed to show mod instructions suppress dialog", {
-              error: err.message,
+              error: getErrorMessageOrDefault(err),
             });
           });
       }
@@ -1543,7 +1560,7 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
       }
     } catch (err) {
       if (!(err instanceof util.UserCanceled)) {
-        api.showErrorNotification("Failed to add collection", err, {
+        api.showErrorNotification("Failed to add collection", unknownToError(err), {
           allowReport: !(err instanceof util.ProcessCanceled),
         });
       }
@@ -1587,8 +1604,12 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
   // external callers to chain the pieces.
   api.events.on("pause-collection", (gameId: string, modId: string) => {
     log("info", "pause collection", { gameId, modId });
-    pauseCollection(api, gameId, modId, true).catch((err: any) => {
-      log("error", "failed to pause collection", { gameId, modId, error: err.message });
+    pauseCollection(api, gameId, modId, true).catch((err: unknown) => {
+      log("error", "failed to pause collection", {
+        gameId,
+        modId,
+        error: getErrorMessageOrDefault(err),
+      });
     });
   });
 
@@ -1626,7 +1647,9 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
       "collections",
       path.join(util.getVortexPath("assets"), "fonts", "collections.svg"),
     )
-    .catch((err: any) => api.showErrorNotification("failed to install icon set", err));
+    .catch((err: unknown) =>
+      api.showErrorNotification("failed to install icon set", unknownToError(err)),
+    );
 
   const iconPath = path.join(util.getVortexPath("assets"), "images", "collectionicon.svg");
   document

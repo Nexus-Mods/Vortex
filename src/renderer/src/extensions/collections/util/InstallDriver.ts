@@ -2,6 +2,7 @@ import * as path from "path";
 
 /* eslint-disable */
 import * as nexusApi from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 
@@ -920,12 +921,12 @@ class InstallDriver {
         this.mRevisionInfo = Array.isArray(nexusInfo?.revisionInfo?.modFiles)
           ? nexusInfo.revisionInfo
           : await this.mInfoCache.getRevisionInfo(revisionId, slug, this.revisionNumber);
-      } catch (err: any) {
+      } catch (err) {
         log("error", "failed to get remote info for revision", {
           revisionId,
           slug,
           revisionNumber: this.revisionNumber,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     }

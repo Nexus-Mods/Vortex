@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as React from "react";
 import { generate as shortid } from "shortid";
 
@@ -195,10 +196,10 @@ async function setUpTools(
         await fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve());
         try {
           await util["extractExeIcon"](tool.exe, iconPath);
-        } catch (err: any) {
+        } catch (err) {
           log("warn", "failed to extract exe icon", {
             executable: tool.exe,
-            error: err.message,
+            error: getErrorMessageOrDefault(err),
           });
         }
       }

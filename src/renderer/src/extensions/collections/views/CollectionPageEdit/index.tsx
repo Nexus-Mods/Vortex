@@ -1,4 +1,5 @@
 import type { IRevision } from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import memoize from "memoize-one";
 import * as React from "react";
 import { Badge, Panel, Tab, Tabs } from "react-bootstrap";
@@ -324,12 +325,12 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
               collectionSlug,
               revisionNumber,
             )) ?? undefined;
-        } catch (err: any) {
+        } catch (err) {
           log("error", "failed to get remote info for revision", {
             revisionId,
             collectionSlug,
             revisionNumber,
-            error: err.message,
+            error: getErrorMessageOrDefault(err),
           });
         }
       }

@@ -1,4 +1,5 @@
 import type { IRevision } from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
@@ -213,9 +214,9 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       .then(() =>
         this.updateSorted(collectionsNow, this.props.sortAdded, this.props.sortWorkshop, false),
       )
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         log("error", "failed to update list of collections", {
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       });
   }
@@ -550,7 +551,10 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       this.refreshImages();
     } catch (err) {
       if (!(err instanceof util.UserCanceled)) {
-        this.context.api.showErrorNotification("Failed to create quick collection", err);
+        this.context.api.showErrorNotification(
+          "Failed to create quick collection",
+          unknownToError(err),
+        );
       }
     }
   };
@@ -564,7 +568,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       this.refreshImages();
     } catch (err) {
       if (!(err instanceof util.UserCanceled)) {
-        this.context.api.showErrorNotification("Failed to init collection", err);
+        this.context.api.showErrorNotification("Failed to init collection", unknownToError(err));
       }
     }
   };
@@ -589,7 +593,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
         this.refreshImages();
       }
     } catch (err) {
-      this.context.api.showErrorNotification("Failed to init collection", err);
+      this.context.api.showErrorNotification("Failed to init collection", unknownToError(err));
     }
   };
 

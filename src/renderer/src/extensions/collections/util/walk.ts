@@ -1,3 +1,4 @@
+import { getErrorCode } from "@vortex/shared";
 import type { IEntry, IWalkOptions } from "turbowalk";
 import turbowalk from "turbowalk";
 
@@ -26,6 +27,8 @@ export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Pro
       return Promise.resolve();
     },
     walkOptions,
-  ).catch((err: any) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)));
+  ).catch((err: unknown) =>
+    getErrorCode(err) === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+  );
   return walkResults;
 }

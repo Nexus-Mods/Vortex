@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
 
@@ -47,7 +48,7 @@ export async function matchChecksums(
             sourceChecksums.add(entry["crc"].toUpperCase());
           }
         } catch (err) {
-          api.showErrorNotification("Failed to determine checksum for file", err, {
+          api.showErrorNotification("Failed to determine checksum for file", unknownToError(err), {
             message: entry.name,
           });
         }
