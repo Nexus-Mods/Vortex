@@ -3024,7 +3024,7 @@ class InstallManager {
     }
 
     return Object.values(session.mods).filter((mod: any) =>
-      ["installed", "failed", "skipped"].includes(mod.status),
+      ["installed", "failed", "ignored"].includes(mod.status),
     ).length;
   }
 

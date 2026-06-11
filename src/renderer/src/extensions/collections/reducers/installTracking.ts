@@ -15,7 +15,7 @@ const DOWNLOADED_STATUSES = new Set([
   "downloading",
   "installed",
   "installing",
-  "skipped",
+  "ignored",
 ]);
 
 /**
@@ -30,9 +30,9 @@ function adjustCounters(
   downloadedCount: number;
   installedCount: number;
   failedCount: number;
-  skippedCount: number;
+  ignoredCount: number;
 } {
-  let { downloadedCount, installedCount, failedCount, skippedCount } = session;
+  let { downloadedCount, installedCount, failedCount, ignoredCount } = session;
 
   // downloadedCount tracks mods in any "active" (non-pending, non-failed) state
   if (!DOWNLOADED_STATUSES.has(oldStatus) && DOWNLOADED_STATUSES.has(newStatus)) downloadedCount++;
@@ -46,11 +46,11 @@ function adjustCounters(
   if (oldStatus !== "failed" && newStatus === "failed") failedCount++;
   if (oldStatus === "failed" && newStatus !== "failed") failedCount--;
 
-  // skippedCount
-  if (oldStatus !== "skipped" && newStatus === "skipped") skippedCount++;
-  if (oldStatus === "skipped" && newStatus !== "skipped") skippedCount--;
+  // ignoredCount
+  if (oldStatus !== "ignored" && newStatus === "ignored") ignoredCount++;
+  if (oldStatus === "ignored" && newStatus !== "ignored") ignoredCount--;
 
-  return { downloadedCount, installedCount, failedCount, skippedCount };
+  return { downloadedCount, installedCount, failedCount, ignoredCount };
 }
 
 const collectionInstallReducer = {
@@ -69,7 +69,7 @@ const collectionInstallReducer = {
         downloadedCount,
         installedCount,
         failedCount: 0,
-        skippedCount: 0,
+        ignoredCount: 0,
       };
 
       return util.setSafe(state, ["activeSession"], session);

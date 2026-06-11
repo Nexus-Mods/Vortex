@@ -37,7 +37,7 @@ function makeSession(overrides: Partial<any> = {}): any {
     downloadedCount: 0,
     installedCount: 0,
     failedCount: 0,
-    skippedCount: 0,
+    ignoredCount: 0,
     mods: {},
     ...overrides,
   };
@@ -154,7 +154,7 @@ describe("getOptionalModsProgress", () => {
       mods: {
         r1: { type: "requires", status: "installed", rule: {} },
         o1: { type: "recommends", status: "installed", rule: {} },
-        o2: { type: "recommends", status: "skipped", rule: {} },
+        o2: { type: "recommends", status: "ignored", rule: {} },
       },
     });
     const result = getOptionalModsProgress(makeState(session), "col1");
@@ -162,7 +162,7 @@ describe("getOptionalModsProgress", () => {
     expect(result).toEqual({
       installed: 1,
       total: 2,
-      skipped: 1,
+      ignored: 1,
     });
   });
 });

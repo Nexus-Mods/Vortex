@@ -10,7 +10,7 @@ export type CollectionModStatus =
   | "installing" // Currently being installed
   | "installed" // Successfully installed
   | "failed" // Installation failed
-  | "skipped" // Skipped by user choice
+  | "ignored" // Excluded by user choice (skipped during install or manually ignored)
   | "optional"; // Optional mod not selected
 
 /**
@@ -54,7 +54,7 @@ export interface ICollectionInstallSession {
   /** Number of mods that failed to install */
   failedCount: number;
   /** Number of optional mods skipped */
-  skippedCount: number;
+  ignoredCount: number;
 }
 
 export interface ICollectionInstallState {

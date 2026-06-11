@@ -7,7 +7,7 @@ export const startInstallSession = createAction(
   (
     sessionInfo: Omit<
       types.ICollectionInstallSession,
-      "downloadedCount" | "installedCount" | "failedCount" | "skippedCount"
+      "downloadedCount" | "installedCount" | "failedCount" | "ignoredCount"
     >,
   ) => sessionInfo,
 );

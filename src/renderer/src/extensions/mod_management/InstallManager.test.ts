@@ -184,7 +184,7 @@ describe("Phased Installer", () => {
       for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
         const required = allMods.filter((m) => (m.phase ?? 0) === phase && m.type === "requires");
         const completed = required.filter((m) =>
-          ["installed", "failed", "skipped"].includes(m.status),
+          ["installed", "failed", "ignored"].includes(m.status),
         );
         if (completed.length >= required.length && required.length > 0) {
           highest = phase;
