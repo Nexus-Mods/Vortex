@@ -57,7 +57,7 @@ function toCandidate(
   mod: ModDetail | undefined,
 ): Candidate {
   return {
-    versionUid: row.versionUid,
+    fileVersionUid: row.fileVersionUid,
     modUid: row.modUid,
     modFileId: row.modFileId,
     category: row.category,
@@ -80,20 +80,20 @@ export async function checkFileLevelRequirements(
 
   // Get the installed files update group ids (modFileId)
   // TODO(cache): a file version's update group + position rarely change
-  // consider caching by versionUid → detail across runs and refresh occasionally.
+  // consider caching by fileVersionUid → detail across runs and refresh occasionally.
   const installedDetails = await ports.fetchFileVersionDetails(
-    installedFiles.map((f) => f.fileUid),
+    installedFiles.map((f) => f.fileVersionUid),
   );
-  const chainOf = mapByKey(installedDetails, (d) => d.uid);
+  const chainOf = mapByKey(installedDetails, (d) => d.fileVersionUid);
 
   // Index installed files for quick lookup
   const enabledByUid = new Map<string, boolean>();
   const installedByChain = new Map<string, InstalledFile[]>();
 
   for (const f of installedFiles) {
-    enabledByUid.set(f.fileUid, f.enabled);
+    enabledByUid.set(f.fileVersionUid, f.enabled);
 
-    const chain = chainOf.get(f.fileUid)?.modFileId;
+    const chain = chainOf.get(f.fileVersionUid)?.modFileId;
     if (chain === undefined) continue;
 
     const bucket = installedByChain.get(chain);
@@ -102,16 +102,16 @@ export async function checkFileLevelRequirements(
   }
 
   // TODO(cache): a source file's dependencies rarely change between runs
-  // consider caching by sourceVersionUid → candidate rows and refresh occasionally.
-  const candidates = await ports.fetchCandidates(enabled.map((f) => f.fileUid));
+  // consider caching by sourceFileVersionUid → candidate rows and refresh occasionally.
+  const candidates = await ports.fetchCandidates(enabled.map((f) => f.fileVersionUid));
   if (candidates.length === 0) return { sources: [] };
 
   // Classify each dependency; only recommend when no matching version is owned.
-  const plan = [...groupBy(candidates, (c) => c.sourceVersionUid)].map(
-    ([sourceFileUid, srcRows]) => ({
-      sourceFileUid,
+  const plan = [...groupBy(candidates, (c) => c.sourceFileVersionUid)].map(
+    ([sourceFileVersionUid, srcRows]) => ({
+      sourceFileVersionUid,
       defs: [...groupBy(srcRows, (c) => c.definitionId)].map(([definitionId, defRows]) => {
-        const candidateVersionUids = new Set(defRows.map((r) => r.versionUid));
+        const candidateFileVersionUids = new Set(defRows.map((r) => r.fileVersionUid));
         const targetGroups = new Set(defRows.map((r) => r.modFileId));
 
         const satisfyingEnabled: string[] = [];
@@ -135,17 +135,19 @@ export async function checkFileLevelRequirements(
         // - an installed/enabled version pins a chain's intersection
 
         // Find matches in installed files
-        for (const versionUid of candidateVersionUids) {
-          const enabled = enabledByUid.get(versionUid);
+        for (const fileVersionUid of candidateFileVersionUids) {
+          const enabled = enabledByUid.get(fileVersionUid);
           if (enabled === undefined) continue;
-          (enabled ? satisfyingEnabled : satisfyingDisabled).push(versionUid);
+          (enabled ? satisfyingEnabled : satisfyingDisabled).push(fileVersionUid);
+          // TODO: could break early on match, if simple resolver and
+          // consumer doesn't want all the matches or the wrong version data.
         }
 
         // Find other versions of a dependency target chain (wrong version).
         for (const group of targetGroups) {
           for (const f of installedByChain.get(group) ?? []) {
-            if (candidateVersionUids.has(f.fileUid)) continue;
-            (f.enabled ? wrongEnabled : wrongDisabled).push(f.fileUid);
+            if (candidateFileVersionUids.has(f.fileVersionUid)) continue;
+            (f.enabled ? wrongEnabled : wrongDisabled).push(f.fileVersionUid);
           }
         }
 
@@ -167,23 +169,23 @@ export async function checkFileLevelRequirements(
   // Hydrate only the recommended candidates (files the user doesn't have).
   // TODO(cache): consider caching candidate display data
   const recRows = plan.flatMap((s) => s.defs.flatMap((d) => d.recRows));
-  const recVersionUids = unique(recRows.map((r) => r.versionUid));
+  const recFileVersionUids = unique(recRows.map((r) => r.fileVersionUid));
   const recModUids = unique(recRows.map((r) => r.modUid));
   const detailByUid = mapByKey(
-    recVersionUids.length ? await ports.fetchFileVersionDetails(recVersionUids) : [],
-    (d) => d.uid,
+    recFileVersionUids.length ? await ports.fetchFileVersionDetails(recFileVersionUids) : [],
+    (d) => d.fileVersionUid,
   );
   const modByUid = mapByKey(
     recModUids.length ? await ports.fetchModDetails(recModUids) : [],
     (m) => m.modUid,
   );
 
-  const sources = plan.map(({ sourceFileUid, defs }) => ({
-    sourceFileUid,
+  const sources = plan.map(({ sourceFileVersionUid, defs }) => ({
+    sourceFileVersionUid,
     dependencies: defs.map(({ recRows: rec, ...dep }) => ({
       ...dep,
       recommended: rec.map((r) =>
-        toCandidate(r, detailByUid.get(r.versionUid), modByUid.get(r.modUid)),
+        toCandidate(r, detailByUid.get(r.fileVersionUid), modByUid.get(r.modUid)),
       ),
     })),
   }));
