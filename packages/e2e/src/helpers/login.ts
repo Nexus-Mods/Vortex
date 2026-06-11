@@ -1,23 +1,25 @@
-import { type Browser, expect, type ElectronApplication, type Page } from "@playwright/test";
+import { type Browser, expect, type Page, type TestInfo } from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
+import { type DiagnosticsTeardown, instrumentNexusPage } from "./diagnostics";
 import { launchNexusBrowser } from "./nexusBrowser";
-import { GlobalTimeouts, Timeouts } from "./timeouts";
+import { Timeouts } from "./timeouts";
 import { freeUser, type NexusUser } from "./users";
 
 export interface LoginToNexusOptions {
+  /**
+   * The Nexus login browser is traced and, on login failure, a trace +
+   * screenshot are attached to `testInfo` under `prefix`. Use a prefix unique
+   * to the caller to avoid attachment name collisions.
+   */
+  nexusDiagnostics: { testInfo: TestInfo; prefix: string };
   /**
    * When true, the auth browser is left open after login completes and is
    * returned to the caller. The caller is then responsible for closing it.
    * Defaults to false (browser is closed once login succeeds).
    */
   keepBrowser?: boolean;
-  /**
-   * Override headless mode for the auth browser. Defaults to true (headless).
-   * Set to false for local debugging only.
-   */
-  headless?: boolean;
   /**
    * Path to a Playwright storage-state file (cookies + localStorage) to
    * preload into the auth browser context. When Nexus session cookies are
@@ -41,15 +43,15 @@ export interface LoginToNexusResult {
 }
 
 export async function loginToNexus(
-  vortexApp: ElectronApplication,
   vortexWindow: Page,
   user: NexusUser = freeUser,
-  options: LoginToNexusOptions = {},
+  options: LoginToNexusOptions,
 ): Promise<LoginToNexusResult | null> {
   const { username, password } = user;
-  let loginPage: Page | null = null;
   let authBrowser: Browser | null = null;
   let authPage: Page | null = null;
+  let nexusTeardown: DiagnosticsTeardown | undefined;
+  let failed = false;
   let leakBrowser = false;
 
   const step =
@@ -65,17 +67,8 @@ export async function loginToNexus(
   });
 
   await step("Click the login button", async () => {
-    const popupPromise = vortexWindow
-      .waitForEvent("popup", { timeout: GlobalTimeouts.ACTION })
-      .catch(() => null);
-    const appWindowPromise = vortexApp
-      .waitForEvent("window", { timeout: GlobalTimeouts.ACTION })
-      .catch(() => null);
-
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
     await vortexLoginPage.vortexLoginButton.click();
-
-    loginPage = (await popupPromise) ?? (await appWindowPromise);
   });
 
   try {
@@ -85,17 +78,13 @@ export async function loginToNexus(
       const oauthUrl = await vortexLoginPage.oauthUrlField.inputValue();
       expect(oauthUrl).toMatch(/^https?:\/\//i);
 
-      if (loginPage !== null) {
-        await loginPage.waitForLoadState("domcontentloaded");
-        await expect(loginPage).toHaveURL(/nexusmods|users\./i);
-      }
-
-      const { browser, page } = await launchNexusBrowser({
-        headless: options.headless,
+      const nexusBrowser = await launchNexusBrowser({
         storageStatePath: options.storageStatePath,
       });
-      authBrowser = browser;
-      authPage = page;
+      authBrowser = nexusBrowser.browser;
+      authPage = nexusBrowser.page;
+
+      nexusTeardown = await instrumentNexusPage(authPage, options.nexusDiagnostics.prefix);
 
       await authPage.goto(oauthUrl, {
         waitUntil: "domcontentloaded",
@@ -133,27 +122,7 @@ export async function loginToNexus(
           await nexusLoginPage.submitLoginButton.click();
         });
         await step("Verify OAuth permission screen", async () => {
-          try {
-            await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
-          } catch (err) {
-            // On failure (rejected creds, captcha, 2FA, site change), drop a
-            // screenshot into test-results/ so the cause is obvious. The
-            // test-results directory is gitignored and cleaned each run.
-            if (authPage !== null) {
-              await authPage
-                .screenshot({
-                  path: `test-results/auth-page-failure-${Date.now()}.png`,
-                  fullPage: true,
-                })
-                .catch(() => undefined);
-              console.error(
-                `[loginToNexus] OAuth permission screen never appeared. URL=${authPage.url()} Title=${await authPage
-                  .title()
-                  .catch(() => "(no title)")}. See test-results/auth-page-failure-*.png.`,
-              );
-            }
-            throw err;
-          }
+          await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
         });
       });
     }
@@ -172,7 +141,16 @@ export async function loginToNexus(
     });
 
     leakBrowser = options.keepBrowser === true;
+  } catch (e) {
+    failed = true;
+    throw e;
   } finally {
+    // Stop tracing + capture a screenshot on failure while the page is still
+    // alive, before the browser is closed below. nexusTeardown is unset only if
+    // the browser failed to launch before instrumentation.
+    if (nexusTeardown !== undefined) {
+      await nexusTeardown(options.nexusDiagnostics.testInfo, failed);
+    }
     if (!leakBrowser) {
       const browserToClose = authBrowser as Browser | null;
       authBrowser = null;

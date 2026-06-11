@@ -57,15 +57,21 @@ The dev inspector runs **the real test** (fixtures: login snapshot, managed
 game, image stubs) headed and single-worker, and launches the app with a fixed
 CDP endpoint on `127.0.0.1:9222` that Chrome DevTools MCP attaches to.
 
-Resolve the pause-file path the same way `llmBreakpoint` does (running `node`
+Resolve the shared tmp paths the same way `llmBreakpoint` does (running `node`
 guarantees the shell and the test agree on `os.tmpdir()` on every platform),
-clear any stale file from a prior run, then start the single test you are
-authoring (background it so the terminal stays free):
+clear any stale files from a prior run, then start the single test you are
+authoring. Redirect its output to a log file, and write a **done sentinel** the
+moment the runner exits (in a subshell, so it fires on pass, fail, or crash) so
+the poll below can tell a pause apart from an early exit. Run this with
+`run_in_background` so the terminal stays free:
 
 ```bash
-PAUSE_FILE="$(node -e 'console.log(require("os").tmpdir())')/vortex-e2e-pause"
-rm -f "$PAUSE_FILE"
-VORTEX_E2E_GREP="<test name>" pnpm nx run @vortex/e2e:dev
+TMP="$(node -e 'console.log(require("os").tmpdir())')"
+PAUSE_FILE="$TMP/vortex-e2e-pause"
+LOG_FILE="$TMP/vortex-e2e-dev.log"
+DONE_FILE="$TMP/vortex-e2e-dev.done"
+rm -f "$PAUSE_FILE" "$LOG_FILE" "$DONE_FILE"
+( VORTEX_E2E_GREP="<test name>" pnpm nx run @vortex/e2e:dev > "$LOG_FILE" 2>&1; echo $? > "$DONE_FILE" )
 ```
 
 `VORTEX_E2E_GREP` is read by `playwright.config.ts` as the test grep, so it must
@@ -73,16 +79,33 @@ match exactly one test. Passing it as an env var (rather than a trailing CLI
 arg) survives forwarding through pnpm and nx cleanly.
 
 When the run reaches an `llmBreakpoint` it creates `$PAUSE_FILE` (containing the
-label) and blocks indefinitely. **Wait for the pause** with a portable
-file-existence poll, backgrounded so you get one notification when it lands:
+label) and blocks indefinitely. But the test can also **fail before reaching the
+breakpoint** (wrong selector, assertion error, launch failure), in which case
+`$PAUSE_FILE` is never created and the runner exits, writing `$DONE_FILE`. So
+the wait must poll for **either** outcome: pause-file appears, **or** done-file
+appears. Never poll for the pause file alone, it would hang forever on a
+pre-breakpoint failure.
 
 ```bash
-until [ -f "$PAUSE_FILE" ]; do sleep 0.5; done; cat "$PAUSE_FILE"
+TMP="$(node -e 'console.log(require("os").tmpdir())')"
+PAUSE_FILE="$TMP/vortex-e2e-pause"
+LOG_FILE="$TMP/vortex-e2e-dev.log"
+DONE_FILE="$TMP/vortex-e2e-dev.done"
+while [ ! -f "$PAUSE_FILE" ] && [ ! -f "$DONE_FILE" ]; do sleep 0.5; done
+if [ -f "$PAUSE_FILE" ]; then
+  echo "[PAUSED] $(cat "$PAUSE_FILE")"
+else
+  echo "[RUNNER EXITED before breakpoint, code $(cat "$DONE_FILE")] read the log to see why it failed:"
+  tail -n 80 "$LOG_FILE"
+fi
 ```
 
-Uses only `[ -f ]` and `sleep`, so it works on Linux, macOS, and Git Bash on
-Windows. (A `[E2E-PAUSE] <label>` console line is also emitted but is not
-guaranteed to reach stdout, so do not grep for it.)
+Uses only `[ -f ]`, `cat`, and `sleep` (no PIDs or signals), so it works on
+Linux, macOS, and Git Bash on Windows. If it prints `[RUNNER EXITED ...]`, the
+test failed: read the log tail, fix the spec, and re-run from the launch step.
+Only drive the MCP when it prints `[PAUSED]`. (A `[E2E-PAUSE] <label>` console
+line is also emitted but is not guaranteed to reach stdout, so do not grep for
+it.)
 
 While paused, drive the live app via the MCP:
 
@@ -100,10 +123,22 @@ evaluate_script: () => { window.__e2e.resume = true; }
 ```
 
 On resume the test removes `$PAUSE_FILE`, re-arming the watcher. Wait for the
-next pause by re-running the same poll before driving the app again:
+next pause by re-running the **same dual-condition poll** before driving the app
+again (the test may also fail or finish between breakpoints, so still check the
+PID, not just the pause file):
 
 ```bash
-until [ -f "$PAUSE_FILE" ]; do sleep 0.5; done; cat "$PAUSE_FILE"
+TMP="$(node -e 'console.log(require("os").tmpdir())')"
+PAUSE_FILE="$TMP/vortex-e2e-pause"
+LOG_FILE="$TMP/vortex-e2e-dev.log"
+DONE_FILE="$TMP/vortex-e2e-dev.done"
+while [ ! -f "$PAUSE_FILE" ] && [ ! -f "$DONE_FILE" ]; do sleep 0.5; done
+if [ -f "$PAUSE_FILE" ]; then
+  echo "[PAUSED] $(cat "$PAUSE_FILE")"
+else
+  echo "[RUNNER EXITED, code $(cat "$DONE_FILE")] no more breakpoints (test passed) or it failed, check the log:"
+  tail -n 80 "$LOG_FILE"
+fi
 ```
 
 Walk the whole flow this way. On a wrong selector or failed assertion: stop the

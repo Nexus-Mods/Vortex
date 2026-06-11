@@ -8,12 +8,19 @@ import {
   expect,
   type ElectronApplication,
   type Page,
+  type TestInfo,
 } from "@playwright/test";
 
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
+import {
+  type DiagnosticsTeardown,
+  instrumentNexusPage,
+  instrumentVortexWindow,
+} from "../helpers/diagnostics";
 import { manageGame, type ManagedGame } from "../helpers/games";
 import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
+import { launchNexusBrowser } from "../helpers/nexusBrowser";
 import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
 import {
@@ -176,8 +183,9 @@ interface WorkerAuthSnapshots {
   /**
    * Returns the auth snapshot for the given user.
    * Authenticates once per worker per user; subsequent calls return the cached result.
+   * testInfo is the triggering test, used to attach diagnostics if the build fails.
    */
-  get(user: NexusUser): Promise<AuthSnapshot>;
+  get(user: NexusUser, testInfo: TestInfo): Promise<AuthSnapshot>;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,10 +203,15 @@ export type VortexTestFixtures = {
   managedGame: ManagedGame;
   /**
    * Path to a Playwright storage-state JSON file with Nexus website cookies,
-   * or undefined when nexusUser is null. Pass to launchNexusBrowser({ storageStatePath })
-   * to get a logged-in browser for browsing nexusmods.com.
+   * or undefined when nexusUser is null. Used internally by the nexusPage fixture.
    */
   nexusStorageState: string | undefined;
+  /**
+   * A logged-in Chromium page pointed at nexusmods.com. Requires nexusUser to be set —
+   * the test is skipped automatically when no user is configured.
+   * Tracing is started on setup and attached to the test report on teardown.
+   */
+  nexusPage: Page;
 };
 
 export type VortexWorkerFixtures = {
@@ -216,6 +229,25 @@ export type VortexOptions = {
    */
   nexusUser: NexusUser | null;
 };
+
+/** Launch a Vortex Electron app against the given user-data dir. */
+async function launchVortexApp(
+  userDataDir: string,
+  opts: { timeout: number; inspect?: boolean },
+): Promise<ElectronApplication> {
+  const { env } = prepareVortexInstance(userDataDir);
+  const mainDir = resolveMainDir();
+  // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can attach
+  // on 127.0.0.1:9222 alongside Playwright's own connection. Only one process can
+  // own the port, so inspect runs must use --workers=1.
+  return electron.launch({
+    executablePath: resolveElectronBinary(),
+    args: [...(opts.inspect ? ["--remote-debugging-port=9222"] : []), mainDir],
+    env,
+    cwd: mainDir,
+    timeout: opts.timeout,
+  });
+}
 
 /**
  * Playwright test with Vortex fixtures.
@@ -250,7 +282,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       const snapshotDirs: string[] = [];
 
       const instance: WorkerAuthSnapshots = {
-        get(user: NexusUser): Promise<AuthSnapshot> {
+        get(user: NexusUser, testInfo: TestInfo): Promise<AuthSnapshot> {
           const key = user.username;
 
           const cached = snapshots.get(key);
@@ -263,25 +295,18 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             const snapshotBase = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-snap-"));
             snapshotDirs.push(snapshotBase);
 
-            const { env } = prepareVortexInstance(snapshotBase);
-            const mainDir = resolveMainDir();
-            const electronBinary = resolveElectronBinary();
-
-            const app = await electron.launch({
-              executablePath: electronBinary,
-              args: [mainDir],
-              env,
-              cwd: mainDir,
-              timeout: Timeouts.SNAPSHOT,
-            });
-
+            const app = await launchVortexApp(snapshotBase, { timeout: Timeouts.SNAPSHOT });
+            let teardown: DiagnosticsTeardown | undefined;
             let storageStatePath: string | undefined;
+            let failed = false;
 
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
-              const loginResult = await loginToNexus(app, window, user, {
+              teardown = await instrumentVortexWindow(app, window, snapshotBase, "snapshot");
+              const loginResult = await loginToNexus(window, user, {
                 skipSteps: true,
                 keepBrowser: true,
+                nexusDiagnostics: { testInfo, prefix: "snapshot-nexus" },
               });
               if (loginResult !== null) {
                 // Save the Nexus website session cookies so mods tests can reuse
@@ -291,7 +316,13 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
                 await loginResult.browser.close();
                 storageStatePath = stateFile;
               }
+            } catch (e) {
+              // At fixture-setup time testInfo.status is not yet recorded, so the
+              // teardown can't infer failure on its own — signal it explicitly.
+              failed = true;
+              throw e;
             } finally {
+              if (teardown !== undefined) await teardown(testInfo, failed);
               // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
               await closeElectronApp(app);
             }
@@ -329,14 +360,14 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   // Test-scoped fixtures
   // ---------------------------------------------------------------------------
 
-  vortexUserDataDir: async ({ workerAuthSnapshots, nexusUser }, use) => {
+  vortexUserDataDir: async ({ workerAuthSnapshots, nexusUser }, use, testInfo) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-"));
 
     if (nexusUser !== null) {
       // Copy the snapshot (produced by a clean Electron close, so DuckDB is
       // fully flushed) into the fresh test dir. prepareVortexInstance will then
       // point ELECTRON_USERDATA/ELECTRON_APPDATA at the copied subdirs.
-      const { snapshotDir } = await workerAuthSnapshots.get(nexusUser);
+      const { snapshotDir } = await workerAuthSnapshots.get(nexusUser, testInfo);
       fs.cpSync(snapshotDir, dir, { recursive: true });
     }
 
@@ -345,80 +376,40 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   },
 
   vortexApp: async ({ vortexUserDataDir }, use) => {
-    const { env } = prepareVortexInstance(vortexUserDataDir);
-    const mainDir = resolveMainDir();
-    const electronBinary = resolveElectronBinary();
-
-    // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can
-    // attach to this fixture-built app (logged in, managed game, stubs) on
-    // 127.0.0.1:9222 alongside Playwright's own connection. Only one process
-    // can own the port, so inspect runs must use --workers=1.
-    const inspect = !!process.env.VORTEX_E2E_INSPECT;
-
-    const app = await electron.launch({
-      executablePath: electronBinary,
-      args: [...(inspect ? ["--remote-debugging-port=9222"] : []), mainDir],
-      env,
-      cwd: mainDir,
+    const app = await launchVortexApp(vortexUserDataDir, {
       timeout: Timeouts.LIFECYCLE,
+      inspect: !!process.env.VORTEX_E2E_INSPECT,
     });
-
     await use(app);
     await closeElectronApp(app);
   },
 
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
     const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
-
-    await mainWindow.context().tracing.start({
-      snapshots: true,
-      screenshots: !!process.env.VORTEX_E2E_HEADED,
-      sources: true,
-    });
+    const teardown = await instrumentVortexWindow(vortexApp, mainWindow, vortexUserDataDir, "main");
     await use(mainWindow);
-
-    const tracePath = testInfo.outputPath("page-trace.zip");
-    await mainWindow.context().tracing.stop({ path: tracePath });
-    await testInfo.attach("page-trace.zip", { path: tracePath, contentType: "application/zip" });
-
-    if (testInfo.status !== testInfo.expectedStatus) {
-      const logPath = path.join(vortexUserDataDir, "userData", "vortex.log");
-      await testInfo.attach("vortex.log", { path: logPath }).catch(() => {});
-
-      // Use Electron's webContents.capturePage() instead of page.screenshot().
-      // The e2e build runs with VORTEX_E2E_HEADLESS=1, which prevents the
-      // BrowserWindow from being shown — hidden windows don't produce
-      // compositor frames, so page.screenshot() hangs waiting for one.
-      // capturePage() reads directly from the renderer and works while hidden.
-      await vortexApp
-        .evaluate(async ({ BrowserWindow }) => {
-          const win = BrowserWindow.getAllWindows().find((w) =>
-            w.webContents.getURL().includes("index.html"),
-          );
-          if (!win) return null;
-          const image = await win.webContents.capturePage();
-          return image.toPNG().toBase64();
-        })
-        .then((base64) => {
-          if (!base64) {
-            return Promise.resolve();
-          }
-          return testInfo.attach("screenshot", {
-            body: Buffer.from(base64, "base64"),
-            contentType: "image/png",
-          });
-        })
-        .catch((e) => console.error(`Failed to capture screenshot: ${e}`));
-    }
+    await teardown(testInfo);
   },
 
-  nexusStorageState: async ({ workerAuthSnapshots, nexusUser }, use) => {
+  nexusStorageState: async ({ workerAuthSnapshots, nexusUser }, use, testInfo) => {
     if (nexusUser === null) {
       await use(undefined);
       return;
     }
-    const { storageStatePath } = await workerAuthSnapshots.get(nexusUser);
+    const { storageStatePath } = await workerAuthSnapshots.get(nexusUser, testInfo);
     await use(storageStatePath);
+  },
+
+  nexusPage: async ({ nexusStorageState }, use, testInfo) => {
+    if (nexusStorageState === undefined) {
+      testInfo.skip(true, "nexusPage requires a logged-in user — set nexusUser in test.use()");
+      return;
+    }
+    const { page, close } = await launchNexusBrowser({ storageStatePath: nexusStorageState });
+    const teardown = await instrumentNexusPage(page, "nexus");
+    await use(page);
+    await teardown(testInfo);
+    await close().catch(() => undefined);
   },
 
   managedGame: async (
