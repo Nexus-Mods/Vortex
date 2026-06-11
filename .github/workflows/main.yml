@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-    branches: [master, release/*]
+    branches: [master, release/*, laz-483-integration]
   pull_request:
-    branches: [master, release/*]
+    branches: [master, release/*, laz-483-integration]
   workflow_dispatch:
 
 concurrency:
