@@ -16,8 +16,7 @@
     "lint": "pnpm eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm eslint --concurrency auto .",
     "test": "pnpm vitest run --config ./vitest.config.ts",
-    "test:downloader": "pnpm vitest run --config ./vitest.downloader.config.ts",
-    "test:adaptor": "pnpm vitest run --config ./vitest.integration.config.ts",
+    "test:integration": "pnpm exec vitest run --config ./vitest.integration.config.ts",
     "publish": "pnpm exec rimraf ./dist && pnpm cross-env pnpm_config_inject_workspace_packages=true pnpm_config_node_linker=hoisted pnpm -F @vortex/main deploy ./dist && node ./dist/prepare-dist-package.mjs",
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
@@ -180,6 +179,11 @@
         ],
         "outputs": [
           "{projectRoot}/build/bundledPlugins/"
+        ]
+      },
+      "test:integration": {
+        "dependsOn": [
+          "build"
         ]
       }
     }

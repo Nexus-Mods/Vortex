@@ -6,9 +6,9 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: "@vortex/main (downloader)",
+      name: "@vortex/main (integration)",
       environment: "node",
-      include: ["src/downloading/*.test.integration.ts"],
+      include: ["src/**/*.test.integration.ts"],
       testTimeout: 30_000,
     },
   }),
