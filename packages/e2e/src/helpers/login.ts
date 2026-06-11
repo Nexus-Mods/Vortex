@@ -112,27 +112,7 @@ export async function loginToNexus(
           await nexusLoginPage.submitLoginButton.click();
         });
         await step("Verify OAuth permission screen", async () => {
-          try {
-            await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
-          } catch (err) {
-            // On failure (rejected creds, captcha, 2FA, site change), drop a
-            // screenshot into test-results/ so the cause is obvious. The
-            // test-results directory is gitignored and cleaned each run.
-            if (authPage !== null) {
-              await authPage
-                .screenshot({
-                  path: `test-results/auth-page-failure-${Date.now()}.png`,
-                  fullPage: true,
-                })
-                .catch(() => undefined);
-              console.error(
-                `[loginToNexus] OAuth permission screen never appeared. URL=${authPage.url()} Title=${await authPage
-                  .title()
-                  .catch(() => "(no title)")}. See test-results/auth-page-failure-*.png.`,
-              );
-            }
-            throw err;
-          }
+          await expect(nexusLoginPage.oauthPermissionTitle).toBeVisible();
         });
       });
     }
