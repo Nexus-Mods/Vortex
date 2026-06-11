@@ -43,6 +43,7 @@ function selectRecommended(defRows: CandidateRow[]): CandidateRow[] {
   const byGroup = groupBy(defRows.filter(isAvailable), (r) => r.modFileId);
 
   // For each group, pick the highest active candidate, if any; otherwise the highest available.
+  // TODO: with game version requirements, we could restrict to candidates matching installed game version.
   return [...byGroup.values()].map((rows) => {
     const active = rows.filter(isActive);
     return highestPosition(active.length > 0 ? active : rows);
@@ -117,6 +118,21 @@ export async function checkFileLevelRequirements(
         const satisfyingDisabled: string[] = [];
         const wrongEnabled: string[] = [];
         const wrongDisabled: string[] = [];
+
+        // TODO: advanced resolution would do set intersection between dependencies targeting the same file chain.
+        // This would ensure the recommended candidate is compatible with the other dependencies.
+        // But this also adds resolution complexity and many new outcome scenarios:
+        // Outcomes:
+        // - non-empty intersection → recommend from it, not each def's latest
+        //   but user might prefer latest and updating the dep source instead
+        // - empty intersection, no OR escape → conflict (unsatisfiable) between 2 or more files
+        // - empty intersection but an OR-alternative chain works → resolvable via the alternative
+        // - combination of all OR branch choices with different intersections ->
+        //   different recommendations, different incompatibilities
+        // Complexities:
+        // - a conflict can span multiple source files (cross-source diamond)
+        // - combinatorial set of outcomes based on OR branches, different recommendations, different conflicts.
+        // - an installed/enabled version pins a chain's intersection
 
         // Find matches in installed files
         for (const versionUid of candidateVersionUids) {
