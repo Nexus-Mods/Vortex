@@ -30,7 +30,7 @@ function makeSession(overrides: Partial<any> = {}): any {
     downloadedCount: 0,
     installedCount: 0,
     failedCount: 0,
-    skippedCount: 0,
+    ignoredCount: 0,
     mods: {},
     ...overrides,
   };
@@ -149,7 +149,7 @@ describe("installTracking reducer", () => {
       expect(result.activeSession.downloadedCount).toBe(0);
     });
 
-    it("increments skippedCount when transitioning to skipped", () => {
+    it("increments ignoredCount when transitioning to ignored", () => {
       const session = makeSession({
         mods: {
           rule1: { status: "pending", type: "recommends", rule: {} },
@@ -160,11 +160,11 @@ describe("installTracking reducer", () => {
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
         ruleId: "rule1",
-        status: "skipped",
+        status: "ignored",
       });
 
-      expect(result.activeSession.skippedCount).toBe(1);
-      // pending → skipped: skipped IS a downloaded status
+      expect(result.activeSession.ignoredCount).toBe(1);
+      // pending → ignored: ignored IS a downloaded status
       expect(result.activeSession.downloadedCount).toBe(1);
     });
 

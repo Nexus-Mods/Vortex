@@ -1,6 +1,7 @@
 import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import { merge, setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/installTracking";
+import { generateCollectionSessionId } from "../installSession/util";
 
 // Initial state
 const initialState: types.ICollectionInstallState = {
@@ -15,7 +16,7 @@ const DOWNLOADED_STATUSES = new Set([
   "downloading",
   "installed",
   "installing",
-  "skipped",
+  "ignored",
 ]);
 
 /**
@@ -30,9 +31,9 @@ function adjustCounters(
   downloadedCount: number;
   installedCount: number;
   failedCount: number;
-  skippedCount: number;
+  ignoredCount: number;
 } {
-  let { downloadedCount, installedCount, failedCount, skippedCount } = session;
+  let { downloadedCount, installedCount, failedCount, ignoredCount } = session;
 
   // downloadedCount tracks mods in any "active" (non-pending, non-failed) state
   if (!DOWNLOADED_STATUSES.has(oldStatus) && DOWNLOADED_STATUSES.has(newStatus)) downloadedCount++;
@@ -46,17 +47,17 @@ function adjustCounters(
   if (oldStatus !== "failed" && newStatus === "failed") failedCount++;
   if (oldStatus === "failed" && newStatus !== "failed") failedCount--;
 
-  // skippedCount
-  if (oldStatus !== "skipped" && newStatus === "skipped") skippedCount++;
-  if (oldStatus === "skipped" && newStatus !== "skipped") skippedCount--;
+  // ignoredCount
+  if (oldStatus !== "ignored" && newStatus === "ignored") ignoredCount++;
+  if (oldStatus === "ignored" && newStatus !== "ignored") ignoredCount--;
 
-  return { downloadedCount, installedCount, failedCount, skippedCount };
+  return { downloadedCount, installedCount, failedCount, ignoredCount };
 }
 
 const collectionInstallReducer = {
   reducers: {
     [actions.startInstallSession as any]: (state: types.ICollectionInstallState, payload: any) => {
-      const sessionId = util.generateCollectionSessionId(payload.collectionId, payload.profileId);
+      const sessionId = generateCollectionSessionId(payload.collectionId, payload.profileId);
       const mods = payload.mods as { [ruleId: string]: any };
       // Full iteration is fine here — this runs once per session start
       const downloadedCount = Object.values(mods).filter((mod) =>
@@ -69,10 +70,10 @@ const collectionInstallReducer = {
         downloadedCount,
         installedCount,
         failedCount: 0,
-        skippedCount: 0,
+        ignoredCount: 0,
       };
 
-      return util.setSafe(state, ["activeSession"], session);
+      return setSafe(state, ["activeSession"], session);
     },
 
     [actions.updateModStatus as any]: (state: types.ICollectionInstallState, payload: any) => {
@@ -82,11 +83,11 @@ const collectionInstallReducer = {
 
       const oldStatus = state.activeSession.mods?.[payload.ruleId]?.status;
       const modPath = ["activeSession", "mods", payload.ruleId];
-      let newState = util.setSafe(state, [...modPath, "status"], payload.status);
+      let newState = setSafe(state, [...modPath, "status"], payload.status);
 
       // Incremental counter update — O(1) instead of iterating all mods
       const counters = adjustCounters(state.activeSession, oldStatus, payload.status);
-      newState = util.merge(newState, ["activeSession"], counters);
+      newState = merge(newState, ["activeSession"], counters);
 
       return newState;
     },
@@ -98,17 +99,17 @@ const collectionInstallReducer = {
 
       const oldStatus = state.activeSession.mods?.[payload.ruleId]?.status;
 
-      let newState = util.setSafe(
+      let newState = setSafe(
         state,
         ["activeSession", "mods", payload.ruleId, "modId"],
         payload.modId,
       );
-      newState = util.setSafe(
+      newState = setSafe(
         newState,
         ["activeSession", "mods", payload.ruleId, "status"],
         "installed",
       );
-      newState = util.setSafe(
+      newState = setSafe(
         newState,
         ["activeSession", "mods", payload.ruleId, "endTime"],
         Date.now(),
@@ -116,16 +117,8 @@ const collectionInstallReducer = {
 
       // Incremental counter update
       const counters = adjustCounters(state.activeSession, oldStatus, "installed");
-      newState = util.setSafe(
-        newState,
-        ["activeSession", "downloadedCount"],
-        counters.downloadedCount,
-      );
-      newState = util.setSafe(
-        newState,
-        ["activeSession", "installedCount"],
-        counters.installedCount,
-      );
+      newState = setSafe(newState, ["activeSession", "downloadedCount"], counters.downloadedCount);
+      newState = setSafe(newState, ["activeSession", "installedCount"], counters.installedCount);
 
       return newState;
     },
@@ -135,13 +128,9 @@ const collectionInstallReducer = {
         return state;
       }
 
-      let newState = util.setSafe(
-        state,
-        ["sessionHistory", payload.sessionId],
-        state.activeSession,
-      );
-      newState = util.setSafe(newState, ["lastActiveSessionId"], payload.sessionId);
-      newState = util.setSafe(newState, ["activeSession"], undefined);
+      let newState = setSafe(state, ["sessionHistory", payload.sessionId], state.activeSession);
+      newState = setSafe(newState, ["lastActiveSessionId"], payload.sessionId);
+      newState = setSafe(newState, ["activeSession"], undefined);
 
       return newState;
     },

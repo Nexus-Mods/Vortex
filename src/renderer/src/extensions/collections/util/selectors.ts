@@ -3,7 +3,7 @@ import { createSelector } from "reselect";
 import type * as types from "../../../types/api";
 
 const getCollectionInstallState = (state: types.IState): types.ICollectionInstallState =>
-  (state as any).session?.collections || {
+  state.session?.collections || {
     activeSession: undefined,
     lastActiveSessionId: undefined,
     sessionHistory: {},
@@ -54,7 +54,7 @@ export const getRequiredModsProgress = createSelector(
 
 export const getOptionalModsProgress = createSelector(
   [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
-  (activeSession, collectionId): { installed: number; total: number; skipped: number } | null => {
+  (activeSession, collectionId): { installed: number; total: number; ignored: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
     }
@@ -63,12 +63,12 @@ export const getOptionalModsProgress = createSelector(
       (mod) => mod.type === "recommends",
     );
     const installed = optionalMods.filter((mod) => mod.status === "installed").length;
-    const skipped = optionalMods.filter((mod) => mod.status === "skipped").length;
+    const ignored = optionalMods.filter((mod) => mod.status === "ignored").length;
 
     return {
       installed,
       total: activeSession.totalOptional,
-      skipped,
+      ignored,
     };
   },
 );

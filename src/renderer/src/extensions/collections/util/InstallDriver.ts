@@ -14,6 +14,7 @@ import * as selectors from "../../../util/selectors";
 import * as installActions from "../actions/installTracking";
 import { setPendingVote } from "../actions/persistent";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
+import { reconstructModStatus } from "../installSession/util";
 import { postprocessCollection } from "../postprocessCollection";
 import { ICollection } from "../types/ICollection";
 import { IRevisionEx } from "../types/IRevisionEx";
@@ -113,7 +114,7 @@ class InstallDriver {
     const currentStatus = currentSession?.mods?.[ruleId]?.status;
 
     // Don't downgrade from terminal states (installed, skipped, failed)
-    const terminalStates: types.CollectionModStatus[] = ["installed", "skipped", "failed"];
+    const terminalStates: types.CollectionModStatus[] = ["installed", "ignored", "failed"];
     if (currentStatus && terminalStates.includes(currentStatus)) {
       return;
     }
@@ -130,6 +131,25 @@ class InstallDriver {
     const ruleId = util.modRuleId(rule);
     this.mStateUpdates.push(installActions.markModInstalled(this.mCurrentSessionId, ruleId, modId));
     this.mModStatusDebouncer.schedule();
+  }
+
+  /**
+   * Mark a collection rule as ignored. Updates the transient install session and
+   * persists the decision durably via the rule's `ignored` flag. The session lives
+   * in state.session (not persisted), so without the durable flag a mid-install
+   * restart would rehydrate an ignored required mod as "pending" and the collection
+   * could never reach completion. startImpl()'s reconstruction reads `ignored` to
+   * restore the "ignored" status; the unfulfilled-rules and dependency-completion
+   * checks already treat ignored rules as resolved.
+   */
+  private markRuleIgnored(rule: types.IModRule) {
+    this.updateModTracking(rule, "ignored");
+
+    if (this.mGameId !== undefined && this.mCollection !== undefined) {
+      this.mApi.store.dispatch(
+        actions.addModRule(this.mGameId, this.mCollection.id, { ...rule, ignored: true }),
+      );
+    }
   }
 
   private completeInstallationTracking(success: boolean) {
@@ -308,7 +328,7 @@ class InstallDriver {
           return util.testRefByIdentifiers({ ...identifiers, condition } as any, r.reference);
         });
         if (rule) {
-          this.updateModTracking(rule, "skipped");
+          this.markRuleIgnored(rule);
         } else {
           log("error", "could not find rule for skipped free user download", {
             identifiers,
@@ -380,13 +400,7 @@ class InstallDriver {
         return false;
       });
       if (matchingRule) {
-        this.updateModTracking(matchingRule, "skipped");
-
-        // Also set the ignored flag on the rule so it's persisted
-        // api.store.dispatch(actions.addModRule(this.mGameId, this.mCollection.id, {
-        //   ...matchingRule,
-        //   ignored: true,
-        // } as any));
+        this.markRuleIgnored(matchingRule);
       }
     });
 
@@ -1056,16 +1070,9 @@ class InstallDriver {
           const download = util.findDownloadByRef(rule.reference, downloads);
           const isBundled = rule.extra?.localPath != null;
           const isInstalled = installedRuleIds.has(ruleId);
-          const isIgnored = rule["ignored"] === true;
           const isDownloaded = download != null || isBundled;
 
-          const status: types.CollectionModStatus = isIgnored
-            ? "skipped"
-            : isInstalled
-              ? "installed"
-              : isDownloaded
-                ? "downloaded"
-                : "pending";
+          const status = reconstructModStatus(rule, isInstalled, isDownloaded);
 
           return [
             ruleId,

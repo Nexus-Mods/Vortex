@@ -1,4 +1,4 @@
-import * as util from "../../../util/api";
+import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
 import type { ICollectionModRule } from "../types/ICollection";
 
 /**
@@ -15,10 +15,10 @@ export function postProcessRule(rule: ICollectionModRule): ICollectionModRule {
   // because with an md5 hash it's generally the case it will only match one version whereas
   // fileExpression supports matching multiple versions, it's simply that we have no automated
   // way of generating glob patterns that ignore the version and date field in the file names
-  if (util.isFuzzyVersion(result.reference.versionMatch) && !!result.reference.logicalFileName) {
+  if (isFuzzyVersion(result.reference.versionMatch) && !!result.reference.logicalFileName) {
     delete result.reference.fileExpression;
   }
-  if (util.isFuzzyVersion(result.source.versionMatch) && !!result.source.logicalFileName) {
+  if (isFuzzyVersion(result.source.versionMatch) && !!result.source.logicalFileName) {
     delete result.source.fileExpression;
   }
   return result;

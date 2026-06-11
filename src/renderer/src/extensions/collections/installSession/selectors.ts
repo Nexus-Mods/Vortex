@@ -274,7 +274,7 @@ export const getCollectionInstallProgress = createSelector(
     downloadedCount: number;
     installedCount: number;
     failedCount: number;
-    skippedCount: number;
+    ignoredCount: number;
     downloadProgress: number; // Percentage (0-100)
     installProgress: number; // Percentage (0-100)
     isComplete: boolean;
@@ -290,7 +290,7 @@ export const getCollectionInstallProgress = createSelector(
 
     // Compute isComplete and installProgress from individual mod entries
     // filtered by type, because the aggregate counters (installedCount,
-    // failedCount, skippedCount) include BOTH required and optional mods,
+    // failedCount, ignoredCount) include BOTH required and optional mods,
     // but totalRequired only counts 'requires' mods.  When optional mods
     // install before the last required mods the aggregate totals exceed
     // totalRequired, causing a premature isComplete.
@@ -301,7 +301,7 @@ export const getCollectionInstallProgress = createSelector(
       : [];
     const installedRequired = requiredMods.filter((mod) => mod.status === "installed").length;
     const completedRequired = requiredMods.filter(
-      (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "skipped",
+      (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "ignored",
     ).length;
 
     const installProgress =
@@ -315,7 +315,7 @@ export const getCollectionInstallProgress = createSelector(
       downloadedCount: session.downloadedCount,
       installedCount: session.installedCount,
       failedCount: session.failedCount,
-      skippedCount: session.skippedCount,
+      ignoredCount: session.ignoredCount,
       downloadProgress,
       installProgress,
       isComplete,
@@ -437,7 +437,7 @@ export const getCollectionPendingMods = (state: IState): ICollectionModInstallIn
 export const getCollectionCompletedMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
   return Object.values(mods).filter(
-    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "skipped",
+    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "ignored",
   );
 };
 
@@ -455,7 +455,7 @@ export const isCollectionPhaseComplete = (state: IState, phase: number): boolean
   }
 
   return requiredPhaseMods.every(
-    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "skipped",
+    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "ignored",
   );
 };
 
@@ -513,7 +513,7 @@ export const getCollectionPhaseProgress = createSelector(
       const optional = phaseMods.filter((m) => m.type === "recommends");
       const installed = required.filter((m) => m.status === "installed").length;
       const failed = required.filter((m) => m.status === "failed").length;
-      const skipped = required.filter((m) => m.status === "skipped" || m.rule.ignored).length;
+      const skipped = required.filter((m) => m.status === "ignored" || m.rule.ignored).length;
       const pending = required.filter(
         (m) =>
           m.status === "pending" ||
