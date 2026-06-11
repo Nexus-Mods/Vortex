@@ -61,7 +61,7 @@ import {
 } from "../../util/util";
 import { MainContext } from "../../views/MainWindow";
 import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
-import { getCollectionActiveSession } from "../collections_integration/selectors";
+import { getCollectionActiveSession } from "../collections/installSession/selectors";
 import type { IDownload } from "../download_management/types/IDownload";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";

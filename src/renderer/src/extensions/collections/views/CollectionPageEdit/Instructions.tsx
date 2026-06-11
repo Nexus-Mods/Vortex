@@ -1,0 +1,162 @@
+import * as React from "react";
+import { ControlLabel, FormControl } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+
+import { FlexLayout, More, Toggle, tooltip } from "../../../../controls/api";
+import type * as types from "../../../../types/api";
+import { INSTRUCTIONS_PLACEHOLDER, NAMESPACE } from "../../constants";
+import { isGamebryoGame } from "../../util/gameSupport";
+
+export interface IInstructionProps {
+  gameId: string;
+  collection: types.IMod;
+  onSetCollectionAttribute: (path: string[], value: any) => void;
+}
+
+function CollectionGeneralInfo(props: IInstructionProps) {
+  return (
+    <FlexLayout type="row">
+      {instructions(props)}
+
+      {settings(props)}
+    </FlexLayout>
+  );
+}
+
+const settings = (props: IInstructionProps) => {
+  const [t] = useTranslation([NAMESPACE, "common"]);
+  const { gameId, onSetCollectionAttribute, collection } = props;
+  const showExcludePluginRules = isGamebryoGame(gameId);
+  const [recommendNewProfile, setRecommendNewProfile] = React.useState(
+    collection.attributes?.collection?.collectionConfig?.recommendNewProfile,
+  );
+  const [excludePluginRules, setExcludePluginRules] = React.useState(
+    collection.attributes?.collection?.collectionConfig?.excludePluginRules,
+  );
+
+  const toggleRecommendNewProfile = React.useCallback(() => {
+    const newValue = !recommendNewProfile;
+    setRecommendNewProfile(newValue);
+    onSetCollectionAttribute(["collectionConfig", "recommendNewProfile"], newValue);
+  }, [onSetCollectionAttribute, recommendNewProfile, setRecommendNewProfile]);
+
+  const toggleExcludePluginRules = React.useCallback(() => {
+    const newValue = !excludePluginRules;
+    setExcludePluginRules(newValue);
+    onSetCollectionAttribute(["collectionConfig", "excludePluginRules"], newValue);
+  }, [onSetCollectionAttribute, excludePluginRules, setExcludePluginRules]);
+
+  return (
+    <FlexLayout className="collection-settings-edit" id="collection-settings-edit" type="column">
+      <h4>{t("Options")}</h4>
+
+      <p>{t("The below settings can optionally be changed to customize this collection")}</p>
+
+      <Toggle
+        checked={recommendNewProfile}
+        id={"settings-recommend-new-profile"}
+        onToggle={toggleRecommendNewProfile}
+      >
+        {t("Recommend new profile")}
+
+        <More id="collection-settings-recommendnewprofile" name={t("Recommend new profile")}>
+          {t(
+            "If enabled, Vortex will recommend creating a new profile when installing this collection. If disabled, the collection will be installed into the currently active profile.",
+          )}
+        </More>
+      </Toggle>
+
+      {showExcludePluginRules ? (
+        <Toggle
+          checked={excludePluginRules}
+          id={"settings-exclude-plugin-rules"}
+          onToggle={toggleExcludePluginRules}
+        >
+          {t("Exclude plugin rules")}
+
+          <More id="collection-settings-excludepluginrules" name={t("Exclude plugin rules")}>
+            {t(
+              "If enabled, custom LOOT plugin rules and groups will not be included when exporting this collection. " +
+                "This prevents inherited rules from spreading between collections.",
+            )}
+          </More>
+        </Toggle>
+      ) : null}
+    </FlexLayout>
+  );
+};
+
+const instructions = (props: IInstructionProps) => {
+  const [t] = useTranslation([NAMESPACE, "common"]);
+  const { collection, onSetCollectionAttribute } = props;
+
+  const [input, setInput] = React.useState(
+    collection.attributes?.["collection"]?.["installInstructions"],
+  );
+  const [placeholder, setPlaceholder] = React.useState(
+    // i18next's t() widens to a non-string union here, which makes useState infer a
+    // lazy initializer (() => never); the cast is load-bearing. Keep the disable so
+    // `eslint --fix` doesn't strip it again.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    t(INSTRUCTIONS_PLACEHOLDER) as string,
+  );
+  const [hasChanged, setHasChanged] = React.useState(false);
+
+  React.useEffect(() => {
+    setInput(collection.attributes?.["collection"]?.["installInstructions"]);
+  }, [collection]);
+
+  const assignInstructions = React.useCallback(
+    (evt: React.FormEvent<any>) => {
+      setInput(evt.currentTarget.value);
+      setHasChanged(true);
+    },
+    [setInput],
+  );
+
+  const saveInstructions = React.useCallback(() => {
+    onSetCollectionAttribute(["installInstructions"], input);
+    setHasChanged(false);
+  }, [input]);
+
+  return (
+    <FlexLayout
+      className="collection-instructions-edit"
+      id="collection-instructions-edit"
+      type="column"
+    >
+      <FlexLayout.Fixed className="collection-instructions-container">
+        <h4>{t("Instructions")}</h4>
+
+        <p>
+          {t(
+            "Instructions will be shown to the user before installation starts and can be reviewed in the Instructions tab. You can also add individual mod instructions in the Mods tab.",
+          )}
+        </p>
+
+        <FormControl
+          componentClass="textarea"
+          id="collection-instructions-area"
+          placeholder={placeholder}
+          rows={8}
+          value={input}
+          onBlur={(e) => setPlaceholder(t(INSTRUCTIONS_PLACEHOLDER))}
+          onChange={assignInstructions}
+          onFocus={(e) => setPlaceholder("")}
+        />
+      </FlexLayout.Fixed>
+
+      <FlexLayout.Fixed className="collection-instructions-buttons">
+        <tooltip.Button
+          disabled={!hasChanged}
+          tooltip={t("Save Instructions")}
+          onClick={saveInstructions}
+        >
+          {t("Save")}
+        </tooltip.Button>
+      </FlexLayout.Fixed>
+    </FlexLayout>
+  );
+};
+
+export default CollectionGeneralInfo;

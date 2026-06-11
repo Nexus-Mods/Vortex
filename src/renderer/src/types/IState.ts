@@ -2,7 +2,7 @@ import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
-import type { ICollectionInstallState } from "../extensions/collections_integration/types";
+import type { ICollectionInstallState } from "../extensions/collections/installSession/types";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";

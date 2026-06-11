@@ -12,7 +12,10 @@ import {
   resolveCategoryName,
   resolveCategoryPath,
 } from "../extensions/category_management/util/retrieveCategoryPath";
-import { generateCollectionSessionId, modRuleId } from "../extensions/collections_integration/util";
+import {
+  generateCollectionSessionId,
+  modRuleId,
+} from "../extensions/collections/installSession/util";
 import { readExtensibleDir } from "../extensions/extension_manager/util";
 import getDriveList from "../extensions/gamemode_management/util/getDriveList";
 import { getGame, getGames } from "../extensions/gamemode_management/util/getGame";

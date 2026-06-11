@@ -122,8 +122,8 @@ import {
   getCollectionSessionById,
   getCollectionStatusBreakdown,
   isCollectionPhaseComplete,
-} from "../collections_integration/selectors";
-import { generateCollectionSessionId } from "../collections_integration/util";
+} from "../collections/installSession/selectors";
+import { generateCollectionSessionId } from "../collections/installSession/util";
 import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";

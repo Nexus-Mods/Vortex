@@ -5,7 +5,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckTrigger } from "../../../types/IHealthCheck";
 import Debouncer from "../../../util/Debouncer";
-import { hasCollectionActiveSession } from "../../collections_integration/selectors";
+import { hasCollectionActiveSession } from "../../collections/installSession/selectors";
 import type { IHealthCheckApi } from "../types";
 
 /**
