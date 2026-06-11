@@ -1,8 +1,12 @@
 const Promise = require("bluebird");
 const path = require("path");
 const { getFileVersion } = require("exe-version");
-const { util } = require("@nexusmods/vortex-api");
+const { selectors, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
+
+const GAME_ID = "fallout4vr";
+const ESL_ENABLER_LIB = "Daytripper4.dll";
+const ESL_NOTIF_ID = "fallout4vr-esl-enabler-notif";
 
 /*
 Ignore the Meshes\AnimTextData\AnimationOffsets\PersistantSubgraphInfoAndOffsetData.txt file as a conflict. 
@@ -34,7 +38,7 @@ function getGameVersion(gamePath, exePath) {
   return fileVersion + "-VR";
 }
 
-let tools = [
+const tools = [
   {
     id: "FO4VREdit",
     name: "FO4VREdit",
@@ -51,9 +55,82 @@ let tools = [
   },
 ];
 
+function isESLSupported(api) {
+  const state = api.getState();
+  const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
+  const discovery = selectors.discoveryByGame(state, GAME_ID);
+  if (discovery?.store === "xbox") {
+    return false;
+  }
+  const modState = util.getSafe(state, ["persistent", "profiles", profileId, "modState"], {});
+  const isEnabled = (modId) => util.getSafe(modState, [modId, "enabled"], false);
+  const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
+  const hasESLEnabler = Object.keys(mods).some(
+    (modId) => isEnabled(modId) && mods[modId]?.attributes?.eslEnabler === true,
+  );
+  if (hasESLEnabler) {
+    api.dismissNotification(ESL_NOTIF_ID);
+  }
+  return hasESLEnabler;
+}
+
+function testEslEnabler(files, gameId) {
+  const isFallout4VR = gameId === GAME_ID;
+  const isESLEnabler = files.some((file) => file.toLowerCase().endsWith(ESL_ENABLER_LIB));
+  return Promise.resolve({
+    supported: isFallout4VR && isESLEnabler,
+    requiredFiles: [],
+  });
+}
+
+function installEslEnabler(files, destinationPath) {
+  const filtered = files.filter((file) => path.extname(file) !== "");
+  const instructions = filtered.map((file) => {
+    const segments = file.split(path.sep);
+    segments.splice(0, 1, "Data");
+    return {
+      type: "copy",
+      source: file,
+      destination: segments.join(path.sep),
+    };
+  });
+
+  // Remove this once the mod type conflict issue is resolved
+  instructions.push({ type: "setmodtype", value: "dinput" });
+  instructions.push({ type: "attribute", key: "eslEnabler", value: true });
+
+  return Promise.resolve({ instructions });
+}
+
+function prepare(api, discovery) {
+  if (isESLSupported(api)) {
+    return Promise.resolve();
+  }
+
+  api.sendNotification({
+    id: ESL_NOTIF_ID,
+    type: "info",
+    title: "ESL Support",
+    message:
+      "Fallout 4 VR requires a mod to enable ESL support. Mod must be installed through Vortex for ESL support to work.",
+    actions: [
+      {
+        title: "Download",
+        action: () =>
+          util.opn("https://www.nexusmods.com/fallout4/mods/91141?tab=files").catch(() => {}),
+      },
+    ],
+  });
+}
+
+const sortAndResolve = (api) => {
+  api.events.emit("autosort-plugins", false);
+  return Promise.resolve();
+};
+
 function main(context) {
   context.registerGame({
-    id: "fallout4vr",
+    id: GAME_ID,
     name: "Fallout 4 VR",
     mergeMods: true,
     queryPath: findGame,
@@ -62,6 +139,7 @@ function main(context) {
     logo: "gameart.jpg",
     executable: () => "Fallout4VR.exe",
     getGameVersion,
+    setup: (discovery) => prepare(context.api, discovery),
     requiredFiles: ["Fallout4VR.exe"],
     environment: {
       SteamAPPId: "611660",
@@ -69,9 +147,53 @@ function main(context) {
     details: {
       steamAppId: 611660,
       compatibleDownloads: ["fallout4"],
+      supportsESL: () => isESLSupported(context.api),
       ignoreConflicts: IGNORED_FILES,
       nexusPageId: "fallout4",
     },
+  });
+
+  context.registerInstaller("fallout4vr-esl-enabler", 10, testEslEnabler, installEslEnabler);
+
+  context.once(() => {
+    context.api.events.on("gamemode-activated", (gameId) => {
+      if (gameId !== GAME_ID) {
+        context.api.dismissNotification(ESL_NOTIF_ID);
+      }
+    });
+    context.api.onAsync("did-deploy", (profileId, newDeployment) => {
+      const state = context.api.getState();
+      const profile = selectors.profileById(state, profileId);
+      if (profile?.gameId !== GAME_ID) {
+        return Promise.resolve();
+      }
+      const discovery = selectors.discoveryByGame(state, GAME_ID);
+      if (!discovery?.path || discovery?.store === "xbox") {
+        // Fallout 4 VR is currently not on Xbox, but it may be one day!
+        return Promise.resolve();
+      }
+
+      const deployedFiles = newDeployment[""];
+      const modESLEnabler = deployedFiles.find((file) =>
+        file.relPath.toLowerCase().endsWith(ESL_ENABLER_LIB.toLowerCase()),
+      );
+      if (modESLEnabler === undefined) {
+        return sortAndResolve(context.api);
+      }
+
+      const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
+      const mod = Object.values(mods).find((mod) => mod.installationPath === modESLEnabler.source);
+      if (mod === undefined || mod.attributes.eslEnabler === true) {
+        return sortAndResolve(context.api);
+      }
+
+      const modAttributes = {
+        ...mod.attributes,
+        eslEnabler: true,
+      };
+      context.api.store.dispatch(actions.setModAttributes(GAME_ID, mod.id, modAttributes));
+      return sortAndResolve(context.api);
+    });
   });
 
   return true;
