@@ -8,68 +8,9 @@ import type {
   ModDetail,
 } from "./types";
 
-// MAIN, UPDATE, OPTIONAL, MISC
-const activeCategories = new Set([1, 2, 3, 5]);
-const availableCategories = new Set([1, 2, 3, 4, 5, 7]);
+const activeCategories = new Set([1, 2, 3, 5]); // MAIN, UPDATE, OPTIONAL, MISC
+const availableCategories = new Set([1, 2, 3, 4, 5, 7]); // MAIN, UPDATE, OPTIONAL, OLD, MISC, ARCHIVED
 const availableStatuses = new Set(["published", "hidden"]);
-
-// Computed from the raw server signals; gates what we recommend, not matching.
-function isAvailable(row: CandidateRow): boolean {
-  return availableCategories.has(row.category) && availableStatuses.has(row.modStatus);
-}
-
-function isActive(row: CandidateRow): boolean {
-  return activeCategories.has(row.category);
-}
-
-function highestPosition(rows: CandidateRow[]): CandidateRow {
-  return rows.reduce((best, r) => (Number(r.position) > Number(best.position) ? r : best));
-}
-
-function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
-  const out = new Map<string, T[]>();
-  for (const item of items) {
-    const k = key(item);
-    const bucket = out.get(k);
-    if (bucket) bucket.push(item);
-    else out.set(k, [item]);
-  }
-  return out;
-}
-
-// One winner per update group: available candidate with the highest position.
-// Matching installed files uses all candidates; eligibility only gates recommendations.
-function selectRecommended(defRows: CandidateRow[]): CandidateRow[] {
-  const byGroup = groupBy(defRows.filter(isAvailable), (r) => r.modFileId);
-
-  // For each group, pick the highest active candidate, if any; otherwise the highest available.
-  // TODO: with game version requirements, we could restrict to candidates matching installed game version.
-  return [...byGroup.values()].map((rows) => {
-    const active = rows.filter(isActive);
-    return highestPosition(active.length > 0 ? active : rows);
-  });
-  // TODO: consider dropping inactive OR group candidates if the other group candidates are active.
-}
-
-function toCandidate(
-  row: CandidateRow,
-  detail: FileVersionDetail | undefined,
-  mod: ModDetail | undefined,
-): Candidate {
-  return {
-    fileVersionUid: row.fileVersionUid,
-    modUid: row.modUid,
-    modFileId: row.modFileId,
-    category: row.category,
-    position: row.position,
-    fileName: detail?.name ?? "",
-    version: detail?.version ?? "",
-    modName: mod?.name ?? "",
-    modSummary: mod?.summary,
-    thumbnailUrl: mod?.thumbnailUrl,
-    adultContent: mod?.adultContent ?? false,
-  };
-}
 
 export async function checkFileLevelRequirements(
   context: FileRequirementsContext,
@@ -193,12 +134,70 @@ export async function checkFileLevelRequirements(
   return { sources };
 }
 
-function unique(values: string[]): string[] {
-  return [...new Set(values)];
+// Computed from the raw server signals; gates what we recommend, not matching.
+function isAvailable(row: CandidateRow): boolean {
+  return availableCategories.has(row.category) && availableStatuses.has(row.modStatus);
+}
+
+function isActive(row: CandidateRow): boolean {
+  return activeCategories.has(row.category);
+}
+
+function highestPosition(rows: CandidateRow[]): CandidateRow {
+  return rows.reduce((best, r) => (Number(r.position) > Number(best.position) ? r : best));
+}
+
+// One winner per update group: available candidate with the highest position.
+// Matching installed files uses all candidates; eligibility only gates recommendations.
+function selectRecommended(defRows: CandidateRow[]): CandidateRow[] {
+  const byGroup = groupBy(defRows.filter(isAvailable), (r) => r.modFileId);
+
+  // For each group, pick the highest active candidate, if any; otherwise the highest available.
+  // TODO: with game version requirements, we could restrict to candidates matching installed game version.
+  return [...byGroup.values()].map((rows) => {
+    const active = rows.filter(isActive);
+    return highestPosition(active.length > 0 ? active : rows);
+  });
+  // TODO: consider dropping inactive OR group candidates if the other group candidates are active.
+}
+
+function toCandidate(
+  row: CandidateRow,
+  detail: FileVersionDetail | undefined,
+  mod: ModDetail | undefined,
+): Candidate {
+  return {
+    fileVersionUid: row.fileVersionUid,
+    modUid: row.modUid,
+    modFileId: row.modFileId,
+    category: row.category,
+    position: row.position,
+    fileName: detail?.name ?? "",
+    version: detail?.version ?? "",
+    modName: mod?.name ?? "",
+    modSummary: mod?.summary,
+    thumbnailUrl: mod?.thumbnailUrl,
+    adultContent: mod?.adultContent ?? false,
+  };
+}
+
+function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const item of items) {
+    const k = key(item);
+    const bucket = out.get(k);
+    if (bucket) bucket.push(item);
+    else out.set(k, [item]);
+  }
+  return out;
 }
 
 function mapByKey<T>(items: T[], key: (item: T) => string): Map<string, T> {
   const out = new Map<string, T>();
   for (const item of items) out.set(key(item), item);
   return out;
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
 }
