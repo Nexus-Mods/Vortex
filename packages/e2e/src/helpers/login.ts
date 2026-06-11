@@ -1,12 +1,19 @@
-import { type Browser, expect, type ElectronApplication, type Page } from "@playwright/test";
+import { type Browser, expect, type Page, type TestInfo } from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
+import { type DiagnosticsTeardown, instrumentNexusPage } from "./diagnostics";
 import { launchNexusBrowser } from "./nexusBrowser";
-import { GlobalTimeouts, Timeouts } from "./timeouts";
+import { Timeouts } from "./timeouts";
 import { freeUser, type NexusUser } from "./users";
 
 export interface LoginToNexusOptions {
+  /**
+   * The Nexus login browser is traced and, on login failure, a trace +
+   * screenshot are attached to `testInfo` under `prefix`. Use a prefix unique
+   * to the caller to avoid attachment name collisions.
+   */
+  nexusDiagnostics: { testInfo: TestInfo; prefix: string };
   /**
    * When true, the auth browser is left open after login completes and is
    * returned to the caller. The caller is then responsible for closing it.
@@ -36,14 +43,15 @@ export interface LoginToNexusResult {
 }
 
 export async function loginToNexus(
-  vortexApp: ElectronApplication,
   vortexWindow: Page,
   user: NexusUser = freeUser,
-  options: LoginToNexusOptions = {},
+  options: LoginToNexusOptions,
 ): Promise<LoginToNexusResult | null> {
   const { username, password } = user;
   let authBrowser: Browser | null = null;
   let authPage: Page | null = null;
+  let nexusTeardown: DiagnosticsTeardown | undefined;
+  let failed = false;
   let leakBrowser = false;
 
   const step =
@@ -75,6 +83,8 @@ export async function loginToNexus(
       });
       authBrowser = nexusBrowser.browser;
       authPage = nexusBrowser.page;
+
+      nexusTeardown = await instrumentNexusPage(authPage, options.nexusDiagnostics.prefix);
 
       await authPage.goto(oauthUrl, {
         waitUntil: "domcontentloaded",
@@ -131,7 +141,16 @@ export async function loginToNexus(
     });
 
     leakBrowser = options.keepBrowser === true;
+  } catch (e) {
+    failed = true;
+    throw e;
   } finally {
+    // Stop tracing + capture a screenshot on failure while the page is still
+    // alive, before the browser is closed below. nexusTeardown is unset only if
+    // the browser failed to launch before instrumentation.
+    if (nexusTeardown !== undefined) {
+      await nexusTeardown(options.nexusDiagnostics.testInfo, failed);
+    }
     if (!leakBrowser) {
       const browserToClose = authBrowser as Browser | null;
       authBrowser = null;
