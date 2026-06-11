@@ -6,6 +6,7 @@ import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-s
  */
 import { test, expect } from "../fixtures/vortex-app";
 import { navigateToGames } from "../helpers/navigation";
+import { LoginPage } from "../selectors/loginPage";
 import { NavBar } from "../selectors/navbar";
 
 test.describe("Game Management", () => {
@@ -39,11 +40,18 @@ test.describe("Game Management", () => {
     });
   });
 
-  test("can add Stardew Valley to managed games via manageGame helper", async ({
+  test("[QA-106] can manage a game while not logged in", async ({
     vortexWindow,
     managedGame: _g,
   }) => {
-    const navbar = new NavBar(vortexWindow);
-    await expect(navbar.modsLink).toBeVisible();
+    await test.step("App is signed out", async () => {
+      const loginPage = new LoginPage(vortexWindow);
+      await expect(loginPage.vortexLoginButton).toBeVisible();
+    });
+
+    await test.step("Mods page is reachable for the managed game", async () => {
+      const navbar = new NavBar(vortexWindow);
+      await expect(navbar.modsLink).toBeVisible();
+    });
   });
 });
