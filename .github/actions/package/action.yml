@@ -85,7 +85,7 @@ runs:
         python-version: "3.11"
 
     - name: Download CodeSignTool
-      if: ${{ inputs.use-codesigning == 'true' || steps.nightly-flag.outputs.is_nightly == 'true' }}
+      if: ${{ inputs.use-codesigning == 'true' }}
       shell: pwsh
       run: .\download-codesigntool.ps1
 
@@ -168,7 +168,7 @@ runs:
       shell: pwsh
       run: |
         $signingAvailable = -not [string]::IsNullOrWhiteSpace($env:ES_USERNAME)
-        $wantSigning = "${{ inputs.use-codesigning }}" -eq "true" -or "${{ steps.nightly-flag.outputs.is_nightly }}" -eq "true"
+        $wantSigning = "${{ inputs.use-codesigning }}" -eq "true"
         if ($wantSigning -and $signingAvailable) {
           pnpm -F @vortex/main run package
         } else {
