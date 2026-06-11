@@ -49,7 +49,6 @@ export const defaultTimeout: () => TimeoutOptions = () => ({
   lookup: 5_000,
   connect: 30_000,
   stall: 15_000,
-  request: 5 * 60_000,
   request: 3 * 60 * 60_000,
 });
 
