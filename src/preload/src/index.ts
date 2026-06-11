@@ -1,4 +1,4 @@
-import { serializeError } from "@vortex/shared";
+import { rehydrateSerializedError, serializeError } from "@vortex/shared";
 import type {
   AppInitMetadata,
   RendererChannels,
@@ -8,6 +8,8 @@ import type {
   SerializableArgs,
   AssertSerializable,
   Serializable,
+  SerializedError,
+  WireResult,
 } from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
@@ -262,11 +264,24 @@ function expose<K extends keyof PreloadWindow>(key: K, value: PreloadWindow[K]) 
   }
 }
 
-function rendererInvoke<C extends keyof InvokeChannels>(
+async function rendererInvoke<C extends keyof InvokeChannels>(
   channel: C,
   ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
 ): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
-  return ipcRenderer.invoke(channel, ...args);
+  type Result = WireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>;
+  const reply: unknown = await ipcRenderer.invoke(channel, ...args);
+  if (isWireResult(reply)) {
+    const result = reply as Result;
+    if (result.ok) return result.value;
+    throw rehydrateSerializedError(result.error as unknown as SerializedError);
+  }
+  return reply as AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>;
+}
+
+function isWireResult(value: unknown): value is WireResult<unknown> {
+  return (
+    typeof value === "object" && value !== null && "ok" in value && typeof value.ok === "boolean"
+  );
 }
 
 function rendererSend<C extends keyof RendererChannels>(
@@ -316,7 +331,10 @@ function rendererCallback<C extends keyof CallbackChannels>(
   ) => {
     handler(collationId, ...args)
       .then((value) => {
-        ipcRenderer.send(`callback:${channel}`, collationId, { ok: true, value });
+        ipcRenderer.send(`callback:${channel}`, collationId, {
+          ok: true,
+          value,
+        });
       })
       .catch((err: unknown) => {
         ipcRenderer.send(`callback:${channel}`, collationId, {
