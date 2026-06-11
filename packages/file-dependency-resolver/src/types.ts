@@ -5,10 +5,10 @@
 // implementation maps the snake_case V3 responses onto these.
 
 export interface CandidateRow {
-  sourceVersionUid: string;
+  sourceFileVersionUid: string;
   definitionId: string;
   modFileId: string; // update group
-  versionUid: string;
+  fileVersionUid: string;
   position: string;
   category: number;
   modStatus: string;
@@ -16,7 +16,7 @@ export interface CandidateRow {
 }
 
 export interface FileVersionDetail {
-  uid: string;
+  fileVersionUid: string;
   modUid: string;
   modFileId: string;
   name: string;
@@ -35,12 +35,12 @@ export interface ModDetail {
 // Paging lives in the implementation.
 export interface ResolverPorts {
   fetchCandidates(fileVersionUids: string[]): Promise<CandidateRow[]>;
-  fetchFileVersionDetails(uids: string[]): Promise<FileVersionDetail[]>;
+  fetchFileVersionDetails(fileVersionUids: string[]): Promise<FileVersionDetail[]>;
   fetchModDetails(modUids: string[]): Promise<ModDetail[]>;
 }
 
 export interface InstalledFile {
-  fileUid: string;
+  fileVersionUid: string;
   enabled: boolean;
 }
 
@@ -52,7 +52,7 @@ export interface FileRequirementsContext {
 
 // The only hydrated payload in the report (a file the user doesn't have).
 export interface Candidate {
-  versionUid: string;
+  fileVersionUid: string;
   modUid: string;
   modFileId: string;
   category: number;
@@ -76,7 +76,7 @@ export interface DependencyResult {
 }
 
 export interface SourceResult {
-  sourceFileUid: string;
+  sourceFileVersionUid: string;
   dependencies: DependencyResult[];
 }
 
