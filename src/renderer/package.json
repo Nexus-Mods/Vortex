@@ -9,7 +9,8 @@
     "typecheck": "pnpm tsc -p tsconfig.json",
     "lint": "pnpm eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm eslint --concurrency auto .",
-    "api": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json && pnpm api-extractor run --local"
+    "api": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json && pnpm api-extractor run --local",
+    "test": "pnpm exec vitest run"
   },
   "nx": {
     "targets": {

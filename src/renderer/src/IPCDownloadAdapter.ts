@@ -106,6 +106,8 @@ export class IPCDownloadAdapter {
   #speedAccumBytes = 0;
   #lastSpeedDispatch: number | null = null;
   #nextCollationId = 0;
+  #currentMaxParallelDownloads: number | undefined;
+  #currentMaxBandwidth: number | undefined;
 
   constructor(api: IExtensionApi) {
     this.#api = api;
@@ -186,8 +188,32 @@ export class IPCDownloadAdapter {
     log("debug", `registered protocol handler for scheme '${scheme}'`);
   }
 
-  processInterruptedDownloads(): void {
+  #syncDownloadSettings(concurrency: number, bytesPerSecond: number): void {
+    window.api.downloader.configure({ concurrency, bytesPerSecond }).catch((err) => {
+      log("warn", "failed to configure download manager", { err });
+    });
+  }
+
+  hydrateFromState(): void {
     const state = this.#api.getState();
+    const { maxParallelDownloads, maxBandwidth } = state.settings.downloads;
+    this.#currentMaxParallelDownloads = maxParallelDownloads;
+    this.#currentMaxBandwidth = maxBandwidth;
+    this.#syncDownloadSettings(maxParallelDownloads, maxBandwidth);
+
+    this.#api.store.subscribe(() => {
+      const { maxParallelDownloads: concurrency, maxBandwidth: bandwidth } =
+        this.#api.getState().settings.downloads;
+      if (
+        concurrency !== this.#currentMaxParallelDownloads ||
+        bandwidth !== this.#currentMaxBandwidth
+      ) {
+        this.#currentMaxParallelDownloads = concurrency;
+        this.#currentMaxBandwidth = bandwidth;
+        this.#syncDownloadSettings(concurrency, bandwidth);
+      }
+    });
+
     const files = state.persistent.downloads.files ?? {};
     const checkpoints = state.persistent.downloads.checkpoints ?? {};
 

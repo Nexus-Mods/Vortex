@@ -370,6 +370,10 @@ export interface InvokeChannels {
   "download:cancel": (downloadId: string) => Promise<void>;
   "download:getState": (downloadId: string) => Promise<WireDownloadState>;
   "download:getStates": (downloadIds: string[]) => Promise<Record<string, WireDownloadState>>;
+  "download:configure": (options: {
+    concurrency?: number | string;
+    bytesPerSecond?: number | string;
+  }) => Promise<void>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<

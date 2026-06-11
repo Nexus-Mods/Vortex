@@ -228,6 +228,7 @@ try {
       cancel: (downloadId) => betterIpcRenderer.invoke("download:cancel", downloadId),
       getState: (downloadId) => betterIpcRenderer.invoke("download:getState", downloadId),
       getStates: (downloadIds) => betterIpcRenderer.invoke("download:getStates", downloadIds),
+      configure: (options) => betterIpcRenderer.invoke("download:configure", options),
       // A rejection here propagates back to main so download:start rejects
       // immediately with the real reason instead of waiting out the callback
       // timeout. Cancellation rejects too, but the install manager drops

@@ -5,7 +5,8 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/import-tool.scss src/images/* dist",
     "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "typecheck": "pnpm tsc"
+    "typecheck": "pnpm tsc",
+    "test": "pnpm exec vitest run"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

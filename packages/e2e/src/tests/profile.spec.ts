@@ -14,7 +14,7 @@ test.describe("Profiles - Add", () => {
     managedGame: _g,
   }) => {
     const profileName = `QA-113 ${Date.now()}`;
-    const gameName = GAME_CONFIGS.stardewvalley!.gameName;
+    const gameName = GAME_CONFIGS.stardewvalley.gameName;
 
     await test.step("Enable Profile Management via global Settings", async () => {
       // Settings only appears in the home spine context, not per-game.

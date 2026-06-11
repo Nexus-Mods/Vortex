@@ -1063,7 +1063,7 @@ class ExtensionManager {
     this.mApi.getState = <T extends IState>() => this.mApi.store.getState() as T;
     this.mApi.onStateChange = this.stateChangeHandler;
 
-    this.mDownloadAdapter.processInterruptedDownloads();
+    this.mDownloadAdapter.hydrateFromState();
 
     this.mApi.onStateChange(["settings", "metaserver", "servers"], () => {
       this.mForceDBReconnect = true;
