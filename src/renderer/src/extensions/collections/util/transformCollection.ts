@@ -5,7 +5,12 @@ import { generate as shortid } from "shortid";
 
 import { log } from "../../../logging";
 import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import { coerceToSemver } from "../../mod_management/util/coerceToSemver";
+import { findModByRef } from "../../mod_management/util/findModByRef";
+import renderModName from "../../mod_management/util/modName";
+import { makeModReference } from "../../mod_management/util/modReference";
+import testModReference from "../../mod_management/util/testModReference";
+import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import { MAX_COLLECTION_NAME_LENGTH, MIN_COLLECTION_NAME_LENGTH, MOD_TYPE } from "../constants";
 import type {
   ICollection,
@@ -60,7 +65,7 @@ export function deduceSource(
 
   if (res.type === "nexus") {
     if (mod.attributes?.source !== "nexus") {
-      throw new Error(`"${util.renderModName(mod)}" doesn't have Nexus as its source`);
+      throw new Error(`"${renderModName(mod)}" doesn't have Nexus as its source`);
     }
     const modId = mod.type === MOD_TYPE ? mod.attributes?.collectionId : mod.attributes?.modId;
     const fileId = mod.type === MOD_TYPE ? mod.attributes?.revisionId : mod.attributes?.fileId;
@@ -152,7 +157,7 @@ export function makeTransferrable(
   rule: types.IModRule,
 ): types.IModRule {
   let newRef: types.IModReference = { ...rule.reference };
-  const mod = util.findModByRef(rule.reference, mods);
+  const mod = findModByRef(rule.reference, mods);
 
   if (
     rule.reference.fileMD5 === undefined &&
@@ -173,13 +178,13 @@ export function makeTransferrable(
       return undefined;
     }
 
-    newRef = util.makeModReference(mod);
+    newRef = makeModReference(mod);
   }
 
   // ok, this gets a bit complex now. If the referenced mod gets updated, also make sure
   // the rules referencing it apply to newer versions
   if (mod !== undefined) {
-    const mpRule = collection.rules.find((iter) => util.testModReference(mod, iter.reference));
+    const mpRule = collection.rules.find((iter) => testModReference(mod, iter.reference));
     if (
       mpRule !== undefined &&
       (mpRule.reference.versionMatch === undefined ||
@@ -213,18 +218,18 @@ export function collectionModToRule(
       }
     : undefined;
 
-  const coerced = util.coerceToSemver(mod.version);
+  const coerced = coerceToSemver(mod.version);
 
   const { updatePolicy } = mod.source;
 
   let versionMatch: string;
   if (updatePolicy === "prefer") {
-    versionMatch = coerced ? `>=${coerced ?? "0.0.0"}+prefer` : util.coerceToSemver(mod.version);
+    versionMatch = coerced ? `>=${coerced ?? "0.0.0"}+prefer` : coerceToSemver(mod.version);
   } else if (updatePolicy === "latest") {
     versionMatch = "*";
   } else {
     // Default to 'exact' for undefined or explicit 'exact' updatePolicy
-    versionMatch = coerced ? coerced : util.coerceToSemver(mod.version);
+    versionMatch = coerced ? coerced : coerceToSemver(mod.version);
   }
 
   // we can't use the md5 hash for a bundled file because they are recompressed
@@ -239,7 +244,7 @@ export function collectionModToRule(
   const reference: types.IModReference = {
     description: mod.name,
     fileMD5: refMD5,
-    gameId: util.convertGameIdReverse(knownGames, mod.domainName),
+    gameId: convertGameIdReverse(knownGames, mod.domainName),
     fileSize: mod.source.fileSize,
     versionMatch,
     logicalFileName: mod.source.logicalFilename,
