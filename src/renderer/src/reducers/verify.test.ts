@@ -276,6 +276,73 @@ describe("verify", () => {
     expect(result).not.toHaveProperty("dl2");
   });
 
+  it("passes key/parentKey/parent to the repair context", () => {
+    const seen: Array<unknown> = [];
+    const verifiers: Record<string, IStateVerifier> = {
+      _: {
+        description: desc("x"),
+        elements: {
+          val: {
+            description: desc("bad"),
+            type: "number",
+            repair: (_input, _def, ctx) => {
+              seen.push(ctx);
+              return 0;
+            },
+          },
+        },
+      },
+    };
+
+    verify("test", verifiers, { item1: { val: "bad" } }, {}, emitSpy());
+
+    // parentKey is the containing object's map key (here "item1")
+    expect(seen[0]).toEqual({ parentKey: "item1", parent: { val: "bad" }, key: "val" });
+  });
+
+  it("self-heals a value from its map key via the repair context (mods installationPath)", () => {
+    // mirrors mods.ts: a mod that lost its installationPath leaf (and its id
+    // leaf) recovers installationPath from the modId map key instead of being
+    // dropped, preserving the rest of the record.
+    const input = {
+      "Mod-A": { attributes: { endorsed: "Undecided" } }, // installationPath lost
+      "Mod-B": { installationPath: "Mod-B", attributes: {} }, // intact
+      "": { attributes: {} }, // unusable key -> must drop
+    };
+    const verifiers: Record<string, IStateVerifier> = {
+      _: {
+        description: desc("bad mod"),
+        elements: {
+          installationPath: {
+            description: desc("installationPath required"),
+            type: "string",
+            required: true,
+            noEmpty: true,
+            repair: (_val, _def, ctx) => {
+              const modId = ctx?.parentKey;
+              if (typeof modId === "string" && modId.length > 0) {
+                return modId;
+              }
+              throw new VerifierDropParent();
+            },
+          },
+        },
+      },
+    };
+
+    const result = verify("test", verifiers, input, {}, emitSpy());
+
+    // Mod-A: installationPath recovered from its map key, record preserved
+    expect(result["Mod-A"]).toEqual({
+      installationPath: "Mod-A",
+      attributes: { endorsed: "Undecided" },
+    });
+    // Mod-B: untouched
+    expect(result["Mod-B"].installationPath).toBe("Mod-B");
+    // empty-key record: unrecoverable -> dropped
+    expect(Object.keys(result)).not.toContain("");
+  });
+
   it("emits descriptions for each broken field", () => {
     const input = { a: "wrong", b: "also wrong" };
     const verifiers: Record<string, IStateVerifier> = {

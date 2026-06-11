@@ -124,7 +124,7 @@ import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
 import reducer, { buildReducerTree, Decision, sanitizeHydrationState } from "./reducers/index";
 import { fetchHydrationState } from "./store/hydration";
-import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
+import { flushPendingDiffsSync, persistDiffMiddleware } from "./store/persistDiffMiddleware";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
 import { computeStateDiff } from "./store/stateDiff";
@@ -183,6 +183,14 @@ const middleware = [
   persistDiffMiddleware,
   reduxLogger(),
 ];
+
+// On quit, persistDiffMiddleware may still hold up to DEBOUNCE_MS of un-sent
+// state diffs. window-all-closed fires in main after the renderer is already
+// gone, so flush synchronously here while we're still alive - otherwise the
+// final writes are lost and affected mods reload missing fields (GH#23363).
+window.addEventListener("beforeunload", () => {
+  flushPendingDiffsSync();
+});
 
 function sanityCheckCB(err: StateError) {
   err["attachLogOnReport"] = true;

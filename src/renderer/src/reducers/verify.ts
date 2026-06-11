@@ -48,6 +48,11 @@ export function verify(
   defaults: { [key: string]: any },
   emitDescription: (description: string) => void,
   log: LogFn = noop,
+  // key under which `input` lives in its parent (e.g. a modId for a mod
+  // record). Threaded through the recursion so a `repair` can recover a value
+  // from the record's own identity - see the installationPath self-heal in
+  // mod_management/reducers/mods.ts (GH#23363/#23355).
+  containerKey?: string,
 ): any {
   if (input === undefined || verifiers === undefined) {
     return input;
@@ -55,7 +60,15 @@ export function verify(
   let res = input;
 
   const recurse = (key: string, mapKey: string) => {
-    const sane = verify(statePath, verifiers[key].elements, res[mapKey], {}, emitDescription, log);
+    const sane = verify(
+      statePath,
+      verifiers[key].elements,
+      res[mapKey],
+      {},
+      emitDescription,
+      log,
+      mapKey,
+    );
     if (sane !== res[mapKey]) {
       res = sane === undefined ? deleteKey(res, mapKey) : update(res, { [mapKey]: { $set: sane } });
     }
@@ -77,7 +90,11 @@ export function verify(
         res = verifiers[key].deleteBroken === "parent" ? undefined : deleteKey(res, realKey);
       } else if (verifiers[key].repair !== undefined) {
         try {
-          const fixed = verifiers[key].repair(input[realKey], defaults[realKey]);
+          const fixed = verifiers[key].repair(input[realKey], defaults[realKey], {
+            parentKey: containerKey,
+            parent: input,
+            key: realKey,
+          });
           res = update(res, { [realKey]: { $set: fixed } });
         } catch (err) {
           if (err instanceof VerifierDrop) {

@@ -95,7 +95,17 @@ function serializeOperation(op: DiffOperation): DiffOperation {
 
 type PersistApi = {
   sendDiff: (hive: PersistedHive, operations: DiffOperation[]) => void;
+  // Synchronous send used only on quit (beforeunload). It blocks until main has
+  // queued the ops, so the final debounced batch is persisted before the window
+  // tears down. Optional so test overrides can omit it (they fall back to
+  // sendDiff). See GH#23363.
+  sendDiffSync?: (hive: PersistedHive, operations: DiffOperation[]) => void;
 };
+
+// The middleware instance registers its synchronous flush here so the renderer
+// entry can call flushPendingDiffsSync() from a beforeunload handler. The app
+// creates exactly one instance; tests create their own (the most recent wins).
+let activeSyncFlush: (() => void) | undefined;
 
 /**
  * Get the persist API lazily - it may not be available at module load time
@@ -150,6 +160,41 @@ export function createPersistDiffMiddleware(
     pendingDiffs = {};
     flushTimeout = null;
   };
+
+  /**
+   * Flush pending diffs synchronously. Used on quit (beforeunload): an async
+   * send would not complete before the renderer process is torn down, so the
+   * final debounced batch would be lost (the mods-changed-on-disk / split seen
+   * in GH#23363). Uses the synchronous IPC when available; otherwise best-effort
+   * async.
+   */
+  const flushDiffsSync = () => {
+    const persistApi = getApi();
+    if (persistApi == null) {
+      return;
+    }
+    if (flushTimeout != null) {
+      clearTimeout(flushTimeout);
+      flushTimeout = null;
+    }
+    for (const [hive, operations] of Object.entries(pendingDiffs) as [
+      PersistedHive,
+      DiffOperation[],
+    ][]) {
+      if (operations.length > 0) {
+        const serializedOps = operations.map(serializeOperation);
+        if (persistApi.sendDiffSync != null) {
+          persistApi.sendDiffSync(hive, serializedOps);
+        } else {
+          persistApi.sendDiff(hive, serializedOps);
+        }
+      }
+    }
+    pendingDiffs = {};
+  };
+
+  // Expose this instance's synchronous flush for the quit-time beforeunload hook.
+  activeSyncFlush = flushDiffsSync;
 
   /**
    * Schedule a flush of pending diffs
@@ -237,3 +282,14 @@ export function createPersistDiffMiddleware(
  * available when this module was first loaded.
  */
 export const persistDiffMiddleware = createPersistDiffMiddleware();
+
+/**
+ * Synchronously flush any pending (debounced) diffs for the default middleware
+ * instance. Call this from a `beforeunload` handler so the last batch of state
+ * changes is persisted before the renderer process is torn down on quit -
+ * otherwise those writes are lost and the affected mods reload missing fields
+ * (GH#23363). No-op if the middleware/persist API isn't ready.
+ */
+export function flushPendingDiffsSync(): void {
+  activeSyncFlush?.();
+}
