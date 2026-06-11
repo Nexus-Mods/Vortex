@@ -260,6 +260,45 @@ function doFetchAvailableExtensions(
     .then((extensions) => ({ time, extensions }));
 }
 
+// Downloads run in the main process and the renderer state is synced
+// asynchronously, so when the download callback resolves, the renderer-side
+// record may not exist yet or may still be "finalizing" (#23454). Poll for it
+// to reach a terminal state instead of reading the store once.
+export function waitForDownloadRecord(
+  api: IExtensionApi,
+  dlId: string,
+  timeoutMS: number = 30000,
+  intervalMS: number = 250,
+): PromiseBB<IDownload> {
+  const tryFetch = (remainingMS: number): PromiseBB<IDownload> => {
+    const state: IState = api.store.getState();
+    const download: IDownload = getSafe(
+      state,
+      ["persistent", "downloads", "files", dlId],
+      undefined,
+    );
+    if (download?.state === "failed") {
+      return PromiseBB.reject(new ProcessCanceled("Extension download failed"));
+    }
+    if (download?.state === "finished" && truthy(download.localPath)) {
+      return PromiseBB.resolve(download);
+    }
+    if (remainingMS <= 0) {
+      log("warn", "timeout waiting for extension download record", {
+        dlId,
+        state: download?.state,
+      });
+      return PromiseBB.reject(
+        download === undefined
+          ? new Error("Download not found")
+          : new Error(`Download not finished (state: ${download.state})`),
+      );
+    }
+    return PromiseBB.delay(intervalMS).then(() => tryFetch(remainingMS - intervalMS));
+  };
+  return tryFetch(timeoutMS);
+}
+
 export function downloadAndInstallExtension(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
@@ -283,18 +322,14 @@ export function downloadAndInstallExtension(
 
   return dlPromise
     .then((dlIds: string[]) => {
-      const state: IState = api.store.getState();
-
       if (dlIds === undefined || dlIds.length !== 1) {
         return PromiseBB.reject(new ProcessCanceled("No download found"));
       }
       api.store.dispatch(setDownloadModInfo(dlIds[0], "internal", true));
-      download = getSafe(state, ["persistent", "downloads", "files", dlIds[0]], undefined);
-      if (download === undefined) {
-        return PromiseBB.reject(new Error("Download not found"));
-      }
-
-      return fetchAvailableExtensions(false);
+      return waitForDownloadRecord(api, dlIds[0]).then((dl) => {
+        download = dl;
+        return fetchAvailableExtensions(false);
+      });
     })
     .then((availableExtensions: { time: Date; extensions: IAvailableExtension[] }) => {
       const extDetail = availableExtensions.extensions.find(
