@@ -33,6 +33,6 @@ jobs:
         with:
           nightly: "true"
           create-artifacts: "true"
-          use-codesigning: "true"
+          use-codesigning: "false"
           release: "false"
           staging-release: "false"
