@@ -2,7 +2,7 @@ import * as path from "path";
 
 import { fs, types, util } from "@nexusmods/vortex-api";
 
-const LOOT_LIST_REVISION = "v0.26";
+const LOOT_LIST_REVISION = "v0.29";
 const DOWNLOAD_THROTTLE_MS = 30 * 60 * 1000; // 30 minutes
 
 function getListUrl(gameId?: string) {
