@@ -1,4 +1,4 @@
-import { rehydrateSerializedError } from "@vortex/shared";
+import { rehydrateSerializedError, serializeError } from "@vortex/shared";
 import type {
   RendererChannels,
   MainChannels,
@@ -137,11 +137,19 @@ function mainHandle<C extends keyof InvokeChannels>(
     | AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>,
   logOptions: LogOptions = false,
 ): void {
-  ipcMain.handle(channel, (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
-    ipcLogger(logOptions, channel, event, args);
-    assertTrustedSender(event);
-    return listener(event, ...args);
-  });
+  ipcMain.handle(
+    channel,
+    async (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
+      ipcLogger(logOptions, channel, event, args);
+      try {
+        assertTrustedSender(event);
+        const value = await listener(event, ...args);
+        return { ok: true, value };
+      } catch (err) {
+        return { ok: false, error: serializeError(err) };
+      }
+    },
+  );
 }
 
 function mainSend<C extends keyof MainChannels>(
