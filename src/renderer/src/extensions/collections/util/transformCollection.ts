@@ -7,7 +7,7 @@ import { log } from "../../../logging";
 import type { IConditionResult, IDialogContent } from "../../../types/IDialog";
 import type { TFunction } from "../../../util/i18n";
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
-import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
+import type { IDownloadHint, IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
 import { coerceToSemver } from "../../mod_management/util/coerceToSemver";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
@@ -21,7 +21,16 @@ import type {
   ICollectionMod,
   ICollectionModRule,
   ICollectionSourceInfo,
+  SourceType,
 } from "../types/ICollection";
+
+// the source types that carry a download hint (a URL/instructions to fetch the
+// mod), as opposed to "nexus"/"bundle" which are resolved differently
+const DOWNLOAD_HINT_MODES: readonly SourceType[] = ["manual", "browse", "direct"];
+
+function isDownloadHintMode(type: SourceType): type is IDownloadHint["mode"] {
+  return DOWNLOAD_HINT_MODES.includes(type);
+}
 
 export function sanitizeExpression(fileName: string): string {
   // drop extension and anything like ".1" or " (1)" at the end which probaby
@@ -207,7 +216,7 @@ export function makeTransferrable(
  * convert a mod entry from a collection into a mod rule
  */
 export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionMod): IModRule {
-  const downloadHint = ["manual", "browse", "direct"].includes(mod.source.type)
+  const downloadHint: IDownloadHint | undefined = isDownloadHintMode(mod.source.type)
     ? {
         url: mod.source.url,
         instructions: mod.source.instructions,
