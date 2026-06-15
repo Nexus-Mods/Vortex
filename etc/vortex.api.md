@@ -797,8 +797,8 @@ function deBOM(input: string): string;
 // Warning: (ae-forgotten-export) The symbol "GenericDebouncer" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-class Debouncer extends GenericDebouncer<number, typeof window.setTimeout, typeof window.clearTimeout> {
-    constructor(func: (...args: any[]) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
+class Debouncer<Args extends unknown[] = unknown[]> extends GenericDebouncer<number, typeof window.setTimeout, typeof window.clearTimeout, Args> {
+    constructor(func: (...args: Args) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
 }
 
 // @public
@@ -4784,7 +4784,7 @@ type ProblemSeverity = "warning" | "error" | "fatal";
 class ProcessCanceled extends Error {
     constructor(message: string, extraInfo?: unknown);
     // (undocumented)
-    get extraInfo(): any;
+    get extraInfo(): unknown;
 }
 
 // @public (undocumented)
