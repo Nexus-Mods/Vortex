@@ -184,8 +184,12 @@ export const stateReducer: IReducerSpec = {
       return setSafe(temp, ["speedHistory"], speeds);
     },
     [action.setDownloadSpeeds as any]: (state, payload) => {
-      const temp = setSafe(state, ["speed"], payload[payload.length - 1]);
-      return setSafe(temp, ["speedHistory"], payload);
+      let speeds = Array.isArray(payload) ? payload.slice() : [];
+      if (speeds.length > NUM_SPEED_DATA_POINTS) {
+        speeds = speeds.slice(speeds.length - NUM_SPEED_DATA_POINTS);
+      }
+      const temp = setSafe(state, ["speed"], speeds[speeds.length - 1] ?? 0);
+      return setSafe(temp, ["speedHistory"], speeds);
     },
     [action.removeDownload as any]: (state, payload) => deleteOrNop(state, ["files", payload.id]),
     [action.removeDownloadSilent as any]: (state, payload) =>
@@ -246,6 +250,19 @@ export const stateReducer: IReducerSpec = {
     files: {},
   },
   verifiers: {
+    speedHistory: {
+      // A corrupted speedHistory (non-array, or longer than NUM_SPEED_DATA_POINTS)
+      // used to crash the Downloads page render. Repair it on hydration so affected
+      // users self-heal instead of staying broken even after the render-path fix.
+      description: () => "Download speed history stored incorrectly will be repaired.",
+      type: "array",
+      repair: (input) => {
+        if (!Array.isArray(input)) {
+          return [];
+        }
+        return input.slice(-NUM_SPEED_DATA_POINTS);
+      },
+    },
     files: {
       // shouldn't be reported atm
       description: () => "Severe! Invalid list of archives",
