@@ -15,6 +15,7 @@ import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 import {
   type DiagnosticsTeardown,
   instrumentNexusPage,
+  instrumentVortexInstance,
   instrumentVortexWindow,
 } from "../helpers/diagnostics";
 import { manageGame, type ManagedGame } from "../helpers/games";
@@ -296,13 +297,14 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             snapshotDirs.push(snapshotBase);
 
             const app = await launchVortexApp(snapshotBase, { timeout: Timeouts.SNAPSHOT });
-            let teardown: DiagnosticsTeardown | undefined;
+            const instanceTeardown = instrumentVortexInstance(snapshotBase, "snapshot");
+            let windowTeardown: DiagnosticsTeardown | undefined;
             let storageStatePath: string | undefined;
             let failed = false;
 
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
-              teardown = await instrumentVortexWindow(app, window, snapshotBase, "snapshot");
+              windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
               const loginResult = await loginToNexus(window, user, {
                 skipSteps: true,
                 keepBrowser: true,
@@ -322,7 +324,8 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
               failed = true;
               throw e;
             } finally {
-              if (teardown !== undefined) await teardown(testInfo, failed);
+              await instanceTeardown(testInfo, failed);
+              if (windowTeardown !== undefined) await windowTeardown(testInfo, failed);
               // Clean close flushes DuckDB WAL so state.v2 is consistent on disk.
               await closeElectronApp(app);
             }
@@ -385,10 +388,16 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   },
 
   vortexWindow: async ({ vortexApp, vortexUserDataDir }, use, testInfo) => {
-    const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
-    const teardown = await instrumentVortexWindow(vortexApp, mainWindow, vortexUserDataDir, "main");
-    await use(mainWindow);
-    await teardown(testInfo);
+    const instanceTeardown = instrumentVortexInstance(vortexUserDataDir, "main");
+    let windowTeardown: DiagnosticsTeardown | undefined;
+    try {
+      const mainWindow = await setupMainWindow(vortexApp, Timeouts.LIFECYCLE);
+      windowTeardown = await instrumentVortexWindow(vortexApp, mainWindow, "main");
+      await use(mainWindow);
+    } finally {
+      await instanceTeardown(testInfo);
+      if (windowTeardown !== undefined) await windowTeardown(testInfo);
+    }
   },
 
   nexusStorageState: async ({ workerAuthSnapshots, nexusUser }, use, testInfo) => {
