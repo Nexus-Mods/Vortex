@@ -28,7 +28,6 @@ import { writeFileAtomic } from "../../util/fsAtomic";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { jsonRequest, rawRequest } from "../../util/network";
-import { getSafe } from "../../util/storeHelper";
 import { INVALID_FILENAME_RE, truthy } from "../../util/util";
 import { addLocalDownload, setDownloadModInfo } from "../download_management/actions/state";
 import { downloadPathForGame } from "../download_management/selectors";
@@ -272,11 +271,7 @@ export function waitForDownloadRecord(
 ): PromiseBB<IDownload> {
   const tryFetch = (remainingMS: number): PromiseBB<IDownload> => {
     const state: IState = api.store.getState();
-    const download: IDownload = getSafe(
-      state,
-      ["persistent", "downloads", "files", dlId],
-      undefined,
-    );
+    const download: IDownload = state.persistent?.downloads?.files?.[dlId];
     if (download?.state === "failed") {
       return PromiseBB.reject(new ProcessCanceled("Extension download failed"));
     }
