@@ -114,7 +114,7 @@ describe("filesystem RPC end-to-end", () => {
     while (true) {
       const next = await iterator.next();
       if (next.done) break;
-      const qp = next.value as QualifiedPath;
+      const qp = next.value;
       expect(qp).toBeInstanceOf(QualifiedPath);
       seen.push(qp.basename);
     }

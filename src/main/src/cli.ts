@@ -105,7 +105,7 @@ function transformEpicArguments(argv: string[]): string[] {
 }
 
 // arguments that should be dropped when restarting the application
-const SKIP_ARGS = {
+const SKIP_ARGS: Record<string, number> = {
   "-d": 1,
   "--download": 1,
   "-i": 1,

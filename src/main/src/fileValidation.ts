@@ -27,7 +27,7 @@ async function hashFile(fullPath: string): Promise<string> {
 export async function validateFiles(
   basePath: string,
 ): Promise<{ missing: string[]; changed: string[] }> {
-  let fileList = {};
+  let fileList: Record<string, string> = {};
   try {
     fileList = await readHashList(basePath);
   } catch (err) {

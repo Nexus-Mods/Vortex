@@ -91,7 +91,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath>>;
+  ): Promise<AsyncIterator<QualifiedPath, undefined>>;
   enumerateDirectory(
     path: QualifiedPath,
     options: {
@@ -101,7 +101,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[QualifiedPath, Status]>>;
+  ): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
   enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -111,7 +111,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status]>>;
+  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>>;
   async enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -121,7 +121,7 @@ export class NodeFileSystemImpl implements NodeFileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status]>> {
+  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
     const rootResolved = await this.#resolvers.resolve(path);
     const iter = await this.#backend.enumerateDirectory(rootResolved, options);
     const includeStatus = Boolean(options?.includeStatus);
@@ -162,11 +162,11 @@ export class NodeFileSystemImpl implements NodeFileSystem {
 }
 
 function wrapIterator(
-  inner: AsyncIterator<ResolvedPath | readonly [ResolvedPath, Status]>,
+  inner: AsyncIterator<ResolvedPath | readonly [ResolvedPath, Status], undefined>,
   rootQP: QualifiedPath,
   rootResolved: ResolvedPath,
   includeStatus: boolean,
-): AsyncIterator<QualifiedPath | [QualifiedPath, Status]> {
+): AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined> {
   return {
     async next() {
       const step = await inner.next();

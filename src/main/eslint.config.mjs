@@ -10,11 +10,5 @@ export default defineConfig([
     languageOptions: {
       globals: { ...globals.node },
     },
-    rules: {
-      // TODO: to be removed after warnings have been fixed
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unsafe-call": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
-    },
   },
 ]);

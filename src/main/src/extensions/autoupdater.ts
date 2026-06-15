@@ -161,7 +161,7 @@ export function setupAutoUpdater(installType: string): void {
   });
 
   // Download progress
-  autoUpdater.on("download-progress", (progress) => {
+  autoUpdater.on("download-progress", (progress: { percent: number }) => {
     log("debug", "Download progress", { percent: progress.percent });
     updateStatus.downloadProgress = progress.percent;
   });

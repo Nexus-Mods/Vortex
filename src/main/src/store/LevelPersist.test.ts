@@ -10,7 +10,7 @@ const SEPARATOR = "###";
 
 function createMockConnection() {
   return {
-    run: vi.fn().mockResolvedValue(undefined),
+    run: vi.fn<(sql: string, params?: unknown[]) => Promise<void>>().mockResolvedValue(undefined),
     runAndReadAll: vi.fn().mockResolvedValue({ getRows: () => [] }),
   };
 }
@@ -40,7 +40,7 @@ describe("LevelPersist.setItem", () => {
 
     await persist.setItem(["a"], "v");
 
-    const sqls = connection.run.mock.calls.map((c) => c[0] as string);
+    const sqls = connection.run.mock.calls.map((c) => c[0]);
     expect(sqls).not.toContainEqual(expect.stringMatching(/BEGIN/i));
     expect(sqls).not.toContainEqual(expect.stringMatching(/COMMIT/i));
   });
@@ -110,7 +110,7 @@ describe("LevelPersist.bulkSetItem", () => {
     }));
     await persist.bulkSetItem(items);
 
-    const sql = connection.run.mock.calls[0][0] as string;
+    const sql = connection.run.mock.calls[0][0];
     const placeholders = sql.match(/\$\d+/g) ?? [];
     expect(placeholders.length).toBe(200); // 2 per item
 
