@@ -214,7 +214,8 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
       <div className="flex shrink-0 items-center gap-x-2 rounded-b bg-surface-translucent-low px-3 py-2">
         {!canBeAdded || pending ? (
           <Button
-            buttonType="tertiary"
+            brand="neutral"
+            appearance="weak"
             disabled={true}
             leftIconPath={!isLoggedIn ? undefined : mdiCheck}
             size="xs"
@@ -228,7 +229,13 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
           </Button>
         )}
 
-        <Button buttonType="tertiary" leftIconPath={mdiOpenInNew} size="xs" onClick={onViewPage}>
+        <Button
+          brand="neutral"
+          appearance="weak"
+          leftIconPath={mdiOpenInNew}
+          size="xs"
+          onClick={onViewPage}
+        >
           View page
         </Button>
       </div>

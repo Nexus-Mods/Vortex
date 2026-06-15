@@ -8,7 +8,7 @@ Components adapted from the web team's "next" project for use in Vortex.
 ui/
 ├── components/
 │   ├── bullet/          - Small rotated-square dot used as an inline marker/separator
-│   ├── button/          - Button system (primary, secondary, tertiary, success, premium)
+│   ├── button/          - Button system (brand × appearance matrix)
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
@@ -71,7 +71,7 @@ Components use `nxm-` prefixed CSS class names to avoid conflicts with existing 
 
 ```tsx
 // Class naming pattern: nxm-{component}-{variant}-{modifier}
-<button className="nxm-button nxm-button-primary" />
+<button className="nxm-button nxm-button-primary nxm-button-strong" />
 <span className="nxm-tab-button nxm-tab-button-selected" />
 ```
 
@@ -88,29 +88,40 @@ joinClasses(["nxm-button", className], {
 
 ### Button
 
-**Defaults:** `buttonType="primary"`, `size="md"` — only set these when you need something different.
+Styled as a `brand` × `appearance` matrix: `brand` picks the colour family, `appearance` picks the prominence (solid fill → text-only).
+
+**Defaults:** `brand="primary"`, `appearance="strong"`, `size="md"` — only set these when you need something different.
 
 ```tsx
 import { Button } from "../../ui/components/button/Button";
 
-// Uses defaults (primary, md) — no need to specify
+// Uses defaults (primary, strong, md) — a solid primary button
 <Button>Click Me</Button>
 
 // Only override what differs from the default
 <Button size="xs">Small</Button>
-<Button buttonType="secondary" filled="strong">Filled</Button>
-<Button buttonType="success">Saved</Button>
+<Button brand="neutral" appearance="subdued">Outlined</Button>
+<Button brand="neutral" appearance="weak">Quiet</Button>
+<Button brand="success">Saved</Button>
 
 // With icons
 import { mdiDownload } from "@mdi/js";
 <Button leftIconPath={mdiDownload}>Download</Button>
 
+// Icon-only (collapses to a square — always pass an aria-label)
+<Button aria-label="Download" leftIconPath={mdiDownload} />
+
 // Loading state
 <Button isLoading>Processing...</Button>
 ```
 
-**Types:** `primary`, `secondary`, `tertiary`, `success`, `premium`
+**Brands:** `primary`, `info`, `neutral`, `success`, `premium`
+**Appearances:** `strong` (solid fill), `moderate` (subtle surface), `subdued` (outline), `weak` (text only)
 **Sizes:** `xs`, `sm`, `md`
+
+A button with no `children`/`customContent` but an icon renders icon-only (square). Every brand supports every appearance; `success`/`premium` derive their full ramps to match. `appearance` defaults to `strong` so a bare `<Button>` is a solid primary button.
+
+> **Migration note:** the old `buttonType`/`filled` props were replaced by `brand`/`appearance`. `secondary`→`neutral`+`subdued`, `tertiary`→`neutral`+`weak`, `filled="strong"`→`appearance="strong"`, `filled="weak"`→`appearance="moderate"`.
 
 ### Icon
 

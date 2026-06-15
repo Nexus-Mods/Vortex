@@ -184,8 +184,8 @@ export const ToolsPage: FC = () => {
             <Panel
               actions={() => (
                 <Button
-                  buttonType="tertiary"
-                  filled="weak"
+                  brand="neutral"
+                  appearance="moderate"
                   leftIconPath={mdiPlus}
                   size="sm"
                   title={t("Add tool")}

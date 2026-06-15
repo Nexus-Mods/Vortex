@@ -56,8 +56,8 @@ export const NoResults = ({
       ? children
       : isError && (
           <Button
-            buttonType="tertiary"
-            filled="weak"
+            brand="neutral"
+            appearance="moderate"
             leftIconPath={mdiOpenInNew}
             size="sm"
             onClick={() =>

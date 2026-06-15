@@ -38,7 +38,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Button buttonType="secondary" onClick={() => setBasicOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setBasicOpen(true)}>
             Open Basic Modal
           </Button>
         </div>
@@ -50,7 +50,7 @@ export const ModalDemo = () => {
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button buttonType="secondary" onClick={() => setBasicOpen(false)}>
+            <Button brand="neutral" appearance="subdued" onClick={() => setBasicOpen(false)}>
               Cancel
             </Button>
 
@@ -65,15 +65,15 @@ export const ModalDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Button buttonType="secondary" onClick={() => setSizeSmOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setSizeSmOpen(true)}>
             Small (sm)
           </Button>
 
-          <Button buttonType="secondary" onClick={() => setSizeLgOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setSizeLgOpen(true)}>
             Large (lg)
           </Button>
 
-          <Button buttonType="secondary" onClick={() => setSizeXlOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setSizeXlOpen(true)}>
             Extra Large (xl)
           </Button>
         </div>
@@ -103,7 +103,7 @@ export const ModalDemo = () => {
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button buttonType="secondary" onClick={() => setSizeLgOpen(false)}>
+            <Button brand="neutral" appearance="subdued" onClick={() => setSizeLgOpen(false)}>
               Cancel
             </Button>
 
@@ -122,7 +122,7 @@ export const ModalDemo = () => {
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button buttonType="secondary" onClick={() => setSizeXlOpen(false)}>
+            <Button brand="neutral" appearance="subdued" onClick={() => setSizeXlOpen(false)}>
               Close
             </Button>
           </div>
@@ -139,7 +139,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Button buttonType="secondary" onClick={() => setNoCloseOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setNoCloseOpen(true)}>
             Open Without Close Button
           </Button>
         </div>
@@ -171,7 +171,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Button buttonType="secondary" onClick={() => setFocusOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setFocusOpen(true)}>
             Open With Initial Focus
           </Button>
         </div>
@@ -187,7 +187,7 @@ export const ModalDemo = () => {
           </Typography>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button buttonType="secondary" onClick={() => setFocusOpen(false)}>
+            <Button brand="neutral" appearance="subdued" onClick={() => setFocusOpen(false)}>
               Cancel
             </Button>
 
@@ -208,7 +208,7 @@ export const ModalDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap gap-4">
-          <Button buttonType="secondary" onClick={() => setCustomOpen(true)}>
+          <Button brand="neutral" appearance="subdued" onClick={() => setCustomOpen(true)}>
             Open Custom Layout
           </Button>
         </div>
@@ -221,7 +221,7 @@ export const ModalDemo = () => {
             </Typography>
 
             <div className="mt-4 flex justify-end gap-2">
-              <Button buttonType="secondary" onClick={() => setCustomOpen(false)}>
+              <Button brand="neutral" appearance="subdued" onClick={() => setCustomOpen(false)}>
                 Close
               </Button>
             </div>

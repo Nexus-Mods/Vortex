@@ -7,7 +7,12 @@ import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
 import React, { useState } from "react";
 
 import { Typography } from "../typography/Typography";
-import { Button } from "./Button";
+import { Button, type ButtonAppearance, type ButtonBrand } from "./Button";
+
+const BRANDS: ButtonBrand[] = ["primary", "info", "neutral", "success", "premium"];
+const APPEARANCES: ButtonAppearance[] = ["strong", "moderate", "subdued", "weak"];
+
+const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export const ButtonDemo = () => {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
@@ -25,108 +30,66 @@ export const ButtonDemo = () => {
         </Typography>
 
         <Typography appearance="subdued">
-          A consistent button system with multiple types, sizes, and states including icon support.
+          A consistent button system with a brand × appearance matrix, multiple sizes, and states
+          including icon support.
         </Typography>
       </div>
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
-          Primary Buttons
+          Brand × Appearance
+        </Typography>
+
+        {BRANDS.map((brand) => (
+          <div className="space-y-2" key={brand}>
+            <Typography appearance="subdued" typographyType="body-sm">
+              {titleCase(brand)}
+            </Typography>
+
+            <div className="flex flex-wrap items-center gap-4">
+              {APPEARANCES.map((appearance) => (
+                <React.Fragment key={appearance}>
+                  <Button appearance={appearance} brand={brand}>
+                    {titleCase(appearance)}
+                  </Button>
+
+                  <Button
+                    appearance={appearance}
+                    aria-label={`${titleCase(brand)} ${titleCase(appearance)} icon only`}
+                    brand={brand}
+                    leftIconPath={mdiCog}
+                  />
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
+          Sizes
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button>Primary Medium</Button>
+          <Button size="md">Medium</Button>
 
-          <Button size="sm">Primary Small</Button>
+          <Button size="sm">Small</Button>
 
+          <Button size="xs">Extra Small</Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
+          States
+        </Typography>
+
+        <div className="flex flex-wrap items-center gap-4">
           <Button disabled={true}>Disabled</Button>
 
           <Button isLoading={loadingStates.primary} onClick={() => handleLoadingClick("primary")}>
             Click for Loading
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-xs">
-          Secondary Buttons
-        </Typography>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="secondary">Secondary Medium</Button>
-
-          <Button buttonType="secondary" size="sm">
-            Secondary Small
-          </Button>
-
-          <Button buttonType="secondary" filled="strong">
-            Filled Strong
-          </Button>
-
-          <Button buttonType="secondary" filled="weak">
-            Filled Weak
-          </Button>
-
-          <Button buttonType="secondary" disabled={true}>
-            Disabled
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-xs">
-          Tertiary Buttons
-        </Typography>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="tertiary">Tertiary Medium</Button>
-
-          <Button buttonType="tertiary" size="sm">
-            Tertiary Small
-          </Button>
-
-          <Button buttonType="tertiary" filled="strong">
-            Filled Strong
-          </Button>
-
-          <Button buttonType="tertiary" filled="weak">
-            Filled Weak
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-xs">
-          Success Buttons
-        </Typography>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="success">Success Medium</Button>
-
-          <Button buttonType="success" size="sm">
-            Success Small
-          </Button>
-
-          <Button buttonType="success" disabled={true}>
-            Disabled
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-xs">
-          Premium Buttons
-        </Typography>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="premium">Premium Medium</Button>
-
-          <Button buttonType="premium" size="sm">
-            Premium Small
-          </Button>
-
-          <Button buttonType="premium" disabled={true}>
-            Disabled
           </Button>
         </div>
       </div>
@@ -149,37 +112,52 @@ export const ButtonDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
-          Responsive Buttons
-        </Typography>
-
-        <Typography appearance="subdued" typographyType="body-sm">
-          These buttons change size based on screen width. Try resizing the window!
-        </Typography>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Button size="sm">Responsive (sm on mobile, md on desktop)</Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-xs">
           Buttons with Icons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
           <Button leftIconPath={mdiDownload}>Download</Button>
 
-          <Button buttonType="secondary" rightIconPath={mdiChevronRight}>
+          <Button brand="neutral" appearance="subdued" rightIconPath={mdiChevronRight}>
             Next
           </Button>
 
-          <Button buttonType="success" leftIconPath={mdiCheck} size="sm">
+          <Button brand="success" leftIconPath={mdiCheck} size="sm">
             Confirm
           </Button>
 
-          <Button buttonType="tertiary" leftIconPath={mdiCog}>
+          <Button brand="neutral" appearance="weak" leftIconPath={mdiCog}>
             Settings
           </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
+          Icon Only
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          Buttons with an icon and no label collapse to a square. Always provide an aria-label.
+        </Typography>
+
+        <div className="flex flex-wrap items-center gap-4">
+          {APPEARANCES.map((appearance) => (
+            <Button
+              appearance={appearance}
+              aria-label={`Settings (${appearance})`}
+              key={appearance}
+              leftIconPath={mdiCog}
+            />
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <Button aria-label="Settings (md)" leftIconPath={mdiCog} size="md" />
+
+          <Button aria-label="Settings (sm)" leftIconPath={mdiCog} size="sm" />
+
+          <Button aria-label="Settings (xs)" leftIconPath={mdiCog} size="xs" />
         </div>
       </div>
     </div>

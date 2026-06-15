@@ -67,8 +67,9 @@ export const ListingDemo = () => {
 
         <div className="flex flex-wrap gap-2">
           <Button
-            buttonType="secondary"
-            {...(isLoading ? { filled: "strong" } : {})}
+            brand="neutral"
+            appearance="subdued"
+            {...(isLoading ? { appearance: "strong" } : {})}
             size="sm"
             onClick={() => {
               setIsLoading(!isLoading);
@@ -79,8 +80,9 @@ export const ListingDemo = () => {
           </Button>
 
           <Button
-            buttonType="secondary"
-            {...(isError ? { filled: "strong" } : {})}
+            brand="neutral"
+            appearance="subdued"
+            {...(isError ? { appearance: "strong" } : {})}
             size="sm"
             onClick={() => {
               setIsError(!isError);
@@ -91,8 +93,9 @@ export const ListingDemo = () => {
           </Button>
 
           <Button
-            buttonType="secondary"
-            {...(isEmpty ? { filled: "strong" } : {})}
+            brand="neutral"
+            appearance="subdued"
+            {...(isEmpty ? { appearance: "strong" } : {})}
             size="sm"
             onClick={() => {
               setIsEmpty(!isEmpty);
@@ -183,7 +186,7 @@ export const ListingDemo = () => {
                   No mods installed yet
                 </Typography>
 
-                <Button buttonType="secondary" size="sm">
+                <Button brand="neutral" appearance="subdued" size="sm">
                   Browse mods
                 </Button>
               </div>
