@@ -873,44 +873,9 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 30_000,
         lookup: 5_000,
         connect: 5_000,
         stall: 200,
-      };
-
-      await expect(
-        download(
-          route.url,
-          dest,
-          {
-            resolver: urlResolver,
-            chunker: staticChunker(),
-          },
-          {
-            timeout,
-          },
-        ),
-      ).rejects.toMatchObject({
-        payload: { code: "network-timeout" },
-      });
-    }, 1_000);
-
-    it("rejects with a network timeout when the request timeout elapses", async () => {
-      using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: false }),
-          delayAt("onRequest", 5_000),
-        ),
-      );
-      await using tmp = await makeTmpDir();
-      const dest = path.join(tmp.dir, "output");
-
-      const timeout: TimeoutOptions = {
-        request: 200,
-        lookup: 5_000,
-        connect: 5_000,
-        stall: 5_000,
       };
 
       await expect(
@@ -936,7 +901,6 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 30_000,
         lookup: 5_000,
         connect: 5_000,
         stall: 5_000,
@@ -973,7 +937,6 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 30_000,
         lookup: 5_000,
         connect: 5_000,
         stall: 200,
@@ -1007,10 +970,9 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 2_000,
-        lookup: 5_000,
-        connect: 5_000,
-        stall: 5_000,
+        lookup: 2_000,
+        connect: 2_000,
+        stall: 2_000,
       };
 
       const abortController = new AbortController();
