@@ -5480,7 +5480,12 @@ class InstallManager {
             }
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
-              if (innerErr.extraInfo !== undefined && innerErr.extraInfo.alreadyReported) {
+              if (
+                typeof innerErr.extraInfo === "object" &&
+                innerErr.extraInfo !== null &&
+                "alreadyReported" in innerErr.extraInfo &&
+                innerErr.extraInfo.alreadyReported
+              ) {
                 return undefined;
               }
               const refName = renderModReference(dep.reference, undefined);
