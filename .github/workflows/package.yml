@@ -42,7 +42,7 @@ on:
       - .github/actions/package/**
 
 permissions:
-  contents: read
+  contents: write # needed to create the GitHub release
   id-token: write # OIDC token for provenance attestation
 
 jobs:
