@@ -1,8 +1,22 @@
 import type { IReference, IRule } from "modmeta-db";
 
+import type { IChoiceType } from "../../installer_fomod_shared/types/interface";
+
 export type { IReference, IRule };
+// The installer-choices shape is owned by the fomod installer (the only producer
+// today). Re-exported here so the install-customization fields have one import home.
+export type { IChoiceType };
 
 export type ModState = "downloading" | "downloaded" | "installing" | "installed";
+
+/**
+ * Binary patches applied to a mod's files when it is installed as a dependency,
+ * keyed by file path. The value is the hash of the baseline file the patch is
+ * applied against.
+ */
+export interface IModPatches {
+  [filePath: string]: string;
+}
 
 /**
  * Attributes specific to Nexus Mods Collections (when IMod.type === "collection")
@@ -77,8 +91,8 @@ export interface ICommonModAttributes {
   referenceTag?: string;
 
   // Installer and patching
-  installerChoices?: any;
-  patches?: any;
+  installerChoices?: IChoiceType;
+  patches?: IModPatches;
   fileList?: IFileListItem[];
 
   // Version and updates
@@ -190,9 +204,6 @@ export interface IModReference extends IReference {
   // the user chose for the mod.
   description?: string;
   instructions?: string;
-  installerChoices?: any;
-  fileList?: IFileListItem[];
-  patches?: any;
 }
 
 /**
@@ -220,8 +231,10 @@ export interface IDownloadHint {
 export interface IModRule extends IRule {
   reference: IModReference;
   fileList?: IFileListItem[];
-  // the format of these choices is installer-specific
-  installerChoices?: any;
+  installerChoices?: IChoiceType;
+  // binary patches applied to the referenced mod's files when it is installed as a
+  // dependency
+  patches?: IModPatches;
   downloadHint?: IDownloadHint;
   // additional information attached to the rule. This will not have
   // any effect on the resolution of the rule but may be used to

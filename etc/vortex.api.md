@@ -575,7 +575,7 @@ const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
 }, {}>;
 
 // @public
-type CollectionModStatus = "pending" | "downloading" | "downloaded" | "installing" | "installed" | "failed" | "skipped" | "optional";
+type CollectionModStatus = "pending" | "downloading" | "downloaded" | "installing" | "installed" | "failed" | "ignored" | "optional";
 
 // Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point api.d.ts
 //
@@ -1022,7 +1022,7 @@ function findModByRef(reference: IModReference, mods: {
 }, source?: {
     gameId: string;
     modId: string;
-}): IMod;
+}, installSpec?: IModInstallSpec): IMod;
 
 // @public
 const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
@@ -1271,7 +1271,7 @@ const getCollectionInstallProgress: ((state: IState) => {
     downloadedCount: number;
     installedCount: number;
     failedCount: number;
-    skippedCount: number;
+    ignoredCount: number;
     downloadProgress: number;
     installProgress: number;
     isComplete: boolean;
@@ -1281,7 +1281,7 @@ totalOptional: number;
 downloadedCount: number;
 installedCount: number;
 failedCount: number;
-skippedCount: number;
+ignoredCount: number;
 downloadProgress: number;
 installProgress: number;
 isComplete: boolean;
@@ -1743,19 +1743,25 @@ interface ICheckbox extends IControlBase {
     value: boolean;
 }
 
+// @public (undocumented)
+type IChoiceType = {
+    type: string;
+    options: IChoices;
+};
+
 // @public
 interface ICollectionInstallSession {
     collectionId: string;
     downloadedCount: number;
     failedCount: number;
     gameId: string;
+    ignoredCount: number;
     installedCount: number;
     mods: {
         [ruleId: string]: ICollectionModInstallInfo;
     };
     profileId: string;
     sessionId: string;
-    skippedCount: number;
     totalOptional: number;
     totalRequired: number;
 }
@@ -2403,6 +2409,16 @@ interface IFileFilter {
     name: string;
 }
 
+// @public
+interface IFileListItem {
+    // (undocumented)
+    md5?: string;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    xxh64?: string;
+}
+
 // @public (undocumented)
 interface IFilterProps {
     // (undocumented)
@@ -3001,6 +3017,16 @@ interface IModifiers {
 }
 
 // @public (undocumented)
+interface IModInstallSpec {
+    // (undocumented)
+    fileList?: IFileListItem[];
+    // (undocumented)
+    installerChoices?: IChoiceType;
+    // (undocumented)
+    patches?: IModPatches;
+}
+
+// @public (undocumented)
 interface IModLookupInfo {
     // (undocumented)
     additionalLogicalFileNames?: string[];
@@ -3008,8 +3034,6 @@ interface IModLookupInfo {
     customFileName?: string;
     // (undocumented)
     fileId?: string;
-    // Warning: (ae-forgotten-export) The symbol "IFileListItem" needs to be exported by the entry point api.d.ts
-    //
     // (undocumented)
     fileList?: IFileListItem[];
     // (undocumented)
@@ -3023,7 +3047,7 @@ interface IModLookupInfo {
     // (undocumented)
     id?: string;
     // (undocumented)
-    installerChoices?: any;
+    installerChoices?: IChoiceType;
     // (undocumented)
     logicalFileName?: string;
     // (undocumented)
@@ -3031,13 +3055,19 @@ interface IModLookupInfo {
     // (undocumented)
     name?: string;
     // (undocumented)
-    patches?: any;
+    patches?: IModPatches;
     // (undocumented)
     referenceTag?: string;
     // (undocumented)
     source?: string;
     // (undocumented)
     version: string;
+}
+
+// @public
+interface IModPatches {
+    // (undocumented)
+    [filePath: string]: string;
 }
 
 // @public (undocumented)
@@ -3047,19 +3077,13 @@ interface IModReference extends IReference {
     // (undocumented)
     description?: string;
     // (undocumented)
-    fileList?: IFileListItem[];
-    // (undocumented)
     id?: string;
     // (undocumented)
     idHint?: string;
     // (undocumented)
-    installerChoices?: any;
-    // (undocumented)
     instructions?: string;
     // (undocumented)
     md5Hint?: string;
-    // (undocumented)
-    patches?: any;
     // (undocumented)
     repo?: {
         repository: string;
@@ -3094,7 +3118,9 @@ interface IModRule extends IRule {
     // (undocumented)
     ignored?: boolean;
     // (undocumented)
-    installerChoices?: any;
+    installerChoices?: IChoiceType;
+    // (undocumented)
+    patches?: IModPatches;
     // (undocumented)
     reference: IModReference;
 }
@@ -3206,7 +3232,7 @@ type InstallerMatchMode = "any" | "all";
 type InstallerSpecInstallFunc = (files: string[], destinationPath: string) => Promise<IInstallResult>;
 
 // @public (undocumented)
-type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: any, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => PromiseLike<IInstallResult>;
+type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: IChoiceType, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => PromiseLike<IInstallResult>;
 
 // @public
 const installIconSet: (set: string, setPath: string) => Promise<Set<string>>;
@@ -5013,6 +5039,9 @@ type Revertability = "yes" | "never" | "invalid";
 // @public (undocumented)
 function rmdirAsync(dirPath: string): Promise_2<void>;
 
+// @public
+function ruleInstallSpec(rule: IModRule): IModInstallSpec;
+
 // Warning: (ae-forgotten-export) The symbol "IElevatedIpc" needs to be exported by the entry point api.d.ts
 //
 // @public
@@ -6060,7 +6089,11 @@ declare namespace types {
         IGameStored,
         IDeploymentManifest,
         IModLookupInfo,
+        IModInstallSpec,
+        IChoiceType,
+        IFileListItem,
         IMod,
+        IModPatches,
         IModReference,
         IModRepoId,
         IModRule,
@@ -6407,6 +6440,7 @@ declare namespace util {
         renderModReference,
         resolveCategoryName,
         resolveCategoryPath,
+        ruleInstallSpec,
         runElevated,
         runThreaded,
         sanitizeCSSId,
@@ -6575,6 +6609,7 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 
 // Warnings were encountered during analysis:
 //
+// lib/extensions/installer_fomod_shared/types/interface.d.ts:76:5 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
 // lib/types/IState.d.ts:161:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts

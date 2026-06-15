@@ -5,10 +5,25 @@ import { generate as shortid } from "shortid";
 import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
 
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
 import * as fs from "../../../util/fs";
 import * as selectors from "../../../util/selectors";
+import { sanitizeFilename } from "../../../util/util";
+import { resolveCategoryName } from "../../category_management/util/retrieveCategoryPath";
+import { getGame } from "../../gamemode_management/util/getGame";
+import type {
+  IChoiceType,
+  IFileListItem,
+  IMod,
+  IModReference,
+  IModRule,
+} from "../../mod_management/types/IMod";
+import { findModByRef } from "../../mod_management/util/findModByRef";
+import renderModName from "../../mod_management/util/modName";
+import { makeModReference } from "../../mod_management/util/modReference";
+import testModReference from "../../mod_management/util/testModReference";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { BUNDLED_PATH, MOD_TYPE, PATCHES_PATH } from "../constants";
 import type {
   ICollection,
@@ -31,20 +46,20 @@ import { ruleId } from "./util";
 import { fileMD5Async } from "./walk";
 
 interface IResolvedRule {
-  mod: types.IMod;
-  rule: types.IModRule;
+  mod: IMod;
+  rule: IModRule;
 }
 
 /**
  * converts the rules in a mod into mod entries for a collection, ready for export
  */
 async function rulesToCollectionMods(
-  api: types.IExtensionApi,
-  collection: types.IMod,
+  api: IExtensionApi,
+  collection: IMod,
   resolvedRules: IResolvedRule[],
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
   stagingPath: string,
-  game: types.IGame,
+  game: IGame,
   collectionInfo: ICollectionAttributes,
   bundleTags: { [modId: string]: string },
   onProgress: (percent: number, text: string) => void,
@@ -89,7 +104,7 @@ async function rulesToCollectionMods(
         gameId: game.id,
       });
 
-      const modName = util.renderModName(mod, { version: false });
+      const modName = renderModName(mod, { version: false });
       try {
         // This call is relatively likely to fail to do it before the hash calculation to
         // save the user time in case it does fail
@@ -101,8 +116,8 @@ async function rulesToCollectionMods(
           bundleTags[mod.id],
         );
 
-        let hashes: any;
-        let choices: any;
+        let hashes: IFileListItem[];
+        let choices: IChoiceType;
 
         let entries: IEntry[] = [];
 
@@ -148,7 +163,7 @@ async function rulesToCollectionMods(
 
         if (collectionInfo.source?.[mod.id]?.type === "bundle") {
           const tlFiles = await fs.readdirAsync(modPath);
-          const generatedName: string = `Bundled - ${util.sanitizeFilename(util.renderModName(mod, { version: true }))}`;
+          const generatedName: string = `Bundled - ${sanitizeFilename(renderModName(mod, { version: true }))}`;
           const destPath = path.join(collectionPath, BUNDLED_PATH, generatedName);
           try {
             await fs.removeAsync(destPath);
@@ -177,14 +192,12 @@ async function rulesToCollectionMods(
 
         onProgress(Math.floor((finished / total) * 100), modName);
 
-        const dlGame: types.IGame =
-          mod.attributes?.downloadGame !== undefined
-            ? util.getGame(mod.attributes.downloadGame)
-            : game;
+        const dlGame: IGame =
+          mod.attributes?.downloadGame !== undefined ? getGame(mod.attributes.downloadGame) : game;
 
         // workaround where Vortex has no support for the game this download came from
         const domainName =
-          dlGame !== undefined ? util.nexusGameId(dlGame) : mod.attributes?.downloadGame;
+          dlGame !== undefined ? nexusGameId(dlGame) : mod.attributes?.downloadGame;
 
         const res: ICollectionMod = {
           name: modName,
@@ -200,7 +213,7 @@ async function rulesToCollectionMods(
             : undefined,
           author: mod.attributes?.author,
           details: {
-            category: util.resolveCategoryName(mod.attributes?.category, state),
+            category: resolveCategoryName(mod.attributes?.category, state),
             type: mod.type,
           },
           phase: rule.extra?.["phase"] ?? 0,
@@ -232,7 +245,7 @@ async function rulesToCollectionMods(
                 "archive, which is guaranteed to cause issues for the end user.[br][/br][br][/br] Please consider using " +
                 "binary patching or bundle your changes instead.",
               parameters: {
-                modName: util.renderModName(mod),
+                modName: renderModName(mod),
               },
               options: {
                 order: ["bbcode", "message"],
@@ -255,11 +268,7 @@ async function rulesToCollectionMods(
   return result.filter((mod) => mod !== undefined && Object.keys(mod.source).length > 0);
 }
 
-function ruleEnabled(
-  rule: ICollectionModRule,
-  mods: { [modId: string]: types.IMod },
-  collection: types.IMod,
-) {
+function ruleEnabled(rule: ICollectionModRule, mods: { [modId: string]: IMod }, collection: IMod) {
   if (rule === undefined) {
     return false;
   }
@@ -276,8 +285,8 @@ function ruleEnabled(
 
 function extractModRules(
   collectionRules: IResolvedRule[],
-  collection: types.IMod,
-  mods: { [modId: string]: types.IMod },
+  collection: IMod,
+  mods: { [modId: string]: IMod },
   collectionAttributes: ICollectionAttributes,
   bundleTags: { [modId: string]: string },
 ): ICollectionModRule[] {
@@ -287,12 +296,12 @@ function extractModRules(
     collectionRules
       .reduce((prev: ICollectionModRule[], resolvedRule: IResolvedRule) => {
         const { mod } = resolvedRule;
-        const source: types.IModReference = util.makeModReference(mod);
+        const source: IModReference = makeModReference(mod);
         const sourceOrig = JSON.parse(JSON.stringify(source));
 
         // ok, this gets a bit complex now. If the referenced mod gets updated, also make sure
         // the rules referencing it apply to newer versions
-        const mpRule = collection.rules.find((iter) => util.testModReference(mod, iter.reference));
+        const mpRule = collection.rules.find((iter) => testModReference(mod, iter.reference));
         if (
           mpRule !== undefined &&
           (mpRule.reference.versionMatch === undefined ||
@@ -317,15 +326,15 @@ function extractModRules(
 
         return [].concat(
           prev,
-          includedRules.map((input: types.IModRule): ICollectionModRule => {
+          includedRules.map((input: IModRule): ICollectionModRule => {
             if (input.extra?.["automatic"] === true) {
               // don't add rules introduced from a remote source, the assumption being that they would be
               // added on the client system as well and might get updated
               return undefined;
             }
-            const target: types.IModRule = JSON.parse(JSON.stringify(input));
+            const target: IModRule = JSON.parse(JSON.stringify(input));
 
-            const targetRef = util.findModByRef(target.reference, mods);
+            const targetRef = findModByRef(target.reference, mods);
             const targetId = targetRef?.id ?? target.reference.idHint;
             const targetRule = makeTransferrable(mods, collection, target);
 
@@ -355,11 +364,11 @@ function extractModRules(
 }
 
 export async function modToCollection(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   stagingPath: string,
-  collection: types.IMod,
-  mods: { [modId: string]: types.IMod },
+  collection: IMod,
+  mods: { [modId: string]: IMod },
   onProgress: (percent?: number, text?: string) => void,
   onError: (message: string, replace: any, mayIgnore: boolean) => void,
 ): Promise<ICollection> {
@@ -374,7 +383,7 @@ export async function modToCollection(
     .map((rule) => {
       let id = rule.reference.id;
       if (id === undefined) {
-        const mod = util.findModByRef(rule.reference, mods);
+        const mod = findModByRef(rule.reference, mods);
         if (mod !== undefined) {
           id = mod.id;
         }
@@ -396,7 +405,7 @@ export async function modToCollection(
 
   const gameSpecific = await generateGameSpecifics(state, gameId, stagingPath, includedMods, mods);
 
-  const game = util.getGame(gameId);
+  const game = getGame(gameId);
   const discovery = selectors.discoveryByGame(state, gameId);
 
   const gameVersions = game !== undefined ? [await game.getInstalledVersion(discovery)] : [];
@@ -410,10 +419,10 @@ export async function modToCollection(
   const collectionInfo: ICollectionInfo = {
     author: collection.attributes?.uploader ?? "Anonymous",
     authorUrl: collection.attributes?.authorURL ?? "",
-    name: util.renderModName(collection),
+    name: renderModName(collection),
     description: collection.attributes?.shortDescription ?? "",
     installInstructions: collectionAttributes.installInstructions ?? "",
-    domainName: util.nexusGameId(game),
+    domainName: nexusGameId(game),
     gameVersions,
   };
 
@@ -432,11 +441,11 @@ export async function modToCollection(
     return prev;
   }, {});
 
-  const resolvedRules = collection.rules.reduce<IResolvedRule[]>((prev, rule: types.IModRule) => {
+  const resolvedRules = collection.rules.reduce<IResolvedRule[]>((prev, rule: IModRule) => {
     const mod =
       rule.reference.id !== undefined
         ? mods[rule.reference.id]
-        : util.findModByRef(rule.reference, mods);
+        : findModByRef(rule.reference, mods);
 
     if (mod === undefined) {
       onError('Not packaging mod that isn\'t installed: "{{id}}"', { id: rule.reference.id }, true);

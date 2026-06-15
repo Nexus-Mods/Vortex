@@ -4,7 +4,10 @@ import type { ILookupResult } from "modmeta-db";
 import { generate as shortid } from "shortid";
 
 import { log } from "../../../logging";
-import type * as types from "../../../types/api";
+import type { IConditionResult, IDialogContent } from "../../../types/IDialog";
+import type { TFunction } from "../../../util/i18n";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IDownloadHint, IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
 import { coerceToSemver } from "../../mod_management/util/coerceToSemver";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
@@ -18,7 +21,16 @@ import type {
   ICollectionMod,
   ICollectionModRule,
   ICollectionSourceInfo,
+  SourceType,
 } from "../types/ICollection";
+
+// the source types that carry a download hint (a URL/instructions to fetch the
+// mod), as opposed to "nexus"/"bundle" which are resolved differently
+const DOWNLOAD_HINT_MODES: readonly SourceType[] = ["manual", "browse", "direct"];
+
+function isDownloadHintMode(type: SourceType): type is IDownloadHint["mode"] {
+  return DOWNLOAD_HINT_MODES.includes(type);
+}
 
 export function sanitizeExpression(fileName: string): string {
   // drop extension and anything like ".1" or " (1)" at the end which probaby
@@ -43,7 +55,7 @@ export function toInt(input: string | number | undefined | null) {
 }
 
 export function deduceSource(
-  mod: types.IMod,
+  mod: IMod,
   sourceInfo: ICollectionSourceInfo,
   versionMatcher: string,
   metaInfo: ILookupResult[],
@@ -136,10 +148,7 @@ export function generateCollection(
   };
 }
 
-export function makeBiDirRule(
-  source: types.IModReference,
-  rule: types.IModRule,
-): ICollectionModRule {
+export function makeBiDirRule(source: IModReference, rule: IModRule): ICollectionModRule {
   if (rule === undefined) {
     return undefined;
   }
@@ -152,11 +161,11 @@ export function makeBiDirRule(
 }
 
 export function makeTransferrable(
-  mods: { [modId: string]: types.IMod },
-  collection: types.IMod,
-  rule: types.IModRule,
-): types.IModRule {
-  let newRef: types.IModReference = { ...rule.reference };
+  mods: { [modId: string]: IMod },
+  collection: IMod,
+  rule: IModRule,
+): IModRule {
+  let newRef: IModReference = { ...rule.reference };
   const mod = findModByRef(rule.reference, mods);
 
   if (
@@ -206,11 +215,8 @@ export function makeTransferrable(
 /**
  * convert a mod entry from a collection into a mod rule
  */
-export function collectionModToRule(
-  knownGames: types.IGameStored[],
-  mod: ICollectionMod,
-): types.IModRule {
-  const downloadHint = ["manual", "browse", "direct"].includes(mod.source.type)
+export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionMod): IModRule {
+  const downloadHint: IDownloadHint | undefined = isDownloadHintMode(mod.source.type)
     ? {
         url: mod.source.url,
         instructions: mod.source.instructions,
@@ -241,7 +247,7 @@ export function collectionModToRule(
       ? mod.source.fileExpression
       : undefined;
 
-  const reference: types.IModReference = {
+  const reference: IModReference = {
     description: mod.name,
     fileMD5: refMD5,
     gameId: convertGameIdReverse(knownGames, mod.domainName),
@@ -271,11 +277,12 @@ export function collectionModToRule(
     };
   }
 
-  const res: types.IModRule = {
+  const res: IModRule = {
     type: mod.optional ? "recommends" : "requires",
     reference,
     fileList: mod.hashes,
     installerChoices: mod.choices,
+    patches: mod.patches,
     downloadHint,
     extra: {
       author: mod.author,
@@ -290,10 +297,9 @@ export function collectionModToRule(
           ? mod.source.instructions
           : undefined,
       phase: mod.phase ?? 0,
-      patches: mod.patches,
       fileOverrides: mod.fileOverrides,
     },
-  } as any;
+  };
 
   if (mod.source.type === "bundle") {
     res.extra.localPath = path.join("bundled", mod.source.fileExpression);
@@ -302,10 +308,7 @@ export function collectionModToRule(
   return res;
 }
 
-export function validateName(
-  t: types.TFunction,
-  content: types.IDialogContent,
-): types.IConditionResult[] {
+export function validateName(t: TFunction, content: IDialogContent): IConditionResult[] {
   const input = content.input[0].value || "";
   if (input.length >= MIN_COLLECTION_NAME_LENGTH && input.length <= MAX_COLLECTION_NAME_LENGTH) {
     return [];

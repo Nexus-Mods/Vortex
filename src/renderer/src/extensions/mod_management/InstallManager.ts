@@ -154,7 +154,14 @@ import type { Dependency, IDependency, IDependencyError, IModInfoEx } from "./ty
 import type { IInstallContext } from "./types/IInstallContext";
 import type { IInstallOptions } from "./types/IInstallOptions";
 import type { IInstallResult, IInstruction, InstructionType } from "./types/IInstallResult";
-import type { IFileListItem, IMod, IModAttributes, IModReference, IModRule } from "./types/IMod";
+import type {
+  IChoiceType,
+  IFileListItem,
+  IMod,
+  IModAttributes,
+  IModReference,
+  IModRule,
+} from "./types/IMod";
 import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
@@ -169,7 +176,9 @@ import queryGameId from "./util/queryGameId";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
+  modMatchesInstallSpec,
   referenceEqual,
+  ruleInstallSpec,
   testRefByIdentifiers,
 } from "./util/testModReference";
 
@@ -341,10 +350,9 @@ function findCollectionByDownload(
 
     // Download lookups will not hold any patch/filelist/installerChoices info.
     //  Which is why in this case we want to ensure that we only match using regular reference fields.
-    const matchingRule = collectionMod.rules?.find((rule) => {
-      const { patches, fileList, installerChoices, ...refWithoutExtras } = rule.reference;
-      return testModReference(lookup, refWithoutExtras);
-    });
+    const matchingRule = collectionMod.rules?.find((rule) =>
+      testModReference(lookup, rule.reference),
+    );
 
     if (matchingRule) {
       return { collectionMod, matchingRule, gameId };
@@ -694,9 +702,9 @@ class InstallManager {
       lookupResults: [], // Will be populated if needed
       download: downloadId,
       phase: matchingRule.extra?.phase || 0,
-      patches: matchingRule.extra?.patches ?? matchingRule.reference.patches,
+      patches: ruleInstallSpec(matchingRule).patches,
       installerChoices: matchingRule.installerChoices,
-      fileList: matchingRule.fileList ?? matchingRule.reference.fileList,
+      fileList: matchingRule.fileList,
     };
 
     // Ensure the phase is marked as having downloads finished
@@ -2374,17 +2382,14 @@ class InstallManager {
           const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
           const mods = api.getState().persistent.mods[gameId];
 
-          // Mods with patches are always reinstalled as variants so the
-          // correct diffs are applied to clean files - skip the lookup.
-          const hasPatches =
-            currentDep.patches != null && Object.keys(currentDep.patches).length > 0;
-          const fullReference: IModReference = {
-            ...currentDep.reference,
+          // Reuse an already-installed mod only when it matches the dependency by
+          // identity AND was installed with the same install spec (installer choices,
+          // file list, patches). Otherwise (different or absent spec) install it.
+          const existingMod = findModByRef(currentDep.reference, mods, undefined, {
             installerChoices: currentDep.installerChoices,
-            patches: currentDep.patches,
             fileList: currentDep.fileList,
-          };
-          const existingMod = hasPatches ? undefined : findModByRef(fullReference, mods);
+            patches: currentDep.patches,
+          });
           const modId =
             existingMod != null
               ? existingMod.id
@@ -3113,15 +3118,12 @@ class InstallManager {
         // Check if mod is already installed with matching installer choices and patches
         const gameId = activeGameId(api.getState());
         const mods = api.getState().persistent.mods[gameId] ?? {};
-        const fullReference: IModReference | undefined = mod.rule?.reference
-          ? {
-              ...mod.rule.reference,
-              installerChoices: mod.rule.installerChoices ?? mod.rule.extra?.installerChoices,
-              patches: mod.rule.extra?.patches,
-              fileList: mod.rule.fileList ?? mod.rule.reference?.fileList,
-            }
+        // Identity + install spec: the mod counts as installed only if the wanted
+        // install spec (installer choices / file list / patches) is present, otherwise
+        // it needs (re)installing.
+        const existingMod = mod.rule?.reference
+          ? findModByRef(mod.rule.reference, mods, undefined, ruleInstallSpec(mod.rule))
           : undefined;
-        const existingMod = fullReference && findModByRef(fullReference, mods);
 
         log("debug", "Requeue check", {
           downloadId,
@@ -3992,7 +3994,7 @@ class InstallManager {
     destinationPath: string,
     gameId: string,
     modId: string,
-    choices: any,
+    choices: IChoiceType,
     unattended: boolean,
     details: IInstallationDetails,
   ): Promise<void> {
@@ -4178,7 +4180,7 @@ class InstallManager {
       instructions: IInstruction[];
       overrideInstructions?: IInstruction[];
     },
-    choices: any,
+    choices: IChoiceType,
     unattended: boolean,
     details: IInstallationDetails,
   ) {
@@ -4646,16 +4648,16 @@ class InstallManager {
       };
 
       const mod = mods[0];
-      const modReference: IModReference = {
-        id: mod.id,
-        fileList: installOptions?.fileList,
-        archiveId: mod.archiveId,
-        gameId,
-        installerChoices: installOptions?.choices,
-        patches: installOptions?.patches,
-      };
+      // An unattended reinstall of an already-present mod with a different install spec
+      // (installer choices / file list / patches) means it's being pulled in as a
+      // dependency by another mod or collection.
       const isDependency =
-        installOptions?.unattended === true && testModReference(mods[0], modReference) === false;
+        installOptions?.unattended === true &&
+        !modMatchesInstallSpec(mod, {
+          installerChoices: installOptions?.choices,
+          fileList: installOptions?.fileList,
+          patches: installOptions?.patches,
+        });
       const addendum = isDependency
         ? " and is trying to be reinstalled as a dependency by another mod or collection."
         : ".";
@@ -6080,9 +6082,6 @@ class InstallManager {
             // being installed having a different tag than the rule
             const reference: IModReference = {
               ...dep.reference,
-              fileList: dep.fileList,
-              patches: dep.patches,
-              installerChoices: dep.installerChoices,
               tag: downloads[downloadId].modInfo.referenceTag,
             };
             dep.reference =
@@ -6314,9 +6313,6 @@ class InstallManager {
     dependencies.forEach((dep) => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
-      updatedRef.installerChoices = dep.installerChoices;
-      updatedRef.patches = dep.patches;
-      updatedRef.fileList = dep.fileList;
       this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
     });
     return Promise.resolve();

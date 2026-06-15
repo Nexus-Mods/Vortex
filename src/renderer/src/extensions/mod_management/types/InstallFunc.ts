@@ -1,5 +1,5 @@
 import type { IInstallResult } from "./IInstallResult";
-import type { IModReference } from "./IMod";
+import type { IChoiceType, IModReference } from "./IMod";
 
 export type ProgressDelegate = (perc: number) => void;
 export interface IInstallationDetails {
@@ -17,7 +17,7 @@ export type InstallFunc = (
   destinationPath: string,
   gameId: string,
   progressDelegate: ProgressDelegate,
-  choices?: any,
+  choices?: IChoiceType,
   unattended?: boolean,
   archivePath?: string,
   options?: IInstallationDetails,
