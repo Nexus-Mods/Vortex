@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
-=======
 ## [2.1.1] - 2026-06-11
 
 ### Fixed
@@ -20,7 +18,6 @@ _Stable 2.1 release. See the beta entries below for the full list of changes sin
 
 - State backup restore potentially wiping state on large profiles ([#23438](https://github.com/Nexus-Mods/Vortex/pull/23438))
 
->>>>>>> 0ce69ce7c (Merge pull request #23468 from Nexus-Mods/hotfix/LAZ-575)
 ## [2.1.0-beta.8] - 2026-06-08
 
 ### **Changed**
@@ -1967,6 +1964,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.1.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0
 [2.1.0-beta.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.8
 [2.1.0-beta.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.7
 [2.1.0-beta.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.6
