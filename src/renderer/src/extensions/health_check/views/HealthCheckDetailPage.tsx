@@ -182,8 +182,8 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
             <div>
               <Button
-                buttonType="tertiary"
-                filled="weak"
+                brand="neutral"
+                appearance="moderate"
                 leftIconPath={mdiArrowLeft}
                 size="sm"
                 onClick={onBack}
@@ -207,7 +207,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                 </div>
               </div>
 
-              <Button buttonType="premium" size="sm" onClick={goPremium}>
+              <Button brand="premium" size="sm" onClick={goPremium}>
                 {t("premium::banner::button")}
               </Button>
             </div>
@@ -246,8 +246,8 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
                 <div className="shrink-0">
                   <Button
-                    buttonType="tertiary"
-                    filled="weak"
+                    brand="neutral"
+                    appearance="moderate"
                     leftIconPath={isHidden ? mdiEye : mdiEyeOff}
                     size="sm"
                     title={isHidden ? t("common:::unhide") : t("common:::hide")}
@@ -278,9 +278,9 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
             <div className="flex shrink-0 gap-x-2">
               <Button
-                buttonType="tertiary"
+                brand="neutral"
+                appearance="moderate"
                 disabled={givenFeedBack}
-                filled="weak"
                 leftIconPath={mdiThumbUp}
                 size="sm"
                 title={t("common:::helpful")}
@@ -288,9 +288,9 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
               />
 
               <Button
-                buttonType="tertiary"
+                brand="neutral"
+                appearance="moderate"
                 disabled={givenFeedBack}
-                filled="weak"
                 leftIconPath={mdiThumbDown}
                 size="sm"
                 title={t("common:::not_helpful")}

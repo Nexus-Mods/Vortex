@@ -103,7 +103,8 @@ export const ToolRow: FC<ToolRowProps> = ({
           <>
             <div className="flex gap-x-2">
               <Button
-                buttonType="tertiary"
+                brand="neutral"
+                appearance="weak"
                 disabled={isFirst}
                 leftIconPath={mdiArrowUp}
                 size="sm"
@@ -112,7 +113,8 @@ export const ToolRow: FC<ToolRowProps> = ({
               />
 
               <Button
-                buttonType="tertiary"
+                brand="neutral"
+                appearance="weak"
                 disabled={isLast}
                 leftIconPath={mdiArrowDown}
                 size="sm"
@@ -128,7 +130,8 @@ export const ToolRow: FC<ToolRowProps> = ({
         <div className="flex gap-x-2">
           {!starter.isGame && !isPrimary && (
             <Button
-              buttonType="tertiary"
+              brand="neutral"
+              appearance="weak"
               disabled={!isPinned && pinDisabled}
               leftIconPath={isPinned ? mdiPinOff : mdiPin}
               size="sm"
@@ -146,7 +149,8 @@ export const ToolRow: FC<ToolRowProps> = ({
           <Dropdown>
             <Menu.Button
               as={Button}
-              buttonType="tertiary"
+              brand="neutral"
+              appearance="weak"
               leftIconPath={mdiDotsVertical}
               size="sm"
             />
@@ -180,9 +184,9 @@ export const ToolRow: FC<ToolRowProps> = ({
         <Divider />
 
         <Button
-          buttonType="secondary"
+          brand="neutral"
+          appearance="strong"
           disabled={!isValid}
-          filled="strong"
           leftIconPath={mdiPlay}
           size="sm"
           title={t("Launch tool")}

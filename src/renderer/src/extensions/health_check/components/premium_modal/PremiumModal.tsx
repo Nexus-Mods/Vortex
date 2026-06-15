@@ -59,9 +59,9 @@ export const PremiumModal = ({
 
       <div className="mt-4 grid grid-cols-2 gap-x-2">
         <Button
-          buttonType="tertiary"
+          brand="neutral"
+          appearance="moderate"
           className="w-full"
-          filled="weak"
           size="sm"
           onClick={onDownload}
         >
@@ -69,7 +69,7 @@ export const PremiumModal = ({
         </Button>
 
         <Button
-          buttonType="premium"
+          brand="premium"
           className="w-full"
           leftIconPath={mdiDiamondStone}
           size="sm"

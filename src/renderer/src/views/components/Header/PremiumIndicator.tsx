@@ -39,12 +39,7 @@ export const PremiumIndicator: FC = () => {
 
   if (showAd) {
     return (
-      <Button
-        buttonType="premium"
-        leftIconPath={mdiDiamondStone}
-        size="sm"
-        onClick={handleGoPremium}
-      >
+      <Button brand="premium" leftIconPath={mdiDiamondStone} size="sm" onClick={handleGoPremium}>
         {t("Go premium")}
       </Button>
     );

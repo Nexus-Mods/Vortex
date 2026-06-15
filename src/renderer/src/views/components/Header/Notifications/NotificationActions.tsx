@@ -27,8 +27,8 @@ export const NotificationActions: FC<NotificationActionsProps> = ({
     <div className="flex gap-x-1">
       {actions?.map((action: INotificationAction) => (
         <Button
-          buttonType="tertiary"
-          filled="weak"
+          brand="neutral"
+          appearance="moderate"
           key={action.title ?? action.icon}
           size="xs"
           onClick={onActionClick(action.title)}
@@ -38,7 +38,7 @@ export const NotificationActions: FC<NotificationActionsProps> = ({
       ))}
 
       {collapsed > 1 && onExpand && (
-        <Button buttonType="tertiary" filled="weak" size="xs" onClick={onExpand}>
+        <Button brand="neutral" appearance="moderate" size="xs" onClick={onExpand}>
           {t("{{ count }} More", { count: collapsed - 1 })}
         </Button>
       )}

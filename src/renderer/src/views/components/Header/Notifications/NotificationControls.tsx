@@ -29,7 +29,8 @@ export const NotificationControls: FC<NotificationControlsProps> = ({
     <div className="relative flex shrink-0 items-start gap-x-1">
       {allowSuppress && (
         <Button
-          buttonType="tertiary"
+          brand="neutral"
+          appearance="weak"
           leftIconPath={mdiEyeOff}
           size="xs"
           title={t("Never show again")}
@@ -39,7 +40,8 @@ export const NotificationControls: FC<NotificationControlsProps> = ({
 
       {!noDismiss && (
         <Button
-          buttonType="tertiary"
+          brand="neutral"
+          appearance="weak"
           leftIconPath={mdiClose}
           size="xs"
           title={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}

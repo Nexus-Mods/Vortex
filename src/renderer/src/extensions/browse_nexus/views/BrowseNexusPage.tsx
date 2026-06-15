@@ -282,8 +282,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 />
 
                 <Button
-                  buttonType="tertiary"
-                  filled="weak"
+                  brand="neutral"
+                  appearance="moderate"
                   leftIconPath={mdiMagnify}
                   size="sm"
                   title={t("common:actions.search")}
@@ -294,8 +294,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               <div className="flex justify-between">
                 <div className="flex items-center gap-x-2">
                   <Button
-                    buttonType="tertiary"
-                    filled="weak"
+                    brand="neutral"
+                    appearance="moderate"
                     leftIconPath={mdiRefresh}
                     size="sm"
                     title={t("collection:browse.refresh")}
@@ -329,8 +329,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 isLoading={loading}
                 noResultsChildren={
                   <Button
-                    buttonType="tertiary"
-                    filled="weak"
+                    brand="neutral"
+                    appearance="moderate"
                     leftIconPath={mdiOpenInNew}
                     size="sm"
                     onClick={() =>
@@ -381,8 +381,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               title={t("collection:browse.modsComingSoon.title")}
             >
               <Button
-                buttonType="tertiary"
-                filled="weak"
+                brand="neutral"
+                appearance="moderate"
                 leftIconPath={mdiOpenInNew}
                 size="sm"
                 onClick={() =>

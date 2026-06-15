@@ -40,7 +40,7 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button as={Button} buttonType="secondary">
+            <Menu.Button as={Button} brand="neutral" appearance="subdued">
               Options
             </Menu.Button>
 
@@ -62,7 +62,7 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button as={Button} buttonType="secondary">
+            <Menu.Button as={Button} brand="neutral" appearance="subdued">
               Actions
             </Menu.Button>
 
@@ -102,7 +102,8 @@ export const DropdownDemo = () => {
           <Dropdown>
             <Menu.Button
               as={Button}
-              buttonType="secondary"
+              brand="neutral"
+              appearance="subdued"
               leftIconPath={mdiDotsVertical}
               size="sm"
             />
@@ -131,7 +132,7 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button as={Button} buttonType="secondary">
+            <Menu.Button as={Button} brand="neutral" appearance="subdued">
               With Disabled
             </Menu.Button>
 
