@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 
+import { verify } from "../../../reducers/verify";
 import { modsReducer } from "./mods";
+
+const noEmit = (): void => undefined;
 
 describe("removeMod", () => {
   it("removes the mod", () => {
@@ -346,5 +349,74 @@ describe("addMod", () => {
       gameId1: { modId1: mod },
       gameId2: { modId1: oldMod },
     });
+  });
+});
+
+describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
+  it("recovers installationPath from the modId instead of dropping the mod", () => {
+    // a mod that lost its installationPath (and id) leaf to a partial write,
+    // keeping only archiveId + attributes - the #23363 corruption shape.
+    const state = {
+      skyrimse: {
+        "Fences of Skyrim-123-1-0-17000": {
+          archiveId: "arch1",
+          attributes: { endorsed: "Undecided", allowRating: true, version: "1.0" },
+        },
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    );
+
+    const mod = result?.skyrimse?.["Fences of Skyrim-123-1-0-17000"];
+    // record preserved (not culled) and installationPath healed to the modId
+    expect(mod).toBeDefined();
+    expect(mod.installationPath).toBe("Fences of Skyrim-123-1-0-17000");
+    expect(mod.archiveId).toBe("arch1");
+    expect(mod.attributes).toEqual({ endorsed: "Undecided", allowRating: true, version: "1.0" });
+  });
+
+  it("leaves a valid mod untouched", () => {
+    const state = {
+      skyrimse: {
+        modA: {
+          id: "modA",
+          type: "",
+          installationPath: "modA",
+          state: "installed",
+          attributes: { name: "Mod A" },
+        },
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    );
+
+    expect(result.skyrimse.modA.installationPath).toBe("modA");
+  });
+
+  it("still drops a mod entry that isn't an object", () => {
+    const state = { skyrimse: { good: { installationPath: "good" }, bad: "not an object" } };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    );
+
+    expect(result.skyrimse.good.installationPath).toBe("good");
+    expect(result.skyrimse).not.toHaveProperty("bad");
   });
 });

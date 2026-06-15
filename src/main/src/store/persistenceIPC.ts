@@ -10,8 +10,9 @@
  * 3. Main process applies operations to LevelDB via ReduxPersistorIPC
  */
 
+import type { DiffOperation } from "@vortex/shared/ipc";
 import type { PersistedHive, PersistedState } from "@vortex/shared/state";
-import type { WebContents } from "electron";
+import { ipcMain, type WebContents } from "electron";
 
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
@@ -32,6 +33,22 @@ export function setupPersistenceIPC(persistor: ReduxPersistorIPC): void {
     });
     persistor.applyDiffOperations(hive, operations);
   });
+
+  // Synchronous flush used by the renderer on quit (beforeunload). Queues the
+  // ops and returns immediately; the actual write is drained by finalizeWrite
+  // during shutdown. Blocking here guarantees the final batch is queued before
+  // the renderer process tears down, so it isn't lost (GH#23363). Raw ipcMain
+  // because betterIpcMain has no synchronous channel.
+  ipcMain.on(
+    "persist:diff-sync",
+    (event: Electron.IpcMainEvent, hive: PersistedHive, operations: DiffOperation[]) => {
+      try {
+        persistor.applyDiffOperations(hive, operations);
+      } finally {
+        event.returnValue = true;
+      }
+    },
+  );
 
   // Handle hydration request from renderer at startup
   // Auto-discovers all hives in the database and registers them
