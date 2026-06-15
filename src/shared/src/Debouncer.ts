@@ -14,16 +14,17 @@ export class GenericDebouncer<
   Timeout,
   SetTimeout extends SetTimeoutFunc<Timeout>,
   ClearTimeout extends ClearTimeoutFunc<Timeout>,
+  Args extends unknown[] = unknown[],
 > {
   private mDebounceMS: number;
-  private mFunc: (...args: any[]) => Error | PromiseLike<void>;
+  private mFunc: (...args: Args) => Error | PromiseLike<void>;
   private mTimer: Timeout | undefined;
 
   private mCallbacks: Callback[] = [];
   private mAddCallbacks: Callback[] = [];
   private mRunning: boolean = false;
   private mReschedule: "no" | "yes" | "immediately" = "no";
-  private mArgs: any[] = [];
+  private mArgs?: Args;
   private mResetting: boolean;
   private mTriggerImmediately: boolean;
   // only used with triggerImmediately
@@ -48,7 +49,7 @@ export class GenericDebouncer<
   constructor(
     setTimeoutFunc: SetTimeout,
     clearTimeoutFunc: ClearTimeout,
-    func: (...args: any[]) => Error | PromiseLike<void>,
+    func: (...args: Args) => Error | PromiseLike<void>,
     debounceMS: number,
     reset?: boolean,
     triggerImmediately: boolean = false,
@@ -69,7 +70,7 @@ export class GenericDebouncer<
    *             and the function actually gets invoked, only the last set of
    *             parameters will be used
    */
-  public schedule(callback?: Callback, ...args: any[]): void {
+  public schedule(callback?: Callback, ...args: Args): void {
     if (callback !== undefined && callback !== null) {
       this.mCallbacks.push(callback);
     }
@@ -107,7 +108,7 @@ export class GenericDebouncer<
    *
    * @memberOf Debouncer
    */
-  public runNow(callback: Callback, ...args: any[]): void {
+  public runNow(callback: Callback, ...args: Args): void {
     if (this.mTimer !== undefined) {
       this.clear();
     }
@@ -165,12 +166,12 @@ export class GenericDebouncer<
     const callbacks = this.mCallbacks;
     this.mCallbacks = [];
     const args = this.mArgs;
-    this.mArgs = [];
+    this.mArgs = undefined;
     this.mTimer = undefined;
 
     let prom: Error | PromiseLike<void>;
     try {
-      prom = this.mFunc(...args);
+      prom = this.mFunc(...args!);
     } catch (err) {
       prom = unknownToError(err);
     }

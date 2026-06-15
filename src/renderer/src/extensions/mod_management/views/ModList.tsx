@@ -178,7 +178,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modSizeAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mAttributes: ITableAttribute[];
-  private mUpdateDebouncer: Debouncer;
+  private mUpdateDebouncer: Debouncer<[IProps]>;
   private mLastUpdateProps: IModProps = {
     mods: {},
     modState: {},

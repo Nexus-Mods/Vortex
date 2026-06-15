@@ -1,12 +1,13 @@
 import { GenericDebouncer } from "@vortex/shared";
 
-export default class Debouncer extends GenericDebouncer<
+export default class Debouncer<Args extends unknown[] = unknown[]> extends GenericDebouncer<
   number,
   typeof window.setTimeout,
-  typeof window.clearTimeout
+  typeof window.clearTimeout,
+  Args
 > {
   constructor(
-    func: (...args: any[]) => Error | PromiseLike<void>,
+    func: (...args: Args) => Error | PromiseLike<void>,
     debounceMS: number,
     reset?: boolean,
     triggerImmediately: boolean = false,
