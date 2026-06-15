@@ -4,22 +4,31 @@
         <meta charset="UTF-8" />
         <title>Vortex</title>
         <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background-color: transparent;
+            }
+
+            #splash {
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: fill;
+                -webkit-user-drag: none;
+            }
+
             .fade-out {
                 opacity: 1;
-                -webkit-user-drag: none;
             }
         </style>
     </head>
 
-    <body
-        id="bg"
-        style="
-            background-color: transparent;
-            overflow: visible;
-            display: table-cell;
-            overflow: hidden;
-        "
-    >
+    <body id="bg">
         <img id="splash" class="fade-out" src="assets/images/splash.png" />
 
         <script>
