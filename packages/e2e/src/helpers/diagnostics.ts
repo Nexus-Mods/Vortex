@@ -57,43 +57,29 @@ export async function startTracing(page: Page): Promise<StopTracing | undefined>
   };
 }
 
-/** Attach failure diagnostics for a Vortex Electron app: vortex.log + a screenshot. */
-async function attachElectronDiagnostics(
-  app: ElectronApplication,
-  userDataDir: string,
-  testInfo: TestInfo,
-  prefix: string,
-): Promise<void> {
-  const logPath = path.join(userDataDir, "userData", "vortex.log");
-  await testInfo.attach(`${prefix}-vortex.log`, { path: logPath }).catch(() => {});
-
-  // capturePage() reads directly from the renderer and works while the window is
-  // hidden (VORTEX_E2E_HEADLESS=1); page.screenshot() would hang waiting for a
-  // compositor frame that a hidden BrowserWindow never produces.
-  const base64 = await app
-    .evaluate(async ({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows().find((w) =>
-        w.webContents.getURL().includes("index.html"),
-      );
-      if (!win) return null;
-      return (await win.webContents.capturePage()).toPNG().toBase64();
-    })
-    .catch(() => null);
-  if (base64 !== null) {
-    await testInfo
-      .attach(`${prefix}-screenshot.png`, {
-        body: Buffer.from(base64, "base64"),
-        contentType: "image/png",
-      })
-      .catch(() => {});
-  }
+/**
+ * Instrument a Vortex instance before a window is available: returns a teardown
+ * that attaches vortex.log from disk on failure. Requires only the userDataDir,
+ * so it is safe to register before launching the Electron process and will still
+ * fire if setupMainWindow (or even app launch) throws.
+ *
+ * All attachment names are prefixed so a single test can hold artifacts from
+ * multiple instrumented surfaces without name collisions.
+ */
+export function instrumentVortexInstance(userDataDir: string, prefix: string): DiagnosticsTeardown {
+  return async (testInfo, failed = false) => {
+    if (shouldDiagnose(testInfo, failed)) {
+      const logPath = path.join(userDataDir, "userData", "vortex.log");
+      await testInfo.attach(`${prefix}-vortex.log`, { path: logPath }).catch(() => {});
+    }
+  };
 }
 
 /**
  * Instrument a Vortex Electron window: start tracing immediately and return a
- * teardown that attaches the trace and, on failure, vortex.log + a screenshot.
- * Every Vortex launch goes through this so fixture-setup failures (e.g. the
- * worker auth-snapshot build) still produce artifacts on the triggering test.
+ * teardown that attaches the trace and, on failure, a screenshot. Log attachment
+ * is handled separately by instrumentVortexInstance, which must always be called
+ * alongside this one.
  *
  * All attachment names are prefixed so a single test can hold artifacts from
  * multiple instrumented surfaces (snapshot build, its own window, the nexus
@@ -102,7 +88,6 @@ async function attachElectronDiagnostics(
 export async function instrumentVortexWindow(
   app: ElectronApplication,
   window: Page,
-  userDataDir: string,
   prefix: string,
 ): Promise<DiagnosticsTeardown> {
   const stopTracing = await startTracing(window);
@@ -111,7 +96,26 @@ export async function instrumentVortexWindow(
       console.error("Failed to stop tracing:", e),
     );
     if (shouldDiagnose(testInfo, failed)) {
-      await attachElectronDiagnostics(app, userDataDir, testInfo, prefix);
+      // capturePage() reads directly from the renderer and works while the window is
+      // hidden (VORTEX_E2E_HEADLESS=1); page.screenshot() would hang waiting for a
+      // compositor frame that a hidden BrowserWindow never produces.
+      const base64 = await app
+        .evaluate(async ({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows().find((w) =>
+            w.webContents.getURL().includes("index.html"),
+          );
+          if (!win) return null;
+          return (await win.webContents.capturePage()).toPNG().toBase64();
+        })
+        .catch(() => null);
+      if (base64 !== null) {
+        await testInfo
+          .attach(`${prefix}-screenshot.png`, {
+            body: Buffer.from(base64, "base64"),
+            contentType: "image/png",
+          })
+          .catch(() => {});
+      }
     }
   };
 }

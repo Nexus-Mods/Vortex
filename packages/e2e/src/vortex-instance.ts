@@ -67,9 +67,22 @@ export function prepareVortexInstance(rootDir?: string): VortexInstanceSetup {
 
 /**
  * Removes the isolated instance directory created by prepareVortexInstance().
+ *
+ * On Windows, file handles (e.g. DuckDB WAL) may still be open briefly after
+ * the Electron process exits, causing EPERM on rmSync. Retry with backoff so
+ * transient handle release doesn't fail the test.
  */
 export function cleanupVortexInstance(userDataDir: string): void {
-  fs.rmSync(userDataDir, { recursive: true, force: true });
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      fs.rmSync(userDataDir, { recursive: true, force: true });
+      return;
+    } catch (e: unknown) {
+      if (attempt === maxAttempts) throw e;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt * 200);
+    }
+  }
 }
 
 // Script mode: launch a Vortex instance and wait for it to exit.
