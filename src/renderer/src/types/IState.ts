@@ -1,3 +1,4 @@
+import type { ICollection, IRevision } from "@nexusmods/nexus-api";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -334,6 +335,17 @@ export interface IOverlaysState {
  * @export
  * @interface IState
  */
+// persistent state owned by the collections extension: the cached collection and
+// revision info fetched from the API
+export interface ICollectionsPersistentState {
+  // keyed by collection id
+  collections: Record<string, { timestamp: number; info: ICollection }>;
+  // keyed by revision id
+  revisions: Record<string, { timestamp: number; info: IRevision }>;
+  // keyed by revision id; queued success votes awaiting submission
+  pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
+}
+
 export interface IState {
   app: IApp;
   user: IUser;
@@ -362,6 +374,7 @@ export interface IState {
     profiles: { [profileId: string]: IProfile };
     mods: IModTable;
     downloads: IStateDownloads;
+    collections: ICollectionsPersistentState;
     categories: { [gameId: string]: ICategoryDictionary };
     gameMode: IStateGameMode;
     deployment: {

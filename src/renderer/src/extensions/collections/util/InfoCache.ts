@@ -10,7 +10,6 @@ import * as selectors from "../../../util/selectors";
 import { updateCollectionInfo, updateRevisionInfo } from "../actions/persistent";
 import { CACHE_EXPIRE_MS, MOD_TYPE } from "../constants";
 import type { ICollectionModRule } from "../types/ICollection";
-import type { IStateEx } from "../types/IStateEx";
 import { computeCacheEvictions } from "./cacheEvictions";
 import { readCollection } from "./readCollection";
 
@@ -61,7 +60,7 @@ class InfoCache {
 
   public async clearCache() {
     const { store } = this.mApi;
-    const state = this.mApi.getState<IStateEx>();
+    const state = this.mApi.getState();
 
     const { collectionDrops, revisionDrops } = computeCacheEvictions(
       state.persistent.collections,

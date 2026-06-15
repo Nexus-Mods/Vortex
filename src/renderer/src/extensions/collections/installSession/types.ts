@@ -1,17 +1,23 @@
-import type { IModRule } from "../../../types/api";
+import type { IModRule, ModState } from "../../mod_management/types/IMod";
 
 /**
- * Status of an individual mod within a collection installation
+ * Status of an individual mod within a collection installation.
+ *
+ * The live states are picked explicitly from a mod's ModState (the `keyof Pick<...>`):
+ * picking a value that isn't a ModState is a compile error so the two can't drift, while
+ * a newly added ModState is NOT silently absorbed. The rest are collection-only lifecycle
+ * states with no IMod equivalent.
  */
 export type CollectionModStatus =
-  | "pending" // Not yet processed
-  | "downloading" // Currently downloading
-  | "downloaded" // Downloaded but not installed
-  | "installing" // Currently being installed
-  | "installed" // Successfully installed
-  | "failed" // Installation failed
-  | "ignored" // Excluded by user choice (skipped during install or manually ignored)
-  | "optional"; // Optional mod not selected
+  | keyof Pick<Record<ModState, true>, "downloading" | "downloaded" | "installing" | "installed">
+  | "pending" // not yet processed
+  // installation failed. NOTE: not yet wired up - the UI renders this status but nothing
+  // sets it on the session yet, so a failed mod currently surfaces as "pending" rather
+  // than "failed". The install-failure path still needs to call updateModTracking(rule,
+  // "failed").
+  | "failed"
+  | "ignored" // excluded by user choice (skipped during install or manually ignored)
+  | "optional"; // optional mod not selected
 
 /**
  * Information about a mod's installation within a collection

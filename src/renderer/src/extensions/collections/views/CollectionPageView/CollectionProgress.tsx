@@ -2,20 +2,46 @@ import type { TFunction } from "i18next";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 
-import { FlexLayout, ProgressBar, Spinner, tooltip } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
-import type { IModEx } from "../../types/IModEx";
-import { calculateCollectionSize, isRelevant } from "../../util/util";
+import FlexLayout from "../../../../controls/FlexLayout";
+import ProgressBar from "../../../../controls/ProgressBar";
+import Spinner from "../../../../controls/Spinner";
+import * as tooltip from "../../../../controls/TooltipControls";
+import { bytesToString } from "../../../../util/util";
+import type { IDownload } from "../../../download_management/types/IDownload";
+import renderModName from "../../../mod_management/util/modName";
+import type { IProfile } from "../../../profile_management/types/IProfile";
+import type { ICollectionItemRow } from "../../installSession/itemRows";
 import CollectionBanner from "./CollectionBanner";
+
+// a row counts towards the collection's progress/size if it has been acted on, or is a
+// not-yet-started required (non-ignored) mod (status-based equivalent of util.isRelevant)
+function itemRelevant(mod: ICollectionItemRow): boolean {
+  if (mod.status !== "pending" && mod.status !== "optional") {
+    return true;
+  }
+  if (mod.collectionRule.ignored) {
+    return false;
+  }
+  return mod.collectionRule.type === "requires";
+}
+
+function itemsSize(mods: Record<string, ICollectionItemRow>): number {
+  return Object.values(mods).reduce((prev, mod) => {
+    if (!itemRelevant(mod)) {
+      return prev;
+    }
+    return prev + (mod.attributes?.fileSize ?? mod.collectionRule.reference.fileSize ?? 0);
+  }, 0);
+}
 
 export interface ICollectionProgressProps {
   t: TFunction;
   showPremiumAd: boolean;
-  mods: { [modId: string]: IModEx };
-  downloads: { [dlId: string]: types.IDownload };
-  profile: types.IProfile;
+  // keyed by rule id
+  mods: Record<string, ICollectionItemRow>;
+  downloads: { [dlId: string]: IDownload };
+  profile: IProfile;
   totalSize: number;
   activity: { [id: string]: string };
   onCancel: () => void;
@@ -28,9 +54,9 @@ interface ICompState {
 }
 
 class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompState> {
-  public static getDerivedStateFromProps(props, state) {
+  public static getDerivedStateFromProps(props: ICollectionProgressProps) {
     return {
-      totalSize: calculateCollectionSize(props.mods),
+      totalSize: itemsSize(props.mods),
     };
   }
 
@@ -55,40 +81,45 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
       onResume,
     } = this.props;
 
-    const group = (mod: types.IMod, download?: types.IDownload): string => {
-      if (mod.state === "downloading" && download?.state === "paused") {
+    const group = (mod: ICollectionItemRow, download?: IDownload): string => {
+      if (mod.status === "downloading" && download?.state === "paused") {
         // treating paused downloads as "pending" for the purpose of progress indicator
         return "pending";
       }
 
-      if (mod.state === "installed" && !profile.modState?.[mod.id]?.enabled) {
+      if (mod.status === "installed" && !profile.modState?.[mod.id]?.enabled) {
         return "disabled";
       }
 
-      return (
-        {
-          null: "pending",
-          installed: "done",
-          downloaded: "pending",
-          installing: "installing",
-          downloading: "downloading",
-        }[mod.state] ?? "pending"
-      );
+      switch (mod.status) {
+        case "installed":
+          return "done";
+        case "failed":
+          // a failed required mod is terminal: count it as done so the bar can complete
+          return "done";
+        case "installing":
+          return "installing";
+        case "downloading":
+          return "downloading";
+        default:
+          // pending / downloaded / optional
+          return "pending";
+      }
     };
 
     interface IModGroups {
-      pending: IModEx[];
-      downloading: IModEx[];
-      installing: IModEx[];
-      disabled: IModEx[];
-      done: IModEx[];
+      pending: ICollectionItemRow[];
+      downloading: ICollectionItemRow[];
+      installing: ICollectionItemRow[];
+      disabled: ICollectionItemRow[];
+      done: ICollectionItemRow[];
     }
 
     const { pending, downloading, installing, disabled, done } = Object.values(
       mods,
     ).reduce<IModGroups>(
       (prev, mod) => {
-        if (mod.collectionRule.type === "requires" && !mod.collectionRule["ignored"]) {
+        if (mod.collectionRule.type === "requires" && !mod.collectionRule.ignored) {
           prev[group(mod, downloads[mod.archiveId])].push(mod);
         }
         return prev;
@@ -166,16 +197,16 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
     );
   }
 
-  private renderBars(installing: IModEx[], done: IModEx[]) {
+  private renderBars(installing: ICollectionItemRow[], done: ICollectionItemRow[]) {
     const { t, downloads, mods } = this.props;
     const { totalSize } = this.state;
 
     const curInstall =
-      installing.length > 0 ? installing.find((iter) => iter.state === "installing") : undefined;
+      installing.length > 0 ? installing.find((iter) => iter.status === "installing") : undefined;
 
     const downloadProgress = Object.values(mods).reduce((prev, mod) => {
       let size = 0;
-      if (mod.state === "downloading" || mod.state === null) {
+      if (mod.status === "downloading" || mod.status === "pending") {
         const download = downloads[mod.archiveId];
         size += download?.received || 0;
       } else {
@@ -184,14 +215,14 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
       return prev + size;
     }, 0);
 
-    const relevant = Object.values(mods).filter(isRelevant);
+    const relevant = Object.values(mods).filter(itemRelevant);
 
     return (
       <>
         <ProgressBar
           showPercentage
           labelLeft={t("Downloading")}
-          labelRight={`${util.bytesToString(downloadProgress)} / ${util.bytesToString(totalSize)}`}
+          labelRight={`${bytesToString(downloadProgress)} / ${bytesToString(totalSize)}`}
           max={totalSize}
           now={downloadProgress}
         />
@@ -199,7 +230,7 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
         <ProgressBar
           showPercentage
           labelLeft={installing.length > 0 ? t("Installing") : t("Waiting to install")}
-          labelRight={curInstall !== undefined ? util.renderModName(curInstall) : undefined}
+          labelRight={curInstall !== undefined ? renderModName(curInstall) : undefined}
           max={relevant.length}
           now={done.length}
         />

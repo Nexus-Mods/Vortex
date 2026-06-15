@@ -575,7 +575,7 @@ const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
 }, {}>;
 
 // @public
-type CollectionModStatus = "pending" | "downloading" | "downloaded" | "installing" | "installed" | "failed" | "ignored" | "optional";
+type CollectionModStatus = keyof Pick<Record<ModState, true>, "downloading" | "downloaded" | "installing" | "installed"> | "pending" | "failed" | "ignored" | "optional";
 
 // Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point api.d.ts
 //
@@ -1025,9 +1025,9 @@ function findModByRef(reference: IModReference, mods: {
 }, installSpec?: IModInstallSpec): IMod;
 
 // @public
-const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
+const finishDownload: ComplexActionCreator3<string, "failed" | "finished" | "redirect", any, {
 id: string;
-state: "finished" | "failed" | "redirect";
+state: "failed" | "finished" | "redirect";
 failCause: any;
 }, {}>;
 
@@ -1782,6 +1782,26 @@ interface ICollectionModInstallInfo {
     rule: IModRule;
     status: CollectionModStatus;
     type: "requires" | "recommends";
+}
+
+// @public
+interface ICollectionsPersistentState {
+    // (undocumented)
+    collections: Record<string, {
+        timestamp: number;
+        info: ICollection;
+    }>;
+    // (undocumented)
+    pendingVotes: Record<string, {
+        collectionSlug: string;
+        revisionNumber: number;
+        time: number;
+    }>;
+    // (undocumented)
+    revisions: Record<string, {
+        timestamp: number;
+        info: IRevision;
+    }>;
 }
 
 // @public
@@ -3898,7 +3918,7 @@ interface IStarterInfo {
     workingDirectory: string;
 }
 
-// @public
+// @public (undocumented)
 interface IState {
     // (undocumented)
     app: IApp;
@@ -3913,6 +3933,7 @@ interface IState {
         };
         mods: IModTable;
         downloads: IStateDownloads;
+        collections: ICollectionsPersistentState;
         categories: {
             [gameId: string]: ICategoryDictionary;
         };
@@ -4549,7 +4570,7 @@ export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props,
 // Warning: (ae-forgotten-export) The symbol "INameOptions" needs to be exported by the entry point api.d.ts
 //
 // @public
-function modName(mod: IMod, options?: INameOptions): string;
+function modName(mod: Pick<IMod, "attributes" | "installationPath">, options?: INameOptions): string;
 
 // @public (undocumented)
 const modPathsForGame: ((state: IState, gameId: string) => {
@@ -5019,7 +5040,7 @@ function renderError(err: string | Error | any, options?: IErrorOptions): IError
 // Warning: (ae-forgotten-export) The symbol "IRenderOptions" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions): string;
+function renderModReference(ref?: IModReference, mod?: Pick<IMod, "attributes" | "installationPath">, options?: IRenderOptions): string;
 
 // @public (undocumented)
 function request(method: Method, reqURL: string, headers: any, cb: (res: IncomingMessage) => void): ClientRequest;
@@ -6270,6 +6291,7 @@ declare namespace types {
         IOverlay,
         IOverlayOptions,
         IOverlaysState,
+        ICollectionsPersistentState,
         IState,
         IDiscoveryPhase,
         IDiscoveryState,
@@ -6612,11 +6634,11 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // lib/extensions/installer_fomod_shared/types/interface.d.ts:76:5 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:161:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:360:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:362:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:394:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:395:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:162:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:376:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:378:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:411:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:412:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
