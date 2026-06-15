@@ -83,8 +83,8 @@ export function createMethodDispatcher(
     }
 
     try {
-      const res = fn.apply(instance, transformArgs(msg.args));
-      return Promise.resolve(res as unknown);
+      const res: unknown = fn.apply(instance, transformArgs(msg.args));
+      return Promise.resolve(res);
     } catch (err) {
       const wrapped =
         err instanceof Error ? err : new Error(typeof err === "string" ? err : "Non-Error throw");

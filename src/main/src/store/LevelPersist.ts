@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import type { DuckDBConnection } from "@duckdb/node-api";
+import type { DuckDBConnection, DuckDBResultReader } from "@duckdb/node-api";
 import { unknownToError } from "@vortex/shared";
 import { DataInvalid } from "@vortex/shared/errors";
 import type { IPersistor } from "@vortex/shared/state";
@@ -211,7 +211,7 @@ class LevelPersist implements IPersistor {
   }
 
   public async getAllKVs(prefix?: string): Promise<Array<{ key: string[]; value: string }>> {
-    let reader;
+    let reader: DuckDBResultReader;
     if (prefix === undefined) {
       reader = await this.#mConnection.runAndReadAll(`SELECT key, value FROM ${this.#mAlias}.kv`);
     } else {
@@ -224,7 +224,7 @@ class LevelPersist implements IPersistor {
     return rows.map((row) => ({
       key: (row[0] as string).split(SEPARATOR),
       value: row[1] as string,
-    })) as Array<{ key: string[]; value: string }>;
+    }));
   }
 
   public async setItem(statePath: string[], newState: string): Promise<void> {

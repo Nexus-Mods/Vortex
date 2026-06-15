@@ -100,7 +100,7 @@ export interface FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath>>;
+  ): Promise<AsyncIterator<QualifiedPath, undefined>>;
 
   /**
    * Returns an async iterator to enumerate the directory.
@@ -119,7 +119,7 @@ export interface FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[QualifiedPath, Status]>>;
+  ): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
 
   /**
    * Returns an async iterator to enumerate the directory.
@@ -206,7 +206,7 @@ export interface FileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath>>;
+  ): Promise<AsyncIterator<ResolvedPath, undefined>>;
 
   enumerateDirectory(
     path: ResolvedPath,
@@ -217,7 +217,7 @@ export interface FileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[ResolvedPath, Status]>>;
+  ): Promise<AsyncIterator<[ResolvedPath, Status], undefined>>;
 
   enumerateDirectory(
     path: ResolvedPath,
@@ -228,7 +228,7 @@ export interface FileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status]>>;
+  ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status], undefined>>;
 
   createStream(
     path: ResolvedPath,

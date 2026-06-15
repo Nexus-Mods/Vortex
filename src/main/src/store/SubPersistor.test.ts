@@ -84,7 +84,7 @@ describe("SubPersistor.bulkSetItem", () => {
     const { wrapped } = createWrappedWithBulk();
     const sub = new SubPersistor(wrapped, "settings");
     const items = [{ key: ["window"], value: "1" }];
-    const snapshot: typeof items = JSON.parse(JSON.stringify(items));
+    const snapshot = structuredClone(items);
 
     await sub.bulkSetItem(items);
 
