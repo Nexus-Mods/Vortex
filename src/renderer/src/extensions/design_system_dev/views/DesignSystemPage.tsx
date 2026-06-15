@@ -25,6 +25,7 @@ import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/tabs.context";
 import { TabsDemo } from "@/ui/components/tabs/TabsDemo";
+import { ToolbarDemo } from "@/ui/components/toolbar/Toolbar.demo";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyDemo } from "@/ui/components/typography/TypographyDemo";
 import { TypographyLinkDemo } from "@/ui/components/typography/TypographyLinkDemo";
@@ -77,6 +78,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
               <TabButton name="Pagination" />
 
               <TabButton name="Collection Tile" />
+
+              <TabButton name="Toolbar" />
             </TabBar>
 
             <div className="mt-6">
@@ -212,6 +215,10 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
 
               <TabPanel name="Collection Tile">
                 <CollectionTileDemo api={api} />
+              </TabPanel>
+
+              <TabPanel name="Toolbar">
+                <ToolbarDemo />
               </TabPanel>
             </div>
           </TabProvider>
