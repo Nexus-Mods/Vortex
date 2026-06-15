@@ -70,7 +70,7 @@ class MainWindow {
   // timers used to prevent window resize/move from constantly causing writes to the
   // store
   private mResizeDebouncer: Debouncer;
-  private mMoveDebouncer: Debouncer;
+  private mMoveDebouncer: Debouncer<[number, number]>;
   private mShown: boolean;
   private mInspector: boolean;
   private mInitialWindowSettings: IWindow | null = null;
@@ -95,7 +95,7 @@ class MainWindow {
       return Promise.resolve();
     }, 500);
 
-    this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
+    this.mMoveDebouncer = new Debouncer((x, y) => {
       if (this.mWindow !== null) {
         this.sendWindowEvent("window:moved", x, y);
       }

@@ -17,7 +17,7 @@ function makeTimers() {
 }
 
 function makeDebouncer(
-  func: (...args: any[]) => Error | PromiseLike<void>,
+  func: (...args: unknown[]) => Error | PromiseLike<void>,
   debounceMS = 200,
   reset = true,
   triggerImmediately = false,
