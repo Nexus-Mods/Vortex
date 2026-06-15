@@ -21,9 +21,6 @@ test.describe("Account - Sign out", () => {
     });
 
     await test.step("Click Logout", async () => {
-      // Startup notification toasts render top-right and overlap the dropdown,
-      // intercepting pointer events over the menu items. Dispatch the click
-      // directly to the (verified) menu item rather than relying on hit-testing.
       await profileMenu.logoutItem.dispatchEvent("click");
       await expect(profileMenu.loginButton).toBeVisible({ timeout: Timeouts.NETWORK });
     });
