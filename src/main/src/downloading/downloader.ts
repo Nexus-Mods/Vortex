@@ -34,10 +34,6 @@ export type Checkpoint = {
 
 export type TimeoutOptions = {
   // TODO: use Temporal API
-
-  /** Hard upper limit for the entire duration of a single HTTP request (ms). */
-  request: number;
-
   /** Timeout for DNS lookup (ms). */
   lookup: number;
 
@@ -352,7 +348,6 @@ function createGotTimeoutOptions(timeout?: TimeoutOptions): GotTimeoutOptions | 
     secureConnect: timeout.connect,
     socket: timeout.stall,
     response: timeout.stall,
-    request: timeout.request,
   };
 }
 
