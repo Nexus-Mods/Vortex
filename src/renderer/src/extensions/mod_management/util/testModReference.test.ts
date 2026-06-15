@@ -21,10 +21,15 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-import type { IMod, IModAttributes, IModReference } from "../types/IMod";
+import type { IMod, IModAttributes, IModReference, IModRule } from "../types/IMod";
 import { coerceToSemver } from "./coerceToSemver";
 import { isFuzzyVersion } from "./isFuzzyVersion";
-import { testModReference, sanitizeExpression } from "./testModReference";
+import {
+  testModReference,
+  sanitizeExpression,
+  modMatchesInstallSpec,
+  ruleInstallSpec,
+} from "./testModReference";
 
 // Mock the log function to avoid console output during tests
 vi.mock("../../../util/log", () => ({
@@ -119,8 +124,13 @@ describe("testModReference", () => {
         source: "nexus",
         game: ["skyrimse"],
         installerChoices: {
-          choice1: "option1",
-          choice2: "option2",
+          type: "fomod",
+          options: [
+            {
+              name: "Main",
+              groups: [{ name: "Group A", choices: [{ name: "Option 1", idx: 0 }] }],
+            },
+          ],
         },
         patches: {
           patch1: "value1",
@@ -497,58 +507,185 @@ describe("testModReference", () => {
     });
   });
 
-  describe("Installer choices and patches matching", () => {
-    it("should match when installer choices and patches are identical", () => {
-      const mod = sampleMods.skyrimse["BSA Version-68139-3-0-1685378500"];
-      const reference: IModReference = {
-        logicalFileName: "BSA_Version.zip",
-        installerChoices: {
-          choice1: "option1",
-          choice2: "option2",
-        },
-        patches: {
-          patch1: "value1",
-          patch2: "value2",
-        },
-      };
+  describe("modMatchesInstallSpec (installer choices, file list, patches)", () => {
+    // The mod's recorded install spec: a fomod installerChoices selection and
+    // patches { patch1: value1, patch2: value2 }.
+    const mod = sampleMods.skyrimse["BSA Version-68139-3-0-1685378500"];
 
-      expect(testModReference(mod, reference)).toBe(true);
+    it("matches when installer choices and patches are identical", () => {
+      expect(
+        modMatchesInstallSpec(mod, {
+          installerChoices: {
+            type: "fomod",
+            options: [
+              {
+                name: "Main",
+                groups: [{ name: "Group A", choices: [{ name: "Option 1", idx: 0 }] }],
+              },
+            ],
+          },
+          patches: { patch1: "value1", patch2: "value2" },
+        }),
+      ).toBe(true);
     });
 
-    it("should fail when installer choices do not match", () => {
-      const mod = sampleMods.skyrimse["BSA Version-68139-3-0-1685378500"];
-      const reference: IModReference = {
-        logicalFileName: "BSA_Version.zip",
-        installerChoices: {
-          choice1: "different_option",
-          choice2: "option2",
-        },
-        patches: {
-          patch1: "value1",
-          patch2: "value2",
-        },
-      };
-
-      expect(testModReference(mod, reference)).toBe(false);
+    it("fails when installer choices do not match", () => {
+      expect(
+        modMatchesInstallSpec(mod, {
+          installerChoices: {
+            type: "fomod",
+            options: [
+              {
+                name: "Main",
+                groups: [{ name: "Group A", choices: [{ name: "Option 2", idx: 1 }] }],
+              },
+            ],
+          },
+          patches: { patch1: "value1", patch2: "value2" },
+        }),
+      ).toBe(false);
     });
 
-    it("should match when patches are identical with matching tag", () => {
-      const mod = sampleMods.skyrimse["BSA Version-68139-3-0-1685378500"];
-      // Add referenceTag to match the tag requirement for patches
-      if (mod.attributes) {
-        mod.attributes.referenceTag = "test-tag";
-      }
+    it("matches identical patches without relying on the reference tag", () => {
+      // tags are shortid-generated and not stable/unique, so variant matching is by
+      // patch content alone.
+      expect(
+        modMatchesInstallSpec(mod, {
+          patches: { patch1: "value1", patch2: "value2" },
+        }),
+      ).toBe(true);
+    });
 
-      const reference: IModReference = {
-        logicalFileName: "BSA_Version.zip",
-        patches: {
-          patch1: "value1",
-          patch2: "value2",
-        },
-        tag: "test-tag",
+    it("fails when patches differ", () => {
+      expect(
+        modMatchesInstallSpec(mod, {
+          patches: { patch1: "DIFFERENT", patch2: "value2" },
+        }),
+      ).toBe(false);
+    });
+
+    it("is satisfied when the rule asks for no particular variant", () => {
+      expect(modMatchesInstallSpec(mod, {})).toBe(true);
+    });
+
+    it("matches on file list", () => {
+      const fileListMod = createMod("file-list-mod", {
+        fileList: [
+          { path: "a.esp", md5: "aaa" },
+          { path: "b.esp", md5: "bbb" },
+        ],
+      });
+
+      expect(
+        modMatchesInstallSpec(fileListMod, {
+          fileList: [
+            { path: "a.esp", md5: "aaa" },
+            { path: "b.esp", md5: "bbb" },
+          ],
+        }),
+      ).toBe(true);
+
+      expect(
+        modMatchesInstallSpec(fileListMod, {
+          fileList: [{ path: "a.esp", md5: "DIFFERENT" }],
+        }),
+      ).toBe(false);
+    });
+
+    it("ignores a spec field that is present but empty", () => {
+      // an empty patches map / file list means "no particular variant requested" for
+      // that dimension, so a mod with no recorded patches still matches.
+      const plainMod = createMod("plain-mod", { fileMD5: "abc" });
+
+      expect(modMatchesInstallSpec(plainMod, { patches: {} })).toBe(true);
+      expect(modMatchesInstallSpec(plainMod, { fileList: [] })).toBe(true);
+    });
+  });
+
+  // Regression guard for the identity / install-spec consolidation: testModReference
+  // answers identity only ("which mod"), never how it was installed. Two installs that
+  // differ solely by installer choices / patches / file list must be indistinguishable
+  // to testModReference; the install-spec dimension lives exclusively in
+  // modMatchesInstallSpec / findModByRef.
+  describe("testModReference ignores install spec (identity only)", () => {
+    const refMD5 = "shared-identity-md5";
+
+    const makeVariant = (id: string, patches: { [k: string]: string }): IMod =>
+      createMod(id, {
+        fileMD5: refMD5,
+        fileName: `${id}.7z`,
+        logicalFileName: "Shared.7z",
+        version: "1.0.0",
+        source: "nexus",
+        game: ["skyrimse"],
+        patches,
+      });
+
+    it("matches a mod by identity regardless of its recorded patches", () => {
+      const reference: IModReference = { fileMD5: refMD5 };
+
+      expect(testModReference(makeVariant("variant-a", { p: "1" }), reference)).toBe(true);
+      expect(testModReference(makeVariant("variant-b", { p: "2" }), reference)).toBe(true);
+    });
+
+    it("treats two installs that differ only by install spec as the same identity", () => {
+      const reference: IModReference = { fileMD5: refMD5 };
+      const variantA = makeVariant("variant-a", { p: "1" });
+      const variantB = makeVariant("variant-b", { p: "2" });
+
+      // identity is equal for both...
+      expect(testModReference(variantA, reference)).toBe(testModReference(variantB, reference));
+      // ...while the install spec is what tells them apart.
+      expect(modMatchesInstallSpec(variantA, { patches: { p: "1" } })).toBe(true);
+      expect(modMatchesInstallSpec(variantB, { patches: { p: "1" } })).toBe(false);
+    });
+  });
+
+  describe("ruleInstallSpec", () => {
+    const baseRule = (over: Partial<IModRule>): IModRule => ({
+      type: "requires",
+      reference: { id: "some-mod" },
+      ...over,
+    });
+
+    it("reads installer choices and file list straight off the rule", () => {
+      const installerChoices = {
+        type: "fomod",
+        options: [{ name: "Main", groups: [{ name: "G", choices: [{ name: "O", idx: 0 }] }] }],
       };
+      const fileList = [{ path: "a.esp", md5: "aaa" }];
 
-      expect(testModReference(mod, reference)).toBe(true);
+      const spec = ruleInstallSpec(baseRule({ installerChoices, fileList }));
+
+      expect(spec.installerChoices).toEqual(installerChoices);
+      expect(spec.fileList).toEqual(fileList);
+    });
+
+    it("reads patches from the first-class rule.patches field", () => {
+      const spec = ruleInstallSpec(baseRule({ patches: { "a.esp": "hash-a" } }));
+      expect(spec.patches).toEqual({ "a.esp": "hash-a" });
+    });
+
+    it("falls back to the legacy rule.extra.patches location", () => {
+      // collection rules persisted before patches became a first-class field stored it
+      // under extra; ruleInstallSpec is the single place that bridges the two so those
+      // rules keep matching without a migration.
+      const spec = ruleInstallSpec(baseRule({ extra: { patches: { "a.esp": "legacy-hash" } } }));
+      expect(spec.patches).toEqual({ "a.esp": "legacy-hash" });
+    });
+
+    it("prefers the first-class field over the legacy location", () => {
+      const spec = ruleInstallSpec(
+        baseRule({
+          patches: { "a.esp": "new-hash" },
+          extra: { patches: { "a.esp": "legacy-hash" } },
+        }),
+      );
+      expect(spec.patches).toEqual({ "a.esp": "new-hash" });
+    });
+
+    it("returns undefined patches when neither location is set", () => {
+      expect(ruleInstallSpec(baseRule({})).patches).toBeUndefined();
     });
   });
 

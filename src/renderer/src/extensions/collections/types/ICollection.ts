@@ -1,4 +1,9 @@
-import type * as types from "../../../types/api";
+import type {
+  IChoiceType,
+  IFileListItem,
+  IModPatches,
+  IModReference,
+} from "../../mod_management/types/IMod";
 import type { ICollectionGamebryo } from "../util/gameSupport/gamebryo";
 import type { ICollectionConfig } from "./ICollectionConfig";
 
@@ -48,11 +53,10 @@ export interface ICollectionMod {
   optional: boolean;
   domainName: string;
   source: ICollectionSourceInfo;
-  // hashes?: types.IFileListItem[];
-  hashes?: any;
+  hashes?: IFileListItem[];
   // installer-specific data to replicate the choices the author made
-  choices?: any;
-  patches?: { [filePath: string]: string };
+  choices?: IChoiceType;
+  patches?: IModPatches;
   instructions?: string;
   author?: string;
   details?: ICollectionModDetails;
@@ -63,9 +67,9 @@ export interface ICollectionMod {
 export type RuleType = "before" | "after" | "requires" | "conflicts" | "recommends" | "provides";
 
 export interface ICollectionModRule {
-  source: types.IModReference;
+  source: IModReference;
   type: RuleType;
-  reference: types.IModReference;
+  reference: IModReference;
 }
 
 export interface ICollectionTool {

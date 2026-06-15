@@ -1,6 +1,6 @@
 import type { ILookupResult, IModInfo } from "modmeta-db";
 
-import type { IFileListItem, IMod, IModReference } from "./IMod";
+import type { IChoiceType, IFileListItem, IMod, IModPatches, IModReference } from "./IMod";
 
 export interface IModInfoEx extends IModInfo {
   referer?: string | (() => PromiseLike<string>);
@@ -16,8 +16,8 @@ export interface IDependency {
   reference: IModReference;
   lookupResults: ILookupResultEx[];
   fileList?: IFileListItem[];
-  installerChoices?: any;
-  patches?: any;
+  installerChoices?: IChoiceType;
+  patches?: IModPatches;
   mod?: IMod;
   extra?: { [key: string]: any };
   phase?: number;

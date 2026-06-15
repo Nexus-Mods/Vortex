@@ -8,13 +8,38 @@ import * as _ from "lodash";
 
 import * as actions from "../../../actions";
 import { log } from "../../../logging";
-import * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import Debouncer from "../../../util/Debouncer";
 import * as selectors from "../../../util/selectors";
+import { getSafe, setSafe } from "../../../util/storeHelper";
+import { batchDispatch } from "../../../util/util";
+import {
+  CollectionsInstallationCompletedEvent,
+  CollectionsInstallationFailedEvent,
+  CollectionsInstallationStartedEvent,
+} from "../../analytics/mixpanel/MixpanelEvents";
+import type { IDownload } from "../../download_management/types/IDownload";
+import { getGame } from "../../gamemode_management/util/getGame";
+import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
+import { findDownloadByRef, lookupFromDownload } from "../../mod_management/util/dependencies";
+import { findModByRef } from "../../mod_management/util/findModByRef";
+import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
+import renderModName from "../../mod_management/util/modName";
+import testModReference, {
+  ruleInstallSpec,
+  testRefByIdentifiers,
+} from "../../mod_management/util/testModReference";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import * as installActions from "../actions/installTracking";
 import { setPendingVote } from "../actions/persistent";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
-import { reconstructModStatus } from "../installSession/util";
+import type { CollectionModStatus, ICollectionModInstallInfo } from "../installSession/types";
+import {
+  generateCollectionSessionId,
+  modRuleId,
+  reconstructModStatus,
+} from "../installSession/util";
 import { postprocessCollection } from "../postprocessCollection";
 import { ICollection } from "../types/ICollection";
 import { IRevisionEx } from "../types/IRevisionEx";
@@ -36,15 +61,15 @@ export type Step =
 export type UpdateCB = () => void;
 
 class InstallDriver {
-  private mApi: types.IExtensionApi;
-  private mProfile: types.IProfile;
+  private mApi: IExtensionApi;
+  private mProfile: IProfile;
   private mGameId: string;
-  private mCollection: types.IMod;
-  private mLastCollection: types.IMod;
+  private mCollection: IMod;
+  private mLastCollection: IMod;
   private mStep: Step = "prepare";
   private mUpdateHandlers: UpdateCB[] = [];
-  private mInstalledMods: types.IMod[] = [];
-  private mDependentMods: types.IModRule[] = [];
+  private mInstalledMods: IMod[] = [];
+  private mDependentMods: IModRule[] = [];
   private mInstallingMod: string;
   private mInstallDone: boolean = false;
   private mCollectionInfo: nexusApi.ICollection;
@@ -57,11 +82,11 @@ class InstallDriver {
   private mPostprocessing: boolean = false;
 
   private mStateUpdates: any[] = [];
-  private mModStatusDebouncer: util.Debouncer = new util.Debouncer(
+  private mModStatusDebouncer: Debouncer = new Debouncer(
     () => {
       const actions = this.mStateUpdates.slice();
       this.mStateUpdates = [];
-      util.batchDispatch(this.mApi.store, actions);
+      batchDispatch(this.mApi.store, actions);
       return Bluebird.resolve();
     },
     100,
@@ -73,7 +98,7 @@ class InstallDriver {
   // single mod event.  Tracking dispatches (mModStatusDebouncer) are unaffected.
   // reset=false keeps it from starving, triggerImmediately=true shows instant
   // feedback on the first event.
-  private mProgressDebouncer: util.Debouncer = new util.Debouncer(
+  private mProgressDebouncer: Debouncer = new Debouncer(
     () => {
       if (this.mProfile && this.mGameId && this.mCollection) {
         this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
@@ -95,7 +120,7 @@ class InstallDriver {
     return this.mDependentMods.filter((m) => m.type === "recommends");
   }
 
-  public updateModTracking(rule: types.IModRule, status: types.CollectionModStatus) {
+  public updateModTracking(rule: IModRule, status: CollectionModStatus) {
     if (!this.mTrackingEnabled || !this.mCurrentSessionId) {
       return;
     }
@@ -106,7 +131,7 @@ class InstallDriver {
       return;
     }
 
-    const ruleId = util.modRuleId(rule);
+    const ruleId = modRuleId(rule);
 
     // Check current status to prevent downgrades from terminal states
     const state = this.mApi.getState();
@@ -114,7 +139,7 @@ class InstallDriver {
     const currentStatus = currentSession?.mods?.[ruleId]?.status;
 
     // Don't downgrade from terminal states (installed, skipped, failed)
-    const terminalStates: types.CollectionModStatus[] = ["installed", "ignored", "failed"];
+    const terminalStates: CollectionModStatus[] = ["installed", "ignored", "failed"];
     if (currentStatus && terminalStates.includes(currentStatus)) {
       return;
     }
@@ -123,12 +148,12 @@ class InstallDriver {
     this.mModStatusDebouncer.schedule();
   }
 
-  public markModInstalledInTracking(rule: types.IModRule, modId: string) {
+  public markModInstalledInTracking(rule: IModRule, modId: string) {
     if (!this.mTrackingEnabled || !this.mCurrentSessionId) {
       return;
     }
 
-    const ruleId = util.modRuleId(rule);
+    const ruleId = modRuleId(rule);
     this.mStateUpdates.push(installActions.markModInstalled(this.mCurrentSessionId, ruleId, modId));
     this.mModStatusDebouncer.schedule();
   }
@@ -142,7 +167,7 @@ class InstallDriver {
    * restore the "ignored" status; the unfulfilled-rules and dependency-completion
    * checks already treat ignored rules as resolved.
    */
-  private markRuleIgnored(rule: types.IModRule) {
+  private markRuleIgnored(rule: IModRule) {
     this.updateModTracking(rule, "ignored");
 
     if (this.mGameId !== undefined && this.mCollection !== undefined) {
@@ -162,7 +187,7 @@ class InstallDriver {
     this.mCurrentSessionId = undefined;
   }
 
-  private mDebounce: util.Debouncer = new util.Debouncer(
+  private mDebounce: Debouncer = new Debouncer(
     (collectionSlug: string, revisionNumber: number, error: Error | undefined) => {
       // this.mApi.events.emit('analytics-track-event-with-payload', 'Collection Installation Failed', {
       //   collection_slug: collectionSlug,
@@ -176,7 +201,7 @@ class InstallDriver {
 
       this.mApi.events.emit(
         "analytics-track-mixpanel-event",
-        new util.CollectionsInstallationFailedEvent(
+        new CollectionsInstallationFailedEvent(
           nexusIds.collectionId,
           nexusIds.revisionId,
           nexusIds.numericGameId,
@@ -193,13 +218,13 @@ class InstallDriver {
     1000,
   );
 
-  constructor(api: types.IExtensionApi) {
+  constructor(api: IExtensionApi) {
     this.mApi = api;
 
     this.mInfoCache = new InfoCache(api);
 
     api.onAsync("will-install-mod", (gameId: string, archiveId: string, modId: string) => {
-      const state: types.IState = api.store.getState();
+      const state: IState = api.store.getState();
       const download = state.persistent.downloads.files[archiveId];
       if (download !== undefined) {
         this.mInstallingMod = download.localPath;
@@ -208,8 +233,8 @@ class InstallDriver {
     });
 
     api.events.on("did-install-mod", (gameId: string, archiveId: string, modId: string) => {
-      const state: types.IState = api.store.getState();
-      const mod = util.getSafe(state.persistent.mods, [gameId, modId], undefined);
+      const state: IState = api.store.getState();
+      const mod = getSafe(state.persistent.mods, [gameId, modId], undefined);
       const downloads = state.persistent.downloads.files;
       // verify the mod installed is actually one required by this collection
       const dependent = this.mDependentMods.find((iter) => {
@@ -225,8 +250,7 @@ class InstallDriver {
           fileNames: Array.from(nameSet).filter((n) => n !== undefined) as string[],
         };
         return (
-          util.testModReference(mod, iter.reference) ||
-          util.testRefByIdentifiers(identifiers, iter.reference)
+          testModReference(mod, iter.reference) || testRefByIdentifiers(identifiers, iter.reference)
         );
       });
 
@@ -251,20 +275,25 @@ class InstallDriver {
           if (dependent.type === "requires") {
             this.mProgressDebouncer.schedule();
           }
+          const installSpec = ruleInstallSpec(dependent);
           applyPatches(
             api,
             this.mCollection,
             gameId,
             dependent.reference.description,
             modId,
-            dependent.extra?.patches,
+            installSpec.patches,
           );
-          const choices = dependent.installerChoices ?? dependent.extra?.installerChoices;
-          util.batchDispatch(api.store, [
+          batchDispatch(api.store, [
             actions.setFileOverride(gameId, modId, dependent.extra?.fileOverrides),
-            actions.setModAttribute(gameId, modId, "installerChoices", choices),
-            actions.setModAttribute(gameId, modId, "patches", dependent.extra?.patches),
-            actions.setModAttribute(gameId, modId, "fileList", dependent.fileList),
+            actions.setModAttribute(
+              gameId,
+              modId,
+              "installerChoices",
+              installSpec.installerChoices,
+            ),
+            actions.setModAttribute(gameId, modId, "patches", installSpec.patches),
+            actions.setModAttribute(gameId, modId, "fileList", installSpec.fileList),
           ]);
         }
       }
@@ -281,10 +310,9 @@ class InstallDriver {
         const state = api.getState();
         const download = state.persistent.downloads.files[downloadId];
         if (download) {
-          const lookup = util.lookupFromDownload(download);
+          const lookup = lookupFromDownload(download);
           const matchingRule = this.mDependentMods.find((rule) => {
-            const { patches, fileList, installerChoices, ...refWithoutExtras } = rule.reference;
-            return util.testModReference(lookup, refWithoutExtras);
+            return testModReference(lookup, rule.reference);
           });
           if (matchingRule) {
             this.updateModTracking(matchingRule, "downloaded");
@@ -307,7 +335,7 @@ class InstallDriver {
           const condition = () => {
             // So this is shit, but we need to account for the fact that the fileId may never match
             //  due to incorrect update chains.
-            if (r.reference.versionMatch != null && util.isFuzzyVersion(r.reference.versionMatch)) {
+            if (r.reference.versionMatch != null && isFuzzyVersion(r.reference.versionMatch)) {
               if (
                 identifiers.modId == null ||
                 r.reference.repo?.modId !== identifiers.modId.toString()
@@ -325,7 +353,7 @@ class InstallDriver {
               return true;
             }
           };
-          return util.testRefByIdentifiers({ ...identifiers, condition } as any, r.reference);
+          return testRefByIdentifiers({ ...identifiers, condition } as any, r.reference);
         });
         if (rule) {
           this.markRuleIgnored(rule);
@@ -339,7 +367,7 @@ class InstallDriver {
 
     api.onStateChange(
       ["persistent", "downloads", "files"],
-      (prev: { [id: string]: types.IDownload }, current: { [id: string]: types.IDownload }) => {
+      (prev: { [id: string]: IDownload }, current: { [id: string]: IDownload }) => {
         if (this.mDependentMods.length === 0) return;
 
         const newIds = Object.keys(current).filter((id) => prev?.[id] === undefined);
@@ -347,10 +375,9 @@ class InstallDriver {
           const download = current[dlId];
           if (!download) continue;
 
-          const lookup = util.lookupFromDownload(download);
+          const lookup = lookupFromDownload(download);
           const matchingRule = this.mDependentMods.find((rule) => {
-            const { patches, fileList, installerChoices, ...refWithoutExtras } = rule.reference;
-            return util.testModReference(lookup, refWithoutExtras);
+            return testModReference(lookup, rule.reference);
           });
 
           const isBundled = matchingRule?.extra?.localPath != null;
@@ -369,10 +396,9 @@ class InstallDriver {
       dlIds.forEach((dlId) => {
         const download = downloads[dlId];
         if (download) {
-          const lookup = util.lookupFromDownload(download);
+          const lookup = lookupFromDownload(download);
           const matchingRule = this.mDependentMods.find((rule) => {
-            const { patches, fileList, installerChoices, ...refWithoutExtras } = rule.reference;
-            return util.testModReference(lookup, refWithoutExtras);
+            return testModReference(lookup, rule.reference);
           });
           if (matchingRule) {
             this.updateModTracking(matchingRule, "downloaded");
@@ -381,7 +407,7 @@ class InstallDriver {
       });
     });
 
-    api.events.on("collection-mod-skipped", (reference: types.IModReference) => {
+    api.events.on("collection-mod-skipped", (reference: IModReference) => {
       // Update tracking when a mod download is skipped (for both free and premium users)
       const matchingRule = this.mDependentMods.find((rule) => {
         // Match by tag (most reliable) or other identifiers
@@ -430,17 +456,13 @@ class InstallDriver {
           const required = (collection?.rules ?? []).filter((rule) =>
             ["requires", "recommends"].includes(rule.type),
           );
-          this.mDependentMods = required.filter((rule) => {
-            const modRef: any = {
-              ...rule.reference,
-              patches: rule?.extra?.patches ? { ...rule.extra.patches } : undefined,
-              fileList: rule?.fileList,
-            };
-            return util.findModByRef(modRef, mods) === undefined;
-          });
+          this.mDependentMods = required.filter(
+            (rule) =>
+              findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule)) === undefined,
+          );
         }
 
-        const isCollectionMod = (rule) => util.findModByRef(rule.reference, mods)?.id === modId;
+        const isCollectionMod = (rule) => findModByRef(rule.reference, mods)?.id === modId;
 
         if (
           this.mCollection !== undefined &&
@@ -464,7 +486,7 @@ class InstallDriver {
     this.mPrepare = this.mPrepare.then(func);
   }
 
-  public async query(profile: types.IProfile, collection: types.IMod) {
+  public async query(profile: IProfile, collection: IMod) {
     await this.mPrepare;
     this.mPrepare = Bluebird.resolve();
 
@@ -487,7 +509,7 @@ class InstallDriver {
     this.triggerUpdate();
   }
 
-  public async start(profile: types.IProfile, collection: types.IMod) {
+  public async start(profile: IProfile, collection: IMod) {
     await this.mPrepare;
     this.mPrepare = Bluebird.resolve();
 
@@ -525,7 +547,7 @@ class InstallDriver {
     return this.mProfile;
   }
 
-  public set profile(val: types.IProfile) {
+  public set profile(val: IProfile) {
     this.mProfile = val;
     if (val !== undefined) {
       this.mGameId = val?.gameId;
@@ -544,7 +566,7 @@ class InstallDriver {
     return this.mPostprocessing;
   }
 
-  public get installedMods(): types.IMod[] {
+  public get installedMods(): IMod[] {
     return this.mInstalledMods;
   }
 
@@ -556,7 +578,7 @@ class InstallDriver {
     return this.mInstallingMod;
   }
 
-  public get collection(): types.IMod {
+  public get collection(): IMod {
     return this.mCollection;
   }
 
@@ -565,12 +587,12 @@ class InstallDriver {
    * does not get reset after the installation completes but please be aware that there is
    * no guarantee this collection is still installed
    */
-  public get lastCollection(): types.IMod {
+  public get lastCollection(): IMod {
     return this.mLastCollection;
   }
 
   public get collectionId(): string {
-    const state: types.IState = this.mApi.store.getState();
+    const state: IState = this.mApi.store.getState();
     const modInfo =
       this.mCollection !== undefined
         ? state.persistent.downloads.files[this.mCollection.archiveId]?.modInfo
@@ -581,7 +603,7 @@ class InstallDriver {
   }
 
   public get collectionSlug(): string {
-    const state: types.IState = this.mApi.store.getState();
+    const state: IState = this.mApi.store.getState();
     const modInfo =
       this.mCollection !== undefined
         ? state.persistent.downloads.files[this.mCollection.archiveId]?.modInfo
@@ -592,7 +614,7 @@ class InstallDriver {
   }
 
   public get revisionNumber(): number {
-    const state: types.IState = this.mApi.store.getState();
+    const state: IState = this.mApi.store.getState();
     const modInfo =
       this.mCollection !== undefined
         ? state.persistent.downloads.files[this.mCollection.archiveId]?.modInfo
@@ -603,7 +625,7 @@ class InstallDriver {
   }
 
   public get revisionId(): number {
-    const state: types.IState = this.mApi.store.getState();
+    const state: IState = this.mApi.store.getState();
     const modInfo =
       this.mCollection !== undefined
         ? state.persistent.downloads.files[this.mCollection.archiveId]?.modInfo
@@ -700,7 +722,7 @@ class InstallDriver {
       return;
     }
     const slug = this.collectionSlug;
-    const state: types.IState = this.mApi.store.getState();
+    const state: IState = this.mApi.store.getState();
     const modInfo = state.persistent.downloads.files[this.mCollection.archiveId]?.modInfo;
     const nexusInfo = modInfo?.nexus;
     this.mCollectionInfo =
@@ -729,7 +751,7 @@ class InstallDriver {
       if (this.mCollection !== undefined) {
         if (!recommendations) {
           const isInstalled = (rule: any) => {
-            const mod = util.findModByRef(rule.reference, mods);
+            const mod = findModByRef(rule.reference, mods);
             return mod != null && mod?.state === "installed";
           };
           const filter = (rule) =>
@@ -751,7 +773,7 @@ class InstallDriver {
           const filter = (rule) =>
             ["requires", "recommends"].includes(rule.type) &&
             rule["ignored"] !== true &&
-            util.findModByRef(rule.reference, mods) === undefined;
+            findModByRef(rule.reference, mods) === undefined;
 
           const incomplete = (this.mCollection.rules ?? []).find(filter);
 
@@ -804,7 +826,7 @@ class InstallDriver {
 
         this.mApi.events.emit(
           "analytics-track-mixpanel-event",
-          new util.CollectionsInstallationCompletedEvent(
+          new CollectionsInstallationCompletedEvent(
             nexusIds.collectionId,
             nexusIds.revisionId,
             nexusIds.numericGameId,
@@ -861,10 +883,10 @@ class InstallDriver {
   }
 
   private getModsEx(
-    profile: types.IProfile,
+    profile: IProfile,
     gameId: string,
-    collection: types.IMod,
-  ): { [id: string]: types.IMod & { collectionRule: types.IModRule } } {
+    collection: IMod,
+  ): { [id: string]: IMod & { collectionRule: IModRule } } {
     if (profile === undefined) {
       profile = this.mProfile;
     }
@@ -884,8 +906,8 @@ class InstallDriver {
         return prev;
       }
 
-      const mod = util.findModByRef(rule.reference, mods);
-      prev[util.modRuleId(rule)] = { ...mod, collectionRule: rule };
+      const mod = findModByRef(rule.reference, mods);
+      prev[modRuleId(rule)] = { ...mod, collectionRule: rule };
 
       return prev;
     }, {});
@@ -922,7 +944,7 @@ class InstallDriver {
     const profile = this.mProfile;
     const gameId = this.mGameId;
 
-    const state: types.IState = this.mApi.store.getState();
+    const state: IState = this.mApi.store.getState();
     const mods = state.persistent.mods[gameId] ?? {};
     const modInfo = state.persistent.downloads.files[collection.archiveId]?.modInfo;
     const nexusInfo = modInfo?.nexus;
@@ -952,7 +974,7 @@ class InstallDriver {
     }
 
     const gameMode = gameId;
-    const currentgame = util.getGame(gameMode);
+    const currentgame = getGame(gameMode);
     const discovery = selectors.discoveryByGame(state, gameMode);
     const gameVersion = await currentgame.getInstalledVersion(discovery);
     const gvMatch = (gv) => gv.reference === gameVersion;
@@ -1002,19 +1024,8 @@ class InstallDriver {
     const required = (collection?.rules ?? []).filter((rule) =>
       ["requires", "recommends"].includes(rule.type),
     );
-    const dependencies: types.IModRule[] = required.reduce((accum, rule) => {
-      // Mods with binary patches are always reinstalled as variants so the
-      // correct diffs are applied to clean files.
-      if (rule.extra?.patches != null) {
-        accum.push(rule);
-        return accum;
-      }
-      const modRef: any = {
-        ...rule.reference,
-        patches: undefined,
-        fileList: rule?.fileList,
-      };
-      const mod = util.findModByRef(modRef, mods);
+    const dependencies: IModRule[] = required.reduce((accum, rule) => {
+      const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
       if (mod === undefined) {
         accum.push(rule);
       } else {
@@ -1038,7 +1049,7 @@ class InstallDriver {
     if (nexusIds?.collectionId != null) {
       this.mApi.events.emit(
         "analytics-track-mixpanel-event",
-        new util.CollectionsInstallationStartedEvent(
+        new CollectionsInstallationStartedEvent(
           nexusIds.collectionId,
           nexusIds.revisionId,
           nexusIds.numericGameId,
@@ -1058,16 +1069,16 @@ class InstallDriver {
       const totalRequired = required.length - optional.length;
 
       // Generate unique session ID
-      this.mCurrentSessionId = util.generateCollectionSessionId(collectionId, profile.id);
+      this.mCurrentSessionId = generateCollectionSessionId(collectionId, profile.id);
 
       const downloads = state.persistent.downloads.files;
-      const installedRuleIds = new Set(installed.map((r) => util.modRuleId(r)));
+      const installedRuleIds = new Set(installed.map((r) => modRuleId(r)));
 
       // Create mod info map
-      const mods: { [ruleId: string]: types.ICollectionModInstallInfo } = Object.fromEntries(
+      const mods: { [ruleId: string]: ICollectionModInstallInfo } = Object.fromEntries(
         required.map((rule) => {
-          const ruleId = util.modRuleId(rule);
-          const download = util.findDownloadByRef(rule.reference, downloads);
+          const ruleId = modRuleId(rule);
+          const download = findDownloadByRef(rule.reference, downloads);
           const isBundled = rule.extra?.localPath != null;
           const isInstalled = installedRuleIds.has(ruleId);
           const isDownloaded = download != null || isBundled;
@@ -1106,7 +1117,7 @@ class InstallDriver {
     });
   };
 
-  private matchRepo(rule: types.IModRule, ref: nexusApi.IModFile) {
+  private matchRepo(rule: IModRule, ref: nexusApi.IModFile) {
     if (ref === null) {
       return false;
     }
@@ -1121,8 +1132,8 @@ class InstallDriver {
     return modId.toString() === ref.modId.toString() && fileId.toString() === ref.fileId.toString();
   }
 
-  private augmentRules(gameId: string, collection: types.IMod) {
-    util.batchDispatch(
+  private augmentRules(gameId: string, collection: IMod) {
+    batchDispatch(
       this.mApi.store,
       (collection.rules ?? [])
         .map((rule) => {
@@ -1143,7 +1154,7 @@ class InstallDriver {
           }
           const revMod = modFiles.find((iter) => this.matchRepo(rule, iter.file));
           if (revMod?.file !== undefined) {
-            const newRule = util.setSafe(rule, ["extra", "fileName"], revMod.file.uri);
+            const newRule = setSafe(rule, ["extra", "fileName"], revMod.file.uri);
             return actions.addModRule(gameId, collection.id, newRule);
           }
         })
@@ -1195,7 +1206,7 @@ class InstallDriver {
     });
   }
 
-  private installProgress(profile: types.IProfile, gameId: string, collection: types.IMod): number {
+  private installProgress(profile: IProfile, gameId: string, collection: IMod): number {
     const mods = this.getModsEx(profile, gameId, collection);
 
     const downloads = this.mApi.getState().persistent.downloads.files;
@@ -1226,7 +1237,7 @@ class InstallDriver {
     return (dlPerc + instPerc) * 50.0;
   }
 
-  private updateProgress(profile: types.IProfile, gameId: string, collection: types.IMod) {
+  private updateProgress(profile: IProfile, gameId: string, collection: IMod) {
     if (collection === undefined) {
       return;
     }
@@ -1239,7 +1250,7 @@ class InstallDriver {
       id: INSTALLING_NOTIFICATION_ID + collection.id,
       type: "activity",
       title: "Installing Collection",
-      message: util.renderModName(collection),
+      message: renderModName(collection),
       progress: this.installProgress(profile, gameId, collection),
       actions: [
         {

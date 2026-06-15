@@ -39,6 +39,7 @@ import { getModSource, getModSources } from "../extensions/mod_management/util/m
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
+  ruleInstallSpec,
   testRefByIdentifiers,
 } from "../extensions/mod_management/util/testModReference";
 import {
@@ -249,6 +250,7 @@ export {
   renderModReference,
   resolveCategoryName,
   resolveCategoryPath,
+  ruleInstallSpec,
   runElevated,
   runThreaded,
   sanitizeCSSId,

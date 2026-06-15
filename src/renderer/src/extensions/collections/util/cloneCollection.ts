@@ -2,10 +2,14 @@ import * as path from "path";
 
 import { unknownToError } from "@vortex/shared";
 
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IDialogResult } from "../../../types/IDialog";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import * as fs from "../../../util/fs";
 import * as selectors from "../../../util/selectors";
+import type { IMod, IModRule } from "../../mod_management/types/IMod";
+import { findModByRef } from "../../mod_management/util/findModByRef";
+import renderModName from "../../mod_management/util/modName";
+import { ruleInstallSpec } from "../../mod_management/util/testModReference";
 import { MOD_TYPE } from "../constants";
 import type { ICollection, ICollectionAttributes } from "../types/ICollection";
 import type { IExtensionFeature } from "./extension";
@@ -13,9 +17,9 @@ import { findExtensions } from "./extension";
 import { hasEditPermissions } from "./util";
 
 function deduceCollectionAttributes(
-  collectionMod: types.IMod,
+  collectionMod: IMod,
   collection: ICollection,
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
 ): ICollectionAttributes {
   const existingInstallMode: { [modId: string]: string } =
     collectionMod.attributes?.collection?.installMode ?? {};
@@ -30,7 +34,7 @@ function deduceCollectionAttributes(
   };
 
   (collectionMod.rules ?? []).forEach((rule) => {
-    const mod = util.findModByRef(rule.reference, mods);
+    const mod = findModByRef(rule.reference, mods);
     if (mod === undefined) {
       // allowing mods to be missing, prior to r32 this would throw an exception
       return;
@@ -51,7 +55,7 @@ function deduceCollectionAttributes(
       url: rule.downloadHint?.url,
       instructions: rule.downloadHint?.instructions,
     };
-    res.saveEdits[mod.id] = rule.extra?.patches !== undefined;
+    res.saveEdits[mod.id] = ruleInstallSpec(rule).patches !== undefined;
   });
 
   return res;
@@ -63,7 +67,7 @@ function deduceCollectionAttributes(
  *          in that case an error notification has already been reported
  */
 export async function cloneCollection(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   id: string,
   sourceId: string,
@@ -73,7 +77,7 @@ export async function cloneCollection(
 
   const { userInfo } = state.persistent["nexus"] ?? {};
   const mods = state.persistent.mods[gameId] ?? {};
-  const existingCollection: types.IMod = mods[sourceId];
+  const existingCollection: IMod = mods[sourceId];
 
   const stagingPath = selectors.installPathForGame(state, gameId);
 
@@ -90,20 +94,20 @@ export async function cloneCollection(
     return undefined;
   }
 
-  const ruleFilter = (rule: types.IModRule) => {
+  const ruleFilter = (rule: IModRule) => {
     if (rule.ignored) {
       return false;
     }
 
-    if (util.findModByRef(rule.reference, mods) === undefined) {
+    if (findModByRef(rule.reference, mods) === undefined) {
       return false;
     }
 
     return true;
   };
 
-  const ruleSimplify = (rule: types.IModRule): types.IModRule => {
-    const referencedMod = util.findModByRef(rule.reference, mods);
+  const ruleSimplify = (rule: IModRule): IModRule => {
+    const referencedMod = findModByRef(rule.reference, mods);
     return {
       ...rule,
       reference: {
@@ -123,7 +127,7 @@ export async function cloneCollection(
   let ownCollection: boolean =
     userInfo?.userId != null && existingCollection.attributes?.uploaderId === userInfo.userId;
   if (editPermissions && !ownCollection) {
-    const result: types.IDialogResult = await api.showDialog(
+    const result: IDialogResult = await api.showDialog(
       "question",
       "Clone Collection",
       {
@@ -131,7 +135,7 @@ export async function cloneCollection(
           'You have edit permissions for the collection "{{name}}", but you are not the owner.[br][/br]' +
           "Would you like to clone it as your own collection, or contribute to the existing one?[br][/br][br][/br]",
         parameters: {
-          name: util.renderModName(existingCollection),
+          name: renderModName(existingCollection),
         },
       },
       [{ label: "Contribute" }, { label: "Clone", default: true }],
@@ -163,7 +167,7 @@ export async function cloneCollection(
       }
     : {};
 
-  const mod: types.IMod = {
+  const mod: IMod = {
     id,
     type: MOD_TYPE,
     state: "installed",

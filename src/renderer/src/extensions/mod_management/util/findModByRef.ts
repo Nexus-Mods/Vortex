@@ -1,12 +1,13 @@
 import { log } from "../../../util/log";
 import type { IMod, IModReference } from "../types/IMod";
 import { isFuzzyVersion } from "./isFuzzyVersion";
-import testModReference from "./testModReference";
+import testModReference, { modMatchesInstallSpec, type IModInstallSpec } from "./testModReference";
 
 export function findModByRef(
   reference: IModReference,
   mods: { [modId: string]: IMod },
   source?: { gameId: string; modId: string },
+  installSpec?: IModInstallSpec,
 ): IMod {
   if (!reference) {
     log("error", "findModByRef called with undefined reference", {
@@ -16,10 +17,19 @@ export function findModByRef(
     return undefined;
   }
   const fuzzy = isFuzzyVersion(reference.versionMatch);
-  if (
-    reference["idHint"] !== undefined &&
-    testModReference(mods[reference["idHint"]], reference, source, fuzzy)
-  ) {
+
+  // When an install spec is given, a candidate must also have been installed with that
+  // spec (installer choices / file list / patches). Checked per candidate because
+  // several variants of the same mod can be installed at once, and only one (if any) is
+  // the requested one.
+  const specMatches = (mod: IMod): boolean =>
+    installSpec == null || modMatchesInstallSpec(mod, installSpec);
+
+  // A candidate matches the reference by identity and by install spec.
+  const matches = (mod: IMod): boolean =>
+    mod != null && testModReference(mod, reference, source, fuzzy) && specMatches(mod);
+
+  if (reference["idHint"] !== undefined && matches(mods[reference["idHint"]])) {
     // fast-path if we have an id from a previous match
     return mods[reference["idHint"]];
   }
@@ -37,21 +47,14 @@ export function findModByRef(
     delete reference.fileMD5;
   }
 
-  if (
-    reference["md5Hint"] !== undefined &&
-    reference.installerChoices === undefined &&
-    reference.patches === undefined &&
-    reference.fileList === undefined
-  ) {
+  if (reference["md5Hint"] !== undefined) {
     const result = Object.keys(mods).find(
-      (dlId) => mods[dlId].attributes?.fileMD5 === reference["md5Hint"],
+      (dlId) => mods[dlId].attributes?.fileMD5 === reference["md5Hint"] && specMatches(mods[dlId]),
     );
     if (result !== undefined) {
       return mods[result];
     }
   }
 
-  return Object.values(mods).find((mod: IMod): boolean =>
-    testModReference(mod, reference, source, fuzzy),
-  );
+  return Object.values(mods).find((mod: IMod): boolean => matches(mod));
 }
