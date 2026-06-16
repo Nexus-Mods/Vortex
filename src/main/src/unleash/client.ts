@@ -117,7 +117,6 @@ export class UnleashClient {
     const result = await this.#apiClient.POST("/api/frontend/client/metrics", {
       body: {
         appName: APP_NAME,
-        instanceId: this.#sessionId,
         sdkVersion: `vortex:${this.#appVersion}`,
         bucket: {
           start: new Date(bucket.start).toISOString(),

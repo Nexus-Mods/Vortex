@@ -329,7 +329,7 @@ describe("UnleashClient", () => {
       expect(fetchMocker.requests()[0].method).toBe("POST");
     });
 
-    it("includes appName and instanceId in the request body", async () => {
+    it("includes appName in the request body", async () => {
       fetchMocker.mockResponseOnce("", { status: 200 });
 
       await new UnleashClient("1.0.0").postMetrics({
@@ -340,7 +340,6 @@ describe("UnleashClient", () => {
 
       const body = JSON.parse(await fetchMocker.requests()[0].text()) as Record<string, unknown>;
       expect(body["appName"]).toBe("Vortex");
-      expect(typeof body["instanceId"]).toBe("string");
     });
 
     it("includes ISO timestamps in the bucket", async () => {
