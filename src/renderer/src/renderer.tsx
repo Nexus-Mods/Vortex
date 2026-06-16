@@ -118,6 +118,7 @@ import {
 import { addNotification, setupNotificationSuppression } from "./actions/notifications";
 import { setMaximized, setWindowPosition, setWindowSize } from "./actions/window";
 import { ApplicationData } from "./applicationData";
+import { FlagsProvider } from "./contexts/FlagsContext";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
@@ -847,13 +848,15 @@ async function load(extensions: ExtensionManager): Promise<void> {
   // render the page content
   ReactDOM.render(
     <Provider store={store}>
-      <DndProvider backend={HTML5Backend}>
-        <I18nextProvider i18n={i18n}>
-          <ExtensionContext.Provider value={extensions}>
-            <AppLayout className="full-height" />
-          </ExtensionContext.Provider>
-        </I18nextProvider>
-      </DndProvider>
+      <FlagsProvider>
+        <DndProvider backend={HTML5Backend}>
+          <I18nextProvider i18n={i18n}>
+            <ExtensionContext.Provider value={extensions}>
+              <AppLayout className="full-height" />
+            </ExtensionContext.Provider>
+          </I18nextProvider>
+        </DndProvider>
+      </FlagsProvider>
     </Provider>,
     document.getElementById("content"),
   );
