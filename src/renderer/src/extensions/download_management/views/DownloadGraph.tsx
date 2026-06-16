@@ -39,11 +39,18 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, maxBandwidth, speeds } = this.props;
+    const { t, maxBandwidth } = this.props;
+    // speedHistory comes straight from persisted state and has been seen to be
+    // corrupted (non-array, or longer than NUM_SPEED_DATA_POINTS). Normalize it
+    // once here so neither Math.max(...speeds) nor convertData can throw and take
+    // the whole Downloads page down via the page-level error boundary.
+    const speeds = Array.isArray(this.props.speeds)
+      ? this.props.speeds.slice(-NUM_SPEED_DATA_POINTS)
+      : [];
     const data = this.convertData(speeds);
 
     let showLimit: boolean = false;
-    let maxData = Math.max(...speeds);
+    let maxData = speeds.length > 0 ? Math.max(...speeds) : 0;
     if (maxBandwidth !== 0 && maxBandwidth !== null && maxData * 1.5 > maxBandwidth) {
       maxData = maxBandwidth * 1.2;
       showLimit = true;
@@ -136,7 +143,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }*/
 
   private convertData(speeds: number[]): any {
-    const padded = Array(NUM_SPEED_DATA_POINTS - speeds.length)
+    const padded = Array(Math.max(0, NUM_SPEED_DATA_POINTS - speeds.length))
       .fill(0)
       .concat(speeds);
     return padded.map((value: number, idx: number) => ({
