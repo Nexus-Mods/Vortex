@@ -1,1 +1,3 @@
-openapi.json binary
+openapi.json -diff linguist-generated=true
+openapi-slim.json -diff linguist-generated=true
+schema.d.ts -diff linguist-generated=true
