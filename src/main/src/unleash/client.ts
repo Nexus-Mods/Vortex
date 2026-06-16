@@ -64,7 +64,7 @@ export class UnleashClient {
 
   static readonly #maxConsecutiveFailures = 5;
 
-  start(interval: number = INTERVAL): () => void {
+  start(interval: number = INTERVAL, onUpdate?: (flags: FeatureFlag[]) => void): () => void {
     let stopped = false;
     let fetching = false;
     let consecutiveFailures = 0;
@@ -82,6 +82,7 @@ export class UnleashClient {
       try {
         this.#flags = await this.fetchFeatureFlags();
         consecutiveFailures = 0;
+        onUpdate?.(this.#flags);
       } catch (err) {
         consecutiveFailures++;
         log("warn", "unleash fetch failed", { consecutiveFailures, err });

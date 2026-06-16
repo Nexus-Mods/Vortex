@@ -241,6 +241,9 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
+
+  // Feature flags: main pushes updated flags after each successful poll
+  "flags:synchronize": (flags: FeatureFlag[]) => void;
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
@@ -365,9 +368,6 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
-
-  // Feature flags: pull current flags from main process
-  "flags:get": () => Promise<FeatureFlag[]>;
 
   // Download channels
   "download:start": (dest: string, collationId: number) => Promise<{ downloadId: string }>;

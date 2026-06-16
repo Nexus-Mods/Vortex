@@ -257,7 +257,12 @@ try {
     },
 
     featureFlags: {
-      get: () => betterIpcRenderer.invoke("flags:get"),
+      onSynchronize: (callback) => {
+        const listener = (_: Electron.IpcRendererEvent, flags: Parameters<typeof callback>[0]) =>
+          callback(flags);
+        ipcRenderer.on("flags:synchronize", listener);
+        return () => ipcRenderer.removeListener("flags:synchronize", listener);
+      },
     },
   });
 } catch (err) {

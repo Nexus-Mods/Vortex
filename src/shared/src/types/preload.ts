@@ -499,10 +499,10 @@ export interface DownloaderApi {
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
 }
 
-/** API for pulling feature flags from the main process */
+/** API for receiving feature flag updates pushed from the main process */
 export interface FeatureFlagsApi {
-  /** Returns the current feature flags cached by the main process */
-  get(): Promise<FeatureFlag[]>;
+  /** Registers a callback invoked whenever main pushes updated flags. Returns an unsubscribe function. */
+  onSynchronize(callback: (flags: FeatureFlag[]) => void): () => void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */
