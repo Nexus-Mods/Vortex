@@ -1,4 +1,5 @@
-import type { IModRule } from "../../mod_management/types/IMod";
+import type { IDownload } from "../../download_management/types/IDownload";
+import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import type { CollectionModStatus } from "./types";
 
 export function generateCollectionSessionId(collectionId: string, profileId: string): string {
@@ -22,30 +23,38 @@ export function modRuleId(input: IModRule): string {
 }
 
 /**
- * Determine the status of a required collection rule when the install session is
- * (re)built. The session lives in state.session and is NOT persisted, so on a
- * mid-install restart it is reconstructed from inputs that DO survive: the set of
- * installed mods, present downloads, and the rule's durable `ignored` flag. The
- * `ignored` flag is written whenever the user skips a mod (see
- * InstallDriver.markRuleIgnored), so a skipped required mod rehydrates as the
- * terminal "ignored" status rather than reverting to "pending" (which would leave
- * the collection permanently incomplete after a restart).
+ * Infer the status of a collection rule from persistent state: the installed mod (if
+ * any), the rule's download (if any), and the rule's durable `ignored` flag. Used both
+ * to (re)build the install session - which lives in state.session and is NOT persisted,
+ * so on a mid-install restart it must be reconstructed from inputs that DO survive - and
+ * to derive a row's status when no session is tracking it.
  *
- * `ignored` takes precedence over `installed` to preserve the prior behaviour: a
- * mod the user chose to skip stays skipped even if a copy happens to be installed.
+ * Precedence:
+ * - `ignored` wins over everything: a mod the user chose to skip stays skipped even if a
+ *   copy happens to be installed/downloaded, and rehydrates as terminal "ignored" rather
+ *   than reverting to "pending" (which would leave the collection permanently incomplete).
+ * - a present mod reports its own lifecycle state (its ModState maps onto the shared
+ *   statuses), so a mid-install mod is "installing", not "installed", until the install
+ *   actually completes.
+ * - an unfinished download is "downloading", a finished (or bundled) one "downloaded".
  */
 export function reconstructModStatus(
   rule: IModRule,
-  isInstalled: boolean,
-  isDownloaded: boolean,
+  mod: IMod | undefined,
+  download: IDownload | undefined,
 ): CollectionModStatus {
   if (rule.ignored === true) {
     return "ignored";
   }
-  if (isInstalled) {
-    return "installed";
+  if (mod !== undefined) {
+    return mod.state ?? "installed";
   }
-  if (isDownloaded) {
+  if (download !== undefined) {
+    return download.state === "finished" ? "downloaded" : "downloading";
+  }
+  // bundled mods ship inside the collection archive, so they count as downloaded
+  // even without a separate download entry
+  if (rule.extra?.localPath != null) {
     return "downloaded";
   }
   return "pending";
