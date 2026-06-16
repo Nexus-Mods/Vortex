@@ -271,6 +271,7 @@ catalog:
   vite: 8.0.16
   vite-plugin-doctest: 2.0.0
   vitest: 4.1.8
+  vitest-fetch-mock: 0.4.5
   vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   webpack: 5.107.2
   webpack-cli: 7.0.3

@@ -371,6 +371,7 @@
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
     "openapi-typescript": "catalog:",
-    "redux-freeze": "catalog:"
+    "redux-freeze": "catalog:",
+    "vitest-fetch-mock": "catalog:"
   }
 }

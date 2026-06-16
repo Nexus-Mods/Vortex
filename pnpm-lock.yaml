@@ -920,6 +920,9 @@ catalogs:
     vitest:
       specifier: 4.1.8
       version: 4.1.8
+    vitest-fetch-mock:
+      specifier: 0.4.5
+      version: 0.4.5
     vortex-parse-ini:
       specifier: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
       version: 0.4.0
@@ -4686,6 +4689,9 @@ importers:
       redux-freeze:
         specifier: 'catalog:'
         version: 0.1.7
+      vitest-fetch-mock:
+        specifier: 'catalog:'
+        version: 0.4.5(vitest@4.1.8)
 
   src/preload:
     dependencies:
@@ -12206,6 +12212,12 @@ packages:
         optional: true
       yaml:
         optional: true
+
+  vitest-fetch-mock@0.4.5:
+    resolution: {integrity: sha512-nhWdCQIGtaSEUVl96pMm0WggyDGPDv5FUy/Q9Hx3cs2RGmh3Q/uRsLClGbdG3kXBkJ3br5yTUjB2MeW25TwdOA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      vitest: '>=2.0.0'
 
   vitest@4.1.8:
     resolution: {integrity: sha512-flY6ScbCIt9HThs+C5HS7jvGOB560DJtk/Z15IQROTA6zEy49Nh8T/dofWTQL+n3vswqn87sbJNiuqw1SDp5Ig==}
@@ -20064,6 +20076,10 @@ snapshots:
       terser: 5.46.1
       tsx: 4.22.4
       yaml: 2.9.0
+
+  vitest-fetch-mock@0.4.5(vitest@4.1.8):
+    dependencies:
+      vitest: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.8)(@vitest/ui@4.1.8)(happy-dom@20.9.0)(vite@8.0.16)
 
   vitest@4.1.8(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.8)(@vitest/ui@4.1.8)(happy-dom@20.9.0)(vite@8.0.16):
     dependencies:
