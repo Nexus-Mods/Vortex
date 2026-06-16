@@ -147,8 +147,15 @@ function sanitize(message: string): string {
   return message.replaceAll("%", "%%");
 }
 
+function errorReplacer(_key: string, value: unknown): unknown {
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: value.stack };
+  }
+  return value;
+}
+
 export function log(level: Level, message: string, metadata?: unknown): void {
-  const meta = metadata === undefined ? undefined : JSON.stringify(metadata);
+  const meta = metadata === undefined ? undefined : JSON.stringify(metadata, errorReplacer);
   const sanitized = sanitize(message);
   LoggerSingleton.log(level, sanitized, {
     process: "main",
