@@ -16,6 +16,7 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type { FeatureFlag } from "./flags";
 import type {
   DiffOperation,
   AppInitMetadata,
@@ -100,6 +101,9 @@ export interface Api {
 
   /** Diagnostic APIs */
   diag: Diag;
+
+  /** Feature flags API */
+  featureFlags: FeatureFlagsApi;
 }
 
 export interface Example {
@@ -493,6 +497,12 @@ export interface DownloaderApi {
    * Returns an unsubscribe function.
    */
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
+}
+
+/** API for pulling feature flags from the main process */
+export interface FeatureFlagsApi {
+  /** Returns the current feature flags cached by the main process */
+  get(): Promise<FeatureFlag[]>;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

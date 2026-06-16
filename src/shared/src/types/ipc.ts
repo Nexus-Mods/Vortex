@@ -21,6 +21,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { DownloadErrorPayload } from "./errors";
+import type { FeatureFlag } from "./flags";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
@@ -364,6 +365,9 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Feature flags: pull current flags from main process
+  "flags:get": () => Promise<FeatureFlag[]>;
 
   // Download channels
   "download:start": (dest: string, collationId: number) => Promise<{ downloadId: string }>;

@@ -255,6 +255,10 @@ try {
         }
       },
     },
+
+    featureFlags: {
+      get: () => betterIpcRenderer.invoke("flags:get"),
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);
