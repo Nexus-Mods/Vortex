@@ -74,6 +74,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
+| openapi-fetch | 0.17.0 |
 | p-queue | 9.3.0 |
 | packery | 2.1.2 |
 | permissions | 2.1.0 |
