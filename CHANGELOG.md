@@ -2000,6 +2000,7 @@ _Yanked due to critical issue found with file overrides_
 - Changelog dashlet was incorrectly displaying markdown
 
 [2.2.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.2.0-beta.1
+[2.1.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.1
 [2.1.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0
 [2.1.0-beta.8]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.8
 [2.1.0-beta.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.1.0-beta.7
