@@ -11,6 +11,10 @@ import {
   type TestInfo,
 } from "@playwright/test";
 
+import {
+  seedDynamicGameExtension,
+  type DynamicGameExtensionId,
+} from "../fixtures/extensions/dynamic-game-extension";
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 import {
   type DiagnosticsTeardown,
@@ -18,7 +22,7 @@ import {
   instrumentVortexInstance,
   instrumentVortexWindow,
 } from "../helpers/diagnostics";
-import { manageGame, type ManagedGame } from "../helpers/games";
+import { manageGame, type ManagedGame, type ManagedGameId } from "../helpers/games";
 import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
 import { launchNexusBrowser } from "../helpers/nexusBrowser";
@@ -229,6 +233,10 @@ export type VortexOptions = {
    * Set via test.use({ nexusUser: freeUser }) or test.use({ nexusUser: premiumUser }).
    */
   nexusUser: NexusUser | null;
+  /** Game fixture to manage when a test requests managedGame. */
+  managedGameId: ManagedGameId;
+  /** Dynamic game extension to seed into the isolated Vortex instance before launch. */
+  dynamicGameExtensionId: DynamicGameExtensionId | null;
 };
 
 /** Launch a Vortex Electron app against the given user-data dir. */
@@ -358,12 +366,18 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   // ---------------------------------------------------------------------------
 
   nexusUser: [null, { option: true }],
+  managedGameId: ["stardewvalley", { option: true }],
+  dynamicGameExtensionId: [null, { option: true }],
 
   // ---------------------------------------------------------------------------
   // Test-scoped fixtures
   // ---------------------------------------------------------------------------
 
-  vortexUserDataDir: async ({ workerAuthSnapshots, nexusUser }, use, testInfo) => {
+  vortexUserDataDir: async (
+    { workerAuthSnapshots, nexusUser, dynamicGameExtensionId },
+    use,
+    testInfo,
+  ) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-"));
 
     if (nexusUser !== null) {
@@ -372,6 +386,10 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       // point ELECTRON_USERDATA/ELECTRON_APPDATA at the copied subdirs.
       const { snapshotDir } = await workerAuthSnapshots.get(nexusUser, testInfo);
       fs.cpSync(snapshotDir, dir, { recursive: true });
+    }
+
+    if (dynamicGameExtensionId !== null) {
+      seedDynamicGameExtension(dir, dynamicGameExtensionId);
     }
 
     await use(dir);
@@ -422,10 +440,20 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   },
 
   managedGame: async (
-    { vortexWindow, vortexApp }: { vortexWindow: Page; vortexApp: ElectronApplication },
+    {
+      vortexWindow,
+      vortexApp,
+      vortexUserDataDir,
+      managedGameId,
+    }: {
+      vortexWindow: Page;
+      vortexApp: ElectronApplication;
+      vortexUserDataDir: string;
+      managedGameId: ManagedGameId;
+    },
     use: (game: ManagedGame) => Promise<void>,
   ) => {
-    const game = await manageGame(vortexWindow, vortexApp, "stardewvalley");
+    const game = await manageGame(vortexWindow, vortexApp, managedGameId, { vortexUserDataDir });
     await use(game);
     cleanupFakeGame(game.basePath);
   },

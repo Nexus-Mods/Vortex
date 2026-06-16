@@ -8,7 +8,7 @@ import { Timeouts } from "./timeouts";
 
 // VORTEX_E2E=1 disables automatic discovery, so all games go through the
 // "Game not discovered" dialog and have their path set via a dialog.showOpenDialog stub.
-export type ManagedGameId = "stardewvalley";
+export type ManagedGameId = keyof typeof GAME_CONFIGS;
 
 export interface ManagedGame {
   basePath: string;
@@ -19,8 +19,9 @@ export async function manageGame(
   vortexWindow: Page,
   electronApp: ElectronApplication,
   gameId: ManagedGameId,
+  options: { vortexUserDataDir?: string } = {},
 ): Promise<ManagedGame> {
-  const fakeGame = setupFakeGame(gameId);
+  const fakeGame = setupFakeGame(gameId, options);
   const gameName = GAME_CONFIGS[gameId].gameName;
 
   await test.step(`Manage game: ${gameId}`, async () => {

@@ -152,7 +152,7 @@ const { basePath, gamePath } = setupFakeGame("stardewvalley");
 cleanupFakeGame(basePath);
 ```
 
-Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`.
+Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`, `gothic1remake`.
 Game layouts live in `fixtures/game-setup/trees/`; see
 `fixtures/game-setup/trees/README.md` for format and export command.
 

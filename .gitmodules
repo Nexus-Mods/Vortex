@@ -1,0 +1,3 @@
+[submodule "external/gdl-games"]
+	path = external/gdl-games
+	url = https://github.com/Nexus-Mods/gdl-games

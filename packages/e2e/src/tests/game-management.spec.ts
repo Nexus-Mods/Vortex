@@ -94,6 +94,45 @@ test.describe("Game Management", () => {
     }
   });
 
+  test("Gothic tree fixture replicates real install layout", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { basePath, gamePath } = setupFakeGame("gothic1remake");
+
+    try {
+      const config = GAME_CONFIGS.gothic1remake;
+      for (const file of config.requiredFiles) {
+        expect(fs.existsSync(path.join(gamePath, file))).toBe(true);
+      }
+      expect(fs.existsSync(path.join(gamePath, "G1R", "Binaries", "Win64"))).toBe(true);
+      expect(
+        fs.existsSync(path.join(gamePath, "G1R", "Binaries", "Win64", "G1R-Win64-Shipping.exe")),
+      ).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, "Engine", "Binaries"))).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, "G1R", "Content", "Paks", "~mods"))).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, "G1R", "Binaries", "Win64", "ue4ss", "Mods"))).toBe(
+        true,
+      );
+      expect(fs.readFileSync(path.join(gamePath, "G1R", "Version", "version.txt"), "utf8")).toBe(
+        "Build123_CL456",
+      );
+    } finally {
+      cleanupFakeGame(basePath);
+    }
+  });
+
+  test.describe("Gothic 1 Remake dynamic GDL extension", () => {
+    test.use({ dynamicGameExtensionId: "gothic1remake", managedGameId: "gothic1remake" });
+
+    test("can manage Gothic 1 Remake", async ({ managedGame }) => {
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      expect(fs.existsSync(path.join(managedGame.gamePath, "G1R-Win64-Shipping.exe"))).toBe(true);
+      expect(fs.existsSync(path.join(managedGame.gamePath, "G1R", "Content"))).toBe(true);
+    });
+  });
+
   test("[QA-106] can manage a game while not logged in", async ({
     vortexWindow,
     managedGame: _g,

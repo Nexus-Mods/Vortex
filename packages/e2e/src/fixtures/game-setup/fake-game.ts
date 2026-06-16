@@ -75,6 +75,14 @@ export const GAME_CONFIGS = {
     externalTrees: [{ base: "localAppData", tree: treeFixture("baldursgate3", "localAppData") }],
     modFolderPath: "Mods",
   } satisfies GameConfig,
+  gothic1remake: {
+    gameId: "gothic1remake",
+    gameName: "Gothic 1 Remake",
+    executable: "G1R-Win64-Shipping.exe",
+    requiredFiles: ["G1R-Win64-Shipping.exe"],
+    tree: treeFixture("gothic1remake"),
+    modFolderPath: "G1R/Content/Paks/~mods",
+  } satisfies GameConfig,
 } as const;
 
 /** Creates a minimal fake PE executable header that passes file type checks. */

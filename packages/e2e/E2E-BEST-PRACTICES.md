@@ -237,8 +237,10 @@ test("mod appears after install", async ({ vortexWindow, managedGame }) => {
 });
 ```
 
-`managedGame` currently manages `"stardewvalley"`. Use `setupFakeGame` directly
-for other tree-backed fixtures when the test only needs on-disk layout.
+`managedGame` defaults to `"stardewvalley"`. Override it with
+`test.use({ managedGameId: "gothic1remake" })` or any key from `GAME_CONFIGS`.
+Games backed by dynamic/generated extensions must also seed that extension, e.g.
+`test.use({ dynamicGameExtensionId: "gothic1remake", managedGameId: "gothic1remake" })`.
 
 #### Just the on-disk install — `setupFakeGame`
 
@@ -258,7 +260,7 @@ test("fake game has expected files", async () => {
 });
 ```
 
-Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`.
+Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`, `gothic1remake`.
 Game layouts live in `packages/e2e/src/fixtures/game-setup/trees/`; see that
 folder's `README.md` for format and export command.
 
