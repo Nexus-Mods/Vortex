@@ -1,0 +1,142 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: xrebirth
+  name: X Rebirth
+  executable: XRebirth.exe
+  requiredFiles: [XRebirth.exe]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: xrebirth
+  # All X Rebirth mods deploy under the game's `extensions` folder.
+  queryModPath: extensions
+
+stores:
+  steam: "2870"
+
+# Mod types are classification tags only: every type deploys to the same
+# `extensions` folder (matching the original extension, which set modType tags
+# but never gave them distinct paths).
+modTypes:
+  - { id: xrebirth-savegame, name: "X Rebirth - savegame", path: "${installPath}/extensions" }
+  - {
+      id: xrebirth-shader-injector,
+      name: "X Rebirth - shader injector",
+      path: "${installPath}/extensions",
+    }
+  - { id: xrebirth-utility, name: "X Rebirth - utility", path: "${installPath}/extensions" }
+  - { id: xrebirth-dropin, name: "X Rebirth - drop-in", path: "${installPath}/extensions" }
+  - { id: xrebirth-save-patch, name: "X Rebirth - save patch", path: "${installPath}/extensions" }
+  - {
+      id: xrebirth-documentation,
+      name: "X Rebirth - documentation",
+      path: "${installPath}/extensions",
+    }
+
+# Priority order (lower = tried first) mirrors the original PRIORITIES table.
+installers:
+  # 50 - canonical content.xml mod: parses the XML and emits attribute
+  # instructions, so it runs through a custom install hook.
+  - id: content-xml
+    priority: 50
+    when: { hasFile: "**/content.xml" }
+    install: { hook: installContentXml }
+
+  # 60 - save_NNN.xml / quicksave.xml at any depth (keep archive layout).
+  - id: savegame
+    priority: 60
+    when: { matches: '(?i)(^|/)(quicksave|save_\d+)\.xml$' }
+    copy: { stripCommonRoot: false }
+    modType: xrebirth-savegame
+
+  # 65 - SweetFX / ReShade shader injector markers.
+  - id: shader-injector
+    priority: 65
+    when:
+      any:
+        - { matches: '(?i)(^|/)d3d9\.dll$' }
+        - { matches: '(?i)(^|/)dxgi\.dll$' }
+        - { matches: '(?i)(^|/)d3d9\.ini$' }
+        - { matches: '(?i)(^|/)SweetFX([\\/]|_)' }
+        - { matches: "(?i)(^|/)reshade-shaders/" }
+        - { matches: "(?i)(^|/)ReShade/" }
+    copy: { stripCommonRoot: true }
+    modType: xrebirth-shader-injector
+
+  # 70 - any .exe present (standalone utility/tool).
+  - id: utility
+    priority: 70
+    when: { extensions: { list: [".exe"], mode: any } }
+    copy: { stripCommonRoot: true }
+    modType: xrebirth-utility
+
+  # 75 - looks like an X Rebirth drop-in (matches a stopPattern).
+  - id: dropin
+    priority: 75
+    when: { stopPatterns: true }
+    copy: { stripCommonRoot: true }
+    modType: xrebirth-dropin
+
+  # 80 - every file is .xml/.txt and at least one is .xml (XML-only save patch).
+  - id: save-patch
+    priority: 80
+    when:
+      all:
+        - { extensions: { list: [".xml", ".txt"], mode: all } }
+        - { extensions: { list: [".xml"], mode: any } }
+    copy: { stripCommonRoot: false }
+    modType: xrebirth-save-patch
+
+  # 90 - pure documentation (every file is a doc extension).
+  - id: documentation
+    priority: 90
+    when:
+      extensions:
+        list:
+          [
+            ".pdf",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".svg",
+            ".xlsx",
+            ".xls",
+            ".docx",
+            ".doc",
+            ".odt",
+            ".ods",
+            ".md",
+            ".rtf",
+          ]
+        mode: all
+    copy: { stripCommonRoot: true }
+    modType: xrebirth-documentation
+
+# Drop-in conflict-detection patterns. Authored as regex (compiled
+# case-insensitively, matching the original details.stopPatterns).
+stopPatterns:
+  - { regex: '[^/]*\.cat$' }
+  - { regex: '[^/]*\.dat$' }
+  - { regex: '(^|/)t/[^/]+\.xml$' }
+  - { regex: '(^|/)lang\.dat$' }
+  - { regex: "(^|/)assets/.+" }
+  - { regex: '(^|/)libraries/.+\.xml$' }
+  - { regex: '(^|/)maps/.+\.xml$' }
+  - { regex: '(^|/)md/.+\.xml$' }
+  - { regex: "(^|/)cinematics/.+" }
+  - { regex: '(^|/)aiscripts/.+\.xml$' }
+  - { regex: '(^|/)voice-[^/]+/.+\.(ogg|wav)$' }
+  - { regex: "(^|/)ui/.+" }
+  - { regex: "(^|/)sfx/.+" }
+  - { regex: '[^/]*\.cur$' }
+  - { regex: '[^/]*\.(ogg|mp3|wav)$' }
+  - { regex: '[^/]*\.(mkv|mp4|webm)$' }
+  - { regex: '[^/]*\.ini$' }
+
+# In-game health checks (registered via context.registerHealthCheck).
+diagnostics:
+  - hook: modHasFilesCheck
+  - hook: contentXmlCustomFileNameCheck
+  - hook: modShapeRecognisedCheck

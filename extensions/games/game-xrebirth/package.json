@@ -3,8 +3,7 @@
   "version": "1.0.1",
   "description": "Support for X Rebirth",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "build": "node build.mjs",
     "test": "pnpm exec vitest run"
   },
   "author": "Black Tree Gaming Ltd.",

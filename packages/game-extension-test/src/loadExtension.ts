@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import * as path from "node:path";
 
 import type { IGameExtensionTestDescriptor, IModCheckContext } from "./types";
@@ -83,6 +84,7 @@ export interface ILoadedExtension {
 interface IStubContext {
   _installers: IInstallerEntry[];
   _game: IHarnessGame | undefined;
+  _healthChecks: IHarnessModHealthCheck[];
   registerGame: (game: IHarnessGame) => void;
   registerInstaller: (
     id: string,
@@ -90,6 +92,7 @@ interface IStubContext {
     testSupported: HarnessTestSupported,
     install: HarnessInstall,
   ) => void;
+  registerHealthCheck: (check: IHarnessModHealthCheck) => void;
   once: (cb: () => void) => void;
   api: Record<string, unknown>;
   [hook: string]: unknown;
@@ -97,9 +100,34 @@ interface IStubContext {
 
 export async function loadExtension(extensionDir: string): Promise<ILoadedExtension> {
   const stubContext = makeStubContext();
-  const indexPath = path.join(extensionDir, "src", "index.ts");
+
+  // GDL extensions (those with a game.yaml) have no hand-written src/index.ts;
+  // their entry is the bundle produced by `gdl build` (dist/index.js), which
+  // registers the game, installers, and health checks against the context.
+  // Legacy hand-written extensions load src/index.ts directly.
+  const isGdl = existsSync(path.join(extensionDir, "game.yaml"));
+  // For GDL extensions, load the generated TS entry (not the webpack bundle):
+  // it runs through the harness's module aliases (@nexusmods/vortex-api -> mock,
+  // @gdl/runtime -> submodule runtime), whereas the bundled CJS would bypass
+  // them and fail to resolve the types-only @nexusmods/vortex-api package.
+  const indexPath = isGdl
+    ? path.join(extensionDir, ".gdl-out", "extension.ts")
+    : path.join(extensionDir, "src", "index.ts");
+
+  if (isGdl && !existsSync(indexPath)) {
+    throw new Error(
+      `GDL extension ${extensionDir} has a game.yaml but no generated entry at ` +
+        `.gdl-out/extension.ts. Run \`gdl build\` (the extension's build script) first.`,
+    );
+  }
+
   const mod = await import(indexPath);
-  const init = mod.default ?? mod.init;
+  // Resolve the init function across module shapes: ESM default, CommonJS
+  // module.exports = fn, and webpack commonjs2's nested { default: fn }.
+  const candidates = [mod.default, mod.init, mod, (mod.default as { default?: unknown })?.default];
+  const init = candidates.find((c) => typeof c === "function") as
+    | ((ctx: unknown) => void)
+    | undefined;
   if (typeof init !== "function") {
     throw new Error(`Extension ${extensionDir} has no default export`);
   }
@@ -116,20 +144,6 @@ export async function loadExtension(extensionDir: string): Promise<ILoadedExtens
     testDescriptor?: IGameExtensionTestDescriptor;
   };
 
-  // Tolerate a missing diagnostic.ts (extension hasn't added one yet), but
-  // surface any other error so syntax mistakes don't silently become
-  // "no health checks registered."
-  const diagnosticPath = path.join(extensionDir, "src", "diagnostic.ts");
-  let diagnosticMod: { healthChecks?: unknown } = {};
-  try {
-    diagnosticMod = (await import(diagnosticPath)) as { healthChecks?: unknown };
-  } catch (err: unknown) {
-    const code = (err as { code?: string } | null)?.code;
-    if (code !== "ERR_MODULE_NOT_FOUND" && code !== "MODULE_NOT_FOUND") {
-      throw err;
-    }
-  }
-
   if (!descriptorMod.testDescriptor) {
     throw new Error(
       `Extension ${extensionDir} does not export a testDescriptor ` +
@@ -138,13 +152,34 @@ export async function loadExtension(extensionDir: string): Promise<ILoadedExtens
     );
   }
 
-  const healthChecks = resolveHealthChecks(diagnosticMod);
+  // GDL extensions register their health checks at init() time; legacy
+  // extensions export them from src/diagnostic.ts.
+  let healthChecks: IHarnessModHealthCheck[];
+  if (isGdl) {
+    healthChecks = stubContext._healthChecks;
+  } else {
+    // Tolerate a missing diagnostic.ts (extension hasn't added one yet), but
+    // surface any other error so syntax mistakes don't silently become
+    // "no health checks registered."
+    const diagnosticPath = path.join(extensionDir, "src", "diagnostic.ts");
+    let diagnosticMod: { healthChecks?: unknown } = {};
+    try {
+      diagnosticMod = (await import(diagnosticPath)) as { healthChecks?: unknown };
+    } catch (err: unknown) {
+      const code = (err as { code?: string } | null)?.code;
+      if (code !== "ERR_MODULE_NOT_FOUND" && code !== "MODULE_NOT_FOUND") {
+        throw err;
+      }
+    }
+    healthChecks = resolveHealthChecks(diagnosticMod);
+  }
+
   if (healthChecks.length === 0) {
     throw new Error(
       `Extension ${extensionDir} exports testDescriptor but has no health checks ` +
-        `(expected at src/diagnostic.ts: export const healthChecks = [...] ` +
-        `with at least one IModHealthCheck). ` +
-        `Without a healthcheck the harness would silently pass every fixture.`,
+        `(GDL: none registered via registerHealthCheck; legacy: none exported from ` +
+        `src/diagnostic.ts). Without a healthcheck the harness would silently pass ` +
+        `every fixture.`,
     );
   }
 
@@ -172,11 +207,17 @@ function makeStubContext(): IStubContext {
   const base: IStubContext = {
     _installers: [],
     _game: undefined,
+    _healthChecks: [],
     registerGame(game) {
       base._game = game;
     },
     registerInstaller(id, priority, testSupported, install) {
       base._installers.push({ id, priority, testSupported, install });
+    },
+    registerHealthCheck(check) {
+      // GDL extensions register health checks at init() time (rather than
+      // exporting them from diagnostic.ts); capture them here.
+      base._healthChecks.push(check);
     },
     once(_cb) {
       /* deferred init not exercised in tests */

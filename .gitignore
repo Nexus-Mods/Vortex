@@ -5,6 +5,7 @@ dist
 dist_custom
 dist_portable
 dist_web
+.gdl-out
 out
 doc
 coverage
