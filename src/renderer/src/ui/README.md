@@ -28,6 +28,7 @@ ui/
 │   ├── pill/            - Compact rounded label for tags and statuses
 │   ├── premium_badge/   - Premium diamond badge
 │   ├── tabs/            - Tabbed interface with context-based state
+│   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   └── typography/      - Typography system (heading, title, body)
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
@@ -194,6 +195,35 @@ function MyTabs() {
 
 **Keyboard:** Arrow Left/Right (navigate, wraps), Home/End (jump to first/last)
 **Tab types:** `primary` (default), `secondary` (count displayed with parentheses)
+
+### Toolbar
+
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When a group has more than `maxVisible` actions (default `7`), the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+
+**Defaults:** `maxVisible={7}`. Pass `maxVisible={null}` to disable collapsing and always render every action.
+
+```tsx
+import { Toolbar } from "../../ui/components/toolbar/Toolbar";
+import { type IToolbarAction, ToolbarGroup } from "../../ui/components/toolbar/ToolbarGroup";
+import { mdiFolderOpenOutline, mdiHistory, mdiRefresh } from "@mdi/js";
+
+const actions: IToolbarAction[] = [
+    { label: "Open mods folder", iconPath: mdiFolderOpenOutline, onClick: openFolder },
+    { label: "History", iconPath: mdiHistory, onClick: showHistory },
+    { label: "Refresh", iconPath: mdiRefresh, onClick: refresh, disabled: isBusy },
+];
+
+<Toolbar>
+    <ToolbarGroup actions={actions} />
+
+    {/* Never collapse — show every action regardless of count */}
+    <ToolbarGroup actions={contextualActions} maxVisible={null} />
+</Toolbar>;
+```
+
+**`IToolbarAction` fields:** `label` (required — the accessible name, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill).
+
+Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
 
 ### Form Components
 
