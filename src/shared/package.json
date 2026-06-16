@@ -34,6 +34,11 @@
       "import": "./dist/errors.js",
       "require": "./dist/errors.cjs"
     },
+    "./flags": {
+      "development": "./src/api/flags.ts",
+      "import": "./dist/flags.js",
+      "require": "./dist/flags.cjs"
+    },
     "./ipc": {
       "development": "./src/api/ipc.ts",
       "import": "./dist/ipc.js",
@@ -57,12 +62,13 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/resources": "^1.30.0",
-    "@opentelemetry/sdk-trace-base": "^1.30.0"
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/resources": "catalog:",
+    "@opentelemetry/sdk-trace-base": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.9.0"
+    "@opentelemetry/api": "catalog:"
   },
   "publishConfig": {
     "exports": {
@@ -81,6 +87,10 @@
       "./errors": {
         "import": "./dist/errors.js",
         "require": "./dist/errors.cjs"
+      },
+      "./flags": {
+        "import": "./dist/flags.js",
+        "require": "./dist/flags.cjs"
       },
       "./ipc": {
         "import": "./dist/ipc.js",

@@ -21,7 +21,8 @@
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
     "sbom": "pnpm node ./sbom.mjs",
-    "download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts"
+    "download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts",
+    "generate:unleash": "pnpm node src/unleash/trim-spec.mjs && pnpm exec openapi-typescript src/unleash/openapi-slim.json --immutable --output src/unleash/schema.d.ts && pnpm exec oxfmt ./src/unleash/*.json ./src/unleash/schema.d.ts"
   },
   "nx": {
     "targets": {
@@ -44,6 +45,7 @@
           "copy-assets",
           "copy-extensions",
           "download-duckdb-extensions",
+          "generate:unleash",
           "^build",
           {
             "target": "build",
@@ -185,6 +187,17 @@
         "dependsOn": [
           "build"
         ]
+      },
+      "generate:unleash": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/src/unleash/openapi.json",
+          "{projectRoot}/src/unleash/trim-spec.mjs"
+        ],
+        "outputs": [
+          "{projectRoot}/src/unleash/schema.d.ts"
+        ]
       }
     }
   },
@@ -263,6 +276,7 @@
     "node-7z": "catalog:",
     "normalize-url": "catalog:",
     "numeral": "catalog:",
+    "openapi-fetch": "catalog:",
     "p-queue": "catalog:",
     "packery": "catalog:",
     "permissions": "catalog:",
@@ -356,6 +370,7 @@
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
+    "openapi-typescript": "catalog:",
     "redux-freeze": "catalog:"
   }
 }
