@@ -306,7 +306,30 @@ function validateInstall(extPath: string, info?: IExtension): PromiseBB<Extensio
   }
 }
 
+// Concurrent install attempts of the same archive (e.g. the update check firing
+// more than once) would extract into the same ".installing" directory
+// simultaneously and fail with "Cannot delete output file ... being used by
+// another process" (#23454). Dedupe them onto a single in-flight promise.
+const activeInstalls: Map<string, PromiseBB<void>> = new Map();
+
 function installExtension(
+  api: IExtensionApi,
+  archivePath: string,
+  info?: IExtension,
+): PromiseBB<void> {
+  const key = path.basename(archivePath).toLowerCase();
+  const active = activeInstalls.get(key);
+  if (active !== undefined) {
+    return active;
+  }
+  const result = installExtensionImpl(api, archivePath, info).finally(() => {
+    activeInstalls.delete(key);
+  });
+  activeInstalls.set(key, result);
+  return result;
+}
+
+function installExtensionImpl(
   api: IExtensionApi,
   archivePath: string,
   info?: IExtension,
@@ -338,13 +361,26 @@ function installExtension(
         "extension.type": info?.type,
       },
       () =>
-        extractor
-          .extractFull(
-            archivePath,
-            tempPath,
-            { ssc: false },
-            () => undefined,
-            () => undefined,
+        // clear leftovers from a previous failed or interrupted attempt -
+        // extracting on top of them fails if any file is locked (#23454)
+        rimrafAsync(tempPath, { glob: false })
+          .catch((err) =>
+            PromiseBB.reject(
+              new DataInvalid(
+                "Failed to remove files left over from a previous install attempt: " +
+                  `${err.message}. They may be locked by another process ` +
+                  "(e.g. an antivirus scan); please try again or restart your computer.",
+              ),
+            ),
+          )
+          .then(() =>
+            extractor.extractFull(
+              archivePath,
+              tempPath,
+              { ssc: false },
+              () => undefined,
+              () => undefined,
+            ),
           )
           .then((result: { code: number; errors: string[] }) => {
             // node-7z can resolve (not reject) with a non-zero exit code or
