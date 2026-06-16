@@ -1,5 +1,9 @@
 import type { Page } from "@playwright/test";
 
+function normalizeNxmUrl(url: string): string {
+  return url.replace(/&amp;/g, "&");
+}
+
 // Chrome has no nxm:// protocol handler in the test browser, so navigation
 // silently fails and Playwright's framenavigated/popup events don't fire.
 // Hook the JS entry points instead. Captured URL lands on globalThis.__capturedNxm.
@@ -76,7 +80,7 @@ export async function waitForNxmUrl(page: Page, timeoutMs: number): Promise<stri
       },
       { timeout: timeoutMs },
     );
-    return (await handle.jsonValue()) as string;
+    return normalizeNxmUrl((await handle.jsonValue()) as string);
   } catch {
     return null;
   }
