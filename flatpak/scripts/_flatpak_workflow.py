@@ -46,10 +46,9 @@ def resolve_flatpak_paths(build_dir: str, manifest: str, repo: str) -> FlatpakPa
 
 def sync_flatpak_build_inputs(root: Path) -> None:
     sync_generated_sources(
-        lockfile=root / "yarn.lock",
+        lockfile=root / "pnpm-lock.yaml",
         output=root / "flatpak/generated-sources.json",
         hash_file=root / "flatpak/generated-sources.hash",
-        recursive=True,
     )
 
     sync_generated_nuget_sources(

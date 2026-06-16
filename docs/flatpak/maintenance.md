@@ -2,15 +2,12 @@
 
 How to build and update the Flatpak package.
 
-> [!WARNING]
+> [!NOTE]
 >
-> ## IMPORTANT: PNPM LOCKFILES ARE NOT SUPPORTED IN FLATPAK-BUILDER-TOOLS YET
->
-> Flatpak dependency source generation still relies on compatibility lockfiles
-> such as npm and Yarn, not `pnpm-lock.yaml`.
->
-> - [Flatpak Builder Tools PR 511]
-> - [Flatpak Builder Tools issue 383]
+> `flatpak-builder-tools` added `pnpm-lock.yaml` support in
+> [Flatpak Builder Tools PR 511], closing [Flatpak Builder Tools issue 383].
+> Vortex's Flatpak manifest and helper scripts use this pnpm path for
+> `flatpak/generated-sources.json` generation.
 
 > [!note] Prerequisites
 > See [Flatpak packaging] for the basics and
@@ -110,7 +107,7 @@ Current baselines:
 
 - Runtime: `org.freedesktop.Platform` 25.08
 - BaseApp: `org.electronjs.Electron2.BaseApp` 25.08
-- Node SDK: `org.freedesktop.Sdk.Extension.node22`
+- Node SDK: `org.freedesktop.Sdk.Extension.node24`
 - .NET SDK: `org.freedesktop.Sdk.Extension.dotnet9`
 
 ## generated-sources.json, generated-nuget-sources.json & Offline Build Behaviour
@@ -126,7 +123,7 @@ This is required for _Flathub submission_ and ensures reproducible builds.
 
 To keep source files in sync automatically, build scripts now:
 
-- hash recursive repository `yarn.lock` files and compare against
+- hash the repository `pnpm-lock.yaml` file and compare against
   `flatpak/generated-sources.hash`
 - hash FOMOD `.csproj` and NuGet input files and compare against
   `flatpak/generated-nuget-sources.hash`
@@ -141,7 +138,7 @@ python3 flatpak/scripts/flatpak_sources.py
 If you are debugging `generated-sources.json` generation, you can run the sync script manually:
 
 ```bash
-python3 flatpak/scripts/flatpak_sources.py --only yarn --force
+python3 flatpak/scripts/flatpak_sources.py --only pnpm --force
 ```
 
 If you are debugging `generated-nuget-sources.json` generation, run:
@@ -155,10 +152,9 @@ you need to narrow the scope during debugging.
 
 ## Troubleshooting
 
-- Missing submodule files during Flatpak build: `yarn install` normally runs
+- Missing submodule files during Flatpak build: `pnpm install` normally runs
   `preinstall.js`, which initializes submodules. If you have not run
-  `yarn install` locally, run `git submodule update --init --recursive`
-  first
+  `pnpm install` locally, run `git submodule update --init --recursive` first
 - `nxm://` handler did not switch automatically:
 
 ```bash

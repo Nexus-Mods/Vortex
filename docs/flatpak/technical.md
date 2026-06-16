@@ -4,13 +4,13 @@ Technical notes for developers working on the Flatpak build.
 
 ## Build Pipeline
 
-Offline-first: `flatpak-node-generator` converts Yarn lockfiles into
-`generated-sources.json` so builds need no network. Yarn pulls from an offline
-mirror inside the sandbox.
+Offline-first: `flatpak-node-generator` converts `pnpm-lock.yaml` into
+`generated-sources.json` so builds need no network. pnpm installs from an
+offline store inside the sandbox.
 
 Build stages (in the SDK sandbox):
 
-1. `yarn install` -- offline dependency fetch
+1. `pnpm install --offline` -- offline dependency fetch
 2. `_install_app`, `subprojects_app`, `_assets_app`, `build_dist` -- compile to `app/`
 3. `electron-builder` -- package app with Electron runtime to `dist/linux-unpacked/`
 4. Copy `dist/linux*-unpacked/` to `/app/main`
@@ -45,12 +45,11 @@ This approach:
 
 Use this to test the actual user installation experience.
 
-## Yarn Config (`flatpak/yarnrc`)
+## pnpm Config
 
-- `child-concurrency 1` -- deterministic, avoids cache races
-- `yarn-offline-mirror` -- tarball store inside the sandbox
-- `yarn-offline-mirror-pruning false` -- don't delete needed tarballs
-- `cache-folder` -- writable cache in the sandbox
+- `npm_config_store_dir` -- pnpm content-addressable store inside the sandbox
+- `npm_config_cache` -- writable package manager cache in the sandbox
+- `npm_config_offline` -- prevent network dependency resolution during the build
 
 ## Launch Mechanism
 
@@ -67,7 +66,7 @@ Use this to test the actual user installation experience.
   and deployment are background operations that cannot wait for user prompts.
 
 - **Offline builds**: Required for Flathub and reproducible builds. All
-  Yarn and NPM dependencies must be in `generated-sources.json`.
+  pnpm and NPM dependencies must be in `generated-sources.json`.
 
 - **Zypak wrapper**: Required by the Electron BaseApp to run Chromium's
   sandbox inside Flatpak's sandbox.

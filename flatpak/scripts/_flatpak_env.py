@@ -8,11 +8,10 @@ import urllib.request
 from pathlib import Path
 from typing import NamedTuple
 
-
-FLATPAK_NODE_GENERATOR_GIT_COMMIT = "216a52efa4fcaaf6612147ffe53d9b70c97addfc"
+# latest master branch commit hash
+FLATPAK_NODE_GENERATOR_GIT_COMMIT = "737c0085912f9f7dabf9341d4608e2a77a51a73a"
 # Note(sewer): Keep this pinned to a known-good upstream commit.
-# Currently, PyPI release fails due to
-# "Unknown playwright browser chromium-headless-shell".
+# This includes flatpak-node-generator support for pnpm lockfiles.
 FLATPAK_NODE_GENERATOR_GIT_URL = (
     "git+https://github.com/flatpak/flatpak-builder-tools.git@"
     f"{FLATPAK_NODE_GENERATOR_GIT_COMMIT}#subdirectory=node"
@@ -166,6 +165,7 @@ def ensure_venv(install_packages: bool = True) -> VenvInfo:
                     str(info.pip_exe),
                     "install",
                     "--upgrade",
+                    "--force-reinstall",
                     FLATPAK_NODE_GENERATOR_GIT_URL,
                 ],
                 cwd=repo_root(),
