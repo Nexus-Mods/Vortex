@@ -1,6 +1,6 @@
 import { createAction } from "redux-act";
 
-import type * as types from "../../../types/api";
+import type * as types from "../types/api";
 
 export const startInstallSession = createAction(
   "COLLECTION_START_INSTALL_SESSION",

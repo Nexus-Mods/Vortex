@@ -9,6 +9,7 @@ import type { IDownload } from "../../download_management/types/IDownload";
 import type {
   IChoiceType,
   IMod,
+  IModInstallSpec,
   IModReference,
   IModRule,
   IFileListItem,
@@ -90,16 +91,6 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
     return lhs.id === rhs.id;
   }
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
-}
-
-// A mod's "install spec": not which mod it is, but how it was installed - the
-// installer choices, file list, and binary patches. This is the data that
-// distinguishes the user-facing "variants" of a mod; it is NOT the named variant
-// itself (that is the `mod.attributes.variant` string).
-export interface IModInstallSpec {
-  installerChoices?: IChoiceType;
-  fileList?: IFileListItem[];
-  patches?: IModPatches;
 }
 
 /**

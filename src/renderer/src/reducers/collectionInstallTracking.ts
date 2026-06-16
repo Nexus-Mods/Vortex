@@ -1,7 +1,7 @@
-import type * as types from "../../../types/api";
-import { merge, setSafe } from "../../../util/storeHelper";
-import * as actions from "../actions/installTracking";
-import { generateCollectionSessionId } from "../installSession/util";
+import * as actions from "../actions/collectionInstallTracking";
+import type * as types from "../types/api";
+import { generateCollectionSessionId } from "../util/collectionInstallSession";
+import { merge, setSafe } from "../util/storeHelper";
 
 // Initial state
 const initialState: types.ICollectionInstallState = {

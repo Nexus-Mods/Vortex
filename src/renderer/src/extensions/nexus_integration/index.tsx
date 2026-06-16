@@ -35,6 +35,7 @@ import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionCon
 import type { IModLookupResult } from "../../types/IModLookupResult";
 import type { IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
+import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import {
   DataInvalid,
   HTTPError,
@@ -61,7 +62,6 @@ import {
 } from "../../util/util";
 import { MainContext } from "../../views/MainWindow";
 import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
-import { getCollectionActiveSession } from "../collections/installSession/selectors";
 import type { IDownload } from "../download_management/types/IDownload";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";

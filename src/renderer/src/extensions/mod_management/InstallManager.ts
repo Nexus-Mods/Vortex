@@ -73,6 +73,15 @@ import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import calculateFolderSize from "../../util/calculateFolderSize";
+import { generateCollectionSessionId } from "../../util/collectionInstallSession";
+import {
+  getCollectionActiveSession,
+  getCollectionInstallProgress,
+  getCollectionModByReference,
+  getCollectionSessionById,
+  getCollectionStatusBreakdown,
+  isCollectionPhaseComplete,
+} from "../../util/collectionInstallSessionSelectors";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import {
   DataInvalid,
@@ -115,15 +124,6 @@ import {
 } from "../../util/util";
 import walk from "../../util/walk";
 import { resolveCategoryId } from "../category_management/util/retrieveCategoryPath";
-import {
-  getCollectionActiveSession,
-  getCollectionInstallProgress,
-  getCollectionModByReference,
-  getCollectionSessionById,
-  getCollectionStatusBreakdown,
-  isCollectionPhaseComplete,
-} from "../collections/installSession/selectors";
-import { generateCollectionSessionId } from "../collections/installSession/util";
 import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";

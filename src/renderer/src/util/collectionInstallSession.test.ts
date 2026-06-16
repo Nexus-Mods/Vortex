@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { IDownload } from "../../download_management/types/IDownload";
-import type { IMod, IModRule } from "../../mod_management/types/IMod";
-import { reconstructModStatus } from "./util";
+import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
+import { reconstructModStatus } from "./collectionInstallSession";
 
 function makeRule(overrides: Partial<IModRule> = {}): IModRule {
   return {

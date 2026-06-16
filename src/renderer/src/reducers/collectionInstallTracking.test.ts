@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import * as actions from "../actions/installTracking";
+import * as actions from "../actions/collectionInstallTracking";
 // The reducer file exports a default object with { reducers, defaults }.
 // We also need the action creators so we can get their .toString() keys.
-import reducer from "./installTracking";
+import reducer from "./collectionInstallTracking";
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -2,15 +2,15 @@ import * as path from "path";
 
 import { createSelector } from "reselect";
 
-import type { IDownload, IMod, IState } from "../../../types/IState";
-import { activeDownloads } from "../../download_management/selectors";
-import { modsForActiveGame } from "../../mod_management/selectors";
+import { activeDownloads } from "../extensions/download_management/selectors";
+import { modsForActiveGame } from "../extensions/mod_management/selectors";
 import type {
   ICollectionInstallState,
   ICollectionInstallSession,
   ICollectionModInstallInfo,
   CollectionModStatus,
-} from "./types";
+} from "../types/collections/ICollectionInstallSession";
+import type { IDownload, IMod, IState } from "../types/IState";
 
 /**
  * Selectors for the installTracking reducer

@@ -1,4 +1,4 @@
-import type { IModRule, ModState } from "../../mod_management/types/IMod";
+import type { IModRule, ModState } from "../../extensions/mod_management/types/IMod";
 
 /**
  * Status of an individual mod within a collection installation.

@@ -3036,7 +3036,7 @@ interface IModifiers {
     shift: boolean;
 }
 
-// @public (undocumented)
+// @public
 interface IModInstallSpec {
     // (undocumented)
     fileList?: IFileListItem[];
@@ -3124,7 +3124,7 @@ interface IModRepoId {
 }
 
 // @public (undocumented)
-interface IModRule extends IRule {
+interface IModRule extends IRule, IModInstallSpec {
     // Warning: (ae-forgotten-export) The symbol "IDownloadHint" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
@@ -3134,13 +3134,7 @@ interface IModRule extends IRule {
         [key: string]: any;
     };
     // (undocumented)
-    fileList?: IFileListItem[];
-    // (undocumented)
     ignored?: boolean;
-    // (undocumented)
-    installerChoices?: IChoiceType;
-    // (undocumented)
-    patches?: IModPatches;
     // (undocumented)
     reference: IModReference;
 }
@@ -6110,10 +6104,10 @@ declare namespace types {
         IGameStored,
         IDeploymentManifest,
         IModLookupInfo,
-        IModInstallSpec,
         IChoiceType,
         IFileListItem,
         IMod,
+        IModInstallSpec,
         IModPatches,
         IModReference,
         IModRepoId,

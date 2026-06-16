@@ -228,13 +228,24 @@ export interface IDownloadHint {
   instructions?: string;
 }
 
-export interface IModRule extends IRule {
-  reference: IModReference;
-  fileList?: IFileListItem[];
+/**
+ * A mod's "install spec": not which mod it is, but how it was installed - the
+ * installer choices, file list, and binary patches. This is the data that
+ * distinguishes the user-facing "variants" of a mod; it is NOT the named variant
+ * itself (that is the `mod.attributes.variant` string). Declared here so IModRule,
+ * IDependency and the install-spec matchers all draw the same three fields from a
+ * single source rather than re-declaring them and risking drift.
+ */
+export interface IModInstallSpec {
   installerChoices?: IChoiceType;
+  fileList?: IFileListItem[];
   // binary patches applied to the referenced mod's files when it is installed as a
   // dependency
   patches?: IModPatches;
+}
+
+export interface IModRule extends IRule, IModInstallSpec {
+  reference: IModReference;
   downloadHint?: IDownloadHint;
   // additional information attached to the rule. This will not have
   // any effect on the resolution of the rule but may be used to
