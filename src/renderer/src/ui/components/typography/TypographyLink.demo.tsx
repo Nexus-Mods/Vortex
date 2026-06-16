@@ -7,19 +7,14 @@ import { mdiArrowRight, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 
 import { Typography } from "./Typography";
-import type { TypographyButtonProps } from "./TypographyLink";
-import { TypographyLink } from "./TypographyLink";
+import { TypographyLink, type ITypographyLinkProps } from "./TypographyLink";
 
-const appearances: NonNullable<TypographyButtonProps["appearance"]>[] = [
-  "info",
-  "premium",
-  "primary",
-  "moderate",
-  "strong",
-  "subdued",
-];
+// Brands sharing the standard solid ramp; `neutral` lives in a different
+// prop-type arm so it gets its own row below.
+const colourBrands = ["primary", "info", "success", "premium", "danger", "warning"] as const;
+const appearances = ["weak", "subdued", "moderate", "strong"] as const;
 
-const variants: NonNullable<TypographyButtonProps["variant"]>[] = ["primary", "secondary", "none"];
+const variants: NonNullable<ITypographyLinkProps["variant"]>[] = ["primary", "secondary", "none"];
 
 export const TypographyLinkDemo = () => (
   <div className="space-y-8">
@@ -50,15 +45,66 @@ export const TypographyLinkDemo = () => (
 
     <div className="space-y-4">
       <Typography as="h3" typographyType="heading-xs">
-        Appearances
+        Colours (brand × appearance)
       </Typography>
 
-      <div className="flex flex-wrap items-center gap-6">
-        {appearances.map((appearance) => (
-          <TypographyLink appearance={appearance} key={appearance}>
-            {appearance}
-          </TypographyLink>
+      <div className="space-y-2">
+        {/* neutral has the full ramp; render its row explicitly */}
+        <div className="flex items-baseline gap-x-4">
+          <Typography appearance="subdued" className="w-24 shrink-0" typographyType="body-sm">
+            neutral
+          </Typography>
+
+          {appearances.map((appearance) => (
+            <TypographyLink
+              appearance={appearance}
+              brand="neutral"
+              key={appearance}
+              typographyType="body-sm"
+              variant="secondary"
+            >
+              {appearance}
+            </TypographyLink>
+          ))}
+        </div>
+
+        {colourBrands.map((brand) => (
+          <div className="flex items-baseline gap-x-4" key={brand}>
+            <Typography appearance="subdued" className="w-24 shrink-0" typographyType="body-sm">
+              {brand}
+            </Typography>
+
+            {appearances.map((appearance) => (
+              <TypographyLink
+                appearance={appearance}
+                brand={brand}
+                key={appearance}
+                typographyType="body-sm"
+                variant="secondary"
+              >
+                {appearance}
+              </TypographyLink>
+            ))}
+          </div>
         ))}
+
+        <div className="flex items-baseline gap-x-4 rounded-sm bg-surface-high p-3">
+          <Typography appearance="subdued" className="w-24 shrink-0" typographyType="body-sm">
+            translucent
+          </Typography>
+
+          {appearances.map((appearance) => (
+            <TypographyLink
+              appearance={appearance}
+              brand="neutral-translucent"
+              key={appearance}
+              typographyType="body-sm"
+              variant="secondary"
+            >
+              {appearance}
+            </TypographyLink>
+          ))}
+        </div>
       </div>
     </div>
 

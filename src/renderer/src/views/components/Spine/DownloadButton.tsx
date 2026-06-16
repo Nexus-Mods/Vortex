@@ -146,8 +146,8 @@ export const DownloadButton: FC = () => {
         <>
           {!isPaused && (
             <Typography
-              appearance="none"
               as="span"
+              brand="none"
               className="leading-none font-semibold"
               type="body-sm"
             >

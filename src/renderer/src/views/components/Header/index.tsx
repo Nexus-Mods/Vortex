@@ -63,7 +63,7 @@ export const Header: FC = () => {
         />
 
         <Typography
-          appearance="none"
+          brand="none"
           className="flex min-w-0 items-center gap-x-2 truncate font-semibold"
         >
           <span className="shrink-0 text-neutral-strong">{title}</span>

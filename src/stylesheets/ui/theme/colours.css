@@ -117,6 +117,7 @@
     --color-translucent-subdued: --alpha(var(--color-white) / 50%);
     --color-translucent-moderate: --alpha(var(--color-white) / 70%);
     --color-translucent-strong: --alpha(var(--color-white) / 95%);
+    --color-translucent-inverted: --alpha(var(--color-black) / 95%);
 
     --color-translucent-dark-50: --alpha(var(--color-black) / 5%);
     --color-translucent-dark-100: --alpha(var(--color-black) / 10%);

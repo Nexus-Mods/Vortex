@@ -56,8 +56,8 @@ export const ModRequirement = ({
             {mod.externalRequirement ? (
               mod.modUrl ? (
                 <Button
-                  brand="neutral"
                   appearance="moderate"
+                  brand="neutral"
                   leftIconPath={mdiWeb}
                   rightIconPath={mdiOpenInNew}
                   size="sm"
@@ -70,8 +70,8 @@ export const ModRequirement = ({
               <>
                 {mod.modUrl ? (
                   <Button
-                    brand="neutral"
                     appearance="moderate"
+                    brand="neutral"
                     leftIcon={<img alt="" src="assets/images/nexus.svg" />}
                     size="sm"
                     onClick={() => window.api.shell.openUrl(mod.modUrl)}
@@ -81,8 +81,8 @@ export const ModRequirement = ({
                 ) : null}
 
                 <Button
-                  brand="neutral"
                   appearance="strong"
+                  brand="neutral"
                   leftIconPath={mdiDownload}
                   rightIcon={showPremiumBadge && <PremiumBadge />}
                   size="sm"
@@ -98,8 +98,8 @@ export const ModRequirement = ({
         {mod.externalRequirement && (
           <div className="flex items-center rounded-sm bg-info-weak/20 p-3">
             <Typography
-              appearance="none"
               as="div"
+              brand="none"
               className="grow text-info-strong"
               typographyType="body-sm"
             >
@@ -107,8 +107,8 @@ export const ModRequirement = ({
             </Typography>
 
             <Button
-              brand="neutral"
               appearance="moderate"
+              brand="neutral"
               leftIconPath={mdiCheck}
               size="sm"
               onClick={onConfirmInstall}
