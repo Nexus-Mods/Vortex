@@ -76,7 +76,7 @@ function isESLSupported(api) {
 
 function testEslEnabler(files, gameId) {
   const isFallout4VR = gameId === GAME_ID;
-  const isESLEnabler = files.some((file) => file.toLowerCase().endsWith(ESL_ENABLER_LIB));
+  const isESLEnabler = files.some((file) => file.toLowerCase().endsWith(ESL_ENABLER_LIB.toLowerCase()));
   return Promise.resolve({
     supported: isFallout4VR && isESLEnabler,
     requiredFiles: [],
@@ -156,11 +156,6 @@ function main(context) {
   context.registerInstaller("fallout4vr-esl-enabler", 10, testEslEnabler, installEslEnabler);
 
   context.once(() => {
-    context.api.events.on("gamemode-activated", (gameId) => {
-      if (gameId !== GAME_ID) {
-        context.api.dismissNotification(ESL_NOTIF_ID);
-      }
-    });
     context.api.onAsync("did-deploy", (profileId, newDeployment) => {
       const state = context.api.getState();
       const profile = selectors.profileById(state, profileId);
