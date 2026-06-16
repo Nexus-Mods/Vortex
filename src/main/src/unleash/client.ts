@@ -13,13 +13,15 @@ import type { paths, components } from "./schema";
 
 type UnleashContext = {
   appName: string;
-  appVersion: string;
   environment: "development" | "production";
-  channel: "beta" | "stable";
   currentTime: string;
-  os: ReturnType<typeof platform>;
   sessionId: string;
   userId?: string;
+  properties: {
+    appVersion: string;
+    os: ReturnType<typeof platform>;
+    channel: "beta" | "stable";
+  };
 };
 
 // NOTE(erri120): injecting our custom unleash context into the query
@@ -79,7 +81,7 @@ export class UnleashClient {
       fetching = true;
 
       try {
-        this.#flags = await this.#fetchFeatureFlags();
+        this.#flags = await this.fetchFeatureFlags();
         consecutiveFailures = 0;
       } catch (err) {
         consecutiveFailures++;
@@ -105,11 +107,12 @@ export class UnleashClient {
     };
   }
 
-  async #fetchFeatureFlags(): Promise<FeatureFlag[]> {
+  async fetchFeatureFlags(): Promise<FeatureFlag[]> {
     const result = await this.#apiClient.GET("/api/frontend", {
       params: {
         query: this.#createContext(),
       },
+      querySerializer: serializeContext,
       headers: {
         accept: "application/json",
       },
@@ -141,15 +144,32 @@ export class UnleashClient {
   #createContext(): UnleashContext {
     return {
       appName: APP_NAME,
-      appVersion: app.getVersion(),
       environment: ENVIRONMENT,
       currentTime: new Date().toISOString(),
-      os: platform(),
       sessionId: this.#sessionId,
-      channel: this.#channel,
-      // TODO: userId
+      properties: {
+        appVersion: this.#appVersion,
+        os: platform(),
+        channel: this.#channel,
+      },
     };
   }
+}
+
+function serializeContext(context: UnleashContext): string {
+  const params = new URLSearchParams();
+
+  if (context.appName) params.set("appName", context.appName);
+  if (context.environment) params.set("environment", context.environment);
+  if (context.currentTime) params.set("currentTime", context.currentTime);
+  if (context.sessionId) params.set("sessionId", context.sessionId);
+  if (context.userId) params.set("userId", context.userId);
+
+  for (const [key, value] of Object.entries(context.properties)) {
+    params.set(`properties[${key}]`, value);
+  }
+
+  return params.toString();
 }
 
 type UnleashToggle = components["schemas"]["frontendApiFeatureSchema"];
