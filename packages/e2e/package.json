@@ -13,7 +13,8 @@
     "typecheck": "pnpm exec tsc",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm exec eslint --concurrency auto .",
-    "fixture:export-tree": "pnpm exec tsx ./src/fixtures/game-setup/export-tree.ts"
+    "fixture:export-tree": "pnpm exec tsx ./src/fixtures/game-setup/export-tree.ts",
+    "fixture:export-platform-trees": "pnpm exec tsx ./src/fixtures/game-setup/export-platform-trees.ts"
   },
   "nx": {
     "targets": {

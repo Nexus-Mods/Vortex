@@ -1,0 +1,3 @@
+# mock-tree-v1
+# Format: d<TAB><relative directory> or f<TAB><relative file>
+f	StardewValley

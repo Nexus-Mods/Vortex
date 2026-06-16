@@ -1,4 +1,4 @@
-import { GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
+import { getGameConfig } from "../fixtures/game-setup/fake-game";
 /**
  * QA-113: user can add a new profile for the currently managed game.
  */
@@ -14,7 +14,7 @@ test.describe("Profiles - Add", () => {
     managedGame: _g,
   }) => {
     const profileName = `QA-113 ${Date.now()}`;
-    const gameName = GAME_CONFIGS.stardewvalley.gameName;
+    const gameName = getGameConfig("stardewvalley").gameName;
 
     await test.step("Enable Profile Management via global Settings", async () => {
       // Settings only appears in the home spine context, not per-game.

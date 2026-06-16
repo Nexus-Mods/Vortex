@@ -6,7 +6,16 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { readMockTree, writeMockTree, type MockTreeEntry, type MockTreeFixture } from "./mock-tree";
+import {
+  mockTreePlatformFromNodePlatform,
+  normaliseFixturePath,
+  readMockTreeFixture,
+  validateFixturePath,
+  writeMockTree,
+  type MockTreeEntry,
+  type MockTreeFixture,
+  type MockTreePlatform,
+} from "./mock-tree";
 
 export interface GameConfig {
   gameId: string;
@@ -25,65 +34,137 @@ interface ExternalFixtureTree {
   tree: MockTreeFixture;
 }
 
+type PlatformStringMap = Partial<Record<MockTreePlatform, string>>;
+type PlatformStringArrayMap = Partial<Record<MockTreePlatform, string[]>> & {
+  common?: string[];
+};
+
+interface GameConfigManifest {
+  gameName: string;
+  executable: string | PlatformStringMap;
+  requiredFiles: string[] | PlatformStringArrayMap;
+  externalTrees?: Array<{ base: ExternalFixtureBase; path: string }>;
+  modFolderPath?: string;
+}
+
 export interface SetupFakeGameOptions {
   /** Root temp directory created by prepareVortexInstance(). */
   vortexUserDataDir?: string;
 }
 
-const treeFixture = (...segments: string[]): MockTreeFixture => {
-  const root = path.join(import.meta.dirname, "trees", ...segments);
-  return {
-    treeFile: path.join(root, "tree.txt"),
-    filesDir: path.join(root, "files"),
-  };
-};
+const TREES_ROOT = path.join(import.meta.dirname, "trees");
 
-export const GAME_CONFIGS = {
-  stardewvalley: {
-    gameId: "stardewvalley",
-    gameName: "Stardew Valley",
-    executable: process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
-    requiredFiles: [
-      process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
-      "Stardew Valley.deps.json",
-      "Stardew Valley.dll",
-      "Stardew Valley.pdb",
-      "Stardew Valley.runtimeconfig.json",
-    ],
-    tree: treeFixture("stardewvalley"),
-    modFolderPath: "Mods",
-  } satisfies GameConfig,
-  skyrimse: {
-    gameId: "skyrimse",
-    gameName: "Skyrim Special Edition",
-    executable: "SkyrimSE.exe",
-    requiredFiles: ["SkyrimSE.exe", "SkyrimSELauncher.exe", "binkw64.dll", "steam_api64.dll"],
-    tree: treeFixture("skyrimse"),
-    modFolderPath: "Data",
-  } satisfies GameConfig,
-  baldursgate3: {
-    gameId: "baldursgate3",
-    gameName: "Baldur's Gate 3",
-    executable: "bin/bg3_dx11.exe",
-    // Vortex only requires bg3_dx11.exe for manual path verification, but BG3's
-    // version branch reads bin/bg3.exe, so the fixture provides both.
-    requiredFiles: ["bin/bg3_dx11.exe", "bin/bg3.exe"],
-    tree: treeFixture("baldursgate3"),
-    // BG3 consults both PlayerProfiles/<profile>/modsettings.lsx and legacy
-    // top-level profile paths depending on version/profile branches. Seed all
-    // tiny XML files so fake executables that report 0.0.0 still activate.
-    externalTrees: [{ base: "localAppData", tree: treeFixture("baldursgate3", "localAppData") }],
-    modFolderPath: "Mods",
-  } satisfies GameConfig,
-  gothic1remake: {
-    gameId: "gothic1remake",
-    gameName: "Gothic 1 Remake",
-    executable: "G1R-Win64-Shipping.exe",
-    requiredFiles: ["G1R-Win64-Shipping.exe"],
-    tree: treeFixture("gothic1remake"),
-    modFolderPath: "G1R/Content/Paks/~mods",
-  } satisfies GameConfig,
-} as const;
+function treeFixture(rootDir: string): MockTreeFixture {
+  return { rootDir };
+}
+
+function readManifest(filePath: string): GameConfigManifest {
+  return JSON.parse(fs.readFileSync(filePath, "utf8")) as GameConfigManifest;
+}
+
+function isPlatformStringMap(value: string | PlatformStringMap): value is PlatformStringMap {
+  return typeof value !== "string";
+}
+
+function isPlatformStringArrayMap(
+  value: string[] | PlatformStringArrayMap,
+): value is PlatformStringArrayMap {
+  return !Array.isArray(value);
+}
+
+function validateRelativePath(value: string, location: string): string {
+  const normalised = normaliseFixturePath(value);
+  try {
+    validateFixturePath(normalised);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`${location}: ${message}`, { cause: err });
+  }
+  return normalised;
+}
+
+function resolveExecutable(
+  manifest: GameConfigManifest,
+  platform: MockTreePlatform,
+  manifestPath: string,
+): string {
+  const rawExecutable = manifest.executable;
+  const executable = isPlatformStringMap(rawExecutable) ? rawExecutable[platform] : rawExecutable;
+  if (executable === undefined) {
+    throw new Error(`Game config manifest missing executable for ${platform}: ${manifestPath}`);
+  }
+  return validateRelativePath(executable, `${manifestPath} executable`);
+}
+
+function resolveRequiredFiles(
+  manifest: GameConfigManifest,
+  platform: MockTreePlatform,
+  manifestPath: string,
+): string[] {
+  const rawRequiredFiles = manifest.requiredFiles;
+  const requiredFiles = isPlatformStringArrayMap(rawRequiredFiles)
+    ? [...(rawRequiredFiles.common ?? []), ...(rawRequiredFiles[platform] ?? [])]
+    : rawRequiredFiles;
+
+  return [...new Set(requiredFiles)].map((filePath) =>
+    validateRelativePath(filePath, `${manifestPath} requiredFiles`),
+  );
+}
+
+function loadGameConfig(gameId: string, rootDir: string, platform: MockTreePlatform): GameConfig {
+  const manifestPath = path.join(rootDir, "config.json");
+  const manifest = readManifest(manifestPath);
+  const externalTrees = manifest.externalTrees?.map((tree) => ({
+    base: tree.base,
+    tree: treeFixture(
+      path.join(rootDir, validateRelativePath(tree.path, `${manifestPath} externalTrees`)),
+    ),
+  }));
+
+  return {
+    gameId,
+    gameName: manifest.gameName,
+    executable: resolveExecutable(manifest, platform, manifestPath),
+    requiredFiles: resolveRequiredFiles(manifest, platform, manifestPath),
+    tree: treeFixture(rootDir),
+    ...(externalTrees === undefined ? {} : { externalTrees }),
+    ...(manifest.modFolderPath === undefined
+      ? {}
+      : {
+          modFolderPath: validateRelativePath(
+            manifest.modFolderPath,
+            `${manifestPath} modFolderPath`,
+          ),
+        }),
+  };
+}
+
+function loadGameConfigs(
+  platform: MockTreePlatform = mockTreePlatformFromNodePlatform(),
+): Record<string, GameConfig> {
+  const configs: Record<string, GameConfig> = {};
+  const fixtureDirs = fs
+    .readdirSync(TREES_ROOT, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort((lhs, rhs) => lhs.localeCompare(rhs));
+
+  for (const fixtureDir of fixtureDirs) {
+    const rootDir = path.join(TREES_ROOT, fixtureDir);
+    if (!fs.existsSync(path.join(rootDir, "config.json"))) continue;
+    configs[fixtureDir] = loadGameConfig(fixtureDir, rootDir, platform);
+  }
+
+  return configs;
+}
+
+export const GAME_CONFIGS: Readonly<Record<string, GameConfig>> = loadGameConfigs();
+
+export function getGameConfig(configKey: string): GameConfig {
+  const config = GAME_CONFIGS[configKey];
+  if (config === undefined) throw new Error(`Unknown game config: ${configKey}`);
+  return config;
+}
 
 /** Creates a minimal fake PE executable header that passes file type checks. */
 function createFakeExecutable(): Buffer {
@@ -138,15 +219,16 @@ export function createFakeGameInstallation(
   const gamePath = path.join(basePath, gameConfig.gameName);
   fs.mkdirSync(gamePath, { recursive: true });
 
-  const entries = readMockTree(gameConfig.tree.treeFile);
-  writeMockTree(gamePath, entries, { filesDir: gameConfig.tree.filesDir });
+  const { entries, filesDirs } = readMockTreeFixture(gameConfig.tree);
+  writeMockTree(gamePath, entries, { filesDirs });
   postProcessTreeExecutables(gamePath, entries);
   assertRequiredFiles(gamePath, gameConfig);
 
   if (gameConfig.externalTrees) {
     for (const tree of gameConfig.externalTrees) {
-      writeMockTree(resolveExternalBase(tree.base, options), readMockTree(tree.tree.treeFile), {
-        filesDir: tree.tree.filesDir,
+      const externalTree = readMockTreeFixture(tree.tree);
+      writeMockTree(resolveExternalBase(tree.base, options), externalTree.entries, {
+        filesDirs: externalTree.filesDirs,
       });
     }
   }
@@ -155,26 +237,25 @@ export function createFakeGameInstallation(
 }
 
 /** Creates a temp directory with a fake game installation. Returns both paths for cleanup. */
-export function setupFakeGame(configKey: keyof typeof GAME_CONFIGS): {
+export function setupFakeGame(configKey: string): {
   basePath: string;
   gamePath: string;
 };
 export function setupFakeGame(
-  configKey: keyof typeof GAME_CONFIGS,
+  configKey: string,
   options: SetupFakeGameOptions,
 ): {
   basePath: string;
   gamePath: string;
 };
 export function setupFakeGame(
-  configKey: keyof typeof GAME_CONFIGS,
+  configKey: string,
   options: SetupFakeGameOptions = {},
 ): {
   basePath: string;
   gamePath: string;
 } {
-  const config = GAME_CONFIGS[configKey];
-  if (!config) throw new Error(`Unknown game config: ${configKey}`);
+  const config = getGameConfig(configKey);
 
   const basePath = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-e2e-games-"));
   const gamePath = createFakeGameInstallation(config, basePath, options);

@@ -1,0 +1,20 @@
+{
+  "gameName": "Stardew Valley",
+  "executable": {
+    "windows": "Stardew Valley.exe",
+    "linux": "StardewValley",
+    "macos": "StardewValley"
+  },
+  "requiredFiles": {
+    "common": [
+      "Stardew Valley.deps.json",
+      "Stardew Valley.dll",
+      "Stardew Valley.pdb",
+      "Stardew Valley.runtimeconfig.json"
+    ],
+    "windows": ["Stardew Valley.exe"],
+    "linux": ["StardewValley"],
+    "macos": ["StardewValley"]
+  },
+  "modFolderPath": "Mods"
+}

@@ -9,8 +9,6 @@ f	Content/XACT/FarmerSounds.xwb
 d	Mods
 f	Stardew Valley.deps.json
 f	Stardew Valley.dll
-f	Stardew Valley.exe
 f	Stardew Valley.pdb
 f	Stardew Valley.runtimeconfig.json
-f	StardewValley
 f	steam_appid.txt

@@ -1,0 +1,7 @@
+{
+  "gameName": "Baldur's Gate 3",
+  "executable": "bin/bg3_dx11.exe",
+  "requiredFiles": ["bin/bg3_dx11.exe", "bin/bg3.exe"],
+  "externalTrees": [{ "base": "localAppData", "path": "localAppData" }],
+  "modFolderPath": "Mods"
+}

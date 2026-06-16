@@ -3,18 +3,31 @@ import path from "node:path";
 
 export type MockTreeEntryType = "dir" | "file";
 
+export type MockTreePlatform = "windows" | "linux" | "macos";
+
+export const MOCK_TREE_PLATFORMS = [
+  "windows",
+  "linux",
+  "macos",
+] as const satisfies readonly MockTreePlatform[];
+
 export interface MockTreeEntry {
   type: MockTreeEntryType;
   path: string;
 }
 
 export interface MockTreeFixture {
-  treeFile: string;
-  filesDir: string;
+  rootDir: string;
+}
+
+export interface ResolvedMockTreeFixture {
+  entries: MockTreeEntry[];
+  filesDirs: string[];
 }
 
 interface WriteMockTreeOptions {
   filesDir?: string;
+  filesDirs?: string[];
 }
 
 const TYPE_BY_PREFIX: Record<string, MockTreeEntryType> = {
@@ -53,6 +66,81 @@ export function parseMockTree(source: string): MockTreeEntry[] {
 
 export function readMockTree(filePath: string): MockTreeEntry[] {
   return parseMockTree(fs.readFileSync(filePath, "utf8"));
+}
+
+export function mockTreePlatformFromNodePlatform(
+  nodePlatform: string = process.platform,
+): MockTreePlatform {
+  switch (nodePlatform) {
+    case "darwin":
+      return "macos";
+    case "linux":
+      return "linux";
+    case "win32":
+      return "windows";
+    default:
+      throw new Error(`Unsupported mock tree platform: ${nodePlatform}`);
+  }
+}
+
+function platformTreeFile(rootDir: string, platform: MockTreePlatform): string {
+  return path.join(rootDir, `tree.${platform}.txt`);
+}
+
+function platformFilesDir(rootDir: string, platform: MockTreePlatform): string {
+  return path.join(rootDir, `files.${platform}`);
+}
+
+function addEntry(entries: Map<string, MockTreeEntry>, entry: MockTreeEntry, source: string): void {
+  const existing = entries.get(entry.path);
+  if (existing !== undefined && existing.type !== entry.type) {
+    throw new Error(
+      `Conflicting mock tree entry for ${entry.path}: ${existing.type} vs ${entry.type} in ${source}`,
+    );
+  }
+  entries.set(entry.path, entry);
+}
+
+function mergeMockTreeEntries(
+  entryGroups: Array<{ entries: MockTreeEntry[]; source: string }>,
+): MockTreeEntry[] {
+  const byPath = new Map<string, MockTreeEntry>();
+  for (const group of entryGroups) {
+    for (const entry of group.entries) {
+      addEntry(byPath, entry, group.source);
+    }
+  }
+
+  return [...byPath.values()].sort((lhs, rhs) => lhs.path.localeCompare(rhs.path));
+}
+
+export function readMockTreeFixture(
+  fixture: MockTreeFixture,
+  platform: MockTreePlatform = mockTreePlatformFromNodePlatform(),
+): ResolvedMockTreeFixture {
+  const commonTreeFile = path.join(fixture.rootDir, "tree.txt");
+  const currentPlatformTreeFile = platformTreeFile(fixture.rootDir, platform);
+
+  const entryGroups: Array<{ entries: MockTreeEntry[]; source: string }> = [];
+  if (fs.existsSync(commonTreeFile)) {
+    entryGroups.push({ entries: readMockTree(commonTreeFile), source: commonTreeFile });
+  }
+  if (fs.existsSync(currentPlatformTreeFile)) {
+    entryGroups.push({
+      entries: readMockTree(currentPlatformTreeFile),
+      source: currentPlatformTreeFile,
+    });
+  }
+  if (entryGroups.length === 0) {
+    throw new Error(
+      `Mock tree fixture has no tree.txt or tree.${platform}.txt: ${fixture.rootDir}`,
+    );
+  }
+
+  return {
+    entries: mergeMockTreeEntries(entryGroups),
+    filesDirs: [path.join(fixture.rootDir, "files"), platformFilesDir(fixture.rootDir, platform)],
+  };
 }
 
 export function validateFixturePath(entryPath: string, lineNumber?: number): void {
@@ -110,16 +198,20 @@ export function writeMockTree(
     }
   }
 
-  if (options.filesDir === undefined) return;
-
-  for (const payloadPath of collectPayloadFiles(options.filesDir)) {
-    validateFixturePath(payloadPath);
-    if (!declaredFiles.has(payloadPath)) {
-      throw new Error(`Mock tree payload has no matching file entry: ${payloadPath}`);
+  const filesDirs = [
+    ...(options.filesDir === undefined ? [] : [options.filesDir]),
+    ...(options.filesDirs ?? []),
+  ];
+  for (const filesDir of filesDirs) {
+    for (const payloadPath of collectPayloadFiles(filesDir)) {
+      validateFixturePath(payloadPath);
+      if (!declaredFiles.has(payloadPath)) {
+        throw new Error(`Mock tree payload has no matching file entry: ${payloadPath}`);
+      }
+      fs.cpSync(
+        path.join(filesDir, ...payloadPath.split("/")),
+        path.join(rootPath, ...payloadPath.split("/")),
+      );
     }
-    fs.cpSync(
-      path.join(options.filesDir, ...payloadPath.split("/")),
-      path.join(rootPath, ...payloadPath.split("/")),
-    );
   }
 }

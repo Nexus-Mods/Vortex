@@ -1,0 +1,6 @@
+{
+  "gameName": "Gothic 1 Remake",
+  "executable": "G1R-Win64-Shipping.exe",
+  "requiredFiles": ["G1R-Win64-Shipping.exe"],
+  "modFolderPath": "G1R/Content/Paks/~mods"
+}

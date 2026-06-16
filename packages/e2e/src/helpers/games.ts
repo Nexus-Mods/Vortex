@@ -1,6 +1,6 @@
 import { expect, type ElectronApplication, type Page } from "@playwright/test";
 
-import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
+import { getGameConfig, setupFakeGame } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
 import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
@@ -8,7 +8,7 @@ import { Timeouts } from "./timeouts";
 
 // VORTEX_E2E=1 disables automatic discovery, so all games go through the
 // "Game not discovered" dialog and have their path set via a dialog.showOpenDialog stub.
-export type ManagedGameId = keyof typeof GAME_CONFIGS;
+export type ManagedGameId = string;
 
 export interface ManagedGame {
   basePath: string;
@@ -22,7 +22,7 @@ export async function manageGame(
   options: { vortexUserDataDir?: string } = {},
 ): Promise<ManagedGame> {
   const fakeGame = setupFakeGame(gameId, options);
-  const gameName = GAME_CONFIGS[gameId].gameName;
+  const gameName = getGameConfig(gameId).gameName;
 
   await test.step(`Manage game: ${gameId}`, async () => {
     const navbar = new NavBar(vortexWindow);

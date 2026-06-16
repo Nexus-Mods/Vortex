@@ -1,4 +1,9 @@
-import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
+import {
+  setupFakeGame,
+  cleanupFakeGame,
+  GAME_CONFIGS,
+  getGameConfig,
+} from "../fixtures/game-setup/fake-game";
 /**
  * Game management tests.
  * Uses fake game installations to avoid requiring real game installs.
@@ -25,12 +30,14 @@ test.describe("Game Management", () => {
   test("fake game installation helper works", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const config = GAME_CONFIGS.stardewvalley;
+    const config = getGameConfig("stardewvalley");
 
     await test.step("Create fake game installation", () => {
       const { basePath, gamePath } = setupFakeGame("stardewvalley");
+      const otherExecutable = process.platform === "win32" ? "StardewValley" : "Stardew Valley.exe";
 
       expect(fs.existsSync(path.join(gamePath, config.executable))).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, otherExecutable))).toBe(false);
       expect(fs.existsSync(path.join(gamePath, "Content", "Maps"))).toBe(true);
       expect(fs.existsSync(path.join(gamePath, "Mods"))).toBe(true);
       expect(fs.readFileSync(path.join(gamePath, "steam_appid.txt"), "utf8")).toBe("413150");
@@ -78,11 +85,11 @@ test.describe("Game Management", () => {
     const gameInstalls: string[] = [];
 
     try {
-      for (const gameId of Object.keys(GAME_CONFIGS) as Array<keyof typeof GAME_CONFIGS>) {
+      for (const gameId of Object.keys(GAME_CONFIGS)) {
         const fakeGame = setupFakeGame(gameId, { vortexUserDataDir: root });
         gameInstalls.push(fakeGame.basePath);
 
-        for (const requiredFile of GAME_CONFIGS[gameId].requiredFiles) {
+        for (const requiredFile of getGameConfig(gameId).requiredFiles) {
           expect(fs.existsSync(path.join(fakeGame.gamePath, ...requiredFile.split("/")))).toBe(
             true,
           );
@@ -100,7 +107,7 @@ test.describe("Game Management", () => {
     const { basePath, gamePath } = setupFakeGame("gothic1remake");
 
     try {
-      const config = GAME_CONFIGS.gothic1remake;
+      const config = getGameConfig("gothic1remake");
       for (const file of config.requiredFiles) {
         expect(fs.existsSync(path.join(gamePath, file))).toBe(true);
       }
