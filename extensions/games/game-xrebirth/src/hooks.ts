@@ -64,7 +64,10 @@ export async function installContentXml(
   files: string[],
   destinationPath: string,
 ): Promise<types.IInstallResult> {
-  const contentPath = files.find((file) => path.basename(file) === "content.xml")!;
+  // Match case-insensitively to agree with the `hasFile: "**/content.xml"`
+  // predicate that gates this installer (GDL globs are case-insensitive); a
+  // case-sensitive lookup here would miss e.g. `Content.XML` and crash.
+  const contentPath = files.find((file) => path.basename(file).toLowerCase() === "content.xml")!;
   const basePath = path.dirname(contentPath);
 
   const data = await fs.readFileAsync(path.join(destinationPath, contentPath), {

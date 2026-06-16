@@ -39,10 +39,14 @@
       },
       "test:game-extensions": {
         "executor": "nx:run-commands",
+        "dependsOn": [
+          "build"
+        ],
         "options": {
           "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-xrebirth"
         },
         "inputs": [
+          "{projectRoot}/game.yaml",
           "{projectRoot}/src/**/*.ts"
         ],
         "cache": false
