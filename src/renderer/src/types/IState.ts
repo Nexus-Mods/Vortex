@@ -3,7 +3,6 @@ import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
-import type { ICollectionInstallState } from "../extensions/collections/installSession/types";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
@@ -12,6 +11,7 @@ import type { IHealthCheckSessionState } from "../extensions/health_check/reduce
 import type { IHistoryPersistent, IHistoryState } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
+import type { ICollectionInstallState } from "./collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";

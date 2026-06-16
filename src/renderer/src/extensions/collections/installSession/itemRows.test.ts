@@ -8,12 +8,12 @@
 
 import { describe, it, expect, vi } from "vitest";
 
+import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
+import { modRuleId } from "../../../util/collectionInstallSession";
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod, IModAttributes, IModRule } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { buildCollectionItemRows } from "./itemRows";
-import type { ICollectionModInstallInfo } from "./types";
-import { modRuleId } from "./util";
 
 vi.mock("../../../util/log", () => ({ log: vi.fn() }));
 

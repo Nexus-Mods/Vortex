@@ -1,11 +1,14 @@
+import type {
+  CollectionModStatus,
+  ICollectionModInstallInfo,
+} from "../../../types/collections/ICollectionInstallSession";
+import { modRuleId, reconstructModStatus } from "../../../util/collectionInstallSession";
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import { renderModReference } from "../../mod_management/util/modName";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
-import type { CollectionModStatus, ICollectionModInstallInfo } from "./types";
-import { modRuleId, reconstructModStatus } from "./util";
 
 /**
  * One member mod of a collection as the CollectionPageView table renders it: the

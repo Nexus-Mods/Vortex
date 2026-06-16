@@ -6,9 +6,19 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 
+import * as installActions from "../../../actions/collectionInstallTracking";
 import { log } from "../../../logging";
+import type {
+  CollectionModStatus,
+  ICollectionModInstallInfo,
+} from "../../../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
+import {
+  generateCollectionSessionId,
+  modRuleId,
+  reconstructModStatus,
+} from "../../../util/collectionInstallSession";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
@@ -35,15 +45,8 @@ import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
 import { setModEnabled } from "../../profile_management/actions/profiles";
 import { activeGameId, profileById } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
-import * as installActions from "../actions/installTracking";
 import { setPendingVote } from "../actions/persistent";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
-import type { CollectionModStatus, ICollectionModInstallInfo } from "../installSession/types";
-import {
-  generateCollectionSessionId,
-  modRuleId,
-  reconstructModStatus,
-} from "../installSession/util";
 import { postprocessCollection } from "../postprocessCollection";
 import { ICollection } from "../types/ICollection";
 import { IRevisionEx } from "../types/IRevisionEx";

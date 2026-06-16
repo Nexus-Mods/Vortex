@@ -1,6 +1,6 @@
-import type { IDownload } from "../../download_management/types/IDownload";
-import type { IMod, IModRule } from "../../mod_management/types/IMod";
-import type { CollectionModStatus } from "./types";
+import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
+import type { CollectionModStatus } from "../types/collections/ICollectionInstallSession";
 
 export function generateCollectionSessionId(collectionId: string, profileId: string): string {
   if (!profileId || !collectionId) {

@@ -34,7 +34,7 @@ export type {
   ICollectionModInstallInfo,
   ICollectionInstallSession,
   CollectionModStatus,
-} from "../extensions/collections/installSession/types";
+} from "./collections/ICollectionInstallSession";
 export type { IAvailableExtension, IExtension } from "./extensions";
 export type {
   LoadOrder,
