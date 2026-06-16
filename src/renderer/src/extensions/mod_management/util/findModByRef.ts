@@ -1,7 +1,7 @@
-import { log } from "../../../util/log";
-import type { IMod, IModReference } from "../types/IMod";
+import { log } from "../../../logging";
+import type { IMod, IModInstallSpec, IModReference } from "../types/IMod";
 import { isFuzzyVersion } from "./isFuzzyVersion";
-import testModReference, { modMatchesInstallSpec, type IModInstallSpec } from "./testModReference";
+import testModReference, { modMatchesInstallSpec } from "./testModReference";
 
 export function findModByRef(
   reference: IModReference,
