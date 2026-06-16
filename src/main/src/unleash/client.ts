@@ -8,7 +8,7 @@ import createClient from "openapi-fetch";
 import type { z } from "zod";
 
 import { log } from "../logging";
-import { APP_NAME, BASE_URL, API_KEY, ENVIRONMENT } from "./constants";
+import { APP_NAME, BASE_URL, API_KEY, ENVIRONMENT, INTERVAL } from "./constants";
 import type { paths, components } from "./schema";
 
 type UnleashContext = {
@@ -42,16 +42,19 @@ export class UnleashClient {
   #flags: FeatureFlag[];
 
   constructor() {
+    this.#sessionId = randomUUID();
+    this.#appVersion = app.getVersion();
+    this.#channel = this.#appVersion.includes("-beta") ? "beta" : "stable";
+
     this.#apiClient = createClient({
       baseUrl: BASE_URL,
       headers: {
         Authorization: API_KEY,
+        "unleash-sdk": `vortex:${this.#appVersion}`,
+        "unleash-appname": APP_NAME,
+        "unleash-connection-id": this.#sessionId,
       },
     });
-
-    this.#sessionId = randomUUID();
-    this.#appVersion = app.getVersion();
-    this.#channel = this.#appVersion.includes("-beta") ? "beta" : "stable";
   }
 
   get flags(): FeatureFlag[] {
@@ -60,7 +63,7 @@ export class UnleashClient {
 
   static readonly #maxConsecutiveFailures = 5;
 
-  start(interval: number): () => void {
+  start(interval: number = INTERVAL): () => void {
     let stopped = false;
     let fetching = false;
     let consecutiveFailures = 0;

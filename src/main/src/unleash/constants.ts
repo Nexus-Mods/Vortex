@@ -1,5 +1,6 @@
 export const APP_NAME = "Vortex";
 export const ENVIRONMENT = process.env.NODE_ENV === "development" ? "development" : "production";
+export const INTERVAL = 60 * 1000;
 
 export const BASE_URL = "https://unleash-edge.nexusmods.com";
 
