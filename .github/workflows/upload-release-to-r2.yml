@@ -3,17 +3,23 @@ name: Upload Release to R2
 on:
   release:
     types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v2.1.1)"
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   upload:
-    if: ${{ !github.event.release.prerelease }}
+    if: ${{ !github.event.release.prerelease || github.event_name == 'workflow_dispatch' }}
     runs-on: platform-cluster
     steps:
       - name: Download release asset
-        run: gh release download ${{ github.event.release.tag_name }} --pattern "vortex-setup-*.exe"
+        run: gh release download ${{ github.event.release.tag_name || inputs.tag }} --pattern "vortex-setup-*.exe"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
