@@ -13,17 +13,13 @@
   "config": {
     "game": "X Rebirth"
   },
-  "vortex": {
-    "gameExtensionTest": true
-  },
   "dependencies": {
     "xml2js": "catalog:"
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",
     "@types/xml2js": "catalog:",
-    "@vortex/extension-test-mocks": "workspace:*",
-    "@vortex/game-extension-test": "workspace:*"
+    "@vortex/extension-test-mocks": "workspace:*"
   },
   "nx": {
     "tags": [
@@ -36,20 +32,6 @@
           "typescript",
           "vortex-api"
         ]
-      },
-      "test:game-extensions": {
-        "executor": "nx:run-commands",
-        "dependsOn": [
-          "build"
-        ],
-        "options": {
-          "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-xrebirth"
-        },
-        "inputs": [
-          "{projectRoot}/game.yaml",
-          "{projectRoot}/src/**/*.ts"
-        ],
-        "cache": false
       }
     }
   }

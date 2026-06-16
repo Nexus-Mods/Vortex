@@ -2656,9 +2656,6 @@ importers:
       '@vortex/extension-test-mocks':
         specifier: workspace:*
         version: link:../../../packages/extension-test-mocks
-      '@vortex/game-extension-test':
-        specifier: workspace:*
-        version: link:../../../packages/game-extension-test
 
   extensions/gamestore-gog:
     devDependencies:
@@ -4058,33 +4055,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.2
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.8)(@vitest/ui@4.1.8)(happy-dom@20.9.0)(vite@8.0.16)
-
-  packages/game-extension-test:
-    devDependencies:
-      '@nexusmods/nexus-api':
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../vortex-api
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.12.2
-      '@vortex/extension-test-mocks':
-        specifier: workspace:*
-        version: link:../extension-test-mocks
-      limiter:
-        specifier: 'catalog:'
-        version: 3.0.0
-      minimist:
-        specifier: 'catalog:'
-        version: 1.2.8
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
