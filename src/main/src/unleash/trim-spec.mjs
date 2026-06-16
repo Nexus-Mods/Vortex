@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const dir = dirname(fileURLToPath(import.meta.url));
 const spec = JSON.parse(readFileSync(join(dir, "openapi.json"), "utf8"));
 
-const KEEP_PATHS = ["/api/frontend"];
+const KEEP_PATHS = ["/api/frontend", "/api/frontend/client/metrics"];
 
 function collectSchemas(obj, schemas, needed) {
   if (typeof obj !== "object" || obj === null) return;

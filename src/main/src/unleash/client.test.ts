@@ -310,4 +310,78 @@ describe("UnleashClient", () => {
       expect(client.flags).toEqual(expected);
     });
   });
+
+  // ============================================================
+  // postMetrics
+  // ============================================================
+
+  describe("postMetrics", () => {
+    it("POSTs to /api/frontend/client/metrics", async () => {
+      fetchMocker.mockResponseOnce("", { status: 200 });
+
+      await new UnleashClient("1.0.0").postMetrics({
+        start: 1_000,
+        stop: 2_000,
+        toggles: { "vortex-test-flag": { yes: 3, no: 1 } },
+      });
+
+      expect(fetchMocker.requests()[0].url).toContain("/api/frontend/client/metrics");
+      expect(fetchMocker.requests()[0].method).toBe("POST");
+    });
+
+    it("includes appName and instanceId in the request body", async () => {
+      fetchMocker.mockResponseOnce("", { status: 200 });
+
+      await new UnleashClient("1.0.0").postMetrics({
+        start: 1_000,
+        stop: 2_000,
+        toggles: {},
+      });
+
+      const body = JSON.parse(await fetchMocker.requests()[0].text()) as Record<string, unknown>;
+      expect(body["appName"]).toBe("Vortex");
+      expect(typeof body["instanceId"]).toBe("string");
+    });
+
+    it("includes ISO timestamps in the bucket", async () => {
+      fetchMocker.mockResponseOnce("", { status: 200 });
+
+      await new UnleashClient("1.0.0").postMetrics({
+        start: 0,
+        stop: 60_000,
+        toggles: {},
+      });
+
+      const body = JSON.parse(await fetchMocker.requests()[0].text()) as {
+        bucket: { start: string; stop: string };
+      };
+      expect(body.bucket.start).toBe(new Date(0).toISOString());
+      expect(body.bucket.stop).toBe(new Date(60_000).toISOString());
+    });
+
+    it("passes toggle counts through unchanged", async () => {
+      fetchMocker.mockResponseOnce("", { status: 200 });
+
+      const toggles = {
+        "vortex-test-flag": { yes: 5, no: 2, variants: { "variant-1": 3 } },
+      };
+      await new UnleashClient("1.0.0").postMetrics({ start: 0, stop: 1, toggles });
+
+      const body = JSON.parse(await fetchMocker.requests()[0].text()) as {
+        bucket: { toggles: typeof toggles };
+      };
+      expect(body.bucket.toggles).toEqual(toggles);
+    });
+
+    it("throws when the API returns an error status", async () => {
+      fetchMocker.mockResponseOnce(
+        JSON.stringify({ id: "1", name: "Unauthorized", message: "bad key" }),
+        { status: 401 },
+      );
+
+      await expect(
+        new UnleashClient("1.0.0").postMetrics({ start: 0, stop: 1, toggles: {} }),
+      ).rejects.toThrow();
+    });
+  });
 });

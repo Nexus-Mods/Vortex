@@ -3,6 +3,7 @@ import { platform } from "node:os";
 
 import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import { flagVariantSchemas } from "@vortex/shared/flags";
+import type { FlagMetricsBucket } from "@vortex/shared/ipc";
 import createClient from "openapi-fetch";
 import type { z } from "zod";
 
@@ -105,6 +106,27 @@ export class UnleashClient {
       stopped = true;
       clearTimeout(timer);
     };
+  }
+
+  async postMetrics(bucket: FlagMetricsBucket): Promise<void> {
+    const result = await this.#apiClient.POST("/api/frontend/client/metrics", {
+      body: {
+        appName: APP_NAME,
+        instanceId: this.#sessionId,
+        sdkVersion: `vortex:${this.#appVersion}`,
+        bucket: {
+          start: new Date(bucket.start).toISOString(),
+          stop: new Date(bucket.stop).toISOString(),
+          toggles: bucket.toggles,
+        },
+      },
+    });
+
+    if (result.error) {
+      throw new Error(
+        `unleash metrics post failed: ${result.error.id} ${result.error.name}: ${result.error.message}`,
+      );
+    }
   }
 
   async fetchFeatureFlags(): Promise<FeatureFlag[]> {

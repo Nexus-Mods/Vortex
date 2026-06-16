@@ -8,14 +8,16 @@ import { FlagsProvider, useFlag, useFlagsContext } from "./FlagsContext";
 
 const mockOnSynchronize = vi.fn<FeatureFlagsApi["onSynchronize"]>();
 const mockUnsubscribe = vi.fn<() => void>();
+const mockReportMetrics = vi.fn<FeatureFlagsApi["reportMetrics"]>();
 
 beforeEach(() => {
   mockUnsubscribe.mockClear();
   mockOnSynchronize.mockClear();
+  mockReportMetrics.mockClear();
   mockOnSynchronize.mockReturnValue(mockUnsubscribe);
   (window as any).api = {
     log: vi.fn(),
-    featureFlags: { onSynchronize: mockOnSynchronize },
+    featureFlags: { onSynchronize: mockOnSynchronize, reportMetrics: mockReportMetrics },
   };
 });
 
@@ -185,5 +187,161 @@ describe("getFlag", () => {
     push([flag]);
     expect(got?.name).toBe("vortex-test-flag");
     expect(got?.variant).toEqual({ name: "variant-2", data: 7 });
+  });
+});
+
+describe("metrics", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not call reportMetrics when nothing has been evaluated", () => {
+    const { unmount } = render(
+      <FlagsProvider>
+        <span />
+      </FlagsProvider>,
+    );
+    unmount();
+    expect(mockReportMetrics).not.toHaveBeenCalled();
+  });
+
+  it("reports a yes count for an enabled flag", () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    const { unmount } = render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+    // Spy re-renders after the push, so getFlag is called once more with the flag present
+    unmount();
+
+    expect(mockReportMetrics).toHaveBeenCalledOnce();
+    const bucket = mockReportMetrics.mock.calls[0][0];
+    expect(bucket.toggles["vortex-test-flag"].yes).toBeGreaterThanOrEqual(1);
+  });
+
+  it("reports a no count for an absent flag", () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    const { unmount } = render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    // flags map stays empty — every getFlag call is a "no"
+    unmount();
+
+    expect(mockReportMetrics).toHaveBeenCalledOnce();
+    const bucket = mockReportMetrics.mock.calls[0][0];
+    expect(bucket.toggles["vortex-test-flag"].no).toBeGreaterThanOrEqual(1);
+  });
+
+  it("reports variant counts when a flag has a variant", () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    const { unmount } = render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag", variant: { name: "variant-1", data: 99 } }]);
+    unmount();
+
+    const bucket = mockReportMetrics.mock.calls[0][0];
+    expect(bucket.toggles["vortex-test-flag"].variants?.["variant-1"]).toBeGreaterThanOrEqual(1);
+  });
+
+  it("omits variants from the bucket entry when none were seen", () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    const { unmount } = render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+    unmount();
+
+    const bucket = mockReportMetrics.mock.calls[0][0];
+    expect(bucket.toggles["vortex-test-flag"].variants).toBeUndefined();
+  });
+
+  it("flushes automatically after 60 seconds", async () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+
+    expect(mockReportMetrics).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(mockReportMetrics).toHaveBeenCalledOnce();
+  });
+
+  it("resets counts after a flush so the next empty bucket does not report", async () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(mockReportMetrics).toHaveBeenCalledTimes(1);
+
+    // No new evaluations — second interval should not flush
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(mockReportMetrics).toHaveBeenCalledTimes(1);
+  });
+
+  it("flushes on unmount and does not double-report at the next interval", () => {
+    function Spy() {
+      useFlag("vortex-test-flag");
+      return null;
+    }
+    const { unmount } = render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+
+    unmount();
+    expect(mockReportMetrics).toHaveBeenCalledOnce();
+
+    // Counts were cleared on unmount, so no second call
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(mockReportMetrics).toHaveBeenCalledOnce();
   });
 });

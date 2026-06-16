@@ -201,6 +201,9 @@ export interface RendererChannels extends RendererCallbackChannels {
 
   // Telemetry: Forward a completed span from renderer to main for buffering/export
   "telemetry:forward-span": (span: SerializedSpan) => void;
+
+  // Feature flags: renderer reports evaluation metrics to main for forwarding to Unleash
+  "flags:metrics": (bucket: FlagMetricsBucket) => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
@@ -244,6 +247,16 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Feature flags: main pushes updated flags after each successful poll
   "flags:synchronize": (flags: FeatureFlag[]) => void;
+}
+
+/** Evaluation counts for a single time bucket, sent from renderer to main */
+export interface FlagMetricsBucket {
+  /** Unix timestamp (ms) for the start of this bucket */
+  start: number;
+  /** Unix timestamp (ms) for the end of this bucket */
+  stop: number;
+  /** Per-flag evaluation counts */
+  toggles: Record<string, { yes: number; no: number; variants?: Record<string, number> }>;
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */

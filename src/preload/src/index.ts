@@ -263,6 +263,7 @@ try {
         ipcRenderer.on("flags:synchronize", listener);
         return () => ipcRenderer.removeListener("flags:synchronize", listener);
       },
+      reportMetrics: (bucket) => betterIpcRenderer.send("flags:metrics", bucket),
     },
   });
 } catch (err) {

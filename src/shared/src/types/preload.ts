@@ -17,6 +17,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
+import type { FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
@@ -503,6 +504,9 @@ export interface DownloaderApi {
 export interface FeatureFlagsApi {
   /** Registers a callback invoked whenever main pushes updated flags. Returns an unsubscribe function. */
   onSynchronize(callback: (flags: FeatureFlag[]) => void): () => void;
+
+  /** Sends a completed evaluation metrics bucket to the main process for forwarding to Unleash. */
+  reportMetrics(bucket: FlagMetricsBucket): void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */
