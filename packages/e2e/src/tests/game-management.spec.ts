@@ -8,6 +8,7 @@ import { test, expect } from "../fixtures/vortex-app";
 import { navigateToGames } from "../helpers/navigation";
 import { LoginPage } from "../selectors/loginPage";
 import { NavBar } from "../selectors/navbar";
+import { cleanupVortexInstance, prepareVortexInstance } from "../vortex-instance";
 
 test.describe("Game Management", () => {
   test("can list available games", async ({ vortexWindow }) => {
@@ -30,14 +31,67 @@ test.describe("Game Management", () => {
       const { basePath, gamePath } = setupFakeGame("stardewvalley");
 
       expect(fs.existsSync(path.join(gamePath, config.executable))).toBe(true);
-
-      for (const dir of config.directories) {
-        expect(fs.existsSync(path.join(gamePath, dir))).toBe(true);
-      }
+      expect(fs.existsSync(path.join(gamePath, "Content", "Maps"))).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, "Mods"))).toBe(true);
+      expect(fs.readFileSync(path.join(gamePath, "steam_appid.txt"), "utf8")).toBe("413150");
 
       cleanupFakeGame(basePath);
       expect(fs.existsSync(basePath)).toBe(false);
     });
+  });
+
+  test("BG3 fake fixture creates Larian profile plumbing", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const root = prepareVortexInstance().userDataDir;
+    let basePath: string | undefined;
+
+    try {
+      const fakeGame = setupFakeGame("baldursgate3", {
+        vortexUserDataDir: root,
+      });
+      basePath = fakeGame.basePath;
+      const { gamePath } = fakeGame;
+
+      expect(fs.existsSync(path.join(gamePath, "bin", "bg3_dx11.exe"))).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, "bin", "bg3.exe"))).toBe(true);
+      expect(fs.existsSync(path.join(gamePath, "Data"))).toBe(true);
+
+      const larianRoot = path.join(root, "Local", "Larian Studios", "Baldur's Gate 3");
+      expect(fs.existsSync(path.join(larianRoot, "Mods"))).toBe(true);
+      expect(
+        fs.existsSync(path.join(larianRoot, "PlayerProfiles", "Public", "modsettings.lsx")),
+      ).toBe(true);
+      expect(
+        fs.existsSync(path.join(larianRoot, "PlayerProfiles", "global", "modsettings.lsx")),
+      ).toBe(true);
+    } finally {
+      if (basePath !== undefined) cleanupFakeGame(basePath);
+      cleanupVortexInstance(root);
+    }
+  });
+
+  test("all fake game configs hydrate from tree fixtures", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const root = prepareVortexInstance().userDataDir;
+    const gameInstalls: string[] = [];
+
+    try {
+      for (const gameId of Object.keys(GAME_CONFIGS) as Array<keyof typeof GAME_CONFIGS>) {
+        const fakeGame = setupFakeGame(gameId, { vortexUserDataDir: root });
+        gameInstalls.push(fakeGame.basePath);
+
+        for (const requiredFile of GAME_CONFIGS[gameId].requiredFiles) {
+          expect(fs.existsSync(path.join(fakeGame.gamePath, ...requiredFile.split("/")))).toBe(
+            true,
+          );
+        }
+      }
+    } finally {
+      for (const basePath of gameInstalls) cleanupFakeGame(basePath);
+      cleanupVortexInstance(root);
+    }
   });
 
   test("[QA-106] can manage a game while not logged in", async ({

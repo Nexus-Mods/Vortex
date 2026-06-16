@@ -1,0 +1,12 @@
+# mock-tree-v1
+# Format: d<TAB><relative directory> or f<TAB><relative file>
+d	Data
+d	Data/Meshes
+d	Data/Scripts
+d	Data/Textures
+f	Data/Skyrim.esm
+f	SkyrimSE.exe
+f	SkyrimSELauncher.exe
+f	binkw64.dll
+f	steam_api64.dll
+f	steam_appid.txt

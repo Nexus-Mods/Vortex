@@ -12,7 +12,8 @@
     "e2e:ui": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test --ui",
     "typecheck": "pnpm exec tsc",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm exec eslint --concurrency auto ."
+    "lint:verbose": "pnpm exec eslint --concurrency auto .",
+    "fixture:export-tree": "pnpm exec tsx ./src/fixtures/game-setup/export-tree.ts"
   },
   "nx": {
     "targets": {

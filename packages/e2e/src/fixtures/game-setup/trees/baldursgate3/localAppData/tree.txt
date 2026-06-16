@@ -1,0 +1,14 @@
+# mock-tree-v1
+# Format: d<TAB><relative directory> or f<TAB><relative file>
+d	Larian Studios
+d	Larian Studios/Baldur's Gate 3
+d	Larian Studios/Baldur's Gate 3/Mods
+d	Larian Studios/Baldur's Gate 3/PlayerProfiles
+d	Larian Studios/Baldur's Gate 3/PlayerProfiles/Public
+f	Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/modsettings.lsx
+d	Larian Studios/Baldur's Gate 3/PlayerProfiles/global
+f	Larian Studios/Baldur's Gate 3/PlayerProfiles/global/modsettings.lsx
+d	Larian Studios/Baldur's Gate 3/Public
+f	Larian Studios/Baldur's Gate 3/Public/modsettings.lsx
+d	Larian Studios/Baldur's Gate 3/global
+f	Larian Studios/Baldur's Gate 3/global/modsettings.lsx

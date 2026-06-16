@@ -237,9 +237,8 @@ test("mod appears after install", async ({ vortexWindow, managedGame }) => {
 });
 ```
 
-Currently only `"stardewvalley"` is supported — Skyrim SE goes through
-Vortex's manual-discovery dialog flow which our fake-game install isn't
-rich enough to satisfy yet (see TODO in `helpers/games.ts`).
+`managedGame` currently manages `"stardewvalley"`. Use `setupFakeGame` directly
+for other tree-backed fixtures when the test only needs on-disk layout.
 
 #### Just the on-disk install — `setupFakeGame`
 
@@ -259,7 +258,9 @@ test("fake game has expected files", async () => {
 });
 ```
 
-Available configs: `stardewvalley`, `skyrimse`. Add more in `packages/e2e/fixtures/game-setup/fake-game.ts`.
+Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`.
+Game layouts live in `packages/e2e/src/fixtures/game-setup/trees/`; see that
+folder's `README.md` for format and export command.
 
 ### Avoid Hardcoded Waits
 
