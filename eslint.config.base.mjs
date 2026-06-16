@@ -29,7 +29,6 @@ export const baseConfig = (tsconfigRootDir, files) =>
       },
       rules: {
         // Perfectionist
-        "perfectionist/sort-imports": "warn",
         "perfectionist/sort-exports": "warn",
 
         // Typescript
@@ -58,7 +57,6 @@ export const baseConfig = (tsconfigRootDir, files) =>
       plugins: { perfectionist },
       rules: {
         // Perfectionist
-        "perfectionist/sort-imports": "warn",
         "perfectionist/sort-exports": "warn",
       },
     },
