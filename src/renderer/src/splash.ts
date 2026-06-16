@@ -3,8 +3,8 @@ import { ipcRenderer } from "electron";
 ipcRenderer.on("fade-out", () => {
   const splash = document.getElementById("splash");
   if (splash) {
-    splash.setAttribute("transition", "opacity 500ms ease-in-out");
-    splash.setAttribute("style", "opacity: 0");
+    splash.style.transition = "opacity 500ms ease-in-out";
+    splash.style.opacity = "0";
   }
 });
 

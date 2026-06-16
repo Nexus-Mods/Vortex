@@ -62,7 +62,7 @@ class SplashScreen {
         frame: false,
         width: 475,
         height: 166,
-        transparent: false,
+        transparent: !disableGPU,
         show: false,
         resizable: false,
         movable: false,
