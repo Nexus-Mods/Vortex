@@ -27,8 +27,8 @@ export const MenuButton: FC<MenuButtonProps> = ({ children, iconPath, isActive, 
       <Icon className="shrink-0" path={iconPath} size="sm" />
 
       <Typography
-        appearance="none"
         as="span"
+        brand="none"
         className="truncate font-semibold"
         typographyType="body-sm"
       >

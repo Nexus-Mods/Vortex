@@ -7,6 +7,12 @@ import React from "react";
 
 import { Typography } from "./Typography";
 
+// Brands sharing the standard solid ramp. `neutral` and `neutral-translucent`
+// live in a different prop-type arm (they also allow `inverted`), so they are
+// rendered as their own rows below rather than mixed into this list.
+const colourBrands = ["primary", "info", "success", "premium", "danger", "warning"] as const;
+const appearances = ["weak", "subdued", "moderate", "strong"] as const;
+
 export const TypographyDemo = () => (
   <div className="space-y-8">
     <div className="rounded-sm bg-surface-mid p-4">
@@ -103,25 +109,76 @@ export const TypographyDemo = () => (
 
     <div className="space-y-4">
       <Typography as="h3" typographyType="heading-xs">
-        Text Appearances
+        Colours (brand × appearance)
       </Typography>
 
-      <div className="space-y-2">
-        <Typography>
-          <span className="font-semibold">Strong:</span> Strong text emphasis
+      <div className="space-y-1">
+        {/* neutral has the full ramp plus inverted; render its row explicitly */}
+        <div className="flex items-baseline gap-x-4">
+          <Typography appearance="subdued" className="w-28 shrink-0" typographyType="body-sm">
+            neutral
+          </Typography>
+
+          {appearances.map((appearance) => (
+            <Typography
+              key={appearance}
+              appearance={appearance}
+              brand="neutral"
+              typographyType="body-sm"
+            >
+              {appearance}
+            </Typography>
+          ))}
+        </div>
+
+        {colourBrands.map((brand) => (
+          <div key={brand} className="flex items-baseline gap-x-4">
+            <Typography appearance="subdued" className="w-28 shrink-0" typographyType="body-sm">
+              {brand}
+            </Typography>
+
+            {appearances.map((appearance) => (
+              <Typography
+                key={appearance}
+                appearance={appearance}
+                brand={brand}
+                typographyType="body-sm"
+              >
+                {appearance}
+              </Typography>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* inverted only exists on neutral; shown on a light surface */}
+      <div className="rounded-sm bg-surface-inverted p-3">
+        <Typography appearance="inverted" brand="neutral">
+          neutral + inverted (for use on light surfaces)
+        </Typography>
+      </div>
+
+      {/* neutral-translucent: the shared white-alpha translucent ramp, over a surface */}
+      <div className="flex items-baseline gap-x-4 rounded-sm bg-surface-high p-3">
+        <Typography appearance="subdued" className="w-28 shrink-0" typographyType="body-sm">
+          translucent
         </Typography>
 
-        <Typography appearance="moderate">
-          <span className="font-semibold">Moderate:</span> Moderate text emphasis
-        </Typography>
+        {appearances.map((appearance) => (
+          <Typography
+            key={appearance}
+            appearance={appearance}
+            brand="neutral-translucent"
+            typographyType="body-sm"
+          >
+            {appearance}
+          </Typography>
+        ))}
+      </div>
 
-        <Typography appearance="subdued">
-          <span className="font-semibold">Subdued:</span> Subdued text emphasis
-        </Typography>
-
-        <Typography appearance="weak">
-          <span className="font-semibold">Weak:</span> Weak text emphasis
-        </Typography>
+      {/* brand="none" opts out of colour — inherits from the parent */}
+      <div className="text-success-strong">
+        <Typography brand="none">brand=&quot;none&quot; inherits the parent colour</Typography>
       </div>
     </div>
 

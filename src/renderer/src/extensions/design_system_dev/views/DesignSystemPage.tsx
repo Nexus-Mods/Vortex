@@ -27,8 +27,8 @@ import { TabProvider } from "@/ui/components/tabs/tabs.context";
 import { TabsDemo } from "@/ui/components/tabs/TabsDemo";
 import { ToolbarDemo } from "@/ui/components/toolbar/Toolbar.demo";
 import { Typography } from "@/ui/components/typography/Typography";
-import { TypographyDemo } from "@/ui/components/typography/TypographyDemo";
-import { TypographyLinkDemo } from "@/ui/components/typography/TypographyLinkDemo";
+import { TypographyDemo } from "@/ui/components/typography/Typography.demo";
+import { TypographyLinkDemo } from "@/ui/components/typography/TypographyLink.demo";
 import MainPage from "@/views/MainPage";
 
 export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {

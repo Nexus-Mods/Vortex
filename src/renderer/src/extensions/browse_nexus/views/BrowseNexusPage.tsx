@@ -302,7 +302,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     onClick={handleRefresh}
                   />
 
-                  <Typography appearance="moderate" isTranslucent={true} typographyType="body-sm">
+                  <Typography
+                    appearance="moderate"
+                    brand="neutral-translucent"
+                    typographyType="body-sm"
+                  >
                     {t("collection:browse.resultsCount", {
                       total: numeral(totalCount).format("0,0"),
                     })}

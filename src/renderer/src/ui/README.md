@@ -139,20 +139,29 @@ import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
 ### Typography
 
-**Defaults:** `as="p"`, `appearance="strong"`, `typographyType` inferred from `as` — only set these when you need something different.
+Colour is expressed as `brand` × `appearance`: `brand` picks the colour family, `appearance` picks the intensity.
+
+**Defaults:** `as="p"`, `brand="neutral"`, `appearance="strong"`, `typographyType` inferred from `as` — only set these when you need something different.
 
 When `typographyType` is omitted it falls back based on `as`: `h1`→`heading-2xl`, `h2`→`heading-xl`, `h3`→`heading-lg`, `h4`→`heading-md`, `h5`→`heading-sm`, `h6`→`heading-xs`, everything else→`body-md`.
 
 ```tsx
 import { Typography } from "../../ui/components/typography/Typography";
 
-// Defaults to <p> with body-md and strong appearance
+// Defaults to <p> with body-md, neutral brand, strong appearance
 <Typography>Some body text</Typography>
 
 // Only override what differs
 <Typography as="h1">Page Heading</Typography>
-<Typography appearance="subdued">Muted text</Typography>
+<Typography appearance="subdued">Muted text (neutral)</Typography>
+<Typography brand="info" appearance="moderate">Info text</Typography>
 <Typography as="span" typographyType="body-sm">Inline small text</Typography>
+
+// inverted is neutral-only (for light surfaces)
+<Typography appearance="inverted">On a light background</Typography>
+
+// brand="none" opts out of colour entirely — inherits the parent's colour
+<Typography brand="none">Inherits colour</Typography>
 
 // Responsive
 <Typography typographyType={{ default: "body-sm", md: "body-md", lg: "body-lg" }}>
@@ -162,7 +171,34 @@ import { Typography } from "../../ui/components/typography/Typography";
 
 **Elements:** `h1`–`h6`, `p`, `span`, `div`, `ul`
 **Types:** `heading-2xl` through `heading-xs`, `title-md` through `title-xs`, `body-2xl` through `body-xs`
-**Appearances:** `strong`, `moderate`, `subdued`, `weak`, `inverted`, `none`
+**Brands:** `neutral` (default), `primary`, `info`, `success`, `premium`, `danger`, `warning`, `neutral-translucent` (white-alpha translucent ramp), `none` (opt out of colour)
+**Appearances:** `weak`, `subdued`, `moderate`, `strong` — plus `inverted` on `neutral` and `neutral-translucent` only. Setting `appearance` with `brand="none"` is disallowed (it would be redundant).
+
+### TypographyLink
+
+A `<button>` styled as a link. Colour uses the **same `brand` × `appearance` model as Typography** (it shares `getTypographyColourClass`), so the brands and appearances above apply here too. On hover the colour shifts one step toward `strong` (and `strong` dims to `moderate`), consistently across every brand.
+
+**Defaults:** `brand="neutral"`, `appearance="strong"`, `variant="primary"`, `typographyType="body-md"`.
+
+```tsx
+import { TypographyLink } from "../../ui/components/typography/TypographyLink";
+
+// Neutral link, underlined (primary variant)
+<TypographyLink onClick={handleClick}>View details</TypographyLink>
+
+// Branded
+<TypographyLink brand="primary">Primary link</TypographyLink>
+<TypographyLink brand="info" appearance="subdued">Subtle info link</TypographyLink>
+
+// Underline only on hover
+<TypographyLink variant="secondary">Secondary</TypographyLink>
+
+// Icons + inherit the surrounding text size (e.g. inside a Trans/sentence)
+<TypographyLink rightIconPath={mdiOpenInNew} typographyType="inherit">Open</TypographyLink>
+```
+
+**Variants:** `primary` (always underlined), `secondary` (underlines on hover), `none` (no underline)
+**typographyType:** same values as Typography, plus `"inherit"` to take the surrounding font size
 
 ### Tabs
 

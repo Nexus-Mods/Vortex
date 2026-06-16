@@ -136,8 +136,8 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
         >
           {easyInstallBadge && (
             <Typography
-              appearance="none"
               as="div"
+              brand="none"
               className="absolute inset-x-0 bottom-0 z-2 flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
               typographyType="title-xs"
             >
@@ -174,7 +174,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
           </div>
 
           <div className="flex items-center gap-x-1.5 border-t border-stroke-weak pt-1.5">
-            <Typography appearance="none" className="text-info-strong" typographyType="body-sm">
+            <Typography brand="info" typographyType="body-sm">
               {collection.category?.name}
             </Typography>
 
@@ -182,11 +182,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
               <>
                 <Bullet />
 
-                <Typography
-                  appearance="none"
-                  className="text-danger-strong"
-                  typographyType="body-sm"
-                >
+                <Typography brand="danger" typographyType="body-sm">
                   Adult
                 </Typography>
               </>
@@ -214,8 +210,8 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
       <div className="flex shrink-0 items-center gap-x-2 rounded-b bg-surface-translucent-low px-3 py-2">
         {!canBeAdded || pending ? (
           <Button
-            brand="neutral"
             appearance="weak"
+            brand="neutral"
             disabled={true}
             leftIconPath={!isLoggedIn ? undefined : mdiCheck}
             size="xs"
@@ -230,8 +226,8 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
         )}
 
         <Button
-          brand="neutral"
           appearance="weak"
+          brand="neutral"
           leftIconPath={mdiOpenInNew}
           size="xs"
           onClick={onViewPage}

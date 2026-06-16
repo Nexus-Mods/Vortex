@@ -60,7 +60,7 @@ export const BulletDemo = () => (
 
         <Bullet />
 
-        <Typography appearance="none" className="text-danger-strong" typographyType="body-sm">
+        <Typography brand="danger" typographyType="body-sm">
           Adult
         </Typography>
       </div>
