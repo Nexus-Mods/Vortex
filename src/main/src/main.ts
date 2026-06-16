@@ -54,6 +54,8 @@ import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";
 import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";
+import { UnleashClient } from "./unleash/client";
+import { initFeatureFlagsIPC } from "./unleash/ipc";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 
@@ -279,6 +281,11 @@ async function main(): Promise<void> {
     });
   });
   initTelemetryIpcHandler();
+
+  const unleashClient = new UnleashClient(app.getVersion());
+  initFeatureFlagsIPC(unleashClient);
+  unleashClient.start();
+
   StylesheetCompiler.init();
 
   if (process.env.VORTEX_E2E === "1") {

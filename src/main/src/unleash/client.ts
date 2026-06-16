@@ -3,7 +3,6 @@ import { platform } from "node:os";
 
 import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import { flagVariantSchemas } from "@vortex/shared/flags";
-import { app } from "electron/main";
 import createClient from "openapi-fetch";
 import type { z } from "zod";
 
@@ -43,10 +42,10 @@ export class UnleashClient {
 
   #flags: FeatureFlag[];
 
-  constructor() {
+  constructor(appVersion: string) {
     this.#sessionId = randomUUID();
-    this.#appVersion = app.getVersion();
-    this.#channel = this.#appVersion.includes("-beta") ? "beta" : "stable";
+    this.#appVersion = appVersion;
+    this.#channel = appVersion.includes("-beta") ? "beta" : "stable";
 
     this.#apiClient = createClient({
       baseUrl: BASE_URL,
@@ -131,7 +130,7 @@ export class UnleashClient {
 
     const flags: FeatureFlag[] = [];
     const { toggles } = result.data;
-    for (let i = 0; i <= toggles.length; i++) {
+    for (let i = 0; i < toggles.length; i++) {
       const toggle = toggles[i];
       const flag = parseToggle(toggle);
       if (flag) flags.push(flag);
@@ -177,7 +176,7 @@ type UnleashToggle = components["schemas"]["frontendApiFeatureSchema"];
 function parseToggle({ name, variant }: UnleashToggle): FeatureFlag | undefined {
   const flagName = name as KnownFlagName;
   if (!(flagName in flagVariantSchemas)) {
-    log("warn", "unkown feature flag returned by Unleash API", { flagName });
+    log("debug", "unkown feature flag returned by Unleash API", { flagName });
     return undefined;
   }
 
@@ -200,7 +199,7 @@ function parseVariantData(
   const schema = variants[variantName];
 
   if (!schema) {
-    log("warn", "unkown feature flag variant returned by Unleash API", { flagName, variantName });
+    log("debug", "unkown feature flag variant returned by Unleash API", { flagName, variantName });
     return undefined;
   }
 
