@@ -327,3 +327,26 @@ describe("setDownloadSpeed", () => {
     expect(result.speed).toEqual(42);
   });
 });
+
+describe("setDownloadSpeeds", () => {
+  it("stores the speed history and last speed", () => {
+    const input = { speed: 0, speedHistory: [] };
+    const result = stateReducer.reducers.SET_DOWNLOAD_SPEEDS(input, [1, 2, 3]);
+    expect(result.speedHistory).toEqual([1, 2, 3]);
+    expect(result.speed).toEqual(3);
+  });
+  it("trims to the last NUM_SPEED_DATA_POINTS entries", () => {
+    const input = { speed: 0, speedHistory: [] };
+    const payload = Array.from({ length: 50 }, (_unused, idx) => idx);
+    const result = stateReducer.reducers.SET_DOWNLOAD_SPEEDS(input, payload);
+    expect((result.speedHistory as number[]).length).toEqual(30);
+    expect((result.speedHistory as number[])[0]).toEqual(20);
+    expect(result.speed).toEqual(49);
+  });
+  it("normalizes a non-array payload to an empty history", () => {
+    const input = { speed: 5, speedHistory: [1, 2] };
+    const result = stateReducer.reducers.SET_DOWNLOAD_SPEEDS(input, { foo: "bar" });
+    expect(result.speedHistory).toEqual([]);
+    expect(result.speed).toEqual(0);
+  });
+});
