@@ -27,6 +27,7 @@ _First beta of the 2.2 release._
 
 ### Fixed
 
+- Free-user manual and collection downloads timing out while waiting for the user to download each file ([#23505](https://github.com/Nexus-Mods/Vortex/pull/23505))
 - Downloads page crashing with "Failed to render" ([#23493](https://github.com/Nexus-Mods/Vortex/pull/23493))
 - Splash screen cropping incorrectly since 2.1 (Electron 42 frameless-window sizing regression) ([#23491](https://github.com/Nexus-Mods/Vortex/pull/23491))
 - SkyrimVR and other `compatibleDownloads` games installing to the wrong game's staging folder ([#23489](https://github.com/Nexus-Mods/Vortex/pull/23489))
