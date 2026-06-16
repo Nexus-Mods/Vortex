@@ -8,42 +8,22 @@
 
 import { describe, it, expect, vi } from "vitest";
 
+import { makeDownload, makeMod, makeRule } from "../../../test-utils/builders";
 import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
-import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod, IModAttributes, IModRule } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { buildCollectionItemRows } from "./itemRows";
 
 vi.mock("../../../util/log", () => ({ log: vi.fn() }));
 
-const requiresRule = (over: Partial<IModRule> = {}): IModRule => ({
-  type: "requires",
-  reference: { id: "mod-1", description: "Mod One" },
-  ...over,
-});
+// domain-specific conveniences over the shared builders: a requires-rule referencing
+// "mod-1" by id, and an installed mod whose attributes.name defaults to its id
+const requiresRule = (over: Partial<IModRule> = {}): IModRule =>
+  makeRule({ reference: { id: "mod-1", description: "Mod One" }, ...over });
 
-const installedMod = (id: string, attributes: IModAttributes = {}): IMod => ({
-  id,
-  state: "installed",
-  type: "",
-  installationPath: `mods/${id}`,
-  attributes: { name: id, ...attributes },
-});
-
-const makeDownload = (over: Partial<IDownload> = {}): IDownload => ({
-  id: "dl",
-  state: "started",
-  urls: [],
-  game: ["skyrimse"],
-  modInfo: {},
-  startTime: 0,
-  fileTime: 0,
-  size: 0,
-  received: 0,
-  verified: 0,
-  ...over,
-});
+const installedMod = (id: string, attributes: IModAttributes = {}): IMod =>
+  makeMod({ id, installationPath: `mods/${id}`, attributes: { name: id, ...attributes } });
 
 describe("buildCollectionItemRows", () => {
   it("filters out rules that are not requires/recommends", () => {
