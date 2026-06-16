@@ -4,8 +4,6 @@ const isGitHubCI = process.env.CI && process.env.GITHUB_ACTIONS;
 
 export default defineConfig({
   test: {
-    reporters: ["default", "junit", isGitHubCI ? "github-actions" : undefined].filter(
-      Boolean,
-    ) as string[],
+    reporters: ["default", isGitHubCI ? "github-actions" : undefined].filter(Boolean) as string[],
   },
 });
