@@ -17,7 +17,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
-import type { FlagMetricsBucket } from "./ipc";
+import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
@@ -507,6 +507,9 @@ export interface FeatureFlagsApi {
 
   /** Sends a completed evaluation metrics bucket to the main process for forwarding to Unleash. */
   reportMetrics(bucket: FlagMetricsBucket): void;
+
+  /** Updates context data used for feature flag evaluation (e.g. userId after login). */
+  setContext(context: FlagContext): void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

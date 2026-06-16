@@ -5,6 +5,10 @@ import { log } from "../logging";
 import type { UnleashClient } from "./client";
 
 export function synchronizeFeatureFlags(client: UnleashClient): () => void {
+  betterIpcMain.on("flags:setContext", (_event, context) => {
+    client.setContext(context);
+  });
+
   betterIpcMain.on("flags:metrics", (_event, bucket) => {
     client.postMetrics(bucket).catch((err: unknown) => {
       log("warn", "unleash metrics post failed", { err });

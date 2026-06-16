@@ -3,7 +3,7 @@ import { platform } from "node:os";
 
 import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import { flagVariantSchemas } from "@vortex/shared/flags";
-import type { FlagMetricsBucket } from "@vortex/shared/ipc";
+import type { FlagContext, FlagMetricsBucket } from "@vortex/shared/ipc";
 import createClient from "openapi-fetch";
 import type { z } from "zod";
 
@@ -42,6 +42,7 @@ export class UnleashClient {
   readonly #channel: "beta" | "stable";
 
   #flags: FeatureFlag[];
+  #context: FlagContext = {};
 
   constructor(appVersion: string) {
     this.#sessionId = randomUUID();
@@ -108,6 +109,10 @@ export class UnleashClient {
     };
   }
 
+  setContext(context: FlagContext): void {
+    this.#context = context;
+  }
+
   async postMetrics(bucket: FlagMetricsBucket): Promise<void> {
     const result = await this.#apiClient.POST("/api/frontend/client/metrics", {
       body: {
@@ -169,6 +174,7 @@ export class UnleashClient {
       environment: ENVIRONMENT,
       currentTime: new Date().toISOString(),
       sessionId: this.#sessionId,
+      userId: this.#context.userId,
       properties: {
         appVersion: this.#appVersion,
         os: platform(),

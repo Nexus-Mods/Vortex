@@ -845,6 +845,17 @@ async function load(extensions: ExtensionManager): Promise<void> {
   extensions.getApi().events.on("gamemode-activated", () => refresh());
   startupFinished();
   eventEmitter.emit("startup");
+
+  let lastUserId: number | undefined;
+  store.subscribe(() => {
+    const userId: number | undefined = (store.getState() as any).persistent?.nexus?.userInfo
+      ?.userId;
+    if (userId !== lastUserId) {
+      lastUserId = userId;
+      window.api.featureFlags.setContext(userId !== undefined ? { userId: String(userId) } : {});
+    }
+  });
+
   // render the page content
   ReactDOM.render(
     <Provider store={store}>

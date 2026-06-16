@@ -264,6 +264,7 @@ try {
         return () => ipcRenderer.removeListener("flags:synchronize", listener);
       },
       reportMetrics: (bucket) => betterIpcRenderer.send("flags:metrics", bucket),
+      setContext: (context) => betterIpcRenderer.send("flags:setContext", context),
     },
   });
 } catch (err) {

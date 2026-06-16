@@ -204,6 +204,9 @@ export interface RendererChannels extends RendererCallbackChannels {
 
   // Feature flags: renderer reports evaluation metrics to main for forwarding to Unleash
   "flags:metrics": (bucket: FlagMetricsBucket) => void;
+
+  // Feature flags: renderer updates context (e.g. userId after login)
+  "flags:setContext": (context: FlagContext) => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
@@ -247,6 +250,11 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Feature flags: main pushes updated flags after each successful poll
   "flags:synchronize": (flags: FeatureFlag[]) => void;
+}
+
+/** Context data the renderer can push to refine feature flag evaluation */
+export interface FlagContext {
+  userId?: string;
 }
 
 /** Evaluation counts for a single time bucket, sent from renderer to main */
