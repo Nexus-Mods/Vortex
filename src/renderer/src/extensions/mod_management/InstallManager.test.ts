@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import type { IExtensionApi, IState } from "../../types/api";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import InstallManager from "./InstallManager";
-import type { IModRule } from "./types/IMod";
 
 // Mock dependencies
 vi.mock("./util/dependencies");
@@ -282,40 +282,6 @@ describe("Phased Installer", () => {
 
       expect(state.allowedPhase).toBe(1);
       expect(state.downloadsFinished.has(3)).toBe(true);
-    });
-  });
-
-  describe("Collection Session Phase Assignment", () => {
-    it("should assign phase 0 when rule.extra.phase is undefined", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(0);
-    });
-
-    it("should use phase from rule.extra.phase when present", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-        extra: { phase: 3 },
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(3);
-    });
-
-    it("should handle null extra field", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-        extra: null,
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(0);
     });
   });
 

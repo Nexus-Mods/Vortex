@@ -3130,13 +3130,37 @@ interface IModRule extends IRule, IModInstallSpec {
     // (undocumented)
     downloadHint?: IDownloadHint;
     // (undocumented)
-    extra?: {
-        [key: string]: any;
-    };
+    extra?: IModRuleExtra;
     // (undocumented)
     ignored?: boolean;
     // (undocumented)
+    phase?: number;
+    // (undocumented)
     reference: IModReference;
+}
+
+// @public
+interface IModRuleExtra {
+    // (undocumented)
+    [key: string]: any;
+    // (undocumented)
+    author?: string;
+    // (undocumented)
+    category?: string;
+    // (undocumented)
+    fileOverrides?: string[];
+    // (undocumented)
+    instructions?: string;
+    // (undocumented)
+    localPath?: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    type?: string;
+    // (undocumented)
+    url?: string;
+    // (undocumented)
+    version?: string;
 }
 
 // @public (undocumented)
@@ -5057,6 +5081,9 @@ function rmdirAsync(dirPath: string): Promise_2<void>;
 // @public
 function ruleInstallSpec(rule: IModRule): IModInstallSpec;
 
+// @public
+function rulePhase(rule: IModRule | undefined): number;
+
 // Warning: (ae-forgotten-export) The symbol "IElevatedIpc" needs to be exported by the entry point api.d.ts
 //
 // @public
@@ -6112,6 +6139,7 @@ declare namespace types {
         IModReference,
         IModRepoId,
         IModRule,
+        IModRuleExtra,
         IRemoveModOptions,
         IDeployOptions,
         InstallFunc,
@@ -6457,6 +6485,7 @@ declare namespace util {
         resolveCategoryName,
         resolveCategoryPath,
         ruleInstallSpec,
+        rulePhase,
         runElevated,
         runThreaded,
         sanitizeCSSId,

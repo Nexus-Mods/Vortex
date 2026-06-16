@@ -66,6 +66,7 @@ export type {
   IModReference,
   IModRepoId,
   IModRule,
+  IModRuleExtra,
 } from "../extensions/mod_management/types/IMod";
 export type { IRemoveModOptions } from "../extensions/mod_management/types/IRemoveModOptions";
 export type { IDeployOptions } from "../extensions/mod_management/types/IDeployOptions";

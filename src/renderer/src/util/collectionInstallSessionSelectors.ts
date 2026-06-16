@@ -4,6 +4,7 @@ import { createSelector } from "reselect";
 
 import { activeDownloads } from "../extensions/download_management/selectors";
 import { modsForActiveGame } from "../extensions/mod_management/selectors";
+import { rulePhase } from "../extensions/mod_management/util/testModReference";
 import type {
   ICollectionInstallState,
   ICollectionInstallSession,
@@ -227,7 +228,7 @@ export const getCollectionModsByPhase = (
   const byPhase = new Map<number, ICollectionModInstallInfo[]>();
 
   Object.values(mods).forEach((mod) => {
-    const phase = mod.rule?.extra?.phase ?? 0;
+    const phase = rulePhase(mod.rule);
     if (!byPhase.has(phase)) {
       byPhase.set(phase, []);
     }
@@ -247,7 +248,7 @@ export const getCollectionModsForPhase = (
   phase: number,
 ): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
-  return Object.values(mods).filter((mod) => (mod.rule?.extra?.phase ?? 0) === phase);
+  return Object.values(mods).filter((mod) => rulePhase(mod.rule) === phase);
 };
 
 /**
@@ -256,7 +257,7 @@ export const getCollectionModsForPhase = (
  */
 export const getCollectionTotalPhases = (state: IState): number => {
   const mods = getCollectionActiveSessionMods(state);
-  const phases = Object.values(mods).map((mod) => mod.rule?.extra?.phase ?? 0);
+  const phases = Object.values(mods).map((mod) => rulePhase(mod.rule));
   return phases.length > 0 ? Math.max(...phases) + 1 : 0;
 };
 
@@ -498,7 +499,7 @@ export const getCollectionPhaseProgress = createSelector(
     const byPhase = new Map<number, ICollectionModInstallInfo[]>();
 
     Object.values(mods).forEach((mod) => {
-      const phase = mod.rule?.extra?.phase ?? 0;
+      const phase = rulePhase(mod.rule);
       if (!byPhase.has(phase)) {
         byPhase.set(phase, []);
       }

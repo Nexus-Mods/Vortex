@@ -6,34 +6,42 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 
-import type { ITableRowAction } from "../../../../controls/api";
-import {
-  EmptyPlaceholder,
-  Icon,
-  OptionsFilter,
-  Table,
-  TableTextFilter,
-  tooltip,
-  Usage,
-} from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import EmptyPlaceholder from "../../../../controls/EmptyPlaceholder";
+import Icon from "../../../../controls/Icon";
+import Table, { type ITableRowAction } from "../../../../controls/Table";
+import OptionsFilter from "../../../../controls/table/OptionsFilter";
+import TableTextFilter from "../../../../controls/table/TextFilter";
+import * as tooltip from "../../../../controls/TooltipControls";
+import Usage from "../../../../controls/Usage";
+import type { IInput } from "../../../../types/IDialog";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IState } from "../../../../types/IState";
+import type { ITableAttribute } from "../../../../types/ITableAttribute";
 import * as fs from "../../../../util/fs";
 import * as selectors from "../../../../util/selectors";
+import { getSafe } from "../../../../util/storeHelper";
+import { sanitizeCSSId } from "../../../../util/util";
+import { resolveCategoryName } from "../../../category_management/util/retrieveCategoryPath";
+import type { IMod, IModRule } from "../../../mod_management/types/IMod";
+import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
+import { findModByRef } from "../../../mod_management/util/findModByRef";
+import renderModName, { renderModReference } from "../../../mod_management/util/modName";
+import { rulePhase } from "../../../mod_management/util/testModReference";
 import { ADULT_CONTENT_URL, INSTRUCTIONS_PLACEHOLDER } from "../../constants";
 import type { ICollectionSourceInfo, SourceType } from "../../types/ICollection";
 import InstallModeRenderer from "./InstallModeRenderer";
 
 export interface IModsPageProps {
   t: TFunction;
-  collection: types.IMod;
-  mods: { [modId: string]: types.IMod };
+  collection: IMod;
+  // keyed by modId
+  mods: Record<string, IMod>;
   showPhaseUsage: boolean;
   showBinpatchWarning: boolean;
   onSetModVersion: (modId: string, version: "exact" | "newest") => void;
-  onAddRule: (rule: types.IModRule) => void;
-  onRemoveRule: (rule: types.IModRule) => void;
+  onAddRule: (rule: IModRule) => void;
+  onRemoveRule: (rule: IModRule) => void;
   onSetCollectionAttribute: (path: string[], value: any) => void;
   onAddModsDialog: (modId: string) => void;
   onDismissPhaseUsage: () => void;
@@ -42,8 +50,8 @@ export interface IModsPageProps {
 }
 
 interface IModEntry {
-  rule: types.IModRule;
-  mod: types.IMod;
+  rule: IModRule;
+  mod: IMod;
 }
 
 type ProblemType =
@@ -67,8 +75,9 @@ interface IProblem {
 }
 
 interface IModsPageState {
-  entries: { [modId: string]: IModEntry };
-  problems: { [modId: string]: IProblem[] };
+  // both keyed by modId
+  entries: Record<string, IModEntry>;
+  problems: Record<string, IProblem[]>;
 }
 
 type IProps = IModsPageProps;
@@ -102,28 +111,23 @@ function undefSort(lhs: any, rhs: any) {
   return lhs !== undefined ? 1 : rhs !== undefined ? -1 : 0;
 }
 
-function modNameSort(
-  lhs: types.IMod,
-  rhs: types.IMod,
-  collator: Intl.Collator,
-  sortDir: string,
-): number {
-  const lhsName = util.renderModName(lhs);
-  const rhsName = util.renderModName(rhs);
+function modNameSort(lhs: IMod, rhs: IMod, collator: Intl.Collator, sortDir: string): number {
+  const lhsName = renderModName(lhs);
+  const rhsName = renderModName(rhs);
   return lhsName === undefined || rhsName === undefined
     ? undefSort(lhsName, rhsName)
     : collator.compare(lhsName, rhsName) * (sortDir !== "desc" ? 1 : -1);
 }
 
 function sortCategories(
-  lhs: types.IMod,
-  rhs: types.IMod,
+  lhs: IMod,
+  rhs: IMod,
   collator: Intl.Collator,
   state: any,
   sortDir: string,
 ): number {
-  const lhsCat = util.resolveCategoryName(lhs?.attributes?.category, state);
-  const rhsCat = util.resolveCategoryName(rhs?.attributes?.category, state);
+  const lhsCat = resolveCategoryName(lhs?.attributes?.category, state);
+  const rhsCat = resolveCategoryName(rhs?.attributes?.category, state);
   return lhsCat === rhsCat
     ? modNameSort(lhs, rhs, collator, sortDir)
     : collator.compare(lhsCat, rhsCat);
@@ -132,14 +136,14 @@ function sortCategories(
 const coerceableRE = /^v?[0-9.]+$/;
 
 function safeCoerce(input: string): string {
-  return coerceableRE.test(input) ? (util.coerceToSemver(input) ?? input) : input;
+  return coerceableRE.test(input) ? (coerceToSemver(input) ?? input) : input;
 }
 
 class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
   private mLang: string;
   private mCollator: Intl.Collator;
 
-  private mColumns: Array<types.ITableAttribute<IModEntry>>;
+  private mColumns: Array<ITableAttribute<IModEntry>>;
 
   private mActions: ITableRowAction[] = [
     {
@@ -290,8 +294,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             message: filteredIds
               .map((id) =>
                 entries[id].mod !== undefined
-                  ? util.renderModName(entries[id].mod)
-                  : util.renderModReference(entries[id].rule.reference),
+                  ? renderModName(entries[id].mod)
+                  : renderModReference(entries[id].rule.reference),
               )
               .join("\n"),
           },
@@ -319,7 +323,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         const { t } = this.props;
         const ids = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
         const maxPhase = Object.values(this.state.entries).reduce(
-          (prev, entry) => Math.max(prev, entry.rule.extra?.["phase"] ?? 0),
+          (prev, entry) => Math.max(prev, rulePhase(entry.rule)),
           0,
         );
         return new Array(maxPhase + 1)
@@ -366,8 +370,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         description: "Mod Name",
         calc: (entry: IModEntry) =>
           entry.mod !== undefined
-            ? util.renderModName(entry.mod)
-            : util.renderModReference(entry.rule.reference),
+            ? renderModName(entry.mod)
+            : renderModReference(entry.rule.reference),
         placement: "table",
         edit: {},
         isDefaultSort: true,
@@ -395,8 +399,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             );
           }
 
-          const color = util.getSafe(entry.mod.attributes, ["color"], "");
-          const icon = util.getSafe(entry.mod.attributes, ["icon"], "");
+          const color = getSafe(entry.mod.attributes, ["color"], "");
+          const icon = getSafe(entry.mod.attributes, ["icon"], "");
           const hasProblem =
             this.state.problems[entry.mod.id] !== undefined &&
             this.state.problems[entry.mod.id].length > 0;
@@ -449,27 +453,22 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         icon: "sitemap",
         placement: "table",
         calc: (mod: IModEntry) =>
-          util.resolveCategoryName(
-            mod.mod?.attributes?.category,
-            this.context.api.store.getState(),
-          ),
+          resolveCategoryName(mod.mod?.attributes?.category, this.context.api.store.getState()),
         isToggleable: true,
         edit: {},
         isSortable: true,
-        isGroupable: (mod: IModEntry, t: types.TFunction) =>
-          util.resolveCategoryName(
-            mod.mod?.attributes?.category,
-            this.context.api.store.getState(),
-          ) || t("<No Category>"),
+        isGroupable: (mod: IModEntry, t: TFunction) =>
+          resolveCategoryName(mod.mod?.attributes?.category, this.context.api.store.getState()) ||
+          t("<No Category>"),
         filter: new OptionsFilter(
           () => {
-            const state: types.IState = this.context.api.getState();
+            const state: IState = this.context.api.getState();
             return Array.from(
               new Set(
                 Object.values(this.state.entries)
                   .map((entry) => entry.mod?.attributes?.category)
                   .filter((entry) => !!entry)
-                  .map((entry) => util.resolveCategoryName(entry, state))
+                  .map((entry) => resolveCategoryName(entry, state))
                   .sort(),
               ),
             ).map((name) => {
@@ -532,7 +531,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         calc: (entry: IModEntry) => {
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
           const { collection } = this.props;
-          const type = util.getSafe(
+          const type = getSafe(
             collection,
             ["attributes", "collection", "source", id, "type"],
             "nexus",
@@ -567,7 +566,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const { collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
 
-          const type = util.getSafe(
+          const type = getSafe(
             collection,
             ["attributes", "collection", "source", id, "type"],
             "nexus",
@@ -577,7 +576,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         customRenderer: (entry: IModEntry) => {
           const { t, collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
-          const type = util.getSafe(
+          const type = getSafe(
             collection,
             ["attributes", "collection", "source", id, "type"],
             "nexus",
@@ -698,7 +697,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const hasInstallerOptions =
             (entry.mod?.attributes?.installerChoices?.options ?? []).length > 0;
 
-          const installMode = util.getSafe(
+          const installMode = getSafe(
             collection,
             ["attributes", "collection", "installMode", id],
             "fresh",
@@ -724,7 +723,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           const hasInstallerOptions =
             (entry.mod?.attributes?.installerChoices?.options ?? []).length > 0;
 
-          const installMode = util.getSafe(
+          const installMode = getSafe(
             collection,
             ["attributes", "collection", "installMode", id],
             "fresh",
@@ -741,11 +740,11 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
           );
         },
         isSortable: true,
-        isGroupable: (entry: IModEntry, t: types.TFunction) => {
+        isGroupable: (entry: IModEntry, t: TFunction) => {
           const { collection } = this.props;
           const id = entry.mod?.id ?? entry.rule?.reference?.id;
 
-          const installMode = util.getSafe(
+          const installMode = getSafe(
             collection,
             ["attributes", "collection", "installMode", id],
             "fresh",
@@ -767,7 +766,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
 
           return collection.attributes?.collection?.instructions?.[entry.mod.id];
         },
-        customRenderer: (entry: IModEntry, detailCell: boolean, t: types.TFunction) => {
+        customRenderer: (entry: IModEntry, detailCell: boolean, t: TFunction) => {
           const { collection } = this.props;
 
           if (entry.mod === undefined) {
@@ -924,7 +923,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
             replace: { phase: (phase || 0).toString() },
           }),
         isGroupable: true,
-        calc: (mod) => mod.rule.extra?.["phase"] ?? 0,
+        calc: (mod) => rulePhase(mod.rule),
         edit: {},
       },
     ];
@@ -1027,7 +1026,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
   }
 
   private categorySort() {
-    const state: types.IState = this.context.api.getState();
+    const state: IState = this.context.api.getState();
     return state.settings.tables.mods.attributes?.["category"]?.sortDirection ?? "none";
   }
 
@@ -1046,7 +1045,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     return Object.values(collection.rules)
       .filter((rule) => ["requires", "recommends"].indexOf(rule.type) !== -1)
       .reduce((prev, rule) => {
-        const mod = util.findModByRef(_.omit(rule.reference, ["versionMatch"]), mods);
+        const mod = findModByRef(_.omit(rule.reference, ["versionMatch"]), mods);
         const id = mod?.id ?? rule.reference.id ?? rule.reference.idHint;
         if (id !== undefined) {
           prev[id] = { rule, mod };
@@ -1057,8 +1056,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
 
   private checkProblems(
     props: IProps,
-    entries: { [modId: string]: IModEntry },
-  ): { [modId: string]: IProblem[] } {
+    entries: Record<string, IModEntry>,
+  ): Record<string, IProblem[]> {
     return Object.values(entries).reduce((prev, entry) => {
       const id = entry.mod?.id ?? entry.rule.reference.id ?? entry.rule.reference.idHint;
       if (id !== undefined) {
@@ -1251,8 +1250,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     return res;
   }
 
-  private async fixInvalidIds(api: types.IExtensionApi, mod: types.IMod) {
-    const modName = util.renderModName(mod);
+  private async fixInvalidIds(api: IExtensionApi, mod: IMod) {
+    const modName = renderModName(mod);
 
     const result = await api.showDialog(
       "question",
@@ -1274,13 +1273,13 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       }, 200);
     } else {
       (api.highlightControl as any)(
-        `#${util.sanitizeCSSId(mod.id)} > .cell-source`,
+        `#${sanitizeCSSId(mod.id)} > .cell-source`,
         4000,
         undefined,
         true,
       );
       (api.highlightControl as any)(
-        `#${util.sanitizeCSSId(mod.id)} > .cell-edit-source`,
+        `#${sanitizeCSSId(mod.id)} > .cell-edit-source`,
         4000,
         undefined,
         true,
@@ -1288,7 +1287,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     }
   }
 
-  private async fixMissingVersion(api: types.IExtensionApi, mod: types.IMod) {
+  private async fixMissingVersion(api: IExtensionApi, mod: IMod) {
     api.events.emit("show-main-page", "Mods");
     setTimeout(() => {
       api.events.emit("mods-select-item", mod.id, true);
@@ -1316,7 +1315,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     const impl = async () => {
       const newRule = _.cloneDeep(mod.rule);
       // onRemoveRule(mod.rule);
-      util.setdefault(newRule, "extra", {})["phase"] = phase;
+      newRule.phase = phase;
       onAddRule(newRule);
 
       if (phase !== 0) {
@@ -1373,7 +1372,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       ["choices-fuzzy-version", () => this.setPreferVersion(this.state.entries[modId])],
     ]);
 
-    const modName = util.renderModName(mod);
+    const modName = renderModName(mod);
     api.showDialog(
       "info",
       modName,
@@ -1409,12 +1408,12 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
 
   private querySource(modId: string, type: SourceType) {
     const { collection } = this.props;
-    const src: ICollectionSourceInfo = util.getSafe(
+    const src: ICollectionSourceInfo = getSafe(
       collection,
       ["attributes", "collection", "source", modId],
       { type },
     );
-    const input: types.IInput[] = [];
+    const input: IInput[] = [];
 
     let text: string;
 

@@ -39,6 +39,7 @@ import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
 import renderModName from "../../mod_management/util/modName";
 import testModReference, {
   ruleInstallSpec,
+  rulePhase,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
 import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
@@ -375,7 +376,7 @@ class InstallDriver {
 
     api.onStateChange(
       ["persistent", "downloads", "files"],
-      (prev: { [id: string]: IDownload }, current: { [id: string]: IDownload }) => {
+      (prev: Record<string, IDownload>, current: Record<string, IDownload>) => {
         if (this.mDependentMods.length === 0) return;
 
         const newIds = Object.keys(current).filter((id) => prev?.[id] === undefined);
@@ -891,7 +892,7 @@ class InstallDriver {
     profile: IProfile,
     gameId: string,
     collection: IMod,
-  ): { [id: string]: IMod & { collectionRule: IModRule } } {
+  ): Record<string, IMod & { collectionRule: IModRule }> {
     if (profile === undefined) {
       profile = this.mProfile;
     }
@@ -1093,7 +1094,7 @@ class InstallDriver {
               rule,
               status,
               type: rule.type as "requires" | "recommends",
-              phase: rule.extra?.phase ?? 0,
+              phase: rulePhase(rule),
             },
           ];
         }),

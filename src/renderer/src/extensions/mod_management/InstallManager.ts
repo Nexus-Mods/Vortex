@@ -179,6 +179,7 @@ import testModReference, {
   modMatchesInstallSpec,
   referenceEqual,
   ruleInstallSpec,
+  rulePhase,
   testRefByIdentifiers,
 } from "./util/testModReference";
 
@@ -697,14 +698,14 @@ class InstallManager {
 
     // Create a dependency object and queue the installation
     const dependency: IDependency = {
+      // install-spec triple (installerChoices / fileList / patches) from the single
+      // extraction point, so it stays in sync with the rule and its legacy fallbacks
+      ...ruleInstallSpec(matchingRule),
       extra: matchingRule.extra,
       reference: matchingRule.reference,
       lookupResults: [], // Will be populated if needed
       download: downloadId,
-      phase: matchingRule.extra?.phase || 0,
-      patches: ruleInstallSpec(matchingRule).patches,
-      installerChoices: matchingRule.installerChoices,
-      fileList: matchingRule.fileList,
+      phase: rulePhase(matchingRule),
     };
 
     // Ensure the phase is marked as having downloads finished
@@ -3423,8 +3424,8 @@ class InstallManager {
         // state has yet to be updated.
         if (collectionMod?.rules) {
           collectionMod.rules.forEach((rule: any) => {
-            const rulePhase = rule.extra?.phase ?? 0;
-            if (rulePhase === curr && rule.reference?.tag) {
+            const phase = rulePhase(rule);
+            if (phase === curr && rule.reference?.tag) {
               const downloadId = getReadyDownloadId(downloads, rule.reference, (id) =>
                 this.hasActiveOrPendingInstallation(sourceModId, id),
               );
@@ -5677,9 +5678,9 @@ class InstallManager {
           );
 
           if (downloadId) {
-            const rulePhase = dep.extra?.phase ?? 0;
+            const depPhase = dep.phase ?? 0;
             // Only process downloads for the current allowed phase or earlier
-            if (rulePhase <= phaseState.allowedPhase) {
+            if (depPhase <= phaseState.allowedPhase) {
               this.handleDownloadFinished(api, downloadId, sourceModId);
               foundCount++;
             }
