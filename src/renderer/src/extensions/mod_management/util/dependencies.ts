@@ -17,7 +17,11 @@ import type { IDependency, ILookupResultEx } from "../types/IDependency";
 import type { IDownloadHint, IModReference, IModRule } from "../types/IMod";
 import { findModByRef } from "./findModByRef";
 import { isFuzzyVersion } from "./isFuzzyVersion";
-import testModReference, { ruleInstallSpec, testRefByIdentifiers } from "./testModReference";
+import testModReference, {
+  ruleInstallSpec,
+  rulePhase,
+  testRefByIdentifiers,
+} from "./testModReference";
 import type { IModLookupInfo } from "./testModReference";
 
 interface IBrowserResult {
@@ -311,6 +315,15 @@ export function findDownloadByRef(
   }
 }
 
+/**
+ * Internal tree node used while GATHERING the transitive dependency graph. It is an
+ * IDependency plus the tree bookkeeping: child `dependencies`, a `redundant` flag set by
+ * tagDuplicates(), and a re-resolve callback. Once the graph is gathered it is flattened
+ * and these tree-only fields are stripped (see flatten() + the _.omit below), yielding the
+ * flat IDependency[] the installer consumes. Kept separate from IDependency on purpose so
+ * those graph-only fields never travel with a flat install unit; this type stays local to
+ * this module.
+ */
 interface IDependencyNode extends IDependency {
   dependencies: IDependencyNode[];
   redundant: boolean;
@@ -393,7 +406,7 @@ async function gatherDependenciesGraph(
       patches: ruleInstallSpec(rule).patches ?? {},
       installerChoices: rule.installerChoices,
       fileList: rule.fileList,
-      phase: rule.extra?.["phase"] ?? 0,
+      phase: rulePhase(rule),
     };
 
     if (urlFromHint) {

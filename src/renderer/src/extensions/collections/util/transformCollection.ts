@@ -7,7 +7,13 @@ import { log } from "../../../logging";
 import type { IConditionResult, IDialogContent } from "../../../types/IDialog";
 import type { TFunction } from "../../../util/i18n";
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
-import type { IDownloadHint, IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
+import type {
+  IDownloadHint,
+  IMod,
+  IModInstallSpec,
+  IModReference,
+  IModRule,
+} from "../../mod_management/types/IMod";
 import { coerceToSemver } from "../../mod_management/util/coerceToSemver";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
@@ -161,7 +167,7 @@ export function makeBiDirRule(source: IModReference, rule: IModRule): ICollectio
 }
 
 export function makeTransferrable(
-  mods: { [modId: string]: IMod },
+  mods: Record<string, IMod>,
   collection: IMod,
   rule: IModRule,
 ): IModRule {
@@ -209,6 +215,20 @@ export function makeTransferrable(
     fileList: rule.fileList,
     comment: rule.comment,
     reference: newRef,
+  };
+}
+
+/**
+ * collection.json serializes a mod's install spec under different field names than
+ * IModRule / IModInstallSpec (hashes -> fileList, choices -> installerChoices; patches
+ * keeps its name). This is the single place that maps the serialized names onto the
+ * install spec, so the pairing can't drift between the forward and reverse converters.
+ */
+export function collectionModInstallSpec(mod: ICollectionMod): IModInstallSpec {
+  return {
+    fileList: mod.hashes,
+    installerChoices: mod.choices,
+    patches: mod.patches,
   };
 }
 
@@ -280,10 +300,9 @@ export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionM
   const res: IModRule = {
     type: mod.optional ? "recommends" : "requires",
     reference,
-    fileList: mod.hashes,
-    installerChoices: mod.choices,
-    patches: mod.patches,
+    ...collectionModInstallSpec(mod),
     downloadHint,
+    phase: mod.phase ?? 0,
     extra: {
       author: mod.author,
       type: mod.details?.type,
@@ -296,7 +315,6 @@ export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionM
         : mod.source.type === "manual"
           ? mod.source.instructions
           : undefined,
-      phase: mod.phase ?? 0,
       fileOverrides: mod.fileOverrides,
     },
   };

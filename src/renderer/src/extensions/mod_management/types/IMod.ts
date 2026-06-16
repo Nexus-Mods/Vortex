@@ -244,14 +244,40 @@ export interface IModInstallSpec {
   patches?: IModPatches;
 }
 
+/**
+ * Free-form metadata bag carried on any mod rule (and copied onto the IDependency built
+ * from it). The bag is general, not collection-specific: keys arrive from mod-metadata /
+ * nexus dependency rules too (e.g. `rules` for nested dependencies, `onlyIfFulfillable`).
+ * The named fields below are the common ones (most populated by the collection converter);
+ * the index signature is kept deliberately so the bag stays open. Legacy `patches` /
+ * `phase` may also live here on older rules; read those through ruleInstallSpec() /
+ * rulePhase() rather than off `extra` directly.
+ */
+export interface IModRuleExtra {
+  author?: string;
+  type?: string;
+  category?: string;
+  version?: string;
+  url?: string;
+  name?: string;
+  instructions?: string;
+  fileOverrides?: string[];
+  // bundled mods ship inside the collection archive; path of the file within it
+  localPath?: string;
+  [key: string]: any;
+}
+
 export interface IModRule extends IRule, IModInstallSpec {
   reference: IModReference;
   downloadHint?: IDownloadHint;
-  // additional information attached to the rule. This will not have
-  // any effect on the resolution of the rule but may be used to
-  // customize/improve its presentation or used to add details to a mod
-  // after/if it got installed through this rule.
-  extra?: { [key: string]: any };
+  // install-ordering phase, matching IDependency.phase and ICollectionMod.phase. Older
+  // rules persisted this under `extra.phase`; read it via rulePhase() so the legacy
+  // location keeps working without a migration.
+  phase?: number;
+  // additional information attached to the rule. This will not have any effect on the
+  // resolution of the rule but may be used to customize/improve its presentation or to
+  // add details to a mod after/if it got installed through this rule.
+  extra?: IModRuleExtra;
   // if true, the rule is deactivated and will not have an effect
   ignored?: boolean;
 }

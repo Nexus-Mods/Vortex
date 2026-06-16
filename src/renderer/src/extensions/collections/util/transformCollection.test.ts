@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { rulePhase } from "../../mod_management/util/testModReference";
 import {
+  collectionModInstallSpec,
   collectionModToRule,
   deduceSource,
   generateCollection,
@@ -441,16 +443,38 @@ describe("collectionModToRule", () => {
     expect(result.reference["md5Hint"]).toBe("hashvalue");
   });
 
-  it("preserves phase in extra", () => {
+  it("writes phase as a first-class rule field", () => {
     const result = collectionModToRule(knownGames, makeCollectionMod({ phase: 2 }));
 
-    expect(result.extra.phase).toBe(2);
+    expect(result.phase).toBe(2);
+    expect(rulePhase(result)).toBe(2);
   });
 
   it("defaults phase to 0 when not set", () => {
     const result = collectionModToRule(knownGames, makeCollectionMod());
 
-    expect(result.extra.phase).toBe(0);
+    expect(result.phase).toBe(0);
+    expect(rulePhase(result)).toBe(0);
+  });
+
+  it("maps the serialized install-spec field names onto the rule", () => {
+    const fileList = [{ path: "a.esp", md5: "aaa" }];
+    const choices = { type: "fomod", options: [] };
+    const patches = { "a.esp": "baseline-hash" };
+    const mod = makeCollectionMod({ hashes: fileList, choices, patches });
+
+    // collectionModToRule must surface hashes -> fileList and choices -> installerChoices
+    const rule = collectionModToRule(knownGames, mod);
+    expect(rule.fileList).toEqual(fileList);
+    expect(rule.installerChoices).toEqual(choices);
+    expect(rule.patches).toEqual(patches);
+
+    // and the single mapping helper it delegates to agrees
+    expect(collectionModInstallSpec(mod)).toEqual({
+      fileList,
+      installerChoices: choices,
+      patches,
+    });
   });
 });
 

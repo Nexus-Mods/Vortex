@@ -153,6 +153,16 @@ export function ruleInstallSpec(rule: IModRule): IModInstallSpec {
 }
 
 /**
+ * The install-ordering phase a rule belongs to. `phase` is a first-class IModRule
+ * field, but older rules stored it under `extra.phase`; this is the single place that
+ * bridges the two locations (mirroring ruleInstallSpec for patches), so callers never
+ * have to know about the legacy location. Defaults to phase 0.
+ */
+export function rulePhase(rule: IModRule | undefined): number {
+  return rule?.phase ?? (rule?.extra?.["phase"] as number | undefined) ?? 0;
+}
+
+/**
  * Converts an IDownload object to an IModReference object.
  * Extracts relevant metadata from the download's modInfo structure to populate
  * the reference fields used for mod matching and dependency resolution.
