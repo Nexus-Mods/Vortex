@@ -239,8 +239,10 @@ test("mod appears after install", async ({ vortexWindow, managedGame }) => {
 
 `managedGame` defaults to `"stardewvalley"`. Override it with
 `test.use({ managedGameId: "gothic1remake" })` or any key from `GAME_CONFIGS`.
-Games backed by dynamic/generated extensions must also seed that extension, e.g.
-`test.use({ dynamicGameExtensionId: "gothic1remake", managedGameId: "gothic1remake" })`.
+
+Games backed by dynamic/generated extensions must also seed that extension. Use
+`dynamicExtensionIds` for current tests, e.g.
+`test.use({ dynamicExtensionIds: ["gothic1remake"], managedGameId: "gothic1remake" })`.
 
 #### Just the on-disk install — `setupFakeGame`
 
