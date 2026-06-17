@@ -2,7 +2,10 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import mixpanel from "mixpanel-browser";
 
 import { getApplication } from "../../../util/application";
-import type { IValidateKeyDataV2 } from "../../nexus_integration/types/IValidateKeyData";
+import type {
+  IMembership,
+  IValidateKeyDataV2,
+} from "../../nexus_integration/types/IValidateKeyData";
 import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from "../constants";
 import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";
@@ -101,7 +104,7 @@ class MixpanelAnalytics {
   /**
    * Determine user type from user info
    */
-  private getUserType(userInfo: IValidateKeyDataV2): string {
+  private getUserType(userInfo: IMembership): string {
     if (!userInfo) return "anonymous"; // unused as always logged in before sending
     if (userInfo.isPremium) return "premium";
     if (userInfo.isSupporter) return "supporter";

@@ -4817,6 +4817,9 @@ importers:
       '@types/json-socket':
         specifier: 'catalog:'
         version: 0.1.21
+      '@types/jsonwebtoken':
+        specifier: 'catalog:'
+        version: 9.0.10
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
