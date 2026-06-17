@@ -135,6 +135,11 @@ stopPatterns:
   - { regex: '[^/]*\.(mkv|mp4|webm)$' }
   - { regex: '[^/]*\.ini$' }
 
+# Corpus testing: run the declarative installers against real X Rebirth mod
+# manifests fetched from Nexus (`gdl test:corpus --fetch`).
+tests:
+  corpus: nexus
+
 # In-game health checks (registered via context.registerHealthCheck).
 diagnostics:
   - hook: modHasFilesCheck

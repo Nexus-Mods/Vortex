@@ -6,6 +6,7 @@ dist_custom
 dist_portable
 dist_web
 .gdl-out
+**/tests/cache
 out
 doc
 coverage
