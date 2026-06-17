@@ -254,6 +254,26 @@ describe("installTracking reducer", () => {
       expect(result.activeSession.installedCount).toBe(1);
     });
 
+    it("decrements failedCount when a failed mod is retried to installed", () => {
+      // planSessionWrite allows failed -> installed (retry revert), so markModInstalled
+      // must clear the prior failure from the aggregate, not just bump installedCount.
+      const session = makeSession({
+        mods: modsByRule([{ ruleId: "rule1", status: "failed", type: "requires" }]),
+        failedCount: 1,
+      });
+      const state = makeInstallState({ activeSession: session });
+
+      const result = reduce(state, actions.markModInstalled, {
+        sessionId: "col1_prof1",
+        ruleId: "rule1",
+        modId: "actual-mod-id",
+      });
+
+      expect(result.activeSession.mods.rule1.status).toBe("installed");
+      expect(result.activeSession.installedCount).toBe(1);
+      expect(result.activeSession.failedCount).toBe(0);
+    });
+
     it("is a no-op when sessionId does not match", () => {
       const session = makeSession({
         mods: modsByRule([{ ruleId: "rule1", status: "downloading", type: "requires" }]),

@@ -4,14 +4,10 @@ import * as path from "path";
 import * as nexusApi from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import Bluebird from "bluebird";
-import * as _ from "lodash";
 
 import * as installActions from "../../../actions/collectionInstallTracking";
 import { log } from "../../../logging";
-import type {
-  CollectionModStatus,
-  ICollectionModInstallInfo,
-} from "../../../types/collections/ICollectionInstallSession";
+import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import {
@@ -27,13 +23,12 @@ import {
   CollectionsInstallationFailedEvent,
   CollectionsInstallationStartedEvent,
 } from "../../analytics/mixpanel/MixpanelEvents";
-import type { IDownload } from "../../download_management/types/IDownload";
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
 import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
-import { findDownloadByRef, lookupFromDownload } from "../../mod_management/util/dependencies";
+import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
 import renderModName from "../../mod_management/util/modName";
@@ -89,23 +84,11 @@ class InstallDriver {
   private mTimeStarted: number;
   private mPostprocessing: boolean = false;
 
-  private mStateUpdates: any[] = [];
-  private mModStatusDebouncer: Debouncer = new Debouncer(
-    () => {
-      const actions = this.mStateUpdates.slice();
-      this.mStateUpdates = [];
-      batchDispatch(this.mApi.store, actions);
-      return Bluebird.resolve();
-    },
-    100,
-    false,
-    false,
-  );
-
-  // Throttle the progress notification to avoid flooding Redux/UI on every
-  // single mod event.  Tracking dispatches (mModStatusDebouncer) are unaffected.
-  // reset=false keeps it from starving, triggerImmediately=true shows instant
-  // feedback on the first event.
+  // Throttle the progress notification to avoid flooding Redux/UI on every single mod
+  // event. (Session status writes are dispatched directly now - InstallManager is the
+  // single lifecycle writer, so the driver's remaining writes are low-frequency and there
+  // is no dispatch storm to batch.) reset=false keeps it from starving,
+  // triggerImmediately=true shows instant feedback on the first event.
   private mProgressDebouncer: Debouncer = new Debouncer(
     () => {
       if (this.mProfile && this.mGameId && this.mCollection) {
@@ -128,44 +111,6 @@ class InstallDriver {
     return this.mDependentMods.filter((m) => m.type === "recommends");
   }
 
-  public updateModTracking(rule: IModRule, status: CollectionModStatus) {
-    if (!this.mTrackingEnabled || !this.mCurrentSessionId) {
-      return;
-    }
-
-    if (status === "installed") {
-      // 'installed' status should be set via markModInstalledInTracking
-      log("warn", "use markModInstalledInTracking to set status to installed");
-      return;
-    }
-
-    const ruleId = modRuleId(rule);
-
-    // Check current status to prevent downgrades from terminal states
-    const state = this.mApi.getState();
-    const currentSession = state.session["collections"]?.activeSession;
-    const currentStatus = currentSession?.mods?.[ruleId]?.status;
-
-    // Don't downgrade from terminal states (installed, skipped, failed)
-    const terminalStates: CollectionModStatus[] = ["installed", "ignored", "failed"];
-    if (currentStatus && terminalStates.includes(currentStatus)) {
-      return;
-    }
-
-    this.mStateUpdates.push(installActions.updateModStatus(this.mCurrentSessionId, ruleId, status));
-    this.mModStatusDebouncer.schedule();
-  }
-
-  public markModInstalledInTracking(rule: IModRule, modId: string) {
-    if (!this.mTrackingEnabled || !this.mCurrentSessionId) {
-      return;
-    }
-
-    const ruleId = modRuleId(rule);
-    this.mStateUpdates.push(installActions.markModInstalled(this.mCurrentSessionId, ruleId, modId));
-    this.mModStatusDebouncer.schedule();
-  }
-
   /**
    * Mark a collection rule as ignored. Updates the transient install session and
    * persists the decision durably via the rule's `ignored` flag. The session lives
@@ -176,12 +121,23 @@ class InstallDriver {
    * checks already treat ignored rules as resolved.
    */
   private markRuleIgnored(rule: IModRule) {
-    this.updateModTracking(rule, "ignored");
-
-    if (this.mGameId !== undefined && this.mCollection !== undefined) {
-      this.mApi.store.dispatch(
-        addModRule(this.mGameId, this.mCollection.id, { ...rule, ignored: true }),
+    // user-initiated skip: write the session status and the durable flag together. Both
+    // are low-frequency, so they dispatch directly (no batching debouncer needed now that
+    // InstallManager is the single lifecycle writer). This intentionally does NOT go
+    // through planSessionWrite's protection: ignoring a mod is an explicit user decision
+    // that must take effect even if the mod already reached a terminal state (e.g. the
+    // user wants to stop the collection re-pulling it and then remove it manually).
+    const actions: any[] = [];
+    if (this.mTrackingEnabled && this.mCurrentSessionId) {
+      actions.push(
+        installActions.updateModStatus(this.mCurrentSessionId, modRuleId(rule), "ignored"),
       );
+    }
+    if (this.mGameId !== undefined && this.mCollection !== undefined) {
+      actions.push(addModRule(this.mGameId, this.mCollection.id, { ...rule, ignored: true }));
+    }
+    if (actions.length > 0) {
+      batchDispatch(this.mApi.store, actions);
     }
   }
 
@@ -190,8 +146,7 @@ class InstallDriver {
       return;
     }
 
-    this.mStateUpdates.push(installActions.finishInstallSession(this.mCurrentSessionId, success));
-    this.mModStatusDebouncer.schedule();
+    this.mApi.store.dispatch(installActions.finishInstallSession(this.mCurrentSessionId, success));
     this.mCurrentSessionId = undefined;
   }
 
@@ -228,20 +183,13 @@ class InstallDriver {
 
     this.mInfoCache = new InfoCache(api);
 
-    api.onAsync("will-install-mod", (gameId: string, archiveId: string, modId: string) => {
+    api.onAsync("will-install-mod", (_gameId: string, archiveId: string, _modId: string) => {
       const state: IState = api.store.getState();
       const download = state.persistent.downloads.files[archiveId];
       if (download !== undefined) {
         this.mInstallingMod = download.localPath;
-        // mark the mod as installing on the session so the UI reflects the live phase
-        // (the install/extraction phase is otherwise indistinguishable from "downloaded")
-        const lookup = lookupFromDownload(download);
-        const matchingRule = this.mDependentMods.find((rule) =>
-          testModReference(lookup, rule.reference),
-        );
-        if (matchingRule !== undefined) {
-          this.updateModTracking(matchingRule, "installing");
-        }
+        // the "installing" session status is now written by InstallManager directly
+        // (the in-process write path), so the driver no longer translates this event
       }
       return Bluebird.resolve();
     });
@@ -279,8 +227,8 @@ class InstallDriver {
           this.mInstalledMods.push(mod);
         }
 
-        // Mark as installed in tracking
-        this.markModInstalledInTracking(dependent, modId);
+        // the "installed" session status is now written by InstallManager directly
+        // (the in-process write path); the driver keeps the patch/attribute side effects
 
         if (
           this.mCollection?.installationPath !== undefined &&
@@ -309,25 +257,10 @@ class InstallDriver {
       this.triggerUpdate();
     });
 
-    api.events.on("did-finish-download", (downloadId: string, downloadState: string) => {
-      // not checking whether the download is actually part of this collection because
-      // that check may be more expensive than the ui update
+    api.events.on("did-finish-download", () => {
+      // progress UI only - the "downloaded" session status is written by InstallManager.
+      // Not gated on collection membership: the check would cost more than the UI refresh.
       this.mProgressDebouncer.schedule();
-
-      // Update mod status to 'downloaded' when download completes successfully
-      if (downloadState === "finished") {
-        const state = api.getState();
-        const download = state.persistent.downloads.files[downloadId];
-        if (download) {
-          const lookup = lookupFromDownload(download);
-          const matchingRule = this.mDependentMods.find((rule) => {
-            return testModReference(lookup, rule.reference);
-          });
-          if (matchingRule) {
-            this.updateModTracking(matchingRule, "downloaded");
-          }
-        }
-      }
     });
 
     api.events.on(
@@ -374,47 +307,8 @@ class InstallDriver {
       },
     );
 
-    api.onStateChange(
-      ["persistent", "downloads", "files"],
-      (prev: Record<string, IDownload>, current: Record<string, IDownload>) => {
-        if (this.mDependentMods.length === 0) return;
-
-        const newIds = Object.keys(current).filter((id) => prev?.[id] === undefined);
-        for (const dlId of newIds) {
-          const download = current[dlId];
-          if (!download) continue;
-
-          const lookup = lookupFromDownload(download);
-          const matchingRule = this.mDependentMods.find((rule) => {
-            return testModReference(lookup, rule.reference);
-          });
-
-          const isBundled = matchingRule?.extra?.localPath != null;
-          if (matchingRule && !isBundled) {
-            this.updateModTracking(matchingRule, "downloading");
-          }
-        }
-      },
-    );
-
-    api.events.on("did-import-downloads", (dlIds: string[]) => {
-      // Update tracking for bundled mods that were just imported
-      const state = api.getState();
-      const downloads = state.persistent.downloads.files;
-
-      dlIds.forEach((dlId) => {
-        const download = downloads[dlId];
-        if (download) {
-          const lookup = lookupFromDownload(download);
-          const matchingRule = this.mDependentMods.find((rule) => {
-            return testModReference(lookup, rule.reference);
-          });
-          if (matchingRule) {
-            this.updateModTracking(matchingRule, "downloaded");
-          }
-        }
-      });
-    });
+    // "downloading" (new downloads) and "downloaded" (imported/bundled downloads) are
+    // now written by InstallManager, the single lifecycle writer for the session.
 
     api.events.on("collection-mod-skipped", (reference: IModReference) => {
       // Update tracking when a mod download is skipped (for both free and premium users)
@@ -862,8 +756,6 @@ class InstallDriver {
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
 
-      // Flush pending tracking updates before cleanup so they aren't lost
-      this.mModStatusDebouncer.runNow(() => undefined);
       // Cancel any pending progress notification — the notification is about
       // to be dismissed anyway and we don't want it to fire after cleanup.
       this.mProgressDebouncer.clear();

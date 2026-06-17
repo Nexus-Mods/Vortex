@@ -1,5 +1,5 @@
 import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
+import type { IMod, IModReference, IModRule } from "../extensions/mod_management/types/IMod";
 import type { CollectionModStatus } from "../types/collections/ICollectionInstallSession";
 
 export function generateCollectionSessionId(collectionId: string, profileId: string): string {
@@ -9,17 +9,24 @@ export function generateCollectionSessionId(collectionId: string, profileId: str
   return `${collectionId}_${profileId}`;
 }
 
-export function modRuleId(input: IModRule): string {
+/**
+ * Stable identity of a mod reference: the rule's tag if present, else the first available
+ * content identifier. This is the reference half of modRuleId, shared so that matching a
+ * dependency back to its session rule uses the exact same notion of identity as the key.
+ */
+export function referenceId(reference: IModReference): string | undefined {
   return (
-    input.type +
-    "_" +
-    (input.reference.tag ||
-      input.reference.fileMD5 ||
-      input.reference.id ||
-      input.reference.logicalFileName ||
-      input.reference.fileExpression ||
-      input.reference.description)
+    reference.tag ||
+    reference.fileMD5 ||
+    reference.id ||
+    reference.logicalFileName ||
+    reference.fileExpression ||
+    reference.description
   );
+}
+
+export function modRuleId(input: IModRule): string {
+  return input.type + "_" + referenceId(input.reference);
 }
 
 /**
