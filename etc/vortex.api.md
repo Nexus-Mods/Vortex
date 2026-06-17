@@ -2940,6 +2940,16 @@ interface IMainPageOptions {
     visible?: () => boolean;
 }
 
+// @public
+interface IMembership {
+    // (undocumented)
+    isLifetime: boolean;
+    // (undocumented)
+    isPremium: boolean;
+    // (undocumented)
+    isSupporter: boolean;
+}
+
 // @public (undocumented)
 interface IMergeFilter {
     // (undocumented)
@@ -4303,13 +4313,9 @@ interface IUser {
 }
 
 // @public
-interface IValidateKeyData {
+interface IValidateKeyData extends Pick<IMembership, "isPremium" | "isSupporter"> {
     // (undocumented)
     email: string;
-    // (undocumented)
-    isPremium: boolean;
-    // (undocumented)
-    isSupporter: boolean;
     // (undocumented)
     name: string;
     // (undocumented)
@@ -6090,6 +6096,7 @@ declare namespace types {
         IProfile,
         IProfileMod,
         IEnableOptions,
+        IMembership,
         IValidateKeyData,
         ILoadOrderDisplayItem,
         SortType,
