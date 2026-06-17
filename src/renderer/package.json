@@ -76,6 +76,7 @@
     "@types/fs-extra": "catalog:",
     "@types/graphlib": "catalog:",
     "@types/json-socket": "catalog:",
+    "@types/jsonwebtoken": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node-7z": "catalog:",
     "@types/numeral": "catalog:",

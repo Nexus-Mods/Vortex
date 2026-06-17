@@ -72,8 +72,8 @@ import { setUserInfo } from "./actions/persistent";
 import { setLoginId, setOauthPending } from "./actions/session";
 import { OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL, getOAuthRedirectUrl } from "./constants";
 import NXMUrl from "./NXMUrl";
-import { isLoggedIn } from "./selectors";
-import type { IJWTAccessToken } from "./types/IJWTAccessToken";
+import { isLoggedIn, userInfo as userInfoSelector } from "./selectors";
+import { accessTokenSchema } from "./types/IJWTAccessToken";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import { IAccountStatus } from "./types/IValidateKeyData";
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from "./util/checkModsVersion";
@@ -287,7 +287,7 @@ export function requestLogin(nexus: Nexus, api: IExtensionApi, callback: (err: E
 
   return oauth
     .sendRequest(
-      async (err: Error, token: ITokenReply) => {
+      (err: Error, token: ITokenReply) => {
         // received reply from site for this state
 
         void bringToFront();
@@ -300,11 +300,20 @@ export function requestLogin(nexus: Nexus, api: IExtensionApi, callback: (err: E
           return callback(err);
         }
 
-        const tokenDecoded: IJWTAccessToken = jwt.decode(token.access_token);
-        //log('info', 'JWT Token', { token: token.access_token });
+        const parsed = accessTokenSchema.safeParse(jwt.decode(token.access_token));
+        if (!parsed.success) {
+          log("error", "OAuth login returned an unrecognized access token", {
+            error: parsed.error.message,
+          });
+          return callback(
+            new ProcessCanceled(
+              "Received an invalid access token from Nexus Mods, please try logging in again.",
+            ),
+          );
+        }
 
         api.store.dispatch(
-          setOAuthCredentials(token.access_token, token.refresh_token, tokenDecoded.fingerprint),
+          setOAuthCredentials(token.access_token, token.refresh_token, parsed.data.fingerprint),
         );
 
         callback(null);
@@ -552,7 +561,7 @@ export function getInfoGraphQL(
     uid: true,
     uri: true,
     version: true,
-  } as any;
+  };
 
   // Ensure the nexus games cache is loaded before constructing UIDs,
   // as makeFileUID needs the games list to convert domain names to numeric IDs
@@ -1209,7 +1218,7 @@ export function endorseDirectImpl(
 ): BluebirdPromise<string> {
   return endorseMod(nexus, gameId, nexusId, version, endorsedStatus).catch((err) => {
     reportEndorseError(api, err, "mod", gameId, nexusId, version);
-    return endorsedStatus as EndorsedStatus;
+    return endorsedStatus;
   });
 }
 
@@ -1769,7 +1778,9 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
-function getAccountStatus(apiUserInfo: IUserInfo): IAccountStatus {
+function getAccountStatus(
+  apiUserInfo: Pick<IUserInfo, "group_id" | "membership_roles">,
+): IAccountStatus {
   if (apiUserInfo.group_id === 5) return IAccountStatus.Banned;
   else if (apiUserInfo.group_id === 41) return IAccountStatus.Closed;
   else if (apiUserInfo.membership_roles.includes("premium")) return IAccountStatus.Premium;
@@ -1801,15 +1812,67 @@ export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPref
   return stateUserInfo;
 }
 
-function userInfoFromJWTToken(input: IJWTAccessToken) {
-  return {
-    email: "",
-    isPremium: input.user.membership_roles.includes("premium"),
-    isSupporter: input.user.membership_roles.includes("supporter"),
-    name: input.user.username,
-    profileUrl: "",
-    userId: input.user.id,
-  };
+/**
+ * Apply a background JWT refresh to the persisted userInfo without clearing it
+ * or hitting the network.
+ *
+ * nexus-api refreshes the OAuth token on its own (see ensureFreshToken) and
+ * invokes onJWTTokenRefresh, which writes the new credentials back into state.
+ * That state change must NOT trigger the full login validation cycle
+ * (setUserInfo(undefined) + updateToken): doing so makes the avatar / premium
+ * bar flicker and fires redundant requests that can trip Nexus rate limiting.
+ *
+ * The only thing that can meaningfully change across a refresh is the
+ * membership carried in the token, so we decode it locally and patch just the
+ * membership flags onto the existing userInfo. No request is made.
+ */
+export function updateUserInfoFromRefreshedToken(
+  api: IExtensionApi,
+  credentials: IOAuthCredentials,
+): void {
+  const existing = userInfoSelector(api.getState());
+  if (existing === undefined) {
+    // nothing persisted yet; a full login (handled elsewhere) will populate it
+    return;
+  }
+
+  // jwt.decode returns the JSON payload, or null/string for malformed or
+  // non-JSON tokens. safeParse validates the whole shape in one step and gives
+  // us a fully typed payload (or a failure we can bail on) with no cast.
+  const parsed = accessTokenSchema.safeParse(jwt.decode(credentials.token));
+  if (!parsed.success) {
+    return;
+  }
+
+  const roles = parsed.data.user.membership_roles;
+
+  const isPremium = roles.includes("premium");
+  const isSupporter = roles.includes("supporter");
+  const isLifetime = roles.includes("lifetimepremium");
+  const status = getAccountStatus({
+    group_id: parsed.data.user.group_id,
+    membership_roles: roles,
+  });
+
+  // avoid a needless dispatch (and re-render) when nothing membership-related changed
+  if (
+    existing.isPremium === isPremium &&
+    existing.isSupporter === isSupporter &&
+    existing.isLifetime === isLifetime &&
+    existing.status === status
+  ) {
+    return;
+  }
+
+  api.store.dispatch(
+    setUserInfo({
+      ...existing,
+      isPremium,
+      isSupporter,
+      isLifetime,
+      status,
+    }),
+  );
 }
 
 export function getOAuthTokenFromState(api: IExtensionApi) {
