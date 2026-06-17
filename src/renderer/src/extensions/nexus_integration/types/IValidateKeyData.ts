@@ -15,17 +15,17 @@ export interface IValidateKeyData {
   userId: number;
 }
 
-export enum IAccountStatus {
-  Premium,
-  Supporter,
-  Free,
-  Banned,
-  Closed,
+/**
+ * Membership-related fields of a user, derived from the role strings in the API
+ * user payload / JWT. Centralising these as one type lets us derive, spread and
+ * compare them as a unit instead of field-by-field.
+ */
+export interface IMembership {
+  isPremium: boolean;
+  isSupporter: boolean;
+  isLifetime: boolean;
 }
 
 export interface IValidateKeyDataV2 extends IValidateKeyData, Partial<IPreference> {
   isLifetime?: boolean;
-  isBanned?: boolean;
-  isClosed?: boolean;
-  status?: IAccountStatus;
 }

@@ -74,8 +74,7 @@ import { OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL, getOAuthRedirectUrl } f
 import NXMUrl from "./NXMUrl";
 import { isLoggedIn, userInfo as userInfoSelector } from "./selectors";
 import { accessTokenSchema } from "./types/IJWTAccessToken";
-import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
-import { IAccountStatus } from "./types/IValidateKeyData";
+import type { IMembership, IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from "./util/checkModsVersion";
 import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
@@ -1778,32 +1777,34 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
-function getAccountStatus(
-  apiUserInfo: Pick<IUserInfo, "group_id" | "membership_roles">,
-): IAccountStatus {
-  if (apiUserInfo.group_id === 5) return IAccountStatus.Banned;
-  else if (apiUserInfo.group_id === 41) return IAccountStatus.Closed;
-  else if (apiUserInfo.membership_roles.includes("premium")) return IAccountStatus.Premium;
-  else if (
-    apiUserInfo.membership_roles.includes("supporter") &&
-    !apiUserInfo.membership_roles.includes("premium")
-  )
-    return IAccountStatus.Supporter;
-  else return IAccountStatus.Free;
+// Membership is encoded in the user payload / JWT as a set of role strings.
+// Keep those literals in one place so the checks below can't drift.
+const MEMBERSHIP_ROLE = {
+  premium: "premium",
+  supporter: "supporter",
+  lifetime: "lifetimepremium",
+} as const;
+
+/**
+ * Derive the membership-related fields of userInfo from a user payload (API
+ * response or decoded JWT). Single source of truth for the role checks, used by
+ * both transformUserInfoFromApi and updateUserInfoFromRefreshedToken.
+ */
+function deriveMembership(user: Pick<IUserInfo, "membership_roles">): IMembership {
+  return {
+    isPremium: user.membership_roles.includes(MEMBERSHIP_ROLE.premium),
+    isSupporter: user.membership_roles.includes(MEMBERSHIP_ROLE.supporter),
+    isLifetime: user.membership_roles.includes(MEMBERSHIP_ROLE.lifetime),
+  };
 }
 
 export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPreference }) {
   const stateUserInfo: IValidateKeyDataV2 = {
     email: input.email,
-    isPremium: input.membership_roles.includes("premium"),
-    isSupporter: input.membership_roles.includes("supporter"),
     name: input.name,
     profileUrl: input.avatar,
     userId: Number.parseInt(input.sub),
-    isLifetime: input.membership_roles.includes("lifetimepremium"),
-    isBanned: input.group_id === 5,
-    isClosed: input.group_id === 41,
-    status: getAccountStatus(input),
+    ...deriveMembership(input),
     ...input.preferences,
   };
 
@@ -1844,35 +1845,17 @@ export function updateUserInfoFromRefreshedToken(
     return;
   }
 
-  const roles = parsed.data.user.membership_roles;
-
-  const isPremium = roles.includes("premium");
-  const isSupporter = roles.includes("supporter");
-  const isLifetime = roles.includes("lifetimepremium");
-  const status = getAccountStatus({
-    group_id: parsed.data.user.group_id,
-    membership_roles: roles,
-  });
+  const membership = deriveMembership(parsed.data.user);
 
   // avoid a needless dispatch (and re-render) when nothing membership-related changed
-  if (
-    existing.isPremium === isPremium &&
-    existing.isSupporter === isSupporter &&
-    existing.isLifetime === isLifetime &&
-    existing.status === status
-  ) {
+  const unchanged = (Object.keys(membership) as (keyof IMembership)[]).every(
+    (key) => existing[key] === membership[key],
+  );
+  if (unchanged) {
     return;
   }
 
-  api.store.dispatch(
-    setUserInfo({
-      ...existing,
-      isPremium,
-      isSupporter,
-      isLifetime,
-      status,
-    }),
-  );
+  api.store.dispatch(setUserInfo({ ...existing, ...membership }));
 }
 
 export function getOAuthTokenFromState(api: IExtensionApi) {
