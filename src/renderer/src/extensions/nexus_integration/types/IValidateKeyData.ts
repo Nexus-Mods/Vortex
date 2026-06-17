@@ -1,24 +1,9 @@
 import type { IPreference } from "@nexusmods/nexus-api";
 
 /**
- * Data retrieved with a correct API Key
- *
- * @export
- * @interface IValidateKeyData
- */
-export interface IValidateKeyData {
-  email: string;
-  isPremium: boolean;
-  isSupporter: boolean;
-  name: string;
-  profileUrl: string;
-  userId: number;
-}
-
-/**
  * Membership-related fields of a user, derived from the role strings in the API
- * user payload / JWT. Centralising these as one type lets us derive, spread and
- * compare them as a unit instead of field-by-field.
+ * user payload / JWT. Single source of truth for these flags so they can be
+ * derived, spread and compared as a unit instead of field-by-field.
  */
 export interface IMembership {
   isPremium: boolean;
@@ -26,6 +11,17 @@ export interface IMembership {
   isLifetime: boolean;
 }
 
-export interface IValidateKeyDataV2 extends IValidateKeyData, Partial<IPreference> {
-  isLifetime?: boolean;
+/**
+ * Data retrieved with a correct API Key (legacy /users/validate shape).
+ *
+ * @export
+ * @interface IValidateKeyData
+ */
+export interface IValidateKeyData extends Pick<IMembership, "isPremium" | "isSupporter"> {
+  email: string;
+  name: string;
+  profileUrl: string;
+  userId: number;
 }
+
+export interface IValidateKeyDataV2 extends IValidateKeyData, IMembership, Partial<IPreference> {}
