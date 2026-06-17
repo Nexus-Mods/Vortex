@@ -1,7 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const { getFileVersion } = require("exe-version");
-const { selectors, util } = require("@nexusmods/vortex-api");
+const { actions, selectors, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 const GAME_ID = "fallout4vr";
@@ -76,7 +76,9 @@ function isESLSupported(api) {
 
 function testEslEnabler(files, gameId) {
   const isFallout4VR = gameId === GAME_ID;
-  const isESLEnabler = files.some((file) => file.toLowerCase().endsWith(ESL_ENABLER_LIB.toLowerCase()));
+  const isESLEnabler = files.some((file) =>
+    file.toLowerCase().endsWith(ESL_ENABLER_LIB.toLowerCase()),
+  );
   return Promise.resolve({
     supported: isFallout4VR && isESLEnabler,
     requiredFiles: [],
@@ -178,7 +180,7 @@ function main(context) {
 
       const mods = util.getSafe(state, ["persistent", "mods", GAME_ID], {});
       const mod = Object.values(mods).find((mod) => mod.installationPath === modESLEnabler.source);
-      if (mod === undefined || mod.attributes.eslEnabler === true) {
+      if (mod === undefined || mod.attributes?.eslEnabler === true) {
         return sortAndResolve(context.api);
       }
 
