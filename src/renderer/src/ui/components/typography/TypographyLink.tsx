@@ -1,7 +1,7 @@
 import React, { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
-import type { ResponsiveScreenSizes, XOr } from "@/ui/utils/types";
+import type { ResponsiveScreenSizes } from "@/ui/utils/types";
 
 import { Icon, type IconSize } from "../icon/Icon";
 import {
@@ -29,8 +29,7 @@ export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   rightIconPath?: string;
   typographyType?: ITypographyLinkTypes | ITypographyLinkTypeObject;
   variant?: "primary" | "secondary" | "none";
-} & XOr<{ children?: string }, { customContent: ReactNode }> &
-  ITypographyColour;
+} & { children?: string; customContent?: ReactNode } & ITypographyColour;
 
 // On hover, the colour shifts one step toward `strong`; `strong` (already the
 // lightest) dims to `moderate` instead, so every appearance gives feedback.
