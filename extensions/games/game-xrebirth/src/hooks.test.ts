@@ -1,7 +1,7 @@
 import path from "node:path";
 
-import { setReadFileResolver } from "@vortex/extension-test-mocks";
-import { describe, test, it, expect, beforeEach } from "vitest";
+import { setReadFileResolver, setMockGame } from "@vortex/extension-test-mocks";
+import { describe, test, it, expect, beforeEach, beforeAll } from "vitest";
 
 import {
   installContentXml,
@@ -9,6 +9,16 @@ import {
   contentXmlCustomFileNameCheck,
   modShapeRecognisedCheck,
 } from "./hooks";
+
+// The mod-shape health check resolves stop patterns from the registered game's
+// details.stopPatterns (single source: game.yaml). Register a representative
+// set so the stopPatterns-recognition path is exercised.
+beforeAll(() => {
+  setMockGame({
+    id: "xrebirth",
+    details: { stopPatterns: ["[^/]*\\.cat$", "[^/]*\\.dat$", "(^|/)assets/.+"] },
+  });
+});
 
 // ---------------------------------------------------------------------------
 // installContentXml

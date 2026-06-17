@@ -237,6 +237,27 @@ function declareInstallers(
   }
 }
 
+/**
+ * The game `util.getGame` returns. Tests that exercise code reading
+ * `getGame(id)?.details?.stopPatterns` (e.g. health checks) set it via
+ * `setMockGame`. Sequential test runs make a shared value safe.
+ */
+let mockGame:
+  | { id?: string; details?: { stopPatterns?: readonly string[] }; [key: string]: unknown }
+  | undefined;
+
+export function setMockGame(
+  game:
+    | { id?: string; details?: { stopPatterns?: readonly string[] }; [key: string]: unknown }
+    | undefined,
+): void {
+  mockGame = game;
+}
+
+function getGame(gameId: string): typeof mockGame {
+  return mockGame !== undefined && mockGame.id === gameId ? mockGame : undefined;
+}
+
 export const util: {
   DataInvalid: typeof DataInvalid;
   ProcessCanceled: typeof ProcessCanceled;
@@ -246,6 +267,7 @@ export const util: {
   buildCopyInstructions: typeof buildCopyInstructions;
   compileStopPatterns: typeof compileStopPatterns;
   findCommonRootDir: typeof findCommonRootDir;
+  getGame: typeof getGame;
 } = {
   DataInvalid: DataInvalid,
   ProcessCanceled: ProcessCanceled,
@@ -255,6 +277,7 @@ export const util: {
   buildCopyInstructions: buildCopyInstructions,
   compileStopPatterns: compileStopPatterns,
   findCommonRootDir: findCommonRootDir,
+  getGame: getGame,
 };
 
 export const log: Mock = vi.fn();

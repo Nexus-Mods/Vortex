@@ -15,6 +15,8 @@ import { fs, types, util } from "@nexusmods/vortex-api";
 import { parseStringPromise } from "xml2js";
 
 /** Mod type ids, mirrored from game.yaml's modTypes block. */
+const XREBIRTH_GAME_ID = "xrebirth";
+
 const XREBIRTH_MOD_TYPES = {
   savegame: "xrebirth-savegame",
   shaderInjector: "xrebirth-shader-injector",
@@ -23,30 +25,6 @@ const XREBIRTH_MOD_TYPES = {
   savePatch: "xrebirth-save-patch",
   documentation: "xrebirth-documentation",
 } as const;
-
-/**
- * Drop-in stop patterns, mirrored from game.yaml's stopPatterns block (regex
- * sources). Used by the mod-shape health check to recognise drop-in content.
- */
-const XREBIRTH_STOP_PATTERNS: string[] = [
-  "[^/]*\\.cat$",
-  "[^/]*\\.dat$",
-  "(^|/)t/[^/]+\\.xml$",
-  "(^|/)lang\\.dat$",
-  "(^|/)assets/.+",
-  "(^|/)libraries/.+\\.xml$",
-  "(^|/)maps/.+\\.xml$",
-  "(^|/)md/.+\\.xml$",
-  "(^|/)cinematics/.+",
-  "(^|/)aiscripts/.+\\.xml$",
-  "(^|/)voice-[^/]+/.+\\.(ogg|wav)$",
-  "(^|/)ui/.+",
-  "(^|/)sfx/.+",
-  "[^/]*\\.cur$",
-  "[^/]*\\.(ogg|mp3|wav)$",
-  "[^/]*\\.(mkv|mp4|webm)$",
-  "[^/]*\\.ini$",
-];
 
 // ---------------------------------------------------------------------------
 // content.xml installer
@@ -137,9 +115,18 @@ const TRIGGERS: types.HealthCheckTrigger[] = [
 const SEVERITY_INFO = types.HealthCheckSeverity.Info;
 const SEVERITY_WARNING = types.HealthCheckSeverity.Warning;
 
-// Hoisted: the stopPatterns list is constant, so compile once instead of every
-// check invocation.
-const STOP_PATTERN_REGEXES = util.compileStopPatterns(XREBIRTH_STOP_PATTERNS);
+// Single source of truth: the drop-in patterns live in game.yaml's
+// `stopPatterns:` block, which the runtime publishes to `IGame.details.stopPatterns`.
+// Read them back from the registered game (compiled once) rather than keeping a
+// second copy here.
+let stopPatternRegexes: RegExp[] | undefined;
+const getStopPatternRegexes = (): RegExp[] => {
+  if (stopPatternRegexes === undefined) {
+    const patterns = util.getGame(XREBIRTH_GAME_ID)?.details?.stopPatterns ?? [];
+    stopPatternRegexes = util.compileStopPatterns(patterns);
+  }
+  return stopPatternRegexes;
+};
 
 function isContentXmlMod(mod: types.IModCheckContext): boolean {
   return mod.files.some((f) => path.basename(f).toLowerCase() === "content.xml");
@@ -263,7 +250,8 @@ export const modShapeRecognisedCheck: types.IModHealthCheck = {
         startedAt,
       );
     }
-    if (mod.files.some((f) => STOP_PATTERN_REGEXES.some((re) => re.test(f)))) {
+    const stopRegexes = getStopPatternRegexes();
+    if (mod.files.some((f) => stopRegexes.some((re) => re.test(f)))) {
       return passed("xrebirth-mod-shape-recognised", "Recognised by stopPatterns match", startedAt);
     }
     return warning(
