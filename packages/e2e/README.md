@@ -156,6 +156,17 @@ Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`, `gothic1remake`.
 Game layouts live in `fixtures/game-setup/trees/`; see
 `fixtures/game-setup/trees/README.md` for format and export command.
 
+### Dynamic Extensions
+
+Tests can seed real dynamic extensions into an isolated Vortex instance before launch:
+
+```ts
+test.use({ dynamicExtensionIds: ["open-directory-e2e"] });
+```
+
+The fixture copies built extension output into `userData/plugins/<id>`. GDL game
+fixtures still work through the legacy `dynamicGameExtensionId` option.
+
 ## CI
 
 E2E tests run as part of the `e2e.yml` GitHub Actions workflow:

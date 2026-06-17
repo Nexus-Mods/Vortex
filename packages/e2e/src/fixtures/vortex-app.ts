@@ -12,9 +12,10 @@ import {
 } from "@playwright/test";
 
 import {
-  seedDynamicGameExtension,
+  seedDynamicExtensions,
+  type DynamicExtensionId,
   type DynamicGameExtensionId,
-} from "../fixtures/extensions/dynamic-game-extension";
+} from "../fixtures/extensions/dynamic-extension";
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
 import {
   type DiagnosticsTeardown,
@@ -237,6 +238,8 @@ export type VortexOptions = {
   managedGameId: ManagedGameId;
   /** Dynamic game extension to seed into the isolated Vortex instance before launch. */
   dynamicGameExtensionId: DynamicGameExtensionId | null;
+  /** Dynamic extensions to seed into the isolated Vortex instance before launch. */
+  dynamicExtensionIds: DynamicExtensionId[];
 };
 
 /** Launch a Vortex Electron app against the given user-data dir. */
@@ -368,13 +371,14 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
   nexusUser: [null, { option: true }],
   managedGameId: ["stardewvalley", { option: true }],
   dynamicGameExtensionId: [null, { option: true }],
+  dynamicExtensionIds: [[], { option: true }],
 
   // ---------------------------------------------------------------------------
   // Test-scoped fixtures
   // ---------------------------------------------------------------------------
 
   vortexUserDataDir: async (
-    { workerAuthSnapshots, nexusUser, dynamicGameExtensionId },
+    { workerAuthSnapshots, nexusUser, dynamicGameExtensionId, dynamicExtensionIds },
     use,
     testInfo,
   ) => {
@@ -388,8 +392,13 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       fs.cpSync(snapshotDir, dir, { recursive: true });
     }
 
+    const extensionsToSeed = [...dynamicExtensionIds];
     if (dynamicGameExtensionId !== null) {
-      seedDynamicGameExtension(dir, dynamicGameExtensionId);
+      extensionsToSeed.push(dynamicGameExtensionId);
+    }
+
+    if (extensionsToSeed.length > 0) {
+      seedDynamicExtensions(dir, [...new Set(extensionsToSeed)]);
     }
 
     await use(dir);
