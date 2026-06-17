@@ -15,8 +15,6 @@ import { fs, types, util } from "@nexusmods/vortex-api";
 import { parseStringPromise } from "xml2js";
 
 /** Mod type ids, mirrored from game.yaml's modTypes block. */
-const XREBIRTH_GAME_ID = "xrebirth";
-
 const XREBIRTH_MOD_TYPES = {
   savegame: "xrebirth-savegame",
   shaderInjector: "xrebirth-shader-injector",
@@ -99,13 +97,11 @@ export async function installContentXml(
 // health checks
 // ---------------------------------------------------------------------------
 
-const TAGGED_NON_CONTENT_XML = new Set<string>([
-  XREBIRTH_MOD_TYPES.savegame,
-  XREBIRTH_MOD_TYPES.shaderInjector,
-  XREBIRTH_MOD_TYPES.utility,
-  XREBIRTH_MOD_TYPES.documentation,
-  XREBIRTH_MOD_TYPES.savePatch,
-]);
+// Every mod our installers produce is tagged with one of these modTypes (the
+// content.xml installer is the exception and is recognised separately). The
+// mod-shape health check uses this set to confirm an installed mod has a
+// recognised X Rebirth shape.
+const RECOGNISED_MOD_TYPES = new Set<string>(Object.values(XREBIRTH_MOD_TYPES));
 
 const CATEGORY = types.HealthCheckCategory.Mods;
 const TRIGGERS: types.HealthCheckTrigger[] = [
@@ -114,19 +110,6 @@ const TRIGGERS: types.HealthCheckTrigger[] = [
 ];
 const SEVERITY_INFO = types.HealthCheckSeverity.Info;
 const SEVERITY_WARNING = types.HealthCheckSeverity.Warning;
-
-// Single source of truth: the drop-in patterns live in game.yaml's
-// `stopPatterns:` block, which the runtime publishes to `IGame.details.stopPatterns`.
-// Read them back from the registered game (compiled once) rather than keeping a
-// second copy here.
-let stopPatternRegexes: RegExp[] | undefined;
-const getStopPatternRegexes = (): RegExp[] => {
-  if (stopPatternRegexes === undefined) {
-    const patterns = util.getGame(XREBIRTH_GAME_ID)?.details?.stopPatterns ?? [];
-    stopPatternRegexes = util.compileStopPatterns(patterns);
-  }
-  return stopPatternRegexes;
-};
 
 function isContentXmlMod(mod: types.IModCheckContext): boolean {
   return mod.files.some((f) => path.basename(f).toLowerCase() === "content.xml");
@@ -225,15 +208,14 @@ export const contentXmlCustomFileNameCheck: types.IModHealthCheck = {
 
 /**
  * The mod must look like *some* recognisable X Rebirth shape: a content.xml
- * mod, a drop-in matching the game's stopPatterns, or one of the tagged
- * non-content modTypes (savegame, utility, shader, etc.). Otherwise the
- * installer matched something but it isn't actually X Rebirth content.
+ * mod, or one tagged with a known modType (savegame, drop-in, utility, shader,
+ * etc.). Otherwise the installer matched something that isn't X Rebirth content.
  */
 export const modShapeRecognisedCheck: types.IModHealthCheck = {
   id: "xrebirth-mod-shape-recognised",
   name: "X Rebirth - mod has a recognisable shape",
   description:
-    "Verifies the install output is content.xml, matches stopPatterns, or is tagged with a known modType.",
+    "Verifies the install output is a content.xml mod or is tagged with a known modType.",
   category: CATEGORY,
   severity: SEVERITY_WARNING,
   triggers: TRIGGERS,
@@ -243,21 +225,17 @@ export const modShapeRecognisedCheck: types.IModHealthCheck = {
       return passed("xrebirth-mod-shape-recognised", "Recognised as content.xml mod", startedAt);
     }
     const modType = mod.attributes.modType as string | undefined;
-    if (modType !== undefined && TAGGED_NON_CONTENT_XML.has(modType)) {
+    if (modType !== undefined && RECOGNISED_MOD_TYPES.has(modType)) {
       return passed(
         "xrebirth-mod-shape-recognised",
         `Recognised by modType: ${modType}`,
         startedAt,
       );
     }
-    const stopRegexes = getStopPatternRegexes();
-    if (mod.files.some((f) => stopRegexes.some((re) => re.test(f)))) {
-      return passed("xrebirth-mod-shape-recognised", "Recognised by stopPatterns match", startedAt);
-    }
     return warning(
       "xrebirth-mod-shape-recognised",
       "Install output has no recognisable X Rebirth shape",
-      "No content.xml, no stop-pattern matches, and no recognised modType.",
+      "No content.xml and no recognised modType.",
       startedAt,
     );
   },

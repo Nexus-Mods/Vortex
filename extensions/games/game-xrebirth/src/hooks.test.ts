@@ -1,7 +1,7 @@
 import path from "node:path";
 
-import { setReadFileResolver, setMockGame } from "@vortex/extension-test-mocks";
-import { describe, test, it, expect, beforeEach, beforeAll } from "vitest";
+import { setReadFileResolver } from "@vortex/extension-test-mocks";
+import { describe, test, it, expect, beforeEach } from "vitest";
 
 import {
   installContentXml,
@@ -9,16 +9,6 @@ import {
   contentXmlCustomFileNameCheck,
   modShapeRecognisedCheck,
 } from "./hooks";
-
-// The mod-shape health check resolves stop patterns from the registered game's
-// details.stopPatterns (single source: game.yaml). Register a representative
-// set so the stopPatterns-recognition path is exercised.
-beforeAll(() => {
-  setMockGame({
-    id: "xrebirth",
-    details: { stopPatterns: ["[^/]*\\.cat$", "[^/]*\\.dat$", "(^|/)assets/.+"] },
-  });
-});
 
 // ---------------------------------------------------------------------------
 // installContentXml
@@ -161,17 +151,17 @@ describe("modShapeRecognisedCheck", () => {
     expect(result.message).toContain("xrebirth-utility");
   });
 
-  test("recognised by stopPattern match", async () => {
+  test("recognised by drop-in modType", async () => {
     const result = await modShapeRecognisedCheck.checkMod(STUB_API, {
       ...ctx,
       files: ["data.cat"],
-      attributes: {},
+      attributes: { modType: "xrebirth-dropin" },
     });
     expect(result.status).toBe("passed");
-    expect(result.message).toMatch(/stopPatterns/);
+    expect(result.message).toContain("xrebirth-dropin");
   });
 
-  test("warns when nothing recognised", async () => {
+  test("warns when neither content.xml nor a recognised modType", async () => {
     const result = await modShapeRecognisedCheck.checkMod(STUB_API, {
       ...ctx,
       files: ["random.bin"],
