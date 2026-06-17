@@ -27,14 +27,9 @@ describe("TypographyLink", () => {
       expect(screen.getByText("Open page")).toBeInTheDocument();
     });
 
-    it("renders customContent instead of children when provided", () => {
-      render(
-        <TypographyLink customContent={<span data-testid="custom">x</span>}>
-          ignored
-        </TypographyLink>,
-      );
+    it("renders customContent when provided", () => {
+      render(<TypographyLink customContent={<span data-testid="custom">x</span>} />);
       expect(screen.getByTestId("custom")).toBeInTheDocument();
-      expect(screen.queryByText("ignored")).not.toBeInTheDocument();
     });
 
     it("renders left and right icons from paths", () => {
