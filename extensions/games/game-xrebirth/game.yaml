@@ -114,26 +114,27 @@ installers:
     copy: { stripCommonRoot: true }
     modType: xrebirth-documentation
 
-# Drop-in conflict-detection patterns. Authored as regex (compiled
-# case-insensitively, matching the original details.stopPatterns).
+# Drop-in conflict-detection patterns (globs; converted to case-insensitive
+# regex at build time for details.stopPatterns and the `stopPatterns` predicate).
 stopPatterns:
-  - { regex: '[^/]*\.cat$' }
-  - { regex: '[^/]*\.dat$' }
-  - { regex: '(^|/)t/[^/]+\.xml$' }
-  - { regex: '(^|/)lang\.dat$' }
-  - { regex: "(^|/)assets/.+" }
-  - { regex: '(^|/)libraries/.+\.xml$' }
-  - { regex: '(^|/)maps/.+\.xml$' }
-  - { regex: '(^|/)md/.+\.xml$' }
-  - { regex: "(^|/)cinematics/.+" }
-  - { regex: '(^|/)aiscripts/.+\.xml$' }
-  - { regex: '(^|/)voice-[^/]+/.+\.(ogg|wav)$' }
-  - { regex: "(^|/)ui/.+" }
-  - { regex: "(^|/)sfx/.+" }
-  - { regex: '[^/]*\.cur$' }
-  - { regex: '[^/]*\.(ogg|mp3|wav)$' }
-  - { regex: '[^/]*\.(mkv|mp4|webm)$' }
-  - { regex: '[^/]*\.ini$' }
+  # Game-data archives and root drop-ins.
+  - "**/*.cat"
+  - "**/*.dat"
+  - "**/*.cur"
+  - "**/*.ini"
+  - "**/*.{ogg,mp3,wav}"
+  - "**/*.{mkv,mp4,webm}"
+  # Translations and standard X Rebirth mod subfolders.
+  - "**/t/*.xml"
+  - "**/assets/**"
+  - "**/libraries/**/*.xml"
+  - "**/maps/**/*.xml"
+  - "**/md/**/*.xml"
+  - "**/cinematics/**"
+  - "**/aiscripts/**/*.xml"
+  - "**/voice-*/**/*.{ogg,wav}"
+  - "**/ui/**"
+  - "**/sfx/**"
 
 # Corpus testing: run the installers against real X Rebirth mod manifests
 # fetched from Nexus (`gdl test:corpus --fetch`). When the extension is built,
