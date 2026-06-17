@@ -130,7 +130,7 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
             <div className="flex shrink-0 gap-x-2">
               <Button
                 brand="neutral"
-                appearance="moderate"
+                appearance="subdued"
                 leftIconPath={mdiRefresh}
                 size="sm"
                 title={t("common:::refresh")}
@@ -139,7 +139,7 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
 
               <Button
                 brand="neutral"
-                appearance="moderate"
+                appearance="subdued"
                 leftIconPath={mdiCog}
                 size="sm"
                 title={t("common:::settings")}
@@ -167,7 +167,7 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
               <div className="flex gap-x-2">
                 <Button
                   brand="neutral"
-                  appearance="moderate"
+                  appearance="subdued"
                   disabled={
                     (selectedTab === "active" && !activeCount) ||
                     (selectedTab === "hidden" && !hiddenCount)
