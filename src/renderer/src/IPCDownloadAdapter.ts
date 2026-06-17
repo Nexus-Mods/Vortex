@@ -25,6 +25,7 @@ import {
   initDownload,
   pauseDownload,
   removeDownload,
+  removeDownloadSilent,
   setDownloadFilePath,
   setDownloadHash,
   setDownloadInterrupted,
@@ -33,6 +34,7 @@ import {
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
+import type { IDownload } from "./extensions/download_management/types/IDownload";
 import { knownGames } from "./extensions/gamemode_management/selectors";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
 import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
@@ -251,12 +253,31 @@ export class IPCDownloadAdapter {
           this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
         });
       } else {
-        log("debug", "interrupted download has no checkpoint, marking paused", {
-          id,
+        // Without a checkpoint there is no record of which byte ranges completed
+        // (chunks download in parallel, so the partial file may have holes) nor
+        // the etag needed to validate it, so the download cannot be resumed. The
+        // resolved CDN url is also likely expired by now. Discard the stale record
+        // and its unusable partial file so the collection installer (or the user)
+        // re-requests a fresh download instead of attempting a resume that is
+        // guaranteed to fail with "No checkpoint stored for download <id>".
+        log("debug", "interrupted download has no checkpoint, discarding", { id });
+        this.#discardStaleDownload(id, download).catch((err) => {
+          log("error", "failed to discard stale download", { id, err });
         });
-        this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
       }
     }
+  }
+
+  async #discardStaleDownload(downloadId: string, download: IDownload): Promise<void> {
+    if (download.localPath !== undefined) {
+      const state = this.#api.getState();
+      const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(state));
+      const dlPath = downloadPathForGame(state, gameId);
+      await rm(path.join(dlPath, download.localPath), { force: true });
+    }
+    // Silent: this is automatic startup cleanup, not a user-initiated removal,
+    // so it shouldn't raise a "downloads removed" toast.
+    this.#api.store.dispatch(removeDownloadSilent(downloadId));
   }
 
   #emitAnalytics(
