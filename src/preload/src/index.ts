@@ -255,6 +255,17 @@ try {
         }
       },
     },
+
+    featureFlags: {
+      onSynchronize: (callback) => {
+        const listener = (_: Electron.IpcRendererEvent, flags: Parameters<typeof callback>[0]) =>
+          callback(flags);
+        ipcRenderer.on("flags:synchronize", listener);
+        return () => ipcRenderer.removeListener("flags:synchronize", listener);
+      },
+      reportMetrics: (bucket) => betterIpcRenderer.send("flags:metrics", bucket),
+      setContext: (context) => betterIpcRenderer.send("flags:setContext", context),
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);

@@ -21,6 +21,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { DownloadErrorPayload } from "./errors";
+import type { FeatureFlag } from "./flags";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
@@ -200,6 +201,12 @@ export interface RendererChannels extends RendererCallbackChannels {
 
   // Telemetry: Forward a completed span from renderer to main for buffering/export
   "telemetry:forward-span": (span: SerializedSpan) => void;
+
+  // Feature flags: renderer reports evaluation metrics to main for forwarding to Unleash
+  "flags:metrics": (bucket: FlagMetricsBucket) => void;
+
+  // Feature flags: renderer updates context (e.g. userId after login)
+  "flags:setContext": (context: FlagContext) => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
@@ -240,6 +247,24 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
+
+  // Feature flags: main pushes updated flags after each successful poll
+  "flags:synchronize": (flags: FeatureFlag[]) => void;
+}
+
+/** Context data the renderer can push to refine feature flag evaluation */
+export interface FlagContext {
+  userId?: string;
+}
+
+/** Evaluation counts for a single time bucket, sent from renderer to main */
+export interface FlagMetricsBucket {
+  /** Unix timestamp (ms) for the start of this bucket */
+  start: number;
+  /** Unix timestamp (ms) for the end of this bucket */
+  stop: number;
+  /** Per-flag evaluation counts */
+  toggles: Record<string, { yes: number; no: number; variants?: Record<string, number> }>;
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */

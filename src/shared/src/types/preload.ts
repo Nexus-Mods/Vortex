@@ -16,6 +16,8 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type { FeatureFlag } from "./flags";
+import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
@@ -100,6 +102,9 @@ export interface Api {
 
   /** Diagnostic APIs */
   diag: Diag;
+
+  /** Feature flags API */
+  featureFlags: FeatureFlagsApi;
 }
 
 export interface Example {
@@ -493,6 +498,18 @@ export interface DownloaderApi {
    * Returns an unsubscribe function.
    */
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
+}
+
+/** API for receiving feature flag updates pushed from the main process */
+export interface FeatureFlagsApi {
+  /** Registers a callback invoked whenever main pushes updated flags. Returns an unsubscribe function. */
+  onSynchronize(callback: (flags: FeatureFlag[]) => void): () => void;
+
+  /** Sends a completed evaluation metrics bucket to the main process for forwarding to Unleash. */
+  reportMetrics(bucket: FlagMetricsBucket): void;
+
+  /** Updates context data used for feature flag evaluation (e.g. userId after login). */
+  setContext(context: FlagContext): void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */
