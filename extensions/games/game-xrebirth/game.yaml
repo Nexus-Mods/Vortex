@@ -135,10 +135,15 @@ stopPatterns:
   - { regex: '[^/]*\.(mkv|mp4|webm)$' }
   - { regex: '[^/]*\.ini$' }
 
-# Corpus testing: run the declarative installers against real X Rebirth mod
-# manifests fetched from Nexus (`gdl test:corpus --fetch`).
+# Corpus testing: run the installers against real X Rebirth mod manifests
+# fetched from Nexus (`gdl test:corpus --fetch`). When the extension is built,
+# the corpus drives the real installer chain (including the content.xml hook)
+# and health checks; syntheticContent supplies the bytes the hook reads, since
+# manifests carry only file lists.
 tests:
   corpus: nexus
+  syntheticContent:
+    content.xml: '<content id="mod-${manifestId}" name="Test ${manifestId}" version="1.0" author="harness"/>'
 
 # In-game health checks (registered via context.registerHealthCheck).
 diagnostics:
