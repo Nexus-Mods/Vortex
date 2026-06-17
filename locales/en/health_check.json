@@ -72,7 +72,8 @@
   "settings": {
     "title": "Health Check (Beta)",
     "description": "Detect issues with your mod list and suggest fixes. More checks are coming soon.",
-    "mod_requirements": "Missing mod requirements suggestions"
+    "mod_requirements": "Missing mod requirements suggestions",
+    "file_requirements": "Missing file requirements warnings"
   },
   "premium": {
     "modal": {

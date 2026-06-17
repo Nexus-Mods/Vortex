@@ -67,7 +67,7 @@ export const ModRequirement = ({
       <div className="min-w-0 grow space-y-0.5 text-left">
         <div className="flex items-start justify-between gap-x-4">
           <div className="min-w-0">
-            <Typography className="truncate" brand="neutral-translucent">
+            <Typography brand="neutral-translucent" className="truncate">
               {`${t(getIssueMessageKey(issueType))} `}
 
               {requirementInfo.requiredBy.modName}
@@ -87,7 +87,7 @@ export const ModRequirement = ({
             {/* todo make this button work */}
             <Button
               brand="neutral"
-              appearance="moderate"
+              appearance="weak"
               // disabled={givenFeedBack}
               leftIconPath={mdiThumbUp}
               size="sm"
@@ -98,7 +98,7 @@ export const ModRequirement = ({
             {/* todo make this button work */}
             <Button
               brand="neutral"
-              appearance="moderate"
+              appearance="weak"
               // disabled={givenFeedBack}
               leftIconPath={mdiThumbDown}
               size="sm"
@@ -108,7 +108,7 @@ export const ModRequirement = ({
 
             <Button
               brand="neutral"
-              appearance="moderate"
+              appearance="weak"
               leftIconPath={isHidden ? mdiEye : mdiEyeOff}
               size="sm"
               title={isHidden ? t("common:::unhide") : t("common:::hide")}
@@ -154,7 +154,6 @@ export const ModRequirement = ({
           brand="neutral"
           appearance="moderate"
           className="self-start"
-          appearance="moderate"
           leftIconPath={mdiCallSplit}
           size="sm"
           onClick={() => console.log("todo")}
@@ -166,7 +165,6 @@ export const ModRequirement = ({
           brand="neutral"
           appearance="moderate"
           className="self-start"
-          appearance="moderate"
           leftIconPath={mdiDownload}
           rightIcon={<PremiumBadge />}
           size="sm"
