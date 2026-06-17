@@ -19,18 +19,20 @@ class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {
     const { t, download, mod } = this.props;
     const recommended = mod.collectionRule.type === "recommends";
 
-    const radial = (titleKey: string) => {
-      const progressBarData = {
-        min: 0,
-        max: 100,
-        value: (mod.progress ?? 0) * 100,
-        class: "collection-install-progress",
-      };
+    // fraction omitted -> indeterminate spin (used when progress isn't known, e.g. the
+    // install/extraction phase, which is not tracked per-mod); a static value there would
+    // read as a stall, the exact thing this view is meant to avoid
+    const radial = (titleKey: string, fraction?: number) => {
+      const data =
+        fraction === undefined
+          ? []
+          : [{ min: 0, max: 100, value: fraction * 100, class: "collection-install-progress" }];
       return (
         <div className="collection-status-progress">
           <RadialProgressT
             className="collection-progress-radial"
-            data={[progressBarData]}
+            data={data}
+            spin={fraction === undefined}
             totalRadius={32}
           />
 
@@ -63,8 +65,7 @@ class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {
           </div>
         );
       case "installing":
-        // install/extraction progress is not tracked per-mod yet, so the radial is
-        // indeterminate (0) for now
+        // install/extraction progress is not tracked per-mod, so spin (indeterminate)
         return radial("Installing...");
       case "downloading":
         if (download?.state === "paused") {
@@ -85,7 +86,7 @@ class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {
             </div>
           );
         }
-        return radial("Downloading...");
+        return radial("Downloading...", mod.progress ?? 0);
       case "failed":
         return (
           <div className="collection-status-failed">

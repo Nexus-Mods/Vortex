@@ -30,6 +30,10 @@ import type { INotification } from "../../../../types/INotification";
 import type { IOverlay, IState } from "../../../../types/IState";
 import type { ITableAttribute } from "../../../../types/ITableAttribute";
 import { getCollectionActiveSession } from "../../../../util/collectionInstallSessionSelectors";
+import {
+  resyncCollectionSessionFromReality,
+  resyncCollectionSessionRules,
+} from "../../../../util/collectionSessionReconstruct";
 import { ProcessCanceled, UserCanceled } from "../../../../util/CustomErrors";
 import { showError } from "../../../../util/message";
 import { getSafe } from "../../../../util/storeHelper";
@@ -552,6 +556,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       this.mInstalling = undefined;
     }
 
+    // a collection install (this one or another) is in flight; gates Resume ("installing
+    // something else") and disables Resync so a manual resync can't race InstallManager
+    const installInFlight = driver.collection !== undefined && !driver.installDone;
+
     const selection =
       (this.mInstalling && driver.collectionInfo !== undefined
         ? revisionInfo?.modFiles?.map?.((file) => ({
@@ -645,10 +653,12 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
               onResume={
                 this.mInstalling
                   ? undefined
-                  : driver.collection !== undefined && !driver.installDone
+                  : installInFlight
                     ? null // installing something else
                     : this.resume
               }
+              onResync={this.resync}
+              resyncDisabled={installInFlight || (activity.mods ?? []).length > 0}
             />
           </FlexLayout.Fixed>
         )}
@@ -684,6 +694,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
   private resume = () => {
     this.props.onResume(this.props.collection.id);
+  };
+
+  private resync = () => {
+    resyncCollectionSessionFromReality(this.context.api);
   };
 
   private setEnabled = (enable: boolean) => {
@@ -808,39 +822,33 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private ignoreSelected = (modIds: string[]) => {
-    const { collection, profile } = this.props;
-    const { itemRows } = this.props;
-
-    batchDispatch(
-      this.context.api.store,
-      modIds.reduce((prev: Redux.Action[], modId: string) => {
-        prev.push(
-          addModRule(profile.gameId, collection.id, {
-            ...itemRows[modId].collectionRule,
-            ignored: true,
-          } as any),
-        );
-        return prev;
-      }, []),
-    );
+    this.setRulesIgnored(modIds, true);
   };
 
   private unignoreSelected = (modIds: string[]) => {
-    const { collection, profile } = this.props;
-    const { itemRows } = this.props;
+    this.setRulesIgnored(modIds, false);
+  };
+
+  // toggle the durable `ignored` flag on the selected rules AND realign the active session
+  // from reality for just those rules. The session is the source of truth while installing,
+  // so without the second step an ignore/unignore made mid-install would not show until the
+  // install finished (the row would keep its stale session status).
+  private setRulesIgnored = (modIds: string[], ignored: boolean) => {
+    const { collection, profile, itemRows } = this.props;
+
+    const rules = modIds
+      .filter((modId) => itemRows[modId] !== undefined)
+      .map((modId) => ({ ...itemRows[modId].collectionRule, ignored }) as IModRule);
+    if (rules.length === 0) {
+      return;
+    }
 
     batchDispatch(
       this.context.api.store,
-      modIds.reduce((prev: Redux.Action[], modId: string) => {
-        prev.push(
-          addModRule(profile.gameId, collection.id, {
-            ...itemRows[modId].collectionRule,
-            ignored: false,
-          } as any),
-        );
-        return prev;
-      }, []),
+      rules.map((rule) => addModRule(profile.gameId, collection.id, rule as any)),
     );
+    // pass the rules carrying the new flag - the session holds a stale snapshot
+    resyncCollectionSessionRules(this.context.api, rules);
   };
 
   private installManually = (modIds: string[]) => {

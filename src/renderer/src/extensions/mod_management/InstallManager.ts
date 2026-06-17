@@ -405,6 +405,27 @@ function filterDependencyRules(rules: IModRule[]): IModRule[] {
 }
 
 /**
+ * Whether the collection rule behind a resolved dependency has since been marked ignored.
+ * filterDependencyRules drops ignored rules ONCE, at gather time; this re-reads the durable
+ * flag so a mod the user ignores mid-install (after the dependency list was gathered) is not
+ * installed after the fact.
+ */
+function isDependencyRuleIgnored(
+  state: IState,
+  gameId: string,
+  sourceModId: string,
+  reference: IModReference,
+): boolean {
+  const rules = state.persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
+  return rules.some(
+    (rule) =>
+      rule.ignored === true &&
+      ["requires", "recommends"].includes(rule.type) &&
+      referenceEqual(rule.reference, reference),
+  );
+}
+
+/**
  * Helper: Check if dependency installation was canceled via event and handle early return
  * Returns true if should continue, false if canceled
  */
@@ -2385,6 +2406,20 @@ class InstallManager {
               downloadId,
             });
             this.mActiveInstalls.delete(installKey);
+            return;
+          }
+
+          // Honour a mid-install ignore: the gathered dependency list is a snapshot from
+          // install start, but the user may have ignored this mod since (flipping the
+          // durable rule.ignored flag). Skip installing it; the phase poller settles the
+          // phase (ignored counts as complete and is excluded from requeue), and the
+          // session already shows it ignored.
+          if (isDependencyRuleIgnored(api.getState(), gameId, sourceModId, currentDep.reference)) {
+            log("info", "skipping install: dependency ignored mid-install", {
+              ref: renderModReference(currentDep.reference),
+            });
+            this.mActiveInstalls.delete(installKey);
+            this.mDependencyRetryCount.delete(installKey);
             return;
           }
 
