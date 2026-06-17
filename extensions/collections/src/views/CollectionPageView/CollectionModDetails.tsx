@@ -36,7 +36,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
 
   const visitPage = React.useCallback(() => {
     util.opn(`${NEXUS_BASE_URL}/${domainName}/mods/${modId}`);
-  }, [uploaderId]);
+  }, [domainName, modId]);
 
   return (
     <div className="installing-mod-overview">
