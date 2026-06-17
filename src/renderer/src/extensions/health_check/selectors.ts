@@ -4,7 +4,10 @@ import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckSessionState } from "./reducers/session";
 import type {
   HealthCheckId,
+  IFileLevelRequirements,
+  IFileRequirementsCheckMetadata,
   IModMissingRequirements,
+  IModRequirementsCheckMetadata,
   IModRequirementExt,
   IModFileInfo,
 } from "./types";
@@ -44,7 +47,17 @@ export const modRequirementsCheckResult = (
   state: IState,
 ): Record<string, IModMissingRequirements> | undefined => {
   const result = healthCheckResult(state, "check-nexus-mod-requirements");
-  return result?.metadata?.modRequirements;
+  return (result?.metadata as IModRequirementsCheckMetadata | undefined)?.modRequirements;
+};
+
+/**
+ * Get the file requirements from the file-level requirements health check
+ */
+export const fileRequirementsCheckResult = (
+  state: IState,
+): Record<string, IFileLevelRequirements> | undefined => {
+  const result = healthCheckResult(state, "check-file-level-requirements");
+  return (result?.metadata as IFileRequirementsCheckMetadata | undefined)?.fileRequirements;
 };
 
 /**
@@ -115,6 +128,7 @@ export const healthCheckPersistentState = (state: IState): IHealthCheckPersisten
     hiddenRequirements: {},
     feedbackGiven: {},
     modRequirementsEnabled: true,
+    fileRequirementsEnabled: true,
   };
 
 /**
@@ -122,6 +136,23 @@ export const healthCheckPersistentState = (state: IState): IHealthCheckPersisten
  */
 export const isModRequirementsEnabled = (state: IState): boolean =>
   healthCheckPersistentState(state).modRequirementsEnabled ?? true;
+
+/**
+ * Whether the file-level requirements feature is available.
+ * The settings toggle and the check both gate on this, so the whole feature
+ * appears only when it is available.
+ *
+ * TODO(LAZ-592): return the feature-flag state here once flag support exists.
+ */
+export const isFileRequirementsFeatureAvailable = (_state: IState): boolean => true;
+
+/**
+ * Check if file-level requirements health check suggestions are enabled.
+ * Requires both the feature to be available and the user setting to be on.
+ */
+export const isFileRequirementsEnabled = (state: IState): boolean =>
+  isFileRequirementsFeatureAvailable(state) &&
+  (healthCheckPersistentState(state).fileRequirementsEnabled ?? true);
 
 /**
  * Get the hidden requirements map

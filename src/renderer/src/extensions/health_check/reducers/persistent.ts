@@ -17,6 +17,8 @@ export interface IHealthCheckPersistentState {
   feedbackGiven: { [modId: number]: string[] };
   /** Whether mod requirements health check suggestions are enabled */
   modRequirementsEnabled: boolean;
+  /** Whether file-level requirements health check suggestions are enabled */
+  fileRequirementsEnabled: boolean;
 }
 
 /**
@@ -53,6 +55,9 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
     [actions.setModRequirementsEnabled as any]: (state, payload) => {
       return setSafe(state, ["modRequirementsEnabled"], payload.enabled);
     },
+    [actions.setFileRequirementsEnabled as any]: (state, payload) => {
+      return setSafe(state, ["fileRequirementsEnabled"], payload.enabled);
+    },
     [actions.setFeedbackGiven as any]: (state, payload) => {
       const { modId, requirementId } = payload;
       const current = state.feedbackGiven?.[modId] || [];
@@ -66,5 +71,6 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
     hiddenRequirements: {},
     feedbackGiven: {},
     modRequirementsEnabled: true,
+    fileRequirementsEnabled: true,
   },
 };

@@ -4,22 +4,23 @@
  */
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
 import {
   HealthCheckCategory,
   HealthCheckTrigger,
   HealthCheckSeverity,
 } from "../../types/IHealthCheck";
-import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
 import { setHealthCheckRunning } from "./actions/session";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
+import { checkFileRequirements, FILE_REQUIREMENTS_CHECK_ID } from "./checks/fileRequirementsCheck";
 import { checkModRequirements, MOD_REQUIREMENTS_CHECK_ID } from "./checks/modRequirementsCheck";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
-import { isModRequirementsEnabled } from "./selectors";
+import { isFileRequirementsEnabled, isModRequirementsEnabled } from "./selectors";
 import type { IHealthCheckApi, IModFileInfo, IModRequirementExt } from "./types";
 import { onDownloadRequirement } from "./utils/onDownloadRequirement";
 import HealthCheckPage from "./views/HealthCheckPage";
@@ -35,7 +36,7 @@ function init(context: IExtensionContext): boolean {
   registry = new HealthCheckRegistry(context.api);
 
   context.registerHealthCheck = (hc: IHealthCheck | IModHealthCheck) => {
-    registry!.register(hc);
+    registry.register(hc);
   };
 
   // Register session reducer for health check state (registered in both main and renderer)
@@ -63,10 +64,10 @@ function init(context: IExtensionContext): boolean {
   });
 
   context.once(() => {
-    legacyAdapter = new LegacyTestAdapter(registry!, context.api);
+    legacyAdapter = new LegacyTestAdapter(registry, context.api);
 
     // Create health check API
-    healthCheckApi = createHealthCheckApi(registry!, legacyAdapter, context.api);
+    healthCheckApi = createHealthCheckApi(registry, legacyAdapter, context.api);
 
     setupAutomaticTriggers(context.api, healthCheckApi);
 
@@ -113,8 +114,56 @@ function init(context: IExtensionContext): boolean {
       },
     });
 
+    // Register the file-level requirements check
+    healthCheckApi.custom.register({
+      id: FILE_REQUIREMENTS_CHECK_ID,
+      name: "File Requirements",
+      description: "Validates that file-level mod dependencies are satisfied",
+      category: HealthCheckCategory.Requirements,
+      severity: HealthCheckSeverity.Info,
+      triggers: [
+        HealthCheckTrigger.ModsChanged,
+        HealthCheckTrigger.Manual,
+        HealthCheckTrigger.ProfileChanged,
+        HealthCheckTrigger.GameChanged,
+        HealthCheckTrigger.SettingsChanged,
+      ],
+      check: async () => {
+        // Skip check if file requirements suggestions are disabled
+        if (!isFileRequirementsEnabled(context.api.getState())) {
+          return {
+            checkId: FILE_REQUIREMENTS_CHECK_ID,
+            status: "passed" as const,
+            severity: HealthCheckSeverity.Info,
+            message: "File requirements check disabled",
+            executionTime: 0,
+            timestamp: new Date(),
+          };
+        }
+
+        context.api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, true));
+        try {
+          const result = await checkFileRequirements(context.api);
+          context.api.sendNotification({
+            type: "info",
+            message: "File Requirements check completed",
+            displayMS: 5000,
+            id: "health-check:file-requirements-complete",
+          });
+          return result;
+        } finally {
+          context.api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, false));
+        }
+      },
+    });
+
     // Re-run checks when the mod requirements setting changes
     context.api.onStateChange(["persistent", "healthCheck", "modRequirementsEnabled"], () => {
+      void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
+    });
+
+    // Re-run checks when the file requirements setting changes
+    context.api.onStateChange(["persistent", "healthCheck", "fileRequirementsEnabled"], () => {
       void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
     });
   });

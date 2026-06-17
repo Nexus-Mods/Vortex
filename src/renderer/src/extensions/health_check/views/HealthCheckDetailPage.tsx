@@ -194,7 +194,13 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
               </div>
             </div>
 
-            <Button brand="neutral" appearance="moderate" leftIconPath={mdiArrowLeft} size="sm" onClick={onBack}>
+            <Button
+              brand="neutral"
+              appearance="subdued"
+              leftIconPath={mdiArrowLeft}
+              size="sm"
+              onClick={onBack}
+            >
               {t("common:::back")}
             </Button>
           </div>
@@ -226,7 +232,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
               <Button
                 brand="neutral"
-                appearance="moderate"
+                appearance="subdued"
                 disabled={givenFeedBack}
                 leftIconPath={mdiThumbUp}
                 size="sm"
@@ -236,7 +242,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
               <Button
                 brand="neutral"
-                appearance="moderate"
+                appearance="subdued"
                 disabled={givenFeedBack}
                 leftIconPath={mdiThumbDown}
                 size="sm"
@@ -248,7 +254,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
               <Button
                 brand="neutral"
-                appearance="moderate"
+                appearance="subdued"
                 leftIconPath={isHidden ? mdiEye : mdiEyeOff}
                 size="sm"
                 title={isHidden ? t("common:::unhide") : t("common:::hide")}
@@ -290,7 +296,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                     <>
                       <Button
                         brand="neutral"
-                        appearance="moderate"
+                        appearance="subdued"
                         leftIconPath={mdiOpenInNew}
                         size="sm"
                         onClick={() => console.log("todo")}
@@ -332,8 +338,8 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                   <div>
                     <Typography
                       appearance="moderate"
-                      className="rounded-t-lg bg-surface-mid px-3 py-2 font-semibold"
                       brand="neutral-translucent"
+                      className="rounded-t-lg bg-surface-mid px-3 py-2 font-semibold"
                     >
                       Pick one of these
                     </Typography>
@@ -344,7 +350,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                           <>
                             <Button
                               brand="neutral"
-                              appearance="moderate"
+                              appearance="subdued"
                               leftIconPath={mdiOpenInNew}
                               size="sm"
                               onClick={() => console.log("todo")}
@@ -385,7 +391,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                           <>
                             <Button
                               brand="neutral"
-                              appearance="moderate"
+                              appearance="subdued"
                               leftIconPath={mdiOpenInNew}
                               size="sm"
                               onClick={() => console.log("todo")}
@@ -437,7 +443,12 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
                   <FileRequirement
                     actions={
-                      <Button brand="neutral" appearance="moderate" size="sm" onClick={() => console.log("todo")}>
+                      <Button
+                        brand="neutral"
+                        appearance="subdued"
+                        size="sm"
+                        onClick={() => console.log("todo")}
+                      >
                         View in loadout
                       </Button>
                     }
@@ -453,7 +464,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                       <>
                         <Button
                           brand="neutral"
-                          appearance="moderate"
+                          appearance="subdued"
                           leftIconPath={mdiOpenInNew}
                           size="sm"
                           onClick={() => console.log("todo")}

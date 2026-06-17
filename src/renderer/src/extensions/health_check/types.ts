@@ -10,7 +10,7 @@ import type { ICustomCheckApi, ILegacyApi, IResultsApi } from "./api";
 /**
  * Known health check IDs
  */
-export type HealthCheckId = "check-nexus-mod-requirements";
+export type HealthCheckId = "check-nexus-mod-requirements" | "check-file-level-requirements";
 
 /**
  * A subset of IModRequiring representing the mod that requires a missing mod.
@@ -132,6 +132,119 @@ export interface IModRequirementsCheckMetadata {
   modsFetched: number;
   /** Map of Vortex mod ID to its missing requirements */
   modRequirements: { [modId: string]: IModMissingRequirements };
+  /** Any errors encountered during the check */
+  errors: string[];
+}
+
+/**
+ * A downloadable file the user can fetch to satisfy a requirement
+ */
+export interface IFileRequirementCandidate {
+  /** Composite id for the file version (game-scoped fileId combined with the game id) */
+  fileUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Mod summary */
+  modSummary?: string;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+}
+
+/**
+ * A file the user already has installed (a Vortex mod)
+ */
+export interface IInstalledFile {
+  /** Vortex mod id (key into persistent.mods and profile.modState) */
+  modId: string;
+  /** Composite id for the file version (game-scoped fileId combined with the game id) */
+  fileUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+  /** Whether this file is currently enabled in the active profile */
+  enabled: boolean;
+}
+
+/**
+ * Dependency not installed; download a file to satisfy it
+ */
+export interface IMissingFileRequirement {
+  kind: "missing";
+  /** Dependency identifier; alternatives that share it are OR options */
+  requirementId: string;
+  /** Files that would satisfy it; more than one is an OR choice */
+  alternatives: IFileRequirementCandidate[];
+}
+
+/**
+ * Wrong version installed; download a correct version (newer or older)
+ */
+export interface IWrongVersionInstalledRequirement {
+  kind: "wrong-version-installed";
+  /** Dependency identifier; alternatives that share it are OR options */
+  requirementId: string;
+  /** The wrong version currently installed */
+  installedFile: IInstalledFile;
+  /** Correct versions the user can download */
+  alternatives: IFileRequirementCandidate[];
+}
+
+/**
+ * Correct and wrong versions installed, wrong one enabled; switch the active version
+ */
+export interface IWrongVersionEnabledRequirement {
+  kind: "wrong-version-enabled";
+  /** Dependency identifier */
+  requirementId: string;
+  /** The wrong version currently enabled */
+  enabledFile: IInstalledFile;
+  /** The correct, disabled version to enable */
+  correctFile: IInstalledFile;
+}
+
+/**
+ * A single dependency of a source file, discriminated on kind
+ */
+export type IFileRequirement =
+  | IMissingFileRequirement
+  | IWrongVersionInstalledRequirement
+  | IWrongVersionEnabledRequirement;
+
+/**
+ * Unsatisfied requirements for one source file; a single health-check entry
+ */
+export interface IFileLevelRequirements {
+  /** Composite id of the source file version that has the requirements */
+  sourceFileUID: string;
+  /** Source mod name, for the listing and detail headings */
+  sourceModName: string;
+  /** The source file's unsatisfied dependencies (kinds can be mixed) */
+  requirements: IFileRequirement[];
+}
+
+/**
+ * Metadata for the file-level requirements health check result
+ */
+export interface IFileRequirementsCheckMetadata {
+  /** Game ID this check was run for */
+  gameId: string;
+  /** Total number of installed files inspected */
+  modsChecked: number;
+  /** Requirements keyed by source file UID */
+  fileRequirements: { [fileUID: string]: IFileLevelRequirements };
   /** Any errors encountered during the check */
   errors: string[];
 }

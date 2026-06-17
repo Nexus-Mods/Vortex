@@ -13,6 +13,7 @@ import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+// todo Fix and button or typography prop changes on this commit
 // TODO: replace with the real shape once the data source is wired up
 export interface IFileRequirementData {
   adultContent: boolean;
@@ -108,8 +109,8 @@ export function FileRequirement({ actions, file, isOr }: IFileRequirementProps) 
         <Typography
           appearance="moderate"
           as="div"
-          className="absolute -bottom-2 left-4.5 bg-surface-low px-3 font-semibold group-last/file:hidden"
           brand="neutral-translucent"
+          className="absolute -bottom-2 left-4.5 bg-surface-low px-3 font-semibold group-last/file:hidden"
           typographyType="body-sm"
         >
           or

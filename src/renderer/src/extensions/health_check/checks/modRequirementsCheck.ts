@@ -7,11 +7,11 @@ import type { IModRequirements } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { setModAttribute } from "../../../actions";
+import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckSeverity } from "../../../types/IHealthCheck";
 import { getGame, nexusGameId, renderModName } from "../../../util/api";
-import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
 import type { IMod } from "../../mod_management/types/IMod";

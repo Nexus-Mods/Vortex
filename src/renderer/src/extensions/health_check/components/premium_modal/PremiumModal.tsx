@@ -65,7 +65,6 @@ export const PremiumModal = ({
           brand="neutral"
           appearance="moderate"
           className="w-full"
-          appearance="moderate"
           leftIconPath={downloadScope === "single" && mdiOpenInNew}
           size="sm"
           onClick={onDownload}
