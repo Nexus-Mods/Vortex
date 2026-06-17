@@ -153,6 +153,7 @@ cleanupFakeGame(basePath);
 ```
 
 Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`, `gothic1remake`.
+
 Game layouts live in `fixtures/game-setup/trees/`; see
 `fixtures/game-setup/trees/README.md` for format and export command.
 
@@ -164,8 +165,8 @@ Tests can seed real dynamic extensions into an isolated Vortex instance before l
 test.use({ dynamicExtensionIds: ["open-directory-e2e"] });
 ```
 
-The fixture copies built extension output into `userData/plugins/<id>`. GDL game
-fixtures still work through the legacy `dynamicGameExtensionId` option.
+The fixture copies built extension output into `userData/plugins/<id>`. For GDL
+game fixtures, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
 
 ## CI
 

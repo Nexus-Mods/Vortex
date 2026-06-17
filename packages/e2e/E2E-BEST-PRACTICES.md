@@ -244,6 +244,8 @@ Games backed by dynamic/generated extensions must also seed that extension. Use
 `dynamicExtensionIds` for current tests, e.g.
 `test.use({ dynamicExtensionIds: ["gothic1remake"], managedGameId: "gothic1remake" })`.
 
+For GDL game fixtures, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
+
 #### Just the on-disk install — `setupFakeGame`
 
 When the test only needs the game's files to exist (e.g. asserting that
