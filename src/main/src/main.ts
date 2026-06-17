@@ -284,7 +284,6 @@ async function main(): Promise<void> {
 
   const unleashClient = new UnleashClient(app.getVersion());
   synchronizeFeatureFlags(unleashClient);
-  unleashClient.start();
 
   StylesheetCompiler.init();
 
