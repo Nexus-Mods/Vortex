@@ -22,7 +22,7 @@ import { setUserInfo } from "../actions/persistent";
 import { setOauthPending } from "../actions/session";
 import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
 import { isLoggedIn } from "../selectors";
-import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
+import type { IMembership, IValidateKeyDataV2 } from "../types/IValidateKeyData";
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
@@ -72,7 +72,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     onClearUserInfo();
   };
 
-  private getMembershipText(userInfo: IValidateKeyDataV2): string {
+  private getMembershipText(userInfo: IMembership): string {
     if (userInfo?.isPremium === true) {
       return "★ Premium";
     } else if (userInfo?.isSupporter === true && userInfo?.isPremium === false) {
