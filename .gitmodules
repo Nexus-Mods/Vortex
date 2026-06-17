@@ -1,4 +1,4 @@
 [submodule "game-description-language"]
 	path = game-description-language
 	url = https://github.com/Nexus-Mods/game-description-language.git
-	branch = feat/vortex-xrebirth-integration
+	branch = main
