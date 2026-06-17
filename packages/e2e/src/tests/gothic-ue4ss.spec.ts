@@ -1,8 +1,8 @@
 import fs from "node:fs";
-import path from "node:path";
 
 import type { ElectronApplication } from "@playwright/test";
 
+import { fixturePathToNative } from "../fixtures/game-setup/mock-tree";
 import { test, expect } from "../fixtures/vortex-app";
 import { acceptConsent } from "../helpers/consent";
 import { installNxmCapture, waitForNxmUrl } from "../helpers/nxmCapture";
@@ -123,7 +123,7 @@ test.describe("Gothic 1 Remake - UE4SS", () => {
     await test.step("Verify UE4SS deployed to Gothic Win64 folder", async () => {
       await waitForFiles(
         DEPLOYED_UE4SS_FILES.map((relativePath) =>
-          path.join(managedGame.gamePath, ...relativePath.split("/")),
+          fixturePathToNative(managedGame.gamePath, relativePath),
         ),
       );
     });

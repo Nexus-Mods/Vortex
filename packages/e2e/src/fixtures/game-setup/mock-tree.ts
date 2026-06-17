@@ -157,6 +157,12 @@ export function validateFixturePath(entryPath: string, lineNumber?: number): voi
   }
 }
 
+export function fixturePathToNative(rootPath: string, fixturePath: string): string {
+  const normalised = normaliseFixturePath(fixturePath);
+  validateFixturePath(normalised);
+  return path.join(rootPath, ...normalised.split("/"));
+}
+
 function collectPayloadFiles(filesDir: string): string[] {
   if (!fs.existsSync(filesDir)) return [];
   if (!fs.statSync(filesDir).isDirectory()) {
@@ -189,7 +195,7 @@ export function writeMockTree(
 
   for (const entry of entries) {
     validateFixturePath(entry.path);
-    const destination = path.join(rootPath, ...entry.path.split("/"));
+    const destination = fixturePathToNative(rootPath, entry.path);
     if (entry.type === "dir") {
       fs.mkdirSync(destination, { recursive: true });
     } else {
@@ -209,8 +215,8 @@ export function writeMockTree(
         throw new Error(`Mock tree payload has no matching file entry: ${payloadPath}`);
       }
       fs.cpSync(
-        path.join(filesDir, ...payloadPath.split("/")),
-        path.join(rootPath, ...payloadPath.split("/")),
+        fixturePathToNative(filesDir, payloadPath),
+        fixturePathToNative(rootPath, payloadPath),
       );
     }
   }

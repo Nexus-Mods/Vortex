@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 
 import {
+  fixturePathToNative,
   mockTreePlatformFromNodePlatform,
   normaliseFixturePath,
   readMockTreeFixture,
@@ -184,14 +185,14 @@ function writeFakeExecutable(filePath: string): void {
 function postProcessTreeExecutables(gamePath: string, entries: MockTreeEntry[]): void {
   for (const entry of entries) {
     if (entry.type === "file" && entry.path.toLowerCase().endsWith(".exe")) {
-      writeFakeExecutable(path.join(gamePath, ...entry.path.split("/")));
+      writeFakeExecutable(fixturePathToNative(gamePath, entry.path));
     }
   }
 }
 
 function assertRequiredFiles(gamePath: string, gameConfig: GameConfig): void {
   const missing = gameConfig.requiredFiles.filter(
-    (filePath) => !fs.existsSync(path.join(gamePath, ...filePath.split("/"))),
+    (filePath) => !fs.existsSync(fixturePathToNative(gamePath, filePath)),
   );
   if (missing.length > 0) {
     throw new Error(`Tree fixture for ${gameConfig.gameId} is missing: ${missing.join(", ")}`);

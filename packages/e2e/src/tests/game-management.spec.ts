@@ -4,6 +4,7 @@ import {
   GAME_CONFIGS,
   getGameConfig,
 } from "../fixtures/game-setup/fake-game";
+import { fixturePathToNative } from "../fixtures/game-setup/mock-tree";
 /**
  * Game management tests.
  * Uses fake game installations to avoid requiring real game installs.
@@ -36,7 +37,7 @@ test.describe("Game Management", () => {
       const { basePath, gamePath } = setupFakeGame("stardewvalley");
       const otherExecutable = process.platform === "win32" ? "StardewValley" : "Stardew Valley.exe";
 
-      expect(fs.existsSync(path.join(gamePath, config.executable))).toBe(true);
+      expect(fs.existsSync(fixturePathToNative(gamePath, config.executable))).toBe(true);
       expect(fs.existsSync(path.join(gamePath, otherExecutable))).toBe(false);
       expect(fs.existsSync(path.join(gamePath, "Content", "Maps"))).toBe(true);
       expect(fs.existsSync(path.join(gamePath, "Mods"))).toBe(true);
@@ -90,9 +91,7 @@ test.describe("Game Management", () => {
         gameInstalls.push(fakeGame.basePath);
 
         for (const requiredFile of getGameConfig(gameId).requiredFiles) {
-          expect(fs.existsSync(path.join(fakeGame.gamePath, ...requiredFile.split("/")))).toBe(
-            true,
-          );
+          expect(fs.existsSync(fixturePathToNative(fakeGame.gamePath, requiredFile))).toBe(true);
         }
       }
     } finally {
@@ -109,7 +108,7 @@ test.describe("Game Management", () => {
     try {
       const config = getGameConfig("gothic1remake");
       for (const file of config.requiredFiles) {
-        expect(fs.existsSync(path.join(gamePath, file))).toBe(true);
+        expect(fs.existsSync(fixturePathToNative(gamePath, file))).toBe(true);
       }
       expect(fs.existsSync(path.join(gamePath, "G1R", "Binaries", "Win64"))).toBe(true);
       expect(
@@ -120,9 +119,9 @@ test.describe("Game Management", () => {
       expect(fs.existsSync(path.join(gamePath, "G1R", "Binaries", "Win64", "ue4ss", "Mods"))).toBe(
         true,
       );
-      expect(fs.readFileSync(path.join(gamePath, "G1R", "Version", "version.txt"), "utf8")).toBe(
-        "Build123_CL456",
-      );
+      expect(
+        fs.readFileSync(fixturePathToNative(gamePath, "G1R/Version/version.txt"), "utf8"),
+      ).toBe("Build123_CL456");
     } finally {
       cleanupFakeGame(basePath);
     }
