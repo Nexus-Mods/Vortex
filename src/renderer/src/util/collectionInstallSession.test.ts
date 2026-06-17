@@ -1,43 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
+import { makeDownload, makeMod, makeRule } from "../test-utils/builders";
 import { reconstructModStatus } from "./collectionInstallSession";
-
-function makeRule(overrides: Partial<IModRule> = {}): IModRule {
-  return {
-    type: "requires",
-    reference: { tag: "abc" },
-    ...overrides,
-  };
-}
-
-function makeMod(overrides: Partial<IMod> = {}): IMod {
-  return {
-    id: "mod-1",
-    state: "installed",
-    type: "",
-    installationPath: "mods/mod-1",
-    attributes: {},
-    ...overrides,
-  };
-}
-
-function makeDownload(overrides: Partial<IDownload> = {}): IDownload {
-  return {
-    id: "dl",
-    state: "started",
-    urls: [],
-    game: ["skyrimse"],
-    modInfo: {},
-    startTime: 0,
-    fileTime: 0,
-    size: 0,
-    received: 0,
-    verified: 0,
-    ...overrides,
-  };
-}
 
 describe("reconstructModStatus", () => {
   it('rehydrates an ignored rule as the terminal "ignored" status so a skip survives a restart', () => {

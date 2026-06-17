@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import * as actions from "../actions/collectionInstallTracking";
+import { makeInstallState, makeSession, modsByRule } from "../test-utils/builders";
 // The reducer file exports a default object with { reducers, defaults }.
 // We also need the action creators so we can get their .toString() keys.
 import reducer from "./collectionInstallTracking";
@@ -19,32 +20,6 @@ function reduce(state: any, actionCreator: any, payload: any): any {
   return fn(state, payload);
 }
 
-function makeSession(overrides: Partial<any> = {}): any {
-  return {
-    sessionId: "col1_prof1",
-    collectionId: "col1",
-    profileId: "prof1",
-    gameId: "skyrimse",
-    totalRequired: 3,
-    totalOptional: 1,
-    downloadedCount: 0,
-    installedCount: 0,
-    failedCount: 0,
-    ignoredCount: 0,
-    mods: {},
-    ...overrides,
-  };
-}
-
-function makeState(overrides: Partial<any> = {}): any {
-  return {
-    activeSession: undefined,
-    lastActiveSessionId: undefined,
-    sessionHistory: {},
-    ...overrides,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // adjustCounters — tested indirectly via updateModStatus reducer
 // ---------------------------------------------------------------------------
@@ -52,7 +27,7 @@ function makeState(overrides: Partial<any> = {}): any {
 describe("installTracking reducer", () => {
   describe("startInstallSession", () => {
     it("creates a new active session with computed counters", () => {
-      const state = makeState();
+      const state = makeInstallState();
       const payload = {
         collectionId: "col1",
         profileId: "prof1",
@@ -76,7 +51,7 @@ describe("installTracking reducer", () => {
     });
 
     it("computes zero counters for an empty mods object", () => {
-      const state = makeState();
+      const state = makeInstallState();
       const payload = {
         collectionId: "col1",
         profileId: "prof1",
@@ -95,11 +70,9 @@ describe("installTracking reducer", () => {
   describe("updateModStatus (adjustCounters)", () => {
     it("increments downloadedCount when transitioning from pending to downloading", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "pending", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "requires" }]),
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -112,12 +85,10 @@ describe("installTracking reducer", () => {
 
     it("increments installedCount when transitioning to installed", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "downloading", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "downloading", type: "requires" }]),
         downloadedCount: 1,
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -132,11 +103,9 @@ describe("installTracking reducer", () => {
 
     it("increments failedCount when transitioning to failed", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "pending", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "requires" }]),
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -151,11 +120,9 @@ describe("installTracking reducer", () => {
 
     it("increments ignoredCount when transitioning to ignored", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "pending", type: "recommends", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "recommends" }]),
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -170,12 +137,10 @@ describe("installTracking reducer", () => {
 
     it("decrements failedCount when recovering from failed to downloading", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "failed", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "failed", type: "requires" }]),
         failedCount: 1,
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -189,11 +154,9 @@ describe("installTracking reducer", () => {
 
     it("handles the full lifecycle: pending → downloading → installed", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "pending", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "requires" }]),
       });
-      let state = makeState({ activeSession: session });
+      let state = makeInstallState({ activeSession: session });
 
       // pending → downloading
       state = reduce(state, actions.updateModStatus, {
@@ -225,11 +188,9 @@ describe("installTracking reducer", () => {
 
     it("is a no-op when sessionId does not match", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "pending", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "requires" }]),
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "wrong_session",
@@ -241,7 +202,7 @@ describe("installTracking reducer", () => {
     });
 
     it("is a no-op when there is no active session", () => {
-      const state = makeState();
+      const state = makeInstallState();
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -254,13 +215,11 @@ describe("installTracking reducer", () => {
 
     it("correctly handles installed → failed (regression: both counters update)", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "installed", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "installed", type: "requires" }]),
         downloadedCount: 1,
         installedCount: 1,
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.updateModStatus, {
         sessionId: "col1_prof1",
@@ -278,12 +237,10 @@ describe("installTracking reducer", () => {
   describe("markModInstalled", () => {
     it("sets modId, status=installed, endTime and updates counters", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "downloading", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "downloading", type: "requires" }]),
         downloadedCount: 1,
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.markModInstalled, {
         sessionId: "col1_prof1",
@@ -299,11 +256,9 @@ describe("installTracking reducer", () => {
 
     it("is a no-op when sessionId does not match", () => {
       const session = makeSession({
-        mods: {
-          rule1: { status: "downloading", type: "requires", rule: {} },
-        },
+        mods: modsByRule([{ ruleId: "rule1", status: "downloading", type: "requires" }]),
       });
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.markModInstalled, {
         sessionId: "wrong",
@@ -318,7 +273,7 @@ describe("installTracking reducer", () => {
   describe("finishInstallSession", () => {
     it("moves active session to history and clears it", () => {
       const session = makeSession();
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.finishInstallSession, {
         sessionId: "col1_prof1",
@@ -332,7 +287,7 @@ describe("installTracking reducer", () => {
 
     it("is a no-op when sessionId does not match", () => {
       const session = makeSession();
-      const state = makeState({ activeSession: session });
+      const state = makeInstallState({ activeSession: session });
 
       const result = reduce(state, actions.finishInstallSession, {
         sessionId: "wrong",
