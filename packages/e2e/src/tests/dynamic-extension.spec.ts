@@ -10,7 +10,7 @@ function vortexLogPath(vortexUserDataDir: string): string {
   return path.join(vortexUserDataDir, "userData", "vortex.log");
 }
 
-function seededExtensionPath(vortexUserDataDir: string): string {
+function preparedExtensionPath(vortexUserDataDir: string): string {
   return path.join(vortexUserDataDir, "userData", "plugins", EXTENSION_ID);
 }
 
@@ -25,10 +25,10 @@ test.describe("Dynamic extensions", () => {
     vortexWindow,
     vortexUserDataDir,
   }) => {
-    const pluginPath = seededExtensionPath(vortexUserDataDir);
+    const pluginPath = preparedExtensionPath(vortexUserDataDir);
     const logPath = vortexLogPath(vortexUserDataDir);
 
-    await test.step("Seeded plugin contains dynamic extension files", () => {
+    await test.step("Prepared plugin contains dynamic extension files", () => {
       expect(fs.existsSync(path.join(pluginPath, "index.cjs"))).toBe(true);
       expect(fs.existsSync(path.join(pluginPath, "info.json"))).toBe(true);
     });

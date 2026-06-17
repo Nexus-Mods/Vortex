@@ -240,11 +240,11 @@ test("mod appears after install", async ({ vortexWindow, managedGame }) => {
 `managedGame` defaults to `"stardewvalley"`. Override it with
 `test.use({ managedGameId: "gothic1remake" })` or any key from `GAME_CONFIGS`.
 
-Games backed by dynamic/generated extensions must also seed that extension. Use
+Games backed by dynamic/generated extensions must also prepare that extension. Use
 `dynamicExtensionIds` for current tests, e.g.
 `test.use({ dynamicExtensionIds: ["gothic1remake"], managedGameId: "gothic1remake" })`.
 
-For GDL game fixtures, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
+For [GDL] game fixtures, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
 
 #### Just the on-disk install — `setupFakeGame`
 
@@ -346,3 +346,5 @@ test.setTimeout(120_000);
 ```
 
 Current `Timeouts` / `GlobalTimeouts` values are starting points, not measured. Calibration follow-up is tracked in LAZ-443.
+
+[GDL]: https://github.com/Nexus-Mods/gdl-games

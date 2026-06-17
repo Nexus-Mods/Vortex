@@ -12,7 +12,7 @@ import {
 } from "@playwright/test";
 
 import {
-  seedDynamicExtensions,
+  prepareDynamicExtensions,
   type DynamicExtensionId,
   type DynamicGameExtensionId,
 } from "../fixtures/extensions/dynamic-extension";
@@ -228,7 +228,7 @@ export type VortexWorkerFixtures = {
 export type VortexOptions = {
   /**
    * The Nexus user to authenticate as. When set, vortexUserDataDir is
-   * pre-seeded from a worker-scoped snapshot so the app starts logged in.
+   * preloaded from a worker-scoped snapshot so app starts logged in.
    * Defaults to null (no login, fresh empty state).
    *
    * Set via test.use({ nexusUser: freeUser }) or test.use({ nexusUser: premiumUser }).
@@ -236,9 +236,9 @@ export type VortexOptions = {
   nexusUser: NexusUser | null;
   /** Game fixture to manage when a test requests managedGame. */
   managedGameId: ManagedGameId;
-  /** Dynamic game extension to seed into the isolated Vortex instance before launch. */
+  /** Dynamic game extension to prepare in isolated Vortex instance before launch. */
   dynamicGameExtensionId: DynamicGameExtensionId | null;
-  /** Dynamic extensions to seed into the isolated Vortex instance before launch. */
+  /** Dynamic extensions to prepare in isolated Vortex instance before launch. */
   dynamicExtensionIds: DynamicExtensionId[];
 };
 
@@ -392,13 +392,13 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       fs.cpSync(snapshotDir, dir, { recursive: true });
     }
 
-    const extensionsToSeed = [...dynamicExtensionIds];
+    const extensionsToPrepare = [...dynamicExtensionIds];
     if (dynamicGameExtensionId !== null) {
-      extensionsToSeed.push(dynamicGameExtensionId);
+      extensionsToPrepare.push(dynamicGameExtensionId);
     }
 
-    if (extensionsToSeed.length > 0) {
-      seedDynamicExtensions(dir, [...new Set(extensionsToSeed)]);
+    if (extensionsToPrepare.length > 0) {
+      prepareDynamicExtensions(dir, [...new Set(extensionsToPrepare)]);
     }
 
     await use(dir);

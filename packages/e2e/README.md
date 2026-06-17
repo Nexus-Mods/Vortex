@@ -159,13 +159,13 @@ Game layouts live in `fixtures/game-setup/trees/`; see
 
 ### Dynamic Extensions
 
-Tests can seed real dynamic extensions into an isolated Vortex instance before launch:
+Tests can prepare real dynamic extensions in isolated Vortex instance before launch:
 
 ```ts
 test.use({ dynamicExtensionIds: ["open-directory-e2e"] });
 ```
 
-The fixture copies built extension output into `userData/plugins/<id>`. For GDL
+The fixture copies built extension output into `userData/plugins/<id>`. For [GDL]
 game fixtures, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
 
 ## CI

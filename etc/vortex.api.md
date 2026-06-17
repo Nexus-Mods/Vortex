@@ -3990,7 +3990,7 @@ interface IStateVerifier {
     // (undocumented)
     noUndefined?: boolean;
     // (undocumented)
-    repair?: (input: any, def: any) => any;
+    repair?: (input: any, def: any, context?: IVerifierRepairContext) => any;
     // (undocumented)
     required?: boolean;
     // (undocumented)
@@ -4322,6 +4322,16 @@ interface IValidateKeyData {
 interface IValidationResult {
     // (undocumented)
     invalid: IInvalidResult[];
+}
+
+// @public (undocumented)
+interface IVerifierRepairContext {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    parent?: unknown;
+    // (undocumented)
+    parentKey?: string;
 }
 
 // @public (undocumented)
@@ -6159,6 +6169,7 @@ declare namespace types {
         IApiFuncOptions,
         IExtensionApiExtension,
         IExtensionApi,
+        IVerifierRepairContext,
         IStateVerifier,
         VerifierDrop,
         VerifierDropParent,

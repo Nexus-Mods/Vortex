@@ -31,7 +31,7 @@ function runGdlGames(command: string, args: string[]): void {
   });
 }
 
-export function ensureDynamicGameExtensionBuilt(gameId: DynamicGameExtensionId): string {
+export function ensureDynamicGdlGameExtensionBuilt(gameId: DynamicGameExtensionId): string {
   if (hasBuiltExtension(gameId)) return distDir(gameId);
 
   if (!fs.existsSync(path.join(GDL_GAMES_ROOT, "package.json"))) {
@@ -53,11 +53,11 @@ export function ensureDynamicGameExtensionBuilt(gameId: DynamicGameExtensionId):
   return distDir(gameId);
 }
 
-export function seedDynamicGameExtension(
+export function prepareDynamicGdlGameExtension(
   vortexUserDataDir: string,
   gameId: DynamicGameExtensionId,
 ): void {
-  const source = ensureDynamicGameExtensionBuilt(gameId);
+  const source = ensureDynamicGdlGameExtensionBuilt(gameId);
   const destination = path.join(vortexUserDataDir, "userData", "plugins", gameId);
 
   fs.rmSync(destination, { recursive: true, force: true });
