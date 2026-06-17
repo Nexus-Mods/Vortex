@@ -14,6 +14,7 @@ import type {
   IModFileContentPage,
   IModInfo,
   IModRequirements,
+  IOAuthCredentials,
   IRating,
   IRevision,
   IModFileContentPageQuery,
@@ -67,6 +68,7 @@ import {
   processErrorMessage,
   resolveGraphError,
   startDownload,
+  updateUserInfoFromRefreshedToken,
   transformUserInfoFromApi,
   updateKey,
   updateToken,
@@ -80,7 +82,6 @@ import {
   MOD_REQUIREMENTS_INFO,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
-import type { ITokenReply } from "./util/oauth";
 import submitFeedback from "./util/submitFeedback";
 import { makeModUID } from "./util/UIDs";
 
@@ -1343,15 +1344,26 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 
 // fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
 export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
-  return (oldValue: ITokenReply, newValue: ITokenReply) => {
+  // Despite the historical ITokenReply annotation, the value stored in
+  // state (and written by onJWTTokenRefresh / setOAuthCredentials) is the
+  // IOAuthCredentials shape: { token, refreshToken, fingerprint }.
+  return (oldValue: IOAuthCredentials, newValue: IOAuthCredentials) => {
     log("info", "onOAuthTokenChanged event handler.");
 
-    // remove user info
-    api.store.dispatch(setUserInfo(undefined));
-
-    if (newValue !== undefined) {
-      updateToken(api, nexus, newValue);
+    if (newValue === undefined) {
+      // logout: credentials cleared
+      api.store.dispatch(setUserInfo(undefined));
+      return;
     }
+
+    if (oldValue !== undefined) {
+      updateUserInfoFromRefreshedToken(api, newValue);
+      return;
+    }
+
+    // fresh login: undefined -> defined
+    api.store.dispatch(setUserInfo(undefined));
+    updateToken(api, nexus, newValue);
   };
 }
 
