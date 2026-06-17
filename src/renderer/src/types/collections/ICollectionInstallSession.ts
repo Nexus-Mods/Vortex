@@ -11,10 +11,9 @@ import type { IModRule, ModState } from "../../extensions/mod_management/types/I
 export type CollectionModStatus =
   | keyof Pick<Record<ModState, true>, "downloading" | "downloaded" | "installing" | "installed">
   | "pending" // not yet processed
-  // installation failed. NOTE: not yet wired up - the UI renders this status but nothing
-  // sets it on the session yet, so a failed mod currently surfaces as "pending" rather
-  // than "failed". The install-failure path still needs to call updateModTracking(rule,
-  // "failed").
+  // installation failed (retries exhausted). Written by InstallManager on the
+  // retries-exhausted branch; counts toward completion so a failed required mod does not
+  // leave the collection stuck, and is revertible if the mod is later retried.
   | "failed"
   | "ignored" // excluded by user choice (skipped during install or manually ignored)
   | "optional"; // optional mod not selected

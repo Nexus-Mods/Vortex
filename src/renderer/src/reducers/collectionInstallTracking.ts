@@ -115,10 +115,11 @@ const collectionInstallReducer = {
         Date.now(),
       );
 
-      // Incremental counter update
+      // Incremental counter update. Merge ALL counters: a retry can revert failed ->
+      // installed (planSessionWrite allows it), and that transition must decrement
+      // failedCount, not just bump installedCount.
       const counters = adjustCounters(state.activeSession, oldStatus, "installed");
-      newState = setSafe(newState, ["activeSession", "downloadedCount"], counters.downloadedCount);
-      newState = setSafe(newState, ["activeSession", "installedCount"], counters.installedCount);
+      newState = merge(newState, ["activeSession"], counters);
 
       return newState;
     },

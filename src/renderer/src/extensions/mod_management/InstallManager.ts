@@ -61,6 +61,7 @@ import { generate as shortid } from "shortid";
  * See AGENTS-COLLECTIONS.md for architectural overview.
  */
 import { removeDownload, setDownloadModInfo, startActivity, stopActivity } from "../../actions";
+import { markModInstalled, updateModStatus } from "../../actions/collectionInstallTracking";
 import {
   type IConditionResult,
   type IDialogContent,
@@ -82,6 +83,8 @@ import {
   getCollectionStatusBreakdown,
   isCollectionPhaseComplete,
 } from "../../util/collectionInstallSessionSelectors";
+import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
+import { sessionWriteForDependency } from "../../util/collectionSessionWrite";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import {
   DataInvalid,
@@ -707,6 +710,11 @@ class InstallManager {
       download: downloadId,
       phase: rulePhase(matchingRule),
     };
+
+    // record that this collection mod's download is available, coupled to the install
+    // queueing below so we never mark "downloaded" for a download we then don't install
+    // (no-op outside an active collection session)
+    this.writeCollectionSession(dependency.reference, { type: "status", status: "downloaded" });
 
     // Ensure the phase is marked as having downloads finished
     // This is needed when downloads complete after initial dependency processing
@@ -2391,6 +2399,14 @@ class InstallManager {
             fileList: currentDep.fileList,
             patches: currentDep.patches,
           });
+          if (existingMod == null) {
+            // about to actually install (not reusing an existing mod): mark installing so
+            // the collection session reflects the live install phase
+            this.writeCollectionSession(currentDep.reference, {
+              type: "status",
+              status: "installing",
+            });
+          }
           const modId =
             existingMod != null
               ? existingMod.id
@@ -2419,6 +2435,11 @@ class InstallManager {
 
           if (modId) {
             this.mActiveInstalls.delete(installKey);
+
+            // record the successful install on the collection session (no-op outside an
+            // active collection session). This is the sole writer of the "installed"
+            // status, covering both a freshly installed mod and a reused existing one.
+            this.writeCollectionSession(currentDep.reference, { type: "installed", modId });
 
             // Apply any extra attributes
             this.applyExtraFromRule(api, gameId, modId, {
@@ -2505,6 +2526,10 @@ class InstallManager {
           } else if (!isCanceled) {
             // Max retries exceeded, clean up and show error
             this.mDependencyRetryCount.delete(installKey);
+            // record the terminal failure on the collection session so the install can
+            // still complete (a failed required mod is decided, not pending) and the UI
+            // shows it as failed rather than stuck
+            this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
             this.showDependencyError(
               api,
               sourceModId,
@@ -5746,6 +5771,10 @@ class InstallManager {
     };
 
     const queueDownload = (dep: IDependency): Promise<string> => {
+      // mark the dependency as downloading on the collection session (no-op outside an
+      // active collection session). Bundled mods are imported, not queued here, so they
+      // are naturally excluded - matching the old driver's bundled skip.
+      this.writeCollectionSession(dep.reference, { type: "status", status: "downloading" });
       if (dep.reference.tag !== undefined) {
         queuedDownloads.push(dep.reference);
       }
@@ -6119,6 +6148,13 @@ class InstallManager {
                     freshDownloads[downloadId]?.state === "finished" &&
                     freshDownloads[downloadId]?.size > 0
                   ) {
+                    // already-finished/imported (incl. bundled) downloads bypass
+                    // handleDownloadFinished, so record "downloaded" here too (no-op
+                    // outside an active collection session)
+                    this.writeCollectionSession(dep.reference, {
+                      type: "status",
+                      status: "downloaded",
+                    });
                     this.queueInstallation(
                       api,
                       dep,
@@ -7212,6 +7248,28 @@ class InstallManager {
     }
 
     return null;
+  }
+
+  /**
+   * Record a dependency install outcome on the active collection session. This is the
+   * direct, in-process write path: the orchestrator already knows which dependency it is
+   * processing, so it matches the rule by reference and dispatches the resulting tracking
+   * action. Additive to the existing api.events.emit calls - it does not replace them.
+   * A no-op when there is no active session, no rule matches, or the write is redundant.
+   */
+  private writeCollectionSession(
+    reference: IModReference,
+    outcome: CollectionInstallOutcome,
+  ): void {
+    const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome);
+    if (plan === null) {
+      return;
+    }
+    const action =
+      plan.write.kind === "markInstalled"
+        ? markModInstalled(plan.sessionId, plan.ruleId, plan.write.modId)
+        : updateModStatus(plan.sessionId, plan.ruleId, plan.write.status);
+    this.mApi.store.dispatch(action);
   }
 
   /**

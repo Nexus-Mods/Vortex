@@ -1471,7 +1471,9 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
       });
       const isDependency = dependency !== undefined;
       if (isDependency) {
-        driver.markModInstalledInTracking(dependency, modId);
+        // "installed" is recorded on the session by InstallManager (the single lifecycle
+        // writer) when the dependency loop installs or reuses the mod; here we only wire
+        // the collection's bidirectional mod rules onto the freshly installed mod.
         const modRules = await driver.infoCache.getCollectionModRules(
           revisionId,
           collection,
