@@ -27,6 +27,7 @@ ui/
 │   ├── picker/          - Picker component
 │   ├── pill/            - Compact rounded label for tags and statuses
 │   ├── premium_badge/   - Premium diamond badge
+│   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   └── typography/      - Typography system (heading, title, body)
@@ -323,6 +324,48 @@ import { CollectionTileSkeleton } from "../../ui/components/collectiontile/Colle
 ```tsx
 import { Pagination } from "../../ui/components/pagination/Pagination";
 ```
+
+### Table
+
+Reusable, column-driven data table. Declare the columns and pass the data; sorting, per-column filtering, column show/hide, grouping, optional pagination and an empty state are handled internally.
+
+**Defaults:** filters and the column toggle auto-enable when a column opts in; pagination is **off** unless `pageSize` is set; headers are always left-aligned.
+
+```tsx
+import { Table } from "../../ui/components/table/Table";
+import type { IColumnDef } from "../../ui/components/table/Table.types";
+
+const columns: Array<IColumnDef<Mod>> = [
+    { id: "name", header: "Name", getValue: (m) => m.name, sortable: true, filter: { type: "text" } },
+    {
+        id: "category",
+        header: "Category",
+        getValue: (m) => m.category,
+        groupable: true,
+        filter: { type: "select", options: [{ label: "UI", value: "UI" }] },
+    },
+    {
+        id: "downloads",
+        header: "Downloads",
+        getValue: (m) => m.downloads,
+        sortable: true,
+        align: "right",
+        cell: (m) => m.downloads.toLocaleString(),
+    },
+];
+
+// No pageSize → renders every row, no pager
+<Table columns={columns} data={mods} getRowId={(m) => m.id} />
+
+// With pagination
+<Table columns={columns} data={mods} getRowId={(m) => m.id} pageSize={50} />
+```
+
+**`ITableProps` fields:** `columns`, `data`, `getRowId` (required); `pageSize` (set to paginate), `caption`, `enableFilters`, `enableColumnToggle`, `emptyState`, `className`.
+
+**`IColumnDef` fields:** `id`, `header` (required); `getValue` (value used for sorting/filtering and the default cell), `cell` (custom renderer), `sortable`/`sortFn`, `filter` (`text` or `select`), `align` (body cells — headers are always left), `width`, `hideable`/`defaultHidden` (column toggle), `groupable`/`groupValue`/`groupLabel`.
+
+**Notes:** grouping is one column at a time — collapsible groups across the full dataset, with the pager hidden while active. Columns use fixed widths, so when their total exceeds the container the table scrolls horizontally. All interactive state lives in the `useTableState` hook.
 
 ### Listing / ListingLoader / NoResults
 

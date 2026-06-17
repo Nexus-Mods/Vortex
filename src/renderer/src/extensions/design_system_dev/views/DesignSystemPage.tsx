@@ -20,6 +20,7 @@ import { PaginationDemo } from "@/ui/components/pagination/PaginationDemo";
 import { PickerDemo } from "@/ui/components/picker/PickerDemo";
 import { PillDemo } from "@/ui/components/pill/PillDemo";
 import { PremiumBadgeDemo } from "@/ui/components/premium_badge/PremiumBadgeDemo";
+import { TableDemo } from "@/ui/components/table/Table.demo";
 import { TabButton } from "@/ui/components/tabs/Tab";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
@@ -76,6 +77,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
               <TabButton name="Listing" />
 
               <TabButton name="Pagination" />
+
+              <TabButton name="Table" />
 
               <TabButton name="Collection Tile" />
 
@@ -211,6 +214,10 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
 
               <TabPanel name="Pagination">
                 <PaginationDemo />
+              </TabPanel>
+
+              <TabPanel name="Table">
+                <TableDemo />
               </TabPanel>
 
               <TabPanel name="Collection Tile">
