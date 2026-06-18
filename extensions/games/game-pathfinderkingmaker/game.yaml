@@ -1,0 +1,30 @@
+gdl: 1
+version: 0.2.0
+
+game:
+  id: pathfinderkingmaker
+  name: "Pathfinder: Kingmaker"
+  executable: Kingmaker.exe
+  requiredFiles: [Kingmaker.exe]
+  logo: gameart.jpg
+  author: m0nster
+  nexusDomain: pathfinderkingmaker
+  # All Kingmaker mods deploy under the game's Mods folder (Unity Mod Manager).
+  queryModPath: Mods
+
+stores:
+  steam: "640820"
+
+setup:
+  ensureDirs:
+    - ${installPath}/Mods
+  requireFiles:
+    files:
+      - ${installPath}/UnityModManager/UnityModManager.dll
+    prompt:
+      title: Action required
+      message: >-
+        You must install Unity Mod Manager to use mods with Pathfinder: Kingmaker.
+      link:
+        label: Go to the Unity Mod Manager page
+        mod: { domain: site, modId: 21 }

@@ -3,8 +3,8 @@
   "version": "0.2.0",
   "description": "Support for Pathfinder: Kingmaker",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "copyfiles -u 1 -f ./src/index.js dist && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs",
+    "test": "pnpm exec vitest run --passWithNoTests"
   },
   "author": "m0nster",
   "license": "GPL-3.0",
@@ -14,7 +14,8 @@
     "game": "Pathfinder: Kingmaker"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@vortex/extension-test-mocks": "workspace:*"
   },
   "nx": {
     "tags": [

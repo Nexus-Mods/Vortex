@@ -2309,6 +2309,9 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      '@vortex/extension-test-mocks':
+        specifier: workspace:*
+        version: link:../../../packages/extension-test-mocks
 
   extensions/games/game-pathfinderwrathoftherighteous:
     devDependencies:
