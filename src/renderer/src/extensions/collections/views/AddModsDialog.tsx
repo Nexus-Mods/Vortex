@@ -4,27 +4,34 @@ import { Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
-import { EmptyPlaceholder, Modal, Table, TableTextFilter, Usage } from "../../../controls/api";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import Modal from "../../../controls/Modal";
+import Table from "../../../controls/Table";
+import TableTextFilter from "../../../controls/table/TextFilter";
+import Usage from "../../../controls/Usage";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../extensions/mod_management/util/modName";
+import type { IState } from "../../../types/IState";
+import type { ITableAttribute } from "../../../types/ITableAttribute";
+import type { TFunction } from "../../../util/i18n";
 import * as selectors from "../../../util/selectors";
 import { startAddModsToCollection } from "../actions/session";
 import { alreadyIncluded } from "../collectionCreate";
 import { MOD_TYPE, NAMESPACE } from "../constants";
 
 export interface IAddModsDialogProps {
-  t: types.TFunction;
+  t: TFunction;
   onAddSelection: (collectionId: string, modIds: string[]) => void;
 }
 
 interface IModWithState {
   selected: boolean;
-  mod: types.IMod;
+  mod: IMod;
 }
 
 function makeColumns(
   onSelect: (modIds: string[], value: boolean) => void,
-): Array<types.ITableAttribute<IModWithState>> {
+): Array<ITableAttribute<IModWithState>> {
   let collator: Intl.Collator;
   return [
     /*
@@ -45,7 +52,7 @@ function makeColumns(
       id: "name",
       name: "Mod Name",
       description: "Mod Name",
-      calc: (mod: IModWithState) => util.renderModName(mod.mod),
+      calc: (mod: IModWithState) => renderModName(mod.mod),
       placement: "table",
       edit: {},
       isDefaultSort: true,
@@ -88,7 +95,7 @@ function AddModsDialog(props: IAddModsDialogProps) {
 
   const [selection, setSelection] = useState(new Set<string>());
 
-  const state: types.IState = store.getState();
+  const state: IState = store.getState();
   const gameId = selectors.activeGameId(state);
   const collectionId: string = useSelector<any, string>(
     (stateSel) => stateSel.session.collections.addModsId,
@@ -148,7 +155,7 @@ function AddModsDialog(props: IAddModsDialogProps) {
       onHide={hide}
     >
       <Modal.Header>
-        <Modal.Title>{util.renderModName(collection)}</Modal.Title>
+        <Modal.Title>{renderModName(collection)}</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>

@@ -4,13 +4,16 @@ import type { IRevision } from "@nexusmods/nexus-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 
-import { Icon, IconBar, Image } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
+import Icon from "../../../../controls/Icon";
+import IconBar from "../../../../controls/IconBar";
+import Image from "../../../../controls/Image";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
 import getVortexPath from "../../../../util/getVortexPath";
+import type { TFunction } from "../../../../util/i18n";
 
 export interface IRemoteTileProps {
-  t: types.TFunction;
-  added?: types.IMod;
+  t: TFunction;
+  added?: IMod;
   incomplete: boolean;
   revision: IRevision;
   onCloneCollection: (modId: string) => Promise<void>;

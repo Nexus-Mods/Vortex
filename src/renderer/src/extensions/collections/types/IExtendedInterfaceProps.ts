@@ -1,11 +1,12 @@
 import type { IRevision } from "@nexusmods/nexus-api";
 
-import type * as types from "../../../types/api";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import type { TFunction } from "../../../util/i18n";
 
 export interface IExtendedInterfaceProps {
-  t: types.TFunction;
+  t: TFunction;
   gameId: string;
-  collection: types.IMod;
+  collection: IMod;
   revisionInfo: IRevision;
   onSetCollectionAttribute: (attrPath: string[], value: any) => void;
 }

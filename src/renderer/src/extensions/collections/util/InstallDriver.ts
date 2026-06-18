@@ -1,7 +1,6 @@
 import * as path from "path";
 
-/* eslint-disable */
-import * as nexusApi from "@nexusmods/nexus-api";
+import type * as nexusApi from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import Bluebird from "bluebird";
 
@@ -37,8 +36,8 @@ import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPendingVote } from "../actions/persistent";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
 import { postprocessCollection } from "../postprocessCollection";
-import { ICollection } from "../types/ICollection";
-import { IRevisionEx } from "../types/IRevisionEx";
+import type { ICollection } from "../types/ICollection";
+import type { IRevisionEx } from "../types/IRevisionEx";
 import { applyPatches } from "./binaryPatching";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
@@ -170,8 +169,8 @@ class InstallDriver {
           gameId,
           modId: mod?.attributes?.modId,
           fileId: mod?.attributes?.fileId,
-          fileIds: Array.from(fileIdSet).filter((id) => id !== undefined) as string[],
-          fileNames: Array.from(nameSet).filter((n) => n !== undefined) as string[],
+          fileIds: Array.from(fileIdSet).filter((id) => id !== undefined),
+          fileNames: Array.from(nameSet).filter((n) => n !== undefined),
         };
         return (
           testModReference(mod, iter.reference) || testRefByIdentifiers(identifiers, iter.reference)

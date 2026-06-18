@@ -2,7 +2,7 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as React from "react";
 import type { TFunction } from "react-i18next";
 
-import { Icon } from "../../../../controls/api";
+import Icon from "../../../../controls/Icon";
 import { log } from "../../../../logging";
 import type InfoCache from "../../util/InfoCache";
 

@@ -2,11 +2,11 @@ import { getErrorCode } from "@vortex/shared";
 import type { IEntry, IWalkOptions } from "turbowalk";
 import turbowalk from "turbowalk";
 
-import * as util from "../../../util/api";
+import { fileMD5 } from "../../../util/checksum";
 import type { IEntryEx } from "../types/IEntryEx";
 
 export async function fileMD5Async(fileName: string): Promise<string> {
-  return util.fileMD5(fileName);
+  return fileMD5(fileName);
 }
 
 export async function walkPath(dirPath: string, walkOptions?: IWalkOptions): Promise<IEntryEx[]> {

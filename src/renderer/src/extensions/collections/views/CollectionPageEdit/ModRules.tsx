@@ -3,18 +3,18 @@ import memoize from "memoize-one";
 import * as React from "react";
 import { ControlLabel, ListGroup, ListGroupItem } from "react-bootstrap";
 
-import { Toggle } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import Toggle from "../../../../controls/Toggle";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import testModReference from "../../../../extensions/mod_management/util/testModReference";
 import type { ICollectionModRule, ICollectionModRuleEx } from "../../types/ICollection";
 import { renderReference } from "../../util/renderReference";
 import { ruleId } from "../../util/util";
 
 export interface IModsPageProps {
   t: TFunction;
-  collection: types.IMod;
-  mods: { [modId: string]: types.IMod };
+  collection: IMod;
+  mods: { [modId: string]: IMod };
   rules: ICollectionModRule[];
   onSetCollectionAttribute: (path: string[], value: any) => void;
 }
@@ -25,8 +25,8 @@ class ModRulesPage extends ComponentEx<IProps, {}> {
   private mAugmentedRules = memoize((rules: ICollectionModRule[]) =>
     rules.map((rule) => this.augmentRule(rule)),
   );
-  private mFilteredRules = memoize((collection: types.IMod, rules: ICollectionModRuleEx[]) =>
-    rules.filter((rule) => !util.testModReference(collection, rule.source)),
+  private mFilteredRules = memoize((collection: IMod, rules: ICollectionModRuleEx[]) =>
+    rules.filter((rule) => !testModReference(collection, rule.source)),
   );
 
   public shouldComponentUpdate(nextProps: IProps) {

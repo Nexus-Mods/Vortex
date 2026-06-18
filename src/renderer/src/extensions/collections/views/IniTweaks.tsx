@@ -10,11 +10,17 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
 import * as actions from "../../../actions";
-import { ActionDropdown, FlexLayout, Icon, More, Usage } from "../../../controls/api";
+import ActionDropdown from "../../../controls/ActionDropdown";
 import { ComponentEx, PureComponentEx } from "../../../controls/ComponentEx";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import FlexLayout from "../../../controls/FlexLayout";
+import Icon from "../../../controls/Icon";
+import More from "../../../controls/More";
+import Usage from "../../../controls/Usage";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IState } from "../../../types/IState";
+import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
 import { INI_TWEAKS_PATH, NAMESPACE, OPTIONAL_TWEAK_PREFIX } from "../constants";
 import type { IExtendedInterfaceProps } from "../types/IExtendedInterfaceProps";
 import type { IINITweak, TweakArray } from "../types/IINITweak";
@@ -50,7 +56,7 @@ interface ITweakProps {
 }
 
 class Tweak extends PureComponentEx<ITweakProps, {}> {
-  private mStatusActions: types.IActionDefinition[] = [
+  private mStatusActions: IActionDefinition[] = [
     {
       icon: "toggle-enabled",
       title: "Enabled",
@@ -109,7 +115,7 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
 
   private edit = () => {
     const { tweaksPath, fileName } = this.props;
-    util.opn(path.join(tweaksPath, fileName)).catch(() => null);
+    opn(path.join(tweaksPath, fileName)).catch(() => null);
   };
 
   private enable = () => {
@@ -240,7 +246,7 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
   private renderTweak = (tweak: IINITweak): JSX.Element => {
     const { t, collection, modsPath } = this.props;
     const { fileName } = tweak;
-    const isEnabled = util.getSafe(collection, ["enabledINITweaks"], []).indexOf(fileName) !== -1;
+    const isEnabled = getSafe(collection, ["enabledINITweaks"], []).indexOf(fileName) !== -1;
     return (
       <Tweak
         enabled={isEnabled}
@@ -268,15 +274,13 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-function mapStateToProps(state: types.IState, ownProps: IExtendedInterfaceProps): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: IExtendedInterfaceProps): IConnectedProps {
   return {
     modsPath: selectors.installPath(state),
   };
 }
 
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<types.IState, null, Redux.Action>,
-): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onSetINITweakEnabled: (gameId: string, modId: string, tweak: string, enabled: boolean) => {
       dispatch(actions.setINITweakEnabled(gameId, modId, tweak, enabled));

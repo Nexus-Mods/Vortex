@@ -3,12 +3,19 @@ import * as path from "path";
 import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
+import SevenZip from "node-7z";
 
+import type { IInstallResult } from "../../../extensions/mod_management/types/IInstallResult";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../extensions/mod_management/util/modName";
+import { convertGameIdReverse } from "../../../extensions/nexus_integration/util/convertGameId";
 import { log } from "../../../logging";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IDialogResult } from "../../../types/IDialog";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { DataInvalid, ProcessCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import * as selectors from "../../../util/selectors";
+import { makeQueue } from "../../../util/util";
 import { MAX_PATCH_SIZE, PATCHES_PATH, PATCH_OVERHEAD } from "../constants";
 import { diffFiles, patchFiles } from "./bsdiff";
 
@@ -21,14 +28,14 @@ async function validatePatch(srcFilePath: string, patchFilePath: string) {
   const srcStats: fs.Stats = await fs.statAsync(srcFilePath);
   const patchStats: fs.Stats = await fs.statAsync(patchFilePath);
   if (patchStats.size - PATCH_OVERHEAD > srcStats.size * MAX_PATCH_SIZE) {
-    throw new util.DataInvalid("patch too large");
+    throw new DataInvalid("patch too large");
   }
 }
 
-const queue = util.makeQueue();
+const queue = makeQueue();
 
 export function scanForDiffs(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   modId: string,
   destPath: string,
@@ -43,7 +50,7 @@ export function scanForDiffs(
   const archive = state.persistent.downloads.files[mod.archiveId];
 
   if (archive === undefined) {
-    throw new util.ProcessCanceled("Archive not found");
+    throw new ProcessCanceled("Archive not found");
   }
 
   const choices = mod.attributes?.installerChoices;
@@ -56,17 +63,17 @@ export function scanForDiffs(
           gameId,
           mod.archiveId,
           { choices },
-          async (instRes: types.IInstallResult, tempPath: string) => {
+          async (instRes: IInstallResult, tempPath: string) => {
             try {
               const rawGame = Array.isArray(archive.game) ? archive.game[0] : archive.game;
               const internalId = rawGame
-                ? util.convertGameIdReverse(selectors.knownGames(state), rawGame) || rawGame
+                ? convertGameIdReverse(selectors.knownGames(state), rawGame) || rawGame
                 : rawGame;
               const dlPath = selectors.downloadPathForGame(state, internalId);
               const archivePath = path.join(dlPath, archive.localPath);
 
               const sourceChecksums: { [fileName: string]: string } = {};
-              const szip = new util.SevenZip();
+              const szip = new SevenZip();
               await szip.list(archivePath, undefined, async (entries) => {
                 for (const entry of entries) {
                   if (entry.attr !== "D") {
@@ -116,7 +123,7 @@ export function scanForDiffs(
                   } catch (err) {
                     await fs.removeAsync(patchPath);
 
-                    const res: types.IDialogResult = await api.showDialog(
+                    const res: IDialogResult = await api.showDialog(
                       "error",
                       "Can't save local edits",
                       {
@@ -153,8 +160,8 @@ export function scanForDiffs(
 }
 
 export async function applyPatches(
-  api: types.IExtensionApi,
-  collection: types.IMod,
+  api: IExtensionApi,
+  collection: IMod,
   gameId: string,
   modName: string,
   modId: string,
@@ -187,7 +194,7 @@ export async function applyPatches(
         });
       }
     } catch (err) {
-      err["Collection"] = util.renderModName(collection);
+      err["Collection"] = renderModName(collection);
       api.showErrorNotification("failed to patch", unknownToError(err), {
         message: filePath,
       });

@@ -3,11 +3,13 @@ import { FormControl, FormGroup, InputGroup } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import { FlexLayout, tooltip } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import FlexLayout from "../../../../controls/FlexLayout";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import type { IState } from "../../../../types/IState";
 import * as selectors from "../../../../util/selectors";
+import { getSafe } from "../../../../util/storeHelper";
 import { NAMESPACE } from "../../constants";
 
 interface IBaseProps {
@@ -19,7 +21,7 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
-  mods: { [modId: string]: types.IMod };
+  mods: { [modId: string]: IMod };
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -75,10 +77,10 @@ class InstallModeRenderer extends ComponentEx<IProps, {}> {
   };
 }
 
-function mapStateToProps(state: types.IState): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const activeGameId = selectors.activeGameId(state);
   return {
-    mods: util.getSafe(state, ["persistent", "mods", activeGameId], {}),
+    mods: getSafe(state, ["persistent", "mods", activeGameId], {}),
   };
 }
 

@@ -1,21 +1,23 @@
-import type * as types from "../../../types/api";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import type { ICollection } from "./ICollection";
 import type { IExtendedInterfaceProps } from "./IExtendedInterfaceProps";
 
 export interface IGameSupportEntry {
   generator: (
-    state: types.IState,
+    state: IState,
     gameId: string,
     stagingPath: string,
     modIds: string[],
-    mods: { [modId: string]: types.IMod },
+    mods: { [modId: string]: IMod },
   ) => Promise<any>;
 
   parser: (
-    api: types.IExtensionApi,
+    api: IExtensionApi,
     gameId: string,
     collection: ICollection,
-    collectionMod: types.IMod,
+    collectionMod: IMod,
   ) => Promise<void>;
 
   interface: (props: IExtendedInterfaceProps) => JSX.Element;

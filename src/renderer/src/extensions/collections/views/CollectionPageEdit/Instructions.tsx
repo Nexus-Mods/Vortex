@@ -2,14 +2,17 @@ import * as React from "react";
 import { ControlLabel, FormControl } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import { FlexLayout, More, Toggle, tooltip } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
+import FlexLayout from "../../../../controls/FlexLayout";
+import More from "../../../../controls/More";
+import Toggle from "../../../../controls/Toggle";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
 import { INSTRUCTIONS_PLACEHOLDER, NAMESPACE } from "../../constants";
 import { isGamebryoGame } from "../../util/gameSupport";
 
 export interface IInstructionProps {
   gameId: string;
-  collection: types.IMod;
+  collection: IMod;
   onSetCollectionAttribute: (path: string[], value: any) => void;
 }
 

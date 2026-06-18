@@ -1,4 +1,6 @@
-import type * as types from "../../../../types/api";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IState } from "../../../../types/IState";
 import type { ICollection } from "../../types/ICollection";
 import type { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";
 import type { IGameSupportEntry } from "../../types/IGameSupportEntry";
@@ -63,11 +65,11 @@ const gameSupport: { [gameId: string]: IGameSupportEntry } = {
 };
 
 export function generateGameSpecifics(
-  state: types.IState,
+  state: IState,
   gameId: string,
   stagingPath: string,
   modIds: string[],
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
 ): Promise<any> {
   if (gameSupport[gameId] !== undefined && gameSupport[gameId].generator !== undefined) {
     return gameSupport[gameId].generator(state, gameId, stagingPath, modIds, mods);
@@ -77,10 +79,10 @@ export function generateGameSpecifics(
 }
 
 export function parseGameSpecifics(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   collection: ICollection,
-  collectionMod: types.IMod,
+  collectionMod: IMod,
 ): Promise<void> {
   if (gameSupport[gameId] !== undefined && gameSupport[gameId].parser !== undefined) {
     return gameSupport[gameId].parser(api, gameId, collection, collectionMod);

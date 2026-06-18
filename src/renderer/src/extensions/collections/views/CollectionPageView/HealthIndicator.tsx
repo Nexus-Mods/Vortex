@@ -3,8 +3,12 @@ import { IGameVersion } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 
-import { FlexLayout, Icon, RadialProgress, tooltip, More } from "../../../../controls/api";
-import { MainContext } from "../../../../views/api";
+import { MainContext } from "../../../../contexts";
+import FlexLayout from "../../../../controls/FlexLayout";
+import Icon from "../../../../controls/Icon";
+import More from "../../../../controls/More";
+import RadialProgress from "../../../../controls/RadialProgress";
+import * as tooltip from "../../../../controls/TooltipControls";
 
 export interface IHealthIndicatorProps {
   t: TFunction;

@@ -1,4 +1,4 @@
-import type * as types from "../../../types/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import * as fs from "../../../util/fs";
 import type { ICollection } from "../types/ICollection";
 import { validateICollection } from "../validationCode/validation";
@@ -8,10 +8,7 @@ function validationMessage(msg: any): string {
   return `${msg.instancePath || "/"} ${msg.message}`;
 }
 
-export async function readCollection(
-  api: types.IExtensionApi,
-  manifest: string,
-): Promise<ICollection> {
+export async function readCollection(api: IExtensionApi, manifest: string): Promise<ICollection> {
   const collectionData = await fs.readFileAsync(manifest, {
     encoding: "utf-8",
   });

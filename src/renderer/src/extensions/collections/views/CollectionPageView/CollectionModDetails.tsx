@@ -2,14 +2,21 @@ import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 
-import { FlexLayout, Image, tooltip, ZoomableImage } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import bbcodeToReact from "../../../../controls/bbcode";
+import FlexLayout from "../../../../controls/FlexLayout";
+import Image from "../../../../controls/Image";
+import * as tooltip from "../../../../controls/TooltipControls";
+import ZoomableImage from "../../../../controls/ZoomableImage";
+import { getGame } from "../../../../extensions/gamemode_management/util/getGame";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import { nexusGameId } from "../../../../extensions/nexus_integration/util/convertGameId";
+import type { TFunction } from "../../../../util/i18n";
+import opn from "../../../../util/opn";
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
 import type { IModEx } from "../../types/IModEx";
 
 export interface ICollectionModDetails {
-  t: types.TFunction;
+  t: TFunction;
   local?: IModEx;
   remote?: ICollectionRevisionMod;
   gameId: string;
@@ -22,22 +29,21 @@ function CollectionModDetails(props: ICollectionModDetails) {
   const uploaderId = local?.attributes?.uploaderId ?? remote?.file?.owner?.memberId;
   const uploaderAvatar = remote?.file?.owner?.avatar ?? "assets/images/noavatar.png";
   const authorName = local?.attributes?.author ?? remote?.file?.mod?.author ?? AUTHOR_UNKNOWN;
-  const modTitle = util.renderModName(local) ?? remote?.file?.mod?.name ?? "";
+  const modTitle = renderModName(local) ?? remote?.file?.mod?.name ?? "";
   const version = local?.attributes?.version ?? remote?.file?.version ?? "???";
   const description = local?.attributes?.shortDescription ?? remote?.file?.mod?.summary ?? "";
   const image = local?.attributes?.pictureUrl ?? remote?.file?.mod?.pictureUrl;
 
   const domainName =
-    remote?.file?.game?.domainName ??
-    util.nexusGameId(util.getGame(local?.attributes?.gameId ?? gameId));
+    remote?.file?.game?.domainName ?? nexusGameId(getGame(local?.attributes?.gameId ?? gameId));
   const modId = local?.attributes?.modId ?? remote?.file?.modId;
 
   const visitUploader = React.useCallback(() => {
-    util.opn(`${NEXUS_BASE_URL}/users/${uploaderId}`);
+    opn(`${NEXUS_BASE_URL}/users/${uploaderId}`);
   }, [uploaderId]);
 
   const visitPage = React.useCallback(() => {
-    util.opn(`${NEXUS_BASE_URL}/${domainName}/mods/${modId}`);
+    opn(`${NEXUS_BASE_URL}/${domainName}/mods/${modId}`);
   }, [domainName, modId]);
 
   return (
@@ -65,7 +71,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
             </FlexLayout.Fixed>
 
             <FlexLayout.Flex>
-              <div className="collection-description">{util.bbcodeToReact(description)}</div>
+              <div className="collection-description">{bbcodeToReact(description)}</div>
             </FlexLayout.Flex>
 
             <FlexLayout.Fixed>

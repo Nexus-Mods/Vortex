@@ -8,20 +8,29 @@ import { connect } from "react-redux";
 import type * as Redux from "redux";
 
 import * as actions from "../../../../actions";
-import { FlexLayout, tooltip } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
+import FlexLayout from "../../../../controls/FlexLayout";
+import * as tooltip from "../../../../controls/TooltipControls";
+import { getGame } from "../../../../extensions/gamemode_management/util/getGame";
+import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
+import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import { makeModReference } from "../../../../extensions/mod_management/util/modReference";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import type { IState } from "../../../../types/IState";
+import opn from "../../../../util/opn";
+import { getSafe, setSafe } from "../../../../util/storeHelper";
+import { Campaign, nexusModsURL, Section } from "../../../../util/util";
 import { startAddModsToCollection } from "../../actions/session";
 import { NAMESPACE } from "../../constants";
-/* eslint-disable */
-import { ICollectionInfo, ICollectionModRule } from "../../types/ICollection";
-import { IExtensionFeature } from "../../util/extension";
+import type { ICollectionInfo, ICollectionModRule } from "../../types/ICollection";
+import type { IExtensionFeature } from "../../util/extension";
 import { getInterface } from "../../util/gameSupport";
-import InstallDriver from "../../util/InstallDriver";
+import type InstallDriver from "../../util/InstallDriver";
 import { makeBiDirRule } from "../../util/transformCollection";
-import FileOverrides, { IPathTools } from "./FileOverrides";
+import type { IPathTools } from "./FileOverrides";
+import FileOverrides from "./FileOverrides";
 import CollectionGeneralPage from "./Instructions";
 import ModRules from "./ModRules";
 import ModsEditPage from "./ModsEditPage";
@@ -30,9 +39,9 @@ const INIT_PAGE = "mods";
 
 export interface ICollectionEditBaseProps {
   pathTool: IPathTools;
-  profile: types.IProfile;
-  collection: types.IMod;
-  mods: { [modId: string]: types.IMod };
+  profile: IProfile;
+  collection: IMod;
+  mods: { [modId: string]: IMod };
   driver: InstallDriver;
   exts: IExtensionFeature[];
   onRemove: (modId: string) => void;
@@ -47,8 +56,8 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetModAttribute: (gameId: string, modId: string, key: string, value: any) => void;
-  onAddRule: (gameId: string, modId: string, rule: types.IModRule) => void;
-  onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) => void;
+  onAddRule: (gameId: string, modId: string, rule: IModRule) => void;
+  onRemoveRule: (gameId: string, modId: string, rule: IModRule) => void;
   onAddModsDialog: (collectionId: string) => void;
   onDismissPhaseUsage: () => void;
   onDismissBinpatchWarning: () => void;
@@ -77,19 +86,19 @@ const emptyList = [];
 
 class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditState> {
   private collectionRules = memoize(
-    (rules: types.IModRule[], mods: { [modId: string]: types.IMod }): ICollectionModRule[] => {
+    (rules: IModRule[], mods: { [modId: string]: IMod }): ICollectionModRule[] => {
       const includedMods = rules
         .filter((rule) => ["requires", "recommends"].includes(rule.type))
         .reduce((prev, rule) => {
-          const mod = util.findModByRef(rule.reference, mods);
+          const mod = findModByRef(rule.reference, mods);
           if (mod !== undefined) {
             prev[mod.id] = mod;
           }
           return prev;
         }, {});
 
-      return Object.values(includedMods).reduce<ICollectionModRule[]>((prev, mod: types.IMod) => {
-        const source = util.makeModReference(mod);
+      return Object.values(includedMods).reduce<ICollectionModRule[]>((prev, mod: IMod) => {
+        const source = makeModReference(mod);
         prev = [].concat(
           prev,
           (mod.rules || [])
@@ -107,7 +116,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
   );
 
   // used in case we do multiple attribute changes in a single frame
-  private mAttributes: types.IMod["attributes"];
+  private mAttributes: IMod["attributes"];
 
   constructor(props: ICollectionEditProps) {
     super(props);
@@ -126,8 +135,8 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
   public UNSAFE_componentWillReceiveProps(newProps: ICollectionEditProps) {
     this.mAttributes = newProps.collection?.attributes;
     if (
-      util.getSafe(newProps.collection, ["id"], undefined) !==
-      util.getSafe(this.props.collection, ["id"], undefined)
+      getSafe(newProps.collection, ["id"], undefined) !==
+      getSafe(this.props.collection, ["id"], undefined)
     ) {
       this.updateState(newProps);
     }
@@ -152,7 +161,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
       return null;
     }
 
-    const game = util.getGame(profile.gameId);
+    const game = getGame(profile.gameId);
 
     const extInterfaces = exts.filter((ext) => ext.editComponent !== undefined);
 
@@ -172,8 +181,9 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
         <FlexLayout.Fixed className="collection-edit-header">
           <FlexLayout type="row">
             <h3>
-              {t("Edit Collection")} / {util.renderModName(collection)}
+              {t("Edit Collection")} / {renderModName(collection)}
             </h3>
+
             <tooltip.IconButton
               icon="delete"
               tooltip={t("Remove this collection")}
@@ -181,112 +191,122 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
             >
               {t("Remove")}
             </tooltip.IconButton>
+
             <tooltip.IconButton
+              disabled={uploadDisabled !== undefined}
               icon="collection-export"
               set="collections"
               tooltip={uploadDisabled ?? t("Upload to Nexus Mods")}
               onClick={this.upload}
-              disabled={uploadDisabled !== undefined}
             >
               {t(nextRev !== undefined ? "Upload Update" : "Upload New")}
             </tooltip.IconButton>
+
             <tooltip.IconButton
+              disabled={revision === undefined}
               icon="open-ext"
               tooltip={t("Open site")}
               onClick={this.openUrl}
-              disabled={revision === undefined}
             >
               {t("View Site")}
             </tooltip.IconButton>
           </FlexLayout>
+
           {t("Set up your mod collection's rules and site preferences.")}
         </FlexLayout.Fixed>
+
         <FlexLayout.Flex>
-          <Tabs id="collection-edit-tabs" activeKey={page} onSelect={this.setCurrentPage}>
+          <Tabs activeKey={page} id="collection-edit-tabs" onSelect={this.setCurrentPage}>
             <Tab
-              key="mods"
               eventKey="mods"
+              key="mods"
               title={
                 <div>
                   {t("Mods")}
+
                   <Badge>{(collection.rules || []).length}</Badge>
                 </div>
               }
             >
               <Panel style={{ position: "relative" }}>
                 <ModsEditPage
-                  mods={mods}
                   collection={collection}
-                  t={t}
-                  onSetModVersion={null}
-                  showPhaseUsage={showPhaseUsage}
+                  mods={mods}
                   showBinpatchWarning={showBinpatchWarning}
+                  showPhaseUsage={showPhaseUsage}
+                  t={t}
+                  onAddModsDialog={this.addModsDialog}
                   onAddRule={this.addRule}
+                  onDismissBinpatchWarning={onDismissBinpatchWarning}
+                  onDismissPhaseUsage={onDismissPhaseUsage}
                   onRemoveRule={this.removeRule}
                   onSetCollectionAttribute={this.setCollectionAttribute}
-                  onAddModsDialog={this.addModsDialog}
-                  onDismissPhaseUsage={onDismissPhaseUsage}
-                  onDismissBinpatchWarning={onDismissBinpatchWarning}
+                  onSetModVersion={null}
                   onShowPhaseColumn={this.showPhaseColumn}
                 />
               </Panel>
             </Tab>
-            <Tab key="mod-rules" eventKey="mod-rules" title={t("Mod Rules")}>
+
+            <Tab eventKey="mod-rules" key="mod-rules" title={t("Mod Rules")}>
               <Panel>
                 <ModRules
-                  t={t}
                   collection={collection}
                   mods={mods}
                   rules={requiredModRules}
+                  t={t}
                   onSetCollectionAttribute={this.setCollectionAttribute}
                 />
               </Panel>
             </Tab>
-            <Tab key="file-overrides" eventKey="file-overrides" title={t("File Overrides")}>
+
+            <Tab eventKey="file-overrides" key="file-overrides" title={t("File Overrides")}>
               <Panel>
                 <FileOverrides
-                  t={t}
                   collection={collection}
                   mods={mods}
-                  onSetCollectionAttribute={this.setCollectionAttribute}
                   pathTool={pathTool}
+                  t={t}
+                  onSetCollectionAttribute={this.setCollectionAttribute}
                 />
               </Panel>
             </Tab>
+
             <Tab
-              key="collection-instructions"
               eventKey="collection-instructions"
+              key="collection-instructions"
               title={t("Collection Instructions")}
             >
               <Panel>
                 <CollectionGeneralPage
-                  gameId={profile.gameId}
                   collection={collection}
+                  gameId={profile.gameId}
                   onSetCollectionAttribute={this.setCollectionAttribute}
                 />
               </Panel>
             </Tab>
+
             {extInterfaces.map((ext) => (
-              <Tab key={ext.id} eventKey={ext.id} title={ext.title(t)}>
+              <Tab eventKey={ext.id} key={ext.id} title={ext.title(t)}>
                 <Panel>
                   <ext.editComponent
-                    t={t}
-                    gameId={profile.gameId}
                     collection={collection}
+                    gameId={profile.gameId}
                     revisionInfo={revision}
+                    t={t}
                     onSetCollectionAttribute={this.setCollectionAttribute}
                   />
                 </Panel>
               </Tab>
             ))}
-            {!!Interface ? (
-              <Tab key="gamespecific" eventKey="gamespecific" title={game.name}>
+
+            {Interface ? (
+              <Tab eventKey="gamespecific" key="gamespecific" title={game.name}>
                 <Panel>
                   <Interface
-                    t={t}
-                    gameId={profile.gameId}
                     collection={collection}
+                    gameId={profile.gameId}
                     revisionInfo={revision}
+                    t={t}
                     onSetCollectionAttribute={this.setCollectionAttribute}
                   />
                 </Panel>
@@ -300,11 +320,11 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
 
   private testUploadPossible(): string {
     const { t, collection } = this.props;
-    const refMods: types.IModRule[] = (collection.rules ?? []).filter((rule) =>
+    const refMods: IModRule[] = (collection.rules ?? []).filter((rule) =>
       ["requires", "recommends"].includes(rule.type),
     );
     if (refMods.length === 0) {
-      return t("Can't upload an empty collection") as string;
+      return t("Can't upload an empty collection");
     } else {
       return undefined;
     }
@@ -338,7 +358,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
   }
 
   private trackTabChange = (page) => {
-    const game = util.getGame(this.props.profile.gameId);
+    const game = getGame(this.props.profile.gameId);
     const pageTracking = page === "gamespecific" ? game.name : page;
     this.context.api.events.emit(
       "analytics-track-navigation",
@@ -376,8 +396,8 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
         "Collections",
         "View on site Workshop Collection",
       );
-      util.opn(
-        util.nexusModsURL(
+      opn(
+        nexusModsURL(
           [
             collection.game.domainName,
             "collections",
@@ -386,20 +406,20 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
             revision.revisionNumber.toString(),
           ],
           {
-            campaign: util.Campaign.GeneralNavigation,
-            section: util.Section.Collections,
+            campaign: Campaign.GeneralNavigation,
+            section: Section.Collections,
           },
         ),
       );
     }
   };
 
-  private addRule = (rule: types.IModRule) => {
+  private addRule = (rule: IModRule) => {
     const { profile, collection } = this.props;
     this.props.onAddRule(profile.gameId, collection.id, rule);
   };
 
-  private removeRule = (rule: types.IModRule) => {
+  private removeRule = (rule: IModRule) => {
     const { profile, collection } = this.props;
     this.props.onRemoveRule(profile.gameId, collection.id, rule);
   };
@@ -409,9 +429,9 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
     if (this.mAttributes === undefined) {
       this.mAttributes = collection.attributes;
     }
-    const attr = util.getSafe(this.mAttributes, ["collection"], {});
-    const updated = util.setSafe(attr, attrPath, value);
-    this.mAttributes = util.setSafe(this.mAttributes, ["collection"], updated);
+    const attr = getSafe(this.mAttributes, ["collection"], {});
+    const updated = setSafe(attr, attrPath, value);
+    this.mAttributes = setSafe(this.mAttributes, ["collection"], updated);
     this.props.onSetModAttribute(profile.gameId, collection.id, "collection", updated);
   };
 
@@ -426,7 +446,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
   };
 }
 
-function mapStateToProps(state: types.IState, ownProps: ICollectionEditBaseProps): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: ICollectionEditBaseProps): IConnectedProps {
   const { settings } = state;
   return {
     phaseColumnVisible: settings.tables["collection-mods"]?.attributes?.phase?.enabled ?? false,
@@ -439,9 +459,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
     onSetModAttribute: (gameId: string, modId: string, key: string, value: any) =>
       dispatch(actions.setModAttribute(gameId, modId, key, value)),
-    onAddRule: (gameId: string, modId: string, rule: types.IModRule) =>
+    onAddRule: (gameId: string, modId: string, rule: IModRule) =>
       dispatch(actions.addModRule(gameId, modId, rule)),
-    onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) =>
+    onRemoveRule: (gameId: string, modId: string, rule: IModRule) =>
       dispatch(actions.removeModRule(gameId, modId, rule)),
     onAddModsDialog: (collectionId: string) => dispatch(startAddModsToCollection(collectionId)),
     onDismissPhaseUsage: () => dispatch(actions.showUsageInstruction("collection-phase", false)),

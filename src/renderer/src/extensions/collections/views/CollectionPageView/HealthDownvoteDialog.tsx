@@ -5,11 +5,11 @@ import { Button, Checkbox, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { Modal } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import { MainContext } from "../../../../contexts";
+import Modal from "../../../../controls/Modal";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
 import * as selectors from "../../../../util/selectors";
-import { MainContext } from "../../../../views/api";
 import { updateSuccessRate } from "../../actions/persistent";
 import { healthDownvoteDialog } from "../../actions/session";
 import { NAMESPACE } from "../../constants";
@@ -31,7 +31,7 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
     (state: any) => state.session.collections.healthDownvoteDialog ?? undefined,
   );
 
-  const collection: types.IMod =
+  const collection: IMod =
     collectionId !== undefined ? state.persistent.mods[gameId]?.[collectionId] : undefined;
 
   let revisionInfo: IRevision;
@@ -92,7 +92,7 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
       <Modal.Body>
         <p>
           {t(
-            `Sorry to hear that the collection \"${util.renderModName(collection)}\" isn't working for you. Here are some steps that could help:`,
+            `Sorry to hear that the collection \"${renderModName(collection)}\" isn't working for you. Here are some steps that could help:`,
           )}
         </p>
 

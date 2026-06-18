@@ -1,6 +1,6 @@
-import type * as types from "../../../types/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 
-export function makeProgressFunction(api: types.IExtensionApi) {
+export function makeProgressFunction(api: IExtensionApi) {
   const notificationId = api.sendNotification({
     type: "activity",
     title: "Building Collection",

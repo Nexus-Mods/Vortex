@@ -2,21 +2,23 @@ import * as React from "react";
 import { Button } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
+import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
+import { renderModReference } from "../../../../extensions/mod_management/util/modName";
+import type { TFunction } from "../../../../util/i18n";
 import { DEFAULT_INSTRUCTIONS } from "../../constants";
 import { isEmpty } from "../../util/util";
 
 export interface IInstructionsProps {
-  t: types.TFunction;
-  collection: types.IMod;
-  mods: { [modId: string]: types.IMod };
+  t: TFunction;
+  collection: IMod;
+  mods: { [modId: string]: IMod };
   onToggleInstructions: (evt: React.MouseEvent<any>) => void;
 }
 
 interface IInstructionsEntry {
-  rule: types.IModRule;
-  mod: types.IMod;
+  rule: IModRule;
+  mod: IMod;
   name: string;
   instructions: string;
 }
@@ -31,13 +33,13 @@ function Instructions(props: IInstructionsProps) {
           return prev;
         }
 
-        const mod: types.IMod = util.findModByRef(rule.reference, mods);
+        const mod: IMod = findModByRef(rule.reference, mods);
 
         if (mod !== undefined) {
           const entry: IInstructionsEntry = {
             rule,
             mod,
-            name: util.renderModReference(rule.reference),
+            name: renderModReference(rule.reference),
             instructions: rule.extra?.instructions,
           };
 

@@ -1,10 +1,11 @@
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import { UserCanceled } from "../../../util/CustomErrors";
 import * as selectors from "../../../util/selectors";
 
-export async function showQuickCollectionRestrictionsDialog(api: types.IExtensionApi) {
+export async function showQuickCollectionRestrictionsDialog(api: IExtensionApi) {
   const t = api.translate;
-  const state: types.IState = api.store.getState();
+  const state: IState = api.store.getState();
   const profileId = selectors.activeProfile(state)?.id;
   if (!profileId) {
     return;
@@ -38,6 +39,6 @@ export async function showQuickCollectionRestrictionsDialog(api: types.IExtensio
     [{ label: "Cancel" }, { label: "Proceed" }],
   );
   return restrictionsDialog.action === "Cancel"
-    ? Promise.reject(new util.UserCanceled())
+    ? Promise.reject(new UserCanceled())
     : Promise.resolve();
 }

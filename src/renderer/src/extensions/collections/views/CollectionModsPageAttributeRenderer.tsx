@@ -1,12 +1,13 @@
 import * as React from "react";
 
-import { FlexLayout, tooltip } from "../../../controls/api";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import FlexLayout from "../../../controls/FlexLayout";
+import * as tooltip from "../../../controls/TooltipControls";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../extensions/mod_management/util/modName";
 
 interface IBaseProps {
   modId: string;
-  collections: types.IMod[];
+  collections: IMod[];
   detailCell: boolean;
 }
 
@@ -52,7 +53,7 @@ function CollectionCount(props: { collectionNames: string[]; modId: string }) {
 function CollectionModsPageAttributeRenderer(props: IProps) {
   const { collections, detailCell, modId } = props;
 
-  const collectionNames = collections.map((collection) => util.renderModName(collection));
+  const collectionNames = collections.map((collection) => renderModName(collection));
 
   const count = collectionNames.length;
   return count > 0 ? (

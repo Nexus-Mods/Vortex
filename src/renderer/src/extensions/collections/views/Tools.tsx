@@ -7,17 +7,18 @@ import { ControlLabel, Image, Table } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
 
 import * as actions from "../../../actions";
-import { Icon, Toggle } from "../../../controls/api";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import Icon from "../../../controls/Icon";
+import Toggle from "../../../controls/Toggle";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IState } from "../../../types/IState";
+import getVortexPath from "../../../util/getVortexPath";
 import * as selectors from "../../../util/selectors";
 
 function ToolIcon(props: { gameId: string; imageUrl: string }) {
   const { gameId, imageUrl } = props;
   if (imageUrl !== undefined) {
-    const src = pathToFileURL(
-      path.join(util.getVortexPath("userData"), gameId, "icons", imageUrl),
-    ).href;
+    const src = pathToFileURL(path.join(getVortexPath("userData"), gameId, "icons", imageUrl)).href;
     return <Image className={"tool-icon valid"} src={src} />;
   } else {
     return <Icon className={"tool-icon valid"} name="executable" />;
@@ -27,7 +28,7 @@ function ToolIcon(props: { gameId: string; imageUrl: string }) {
 interface IToolItemProps {
   t: TFunction;
   gameId: string;
-  tool: types.IDiscoveredTool;
+  tool: IDiscoveredTool;
   enabled: boolean;
   onToggle: (newValue: boolean, dataId: string) => void;
 }
@@ -62,7 +63,7 @@ function ToolItem(props: IToolItemProps) {
 
 interface IToolsProps {
   t: TFunction;
-  collection: types.IMod;
+  collection: IMod;
   onSetCollectionAttribute: (attrPath: string[], value: any) => void;
 }
 
@@ -73,7 +74,7 @@ function Tools(props: IToolsProps) {
 
   const gameMode: string = useSelector(selectors.activeGameId);
 
-  const includedTools: string[] = useSelector<types.IState, string[]>(
+  const includedTools: string[] = useSelector<IState, string[]>(
     (state) =>
       state.persistent.mods[gameMode][collection.id].attributes?.collection?.includedTools ??
       emptyArray,
@@ -89,9 +90,7 @@ function Tools(props: IToolsProps) {
     [includedTools, onSetCollectionAttribute],
   );
 
-  const tools = useSelector(
-    (state: types.IState) => state.settings.gameMode.discovered[gameMode].tools,
-  );
+  const tools = useSelector((state: IState) => state.settings.gameMode.discovered[gameMode].tools);
 
   const custom = Object.values(tools ?? {}).filter((tool) => tool.custom && !tool.hidden);
 

@@ -4,17 +4,23 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import * as actions from "../../../../actions";
-import { Modal, Spinner, tooltip } from "../../../../controls/api";
+import Modal from "../../../../controls/Modal";
+import Spinner from "../../../../controls/Spinner";
+import * as tooltip from "../../../../controls/TooltipControls";
+import { getGame } from "../../../../extensions/gamemode_management/util/getGame";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
+import renderModName from "../../../../extensions/mod_management/util/modName";
 import { log } from "../../../../logging";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IState } from "../../../../types/IState";
 import { NAMESPACE } from "../../constants";
 import type InstallDriver from "../../util/InstallDriver";
 import CollectionThumbnail from "../CollectionTile";
 import YouCuratedTag from "./YouCuratedThisTag";
 
 export interface IInstallFinishedDialogProps {
-  api: types.IExtensionApi;
+  api: IExtensionApi;
   driver: InstallDriver;
   onClone: (collectionId: string) => Promise<string>;
   editCollection: (id: string) => void;
@@ -30,7 +36,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
   const { api, driver, onClone } = props;
   const { t } = useTranslation(api.NAMESPACE);
 
-  const userInfo = useSelector<types.IState, { userId: number }>(
+  const userInfo = useSelector<IState, { userId: number }>(
     (state) => state.persistent["nexus"]?.userInfo ?? emptyObject,
   );
 
@@ -82,17 +88,17 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
 
   const collection = driver.collection;
 
-  const mods = useSelector<types.IState, { [modId: string]: types.IMod }>((state) =>
+  const mods = useSelector<IState, { [modId: string]: IMod }>((state) =>
     driver.profile !== undefined ? state.persistent.mods[driver.profile?.gameId] : emptyObject,
   );
 
   const optionals = React.useMemo(() => {
     return (collection?.rules ?? []).filter(
-      (rule) => rule.type === "recommends" && util.findModByRef(rule.reference, mods) === undefined,
+      (rule) => rule.type === "recommends" && findModByRef(rule.reference, mods) === undefined,
     );
   }, [collection?.rules, mods]);
 
-  const game = driver.profile !== undefined ? util.getGame(driver.profile.gameId) : undefined;
+  const game = driver.profile !== undefined ? getGame(driver.profile.gameId) : undefined;
 
   const ownCollection: boolean = driver.collectionInfo?.user?.memberId === userInfo?.userId;
 
@@ -126,7 +132,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
           <Media.Right>
             <h5>{game?.name}</h5>
 
-            <h3>{util.renderModName(driver.collection)}</h3>
+            <h3>{renderModName(driver.collection)}</h3>
 
             {driver.collection?.attributes?.shortDescription ?? t("No description")}
 
