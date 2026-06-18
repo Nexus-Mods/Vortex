@@ -9,11 +9,61 @@ game:
   logo: gameart.jpg
   author: m0nster
   nexusDomain: pathfinderkingmaker
-  # All Kingmaker mods deploy under the game's Mods folder (Unity Mod Manager).
+  # Unity Mod Manager mods deploy under the game's Mods folder.
   queryModPath: Mods
 
 stores:
   steam: "640820"
+
+context:
+  # Custom character portraits live in the user's LocalLow profile, not the game
+  # install. Each portrait is a folder of Small/Medium/Fulllength PNGs.
+  portraitsRoot: ${appDataLocalLow}/Owlcat Games/Pathfinder Kingmaker/Portraits
+
+modTypes:
+  - { id: portrait, name: Portrait, path: "${portraitsRoot}" }
+
+# A portrait folder is identified by the Small + Medium + Fulllength PNG trio.
+# UMM code mods (.dll) and in-game asset-bundle replacements are excluded so they
+# keep deploying to Mods/ and the game data folder respectively.
+installers:
+  # Multi-portrait packs wrapped in a top-level Portraits/ folder: strip the
+  # wrapper so each portrait subfolder lands directly under the Portraits root.
+  - id: portrait-collection
+    priority: 24
+    when:
+      all:
+        - { hasFile: "**/Portraits/*/Fulllength.png" }
+        - { hasFile: "**/Portraits/*/Medium.png" }
+        - { hasFile: "**/Portraits/*/Small.png" }
+    unless:
+      any:
+        - { hasFile: "**/*.dll" }
+        - { hasFile: "**/*_Data/StreamingAssets/**" }
+    copy: { stripCommonRoot: true }
+    modType: portrait
+
+  # A single portrait in its own folder: take that folder and place it under the
+  # Portraits root.
+  - id: portrait
+    priority: 25
+    when:
+      all:
+        - { hasFile: "**/Fulllength.png" }
+        - { hasFile: "**/Medium.png" }
+        - { hasFile: "**/Small.png" }
+    unless:
+      any:
+        - { hasFile: "**/*.dll" }
+        - { hasFile: "**/*_Data/StreamingAssets/**" }
+        # Root-loose portraits have no folder name to deploy into; out of scope.
+        - { hasFile: "Fulllength.png" }
+        # Wrapped packs are handled by portrait-collection above.
+        - { hasFile: "**/Portraits/*/Fulllength.png" }
+    anchor: "**/Fulllength.png"
+    take: parent
+    placeAt: ${portraitsRoot}
+    modType: portrait
 
 setup:
   ensureDirs:
@@ -28,3 +78,6 @@ setup:
       link:
         label: Go to the Unity Mod Manager page
         mod: { domain: site, modId: 21 }
+
+tests:
+  corpus: nexus
