@@ -2,33 +2,35 @@ import * as _ from "lodash";
 
 import * as actions from "../../actions";
 import { log } from "../../logging";
-import type * as types from "../../types/api";
-import * as util from "../../util/api";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import { batchDispatch, toPromise } from "../../util/util";
+import type { IMod, IModRule } from "../mod_management/types/IMod";
+import { findModByRef } from "../mod_management/util/findModByRef";
+import testModReference from "../mod_management/util/testModReference";
 import type { ICollection } from "./types/ICollection";
 import type { IExtensionFeature } from "./util/extension";
 import { findExtensions } from "./util/extension";
 import { parseGameSpecifics } from "./util/gameSupport";
 
 function applyCollectionRules(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   collection: ICollection,
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
 ) {
   const batch = (collection.modRules ?? []).reduce((prev, rule) => {
-    const sourceMod = util.findModByRef(rule.source, mods);
+    const sourceMod = findModByRef(rule.source, mods);
     if (sourceMod !== undefined) {
-      const destMod = util.findModByRef(rule.reference, mods);
+      const destMod = findModByRef(rule.reference, mods);
 
       let exists: boolean = false;
       if (destMod !== undefined) {
         // replace existing rules between these two mods
         const exSourceRules = (sourceMod.rules ?? []).filter(
-          (iter) =>
-            ["before", "after"].includes(iter.type) &&
-            util.testModReference(destMod, iter.reference),
+          (iter: IModRule) =>
+            ["before", "after"].includes(iter.type) && testModReference(destMod, iter.reference),
         );
-        exSourceRules.forEach((exSourceRule) => {
+        exSourceRules.forEach((exSourceRule: IModRule) => {
           const copy = JSON.parse(JSON.stringify(exSourceRule));
           delete copy.reference.idHint;
           if (!exists && _.isEqual(copy, rule)) {
@@ -38,11 +40,10 @@ function applyCollectionRules(
           }
         });
         const exDestRules = (destMod.rules ?? []).filter(
-          (iter) =>
-            ["before", "after"].includes(iter.type) &&
-            util.testModReference(sourceMod, iter.reference),
+          (iter: IModRule) =>
+            ["before", "after"].includes(iter.type) && testModReference(sourceMod, iter.reference),
         );
-        exDestRules.forEach((exDestRule) => {
+        exDestRules.forEach((exDestRule: IModRule) => {
           prev.push(actions.removeModRule(gameId, destMod.id, exDestRule));
         });
         rule.reference = {
@@ -64,7 +65,7 @@ function applyCollectionRules(
     return prev;
   }, []);
 
-  util.batchDispatch(api.store, batch);
+  batchDispatch(api.store, batch);
 }
 
 /**
@@ -73,17 +74,17 @@ function applyCollectionRules(
  * exists
  */
 export async function postprocessCollection(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
-  collectionMod: types.IMod,
+  collectionMod: IMod,
   collection: ICollection,
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
 ) {
   log("info", "postprocess collection");
   applyCollectionRules(api, gameId, collection, mods);
   try {
     // TODO: replace this with a call to the awaitModsDeployment API extension method
-    await util.toPromise((cb) =>
+    await toPromise((cb) =>
       api.events.emit("deploy-mods", cb, undefined, undefined, {
         isCollectionPostprocessCall: true,
       }),

@@ -1,35 +1,37 @@
 /**
- * Orchestration tests for InstallDriver, driven through the fake-api harness
- * (test-utils/builders makeDriverHarness). The driver is a singleton reacting to a global
- * event bus while mutating a single redux install session, so the tests are grouped by the
- * USER JOURNEY that exercises a given event surface (session lifecycle, premium install,
- * churn, completion decision) rather than by individual handler. Each journey states only the
- * member rule that distinguishes it and reuses the shared builders for everything else.
+ * Orchestration tests for InstallDriver, driven through the fake-api harness via the
+ * driverTest `makeDriver` fixture. The driver is a singleton reacting to a global event bus
+ * while mutating a single redux install session, so the tests are grouped by the USER JOURNEY
+ * that exercises a given event surface (session lifecycle, premium install, churn, completion
+ * decision) rather than by individual handler. Each journey states only the member rule that
+ * distinguishes it and reuses the shared builders for everything else.
+ *
+ * The harness lifecycle (build + start + the worker-global registry/mock teardown) comes from
+ * the shared driverTest/harnessTest fixtures, so there is no hand-written afterEach to forget.
  *
  * Skip attribution (premium/automatic and free-user) is no longer the driver's concern - it
  * moved to markCollectionMemberSkipped (see collectionSkip.test.ts).
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import {
+  type IDriverHarness,
   makeCollectionModInfo,
   makeDownload,
-  makeDriverHarness,
   makeFileListItem,
   makeInstallerChoices,
   makeMod,
   makePatches,
   makeReference,
   makeRule,
-  resetHarnessRegistries,
 } from "../../../test-utils/builders";
+import { test as driverTest } from "../../../test-utils/driverTest";
 import { modRuleId } from "../../../util/collectionInstallSession";
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { MOD_TYPE } from "../constants";
 import { applyPatches } from "./binaryPatching";
-import InstallDriver from "./InstallDriver";
 
 // applyPatches is a single named collaborator that does binary file patching (fs). Stubbing it
 // at that boundary lets the member install-spec path run without touching disk while we still
@@ -77,24 +79,24 @@ function makeCollectionFixture(opts: {
   return { collection, download };
 }
 
-function harnessFor(fixture: ICollectionFixture) {
-  return makeDriverHarness(InstallDriver, {
-    mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
-    downloads: { [fixture.download.id]: fixture.download },
-    profiles: { [profile.id]: profile },
-  });
-}
-
-// Build the harness and run start(profile, collection), returning the started harness.
-async function started(fixture: ICollectionFixture) {
-  const h = harnessFor(fixture);
-  await h.driver.start(profile, fixture.collection);
-  return h;
-}
-
-afterEach(() => {
-  resetHarnessRegistries();
-  vi.clearAllMocks();
+// extend the shared harness test with a driver fixture: build the harness for a collection
+// fixture, run start(), and hand back the started harness (registry/mock teardown is inherited)
+const test = driverTest.extend<{
+  startCollection: (fixture: ICollectionFixture) => Promise<IDriverHarness>;
+}>({
+  // build the harness via the inherited makeDriver fixture, run start(), and hand back the
+  // started harness (the registry/mock teardown is inherited from harnessTest)
+  startCollection: async ({ makeDriver }, use) => {
+    await use(async (fixture: ICollectionFixture) => {
+      const h = makeDriver({
+        mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
+        downloads: { [fixture.download.id]: fixture.download },
+        profiles: { [profile.id]: profile },
+      });
+      await h.driver.start(profile, fixture.collection);
+      return h;
+    });
+  },
 });
 
 // a tag-identified required member (no description, so a member did-install-mod skips the
@@ -110,13 +112,15 @@ const installedMemberMod: IMod = makeMod({
 });
 
 describe("InstallDriver session lifecycle", () => {
-  it("constructs in the prepare step", () => {
-    const h = makeDriverHarness(InstallDriver);
+  test("constructs in the prepare step", ({ makeDriver }) => {
+    const h = makeDriver();
     expect(h.driver.step).toBe("prepare");
   });
 
-  it("start() opens an active session that tracks the collection's member rule", async () => {
-    const h = await started(defaultFixture);
+  test("start() opens an active session that tracks the collection's member rule", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(defaultFixture);
 
     const session = h.getState().session.collections.activeSession;
     expect(session).toBeDefined();
@@ -125,8 +129,10 @@ describe("InstallDriver session lifecycle", () => {
     expect(h.driver.currentSessionId).toBe(session?.sessionId);
   });
 
-  it("refuses to start a second collection while one is still installing", async () => {
-    const h = await started(defaultFixture);
+  test("refuses to start a second collection while one is still installing", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(defaultFixture);
     const firstSessionId = h.driver.currentSessionId;
 
     const other = makeMod({ id: "col-2", type: MOD_TYPE, archiveId: "dl-2" });
@@ -139,8 +145,10 @@ describe("InstallDriver session lifecycle", () => {
 });
 
 describe("InstallDriver premium install journey", () => {
-  it("counts a member mod toward installedMods when it finishes installing", async () => {
-    const h = await started(defaultFixture);
+  test("counts a member mod toward installedMods when it finishes installing", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(defaultFixture);
     h.setState((draft) => {
       draft.persistent.mods[GAME_ID][installedMemberMod.id] = installedMemberMod;
     });
@@ -150,9 +158,11 @@ describe("InstallDriver premium install journey", () => {
     expect(h.driver.installedMods.map((mod) => mod.id)).toContain(installedMemberMod.id);
   });
 
-  it("is idempotent for a duplicate did-install-mod (counts the member once)", async () => {
+  test("is idempotent for a duplicate did-install-mod (counts the member once)", async ({
+    startCollection,
+  }) => {
     // churn / out-of-order: the same install event can arrive more than once
-    const h = await started(defaultFixture);
+    const h = await startCollection(defaultFixture);
     h.setState((draft) => {
       draft.persistent.mods[GAME_ID][installedMemberMod.id] = installedMemberMod;
     });
@@ -165,7 +175,9 @@ describe("InstallDriver premium install journey", () => {
     );
   });
 
-  it("applies the rule's install spec to a member mod when it finishes installing", async () => {
+  test("applies the rule's install spec to a member mod when it finishes installing", async ({
+    startCollection,
+  }) => {
     // a member with a description triggers the side-effect block: the rule's patches /
     // installer choices / file list are applied + stamped onto the installed mod
     const installerChoices = makeInstallerChoices();
@@ -184,7 +196,7 @@ describe("InstallDriver premium install journey", () => {
       attributes: { referenceTag: "mod-sfx" },
     });
 
-    const h = await started(sfx);
+    const h = await startCollection(sfx);
     h.setState((draft) => {
       draft.persistent.mods[GAME_ID][installedSfxMod.id] = installedSfxMod;
     });
@@ -209,7 +221,9 @@ describe("InstallDriver premium install journey", () => {
 });
 
 describe("InstallDriver churn (events from non-members / other collections)", () => {
-  it("does not let a non-member mod's did-install-mod touch the active install", async () => {
+  test("does not let a non-member mod's did-install-mod touch the active install", async ({
+    startCollection,
+  }) => {
     // a standalone mod (or a different collection's mod) finishing install must not be
     // attributed to the active collection. Use the description-bearing sfx collection so that a
     // mis-attribution WOULD run the install-spec side-effects (a stamped attribute / dispatch),
@@ -220,7 +234,7 @@ describe("InstallDriver churn (events from non-members / other collections)", ()
       installerChoices: makeInstallerChoices(),
     });
     const sfx = makeCollectionFixture({ id: "col-sfx", rule: sfxRule, collectionId: 2 });
-    const h = await started(sfx);
+    const h = await startCollection(sfx);
     h.setState((draft) => {
       draft.persistent.mods[GAME_ID]["foreign"] = makeMod({
         id: "foreign",
@@ -244,8 +258,8 @@ describe("InstallDriver completion decision", () => {
   // is testable without the postprocessing side-effect (staging path / readCollection). The
   // collection reaches review only when this returns true.
 
-  it("reports complete once every required member is installed", async () => {
-    const h = await started(defaultFixture);
+  test("reports complete once every required member is installed", async ({ startCollection }) => {
+    const h = await startCollection(defaultFixture);
     h.setState((draft) => {
       draft.persistent.mods[GAME_ID][installedMemberMod.id] = installedMemberMod;
     });
@@ -253,13 +267,15 @@ describe("InstallDriver completion decision", () => {
     expect(h.driver.isInstallComplete(false)).toBe(true);
   });
 
-  it("reports incomplete while a required member is still missing", async () => {
-    const h = await started(defaultFixture);
+  test("reports incomplete while a required member is still missing", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(defaultFixture);
 
     expect(h.driver.isInstallComplete(false)).toBe(false);
   });
 
-  it("treats an ignored required member as resolved", async () => {
+  test("treats an ignored required member as resolved", async ({ startCollection }) => {
     // a member that was skipped (durable ignored flag) must not block completion, even though
     // it was never installed - otherwise a skipped required mod leaves the collection stuck
     const ignoredRule = makeRule({
@@ -267,7 +283,7 @@ describe("InstallDriver completion decision", () => {
       reference: makeReference({ tag: "mod-ign" }),
       ignored: true,
     });
-    const h = await started(makeCollectionFixture({ id: "col-ign", rule: ignoredRule }));
+    const h = await startCollection(makeCollectionFixture({ id: "col-ign", rule: ignoredRule }));
 
     expect(h.driver.isInstallComplete(false)).toBe(true);
   });

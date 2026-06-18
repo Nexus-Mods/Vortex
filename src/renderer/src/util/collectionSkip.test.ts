@@ -6,11 +6,12 @@
  * ignored (transient status + durable rule flag). Production flakiness lived in the free-user
  * identifier matching, so the matching paths are all exercised here.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect } from "vitest";
 
 import type { IModRule } from "../extensions/mod_management/types/IMod";
 import {
-  makeApiHarness,
+  type IApiHarness,
+  type IDriverHarnessState,
   makeInstallState,
   makeMod,
   makeModInstallInfo,
@@ -18,6 +19,7 @@ import {
   makeRule,
   makeSession,
 } from "../test-utils/builders";
+import { test } from "../test-utils/harnessTest";
 import { modRuleId } from "./collectionInstallSession";
 import { getCollectionActiveSessionMod } from "./collectionInstallSessionSelectors";
 import { markCollectionMemberSkipped } from "./collectionSkip";
@@ -26,8 +28,8 @@ const GAME_ID = "skyrimse";
 const COLLECTION_ID = "col-1";
 const SESSION_ID = "sess-1";
 
-// seed an active session whose collection tracks the single given member rule
-function harnessWithRule(rule: IModRule) {
+// the harness slices for an active session whose collection tracks the single given member rule
+function ruleOverrides(rule: IModRule): Partial<IDriverHarnessState> {
   const collection = makeMod({ id: COLLECTION_ID, rules: [rule] });
   const session = makeSession({
     sessionId: SESSION_ID,
@@ -35,20 +37,18 @@ function harnessWithRule(rule: IModRule) {
     gameId: GAME_ID,
     mods: { [modRuleId(rule)]: makeModInstallInfo({ rule, status: "pending" }) },
   });
-  return makeApiHarness({
+  return {
     mods: { [GAME_ID]: { [COLLECTION_ID]: collection } },
     session: makeInstallState({ activeSession: session }),
-  });
+  };
 }
 
-type Harness = ReturnType<typeof harnessWithRule>;
-
-const statusOf = (h: Harness, rule: IModRule) =>
+const statusOf = (h: IApiHarness, rule: IModRule) =>
   getCollectionActiveSessionMod(h.getState(), modRuleId(rule))?.status;
 
 // the durable `ignored` flag lives on the collection mod's rule (not the session), so it
 // survives a restart; read it back through the real mods reducer the harness applies
-const durableIgnored = (h: Harness) =>
+const durableIgnored = (h: IApiHarness) =>
   h.getState().persistent.mods[GAME_ID][COLLECTION_ID].rules?.[0]?.ignored;
 
 const repoRule = (overrides: Partial<IModRule["reference"]> = {}): IModRule =>
@@ -62,9 +62,9 @@ const repoRule = (overrides: Partial<IModRule["reference"]> = {}): IModRule =>
   });
 
 describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
-  it("ignores the member whose reference matches the skipped dependency", () => {
+  test("ignores the member whose reference matches the skipped dependency", ({ makeApi }) => {
     const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       reference: makeReference({ tag: "mod-a" }),
@@ -75,9 +75,9 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(durableIgnored(h)).toBe(true);
   });
 
-  it("does nothing for a reference that is not a member", () => {
+  test("does nothing for a reference that is not a member", ({ makeApi }) => {
     const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       reference: makeReference({ tag: "not-a-member" }),
@@ -90,12 +90,12 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
 });
 
 describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
-  it("ignores a member matched by logical file name", () => {
+  test("ignores a member matched by logical file name", ({ makeApi }) => {
     const rule = makeRule({
       type: "requires",
       reference: makeReference({ tag: "mod-skip", logicalFileName: "Skip Me.7z" }),
     });
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, fileNames: ["Skip Me.7z"] },
@@ -106,12 +106,12 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
     expect(durableIgnored(h)).toBe(true);
   });
 
-  it("does nothing when the file name matches no member", () => {
+  test("does nothing when the file name matches no member", ({ makeApi }) => {
     const rule = makeRule({
       type: "requires",
       reference: makeReference({ tag: "mod-skip", logicalFileName: "Skip Me.7z" }),
     });
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, fileNames: ["Other Mod.7z"] },
@@ -121,9 +121,9 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
     expect(statusOf(h, rule)).toBe("pending");
   });
 
-  it("ignores a member on a definitive repo modId + fileId match", () => {
+  test("ignores a member on a definitive repo modId + fileId match", ({ makeApi }) => {
     const rule = repoRule();
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, modId: 42, fileIds: ["100"] },
@@ -133,9 +133,9 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
     expect(statusOf(h, rule)).toBe("ignored");
   });
 
-  it("does not ignore the same mod page but a different file", () => {
+  test("does not ignore the same mod page but a different file", ({ makeApi }) => {
     const rule = repoRule();
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, modId: 42, fileIds: ["999"] },
@@ -145,9 +145,9 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
     expect(statusOf(h, rule)).toBe("pending");
   });
 
-  it("does not ignore a different mod page", () => {
+  test("does not ignore a different mod page", ({ makeApi }) => {
     const rule = repoRule();
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, modId: 99 },
@@ -157,11 +157,13 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
     expect(statusOf(h, rule)).toBe("pending");
   });
 
-  it("ignores a fuzzy member by file name when the file id differs (update chain)", () => {
+  test("ignores a fuzzy member by file name when the file id differs (update chain)", ({
+    makeApi,
+  }) => {
     // fixed bug: testRefByIdentifiers returns false on the file-id mismatch, but the fuzzy
     // fallback matches by the skipped file name instead
     const rule = repoRule({ versionMatch: "1.0.0+prefer", logicalFileName: "Fuzzy Mod.7z" });
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: {
@@ -176,10 +178,12 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
     expect(statusOf(h, rule)).toBe("ignored");
   });
 
-  it("ignores a fuzzy member matched by modId when the skip carries no file names", () => {
+  test("ignores a fuzzy member matched by modId when the skip carries no file names", ({
+    makeApi,
+  }) => {
     // fixed bug: the previous inline handler dereferenced fileNames before guarding it and threw
     const rule = repoRule({ versionMatch: "1.0.0+prefer" });
-    const h = harnessWithRule(rule);
+    const h = makeApi(ruleOverrides(rule));
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, modId: 42 },
@@ -191,8 +195,8 @@ describe("markCollectionMemberSkipped - free-user skip (identifiers)", () => {
 });
 
 describe("markCollectionMemberSkipped - no active session", () => {
-  it("is a no-op when no collection install is active", () => {
-    const h = makeApiHarness();
+  test("is a no-op when no collection install is active", ({ makeApi }) => {
+    const h = makeApi();
 
     const matched = markCollectionMemberSkipped(h.api, {
       identifiers: { gameId: GAME_ID, fileNames: ["Anything.7z"] },

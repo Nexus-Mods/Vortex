@@ -7,6 +7,15 @@
  * and accepts a partial override - the Test Data Builder pattern - so a test only
  * states the fields it cares about.
  *
+ * The data builders (makeMod, makeRule, makeReference, makeSession, ...) are deliberately PLAIN
+ * FUNCTIONS, not vitest fixtures (test.extend). They are stateless, deterministic, and allocate
+ * nothing that needs teardown, and their whole value is the partial-override args - wrapping them
+ * as fixtures would only add indirection and lose that ergonomics. Fixtures earn their keep for
+ * per-test setup/teardown + laziness, which here applies only to the STATEFUL harness below
+ * (makeApiHarness / makeDriverHarness register a fake game in a worker-global registry that must
+ * be cleared between tests); that lifecycle is wrapped by the harnessTest / driverTest fixtures,
+ * not by these builders.
+ *
  * Test-only: nothing in the production tree imports this module.
  */
 import { EventEmitter } from "events";
