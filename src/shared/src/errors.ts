@@ -102,7 +102,7 @@ export function isEnvironmentalError(err: unknown): boolean {
   if (!(err instanceof Error)) {
     return false;
   }
-  if ((err as { allowReport?: boolean }).allowReport === false) {
+  if ("allowReport" in err && err.allowReport === false) {
     return true;
   }
   const code = getErrorCode(err);
