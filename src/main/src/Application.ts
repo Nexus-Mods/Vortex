@@ -45,7 +45,6 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import { setTelemetryEnabled } from "./telemetry/state";
-import TrayIcon from "./TrayIcon";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
 / everything except a patch) compared to what was running last */
@@ -115,8 +114,7 @@ class Application {
   private mArgs: IParameters;
   private mMainWindow: MainWindow | undefined;
   private mMainWindowReady: Promise<Electron.WebContents | undefined> | undefined;
-  private mTray: TrayIcon;
-  private mAppMetadata: AppInitMetadata;
+  private mAppMetadata: AppInitMetadata | undefined;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
 
@@ -206,9 +204,6 @@ class Application {
         .then(() => {
           log("info", "clean application end");
           DuckDBSingleton.getInstance().close();
-          if (this.mTray !== undefined) {
-            this.mTray.close();
-          }
           if (process.platform !== "darwin") {
             app.quit();
           }
@@ -489,15 +484,10 @@ class Application {
     log("debug", "waiting for user interface");
     await this.awaitMainWindowReady();
 
-    log("debug", "setting up tray icon");
-    this.createTray();
-
     if (splash) {
       log("debug", "removing splash screen");
       await splash.fadeOut();
     }
-
-    this.connectTrayAndWindow();
   }
 
   private isUACEnabled(): boolean {
@@ -783,18 +773,6 @@ class Application {
     }
 
     log("info", "state backup imported");
-  }
-
-  private createTray(): void {
-    // Pass null api since ExtensionManager is now renderer-only
-    //  and TrayIcon used to receive the api from there.
-    this.mTray = new TrayIcon();
-  }
-
-  private connectTrayAndWindow() {
-    if (this.mTray.initialized) {
-      this.mMainWindow.connectToTray(this.mTray);
-    }
   }
 
   private multiUserPath() {

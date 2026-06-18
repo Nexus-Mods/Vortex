@@ -11,7 +11,6 @@ import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";
-import type TrayIcon from "./TrayIcon";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
@@ -281,13 +280,6 @@ class MainWindow {
         });
       });
     });
-  }
-
-  public connectToTray(tray: TrayIcon) {
-    if (this.mWindow === null) {
-      return;
-    }
-    tray.setMainWindow(this.mWindow);
   }
 
   public show(maximized: boolean, startMinimized?: boolean) {
