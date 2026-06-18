@@ -40,6 +40,12 @@ pnpm e2e:headed
 # Run with Playwright inspector (step-through debugging)
 pnpm e2e:debug
 
+# Debug specific test file
+pnpm e2e:debug -- src/tests/smoke.spec.ts
+
+# Debug single test by name
+pnpm e2e:debug -- -g "Settings page loads"
+
 # Run a specific test file
 pnpm -F @vortex/e2e exec playwright test smoke.spec.ts
 

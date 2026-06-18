@@ -8,6 +8,7 @@
     "dev": "pnpm exec cross-env VORTEX_E2E_INSPECT=1 pnpm exec playwright test --workers=1",
     "dev:explore": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec tsx ./src/vortex-instance.ts --debug",
     "e2e": "pnpm exec playwright test",
+    "e2e:debug": "pnpm exec playwright test --debug",
     "e2e:headed": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test",
     "e2e:ui": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test --ui",
     "typecheck": "pnpm exec tsc",
@@ -38,6 +39,15 @@
         ]
       },
       "e2e": {
+        "cache": false,
+        "dependsOn": [
+          {
+            "target": "build",
+            "projects": "@vortex/main"
+          }
+        ]
+      },
+      "e2e:debug": {
         "cache": false,
         "dependsOn": [
           {
