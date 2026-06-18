@@ -23,6 +23,7 @@
       "{projectRoot}/src/**/*.{ts,tsx}"
     ],
     "eslint": ["{projectRoot}/eslint.config.mjs", "{workspaceRoot}/eslint.config.base.mjs"],
+    "oxlint": ["{workspaceRoot}/oxlint.base.config.json", "{projectRoot}/.oxlintrc.json"],
     "vortex-api": [
       "{workspaceRoot}/scripts/extensions-rolldown.mjs",
       { "dependentTasksOutputFiles": "packages/vortex-api/lib/api.d.ts" }
@@ -53,7 +54,7 @@
     "lint*": {
       "dependsOn": ["^build"],
       "cache": true,
-      "inputs": ["default", "typescript", "eslint"],
+      "inputs": ["default", "typescript", "eslint", "oxlint"],
       "outputs": []
     }
   }

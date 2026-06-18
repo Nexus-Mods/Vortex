@@ -41,7 +41,7 @@ export function extractErrorFields(err: Error): Omit<SerializedError, "cause"> {
   const extras: Record<string, unknown> = {};
   for (const key of Object.getOwnPropertyNames(err)) {
     if (STANDARD_ERROR_KEYS.has(key)) continue;
-    const value = (err as unknown as Record<string, unknown>)[key];
+    const value: unknown = Object.getOwnPropertyDescriptor(err, key)?.value;
     if (typeof value === "function") continue;
     extras[key] = value;
   }

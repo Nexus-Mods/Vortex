@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 
 import { serializeError, rehydrateSerializedError } from "./error-serialization";
 import { DownloadError } from "./types/errors";
@@ -55,7 +55,8 @@ describe("serializeError / rehydrateSerializedError", () => {
 
   it("preserves a nested cause chain", () => {
     const out = roundTrip(new Error("outer", { cause: new Error("root") }));
-    expect((out.cause as Error).message).toBe("root");
+    assert(out.cause instanceof Error);
+    expect(out.cause.message).toBe("root");
   });
 
   it("coerces non-Error throwables", () => {

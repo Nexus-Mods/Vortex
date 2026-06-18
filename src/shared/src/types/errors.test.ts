@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 
 import { rehydrateSerializedError, serializeError } from "../error-serialization";
 import { isErrorOfType, ProcessCanceled, UserCanceled } from "./errors";
@@ -45,11 +45,8 @@ describe("isErrorOfType", () => {
 
   it("narrows the type for callers (compile-time guard)", () => {
     const err: unknown = new UserCanceled(true);
-    if (isErrorOfType(err, UserCanceled)) {
-      // `err` is narrowed to UserCanceled here; accessing `skipped` must typecheck.
-      expect(err.skipped).toBe(true);
-    } else {
-      throw new Error("expected match");
-    }
+    assert(isErrorOfType(err, UserCanceled), "expected match");
+    // `err` is narrowed to UserCanceled here; accessing `skipped` must typecheck.
+    expect(err.skipped).toBe(true);
   });
 });

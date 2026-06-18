@@ -106,7 +106,7 @@ export class GenericDebouncer<
    * @param {(err: Error) => void} callback
    * @param {...any[]} args
    *
-   * @memberOf Debouncer
+   * @memberof Debouncer
    */
   public runNow(callback: Callback, ...args: Args): void {
     if (this.mTimer !== undefined) {
@@ -136,7 +136,7 @@ export class GenericDebouncer<
    * @param {boolean} immediately if set (default is false) the function gets called
    *                              immediately instead of awaiting the timer
    *
-   * @memberOf Debouncer
+   * @memberof Debouncer
    */
   public wait(callback: (err: Error | null) => void, immediately: boolean = false): void {
     if (this.mTimer === undefined && !this.mRunning) {

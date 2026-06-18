@@ -1,7 +1,7 @@
 import type { Span } from "@opentelemetry/api";
 import { SpanStatusCode } from "@opentelemetry/api";
 
-import { computeErrorFingerprint, sanitizeFramePath } from "../errors";
+import { computeErrorFingerprint, getErrorCode, sanitizeFramePath } from "../errors";
 
 /**
  * Record an error on a span: compute fingerprint, record the exception,
@@ -60,7 +60,7 @@ export const recordErrorOnSpan = (
  * fingerprints stable.
  */
 const errorDiscriminator = (error: Error): string | undefined => {
-  const code = (error as { code?: unknown }).code;
+  const code = getErrorCode(error);
   // `constructor.name` is accurate for live errors but degrades to "Error" for
   // any error rebuilt from the IPC wire (see error-serialization.ts, which always
   // mints a plain Error). `error.name` is the serialization-durable type signal,

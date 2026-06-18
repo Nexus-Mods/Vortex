@@ -102,7 +102,7 @@ describe("staticChunker", () => {
     });
 
     it("throws when numChunks exceeds file size", () => {
-      expect(() => createChunks(3, 4)).toThrow();
+      expect(() => createChunks(3, 4)).toThrow("Cannot create 4 chunks from 3 bytes");
     });
 
     it("handles a file that divides evenly into chunks", () => {
