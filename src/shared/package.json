@@ -8,7 +8,8 @@
     "build": "pnpm tsdown",
     "typecheck": "pnpm tsc",
     "lint": "pnpm eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm eslint --concurrency auto ."
+    "lint:verbose": "pnpm eslint --concurrency auto .",
+    "test": "pnpm exec vitest run"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
