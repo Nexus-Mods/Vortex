@@ -153,17 +153,14 @@ export function isErrorWithSystemCode(err: unknown): err is ErrorWithSystemCode 
 export const sanitizeFramePath = (frame: string): string =>
   frame.replace(INSTALL_PATH_RE, "").replace(/\\/g, "/").replace(USER_HOME_RE, "$1<USER>");
 
-const _SEP = String.raw`[/\\]`;
-const _WIN = String.raw`[A-Za-z]:${_SEP}`; // C:\ or C:/
-const _UNIX = String.raw`(?<!\/)\/`; // / not inside ://
-const _SEGS = String.raw`(?:[^/\\():]+${_SEP})*?`; // lazy path segments
-const _ANCHORS = String.raw`(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)`;
+const SEP = String.raw`[/\\]`;
+const WIN = String.raw`[A-Za-z]:${SEP}`; // C:\ or C:/
+const UNIX = String.raw`(?<!\/)\/`; // / not inside ://
+const SEGS = String.raw`(?:[^/\\():]+${SEP})*?`; // lazy path segments
+const ANCHORS = String.raw`(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)`;
 /** Matches the installation-specific prefix of a stack frame path up to the first
  * stable segment (src, node_modules, app.asar, or plugins). */
-const INSTALL_PATH_RE = new RegExp(
-  String.raw`(?:${_WIN}|${_UNIX})${_SEGS}(?=${_ANCHORS}${_SEP})`,
-  "g",
-);
+const INSTALL_PATH_RE = new RegExp(String.raw`(?:${WIN}|${UNIX})${SEGS}(?=${ANCHORS}${SEP})`, "g");
 
 /** Matches the username segment of a user-home path (`/Users/<name>` or
  * `/home/<name>`). Run after backslash normalization so only forward slashes
