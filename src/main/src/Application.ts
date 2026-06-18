@@ -96,7 +96,7 @@ class Application {
         "net::ERR_HTTP2_PROTOCOL_ERROR",
         "net::ERR_INCOMPLETE_CHUNKED_ENCODING",
       ].includes(err.message) ||
-      ["ETIMEDOUT", "ECONNRESET", "EPIPE"].includes(code)
+      (code && ["ETIMEDOUT", "ECONNRESET", "EPIPE"].includes(code))
     ) {
       log("warn", "network error unhandled", err.stack);
       return true;
@@ -164,7 +164,7 @@ class Application {
   private async initMainWindow(): Promise<void> {
     const windowSettings = await readPersistedValue<IWindow>("settings", ["window"]);
 
-    this.mMainWindow = new MainWindow(this.mArgs.inspector, windowSettings);
+    this.mMainWindow = new MainWindow(this.mArgs.inspector ?? false, windowSettings);
     log("debug", "creating main window");
 
     // Start window creation but don't wait for ready-to-show.
@@ -224,7 +224,7 @@ class Application {
       }
     });
 
-    app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
+    app.on("second-instance", (_event, secondaryArgv) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch((err: unknown) =>
         log("error", "error applying arguments", unknownToError(err)),
@@ -298,7 +298,6 @@ class Application {
   private attachWebView = (
     _event: Electron.Event,
     webPreferences: Electron.WebPreferences & { preloadURL?: string },
-    _params,
   ) => {
     // disallow creation of insecure webviews
 
@@ -454,10 +453,10 @@ class Application {
     // fetches it via getInitMetadata() early in its boot.
     log("debug", "checking how Vortex was installed");
     await this.identifyInstallType();
-    this.mAppMetadata.version = app.getVersion();
+    this.mAppMetadata!.version = app.getVersion();
 
     log("debug", "checking if migration is required");
-    await this.migrateIfNecessary(this.mAppMetadata.version);
+    await this.migrateIfNecessary(this.mAppMetadata!.version);
 
     // Install dev tools extensions before creating the main window so the
     // extension content scripts are registered on the session before the
@@ -543,9 +542,9 @@ class Application {
     try {
       await stat(path.join(getVortexPath("application"), "Uninstall Vortex.exe"));
       // Collect metadata - renderer will dispatch the action
-      this.mAppMetadata.installType = "regular";
+      this.mAppMetadata!.installType = "regular";
     } catch {
-      this.mAppMetadata.installType = "managed";
+      this.mAppMetadata!.installType = "managed";
     }
   }
 
@@ -587,7 +586,7 @@ class Application {
       app.quit();
     } else {
       // Collect metadata - renderer will dispatch the action
-      this.mAppMetadata.warnedAdmin = 1;
+      this.mAppMetadata!.warnedAdmin = 1;
     }
   }
 
@@ -664,8 +663,7 @@ class Application {
     try {
       const promises = setParameters.map(async (setParameter) => {
         const pathArray = this.splitPath(setParameter.key);
-        const newValue: string | undefined =
-          setParameter.value.length === 0 ? undefined : setParameter.value;
+        const newValue = setParameter.value.length === 0 ? null : setParameter.value;
         await persist.setItem(pathArray, newValue);
       });
 
@@ -1139,8 +1137,9 @@ class Application {
       return;
     }
 
-    if (args.download || args.install) {
-      this.mMainWindow.sendExternalURL(args.download || args.install, args.install !== undefined);
+    const url = args.download || args.install;
+    if (url) {
+      this.mMainWindow.sendExternalURL(url, args.install !== undefined);
     }
 
     if (args.installArchive) {

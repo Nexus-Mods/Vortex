@@ -1,9 +1,9 @@
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: unknown) => {
-    if (typeof msg === "object" && "type" in msg && msg.type === "get-app-info") {
+    if (typeof msg === "object" && msg && "type" in msg && msg.type === "get-app-info") {
       // You can expand this object with more info as needed
-      process.send({
+      process.send?.({
         type: "app-info",
         appPath: app.getAppPath(),
         userData: app.getPath("userData"),
@@ -62,7 +62,7 @@ process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 const earlyErrHandler = (error: Error) => {
   // Show the dialog first — dialog.showErrorBox is synchronous in Electron
   // and blocks until the user dismisses it, giving the report time to send.
-  if (error.stack.includes("[as dlopen]")) {
+  if ("stack" in error && typeof error.stack === "string" && error.stack.includes("[as dlopen]")) {
     dialog.showErrorBox(
       "Vortex failed to start up",
       `An unexpected error occurred while Vortex was initialising:\n\n${error.message}\n\n` +
@@ -137,8 +137,11 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
     );
   };
 
-  process.env["PATH_ORIG"] = process.env["PATH"].slice(0);
-  process.env["PATH"] = process.env["PATH"].split(";").filter(pathFilter).join(";");
+  const path = process.env.PATH;
+  if (path) {
+    process.env["PATH_ORIG"] = path.slice(0);
+    process.env["PATH"] = path.split(";").filter(pathFilter).join(";");
+  }
 }
 
 try {

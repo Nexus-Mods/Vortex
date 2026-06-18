@@ -70,7 +70,7 @@ class MainWindow {
   // store
   private mResizeDebouncer: Debouncer;
   private mMoveDebouncer: Debouncer<[number, number]>;
-  private mShown: boolean;
+  private mShown: boolean = false;
   private mInspector: boolean;
   private mInitialWindowSettings: IWindow | null = null;
   private mRendererPid: number | undefined;
@@ -421,7 +421,8 @@ class MainWindow {
     this.mWindow.on("move", () => {
       if (this.mWindow?.isMaximized?.() === false) {
         const pos: number[] = this.mWindow.getPosition();
-        this.mMoveDebouncer.schedule(undefined, pos[0], pos[1]);
+        const [x, y] = pos;
+        this.mMoveDebouncer.schedule(undefined, x ?? 0, y ?? 0);
       }
     });
   }
