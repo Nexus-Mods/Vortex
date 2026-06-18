@@ -25,11 +25,17 @@ suite: Gothic 1 Remake - UE4SS
 title: installs UE4SS from Nexus and deploys injector files
 
 fixtures:
-    # Free user.
-    nexusUser: free
-
     # Game extension.
     dynamicGameExtensionId: gothic1remake
+
+    # Use instead of Matrix for single user.
+    # nexusUser: free
+
+matrix:
+    # Run once as free, once as premium.
+    nexusUser:
+        - free
+        - premium
 
 download:
     # Mod page.
@@ -62,15 +68,6 @@ deploy:
 
 `manage-download-and-deploy` manages the game, downloads the mod, and can
 deploy files when `deploy` is set.
-
-Matrix example:
-
-```yml
-matrix:
-    nexusUser:
-        - free
-        - premium
-```
 
 Do not mix `matrix.nexusUser` with `fixtures.nexusUser`.
 
