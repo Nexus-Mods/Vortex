@@ -81,6 +81,19 @@
         background-color: var(--color-surface-translucent-mid);
     }
 
+    .nxm-dropdown-title {
+        width: 100%;
+        padding-block: calc(var(--spacing) * 1.5);
+        padding-inline: calc(var(--spacing) * 3);
+
+        text-transform: uppercase;
+        font-size: var(--text-2xs);
+        color: var(--color-neutral-subdued);
+        line-height: var(--text-2xs--line-height);
+        letter-spacing: var(--tracking-widest);
+        font-weight: var(--font-weight-semibold);
+    }
+
     .nxm-dropdown-item {
         width: 100%;
         display: flex;
