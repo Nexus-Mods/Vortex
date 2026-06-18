@@ -4040,12 +4040,21 @@ importers:
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.60.0
+      '@types/js-yaml':
+        specifier: 'catalog:'
+        version: 4.0.9
       electron:
         specifier: 'catalog:'
         version: 42.3.3
+      js-yaml:
+        specifier: 'catalog:'
+        version: 4.1.1
       playwright:
         specifier: 'catalog:'
         version: 1.60.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/exe-version:
     devDependencies:
@@ -5205,7 +5214,7 @@ importers:
 packages:
 
   7z-bin@https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
+    resolution: {gitHosted: true, integrity: sha512-Wbq5MzOOBewAXp89Fyev4Q5u2yU2VMo/xhQo2TzSJ784NrTv4AXTrcrwmci2vUhOFtylX79ERowiWG+RuiEMsA==, tarball: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c}
     version: 26.0.1
     hasBin: true
 
@@ -11370,7 +11379,7 @@ packages:
     hasBin: true
 
   rimraf@https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2}
+    resolution: {gitHosted: true, integrity: sha512-bUluJfpyNMy+q3xCiB5KjLVxPl+MHfS2qJj0eZupLvo9+PlLgoDnO37hkj+wnofxEhstXq+d10XbGIkyyjHmKA==, tarball: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2}
     version: 2.6.2
     hasBin: true
 

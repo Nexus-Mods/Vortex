@@ -1,0 +1,21 @@
+id: stardewvalley-smapi-mod-manager
+flow: manage-download-and-deploy
+suite: Mods - Downloads
+title: "[QA-108] user can download SMAPI via the Mod Manager link"
+
+matrix:
+  nexusUser:
+    - free
+    - premium
+
+download:
+  modUrl: https://www.nexusmods.com/stardewvalley/mods/2400
+
+  expectedUrl:
+    regex: stardewvalley/mods/2400
+
+  expectedModRow:
+    regex: SMAPI
+    flags: i
+
+  missingNxmMessage: No nxm:// URL appeared in the page after the download click

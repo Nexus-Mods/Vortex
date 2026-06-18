@@ -1,0 +1,28 @@
+id: gothic1remake-ue4ss
+flow: manage-download-and-deploy
+suite: Gothic 1 Remake - UE4SS
+title: installs UE4SS from Nexus and deploys injector files
+
+fixtures:
+  nexusUser: free
+  dynamicGameExtensionId: gothic1remake
+
+download:
+  modUrl: https://www.nexusmods.com/gothic1remake/mods/3?tab=files
+
+  expectedUrl:
+    regex: gothic1remake/mods/3
+
+  expectedModRow:
+    regex: UE4SS-3
+    flags: i
+
+  missingNxmMessage: No nxm:// URL appeared in the page after the UE4SS download click
+
+deploy:
+  expectedFiles:
+    - G1R/Binaries/Win64/dwmapi.dll
+    - G1R/Binaries/Win64/UE4SS.dll
+    - G1R/Binaries/Win64/UE4SS-settings.ini
+
+  message: Expected UE4SS files to deploy

@@ -52,6 +52,12 @@ pnpm -F @vortex/e2e exec playwright test smoke.spec.ts
 # Run tests matching a tag
 pnpm -F @vortex/e2e exec playwright test --grep @smoke
 
+# Run a YAML-backed data-driven case
+VORTEX_E2E_GREP="@case:gothic1remake-ue4ss" pnpm e2e
+
+# Debug one YAML-backed game/user variant
+VORTEX_E2E_GREP="@game:stardewvalley.*@user:premium" pnpm e2e:debug
+
 # Run tests matching a name pattern
 pnpm -F @vortex/e2e exec playwright test -g "Settings"
 ```
@@ -62,17 +68,20 @@ Examples above assume `.env` has needed creds.
 
 ```
 packages/e2e/
-  fixtures/
+  src/fixtures/
     vortex-app.ts              # Electron launch fixture (vortexApp + vortexWindow)
     game-setup/
       fake-game.ts             # Fake game installation helpers (Stardew Valley, Skyrim SE)
-  selectors/
+    test-cases/                # YAML-backed data-driven test cases
+  src/selectors/
     navbar.ts                  # NavBar POM (sidebar navigation)
     dashboard.ts               # DashboardPage POM (dashboard tiles, videos)
     settings.ts                # SettingsPage POM (tabs, toggles, language)
-  helpers/
+  src/helpers/
     navigation.ts              # Navigation utilities (navigateToSettings, navigateToGames)
-  tests/
+    data-driven/               # YAML discovery, validation, and flow registration
+  src/tests/
+    data-driven.spec.ts        # Registers YAML cases as individual Playwright tests
     smoke.spec.ts              # App launch, console errors, basic navigation
     dashboard.spec.ts          # Dashboard tiles, getting started, what's new
     settings.spec.ts           # Settings page toggles and tab navigation
@@ -160,8 +169,24 @@ cleanupFakeGame(basePath);
 
 Available configs: `stardewvalley`, `skyrimse`, `baldursgate3`, `gothic1remake`.
 
-Game layouts live in `fixtures/game-setup/trees/`; see
-`fixtures/game-setup/trees/README.md` for format and export command.
+Game layouts live in `src/fixtures/game-setup/trees/`; see
+`src/fixtures/game-setup/trees/README.md` for format and export command.
+
+### Data-driven Test Cases
+
+Per-game YAML cases live under `src/fixtures/test-cases/games/<gameId>/`.
+
+They are registered by `tests/data-driven.spec.ts`, so `pnpm e2e` includes them
+and Playwright lists each matrix variant as an individual test.
+
+The first supported flow is `manage-download-and-deploy`. It:
+
+- manages the fake game
+- downloads a Nexus mod through Mod Manager Download
+- optionally deploys and asserts files when the YAML includes a `deploy` block
+
+See `src/fixtures/test-cases/README.md` for schema details and case-selection
+examples.
 
 ### Dynamic Extensions
 
@@ -171,8 +196,8 @@ Tests can prepare real dynamic extensions in isolated Vortex instance before lau
 test.use({ dynamicExtensionIds: ["open-directory-e2e"] });
 ```
 
-The fixture copies built extension output into `userData/plugins/<id>`. For [GDL]
-game fixtures, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
+The fixture copies built extension output into `userData/plugins/<id>`. For game
+fixtures that need a dynamic game extension, use `test.use({ dynamicGameExtensionId: "gothic1remake" })`.
 
 ## CI
 

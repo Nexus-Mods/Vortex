@@ -79,7 +79,10 @@
   },
   "devDependencies": {
     "@playwright/test": "catalog:",
+    "@types/js-yaml": "catalog:",
     "playwright": "catalog:",
-    "electron": "catalog:"
+    "electron": "catalog:",
+    "js-yaml": "catalog:",
+    "zod": "catalog:"
   }
 }

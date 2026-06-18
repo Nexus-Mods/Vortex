@@ -1,6 +1,6 @@
 /* eslint-disable perfectionist/sort-imports */
 /**
- * Shared helpers for Nexus Mods Mod Manager downloads in E2E tests.
+ * Shared helpers for Nexus Mods Mod Manager downloads and deployment in E2E tests.
  */
 import fs from "node:fs";
 
@@ -12,22 +12,6 @@ import { NavBar } from "../selectors/navbar";
 import { acceptConsent } from "./consent";
 import { installNxmCapture, waitForNxmUrl } from "./nxmCapture";
 import { Timeouts } from "./timeouts";
-
-/** Describes a game/mod scenario and the Vortex result it should produce. */
-export interface GameModScenario {
-  /** Game id used by the Vortex fixture layer. */
-  gameId: string;
-  /** Dynamic game extension id to prepare before Vortex starts, when needed. */
-  dynamicGameExtensionId?: string;
-  /** Nexus Mods page URL opened before clicking Mod Manager Download. */
-  modUrl: string;
-  /** Optional Nexus URL assertion after the page loads. */
-  expectedUrl?: RegExp;
-  /** Expected Vortex Mods page row after the download imports. */
-  expectedModRow: string | RegExp;
-  /** Optional files that should exist under the game root after deployment. */
-  expectedDeployedFiles?: readonly string[];
-}
 
 /** Options for opening a Nexus mod page and capturing its `nxm://` URL. */
 export interface NexusModManagerDownloadOptions {
