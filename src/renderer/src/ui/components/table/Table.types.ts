@@ -53,6 +53,8 @@ export interface IColumnDef<T> {
   align?: "left" | "center" | "right";
   /** Explicit column width as a CSS value (e.g. `"120px"`, `"20%"`). */
   width?: string;
+  /** Whether the user may drag the column edge to resize it. Default `true`. */
+  resizable?: boolean;
   /** Whether the user may hide the column via the column toggle. Default `true`. */
   hideable?: boolean;
   /** Whether the column starts hidden. Default `false`. */
@@ -103,6 +105,22 @@ export interface ITableProps<T> {
    * least one column is hideable.
    */
   enableColumnToggle?: boolean;
+  /**
+   * Allows users to resize columns by dragging the header edge. Defaults to
+   * `true`. Individual columns can opt out with `resizable: false`.
+   */
+  enableColumnResize?: boolean;
+  /**
+   * Initial user-set column widths in pixels, keyed by column id (e.g. values
+   * restored from persistence). Applied on top of each column's `width`.
+   */
+  columnWidths?: Record<string, number>;
+  /**
+   * Called with the complete column-width map (whole px, keyed by column id)
+   * whenever the user finishes resizing a column or resets the widths. An empty
+   * map means "no custom widths". Wire this to persistence to remember widths.
+   */
+  onColumnWidthsChange?: (widths: Record<string, number>) => void;
   /** Node rendered when there are no rows to display. */
   emptyState?: ReactNode;
 }

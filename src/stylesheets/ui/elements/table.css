@@ -12,7 +12,7 @@
            min height to prevent dropdowns being cropped, we can probably remove
            this when we update headless to v2 and make use of portal
         */
-        min-height: calc(var(--spacing) * 164);
+        min-height: calc(var(--spacing) * 96);
     }
 
     .nxm-table {
@@ -31,6 +31,7 @@
     /* Header --------------------------------------------------------------- */
 
     .nxm-table-th {
+        position: relative;
         white-space: nowrap;
         vertical-align: middle;
         color: var(--color-neutral-moderate);
@@ -44,6 +45,47 @@
         gap: calc(var(--spacing) * 2);
     }
 
+    .nxm-table-resize-handle {
+        top: 0;
+        height: 100%;
+        user-select: none;
+        touch-action: none;
+        cursor: col-resize;
+        position: absolute;
+        inset-inline-end: 0;
+        width: calc(var(--spacing) * 2);
+
+        /* The grip line, centred within the wider hit area. Hidden until the
+           header cell is hovered. */
+        &::after {
+            top: 25%;
+            width: 1px;
+            height: 50%;
+            content: "";
+            position: absolute;
+            inset-inline-end: 0;
+            background-color: transparent;
+
+            transition-property: background-color;
+            transition-duration: var(--default-transition-duration);
+            transition-timing-function: var(--default-transition-timing-function);
+        }
+
+        .nxm-table-th:hover &::after {
+            background-color: var(--color-translucent-200);
+        }
+
+        &:hover::after {
+            background-color: var(--color-primary-strong);
+        }
+    }
+
+    /* Applied to <body> while a column is being dragged. */
+    .nxm-table-resizing {
+        cursor: col-resize;
+        user-select: none;
+    }
+
     .nxm-table-sort {
         color: inherit;
         cursor: pointer;
@@ -52,8 +94,8 @@
         gap: calc(var(--spacing) * 1);
 
         transition-property: color;
-        transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+        transition-timing-function: var(--default-transition-timing-function);
 
         &:hover,
         &:focus-visible {
@@ -86,8 +128,8 @@
         color: var(--color-neutral-subdued);
 
         transition-property: opacity, color;
-        transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+        transition-timing-function: var(--default-transition-timing-function);
 
         &:hover,
         &:focus-visible {
@@ -117,8 +159,8 @@
 
     .nxm-table-row {
         transition-property: background-color;
-        transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+        transition-timing-function: var(--default-transition-timing-function);
 
         &:hover {
             background-color: var(--color-translucent-dark-300);

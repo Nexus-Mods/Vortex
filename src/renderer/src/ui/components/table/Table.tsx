@@ -11,7 +11,21 @@ import { TableColumnToggle } from "./TableColumnToggle";
 import { TableFilterSelect } from "./TableFilterSelect";
 import { TableGroupRow } from "./TableGroupRow";
 import { TableEmptyRow, TableRow } from "./TableRow";
+import { useColumnResize } from "./useColumnResize.hook";
 import { useTableState } from "./useTableState.hook";
+
+/**
+ * Reads a column's configured `width` as a pixel number so it can act as the
+ * resize floor. Non-pixel widths (e.g. `"20%"`) and undefined return undefined,
+ * falling back to the resize hook's default minimum.
+ */
+const parsePxWidth = (width: string | undefined): number | undefined => {
+  if (!width) {
+    return undefined;
+  }
+  const match = /^(\d+(?:\.\d+)?)px$/.exec(width.trim());
+  return match ? Number(match[1]) : undefined;
+};
 
 const sortIconPath = (state: "asc" | "desc" | "none") => {
   if (state === "asc") {
@@ -73,6 +87,9 @@ export const Table = <T,>({
   className,
   enableFilters,
   enableColumnToggle,
+  enableColumnResize = true,
+  columnWidths: initialColumnWidths,
+  onColumnWidthsChange,
   emptyState,
 }: ITableProps<T>) => {
   const {
@@ -94,6 +111,11 @@ export const Table = <T,>({
     setPage,
   } = useTableState({ columns, data, pageSize });
 
+  const { columnWidths, handleResizeStart, hasCustomWidths, resetColumnWidths } = useColumnResize({
+    initialWidths: initialColumnWidths,
+    onChange: onColumnWidthsChange,
+  });
+
   const showFilters = enableFilters ?? columns.some((column) => !!column.filter);
   const showColumnToggle =
     enableColumnToggle ?? columns.some((column) => column.hideable !== false);
@@ -108,10 +130,25 @@ export const Table = <T,>({
 
   const isEmpty = groups ? groups.length === 0 : pageData.length === 0;
 
+  // Once columns have custom widths, every visible column is pinned to an
+  // explicit pixel width (see useColumnResize). Sizing the table to their exact
+  // sum lets it grow past the container — so widening one column scrolls
+  // horizontally rather than stealing width from the others. A `width: auto`
+  // table would instead be capped at the container and redistribute the deficit.
+  const resizedWidths = visibleColumns.map((column) => columnWidths[column.id]);
+  const tableWidth =
+    hasCustomWidths && resizedWidths.every((width) => typeof width === "number")
+      ? resizedWidths.reduce((sum, width) => sum + width, 0)
+      : undefined;
+
   return (
     <div className={joinClasses(["nxm-table-wrapper", className])}>
       <div className="nxm-table-scroll">
-        <table aria-describedby={captionId} className="nxm-table">
+        <table
+          aria-describedby={captionId}
+          className="nxm-table"
+          style={tableWidth ? { width: tableWidth } : undefined}
+        >
           {!!caption && (
             <caption className="sr-only" id={captionId}>
               {caption}
@@ -119,9 +156,10 @@ export const Table = <T,>({
           )}
 
           <colgroup>
-            {visibleColumns.map((column) => (
-              <col key={column.id} style={column.width ? { width: column.width } : undefined} />
-            ))}
+            {visibleColumns.map((column) => {
+              const width = columnWidths[column.id] ?? column.width;
+              return <col key={column.id} style={width ? { width } : undefined} />;
+            })}
           </colgroup>
 
           <thead className="nxm-table-head">
@@ -139,6 +177,7 @@ export const Table = <T,>({
                   <th
                     aria-sort={column.sortable ? ariaSort : undefined}
                     className="nxm-table-th"
+                    data-column-id={column.id}
                     key={column.id}
                     scope="col"
                   >
@@ -180,12 +219,22 @@ export const Table = <T,>({
 
                       {showColumnToggle && column.id === lastColumnId && (
                         <TableColumnToggle
+                          canResetWidths={hasCustomWidths}
                           columns={columns}
                           hiddenColumnIds={hiddenColumnIds}
+                          onResetWidths={enableColumnResize ? resetColumnWidths : undefined}
                           onToggleColumn={setColumnHidden}
                         />
                       )}
                     </div>
+
+                    {enableColumnResize && column.resizable !== false && (
+                      <span
+                        aria-hidden={true}
+                        className="nxm-table-resize-handle"
+                        onPointerDown={handleResizeStart(column.id, parsePxWidth(column.width))}
+                      />
+                    )}
                   </th>
                 );
               })}

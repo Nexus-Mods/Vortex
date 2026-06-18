@@ -1,20 +1,22 @@
 import { Listbox as HeadlessListbox } from "@headlessui/react";
-import { mdiCog } from "@mdi/js";
+import { mdiArrowExpandHorizontal, mdiCog } from "@mdi/js";
 import React from "react";
 
 import { DropdownTitle } from "@/ui/components/dropdown/DropdownTitle";
 
 import { Button } from "../button/Button";
+import { Icon } from "../icon/Icon";
 import { Listbox } from "../listbox/Listbox";
 import { ListboxOption } from "../listbox/ListboxOption";
 import { ListboxOptions } from "../listbox/ListboxOptions";
-import { Typography } from "../typography/Typography";
 import type { IColumnDef } from "./Table.types";
 
 interface ITableColumnToggleProps<T> {
   columns: Array<IColumnDef<T>>;
   hiddenColumnIds: Set<string>;
   onToggleColumn: (columnId: string, hidden: boolean) => void;
+  onResetWidths?: () => void;
+  canResetWidths?: boolean;
 }
 
 /**
@@ -28,6 +30,8 @@ export const TableColumnToggle = <T,>({
   columns,
   hiddenColumnIds,
   onToggleColumn,
+  onResetWidths,
+  canResetWidths = false,
 }: ITableColumnToggleProps<T>) => {
   const hideableColumns = columns.filter((column) => column.hideable !== false);
   const visibleIds = hideableColumns
@@ -85,6 +89,35 @@ export const TableColumnToggle = <T,>({
             value={column.id}
           />
         ))}
+
+        {onResetWidths && (
+          <>
+            <span className="nxm-dropdown-divider" />
+
+            <button
+              className="nxm-dropdown-item"
+              disabled={!canResetWidths}
+              type="button"
+              onClick={(event) => {
+                onResetWidths();
+                // This is a multi-select Listbox, so it stays open on clicks and
+                // v1 exposes no programmatic close. Mimic Escape (handled by
+                // Listbox.Options) to dismiss the menu after resetting.
+                event.currentTarget.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+                );
+              }}
+            >
+              <Icon
+                className="nxm-dropdown-item-icon"
+                path={mdiArrowExpandHorizontal}
+                size="none"
+              />
+
+              <span className="nxm-dropdown-item-label">Reset column widths</span>
+            </button>
+          </>
+        )}
       </ListboxOptions>
     </Listbox>
   );

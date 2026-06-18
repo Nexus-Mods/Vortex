@@ -55,6 +55,17 @@ const buildMods = (count: number): IDemoMod[] =>
     endorsed: index % 3 === 0,
   }));
 
+// Stand-in for widths a user previously dragged and we restored from
+// persistence — deliberately wider than the columns' configured widths so the
+// custom sizing (and the enabled "Reset column widths" action) is obvious.
+const PRESET_COLUMN_WIDTHS: Record<string, number> = {
+  status: 180,
+  name: 360,
+  version: 160,
+  category: 220,
+  endorsed: 160,
+};
+
 export const TableDemo = () => {
   const data = useMemo(() => buildMods(60), []);
 
@@ -190,6 +201,7 @@ export const TableDemo = () => {
         align: "right",
         width: "140px",
         hideable: false,
+        resizable: false,
         cell: () => (
           <Button appearance="moderate" brand="neutral" leftIconPath={mdiDelete} size="xs">
             Remove
@@ -210,17 +222,48 @@ export const TableDemo = () => {
         <Typography appearance="subdued">
           Reusable, column-driven data table. Supports click-to-sort headers, per-column text and
           select filters, grouping by a column, showing/hiding columns via the gear menu, and
-          pagination. This demo paginates a 60-row dataset; only the current page is in the DOM.
+          pagination. This demo paginates a 60-row dataset; only the current page is in the DOM. It
+          also loads with mock preset column widths (as if restored from persistence), so the gear
+          menu's "Reset column widths" action is enabled — use it to snap columns back to their
+          defaults.
         </Typography>
       </div>
 
       <Table
         caption="Mods"
         columns={columns}
+        columnWidths={PRESET_COLUMN_WIDTHS}
         data={data}
         getRowId={(row) => row.id}
         pageSize={15}
+        onColumnWidthsChange={(widths) => {
+          // A consumer would persist this map (e.g. per table id); here we just
+          // log it so the design-system demo stays self-contained.
+          // eslint-disable-next-line no-console
+          console.log("[TableDemo] column widths changed:", widths);
+        }}
       />
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
+          Without column resizing
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          Drag a header's right edge to resize columns. Resizing is on by default; pass
+          `enableColumnResize={false}` to disable it for the whole table, or `resizable: false` on a
+          single column (as on the Actions column above).
+        </Typography>
+
+        <Table
+          caption="Mods (fixed columns)"
+          columns={columns}
+          data={data}
+          enableColumnResize={false}
+          getRowId={(row) => row.id}
+          pageSize={5}
+        />
+      </div>
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
@@ -254,6 +297,12 @@ export const TableDemo = () => {
           <li>Sorting, filtering, column visibility and pagination are handled internally</li>
 
           <li>Set hideable: false to pin a column (e.g. Actions) in the column toggle</li>
+
+          <li>
+            Drag a header's right edge to resize a column (no narrower than its configured width);
+            disable per-column with resizable: false (e.g. Actions) or for the whole table with
+            enableColumnResize={"{false}"}. The gear menu has a "Reset column widths" action
+          </li>
 
           <li>
             Hover a groupable header (Status, Category, Endorsed) and click the group icon to group

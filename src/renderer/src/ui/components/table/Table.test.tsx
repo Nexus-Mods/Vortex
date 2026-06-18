@@ -1,7 +1,7 @@
 import { render, screen, cleanup, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 import { Table } from "./Table";
 import type { IColumnDef } from "./Table.types";
@@ -124,6 +124,37 @@ describe("Table", () => {
     await userEvent.click(screen.getByRole("option", { name: "Category" }));
 
     expect(screen.queryByRole("columnheader", { name: "Category" })).not.toBeInTheDocument();
+  });
+
+  it("offers a reset-widths action in the column menu, disabled until a column is resized", async () => {
+    renderTable();
+    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
+
+    // No column has been resized yet, so resetting is a no-op and disabled.
+    expect(screen.getByRole("button", { name: /reset column widths/i })).toBeDisabled();
+  });
+
+  it("omits the reset-widths action when column resizing is disabled", async () => {
+    renderTable({ enableColumnResize: false });
+    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
+
+    expect(screen.queryByRole("button", { name: /reset column widths/i })).not.toBeInTheDocument();
+  });
+
+  it("enables reset for restored widths and reports an empty map when cleared", async () => {
+    const onColumnWidthsChange = vi.fn();
+    renderTable({ columnWidths: { name: 300 }, onColumnWidthsChange });
+    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
+
+    // Restored widths count as custom widths, so resetting is available.
+    const reset = screen.getByRole("button", { name: /reset column widths/i });
+    expect(reset).toBeEnabled();
+
+    await userEvent.click(reset);
+
+    // Reset reports the cleared map and dismisses the menu.
+    expect(onColumnWidthsChange).toHaveBeenCalledWith({});
+    expect(screen.queryByRole("button", { name: /reset column widths/i })).not.toBeInTheDocument();
   });
 
   it("renders the empty state when no rows match", async () => {
