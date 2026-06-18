@@ -19,32 +19,20 @@ context:
   # Custom character portraits live in the user's LocalLow profile, not the game
   # install. Each portrait is a folder of Small/Medium/Fulllength PNGs.
   portraitsRoot: ${appDataLocalLow}/Owlcat Games/Pathfinder Kingmaker/Portraits
+  # Wwise voice soundbanks overwrite the game's stock banks in its audio folder.
+  audioRoot: ${installPath}/Kingmaker_Data/StreamingAssets/Audio/Windows
 
 modTypes:
   - { id: portrait, name: Portrait, path: "${portraitsRoot}" }
+  - { id: voice, name: Voice soundbank, path: "${audioRoot}" }
 
 # A portrait folder is identified by the Small + Medium + Fulllength PNG trio.
 # UMM code mods (.dll) and in-game asset-bundle replacements are excluded so they
 # keep deploying to Mods/ and the game data folder respectively.
 installers:
-  # Multi-portrait packs wrapped in a top-level Portraits/ folder: strip the
-  # wrapper so each portrait subfolder lands directly under the Portraits root.
-  - id: portrait-collection
-    priority: 24
-    when:
-      all:
-        - { hasFile: "**/Portraits/*/Fulllength.png" }
-        - { hasFile: "**/Portraits/*/Medium.png" }
-        - { hasFile: "**/Portraits/*/Small.png" }
-    unless:
-      any:
-        - { hasFile: "**/*.dll" }
-        - { hasFile: "**/*_Data/StreamingAssets/**" }
-    copy: { stripCommonRoot: true }
-    modType: portrait
-
-  # A single portrait in its own folder: take that folder and place it under the
-  # Portraits root.
+  # Portraits: any archive carrying the Small/Medium/Fulllength PNG trio. A hook
+  # deploys each portrait folder as Portraits/<name>/, covering single-folder,
+  # multi-portrait Portraits/ wrappers, and loose-at-root archives.
   - id: portrait
     priority: 25
     when:
@@ -56,14 +44,21 @@ installers:
       any:
         - { hasFile: "**/*.dll" }
         - { hasFile: "**/*_Data/StreamingAssets/**" }
-        # Root-loose portraits have no folder name to deploy into; out of scope.
-        - { hasFile: "Fulllength.png" }
-        # Wrapped packs are handled by portrait-collection above.
-        - { hasFile: "**/Portraits/*/Fulllength.png" }
-    anchor: "**/Fulllength.png"
-    take: parent
-    placeAt: ${portraitsRoot}
-    modType: portrait
+    install: { hook: installPortrait }
+
+  # Voice soundbanks (.bnk): a hook flattens each bank into the audio folder.
+  # Code mods (.dll) and data/loader mods (.json/.jbp/.patch) are excluded so
+  # they keep deploying to Mods/, as are multi-variant packs (handled in the hook).
+  - id: voice
+    priority: 30
+    when: { hasFile: "**/*.bnk" }
+    unless:
+      any:
+        - { hasFile: "**/*.dll" }
+        - { hasFile: "**/*.json" }
+        - { hasFile: "**/*.jbp" }
+        - { hasFile: "**/*.patch" }
+    install: { hook: installVoice }
 
 setup:
   ensureDirs:
