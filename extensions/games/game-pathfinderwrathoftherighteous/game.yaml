@@ -1,0 +1,38 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: pathfinderwrathoftherighteous
+  name: "Pathfinder: Wrath of the Righteous"
+  executable: Wrath.exe
+  requiredFiles: [Wrath.exe]
+  logo: gameart.jpg
+  author: Black Tree Gaming Ltd.
+  nexusDomain: pathfinderwrathoftherighteous
+  queryModPath: Mods
+
+stores:
+  steam: "1184370"
+  gog: "1207187357"
+
+# Reads the build version from Version.info. The original extension split the
+# file on spaces and took the 4th token; the regex captures that same token.
+discovery:
+  version:
+    file: ${installPath}/Wrath_Data/StreamingAssets/Version.info
+    regex: '^(?:\S+\s+){3}(\S+)'
+
+setup:
+  ensureDirs:
+    - ${installPath}/Mods
+  requireFiles:
+    files:
+      - ${installPath}/UnityModManager/UnityModManager.dll
+    prompt:
+      title: Action required
+      message: >-
+        You must install Unity Mod Manager to use mods with Pathfinder: Wrath of
+        the Righteous.
+      link:
+        label: Go to the Unity Mod Manager page
+        mod: { domain: site, modId: 21 }
