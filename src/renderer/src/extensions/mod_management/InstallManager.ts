@@ -85,6 +85,7 @@ import {
 } from "../../util/collectionInstallSessionSelectors";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import { sessionWriteForDependency } from "../../util/collectionSessionWrite";
+import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import {
   DataInvalid,
@@ -837,8 +838,9 @@ class InstallManager {
       this.mActiveInstalls.delete(installKey);
     }
 
-    // Notify InstallDriver to update tracking status
-    api.events.emit("collection-mod-skipped", dep.reference);
+    // Mark the skipped member ignored directly against the active session (collections is core
+    // now, so no event round-trip through the InstallDriver is needed).
+    markCollectionMemberSkipped(api, { reference: dep.reference });
 
     // See if we can advance the phase
     this.maybeAdvancePhase(sourceModId, api);

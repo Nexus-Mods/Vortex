@@ -155,7 +155,6 @@ Register event handlers inside `context.once()` to ensure all extensions are loa
 | `did-install-collection`          | -                                  | Collection was installed            |
 | `did-download-collection`         | -                                  | Collection was downloaded           |
 | `collection-postprocess-complete` | -                                  | Collection post-processing done     |
-| `collection-mod-skipped`          | -                                  | A mod in the collection was skipped |
 | `submit-collection`               | -                                  | Submit collection to Nexus          |
 | `update-conflicts-and-rules`      | -                                  | Async. Update collection conflicts  |
 

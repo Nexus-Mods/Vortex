@@ -56,7 +56,10 @@ export type {
 export type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 export type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 export type { IDeploymentManifest } from "../extensions/mod_management/types/IDeploymentManifest";
-export type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+export type {
+  IModLookupInfo,
+  IReferenceIdentifiers,
+} from "../extensions/mod_management/util/testModReference";
 export type {
   IChoiceType,
   IFileListItem,

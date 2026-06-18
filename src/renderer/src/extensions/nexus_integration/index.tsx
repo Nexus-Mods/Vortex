@@ -36,6 +36,7 @@ import type { IModLookupResult } from "../../types/IModLookupResult";
 import type { IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
+import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import {
   DataInvalid,
   HTTPError,
@@ -1782,7 +1783,9 @@ function onSkip(api: IExtensionApi, inputUrl: string) {
           fileNames: Array.from(fileNames),
           fileIds: Array.from(fileIdSet),
         };
-        api.events.emit("free-user-skipped-download", itemIdentifiers);
+        // collections is now core, so the skip site dispatches the ignore directly against the
+        // active install session rather than emitting an event for the InstallDriver to handle
+        markCollectionMemberSkipped(api, { identifiers: itemIdentifiers });
         queueItem.rej(new UserCanceled(true));
       })
       .catch((err) => {
