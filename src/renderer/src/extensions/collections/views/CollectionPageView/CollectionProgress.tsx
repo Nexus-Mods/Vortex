@@ -47,6 +47,10 @@ export interface ICollectionProgressProps {
   onCancel: () => void;
   onPause: () => void;
   onResume: () => void;
+  onResync: () => void;
+  // disabled while an install or deployment is in flight, so a manual resync can't race
+  // InstallManager's own writes
+  resyncDisabled: boolean;
 }
 
 interface ICompState {
@@ -79,6 +83,8 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
       onCancel,
       onPause,
       onResume,
+      onResync,
+      resyncDisabled,
     } = this.props;
 
     const group = (mod: ICollectionItemRow, download?: IDownload): string => {
@@ -165,6 +171,21 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
                       onClick={onPause}
                     />
                   ) : null}
+
+                  <tooltip.IconButton
+                    className="btn-embed btn-refresh"
+                    icon="refresh"
+                    disabled={resyncDisabled}
+                    tooltip={
+                      resyncDisabled
+                        ? t("Available once the current install and deployment have finished")
+                        : t(
+                            "Refresh the install status from disk if it looks out of date, " +
+                              "e.g. after manually removing or re-downloading a mod",
+                          )
+                    }
+                    onClick={onResync}
+                  />
 
                   <tooltip.IconButton
                     className="btn-embed btn-cancel"

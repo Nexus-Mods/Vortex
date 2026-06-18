@@ -7,14 +7,10 @@ import Bluebird from "bluebird";
 
 import * as installActions from "../../../actions/collectionInstallTracking";
 import { log } from "../../../logging";
-import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-import {
-  generateCollectionSessionId,
-  modRuleId,
-  reconstructModStatus,
-} from "../../../util/collectionInstallSession";
+import { generateCollectionSessionId, modRuleId } from "../../../util/collectionInstallSession";
+import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
@@ -28,13 +24,11 @@ import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
 import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
-import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
 import renderModName from "../../mod_management/util/modName";
 import testModReference, {
   ruleInstallSpec,
-  rulePhase,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
 import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
@@ -103,7 +97,6 @@ class InstallDriver {
 
   // Collection installation tracking
   private mCurrentSessionId: string;
-  private mTrackingEnabled: boolean = true;
   private get requiredMods() {
     return this.mDependentMods.filter((m) => m.type === "requires");
   }
@@ -128,7 +121,7 @@ class InstallDriver {
     // that must take effect even if the mod already reached a terminal state (e.g. the
     // user wants to stop the collection re-pulling it and then remove it manually).
     const actions: any[] = [];
-    if (this.mTrackingEnabled && this.mCurrentSessionId) {
+    if (this.mCurrentSessionId) {
       actions.push(
         installActions.updateModStatus(this.mCurrentSessionId, modRuleId(rule), "ignored"),
       );
@@ -142,7 +135,7 @@ class InstallDriver {
   }
 
   private completeInstallationTracking(success: boolean) {
-    if (!this.mTrackingEnabled || !this.mCurrentSessionId) {
+    if (!this.mCurrentSessionId) {
       return;
     }
 
@@ -608,14 +601,6 @@ class InstallDriver {
     return ["disclaimer", "installing"].indexOf(this.mStep) !== -1;
   }
 
-  public enableTracking(enabled: boolean = true) {
-    this.mTrackingEnabled = enabled;
-  }
-
-  public get isTrackingEnabled(): boolean {
-    return this.mTrackingEnabled;
-  }
-
   public get currentSessionId(): string | undefined {
     return this.mCurrentSessionId;
   }
@@ -957,54 +942,31 @@ class InstallDriver {
       this.mInstallDone = false;
     }
 
-    if (this.mTrackingEnabled) {
-      const collectionId = collection.id;
-      const optional = required.filter((r) => r.type === "recommends");
-      const totalOptional = optional.length;
-      const totalRequired = required.length - optional.length;
+    const collectionId = collection.id;
+    const optional = required.filter((r) => r.type === "recommends");
+    const totalOptional = optional.length;
+    const totalRequired = required.length - optional.length;
 
-      // Generate unique session ID
-      this.mCurrentSessionId = generateCollectionSessionId(collectionId, profile.id);
+    // Generate unique session ID
+    this.mCurrentSessionId = generateCollectionSessionId(collectionId, profile.id);
 
-      const downloads = state.persistent.downloads.files;
+    const downloads = state.persistent.downloads.files;
 
-      // the session's per-rule mod info, keyed by rule id
-      const sessionModInfo: Record<string, ICollectionModInstallInfo> = Object.fromEntries(
-        required.map((rule) => {
-          const ruleId = modRuleId(rule);
-          const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
-          const dlId = findDownloadByRef(rule.reference, downloads);
-          const status = reconstructModStatus(
-            rule,
-            mod,
-            dlId != null ? downloads[dlId] : undefined,
-          );
+    // the session's per-rule mod info, keyed by rule id, reconstructed from reality
+    const sessionModInfo = reconstructSessionMods({ rules: required, mods, downloads });
 
-          return [
-            ruleId,
-            {
-              rule,
-              status,
-              type: rule.type as "requires" | "recommends",
-              phase: rulePhase(rule),
-            },
-          ];
-        }),
-      );
-
-      // Dispatch start session action (omitting computed properties)
-      this.mApi.store.dispatch(
-        installActions.startInstallSession({
-          sessionId: this.mCurrentSessionId,
-          collectionId,
-          profileId: profile.id,
-          gameId: this.mGameId,
-          mods: sessionModInfo,
-          totalRequired,
-          totalOptional,
-        }),
-      );
-    }
+    // Dispatch start session action (omitting computed properties)
+    this.mApi.store.dispatch(
+      installActions.startInstallSession({
+        sessionId: this.mCurrentSessionId,
+        collectionId,
+        profileId: profile.id,
+        gameId: this.mGameId,
+        mods: sessionModInfo,
+        totalRequired,
+        totalOptional,
+      }),
+    );
 
     log("info", "starting install of collection", {
       totalMods: required.length,
