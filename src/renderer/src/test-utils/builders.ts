@@ -11,6 +11,7 @@
  */
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IMod, IModReference, IModRule } from "../extensions/mod_management/types/IMod";
+import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import type { IProfileMod } from "../extensions/profile_management/types/IProfile";
 import type {
   CollectionModStatus,
@@ -60,6 +61,10 @@ export function makeDownload(overrides: Partial<IDownload> = {}): IDownload {
 
 export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMod {
   return { enabled: true, enabledTime: 0, ...overrides };
+}
+
+export function makeLookup(overrides: Partial<IModLookupInfo> = {}): IModLookupInfo {
+  return { fileMD5: "", fileSizeBytes: 0, fileName: "", version: "", ...overrides };
 }
 
 export function makeModInstallInfo(

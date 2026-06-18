@@ -4,7 +4,8 @@ import { createSelector } from "reselect";
 
 import { activeDownloads } from "../extensions/download_management/selectors";
 import { modsForActiveGame } from "../extensions/mod_management/selectors";
-import { rulePhase } from "../extensions/mod_management/util/testModReference";
+import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+import testModReference, { rulePhase } from "../extensions/mod_management/util/testModReference";
 import type {
   ICollectionInstallState,
   ICollectionInstallSession,
@@ -136,53 +137,30 @@ export const getCollectionActiveSessionMod = (
 };
 
 /**
- * Search for a mod in the active collection by mod reference details
- * This is useful when you have deployment information and need to find the corresponding collection rule
- * @param searchParams Object containing mod identifiers to search by
+ * Search for a mod in the active collection that a download corresponds to.
+ * @param lookup Canonical lookup info for the download (use lookupFromDownload)
  * @returns The mod installation info or undefined if not found
+ *
+ * Matches each session rule's reference with the shared testModReference matcher (the same
+ * identity logic the dependency resolver uses), so there is one notion of reference identity
+ * and no separate "find by modId" path: the session stores the installed Vortex mod id,
+ * which is a different namespace than the Nexus ids a download carries.
  */
 export const getCollectionModByReference = (
   state: IState,
-  searchParams: {
-    tag?: string;
-    modId?: string;
-    fileMD5?: string;
-    fileId?: string;
-    logicalFileName?: string;
-  },
+  lookup: IModLookupInfo,
 ): ICollectionModInstallInfo | undefined => {
   const mods = getCollectionActiveSessionMods(state);
 
-  // First try to find by modId if provided (most direct match)
-  if (searchParams.modId) {
-    const byModId = Object.values(mods).find((mod) => mod.modId === searchParams.modId);
-    if (byModId) return byModId;
-  }
-
-  // Fall back to searching by rule reference fields
   return Object.values(mods).find((mod) => {
+    // bundled mods ship inside the collection archive and have no resolvable reference, so
+    // they are matched by archive file name (lookup.fileName is the download's localPath)
     const isBundled = mod.rule?.extra?.localPath != null;
     if (isBundled) {
-      return (
-        path.basename(mod.rule.extra.localPath) ===
-        path.basename(
-          searchParams.logicalFileName,
-          path.extname(searchParams.logicalFileName || ""),
-        )
-      );
+      return path.basename(mod.rule.extra.localPath) === path.basename(lookup.fileName ?? "");
     }
 
-    const ref = mod.rule?.reference;
-    if (!ref) return false;
-
-    // Check each available identifier
-    if (searchParams.tag && ref.tag === searchParams.tag) return true;
-    if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
-    if (searchParams.fileId && ref.repo?.fileId === searchParams.fileId) return true;
-    if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName)
-      return true;
-
-    return false;
+    return mod.rule?.reference != null && testModReference(lookup, mod.rule.reference);
   });
 };
 

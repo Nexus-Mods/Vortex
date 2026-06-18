@@ -1298,13 +1298,7 @@ const getCollectionLastActiveSessionId: (state: IState) => string | undefined;
 const getCollectionLastCompletedSession: (state: IState) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionModByReference: (state: IState, searchParams: {
-    tag?: string;
-    modId?: string;
-    fileMD5?: string;
-    fileId?: string;
-    logicalFileName?: string;
-}) => ICollectionModInstallInfo | undefined;
+const getCollectionModByReference: (state: IState, lookup: IModLookupInfo) => ICollectionModInstallInfo | undefined;
 
 // @public
 const getCollectionModsByPhase: (state: IState) => Map<number, ICollectionModInstallInfo[]>;

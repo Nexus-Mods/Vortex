@@ -371,12 +371,7 @@ function findCollectionByDownload(
     return null;
   }
 
-  const matchingRule = getCollectionModByReference(state, {
-    tag: download.modInfo?.referenceTag,
-    fileMD5: download.fileMD5,
-    fileId: download.modInfo?.nexus?.ids?.fileId?.toString(),
-    logicalFileName: download.localPath,
-  });
+  const matchingRule = getCollectionModByReference(state, lookupFromDownload(download));
   if (!matchingRule) {
     log("debug", "No matching rule found in collection for download", {
       downloadId: download.id,

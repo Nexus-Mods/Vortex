@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   makeInstallState,
+  makeLookup,
   makeModInstallInfo,
   makeRule,
   makeSession,
@@ -19,6 +20,7 @@ import type {
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
 import {
+  getCollectionModByReference,
   getCollectionPhaseProgress,
   getCollectionStatusBreakdown,
 } from "./collectionInstallSessionSelectors";
@@ -104,5 +106,72 @@ describe("getCollectionStatusBreakdown", () => {
     expect(breakdown.optional.installed).toBe(1);
     expect(breakdown.total.installed).toBe(2);
     expect(breakdown.total.downloading).toBe(1);
+  });
+});
+
+describe("getCollectionModByReference", () => {
+  // build a session keyed by ruleId; each entry gives the rule's reference and optionally an
+  // installed Vortex mod id or a bundled localPath
+  function sessionWith(
+    entries: Record<
+      string,
+      { reference?: Record<string, any>; modId?: string; localPath?: string }
+    >,
+  ) {
+    const mods: Record<string, ICollectionModInstallInfo> = {};
+    for (const [ruleId, e] of Object.entries(entries)) {
+      mods[ruleId] = makeModInstallInfo({
+        rule: makeRule({
+          reference: e.reference ?? { tag: ruleId },
+          ...(e.localPath != null ? { extra: { localPath: e.localPath } } : {}),
+        }),
+        modId: e.modId,
+        status: "installed",
+      });
+    }
+    return asIState(makeInstallState({ activeSession: makeSession({ mods }) }));
+  }
+
+  it("matches a session rule by its reference tag", () => {
+    const state = sessionWith({ r1: { reference: { tag: "tag-1" } } });
+    expect(getCollectionModByReference(state, makeLookup({ referenceTag: "tag-1" }))).toBeDefined();
+  });
+
+  it("matches an external reference by fileMD5", () => {
+    const state = sessionWith({ r1: { reference: { fileMD5: "md5-aaa" } } });
+    expect(getCollectionModByReference(state, makeLookup({ fileMD5: "md5-aaa" }))).toBeDefined();
+  });
+
+  it("matches a bundled mod by its archive file name", () => {
+    const state = sessionWith({ r1: { localPath: "Bundled Mod.7z" } });
+    expect(
+      getCollectionModByReference(state, makeLookup({ fileName: "Bundled Mod.7z" })),
+    ).toBeDefined();
+  });
+
+  it("returns undefined when no reference matches the lookup", () => {
+    const state = sessionWith({ r1: { reference: { tag: "tag-1" } } });
+    expect(
+      getCollectionModByReference(state, makeLookup({ referenceTag: "other" })),
+    ).toBeUndefined();
+  });
+
+  it("matches on reference identity, never the installed Vortex mod id", () => {
+    // the entry's modId is the installed Vortex id; a lookup carrying that value (but not the
+    // rule's reference) must NOT match - the removed fast-path used to compare exactly this
+    const state = sessionWith({ r1: { reference: { tag: "tag-1" }, modId: "12345" } });
+    expect(
+      getCollectionModByReference(state, makeLookup({ referenceTag: "12345" })),
+    ).toBeUndefined();
+    expect(getCollectionModByReference(state, makeLookup({ referenceTag: "tag-1" }))?.modId).toBe(
+      "12345",
+    );
+  });
+
+  it("returns undefined when there is no active session", () => {
+    const empty = asIState(makeInstallState());
+    expect(
+      getCollectionModByReference(empty, makeLookup({ referenceTag: "tag-1" })),
+    ).toBeUndefined();
   });
 });
