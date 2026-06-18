@@ -8,10 +8,15 @@ import { useSelector, useStore } from "react-redux";
 
 import { Spinner, tooltip } from "../../../../controls/api";
 import { log } from "../../../../logging";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IState } from "../../../../types/IState";
 import * as fs from "../../../../util/fs";
+import type { TFunction } from "../../../../util/i18n";
 import * as selectors from "../../../../util/selectors";
+import { getSafe } from "../../../../util/storeHelper";
+import { batchDispatch } from "../../../../util/util";
+import type { IMod } from "../../../mod_management/types/IMod";
+import { findModByRef } from "../../../mod_management/util/findModByRef";
 import type { ICollection } from "../../types/ICollection";
 import type { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";
 
@@ -22,7 +27,7 @@ interface IGamebryoLO {
 }
 
 function getEnabledPlugins(
-  state: types.IState,
+  state: IState,
   plugins: string[],
 ): Array<{ name: string; enabled: boolean }> {
   const gamebryoLO: { [id: string]: IGamebryoLO } = state["loadOrder"];
@@ -72,7 +77,7 @@ export interface ICollectionGamebryo {
 async function getIncludedPlugins(
   gameId: string,
   stagingPath: string,
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
   modIds: string[],
 ): Promise<string[]> {
   const extensions = ["fallout4", "skyrimse"].includes(gameId)
@@ -105,11 +110,11 @@ async function getIncludedPlugins(
 }
 
 export async function generate(
-  state: types.IState,
+  state: IState,
   gameId: string,
   stagingPath: string,
   modIds: string[],
-  mods: { [modId: string]: types.IMod },
+  mods: { [modId: string]: IMod },
 ): Promise<ICollectionGamebryo> {
   const includedPlugins: string[] = await getIncludedPlugins(gameId, stagingPath, mods, modIds);
 
@@ -139,10 +144,10 @@ function refName(iter: string | { name: string }): string {
 }
 
 export async function parser(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   collection: ICollection,
-  collectionMod: types.IMod,
+  collectionMod: IMod,
 ) {
   const state: IStateWithLootLists = api.getState();
 
@@ -162,7 +167,7 @@ export async function parser(
 
   // set up groups and their rules (skipped if user opted out)
   if (!skipPluginRules && Array.isArray(collection.pluginRules?.groups)) {
-    util.batchDispatch(
+    batchDispatch(
       api.store,
       collection.pluginRules.groups.reduce((prev, group) => {
         const isNew =
@@ -192,7 +197,7 @@ export async function parser(
 
   const collectionModIds = collectionMod.rules
     .filter((rule) => ["requires", "recommends"].includes(rule.type))
-    .map((rule) => util.findModByRef(rule.reference, mods))
+    .map((rule) => findModByRef(rule.reference, mods))
     .filter((mod) => !!mod)
     .map((mod) => mod.id);
 
@@ -202,7 +207,7 @@ export async function parser(
     collection.plugins.find((plugin) => plugin.name === pluginName && plugin.enabled) !== undefined;
 
   // set up plugins and their rules
-  util.batchDispatch(
+  batchDispatch(
     api.store,
     includedPlugins.map((plugin) => {
       return {
@@ -228,7 +233,7 @@ export async function parser(
     return;
   }
 
-  util.batchDispatch(
+  batchDispatch(
     api.store,
     (collection.pluginRules?.plugins ?? []).reduce((prev, plugin) => {
       const existing = userlist.plugins.find(
@@ -250,7 +255,7 @@ export async function parser(
         (plugin[type] || []).forEach((ref) => {
           const match = (iter) => refName(iter).toUpperCase() === ref.toUpperCase();
 
-          if (util.getSafe(existing, [lootType], []).find(match) === undefined) {
+          if (getSafe(existing, [lootType], []).find(match) === undefined) {
             prev.push({
               type: "ADD_USERLIST_RULE",
               payload: {
@@ -328,7 +333,7 @@ interface ILOOTList {
   groups: ILOOTGroup[];
 }
 
-type IStateWithLootLists = types.IState & {
+type IStateWithLootLists = IState & {
   userlist?: ILOOTList;
   masterlist?: ILOOTList;
 };
@@ -349,7 +354,7 @@ function ruleId(rule: string | ILootReference): string {
   }
 }
 
-function ruleType(t: types.TFunction, type: string): string {
+function ruleType(t: TFunction, type: string): string {
   switch (type) {
     case "after":
       return t("after");
@@ -374,12 +379,12 @@ function renderRefName(rule: IRule): string {
 }
 
 interface IPluginRuleProps {
-  t: types.TFunction;
+  t: TFunction;
   rule: IRule;
   onRemove: (rule: IRule) => void;
 }
 
-function renderType(t: types.TFunction, type: string) {
+function renderType(t: TFunction, type: string) {
   if (type === "assigned") {
     return t("assigned to group");
   } else {
@@ -428,7 +433,7 @@ export function Interface(props: IExtendedInterfaceProps): JSX.Element {
   }>(null);
   const store = useStore();
   const gameId = useSelector(selectors.activeGameId);
-  const mods = useSelector((selState: types.IState) => selState.persistent.mods[gameId]);
+  const mods = useSelector((selState: IState) => selState.persistent.mods[gameId]);
   const userlist: ILOOTList = useSelector((selState: any) => selState.userlist);
 
   const state = store.getState();

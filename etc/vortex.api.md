@@ -3488,6 +3488,22 @@ interface IReducerSpec<T = {
     };
 }
 
+// @public
+interface IReferenceIdentifiers {
+    // (undocumented)
+    condition?: () => boolean;
+    // (undocumented)
+    fileId?: number;
+    // (undocumented)
+    fileIds?: string[];
+    // (undocumented)
+    fileNames?: string[];
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    modId?: number;
+}
+
 // @public (undocumented)
 interface IRegisteredExtension {
     // (undocumented)
@@ -5985,14 +6001,7 @@ function testModReference(mod: IMod | IModLookupInfo, reference: IModReference, 
 }, fuzzyVersion?: boolean): boolean;
 
 // @public (undocumented)
-function testRefByIdentifiers(identifiers: {
-    gameId: string;
-    modId?: number;
-    fileId?: number;
-    fileNames?: string[];
-    fileIds?: string[];
-    condition?: () => boolean;
-}, ref: IModReference): boolean;
+function testRefByIdentifiers(identifiers: IReferenceIdentifiers, ref: IModReference): boolean;
 
 // @public (undocumented)
 type TestSupported = (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => PromiseLike<ISupportedResult>;
@@ -6125,6 +6134,7 @@ declare namespace types {
         IGameStored,
         IDeploymentManifest,
         IModLookupInfo,
+        IReferenceIdentifiers,
         IChoiceType,
         IFileListItem,
         IMod,

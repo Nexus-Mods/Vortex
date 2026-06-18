@@ -4,9 +4,12 @@ import type { ICollection, IRevision } from "@nexusmods/nexus-api";
 import { getErrorCode, unknownToError } from "@vortex/shared";
 
 import { log } from "../../../logging";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IExtensionApi, ThunkStore } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import * as selectors from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import { batchDispatch } from "../../../util/util";
+import type { IMod } from "../../mod_management/types/IMod";
 import { updateCollectionInfo, updateRevisionInfo } from "../actions/persistent";
 import { CACHE_EXPIRE_MS, MOD_TYPE } from "../constants";
 import type { ICollectionModRule } from "../types/ICollection";
@@ -20,16 +23,16 @@ import { readCollection } from "./readCollection";
  * behavior were to change, the way InfoCache gets used would become invalid!
  */
 class InfoCache {
-  private mApi: types.IExtensionApi;
+  private mApi: IExtensionApi;
   private mCacheRevRequests: { [revId: string]: Promise<IRevision> } = {};
   private mCacheColRequests: { [revId: string]: Promise<ICollection> } = {};
   private mCacheColRules: { [revId: string]: Promise<ICollectionModRule[]> } = {};
 
-  constructor(api: types.IExtensionApi) {
+  constructor(api: IExtensionApi) {
     this.mApi = api;
   }
 
-  public async getCollectionModRules(revisionId: number, collection: types.IMod, gameId: string) {
+  public async getCollectionModRules(revisionId: number, collection: IMod, gameId: string) {
     const cacheId = revisionId ?? collection.id;
     if (this.mCacheColRules[cacheId] === undefined) {
       this.mCacheColRules[cacheId] = this.cacheCollectionModRules(revisionId, collection, gameId);
@@ -39,11 +42,10 @@ class InfoCache {
   }
 
   public async getCollectionInfo(slug: string, forceFetch?: boolean): Promise<ICollection> {
-    const { store } = this.mApi;
     if (slug === undefined) {
       return;
     }
-    const collections = store.getState().persistent.collections.collections ?? {};
+    const collections = this.mApi.getState().persistent.collections?.collections ?? {};
     if (
       forceFetch ||
       collections[slug]?.timestamp === undefined ||
@@ -71,7 +73,7 @@ class InfoCache {
       log("debug", "dropping outdated collections cache", {
         ids: collectionDrops,
       });
-      util.batchDispatch(
+      batchDispatch(
         store,
         collectionDrops.map((coll) => updateCollectionInfo(coll, undefined, undefined)),
       );
@@ -81,7 +83,7 @@ class InfoCache {
       log("debug", "dropping outdated revision cache", {
         ids: revisionDrops,
       });
-      util.batchDispatch(
+      batchDispatch(
         store,
         revisionDrops.map((rev) => updateRevisionInfo(Number(rev), undefined, undefined)),
       );
@@ -104,10 +106,9 @@ class InfoCache {
     collectionSlug: string,
     revisionNumber: number,
     fetchBehavior: "allow" | "avoid" | "force" = "allow",
-  ): Promise<IRevision> {
-    const { store } = this.mApi;
+  ): Promise<IRevision | undefined> {
     const revisions: { [id: string]: { info: IRevision; timestamp: number } } =
-      store.getState().persistent.collections.revisions ?? {};
+      this.mApi.getState().persistent.collections.revisions ?? {};
     if (
       fetchBehavior === "force" ||
       revisions[revisionId]?.timestamp === undefined ||
@@ -118,7 +119,7 @@ class InfoCache {
     }
 
     if (!revisions[revisionId]?.info?.collection) {
-      return Promise.resolve(undefined);
+      return;
     }
 
     const collectionInfo = await this.getCollectionInfo(revisions[revisionId].info.collection.slug);
@@ -132,7 +133,8 @@ class InfoCache {
   }
 
   private fetchRevisionInfo(
-    revisions,
+    // keyed by revision id
+    revisions: Record<string, { info: IRevision; timestamp: number }>,
     revisionId: number,
     collectionSlug: string,
     revisionNumber: number,
@@ -152,17 +154,11 @@ class InfoCache {
 
   private async cacheCollectionModRules(
     revisionId: number,
-    collection: types.IMod,
+    collection: IMod,
     gameId: string,
   ): Promise<ICollectionModRule[]> {
-    const store = this.mApi.store;
-    const state = store.getState();
-
-    const mods: { [modId: string]: types.IMod } = util.getSafe(
-      state,
-      ["persistent", "mods", gameId],
-      {},
-    );
+    const state = this.mApi.getState();
+    const mods: { [modId: string]: IMod } = getSafe(state, ["persistent", "mods", gameId], {});
     const colMod =
       collection ??
       Object.values(mods).find(
@@ -208,9 +204,9 @@ class InfoCache {
   }
 
   private updateRevisionCacheState(
-    store: types.ThunkStore<any>,
+    store: ThunkStore<IState>,
     revisionId: number,
-    revisionInfo: any,
+    revisionInfo: IRevision,
     now: number,
   ): void {
     // we cache revision info and collection info separately to reduce duplication
@@ -218,6 +214,8 @@ class InfoCache {
     store.dispatch(
       updateCollectionInfo(revisionInfo.collection.id.toString(), revisionInfo.collection, now),
     );
+    // the full collection is cached separately above; the revision keeps only an { id, slug }
+    // pointer (getRevisionInfo rehydrates the full collection from the slug on read)
     store.dispatch(
       updateRevisionInfo(
         revisionId,

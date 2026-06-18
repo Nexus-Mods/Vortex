@@ -23,9 +23,8 @@ import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
 import { installPathForGame } from "../../mod_management/selectors";
-import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
+import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
-import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
 import renderModName from "../../mod_management/util/modName";
 import testModReference, {
   ruleInstallSpec,
@@ -102,36 +101,6 @@ class InstallDriver {
   }
   private get recommendedMods() {
     return this.mDependentMods.filter((m) => m.type === "recommends");
-  }
-
-  /**
-   * Mark a collection rule as ignored. Updates the transient install session and
-   * persists the decision durably via the rule's `ignored` flag. The session lives
-   * in state.session (not persisted), so without the durable flag a mid-install
-   * restart would rehydrate an ignored required mod as "pending" and the collection
-   * could never reach completion. startImpl()'s reconstruction reads `ignored` to
-   * restore the "ignored" status; the unfulfilled-rules and dependency-completion
-   * checks already treat ignored rules as resolved.
-   */
-  private markRuleIgnored(rule: IModRule) {
-    // user-initiated skip: write the session status and the durable flag together. Both
-    // are low-frequency, so they dispatch directly (no batching debouncer needed now that
-    // InstallManager is the single lifecycle writer). This intentionally does NOT go
-    // through planSessionWrite's protection: ignoring a mod is an explicit user decision
-    // that must take effect even if the mod already reached a terminal state (e.g. the
-    // user wants to stop the collection re-pulling it and then remove it manually).
-    const actions: any[] = [];
-    if (this.mCurrentSessionId) {
-      actions.push(
-        installActions.updateModStatus(this.mCurrentSessionId, modRuleId(rule), "ignored"),
-      );
-    }
-    if (this.mGameId !== undefined && this.mCollection !== undefined) {
-      actions.push(addModRule(this.mGameId, this.mCollection.id, { ...rule, ignored: true }));
-    }
-    if (actions.length > 0) {
-      batchDispatch(this.mApi.store, actions);
-    }
   }
 
   private completeInstallationTracking(success: boolean) {
@@ -256,75 +225,12 @@ class InstallDriver {
       this.mProgressDebouncer.schedule();
     });
 
-    api.events.on(
-      "free-user-skipped-download",
-      (identifiers: {
-        gameId: string;
-        modId?: number;
-        fileId?: number;
-        fileNames?: string[];
-        fileIds?: string[];
-      }) => {
-        const sanitize = (fileName: string) => fileName.toLowerCase().replace(/[^a-z]+/gi, "");
-        const rule = this.mDependentMods.find((r) => {
-          const condition = () => {
-            // So this is shit, but we need to account for the fact that the fileId may never match
-            //  due to incorrect update chains.
-            if (r.reference.versionMatch != null && isFuzzyVersion(r.reference.versionMatch)) {
-              if (
-                identifiers.modId == null ||
-                r.reference.repo?.modId !== identifiers.modId.toString()
-              ) {
-                return false;
-              }
-              const nameSet = new Set(identifiers.fileNames.map(sanitize));
-              if (identifiers.fileNames) {
-                if (!nameSet.has(sanitize(r.reference.logicalFileName))) {
-                  return false;
-                }
-              }
-              // If we made it this far, we have the correct modId and logicalFileName
-              //  should be good enough...
-              return true;
-            }
-          };
-          return testRefByIdentifiers({ ...identifiers, condition } as any, r.reference);
-        });
-        if (rule) {
-          this.markRuleIgnored(rule);
-        } else {
-          log("error", "could not find rule for skipped free user download", {
-            identifiers,
-          });
-        }
-      },
-    );
-
     // "downloading" (new downloads) and "downloaded" (imported/bundled downloads) are
     // now written by InstallManager, the single lifecycle writer for the session.
 
-    api.events.on("collection-mod-skipped", (reference: IModReference) => {
-      // Update tracking when a mod download is skipped (for both free and premium users)
-      const matchingRule = this.mDependentMods.find((rule) => {
-        // Match by tag (most reliable) or other identifiers
-        if (reference.tag && rule.reference.tag === reference.tag) {
-          return true;
-        }
-        if (reference.fileMD5 && rule.reference.fileMD5 === reference.fileMD5) {
-          return true;
-        }
-        if (
-          reference.logicalFileName &&
-          rule.reference.logicalFileName === reference.logicalFileName
-        ) {
-          return true;
-        }
-        return false;
-      });
-      if (matchingRule) {
-        this.markRuleIgnored(matchingRule);
-      }
-    });
+    // A skipped collection member (premium/automatic via InstallManager, or a free user via
+    // nexus_integration) is now marked ignored at the skip site via markCollectionMemberSkipped;
+    // the driver no longer listens for `collection-mod-skipped` / `free-user-skipped-download`.
 
     api.events.on(
       "will-install-dependencies",
@@ -624,6 +530,37 @@ class InstallDriver {
       this.mRevisionInfo?.collection;
   }
 
+  /**
+   * Whether the active collection has nothing left to install: every required rule (and, on the
+   * recommendations pass, every recommended rule too) is either installed or explicitly ignored.
+   * This is the completion DECISION, deliberately separate from the postprocessing side-effect
+   * (finalizeInstalledCollection) so it can be unit-tested without the staging-path / fs
+   * infrastructure. The two passes differ as before: the required pass demands an installed
+   * state, the recommendations pass only that the mod is present.
+   */
+  public isInstallComplete(recommendations: boolean): boolean {
+    if (this.mCollection === undefined || this.mGameId === undefined) {
+      return false;
+    }
+    const mods = this.mApi.getState().persistent.mods[this.mGameId] ?? {};
+    const rules = this.mCollection.rules ?? [];
+    if (!recommendations) {
+      const isInstalled = (rule: IModRule) => {
+        const mod = findModByRef(rule.reference, mods);
+        return mod != null && mod.state === "installed";
+      };
+      return !rules.some(
+        (rule) => rule.type === "requires" && rule.ignored !== true && !isInstalled(rule),
+      );
+    }
+    return !rules.some(
+      (rule) =>
+        ["requires", "recommends"].includes(rule.type) &&
+        rule.ignored !== true &&
+        findModByRef(rule.reference, mods) === undefined,
+    );
+  }
+
   private async onDidInstallDependencies(gameId: string, modId: string, recommendations: boolean) {
     const mods = this.mApi.getState().persistent.mods[gameId];
 
@@ -638,15 +575,7 @@ class InstallDriver {
 
       if (this.mCollection !== undefined) {
         if (!recommendations) {
-          const isInstalled = (rule: any) => {
-            const mod = findModByRef(rule.reference, mods);
-            return mod != null && mod?.state === "installed";
-          };
-          const filter = (rule) =>
-            rule.type === "requires" && rule["ignored"] !== true && isInstalled(rule) === false;
-
-          const incomplete = (this.mCollection.rules ?? []).find(filter);
-          if (incomplete === undefined) {
+          if (this.isInstallComplete(false)) {
             await this.initCollectionInfo();
             this.mStep = "review";
           } else {
@@ -658,17 +587,10 @@ class InstallDriver {
           this.triggerUpdate();
         } else {
           // We finished installing optional mods for the current collection - reset everything.
-          const filter = (rule) =>
-            ["requires", "recommends"].includes(rule.type) &&
-            rule["ignored"] !== true &&
-            findModByRef(rule.reference, mods) === undefined;
-
-          const incomplete = (this.mCollection.rules ?? []).find(filter);
-
           this.mProgressDebouncer.clear();
           this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + modId);
 
-          if (incomplete === undefined) {
+          if (this.isInstallComplete(true)) {
             // revisit review screen
             await this.initCollectionInfo();
             this.mStep = "review";
@@ -680,59 +602,76 @@ class InstallDriver {
       }
     }
 
-    const stagingPath = installPathForGame(this.mApi.getState(), gameId);
+    await this.finalizeInstalledCollection(gameId, modId, mods);
+  }
+
+  /**
+   * Postprocessing side-effect after a dependency-install round: read the collection.json from
+   * the staging folder and apply its mod rules, then emit completion analytics. Kept separate
+   * from the completion DECISION (isInstallComplete) so the decision needs no fs/staging-path
+   * infrastructure. Errors here are expected on the platform where the collection was authored,
+   * so they are swallowed (with a failure-analytics debounce). The staging-path lookup is inside
+   * the try so a path-resolution failure follows the same swallow path.
+   */
+  private async finalizeInstalledCollection(
+    gameId: string,
+    modId: string,
+    mods: Record<string, IMod>,
+  ) {
     const mod = mods[modId];
-    if (mod !== undefined && mod.type === MOD_TYPE) {
-      try {
-        const collectionInfo: ICollection = await readCollection(
-          this.mApi,
-          path.join(stagingPath, mod.installationPath, "collection.json"),
-        );
+    if (mod === undefined || mod.type !== MOD_TYPE) {
+      return;
+    }
+    try {
+      const stagingPath = installPathForGame(this.mApi.getState(), gameId);
+      const collectionInfo: ICollection = await readCollection(
+        this.mApi,
+        path.join(stagingPath, mod.installationPath, "collection.json"),
+      );
 
-        // Signal postprocessing and yield to the event loop so the review
-        // dialog can render before the heavy deployment/parsing work begins.
-        this.mPostprocessing = true;
-        this.triggerUpdate();
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      // Signal postprocessing and yield to the event loop so the review
+      // dialog can render before the heavy deployment/parsing work begins.
+      this.mPostprocessing = true;
+      this.triggerUpdate();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-        await postprocessCollection(this.mApi, gameId, mod, collectionInfo, mods);
+      await postprocessCollection(this.mApi, gameId, mod, collectionInfo, mods);
 
-        this.mPostprocessing = false;
+      this.mPostprocessing = false;
 
-        // Refresh again so that postprocessing changes are reflected in the UI.
-        // (and have the finalization step cleared)
-        this.triggerUpdate();
+      // Refresh again so that postprocessing changes are reflected in the UI.
+      // (and have the finalization step cleared)
+      this.triggerUpdate();
 
-        /* COLLECTIONS COMPLETED ANALYTICS */
+      /* COLLECTIONS COMPLETED ANALYTICS */
 
-        const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), this.mCollection.archiveId);
+      const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), this.mCollection.archiveId);
 
-        const duration_ms = Date.now() - this.mTimeStarted;
+      const duration_ms = Date.now() - this.mTimeStarted;
 
-        this.mApi.events.emit(
-          "analytics-track-mixpanel-event",
-          new CollectionsInstallationCompletedEvent(
-            nexusIds.collectionId,
-            nexusIds.revisionId,
-            nexusIds.numericGameId,
-            this.installedMods.length,
-            duration_ms,
-          ),
-        );
+      this.mApi.events.emit(
+        "analytics-track-mixpanel-event",
+        new CollectionsInstallationCompletedEvent(
+          nexusIds.collectionId,
+          nexusIds.revisionId,
+          nexusIds.numericGameId,
+          this.installedMods.length,
+          duration_ms,
+        ),
+      );
 
-        // this.mApi.events.emit('analytics-track-event-with-payload', 'Collection Installation Completed', {
-        //   collection_slug: this.collectionSlug,
-        //   collection_revision_number: this.revisionNumber
-        // });
-      } catch (err) {
-        this.mPostprocessing = false;
-        log(
-          "info",
-          "Failed to apply mod rules from collection. This is normal if this is the " +
-            "platform where the collection has been created.",
-        );
-        this.mDebounce.schedule(undefined, this.collectionSlug, this.revisionNumber, err);
-      }
+      // this.mApi.events.emit('analytics-track-event-with-payload', 'Collection Installation Completed', {
+      //   collection_slug: this.collectionSlug,
+      //   collection_revision_number: this.revisionNumber
+      // });
+    } catch (err) {
+      this.mPostprocessing = false;
+      log(
+        "info",
+        "Failed to apply mod rules from collection. This is normal if this is the " +
+          "platform where the collection has been created.",
+      );
+      this.mDebounce.schedule(undefined, this.collectionSlug, this.revisionNumber, err);
     }
   }
 

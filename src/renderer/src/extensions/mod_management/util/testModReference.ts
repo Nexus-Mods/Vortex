@@ -373,15 +373,22 @@ function testRef(
   return true;
 }
 
+/**
+ * The loose Nexus identifiers a reference can be matched against (a mod page + file ids/names),
+ * plus an optional caller-supplied fallback predicate. Shared so callers do not re-declare the
+ * shape inline.
+ */
+export interface IReferenceIdentifiers {
+  gameId: string;
+  modId?: number;
+  fileId?: number;
+  fileNames?: string[];
+  fileIds?: string[];
+  condition?: () => boolean;
+}
+
 export function testRefByIdentifiers(
-  identifiers: {
-    gameId: string;
-    modId?: number;
-    fileId?: number;
-    fileNames?: string[];
-    fileIds?: string[];
-    condition?: () => boolean;
-  },
+  identifiers: IReferenceIdentifiers,
   ref: IModReference,
 ): boolean {
   if (identifiers == null || typeof identifiers !== "object" || Array.isArray(identifiers)) {

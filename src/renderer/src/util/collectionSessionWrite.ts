@@ -1,7 +1,7 @@
 /**
  * Planning + resolving writes to the collection install session. This is the WRITE side
  * of the session (the read side is collectionInstallSessionSelectors). It is internal to
- * the install flow - InstallManager (and the driver, for user skips) use it directly; it
+ * the install flow - InstallManager uses it directly for automatic lifecycle writes; it
  * is deliberately NOT re-exported through the public api barrels.
  */
 import type { IModReference } from "../extensions/mod_management/types/IMod";
@@ -27,12 +27,12 @@ export type CollectionSessionWrite =
 
 /**
  * Decide how an automatic install outcome should be written to a session mod, given that
- * mod's current status. This is the single source of the automatic write rules (the user
- * skip path, markRuleIgnored, deliberately bypasses it - see below):
+ * mod's current status. This is the single source of the automatic write rules (the skip
+ * path, markCollectionMemberSkipped, deliberately bypasses it - see below):
  *
  * - "ignored" is the user's final word: no automatic write overrides it. The user changes
- *   it by un-ignoring/resuming; markRuleIgnored sets it directly (bypassing this planner)
- *   precisely so an explicit skip CAN override a prior installed/in-progress state.
+ *   it by un-ignoring/resuming; markCollectionMemberSkipped sets it directly (bypassing this
+ *   planner) precisely so an explicit skip CAN override a prior installed/in-progress state.
  * - reaching "installed" wins over any in-progress or failed state (recorded via
  *   markModInstalled, which carries the modId) - but not over a user "ignored".
  * - a completed install ("installed") is not downgraded by a late/stray in-progress event.
