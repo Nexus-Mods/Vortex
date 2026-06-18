@@ -1,4 +1,4 @@
-import { rehydrateSerializedError, serializeError } from "@vortex/shared";
+import { rehydrateSerializedError, serializeError, setErrorOriginTracker } from "@vortex/shared";
 import type {
   AppInitMetadata,
   RendererChannels,
@@ -26,6 +26,35 @@ const betterIpcRenderer = {
   off: rendererOff,
   callback: rendererCallback,
 };
+
+// Pass renderer-owned errors by reference across the IPC round-trip: a callback
+// error serialized here is stashed live and handed straight back when its
+// proxied copy returns — preserving identity, prototype and the real throw-site
+// stack. Bounded, so a one-way error that never returns is evicted rather than
+// retained; an evicted ref just falls back to generic-Error hydration. The
+// renderer and preload share one V8 context (contextIsolation is off for the
+// main window), so the stashed object is the same one the callback threw. The
+// "renderer" namespace keeps these refs distinct from any tracker main installs.
+const ORIGIN_STASH_MAX = 512;
+const originStash = new Map<string, Error>();
+let originSeq = 0;
+setErrorOriginTracker({
+  namespace: "renderer",
+  capture: (err: Error): string => {
+    const id = `${originSeq++}`;
+    originStash.set(id, err);
+    if (originStash.size > ORIGIN_STASH_MAX) {
+      const oldest = originStash.keys().next().value;
+      if (oldest !== undefined) originStash.delete(oldest);
+    }
+    return id;
+  },
+  resolve: (id: string): Error | undefined => {
+    const err = originStash.get(id);
+    if (err !== undefined) originStash.delete(id);
+    return err;
+  },
+});
 
 try {
   expose("versions", {
