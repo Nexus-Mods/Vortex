@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { DownloadIsHTML } from "@vortex/shared/errors";
+import { DownloadIsHTML, isErrorOfType } from "@vortex/shared/errors";
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import _ from "lodash";
@@ -422,13 +422,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     }
     const urlInvalid = ["moved permanently", "forbidden", "gone"];
     const title = resume ? "Failed to resume download" : "Failed to start download";
-    if (err instanceof ProcessCanceled) {
+    if (isErrorOfType(err, ProcessCanceled)) {
       this.props.onShowError(title, err, undefined, false);
-    } else if (err instanceof UserCanceled) {
+    } else if (isErrorOfType(err, UserCanceled)) {
       // nop
-    } else if (err instanceof DataInvalid || err instanceof URIError) {
+    } else if (isErrorOfType(err, DataInvalid) || isErrorOfType(err, URIError)) {
       this.props.onShowError(title, err, undefined, false);
-    } else if (err instanceof DownloadIsHTML) {
+    } else if (isErrorOfType(err, DownloadIsHTML)) {
       if (resume) {
         this.props.onShowError(
           title,
@@ -447,7 +447,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         undefined,
         false,
       );
-    } else if (err instanceof TemporaryError) {
+    } else if (isErrorOfType(err, TemporaryError)) {
       this.props.onShowError(
         title,
         "Downloading failed due to an I/O error (either " +

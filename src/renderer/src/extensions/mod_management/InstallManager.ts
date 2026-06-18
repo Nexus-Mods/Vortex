@@ -12,7 +12,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
+import { AlreadyDownloaded, DownloadIsHTML, isErrorOfType } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
@@ -1784,9 +1784,9 @@ class InstallManager {
                   //   exceptions from extensions, hence we have to do the string check (last one)
                   const errObj = unknownToError(err);
                   const canceled =
-                    err instanceof UserCanceled ||
-                    err instanceof TemporaryError ||
-                    err instanceof ProcessCanceled ||
+                    isErrorOfType(err, UserCanceled) ||
+                    isErrorOfType(err, TemporaryError) ||
+                    isErrorOfType(err, ProcessCanceled) ||
                     !truthy(err) ||
                     errObj.message === "Canceled" ||
                     (truthy(errObj.stack) &&
@@ -1799,7 +1799,7 @@ class InstallManager {
                   )
                     .then(() => undefined)
                     .catch((innerErr: unknown) => {
-                      if (innerErr instanceof UserCanceled) {
+                      if (isErrorOfType(innerErr, UserCanceled)) {
                         return;
                       }
                       const err = unknownToError(innerErr);
@@ -1835,7 +1835,7 @@ class InstallManager {
                     return prom.then(() => {
                       promiseCallback?.(errObj, null);
                     });
-                  } else if (err instanceof ArchiveBrokenError) {
+                  } else if (isErrorOfType(err, ArchiveBrokenError)) {
                     return prom.then(() => {
                       if (archiveId) {
                         api.store.dispatch(
@@ -1888,7 +1888,7 @@ class InstallManager {
                         });
                       }
                     });
-                  } else if (err instanceof SetupError) {
+                  } else if (isErrorOfType(err, SetupError)) {
                     return prom.then(() => {
                       if (installContext !== undefined) {
                         installContext.reportError("Installation failed", err, false, {
@@ -1898,7 +1898,7 @@ class InstallManager {
                       }
                       promiseCallback?.(err, null);
                     });
-                  } else if (err instanceof DataInvalid) {
+                  } else if (isErrorOfType(err, DataInvalid)) {
                     return prom.then(() => {
                       if (installContext !== undefined) {
                         installContext.reportError(
@@ -2490,8 +2490,8 @@ class InstallManager {
           const installCanceled = !this.mDependencyInstalls[sourceModId];
           const isCanceled =
             installCanceled ||
-            unknownError instanceof UserCanceled ||
-            unknownError instanceof ProcessCanceled;
+            isErrorOfType(unknownError, UserCanceled) ||
+            isErrorOfType(unknownError, ProcessCanceled);
           const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
           if (!isCanceled && hasRetriesLeft) {
             this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
@@ -5075,9 +5075,9 @@ class InstallManager {
                 async (error, id) => {
                   if (error == null) {
                     return resolve(id);
-                  } else if (error instanceof AlreadyDownloaded) {
+                  } else if (isErrorOfType(error, AlreadyDownloaded)) {
                     return resolve(error.downloadId);
-                  } else if (error instanceof DownloadIsHTML) {
+                  } else if (isErrorOfType(error, DownloadIsHTML)) {
                     // If this is a google drive link and the file exceeds the
                     //  virus testing limit, Google will return an HTML page asking
                     //  the user for consent to download the file. Lets try this using
@@ -5228,7 +5228,7 @@ class InstallManager {
         parentCollectionId,
       )
         .catch((err) => {
-          if (err instanceof HTTPError) {
+          if (isErrorOfType(err, HTTPError)) {
             // assuming the api failed because the mod had been archive, can still download
             // the exact file specified by the curator
             return undefined;
@@ -5259,7 +5259,7 @@ class InstallManager {
         fileName,
         parentCollectionId,
       ).catch((err) => {
-        if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
+        if (isErrorOfType(err, UserCanceled) || isErrorOfType(err, ProcessCanceled)) {
           return Promise.reject(err);
         }
         // with +prefer versions, if the exact version isn't available, an update is acceptable
@@ -5479,7 +5479,7 @@ class InstallManager {
               return undefined;
             }
             // don't cancel the whole process if one dependency fails to install
-            if (innerErr instanceof ProcessCanceled) {
+            if (isErrorOfType(innerErr, ProcessCanceled)) {
               if (
                 typeof innerErr.extraInfo === "object" &&
                 innerErr.extraInfo !== null &&
@@ -5507,7 +5507,7 @@ class InstallManager {
               );
               return undefined;
             }
-            if (innerErr instanceof DownloadIsHTML) {
+            if (isErrorOfType(innerErr, DownloadIsHTML)) {
               const refName = renderModReference(dep.reference, undefined);
               const message =
                 "The direct download URL for this file is not valid or didn't lead to a file. " +
@@ -5525,7 +5525,7 @@ class InstallManager {
               );
               return undefined;
             }
-            if (innerErr instanceof NotFound) {
+            if (isErrorOfType(innerErr, NotFound)) {
               const refName = renderModReference(dep.reference, undefined);
               this.showDependencyError(
                 api,
@@ -5540,7 +5540,7 @@ class InstallManager {
               );
               return undefined;
             }
-            if (innerErr instanceof UserCanceled) {
+            if (isErrorOfType(innerErr, UserCanceled)) {
               if (innerErr.skipped) {
                 return undefined;
               } else {
@@ -5632,7 +5632,7 @@ class InstallManager {
         abort.signal,
       );
     } catch (outerErr: unknown) {
-      if (outerErr instanceof ProcessCanceled) {
+      if (isErrorOfType(outerErr, ProcessCanceled)) {
         // This indicates an error in the dependency rules so it's
         // adequate to show an error but not as a bug in Vortex
 
@@ -5645,7 +5645,7 @@ class InstallManager {
         });
         return [];
       }
-      if (outerErr instanceof UserCanceled) {
+      if (isErrorOfType(outerErr, UserCanceled)) {
         log("info", "canceled out of dependency install");
         // Cancel all remaining operations when user cancels
         abort.abort();
@@ -5783,12 +5783,12 @@ class InstallManager {
 
               // Check if this is a "File already downloaded" error (for cases where we get a generic error message)
               const isAlreadyDownloaded =
-                err instanceof AlreadyDownloaded ||
+                isErrorOfType(err, AlreadyDownloaded) ||
                 errMsg?.includes("File already downloaded") ||
                 errMsg?.includes("already downloaded");
 
               if (isAlreadyDownloaded) {
-                if (err instanceof AlreadyDownloaded && err.downloadId !== undefined) {
+                if (isErrorOfType(err, AlreadyDownloaded) && err.downloadId !== undefined) {
                   log("info", "File already downloaded, using existing download ID", {
                     downloadId: err.downloadId,
                   });
@@ -5796,7 +5796,7 @@ class InstallManager {
                 }
                 // If file is already downloaded, check if we can find the download
                 // Try to find the download by filename
-                const alreadyDlErr = err instanceof AlreadyDownloaded ? err : undefined;
+                const alreadyDlErr = isErrorOfType(err, AlreadyDownloaded) ? err : undefined;
                 const currentDownloads = api.getState().persistent.downloads.files;
                 const downloadId = Object.keys(currentDownloads).find(
                   (dlId) =>
@@ -5954,7 +5954,7 @@ class InstallManager {
               )
                 .then((res) => resolve(res))
                 .catch((err) => {
-                  if (err instanceof UserCanceled) {
+                  if (isErrorOfType(err, UserCanceled)) {
                     err.skipped = true;
                   }
                   return reject(err);
@@ -6028,13 +6028,13 @@ class InstallManager {
       }
       return dlPromise
         .catch((err: unknown) => {
-          if (err instanceof UserCanceled) {
+          if (isErrorOfType(err, UserCanceled)) {
             if ((err as UserCanceled & { skipped?: boolean }).skipped) {
               this.handleDownloadSkipped(api, sourceModId, dep);
             }
             return Promise.reject(err);
           }
-          if (err instanceof AlreadyDownloaded) {
+          if (isErrorOfType(err, AlreadyDownloaded)) {
             if (err.downloadId !== undefined) {
               return Promise.resolve(err.downloadId);
             } else {
@@ -6608,9 +6608,9 @@ class InstallManager {
       .catch((err) => {
         api.dismissNotification(notificationId);
         api.store.dispatch(stopActivity("dependencies", "gathering"));
-        if (!(err instanceof UserCanceled) && !(err instanceof NotFound)) {
+        if (!isErrorOfType(err, UserCanceled) && !isErrorOfType(err, NotFound)) {
           api.showErrorNotification("Failed to check dependencies", err);
-        } else if (err instanceof NotFound) {
+        } else if (isErrorOfType(err, NotFound)) {
           api.showErrorNotification(
             "Failed to check dependencies",
             "A mod dependency could not be found. This is usually caused by " +
@@ -6847,7 +6847,7 @@ class InstallManager {
       })
       .catch((err) => {
         api.store.dispatch(stopActivity("dependencies", "gathering"));
-        if (!(err instanceof UserCanceled)) {
+        if (!isErrorOfType(err, UserCanceled)) {
           api.showErrorNotification("Failed to check dependencies", err);
         }
       })
@@ -7237,7 +7237,7 @@ class InstallManager {
 
     // Don't allow reporting for user-initiated cancellations
     const isCanceled =
-      details instanceof UserCanceled ||
+      isErrorOfType(details, UserCanceled) ||
       (details instanceof String &&
         ["usercanceled", "canceled", "cancelled"].some((term) =>
           details.toLowerCase().includes(term),

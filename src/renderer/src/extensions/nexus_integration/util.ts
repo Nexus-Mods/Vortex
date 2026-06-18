@@ -28,7 +28,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
+import { AlreadyDownloaded, DownloadIsHTML, isErrorOfType } from "@vortex/shared/errors";
 import BluebirdPromise from "bluebird";
 import type { TFunction } from "i18next";
 import jwt from "jsonwebtoken";
@@ -470,9 +470,9 @@ function startDownloadCollection(
             "an unpublished collection.",
           { allowReport: false },
         );
-      } else if (!(err instanceof UserCanceled)) {
+      } else if (!isErrorOfType(err, UserCanceled)) {
         api.showErrorNotification("Failed to download collection", err, {
-          allowReport: !(err instanceof ProcessCanceled),
+          allowReport: !isErrorOfType(err, ProcessCanceled),
         });
       }
       return null;
@@ -875,14 +875,14 @@ function startDownloadMod(
             message: false,
           },
         });
-      } else if (err instanceof RateLimitError) {
+      } else if (isErrorOfType(err, RateLimitError)) {
         api.sendNotification({
           id: "rate-limit-exceeded",
           type: "warning",
           title: "Rate-limit exceeded",
           message: "You wont be able to use network features until the next full hour.",
         });
-      } else if (err instanceof NexusError) {
+      } else if (isErrorOfType(err, NexusError)) {
         const detail = processErrorMessage(err);
         let allowReport = detail.Servermessage === undefined;
         if (detail.noReport) {
@@ -896,7 +896,7 @@ function startDownloadMod(
         api.showErrorNotification("Download failed", err, {
           allowReport: false,
         });
-      } else if (err instanceof HTTPError) {
+      } else if (isErrorOfType(err, HTTPError)) {
         api.showErrorNotification(
           "Download failed",
           {
@@ -905,11 +905,11 @@ function startDownloadMod(
           },
           { allowReport: false },
         );
-      } else if (err instanceof TimeoutError) {
+      } else if (isErrorOfType(err, TimeoutError)) {
         api.showErrorNotification("Download failed", err, {
           allowReport: false,
         });
-      } else if (err instanceof ProcessCanceled) {
+      } else if (isErrorOfType(err, ProcessCanceled)) {
         api.showErrorNotification(
           "Download failed",
           {
@@ -932,7 +932,7 @@ function startDownloadMod(
           },
           { allowReport: false },
         );
-      } else if (err instanceof TemporaryError) {
+      } else if (isErrorOfType(err, TemporaryError)) {
         api.showErrorNotification(
           "Download failed",
           {
@@ -941,9 +941,9 @@ function startDownloadMod(
           },
           { allowReport: false },
         );
-      } else if (err instanceof AlreadyDownloaded) {
+      } else if (isErrorOfType(err, AlreadyDownloaded)) {
         return err.downloadId;
-      } else if (err instanceof UserCanceled) {
+      } else if (isErrorOfType(err, UserCanceled)) {
         // nop
       } else if (err.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE") {
         api.showErrorNotification(
@@ -1181,7 +1181,7 @@ function reportEndorseError(
     });
   } else if (
     IGNORE_ERRORS.includes(err["code"]) ||
-    err instanceof ProcessCanceled ||
+    isErrorOfType(err, ProcessCanceled) ||
     (err?.message ?? "").includes("getaddrinfo")
   ) {
     api.showErrorNotification(`Endorsing ${type} failed, please try again later`, err, {
