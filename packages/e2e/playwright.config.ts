@@ -1,15 +1,11 @@
-import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { defineConfig } from "@playwright/test";
 
+import { loadE2EEnv } from "./src/helpers/env";
 import { GlobalTimeouts, Timeouts } from "./src/helpers/timeouts";
 
-const envFilePath = path.resolve(import.meta.dirname, ".env");
-
-if (existsSync(envFilePath)) {
-  process.loadEnvFile(envFilePath);
-}
+loadE2EEnv();
 
 export default defineConfig({
   testDir: "./src/tests",
