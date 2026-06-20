@@ -10,6 +10,7 @@
     <Version>1.0.0</Version>
     <Authors>Nexus Mods</Authors>
     <Description>Probes for the .NET Desktop Runtime</Description>
+    <CETCompat>false</CETCompat>
   </PropertyGroup>
 
 </Project>
