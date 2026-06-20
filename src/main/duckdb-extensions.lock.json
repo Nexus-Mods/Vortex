@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "duckdbVersion": "v1.5.1",
+  "extensions": [
+    {
+      "name": "level_pivot",
+      "platforms": {
+        "windows_amd64": {
+          "url": "https://nexus-mods.github.io/duckdb-level-pivot/current_release/v1.5.1/windows_amd64/level_pivot.duckdb_extension.gz",
+          "sha256": "c4ee070ec4a5a9a07dfd1d9369c08a8af02b18bd280db5c0924686dd04578359"
+        },
+        "linux_amd64": {
+          "url": "https://nexus-mods.github.io/duckdb-level-pivot/current_release/v1.5.1/linux_amd64/level_pivot.duckdb_extension.gz",
+          "sha256": "013859c55af64a76e47a0493a682a121d29fce1f65c91e3ceb7aa0611ccba43a"
+        }
+      }
+    }
+  ]
+}

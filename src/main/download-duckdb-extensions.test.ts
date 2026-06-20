@@ -1,6 +1,15 @@
 import { describe, it, expect } from "vitest";
 
-import { parseDuckDBVersion, buildExtensionUrl } from "./download-duckdb-extensions";
+import {
+  parseDuckDBVersion,
+  buildExtensionUrl,
+  validateExtensionLock,
+  getLockedExtensionArtifact,
+  assertSha256Matches,
+  getLocalExtensionArtifactPath,
+  type IExtensionConfig,
+  type IExtensionLockFile,
+} from "./download-duckdb-extensions";
 
 describe("parseDuckDBVersion", () => {
   it("strips the -r.X suffix and prepends v", () => {
@@ -53,5 +62,106 @@ describe("buildExtensionUrl", () => {
         platform: "windows_amd64",
       }),
     ).toThrow(/repository/i);
+  });
+});
+
+describe("validateExtensionLock", () => {
+  const config: IExtensionConfig = {
+    platforms: ["windows_amd64", "linux_amd64"],
+    outputDir: "build/duckdb-extensions",
+    extensions: [
+      {
+        name: "level_pivot",
+        type: "http",
+        repository: "https://nexus-mods.github.io/duckdb-level-pivot/current_release",
+      },
+    ],
+  };
+
+  const lock: IExtensionLockFile = {
+    version: 1,
+    duckdbVersion: "v1.5.1",
+    extensions: [
+      {
+        name: "level_pivot",
+        platforms: {
+          windows_amd64: {
+            url: "https://example.invalid/windows.gz",
+            sha256: "windows-hash",
+          },
+          linux_amd64: {
+            url: "https://example.invalid/linux.gz",
+            sha256: "linux-hash",
+          },
+        },
+      },
+    ],
+  };
+
+  it("accepts a lockfile that covers the config and DuckDB version", () => {
+    expect(() => validateExtensionLock(config, lock, "v1.5.1")).not.toThrow();
+  });
+
+  it("throws when the lockfile DuckDB version is stale", () => {
+    expect(() => validateExtensionLock(config, lock, "v1.5.2")).toThrow(/v1\.5\.1.*v1\.5\.2/);
+  });
+
+  it("throws when an extension is missing from the lockfile", () => {
+    expect(() =>
+      validateExtensionLock(
+        {
+          ...config,
+          extensions: [...config.extensions, { name: "delta", type: "community" }],
+        },
+        lock,
+        "v1.5.1",
+      ),
+    ).toThrow(/delta/);
+  });
+
+  it("throws when a platform is missing from the lockfile", () => {
+    expect(() =>
+      validateExtensionLock(
+        {
+          ...config,
+          platforms: [...config.platforms, "osx_amd64"],
+        },
+        lock,
+        "v1.5.1",
+      ),
+    ).toThrow(/osx_amd64/);
+  });
+
+  it("returns a locked artifact URL for an extension and platform", () => {
+    expect(getLockedExtensionArtifact(lock, "level_pivot", "linux_amd64").url).toBe(
+      "https://example.invalid/linux.gz",
+    );
+  });
+});
+
+describe("assertSha256Matches", () => {
+  it("accepts matching hashes", () => {
+    expect(() => assertSha256Matches("ABC123", "abc123", "artifact.gz")).not.toThrow();
+  });
+
+  it("throws with both hashes when they differ", () => {
+    expect(() => assertSha256Matches("expected", "actual", "artifact.gz")).toThrow(
+      /expected expected, got actual/,
+    );
+  });
+});
+
+describe("getLocalExtensionArtifactPath", () => {
+  it("matches the Flatpak prefetched source layout", () => {
+    expect(
+      getLocalExtensionArtifactPath(
+        "/run/build/vortex/flatpak-duckdb-extensions",
+        "v1.5.1",
+        "linux_amd64",
+        "level_pivot",
+      ),
+    ).toBe(
+      "/run/build/vortex/flatpak-duckdb-extensions/v1.5.1/linux_amd64/level_pivot.duckdb_extension.gz",
+    );
   });
 });
