@@ -6,7 +6,9 @@ import {
   validateExtensionLock,
   getLockedExtensionArtifact,
   assertSha256Matches,
+  getDuckDBPlatform,
   getLocalExtensionArtifactPath,
+  getUnpackedExtensionPath,
   type IExtensionConfig,
   type IExtensionLockFile,
 } from "./download-duckdb-extensions";
@@ -163,5 +165,24 @@ describe("getLocalExtensionArtifactPath", () => {
     ).toBe(
       "/run/build/vortex/flatpak-duckdb-extensions/v1.5.1/linux_amd64/level_pivot.duckdb_extension.gz",
     );
+  });
+});
+
+describe("getUnpackedExtensionPath", () => {
+  it("matches DuckDB's extension_directory layout", () => {
+    expect(
+      getUnpackedExtensionPath("/app/duckdb-extensions", "v1.5.1", "linux_amd64", "level_pivot"),
+    ).toBe("/app/duckdb-extensions/v1.5.1/linux_amd64/level_pivot.duckdb_extension");
+  });
+});
+
+describe("getDuckDBPlatform", () => {
+  it("maps supported host platforms to DuckDB platform names", () => {
+    expect(getDuckDBPlatform("linux", "x64")).toBe("linux_amd64");
+    expect(getDuckDBPlatform("win32", "x64")).toBe("windows_amd64");
+  });
+
+  it("throws for unsupported host platforms", () => {
+    expect(() => getDuckDBPlatform("darwin", "arm64")).toThrow(/unsupported/i);
   });
 });

@@ -8,6 +8,10 @@ import * as zlib from "node:zlib";
 
 const UPDATE_DUCKDB_LOCK_ARG = "--update-duckdb-lock";
 const DUCKDB_EXTENSION_SOURCE_DIR_ENV = "VORTEX_DUCKDB_EXTENSION_SOURCE_DIR";
+export const DUCKDB_EXTENSION_DOWNLOAD_COMMAND =
+  "pnpm run --filter @vortex/main duckdb:download-duckdb-extensions";
+const DUCKDB_EXTENSION_CONFIG_FILENAME = "duckdb-extensions.json";
+const DUCKDB_EXTENSION_LOCK_FILENAME = "duckdb-extensions.lock.json";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -170,6 +174,68 @@ export function getLocalExtensionArtifactPath(
     platform,
     `${extensionName}.duckdb_extension.gz`,
   );
+}
+
+export function getUnpackedExtensionPath(
+  duckdbExtensionsOutputDir: string,
+  duckdbVersion: string,
+  platform: string,
+  extensionName: string,
+): string {
+  return path.join(
+    duckdbExtensionsOutputDir,
+    duckdbVersion,
+    platform,
+    `${extensionName}.duckdb_extension`,
+  );
+}
+
+export function getDuckDBPlatform(
+  nodePlatform: NodeJS.Platform = process.platform,
+  nodeArch: string = process.arch,
+): string {
+  if (nodePlatform === "linux" && nodeArch === "x64") {
+    return "linux_amd64";
+  }
+  if (nodePlatform === "win32" && nodeArch === "x64") {
+    return "windows_amd64";
+  }
+  throw new Error(`Unsupported DuckDB extension platform: ${nodePlatform}/${nodeArch}`);
+}
+
+function getDuckDBExtensionsConfigPath(baseDir = import.meta.dirname): string {
+  return path.resolve(baseDir, DUCKDB_EXTENSION_CONFIG_FILENAME);
+}
+
+function getDuckDBExtensionsLockPath(baseDir = import.meta.dirname): string {
+  return path.resolve(baseDir, DUCKDB_EXTENSION_LOCK_FILENAME);
+}
+
+export function getDuckDBNodeApiPackagePath(baseDir = import.meta.dirname): string {
+  return path.resolve(baseDir, "node_modules/@duckdb/node-api/package.json");
+}
+
+export function readJsonFile<T>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, "utf8")) as T;
+}
+
+export function readDuckDBExtensionConfig(
+  configPath = getDuckDBExtensionsConfigPath(),
+): IExtensionConfig {
+  return readJsonFile<IExtensionConfig>(configPath);
+}
+
+export function readDuckDBExtensionLock(
+  lockPath = getDuckDBExtensionsLockPath(),
+): IExtensionLockFile {
+  return readJsonFile<IExtensionLockFile>(lockPath);
+}
+
+export function getDuckDBExtensionsOutputDir(
+  config: IExtensionConfig,
+  baseDir = import.meta.dirname,
+): string {
+  return path.resolve(baseDir, config.outputDir);
 }
 
 async function createExtensionLockFile(
@@ -378,18 +444,11 @@ async function hashRemoteArtifact(
 
 async function main(): Promise<void> {
   const updateDuckDBLock = process.argv.includes(UPDATE_DUCKDB_LOCK_ARG);
-  const duckdbExtensionsConfigPath = path.resolve(import.meta.dirname, "duckdb-extensions.json");
-  const duckdbExtensionsConfig: IExtensionConfig = JSON.parse(
-    fs.readFileSync(duckdbExtensionsConfigPath, "utf8"),
-  );
-  const duckdbExtensionsLockPath = path.resolve(import.meta.dirname, "duckdb-extensions.lock.json");
+  const duckdbExtensionsConfig = readDuckDBExtensionConfig();
+  const duckdbExtensionsLockPath = getDuckDBExtensionsLockPath();
 
   // Detect DuckDB version from the installed @duckdb/node-api package
-  const duckdbNodeApiPackagePath = path.resolve(
-    import.meta.dirname,
-    "node_modules/@duckdb/node-api/package.json",
-  );
-  const duckdbNodeApiPackage = JSON.parse(fs.readFileSync(duckdbNodeApiPackagePath, "utf8"));
+  const duckdbNodeApiPackage = readJsonFile<{ version: string }>(getDuckDBNodeApiPackagePath());
   const duckdbVersion = parseDuckDBVersion(duckdbNodeApiPackage.version as string);
 
   console.log(`DuckDB version: ${duckdbVersion}`);
@@ -409,17 +468,12 @@ async function main(): Promise<void> {
   }
 
   // Normal mode only consumes the generated lockfile: no URL resolution here.
-  const duckdbExtensionsLock: IExtensionLockFile = JSON.parse(
-    fs.readFileSync(duckdbExtensionsLockPath, "utf8"),
-  );
+  const duckdbExtensionsLock = readDuckDBExtensionLock(duckdbExtensionsLockPath);
 
   // Normal builds must fail early if the generated lock no longer matches intent.
   validateExtensionLock(duckdbExtensionsConfig, duckdbExtensionsLock, duckdbVersion);
 
-  const duckdbExtensionsOutputDir = path.resolve(
-    import.meta.dirname,
-    duckdbExtensionsConfig.outputDir,
-  );
+  const duckdbExtensionsOutputDir = getDuckDBExtensionsOutputDir(duckdbExtensionsConfig);
 
   // Flatpak sets this to an offline source directory populated before build time.
   const duckdbExtensionSourceDir = process.env[DUCKDB_EXTENSION_SOURCE_DIR_ENV] || undefined;
@@ -428,11 +482,11 @@ async function main(): Promise<void> {
     for (const platform of duckdbExtensionsConfig.platforms) {
       const { sha256, url } = getLockedExtensionArtifact(duckdbExtensionsLock, ext.name, platform);
 
-      const unpackedDuckDBExtensionPath = path.join(
+      const unpackedDuckDBExtensionPath = getUnpackedExtensionPath(
         duckdbExtensionsOutputDir,
         duckdbVersion,
         platform,
-        `${ext.name}.duckdb_extension`,
+        ext.name,
       );
 
       if (fs.existsSync(unpackedDuckDBExtensionPath)) {
