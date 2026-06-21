@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 import {
   mdiCollapseAll,
   mdiExpandAll,
@@ -37,7 +39,7 @@ export default function useCategoryTree() {
     };
   });
 
-  const { onSetCategoryOrder, onRemoveCategory } = useCategoryList();
+  const { onSetCategoryOrder, onSetCategory, onRemoveCategory } = useCategoryList();
 
   const treeData = useMemo(() => {
     if (!categories || !Object.keys(categories).length) return [];
@@ -186,6 +188,14 @@ export default function useCategoryTree() {
     [showEmpty, toggleEmpty, collapseAll, expandAll, sortAlphabetically],
   );
 
+  const createCategory = useCallback(
+    (name: string, order: number = 0, parentCategory?: string) => {
+      const uid = randomUUID();
+      onSetCategory(gameMode, uid, { name, parentCategory, order });
+    },
+    [gameMode, onSetCategory],
+  );
+
   const removeCategory = useCallback(
     (id: string) => {
       onRemoveCategory(gameMode, id);
@@ -199,6 +209,7 @@ export default function useCategoryTree() {
     toolbarActions,
     filteredTreeData,
     toggleExpand,
+    createCategory,
     removeCategory,
   };
 }

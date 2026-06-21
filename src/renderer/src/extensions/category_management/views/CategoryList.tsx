@@ -633,6 +633,7 @@ export function CategoryListFC() {
     filteredTreeData,
     toolbarActions,
     toggleExpand,
+    createCategory,
     removeCategory,
   } = useCategoryTree();
 
@@ -642,7 +643,7 @@ export function CategoryListFC() {
         <ToolbarGroup actions={toolbarActions} />
       </Toolbar>
 
-      <div className="flex items-center gap-2">
+      <div className="my-2 flex items-center gap-2">
         <MdiIcon className="nxm-neutral" path={mdiMagnify} />
 
         <Input
@@ -659,7 +660,7 @@ export function CategoryListFC() {
 
       <div className="my-2 max-h-[calc(dvh*0.75)] overflow-auto">
         <Listing
-          className="grid grid-cols-1 gap-2"
+          className="grid min-h-[calc(dvh*0.5)] grid-cols-1 gap-2"
           entityCount={filteredTreeData?.length ?? 0}
           isError={false}
           isLoading={false}
@@ -669,6 +670,7 @@ export function CategoryListFC() {
           {filteredTreeData?.map((c) => (
             <CategoryListItem
               category={c}
+              createSubcategory={createCategory}
               expand={toggleExpand}
               key={c.categoryId}
               remove={removeCategory}

@@ -1,4 +1,6 @@
 import {
+  mdiArrowDown,
+  mdiArrowUp,
   mdiCancel,
   mdiChevronDown,
   mdiChevronRight,
@@ -24,9 +26,15 @@ interface ICategoryListItemProps {
   category: ICategoriesTree;
   expand: (id: string) => void;
   remove: (id: string) => void;
+  createSubcategory: (name: string, order: number, parent: string) => void;
 }
 
-export default function CategoryListItem({ category, expand, remove }: ICategoryListItemProps) {
+export default function CategoryListItem({
+  category,
+  expand,
+  remove,
+  createSubcategory,
+}: ICategoryListItemProps) {
   const [addNew, setAddNew] = useState(false);
   const [editName, setEditName] = useState(false);
   const [newName, setNewName] = useState(category.title);
@@ -55,6 +63,8 @@ export default function CategoryListItem({ category, expand, remove }: ICategory
     if (!type) {
       setEditName(false);
       setAddNew(false);
+      setNewSubcategoryName("");
+      setNewName(title);
     } else if (type === "name") {
       setEditName(true);
       setAddNew(false);
@@ -64,6 +74,13 @@ export default function CategoryListItem({ category, expand, remove }: ICategory
       setEditName(false);
       setNewName(title);
     }
+  };
+
+  const createCategory = (name: string) => {
+    setEditMode();
+    setNewSubcategoryName("");
+    createSubcategory(name, 0, categoryId);
+    expand(categoryId);
   };
 
   return (
@@ -86,7 +103,11 @@ export default function CategoryListItem({ category, expand, remove }: ICategory
           </div>
 
           <div>
-            {!editName && <Typography typographyType="body-sm">{title}</Typography>}
+            {!editName && (
+              <Typography title={categoryId} typographyType="body-sm">
+                {title}
+              </Typography>
+            )}
 
             {editName && (
               <div className="flex gap-2">
@@ -128,7 +149,7 @@ export default function CategoryListItem({ category, expand, remove }: ICategory
 
         <div>
           <Toolbar>
-            <ToolbarGroup actions={actions} />
+            <ToolbarGroup actions={actions} maxVisible={4} />
           </Toolbar>
         </div>
       </div>
@@ -150,8 +171,10 @@ export default function CategoryListItem({ category, expand, remove }: ICategory
             appearance="moderate"
             aria-label="Save"
             brand="primary"
+            disabled={newSubcategoryName.length <= 2}
             leftIconPath={mdiPlus}
             size="sm"
+            onClick={() => createCategory(newSubcategoryName)}
           />
 
           <Button
@@ -170,6 +193,7 @@ export default function CategoryListItem({ category, expand, remove }: ICategory
           {children.map((c) => (
             <CategoryListItem
               category={c}
+              createSubcategory={createSubcategory}
               expand={() => expand(c.categoryId)}
               key={c.categoryId}
               remove={remove}

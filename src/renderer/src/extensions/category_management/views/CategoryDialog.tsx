@@ -1,7 +1,8 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
-import Modal from "../../../controls/Modal";
+import { Modal } from "@/ui/components/modal/Modal";
+
 import CategoryList, { CategoryListFC } from "./CategoryList";
 
 interface IProps {
@@ -13,18 +14,12 @@ function CategoryDialog({ visible, onHide }: IProps) {
   const { t } = useTranslation("common");
 
   return (
-    <Modal id="categories" show={visible} onHide={() => onHide()}>
-      <Modal.Header>{t("Categories")}</Modal.Header>
+    <Modal isOpen={visible} size="lg" title={t("Categories")} onClose={() => onHide()}>
+      <CategoryListFC />
 
-      <Modal.Body>
-        <CategoryListFC />
+      <CategoryList />
 
-        <CategoryList />
-      </Modal.Body>
-
-      <Modal.Footer>
-        <div onClick={() => onHide()}>Close me</div>
-      </Modal.Footer>
+      <div onClick={() => onHide()}>Close me</div>
     </Modal>
   );
 }
