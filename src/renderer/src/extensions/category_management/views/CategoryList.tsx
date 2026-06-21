@@ -1,3 +1,4 @@
+import { mdiMagnify } from "@mdi/js";
 import { unknownToError } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 import * as React from "react";
@@ -12,6 +13,12 @@ import type {
 import SortableTree from "react-sortable-tree";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { Input } from "@/ui/components/form/input/Input";
+import { Icon as MdiIcon } from "@/ui/components/icon/Icon";
+import { Listing } from "@/ui/components/listing/Listing";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 
 import { showDialog } from "../../../actions/notifications";
 import ActionDropdown from "../../../controls/ActionDropdown";
@@ -36,9 +43,11 @@ import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
 import type { IMod } from "../../mod_management/types/IMod";
 import { removeCategory, renameCategory, setCategory, setCategoryOrder } from "../actions/category";
+import useCategoryTree from "../hooks/CategoryTreeHook";
 import type { ICategory, ICategoryDictionary } from "../types/ICategoryDictionary";
 import type { ICategoriesTree } from "../types/ITrees";
 import createTreeDataObject from "../util/createTreeDataObject";
+import CategoryListItem, { CategoryListSkeletonTile } from "./CategoryListItem";
 
 const nop = () => undefined;
 
@@ -155,21 +164,24 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     return (
       <div className="categories-dialog">
         <IconBar
+          className="menubar categories-icons"
           group="categories-icons"
           staticElements={this.mButtons}
-          className="menubar categories-icons"
           t={t}
         />
+
         <div className="search-category-box">
           <div style={{ display: "inline-block", position: "relative" }}>
             <FormControl
               id="search-category-input"
-              type="text"
               placeholder={t("Search")}
+              type="text"
               value={searchString || ""}
               onChange={this.startSearch}
             />
+
             <Icon className="search-icon" name="search" />
+
             <span className="search-position">
               {t("{{ pos }} of {{ total }}", {
                 replace: {
@@ -179,38 +191,41 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
               })}
             </span>
           </div>
+
           <IconButton
-            id="btn-search-category-prev"
             className="btn-embed"
+            disabled={!searchFoundCount}
             icon="search-up"
+            id="btn-search-category-prev"
             tooltip={t("Prev")}
             type="button"
-            disabled={!searchFoundCount}
             onClick={this.selectPrevMatch}
           />
+
           <IconButton
-            id="btn-search-category-next"
             className="btn-embed"
+            disabled={!searchFoundCount}
             icon="search-down"
+            id="btn-search-category-next"
             tooltip={t("Next")}
             type="button"
-            disabled={!searchFoundCount}
             onClick={this.selectNextMatch}
           />
         </div>
+
         <SortableTree
-          treeData={expandedTreeData}
-          onChange={nop}
-          onVisibilityToggle={this.toggleVisibility}
           canDrop={this.canDrop}
-          onMoveNode={this.moveNode}
-          style={{ height: "95%" }}
+          generateNodeProps={this.generateNodeProps}
+          getNodeKey={this.getNodeKey}
+          searchFinishCallback={this.searchFinishCallback}
+          searchFocusOffset={searchFocusIndex}
           searchMethod={this.searchMethod}
           searchQuery={searchString}
-          searchFocusOffset={searchFocusIndex}
-          searchFinishCallback={this.searchFinishCallback}
-          getNodeKey={this.getNodeKey}
-          generateNodeProps={this.generateNodeProps}
+          style={{ height: "95%" }}
+          treeData={expandedTreeData}
+          onChange={nop}
+          onMoveNode={this.moveNode}
+          onVisibilityToggle={this.toggleVisibility}
         />
       </div>
     );
@@ -562,9 +577,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         <ActionDropdown
           className="category-buttons"
           group="category-icons"
+          instanceId={rowInfo.node.categoryId}
           staticElements={actions}
           t={t}
-          instanceId={rowInfo.node.categoryId}
         />,
       ],
     };
@@ -609,6 +624,60 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       onSetCategoryOrder(gameMode, newOrder(treeData as ICategoriesTree[]));
     }
   };
+}
+
+export function CategoryListFC() {
+  const {
+    searchString,
+    setSearchString,
+    filteredTreeData,
+    toolbarActions,
+    toggleExpand,
+    removeCategory,
+  } = useCategoryTree();
+
+  return (
+    <div className="categories-dialog">
+      <Toolbar>
+        <ToolbarGroup actions={toolbarActions} />
+      </Toolbar>
+
+      <div className="flex items-center gap-2">
+        <MdiIcon className="nxm-neutral" path={mdiMagnify} />
+
+        <Input
+          hideLabel
+          className="h-full grow"
+          id="size-sm-search-categories"
+          placeholder="Filter categories..."
+          size="sm"
+          type="text"
+          value={searchString}
+          onChange={(e) => setSearchString(e.target.value)}
+        />
+      </div>
+
+      <div className="my-2 max-h-[calc(dvh*0.75)] overflow-auto">
+        <Listing
+          className="grid grid-cols-1 gap-2"
+          entityCount={filteredTreeData?.length ?? 0}
+          isError={false}
+          isLoading={false}
+          skeletonCount={10}
+          SkeletonTile={CategoryListSkeletonTile}
+        >
+          {filteredTreeData?.map((c) => (
+            <CategoryListItem
+              category={c}
+              expand={toggleExpand}
+              key={c.categoryId}
+              remove={removeCategory}
+            />
+          ))}
+        </Listing>
+      </div>
+    </div>
+  );
 }
 
 const emptyObj = {};

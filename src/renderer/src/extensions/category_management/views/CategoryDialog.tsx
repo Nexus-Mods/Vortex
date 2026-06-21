@@ -1,54 +1,32 @@
 import * as React from "react";
-import type * as Redux from "redux";
+import { useTranslation } from "react-i18next";
 
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Modal from "../../../controls/Modal";
-import { showCategoriesDialog } from "../actions/session";
-import CategoryList from "./CategoryList";
+import CategoryList, { CategoryListFC } from "./CategoryList";
 
-interface IConnectedProps {
-  showDialog: boolean;
+interface IProps {
+  visible: boolean;
+  onHide: () => void;
 }
 
-interface IActionProps {
-  onShowSelf: (show: boolean) => void;
+function CategoryDialog({ visible, onHide }: IProps) {
+  const { t } = useTranslation("common");
+
+  return (
+    <Modal id="categories" show={visible} onHide={() => onHide()}>
+      <Modal.Header>{t("Categories")}</Modal.Header>
+
+      <Modal.Body>
+        <CategoryListFC />
+
+        <CategoryList />
+      </Modal.Body>
+
+      <Modal.Footer>
+        <div onClick={() => onHide()}>Close me</div>
+      </Modal.Footer>
+    </Modal>
+  );
 }
 
-type IProps = IConnectedProps & IActionProps;
-
-class CategoryDialog extends ComponentEx<IProps, {}> {
-  public render(): JSX.Element {
-    const { t, showDialog } = this.props;
-
-    return (
-      <Modal show={showDialog} onHide={this.hide}>
-        <Modal.Header>
-          <Modal.Title>{t("Categories")}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <CategoryList />
-        </Modal.Body>
-      </Modal>
-    );
-  }
-
-  private hide = () => {
-    this.props.onShowSelf(false);
-  };
-}
-
-function mapStateToProps(state: any): IConnectedProps {
-  return {
-    showDialog: state.session.categories.showDialog,
-  };
-}
-
-function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
-  return {
-    onShowSelf: (show: boolean) => dispatch(showCategoriesDialog(show)),
-  };
-}
-
-export default translate(["common"])(
-  connect(mapStateToProps, mapDispatchToProps)(CategoryDialog),
-) as React.ComponentClass<{}>;
+export default CategoryDialog;

@@ -1,6 +1,8 @@
 import i18next from "i18next";
 import type * as Redux from "redux";
 
+import { setDialogVisible } from "@/actions";
+
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { TFunction } from "../../util/i18n";
@@ -95,7 +97,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerDialog("categories", CategoryDialog);
   context.registerAction("mod-icons", 80, "categories", {}, "Categories", () => {
-    context.api.store.dispatch(showCategoriesDialog(true));
+    context.api.store.dispatch(setDialogVisible("categories"));
   });
 
   context.registerTableAttribute("mods", {
