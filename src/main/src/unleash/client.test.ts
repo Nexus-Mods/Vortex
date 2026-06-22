@@ -146,7 +146,7 @@ describe("UnleashClient", () => {
     async function fetchedParams(appVersion: string): Promise<URLSearchParams> {
       fetchMocker.mockResponseOnce(toggleBody([]));
       await new UnleashClient(appVersion).fetchFeatureFlags();
-      return new URLSearchParams(new URL(fetchMocker.requests()[0].url).search);
+      return new URLSearchParams(new URL(fetchMocker.requests()[0]!.url).search);
     }
 
     it("serializes standard fields as flat query params", async () => {
@@ -325,8 +325,8 @@ describe("UnleashClient", () => {
         toggles: { "vortex-test-flag": { yes: 3, no: 1 } },
       });
 
-      expect(fetchMocker.requests()[0].url).toContain("/api/frontend/client/metrics");
-      expect(fetchMocker.requests()[0].method).toBe("POST");
+      expect(fetchMocker.requests()[0]!.url).toContain("/api/frontend/client/metrics");
+      expect(fetchMocker.requests()[0]!.method).toBe("POST");
     });
 
     it("includes appName in the request body", async () => {
@@ -338,7 +338,7 @@ describe("UnleashClient", () => {
         toggles: {},
       });
 
-      const body = JSON.parse(await fetchMocker.requests()[0].text()) as Record<string, unknown>;
+      const body = JSON.parse(await fetchMocker.requests()[0]!.text()) as Record<string, unknown>;
       expect(body["appName"]).toBe("Vortex");
     });
 
@@ -351,7 +351,7 @@ describe("UnleashClient", () => {
         toggles: {},
       });
 
-      const body = JSON.parse(await fetchMocker.requests()[0].text()) as {
+      const body = JSON.parse(await fetchMocker.requests()[0]!.text()) as {
         bucket: { start: string; stop: string };
       };
       expect(body.bucket.start).toBe(new Date(0).toISOString());
@@ -366,7 +366,7 @@ describe("UnleashClient", () => {
       };
       await new UnleashClient("1.0.0").postMetrics({ start: 0, stop: 1, toggles });
 
-      const body = JSON.parse(await fetchMocker.requests()[0].text()) as {
+      const body = JSON.parse(await fetchMocker.requests()[0]!.text()) as {
         bucket: { toggles: typeof toggles };
       };
       expect(body.bucket.toggles).toEqual(toggles);
