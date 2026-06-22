@@ -4,7 +4,7 @@ import React, { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 import { getTabId } from "@/ui/utils/getTabId";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { useTabContext } from "./tabs.context";
+import { useTabContext } from "./Tabs.context";
 
 export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   count?: number;

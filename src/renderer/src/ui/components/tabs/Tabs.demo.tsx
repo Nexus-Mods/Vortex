@@ -7,10 +7,10 @@ import React, { useState } from "react";
 
 import { Typography } from "@/ui/components/typography/Typography";
 
-import { TabButton } from "./Tab";
 import { TabBar } from "./TabBar";
+import { TabButton } from "./TabButton";
 import { TabPanel } from "./TabPanel";
-import { TabProvider } from "./tabs.context";
+import { TabProvider } from "./Tabs.context";
 
 export const TabsDemo = () => {
   const [selectedTab1, setSelectedTab1] = useState("overview");

@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { TabButton } from "./Tab";
 import { TabBar } from "./TabBar";
+import { TabButton } from "./TabButton";
 import { TabPanel } from "./TabPanel";
-import { TabProvider } from "./tabs.context";
+import { TabProvider } from "./Tabs.context";
 
 // --- Helpers ---
 
