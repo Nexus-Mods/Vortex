@@ -7,23 +7,17 @@ import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
-import {
-  HealthCheckCategory,
-  HealthCheckTrigger,
-  HealthCheckSeverity,
-} from "../../types/IHealthCheck";
+import { HealthCheckTrigger } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
 import { setFileRequirementsFlagEnabled } from "./actions/persistent";
-import { setHealthCheckRunning } from "./actions/session";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
-import { checkFileRequirements, FILE_REQUIREMENTS_CHECK_ID } from "./checks/fileRequirementsCheck";
-import { checkModRequirements, MOD_REQUIREMENTS_CHECK_ID } from "./checks/modRequirementsCheck";
+import { fileRequirementsHealthCheck } from "./checks/fileRequirementsCheck";
+import { modRequirementsHealthCheck } from "./checks/modRequirementsCheck";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
-import { isFileRequirementsEnabled, isModRequirementsEnabled } from "./selectors";
 import type { IHealthCheckApi, IModFileInfo, IModRequirementExt } from "./types";
 import { onDownloadRequirement } from "./utils/onDownloadRequirement";
 import HealthCheckPage from "./views/HealthCheckPage";
@@ -77,91 +71,13 @@ function init(context: IExtensionContext): boolean {
 
     setupAutomaticTriggers(context.api, healthCheckApi);
 
-    // Register the nexus requirements check
-    healthCheckApi.custom.register({
-      id: MOD_REQUIREMENTS_CHECK_ID,
-      name: "Nexus Mod Requirements",
-      description: "Validates that all Nexus mod requirements are satisfied",
-      category: HealthCheckCategory.Requirements,
-      severity: HealthCheckSeverity.Info,
-      triggers: [
-        HealthCheckTrigger.ModsChanged,
-        HealthCheckTrigger.Manual,
-        HealthCheckTrigger.ProfileChanged,
-        HealthCheckTrigger.GameChanged,
-        HealthCheckTrigger.SettingsChanged,
-      ],
-      check: async () => {
-        // Skip check if mod requirements suggestions are disabled
-        if (!isModRequirementsEnabled(context.api.getState())) {
-          return {
-            checkId: MOD_REQUIREMENTS_CHECK_ID,
-            status: "passed" as const,
-            severity: HealthCheckSeverity.Info,
-            message: "Mod requirements check disabled",
-            executionTime: 0,
-            timestamp: new Date(),
-          };
-        }
-
-        context.api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true));
-        try {
-          const result = await checkModRequirements(context.api);
-          context.api.sendNotification({
-            type: "info",
-            message: "Nexus Mod Requirements check completed",
-            displayMS: 5000,
-            id: "health-check:nexus-requirements-complete",
-          });
-          return result;
-        } finally {
-          context.api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, false));
-        }
-      },
-    });
-
-    // Register the file-level requirements check
-    healthCheckApi.custom.register({
-      id: FILE_REQUIREMENTS_CHECK_ID,
-      name: "File Requirements",
-      description: "Validates that file-level mod dependencies are satisfied",
-      category: HealthCheckCategory.Requirements,
-      severity: HealthCheckSeverity.Info,
-      triggers: [
-        HealthCheckTrigger.ModsChanged,
-        HealthCheckTrigger.Manual,
-        HealthCheckTrigger.ProfileChanged,
-        HealthCheckTrigger.GameChanged,
-        HealthCheckTrigger.SettingsChanged,
-      ],
-      check: async () => {
-        // Skip check if file requirements suggestions are disabled
-        if (!isFileRequirementsEnabled(context.api.getState())) {
-          return {
-            checkId: FILE_REQUIREMENTS_CHECK_ID,
-            status: "passed" as const,
-            severity: HealthCheckSeverity.Info,
-            message: "File requirements check disabled",
-            executionTime: 0,
-            timestamp: new Date(),
-          };
-        }
-
-        context.api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, true));
-        try {
-          const result = await checkFileRequirements(context.api);
-          context.api.sendNotification({
-            type: "info",
-            message: "File Requirements check completed",
-            displayMS: 5000,
-            id: "health-check:file-requirements-complete",
-          });
-          return result;
-        } finally {
-          context.api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, false));
-        }
-      },
-    });
+    // Register the requirements health checks. Each check owns its full
+    // descriptor (id, triggers, enablement gate, running-state + notification
+    // wrapper) in its provider module, so registration here is trivial.
+    const checks: IHealthCheck[] = [modRequirementsHealthCheck, fileRequirementsHealthCheck];
+    for (const check of checks) {
+      healthCheckApi.custom.register(check);
+    }
 
     // Re-run checks when the mod requirements setting changes
     context.api.onStateChange(["persistent", "healthCheck", "modRequirementsEnabled"], () => {

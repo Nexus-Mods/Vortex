@@ -9,8 +9,13 @@ import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { setModAttribute } from "../../../actions";
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IHealthCheckResult } from "../../../types/IHealthCheck";
-import { HealthCheckSeverity } from "../../../types/IHealthCheck";
+import {
+  HealthCheckCategory,
+  HealthCheckSeverity,
+  HealthCheckTrigger,
+  type IHealthCheck,
+  type IHealthCheckResult,
+} from "../../../types/IHealthCheck";
 import { getGame, nexusGameId, renderModName } from "../../../util/api";
 import { getSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
@@ -19,6 +24,8 @@ import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericGameIdToDomainName } from "../../nexus_integration/util";
 import { makeModUID } from "../../nexus_integration/util/UIDs";
 import { activeProfile } from "../../profile_management/selectors";
+import { setHealthCheckRunning } from "../actions/session";
+import { isModRequirementsEnabled } from "../selectors";
 import type {
   IModRequirementsCheckMetadata,
   IModMissingRequirements,
@@ -403,3 +410,49 @@ export async function checkModRequirements(
     );
   }
 }
+
+/**
+ * Registration descriptor for the Nexus mod requirements check. Owns its own
+ * enablement gate, running-state bracket and completion notification so that
+ * index.ts only has to register it.
+ */
+export const modRequirementsHealthCheck: IHealthCheck = {
+  id: MOD_REQUIREMENTS_CHECK_ID,
+  name: "Nexus Mod Requirements",
+  description: "Validates that all Nexus mod requirements are satisfied",
+  category: HealthCheckCategory.Requirements,
+  severity: HealthCheckSeverity.Info,
+  triggers: [
+    HealthCheckTrigger.ModsChanged,
+    HealthCheckTrigger.Manual,
+    HealthCheckTrigger.ProfileChanged,
+    HealthCheckTrigger.GameChanged,
+    HealthCheckTrigger.SettingsChanged,
+  ],
+  check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
+    if (!isModRequirementsEnabled(api.getState())) {
+      return {
+        checkId: MOD_REQUIREMENTS_CHECK_ID,
+        status: "passed",
+        severity: HealthCheckSeverity.Info,
+        message: "Mod requirements check disabled",
+        executionTime: 0,
+        timestamp: new Date(),
+      };
+    }
+
+    api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true));
+    try {
+      const result = await checkModRequirements(api);
+      api.sendNotification({
+        type: "info",
+        message: "Nexus Mod Requirements check completed",
+        displayMS: 5000,
+        id: "health-check:nexus-requirements-complete",
+      });
+      return result;
+    } finally {
+      api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, false));
+    }
+  },
+};
