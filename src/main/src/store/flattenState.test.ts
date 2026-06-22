@@ -41,6 +41,6 @@ describe("flattenState", () => {
     }
     const leaves = flattenState({ persistent: { downloads: wide } });
     expect(leaves).toHaveLength(300000);
-    expect(leaves[0].key.slice(0, 2)).toEqual(["persistent", "downloads"]);
+    expect(leaves[0]!.key.slice(0, 2)).toEqual(["persistent", "downloads"]);
   });
 });

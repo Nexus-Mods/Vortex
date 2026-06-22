@@ -100,7 +100,7 @@ describe("ReduxPersistorIPC: run grouping", () => {
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
     expect(persistor.bulkRemoveItem).not.toHaveBeenCalled();
 
-    const items = persistor.bulkSetItem.mock.calls[0][0] as Array<{
+    const items = persistor.bulkSetItem.mock.calls[0]![0] as Array<{
       key: PersistorKey;
       value: string;
     }>;
@@ -162,7 +162,7 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
-    const items = persistor.bulkSetItem.mock.calls[0][0] as Array<unknown>;
+    const items = persistor.bulkSetItem.mock.calls[0]![0] as Array<unknown>;
     expect(items.length).toBe(256);
   });
 
@@ -175,8 +175,8 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
-    expect((persistor.bulkSetItem.mock.calls[0][0] as Array<unknown>).length).toBe(256);
-    expect((persistor.bulkSetItem.mock.calls[1][0] as Array<unknown>).length).toBe(1);
+    expect((persistor.bulkSetItem.mock.calls[0]![0] as Array<unknown>).length).toBe(256);
+    expect((persistor.bulkSetItem.mock.calls[1]![0] as Array<unknown>).length).toBe(1);
   });
 
   it("splits a 1002-op set run into 4 chunks (256+256+256+234)", async () => {
@@ -194,7 +194,7 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     // First key of each chunk advances by 256, last chunk has the tail.
     const firstKeys = persistor.bulkSetItem.mock.calls.map((c) => {
       const items = c[0] as Array<{ key: PersistorKey }>;
-      return items[0].key[0];
+      return items[0]!.key[0];
     });
     expect(firstKeys).toEqual(["k0", "k256", "k512", "k768"]);
   });
@@ -386,10 +386,10 @@ describe("ReduxPersistorIPC: atomicity under partial failure (force-close simula
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
     expect(
       (
-        persistor.bulkSetItem.mock.calls[0][0] as Array<{
+        persistor.bulkSetItem.mock.calls[0]![0] as Array<{
           key: PersistorKey;
         }>
-      )[0].key[0],
+      )[0]!.key[0],
     ).toBe("first");
 
     release();
@@ -398,10 +398,10 @@ describe("ReduxPersistorIPC: atomicity under partial failure (force-close simula
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
     expect(
       (
-        persistor.bulkSetItem.mock.calls[1][0] as Array<{
+        persistor.bulkSetItem.mock.calls[1]![0] as Array<{
           key: PersistorKey;
         }>
-      )[0].key[0],
+      )[0]!.key[0],
     ).toBe("second");
   });
 });

@@ -68,7 +68,7 @@ describe("SubPersistor.bulkSetItem", () => {
     const { wrapped, bulkSetItem } = createWrappedWithBulk();
     const sub = new SubPersistor(wrapped, "app");
 
-    await sub.bulkSetItem([
+    await sub.bulkSetItem!([
       { key: ["extensions", "ext1", "remove"], value: "true" },
       { key: ["extensions", "ext2", "remove"], value: "true" },
     ]);
@@ -86,7 +86,7 @@ describe("SubPersistor.bulkSetItem", () => {
     const items = [{ key: ["window"], value: "1" }];
     const snapshot = structuredClone(items);
 
-    await sub.bulkSetItem(items);
+    await sub.bulkSetItem!(items);
 
     expect(items).toEqual(snapshot);
   });
@@ -108,7 +108,7 @@ describe("SubPersistor.bulkRemoveItem", () => {
     const { wrapped, bulkRemoveItem } = createWrappedWithBulk();
     const sub = new SubPersistor(wrapped, "app");
 
-    await sub.bulkRemoveItem([
+    await sub.bulkRemoveItem!([
       ["extensions", "a"],
       ["extensions", "b"],
     ]);
@@ -132,7 +132,7 @@ describe("SubPersistor.getAllKVs filtering", () => {
     getAllKVs.mockResolvedValue(mixed);
 
     const sub = new SubPersistor(wrapped, "settings");
-    const result = await sub.getAllKVs();
+    const result = await sub.getAllKVs!();
 
     expect(result).toEqual([
       { key: ["window", "x"], value: "1" },

@@ -38,7 +38,7 @@ export function nativeToQP(nativePath: string): QualifiedPath {
   if (scheme === "windows") {
     const forward = nativePath.replace(/\\/g, "/");
     const match = /^([A-Za-z]):\/(.*)$/.exec(forward);
-    if (match) {
+    if (match && match[1] && match[2]) {
       const drive = match[1].toUpperCase();
       const tail = match[2];
       const path = tail.length > 0 ? `/${drive}/${tail}` : `/${drive}`;

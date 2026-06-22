@@ -1,4 +1,4 @@
-import { getErrorMessage } from "@vortex/shared";
+import { getErrorMessage, getErrorMessageOrDefault } from "@vortex/shared";
 import { UserCanceled } from "@vortex/shared/errors";
 import { app, dialog } from "electron";
 
@@ -76,7 +76,7 @@ async function showTerminateError(
   const result = await dialog.showMessageBox({
     type: "error",
     title: "An unrecoverable error occurred",
-    message: getErrorMessage(error),
+    message: getErrorMessageOrDefault(error),
     detail: detail,
     buttons: buttons,
     defaultId: buttons.length - 1,

@@ -199,7 +199,7 @@ describe("DownloadManager", () => {
         resource: route.url,
         dest: path.join(tmp.dir, "does-not-exist"),
         completedRanges: [],
-        etag: null,
+        etag: undefined,
       } satisfies DownloadCheckpoint<URL>;
 
       const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
@@ -306,9 +306,9 @@ describe("DownloadManager", () => {
       const completedRanges = pauseResult.checkpoint.completedRanges;
       if (completedRanges.length > 0) {
         const [range] = completedRanges;
-        expect(range.start).toBe(0);
-        expect(range.end).toBeGreaterThan(0);
-        expect(range.end).toBeLessThanOrEqual(LARGE_FILE.length);
+        expect(range!.start).toBe(0);
+        expect(range!.end).toBeGreaterThan(0);
+        expect(range!.end).toBeLessThanOrEqual(LARGE_FILE.length);
       }
       // an empty array is also acceptable if the download hadn't written anything yet
     });

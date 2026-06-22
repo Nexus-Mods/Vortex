@@ -28,8 +28,8 @@ describe("queryParser", () => {
     const queries = parseAllQueries(tmpDir);
 
     expect(queries).toHaveLength(1);
-    expect(queries[0].name).toBe("my_long_query_name");
-    expect(queries[0].alias).toBe("myQuery");
+    expect(queries[0]!.name).toBe("my_long_query_name");
+    expect(queries[0]!.alias).toBe("myQuery");
   });
 
   it("alias is undefined when not specified", () => {
@@ -40,7 +40,7 @@ describe("queryParser", () => {
 
     const queries = parseAllQueries(tmpDir);
 
-    expect(queries[0].alias).toBeUndefined();
+    expect(queries[0]!.alias).toBeUndefined();
   });
 
   it("parses @alias on setup queries", () => {
@@ -51,6 +51,6 @@ describe("queryParser", () => {
 
     const queries = parseAllQueries(tmpDir);
 
-    expect(queries[0].alias).toBe("myModel");
+    expect(queries[0]!.alias).toBe("myModel");
   });
 });
