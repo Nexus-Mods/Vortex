@@ -1,15 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
+  type ErrorOriginTracker,
   rehydrateSerializedError,
   serializeError,
-  setErrorOriginTracker,
 } from "./error-serialization";
 import { DownloadError, ProcessCanceled } from "./types/errors";
 
 // A round-trip mirrors what crosses the IPC boundary: serialize on one side,
-// hand the plain object to the other, rehydrate there.
-const roundTrip = (err: unknown): Error => rehydrateSerializedError(serializeError(err));
+// hand the plain object to the other, rehydrate there. An optional tracker is
+// threaded through both ends, the way a caller (preload) owns and passes it.
+const roundTrip = (err: unknown, tracker?: ErrorOriginTracker): Error =>
+  rehydrateSerializedError(serializeError(err, tracker), tracker);
 
 describe("serializeError / rehydrateSerializedError", () => {
   it("preserves name and message", () => {
@@ -81,14 +83,13 @@ describe("serializeError / rehydrateSerializedError", () => {
 });
 
 describe("by-reference origin tracker", () => {
-  afterEach(() => setErrorOriginTracker(undefined));
-
-  // Mimic the renderer's preload stash: hand back the same live object on return.
-  const installStash = () => {
+  // Mimic the renderer's preload tracker: a namespaced stash that hands back the
+  // same live object on return. Owned by the caller and passed in — no globals.
+  const makeTracker = (namespace = "test"): ErrorOriginTracker => {
     const stash = new Map<string, Error>();
     let seq = 0;
-    setErrorOriginTracker({
-      namespace: "test",
+    return {
+      namespace,
       capture: (err) => {
         const id = `${seq++}`;
         stash.set(id, err);
@@ -99,87 +100,67 @@ describe("by-reference origin tracker", () => {
         if (err !== undefined) stash.delete(id);
         return err;
       },
-    });
-    return stash;
+    };
   };
 
   it("returns the original object (identity + prototype + stack) on round-trip", () => {
-    installStash();
+    const tracker = makeTracker();
     const original = new ProcessCanceled("Wrong user id");
-    const out = roundTrip(original);
+    const out = roundTrip(original, tracker);
     expect(out).toBe(original); // same reference, not a copy
     expect(out.stack).toBe(original.stack); // real throw-site stack preserved
   });
 
   it("resolves the original even when relayed through a context that re-serializes it", () => {
-    const stash = new Map<string, Error>();
-    const tracker = {
-      namespace: "test",
-      capture: (err: Error) => {
-        stash.set("k", err);
-        return "k";
-      },
-      resolve: (id: string) => stash.get(id),
-    };
+    const tracker = makeTracker();
     const original = new ProcessCanceled("Wrong user id");
 
     // renderer: capture + tag the wire form (namespaced)
-    setErrorOriginTracker(tracker);
-    const onWire = serializeError(original);
-    expect(onWire.data?.["__originRef"]).toBe("test:k");
+    const onWire = serializeError(original, tracker);
+    expect(onWire.data?.["__originRef"]).toBe("test:0");
 
     // main (no tracker): hydrate then re-serialize — the ref must ride through
-    setErrorOriginTracker(undefined);
     const relayed = serializeError(rehydrateSerializedError(onWire));
-    expect(relayed.data?.["__originRef"]).toBe("test:k");
+    expect(relayed.data?.["__originRef"]).toBe("test:0");
 
     // renderer regains ownership and gets the original back
-    setErrorOriginTracker(tracker);
-    expect(rehydrateSerializedError(relayed)).toBe(original);
+    expect(rehydrateSerializedError(relayed, tracker)).toBe(original);
   });
 
   it("resolves the original carried on a wrapped error's cause chain", () => {
-    installStash();
+    const tracker = makeTracker();
     const original = new ProcessCanceled("Wrong user id");
     // Wire shape of a wrapper (e.g. main's "Resolver failed") whose cause is the
     // captured original — mirrors main wrapping a relayed renderer callback error.
-    const wire = { message: "Resolver failed", cause: serializeError(original) };
-    expect(rehydrateSerializedError(wire).cause as Error).toBe(original);
+    const wire = { message: "Resolver failed", cause: serializeError(original, tracker) };
+    expect(rehydrateSerializedError(wire, tracker).cause as Error).toBe(original);
   });
 
   it("ignores a ref minted under a different namespace (no cross-context mis-resolve)", () => {
     // Context A captures and tags the wire under its namespace.
-    const stashA = new Map<string, Error>();
-    setErrorOriginTracker({
-      namespace: "main",
-      capture: (err) => {
-        stashA.set("0", err);
-        return "0";
-      },
-      resolve: (id) => stashA.get(id),
-    });
+    const trackerA = makeTracker("main");
     const original = new ProcessCanceled("from main");
-    const onWire = serializeError(original);
+    const onWire = serializeError(original, trackerA);
     expect(onWire.data?.["__originRef"]).toBe("main:0");
 
     // Context B has a colliding local id "0" but a different namespace — it must
     // NOT resolve A's ref, and must fall back to hydration instead.
     const stashB = new Map<string, Error>([["0", new Error("unrelated B error")]]);
-    setErrorOriginTracker({
+    const trackerB: ErrorOriginTracker = {
       namespace: "renderer",
       capture: () => undefined,
       resolve: (id) => stashB.get(id),
-    });
-    const out = rehydrateSerializedError(onWire);
+    };
+    const out = rehydrateSerializedError(onWire, trackerB);
     expect(out).not.toBe(original);
     expect(out).not.toBe(stashB.get("0"));
     expect(out.name).toBe("ProcessCanceled");
   });
 
-  it("falls back to a generic Error when the ref isn't owned here (evicted / foreign context)", () => {
-    const onWire = serializeError(new ProcessCanceled("gone")); // captured by no tracker
-    // No tracker installed on this side → plain Error carrying the name, which
-    // name-based checks (isErrorOfType) still match.
+  it("falls back to a generic Error when no tracker is passed (foreign context)", () => {
+    const onWire = serializeError(new ProcessCanceled("gone"));
+    // No tracker on this side → plain Error carrying the name, which name-based
+    // checks (isErrorOfType) still match.
     const out = rehydrateSerializedError(onWire);
     expect(out).not.toBeInstanceOf(ProcessCanceled);
     expect(out.name).toBe("ProcessCanceled");
