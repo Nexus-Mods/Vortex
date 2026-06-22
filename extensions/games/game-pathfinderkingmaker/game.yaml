@@ -6,7 +6,7 @@ game:
   name: "Pathfinder: Kingmaker"
   executable: Kingmaker.exe
   requiredFiles: [Kingmaker.exe]
-  logo: gameart.jpg
+  logo: gameart.webp
   author: m0nster
   nexusDomain: pathfinderkingmaker
   # Unity Mod Manager mods deploy under the game's Mods folder.

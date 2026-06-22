@@ -6,7 +6,7 @@ game:
   name: "Pathfinder: Wrath of the Righteous"
   executable: Wrath.exe
   requiredFiles: [Wrath.exe]
-  logo: gameart.jpg
+  logo: gameart.webp
   author: Black Tree Gaming Ltd.
   nexusDomain: pathfinderwrathoftherighteous
   # Unity Mod Manager mods deploy under the game's Mods folder.
