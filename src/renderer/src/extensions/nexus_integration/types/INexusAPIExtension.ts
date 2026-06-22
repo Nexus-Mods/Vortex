@@ -21,6 +21,18 @@ import type {
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IValidateKeyDataV2 } from "./IValidateKeyData";
 
+/**
+ * Minimal mod details fetched in a single batched modsByUid GraphQL query.
+ * `uid` is the composite mod UID.
+ */
+export interface INexusModDetails {
+  uid: string;
+  name?: string;
+  summary?: string;
+  thumbnailUrl?: string;
+  adultContent?: boolean;
+}
+
 export interface INexusAPIExtension {
   nexusCheckModsVersion?: (
     gameId: string,
@@ -108,6 +120,9 @@ export interface INexusAPIExtension {
     gameId: string,
     modIds: number[],
   ) => PromiseLike<{ [modId: number]: Partial<IModRequirements> }>;
+
+  /** Batched mod details by composite mod UID (single modsByUid GraphQL call). */
+  nexusGetModDetailsByUid?: (uids: string[]) => PromiseLike<INexusModDetails[]>;
 
   // Retrieves user data which is persistently stored in Vortex's state.
   nexusGetUserKeyData?: () => PromiseLike<IValidateKeyDataV2>;
