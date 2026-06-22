@@ -7,6 +7,7 @@ dist_portable
 dist_web
 .gdl-out
 **/tests/cache
+docs/superpowers/
 out
 doc
 coverage
