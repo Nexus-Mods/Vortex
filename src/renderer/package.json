@@ -105,6 +105,7 @@
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@vortex/nexus-api-v3": "workspace:*",
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "bbcode-to-react": "catalog:",
