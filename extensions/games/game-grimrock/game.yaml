@@ -1,0 +1,28 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: grimrock
+  name: Legend of Grimrock
+  executable: grimrock.exe
+  requiredFiles: ["grimrock.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: grimrock
+  # Dungeons (custom modules) deploy under the user's Documents folder, not the
+  # game install.
+  queryModPath: ${documents}/Almost Human/Legend of Grimrock/Dungeons
+
+stores:
+  steam: "207170"
+
+discovery:
+  # The original extension discovered the game by Steam name; kept as a fallback.
+  steamName: Legend of Grimrock
+
+setup:
+  ensureDirs:
+    - ${documents}/Almost Human/Legend of Grimrock/Dungeons
+
+tests:
+  corpus: off
