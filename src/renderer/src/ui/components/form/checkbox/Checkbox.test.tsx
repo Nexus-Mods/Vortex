@@ -11,6 +11,14 @@ afterEach(() => {
   cleanup();
 });
 
+const renderComponent = (props: Partial<React.ComponentProps<typeof Checkbox>> = {}) => {
+  const onChange = vi.fn();
+
+  render(<Checkbox onChange={onChange} {...props} />);
+
+  return { onChange };
+};
+
 const getCheckbox = () => screen.getByRole("checkbox");
 const getField = () => document.querySelector(".nxm-checkbox-field");
 
@@ -18,61 +26,59 @@ const getField = () => document.querySelector(".nxm-checkbox-field");
 
 describe("Checkbox", () => {
   it("renders an unchecked checkbox by default", () => {
-    render(<Checkbox />);
+    renderComponent();
     expect(getCheckbox()).not.toBeChecked();
   });
 
   it("reflects the checked prop", () => {
-    render(<Checkbox checked={true} onChange={() => undefined} />);
+    renderComponent({ checked: true });
     expect(getCheckbox()).toBeChecked();
   });
 
   it("renders label children", () => {
-    render(<Checkbox>Accept terms</Checkbox>);
+    renderComponent({ children: "Accept terms" });
     expect(screen.getByText("Accept terms")).toHaveClass("nxm-checkbox-label");
   });
 
   describe("state classes", () => {
     it("adds the checked class when checked", () => {
-      render(<Checkbox checked={true} onChange={() => undefined} />);
+      renderComponent({ checked: true });
       expect(getField()).toHaveClass("nxm-checkbox-checked");
     });
 
     it("adds the disabled class and attribute when disabled", () => {
-      render(<Checkbox disabled={true} />);
+      renderComponent({ disabled: true });
       expect(getField()).toHaveClass("nxm-checkbox-disabled");
       expect(getCheckbox()).toBeDisabled();
     });
 
     it("adds the error class when hasError", () => {
-      render(<Checkbox hasError={true} />);
+      renderComponent({ hasError: true });
       expect(getField()).toHaveClass("nxm-checkbox-error");
     });
   });
 
   describe("interactions", () => {
     it("calls onChange when clicked", async () => {
-      const onChange = vi.fn();
-      render(<Checkbox checked={false} onChange={onChange} />);
+      const { onChange } = renderComponent({ checked: false });
       await userEvent.click(getCheckbox());
       expect(onChange).toHaveBeenCalledOnce();
     });
 
     it("does not call onChange when disabled", async () => {
-      const onChange = vi.fn();
-      render(<Checkbox checked={false} disabled={true} onChange={onChange} />);
+      const { onChange } = renderComponent({ checked: false, disabled: true });
       await userEvent.click(getCheckbox());
       expect(onChange).not.toHaveBeenCalled();
     });
   });
 
   it("merges a custom className onto the field", () => {
-    render(<Checkbox className="my-class" />);
+    renderComponent({ className: "my-class" });
     expect(getField()).toHaveClass("nxm-checkbox-field", "my-class");
   });
 
   it("forwards arbitrary input attributes", () => {
-    render(<Checkbox name="terms" value="yes" />);
+    renderComponent({ name: "terms", value: "yes" });
     expect(getCheckbox()).toHaveAttribute("name", "terms");
   });
 });

@@ -14,7 +14,7 @@ afterEach(() => {
   cleanup();
 });
 
-const Harness = ({
+const ControlledTabs = ({
   disabledThird = false,
   initial = "One",
   tabType,
@@ -40,6 +40,10 @@ const Harness = ({
   );
 };
 
+const renderComponent = (props: React.ComponentProps<typeof ControlledTabs> = {}) => {
+  render(<ControlledTabs {...props} />);
+};
+
 const getTab = (name: RegExp) => screen.getByRole("tab", { name });
 
 // --- Tests ---
@@ -47,42 +51,42 @@ const getTab = (name: RegExp) => screen.getByRole("tab", { name });
 describe("Tabs", () => {
   describe("structure", () => {
     it("renders a tablist with one tab per TabButton", () => {
-      render(<Harness />);
+      renderComponent();
       expect(screen.getByRole("tablist")).toBeInTheDocument();
       expect(screen.getAllByRole("tab")).toHaveLength(3);
     });
 
     it("renders a count on a tab when provided", () => {
-      render(<Harness />);
+      renderComponent();
       expect(getTab(/two/i)).toHaveTextContent("5");
     });
   });
 
   describe("selection", () => {
     it("shows only the selected tab's panel", () => {
-      render(<Harness />);
+      renderComponent();
       expect(screen.getByText("Panel One")).toBeInTheDocument();
       expect(screen.queryByText("Panel Two")).not.toBeInTheDocument();
     });
 
     it("marks the selected tab with aria-selected", () => {
-      render(<Harness />);
+      renderComponent();
       expect(getTab(/one/i)).toHaveAttribute("aria-selected", "true");
       expect(getTab(/two/i)).toHaveAttribute("aria-selected", "false");
     });
 
     it("adds the selected modifier class to the active tab", () => {
-      render(<Harness />);
+      renderComponent();
       expect(getTab(/one/i)).toHaveClass("nxm-tab-button-selected");
     });
 
     it("links a tab to its panel via aria-controls", () => {
-      render(<Harness />);
+      renderComponent();
       expect(getTab(/one/i)).toHaveAttribute("aria-controls", "tabcontent-one");
     });
 
     it("switches the panel when another tab is clicked", async () => {
-      render(<Harness />);
+      renderComponent();
       await userEvent.click(getTab(/two/i));
       expect(screen.getByText("Panel Two")).toBeInTheDocument();
       expect(screen.queryByText("Panel One")).not.toBeInTheDocument();
@@ -91,21 +95,21 @@ describe("Tabs", () => {
 
   describe("keyboard navigation", () => {
     it("selects the next tab on ArrowRight", async () => {
-      render(<Harness />);
+      renderComponent();
       getTab(/one/i).focus();
       await userEvent.keyboard("{ArrowRight}");
       expect(screen.getByText("Panel Two")).toBeInTheDocument();
     });
 
     it("wraps to the first tab on ArrowRight from the last", async () => {
-      render(<Harness initial="Three" />);
+      renderComponent({ initial: "Three" });
       getTab(/three/i).focus();
       await userEvent.keyboard("{ArrowRight}");
       expect(screen.getByText("Panel One")).toBeInTheDocument();
     });
 
     it("jumps to the first tab on Home", async () => {
-      render(<Harness initial="Three" />);
+      renderComponent({ initial: "Three" });
       getTab(/three/i).focus();
       await userEvent.keyboard("{Home}");
       expect(screen.getByText("Panel One")).toBeInTheDocument();
@@ -114,7 +118,7 @@ describe("Tabs", () => {
 
   describe("disabled tab", () => {
     it("disables the tab and adds the disabled class", () => {
-      render(<Harness disabledThird={true} />);
+      renderComponent({ disabledThird: true });
       expect(getTab(/three/i)).toBeDisabled();
       expect(getTab(/three/i)).toHaveClass("nxm-tab-button-disabled");
     });
@@ -122,13 +126,13 @@ describe("Tabs", () => {
 
   describe("tabType", () => {
     it("applies the primary bar class by default", () => {
-      const { container } = render(<Harness />);
-      expect(container.querySelector(".nxm-tab-bar")).toHaveClass("nxm-tab-bar-primary");
+      renderComponent();
+      expect(document.querySelector(".nxm-tab-bar")).toHaveClass("nxm-tab-bar-primary");
     });
 
     it("applies the secondary bar class when tabType is secondary", () => {
-      const { container } = render(<Harness tabType="secondary" />);
-      expect(container.querySelector(".nxm-tab-bar")).toHaveClass("nxm-tab-bar-secondary");
+      renderComponent({ tabType: "secondary" });
+      expect(document.querySelector(".nxm-tab-bar")).toHaveClass("nxm-tab-bar-secondary");
     });
   });
 

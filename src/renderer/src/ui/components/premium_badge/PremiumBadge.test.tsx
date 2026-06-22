@@ -10,23 +10,24 @@ afterEach(() => {
   cleanup();
 });
 
+const getBadge = () => document.querySelector("span");
+
 // --- Tests ---
 
 describe("PremiumBadge", () => {
   it("renders an icon inside a badge span", () => {
-    const { container } = render(<PremiumBadge />);
-    const span = container.querySelector("span");
-    expect(span).toBeInTheDocument();
+    render(<PremiumBadge />);
+    expect(getBadge()).toBeInTheDocument();
     expect(screen.getByRole("presentation").tagName).toBe("svg");
   });
 
   it("applies the premium background base classes", () => {
-    const { container } = render(<PremiumBadge />);
-    expect(container.querySelector("span")).toHaveClass("bg-premium-moderate");
+    render(<PremiumBadge />);
+    expect(getBadge()).toHaveClass("bg-premium-moderate");
   });
 
   it("merges a custom className", () => {
-    const { container } = render(<PremiumBadge className="my-class" />);
-    expect(container.querySelector("span")).toHaveClass("bg-premium-moderate", "my-class");
+    render(<PremiumBadge className="my-class" />);
+    expect(getBadge()).toHaveClass("bg-premium-moderate", "my-class");
   });
 });

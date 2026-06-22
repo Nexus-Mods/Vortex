@@ -14,11 +14,11 @@ afterEach(() => {
   cleanup();
 });
 
-const Harness = ({
-  onChange = vi.fn(),
+const ControlledListbox = ({
+  onChange,
   showChevron,
 }: {
-  onChange?: (value: string) => void;
+  onChange: (value: string) => void;
   showChevron?: boolean;
 }) => {
   const [value, setValue] = useState("a");
@@ -42,41 +42,48 @@ const Harness = ({
   );
 };
 
+const renderComponent = ({ showChevron }: { showChevron?: boolean } = {}) => {
+  const onChange = vi.fn();
+
+  render(<ControlledListbox showChevron={showChevron} onChange={onChange} />);
+
+  return { onChange };
+};
+
 const getTrigger = () => screen.getByRole("button");
 
 // --- Tests ---
 
 describe("Listbox", () => {
   it("applies the nxm-dropdown class to the wrapper", () => {
-    render(<Harness />);
+    renderComponent();
     expect(document.querySelector(".nxm-dropdown")).toBeInTheDocument();
   });
 
   it("renders the trigger with a chevron icon by default", () => {
-    render(<Harness />);
+    renderComponent();
     expect(getTrigger().querySelector(".nxm-dropdown-button-icon")).toBeInTheDocument();
   });
 
   it("hides the chevron when showChevron is false", () => {
-    render(<Harness showChevron={false} />);
+    renderComponent({ showChevron: false });
     expect(getTrigger().querySelector(".nxm-dropdown-button-icon")).not.toBeInTheDocument();
   });
 
   it("does not show options until opened", () => {
-    render(<Harness />);
+    renderComponent();
     expect(screen.queryByText("Banana")).not.toBeInTheDocument();
   });
 
   it("reveals the options when the trigger is clicked", async () => {
-    render(<Harness />);
+    renderComponent();
     await userEvent.click(getTrigger());
     expect(screen.getByRole("option", { name: /apple/i })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /banana/i })).toBeInTheDocument();
   });
 
   it("calls onChange with the selected value", async () => {
-    const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
+    const { onChange } = renderComponent();
     await userEvent.click(getTrigger());
     await userEvent.click(screen.getByRole("option", { name: /banana/i }));
     expect(onChange).toHaveBeenCalledWith("b");

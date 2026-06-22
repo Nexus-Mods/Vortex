@@ -10,6 +10,9 @@ afterEach(() => {
   cleanup();
 });
 
+// the FormField root always carries the min-w-0 utility
+const getRoot = () => document.querySelector(".min-w-0");
+
 // --- Tests ---
 
 describe("FormField", () => {
@@ -21,7 +24,6 @@ describe("FormField", () => {
 
     it("visually hides the label with sr-only when hideLabel", () => {
       render(<FormField hideLabel={true} label="Username" />);
-      // the <label> element carries the sr-only class
       expect(document.querySelector("label")).toHaveClass("sr-only");
     });
 
@@ -78,13 +80,13 @@ describe("FormField", () => {
 
   describe("disabled", () => {
     it("makes the container non-interactive", () => {
-      const { container } = render(<FormField disabled={true} label="Username" />);
-      expect(container.firstChild).toHaveClass("pointer-events-none", "opacity-40");
+      render(<FormField disabled={true} label="Username" />);
+      expect(getRoot()).toHaveClass("pointer-events-none", "opacity-40");
     });
   });
 
   it("merges a custom className on the container", () => {
-    const { container } = render(<FormField className="my-class" label="Username" />);
-    expect(container.firstChild).toHaveClass("min-w-0", "my-class");
+    render(<FormField className="my-class" label="Username" />);
+    expect(getRoot()).toHaveClass("min-w-0", "my-class");
   });
 });

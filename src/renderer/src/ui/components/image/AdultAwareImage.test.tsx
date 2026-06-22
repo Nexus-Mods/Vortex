@@ -16,6 +16,10 @@ const mockUserInfo = (value: { adultBlurImages?: boolean } | undefined) => {
   (useSelector as unknown as ReturnType<typeof vi.fn>).mockReturnValue(value);
 };
 
+const renderComponent = (props: Partial<React.ComponentProps<typeof AdultAwareImage>> = {}) => {
+  render(<AdultAwareImage alt="img" isAdult={true} src="x.png" {...props} />);
+};
+
 const getImg = () => document.querySelector("img");
 
 beforeEach(() => {
@@ -31,25 +35,25 @@ afterEach(() => {
 describe("AdultAwareImage", () => {
   it("blurs adult content when the user opts into blurring", () => {
     mockUserInfo({ adultBlurImages: true });
-    render(<AdultAwareImage alt="img" isAdult={true} src="x.png" />);
+    renderComponent();
     expect(getImg()).toHaveClass("blur-xl");
   });
 
   it("does not blur adult content when the user opts out", () => {
     mockUserInfo({ adultBlurImages: false });
-    render(<AdultAwareImage alt="img" isAdult={true} src="x.png" />);
+    renderComponent();
     expect(getImg()).not.toHaveClass("blur-xl");
   });
 
   it("never blurs non-adult content", () => {
     mockUserInfo({ adultBlurImages: true });
-    render(<AdultAwareImage alt="img" isAdult={false} src="x.png" />);
+    renderComponent({ isAdult: false });
     expect(getImg()).not.toHaveClass("blur-xl");
   });
 
   it("blurs adult content by default when no user is logged in", () => {
     mockUserInfo(undefined);
-    render(<AdultAwareImage alt="img" isAdult={true} src="x.png" />);
+    renderComponent();
     expect(getImg()).toHaveClass("blur-xl");
   });
 });

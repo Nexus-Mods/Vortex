@@ -12,89 +12,71 @@ afterEach(() => {
 
 const SkeletonTile = () => <div data-testid="skeleton" />;
 
+const renderComponent = (props: Partial<React.ComponentProps<typeof Listing>> = {}) => {
+  render(<Listing SkeletonTile={SkeletonTile} {...props} />);
+};
+
 // --- Tests ---
 
 describe("Listing", () => {
   describe("loading", () => {
     it("renders skeletons when isLoading", () => {
-      render(<Listing SkeletonTile={SkeletonTile} isLoading={true} skeletonCount={3} />);
+      renderComponent({ isLoading: true, skeletonCount: 3 });
       expect(screen.getAllByTestId("skeleton")).toHaveLength(3);
     });
 
     it("does not render additionalContent while still loading", () => {
-      render(
-        <Listing
-          SkeletonTile={SkeletonTile}
-          additionalContent={<div data-testid="more" />}
-          isLoading={true}
-          skeletonCount={1}
-        />,
-      );
+      renderComponent({
+        additionalContent: <div data-testid="more" />,
+        isLoading: true,
+        skeletonCount: 1,
+      });
       expect(screen.queryByTestId("more")).not.toBeInTheDocument();
     });
   });
 
   describe("with content", () => {
     it("renders children when there are entities and not loading", () => {
-      render(
-        <Listing SkeletonTile={SkeletonTile} entityCount={2}>
-          <div data-testid="content" />
-        </Listing>,
-      );
+      renderComponent({ children: <div data-testid="content" />, entityCount: 2 });
       expect(screen.getByTestId("content")).toBeInTheDocument();
       expect(screen.queryByTestId("skeleton")).not.toBeInTheDocument();
     });
 
     it("renders additionalContent once loaded", () => {
-      render(
-        <Listing
-          SkeletonTile={SkeletonTile}
-          additionalContent={<div data-testid="more" />}
-          entityCount={2}
-        >
-          <div data-testid="content" />
-        </Listing>,
-      );
+      renderComponent({
+        additionalContent: <div data-testid="more" />,
+        children: <div data-testid="content" />,
+        entityCount: 2,
+      });
       expect(screen.getByTestId("more")).toBeInTheDocument();
     });
   });
 
   describe("error", () => {
     it("renders the error NoResults with the given title", () => {
-      render(<Listing SkeletonTile={SkeletonTile} errorTitle="Boom" isError={true} />);
+      renderComponent({ errorTitle: "Boom", isError: true });
       expect(screen.getByText("Boom")).toBeInTheDocument();
     });
 
     it("renders customError when provided", () => {
-      render(
-        <Listing
-          SkeletonTile={SkeletonTile}
-          customError={<div data-testid="custom-error" />}
-          isError={true}
-        />,
-      );
+      renderComponent({ customError: <div data-testid="custom-error" />, isError: true });
       expect(screen.getByTestId("custom-error")).toBeInTheDocument();
     });
   });
 
   describe("empty", () => {
     it("renders the default no-results title when there are no entities", () => {
-      render(<Listing SkeletonTile={SkeletonTile} />);
+      renderComponent();
       expect(screen.getByText("No items found")).toBeInTheDocument();
     });
 
     it("renders a custom no-results title", () => {
-      render(<Listing SkeletonTile={SkeletonTile} noResultsTitle="Nothing matched" />);
+      renderComponent({ noResultsTitle: "Nothing matched" });
       expect(screen.getByText("Nothing matched")).toBeInTheDocument();
     });
 
     it("renders customNoResults when provided", () => {
-      render(
-        <Listing
-          SkeletonTile={SkeletonTile}
-          customNoResults={<div data-testid="custom-empty" />}
-        />,
-      );
+      renderComponent({ customNoResults: <div data-testid="custom-empty" /> });
       expect(screen.getByTestId("custom-empty")).toBeInTheDocument();
     });
   });

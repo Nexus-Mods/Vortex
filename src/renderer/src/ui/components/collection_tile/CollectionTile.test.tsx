@@ -24,76 +24,101 @@ afterEach(() => {
   cleanup();
 });
 
-const makeCollection = (overrides: Record<string, unknown> = {}) =>
-  ({
-    badges: [],
-    category: { name: "Gameplay" },
-    endorsements: 1234,
-    latestPublishedRevision: { adultContent: false, modCount: 42, totalSize: 1024 },
-    name: "My Collection",
-    slug: "my-collection",
-    summary: "A great collection of mods.",
-    tileImage: { thumbnailUrl: "tile.png" },
-    user: { avatar: "avatar.png", name: "Author Name" },
-    ...overrides,
-  }) as unknown as ICollectionTileProps["collection"];
+// A minimal, fully-typed stand-in for the fields of ICollection the tile reads,
+// so tests can assert against the fixture rather than hardcoded strings.
+interface TestCollection {
+  badges: { description: string; name: string }[];
+  category: { name: string };
+  endorsements: number;
+  latestPublishedRevision: { adultContent: boolean; modCount: number; totalSize: number };
+  name: string;
+  slug: string;
+  summary: string;
+  tileImage: { thumbnailUrl: string };
+  user: { avatar: string; name: string };
+}
+
+const makeCollection = (overrides: Partial<TestCollection> = {}): TestCollection => ({
+  badges: [],
+  category: { name: "Gameplay" },
+  endorsements: 1234,
+  latestPublishedRevision: { adultContent: false, modCount: 42, totalSize: 1024 },
+  name: "My Collection",
+  slug: "my-collection",
+  summary: "A great collection of mods.",
+  tileImage: { thumbnailUrl: "tile.png" },
+  user: { avatar: "avatar.png", name: "Author Name" },
+  ...overrides,
+});
 
 // state present so the canBeAdded/login logic runs
 const makeApi = () => ({ getState: () => ({}) }) as unknown as IExtensionApi;
 
-const renderTile = (props: Partial<ICollectionTileProps> = {}) =>
-  render(<CollectionTile api={makeApi()} collection={makeCollection()} {...props} />);
+const renderComponent = ({
+  collection = makeCollection(),
+  isLoggedIn,
+}: { collection?: TestCollection; isLoggedIn?: boolean } = {}) => {
+  const onAddCollection = vi.fn();
+  const onViewPage = vi.fn();
+
+  render(
+    <CollectionTile
+      api={makeApi()}
+      collection={collection as unknown as ICollectionTileProps["collection"]}
+      isLoggedIn={isLoggedIn}
+      onAddCollection={onAddCollection}
+      onViewPage={onViewPage}
+    />,
+  );
+
+  return { collection, onAddCollection, onViewPage };
+};
 
 // --- Tests ---
 
 describe("CollectionTile", () => {
   describe("content", () => {
     it("renders the collection name, author, category and summary", () => {
-      renderTile();
-      expect(screen.getByText("My Collection")).toBeInTheDocument();
-      expect(screen.getByText("Author Name")).toBeInTheDocument();
-      expect(screen.getByText("Gameplay")).toBeInTheDocument();
-      expect(screen.getByText("A great collection of mods.")).toBeInTheDocument();
+      const { collection } = renderComponent();
+      expect(screen.getByText(collection.name)).toBeInTheDocument();
+      expect(screen.getByText(collection.user.name)).toBeInTheDocument();
+      expect(screen.getByText(collection.category.name)).toBeInTheDocument();
+      expect(screen.getByText(collection.summary)).toBeInTheDocument();
     });
 
     it("renders the tile image with the collection name as alt text", () => {
-      renderTile();
-      expect(screen.getByRole("img", { name: "My Collection" })).toBeInTheDocument();
+      const { collection } = renderComponent();
+      expect(screen.getByRole("img", { name: collection.name })).toBeInTheDocument();
     });
 
     it("does not show the Adult label for non-adult collections", () => {
-      renderTile();
+      renderComponent();
       expect(screen.queryByText("Adult")).not.toBeInTheDocument();
     });
 
     it("shows the Adult label for adult collections", () => {
-      render(
-        <CollectionTile
-          api={makeApi()}
-          collection={makeCollection({
-            latestPublishedRevision: { adultContent: true, modCount: 1, totalSize: 1 },
-          })}
-        />,
-      );
+      const collection = makeCollection({
+        latestPublishedRevision: { adultContent: true, modCount: 1, totalSize: 1 },
+      });
+      renderComponent({ collection });
       expect(screen.getByText("Adult")).toBeInTheDocument();
     });
   });
 
   describe("actions", () => {
     it("calls onViewPage when the view page button is clicked", async () => {
-      const onViewPage = vi.fn();
-      renderTile({ onViewPage });
+      const { onViewPage } = renderComponent();
       await userEvent.click(screen.getByRole("button", { name: /view page/i }));
       expect(onViewPage).toHaveBeenCalledOnce();
     });
 
     it("offers the add-collection action when logged in", () => {
-      renderTile({ isLoggedIn: true });
+      renderComponent({ isLoggedIn: true });
       expect(screen.getByRole("button", { name: /add collection/i })).toBeInTheDocument();
     });
 
     it("prompts to log in when logged out", () => {
-      renderTile({ isLoggedIn: false });
+      renderComponent({ isLoggedIn: false });
       expect(screen.getByRole("button", { name: /log in to add/i })).toBeInTheDocument();
     });
   });

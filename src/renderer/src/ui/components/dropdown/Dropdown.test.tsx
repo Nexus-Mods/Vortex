@@ -15,7 +15,9 @@ afterEach(() => {
   cleanup();
 });
 
-const renderDropdown = (onEdit = vi.fn()) => {
+const renderComponent = () => {
+  const onEdit = vi.fn();
+
   render(
     <Dropdown>
       <Menu.Button>Options</Menu.Button>
@@ -39,42 +41,42 @@ const renderDropdown = (onEdit = vi.fn()) => {
 
 describe("Dropdown", () => {
   it("applies the nxm-dropdown class to the wrapper", () => {
-    renderDropdown();
+    renderComponent();
     expect(document.querySelector(".nxm-dropdown")).toBeInTheDocument();
   });
 
   it("renders the trigger button", () => {
-    const { trigger } = renderDropdown();
+    const { trigger } = renderComponent();
     expect(trigger).toBeInTheDocument();
   });
 
   it("does not show the menu items until opened", () => {
-    renderDropdown();
+    renderComponent();
     expect(screen.queryByText("Edit")).not.toBeInTheDocument();
   });
 
   it("reveals the menu items when the trigger is clicked", async () => {
-    const { trigger } = renderDropdown();
+    const { trigger } = renderComponent();
     await userEvent.click(trigger);
     expect(screen.getByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Delete")).toBeInTheDocument();
   });
 
   it("renders a divider as a separator when open", async () => {
-    const { trigger } = renderDropdown();
+    const { trigger } = renderComponent();
     await userEvent.click(trigger);
     expect(screen.getByRole("separator")).toBeInTheDocument();
   });
 
   it("calls the item's onClick when selected", async () => {
-    const { onEdit, trigger } = renderDropdown();
+    const { onEdit, trigger } = renderComponent();
     await userEvent.click(trigger);
     await userEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
     expect(onEdit).toHaveBeenCalledOnce();
   });
 
   it("disables a disabled item", async () => {
-    const { trigger } = renderDropdown();
+    const { trigger } = renderComponent();
     await userEvent.click(trigger);
     expect(screen.getByRole("menuitem", { name: "Disabled" })).toBeDisabled();
   });

@@ -13,13 +13,21 @@ afterEach(() => {
   cleanup();
 });
 
-const options: IListboxOption<string>[] = [
+const defaultOptions: IListboxOption<string>[] = [
   { label: "Red", value: "red" },
   { label: "Blue", value: "blue" },
 ];
 
-const Harness = ({ onChange = vi.fn() }: { onChange?: (value: string) => void }) => {
-  const [value, setValue] = useState("red");
+const ControlledPicker = ({
+  initialValue,
+  onChange,
+  options,
+}: {
+  initialValue: string;
+  onChange: (value: string) => void;
+  options: IListboxOption<string>[];
+}) => {
+  const [value, setValue] = useState(initialValue);
 
   return (
     <Picker
@@ -33,30 +41,37 @@ const Harness = ({ onChange = vi.fn() }: { onChange?: (value: string) => void })
   );
 };
 
+const renderComponent = (options = defaultOptions, initialValue = "red") => {
+  const onChange = vi.fn();
+
+  render(<ControlledPicker initialValue={initialValue} options={options} onChange={onChange} />);
+
+  return { onChange };
+};
+
 const getTrigger = () => screen.getByRole("button");
 
 // --- Tests ---
 
 describe("Picker", () => {
   it("shows the selected option's label in the trigger", () => {
-    render(<Harness />);
+    renderComponent();
     expect(getTrigger()).toHaveTextContent("Red");
   });
 
   it("does not show the options until opened", () => {
-    render(<Harness />);
+    renderComponent();
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
   });
 
   it("reveals all options when opened", async () => {
-    render(<Harness />);
+    renderComponent();
     await userEvent.click(getTrigger());
     expect(screen.getAllByRole("option")).toHaveLength(2);
   });
 
   it("calls onChange with the chosen value and updates the trigger", async () => {
-    const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
+    const { onChange } = renderComponent();
 
     await userEvent.click(getTrigger());
     await userEvent.click(screen.getByRole("option", { name: /blue/i }));
@@ -66,10 +81,7 @@ describe("Picker", () => {
   });
 
   it("renders an option icon when iconPath is provided", async () => {
-    const iconOptions: IListboxOption<string>[] = [
-      { iconPath: "M0 0h24v24H0z", label: "With icon", value: "x" },
-    ];
-    render(<Picker options={iconOptions} value="x" onChange={() => undefined} />);
+    renderComponent([{ iconPath: "M0 0h24v24H0z", label: "With icon", value: "x" }], "x");
     await userEvent.click(getTrigger());
     expect(
       screen.getByRole("option", { name: /with icon/i }).querySelector(".nxm-dropdown-item-icon"),
