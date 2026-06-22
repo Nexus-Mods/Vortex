@@ -129,6 +129,7 @@ export const healthCheckPersistentState = (state: IState): IHealthCheckPersisten
     feedbackGiven: {},
     modRequirementsEnabled: true,
     fileRequirementsEnabled: true,
+    fileRequirementsFlagEnabled: false,
   };
 
 /**
@@ -142,9 +143,13 @@ export const isModRequirementsEnabled = (state: IState): boolean =>
  * The settings toggle and the check both gate on this, so the whole feature
  * appears only when it is available.
  *
- * TODO(LAZ-592): return the feature-flag state here once flag support exists.
+ * Backed by the Unleash "vortex-file-level-requirements" flag, mirrored into
+ * persistent state from window.api.featureFlags.onSynchronize (see the extension
+ * init). Persisted so the last-known value is kept across restarts; defaults to
+ * false only before any flag state has been received (fail-closed).
  */
-export const isFileRequirementsFeatureAvailable = (_state: IState): boolean => true;
+export const isFileRequirementsFeatureAvailable = (state: IState): boolean =>
+  healthCheckPersistentState(state).fileRequirementsFlagEnabled ?? false;
 
 /**
  * Check if file-level requirements health check suggestions are enabled.
