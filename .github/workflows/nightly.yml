@@ -24,7 +24,7 @@ jobs:
       DEBUG: electron-builder # gives electron more verbose logs
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: "recursive"
 
