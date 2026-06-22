@@ -1,0 +1,59 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: witcher2
+  name: The Witcher 2
+  executable: bin/witcher2.exe
+  requiredFiles: ["bin/witcher2.exe", "bin/userContentManager.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: witcher2
+  queryModPath: CookedPC
+
+# Steam supplies the steamAppId detail (auto-derived from the app id), matching
+# the original extension's details block.
+stores:
+  steam: "20920"
+
+discovery:
+  # The original extension discovered only via the CD Projekt Red registry key
+  # (no Steam name fallback).
+  registry:
+    - { hive: HKLM, key: 'Software\CD Project Red\The Witcher 2', value: InstallFolder }
+
+setup:
+  ensureDirs:
+    - ${installPath}/UserContent
+
+# User content deploys to UserContent (distinct from the default CookedPC path),
+# matching the original `witcher2user` modType.
+modTypes:
+  - { id: witcher2user, name: The Witcher 2 - user content, path: "${installPath}/UserContent" }
+
+installers:
+  # The original `witcher2user` modType test matched any mod whose instructions
+  # produced a `cook.hash` file; such archives are routed to UserContent.
+  # Everything else falls through to the default installer -> CookedPC.
+  - id: witcher2-user-content
+    priority: 25
+    when: { hasFile: "**/cook.hash" }
+    copy: { stripCommonRoot: false }
+    modType: witcher2user
+
+tests:
+  corpus: off
+  cases:
+    # A mod carrying a cook.hash is routed to the witcher2user modType (which
+    # deploys to ${installPath}/UserContent). Copy-form destinations are
+    # relative to that deploy root, which Vortex applies at deploy time.
+    - name: cook.hash routes to witcher2user (UserContent)
+      archive:
+        - cook.hash
+        - content.bundle
+      expect:
+        matched: witcher2-user-content
+        modType: witcher2user
+        plan:
+          - cook.hash
+          - content.bundle

@@ -1,0 +1,55 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: witcher
+  name: The Witcher
+  executable: system/witcher.exe
+  requiredFiles: ["system/witcher.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: witcher
+  queryModPath: Data/Override
+
+# Steam supplies the SteamAPPId env var + steamAppId detail (auto-derived from
+# the app id), matching the original extension's environment/details blocks.
+stores:
+  steam: "20900"
+
+discovery:
+  # The original extension preferred the CD Projekt Red registry key, then fell
+  # back to a Steam name lookup before findByAppId. Both fallbacks are kept here.
+  registry:
+    - { hive: HKLM, key: 'Software\CD Project Red\Witcher', value: InstallFolder }
+  steamName: "The Witcher: Enhanced Edition Director's Cut"
+
+setup:
+  ensureDirs:
+    - ${installPath}/Data/Override
+
+# Classification tag for user content; deploys to the same Data/Override folder
+# as the default mod path (matching the original `witcheruser` modType).
+modTypes:
+  - { id: witcheruser, name: The Witcher - user content, path: "${installPath}/Data/Override" }
+
+installers:
+  # The original `witcheruser` modType test matched any mod whose instructions
+  # produced a `cook.hash` file; such archives are routed to the witcheruser
+  # modType. Everything else falls through to the default installer.
+  - id: witcher-user-content
+    priority: 25
+    when: { hasFile: "**/cook.hash" }
+    copy: { stripCommonRoot: false }
+    modType: witcheruser
+
+tests:
+  corpus: off
+  cases:
+    # A mod carrying a cook.hash is classified as user content.
+    - name: cook.hash routes to witcheruser
+      archive:
+        - cook.hash
+        - data.bundle
+      expect:
+        matched: witcher-user-content
+        modType: witcheruser

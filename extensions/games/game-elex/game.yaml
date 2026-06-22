@@ -1,0 +1,62 @@
+gdl: 1
+version: 0.0.1
+
+game:
+  id: elex
+  name: Elex
+  executable: system/ELEX.exe
+  requiredFiles: ["system/ELEX.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: elex
+  queryModPath: data/packed
+
+stores:
+  steam: "411300"
+
+setup:
+  ensureDirs:
+    - ${installPath}/data/packed
+
+# Every Elex mod deploys under data/packed.
+modTypes:
+  - { id: pak, name: ELEX mod, path: "${installPath}/data/packed" }
+
+installers:
+  # The original extension supported any archive carrying a `.pak`, re-rooted the
+  # archive at the `.pak`'s directory, and copied that directory's contents into
+  # data/packed. FOMOD archives (a fomod/moduleconfig.xml present) were left to the
+  # FOMOD installer.
+  - id: elex-mod
+    priority: 25
+    when: { hasFile: "**/*.pak" }
+    unless: { matches: '(?i)(^|/)fomod/moduleconfig\.xml$' }
+    anchor: "**/*.pak"
+    take: parent
+    placeAt: ${installPath}/data/packed
+    modType: pak
+
+tests:
+  corpus: off
+  cases:
+    # .pak at archive root re-roots to data/packed and copies the file as-is.
+    - name: bare .pak at root installs to data/packed
+      archive:
+        - mod.pak
+      expect:
+        matched: elex-mod
+        modType: pak
+        plan:
+          - ${installPath}/data/packed/mod.pak
+    # .pak nested in a wrapper dir: the wrapper is stripped (re-rooted at the .pak's
+    # directory) and sibling content keeps its sub-layout, matching installContent.
+    - name: nested .pak re-roots at its directory
+      archive:
+        - SomeMod/mod.pak
+        - SomeMod/textures/skin.dds
+      expect:
+        matched: elex-mod
+        modType: pak
+        plan:
+          - ${installPath}/data/packed/mod.pak
+          - ${installPath}/data/packed/textures/skin.dds

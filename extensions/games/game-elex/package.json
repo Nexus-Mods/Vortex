@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "Support for Elex",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs",
+    "test": "pnpm exec vitest run --passWithNoTests"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -14,7 +14,8 @@
     "game": "Elex"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@vortex/extension-test-mocks": "workspace:*"
   },
   "nx": {
     "tags": [

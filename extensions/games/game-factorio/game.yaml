@@ -1,0 +1,31 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: factorio
+  name: Factorio
+  executable: bin/x64/Factorio.exe
+  requiredFiles: ["data/core/graphics/factorio.ico"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: factorio
+  # Factorio stores mods in %APPDATA%\Factorio\mods, outside the game install
+  # directory. The original extension branched on platform; the ~/.factorio/mods
+  # path is the Linux branch, which is dead code on Vortex's Windows-only runtime.
+  queryModPath: ${appDataRoaming}/Factorio/mods
+
+# Steam is the primary lookup (and supplies the SteamAPPId env + steamAppId
+# detail). The original extension used a Steam name lookup, kept below as a
+# discovery fallback when the game isn't found by app-id.
+stores:
+  steam: "427520"
+
+discovery:
+  steamName: Factorio
+
+setup:
+  ensureDirs:
+    - ${appDataRoaming}/Factorio/mods
+
+tests:
+  corpus: off

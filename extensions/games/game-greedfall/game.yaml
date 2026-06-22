@@ -1,0 +1,48 @@
+gdl: 1
+version: 1.0.2
+
+game:
+  id: greedfall
+  name: GreedFall
+  executable: GreedFall.exe
+  requiredFiles: [GreedFall.exe]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: greedfall
+  # GreedFall mods deploy into the game's `datalocal` folder.
+  queryModPath: datalocal
+
+stores:
+  steam: "606880"
+
+# Every mod deploys to the same `datalocal` folder; the installer hook re-roots
+# each archive at its `datalocal` segment before copying.
+modTypes:
+  - { id: greedfall-mod, name: "GreedFall mod", path: "${installPath}/datalocal" }
+
+# A single catch-all installer claims any archive that is not a FOMOD. FOMOD
+# archives (fomod/moduleconfig.xml) are excluded so they fall through to
+# Vortex's built-in FOMOD installer. The hook re-roots files at the `datalocal`
+# path segment and emits mkdir/copy instructions.
+installers:
+  - id: greedfall-mod
+    priority: 25
+    when: { matches: ".+" }
+    unless: { matches: '(?i)(^|/)fomod/moduleconfig\.xml$' }
+    install: { hook: installGreedfallMod }
+
+setup:
+  ensureDirs:
+    - ${installPath}/datalocal
+
+# Read the product version from the game executable (exe-version, bundled).
+discovery:
+  version: { hook: detectGameVersion }
+
+# After deploy, bump the modified time of every deployed file to "now" so the
+# game reloads them.
+events:
+  did-deploy: { hook: didDeploy }
+
+tests:
+  corpus: nexus

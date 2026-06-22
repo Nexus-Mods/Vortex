@@ -1,0 +1,28 @@
+gdl: 1
+version: 1.0.0
+
+game:
+  id: stateofdecay
+  name: State of Decay
+  executable: StateOfDecay.exe
+  requiredFiles: ["StateOfDecay.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: stateofdecay
+  queryModPath: game
+  details:
+    steamAppId: 241540
+
+# Steam is the primary lookup (and supplies the SteamAPPId env + steamAppId
+# detail). The original extension discovered the game by Steam name, preferring
+# "State of Decay: Year-One" and falling back to "State of Decay"; that name
+# lookup is kept as a discovery fallback below.
+stores:
+  steam: "241540"
+
+discovery:
+  # Fallback when the game isn't found by app-id (the original used findByName).
+  steamName: "State of Decay: Year-One"
+
+tests:
+  corpus: off

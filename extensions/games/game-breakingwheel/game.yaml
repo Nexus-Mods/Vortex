@@ -1,0 +1,27 @@
+gdl: 1
+version: 1.0.0
+
+game:
+  id: breakingwheel
+  name: Breaking Wheel
+  executable: Ellie_Ball_Project.exe
+  requiredFiles: ["Ellie_Ball_Project.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: breakingwheel
+  queryModPath: ModdingTools
+  details:
+    steamAppId: 545890
+
+# Steam is the primary lookup (and supplies the SteamAPPId env + steamAppId
+# detail). The original extension discovered the game purely by Steam name; that
+# is kept as a discovery fallback below.
+stores:
+  steam: "545890"
+
+discovery:
+  # Fallback when the game isn't found by app-id (the original used findByName).
+  steamName: Breaking Wheel
+
+tests:
+  corpus: off

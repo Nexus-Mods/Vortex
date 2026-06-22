@@ -1,0 +1,32 @@
+gdl: 1
+version: 1.0.1
+
+game:
+  id: grimdawn
+  name: Grim Dawn
+  executable: Grim Dawn.exe
+  requiredFiles: ["Grim Dawn.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: grimdawn
+  queryModPath: mods
+  details:
+    hashFiles: ["Grim Dawn.exe", "Game.dll"]
+
+# Steam is the primary lookup (and supplies the SteamAPPId env + steamAppId
+# detail). The original extension preferred the GOG registry key and fell back to
+# a Steam name lookup; both are kept as discovery fallbacks below.
+stores:
+  steam: "219990"
+  gog: "1449651388"
+
+discovery:
+  # Fallback when the game isn't found by app-id (the original used findByName).
+  steamName: Grim Dawn
+
+setup:
+  ensureDirs:
+    - ${installPath}/mods
+
+tests:
+  corpus: off

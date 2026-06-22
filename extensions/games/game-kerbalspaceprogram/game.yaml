@@ -1,0 +1,20 @@
+gdl: 1
+version: 1.0.2
+
+game:
+  id: kerbalspaceprogram
+  name: Kerbal Space Program
+  executable: KSP_x64.exe
+  requiredFiles: ["KSP_x64.exe"]
+  logo: gameart.webp
+  author: Black Tree Gaming Ltd.
+  nexusDomain: kerbalspaceprogram
+  queryModPath: GameData
+  details:
+    hashFiles: ["KSP_x64_Data/Managed/Assembly-CSharp.dll"]
+
+stores:
+  steam: "220200"
+
+tests:
+  corpus: off
