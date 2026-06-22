@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { assert, describe, expect, it } from "vitest";
-=======
-import { describe, expect, it } from "vitest";
->>>>>>> 5465d0ef1 (Merge pull request #23541 from Nexus-Mods/task/process-error-container)
 
 import {
   type ErrorOriginTracker,
@@ -16,6 +12,26 @@ import { DownloadError, ProcessCanceled } from "./types/errors";
 // threaded through both ends, the way a caller (preload) owns and passes it.
 const roundTrip = (err: unknown, tracker?: ErrorOriginTracker): Error =>
   rehydrateSerializedError(serializeError(err, tracker), tracker);
+
+// Mimic the renderer's preload tracker: a namespaced stash that hands back the
+// same live object on return. Owned by the caller and passed in — no globals.
+const makeTracker = (namespace = "test"): ErrorOriginTracker => {
+  const stash = new Map<string, Error>();
+  let seq = 0;
+  return {
+    namespace,
+    capture: (err) => {
+      const id = `${seq++}`;
+      stash.set(id, err);
+      return id;
+    },
+    resolve: (id) => {
+      const err = stash.get(id);
+      if (err !== undefined) stash.delete(id);
+      return err;
+    },
+  };
+};
 
 describe("serializeError / rehydrateSerializedError", () => {
   it("preserves name and message", () => {
@@ -88,26 +104,6 @@ describe("serializeError / rehydrateSerializedError", () => {
 });
 
 describe("by-reference origin tracker", () => {
-  // Mimic the renderer's preload tracker: a namespaced stash that hands back the
-  // same live object on return. Owned by the caller and passed in — no globals.
-  const makeTracker = (namespace = "test"): ErrorOriginTracker => {
-    const stash = new Map<string, Error>();
-    let seq = 0;
-    return {
-      namespace,
-      capture: (err) => {
-        const id = `${seq++}`;
-        stash.set(id, err);
-        return id;
-      },
-      resolve: (id) => {
-        const err = stash.get(id);
-        if (err !== undefined) stash.delete(id);
-        return err;
-      },
-    };
-  };
-
   it("returns the original object (identity + prototype + stack) on round-trip", () => {
     const tracker = makeTracker();
     const original = new ProcessCanceled("Wrong user id");
@@ -138,7 +134,7 @@ describe("by-reference origin tracker", () => {
     // Wire shape of a wrapper (e.g. main's "Resolver failed") whose cause is the
     // captured original — mirrors main wrapping a relayed renderer callback error.
     const wire = { message: "Resolver failed", cause: serializeError(original, tracker) };
-    expect(rehydrateSerializedError(wire, tracker).cause as Error).toBe(original);
+    expect(rehydrateSerializedError(wire, tracker).cause).toBe(original);
   });
 
   it("ignores a ref minted under a different namespace (no cross-context mis-resolve)", () => {
