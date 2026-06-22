@@ -1,4 +1,4 @@
-import { rehydrateSerializedError, serializeError } from "@vortex/shared";
+import { type ErrorOriginTracker, rehydrateSerializedError, serializeError } from "@vortex/shared";
 import type {
   AppInitMetadata,
   RendererChannels,
@@ -25,6 +25,36 @@ const betterIpcRenderer = {
   on: rendererOn,
   off: rendererOff,
   callback: rendererCallback,
+};
+
+// Pass renderer-owned errors by reference across the IPC round-trip: a callback
+// error serialized here (rendererCallback) is stashed live and handed straight
+// back when its proxied copy returns (rendererInvoke) — preserving identity,
+// prototype and the real throw-site stack. Bounded, so a one-way error that
+// never returns is evicted rather than retained; an evicted ref just falls back
+// to generic-Error hydration. The renderer and preload share one V8 context
+// (contextIsolation is off for the main window), so the stashed object is the
+// same one the callback threw. The "renderer" namespace keeps these refs
+// distinct from any tracker main owns.
+const ORIGIN_STASH_MAX = 512;
+const originStash = new Map<string, Error>();
+let originSeq = 0;
+const errorOriginTracker: ErrorOriginTracker = {
+  namespace: "renderer",
+  capture: (err: Error): string => {
+    const id = `${originSeq++}`;
+    originStash.set(id, err);
+    if (originStash.size > ORIGIN_STASH_MAX) {
+      const oldest = originStash.keys().next().value;
+      if (oldest !== undefined) originStash.delete(oldest);
+    }
+    return id;
+  },
+  resolve: (id: string): Error | undefined => {
+    const err = originStash.get(id);
+    if (err !== undefined) originStash.delete(id);
+    return err;
+  },
 };
 
 try {
@@ -280,7 +310,7 @@ async function rendererInvoke<C extends keyof InvokeChannels>(
   if (isWireResult(reply)) {
     const result = reply as Result;
     if (result.ok) return result.value;
-    throw rehydrateSerializedError(result.error as unknown as SerializedError);
+    throw rehydrateSerializedError(result.error as unknown as SerializedError, errorOriginTracker);
   }
   return reply as AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>;
 }
@@ -346,7 +376,7 @@ function rendererCallback<C extends keyof CallbackChannels>(
       .catch((err: unknown) => {
         ipcRenderer.send(`callback:${channel}`, collationId, {
           ok: false,
-          error: serializeError(err),
+          error: serializeError(err, errorOriginTracker),
         });
       });
   };

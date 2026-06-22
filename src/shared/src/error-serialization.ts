@@ -1,9 +1,15 @@
 // Generic Error <-> wire serializer shared across the IPC boundaries (the
-// adaptor RPC transport and the renderer<->main callback channels). The
-// serializer is agnostic to the error classes it carries: the sender serializes
-// `name`, `code`, and any extra own enumerable properties; the receiver
-// rehydrates a generic `Error` with those fields copied back, so callers can
-// branch on `err.name` and reconstruct their concrete error type.
+// adaptor RPC transport and the renderer<->main callback channels). The sender
+// serializes `name`, `code`, and any extra own enumerable properties; the
+// receiver rebuilds a generic `Error` with those fields copied back, so callers
+// can branch on `err.name` (e.g. via isErrorOfType) rather than `instanceof`.
+//
+// When a context owns the live error (the renderer, for a callback error that
+// round-trips back to it), the caller can pass an ErrorOriginTracker to both
+// functions to carry the error by reference instead — the original object is
+// handed back verbatim, preserving identity, prototype and the real throw-site
+// stack. This is the only path that recovers the concrete type across the wire;
+// everything else is a plain Error.
 //
 // `cause` chains are serialized recursively up to MAX_CAUSE_DEPTH levels.
 // Deeper chains (and non-Error causes) are truncated silently to avoid runaway
@@ -11,6 +17,41 @@
 
 import { getErrorMessage } from "./errors";
 import type { SerializedError } from "./types/ipc";
+
+/**
+ * Caller-owned hook to carry errors a context owns by reference instead of by
+ * value. The classic case: the renderer makes an IPC call, main invokes a
+ * renderer callback, that callback throws, and main proxies the error back to
+ * the renderer. The thrown error never actually left the renderer's heap, so
+ * instead of reconstructing a lossy copy the caller stashes the live object when
+ * serializing (`capture`) and hands the original straight back when it returns
+ * (`resolve`) — preserving identity, prototype and the real throw-site stack.
+ *
+ * The tracker (and its stash) live in the caller, not here — pass it to
+ * {@link serializeError} / {@link rehydrateSerializedError}. Each context
+ * (renderer, main) owns its own; a tracker only ever resolves errors it
+ * captured. `namespace` keeps two trackers from colliding: refs are tagged with
+ * it on the wire, and a ref carrying a different namespace is ignored and falls
+ * back to generic `Error` hydration. Calls that pass no tracker always hydrate.
+ */
+export interface ErrorOriginTracker {
+  /**
+   * Distinct id for the owning context (e.g. "renderer", "main"). Namespaces ref
+   * tokens so two trackers can't mis-resolve each other's errors.
+   */
+  readonly namespace: string;
+  /** Stash a live error and return a context-local id, or undefined to opt out. */
+  capture(err: Error): string | undefined;
+  /** Return the original for a context-local id (namespace already stripped), if still held. */
+  resolve(id: string): Error | undefined;
+}
+
+// Key under which the by-reference token rides in `data`. Living in `data`
+// (rather than a dedicated SerializedError field) means it survives a context
+// that rehydrates and re-serializes the error in transit (e.g. main relaying a
+// renderer callback error back), since `data` is copied onto the error and
+// re-extracted as an own property.
+const ORIGIN_REF_KEY = "__originRef";
 
 /** Own-property keys that are part of the standard Error surface. */
 const STANDARD_ERROR_KEYS = new Set<string>(["name", "message", "stack", "cause", "code"]);
@@ -20,12 +61,12 @@ export const MAX_CAUSE_DEPTH = 3;
 
 export function extractErrorFields(err: Error): Omit<SerializedError, "cause"> {
   const result: Omit<SerializedError, "cause"> = { message: err.message };
-  // Type identity only exists on the live error and is lost the moment it crosses
-  // the wire (the receiver always mints a plain `Error`). Prefer the explicit
-  // `name` when the author set one; otherwise fall back to the runtime class name
-  // (`constructor.name`) so subclasses that never assign `this.name` — and would
-  // otherwise serialize as a nameless "Error" — keep their type for downstream
-  // consumers (e.g. error fingerprinting that branches on `name`).
+  // Type identity is lost on the wire (the receiver mints a plain `Error`), so
+  // `name` is the only type signal downstream consumers have — both callers
+  // branching via isErrorOfType and error fingerprinting. Prefer the explicit
+  // `name` when the author set one; otherwise fall back to the runtime class
+  // name (`constructor.name`) so subclasses that never assign `this.name` — and
+  // would otherwise serialize as a nameless "Error" — keep their type.
   if (err.name && err.name !== "Error") {
     result.name = err.name;
   } else {
@@ -58,19 +99,57 @@ export function serializeCause(value: unknown, depth: number): SerializedError |
   return nested === undefined ? fields : { ...fields, cause: nested };
 }
 
-/** Serialize any thrown value into its wire representation. */
-export function serializeError(err: unknown): SerializedError {
+/**
+ * Serialize any thrown value into its wire representation. Pass `tracker` to
+ * carry an error this context owns by reference (see {@link ErrorOriginTracker}).
+ */
+export function serializeError(err: unknown, tracker?: ErrorOriginTracker): SerializedError {
   if (!(err instanceof Error)) {
     return { message: getErrorMessage(err) ?? "" };
   }
   const fields = extractErrorFields(err);
   const cause = serializeCause((err as Error & { cause?: unknown }).cause, MAX_CAUSE_DEPTH);
-  return cause === undefined ? fields : { ...fields, cause };
+  const result: SerializedError = cause === undefined ? fields : { ...fields, cause };
+
+  // If a tracker is given, stash the live error and tag the wire form (with the
+  // tracker's namespace) so the original can be handed back if it returns here.
+  if (tracker !== undefined) {
+    const id = tracker.capture(err);
+    if (id !== undefined) {
+      result.data = { ...result.data, [ORIGIN_REF_KEY]: `${tracker.namespace}:${id}` };
+    }
+  }
+
+  return result;
 }
 
-export function rehydrateSerializedError(serialized: SerializedError): Error {
+/**
+ * Rehydrate a serialized error. Pass the same `tracker` used to serialize to
+ * recover an error this context owns by reference instead of reconstructing it.
+ */
+export function rehydrateSerializedError(
+  serialized: SerializedError,
+  tracker?: ErrorOriginTracker,
+): Error {
+  // By-reference fast path: if the tracker still holds the original, return it
+  // as-is — avoids the generic Error constructor and keeps identity, prototype
+  // and the real throw-site stack.
+  const ref = serialized.data?.[ORIGIN_REF_KEY];
+  if (typeof ref === "string" && tracker !== undefined) {
+    // Only resolve refs this tracker minted; another context's namespace (or an
+    // evicted ref) falls through to plain-Error hydration below.
+    const prefix = `${tracker.namespace}:`;
+    if (ref.startsWith(prefix)) {
+      const original = tracker.resolve(ref.slice(prefix.length));
+      if (original !== undefined) return original;
+    }
+  }
+
   const err = new Error(serialized.message, {
-    cause: serialized.cause !== undefined ? rehydrateSerializedError(serialized.cause) : undefined,
+    cause:
+      serialized.cause !== undefined
+        ? rehydrateSerializedError(serialized.cause, tracker)
+        : undefined,
   });
   if (serialized.name !== undefined) err.name = serialized.name;
   if (serialized.code !== undefined) {
