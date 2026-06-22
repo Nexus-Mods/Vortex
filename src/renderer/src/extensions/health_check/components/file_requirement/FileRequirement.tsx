@@ -4,7 +4,7 @@ import {
   mdiFileOutline,
   mdiMonitorArrowDownVariant,
 } from "@mdi/js";
-import React, { useState, type ReactNode } from "react";
+import React, { type ReactNode } from "react";
 
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -13,15 +13,20 @@ import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-// todo Fix and button or typography prop changes on this commit
-// TODO: replace with the real shape once the data source is wired up
+/** Display data for one file in a requirement — a download candidate or an installed file. */
 export interface IFileRequirementData {
+  /** Composite file version id, used by the action handlers. */
+  fileUID: string;
   adultContent: boolean;
   modName: string;
   modDescription: string;
   modImageSrc: string;
   fileName: string;
   fileVersion: string;
+  /** Whether this file is installed (false for a download candidate). */
+  installed: boolean;
+  /** Whether this installed file is enabled (ignored when not installed). */
+  enabled: boolean;
 }
 
 interface IFileRequirementProps {
@@ -31,9 +36,6 @@ interface IFileRequirementProps {
 }
 
 export function FileRequirement({ actions, file, isOr }: IFileRequirementProps) {
-  // todo get this value
-  const [isFileEnabled] = useState(() => Math.random() < 0.5);
-
   return (
     <div
       className={joinClasses([
@@ -88,15 +90,18 @@ export function FileRequirement({ actions, file, isOr }: IFileRequirementProps) 
         </Typography>
 
         <div className="flex items-center gap-x-2">
-          {/* todo make these pills work */}
-          <Pill iconPath={mdiMonitorArrowDownVariant}>Installed</Pill>
+          {file.installed && (
+            <>
+              <Pill iconPath={mdiMonitorArrowDownVariant}>Installed</Pill>
 
-          {isFileEnabled ? (
-            <Pill iconPath={mdiCheckCircleOutline} pillType="success">
-              Enabled
-            </Pill>
-          ) : (
-            <Pill iconPath={mdiCloseCircleOutline}>Disabled</Pill>
+              {file.enabled ? (
+                <Pill iconPath={mdiCheckCircleOutline} pillType="success">
+                  Enabled
+                </Pill>
+              ) : (
+                <Pill iconPath={mdiCloseCircleOutline}>Disabled</Pill>
+              )}
+            </>
           )}
 
           {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}

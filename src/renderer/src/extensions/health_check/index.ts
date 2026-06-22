@@ -18,8 +18,7 @@ import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
-import type { IHealthCheckApi, IModFileInfo, IModRequirementExt } from "./types";
-import { onDownloadRequirement } from "./utils/onDownloadRequirement";
+import type { IHealthCheckApi } from "./types";
 import HealthCheckPage from "./views/HealthCheckPage";
 import SettingsHealthCheck from "./views/SettingsHealthCheck";
 
@@ -57,9 +56,6 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       api: context.api,
       onRefresh: () => healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.Manual),
-      onDownloadRequirement: async (req: IModRequirementExt, file?: IModFileInfo) => {
-        await onDownloadRequirement(context.api, req, file);
-      },
     }),
   });
 
