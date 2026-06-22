@@ -6,9 +6,9 @@ import { Button } from "../button/Button";
 import { Icon } from "../icon/Icon";
 import { Typography } from "../typography/Typography";
 
-type Appearance = "default" | "success";
+type IAppearance = "default" | "success";
 
-const getIconClassName = (appearance: Appearance) => {
+const getIconClassName = (appearance: IAppearance) => {
   switch (appearance) {
     case "success":
       return "text-success-strong";
@@ -26,7 +26,7 @@ export const NoResults = ({
   message,
   title,
 }: PropsWithChildren<{
-  appearance?: Appearance;
+  appearance?: IAppearance;
   className?: string;
   iconPath?: string;
   isError?: boolean;

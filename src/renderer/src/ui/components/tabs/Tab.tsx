@@ -5,7 +5,7 @@ import { getTabId } from "../../utils/getTabId";
 import { joinClasses } from "../../utils/joinClasses";
 import { useTabContext } from "./tabs.context";
 
-export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   count?: number;
   name: string;
 };
@@ -14,7 +14,7 @@ export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
  * Standard tab component, implemented as a button. Clicking it will reveal the
  * content for the selected tab.
  */
-export const TabButton = ({ className, count, disabled, name, ...props }: TabButtonProps) => {
+export const TabButton = ({ className, count, disabled, name, ...props }: ITabButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null!);
   const { onKeyDown, onTabClick, registerTab, selectedTab, tabListId, tabType } = useTabContext();
 

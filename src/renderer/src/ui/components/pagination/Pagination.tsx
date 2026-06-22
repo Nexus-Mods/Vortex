@@ -5,7 +5,7 @@ import { joinClasses } from "../../utils/joinClasses";
 import { Icon } from "../icon/Icon";
 import { JumpToPage } from "./JumpToPage";
 
-export interface PaginationProps extends ClassAttributes<HTMLElement> {
+export interface IPaginationProps extends ClassAttributes<HTMLElement> {
   className?: string;
   currentPage: number;
   /**
@@ -30,7 +30,7 @@ export const Pagination = ({
   scrollRef,
   totalRecords = 0,
   ...props
-}: PaginationProps) => {
+}: IPaginationProps) => {
   const totalPages = useMemo(
     () => Math.ceil(totalRecords / recordsPerPage),
     [totalRecords, recordsPerPage],

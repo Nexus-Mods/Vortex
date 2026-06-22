@@ -13,41 +13,41 @@ import { getTabId } from "../../utils/getTabId";
 /**
  * Arguments for the register tab method
  */
-type RegisterTabArgs = {
+type IRegisterTabArgs = {
   disabled?: boolean;
   name: string;
   ref: MutableRefObject<HTMLButtonElement>;
 };
 
-type TabType = "primary" | "secondary";
+type ITabType = "primary" | "secondary";
 
 /**
  * State for the TabContext
  */
-export interface TabsState {
+export interface ITabsState {
   onKeyDown: (event: KeyboardEvent) => void;
   onTabClick: (tabName: string) => void;
-  registerTab: (args: RegisterTabArgs) => void;
+  registerTab: (args: IRegisterTabArgs) => void;
   selectedTab: string;
   tabListId: string;
-  tabType: TabType;
+  tabType: ITabType;
 }
 
 /**
  * Props for the TabProvider
  */
-export interface TabProviderProps {
+export interface ITabProviderProps {
   children?: ReactNode;
   onSetSelectedTab?: (tab: string) => void;
   tab: string;
   tabListId: string;
-  tabType?: TabType;
+  tabType?: ITabType;
 }
 
 /**
  * The React context for the TabProvider
  */
-export const TabContext = createContext<TabsState | undefined>(undefined);
+export const TabContext = createContext<ITabsState | undefined>(undefined);
 
 /**
  * React component to provide context to tabs
@@ -58,7 +58,7 @@ export const TabProvider = ({
   tab,
   tabListId,
   tabType = "primary",
-}: TabProviderProps) => {
+}: ITabProviderProps) => {
   // Handles callback for tab select behaviour (e.g. scrolling)
   const setSelectedTab = (tabToSet: string) => {
     onSetSelectedTab?.(tabToSet);
@@ -68,14 +68,14 @@ export const TabProvider = ({
   const selectedTab = getTabId(tab);
 
   // Store references to each tab to manage focus. References are keyed by tab name
-  const [tabs, setTabs] = useState<Record<string, Omit<RegisterTabArgs, "name">>>({});
+  const [tabs, setTabs] = useState<Record<string, Omit<IRegisterTabArgs, "name">>>({});
 
   // Tracks all tabs in id format
   const tabIds = Object.keys(tabs);
 
   // Registers tabs in the `tabs` state variable to manage keyboard focus
   const registerTab = useCallback(
-    ({ disabled, name, ref }: RegisterTabArgs) =>
+    ({ disabled, name, ref }: IRegisterTabArgs) =>
       setTabs((currentTabs) => ({
         ...currentTabs,
         [name]: { disabled, ref },
@@ -157,7 +157,7 @@ export const TabProvider = ({
  * Hook to enforce that context has a provider
  * COMPATIBILITY FIX: Using useContext instead of use() for React 16 compatibility
  */
-export const useTabContext = (): TabsState => {
+export const useTabContext = (): ITabsState => {
   const context = useContext(TabContext);
 
   if (context === undefined) {

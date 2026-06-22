@@ -11,11 +11,11 @@ import * as React from "react";
 
 import { joinClasses } from "../../../utils/joinClasses";
 import { Icon } from "../../icon/Icon";
-import type { BaseFormFieldProps } from "../formfield/FormField";
+import type { IBaseFormFieldProps } from "../formfield/FormField";
 import { FormField } from "../formfield/FormField";
 
-export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> &
-  BaseFormFieldProps & {
+export type ISelectProps = SelectHTMLAttributes<HTMLSelectElement> &
+  IBaseFormFieldProps & {
     ref?: Ref<HTMLSelectElement>;
   };
 
@@ -32,7 +32,7 @@ export const Select = ({
   required,
   showRequiredLabel,
   ...props
-}: SelectProps) => {
+}: ISelectProps) => {
   // Make sure hints is always an array
   hints = !Array.isArray(hints) ? [hints] : hints;
 

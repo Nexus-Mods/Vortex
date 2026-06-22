@@ -47,7 +47,7 @@ const userInfoDebouncer = new Debouncer(
   true,
 );
 
-export interface CollectionTileProps {
+export interface ICollectionTileProps {
   api: IExtensionApi;
   collection: ICollection;
   isLoggedIn?: boolean;
@@ -66,7 +66,7 @@ const Stat = ({ children, iconPath }: PropsWithChildren<{ iconPath: string }>) =
   </div>
 );
 
-export const CollectionTile: ComponentType<CollectionTileProps> = ({
+export const CollectionTile: ComponentType<ICollectionTileProps> = ({
   api,
   collection,
   isLoggedIn = true,

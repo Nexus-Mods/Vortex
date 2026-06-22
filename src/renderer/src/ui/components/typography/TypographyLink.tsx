@@ -3,7 +3,7 @@ import React, { type ButtonHTMLAttributes, type ReactNode, type Ref } from "reac
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { ResponsiveScreenSizes, XOr } from "@/ui/utils/types";
 
-import { Icon, type IconSize } from "../icon/Icon";
+import { Icon, type IIconSize } from "../icon/Icon";
 import {
   getTypographyColourClass,
   getTypographyStyles,
@@ -23,7 +23,7 @@ type ITypographyLinkTypeObject = ITypographyLinkTypeObjectDefault & {
 };
 
 export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  iconSize?: IconSize;
+  iconSize?: IIconSize;
   leftIconPath?: string;
   ref?: Ref<HTMLButtonElement>;
   rightIconPath?: string;

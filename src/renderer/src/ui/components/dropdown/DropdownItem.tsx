@@ -5,7 +5,7 @@ import { joinClasses } from "../../utils/joinClasses";
 import type { XOr } from "../../utils/types";
 import { Icon } from "../icon/Icon";
 
-type DropdownItemProps = { children?: string; customContent?: ReactNode } & XOr<
+type IDropdownItemProps = { children?: string; customContent?: ReactNode } & XOr<
   { leftIconPath?: string },
   { leftIcon?: ReactNode }
 > &
@@ -33,7 +33,7 @@ export const DropdownItem = ({
   rightIconPath,
   onClick,
   ...props
-}: ComponentProps<typeof Menu.Item> & DropdownItemProps & { onClick?: () => void }) => (
+}: ComponentProps<typeof Menu.Item> & IDropdownItemProps & { onClick?: () => void }) => (
   <Menu.Item {...props}>
     {({ active, disabled }) => (
       <button

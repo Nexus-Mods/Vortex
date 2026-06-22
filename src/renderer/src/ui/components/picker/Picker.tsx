@@ -7,7 +7,7 @@ import { ListboxOptions } from "../listbox/ListboxOptions";
 
 // todo placement prop should be removed when you use headless ui v2
 
-interface PickerProps<T> {
+interface IPickerProps<T> {
   className?: string;
   options: IListboxOption<T>[];
   placement?: "left" | "right";
@@ -21,7 +21,7 @@ export function Picker<T>({
   placement = "right",
   value,
   onChange,
-}: PickerProps<T>) {
+}: IPickerProps<T>) {
   const selectedOption = options.find((o) => o.value === value);
 
   return (
