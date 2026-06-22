@@ -22,7 +22,7 @@ describe("ProgressReporter", () => {
 
     it("sets size to null when unknown", () => {
       reporter.init(undefined);
-      expect(reporter.getProgress().size).toBeNull();
+      expect(reporter.getProgress().size).toBeUndefined();
     });
 
     it("sets isChunked to false", () => {

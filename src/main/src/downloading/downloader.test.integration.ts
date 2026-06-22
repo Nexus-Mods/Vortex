@@ -546,7 +546,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = new ProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().size).toBeNull();
+      expect(progressReporter.getProgress().size).toBeUndefined();
     });
 
     test.each([
