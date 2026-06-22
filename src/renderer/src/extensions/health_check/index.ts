@@ -3,6 +3,8 @@
  * Provides health check functionality for mods
  */
 
+import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
+
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
 import {
@@ -11,6 +13,7 @@ import {
   HealthCheckSeverity,
 } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
+import { setFileRequirementsFlagEnabled } from "./actions/persistent";
 import { setHealthCheckRunning } from "./actions/session";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
@@ -29,6 +32,9 @@ import SettingsHealthCheck from "./views/SettingsHealthCheck";
 let registry: HealthCheckRegistry | null = null;
 let legacyAdapter: LegacyTestAdapter | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
+
+/** Unleash flag gating the file-level requirements feature; must match the Unleash toggle. */
+const FILE_REQUIREMENTS_FLAG: KnownFlagName = "vortex-file-level-requirements";
 
 function init(context: IExtensionContext): boolean {
   // Create the registry up front so registerHealthCheck routes directly
@@ -164,6 +170,20 @@ function init(context: IExtensionContext): boolean {
 
     // Re-run checks when the file requirements setting changes
     context.api.onStateChange(["persistent", "healthCheck", "fileRequirementsEnabled"], () => {
+      void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
+    });
+
+    // Mirror the Unleash file-level-requirements flag into persistent state so the
+    // settings UI and the check can gate on it. Flags are pushed only after a
+    // successful Unleash poll, so until then the last-known value is kept (fail-closed).
+    let flagEnabled: boolean | undefined;
+    window.api.featureFlags.onSynchronize((flags: FeatureFlag[]) => {
+      const enabled = flags.some((flag) => flag.name === FILE_REQUIREMENTS_FLAG);
+      if (enabled === flagEnabled) {
+        return;
+      }
+      flagEnabled = enabled;
+      context.api.store?.dispatch(setFileRequirementsFlagEnabled(enabled));
       void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
     });
   });
