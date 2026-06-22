@@ -17,7 +17,9 @@
       "requires_mods_plural": "Requires {{ count }} mods",
       "may_require_mods": "May require {{ count }} mod",
       "may_require_mods_plural": "May require {{ count }} mods",
-      "more_count": "+{{ count }} more"
+      "more_count": "+{{ count }} more",
+      "requires_files": "Requires {{ count }} file",
+      "requires_files_plural": "Requires {{ count }} files"
     },
     "no_results_active": {
       "title": "Health check passed",
@@ -52,7 +54,16 @@
       "requires_files": "Requires {{ count }} mod file to be installed to work correctly.",
       "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
       "install_via_mod_page": "Install via mod page",
-      "install_one_click": "1-click install"
+      "install_one_click": "1-click install",
+      "pick_one": "Pick one of these",
+      "wrong_version_installed": "A different version of an installed file is required. Only one version can be enabled at a time.",
+      "installed_version": "Currently installed version:",
+      "required_version": "Required version:",
+      "wrong_version_enabled": "The correct version is installed but a different version is enabled. Only one version can be enabled at a time.",
+      "enabled_version": "Currently enabled version:",
+      "correct_version": "Correct version:",
+      "view_in_loadout": "View in loadout",
+      "switch_version": "Switch version"
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",
