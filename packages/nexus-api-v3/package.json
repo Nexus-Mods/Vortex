@@ -5,10 +5,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "codegen": "openapi-typescript https://api.nexusmods.com/openapi.yaml -o src/generated/nexus-api-v3.d.ts --immutable",
-    "build": "pnpm tsdown",
-    "test": "vitest run",
-    "typecheck": "pnpm tsc --noEmit -p tsconfig.json",
+    "codegen": "pnpm exec openapi-typescript https://api.nexusmods.com/openapi.yaml -o src/generated/nexus-api-v3.d.ts --immutable",
+    "build": "pnpm exec tsdown",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc",
     "lint": "pnpm exec oxlint --quiet",
     "lint:verbose": "pnpm exec oxlint"
   },
