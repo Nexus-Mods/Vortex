@@ -308,6 +308,7 @@ function expose<K extends keyof PreloadWindow>(key: K, value: PreloadWindow[K]) 
     // NOTE(erri120): This looks bad but sadly is correct.
     // When context isolation is disabled, contextBridge becomes unusable
     // so we have to manually set values on the window directly.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     (window as unknown as PreloadWindow)[key] = value;
   }
 }
@@ -316,17 +317,17 @@ async function rendererInvoke<C extends keyof InvokeChannels>(
   channel: C,
   ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
 ): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
-  type Result = WireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>;
-  const reply: unknown = await ipcRenderer.invoke(channel, ...args);
-  if (isWireResult(reply)) {
-    const result = reply as Result;
-    if (result.ok) return result.value;
-    throw rehydrateSerializedError(result.error as unknown as SerializedError, errorOriginTracker);
+  const reply = await ipcRenderer.invoke(channel, ...args);
+  if (isWireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>(reply)) {
+    if (reply.ok) return reply.value;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    throw rehydrateSerializedError(reply.error as unknown as SerializedError, errorOriginTracker);
   }
-  return reply as AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>;
+
+  return reply;
 }
 
-function isWireResult(value: unknown): value is WireResult<unknown> {
+function isWireResult<T>(value: unknown): value is WireResult<T> {
   return (
     typeof value === "object" && value !== null && "ok" in value && typeof value.ok === "boolean"
   );
@@ -383,6 +384,7 @@ function rendererCallback<C extends keyof CallbackChannels>(
           ok: true,
           value,
         });
+        return undefined;
       })
       .catch((err: unknown) => {
         ipcRenderer.send(`callback:${channel}`, collationId, {
