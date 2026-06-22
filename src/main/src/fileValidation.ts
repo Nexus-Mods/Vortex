@@ -6,15 +6,18 @@ import fs from "fs-extra";
 
 import { log } from "./logging";
 
-async function readHashList(basePath: string): Promise<{ [name: string]: string }> {
+async function readHashList(basePath: string): Promise<Record<string, string>> {
   const data = await fs.readFile(path.join(basePath, "md5sums.csv"), {
     encoding: "utf-8",
   });
-  return data.split("\n").reduce((prev, line) => {
-    const [key, hash] = line.split(":");
-    prev[key] = hash;
-    return prev;
-  }, {});
+  return data.split("\n").reduce(
+    (prev, line) => {
+      const [key, hash] = line.split(":");
+      if (key && hash) prev[key] = hash;
+      return prev;
+    },
+    {} as Record<string, string>,
+  );
 }
 
 async function hashFile(fullPath: string): Promise<string> {

@@ -228,7 +228,7 @@ class LevelPersist implements IPersistor {
     }));
   }
 
-  public async setItem(statePath: string[], newState: string): Promise<void> {
+  public async setItem(statePath: string[], newState: string | null): Promise<void> {
     // No internal BEGIN/COMMIT here. The previous implementation issued
     // three statements (SELECT-then-UPDATE-or-INSERT) and self-wrapped in a
     // transaction to keep them atomic against concurrent writers to the

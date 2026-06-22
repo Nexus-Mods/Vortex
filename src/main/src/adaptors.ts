@@ -155,7 +155,7 @@ function nativeToQualifiedPath(nativePath: string, os: OS): QualifiedPath {
   if (os === OS.Windows) {
     const forward = nativePath.replace(/\\/g, "/");
     const match = /^([A-Za-z]):\/?(.*)$/.exec(forward);
-    if (match) {
+    if (match && match[1] && match[2]) {
       const drive = match[1].toUpperCase();
       const tail = match[2];
       const inner = tail.length > 0 ? `/${drive}/${tail}` : `/${drive}`;
@@ -189,7 +189,7 @@ function qualifiedPathToNative(qp: { value?: string; scheme?: string; path?: str
 
   if (parsed.scheme === "windows") {
     const m = /^\/?([A-Za-z])\/(.*)$/.exec(segments);
-    if (m) {
+    if (m && m[1] && m[2]) {
       return `${m[1]}:\\${m[2].replace(/\//g, "\\")}`;
     }
     return segments.replace(/\//g, "\\");
