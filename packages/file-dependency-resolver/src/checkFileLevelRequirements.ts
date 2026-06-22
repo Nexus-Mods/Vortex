@@ -77,9 +77,9 @@ export async function checkFileLevelRequirements(
 
         // Find matches in installed files
         for (const fileVersionUid of candidateFileVersionUids) {
-          const enabled = enabledByUid.get(fileVersionUid);
-          if (enabled === undefined) continue;
-          (enabled ? satisfyingEnabled : satisfyingDisabled).push(fileVersionUid);
+          const isEnabled = enabledByUid.get(fileVersionUid);
+          if (isEnabled === undefined) continue;
+          (isEnabled ? satisfyingEnabled : satisfyingDisabled).push(fileVersionUid);
           // TODO: could break early on match, if simple resolver and
           // consumer doesn't want all the matches or the wrong version data.
         }

@@ -8,6 +8,8 @@
   "scripts": {
     "build": "pnpm tsdown",
     "typecheck": "pnpm tsc -p ./tsconfig.json",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint",
     "test": "pnpm vitest run"
   },
   "exports": {
