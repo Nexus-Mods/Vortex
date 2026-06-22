@@ -81,6 +81,24 @@ export interface IModFileInfo {
 }
 
 /**
+ * Minimal mod details used by the health checks (mod-level requirement listing
+ * and file-level requirement candidates). Sourced from the batched modsByUid
+ * GraphQL query.
+ */
+export interface IModDetails {
+  /** Composite mod UID (game + mod id) */
+  modUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Mod summary */
+  modSummary?: string;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+}
+
+/**
  * A required DLC that may be missing
  */
 export interface IMissingRequiredDlc {
