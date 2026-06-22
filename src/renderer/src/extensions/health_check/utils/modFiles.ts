@@ -1,8 +1,10 @@
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
+import { makeModUID } from "../../nexus_integration/util/UIDs";
 import { setModFiles, setModFilesLoading } from "../actions/session";
 import { getModFiles as getModFilesSelector } from "../selectors";
-import type { IModFileInfo } from "../types";
+import type { IModDetails, IModFileInfo } from "../types";
+import { getModDetails } from "./modDetails";
 
 /**
  * Fetch available MAIN files for a mod from Nexus
@@ -17,13 +19,21 @@ async function fetchModFilesFromApi(
     return [];
   }
 
-  const [modInfo, modFiles] = await Promise.all([
-    api.ext.nexusGetModInfo?.(gameId, modId),
-    api.ext.nexusGetModFiles?.(gameId, modId),
-  ]);
+  // Kick off the mod-details fetch (kept separate from the files call so its
+  // IModDetails[] type isn't widened to any by the loosely-typed api.ext call),
+  // then await both concurrently.
+  const modUID = makeModUID({ gameId, modId: modId.toString(), fileId: "0" });
+  const detailsPromise: Promise<IModDetails[]> = modUID
+    ? getModDetails(api, [modUID])
+    : Promise.resolve<IModDetails[]>([]);
+
+  const modFiles = await api.ext.nexusGetModFiles?.(gameId, modId);
   if (!modFiles || modFiles.length === 0) {
     return [];
   }
+
+  const details = await detailsPromise;
+  const thumbnailUrl = details[0]?.thumbnailUrl;
 
   // Filter for MAIN category files only (category_id === 1)
   const mainFiles = modFiles.filter((f) => f.category_id === 1);
@@ -41,7 +51,7 @@ async function fetchModFilesFromApi(
       size: f.size,
       uploadedTimestamp: f.uploaded_timestamp,
       isPrimary: f.is_primary,
-      thumbnailUrl: modInfo?.picture_url,
+      thumbnailUrl,
     }))
     .sort((a, b) => {
       // Sort by upload date (newest first)
