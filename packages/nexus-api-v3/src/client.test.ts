@@ -17,8 +17,9 @@ function makeClient(options: Partial<Parameters<typeof createNexusV3Client>[0]> 
 }
 
 function lastRequest(): Request {
-  const requests = fetchMocker.requests();
-  return requests[requests.length - 1];
+  const request = fetchMocker.requests().at(-1);
+  if (!request) throw new Error("no fetch request was recorded");
+  return request;
 }
 
 async function lastBody(): Promise<Record<string, unknown>> {
@@ -29,6 +30,16 @@ async function lastBody(): Promise<Record<string, unknown>> {
 function mockData(data: unknown, status = 200): void {
   fetchMocker.mockResponseOnce(JSON.stringify({ data }), { status });
 }
+
+// A minimal payload that satisfies the generated CollectionPayload type.
+const collectionData = {
+  adult_content: false,
+  collection_manifest: {
+    info: { author: "author", name: "My Collection", domain_name: "skyrimspecialedition" },
+    mods: [],
+  },
+  collection_schema_id: 1,
+};
 
 beforeEach(() => {
   fetchMocker.resetMocks();
@@ -61,11 +72,11 @@ describe("auth headers", () => {
     expect(lastRequest().headers.get("apikey")).toBeNull();
   });
 
-  it("sends the Vortex user agent", async () => {
+  it("sends the user agent from options", async () => {
     mockData({ id: "upload-1" });
-    await makeClient().createUpload(1024, "file.zip");
+    await makeClient({ userAgent: "Vortex/1.2.3" }).createUpload(1024, "file.zip");
 
-    expect(lastRequest().headers.get("user-agent")).toBe("Vortex");
+    expect(lastRequest().headers.get("user-agent")).toBe("Vortex/1.2.3");
   });
 });
 
@@ -137,13 +148,8 @@ describe("getUpload", () => {
 describe("createCollection", () => {
   it("POSTs upload_id and collection_data to /collections", async () => {
     mockData({ id: "col-1", revision_id: "rev-1" });
-    const collectionData = {
-      adult_content: false,
-      collection_manifest: { info: {}, mods: [] },
-      collection_schema_id: 1,
-    };
 
-    const result = await makeClient().createCollection("upload-1", collectionData as never);
+    const result = await makeClient().createCollection("upload-1", collectionData);
 
     expect(lastRequest().method).toBe("POST");
     expect(lastRequest().url).toBe(`${BASE_URL}/collections`);
@@ -170,16 +176,13 @@ describe("createCollection", () => {
       { status: 422, headers: { "content-type": "application/problem+json" } },
     );
 
-    try {
-      await makeClient().createCollection("upload-1", {} as never);
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(V3ApiError);
-      const v3err = err as V3ApiError;
-      expect(v3err.status).toBe(422);
-      expect(v3err.validationErrors).toHaveLength(1);
-      expect(v3err.validationErrors![0].pointer).toContain("mod_id");
-    }
+    const promise = makeClient().createCollection("upload-1", collectionData);
+
+    await expect(promise).rejects.toBeInstanceOf(V3ApiError);
+    await expect(promise).rejects.toMatchObject({
+      status: 422,
+      validationErrors: [expect.objectContaining({ pointer: expect.stringContaining("mod_id") })],
+    });
   });
 });
 
@@ -187,11 +190,11 @@ describe("createCollectionRevision", () => {
   it("POSTs to /collections/{id}/revisions with the id interpolated", async () => {
     mockData({ id: "rev-2", collection_id: "col-1" });
 
-    const result = await makeClient().createCollectionRevision("col-1", "upload-1", {} as never);
+    const result = await makeClient().createCollectionRevision("col-1", "upload-1", collectionData);
 
     expect(lastRequest().method).toBe("POST");
     expect(lastRequest().url).toBe(`${BASE_URL}/collections/col-1/revisions`);
-    expect(await lastBody()).toEqual({ upload_id: "upload-1", collection_data: {} });
+    expect(await lastBody()).toEqual({ upload_id: "upload-1", collection_data: collectionData });
     expect(result.id).toBe("rev-2");
     expect(result.collection_id).toBe("col-1");
   });
@@ -227,15 +230,13 @@ describe("error fallback", () => {
   it("builds a V3ApiError from the HTTP response when the body is not problem+json", async () => {
     fetchMocker.mockResponseOnce("<html>502 Bad Gateway</html>", { status: 502 });
 
-    try {
-      await makeClient().createUpload(1024, "file.zip");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(V3ApiError);
-      const v3err = err as V3ApiError;
-      expect(v3err.status).toBe(502);
-      expect(v3err.message).toBe("HTTP 502");
-      expect(v3err.problemType).toBe("about:blank");
-    }
+    const promise = makeClient().createUpload(1024, "file.zip");
+
+    await expect(promise).rejects.toBeInstanceOf(V3ApiError);
+    await expect(promise).rejects.toMatchObject({
+      status: 502,
+      message: "HTTP 502",
+      problemType: "about:blank",
+    });
   });
 });

@@ -5,6 +5,8 @@ import type { paths } from "./generated/nexus-api-v3";
 
 export interface NexusV3ClientOptions {
   baseUrl: string;
+  /** User-Agent header, e.g. `Vortex/1.2.3`. The caller supplies the app version. */
+  userAgent?: string;
   apiKey?: string;
   bearerToken?: string;
   middleware?: Middleware[];
@@ -13,9 +15,11 @@ export interface NexusV3ClientOptions {
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
 
 export function createNexusV3Client(options: NexusV3ClientOptions) {
-  const headers: Record<string, string> = {
-    "User-Agent": "Vortex",
-  };
+  const headers: Record<string, string> = {};
+
+  if (options.userAgent) {
+    headers["User-Agent"] = options.userAgent;
+  }
 
   if (options.bearerToken) {
     headers["Authorization"] = `Bearer ${options.bearerToken}`;
@@ -110,7 +114,8 @@ function toV3Error(error: unknown, response: Response): V3ApiError {
   // this will be a ProblemDetails or ValidationProblem object — but proxies,
   // 502 pages, and transport errors can all produce other shapes, so we fall
   // back to the HTTP response whenever a field is missing.
-  const problem = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+  const problem: Record<string, unknown> =
+    typeof error === "object" && error !== null ? Object.fromEntries(Object.entries(error)) : {};
 
   return new V3ApiError({
     type: typeof problem.type === "string" ? problem.type : "about:blank",
