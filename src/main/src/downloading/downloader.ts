@@ -28,7 +28,7 @@ export const defaultChunkConcurrency = 4;
 
 /** @internal */
 export type Checkpoint = {
-  etag: string | null;
+  etag: string | undefined;
   completedRanges: ByteRange[];
 };
 
@@ -88,7 +88,7 @@ export async function download<T>(
   let probe: ProbeResult;
   try {
     probe = await withRetry(
-      () => probeUrl(sessionGot, resolved.probeEndpoint, options?.checkpoint?.etag ?? null),
+      () => probeUrl(sessionGot, resolved.probeEndpoint, options?.checkpoint?.etag ?? undefined),
       strategy.retry,
       options?.abortSignal,
     );
@@ -105,9 +105,10 @@ export async function download<T>(
     if (probe.fileName) options.progressReporter.fileName = probe.fileName;
   }
 
-  const canChunk = probe.acceptsRanges && probe.size > 0;
-  const chunks = canChunk ? await Promise.resolve(strategy.chunker(probe.size, resource)) : [];
-
+  const chunks: Chunk[] =
+    probe.acceptsRanges && probe.size
+      ? await Promise.resolve(strategy.chunker(probe.size, resource))
+      : [];
   const isChunked = chunks.length > 1;
 
   const completedRanges = options?.checkpoint?.completedRanges ?? [];
@@ -129,7 +130,7 @@ export async function download<T>(
     throw new DownloadError({ code: "fs-error", path: dest }, `Failed to open ${dest}`, err);
   }
 
-  if (options?.checkpoint && probe.size > 0) {
+  if (options?.checkpoint && probe.size) {
     try {
       await handle.fd.truncate(probe.size);
     } catch (err) {
@@ -147,9 +148,9 @@ export async function download<T>(
         concurrency: options?.chunkConcurrency ?? defaultChunkConcurrency,
       });
 
-      let chunkProgress: Map<number, ChunkProgress> | null = null;
+      let chunkProgress: Map<number, ChunkProgress> | undefined = undefined;
       if (options?.progressReporter) {
-        chunkProgress = options.progressReporter.initChunked(chunks, probe.size);
+        chunkProgress = options.progressReporter.initChunked(chunks, probe.size!);
 
         // fast forward progress reporter to checkpoint
         for (const chunk of chunks) {
@@ -158,6 +159,7 @@ export async function download<T>(
           );
           if (isComplete) {
             const progress = chunkProgress.get(chunk.index);
+            if (!progress) continue;
             const size = chunk.range.end - chunk.range.start + 1;
             progress.bytesReceived = size;
             progress.bytesWritten = size;
@@ -174,8 +176,10 @@ export async function download<T>(
                 // partial download doesn't leave stale byte counts.
                 if (chunkProgress) {
                   const progress = chunkProgress.get(chunk.index);
-                  progress.bytesReceived = 0;
-                  progress.bytesWritten = 0;
+                  if (progress) {
+                    progress.bytesReceived = 0;
+                    progress.bytesWritten = 0;
+                  }
                 }
 
                 return downloadChunk(sessionGot, chunk, resolved, probe, handle, {
@@ -229,9 +233,9 @@ export async function download<T>(
           }
 
           let expectedRemainingBytes: number | undefined = undefined;
-          let rangeChunk: Chunk | null = null;
+          let rangeChunk: Chunk | undefined = undefined;
 
-          if (probe.size !== null && writePosition > 0) {
+          if (probe.size && writePosition > 0) {
             expectedRemainingBytes = probe.size - writePosition;
           }
 
@@ -239,7 +243,7 @@ export async function download<T>(
           // even in the non-chunked path. This avoids re-downloading
           // already-completed bytes when resuming and lets the server
           // send only the remainder of the file.
-          if (probe.acceptsRanges && probe.size > 0 && writePosition > 0) {
+          if (probe.acceptsRanges && probe.size && writePosition > 0) {
             rangeChunk = {
               index: 0,
               range: { start: writePosition, end: probe.size - 1 },
@@ -251,8 +255,8 @@ export async function download<T>(
             progress: progress,
             abortSignal: options?.abortSignal,
             rateLimiter: strategy.rateLimiter,
-            etag: probe.etag,
-            chunk: rangeChunk,
+            etag: probe.etag ?? undefined,
+            chunk: rangeChunk ?? undefined,
             expectedRemainingBytes,
           });
         },
@@ -274,10 +278,10 @@ export async function download<T>(
 async function probeUrl(
   got: Got,
   endpoint: ResolvedEndpoint,
-  previousETag: string | null,
+  previousETag: string | undefined,
 ): Promise<ProbeResult> {
   const response = await got.head(endpoint.url, {
-    headers: createHeaders(previousETag, null, endpoint.headers),
+    headers: createHeaders(previousETag, undefined, endpoint.headers),
   });
 
   const contentType = response.headers["content-type"] ?? "";
@@ -296,7 +300,7 @@ async function probeUrl(
   const acceptsRanges = response.headers["accept-ranges"] === "bytes";
 
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag
-  const etag = response.headers.etag ?? null;
+  const etag = response.headers.etag;
 
   // NOTE(erri120): Server has to do the precondition check of the ETag.
   if (etag && previousETag && etag !== previousETag) {
@@ -422,7 +426,7 @@ async function downloadStream(
     }
   } catch (err) {
     if (err instanceof DownloadError || isCancellation(err)) throw err;
-    throw toNetworkError(stream.requestUrl, err);
+    throw toNetworkError(stream.requestUrl!, err);
   }
 }
 
@@ -501,11 +505,11 @@ function createHeaders(
 function getSize(
   headers: IncomingHttpHeaders,
   header: "content-length" | "content-range",
-): number | null {
+): number | undefined {
   const rawValue = headers[header];
-  if (!rawValue) return null;
+  if (!rawValue) return undefined;
 
-  let parsed: number | null;
+  let parsed: number | undefined;
   if (header === "content-length") {
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
     // Content-Length: <length>
@@ -516,47 +520,49 @@ function getSize(
     // Content-Range: <unit> <range>/*
     // Content-Range: <unit> */<size>
     const slashIndex = rawValue.lastIndexOf("/");
-    if (slashIndex === -1) return null;
+    if (slashIndex === -1) return undefined;
 
     const size = rawValue.slice(slashIndex + 1);
-    if (size === "*") return null;
+    if (size === "*") return undefined;
 
     parsed = parseInt(size, 10);
   }
 
-  return isNaN(parsed) ? null : parsed;
+  if (parsed === undefined || parsed < 0 || isNaN(parsed)) return undefined;
+  return parsed;
 }
 
-function getContentDispositionFileName(headers: IncomingHttpHeaders): string | null {
+function getContentDispositionFileName(headers: IncomingHttpHeaders): string | undefined {
   const raw = headers["content-disposition"];
-  if (!raw) return null;
+  if (!raw) return undefined;
   // RFC 6266: filename* (encoded) takes priority over filename.
   const starMatch = /filename\*\s*=\s*[^']*'[^']*'([^;]+)/i.exec(raw);
-  if (starMatch) {
+  if (starMatch && starMatch[1]) {
     try {
       return decodeURIComponent(starMatch[1].trim());
     } catch {
       // fall through to plain filename
     }
   }
+
   const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(raw);
-  return plainMatch ? plainMatch[1].trim() : null;
+  return plainMatch && plainMatch[1] ? plainMatch[1].trim() : undefined;
 }
 
-function getFileNameFromUrl(url: string): string | null {
+function getFileNameFromUrl(url: string): string | undefined {
   try {
     const basename = decodeURIComponent(new URL(url).pathname.split("/").at(-1) ?? "");
-    return basename.length > 0 ? basename : null;
+    return basename.length > 0 ? basename : undefined;
   } catch {
-    return null;
+    return undefined;
   }
 }
 
 type ProbeResult = {
-  size: number | null;
+  size: number | undefined;
   acceptsRanges: boolean;
-  etag: string | null;
-  fileName: string | null;
+  etag: string | undefined;
+  fileName: string | undefined;
 };
 
 type FileHandle = { fd: NodeFileHandle; path: string };
