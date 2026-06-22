@@ -7,12 +7,12 @@
 
 import React, { useState, type InputHTMLAttributes, type Ref } from "react";
 
-import { joinClasses } from "../../../utils/joinClasses";
-import type { BaseFormFieldProps } from "../formfield/FormField";
-import { FormField } from "../formfield/FormField";
+import type { IBaseFormFieldProps } from "@/ui/components/form/formfield/FormField";
+import { FormField } from "@/ui/components/form/formfield/FormField";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-export interface InputProps
-  extends BaseFormFieldProps, Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+export interface IInputProps
+  extends IBaseFormFieldProps, Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   /**
    * Restrict default value to string | number as we don't use this component for checkbox
    */
@@ -48,8 +48,8 @@ export const Input = ({
   type = "text",
   value,
   ...props
-}: InputProps) => {
-  const trimToMaxLength = (val?: InputProps["value"]) =>
+}: IInputProps) => {
+  const trimToMaxLength = (val?: IInputProps["value"]) =>
     maxLength ? val?.toString().substring(0, maxLength) : val?.toString();
 
   const [inputLength, setInputLength] = useState(

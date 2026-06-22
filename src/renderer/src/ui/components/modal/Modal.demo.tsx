@@ -5,8 +5,9 @@
 
 import React, { useRef, useState } from "react";
 
-import { Button } from "../button/Button";
-import { Typography } from "../typography/Typography";
+import { Button } from "@/ui/components/button/Button";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Modal, ModalPanel, ModalWrapper } from "./Modal";
 
 export const ModalDemo = () => {

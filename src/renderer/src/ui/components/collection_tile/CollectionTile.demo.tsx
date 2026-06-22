@@ -6,8 +6,9 @@
 import type { ICollection } from "@nexusmods/nexus-api";
 import React, { type ComponentType } from "react";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { Typography } from "../typography/Typography";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { CollectionTile } from "./CollectionTile";
 
 export interface ICollectionTileDemoProps {

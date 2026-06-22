@@ -5,7 +5,8 @@
 
 import React from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Bullet } from "./Bullet";
 
 export const BulletDemo = () => (

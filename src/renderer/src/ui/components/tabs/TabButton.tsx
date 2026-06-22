@@ -1,11 +1,12 @@
 import numeral from "numeral";
 import React, { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 
-import { getTabId } from "../../utils/getTabId";
-import { joinClasses } from "../../utils/joinClasses";
-import { useTabContext } from "./tabs.context";
+import { getTabId } from "@/ui/utils/getTabId";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+import { useTabContext } from "./Tabs.context";
+
+export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   count?: number;
   name: string;
 };
@@ -14,7 +15,7 @@ export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
  * Standard tab component, implemented as a button. Clicking it will reveal the
  * content for the selected tab.
  */
-export const TabButton = ({ className, count, disabled, name, ...props }: TabButtonProps) => {
+export const TabButton = ({ className, count, disabled, name, ...props }: ITabButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null!);
   const { onKeyDown, onTabClick, registerTab, selectedTab, tabListId, tabType } = useTabContext();
 

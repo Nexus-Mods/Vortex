@@ -1,11 +1,11 @@
 import { mdiArrowDown, mdiArrowUp, mdiFormatListGroup, mdiUnfoldMoreHorizontal } from "@mdi/js";
 import React, { useMemo } from "react";
 
+import { Input } from "@/ui/components/form/input/Input";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Pagination } from "@/ui/components/pagination/Pagination";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { Input } from "../form/input/Input";
-import { Icon } from "../icon/Icon";
-import { Pagination } from "../pagination/Pagination";
 import type { IColumnDef, IColumnFilter, ITableProps } from "./Table.types";
 import { TableColumnToggle } from "./TableColumnToggle";
 import { TableFilterSelect } from "./TableFilterSelect";

@@ -2,7 +2,7 @@ import { Menu } from "@headlessui/react";
 import { mdiDotsVertical } from "@mdi/js";
 import React, { type HTMLAttributes } from "react";
 
-import { Button, type ButtonBrand } from "@/ui/components/button/Button";
+import { Button, type IButtonBrand } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
@@ -13,7 +13,7 @@ export interface IToolbarAction {
   iconPath?: string;
   onClick?: () => void;
   disabled?: boolean;
-  brand?: ButtonBrand;
+  brand?: IButtonBrand;
   showLabel?: boolean;
 }
 

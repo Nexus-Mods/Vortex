@@ -1,13 +1,13 @@
 import React from "react";
 
-import { Listbox } from "../listbox/Listbox";
-import { ListboxButton } from "../listbox/ListboxButton";
-import { ListboxOption, type IListboxOption } from "../listbox/ListboxOption";
-import { ListboxOptions } from "../listbox/ListboxOptions";
+import { Listbox } from "@/ui/components/listbox/Listbox";
+import { ListboxButton } from "@/ui/components/listbox/ListboxButton";
+import { ListboxOption, type IListboxOption } from "@/ui/components/listbox/ListboxOption";
+import { ListboxOptions } from "@/ui/components/listbox/ListboxOptions";
 
 // todo placement prop should be removed when you use headless ui v2
 
-interface PickerProps<T> {
+interface IPickerProps<T> {
   className?: string;
   options: IListboxOption<T>[];
   placement?: "left" | "right";
@@ -21,7 +21,7 @@ export function Picker<T>({
   placement = "right",
   value,
   onChange,
-}: PickerProps<T>) {
+}: IPickerProps<T>) {
   const selectedOption = options.find((o) => o.value === value);
 
   return (

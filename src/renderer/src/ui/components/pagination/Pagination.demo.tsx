@@ -5,7 +5,8 @@
 
 import React, { useState } from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Pagination } from "./Pagination";
 
 export const PaginationDemo = () => {

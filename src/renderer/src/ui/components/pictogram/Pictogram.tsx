@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 import React from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 const sizeMap = {
   "4xs": "size-4",
@@ -15,7 +15,7 @@ const sizeMap = {
   "2xl": "size-40",
 } as const satisfies Record<string, string>;
 
-type Theme = "creator" | "info" | "none" | "premium" | "primary";
+type ITheme = "creator" | "info" | "none" | "premium" | "primary";
 
 const themeMap = {
   creator: "text-creator-moderate",
@@ -23,9 +23,9 @@ const themeMap = {
   none: "",
   premium: "text-premium-moderate",
   primary: "text-primary-moderate",
-} as const satisfies Record<Theme, string>;
+} as const satisfies Record<ITheme, string>;
 
-export type PictogramName = "health-check" | "tools";
+export type IPictogramName = "health-check" | "tools";
 
 export const Pictogram = ({
   className,
@@ -35,9 +35,9 @@ export const Pictogram = ({
   ...props
 }: HTMLAttributes<SVGElement> & {
   className?: string;
-  name: PictogramName;
+  name: IPictogramName;
   size?: keyof typeof sizeMap;
-  theme?: Theme;
+  theme?: ITheme;
 }) => (
   <svg
     {...props}

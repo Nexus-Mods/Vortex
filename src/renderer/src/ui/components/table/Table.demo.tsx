@@ -13,10 +13,11 @@ import {
 } from "@mdi/js";
 import React, { useMemo, useState } from "react";
 
-import { Button } from "../button/Button";
-import { Switch } from "../form/switch/Switch";
-import { Icon } from "../icon/Icon";
-import { Typography } from "../typography/Typography";
+import { Button } from "@/ui/components/button/Button";
+import { Switch } from "@/ui/components/form/switch/Switch";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Table } from "./Table";
 import type { IColumnDef } from "./Table.types";
 

@@ -9,26 +9,26 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
-type BasePillProps = {
+type IBasePillProps = {
   children: string;
   pillType?: "default" | "none" | "success";
 } & XOr<{ iconPath?: string }, { icon?: ReactNode }>;
 
-type PillDefaultProps = HTMLAttributes<HTMLDivElement> & {
+type IPillDefaultProps = HTMLAttributes<HTMLDivElement> & {
   as?: never;
   ref?: Ref<HTMLDivElement>;
-} & BasePillProps;
+} & IBasePillProps;
 
-type ButtonPillProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type IButtonPillProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   as: "button";
   className?: string;
   disabled?: boolean;
   ref?: Ref<HTMLButtonElement>;
-} & BasePillProps;
+} & IBasePillProps;
 
-type PillProps = PillDefaultProps | ButtonPillProps;
+type IPillProps = IPillDefaultProps | IButtonPillProps;
 
-const getPillClasses = ({ pillType = "default" }: Pick<BasePillProps, "pillType">) =>
+const getPillClasses = ({ pillType = "default" }: Pick<IBasePillProps, "pillType">) =>
   joinClasses("nxm-pill", {
     [`nxm-pill-${pillType}`]: pillType !== "none",
   });
@@ -37,7 +37,7 @@ const Content = ({
   icon,
   iconPath,
   label,
-}: Pick<PillProps, "icon" | "iconPath"> & { label?: string }) => (
+}: Pick<IPillProps, "icon" | "iconPath"> & { label?: string }) => (
   <>
     {!!icon && <span className="nxm-pill-icon flex items-center justify-center">{icon}</span>}
 
@@ -47,7 +47,7 @@ const Content = ({
   </>
 );
 
-export const Pill = (allProps: PillProps) => {
+export const Pill = (allProps: IPillProps) => {
   const { children, className, icon, iconPath, pillType, ref, ...rest } = allProps;
 
   const content = <Content icon={icon} iconPath={iconPath} label={children} />;
@@ -68,7 +68,7 @@ export const Pill = (allProps: PillProps) => {
     );
   }
 
-  const { as, ...props } = rest as PillDefaultProps;
+  const { as, ...props } = rest as IPillDefaultProps;
 
   return (
     <div

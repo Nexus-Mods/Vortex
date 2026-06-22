@@ -6,6 +6,7 @@
 import { mdiAccount, mdiCog, mdiDownload, mdiHeart, mdiMagnify, mdiStar } from "@mdi/js";
 import React from "react";
 
+import { Typography } from "@/ui/components/typography/Typography";
 import {
   nxmCollection,
   nxmDiscord,
@@ -13,8 +14,8 @@ import {
   nxmMod,
   nxmRosette,
   nxmVortex,
-} from "../../icon-paths";
-import { Typography } from "../typography/Typography";
+} from "@/ui/icon-paths";
+
 import { Icon } from "./Icon";
 
 const mdiIcons = [

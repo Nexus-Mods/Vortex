@@ -6,8 +6,9 @@
 import { mdiPalette, mdiTranslate } from "@mdi/js";
 import React, { useState } from "react";
 
-import { type IListboxOption } from "../listbox/ListboxOption";
-import { Typography } from "../typography/Typography";
+import { type IListboxOption } from "@/ui/components/listbox/ListboxOption";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Picker } from "./Picker";
 
 const sortOptions = [

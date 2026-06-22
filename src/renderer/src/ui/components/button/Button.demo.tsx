@@ -6,11 +6,12 @@
 import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
 import React, { useState } from "react";
 
-import { Typography } from "../typography/Typography";
-import { Button, type ButtonAppearance, type ButtonBrand } from "./Button";
+import { Typography } from "@/ui/components/typography/Typography";
 
-const BRANDS: ButtonBrand[] = ["primary", "info", "neutral", "success", "premium"];
-const APPEARANCES: ButtonAppearance[] = ["strong", "moderate", "subdued", "weak"];
+import { Button, type IButtonAppearance, type IButtonBrand } from "./Button";
+
+const BRANDS: IButtonBrand[] = ["primary", "info", "neutral", "success", "premium"];
+const APPEARANCES: IButtonAppearance[] = ["strong", "moderate", "subdued", "weak"];
 
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 

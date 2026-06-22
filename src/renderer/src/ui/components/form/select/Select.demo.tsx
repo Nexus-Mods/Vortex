@@ -5,7 +5,8 @@
 
 import React, { useState } from "react";
 
-import { Typography } from "../../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Select } from "./Select";
 
 export const SelectDemo = () => {
