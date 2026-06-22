@@ -1,11 +1,11 @@
 import type { TFunction } from "i18next";
 import * as React from "react";
 
-import type * as types from "../../../types/api";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
 
 export interface ICollectionReleaseStatusProps {
   t: TFunction;
-  collection: types.IMod;
+  collection: IMod;
   active: boolean;
   enabled: boolean;
   incomplete: boolean;

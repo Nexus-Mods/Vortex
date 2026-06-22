@@ -1,8 +1,12 @@
 import { createSelector } from "reselect";
 
-import type * as types from "../../../types/api";
+import type {
+  ICollectionInstallSession,
+  ICollectionInstallState,
+} from "../../../types/collections/ICollectionInstallSession";
+import type { IState } from "../../../types/IState";
 
-const getCollectionInstallState = (state: types.IState): types.ICollectionInstallState =>
+const getCollectionInstallState = (state: IState): ICollectionInstallState =>
   state.session?.collections || {
     activeSession: undefined,
     lastActiveSessionId: undefined,
@@ -11,7 +15,7 @@ const getCollectionInstallState = (state: types.IState): types.ICollectionInstal
 
 export const getActiveInstallSession = createSelector(
   [getCollectionInstallState],
-  (installState): types.ICollectionInstallSession | undefined => installState.activeSession,
+  (installState): ICollectionInstallSession | undefined => installState.activeSession,
 );
 
 export const isInstallationActive = createSelector(
@@ -20,7 +24,7 @@ export const isInstallationActive = createSelector(
 );
 
 export const getCollectionInstallProgress = createSelector(
-  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  [getActiveInstallSession, (_state: IState, collectionId: string) => collectionId],
   (activeSession, collectionId): { installed: number; total: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
@@ -34,7 +38,7 @@ export const getCollectionInstallProgress = createSelector(
 );
 
 export const getRequiredModsProgress = createSelector(
-  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  [getActiveInstallSession, (_state: IState, collectionId: string) => collectionId],
   (activeSession, collectionId): { installed: number; total: number; failed: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
@@ -53,7 +57,7 @@ export const getRequiredModsProgress = createSelector(
 );
 
 export const getOptionalModsProgress = createSelector(
-  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  [getActiveInstallSession, (_state: IState, collectionId: string) => collectionId],
   (activeSession, collectionId): { installed: number; total: number; ignored: number } | null => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return null;
@@ -74,7 +78,7 @@ export const getOptionalModsProgress = createSelector(
 );
 
 export const getCollectionModsStatus = createSelector(
-  [getActiveInstallSession, (_state: types.IState, collectionId: string) => collectionId],
+  [getActiveInstallSession, (_state: IState, collectionId: string) => collectionId],
   (activeSession, collectionId) => {
     if (!activeSession || activeSession.collectionId !== collectionId) {
       return [];

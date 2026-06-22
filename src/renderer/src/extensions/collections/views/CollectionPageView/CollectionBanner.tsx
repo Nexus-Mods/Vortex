@@ -2,9 +2,12 @@ import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 
-import { FlexLayout, Icon, Image } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import * as util from "../../../../util/api";
+import FlexLayout from "../../../../controls/FlexLayout";
+import Icon from "../../../../controls/Icon";
+import Image from "../../../../controls/Image";
+import opn from "../../../../util/opn";
+import { Campaign, Content, nexusModsURL, Section } from "../../../../util/util";
 import { PREMIUM_PATH } from "../../constants";
 
 export interface ICollectionBannerProps {
@@ -58,15 +61,13 @@ class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {
       "Go Premium",
       "Collections Added Collection",
     );
-    util
-      .opn(
-        util.nexusModsURL(PREMIUM_PATH, {
-          section: util.Section.Users,
-          campaign: util.Campaign.BuyPremium,
-          content: util.Content.CollectionsDownloadAd,
-        }),
-      )
-      .catch((err) => undefined);
+    opn(
+      nexusModsURL(PREMIUM_PATH, {
+        section: Section.Users,
+        campaign: Campaign.BuyPremium,
+        content: Content.CollectionsDownloadAd,
+      }),
+    ).catch((err) => undefined);
   };
 }
 

@@ -1,11 +1,12 @@
 import * as React from "react";
 
-import { Icon } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
+import Icon from "../../../../controls/Icon";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import type { TFunction } from "../../../../util/i18n";
 
 interface INewRevisionMarkerProps {
-  t: types.TFunction;
-  collection: types.IMod;
+  t: TFunction;
+  collection: IMod;
   updating: boolean;
 }
 

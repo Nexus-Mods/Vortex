@@ -6,15 +6,21 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { useSelector } from "react-redux";
 
-import { FlexLayout, tooltip } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
-import { MainContext } from "../../../../views/api";
+import { MainContext } from "../../../../contexts";
+import FlexLayout from "../../../../controls/FlexLayout";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import type { IState } from "../../../../types/IState";
+import { UserCanceled } from "../../../../util/CustomErrors";
+import makeReactive from "../../../../util/makeReactive";
+import opn from "../../../../util/opn";
+import { Campaign, Section, nexusModsURL } from "../../../../util/util";
 import CollectionThumbnail from "../CollectionTile";
 
 export interface IInstallChangelogDialogProps {
   gameId: string;
-  collection: types.IMod;
+  collection: IMod;
   revisionInfo: IRevision;
   onContinue: () => void;
   onCancel: () => void;
@@ -28,9 +34,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
   const { collection, gameId, onCancel, onContinue, revisionInfo } = props;
 
   const { t } = useTranslation();
-  const lang: string = useSelector<types.IState, string>(
-    (state) => state.settings.interface.language,
-  );
+  const lang: string = useSelector<IState, string>((state) => state.settings.interface.language);
 
   const context = useContext(MainContext);
 
@@ -40,12 +44,12 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
       "Collections",
       "View on site Updated Collection",
     );
-    util.opn(
-      util.nexusModsURL(
+    opn(
+      nexusModsURL(
         [revisionInfo.collection.game.domainName, "collections", revisionInfo.collection.slug],
         {
-          campaign: util.Campaign.GeneralNavigation,
-          section: util.Section.Collections,
+          campaign: Campaign.GeneralNavigation,
+          section: Section.Collections,
         },
       ),
     );
@@ -63,7 +67,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
       <Modal.Header>
         <Modal.Title>
           {t("{{collectionName}} update", {
-            replace: { collectionName: util.renderModName(collection) },
+            replace: { collectionName: renderModName(collection) },
           })}
         </Modal.Title>
       </Modal.Header>
@@ -115,7 +119,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
   );
 }
 
-const localState = util.makeReactive<{ job: IInstallChangelogDialogProps }>({
+const localState = makeReactive<{ job: IInstallChangelogDialogProps }>({
   job: {
     collection: undefined,
     gameId: undefined,
@@ -153,11 +157,7 @@ export class InstallChangelogDialog extends Component<{}> {
   }
 }
 
-function showChangelog(
-  collection: types.IMod,
-  gameId: string,
-  revisionInfo: IRevision,
-): Promise<void> {
+function showChangelog(collection: IMod, gameId: string, revisionInfo: IRevision): Promise<void> {
   return new Promise((resolve: () => void, reject: (err: Error) => void) => {
     localState.job = {
       collection,
@@ -169,7 +169,7 @@ function showChangelog(
       },
       onCancel: () => {
         localState.job = undefined;
-        reject(new util.UserCanceled());
+        reject(new UserCanceled());
       },
     };
   });

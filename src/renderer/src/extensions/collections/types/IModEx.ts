@@ -1,10 +1,11 @@
 import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 
-import type * as types from "../../../types/api";
+import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
+import type { IProfileMod } from "../../../extensions/profile_management/types/IProfile";
 
-export type IModEx = types.IMod &
-  types.IProfileMod & {
-    collectionRule: types.IModRule;
+export type IModEx = IMod &
+  IProfileMod & {
+    collectionRule: IModRule;
     progress?: number;
     infoFromApi?: ICollectionRevisionMod;
   };

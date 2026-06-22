@@ -8,11 +8,17 @@ import Zip from "node-7z";
 import { dir as tmpDir } from "tmp";
 
 import * as actions from "../../actions";
+import { getGame } from "../../extensions/gamemode_management/util/getGame";
+import type { IMod } from "../../extensions/mod_management/types/IMod";
+import renderModName from "../../extensions/mod_management/util/modName";
 import { log } from "../../logging";
-import type * as types from "../../types/api";
-import * as util from "../../util/api";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
+import opn from "../../util/opn";
 import * as selectors from "../../util/selectors";
+import { toPromise } from "../../util/util";
 import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
 import type { ICollection, ICollectionMod, ICollectionSourceInfo } from "./types/ICollection";
 import { makeProgressFunction } from "./util/makeProgressFunction";
@@ -55,9 +61,9 @@ async function zip(zipPath: string, sourcePath: string): Promise<void> {
 }
 
 async function generateCollectionInfo(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
-  collection: types.IMod,
+  collection: IMod,
   progress: (percent: number, text: string) => void,
   error: (message: string, replace: any, mayIgnore: boolean) => void,
 ): Promise<ICollection> {
@@ -68,9 +74,9 @@ async function generateCollectionInfo(
 }
 
 async function writeCollectionToFile(
-  state: types.IState,
+  state: IState,
   info: ICollection,
-  mod: types.IMod,
+  mod: IMod,
   outputPath: string,
 ) {
   await fs.ensureDirWritableAsync(outputPath, () => Bluebird.resolve());
@@ -148,7 +154,7 @@ function filterInfo(input: ICollection): RecursivePartial<ICollection> {
 }
 
 async function queryErrorsContinue(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   errors: Array<{ message: string; replace: any }>,
 ) {
   const res = await api.showDialog(
@@ -162,12 +168,12 @@ async function queryErrorsContinue(
   );
 
   if (res.action === "Cancel") {
-    throw new util.UserCanceled();
+    throw new UserCanceled();
   }
 }
 
 function renderGraphLocateError(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   modId: string,
   det: IGraphErrorDetail,
@@ -186,7 +192,7 @@ function renderGraphLocateError(
             "it may have been removed.",
           {
             replace: {
-              modName: util.renderModName(missingMod),
+              modName: renderModName(missingMod),
               modId: det.value,
             },
           },
@@ -208,7 +214,7 @@ function renderGraphLocateError(
             "it may have been removed.",
           {
             replace: {
-              modName: util.renderModName(missingMod, { version: true }),
+              modName: renderModName(missingMod, { version: true }),
               modId: missingMod.attributes?.modId ?? "Unknown",
               fileId: missingMod.attributes?.fileId,
             },
@@ -231,7 +237,7 @@ function renderGraphErrorFallback(message: string, det: IGraphErrorDetail): stri
 }
 
 function renderGraphErrorDetail(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   modId: string,
   message: string,
@@ -245,12 +251,12 @@ function renderGraphErrorDetail(
 }
 
 export async function doExportToAPI(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   modId: string,
   uploaderName: string,
 ): Promise<{ slug: string; revisionNumber: number }> {
-  const state: types.IState = api.store.getState();
+  const state: IState = api.store.getState();
   const mod = state.persistent.mods[gameId][modId];
 
   const { progress, progressEnd } = makeProgressFunction(api);
@@ -276,13 +282,13 @@ export async function doExportToAPI(
       if (mayIgnore) {
         await queryErrorsContinue(api, errors);
       } else {
-        throw new util.UserCanceled();
+        throw new UserCanceled();
       }
     }
 
     await withTmpDir(async (tmpPath) => {
       const isNewUpload = mod.attributes?.collectionId === undefined;
-      const game = util.getGame(gameId);
+      const game = getGame(gameId);
       const userInfo = state.persistent["nexus"]?.userInfo;
 
       const filePath = await writeCollectionToFile(state, info, mod, tmpPath);
@@ -298,7 +304,7 @@ export async function doExportToAPI(
         log("info", "user doesn't match original author, creating new collection");
         collectionId = undefined;
       }
-      const result: ICreateCollectionResult = await util.toPromise((cb) =>
+      const result: ICreateCollectionResult = await toPromise((cb) =>
         api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, cb),
       );
       collectionId = result.collection.id;
@@ -347,14 +353,14 @@ export async function doExportToAPI(
           "are mod id and file id for it set correctly?",
         message: file !== undefined ? file.name : `id: ${e.fileId}`,
       });
-      throw new util.ProcessCanceled("Mod file not found");
+      throw new ProcessCanceled("Mod file not found");
     } else if (e.name === "ParameterInvalid") {
       api.sendNotification({
         type: "error",
         title: "The server rejected this collection",
         message: e.message || "<No reason given>",
       });
-      throw new util.ProcessCanceled("collection rejected");
+      throw new ProcessCanceled("collection rejected");
     } else if (e.name === "GraphError") {
       const message: string = e.message;
       const details: IGraphErrorDetail[] = e.details ?? [];
@@ -384,8 +390,8 @@ export async function doExportToAPI(
           },
         ],
       });
-      throw new util.ProcessCanceled("collection rejected");
-    } else if (err instanceof util.ProcessCanceled) {
+      throw new ProcessCanceled("collection rejected");
+    } else if (err instanceof ProcessCanceled) {
       api.showErrorNotification("Failed to upload collection", unknownToError(err), {
         allowReport: false,
       });
@@ -397,8 +403,8 @@ export async function doExportToAPI(
   return { slug: collectionSlug, revisionNumber };
 }
 
-export async function doExportToFile(api: types.IExtensionApi, gameId: string, modId: string) {
-  const state: types.IState = api.store.getState();
+export async function doExportToFile(api: IExtensionApi, gameId: string, modId: string) {
+  const state: IState = api.store.getState();
   const mod = state.persistent.mods[gameId][modId];
 
   const { progress, progressEnd } = makeProgressFunction(api);
@@ -419,7 +425,7 @@ export async function doExportToFile(api: types.IExtensionApi, gameId: string, m
       {
         title: "Open",
         action: () => {
-          util.opn(path.join(stagingPath, mod.installationPath, "export")).catch(() => null);
+          opn(path.join(stagingPath, mod.installationPath, "export")).catch(() => null);
         },
       },
     ];

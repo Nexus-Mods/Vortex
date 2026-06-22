@@ -3,8 +3,14 @@ import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 
 import * as actions from "../../../actions";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import { getGame } from "../../../extensions/gamemode_management/util/getGame";
+import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
+import testModReference from "../../../extensions/mod_management/util/testModReference";
+import type { IProfile } from "../../../extensions/profile_management/types/IProfile";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import { UserCanceled } from "../../../util/CustomErrors";
+import { batchDispatch } from "../../../util/util";
 import { MOD_TYPE } from "../constants";
 import { importTweaks } from "../initweaks";
 import type { IINITweak } from "../types/IINITweak";
@@ -12,9 +18,9 @@ import { createCollection } from "./createCollection";
 import { makeCollectionId, validateName } from "./transformCollection";
 
 async function createTweaksFromProfile(
-  api: types.IExtensionApi,
-  profile: types.IProfile,
-  mods: { [modId: string]: types.IMod },
+  api: IExtensionApi,
+  profile: IProfile,
+  mods: { [modId: string]: IMod },
   existingId: string,
 ): Promise<IINITweak[]> {
   return importTweaks(
@@ -26,13 +32,13 @@ async function createTweaksFromProfile(
 }
 
 function createRulesFromProfile(
-  profile: types.IProfile,
-  mods: { [modId: string]: types.IMod },
-  existingRules: types.IModRule[],
+  profile: IProfile,
+  mods: { [modId: string]: IMod },
+  existingRules: IModRule[],
   existingId: string,
-  filterFunc: (mod: types.IMod) => boolean,
+  filterFunc: (mod: IMod) => boolean,
   isQuickCollection?: boolean,
-): types.IModRule[] {
+): IModRule[] {
   return Object.keys(profile.modState ?? {})
     .filter(
       (modId) =>
@@ -47,9 +53,7 @@ function createRulesFromProfile(
       // don't forget what we set up regarding version matching
       let versionMatch: string;
 
-      const oldRule = existingRules.find((iter) =>
-        util.testModReference(mods[modId], iter.reference),
-      );
+      const oldRule = existingRules.find((iter) => testModReference(mods[modId], iter.reference));
       if (oldRule !== undefined && oldRule.reference.versionMatch !== undefined) {
         versionMatch =
           oldRule.reference.versionMatch === "*" ? "*" : mods[modId].attributes.version;
@@ -70,19 +74,14 @@ function createRulesFromProfile(
     });
 }
 
-function updateCollection(
-  api: types.IExtensionApi,
-  gameId: string,
-  mod: types.IMod,
-  newRules: types.IModRule[],
-) {
+function updateCollection(api: IExtensionApi, gameId: string, mod: IMod, newRules: IModRule[]) {
   api.store.dispatch(actions.setModAttribute(gameId, mod.id, "editable", true));
 
-  const removedRules: types.IModRule[] = [];
+  const removedRules: IModRule[] = [];
   // remove rules not found in newRules
-  util.batchDispatch(
+  batchDispatch(
     api.store,
-    (mod.rules ?? []).reduce((prev: Redux.Action[], rule: types.IModRule) => {
+    (mod.rules ?? []).reduce((prev: Redux.Action[], rule: IModRule) => {
       if (newRules.find((iter) => _.isEqual(rule, iter)) === undefined) {
         removedRules.push(rule);
         prev.push(actions.removeModRule(gameId, mod.id, rule));
@@ -92,9 +91,9 @@ function updateCollection(
   );
 
   // add rules not found in the old list
-  util.batchDispatch(
+  batchDispatch(
     api.store,
-    newRules.reduce((prev: Redux.Action[], rule: types.IModRule) => {
+    newRules.reduce((prev: Redux.Action[], rule: IModRule) => {
       if ((mod.rules ?? []).find((iter) => _.isEqual(rule, iter)) === undefined) {
         prev.push(actions.addModRule(gameId, mod.id, rule));
       }
@@ -111,11 +110,11 @@ interface ICreateCollectionFromProfileResult {
 }
 
 export async function createCollectionFromProfile(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   profileId: string,
   forceName?: string,
 ): Promise<ICreateCollectionFromProfileResult> {
-  const state: types.IState = api.store.getState();
+  const state: IState = api.store.getState();
   const profile = state.persistent.profiles[profileId];
 
   const isQuickCollection = forceName !== undefined;
@@ -123,12 +122,11 @@ export async function createCollectionFromProfile(
     ? makeCollectionId(`${profileId}_${shortid()}`)
     : makeCollectionId(profileId);
 
-  const mod: types.IMod = state.persistent.mods[profile.gameId]?.[id];
+  const mod: IMod = state.persistent.mods[profile.gameId]?.[id];
 
-  const isNexusSourced = (m: types.IMod) => m?.attributes?.source === "nexus";
-  const isGeneratedMod = (m: types.IMod) => m?.attributes?.generated === true;
-  const filterFunc = (m: types.IMod) =>
-    forceName ? isNexusSourced(m) && !isGeneratedMod(m) : true;
+  const isNexusSourced = (m: IMod) => m?.attributes?.source === "nexus";
+  const isGeneratedMod = (m: IMod) => m?.attributes?.generated === true;
+  const filterFunc = (m: IMod) => (forceName ? isNexusSourced(m) && !isGeneratedMod(m) : true);
   const rules = createRulesFromProfile(
     profile,
     state.persistent.mods[profile.gameId] ?? {},
@@ -164,7 +162,7 @@ export async function createCollectionFromProfile(
 
     const cancelled = result.action === "Cancel";
     if (cancelled) {
-      throw new util.UserCanceled();
+      throw new UserCanceled();
     }
 
     wantsToUpload = result.action === uploadLabel;
@@ -175,7 +173,7 @@ export async function createCollectionFromProfile(
 
     const userInfo = state.persistent["nexus"]?.userInfo;
     if (userInfo?.userId) {
-      const game = util.getGame(profile.gameId);
+      const game = getGame(profile.gameId);
       const creationMethod = isQuickCollection ? "quick_collection" : "from_profile";
       api.events.emit("analytics-track-mixpanel-event", {
         eventName: "collection_drafted",

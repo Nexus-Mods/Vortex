@@ -1,18 +1,20 @@
 import { unknownToError } from "@vortex/shared";
 
-import type * as types from "../../../types/api";
+import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { MOD_TYPE } from "../constants";
 
 export async function createCollection(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   id: string,
   name: string,
-  rules: types.IModRule[],
+  rules: IModRule[],
 ) {
-  const state: types.IState = api.store.getState();
+  const state: IState = api.store.getState();
 
-  const mod: types.IMod = {
+  const mod: IMod = {
     id,
     type: MOD_TYPE,
     state: "installed",

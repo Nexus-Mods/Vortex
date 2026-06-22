@@ -38,7 +38,6 @@ import renderModName from "../mod_management/util/modName";
 import testModReference from "../mod_management/util/testModReference";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import type { IProfile } from "../profile_management/types/IProfile";
-/* eslint-disable */
 import { clearPendingVote, updateSuccessRate } from "./actions/persistent";
 import {
   addCollectionAction,
@@ -63,8 +62,8 @@ import sessionReducer from "./reducers/session";
 import settingsReducer from "./reducers/settings";
 import { testSupported } from "./testSupported";
 import initTools from "./tools";
-import { ICollection } from "./types/ICollection";
-import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
+import type { ICollection } from "./types/ICollection";
+import type { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
 import { cloneCollection } from "./util/cloneCollection";
 import { createCollection } from "./util/createCollection";
 import { genDefaultsAction } from "./util/defaults";
@@ -77,7 +76,7 @@ import { bbProm, getUnfulfilledNotificationId } from "./util/util";
 import AddModsDialog from "./views/AddModsDialog";
 import CollectionsMainPage from "./views/CollectionList";
 import CollectionAttributeRenderer from "./views/CollectionModsPageAttributeRenderer";
-import { IPathTools } from "./views/CollectionPageEdit/FileOverrides";
+import type { IPathTools } from "./views/CollectionPageEdit/FileOverrides";
 import HealthDownvoteDialog from "./views/CollectionPageView/HealthDownvoteDialog";
 import {
   InstallChangelogDialog,
@@ -533,7 +532,7 @@ async function removeCollection(
         message: modName,
         allowReport: !(err instanceof ProcessCanceled),
         warning: err instanceof ProcessCanceled,
-      } as any);
+      });
     }
   } finally {
     modsBeingRemoved.delete(makeModKey(gameId, modId));
@@ -654,7 +653,7 @@ async function updateMeta(api: IExtensionApi, collectionId?: string) {
           revisionNumber,
           "force",
         );
-        if (!!info) {
+        if (info) {
           const latestPublishedRev = info.collection.latestPublishedRevision;
 
           api.store.dispatch(
@@ -829,7 +828,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
       name: "Collection",
       customDependencyManagement: true,
       noConflicts: true,
-    } as any,
+    },
   );
 
   const stateFunc: () => IState = () => context.api.store.getState();
@@ -1135,7 +1134,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
     }
 
     if ((collection?.rules ?? []).find(ruleMatches) !== undefined) {
-      return false as any;
+      return false;
     }
     return undefined;
   });

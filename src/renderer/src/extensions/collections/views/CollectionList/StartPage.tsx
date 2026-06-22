@@ -9,12 +9,20 @@ import { connect } from "react-redux";
 import Select from "react-select";
 
 import * as actions from "../../../../actions";
-import { EmptyPlaceholder, Icon, IconBar } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
+import EmptyPlaceholder from "../../../../controls/EmptyPlaceholder";
+import Icon from "../../../../controls/Icon";
+import IconBar from "../../../../controls/IconBar";
+import type { IGameStored } from "../../../../extensions/gamemode_management/types/IGameStored";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
-/* eslint-disable */
+import type { IActionDefinition } from "../../../../types/IActionDefinition";
+import { UserCanceled } from "../../../../util/CustomErrors";
+import type { TFunction as TFunctionApi } from "../../../../util/i18n";
+import opn from "../../../../util/opn";
+import { getSafe } from "../../../../util/storeHelper";
 import { setSortAdded, setSortWorkshop } from "../../actions/settings";
 import { initFromProfile } from "../../collectionCreate";
 import {
@@ -24,7 +32,7 @@ import {
   NAMESPACE,
   NEXUS_BASE_URL,
 } from "../../constants";
-import InfoCache from "../../util/InfoCache";
+import type InfoCache from "../../util/InfoCache";
 import { validateName } from "../../util/transformCollection";
 import { hasEditPermissions } from "../../util/util";
 import CollectionThumbnail from "../CollectionTile";
@@ -37,14 +45,14 @@ const BUG_REPORT_URL =
 
 export interface IStartPageProps {
   t: TFunction;
-  game: types.IGameStored;
-  installing: types.IMod;
+  game: IGameStored;
+  installing: IMod;
   infoCache: InfoCache;
-  profile: types.IProfile;
+  profile: IProfile;
   activeTab: string;
   localState: { ownCollections: IRevision[] };
-  mods: { [modId: string]: types.IMod };
-  matchedReferences: { [collectionId: string]: types.IMod[] };
+  mods: { [modId: string]: IMod };
+  matchedReferences: { [collectionId: string]: IMod[] };
   onCreateCollection: (name: string) => void;
   onInstallCollection: (revision: IRevision) => Promise<void>;
   onClone: (modId: string) => Promise<void>;
@@ -70,8 +78,8 @@ interface IActionProps {
 }
 
 interface ISortItem {
-  mod: types.IMod;
-  added?: types.IMod;
+  mod: IMod;
+  added?: IMod;
   revision: IRevision;
 }
 
@@ -110,7 +118,7 @@ function validateCollectionName(t: TFunction, input: string): string {
 }
 
 interface IAddCardProps {
-  t: types.TFunction;
+  t: TFunctionApi;
   onClick: () => void;
 }
 
@@ -120,7 +128,7 @@ function AddCard(props: IAddCardProps) {
   const classes = ["collection-add-btn"];
 
   return (
-    <Panel className={classes.join(" ")} bsStyle="default" onClick={onClick}>
+    <Panel bsStyle="default" className={classes.join(" ")} onClick={onClick}>
       <Panel.Body className="collection-thumbnail-body">
         <EmptyPlaceholder icon="folder-add" text={t("Discover more collections")} />
       </Panel.Body>
@@ -129,7 +137,7 @@ function AddCard(props: IAddCardProps) {
 }
 
 interface ICreateCardProps {
-  t: types.TFunction;
+  t: TFunctionApi;
   onCreateFromProfile: () => void;
   onCreateEmpty: () => void;
   onCreateQuickCollection: () => void;
@@ -141,7 +149,7 @@ function CreateCard(props: ICreateCardProps) {
 
   const classes = ["collection-add-btn"];
 
-  const actions = React.useRef<types.IActionDefinition[]>([]);
+  const actions = React.useRef<IActionDefinition[]>([]);
 
   React.useEffect(() => {
     actions.current = [
@@ -173,19 +181,20 @@ function CreateCard(props: ICreateCardProps) {
   }, [props.onCreateFromProfile, props.onCreateEmpty, props.onCreateQuickCollection]);
 
   return (
-    <Panel className={classes.join(" ")} bsStyle="default">
+    <Panel bsStyle="default" className={classes.join(" ")}>
       <Panel.Body className="collection-thumbnail-body">
-        <EmptyPlaceholder icon="add" text={t("Create a collection")} fill />
+        <EmptyPlaceholder fill icon="add" text={t("Create a collection")} />
+
         <div className="hover-menu">
-          <div key="primary-buttons" className="hover-content">
+          <div className="hover-content" key="primary-buttons">
             <IconBar
-              className="buttons"
-              group="collection-actions"
-              staticElements={actions.current}
-              collapse={false}
               buttonType="text"
-              orientation="vertical"
+              className="buttons"
               clickAnywhere={true}
+              collapse={false}
+              group="collection-actions"
+              orientation="vertical"
+              staticElements={actions.current}
               t={t}
             />
           </div>
@@ -260,13 +269,14 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
     const { added, workshop } = collectionsEx;
 
     return (
-      <Tabs id="collection-start-page" activeKey={activeTab} onSelect={this.setActiveTab}>
+      <Tabs activeKey={activeTab} id="collection-start-page" onSelect={this.setActiveTab}>
         <Tab
-          tabClassName="collection-tab"
           eventKey="active-collections"
+          tabClassName="collection-tab"
           title={
             <>
               <Icon name="add" />
+
               {t("Added Collections")}
             </>
           }
@@ -274,56 +284,63 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
           <Panel>
             <Panel.Heading>
               <Panel.Title>{t("View and manage collections created by other users.")}</Panel.Title>
+
               <div className="flex-fill" />
+
               <div className="collection-sort-container">
                 {t("Sort by:")}
+
                 <Select
+                  autosize={false}
                   className="select-compact"
+                  clearable={false}
                   options={[
                     { value: "alphabetical", label: t("Name A-Z") },
                     { value: "datedownloaded", label: t("Date downloaded") },
                     { value: "recentlyupdated", label: t("Recently updated") },
                   ]}
+                  searchable={false}
                   value={sortAdded}
                   onChange={this.setSortAdded}
-                  clearable={false}
-                  autosize={false}
-                  searchable={false}
                 />
               </div>
             </Panel.Heading>
+
             <Panel.Body>
               <div className="collection-list">
                 <AddCard t={t} onClick={this.openCollections} />
+
                 {added.map((mod) => (
                   <CollectionThumbnail
-                    key={mod.mod.id}
-                    t={t}
+                    collection={mod.mod}
+                    details={true}
                     gameId={profile.gameId}
                     imageTime={imageTime}
-                    installing={installing}
-                    mods={mods}
                     incomplete={matchedReferences[mod.mod.id]?.includes?.(null)}
-                    collection={mod.mod}
                     infoCache={this.props.infoCache}
-                    onView={onView}
+                    installing={installing}
+                    key={mod.mod.id}
+                    mods={mods}
+                    t={t}
+                    onPause={onPause}
                     onRemove={onRemove}
                     onResume={onResume}
-                    onPause={onPause}
                     onUpdate={onUpdate}
-                    details={true}
+                    onView={onView}
                   />
                 ))}
               </div>
             </Panel.Body>
           </Panel>
         </Tab>
+
         <Tab
-          tabClassName="collection-tab"
           eventKey="collection-workshop"
+          tabClassName="collection-tab"
           title={
             <>
               <Icon name="highlight-tool" />
+
               {t("Workshop")}
             </>
           }
@@ -331,74 +348,79 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
           <Panel>
             <Panel.Heading>
               <Panel.Title>
-                <Trans ns={NAMESPACE} i18nKey="collection-own-page">
+                <Trans i18nKey="collection-own-page" ns={NAMESPACE}>
                   Build your own collections and share them with the Nexus Mods community. You can
                   view all your uploaded collections&nbsp;
                   <a
-                    onClick={this.openMyCollectionsPage}
                     className="my-collections-page-link"
                     title={t("Open My Collections Page")}
+                    onClick={this.openMyCollectionsPage}
                   >
                     here.
                   </a>
                 </Trans>
               </Panel.Title>
+
               <div className="flex-fill" />
+
               <div className="collection-sort-container">
                 {t("Sort by:")}
+
                 <Select
+                  autosize={false}
                   className="select-compact"
+                  clearable={false}
                   options={[
                     { value: "alphabetical", label: t("Name A-Z") },
                     { value: "datecreated", label: t("Date created") },
                     { value: "recentlyupdated", label: t("Recently updated") },
                   ]}
+                  searchable={false}
                   value={sortWorkshop}
                   onChange={this.setSortWorkshop}
-                  clearable={false}
-                  autosize={false}
-                  searchable={false}
                 />
               </div>
             </Panel.Heading>
+
             <Panel.Body>
               <div className="collection-list">
                 <CreateCard
                   t={t}
+                  onCreateEmpty={this.fromEmpty}
                   onCreateFromProfile={this.fromProfile}
                   onCreateQuickCollection={this.quickCollection}
-                  onCreateEmpty={this.fromEmpty}
                   onTrackClick={this.trackEvent}
                 />
+
                 {workshop.map((mod) =>
                   mod.mod !== undefined ? (
                     <CollectionThumbnail
-                      t={t}
-                      key={mod.mod.id}
-                      gameId={profile.gameId}
                       collection={mod.mod}
-                      infoCache={this.props.infoCache}
+                      details={true}
+                      gameId={profile.gameId}
                       imageTime={imageTime}
-                      mods={mods}
                       incomplete={
                         mod.mod === undefined || matchedReferences[mod.mod.id]?.includes?.(null)
                       }
+                      infoCache={this.props.infoCache}
+                      key={mod.mod.id}
+                      mods={mods}
+                      t={t}
                       onEdit={onEdit}
                       onRemove={onRemove}
                       onUpload={onUpload}
-                      details={true}
                     />
                   ) : (
                     <CollectionThumbnailRemote
-                      t={t}
-                      key={mod.revision.id}
-                      revision={mod.revision}
                       added={mod.added}
                       incomplete={
                         mod.added === undefined || matchedReferences[mod.added.id]?.includes?.(null)
                       }
-                      onInstallCollection={onInstallCollection}
+                      key={mod.revision.id}
+                      revision={mod.revision}
+                      t={t}
                       onCloneCollection={onClone}
+                      onInstallCollection={onInstallCollection}
                       onResumeCollection={onResume}
                     />
                   ),
@@ -413,7 +435,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
 
   private name(input: ISortItem): string {
     return input.mod !== undefined
-      ? util.renderModName(input.mod)
+      ? renderModName(input.mod)
       : (input.revision?.collection?.name ?? "");
   }
 
@@ -443,7 +465,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateSorted(
-    collections: types.IMod[],
+    collections: IMod[],
     sortAdded: string,
     sortWorkshop: string,
     allowMetaUpdate: boolean,
@@ -465,7 +487,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
     ).then((result: ISortItem[]) => {
       let { foreign, own }: { foreign: ISortItem[]; own: ISortItem[] } = result.reduce(
         (prev, mod) => {
-          if (util.getSafe(mod.mod.attributes, ["editable"], false)) {
+          if (getSafe(mod.mod.attributes, ["editable"], false)) {
             prev.own.push(mod);
           } else {
             prev.foreign.push(mod);
@@ -503,13 +525,13 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private setSortAdded = (value: { value: string; label: string }) => {
-    if (!!value) {
+    if (value) {
       this.props.onSetSortAdded(value.value);
     }
   };
 
   private setSortWorkshop = (value: { value: string; label: string }) => {
-    if (!!value) {
+    if (value) {
       this.props.onSetSortWorkshop(value.value);
     }
   };
@@ -530,7 +552,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       "Collections",
       "Open My Collections",
     );
-    util.opn(`${NEXUS_BASE_URL}/my-collections`).catch(() => null);
+    opn(`${NEXUS_BASE_URL}/my-collections`).catch(() => null);
   };
 
   private trackEvent = (namespace: string, eventName: string) => {
@@ -538,11 +560,11 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private openFeedback = () => {
-    util.opn(FEEDBACK_URL).catch(() => null);
+    opn(FEEDBACK_URL).catch(() => null);
   };
 
   private openBugReport = () => {
-    util.opn(BUG_REPORT_URL).catch(() => null);
+    opn(BUG_REPORT_URL).catch(() => null);
   };
 
   private quickCollection = async () => {
@@ -550,7 +572,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       await initFromProfile(this.context.api);
       this.refreshImages();
     } catch (err) {
-      if (!(err instanceof util.UserCanceled)) {
+      if (!(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification(
           "Failed to create quick collection",
           unknownToError(err),
@@ -567,7 +589,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       await initFromProfile(this.context.api, profile.id);
       this.refreshImages();
     } catch (err) {
-      if (!(err instanceof util.UserCanceled)) {
+      if (!(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification("Failed to init collection", unknownToError(err));
       }
     }

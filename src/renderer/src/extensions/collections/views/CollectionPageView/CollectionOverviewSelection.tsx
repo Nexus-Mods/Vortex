@@ -4,10 +4,11 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Image as BSImage, Media, Panel } from "react-bootstrap";
 
-import { tooltip } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import type { IModEx } from "../../types/IModEx";
 import CollectionReleaseStatus from "../CollectionReleaseStatus";
 import CollectionModDetails from "./CollectionModDetails";
@@ -15,8 +16,8 @@ import SlideshowControls from "./SlideshowControls";
 
 interface ICollectionOverviewProps {
   t: TFunction;
-  profile: types.IProfile;
-  collection: types.IMod;
+  profile: IProfile;
+  collection: IMod;
   incomplete: boolean;
   modSelection: Array<{ local: IModEx; remote: ICollectionRevisionMod }>;
   onDeselectMods?: () => void;
@@ -47,7 +48,7 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
     return (
       <Panel className={classes.join(" ")}>
         <div className="collection-overview-title">
-          <div className="collection-title">{util.renderModName(collection)}</div>
+          <div className="collection-title">{renderModName(collection)}</div>
 
           <CollectionReleaseStatus
             active={true}

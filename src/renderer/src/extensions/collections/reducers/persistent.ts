@@ -1,9 +1,9 @@
 import update from "immutability-helper";
 
-import type * as types from "../../../types/api";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import * as actions from "../actions/persistent";
 
-const persistentReducer: types.IReducerSpec = {
+const persistentReducer: IReducerSpec = {
   reducers: {
     [actions.updateCollectionInfo as any]: (state, payload) => {
       const { collectionId, collectionInfo, timestamp } = payload;

@@ -49,11 +49,10 @@ import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setModEnabled, setModsEnabled } from "../../../profile_management/actions/profiles";
 import type { IProfile, IProfileMod } from "../../../profile_management/types/IProfile";
 import { showUsageInstruction } from "../../../settings_interface/actions/interface";
-/* eslint-disable */
 import { AUTHOR_UNKNOWN, AVATAR_FALLBACK } from "../../constants";
-import { buildCollectionItemRows } from "../../installSession/itemRows";
 import type { ICollectionItemRow } from "../../installSession/itemRows";
-import InstallDriver from "../../util/InstallDriver";
+import { buildCollectionItemRows } from "../../installSession/itemRows";
+import type InstallDriver from "../../util/InstallDriver";
 import CollectionInstructions from "./CollectionInstructions";
 import CollectionItemStatus from "./CollectionItemStatus";
 import CollectionOverview from "./CollectionOverview";
@@ -165,13 +164,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   private mModActions: ITableRowAction[];
   private mInstalling: boolean = false;
 
-  private revisionMerged = memoizeOne(
-    (collection: ICollection, revision: IRevision) =>
-      ({
-        ...revision,
-        collection,
-      }) as any as IRevision,
-  );
+  private revisionMerged = memoizeOne((collection: ICollection, revision: IRevision) => ({
+    ...revision,
+    collection,
+  }));
 
   constructor(props: IProps) {
     super(props);
@@ -247,7 +243,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           const download =
             mod.archiveId !== undefined ? this.props.downloads[mod.archiveId] : undefined;
 
-          return <CollectionItemStatus t={this.props.t} mod={mod} download={download} />;
+          return <CollectionItemStatus download={download} mod={mod} t={this.props.t} />;
         },
         calc: (mod: ICollectionItemRow) => {
           const recommended = mod.collectionRule.type === "recommends";
@@ -382,6 +378,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           return (
             <div>
               <Image circle src={avatar || AVATAR_FALLBACK} />
+
               {name || t(AUTHOR_UNKNOWN)}
             </div>
           );
@@ -403,9 +400,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
           return (
             <tooltip.IconButton
+              data-modid={mod.id}
               icon="details"
               tooltip={instructions}
-              data-modid={mod.id}
               onClick={this.toggleInstructions}
             />
           );
@@ -569,68 +566,70 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         : modSelection) ?? [];
 
     return (
-      <FlexLayout type="column" className={className}>
+      <FlexLayout className={className} type="column">
         <FlexLayout.Fixed className="collection-overview-panel">
           {selection.length > 0 ? (
             <CollectionOverviewSelection
-              t={t}
-              profile={profile}
               collection={collection}
-              onDeselectMods={this.unselectMods}
               incomplete={incomplete}
               modSelection={selection}
+              profile={profile}
+              t={t}
+              onDeselectMods={this.unselectMods}
             />
           ) : (
             <CollectionOverview
-              t={t}
+              collection={collection}
+              incomplete={incomplete}
               language={language}
               profile={profile}
-              collection={collection}
-              totalSize={totalSize}
-              showUpvoteResponse={showUpvoteResponse}
-              showDownvoteResponse={showDownvoteResponse}
               revision={this.revisionMerged(collectionInfo, revisionInfo)}
+              showDownvoteResponse={showDownvoteResponse}
+              showUpvoteResponse={showUpvoteResponse}
+              t={t}
+              totalSize={totalSize}
               votedSuccess={votedSuccess}
+              onClone={this.clone}
+              onClose={this.close}
+              onRemove={this.remove}
               onSetEnabled={this.setEnabled}
               onShowMods={this.showMods}
-              onClose={this.close}
-              onClone={this.clone}
-              onRemove={this.remove}
-              onVoteSuccess={onVoteSuccess}
               onSuppressVoteResponse={onSuppressVoteResponse}
-              incomplete={incomplete}
+              onVoteSuccess={onVoteSuccess}
             />
           )}
         </FlexLayout.Fixed>
+
         <FlexLayout.Flex className="collection-mods-panel">
           <Tabs
-            id="collection-view-tabs"
             activeKey={currentTab}
-            onSelect={this.selectTab}
-            unmountOnExit={true}
+            id="collection-view-tabs"
             mountOnEnter={true}
+            unmountOnExit={true}
+            onSelect={this.selectTab}
           >
-            <Tab key="instructions" eventKey="instructions" title={t("Instructions")}>
+            <Tab eventKey="instructions" key="instructions" title={t("Instructions")}>
               <Panel>
                 <Panel.Body>
                   <CollectionInstructions
-                    t={t}
                     collection={collection}
                     mods={mods}
+                    t={t}
                     onToggleInstructions={this.toggleInstructions}
                   />
                 </Panel.Body>
               </Panel>
             </Tab>
-            <Tab key="mods" eventKey="mods" title={t("Mods")}>
+
+            <Tab eventKey="mods" key="mods" title={t("Mods")}>
               <Panel>
                 <Panel.Body>
                   <Table
-                    tableId="collection-mods"
-                    showDetails={false}
-                    data={itemRows}
-                    staticElements={this.mAttributes}
                     actions={this.mModActions}
+                    data={itemRows}
+                    showDetails={false}
+                    staticElements={this.mAttributes}
+                    tableId="collection-mods"
                     onChangeSelection={this.changeModSelection}
                   />
                 </Panel.Body>
@@ -638,16 +637,18 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             </Tab>
           </Tabs>
         </FlexLayout.Flex>
+
         {(driver.step !== "review" || driver.collection?.id !== collection?.id) && (
           <FlexLayout.Fixed>
             <CollectionProgress
-              t={t}
-              showPremiumAd={this.props.showPremiumAd}
+              activity={activity}
+              downloads={downloads}
               mods={itemRows}
               profile={profile}
-              downloads={downloads}
+              resyncDisabled={installInFlight || (activity.mods ?? []).length > 0}
+              showPremiumAd={this.props.showPremiumAd}
+              t={t}
               totalSize={totalSize}
-              activity={activity}
               onCancel={this.cancel}
               onPause={this.mInstalling ? this.pause : undefined}
               onResume={
@@ -658,7 +659,6 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
                     : this.resume
               }
               onResync={this.resync}
-              resyncDisabled={installInFlight || (activity.mods ?? []).length > 0}
             />
           </FlexLayout.Fixed>
         )}
@@ -838,7 +838,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
     const rules = modIds
       .filter((modId) => itemRows[modId] !== undefined)
-      .map((modId) => ({ ...itemRows[modId].collectionRule, ignored }) as IModRule);
+      .map((modId) => ({ ...itemRows[modId].collectionRule, ignored }));
     if (rules.length === 0) {
       return;
     }

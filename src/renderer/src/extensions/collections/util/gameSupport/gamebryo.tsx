@@ -6,7 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ControlLabel, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { useSelector, useStore } from "react-redux";
 
-import { Spinner, tooltip } from "../../../../controls/api";
+import Spinner from "../../../../controls/Spinner";
+import * as tooltip from "../../../../controls/TooltipControls";
 import { log } from "../../../../logging";
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import type { IState } from "../../../../types/IState";

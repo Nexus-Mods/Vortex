@@ -9,11 +9,21 @@ import { connect } from "react-redux";
 import type * as Redux from "redux";
 
 import * as actions from "../../../../actions";
-import { Icon, IconBar, Image, tooltip } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import Icon from "../../../../controls/Icon";
+import IconBar from "../../../../controls/IconBar";
+import Image from "../../../../controls/Image";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
+import type { IActionDefinition } from "../../../../types/IActionDefinition";
+import type { IState } from "../../../../types/IState";
+import { UserCanceled } from "../../../../util/CustomErrors";
+import getVortexPath from "../../../../util/getVortexPath";
+import type { TFunction as TFunctionApi } from "../../../../util/i18n";
 import * as selectors from "../../../../util/selectors";
+import { getSafe } from "../../../../util/storeHelper";
 import {
   AUTHOR_UNKNOWN,
   MAX_COLLECTION_NAME_LENGTH,
@@ -28,10 +38,10 @@ export interface IBaseProps {
   t: TFunction;
   className?: string;
   gameId: string;
-  installing?: types.IMod;
-  collection: types.IMod;
+  installing?: IMod;
+  collection: IMod;
   infoCache?: InfoCache;
-  mods?: { [modId: string]: types.IMod };
+  mods?: { [modId: string]: IMod };
   incomplete?: boolean;
   details: boolean | "some";
   forceRevisionDisplay?: number;
@@ -46,7 +56,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  profile: types.IProfile;
+  profile: IProfile;
 }
 
 interface IActionProps {
@@ -56,7 +66,7 @@ interface IActionProps {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IModNameFieldProps {
-  t: types.TFunction;
+  t: TFunctionApi;
   name: string;
   onChange: (name: string) => void;
 }
@@ -134,10 +144,10 @@ function ModNameField(props: IModNameFieldProps) {
 }
 
 class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
-  private imageURLs = memoizeOne((collection: types.IMod) =>
+  private imageURLs = memoizeOne((collection: IMod) =>
     [
       collection.attributes?.pictureUrl,
-      path.join(util.getVortexPath("assets"), "images", "collection_fallback_tile.png"),
+      path.join(getVortexPath("assets"), "images", "collection_fallback_tile.png"),
     ].filter((iter) => iter !== undefined),
   );
 
@@ -166,9 +176,9 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
       return null;
     }
 
-    const active = util.getSafe(profile, ["modState", collection.id, "enabled"], false);
+    const active = getSafe(profile, ["modState", collection.id, "enabled"], false);
 
-    const refMods: types.IModRule[] = (collection.rules ?? []).filter((rule) =>
+    const refMods: IModRule[] = (collection.rules ?? []).filter((rule) =>
       ["requires", "recommends"].includes(rule.type),
     );
 
@@ -242,14 +252,12 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
                 ) : null}
               </div>
 
-              <div className="name no-hover">
-                {util.renderModName(collection, { version: false })}
-              </div>
+              <div className="name no-hover">{renderModName(collection, { version: false })}</div>
 
               {onEdit !== undefined ? (
                 <div className="hover">
                   <ModNameField
-                    name={util.renderModName(collection, { version: false })}
+                    name={renderModName(collection, { version: false })}
                     t={t}
                     onChange={this.changeName}
                   />
@@ -277,7 +285,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
                   {refMods.length}
                 </div>
 
-                {/*<div><Icon name='archive' />{util.bytesToString(totalSize)}</div>*/}
+                {/*<div><Icon name='archive' />{bytesToString(totalSize)}</div>*/}
               </div>
             </div>
           ) : null}
@@ -311,7 +319,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
       onView,
     } = this.props;
 
-    const result: types.IActionDefinition[] = [];
+    const result: IActionDefinition[] = [];
 
     if (onUpdate) {
       result.push({
@@ -334,7 +342,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
             this.nextState.updating = true;
             prom
               .catch((err) => {
-                if (!(err instanceof util.UserCanceled)) {
+                if (!(err instanceof UserCanceled)) {
                   this.context.api.showErrorNotification(
                     "Failed to update collection",
                     unknownToError(err),
@@ -411,7 +419,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
         icon: "upload",
         action: (instanceIds: string[]) => this.invoke(onUpload, instanceIds),
         condition: () => {
-          const refMods: types.IModRule[] = (collection.rules ?? []).filter((rule) =>
+          const refMods: IModRule[] = (collection.rules ?? []).filter((rule) =>
             ["requires", "recommends"].includes(rule.type),
           );
           if (refMods.length === 0) {
@@ -426,7 +434,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
     return result;
   }
 
-  private renderMenu(refMods: types.IModRule[], totalSize: number): JSX.Element[] {
+  private renderMenu(refMods: IModRule[], totalSize: number): JSX.Element[] {
     const { t, collection } = this.props;
 
     return [
@@ -456,7 +464,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
 
 const emptyObj = {};
 
-function mapStateToProps(state: types.IState, ownProps: IBaseProps): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   return {
     profile: selectors.activeProfile(state),
   };

@@ -3,19 +3,28 @@ import * as path from "path";
 import type { ICollection, IDownloadURL, IRevision } from "@nexusmods/nexus-api";
 import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
+import SevenZip from "node-7z";
 
 import * as actions from "../../actions";
-import type * as types from "../../types/api";
-import * as util from "../../util/api";
+import type { IMod, IModRule } from "../../extensions/mod_management/types/IMod";
+import { findModByRef } from "../../extensions/mod_management/util/findModByRef";
+import renderModName from "../../extensions/mod_management/util/modName";
+import testModReference from "../../extensions/mod_management/util/testModReference";
+import type { IDialogResult } from "../../types/IDialog";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
+import getVortexPath from "../../util/getVortexPath";
 import * as selectors from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
+import { batchDispatch, sanitizeFilename, toPromise } from "../../util/util";
 import type InstallDriver from "./util/InstallDriver";
 import { readCollection } from "./util/readCollection";
 import { collectionModToRule } from "./util/transformCollection";
 import showChangelog from "./views/InstallDialog/InstallChangelogDialog";
 
 async function collectionUpdate(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   downloadGameId: string,
   collectionSlug: string,
   revisionNumber: string,
@@ -30,7 +39,7 @@ async function collectionUpdate(
       )
     )[0];
     if (latest === undefined) {
-      throw new util.ProcessCanceled(
+      throw new ProcessCanceled(
         `Server returned no info on collection ${collectionSlug}, revision ${revisionNumber}`,
       );
     }
@@ -70,8 +79,8 @@ async function collectionUpdate(
     )[0];
     let dlId: string;
     try {
-      const fileName = util.sanitizeFilename(collection.name);
-      dlId = await util.toPromise((cb) =>
+      const fileName = sanitizeFilename(collection.name);
+      dlId = await toPromise((cb) =>
         api.events.emit(
           "start-download",
           downloadURLs.map((iter) => iter.URI),
@@ -104,10 +113,10 @@ async function collectionUpdate(
     const dlPath = selectors.downloadPathForGame(api.getState(), downloadGameId);
     const localPath = api.getState().persistent.downloads.files[dlId]?.localPath;
     const archivePath = path.join(dlPath, localPath);
-    const tempDir = path.join(util.getVortexPath("temp"), "collection-update-" + oldModId);
+    const tempDir = path.join(getVortexPath("temp"), "collection-update-" + oldModId);
 
-    let newRules: types.IModRule[];
-    const szip = new util.SevenZip();
+    let newRules: IModRule[];
+    const szip = new SevenZip();
     await szip.extractFull(archivePath, tempDir);
     try {
       const newCollectionData = await readCollection(api, path.join(tempDir, "collection.json"));
@@ -125,18 +134,17 @@ async function collectionUpdate(
     // as a dependency
     const candidates = oldRules
       .filter((rule) => ["requires", "recommends"].includes(rule.type))
-      .map((rule) => util.findModByRef(rule.reference, mods))
+      .map((rule) => findModByRef(rule.reference, mods))
       .filter((mod) => mod !== undefined && mod.attributes?.["installedAsDependency"] === true);
 
     const notCandidates = Object.values(mods).filter(
       (mod) => !candidates.includes(mod) && mod.id !== oldModId,
     );
 
-    const references = (rules: types.IModRule[], mod: types.IMod) =>
+    const references = (rules: IModRule[], mod: IMod) =>
       (rules ?? []).find(
         (rule) =>
-          ["requires", "recommends"].includes(rule.type) &&
-          util.testModReference(mod, rule.reference),
+          ["requires", "recommends"].includes(rule.type) && testModReference(mod, rule.reference),
       ) !== undefined;
 
     // for each dependency of the collection,
@@ -156,8 +164,8 @@ async function collectionUpdate(
     let ops = { remove: [], keep: [] };
 
     if (obsolete.length > 0) {
-      const collectionName = collection?.name ?? util.renderModName(oldMod);
-      const result: types.IDialogResult = await api.showDialog(
+      const collectionName = collection?.name ?? renderModName(oldMod);
+      const result: IDialogResult = await api.showDialog(
         "question",
         "Remove mods from old revision?",
         {
@@ -182,7 +190,7 @@ async function collectionUpdate(
         ops.remove = obsolete.map((mod) => mod.id);
       } else {
         // Review
-        const reviewResult: types.IDialogResult = await api.showDialog(
+        const reviewResult: IDialogResult = await api.showDialog(
           "question",
           "Remove mods from old revision?",
           {
@@ -194,7 +202,7 @@ async function collectionUpdate(
             },
             checkboxes: obsolete.map((mod) => ({
               id: mod.id,
-              text: util.renderModName(mod),
+              text: renderModName(mod),
               value: true,
             })),
           },
@@ -219,7 +227,7 @@ async function collectionUpdate(
     }
 
     // mark kept mods as manually installed, otherwise this will be queried again
-    util.batchDispatch(
+    batchDispatch(
       api.store,
       ops.keep.map((modId) =>
         actions.setModAttribute(gameMode, modId, "installedAsDependency", false),
@@ -231,14 +239,14 @@ async function collectionUpdate(
     const enabledOptionalMods: string[] = candidates
       .filter((mod) => {
         const isOptional = oldRules.some(
-          (r) => r.type === "recommends" && util.testModReference(mod, r.reference),
+          (r) => r.type === "recommends" && testModReference(mod, r.reference),
         );
-        return isOptional && util.getSafe(profile?.modState, [mod.id, "enabled"], false);
+        return isOptional && getSafe(profile?.modState, [mod.id, "enabled"], false);
       })
       .map((mod) => mod.id);
 
     // Remove old collection and obsolete mods
-    await util.toPromise((cb) =>
+    await toPromise((cb) =>
       api.events.emit("remove-mods", gameMode, [oldModId, ...ops.remove], cb, {
         incomplete: true,
         ignoreInstalling: true,
@@ -247,18 +255,18 @@ async function collectionUpdate(
 
     // Install the new revision — did-install-mod will start the driver
     // cleanly since cleanup is already done
-    const newModId = await util.toPromise<string | undefined>((cb) =>
+    const newModId = await toPromise<string | undefined>((cb) =>
       api.events.emit("start-install-download", dlId, undefined, cb),
     );
 
     if (newModId === undefined) {
-      throw new util.ProcessCanceled("Download failed, update archive not found");
+      throw new ProcessCanceled("Download failed, update archive not found");
     }
 
     // Restore enabled state for optional mods that survived the update
     if (profile !== undefined && enabledOptionalMods.length > 0) {
       const currentMods = api.getState().persistent.mods[gameMode];
-      util.batchDispatch(
+      batchDispatch(
         api.store,
         enabledOptionalMods
           .filter((id) => currentMods?.[id] !== undefined)
@@ -266,17 +274,17 @@ async function collectionUpdate(
       );
     }
   } catch (err) {
-    if (!(err instanceof util.UserCanceled)) {
+    if (!(err instanceof UserCanceled)) {
       api.showErrorNotification("Failed to download collection", unknownToError(err), {
-        allowReport: !(err instanceof util.ProcessCanceled),
-        warning: err instanceof util.ProcessCanceled,
+        allowReport: !(err instanceof ProcessCanceled),
+        warning: err instanceof ProcessCanceled,
       });
     }
   }
 }
 
 export function onCollectionUpdate(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   driver: InstallDriver,
 ): (...args: any[]) => void {
   return (
@@ -299,7 +307,7 @@ export function onCollectionUpdate(
           cb?.(null);
         })
         .catch((err) => {
-          if (!(err instanceof util.UserCanceled)) {
+          if (!(err instanceof UserCanceled)) {
             api.showErrorNotification("Failed to update collection", unknownToError(err));
           }
           cb?.(err);

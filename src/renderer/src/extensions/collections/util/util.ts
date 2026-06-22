@@ -3,7 +3,7 @@ import { createHash } from "crypto";
 import type { CollectionPermission, ICollectionPermission } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
 
-import type * as types from "../../../types/api";
+import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
 import type { ICollectionModRuleEx } from "../types/ICollection";
 import type { IModEx } from "../types/IModEx";
 
@@ -52,7 +52,7 @@ export function isRelevant(mod: IModEx) {
   return true;
 }
 
-export type IModWithRule = types.IMod & { collectionRule: types.IModRule };
+export type IModWithRule = IMod & { collectionRule: IModRule };
 
 export function calculateCollectionSize(mods: { [id: string]: IModWithRule }): number {
   return Object.values(mods).reduce((prev: number, mod: IModEx) => {

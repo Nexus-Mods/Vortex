@@ -1,19 +1,23 @@
-/* eslint-disable */
 import * as path from "node:path";
 
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import * as React from "react";
 
 import * as actions from "../../actions";
+import type { IMod } from "../../extensions/mod_management/types/IMod";
+import type { IProfile } from "../../extensions/profile_management/types/IProfile";
 import { log } from "../../logging";
-import * as types from "../../types/api";
-import * as util from "../../util/api";
+import type { IConditionResult, IDialogContent } from "../../types/IDialog";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import * as fs from "../../util/fs";
 import * as selectors from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
+import { batchDispatch, isFilenameValid } from "../../util/util";
 import { INI_TWEAKS_PATH, OPTIONAL_TWEAK_PREFIX } from "./constants";
-import { ICollection } from "./types/ICollection";
-import { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
-import { IINITweak, TweakArray } from "./types/IINITweak";
+import type { ICollection } from "./types/ICollection";
+import type { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
+import type { IINITweak, TweakArray } from "./types/IINITweak";
 import TweakList from "./views/IniTweaks";
 
 const gameSupport = {
@@ -56,9 +60,9 @@ function isSupported(gameId: string) {
   return gameSupport[gameId] !== undefined;
 }
 
-function validateFilenameInput(content: types.IDialogContent): types.IConditionResult[] {
+function validateFilenameInput(content: IDialogContent): IConditionResult[] {
   const input = content.input[0].value || "";
-  if (input.length < 2 || !(util as any).isFilenameValid(input)) {
+  if (input.length < 2 || !isFilenameValid(input)) {
     return [
       {
         actions: ["Confirm"],
@@ -71,7 +75,7 @@ function validateFilenameInput(content: types.IDialogContent): types.IConditionR
   }
 }
 
-function TweakListWrap(api: types.IExtensionApi, prop: IExtendedInterfaceProps): JSX.Element {
+function TweakListWrap(api: IExtensionApi, prop: IExtendedInterfaceProps): JSX.Element {
   return React.createElement(TweakList, {
     ...prop,
     settingsFiles: gameSupport[prop.gameId].gameSettingsFiles,
@@ -93,22 +97,18 @@ async function getTweaks(dirPath: string): Promise<string[]> {
   }
 }
 
-export function getEnabledTweaks(api: types.IExtensionApi, gameId: string, modId: string) {
+export function getEnabledTweaks(api: IExtensionApi, gameId: string, modId: string) {
   const state = api.getState();
-  const mods: { [modId: string]: types.IMod } = util.getSafe(
-    state,
-    ["persistent", "mods", gameId],
-    {},
-  );
-  const tweaks = util.getSafe(mods[modId], ["enabledINITweaks"], []);
+  const mods: { [modId: string]: IMod } = getSafe(state, ["persistent", "mods", gameId], {});
+  const tweaks = getSafe(mods[modId], ["enabledINITweaks"], []);
   return tweaks;
 }
 
 export async function importTweaks(
-  api: types.IExtensionApi,
-  profile: types.IProfile,
-  mods: { [modId: string]: types.IMod },
-  destCollection: types.IMod,
+  api: IExtensionApi,
+  profile: IProfile,
+  mods: { [modId: string]: IMod },
+  destCollection: IMod,
   force?: boolean,
 ) {
   const tweaks = await getAllTweaks(api, profile, mods);
@@ -136,15 +136,15 @@ export async function importTweaks(
   }
 
   if (batchedActions.length > 0) {
-    util.batchDispatch(api.store, batchedActions);
+    batchDispatch(api.store, batchedActions);
   }
   return Promise.resolve(tweaks);
 }
 
 async function getAllTweaks(
-  api: types.IExtensionApi,
-  profile: types.IProfile,
-  mods: { [modId: string]: types.IMod },
+  api: IExtensionApi,
+  profile: IProfile,
+  mods: { [modId: string]: IMod },
 ): Promise<TweakArray> {
   const state = api.getState();
   if (profile?.gameId === undefined) {
@@ -154,8 +154,7 @@ async function getAllTweaks(
   const installationPath = selectors.installPathForGame(state, profile.gameId);
   const enabledMods = Object.keys(mods).filter(
     (id) =>
-      util.getSafe(profile.modState, [id, "enabled"], false) &&
-      mods[id].installationPath !== undefined,
+      getSafe(profile.modState, [id, "enabled"], false) && mods[id].installationPath !== undefined,
   );
   const validTweaks: IINITweak[] = [];
   for (const modId of enabledMods) {
@@ -216,7 +215,7 @@ async function genRefreshTweaks(modPath: string): Promise<TweakArray> {
 }
 
 async function genRemoveIniTweak(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   props: IExtendedInterfaceProps,
   modPath: string,
   tweak: IINITweak,
@@ -260,7 +259,7 @@ async function genRemoveIniTweak(
 }
 
 async function genAddIniTweak(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   modPath: string,
   settingsFiles: string[],
 ): Promise<void> {
@@ -302,7 +301,7 @@ async function genAddIniTweak(
     });
 }
 
-async function genEnableIniTweaks(api: types.IExtensionApi, gameId: string, mod: types.IMod) {
+async function genEnableIniTweaks(api: IExtensionApi, gameId: string, mod: IMod) {
   const stagingPath = selectors.installPathForGame(api.getState(), gameId);
   const modPath = path.join(stagingPath, mod.installationPath);
   try {
@@ -311,7 +310,7 @@ async function genEnableIniTweaks(api: types.IExtensionApi, gameId: string, mod:
       actions.setINITweakEnabled(gameId, mod.id, req.fileName, true),
     );
     if (batched.length > 0) {
-      util.batchDispatch(api.store, batched);
+      batchDispatch(api.store, batched);
     }
   } catch (err) {
     if (getErrorCode(err) !== "ENOENT") {
@@ -320,15 +319,15 @@ async function genEnableIniTweaks(api: types.IExtensionApi, gameId: string, mod:
   }
 }
 
-function init(context: types.IExtensionContext) {
+function init(context: IExtensionContext) {
   context.optional.registerCollectionFeature(
     "ini-tweaks",
     () => Promise.resolve({}),
-    (gameId: string, collection: ICollection, mod: types.IMod) =>
+    (gameId: string, collection: ICollection, mod: IMod) =>
       genEnableIniTweaks(context.api, gameId, mod),
     () => Promise.resolve(),
     () => "INI Tweaks",
-    (state: types.IState, gameId: string) => isSupported(gameId),
+    (state: IState, gameId: string) => isSupported(gameId),
     (prop: IExtendedInterfaceProps) => TweakListWrap(context.api, prop),
   );
 

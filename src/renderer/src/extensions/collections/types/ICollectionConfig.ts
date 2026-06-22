@@ -1,4 +1,4 @@
-import type * as types from "../../../types/api";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
 import type { ICollection } from "./ICollection";
 
 export interface ICollectionConfig {
@@ -8,7 +8,7 @@ export interface ICollectionConfig {
 
 export interface IConfigGeneratorProps {
   gameId: string;
-  collectionMod: types.IMod;
+  collectionMod: IMod;
 }
 
 export interface IConfigParserProps {

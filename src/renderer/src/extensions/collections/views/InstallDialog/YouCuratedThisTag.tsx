@@ -1,9 +1,9 @@
 import * as React from "react";
 
-import { Icon } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
+import Icon from "../../../../controls/Icon";
+import type { TFunction } from "../../../../util/i18n";
 
-function Tag(props: { t: types.TFunction }) {
+function Tag(props: { t: TFunction }) {
   const { t } = props;
 
   return (

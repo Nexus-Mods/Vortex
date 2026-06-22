@@ -1,15 +1,14 @@
 import * as _ from "lodash";
+import type { IReference } from "modmeta-db";
 
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IDownload } from "../../../extensions/download_management/types/IDownload";
+import { lookupFromDownload } from "../../../extensions/mod_management/util/dependencies";
+import testModReference from "../../../extensions/mod_management/util/testModReference";
 
-export function testDownloadReference(
-  download: types.IDownload,
-  reference: types.IReference,
-): boolean {
+export function testDownloadReference(download: IDownload, reference: IReference): boolean {
   if (download === undefined) {
     return false;
   }
 
-  return util.testModReference((util as any).lookupFromDownload(download), reference);
+  return testModReference(lookupFromDownload(download), reference);
 }

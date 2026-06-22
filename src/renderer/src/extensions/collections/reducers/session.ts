@@ -1,20 +1,20 @@
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/session";
 
-const sessionReducer: types.IReducerSpec = {
+const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.startEditCollection as any]: (state, payload) => {
       const { modId } = payload;
-      return util.setSafe(state, ["editCollectionId"], modId);
+      return setSafe(state, ["editCollectionId"], modId);
     },
     [actions.startAddModsToCollection as any]: (state, payload) => {
       const { collectionId } = payload;
-      return util.setSafe(state, ["addModsId"], collectionId);
+      return setSafe(state, ["addModsId"], collectionId);
     },
     [actions.healthDownvoteDialog as any]: (state, payload) => {
       const { collectionModId } = payload;
-      return util.setSafe(state, ["healthDownvoteDialog"], collectionModId);
+      return setSafe(state, ["healthDownvoteDialog"], collectionModId);
     },
   },
   defaults: {

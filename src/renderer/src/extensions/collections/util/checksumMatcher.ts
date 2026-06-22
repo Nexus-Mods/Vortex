@@ -3,23 +3,26 @@ import * as path from "path";
 import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
+import SevenZip from "node-7z";
 
+import { convertGameIdReverse } from "../../../extensions/nexus_integration/util/convertGameId";
 import { log } from "../../../logging";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { ProcessCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import * as selectors from "../../../util/selectors";
+import walk from "../../../util/walk";
 import { ReplicateHashMismatchError } from "../util/errors";
 
 export async function matchChecksums(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   modId: string,
 ): Promise<void> {
   const state = api.getState();
   const mod = state.persistent.mods[gameId][modId];
   if (!mod?.archiveId) {
-    throw new util.ProcessCanceled("Mod not found");
+    throw new ProcessCanceled("Mod not found");
   }
 
   const stagingPath = selectors.installPathForGame(state, gameId);
@@ -28,18 +31,18 @@ export async function matchChecksums(
   const archive = state.persistent.downloads.files[mod.archiveId];
 
   if (archive === undefined) {
-    throw new util.ProcessCanceled("Archive not found");
+    throw new ProcessCanceled("Archive not found");
   }
 
   const rawGame = Array.isArray(archive.game) ? archive.game[0] : archive.game;
   const internalId = rawGame
-    ? util.convertGameIdReverse(selectors.knownGames(state), rawGame) || rawGame
+    ? convertGameIdReverse(selectors.knownGames(state), rawGame) || rawGame
     : rawGame;
   const dlPath = selectors.downloadPathForGame(state, internalId);
   const archivePath = path.join(dlPath, archive.localPath);
 
   const sourceChecksums: Set<string> = new Set();
-  const szip = new util.SevenZip();
+  const szip = new SevenZip();
   await szip.list(archivePath, undefined, async (entries) => {
     for (const entry of entries) {
       if (entry.attr !== "D") {
@@ -57,7 +60,7 @@ export async function matchChecksums(
   });
 
   let entries: string[] = [];
-  await util.walk(
+  await walk(
     localPath,
     (input) => {
       return Bluebird.resolve((entries = [].concat(entries, input)));

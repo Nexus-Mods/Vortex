@@ -5,11 +5,18 @@ import * as React from "react";
 import { generate as shortid } from "shortid";
 
 import * as actions from "../../actions";
+import type { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IMod } from "../../extensions/mod_management/types/IMod";
 import { log } from "../../logging";
-import type * as types from "../../types/api";
-import * as util from "../../util/api";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import extractExeIcon from "../../util/exeIcon";
 import * as fs from "../../util/fs";
 import * as selectors from "../../util/selectors";
+import StarterInfo from "../../util/StarterInfo";
+import { setSafe } from "../../util/storeHelper";
+import { batchDispatch, isChildPath, makeUniqueByKey } from "../../util/util";
 import type { ICollection, ICollectionTool } from "./types/ICollection";
 import type { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
 import ToolList from "./views/Tools";
@@ -20,21 +27,16 @@ function ToolsListWrap(prop: IExtendedInterfaceProps): JSX.Element {
   });
 }
 
-function convertTools(
-  state: types.IState,
-  gameId: string,
-  includedTools: string[],
-): ICollectionTool[] {
+function convertTools(state: IState, gameId: string, includedTools: string[]): ICollectionTool[] {
   const { tools } = state.settings.gameMode.discovered[gameId];
   const discovery = selectors.discoveryByGame(state, gameId);
 
-  return util
-    .makeUniqueByKey(includedTools ?? [], (item) => item)
+  return makeUniqueByKey(includedTools ?? [], (item) => item)
     .filter((toolId) => tools[toolId]?.custom && !tools[toolId]?.hidden)
     .map((toolId) => {
       const tool = tools[toolId];
 
-      const exe = util.isChildPath(tool.path, discovery.path)
+      const exe = isChildPath(tool.path, discovery.path)
         ? path.relative(discovery.path, tool.path)
         : tool.path;
 
@@ -51,7 +53,7 @@ function convertTools(
     });
 }
 
-function generateTools(api: types.IExtensionApi, gameId: string, mod: types.IMod) {
+function generateTools(api: IExtensionApi, gameId: string, mod: IMod) {
   return {
     tools: convertTools(api.getState(), gameId, mod.attributes?.collection?.includedTools),
   };
@@ -79,11 +81,7 @@ function sameArgs(lhs: string[], rhs: string[]): boolean {
   return true;
 }
 
-function isSameTool(
-  discovery: types.IDiscoveryResult,
-  lhs: types.IDiscoveredTool,
-  rhs: ICollectionTool,
-) {
+function isSameTool(discovery: IDiscoveryResult, lhs: IDiscoveredTool, rhs: ICollectionTool) {
   if (lhs?.path === undefined) {
     return false;
   }
@@ -107,11 +105,11 @@ function updatePaths(tool: ICollectionToolEx, gamePath: string) {
 }
 
 async function cloneTools(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   tools: ICollectionTool[],
-  from: types.IMod,
-  to: types.IMod,
+  from: IMod,
+  to: IMod,
 ): Promise<void> {
   const discovery = selectors.discoveryByGame(api.getState(), gameId);
 
@@ -128,12 +126,12 @@ async function cloneTools(
     })
     .filter((iter) => iter !== undefined);
 
-  const attributes = util.setSafe(to.attributes.collection, ["includedTools"], includedTools);
+  const attributes = setSafe(to.attributes.collection, ["includedTools"], includedTools);
   api.store.dispatch(actions.setModAttribute(gameId, to.id, "collection", attributes));
 }
 
 async function setUpTools(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   tools: ICollectionTool[],
 ): Promise<void> {
@@ -179,7 +177,7 @@ async function setUpTools(
   });
 
   // this has to happen before we extract icons, otherwise we might create duplicates
-  util.batchDispatch(api.store, addActions);
+  batchDispatch(api.store, addActions);
 
   const notFoundTools: string[] = [];
 
@@ -192,10 +190,10 @@ async function setUpTools(
       }
 
       if (path.extname(tool.exe) === ".exe") {
-        const iconPath = util.StarterInfo.toolIconRW(gameId, tool.id);
+        const iconPath = StarterInfo.toolIconRW(gameId, tool.id);
         await fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve());
         try {
-          await util["extractExeIcon"](tool.exe, iconPath);
+          await extractExeIcon(tool.exe, iconPath);
         } catch (err) {
           log("warn", "failed to extract exe icon", {
             executable: tool.exe,
@@ -223,7 +221,7 @@ async function setUpTools(
     );
   }
 
-  util.batchDispatch(
+  batchDispatch(
     api.store,
     addTools.map((tool) => actions.setToolVisible(gameId, tool.id, true)),
   );
@@ -234,17 +232,16 @@ async function setUpTools(
   parse: (gameId: string, collection: ICollection, mod: types.IMod) => Promise<void>;
 */
 
-function init(context: types.IExtensionContext) {
+function init(context: IExtensionContext) {
   context.optional.registerCollectionFeature(
     "tools",
-    (gameId: string, includedMods: string[], mod: types.IMod) =>
-      generateTools(context.api, gameId, mod),
-    (gameId: string, collection: ICollection, mod: types.IMod) =>
+    (gameId: string, includedMods: string[], mod: IMod) => generateTools(context.api, gameId, mod),
+    (gameId: string, collection: ICollection, mod: IMod) =>
       setUpTools(context.api, gameId, collection["tools"]),
-    (gameId: string, collection: ICollection, from: types.IMod, to: types.IMod) =>
+    (gameId: string, collection: ICollection, from: IMod, to: IMod) =>
       cloneTools(context.api, gameId, collection["tools"], from, to),
     () => "Tools",
-    (state: types.IState, gameId: string) => true,
+    (state: IState, gameId: string) => true,
     ToolsListWrap,
   );
 }

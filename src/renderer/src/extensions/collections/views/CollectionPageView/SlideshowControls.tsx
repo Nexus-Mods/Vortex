@@ -1,11 +1,11 @@
 import * as React from "react";
 
-import { tooltip } from "../../../../controls/api";
-import type * as types from "../../../../types/api";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { TFunction } from "../../../../util/i18n";
 import Timer from "./Timer";
 
 export interface ISlideshowControlsProps {
-  t: types.TFunction;
+  t: TFunction;
   numItems: number;
   autoProgressTimeMS?: number;
 

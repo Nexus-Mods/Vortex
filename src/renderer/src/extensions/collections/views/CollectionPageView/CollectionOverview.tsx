@@ -4,16 +4,25 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Media, Panel } from "react-bootstrap";
 
-import { ActionDropdown, FlexLayout, Image, tooltip } from "../../../../controls/api";
+import { MainContext } from "../../../../contexts";
+import ActionDropdown from "../../../../controls/ActionDropdown";
 import { ComponentEx } from "../../../../controls/ComponentEx";
+import FlexLayout from "../../../../controls/FlexLayout";
+import Image from "../../../../controls/Image";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IMod } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import type { IActionDefinition } from "../../../../types/IActionDefinition";
+import type { IDialogResult } from "../../../../types/IDialog";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { TFunction as TFunctionApi } from "../../../../util/i18n";
+import opn from "../../../../util/opn";
 import * as selectors from "../../../../util/selectors";
-import { MainContext } from "../../../../views/api";
+import { Campaign, nexusModsURL, Section } from "../../../../util/util";
 import { updateCollectionInfo } from "../../actions/persistent";
 import { healthDownvoteDialog } from "../../actions/session";
-/* eslint-disable */
 import CollectionReleaseStatus from "../CollectionReleaseStatus";
 import CollectionThumbnail from "../CollectionTile";
 import HealthIndicator from "./HealthIndicator";
@@ -22,8 +31,8 @@ const ENDORSE_DELAY_MS = 43200000; // 12 hours
 //const ENDORSE_DELAY_MS = 60000; // 1 minute
 
 interface IEndorseButtonProps {
-  t: types.TFunction;
-  mod: types.IMod;
+  t: TFunctionApi;
+  mod: IMod;
   collection: ICollection;
   gameId: string;
   voteAllowed: boolean;
@@ -90,12 +99,12 @@ function EndorseButton(props: IEndorseButtonProps) {
 
   return (
     <tooltip.IconButton
-      icon={icon}
-      tooltip={toolTip}
       className={classes}
-      onClick={endorse}
       disabled={!voteAllowed || collection?.endorsements === undefined}
+      icon={icon}
       spin={endorsedStatus.toLowerCase() === "pending"}
+      tooltip={toolTip}
+      onClick={endorse}
     >
       {collection?.endorsements ?? "?"}
     </tooltip.IconButton>
@@ -103,7 +112,7 @@ function EndorseButton(props: IEndorseButtonProps) {
 }
 
 interface ICommentButtonProps {
-  t: types.TFunction;
+  t: TFunctionApi;
   collection: ICollection;
 }
 
@@ -114,7 +123,7 @@ function CommentButton(props: ICommentButtonProps) {
   const click = React.useCallback(() => {
     if (collection?.["commentLink"] !== undefined) {
       context.api.events.emit("analytics-track-click-event", "Collections", "Comments");
-      util.opn(collection["commentLink"]);
+      opn(collection["commentLink"]);
     }
   }, [collection]);
 
@@ -123,18 +132,18 @@ function CommentButton(props: ICommentButtonProps) {
     : t("Comments");
   return (
     <tooltip.IconButton
-      icon="comments"
       className="collection-ghost-button"
+      disabled={collection?.["commentLink"] === undefined || collection?.viewerIsBlocked}
+      icon="comments"
       tooltip={tip}
       onClick={click}
-      disabled={collection?.["commentLink"] === undefined || collection?.viewerIsBlocked}
     >
       {collection?.forumTopic?.postsCount ?? 0}
     </tooltip.IconButton>
   );
 }
 
-async function refreshCollection(api: types.IExtensionApi, collection: ICollection) {
+async function refreshCollection(api: IExtensionApi, collection: ICollection) {
   if (!collection?.slug) {
     return;
   }
@@ -151,8 +160,8 @@ async function refreshCollection(api: types.IExtensionApi, collection: ICollecti
 interface ICollectionOverviewProps {
   t: TFunction;
   language: string;
-  profile: types.IProfile;
-  collection: types.IMod;
+  profile: IProfile;
+  collection: IMod;
   totalSize: number;
   revision: IRevision;
   votedSuccess: RatingOptions;
@@ -169,7 +178,7 @@ interface ICollectionOverviewProps {
 }
 
 class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx: number }> {
-  private mWorkshopActions: types.IActionDefinition[];
+  private mWorkshopActions: IActionDefinition[];
 
   constructor(props: ICollectionOverviewProps) {
     super(props);
@@ -255,61 +264,75 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
         <Media>
           <Media.Left>
             <CollectionThumbnail
-              t={t}
-              imageTime={Date.now()}
               collection={collection}
-              gameId={profile.gameId}
               details={false}
+              gameId={profile.gameId}
+              imageTime={Date.now()}
+              t={t}
             />
           </Media.Left>
+
           <Media.Body>
             <FlexLayout type="column">
               <FlexLayout.Fixed>
                 <div className="collection-overview-title">
-                  <div className="collection-title">{util.renderModName(collection)}</div>
+                  <div className="collection-title">{renderModName(collection)}</div>
+
                   <CollectionReleaseStatus
-                    t={t}
                     active={true}
-                    enabled={profile.modState?.[collection.id]?.enabled ?? false}
                     collection={collection}
+                    enabled={profile.modState?.[collection.id]?.enabled ?? false}
                     incomplete={incomplete}
+                    t={t}
                   />
+
                   <div className="flex-filler" />
                 </div>
               </FlexLayout.Fixed>
+
               <FlexLayout.Flex className="collection-description-container">
                 <div className="collection-description">
                   {collection.attributes?.shortDescription ?? t("No description")}
                 </div>
               </FlexLayout.Flex>
+
               <FlexLayout.Fixed className="collection-page-detail-bar">
                 <FlexLayout type="row">
                   <FlexLayout.Fixed className="collection-detail-cell">
                     <FlexLayout type="row">
                       <Image
+                        circle
                         srcs={[
                           collection.attributes?.uploaderAvatar ?? "assets/images/noavatar.png",
                         ]}
-                        circle
                       />
+
                       <div>
                         <div className="title">{t("Curated by")}</div>
+
                         <div>{collection.attributes?.uploader}</div>
                       </div>
                     </FlexLayout>
                   </FlexLayout.Fixed>
+
                   <FlexLayout.Fixed className="collection-detail-cell hideable">
                     <div className="title">{t("Revision")}</div>
+
                     <div>{collection.attributes?.revisionNumber}</div>
                   </FlexLayout.Fixed>
+
                   <FlexLayout.Fixed className="collection-detail-cell">
                     <div className="title">{t("Last updated")}</div>
+
                     <div>{this.renderTime(collection.attributes?.updatedTimestamp)}</div>
                   </FlexLayout.Fixed>
+
                   <FlexLayout.Fixed className="collection-detail-cell hideable">
                     <div className="title">{t("Uploaded")}</div>
+
                     <div>{this.renderTime(collection.attributes?.uploadedTimestamp)}</div>
                   </FlexLayout.Fixed>
+
                   {/*
                   <FlexLayout.Fixed className='collection-detail-cell'>
                     <div className='title'>{t('Mods')}</div>
@@ -318,16 +341,18 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
                   */}
                   <FlexLayout.Fixed>
                     <EndorseButton
-                      t={t}
                       collection={revision.collection}
-                      mod={collection}
                       gameId={profile.gameId}
+                      mod={collection}
+                      t={t}
                       voteAllowed={voteAllowed}
                     />
                   </FlexLayout.Fixed>
+
                   <FlexLayout.Fixed>
-                    <CommentButton t={t} collection={revision.collection} />
+                    <CommentButton collection={revision.collection} t={t} />
                   </FlexLayout.Fixed>
+
                   <FlexLayout.Flex>
                     <div />
                   </FlexLayout.Flex>
@@ -335,33 +360,35 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
               </FlexLayout.Fixed>
             </FlexLayout>
           </Media.Body>
+
           <Media.Right>
             <div className="collection-health-container">
               <FlexLayout type="column">
                 <FlexLayout.Fixed>
                   {revision?.revisionStatus !== "is_private" ? (
                     <HealthIndicator
-                      t={t}
-                      revisionNumber={revision?.revisionNumber ?? 0}
-                      value={rating}
-                      onVoteSuccess={this.voteSuccess}
-                      ownSuccess={votedSuccess}
-                      voteAllowed={voteAllowed}
+                      collectionGameVersion={revision?.gameVersions?.[0]?.reference ?? "?"}
                       gameVersion={
                         (this.context.api.getState().persistent?.gameMode as any)?.versions?.[
                           profile.gameId
                         ] ?? "?"
                       }
-                      collectionGameVersion={revision?.gameVersions?.[0]?.reference ?? "?"}
+                      ownSuccess={votedSuccess}
+                      revisionNumber={revision?.revisionNumber ?? 0}
+                      t={t}
+                      value={rating}
+                      voteAllowed={voteAllowed}
+                      onVoteSuccess={this.voteSuccess}
                     />
                   ) : null}
                 </FlexLayout.Fixed>
+
                 <FlexLayout.Flex>
                   <div className="collection-workshop-actions">
                     <ActionDropdown
-                      t={t}
                       id="collection-workshop-actions"
                       staticElements={this.mWorkshopActions}
+                      t={t}
                     />
                   </div>
                 </FlexLayout.Flex>
@@ -394,8 +421,8 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
         "Collections",
         "View on site Added Collection",
       );
-      util.opn(
-        util.nexusModsURL(
+      opn(
+        nexusModsURL(
           [
             collection.game.domainName,
             "collections",
@@ -404,8 +431,8 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
             revision.revisionNumber.toString(),
           ],
           {
-            campaign: util.Campaign.GeneralNavigation,
-            section: util.Section.Collections,
+            campaign: Campaign.GeneralNavigation,
+            section: Section.Collections,
           },
         ),
       );
@@ -498,7 +525,7 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
             },
           ],
         )
-        .then((result: types.IDialogResult) => {
+        .then((result: IDialogResult) => {
           if (result.input["dont_show_again"]) {
             onSuppressVoteResponse("upvote");
           }
@@ -532,18 +559,18 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
             {
               label: 'View comments',
               action: () => {
-                util.opn(revision.collection.commentLink).catch(() => null);
+                opn(revision.collection.commentLink).catch(() => null);
               },
             },
             {
               label: 'View bugs',
               action: () => {
-                util.opn(bugLink).catch(() => null);
+                opn(bugLink).catch(() => null);
               },
             },
           ],
         )
-        .then((result: types.IDialogResult) => {
+        .then((result: IDialogResult) => {
           if (result.input['dont_show_again']) {
             onSuppressVoteResponse('downvote');
           }

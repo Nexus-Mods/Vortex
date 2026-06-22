@@ -1,11 +1,12 @@
 import * as path from "path";
 
-import type * as types from "../../types/api";
+import type { IInstallResult } from "../../extensions/mod_management/types/IInstallResult";
+import type { ProgressDelegate } from "../../extensions/mod_management/types/InstallFunc";
+import type { IExtensionApi, IInstruction } from "../../types/IExtensionContext";
 import * as selectors from "../../util/selectors";
 import { BUNDLED_PATH, MOD_TYPE } from "./constants";
-/* eslint-disable */
-import { ICollection } from "./types/ICollection";
-import { ICollectionConfig } from "./types/ICollectionConfig";
+import type { ICollection } from "./types/ICollection";
+import type { ICollectionConfig } from "./types/ICollectionConfig";
 import { parseConfig } from "./util/collectionConfig";
 import { readCollection } from "./util/readCollection";
 import { collectionModToRule } from "./util/transformCollection";
@@ -13,22 +14,22 @@ import { collectionModToRule } from "./util/transformCollection";
 /**
  * installer function to be used with registerInstaller
  */
-export function makeInstall(api: types.IExtensionApi) {
+export function makeInstall(api: IExtensionApi) {
   return async (
     files: string[],
     destinationPath: string,
     gameId: string,
-    progressDelegate: types.ProgressDelegate,
-  ): Promise<types.IInstallResult> => {
+    progressDelegate: ProgressDelegate,
+  ): Promise<IInstallResult> => {
     const collection: ICollection = await readCollection(
       api,
       path.join(destinationPath, "collection.json"),
     );
 
     const config: ICollectionConfig = await parseConfig({ collection, gameId });
-    const configInstructions: types.IInstruction[] = Object.entries(config).reduce(
+    const configInstructions: IInstruction[] = Object.entries(config).reduce(
       (accum, [key, value]) => {
-        const instr: types.IInstruction = { type: "attribute", key, value };
+        const instr: IInstruction = { type: "attribute", key, value };
         accum.push(instr);
         return accum;
       },

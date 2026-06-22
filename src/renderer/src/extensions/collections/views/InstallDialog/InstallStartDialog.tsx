@@ -8,10 +8,20 @@ import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 
 import * as actions from "../../../../actions";
-import { FlexLayout, Modal, More, Toggle } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
-import type * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import FlexLayout from "../../../../controls/FlexLayout";
+import Modal from "../../../../controls/Modal";
+import More from "../../../../controls/More";
+import Toggle from "../../../../controls/Toggle";
+import { getGame } from "../../../../extensions/gamemode_management/util/getGame";
+import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import getTextProfileManagement from "../../../../extensions/profile_management/texts";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
+import type { IState } from "../../../../types/IState";
+import type { TFunction } from "../../../../util/i18n";
+import { getSafe } from "../../../../util/storeHelper";
+import { batchDispatch } from "../../../../util/util";
 import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
 import { isGamebryoGame } from "../../util/gameSupport";
 import type InstallDriver from "../../util/InstallDriver";
@@ -26,8 +36,8 @@ interface IInstallDialogProps {
 }
 
 interface IConnectedProps {
-  allProfiles: { [profileId: string]: types.IProfile };
-  mods: { [modId: string]: types.IMod };
+  allProfiles: { [profileId: string]: IProfile };
+  mods: { [modId: string]: IMod };
   isPremium: boolean;
   userInfo: { userId: number };
   nextProfileId: string;
@@ -36,12 +46,12 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onAddProfile: (profile: types.IProfile) => void;
+  onAddProfile: (profile: IProfile) => void;
   onSetCollectionConcurrency: (enabled: boolean) => void;
   onSetModAttribute: (gameId: string, modId: string, key: string, value: any) => void;
   onSetModAttributes: (gameId: string, modId: string, attributes: { [key: string]: any }) => void;
-  onAddRule: (gameId: string, modId: string, rule: types.IModRule) => void;
-  onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) => void;
+  onAddRule: (gameId: string, modId: string, rule: IModRule) => void;
+  onRemoveRule: (gameId: string, modId: string, rule: IModRule) => void;
   onSetProfilesVisible: () => void;
   onShowProfilesPage: (useModernLayout: boolean) => void;
 }
@@ -60,11 +70,11 @@ function nop() {
 }
 
 interface IInstallDialogSelectProfileProps {
-  t: types.TFunction;
-  profile: types.IProfile;
+  t: TFunction;
+  profile: IProfile;
   selectedProfile: string;
   recommendedNewProfile: boolean;
-  allProfiles: { [profileId: string]: types.IProfile };
+  allProfiles: { [profileId: string]: IProfile };
   onSelectProfile: (value: { value: string; label: string }) => void;
 }
 
@@ -107,9 +117,9 @@ function InstallDialogSelectProfile(props: IInstallDialogSelectProfileProps) {
 }
 
 interface IInstallDialogConfirmProfileProps {
-  t: types.TFunction;
+  t: TFunction;
   collectionName: string;
-  selectedProfile: types.IProfile;
+  selectedProfile: IProfile;
 }
 
 function InstallDialogConfirmProfile(props: IInstallDialogConfirmProfileProps) {
@@ -136,7 +146,7 @@ function InstallDialogConfirmProfile(props: IInstallDialogConfirmProfileProps) {
  * Installation prompt that shows up when the user imports a collection
  */
 class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
-  private mLastCollection: types.IMod;
+  private mLastCollection: IMod;
   constructor(props: IProps) {
     super(props);
 
@@ -197,11 +207,11 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     // used to convert a \n into something that react-markdown can use to detect paragraphs properly
     installInstructions = installInstructions.replace(/\r?\n/g, "  \r\n");
 
-    const game = util.getGame(profile.gameId);
+    const game = getGame(profile.gameId);
 
     const ownCollection: boolean =
       userInfo?.userId !== undefined && driver.collectionInfo?.user?.memberId === userInfo?.userId;
-    const collectionName = util.renderModName(driver.collection);
+    const collectionName = renderModName(driver.collection);
     return (
       <Modal show={driver.collection !== undefined && driver.step === "query"} onHide={nop}>
         <Modal.Header>
@@ -252,7 +262,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
               )}
 
               <More id="more-profile-instcollection" name={t("Profiles")} wikiId="profiles">
-                {util.getText("profile", "profiles", t)}
+                {getTextProfileManagement("profiles", t)}
               </More>
             </p>
           </FlexLayout>
@@ -346,7 +356,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
         const { profile } = driver;
 
         const profileId = shortid();
-        const name = util.renderModName(driver.collection);
+        const name = renderModName(driver.collection);
         const newProfile = {
           id: profileId,
           gameId: profile.gameId,
@@ -389,12 +399,12 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
 
 const emptyObject = {};
 
-function mapStateToProps(state: types.IState, ownProps: IInstallDialogProps): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: IInstallDialogProps): IConnectedProps {
   const { editCollectionId } = (state.session as any).collections;
   const gameMode = ownProps.driver?.profile?.gameId;
 
-  const isPremium = util.getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false);
-  const collectionsInstallWhileDownloading = util.getSafe(
+  const isPremium = getSafe(state, ["persistent", "nexus", "userInfo", "isPremium"], false);
+  const collectionsInstallWhileDownloading = getSafe(
     state,
     ["settings", "downloads", "collectionsInstallWhileDownloading"],
     true,
@@ -417,14 +427,14 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
       dispatch(actions.setModAttribute(gameId, modId, key, value)),
     onSetModAttributes: (gameId: string, modId: string, attributes: { [key: string]: any }) =>
       dispatch(actions.setModAttributes(gameId, modId, attributes)),
-    onAddRule: (gameId: string, modId: string, rule: types.IModRule) =>
+    onAddRule: (gameId: string, modId: string, rule: IModRule) =>
       dispatch(actions.addModRule(gameId, modId, rule)),
-    onRemoveRule: (gameId: string, modId: string, rule: types.IModRule) =>
+    onRemoveRule: (gameId: string, modId: string, rule: IModRule) =>
       dispatch(actions.removeModRule(gameId, modId, rule)),
-    onAddProfile: (profile: types.IProfile) => dispatch(actions.setProfile(profile)),
+    onAddProfile: (profile: IProfile) => dispatch(actions.setProfile(profile)),
     onSetProfilesVisible: () => dispatch(actions.setProfilesVisible(true)),
     onShowProfilesPage: (useModernLayout: boolean) =>
-      util.batchDispatch(dispatch, [
+      batchDispatch(dispatch, [
         actions.setProfilesVisible(true),
         actions.setOpenMainPage(useModernLayout ? "game-profiles" : "Profiles", false),
       ]),

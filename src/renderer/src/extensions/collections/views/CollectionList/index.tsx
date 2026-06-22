@@ -10,23 +10,35 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
 import * as actions from "../../../../actions";
-/* eslint-disable */
-import { FlexLayout, tooltip } from "../../../../controls/api";
 import { ComponentEx } from "../../../../controls/ComponentEx";
+import FlexLayout from "../../../../controls/FlexLayout";
+import * as tooltip from "../../../../controls/TooltipControls";
+import type { IDownload } from "../../../../extensions/download_management/types/IDownload";
+import type { IGameStored } from "../../../../extensions/gamemode_management/types/IGameStored";
+import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
+import { findDownloadByRef } from "../../../../extensions/mod_management/util/dependencies";
+import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
+import renderModName from "../../../../extensions/mod_management/util/modName";
+import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
-import * as types from "../../../../types/api";
-import * as util from "../../../../util/api";
+import type { INotification } from "../../../../types/INotification";
+import type { IState } from "../../../../types/IState";
+import { ProcessCanceled, UserCanceled } from "../../../../util/CustomErrors";
+import Debouncer from "../../../../util/Debouncer";
 import * as selectors from "../../../../util/selectors";
-import { MainPage } from "../../../../views/api";
+import { getSafe } from "../../../../util/storeHelper";
+import { toPromise } from "../../../../util/util";
+import MainPage from "../../../../views/MainPage";
 import { updateSuccessRate } from "../../actions/persistent";
 import { doExportToAPI } from "../../collectionExport";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE, NAMESPACE, TOS_URL } from "../../constants";
-import { findExtensions, IExtensionFeature } from "../../util/extension";
-import InstallDriver from "../../util/InstallDriver";
+import type { IExtensionFeature } from "../../util/extension";
+import { findExtensions } from "../../util/extension";
+import type InstallDriver from "../../util/InstallDriver";
 import { uploadCollection } from "../../util/uploadCollection";
 import { hasEditPermissions } from "../../util/util";
 import CollectionEdit from "../CollectionPageEdit";
-import { IPathTools } from "../CollectionPageEdit/FileOverrides";
+import type { IPathTools } from "../CollectionPageEdit/FileOverrides";
 import CollectionPage from "../CollectionPageView";
 import StartPage from "./StartPage";
 
@@ -39,7 +51,7 @@ export interface ICollectionsMainPageBaseProps extends WithTranslation {
   onAddCallback: (cbName: string, cb: (...args: any[]) => void) => void;
   onCloneCollection: (collectionId: string) => Promise<string>;
   onRemoveCollection: (gameId: string, modId: string, cancel: boolean) => Promise<void>;
-  onCreateCollection: (profile: types.IProfile, name: string) => void;
+  onCreateCollection: (profile: IProfile, name: string) => void;
   onInstallCollection: (revision: IRevision) => Promise<void>;
   onUpdateMeta: () => void;
 
@@ -47,11 +59,11 @@ export interface ICollectionsMainPageBaseProps extends WithTranslation {
 }
 
 interface IConnectedProps {
-  profile: types.IProfile;
-  game: types.IGameStored;
-  mods: { [modId: string]: types.IMod };
-  downloads: { [dlId: string]: types.IDownload };
-  notifications: types.INotification[];
+  profile: IProfile;
+  game: IGameStored;
+  mods: { [modId: string]: IMod };
+  downloads: { [dlId: string]: IDownload };
+  notifications: INotification[];
   exts: IExtensionFeature[];
   userInfo: { name: string; userId: number };
 }
@@ -66,7 +78,7 @@ export type ICollectionsMainPageProps = ICollectionsMainPageBaseProps &
 
 interface IComponentState {
   selectedCollection: string;
-  matchedReferences: { [collectionId: string]: types.IMod[] };
+  matchedReferences: { [collectionId: string]: IMod[] };
   viewMode: "view" | "edit";
   activeTab: string;
 }
@@ -75,7 +87,7 @@ const emptyObj = {};
 const emptyArr = [];
 
 class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, IComponentState> {
-  private mMatchRefDebouncer: util.Debouncer;
+  private mMatchRefDebouncer: Debouncer;
   constructor(props: ICollectionsMainPageProps) {
     super(props);
     this.initState({
@@ -97,7 +109,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
 
     props.resetCB?.(this.resetMainPage);
 
-    this.mMatchRefDebouncer = new util.Debouncer(() => {
+    this.mMatchRefDebouncer = new Debouncer(() => {
       this.nextState.matchedReferences = this.updateMatchedReferences(this.props);
       return Promise.resolve();
     }, 2000);
@@ -125,7 +137,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
 
     const collection = selectedCollection !== undefined ? mods[selectedCollection] : undefined;
 
-    let content = null;
+    let content: JSX.Element;
 
     if (collection === undefined) {
       content = (
@@ -141,27 +153,28 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
           >
             {t("Refresh")}
           </tooltip.IconButton>
+
           <StartPage
-            t={t}
-            game={game}
-            localState={localState}
-            installing={driver.installDone ? undefined : driver.collection}
-            infoCache={driver.infoCache}
-            profile={profile}
-            mods={mods}
-            matchedReferences={matchedReferences ?? emptyObj}
             activeTab={activeTab}
-            onView={this.view}
-            onEdit={this.edit}
-            onRemove={this.remove}
-            onUpdate={this.update}
-            onUpload={this.upload}
+            game={game}
+            infoCache={driver.infoCache}
+            installing={driver.installDone ? undefined : driver.collection}
+            localState={localState}
+            matchedReferences={matchedReferences ?? emptyObj}
+            mods={mods}
+            profile={profile}
+            t={t}
             onClone={this.clone}
             onCreateCollection={this.createCollection}
-            onResume={this.resume}
-            onPause={this.pause}
-            onSetActiveTab={this.setActiveTab}
+            onEdit={this.edit}
             onInstallCollection={this.props.onInstallCollection}
+            onPause={this.pause}
+            onRemove={this.remove}
+            onResume={this.resume}
+            onSetActiveTab={this.setActiveTab}
+            onUpdate={this.update}
+            onUpload={this.upload}
+            onView={this.view}
           />
         </>
       );
@@ -171,43 +184,44 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
           <FlexLayout.Fixed>
             <tooltip.IconButton
               className="collection-back-btn"
-              tooltip="Return to overview"
               icon="nav-back"
+              tooltip="Return to overview"
               onClick={this.deselectCollection}
             >
               {t("View All Collections")}
             </tooltip.IconButton>
           </FlexLayout.Fixed>
+
           <FlexLayout.Flex>
             {viewMode === "view" ? (
               <CollectionPage
-                t={t}
                 className="collection-details"
-                driver={this.props.driver}
-                profile={profile}
                 collection={collection}
-                mods={mods}
                 downloads={downloads}
+                driver={this.props.driver}
+                mods={mods}
                 notifications={notifications}
+                profile={profile}
+                t={t}
                 onAddCallback={this.props.onAddCallback}
-                onView={this.view}
-                onPause={this.pause}
                 onCancel={this.cancel}
                 onClone={this.clone}
-                onResume={this.resume}
                 onInstallManually={this.installManually}
+                onPause={this.pause}
+                onResume={this.resume}
+                onView={this.view}
                 onVoteSuccess={this.voteSuccess}
               />
             ) : (
               <CollectionEdit
-                profile={profile}
                 collection={collection}
-                mods={mods}
                 driver={this.props.driver}
+                exts={this.props.exts}
+                mods={mods}
+                pathTool={pathTool}
+                profile={profile}
                 onRemove={this.remove}
                 onUpload={this.upload}
-                exts={this.props.exts}
-                pathTool={pathTool}
               />
             )}
           </FlexLayout.Flex>
@@ -297,7 +311,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     }
 
     (collection?.rules ?? []).forEach((rule) => {
-      const dlId = util.findDownloadByRef(rule.reference, downloads);
+      const dlId = findDownloadByRef(rule.reference, downloads);
       if (dlId !== undefined) {
         this.context.api.events.emit("pause-download", dlId);
       }
@@ -333,14 +347,14 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
           "be lost.\n\n" +
           'Are you sure you want to remove "{{collectionName}}" from your Workshop?',
         parameters: {
-          collectionName: util.renderModName(mods[modId]),
+          collectionName: renderModName(mods[modId]),
         },
       },
       [{ label: "Cancel" }, { label: "Remove" }],
     );
 
     if (result.action === "Remove") {
-      await util.toPromise((cb) =>
+      await toPromise((cb) =>
         api.events.emit("remove-mod", profile.gameId, modId, cb, {
           incomplete: true,
         }),
@@ -395,7 +409,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
       prev[collection.id] = (collection.rules || [])
         .filter((rule) => rule.type === "requires" && !rule["ignored"])
         .map((rule) => {
-          const mod = util.findModByRef(rule.reference, mods);
+          const mod = findModByRef(rule.reference, mods);
           if (mod !== undefined && !profile.modState?.[mod.id]?.enabled) {
             return null;
           }
@@ -419,8 +433,8 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
         return this.removeWorkshop(modId).catch((err: unknown) => {
           const allowReport =
             !["EPERM"].includes(getErrorCode(err)) &&
-            !(err instanceof util.ProcessCanceled) &&
-            !(err instanceof util.UserCanceled);
+            !(err instanceof ProcessCanceled) &&
+            !(err instanceof UserCanceled);
           api.showErrorNotification("Failed to remove collection", unknownToError(err), {
             allowReport,
           });
@@ -434,9 +448,9 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
         });
       }
     } catch (err) {
-      if (err instanceof util.UserCanceled) {
+      if (err instanceof UserCanceled) {
         log("info", "collection removal canceled by user");
-      } else if (err instanceof util.ProcessCanceled) {
+      } else if (err instanceof ProcessCanceled) {
         api.sendNotification({
           type: "warning",
           title: "Removal failed",
@@ -459,9 +473,9 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
       return;
     }
 
-    const downloadGame = util.getSafe(mod.attributes, ["downloadGame"], gameMode);
-    const newestFileId = util.getSafe(mod.attributes, ["newestVersion"], undefined);
-    await util.toPromise((cb) =>
+    const downloadGame = getSafe(mod.attributes, ["downloadGame"], gameMode);
+    const newestFileId = getSafe(mod.attributes, ["newestVersion"], undefined);
+    await toPromise((cb) =>
       this.context.api.events.emit(
         "collection-update",
         downloadGame,
@@ -478,7 +492,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     uploadCollection(this.context.api, this.props.profile?.id, collectionId);
   };
 
-  private installManually = (collectionId: string, rules: types.IModRule[]) => {
+  private installManually = (collectionId: string, rules: IModRule[]) => {
     const { api } = this.context;
 
     const ruleGroups = rules.reduce(
@@ -507,11 +521,11 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     eaa(ruleGroups.requires, false)
       .then(() => eaa(ruleGroups.recommends, true))
       .catch((err: unknown) => {
-        if (err instanceof util.UserCanceled) {
+        if (err instanceof UserCanceled) {
           return;
         }
         api.showErrorNotification("Failed to install dependencies", unknownToError(err), {
-          allowReport: !(err instanceof util.ProcessCanceled),
+          allowReport: !(err instanceof ProcessCanceled),
         });
       });
   };
@@ -539,7 +553,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
   };
 }
 
-function mapStateToProps(state: types.IState): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const profile = selectors.activeProfile(state);
   const game = profile !== undefined ? selectors.gameById(state, profile.gameId) : undefined;
   return {
