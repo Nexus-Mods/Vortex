@@ -22,6 +22,7 @@ import { EventEmitter } from "events";
 
 import { batch } from "redux-act";
 
+import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
@@ -50,6 +51,22 @@ import local from "../util/local";
 
 export function makeReference(overrides: Partial<IModReference> = {}): IModReference {
   return { tag: "ref-tag", ...overrides };
+}
+
+// a repo-pinned EXACT reference (no fuzzy versionMatch): its stable identity is the pinned file's
+// fileMD5
+export function makeExactRef(overrides: Partial<IModReference> = {}): IModReference {
+  return makeReference({
+    repo: { repository: "nexus", gameId: "skyrimse", modId: "100", fileId: "5" },
+    fileMD5: "abc123",
+    ...overrides,
+  });
+}
+
+// a fuzzy-version (prefers/latest) reference: it resolves to a varying file across versions, so
+// its stable identity is the mod page (repo.modId) rather than the version-specific fileMD5
+export function makeFuzzyRef(overrides: Partial<IModReference> = {}): IModReference {
+  return makeExactRef({ versionMatch: "*", ...overrides });
 }
 
 export function makeRule(overrides: Partial<IModRule> = {}): IModRule {
@@ -180,6 +197,28 @@ export function makeCollectionModInfo(
 ): IModInfo {
   const { collectionId = 1, revisionId = 1, gameId = "skyrimse" } = overrides;
   return makeModInfo({ nexus: { ids: { collectionId, revisionId, gameId } } });
+}
+
+// A collection-manifest mod entry (ICollectionMod), as produced by authoring / read on install.
+// Defaults to a nexus-sourced member; override `source` wholesale (matching how the rule
+// transform reads mod.source) to model bundles, manual sources, missing ids, etc.
+export function makeCollectionMod(overrides: Partial<ICollectionMod> = {}): ICollectionMod {
+  return {
+    name: "Test Mod",
+    version: "1.2.3",
+    optional: false,
+    domainName: "skyrimspecialedition",
+    source: {
+      type: "nexus",
+      modId: 100,
+      fileId: 200,
+      md5: "abc",
+      fileSize: 1024,
+      logicalFilename: "TestMod",
+      updatePolicy: "exact",
+    },
+    ...overrides,
+  };
 }
 
 export type { CollectionModStatus };

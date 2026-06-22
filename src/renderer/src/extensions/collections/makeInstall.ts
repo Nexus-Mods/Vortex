@@ -92,7 +92,7 @@ export function makeInstall(api: IExtensionApi) {
         })),
         ...collection.mods.map((mod) => ({
           type: "rule" as any,
-          rule: collectionModToRule(knownGames, mod),
+          rule: collectionModToRule(knownGames, mod, config.referenceTagScheme === "deterministic"),
         })),
       ],
     });

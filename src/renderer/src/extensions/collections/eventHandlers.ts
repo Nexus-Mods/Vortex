@@ -121,7 +121,11 @@ async function collectionUpdate(
     try {
       const newCollectionData = await readCollection(api, path.join(tempDir, "collection.json"));
       const knownGames = selectors.knownGames(api.getState());
-      newRules = newCollectionData.mods.map((mod) => collectionModToRule(knownGames, mod));
+      const deterministic =
+        newCollectionData.collectionConfig?.referenceTagScheme === "deterministic";
+      newRules = newCollectionData.mods.map((mod) =>
+        collectionModToRule(knownGames, mod, deterministic),
+      );
     } catch (err) {
       await fs.removeAsync(tempDir).catch(() => undefined);
       throw err;

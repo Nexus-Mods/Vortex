@@ -1,6 +1,38 @@
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IMod, IModReference, IModRule } from "../extensions/mod_management/types/IMod";
-import type { CollectionModStatus } from "../types/collections/ICollectionInstallSession";
+import type {
+  CollectionModStatus,
+  ICollectionInstallSession,
+} from "../types/collections/ICollectionInstallSession";
+
+/**
+ * The terminal member statuses: a member with one of these has a decided outcome and no longer
+ * blocks collection completion. "failed" is terminal because InstallManager writes it only after
+ * retries are exhausted (in-flight retries keep a non-terminal status, so they still block);
+ * "ignored" is an excluded member (a user skip or the durable ignored flag). "optional"
+ * (optional-not-selected) is intentionally NOT terminal. Shared so the driver's completion
+ * decision, the install-progress selector, and InstallManager's completion counter stay in sync.
+ */
+export function isTerminalMemberStatus(status: CollectionModStatus): boolean {
+  return status === "installed" || status === "failed" || status === "ignored";
+}
+
+/**
+ * Progress position for the free-user "download mod" dialog: the count of members whose download
+ * has been resolved (anything other than still-pending or in-flight `downloading`), plus one for
+ * the download currently shown, clamped to the total. Counting resolved members (so a skip
+ * advances the position) keeps it monotonic and inside 1..total.
+ */
+export function freeUserDownloadPosition(session: ICollectionInstallSession): {
+  position: number;
+  total: number;
+} {
+  const total = Math.max(session.totalRequired + session.totalOptional, 1);
+  const resolved = Object.values(session.mods).filter(
+    (mod) => mod.status !== "pending" && mod.status !== "downloading",
+  ).length;
+  return { position: Math.min(resolved + 1, total), total };
+}
 
 export function generateCollectionSessionId(collectionId: string, profileId: string): string {
   if (!profileId || !collectionId) {

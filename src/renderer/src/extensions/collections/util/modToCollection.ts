@@ -488,7 +488,9 @@ export async function modToCollection(
     modRules,
     ...extData,
     ...filteredGameSpecific,
-    collectionConfig: { ...collectionConfig },
+    // stamp the deterministic tag scheme so the install side knows it can derive stable member
+    // tags from file identity (see deterministicReferenceTag); absent on legacy collections
+    collectionConfig: { ...collectionConfig, referenceTagScheme: "deterministic" },
   };
 
   return res;
