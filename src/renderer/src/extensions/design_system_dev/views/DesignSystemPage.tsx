@@ -13,6 +13,7 @@ import { CollectionTileDemo } from "@/ui/components/collectiontile/CollectionTil
 import { DropdownDemo } from "@/ui/components/dropdown/DropdownDemo";
 import { InputDemo } from "@/ui/components/form/input/InputDemo";
 import { SelectDemo } from "@/ui/components/form/select/SelectDemo";
+import { SwitchDemo } from "@/ui/components/form/switch/Switch.demo";
 import { IconDemo } from "@/ui/components/icon/IconDemo";
 import { ImageDemo } from "@/ui/components/image/ImageDemo";
 import { ListingDemo } from "@/ui/components/listing/ListingDemo";
@@ -130,6 +131,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
                     <TabButton name="Input" />
 
                     <TabButton name="Select" />
+
+                    <TabButton name="Switch" />
                   </TabBar>
 
                   <div className="mt-6">
@@ -139,6 +142,10 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
 
                     <TabPanel name="Select">
                       <SelectDemo />
+                    </TabPanel>
+
+                    <TabPanel name="Switch">
+                      <SwitchDemo />
                     </TabPanel>
                   </div>
                 </TabProvider>
