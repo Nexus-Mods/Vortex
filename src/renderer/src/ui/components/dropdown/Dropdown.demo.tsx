@@ -7,8 +7,9 @@ import { Menu } from "@headlessui/react";
 import { mdiContentCopy, mdiDelete, mdiDotsVertical, mdiDownload, mdiPencil } from "@mdi/js";
 import React, { useCallback } from "react";
 
-import { Button } from "../button/Button";
-import { Typography } from "../typography/Typography";
+import { Button } from "@/ui/components/button/Button";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Dropdown } from "./Dropdown";
 import { DropdownDivider } from "./DropdownDivider";
 import { DropdownItem } from "./DropdownItem";

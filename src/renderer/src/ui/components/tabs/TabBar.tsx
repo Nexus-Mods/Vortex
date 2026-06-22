@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import { useTabContext } from "./tabs.context";
 
 /**

@@ -5,7 +5,8 @@
 
 import React from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { AdultAwareImage } from "./AdultAwareImage";
 import type { IImageProps } from "./Image";
 import { Image } from "./Image";

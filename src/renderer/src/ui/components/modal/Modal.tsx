@@ -2,8 +2,8 @@ import { Dialog } from "@headlessui/react";
 import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 type IModalSize = "sm" | "md" | "lg" | "xl";
 

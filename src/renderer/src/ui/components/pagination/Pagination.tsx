@@ -1,8 +1,9 @@
 import { mdiMenuLeft, mdiMenuRight } from "@mdi/js";
 import React, { useMemo, type ClassAttributes, type RefObject } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import { JumpToPage } from "./JumpToPage";
 
 export interface IPaginationProps extends ClassAttributes<HTMLElement> {

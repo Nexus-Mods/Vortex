@@ -1,8 +1,9 @@
 import numeral from "numeral";
 import React, { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 
-import { getTabId } from "../../utils/getTabId";
-import { joinClasses } from "../../utils/joinClasses";
+import { getTabId } from "@/ui/utils/getTabId";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import { useTabContext } from "./tabs.context";
 
 export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

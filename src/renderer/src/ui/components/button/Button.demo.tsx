@@ -6,7 +6,8 @@
 import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
 import React, { useState } from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Button, type IButtonAppearance, type IButtonBrand } from "./Button";
 
 const BRANDS: IButtonBrand[] = ["primary", "info", "neutral", "success", "premium"];

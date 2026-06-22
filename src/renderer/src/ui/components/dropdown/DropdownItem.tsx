@@ -1,9 +1,9 @@
 import { Menu } from "@headlessui/react";
 import React, { type ComponentProps, type ReactNode } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import type { XOr } from "../../utils/types";
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import type { XOr } from "@/ui/utils/types";
 
 type IDropdownItemProps = { children?: string; customContent?: ReactNode } & XOr<
   { leftIconPath?: string },

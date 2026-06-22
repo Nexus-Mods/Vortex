@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react";
 
-import { getTabId } from "../../utils/getTabId";
+import { getTabId } from "@/ui/utils/getTabId";
+
 import { useTabContext } from "./tabs.context";
 
 /**

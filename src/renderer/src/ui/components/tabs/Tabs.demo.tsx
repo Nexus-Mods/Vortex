@@ -5,7 +5,8 @@
 
 import React, { useState } from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { TabButton } from "./Tab";
 import { TabBar } from "./TabBar";
 import { TabPanel } from "./TabPanel";

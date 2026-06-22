@@ -2,13 +2,13 @@ import { Listbox as HeadlessListbox } from "@headlessui/react";
 import { mdiArrowExpandHorizontal, mdiCog } from "@mdi/js";
 import React from "react";
 
+import { Button } from "@/ui/components/button/Button";
 import { DropdownTitle } from "@/ui/components/dropdown/DropdownTitle";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Listbox } from "@/ui/components/listbox/Listbox";
+import { ListboxOption } from "@/ui/components/listbox/ListboxOption";
+import { ListboxOptions } from "@/ui/components/listbox/ListboxOptions";
 
-import { Button } from "../button/Button";
-import { Icon } from "../icon/Icon";
-import { Listbox } from "../listbox/Listbox";
-import { ListboxOption } from "../listbox/ListboxOption";
-import { ListboxOptions } from "../listbox/ListboxOptions";
 import type { IColumnDef } from "./Table.types";
 
 interface ITableColumnToggleProps<T> {

@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { type IListboxOption } from "../listbox/ListboxOption";
+import { type IListboxOption } from "@/ui/components/listbox/ListboxOption";
+
 import { Picker } from "./Picker";
 
 // --- Helpers ---

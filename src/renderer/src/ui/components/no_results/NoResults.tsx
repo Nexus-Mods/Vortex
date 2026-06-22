@@ -1,10 +1,10 @@
 import { mdiAlertCircleOutline, mdiOpenInNew } from "@mdi/js";
 import React, { type PropsWithChildren } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import { Button } from "../button/Button";
-import { Icon } from "../icon/Icon";
-import { Typography } from "../typography/Typography";
+import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 type IAppearance = "default" | "success";
 

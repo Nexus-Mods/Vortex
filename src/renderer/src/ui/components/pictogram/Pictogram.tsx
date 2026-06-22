@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 import React from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 const sizeMap = {
   "4xs": "size-4",

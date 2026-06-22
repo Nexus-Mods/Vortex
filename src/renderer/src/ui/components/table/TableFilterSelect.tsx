@@ -1,9 +1,9 @@
 import React from "react";
 
-import { Listbox } from "../listbox/Listbox";
-import { ListboxButton } from "../listbox/ListboxButton";
-import { ListboxOption } from "../listbox/ListboxOption";
-import { ListboxOptions } from "../listbox/ListboxOptions";
+import { Listbox } from "@/ui/components/listbox/Listbox";
+import { ListboxButton } from "@/ui/components/listbox/ListboxButton";
+import { ListboxOption } from "@/ui/components/listbox/ListboxOption";
+import { ListboxOptions } from "@/ui/components/listbox/ListboxOptions";
 
 interface ITableFilterSelectProps {
   id: string;

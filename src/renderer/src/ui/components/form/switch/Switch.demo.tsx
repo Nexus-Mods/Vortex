@@ -7,7 +7,8 @@
 
 import React, { useState } from "react";
 
-import { Typography } from "../../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Switch } from "./Switch";
 
 const CHILD_LABELS = ["Auto-update", "Notifications", "Telemetry"];

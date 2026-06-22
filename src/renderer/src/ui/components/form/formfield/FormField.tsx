@@ -7,8 +7,8 @@
 
 import React, { type HTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { joinClasses } from "../../../utils/joinClasses";
-import { Typography, type ITypographyTypes } from "../../typography/Typography";
+import { Typography, type ITypographyTypes } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IBaseFormFieldProps {
   /**

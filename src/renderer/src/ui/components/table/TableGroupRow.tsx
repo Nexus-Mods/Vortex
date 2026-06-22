@@ -1,7 +1,8 @@
 import { mdiChevronDown, mdiChevronRight } from "@mdi/js";
 import React, { Fragment } from "react";
 
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+
 import type { IColumnDef, ITableGroup } from "./Table.types";
 import { TableRow } from "./TableRow";
 

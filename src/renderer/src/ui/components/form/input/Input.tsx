@@ -7,9 +7,9 @@
 
 import React, { useState, type InputHTMLAttributes, type Ref } from "react";
 
-import { joinClasses } from "../../../utils/joinClasses";
-import type { IBaseFormFieldProps } from "../formfield/FormField";
-import { FormField } from "../formfield/FormField";
+import type { IBaseFormFieldProps } from "@/ui/components/form/formfield/FormField";
+import { FormField } from "@/ui/components/form/formfield/FormField";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IInputProps
   extends IBaseFormFieldProps, Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {

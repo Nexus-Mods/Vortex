@@ -1,9 +1,9 @@
 import React, { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
 
+import { Icon, type IIconSize } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { ResponsiveScreenSizes, XOr } from "@/ui/utils/types";
 
-import { Icon, type IIconSize } from "../icon/Icon";
 import {
   getTypographyColourClass,
   getTypographyStyles,

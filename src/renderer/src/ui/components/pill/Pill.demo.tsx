@@ -6,8 +6,9 @@
 import { mdiCheck, mdiCheckCircleOutline, mdiClose, mdiStar, mdiTag } from "@mdi/js";
 import React, { useState, type ComponentProps } from "react";
 
-import { Icon } from "../icon/Icon";
-import { Typography } from "../typography/Typography";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Pill } from "./Pill";
 
 type PillType = NonNullable<ComponentProps<typeof Pill>["pillType"]>;

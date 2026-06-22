@@ -5,7 +5,8 @@
 
 import React from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Pictogram, type IPictogramName } from "./Pictogram";
 
 const sizes = ["4xs", "3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl"] as const;
