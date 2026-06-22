@@ -9,7 +9,8 @@ vi.mock("../../util/api", () => ({
   nexusGameId: vi.fn(),
 }));
 
-// Also mock the modRequirementsCheck module for the same reason.
+// Also mock the modRequirementsCheck module for the same reason. index.ts
+// registers the exported descriptor, so the mock must provide it.
 vi.mock("./checks/modRequirementsCheck", () => ({
   MOD_REQUIREMENTS_CHECK_ID: "nexus-mod-requirements",
   checkModRequirements: vi.fn().mockResolvedValue({
@@ -20,6 +21,22 @@ vi.mock("./checks/modRequirementsCheck", () => ({
     executionTime: 0,
     timestamp: new Date(0),
   }),
+  modRequirementsHealthCheck: {
+    id: "nexus-mod-requirements",
+    name: "Nexus Mod Requirements",
+    description: "",
+    category: "requirements",
+    severity: "info",
+    triggers: ["manual"],
+    check: vi.fn().mockResolvedValue({
+      checkId: "nexus-mod-requirements",
+      status: "passed",
+      severity: "info",
+      message: "mocked",
+      executionTime: 0,
+      timestamp: new Date(0),
+    }),
+  },
 }));
 
 // Same for the fileRequirementsCheck module.
@@ -33,6 +50,22 @@ vi.mock("./checks/fileRequirementsCheck", () => ({
     executionTime: 0,
     timestamp: new Date(0),
   }),
+  fileRequirementsHealthCheck: {
+    id: "file-level-requirements",
+    name: "File Requirements",
+    description: "",
+    category: "requirements",
+    severity: "info",
+    triggers: ["manual"],
+    check: vi.fn().mockResolvedValue({
+      checkId: "file-level-requirements",
+      status: "passed",
+      severity: "info",
+      message: "mocked",
+      executionTime: 0,
+      timestamp: new Date(0),
+    }),
+  },
 }));
 
 import {
@@ -77,6 +110,10 @@ describe("context.registerHealthCheck", () => {
         onStateChange: vi.fn(),
       },
     };
+
+    // init() subscribes to the Unleash flag bridge in its once() body; the
+    // global test stub only provides window.api.log, so add featureFlags here.
+    (window as any).api.featureFlags = { onSynchronize: vi.fn() };
 
     const mod = await import("./index.js");
     const init = mod.default ?? (mod as unknown as { init: unknown }).init;

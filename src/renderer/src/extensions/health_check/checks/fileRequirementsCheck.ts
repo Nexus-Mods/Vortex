@@ -7,9 +7,17 @@ import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { HealthCheckSeverity, type IHealthCheckResult } from "../../../types/IHealthCheck";
+import {
+  HealthCheckCategory,
+  HealthCheckSeverity,
+  HealthCheckTrigger,
+  type IHealthCheck,
+  type IHealthCheckResult,
+} from "../../../types/IHealthCheck";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
+import { setHealthCheckRunning } from "../actions/session";
+import { isFileRequirementsEnabled } from "../selectors";
 import type { IFileRequirementsCheckMetadata } from "../types";
 import { runFileLevelRequirements } from "../utils/runFileLevelRequirements";
 
@@ -103,3 +111,49 @@ export async function checkFileRequirements(api: IExtensionApi): Promise<IHealth
     );
   }
 }
+
+/**
+ * Registration descriptor for the file-level requirements check. Owns its own
+ * enablement gate, running-state bracket and completion notification so that
+ * index.ts only has to register it.
+ */
+export const fileRequirementsHealthCheck: IHealthCheck = {
+  id: FILE_REQUIREMENTS_CHECK_ID,
+  name: "File Requirements",
+  description: "Validates that file-level mod dependencies are satisfied",
+  category: HealthCheckCategory.Requirements,
+  severity: HealthCheckSeverity.Info,
+  triggers: [
+    HealthCheckTrigger.ModsChanged,
+    HealthCheckTrigger.Manual,
+    HealthCheckTrigger.ProfileChanged,
+    HealthCheckTrigger.GameChanged,
+    HealthCheckTrigger.SettingsChanged,
+  ],
+  check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
+    if (!isFileRequirementsEnabled(api.getState())) {
+      return {
+        checkId: FILE_REQUIREMENTS_CHECK_ID,
+        status: "passed",
+        severity: HealthCheckSeverity.Info,
+        message: "File requirements check disabled",
+        executionTime: 0,
+        timestamp: new Date(),
+      };
+    }
+
+    api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, true));
+    try {
+      const result = await checkFileRequirements(api);
+      api.sendNotification({
+        type: "info",
+        message: "File Requirements check completed",
+        displayMS: 5000,
+        id: "health-check:file-requirements-complete",
+      });
+      return result;
+    } finally {
+      api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, false));
+    }
+  },
+};
