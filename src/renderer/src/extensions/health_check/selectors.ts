@@ -143,7 +143,7 @@ export const isModRequirementsEnabled = (state: IState): boolean =>
  * The settings toggle and the check both gate on this, so the whole feature
  * appears only when it is available.
  *
- * Backed by the Unleash "vortex-file-level-requirements" flag, mirrored into
+ * Backed by the Unleash "vortex-file-requirements-health-check" flag, mirrored into
  * persistent state from window.api.featureFlags.onSynchronize (see the extension
  * init). Persisted so the last-known value is kept across restarts; defaults to
  * false only before any flag state has been received (fail-closed).

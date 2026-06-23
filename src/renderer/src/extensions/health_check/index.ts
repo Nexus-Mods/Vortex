@@ -27,7 +27,7 @@ let legacyAdapter: LegacyTestAdapter | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
 
 /** Unleash flag gating the file-level requirements feature; must match the Unleash toggle. */
-const FILE_REQUIREMENTS_FLAG: KnownFlagName = "vortex-file-level-requirements";
+const FILE_REQUIREMENTS_FLAG: KnownFlagName = "vortex-file-requirements-health-check";
 
 function init(context: IExtensionContext): boolean {
   // Create the registry up front so registerHealthCheck routes directly
