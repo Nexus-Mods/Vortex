@@ -13,7 +13,7 @@ export const flagVariantSchemas = {
   // On/off gate for the file-level requirements health check (no variants).
   // Prefixed with "vortex-" to qualify it within the shared Unleash application;
   // the name must match the toggle configured in Unleash.
-  "vortex-file-level-requirements": {},
+  "vortex-file-requirements-health-check": {},
 };
 
 type FlagVariantSchemas = typeof flagVariantSchemas;
