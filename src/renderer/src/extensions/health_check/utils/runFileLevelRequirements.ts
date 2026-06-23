@@ -1,24 +1,43 @@
+import {
+  checkFileLevelRequirements,
+  type InstalledFile,
+} from "@nexusmods/file-dependency-resolver";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { activeProfile } from "../../profile_management/selectors";
 import type { IFileRequirementsCheckMetadata } from "../types";
+import { createResolverPorts } from "./fileDependencyPorts";
+import { gatherInstalledFiles, makeInstalledFileHydrator } from "./installedFiles";
+import { mapRequirementsReport } from "./mapRequirementsReport";
 
 /**
- * Resolve the file-level requirements for the active game.
- *
- * Returns an empty result for now. This is where the file dependency resolution
- * will be implemented.
- *
- * TODO: resolve the active game's file requirements and return them here.
+ * Resolve the active game's file-level requirements: gather installed files,
+ * run the dependency resolver against the Nexus v3 ports, then map the report
+ * onto Vortex's check metadata.
  */
-export function runFileLevelRequirements(
+export async function runFileLevelRequirements(
   api: IExtensionApi,
 ): Promise<IFileRequirementsCheckMetadata> {
   const gameId = activeProfile(api.getState())?.gameId ?? "";
 
-  return Promise.resolve({
+  const refs = await gatherInstalledFiles(api);
+  if (refs.length === 0) {
+    return { gameId, modsChecked: 0, fileRequirements: {}, errors: [] };
+  }
+
+  const installedFiles: InstalledFile[] = refs.map((ref) => ({
+    fileVersionUid: ref.fileUID,
+    enabled: ref.enabled,
+  }));
+
+  const report = await checkFileLevelRequirements({
+    installedFiles,
+    ports: createResolverPorts(api),
+  });
+
+  return mapRequirementsReport(report, makeInstalledFileHydrator(api, refs), {
     gameId,
-    modsChecked: 0,
-    fileRequirements: {},
+    modsChecked: refs.length,
     errors: [],
   });
 }
