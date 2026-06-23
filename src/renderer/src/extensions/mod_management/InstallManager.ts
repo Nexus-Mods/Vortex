@@ -535,8 +535,14 @@ class InstallManager {
   private mNotificationAggregator: NotificationAggregator;
   private mNotificationAggregationTimeoutMS: number = 5000;
 
-  // This limiter drives the DownloadManager to queue up new downloads.
-  private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
+  // Bounds how many collection dependencies are processed concurrently through the
+  // download -> install pipeline (driving the DownloadManager to queue downloads ahead, and
+  // orchestrating queued installs). This is NOT the install-concurrency cap: the actual install
+  // step runs under mInstallLimit. Sized larger than mInstallLimit on purpose, so downloads are
+  // fetched ahead while a smaller number install. Must stay a DIFFERENT limiter from mInstallLimit
+  // because the orchestration acquires a slot here and then calls this.install() (mInstallLimit) -
+  // gating both on one limiter would nest it and deadlock the pipeline.
+  private mDependencyPipelineLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
 
   // Queues installations for processing - primarily used to keep track of pending installations
   //  for the current dependency phase if/when concurrent download and installation is disabled.
@@ -560,8 +566,11 @@ class InstallManager {
   private mDependencyRetryCount: Map<string, number> = new Map();
   private static readonly MAX_DEPENDENCY_RETRIES = 3;
 
-  // Main installation concurrency limiter - replaces sequential mQueue
-  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
+  // Caps how many mods install (extract/deploy) at once, across BOTH top-level and dependency
+  // installs - every install routes through this.install(), which acquires a slot here. This is
+  // the real install-concurrency cap (MAX_SIMULTANEOUS_INSTALLS); it replaces the old sequential
+  // mQueue. Dependency orchestration/look-ahead is bounded separately by mDependencyPipelineLimit.
+  private mInstallLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
     InstallManager.MAX_SIMULTANEOUS_INSTALLS,
   );
 
@@ -647,7 +656,7 @@ class InstallManager {
       // Clear the dependency installs map
       this.mDependencyInstalls = {};
 
-      this.mDependencyInstallsLimit = new ConcurrencyLimiter(10);
+      this.mDependencyPipelineLimit = new ConcurrencyLimiter(10);
 
       // Clear all retry counters
       this.mDependencyRetryCount.clear();
@@ -1228,7 +1237,7 @@ class InstallManager {
     const currentProfile = profileById(state, profileId) ?? activeProfile(state);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
-    this.mMainInstallsLimit
+    this.mInstallLimit
       .do(() => {
         return new Promise<string>((resolve, reject) => {
           const installationZip = new Zip();
@@ -2280,8 +2289,8 @@ class InstallManager {
     retryKeysToRemove.forEach((key) => this.mDependencyRetryCount.delete(key));
 
     if (hard) {
-      this.mMainInstallsLimit.clearQueue();
-      this.mDependencyInstallsLimit.clearQueue();
+      this.mInstallLimit.clearQueue();
+      this.mDependencyPipelineLimit.clearQueue();
       this.mInstallPhaseState.delete(sourceModId);
     }
   }
@@ -2375,8 +2384,15 @@ class InstallManager {
     // Track active count for the phase
     phaseState.activeByPhase.set(phase, (phaseState.activeByPhase.get(phase) ?? 0) + 1);
 
-    // Process installation immediately in parallel using concurrency limiter
-    this.mDependencyInstallsLimit
+    // Orchestrate the queued dependency install under mDependencyPipelineLimit. This MUST be a
+    // different limiter from the one the actual install acquires: this callback calls
+    // installModAsync -> this.install(), which takes a slot on mInstallLimit. Gating both on
+    // mInstallLimit nests the same limiter (outer orchestration slot + inner install slot per
+    // dependency), so once every slot is held by an orchestration waiting for an install slot the
+    // whole pipeline deadlocks. The actual install concurrency is already capped at
+    // MAX_SIMULTANEOUS_INSTALLS by that inner mInstallLimit; this outer limiter only bounds
+    // how many downloaded dependencies are orchestrated/queued ahead.
+    this.mDependencyPipelineLimit
       .do(async () => {
         const startTime = Date.now();
 
@@ -6014,7 +6030,7 @@ class InstallManager {
 
     const installDownload = (dep: IDependency, downloadId: string): Promise<string> => {
       return new Promise<string>((resolve, reject) => {
-        return this.mDependencyInstallsLimit.do(async () => {
+        return this.mDependencyPipelineLimit.do(async () => {
           return abort.signal.aborted
             ? reject(new UserCanceled(false))
             : this.withInstructions(
@@ -6194,24 +6210,24 @@ class InstallManager {
           return dep.mod == null
             ? Promise.resolve()
                 .then(() => {
-                  // Queue installation for already-finished downloads that aren't
-                  // installed yet. Without this, mods whose archives already exist
-                  // (e.g. from a prior cancelled install) would never be queued
-                  // because the did-finish-download event only fires for NEW
-                  // downloads. queueInstallation deduplicates internally.
+                  // Queue installation for already-finished downloads that aren't installed yet.
+                  // Without this, mods whose archives already exist (e.g. from a prior cancelled
+                  // install) would never be queued, because the did-finish-download event only
+                  // fires for NEW downloads. queueInstallation deduplicates internally.
+                  //
+                  // Deliberately does NOT write the "downloaded" status. That status is already
+                  // owned elsewhere - handleDownloadFinished writes it for event-driven (fresh /
+                  // resumed) downloads, and the session reconstruction (reconstructSessionMods) seeds
+                  // it for already-present and bundled archives at install start. Writing it here
+                  // as well duplicated it and, arriving after the installer had already advanced
+                  // the member to "installing", regressed the row back to "downloaded" (it read
+                  // "Waiting to install" for the whole install).
                   const freshDownloads = api.getState().persistent.downloads.files;
                   if (
                     downloadId &&
                     freshDownloads[downloadId]?.state === "finished" &&
                     freshDownloads[downloadId]?.size > 0
                   ) {
-                    // already-finished/imported (incl. bundled) downloads bypass
-                    // handleDownloadFinished, so record "downloaded" here too (no-op
-                    // outside an active collection session)
-                    this.writeCollectionSession(dep.reference, {
-                      type: "status",
-                      status: "downloaded",
-                    });
                     this.queueInstallation(
                       api,
                       dep,

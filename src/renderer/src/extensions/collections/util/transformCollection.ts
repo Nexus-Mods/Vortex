@@ -18,7 +18,7 @@ import { coerceToSemver } from "../../mod_management/util/coerceToSemver";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import { makeModReference } from "../../mod_management/util/modReference";
-import testModReference from "../../mod_management/util/testModReference";
+import { findRuleByRef } from "../../mod_management/util/testModReference";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import { MAX_COLLECTION_NAME_LENGTH, MIN_COLLECTION_NAME_LENGTH, MOD_TYPE } from "../constants";
 import type {
@@ -200,7 +200,7 @@ export function makeTransferrable(
   // ok, this gets a bit complex now. If the referenced mod gets updated, also make sure
   // the rules referencing it apply to newer versions
   if (mod !== undefined) {
-    const mpRule = collection.rules.find((iter) => testModReference(mod, iter.reference));
+    const mpRule = findRuleByRef(collection.rules, mod);
     if (
       mpRule !== undefined &&
       (mpRule.reference.versionMatch === undefined ||

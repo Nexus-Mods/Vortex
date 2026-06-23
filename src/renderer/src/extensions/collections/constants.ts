@@ -10,9 +10,6 @@ export const NEXUS_NEXT_SUBDOMAIN = process.env["NEXT_SUBDOMAIN"] || "next";
 export const NEXUS_BASE_URL =
   process.env["NEXUS_BASE_URL"] || `https://${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
 export const NEXUS_GAMES_URL = process.env["NEXUS_GAMES_URL"] || `https://${NEXUS_DOMAIN}/games`;
-export const NEXUS_BASE_GAMES_URL =
-  process.env["NEXUS_BASE_GAMES_URL"] ||
-  `https://${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}/games`;
 export const NEXUS_PROTOCOL = "https:";
 
 export const PREMIUM_PATH = ["account", "billing", "premium"];

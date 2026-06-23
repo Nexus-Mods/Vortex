@@ -1025,6 +1025,9 @@ function findModByRef(reference: IModReference, mods: {
 }, installSpec?: IModInstallSpec): IMod;
 
 // @public
+function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined;
+
+// @public
 const finishDownload: ComplexActionCreator3<string, "failed" | "finished" | "redirect", any, {
 id: string;
 state: "failed" | "finished" | "redirect";
@@ -1274,6 +1277,7 @@ const getCollectionInstallProgress: ((state: IState) => {
     ignoredCount: number;
     downloadProgress: number;
     installProgress: number;
+    combinedProgress: number;
     isComplete: boolean;
 }) & OutputSelectorFields<(args_0: ICollectionInstallSession) => {
 totalRequired: number;
@@ -1284,6 +1288,7 @@ failedCount: number;
 ignoredCount: number;
 downloadProgress: number;
 installProgress: number;
+combinedProgress: number;
 isComplete: boolean;
 }, {
 clearCache: () => void;
@@ -6429,6 +6434,7 @@ declare namespace util {
         findCommonRootDir,
         findDownloadByRef,
         findModByRef,
+        findRuleByRef,
         GameNotFound,
         instance_2 as GameStoreHelper,
         normalizeStoreQuery,

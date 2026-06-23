@@ -3,9 +3,7 @@ import { createHash } from "crypto";
 import type { CollectionPermission, ICollectionPermission } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
 
-import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
 import type { ICollectionModRuleEx } from "../types/ICollection";
-import type { IModEx } from "../types/IModEx";
 
 export function hasEditPermissions(permissions: ICollectionPermission[]): boolean {
   if (!permissions) {
@@ -35,33 +33,6 @@ export function ruleId(rule: ICollectionModRuleEx): string {
   // md5-hashing to prevent excessive id names and special characters as a key
   // in application state
   return md5sum(`${rule.sourceName}-${rule.type}-${rule.referenceName}`);
-}
-
-export function isRelevant(mod: IModEx) {
-  if (mod.state) {
-    // consider any mod that's already being downloaded/installed
-    return true;
-  }
-  if (mod.collectionRule["ignored"]) {
-    return false;
-  }
-  if (mod.collectionRule.type !== "requires") {
-    return false;
-  }
-
-  return true;
-}
-
-export type IModWithRule = IMod & { collectionRule: IModRule };
-
-export function calculateCollectionSize(mods: { [id: string]: IModWithRule }): number {
-  return Object.values(mods).reduce((prev: number, mod: IModEx) => {
-    if (!isRelevant(mod)) {
-      return prev;
-    }
-    const size = mod.attributes?.fileSize ?? mod.collectionRule.reference.fileSize ?? 0;
-    return prev + size;
-  }, 0);
 }
 
 export function isEmpty(value: any) {

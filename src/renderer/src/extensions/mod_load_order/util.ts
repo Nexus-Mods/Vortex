@@ -3,11 +3,7 @@ import * as util from "../../util/api";
 import type { ILoadOrder, ILoadOrderEntry } from "./types/types";
 
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {
-  if (collection.rules === undefined) {
-    return false;
-  }
-
-  return collection.rules.find((rule) => util.testModReference(mod, rule.reference)) !== undefined;
+  return util.findRuleByRef(collection.rules, mod) !== undefined;
 }
 
 export function isValidMod(mod: types.IMod) {

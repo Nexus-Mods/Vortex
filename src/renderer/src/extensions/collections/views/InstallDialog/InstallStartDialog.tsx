@@ -147,6 +147,7 @@ function InstallDialogConfirmProfile(props: IInstallDialogConfirmProfileProps) {
  */
 class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
   private mLastCollection: IMod;
+  private mUnsubscribeDriver?: () => void;
   constructor(props: IProps) {
     super(props);
 
@@ -156,10 +157,19 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       recommendedNewProfile: false,
       skipPluginRules: false,
     });
+  }
 
-    if (props.driver !== undefined) {
-      this.props.driver.onUpdate(() => this.forceUpdate());
+  public componentDidMount() {
+    // subscribe here, not in the constructor: a constructor subscription can fire forceUpdate
+    // before this instance mounts (or on an instance that never mounts at all)
+    if (this.props.driver !== undefined) {
+      this.mUnsubscribeDriver = this.props.driver.onUpdate(() => this.forceUpdate());
     }
+  }
+
+  public componentWillUnmount() {
+    this.mUnsubscribeDriver?.();
+    this.mUnsubscribeDriver = undefined;
   }
 
   static getDerivedStateFromProps(props: IProps, state: IInstallDialogState) {
@@ -176,7 +186,10 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     const { driver } = this.props;
     if (driver !== undefined) {
       if (driver !== prevProps.driver) {
-        driver.onUpdate(() => this.forceUpdate());
+        // drop the old driver's hook before subscribing to the new one, so a stale handler
+        // doesn't linger and forceUpdate after the driver swap
+        this.mUnsubscribeDriver?.();
+        this.mUnsubscribeDriver = driver.onUpdate(() => this.forceUpdate());
       }
 
       if (driver.collection !== this.mLastCollection) {
