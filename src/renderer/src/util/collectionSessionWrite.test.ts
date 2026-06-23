@@ -16,7 +16,11 @@ import type {
   CollectionModStatus,
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
-import { planSessionWrite, sessionWriteForDependency } from "./collectionSessionWrite";
+import {
+  planDependencyErrorRecovery,
+  planSessionWrite,
+  sessionWriteForDependency,
+} from "./collectionSessionWrite";
 
 describe("planSessionWrite", () => {
   it("records reaching installed via markInstalled, over any in-progress or failed state", () => {
@@ -128,5 +132,51 @@ describe("sessionWriteForDependency", () => {
     expect(
       sessionWriteForDependency(state, refForTag("r1"), { type: "installed", modId: "mod-1" }),
     ).toBeNull();
+  });
+});
+
+describe("planDependencyErrorRecovery", () => {
+  const base = {
+    installCanceled: false,
+    ruleIgnored: false,
+    isCanceled: false,
+    hasRetriesLeft: true,
+  };
+
+  it("leaves an explicitly skipped member alone (never requeue - that would re-prompt the skip)", () => {
+    // even with retries available, an ignored member must not be resurrected
+    expect(planDependencyErrorRecovery({ ...base, ruleIgnored: true, isCanceled: true })).toEqual({
+      action: "leave",
+    });
+  });
+
+  it("leaves members alone when the whole install was cancelled (resume rebuilds them)", () => {
+    expect(
+      planDependencyErrorRecovery({ ...base, installCanceled: true, isCanceled: true }),
+    ).toEqual({ action: "leave" });
+  });
+
+  it("requeues a transient error while retries remain", () => {
+    expect(planDependencyErrorRecovery({ ...base })).toEqual({ action: "requeue" });
+  });
+
+  it("requeues a download cancelled as collateral (canceled, not skipped, retries left)", () => {
+    // the free-user skip cascade tears down sibling downloads; those are wanted mods, so retry
+    expect(
+      planDependencyErrorRecovery({ ...base, isCanceled: true, hasRetriesLeft: true }),
+    ).toEqual({ action: "requeue" });
+  });
+
+  it("settles a genuine failure as failed and surfaces the error once retries are exhausted", () => {
+    expect(planDependencyErrorRecovery({ ...base, hasRetriesLeft: false })).toEqual({
+      action: "fail",
+      showError: true,
+    });
+  });
+
+  it("settles a cancellation as failed WITHOUT surfacing an error (cancel is not a failure)", () => {
+    expect(
+      planDependencyErrorRecovery({ ...base, isCanceled: true, hasRetriesLeft: false }),
+    ).toEqual({ action: "fail", showError: false });
   });
 });

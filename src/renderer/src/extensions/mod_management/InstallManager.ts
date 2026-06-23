@@ -74,7 +74,10 @@ import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import calculateFolderSize from "../../util/calculateFolderSize";
-import { generateCollectionSessionId } from "../../util/collectionInstallSession";
+import {
+  generateCollectionSessionId,
+  isTerminalMemberStatus,
+} from "../../util/collectionInstallSession";
 import {
   getCollectionActiveSession,
   getCollectionInstallProgress,
@@ -84,7 +87,10 @@ import {
   isCollectionPhaseComplete,
 } from "../../util/collectionInstallSessionSelectors";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
-import { sessionWriteForDependency } from "../../util/collectionSessionWrite";
+import {
+  planDependencyErrorRecovery,
+  sessionWriteForDependency,
+} from "../../util/collectionSessionWrite";
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import {
@@ -2542,35 +2548,55 @@ class InstallManager {
           const err = unknownToError(unknownError);
           this.mActiveInstalls.delete(installKey);
           const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
-          // A missing mDependencyInstalls entry means the install was torn down
-          // externally (cancel-dependency-install / clearQueued). Treat the
-          // late error as cancellation so it doesn't surface as a notification
-          // or trigger a retry for a download the user already canceled.
+          // A missing mDependencyInstalls entry means the whole install was torn down
+          // externally (cancel-dependency-install / clearQueued / pause). Treat the late
+          // error as cancellation so it doesn't surface as a notification.
           const installCanceled = !this.mDependencyInstalls[sourceModId];
           const isCanceled =
             installCanceled ||
             unknownError instanceof UserCanceled ||
             unknownError instanceof ProcessCanceled;
+          // An explicitly skipped member already carries the durable `ignored` flag (the skip
+          // site sets it before this rejection arrives). It is terminal: never requeue it (that
+          // would re-prompt the download a free user just skipped) and never re-mark it.
+          const ruleIgnored = isDependencyRuleIgnored(
+            api.getState(),
+            gameId,
+            sourceModId,
+            dep.reference,
+          );
           const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
-          if (!isCanceled && hasRetriesLeft) {
-            this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
+          const recovery = planDependencyErrorRecovery({
+            installCanceled,
+            ruleIgnored,
+            isCanceled,
+            hasRetriesLeft,
+          });
+          if (recovery.action === "requeue") {
+            // A transient error OR a download cancelled as collateral while the install is still
+            // live. Requeue rather than abandoning the member non-terminal - a dangling member
+            // both blocks completion and gets re-prompted on the next install pass.
+            this.mPendingInstalls.set(installKey, dep);
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
-          } else if (!isCanceled) {
-            // Max retries exceeded, clean up and show error
-            this.mDependencyRetryCount.delete(installKey);
-            // record the terminal failure on the collection session so the install can
-            // still complete (a failed required mod is decided, not pending) and the UI
-            // shows it as failed rather than stuck
-            this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
-            this.showDependencyError(
-              api,
-              sourceModId,
-              "Failed to install dependency",
-              err,
-              renderModReference(dep.reference),
-            );
           } else {
             this.mDependencyRetryCount.delete(installKey);
+            if (recovery.action === "fail") {
+              // Retries exhausted: settle the member as failed (terminal) so the collection can
+              // still complete and the member is not re-prompted. writeCollectionSession no-ops
+              // over an already-terminal status, so this only settles a genuinely stuck member.
+              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
+              if (recovery.showError) {
+                this.showDependencyError(
+                  api,
+                  sourceModId,
+                  "Failed to install dependency",
+                  err,
+                  renderModReference(dep.reference),
+                );
+              }
+            }
+            // action === "leave": whole-install pause/cancel (resume rebuilds) or an explicitly
+            // skipped member - nothing to recover.
           }
           // Don't rethrow to avoid crashing the concurrency limiter
         } finally {
@@ -3086,9 +3112,8 @@ class InstallManager {
       return 0;
     }
 
-    return Object.values(session.mods).filter((mod: any) =>
-      ["installed", "failed", "ignored"].includes(mod.status),
-    ).length;
+    return Object.values(session.mods).filter((mod: any) => isTerminalMemberStatus(mod.status))
+      .length;
   }
 
   // Helper to check if an archiveId has pending or active installations

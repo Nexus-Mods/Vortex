@@ -13,6 +13,7 @@ import type {
   CollectionModStatus,
 } from "../types/collections/ICollectionInstallSession";
 import type { IDownload, IMod, IState } from "../types/IState";
+import { isTerminalMemberStatus } from "./collectionInstallSession";
 
 /**
  * Selectors for the installTracking reducer
@@ -279,8 +280,8 @@ export const getCollectionInstallProgress = createSelector(
         )
       : [];
     const installedRequired = requiredMods.filter((mod) => mod.status === "installed").length;
-    const completedRequired = requiredMods.filter(
-      (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "ignored",
+    const completedRequired = requiredMods.filter((mod) =>
+      isTerminalMemberStatus(mod.status),
     ).length;
 
     const installProgress =

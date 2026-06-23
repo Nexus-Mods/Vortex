@@ -55,6 +55,40 @@ export function planSessionWrite(
   return { kind: "updateStatus", status: outcome.status };
 }
 
+/** What the dependency-install error handler should do with a member whose attempt threw. */
+export type DependencyErrorRecovery =
+  | { action: "leave" } // decided elsewhere (explicit skip) or whole install torn down: do nothing
+  | { action: "requeue" } // retryable: attempt again
+  | { action: "fail"; showError: boolean }; // terminal: settle as failed, report only a real error
+
+/**
+ * Decide how to recover a collection dependency whose install/download attempt threw. The sibling
+ * of planSessionWrite on the error path - pure, so the policy is testable apart from the install
+ * machinery:
+ * - an explicitly skipped member (ruleIgnored) or a whole-install cancel (installCanceled) is left
+ *   untouched - the skip is terminal and a cancelled install is rebuilt on resume; requeuing a
+ *   skipped member would re-prompt the very download a free user just skipped;
+ * - otherwise, while retries remain the member is requeued - a transient error or a download
+ *   cancelled as collateral (a sibling torn down during the free-user skip cascade) must not
+ *   abandon the member non-terminal, which would block completion and re-prompt next pass;
+ * - once retries are exhausted it is settled as failed (terminal) so the collection can still
+ *   complete, surfacing an error only for a genuine failure, never for a user cancellation.
+ */
+export function planDependencyErrorRecovery(input: {
+  installCanceled: boolean;
+  ruleIgnored: boolean;
+  isCanceled: boolean;
+  hasRetriesLeft: boolean;
+}): DependencyErrorRecovery {
+  if (input.installCanceled || input.ruleIgnored) {
+    return { action: "leave" };
+  }
+  if (input.hasRetriesLeft) {
+    return { action: "requeue" };
+  }
+  return { action: "fail", showError: !input.isCanceled };
+}
+
 /** A resolved session write: which session/rule to update and how. */
 export interface IResolvedSessionWrite {
   sessionId: string;

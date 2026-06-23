@@ -36,6 +36,7 @@ import type {
 import { scanForDiffs } from "./binaryPatching";
 import { matchChecksums } from "./checksumMatcher";
 import { generateConfig } from "./collectionConfig";
+import { REFERENCE_TAG_SCHEME } from "./deterministicReferenceTag";
 import { ReplicateHashMismatchError } from "./errors";
 import type { IExtensionFeature } from "./extension";
 import { findExtensions } from "./extension";
@@ -488,7 +489,9 @@ export async function modToCollection(
     modRules,
     ...extData,
     ...filteredGameSpecific,
-    collectionConfig: { ...collectionConfig },
+    // stamp the deterministic tag scheme so the install side knows it can derive stable member
+    // tags from file identity (see deterministicReferenceTag)
+    collectionConfig: { ...collectionConfig, referenceTagScheme: REFERENCE_TAG_SCHEME },
   };
 
   return res;

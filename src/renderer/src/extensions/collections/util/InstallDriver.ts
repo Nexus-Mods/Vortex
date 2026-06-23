@@ -6,9 +6,15 @@ import Bluebird from "bluebird";
 
 import * as installActions from "../../../actions/collectionInstallTracking";
 import { log } from "../../../logging";
+import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-import { generateCollectionSessionId, modRuleId } from "../../../util/collectionInstallSession";
+import {
+  generateCollectionSessionId,
+  isTerminalMemberStatus,
+  modRuleId,
+} from "../../../util/collectionInstallSession";
+import { getCollectionActiveSession } from "../../../util/collectionInstallSessionSelectors";
 import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
@@ -65,6 +71,11 @@ class InstallDriver {
   private mUpdateHandlers: UpdateCB[] = [];
   private mInstalledMods: IMod[] = [];
   private mDependentMods: IModRule[] = [];
+  // referenceTag -> member rule, kept in sync with mDependentMods (see setDependentMods). Lets the
+  // did-install-mod handler resolve an installed mod to its rule in O(1) by its stamped
+  // referenceTag instead of scanning every member, which is what made attribution O(n^2) and froze
+  // the UI on 2000-4000 mod collections.
+  private mDependentByTag: Map<string, IModRule> = new Map();
   private mInstallingMod: string;
   private mInstallDone: boolean = false;
   private mCollectionInfo: nexusApi.ICollection;
@@ -100,6 +111,19 @@ class InstallDriver {
   }
   private get recommendedMods() {
     return this.mDependentMods.filter((m) => m.type === "recommends");
+  }
+
+  // single point that assigns the member rules, so the referenceTag index can never drift from
+  // mDependentMods. First rule wins on a duplicate tag.
+  private setDependentMods(rules: IModRule[]) {
+    this.mDependentMods = rules;
+    this.mDependentByTag = new Map();
+    for (const rule of rules) {
+      const tag = rule.reference.tag;
+      if (tag !== undefined && !this.mDependentByTag.has(tag)) {
+        this.mDependentByTag.set(tag, rule);
+      }
+    }
   }
 
   private completeInstallationTracking(success: boolean) {
@@ -159,10 +183,22 @@ class InstallDriver {
       const state: IState = api.store.getState();
       const mod = getSafe(state.persistent.mods, [gameId, modId], undefined);
       const downloads = state.persistent.downloads.files;
-      // verify the mod installed is actually one required by this collection
-      const dependent = this.mDependentMods.find((iter) => {
-        const nameSet = new Set<string>();
+
+      // verify the mod installed is actually one required by this collection. Fast path: an
+      // installed collection member is stamped with its rule's referenceTag, and testModReference
+      // treats an identical tag as authoritative, so a tag hit is a definitive O(1) match - this
+      // is what keeps attribution from being O(members) per event (the 2000-4000 mod freeze).
+      const taggedDependent =
+        mod?.attributes?.referenceTag !== undefined
+          ? this.mDependentByTag.get(mod.attributes.referenceTag)
+          : undefined;
+
+      // fallback for a mod with no (matching) referenceTag: match by reference / identifiers. The
+      // identifiers are independent of the rule, so build them once rather than per member.
+      let dependent = taggedDependent;
+      if (dependent === undefined) {
         const fileIdSet = new Set<string>();
+        const nameSet = new Set<string>();
         fileIdSet.add(mod?.attributes?.fileId?.toString());
         nameSet.add(downloads[archiveId]?.localPath);
         const identifiers = {
@@ -172,10 +208,12 @@ class InstallDriver {
           fileIds: Array.from(fileIdSet).filter((id) => id !== undefined),
           fileNames: Array.from(nameSet).filter((n) => n !== undefined),
         };
-        return (
-          testModReference(mod, iter.reference) || testRefByIdentifiers(identifiers, iter.reference)
+        dependent = this.mDependentMods.find(
+          (iter) =>
+            testModReference(mod, iter.reference) ||
+            testRefByIdentifiers(identifiers, iter.reference),
         );
-      });
+      }
 
       if (mod !== undefined && dependent !== undefined) {
         const isMarkedInstalled = this.mInstalledMods.find((m) => m.id === mod.id) !== undefined;
@@ -191,14 +229,33 @@ class InstallDriver {
         // the "installed" session status is now written by InstallManager directly
         // (the in-process write path); the driver keeps the patch/attribute side effects
 
+        const installSpec = ruleInstallSpec(dependent);
+
+        // Stamp the install spec (installerChoices/patches/fileList) onto the installed mod for
+        // every member, including those with no reference.description, so it can be re-matched to
+        // its rule on a later pass: reconstructSessionMods / findModByRef require a candidate to
+        // also match the spec (modMatchesInstallSpec), so a member whose spec was never stamped is
+        // judged "not installed" and gets re-pulled. (applyPatches below still needs the
+        // description, which it uses as the mod label.) The stamping is tag-scheme agnostic, so it
+        // keeps the hundreds of thousands of existing (random-tag) collections re-attributable too,
+        // not just new deterministic ones.
+        batchDispatch(api.store, [
+          setFileOverride(gameId, modId, dependent.extra?.fileOverrides),
+          setModAttribute(gameId, modId, "installerChoices", installSpec.installerChoices),
+          setModAttribute(gameId, modId, "patches", installSpec.patches),
+          setModAttribute(gameId, modId, "fileList", installSpec.fileList),
+        ]);
+
+        if (dependent.type === "requires") {
+          this.mProgressDebouncer.schedule();
+        }
+
+        // applyPatches writes the binary patches into the collection's staging path and uses the
+        // member's description as the mod label, so it (and only it) still needs both present.
         if (
           this.mCollection?.installationPath !== undefined &&
           dependent.reference.description !== undefined
         ) {
-          if (dependent.type === "requires") {
-            this.mProgressDebouncer.schedule();
-          }
-          const installSpec = ruleInstallSpec(dependent);
           applyPatches(
             api,
             this.mCollection,
@@ -207,12 +264,6 @@ class InstallDriver {
             modId,
             installSpec.patches,
           );
-          batchDispatch(api.store, [
-            setFileOverride(gameId, modId, dependent.extra?.fileOverrides),
-            setModAttribute(gameId, modId, "installerChoices", installSpec.installerChoices),
-            setModAttribute(gameId, modId, "patches", installSpec.patches),
-            setModAttribute(gameId, modId, "fileList", installSpec.fileList),
-          ]);
         }
       }
       this.triggerUpdate();
@@ -257,9 +308,11 @@ class InstallDriver {
           const required = (collection?.rules ?? []).filter((rule) =>
             ["requires", "recommends"].includes(rule.type),
           );
-          this.mDependentMods = required.filter(
-            (rule) =>
-              findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule)) === undefined,
+          this.setDependentMods(
+            required.filter(
+              (rule) =>
+                findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule)) === undefined,
+            ),
           );
         }
 
@@ -530,34 +583,31 @@ class InstallDriver {
   }
 
   /**
-   * Whether the active collection has nothing left to install: every required rule (and, on the
-   * recommendations pass, every recommended rule too) is either installed or explicitly ignored.
-   * This is the completion DECISION, deliberately separate from the postprocessing side-effect
-   * (finalizeInstalledCollection) so it can be unit-tested without the staging-path / fs
-   * infrastructure. The two passes differ as before: the required pass demands an installed
-   * state, the recommendations pass only that the mod is present.
+   * Whether the active collection has nothing left to install: every required member (and, on the
+   * recommendations pass, every recommended member too) has reached a terminal status - installed,
+   * failed, or ignored (see isTerminalMemberStatus). This is the completion DECISION, deliberately
+   * separate from the postprocessing side-effect (finalizeInstalledCollection) so it can be
+   * unit-tested without the staging-path / fs infrastructure.
    */
   public isInstallComplete(recommendations: boolean): boolean {
     if (this.mCollection === undefined || this.mGameId === undefined) {
       return false;
     }
-    const mods = this.mApi.getState().persistent.mods[this.mGameId] ?? {};
-    const rules = this.mCollection.rules ?? [];
-    if (!recommendations) {
-      const isInstalled = (rule: IModRule) => {
-        const mod = findModByRef(rule.reference, mods);
-        return mod != null && mod.state === "installed";
-      };
-      return !rules.some(
-        (rule) => rule.type === "requires" && rule.ignored !== true && !isInstalled(rule),
-      );
+    const session = getCollectionActiveSession(this.mApi.getState());
+    if (session === undefined || session.collectionId !== this.mCollection.id) {
+      // no active session for this collection - nothing we can assert as complete
+      return false;
     }
-    return !rules.some(
-      (rule) =>
-        ["requires", "recommends"].includes(rule.type) &&
-        rule.ignored !== true &&
-        findModByRef(rule.reference, mods) === undefined,
-    );
+    // The collection session is the single source of truth: it carries a terminal status per
+    // member rule (written by the single-writer install path), so completion is an O(members)
+    // scan. The required pass needs every required member terminal; the recommendations pass
+    // additionally needs every recommended member terminal.
+    const types: Array<ICollectionModInstallInfo["type"]> = recommendations
+      ? ["requires", "recommends"]
+      : ["requires"];
+    return Object.values(session.mods)
+      .filter((mod) => types.includes(mod.type))
+      .every((mod) => isTerminalMemberStatus(mod.status));
   }
 
   private async onDidInstallDependencies(gameId: string, modId: string, recommendations: boolean) {
@@ -698,7 +748,7 @@ class InstallDriver {
     this.mProfile = undefined;
     this.mGameId = undefined;
     this.mInstalledMods = [];
-    this.mDependentMods = [];
+    this.setDependentMods([]);
     this.mStep = "prepare";
     this.mOnStop?.();
   }
@@ -851,7 +901,7 @@ class InstallDriver {
       }
       return accum;
     }, []);
-    this.mDependentMods = dependencies;
+    this.setDependentMods(dependencies);
     // log('debug', 'dependent mods', JSON.stringify(dependencies));
 
     /* COLLECTIONS START ANALYTICS */
@@ -990,7 +1040,7 @@ class InstallDriver {
 
     this.completeInstallationTracking(true);
     this.mCollection = undefined;
-    this.mDependentMods = [];
+    this.setDependentMods([]);
     this.mInstallDone = true;
     this.triggerUpdate();
   };

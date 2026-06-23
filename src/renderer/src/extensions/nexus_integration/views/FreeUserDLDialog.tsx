@@ -7,8 +7,10 @@ import { Button } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
 import Modal from "../../../controls/Modal";
+import type { ICollectionInstallSession } from "../../../types/collections/ICollectionInstallSession";
 import type { IComponentContext } from "../../../types/IComponentContext";
 import type { IState } from "../../../types/IState";
+import { freeUserDownloadPosition } from "../../../util/collectionInstallSession";
 import { log } from "../../../util/log";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
@@ -99,7 +101,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     (state) => state.persistent["nexus"].userInfo,
   );
 
-  const collectionInstallSession = useSelector<IState, any>(
+  const collectionInstallSession = useSelector<IState, ICollectionInstallSession | undefined>(
     (state) => state.session?.["collections"]?.activeSession,
   );
   const context = React.useContext<IComponentContext>(MainContext);
@@ -127,14 +129,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [show]);
 
   React.useEffect(() => {
-    if (collectionInstallSession?.downloadedCount != null) {
-      const position = collectionInstallSession.downloadedCount + 1;
-      const total = Math.max(
-        collectionInstallSession.totalRequired + collectionInstallSession.totalOptional,
-        1,
-      );
-      setPositionText(`${position}/${total}`);
+    if (collectionInstallSession?.mods == null) {
+      return;
     }
+    const { position, total } = freeUserDownloadPosition(collectionInstallSession);
+    setPositionText(`${position}/${total}`);
   }, [collectionInstallSession]);
 
   React.useEffect(() => {

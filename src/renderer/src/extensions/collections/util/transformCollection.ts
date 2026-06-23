@@ -29,6 +29,7 @@ import type {
   ICollectionSourceInfo,
   SourceType,
 } from "../types/ICollection";
+import { deterministicReferenceTag } from "./deterministicReferenceTag";
 
 // the source types that carry a download hint (a URL/instructions to fetch the
 // mod), as opposed to "nexus"/"bundle" which are resolved differently
@@ -235,7 +236,11 @@ export function collectionModInstallSpec(mod: ICollectionMod): IModInstallSpec {
 /**
  * convert a mod entry from a collection into a mod rule
  */
-export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionMod): IModRule {
+export function collectionModToRule(
+  knownGames: IGameStored[],
+  mod: ICollectionMod,
+  deterministic = false,
+): IModRule {
   const downloadHint: IDownloadHint | undefined = isDownloadHintMode(mod.source.type)
     ? {
         url: mod.source.url,
@@ -267,6 +272,8 @@ export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionM
       ? mod.source.fileExpression
       : undefined;
 
+  const installSpec = collectionModInstallSpec(mod);
+
   const reference: IModReference = {
     description: mod.name,
     fileMD5: refMD5,
@@ -275,7 +282,6 @@ export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionM
     versionMatch,
     logicalFileName: mod.source.logicalFilename,
     fileExpression,
-    tag: mod.source.tag ?? shortid(),
   };
 
   if (["latest", "prefer"].includes(updatePolicy)) {
@@ -297,10 +303,21 @@ export function collectionModToRule(knownGames: IGameStored[], mod: ICollectionM
     };
   }
 
+  // Bundled members carry a tag stored at authoring; only tagless members (e.g. nexus) fall back
+  // here. For a deterministic collection, derive a stable tag from the member's identity + install
+  // spec so re-processing yields the same tag (no random drift, so an installed mod keeps matching
+  // its rule instead of being re-pulled). Computed AFTER the repo block on purpose: a fuzzy
+  // (prefers/latest) member's deterministic identity is repo.modId, which must be populated first.
+  // Legacy collections keep the random shortid, so mods already installed under an old random tag
+  // continue to match.
+  reference.tag =
+    mod.source.tag ??
+    (deterministic ? (deterministicReferenceTag(reference, installSpec) ?? shortid()) : shortid());
+
   const res: IModRule = {
     type: mod.optional ? "recommends" : "requires",
     reference,
-    ...collectionModInstallSpec(mod),
+    ...installSpec,
     downloadHint,
     phase: mod.phase ?? 0,
     extra: {

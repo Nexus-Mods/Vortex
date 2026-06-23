@@ -8,6 +8,7 @@ import { BUNDLED_PATH, MOD_TYPE } from "./constants";
 import type { ICollection } from "./types/ICollection";
 import type { ICollectionConfig } from "./types/ICollectionConfig";
 import { parseConfig } from "./util/collectionConfig";
+import { REFERENCE_TAG_SCHEME } from "./util/deterministicReferenceTag";
 import { readCollection } from "./util/readCollection";
 import { collectionModToRule } from "./util/transformCollection";
 
@@ -92,7 +93,11 @@ export function makeInstall(api: IExtensionApi) {
         })),
         ...collection.mods.map((mod) => ({
           type: "rule" as any,
-          rule: collectionModToRule(knownGames, mod),
+          rule: collectionModToRule(
+            knownGames,
+            mod,
+            config.referenceTagScheme === REFERENCE_TAG_SCHEME,
+          ),
         })),
       ],
     });

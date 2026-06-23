@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { makeCollectionMod } from "../../../test-utils/builders";
 import { rulePhase } from "../../mod_management/util/testModReference";
+import { deterministicReferenceTag } from "./deterministicReferenceTag";
 import {
   collectionModInstallSpec,
   collectionModToRule,
@@ -288,23 +290,6 @@ describe("makeBiDirRule", () => {
 
 describe("collectionModToRule", () => {
   const knownGames: any[] = [{ id: "skyrimse", domainName: "skyrimspecialedition" }];
-
-  const makeCollectionMod = (overrides: Record<string, any> = {}): any => ({
-    name: "Test Mod",
-    version: "1.2.3",
-    optional: false,
-    domainName: "skyrimspecialedition",
-    source: {
-      type: "nexus",
-      modId: 100,
-      fileId: 200,
-      md5: "abc",
-      fileSize: 1024,
-      logicalFilename: "TestMod",
-      updatePolicy: "exact",
-    },
-    ...overrides,
-  });
 
   it("creates a requires rule for a non-optional mod", () => {
     const result = collectionModToRule(knownGames, makeCollectionMod());
@@ -718,5 +703,64 @@ describe("makeTransferrable", () => {
 
     expect(result.fileList).toEqual([{ path: "file.esp" }]);
     expect(result.comment).toBe("load after this");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// collectionModToRule - deterministic referenceTag fallback
+// ---------------------------------------------------------------------------
+
+describe("collectionModToRule deterministic referenceTag", () => {
+  const knownGames: any[] = [{ id: "skyrimse", domainName: "skyrimspecialedition" }];
+
+  // the shared builder defaults to a tagless nexus member (no source.tag, has md5) - exactly the
+  // case that reaches the tag fallback (deterministic tag or random shortid). Bundles instead
+  // carry a stored source.tag and so never reach the fallback.
+  const withMd5 = (md5: string) =>
+    makeCollectionMod({ source: { ...makeCollectionMod().source, md5 } });
+
+  it("uses a random tag for a tagless member in legacy (non-deterministic) mode", () => {
+    const a = collectionModToRule(knownGames, makeCollectionMod());
+    const b = collectionModToRule(knownGames, makeCollectionMod());
+    expect(a.reference.tag).toBeDefined();
+    expect(a.reference.tag).not.toBe(b.reference.tag);
+  });
+
+  it("derives a stable tag from file identity + install spec in deterministic mode", () => {
+    const a = collectionModToRule(knownGames, makeCollectionMod(), true);
+    const b = collectionModToRule(knownGames, makeCollectionMod(), true);
+    expect(a.reference.tag).toBe(b.reference.tag);
+    // and it is exactly the deterministicReferenceTag of the reference + install spec
+    expect(a.reference.tag).toBe(
+      deterministicReferenceTag(a.reference, collectionModInstallSpec(makeCollectionMod())),
+    );
+  });
+
+  it("changes the deterministic tag when the file hash changes", () => {
+    const a = collectionModToRule(knownGames, withMd5("hash-a"), true);
+    const b = collectionModToRule(knownGames, withMd5("hash-b"), true);
+    expect(a.reference.tag).not.toBe(b.reference.tag);
+  });
+
+  it("keeps a stored tag regardless of mode (bundle members)", () => {
+    const stored = makeCollectionMod({
+      source: { ...makeCollectionMod().source, tag: "stored-tag" },
+    });
+    expect(collectionModToRule(knownGames, stored).reference.tag).toBe("stored-tag");
+    expect(collectionModToRule(knownGames, stored, true).reference.tag).toBe("stored-tag");
+  });
+
+  it("derives a stable modId-based tag for a fuzzy (latest) rule across differing file hashes", () => {
+    // a latest/prefer member floats across versions, so its tag must key on the mod page
+    // (repo.modId), not the version-specific fileMD5. Two resolutions of the same mod with
+    // different md5 must yield the SAME deterministic tag - and a real hash, not a random shortid.
+    const latest = (md5: string) =>
+      makeCollectionMod({ source: { ...makeCollectionMod().source, updatePolicy: "latest", md5 } });
+    const a = collectionModToRule(knownGames, latest("v1-md5"), true);
+    const b = collectionModToRule(knownGames, latest("v2-md5"), true);
+
+    expect(a.reference.tag).toBe(b.reference.tag);
+    // md5 hex (deterministic) is 32 chars; a shortid fallback would not match this
+    expect(a.reference.tag).toMatch(/^[0-9a-f]{32}$/);
   });
 });
