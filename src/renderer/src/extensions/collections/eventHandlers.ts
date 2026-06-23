@@ -18,6 +18,7 @@ import getVortexPath from "../../util/getVortexPath";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, sanitizeFilename, toPromise } from "../../util/util";
+import { REFERENCE_TAG_SCHEME } from "./util/deterministicReferenceTag";
 import type InstallDriver from "./util/InstallDriver";
 import { readCollection } from "./util/readCollection";
 import { collectionModToRule } from "./util/transformCollection";
@@ -122,7 +123,7 @@ async function collectionUpdate(
       const newCollectionData = await readCollection(api, path.join(tempDir, "collection.json"));
       const knownGames = selectors.knownGames(api.getState());
       const deterministic =
-        newCollectionData.collectionConfig?.referenceTagScheme === "deterministic";
+        newCollectionData.collectionConfig?.referenceTagScheme === REFERENCE_TAG_SCHEME;
       newRules = newCollectionData.mods.map((mod) =>
         collectionModToRule(knownGames, mod, deterministic),
       );

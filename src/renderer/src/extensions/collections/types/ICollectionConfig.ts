@@ -4,17 +4,13 @@ import type { ICollection } from "./ICollection";
 export interface ICollectionConfig {
   recommendNewProfile: boolean;
   excludePluginRules: boolean;
-  // Identifies how this collection's member referenceTags were generated. Deterministic tags can
-  // only be applied to collections authored AFTER that change (already-published collections keep
-  // their random shortid tags and can never be retrofitted), so the scheme must be recorded in the
-  // config NOW to tell the two apart at install time:
-  //   absent          -> legacy: random shortid tags, matched only by the stamped tag.
-  //   "deterministic" -> tags derived from file identity + installSpec (deterministicReferenceTag),
-  //                      stable across re-install/restart and recomputable/indexable by the matcher.
-  // Set ONLY by the authoring path (alongside actually generating deterministic tags); the config
-  // defaults must leave it absent so legacy collections that fall back to the defaults are not
-  // mislabelled.
-  referenceTagScheme?: "deterministic";
+  // Identifies how this collection's member referenceTags were generated, so the install side knows
+  // how to match them:
+  //   absent -> random shortid tags, matched only by the stamped tag.
+  //   a version string (REFERENCE_TAG_SCHEME) -> tags derived from file identity + installSpec
+  //     (deterministicReferenceTag), stable across re-install/restart and recomputable by the matcher.
+  // Set only by the authoring path; the config defaults leave it absent.
+  referenceTagScheme?: string;
 }
 
 export interface IConfigGeneratorProps {

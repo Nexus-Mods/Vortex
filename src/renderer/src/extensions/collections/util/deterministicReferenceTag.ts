@@ -2,6 +2,11 @@ import { checksum } from "../../../util/checksum";
 import type { IModInstallSpec, IModReference } from "../../mod_management/types/IMod";
 import { isFuzzyVersion } from "../../mod_management/util/isFuzzyVersion";
 
+// Version of the deterministic referenceTag algorithm, recorded in a collection's config
+// (ICollectionConfig.referenceTagScheme). The install side only derives deterministic tags for a
+// collection whose recorded scheme matches this version.
+export const REFERENCE_TAG_SCHEME = "v1";
+
 /**
  * Derive a stable referenceTag for a collection member from its identity plus install spec,
  * replacing the random shortid that can drift across re-install.
