@@ -5,6 +5,8 @@
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
+import { runFileLevelRequirements } from "@/extensions/health_check/utils/fileRequirements/runFileLevelRequirements";
+
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import {
@@ -19,7 +21,6 @@ import { activeProfile } from "../../profile_management/selectors";
 import { setHealthCheckRunning } from "../actions/session";
 import { isFileRequirementsEnabled } from "../selectors";
 import type { IFileRequirementsCheckMetadata } from "../types";
-import { runFileLevelRequirements } from "../utils/runFileLevelRequirements";
 
 export const FILE_REQUIREMENTS_CHECK_ID = "check-file-level-requirements";
 

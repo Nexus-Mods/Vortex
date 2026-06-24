@@ -1,11 +1,11 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { renderModName } from "../../../util/api";
-import { getSafe } from "../../../util/storeHelper";
-import type { IMod } from "../../mod_management/types/IMod";
-import { nexusGamesProm } from "../../nexus_integration/util";
-import { makeFileUID } from "../../nexus_integration/util/UIDs";
-import { activeProfile } from "../../profile_management/selectors";
-import type { IInstalledFile } from "../types";
+import type { IInstalledFile } from "@/extensions/health_check/types";
+import type { IMod } from "@/extensions/mod_management/types/IMod";
+import { nexusGamesProm } from "@/extensions/nexus_integration/util";
+import { makeFileUID } from "@/extensions/nexus_integration/util/UIDs";
+import { activeProfile } from "@/extensions/profile_management/selectors";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import { renderModName } from "@/util/api";
+import { getSafe } from "@/util/storeHelper";
 
 /** The subset of mod attributes the file-level gather/hydrate reads. */
 interface IInstalledModAttributes {

@@ -6,10 +6,11 @@ import type {
 } from "@nexusmods/file-dependency-resolver";
 import type { components } from "@vortex/nexus-api-v3";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
+import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
+import { createVortexNexusV3Client } from "@/extensions/nexus_integration/nexusV3Client";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+
 import { createKeyedCache, resolveCached, type KeyedCache } from "./fileDependencyCache";
-import { getModDetails } from "./modDetails";
 
 type V3Client = ReturnType<typeof createVortexNexusV3Client>;
 type V3Candidate = components["schemas"]["ModFileVersionDependencyCandidate"];

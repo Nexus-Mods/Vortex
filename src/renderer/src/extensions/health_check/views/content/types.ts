@@ -1,10 +1,10 @@
 import type { FC } from "react";
 
+import type { Severity } from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 
 import type { HealthCheckId } from "../../types";
-import type { Severity } from "../../utils/severityStyles";
 
 /**
  * A single item a health check contributes to the listing. Generic across all
