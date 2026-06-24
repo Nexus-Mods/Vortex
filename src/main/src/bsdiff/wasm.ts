@@ -1,9 +1,7 @@
 /**
- * Pure bsdiff WASM helpers. No worker, no I/O — safe to use from any
- * context (renderer, inline fallback, DOM Worker).
+ * Pure bsdiff WASM helpers (BSDIFF40-compatible). No worker and no I/O, so they
+ * run in any context: the patch worker thread, a direct caller, or a test.
  */
-
-import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface BsdiffWasmExports {
   memory: WebAssembly.Memory;
@@ -16,7 +14,7 @@ export interface BsdiffWasmExports {
   free_output(): void;
 }
 
-export const BSDIFF_OK = 0;
+const BSDIFF_OK = 0;
 
 export function loadWasm(wasmBytes: Uint8Array): BsdiffWasmExports {
   const wasmModule = new WebAssembly.Module(wasmBytes as unknown as BufferSource);
@@ -24,7 +22,7 @@ export function loadWasm(wasmBytes: Uint8Array): BsdiffWasmExports {
   return instance.exports as unknown as BsdiffWasmExports;
 }
 
-export function runBinaryOp(
+function runBinaryOp(
   wasm: BsdiffWasmExports,
   left: Uint8Array,
   right: Uint8Array,
@@ -46,7 +44,7 @@ export function runBinaryOp(
   }
 }
 
-export function readOutput(wasm: BsdiffWasmExports): Uint8Array {
+function readOutput(wasm: BsdiffWasmExports): Uint8Array {
   const ptr = wasm.output_ptr();
   const len = wasm.output_len();
   if (len === 0) {
@@ -58,35 +56,33 @@ export function readOutput(wasm: BsdiffWasmExports): Uint8Array {
   return result;
 }
 
-export interface BsdiffRequest {
-  id: number;
-  op: "create_patch" | "apply_patch";
-  left: Uint8Array;
-  right: Uint8Array;
-}
-
-export interface BsdiffResponse {
-  id: number;
-  result?: Uint8Array;
-  error?: string;
-}
-
-// Init message handed to the worker before any op so it can instantiate the
-// WASM module. Kept distinct from BsdiffRequest (which always carries an `id`).
-export interface BsdiffInit {
-  init: true;
-  wasm: Uint8Array;
-}
-
-export function processRequest(wasm: BsdiffWasmExports, msg: BsdiffRequest): BsdiffResponse {
-  try {
-    const op = msg.op === "create_patch" ? wasm.create_patch : wasm.apply_patch;
-    const status = runBinaryOp(wasm, msg.left, msg.right, op);
-    if (status !== BSDIFF_OK) {
-      return { id: msg.id, error: `bsdiff ${msg.op} failed with status ${status}` };
-    }
-    return { id: msg.id, result: readOutput(wasm) };
-  } catch (err: unknown) {
-    return { id: msg.id, error: getErrorMessageOrDefault(err) };
+function runOp(
+  wasm: BsdiffWasmExports,
+  name: "create_patch" | "apply_patch",
+  left: Uint8Array,
+  right: Uint8Array,
+): Uint8Array {
+  const status = runBinaryOp(wasm, left, right, wasm[name]);
+  if (status !== BSDIFF_OK) {
+    throw new Error(`bsdiff ${name} failed with status ${status}`);
   }
+  return readOutput(wasm);
+}
+
+/** Create a BSDIFF40 patch between two buffers. Throws on a non-OK wasm status. */
+export function createPatch(
+  wasm: BsdiffWasmExports,
+  oldBuf: Uint8Array,
+  newBuf: Uint8Array,
+): Uint8Array {
+  return runOp(wasm, "create_patch", oldBuf, newBuf);
+}
+
+/** Apply a BSDIFF40 patch to a buffer. Throws on a non-OK wasm status. */
+export function applyPatch(
+  wasm: BsdiffWasmExports,
+  oldBuf: Uint8Array,
+  patchBuf: Uint8Array,
+): Uint8Array {
+  return runOp(wasm, "apply_patch", oldBuf, patchBuf);
 }

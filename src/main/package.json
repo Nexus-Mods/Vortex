@@ -59,7 +59,10 @@
           "{projectRoot}/build/main.cjs",
           "{projectRoot}/build/main.cjs.map",
           "{projectRoot}/build/bootstrap.mjs",
-          "{projectRoot}/build/bootstrap.mjs.map"
+          "{projectRoot}/build/bootstrap.mjs.map",
+          "{projectRoot}/build/bsdiff-worker.cjs",
+          "{projectRoot}/build/bsdiff-worker.cjs.map",
+          "{projectRoot}/build/hdiff.wasm"
         ]
       },
       "publish": {

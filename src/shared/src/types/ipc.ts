@@ -247,6 +247,10 @@ export interface InvokeChannels {
   // Examples:
   "example:ping": () => Promise<string>;
 
+  // bsdiff binary patching, run on a main-process worker_thread (only paths cross IPC)
+  "bsdiff:create": (oldPath: string, newPath: string, patchPath: string) => Promise<void>;
+  "bsdiff:apply": (oldPath: string, patchPath: string, outputPath: string) => Promise<void>;
+
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 

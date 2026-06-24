@@ -30,6 +30,7 @@ import {
   WebContentsView,
 } from "electron";
 
+import { diffFiles as bsdiffDiff, patchFiles as bsdiffPatch } from "./bsdiff/host";
 import { relaunch } from "./cli";
 import { getVortexPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
@@ -627,4 +628,20 @@ export function init() {
   betterIpcMain.handle("powerSaveBlocker:isStarted", (_event: IpcMainInvokeEvent, id: number) => {
     return powerSaveBlocker.isStarted(id);
   });
+
+  // ============================================================================
+  // bsdiff binary patching (delegated to a worker_thread, off the main loop)
+  // ============================================================================
+
+  betterIpcMain.handle(
+    "bsdiff:create",
+    (_event: IpcMainInvokeEvent, oldPath: string, newPath: string, patchPath: string) =>
+      bsdiffDiff(oldPath, newPath, patchPath),
+  );
+
+  betterIpcMain.handle(
+    "bsdiff:apply",
+    (_event: IpcMainInvokeEvent, oldPath: string, patchPath: string, outputPath: string) =>
+      bsdiffPatch(oldPath, outputPath, patchPath),
+  );
 }

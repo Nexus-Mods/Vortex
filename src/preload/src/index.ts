@@ -236,6 +236,13 @@ try {
       onResolve: (handler) => betterIpcRenderer.callback("download:resolve", handler),
     },
 
+    bsdiff: {
+      diff: (oldPath, newPath, patchPath) =>
+        betterIpcRenderer.invoke("bsdiff:create", oldPath, newPath, patchPath),
+      patch: (oldPath, outputPath, patchPath) =>
+        betterIpcRenderer.invoke("bsdiff:apply", oldPath, patchPath, outputPath),
+    },
+
     diag: {
       // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
       fatal: (message: string) => {
