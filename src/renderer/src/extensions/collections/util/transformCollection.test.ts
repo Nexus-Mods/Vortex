@@ -1,7 +1,17 @@
+import type { ILookupResult } from "modmeta-db";
 import { describe, expect, it } from "vitest";
 
-import { makeCollectionMod } from "../../../test-utils/builders";
+import { makeCollectionMod, makeGameStored } from "../../../test-utils/builders";
+import type { IDialogContent } from "../../../types/IDialog";
+import type { TFunction } from "../../../util/i18n";
+import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
 import { rulePhase } from "../../mod_management/util/testModReference";
+import type {
+  ICollectionInfo,
+  ICollectionMod,
+  ICollectionModRule,
+  ICollectionSourceInfo,
+} from "../types/ICollection";
 import { deterministicReferenceTag } from "./deterministicReferenceTag";
 import {
   collectionModInstallSpec,
@@ -79,9 +89,11 @@ describe("sanitizeExpression", () => {
 // ---------------------------------------------------------------------------
 
 describe("deduceSource", () => {
-  const makeMod = (overrides: Record<string, any> = {}): any => ({
+  const makeMod = (overrides: Record<string, unknown> = {}): IMod => ({
     id: "mod1",
+    state: "installed",
     type: "mod",
+    installationPath: "mods/mod1",
     attributes: {
       source: "nexus",
       modId: 1234,
@@ -94,19 +106,23 @@ describe("deduceSource", () => {
     },
   });
 
-  const makeLookupResults = (value: Record<string, any>): any[] => [{ key: "k", value }];
+  const makeLookupResults = (value: Record<string, unknown>): ILookupResult[] => [
+    { key: "k", value } as unknown as ILookupResult,
+  ];
 
-  const makeSourceInfo = (overrides: Record<string, any> = {}): any => ({
+  const makeSourceInfo = (
+    overrides: Partial<ICollectionSourceInfo> = {},
+  ): ICollectionSourceInfo => ({
     type: "nexus",
     ...overrides,
   });
 
   /** Call deduceSource with sensible defaults for optional-in-practice args. */
   function callDeduce(
-    mod: any,
-    sourceInfo?: any,
+    mod: IMod,
+    sourceInfo?: ICollectionSourceInfo,
     versionMatcher?: string,
-    metaInfo: any[] = [],
+    metaInfo: ILookupResult[] = [],
     tag = "tag1",
   ) {
     return deduceSource(mod, sourceInfo ?? undefined, versionMatcher ?? undefined, metaInfo, tag);
@@ -252,12 +268,12 @@ describe("deduceSource", () => {
 // ---------------------------------------------------------------------------
 
 describe("makeBiDirRule", () => {
-  const makeRef = (overrides: Record<string, any> = {}): any => ({
+  const makeRef = (overrides: Partial<IModReference> = {}): IModReference => ({
     id: "mod-id",
     ...overrides,
   });
 
-  const makeRule = (overrides: Record<string, any> = {}): any => ({
+  const makeBiDirTestRule = (overrides: Partial<IModRule> = {}): IModRule => ({
     type: "after",
     reference: makeRef(),
     ...overrides,
@@ -269,7 +285,7 @@ describe("makeBiDirRule", () => {
 
   it("combines source and rule into a bidirectional rule", () => {
     const source = makeRef({ id: "src-mod" });
-    const rule = makeRule({
+    const rule = makeBiDirTestRule({
       type: "after",
       reference: makeRef({ id: "target-mod" }),
     });
@@ -289,7 +305,7 @@ describe("makeBiDirRule", () => {
 // ---------------------------------------------------------------------------
 
 describe("collectionModToRule", () => {
-  const knownGames: any[] = [{ id: "skyrimse", domainName: "skyrimspecialedition" }];
+  const knownGames = [makeGameStored({ id: "skyrimse" })];
 
   it("creates a requires rule for a non-optional mod", () => {
     const result = collectionModToRule(knownGames, makeCollectionMod());
@@ -468,10 +484,10 @@ describe("collectionModToRule", () => {
 // ---------------------------------------------------------------------------
 
 describe("validateName", () => {
-  // Mock translation function — just returns the key
-  const t = ((key: string) => key) as any;
+  // Mock translation function: just returns the key
+  const t = ((key: string) => key) as unknown as TFunction;
 
-  const makeContent = (value: string | undefined): any => ({
+  const makeContent = (value: string | undefined): IDialogContent => ({
     input: [{ id: "name", value }],
   });
 
@@ -520,9 +536,9 @@ describe("validateName", () => {
 
 describe("generateCollection", () => {
   it("wraps info, mods, and modRules into a collection", () => {
-    const info: any = { name: "Test" };
-    const mods: any = [{ name: "Mod1" }];
-    const rules: any = [{ type: "after" }];
+    const info = { name: "Test" } as ICollectionInfo;
+    const mods = [{ name: "Mod1" }] as ICollectionMod[];
+    const rules = [{ type: "after" }] as ICollectionModRule[];
 
     const result = generateCollection(info, mods, rules);
 
@@ -545,8 +561,11 @@ describe("makeCollectionId", () => {
 // ---------------------------------------------------------------------------
 
 describe("makeTransferrable", () => {
-  const makeMod = (id: string, overrides: Record<string, any> = {}): any => ({
+  const makeMod = (id: string, overrides: Record<string, unknown> = {}): IMod => ({
     id,
+    state: "installed",
+    type: "",
+    installationPath: `mods/${id}`,
     attributes: {
       fileMD5: "abc123",
       logicalFileName: "TestMod",
@@ -556,7 +575,9 @@ describe("makeTransferrable", () => {
     rules: [],
   });
 
-  const makeRule = (overrides: Record<string, any> = {}): any => ({
+  const makeRule = (
+    overrides: Partial<IModReference & Pick<IModRule, "fileList" | "comment">> = {},
+  ): IModRule => ({
     type: "after",
     reference: {
       id: "target-mod",
@@ -566,9 +587,13 @@ describe("makeTransferrable", () => {
     },
   });
 
-  const makeCollection = (rules: any[] = []): any => ({
+  const makeCollection = (rules: Array<Partial<IModRule>> = []): IMod => ({
     id: "collection-1",
-    rules,
+    state: "installed",
+    type: "",
+    installationPath: "mods/collection-1",
+    attributes: {},
+    rules: rules as IModRule[],
   });
 
   it("passes through a rule that has fileMD5", () => {
@@ -695,7 +720,7 @@ describe("makeTransferrable", () => {
       fileList: [{ path: "file.esp" }],
       comment: "load after this",
     });
-    // fileList/comment are on the rule, not reference — fix the shape
+    // fileList/comment are on the rule, not reference: fix the shape
     rule.fileList = [{ path: "file.esp" }];
     rule.comment = "load after this";
 
@@ -711,7 +736,7 @@ describe("makeTransferrable", () => {
 // ---------------------------------------------------------------------------
 
 describe("collectionModToRule deterministic referenceTag", () => {
-  const knownGames: any[] = [{ id: "skyrimse", domainName: "skyrimspecialedition" }];
+  const knownGames = [makeGameStored({ id: "skyrimse" })];
 
   // the shared builder defaults to a tagless nexus member (no source.tag, has md5) - exactly the
   // case that reaches the tag fallback (deterministic tag or random shortid). Bundles instead

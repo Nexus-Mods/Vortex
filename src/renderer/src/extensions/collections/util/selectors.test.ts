@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { makeSession as makeSessionBase } from "../../../test-utils/builders";
+import type {
+  ICollectionInstallSession,
+  ICollectionModInstallInfo,
+} from "../../../types/collections/ICollectionInstallSession";
+import type { IState } from "../../../types/IState";
+import type { IModRule } from "../../mod_management/types/IMod";
 import {
   getActiveInstallSession,
   getCollectionInstallProgress,
@@ -14,7 +21,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeState(activeSession?: any): any {
+function makeState(activeSession?: ICollectionInstallSession): IState {
   return {
     session: {
       collections: {
@@ -23,24 +30,26 @@ function makeState(activeSession?: any): any {
         sessionHistory: {},
       },
     },
-  };
+  } as unknown as IState;
 }
 
-function makeSession(overrides: Partial<any> = {}): any {
-  return {
-    sessionId: "col1_prof1",
-    collectionId: "col1",
-    profileId: "prof1",
-    gameId: "skyrimse",
-    totalRequired: 3,
-    totalOptional: 2,
-    downloadedCount: 0,
-    installedCount: 0,
-    failedCount: 0,
-    ignoredCount: 0,
-    mods: {},
-    ...overrides,
-  };
+// these selector tests assume a 3-required / 2-optional session by default
+function makeSession(
+  overrides: Partial<ICollectionInstallSession> = {},
+): ICollectionInstallSession {
+  return makeSessionBase({ totalRequired: 3, totalOptional: 2, ...overrides });
+}
+
+// the selectors only read a few fields off each mod entry (type/status/modId and rule.reference),
+// so these tests model partial entries; the single cast localizes the partial shape here.
+type PartialModInstallInfo = Partial<Omit<ICollectionModInstallInfo, "rule">> & {
+  rule?: Partial<IModRule>;
+};
+
+function makeMods(
+  entries: Record<string, PartialModInstallInfo>,
+): Record<string, ICollectionModInstallInfo> {
+  return entries as Record<string, ICollectionModInstallInfo>;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +69,7 @@ describe("getActiveInstallSession", () => {
   });
 
   it("returns fallback when session state is missing entirely", () => {
-    const emptyState: any = {};
+    const emptyState = {} as IState;
     expect(getActiveInstallSession(emptyState)).toBeUndefined();
   });
 });
@@ -122,12 +131,12 @@ describe("getRequiredModsProgress", () => {
   it("counts required mods correctly", () => {
     const session = makeSession({
       totalRequired: 3,
-      mods: {
+      mods: makeMods({
         r1: { type: "requires", status: "installed", rule: {} },
         r2: { type: "requires", status: "downloading", rule: {} },
         r3: { type: "requires", status: "failed", rule: {} },
         o1: { type: "recommends", status: "installed", rule: {} },
-      },
+      }),
     });
     const result = getRequiredModsProgress(makeState(session), "col1");
 
@@ -151,11 +160,11 @@ describe("getOptionalModsProgress", () => {
   it("counts optional mods correctly", () => {
     const session = makeSession({
       totalOptional: 2,
-      mods: {
+      mods: makeMods({
         r1: { type: "requires", status: "installed", rule: {} },
         o1: { type: "recommends", status: "installed", rule: {} },
         o2: { type: "recommends", status: "ignored", rule: {} },
-      },
+      }),
     });
     const result = getOptionalModsProgress(makeState(session), "col1");
 
@@ -183,7 +192,7 @@ describe("getCollectionModsStatus", () => {
 
   it("maps mod entries to status objects", () => {
     const session = makeSession({
-      mods: {
+      mods: makeMods({
         r1: {
           type: "requires",
           status: "installed",
@@ -192,7 +201,7 @@ describe("getCollectionModsStatus", () => {
             reference: { description: "Cool Mod" },
           },
         },
-      },
+      }),
     });
     const result = getCollectionModsStatus(makeState(session), "col1");
 
@@ -208,7 +217,7 @@ describe("getCollectionModsStatus", () => {
 
   it("falls back to logicalFileName for modName", () => {
     const session = makeSession({
-      mods: {
+      mods: makeMods({
         r1: {
           type: "requires",
           status: "pending",
@@ -216,7 +225,7 @@ describe("getCollectionModsStatus", () => {
             reference: { logicalFileName: "FallbackName" },
           },
         },
-      },
+      }),
     });
     const result = getCollectionModsStatus(makeState(session), "col1");
 
@@ -225,13 +234,13 @@ describe("getCollectionModsStatus", () => {
 
   it("falls back to 'Unknown Mod' when no name available", () => {
     const session = makeSession({
-      mods: {
+      mods: makeMods({
         r1: {
           type: "requires",
           status: "pending",
           rule: { reference: {} },
         },
-      },
+      }),
     });
     const result = getCollectionModsStatus(makeState(session), "col1");
 
@@ -254,12 +263,12 @@ describe("getInstallationSummary", () => {
       installedCount: 2,
       totalRequired: 3,
       totalOptional: 1,
-      mods: {
+      mods: makeMods({
         r1: { type: "requires", status: "installed" },
         r2: { type: "requires", status: "installed" },
         r3: { type: "requires", status: "downloading" },
         o1: { type: "recommends", status: "pending" },
-      },
+      }),
     });
     const result = getInstallationSummary(makeState(session));
 

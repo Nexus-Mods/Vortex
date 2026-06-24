@@ -23,9 +23,13 @@ import { EventEmitter } from "events";
 import { batch } from "redux-act";
 
 import { MOD_TYPE } from "../extensions/collections/constants";
-import type { ICollectionMod } from "../extensions/collections/types/ICollection";
+import type {
+  ICollectionMod,
+  ICollectionModRule,
+} from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
 import type {
   IChoiceType,
@@ -86,6 +90,19 @@ export function makeRule(overrides: Partial<IModRule> = {}): IModRule {
   };
 }
 
+// A collection rule whose source and reference are both references (before/after/conflicts/...).
+// Distinct from makeRule, which builds an IModRule.
+export function makeCollectionModRule(
+  overrides: Partial<ICollectionModRule> = {},
+): ICollectionModRule {
+  return {
+    source: makeReference(),
+    type: "after",
+    reference: makeReference(),
+    ...overrides,
+  };
+}
+
 export function makeMod(overrides: Partial<IMod> = {}): IMod {
   return {
     id: "mod-1",
@@ -115,6 +132,20 @@ export function makeDownload(overrides: Partial<IDownload> = {}): IDownload {
 
 export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMod {
   return { enabled: true, enabledTime: 0, ...overrides };
+}
+
+// A cached game entry. Defaults to skyrimse with its nexus page id under `details`, so
+// convertGameIdReverse resolves "skyrimspecialedition" to "skyrimse" through this entry rather
+// than its hardcoded fallback.
+export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStored {
+  return {
+    id: "skyrimse",
+    name: "Skyrim Special Edition",
+    requiredFiles: [],
+    executable: "SkyrimSE.exe",
+    details: { nexusPageId: "skyrimspecialedition" },
+    ...overrides,
+  };
 }
 
 export function makeLookup(overrides: Partial<IModLookupInfo> = {}): IModLookupInfo {
