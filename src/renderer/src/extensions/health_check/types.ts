@@ -201,8 +201,8 @@ export interface IInstalledFile {
  */
 export interface IMissingFileRequirement {
   kind: "missing";
-  /** Dependency identifier; alternatives that share it are OR options */
-  requirementId: string;
+  /** Requirement definition id; alternatives that share it are OR options */
+  requirementDefId: string;
   /** Files that would satisfy it; more than one is an OR choice */
   alternatives: IFileRequirementCandidate[];
 }
@@ -212,8 +212,8 @@ export interface IMissingFileRequirement {
  */
 export interface IWrongVersionInstalledRequirement {
   kind: "wrong-version-installed";
-  /** Dependency identifier; alternatives that share it are OR options */
-  requirementId: string;
+  /** Requirement definition id; alternatives that share it are OR options */
+  requirementDefId: string;
   /** The wrong version currently installed */
   installedFile: IInstalledFile;
   /** Correct versions the user can download */
@@ -225,8 +225,8 @@ export interface IWrongVersionInstalledRequirement {
  */
 export interface IWrongVersionEnabledRequirement {
   kind: "wrong-version-enabled";
-  /** Dependency identifier */
-  requirementId: string;
+  /** Requirement definition id */
+  requirementDefId: string;
   /** The wrong version currently enabled */
   enabledFile: IInstalledFile;
   /** The correct, disabled version to enable */

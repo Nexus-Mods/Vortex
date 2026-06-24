@@ -59,7 +59,7 @@ function classifyDependency(
       }
       return {
         kind: "wrong-version-enabled",
-        requirementId: definitionId,
+        requirementDefId: definitionId,
         enabledFile,
         correctFile,
       };
@@ -68,7 +68,7 @@ function classifyDependency(
     // Correct version not owned: download one.
     return {
       kind: "wrong-version-installed",
-      requirementId: definitionId,
+      requirementDefId: definitionId,
       installedFile: enabledFile,
       alternatives,
     };
@@ -81,7 +81,7 @@ function classifyDependency(
     return undefined;
   }
 
-  return { kind: "missing", requirementId: definitionId, alternatives };
+  return { kind: "missing", requirementDefId: definitionId, alternatives };
 }
 
 /**
