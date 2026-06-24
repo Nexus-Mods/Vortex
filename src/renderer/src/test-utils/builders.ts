@@ -22,6 +22,7 @@ import { EventEmitter } from "events";
 
 import { batch } from "redux-act";
 
+import { MOD_TYPE } from "../extensions/collections/constants";
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
@@ -35,7 +36,7 @@ import type {
   IModRule,
 } from "../extensions/mod_management/types/IMod";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
-import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
+import type { IProfileMod } from "../extensions/profile_management/types/IProfile";
 import trackingReducer from "../reducers/collectionInstallTracking";
 import type {
   CollectionModStatus,
@@ -48,6 +49,14 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IState } from "../types/IState";
 import local from "../util/local";
+import type {
+  IApiHarness,
+  IDriverHarness,
+  IDriverHarnessState,
+  IRevisionFixture,
+  IRevisionMemberSpec,
+  ITrackedAction,
+} from "./harnessTypes";
 
 export function makeReference(overrides: Partial<IModReference> = {}): IModReference {
   return { tag: "ref-tag", ...overrides };
@@ -221,13 +230,52 @@ export function makeCollectionMod(overrides: Partial<ICollectionMod> = {}): ICol
   };
 }
 
-export type { CollectionModStatus };
+export function makeRevision(
+  revisionNumber: number,
+  members: IRevisionMemberSpec[],
+  overrides: { collectionId?: string } = {},
+): IRevisionFixture {
+  const collectionId = overrides.collectionId ?? "col-1";
+  const rules: IModRule[] = [];
+  const installed: IMod[] = [];
+  const manifestMods: ICollectionMod[] = [];
 
-/** A dispatched redux-act action as the harness sees it. */
-interface ITrackedAction {
-  type: string;
-  payload?: unknown;
+  for (const { tag, version, optional = false } of members) {
+    rules.push(
+      makeRule({
+        type: optional ? "recommends" : "requires",
+        reference: makeReference({
+          tag,
+          ...(version !== undefined ? { versionMatch: version } : {}),
+        }),
+      }),
+    );
+    installed.push(
+      makeMod({
+        id: `inst-${tag}`,
+        attributes: {
+          referenceTag: tag,
+          installedAsDependency: true,
+          ...(version !== undefined ? { version } : {}),
+        },
+      }),
+    );
+    manifestMods.push(makeCollectionMod({ name: tag, version: version ?? "1.0.0", optional }));
+  }
+
+  const collection = makeMod({
+    id: collectionId,
+    type: MOD_TYPE,
+    archiveId: `dl-${collectionId}`,
+    installationPath: `mods/${collectionId}`,
+    rules,
+    attributes: { revisionNumber },
+  });
+
+  return { revisionNumber, collection, rules, installed, manifestMods };
 }
+
+export type { CollectionModStatus };
 
 const BATCH_TYPE: string = (batch as unknown as { getType: () => string }).getType();
 const sessionReducers = trackingReducer.reducers as Record<
@@ -242,18 +290,6 @@ const modsReducers = modsReducer.reducers as Record<
   string,
   (state: ModsSlice, payload: unknown) => ModsSlice
 >;
-
-/** The redux slices an InstallDriver test arranges, each a builder-style override. */
-export interface IDriverHarnessState {
-  // installed mods, keyed by gameId then modId (state.persistent.mods)
-  mods: Record<string, Record<string, IMod>>;
-  // downloads, keyed by download id (state.persistent.downloads.files)
-  downloads: Record<string, IDownload>;
-  // profiles, keyed by profile id (state.persistent.profiles)
-  profiles: Record<string, IProfile>;
-  // the install-tracking slice (state.session.collections)
-  session: ICollectionInstallState;
-}
 
 function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   const slices: IDriverHarnessState = {
@@ -334,27 +370,6 @@ export function resetHarnessRegistries(): void {
     gameVersionManager: undefined,
   });
   gvReg.gameVersionManager = undefined;
-}
-
-export interface IApiHarness {
-  api: IExtensionApi;
-  // every dispatched action, batched actions flattened, in order
-  dispatched: ITrackedAction[];
-  // emit a global event (runs any registered on/onAsync listeners synchronously)
-  emit: (event: string, ...args: unknown[]) => void;
-  // read the live fake state
-  getState: () => IState;
-  // mutate the state mid-test (to model churn between events)
-  setState: (mutate: (draft: IState) => void) => void;
-  // configure what the next showDialog call resolves to
-  setNextDialog: (result: IDialogResult) => void;
-  // showDialog calls, recorded in order
-  dialogCalls: Array<{ type: DialogType; title: string }>;
-}
-
-export interface IDriverHarness extends IApiHarness {
-  // the driver under test, constructed against the fake api
-  driver: InstallDriver;
 }
 
 /**
