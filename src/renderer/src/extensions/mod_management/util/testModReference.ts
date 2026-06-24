@@ -518,7 +518,10 @@ export function isOptionalRule(rule: RuleTyped): boolean {
  * nothing to add here for those.
  */
 export function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined {
-  if (!Array.isArray(rules)) {
+  // no rule can match a mod that isn't there - a collection row for a not-yet-installed member has
+  // no entry in the installed-mods map. testModReference guards this internally; findRuleByRef must
+  // too, since it converts the mod to lookup info up front (before the per-rule testModReference).
+  if (!Array.isArray(rules) || mod == null) {
     return undefined;
   }
   const lookup = modAttributesToLookupInfo(mod);

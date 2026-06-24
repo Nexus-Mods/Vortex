@@ -30,6 +30,7 @@ import {
   modMatchesInstallSpec,
   ruleInstallSpec,
   rulePhase,
+  findRuleByRef,
 } from "./testModReference";
 
 // Mock the log function to avoid console output during tests
@@ -1120,5 +1121,33 @@ describe("testModReference", () => {
         expect(coerceToSemver("1.0")).toBe("1.0.0");
       });
     });
+  });
+});
+
+describe("findRuleByRef", () => {
+  const mod: IMod = {
+    id: "mod-a",
+    state: "installed",
+    type: "",
+    installationPath: "mods/mod-a",
+    attributes: { referenceTag: "tag-a" },
+  };
+  const rules: IModRule[] = [
+    { type: "requires", reference: { tag: "tag-a" } },
+    { type: "after", reference: { tag: "tag-b" } },
+  ];
+
+  it("finds the rule whose reference matches the mod", () => {
+    expect(findRuleByRef(rules, mod)).toBe(rules[0]);
+  });
+
+  it("returns undefined (does not throw) for a not-yet-installed member's missing mod", () => {
+    // a collection row for a member that isn't installed yet has no entry in the mods map, so the
+    // caller passes undefined - this must be tolerated, not crash on mod.attributes / mod.game
+    expect(findRuleByRef(rules, undefined as unknown as IMod)).toBeUndefined();
+  });
+
+  it("returns undefined when there are no rules", () => {
+    expect(findRuleByRef(undefined, mod)).toBeUndefined();
   });
 });
