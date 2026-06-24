@@ -76,6 +76,7 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
     const { content, entry } = item;
     return (
       <content.ListingRow
+        api={api}
         entry={entry}
         isHidden={item.hidden}
         key={`${entry.checkId}:${entry.id}`}

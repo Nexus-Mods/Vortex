@@ -2,16 +2,11 @@
   "actions": {
     "install_all": "1-click install all ({{count}})"
   },
-  "issue_message": {
-    "missing_required_mod": "Missing required mod for:",
-    "possible_missing_required_mod": "Possible missing required mod for:",
-    "low_space": "Not enough disk space for:",
-    "file_corrupted": "Corrupted file detected for:"
-  },
   "listing": {
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "item": {
+      "title": "Additional mod may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}",
       "requires_mods": "Requires {{ count }} mod",
       "requires_mods_plural": "Requires {{ count }} mods",
@@ -51,6 +46,12 @@
       "error": "Was this error helpful?"
     },
     "item": {
+      "title": "Additional mod may be required for: {{modName}}",
+      "description": "Check <modLink>{{modName}} description</modLink> for details.",
+      "check_the_description": "Check the description before installing.",
+      "open_external_mod_page": "Open external mod page",
+      "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
+      "confirm_install": "Confirm install",
       "requires_files": "Requires {{ count }} mod file to be installed to work correctly.",
       "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
       "install_via_mod_page": "Install via mod page",
