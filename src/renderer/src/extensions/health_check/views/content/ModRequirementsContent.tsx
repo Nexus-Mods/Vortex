@@ -126,8 +126,10 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
   const fileData: IFileRequirementData = {
     fileUID: mod.uid,
     adultContent: mainFile?.adultContent ?? false,
-    modName: mod.modName || mod.modUrl || mod.notes || "",
-    modDescription: mod.notes || mainFile?.modSummary || t("detail::item::check_the_description"),
+    modName: mod.modName || mod.modUrl || "",
+    // The mod's own summary describes it; fall back to the requirement note
+    // (e.g. external requirements with no Nexus summary), then a generic prompt.
+    modDescription: mainFile?.modSummary || mod.notes || t("detail::item::check_the_description"),
     modImageSrc: mainFile?.thumbnailUrl ?? "",
     fileName: mainFile?.name ?? "",
     fileVersion: mainFile?.version ?? "",
