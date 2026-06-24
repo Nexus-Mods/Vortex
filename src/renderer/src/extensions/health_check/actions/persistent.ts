@@ -1,14 +1,24 @@
 import { createAction } from "redux-act";
 
 /**
- * Set whether a specific requirement is hidden for a mod
- * Uses the unique requirement ID from Nexus API instead of modId to properly support external requirements
+ * Set whether a mod-level requirement is hidden, keyed by requiring mod + the
+ * requirement's own Nexus id (so external requirements work too).
  */
-export const setRequirementHidden = createAction(
-  "SET_HEALTH_CHECK_REQUIREMENT_HIDDEN",
+export const setModRequirementHidden = createAction(
+  "SET_HEALTH_CHECK_MOD_REQUIREMENT_HIDDEN",
   (modId: number, requirementId: string, hidden: boolean) => ({
     modId,
     requirementId,
+    hidden,
+  }),
+);
+
+/** Set whether a file-level requirement is hidden, keyed by source file + requirement definition id. */
+export const setFileRequirementHidden = createAction(
+  "SET_HEALTH_CHECK_FILE_REQUIREMENT_HIDDEN",
+  (sourceFileUID: string, requirementDefId: string, hidden: boolean) => ({
+    sourceFileUID,
+    requirementDefId,
     hidden,
   }),
 );

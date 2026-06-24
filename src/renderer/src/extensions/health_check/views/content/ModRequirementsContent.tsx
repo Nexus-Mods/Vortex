@@ -21,7 +21,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { opn } from "@/util/api";
 
-import { setRequirementHidden } from "../../actions/persistent";
+import { setModRequirementHidden } from "../../actions/persistent";
 import { MOD_REQUIREMENTS_CHECK_ID } from "../../checks/modRequirementsCheck";
 import { FeedbackModal } from "../../components/feedback_modal/FeedbackModal";
 import {
@@ -31,15 +31,15 @@ import {
 import { ModRequirement } from "../../components/mod_requirement/ModRequirement";
 import { useModRequirementActions } from "../../components/mod_requirement/useModRequirementActions";
 import { PremiumModal } from "../../components/premium_modal/PremiumModal";
-import { allModRequirements, getModFiles, hiddenRequirements } from "../../selectors";
+import { allModRequirements, getModFiles, hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
 import type { IDetailViewProps, IHealthCheckContent, IListingRowProps } from "./types";
 
 function isModHidden(
-  state: Parameters<typeof hiddenRequirements>[0],
+  state: Parameters<typeof hiddenModRequirements>[0],
   mod: IModRequirementExt,
 ): boolean {
-  return (hiddenRequirements(state)[mod.requiredBy.modId] || []).includes(mod.id);
+  return (hiddenModRequirements(state)[mod.requiredBy.modId] || []).includes(mod.id);
 }
 
 function ModRequirementsListingRow({
@@ -87,7 +87,7 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
 
   const modFiles = useSelector((state: IState) => getModFiles(state, mod.modId));
 
-  const hiddenRequirementMap = useSelector(hiddenRequirements);
+  const hiddenRequirementMap = useSelector(hiddenModRequirements);
   const isHidden = useMemo(
     () => (hiddenRequirementMap[mod.requiredBy.modId] ?? []).includes(mod.id),
     [hiddenRequirementMap, mod.requiredBy.modId, mod.id],
@@ -111,14 +111,14 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
   }, [mod.requiredBy.modUrl]);
 
   const handleToggleHide = useCallback(() => {
-    api.store?.dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, !isHidden));
+    api.store?.dispatch(setModRequirementHidden(mod.requiredBy.modId, mod.id, !isHidden));
     onBack();
   }, [api, mod.requiredBy.modId, mod.id, isHidden, onBack]);
 
   // External installs can't be auto-detected, so confirming just hides the
   // requirement from future checks.
   const handleConfirmInstall = useCallback(() => {
-    api.store?.dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
+    api.store?.dispatch(setModRequirementHidden(mod.requiredBy.modId, mod.id, true));
     onBack();
   }, [api, mod.requiredBy.modId, mod.id, onBack]);
 
@@ -292,6 +292,6 @@ export const modRequirementsContent: IHealthCheckContent = {
   toggleHide: (api, entry) => {
     const mod = entry.data as IModRequirementExt;
     const hidden = isModHidden(api.getState(), mod);
-    api.store?.dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, !hidden));
+    api.store?.dispatch(setModRequirementHidden(mod.requiredBy.modId, mod.id, !hidden));
   },
 };

@@ -1,6 +1,8 @@
 import {
   mdiChevronRight,
   mdiDownload,
+  mdiEye,
+  mdiEyeOff,
   mdiOpenInNew,
   mdiSwapHorizontal,
   mdiThumbDown,
@@ -25,7 +27,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
-import { setFeedbackGiven } from "../../actions/persistent";
+import { setFeedbackGiven, setFileRequirementHidden } from "../../actions/persistent";
 import { FILE_REQUIREMENTS_CHECK_ID } from "../../checks/fileRequirementsCheck";
 import { FeedbackModal } from "../../components/feedback_modal/FeedbackModal";
 import {
@@ -33,14 +35,23 @@ import {
   type IFileRequirementData,
 } from "../../components/file_requirement/FileRequirement";
 import { PremiumModal } from "../../components/premium_modal/PremiumModal";
-import { feedbackGivenMap, fileRequirementsCheckResult } from "../../selectors";
+import {
+  feedbackGivenMap,
+  fileRequirementsCheckResult,
+  hiddenFileRequirements,
+} from "../../selectors";
 import type {
   IFileLevelRequirements,
   IFileRequirement,
   IFileRequirementCandidate,
   IInstalledFile,
 } from "../../types";
-import type { IDetailViewProps, IHealthCheckContent, IListingRowProps } from "./types";
+import type {
+  IDetailViewProps,
+  IHealthCheckContent,
+  IHealthCheckEntry,
+  IListingRowProps,
+} from "./types";
 
 /** Shared per-detail action context threaded down to the requirement cards. */
 interface IFileActionContext {
@@ -234,7 +245,7 @@ function WrongVersionEnabled({
   );
 }
 
-function FileRequirementsListingRow({ entry, onOpen }: IListingRowProps) {
+function FileRequirementsListingRow({ entry, isHidden, onOpen, onToggleHide }: IListingRowProps) {
   const { t } = useTranslation("health_check");
   const data = entry.data as IFileLevelRequirements;
   const severityStyle = severityStyleMap[entry.severity];
@@ -264,6 +275,18 @@ function FileRequirementsListingRow({ entry, onOpen }: IListingRowProps) {
           {t("listing::item::requires_files", { count: data.requirements.length })}
         </Typography>
       </div>
+
+      <Button
+        appearance="moderate"
+        brand="neutral"
+        leftIconPath={isHidden ? mdiEye : mdiEyeOff}
+        size="sm"
+        title={isHidden ? t("common:::unhide") : t("common:::hide")}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleHide();
+        }}
+      />
 
       <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
     </div>
@@ -385,7 +408,7 @@ function FileRequirementsDetailView({ entry, api }: IDetailViewProps) {
               return (
                 <MissingRequirement
                   ctx={ctx}
-                  key={requirement.requirementId}
+                  key={requirement.requirementDefId}
                   requirement={requirement}
                 />
               );
@@ -393,7 +416,7 @@ function FileRequirementsDetailView({ entry, api }: IDetailViewProps) {
               return (
                 <WrongVersionInstalled
                   ctx={ctx}
-                  key={requirement.requirementId}
+                  key={requirement.requirementDefId}
                   requirement={requirement}
                 />
               );
@@ -401,7 +424,7 @@ function FileRequirementsDetailView({ entry, api }: IDetailViewProps) {
               return (
                 <WrongVersionEnabled
                   api={api}
-                  key={requirement.requirementId}
+                  key={requirement.requirementDefId}
                   requirement={requirement}
                 />
               );
@@ -434,21 +457,64 @@ function FileRequirementsDetailView({ entry, api }: IDetailViewProps) {
   );
 }
 
+/** Whether a (homogeneous, post-split) file entry's requirements are all hidden. */
+function isFileEntryHidden(
+  state: Parameters<typeof hiddenFileRequirements>[0],
+  entry: IHealthCheckEntry,
+): boolean {
+  const data = entry.data as IFileLevelRequirements;
+  const hidden = hiddenFileRequirements(state)[data.sourceFileUID] ?? [];
+  return (
+    data.requirements.length > 0 &&
+    data.requirements.every((req) => hidden.includes(req.requirementDefId))
+  );
+}
+
 export const fileRequirementsContent: IHealthCheckContent = {
+  // Split each source file into a visible and a hidden entry so a partially
+  // dismissed file shows its live issues under Active and its hidden ones under
+  // Hidden.
   selectEntries: (state) => {
     const result = fileRequirementsCheckResult(state);
     if (!result) {
       return [];
     }
-    return Object.values(result).map((requirements) => ({
-      id: requirements.sourceFileUID,
-      checkId: FILE_REQUIREMENTS_CHECK_ID,
-      severity: "warning",
-      data: requirements,
-    }));
+    const hiddenMap = hiddenFileRequirements(state);
+    const entries: IHealthCheckEntry[] = [];
+    for (const source of Object.values(result)) {
+      const hidden = new Set(hiddenMap[source.sourceFileUID] ?? []);
+      const visible = source.requirements.filter((req) => !hidden.has(req.requirementDefId));
+      const dismissed = source.requirements.filter((req) => hidden.has(req.requirementDefId));
+      if (visible.length > 0) {
+        entries.push({
+          id: source.sourceFileUID,
+          checkId: FILE_REQUIREMENTS_CHECK_ID,
+          severity: "warning",
+          data: { ...source, requirements: visible },
+        });
+      }
+      if (dismissed.length > 0) {
+        entries.push({
+          id: `${source.sourceFileUID}::hidden`,
+          checkId: FILE_REQUIREMENTS_CHECK_ID,
+          severity: "warning",
+          data: { ...source, requirements: dismissed },
+        });
+      }
+    }
+    return entries;
   },
   ListingRow: FileRequirementsListingRow,
   DetailView: FileRequirementsDetailView,
-  // TODO(LAZ-590 follow-up): add file-level hide state (own persistent map keyed by sourceFileUID).
-  supportsHide: false,
+  supportsHide: true,
+  isHidden: (state, entry) => isFileEntryHidden(state, entry),
+  // Toggle the whole entry; per-def storage means a later, newly-unsatisfied
+  // dependency on the same file still surfaces.
+  toggleHide: (api, entry) => {
+    const data = entry.data as IFileLevelRequirements;
+    const hide = !isFileEntryHidden(api.getState(), entry);
+    for (const req of data.requirements) {
+      api.store?.dispatch(setFileRequirementHidden(data.sourceFileUID, req.requirementDefId, hide));
+    }
+  },
 };
