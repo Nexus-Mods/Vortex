@@ -30,6 +30,24 @@ export const test = driverTest.extend<ICollectionFixtures>({
       let currentRules: IModRule[] = [];
       let currentCollectionId = "";
 
+      // resolve once the driver reaches a step. The driver fires onUpdate on every step
+      // transition, so we await that exact event rather than guessing a fixed delay (the old
+      // fixed tick raced the async did-install-dependencies handler under load). A driver that
+      // never reaches the step is bounded by the caller's per-test timeout.
+      const waitForStep = (step: string): Promise<void> =>
+        new Promise((resolve) => {
+          if (harness.driver.step === step) {
+            resolve();
+            return;
+          }
+          const dispose = harness.driver.onUpdate(() => {
+            if (harness.driver.step === step) {
+              dispose();
+              resolve();
+            }
+          });
+        });
+
       const collection: ICollectionHarness = {
         ...harness,
         installRevision: async (rev, present = rev.installed) => {
@@ -55,11 +73,11 @@ export const test = driverTest.extend<ICollectionFixtures>({
               }
             }
           });
-          // the driver advances to review once it sees the collection's deps are installed
+          // the async did-install-dependencies handler advances the driver to its review step
+          // once it sees the deps are installed; wait for that state (not a fixed tick) so the
+          // continue below cannot race it under load, then proceed past review to close
           harness.emit("did-install-dependencies", GAME_ID, currentCollectionId, false);
-          // let the async did-install-dependencies handler settle (it awaits a collection-info
-          // lookup that short-circuits without a download), then proceed past review to close
-          await new Promise((resolve) => setTimeout(resolve, 0));
+          await waitForStep("review");
           await harness.driver.continue();
         },
         memberStatus: (tag) => {

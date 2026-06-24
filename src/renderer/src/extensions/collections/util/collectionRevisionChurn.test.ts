@@ -49,7 +49,7 @@ describe("collection revision churn (repeated update/downgrade at scale)", () =>
 
     // the whole up/down churn left the driver idle with no leaked active session
     expect(collection.getState().session.collections.activeSession).toBeUndefined();
-  });
+  }, 15_000);
 
   test("on update, a changed member's new file is pending while the dropped old file is released", async ({
     makeCollection,
@@ -68,5 +68,5 @@ describe("collection revision churn (repeated update/downgrade at scale)", () =>
     expect(collection.memberStatus("x2")).toBe("pending"); // updated member's new file not installed
     expect(collection.memberStatus("x1")).toBeUndefined(); // old member is not in the new revision
     expect(collection.driver.isInstallComplete(false)).toBe(false);
-  });
+  }, 15_000);
 });
