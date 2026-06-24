@@ -49,7 +49,7 @@ jobs:
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential libfontconfig1-dev p7zip-full
+        run: sudo apt-get update && sudo apt-get install -y build-essential libfontconfig1-dev p7zip-full libgtk-3-0 libatk-bridge2.0-0 libatspi2.0-0 libasound2t64 libcups2 libgbm1 libnss3 libxkbcommon0 libnspr4
 
       - name: Install dependencies
         run: pnpm install
