@@ -5,7 +5,7 @@ import { generate as shortid } from "shortid";
 import * as actions from "../../../actions";
 import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
-import testModReference from "../../../extensions/mod_management/util/testModReference";
+import { findRuleByRef } from "../../../extensions/mod_management/util/testModReference";
 import type { IProfile } from "../../../extensions/profile_management/types/IProfile";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
@@ -53,7 +53,7 @@ function createRulesFromProfile(
       // don't forget what we set up regarding version matching
       let versionMatch: string;
 
-      const oldRule = existingRules.find((iter) => testModReference(mods[modId], iter.reference));
+      const oldRule = findRuleByRef(existingRules, mods[modId]);
       if (oldRule !== undefined && oldRule.reference.versionMatch !== undefined) {
         versionMatch =
           oldRule.reference.versionMatch === "*" ? "*" : mods[modId].attributes.version;

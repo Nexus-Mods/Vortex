@@ -43,8 +43,7 @@ import { addModRule, removeModRule } from "../../../mod_management/actions/mods"
 import type { IMod, IModRule } from "../../../mod_management/types/IMod";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
-import { removeMods } from "../../../mod_management/util/removeMods";
-import testModReference from "../../../mod_management/util/testModReference";
+import { findRuleByRef } from "../../../mod_management/util/testModReference";
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setModEnabled, setModsEnabled } from "../../../profile_management/actions/profiles";
 import type { IProfile, IProfileMod } from "../../../profile_management/types/IProfile";
@@ -163,6 +162,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   private mAttributes: Array<ITableAttribute<ICollectionItemRow>>;
   private mModActions: ITableRowAction[];
   private mInstalling: boolean = false;
+  private mUnsubscribeDriver?: () => void;
 
   private revisionMerged = memoizeOne((collection: ICollection, revision: IRevision) => ({
     ...revision,
@@ -251,9 +251,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
             case "ignored":
               return ["Ignored"];
             case "installing":
-              return ["Installing", Math.floor((mod.progress ?? 0) * 100.0) / 100.0];
+              return ["Installing"];
             case "downloading":
-              return ["Downloading", Math.floor((mod.progress ?? 0) * 100.0) / 100.0];
+              return ["Downloading"];
             case "failed":
               return ["Failed"];
             case "pending":
@@ -425,6 +425,16 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   public async componentDidMount() {
     const { collection, userInfo } = this.props;
 
+    // subscribe synchronously, before any await: the disposer must be set by the time
+    // componentWillUnmount can run, otherwise an unmount during the revision-info fetch below
+    // would leave this handler registered on an unmounted instance. The item rows come from the
+    // redux store via mapStateToProps; this hook only tracks the driver's own step (not in redux).
+    this.mUnsubscribeDriver = this.props.driver.onUpdate(() => {
+      if (this.props.driver.step !== this.state.driverStep) {
+        this.nextState.driverStep = this.props.driver.step;
+      }
+    });
+
     const { attributes } = collection ?? {};
     const { revisionId, collectionSlug, revisionNumber } = attributes ?? {};
     if ((revisionId !== undefined || collectionSlug !== undefined) && userInfo !== undefined) {
@@ -440,14 +450,13 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         });
       }
     }
+  }
 
-    // the item rows come from the redux store via mapStateToProps now, so we only
-    // need the driver hook to track the driver's own step (which is not in redux)
-    this.props.driver.onUpdate(() => {
-      if (this.props.driver.step !== this.state.driverStep) {
-        this.nextState.driverStep = this.props.driver.step;
-      }
-    });
+  public componentWillUnmount() {
+    // drop the driver hook so a later triggerUpdate doesn't setState on this unmounted instance
+    // (handlers accumulate otherwise: onUpdate is called fresh on every mount)
+    this.mUnsubscribeDriver?.();
+    this.mUnsubscribeDriver = undefined;
   }
 
   public async UNSAFE_componentWillReceiveProps(newProps: ICollectionPageProps) {
@@ -697,7 +706,18 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private resync = () => {
-    resyncCollectionSessionFromReality(this.context.api);
+    const { t } = this.props;
+    const changed = resyncCollectionSessionFromReality(this.context.api);
+    this.context.api.sendNotification({
+      id: "collection-resync",
+      type: "success",
+      title: "Collection re-synced",
+      message:
+        changed > 0
+          ? t("{{count}} mod status(es) realigned", { replace: { count: changed } })
+          : t("Already up to date"),
+      displayMS: 4000,
+    });
   };
 
   private setEnabled = (enable: boolean) => {
@@ -811,7 +831,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   private getModInstructions = (modId: string) => {
     const { collection, mods } = this.props;
     const mod = mods[modId];
-    const modRule = collection.rules?.find((rule) => testModReference(mod, rule.reference));
+    const modRule = findRuleByRef(collection.rules, mod);
     return modRule?.["extra"]?.["instructions"];
   };
 
@@ -1005,6 +1025,11 @@ function sessionModsForCollection(
 // per-instance factory so the item-row selector memoizes against this collection's
 // inputs (collection rules, installed mods, downloads, mod state, active session)
 function makeMapStateToProps(): (state: IState, ownProps: ICollectionPageProps) => IConnectedProps {
+  // The prior row map, threaded back into each rebuild so unchanged rows keep their object
+  // reference, which keeps download-progress churn cheap: progress is not a row field, so a tick
+  // that only advances bytes rebuilds to a reference-equal map and connect skips the render.
+  // Download state transitions (paused/failed/finished) flow through because they change row content.
+  let lastRows: Record<string, ICollectionItemRow> = {};
   const getItemRows = createSelector(
     (_state: IState, ownProps: ICollectionPageProps) => ownProps.collection?.rules,
     (state: IState, ownProps: ICollectionPageProps) =>
@@ -1014,8 +1039,13 @@ function makeMapStateToProps(): (state: IState, ownProps: ICollectionPageProps) 
       ownProps.profile?.modState ?? EMPTY_MOD_STATE,
     (state: IState, ownProps: ICollectionPageProps) =>
       sessionModsForCollection(state, ownProps.collection?.id),
-    (rules, mods, downloads, modState, sessionMods) =>
-      buildCollectionItemRows({ rules: rules ?? [], mods, downloads, modState, sessionMods }),
+    (rules, mods, downloads, modState, sessionMods) => {
+      lastRows = buildCollectionItemRows(
+        { rules: rules ?? [], mods, downloads, modState, sessionMods },
+        lastRows,
+      );
+      return lastRows;
+    },
   );
 
   return (state, ownProps) => {

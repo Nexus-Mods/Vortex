@@ -22,7 +22,7 @@ import type {
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import { makeModReference } from "../../mod_management/util/modReference";
-import testModReference, { rulePhase } from "../../mod_management/util/testModReference";
+import { findRuleByRef, rulePhase } from "../../mod_management/util/testModReference";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { BUNDLED_PATH, MOD_TYPE, PATCHES_PATH } from "../constants";
 import type {
@@ -302,7 +302,7 @@ function extractModRules(
 
         // ok, this gets a bit complex now. If the referenced mod gets updated, also make sure
         // the rules referencing it apply to newer versions
-        const mpRule = collection.rules.find((iter) => testModReference(mod, iter.reference));
+        const mpRule = findRuleByRef(collection.rules, mod);
         if (
           mpRule !== undefined &&
           (mpRule.reference.versionMatch === undefined ||

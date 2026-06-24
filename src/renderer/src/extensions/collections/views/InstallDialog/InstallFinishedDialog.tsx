@@ -43,11 +43,14 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
   const forceUpdate = React.useState(0)[1];
 
   React.useEffect(() => {
-    driver.onUpdate(() => {
+    // dispose on unmount / driver change so the handler doesn't accumulate and later forceUpdate
+    // an unmounted dialog (onUpdate returns its unregister fn)
+    const dispose = driver.onUpdate(() => {
       if (driver?.collection !== undefined && driver?.step === "review") {
         forceUpdate((i) => i + 1);
       }
     });
+    return dispose;
   }, [driver, forceUpdate]);
 
   const skip = React.useCallback(async () => {

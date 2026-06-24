@@ -16,7 +16,6 @@ import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import opn from "../../util/opn";
 import * as selectors from "../../util/selectors";
 import { toPromise } from "../../util/util";
 import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
@@ -401,64 +400,4 @@ export async function doExportToAPI(
   }
 
   return { slug: collectionSlug, revisionNumber };
-}
-
-export async function doExportToFile(api: IExtensionApi, gameId: string, modId: string) {
-  const state: IState = api.store.getState();
-  const mod = state.persistent.mods[gameId][modId];
-
-  const { progress, progressEnd } = makeProgressFunction(api);
-
-  const errors: Array<{ message: string; replace: any }> = [];
-
-  const onError = (message: string, replace: any) => {
-    errors.push({ message, replace });
-  };
-
-  try {
-    const stagingPath = selectors.installPathForGame(state, gameId);
-    const modPath = path.join(stagingPath, mod.installationPath);
-    const outputPath = path.join(modPath, "build");
-    const info = await generateCollectionInfo(api, gameId, mod, progress, onError);
-    const zipPath = await writeCollectionToFile(state, info, mod, outputPath);
-    const dialogActions = [
-      {
-        title: "Open",
-        action: () => {
-          opn(path.join(stagingPath, mod.installationPath, "export")).catch(() => null);
-        },
-      },
-    ];
-
-    if (errors.length > 0) {
-      const li = (input: string) => `[*]${input}`;
-      dialogActions.unshift({
-        title: "Errors",
-        action: () => {
-          api.showDialog(
-            "error",
-            "Collection Export Errors",
-            {
-              bbcode:
-                "[list]" +
-                errors.map((err) => li(api.translate(err.message, { replace: err.replace }))) +
-                "[/list]",
-            },
-            [{ label: "Close" }],
-          );
-        },
-      });
-    }
-
-    api.sendNotification({
-      id: "collection-exported",
-      title: errors.length > 0 ? "Collection exported, there were errors" : "Collection exported",
-      message: zipPath,
-      type: errors.length > 0 ? "warning" : "success",
-      actions: dialogActions,
-    });
-  } catch (err) {
-    api.showErrorNotification("Failed to export collection", unknownToError(err));
-  }
-  progressEnd();
 }

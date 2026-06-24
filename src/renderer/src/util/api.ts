@@ -35,6 +35,7 @@ import { getModSource, getModSources } from "../extensions/mod_management/util/m
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
+  findRuleByRef,
   ruleInstallSpec,
   rulePhase,
   testRefByIdentifiers,
@@ -189,6 +190,7 @@ export {
   findCommonRootDir,
   findDownloadByRef,
   findModByRef,
+  findRuleByRef,
   GameNotFound,
   GameStoreHelper,
   normalizeStoreQuery,

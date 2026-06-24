@@ -12,9 +12,11 @@ import type { IState } from "../../../types/IState";
 import {
   generateCollectionSessionId,
   isTerminalMemberStatus,
-  modRuleId,
 } from "../../../util/collectionInstallSession";
-import { getCollectionActiveSession } from "../../../util/collectionInstallSessionSelectors";
+import {
+  getCollectionActiveSession,
+  getCollectionInstallProgress,
+} from "../../../util/collectionInstallSessionSelectors";
 import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
@@ -47,7 +49,7 @@ import type { IRevisionEx } from "../types/IRevisionEx";
 import { applyPatches } from "./binaryPatching";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
-import { calculateCollectionSize, getUnfulfilledNotificationId, isRelevant } from "./util";
+import { getUnfulfilledNotificationId } from "./util";
 
 export type Step =
   | "prepare"
@@ -81,7 +83,6 @@ class InstallDriver {
   private mCollectionInfo: nexusApi.ICollection;
   private mRevisionInfo: nexusApi.IRevision;
   private mInfoCache: InfoCache;
-  private mTotalSize: number;
   private mOnStop: () => void;
   private mPrepare: Bluebird<void> = Bluebird.resolve();
   private mTimeStarted: number;
@@ -95,7 +96,7 @@ class InstallDriver {
   private mProgressDebouncer: Debouncer = new Debouncer(
     () => {
       if (this.mProfile && this.mGameId && this.mCollection) {
-        this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
+        this.updateProgress(this.mCollection);
       }
       return Bluebird.resolve();
     },
@@ -385,16 +386,23 @@ class InstallDriver {
     this.mLastCollection = this.mCollection = collection;
     this.mGameId = profile?.gameId ?? activeGameId(this.mApi.getState());
 
-    this.mTotalSize = calculateCollectionSize(this.getModsEx(profile, this.mGameId, collection));
-
     await this.startInstall();
     await this.initCollectionInfo();
 
     this.triggerUpdate();
   }
 
-  public onUpdate(cb: UpdateCB) {
+  // returns a disposer that unregisters the handler. Callers (React components) MUST call it on
+  // unmount: without it the handler list grows on every mount and triggerUpdate later fires the
+  // stale closure, calling setState/forceUpdate on an unmounted component.
+  public onUpdate(cb: UpdateCB): () => void {
     this.mUpdateHandlers.push(cb);
+    return () => {
+      const idx = this.mUpdateHandlers.indexOf(cb);
+      if (idx !== -1) {
+        this.mUpdateHandlers.splice(idx, 1);
+      }
+    };
   }
 
   public get profile() {
@@ -753,37 +761,6 @@ class InstallDriver {
     this.mOnStop?.();
   }
 
-  private getModsEx(
-    profile: IProfile,
-    gameId: string,
-    collection: IMod,
-  ): Record<string, IMod & { collectionRule: IModRule }> {
-    if (profile === undefined) {
-      profile = this.mProfile;
-    }
-    if (profile === undefined) {
-      return {};
-    }
-
-    const mods = this.mApi.getState().persistent.mods[gameId];
-
-    if (mods === undefined) {
-      log("error", "no mods for game", { gameId });
-      return {};
-    }
-
-    return (collection.rules ?? []).reduce((prev, rule) => {
-      if (!["requires", "recommends"].includes(rule.type)) {
-        return prev;
-      }
-
-      const mod = findModByRef(rule.reference, mods);
-      prev[modRuleId(rule)] = { ...mod, collectionRule: rule };
-
-      return prev;
-    }, {});
-  }
-
   private startInstall = async () => {
     // suppress plugins-changed event to avoid constantly running expensive callbacks
     // until onStop gets called
@@ -884,7 +861,7 @@ class InstallDriver {
 
     this.mApi.events.emit("view-collection", collection.id);
 
-    this.updateProgress(profile, gameId, collection);
+    this.updateProgress(collection);
 
     this.augmentRules(gameId, collection);
 
@@ -1051,44 +1028,26 @@ class InstallDriver {
     });
   }
 
-  private installProgress(profile: IProfile, gameId: string, collection: IMod): number {
-    const mods = this.getModsEx(profile, gameId, collection);
-
-    const downloads = this.mApi.getState().persistent.downloads.files;
-
-    const downloadProgress = Object.values(mods).reduce((prev, mod) => {
-      let size = 0;
-
-      if (mod.state === "downloaded") {
-        // Download complete - use full file size
-        size += mod.attributes?.fileSize || 0;
-      } else if (mod.state === "downloading" || mod.state == null) {
-        // Download in progress - use received bytes or total size
-        const download = downloads[mod.archiveId];
-        size += download?.received || download?.size || 0;
-      } else {
-        // Not started or installed
-        size += mod.attributes?.fileSize || 0;
-      }
-      return prev + size;
-    }, 0);
-
-    const installedMods = Object.values(mods).filter((mod) => mod.state === "installed");
-    const totalMods = Object.values(mods).filter(isRelevant);
-
-    const dlPerc = downloadProgress / this.mTotalSize;
-    const instPerc = installedMods.length / totalMods.length;
-
-    return (dlPerc + instPerc) * 50.0;
+  private installProgress(collection: IMod): number {
+    // Read progress from the session SSOT instead of re-deriving it by scanning every mod
+    // against every rule (the old getModsEx was O(rules x mods) on each tick). The session
+    // carries O(1) download/install counters per member, kept current by the single-writer
+    // install path; combinedProgress is the count-based download/install average (0-100).
+    const state = this.mApi.getState();
+    const session = getCollectionActiveSession(state);
+    if (session === undefined || session.collectionId !== collection.id) {
+      return 0;
+    }
+    const progress = getCollectionInstallProgress(state);
+    if (progress === null) {
+      return 0;
+    }
+    return progress.combinedProgress;
   }
 
-  private updateProgress(profile: IProfile, gameId: string, collection: IMod) {
+  private updateProgress(collection: IMod) {
     if (collection === undefined) {
       return;
-    }
-
-    if (this.mTotalSize === undefined) {
-      this.mTotalSize = calculateCollectionSize(this.getModsEx(profile, gameId, collection));
     }
 
     this.mApi.sendNotification({
@@ -1096,7 +1055,7 @@ class InstallDriver {
       type: "activity",
       title: "Installing Collection",
       message: renderModName(collection),
-      progress: this.installProgress(profile, gameId, collection),
+      progress: this.installProgress(collection),
       actions: [
         {
           title: "Show",

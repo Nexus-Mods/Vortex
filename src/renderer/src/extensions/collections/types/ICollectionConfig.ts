@@ -22,8 +22,3 @@ export interface IConfigParserProps {
   gameId: string;
   collection: ICollection;
 }
-
-export interface IConfigSpecific {
-  generateConfig: (genProps: IConfigGeneratorProps) => Promise<ICollectionConfig>;
-  parseConfig: (parserProps: IConfigParserProps) => Promise<ICollectionConfig>;
-}

@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import * as React from "react";
 
 import Icon from "../../../../controls/Icon";
-import RadialProgress from "../../../../controls/RadialProgress";
+import Spinner from "../../../../controls/Spinner";
 import type { IDownload } from "../../../download_management/types/IDownload";
 import type { ICollectionItemRow } from "../../installSession/itemRows";
 
@@ -12,34 +12,21 @@ interface ICollectionItemStatusProps {
   download?: IDownload;
 }
 
-const RadialProgressT: any = RadialProgress;
-
 class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {}> {
   public render(): JSX.Element {
     const { t, download, mod } = this.props;
     const recommended = mod.collectionRule.type === "recommends";
 
-    // fraction omitted -> indeterminate spin (used when progress isn't known, e.g. the
-    // install/extraction phase, which is not tracked per-mod); a static value there would
-    // read as a stall, the exact thing this view is meant to avoid
-    const radial = (titleKey: string, fraction?: number) => {
-      const data =
-        fraction === undefined
-          ? []
-          : [{ min: 0, max: 100, value: fraction * 100, class: "collection-install-progress" }];
-      return (
-        <div className="collection-status-progress">
-          <RadialProgressT
-            className="collection-progress-radial"
-            data={data}
-            spin={fraction === undefined}
-            totalRadius={32}
-          />
+    // Download and install/extraction progress is not shown per-mod: a lightweight
+    // indeterminate spinner (the same one the post-processing window uses) reads as
+    // activity without the per-tick cost of a progress radial.
+    const spinner = (titleKey: string) => (
+      <div className="collection-status-progress">
+        <Spinner className="collection-progress-radial" />
 
-          <div className="progress-title">{t(titleKey)}</div>
-        </div>
-      );
-    };
+        <div className="progress-title">{t(titleKey)}</div>
+      </div>
+    );
 
     switch (mod.status) {
       case "ignored":
@@ -65,8 +52,7 @@ class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {
           </div>
         );
       case "installing":
-        // install/extraction progress is not tracked per-mod, so spin (indeterminate)
-        return radial("Installing...");
+        return spinner("Installing...");
       case "downloading":
         if (download?.state === "paused") {
           return (
@@ -86,7 +72,7 @@ class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {
             </div>
           );
         }
-        return radial("Downloading...", mod.progress ?? 0);
+        return spinner("Downloading...");
       case "failed":
         return (
           <div className="collection-status-failed">

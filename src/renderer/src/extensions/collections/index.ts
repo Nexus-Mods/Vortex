@@ -356,7 +356,11 @@ async function pauseCollection(
 
   (collection?.rules ?? []).forEach((rule) => {
     const dlId = findDownloadByRef(rule.reference, downloads);
-    if (dlId !== undefined) {
+    // Only pause downloads still in progress (matches the active-download check in
+    // IPCDownloadAdapter.hydrateFromState). A collection paused mid-install has many members already
+    // fully downloaded; pausing those is needless and makes the download manager throw "is not
+    // paused: status is ...".
+    if (dlId !== undefined && ["init", "started"].includes(downloads[dlId]?.state)) {
       api.events.emit("pause-download", dlId);
     }
   });

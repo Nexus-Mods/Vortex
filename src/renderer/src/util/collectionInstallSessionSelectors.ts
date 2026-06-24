@@ -257,6 +257,7 @@ export const getCollectionInstallProgress = createSelector(
     ignoredCount: number;
     downloadProgress: number; // Percentage (0-100)
     installProgress: number; // Percentage (0-100)
+    combinedProgress: number; // Percentage (0-100), average of download + install
     isComplete: boolean;
   } | null => {
     if (!session) {
@@ -298,6 +299,7 @@ export const getCollectionInstallProgress = createSelector(
       ignoredCount: session.ignoredCount,
       downloadProgress,
       installProgress,
+      combinedProgress: (downloadProgress + installProgress) / 2,
       isComplete,
     };
   },

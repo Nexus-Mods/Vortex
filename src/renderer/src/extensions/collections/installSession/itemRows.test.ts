@@ -87,14 +87,13 @@ describe("buildCollectionItemRows", () => {
     const row = rows[modRuleId(rule)];
 
     expect(row.archiveId).toBe("dl1");
-    expect(row.progress).toBeCloseTo(0.25);
     expect(row.attributes?.fileName).toBe("file.7z");
     expect(row.attributes?.version).toBe("2.0");
     // an unfinished download infers to "downloading"
     expect(row.status).toBe("downloading");
   });
 
-  it("marks a finished download as downloaded with no progress", () => {
+  it("marks a finished download as downloaded", () => {
     const rule = requiresRule({ reference: { md5Hint: "abc" } });
     const download = makeDownload({
       state: "finished",
@@ -112,7 +111,67 @@ describe("buildCollectionItemRows", () => {
     });
     const row = rows[modRuleId(rule)];
 
-    expect(row.progress).toBeUndefined();
+    expect(row.status).toBe("downloaded");
+  });
+
+  it("resolves a tagged rule's installed mod via the referenceTag index", () => {
+    // installed collection mods carry the rule's referenceTag; resolution uses the prebuilt tag
+    // index rather than scanning every mod
+    const rule = requiresRule({ reference: { tag: "mod-ref-tag" } });
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: {
+        m1: installedMod("m1", { referenceTag: "mod-ref-tag" }),
+        m2: installedMod("m2", { referenceTag: "other-tag" }),
+      },
+      downloads: {},
+      modState: {},
+      sessionMods: {},
+    });
+    const row = rows[modRuleId(rule)];
+
+    expect(row.id).toBe("m1");
+    expect(row.status).toBe("installed");
+  });
+
+  it("falls back to fileMD5 when a tagged rule's installed mod carries a different tag", () => {
+    // a member whose referenceTag drifted, or that was matched by hash rather than tag, is still
+    // recognised by content hash - so it is not wrongly shown as not-installed
+    const rule = requiresRule({ reference: { tag: "rule-tag", fileMD5: "hash-xyz" } });
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: { m1: installedMod("m1", { referenceTag: "drifted-tag", fileMD5: "hash-xyz" }) },
+      downloads: {},
+      modState: {},
+      sessionMods: {},
+    });
+    const row = rows[modRuleId(rule)];
+
+    expect(row.id).toBe("m1");
+    expect(row.status).toBe("installed");
+  });
+
+  it("resolves a tagged rule's download via the referenceTag index", () => {
+    // collection downloads are stamped with the rule's referenceTag; the row resolution uses the
+    // prebuilt tag index rather than scanning every download
+    const rule = requiresRule({ reference: { tag: "ref-tag-1" } });
+    const download = makeDownload({
+      state: "finished",
+      received: 100,
+      size: 100,
+      modInfo: { referenceTag: "ref-tag-1" },
+    });
+
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: {},
+      downloads: { dlA: download, dlB: makeDownload({ state: "finished" }) },
+      modState: {},
+      sessionMods: {},
+    });
+    const row = rows[modRuleId(rule)];
+
+    expect(row.archiveId).toBe("dlA");
     expect(row.status).toBe("downloaded");
   });
 
@@ -217,5 +276,48 @@ describe("buildCollectionItemRows", () => {
     const row = rows[modRuleId(rule)];
 
     expect(row.status).toBe("ignored");
+  });
+
+  it("reuses the prior map and row references when nothing changed", () => {
+    const rule = requiresRule({ reference: { id: "mod-1" } });
+    const params = {
+      rules: [rule],
+      mods: { "mod-1": installedMod("mod-1", { version: "1.0.0" }) },
+      downloads: {},
+      modState: {},
+      sessionMods: {},
+    };
+
+    const first = buildCollectionItemRows(params);
+    // identical inputs -> the whole map (and every row) is handed back by reference
+    const second = buildCollectionItemRows(params, first);
+
+    expect(second).toBe(first);
+  });
+
+  it("replaces only the changed row's reference, keeping unchanged rows stable", () => {
+    const ruleA = requiresRule({ reference: { id: "mod-1" } });
+    const ruleB = makeRule({ reference: { id: "mod-2", description: "Mod Two" } });
+    const mods: Record<string, IMod> = {
+      "mod-1": installedMod("mod-1", { version: "1.0.0" }),
+      "mod-2": installedMod("mod-2", { version: "2.0.0" }),
+    };
+    const params = { rules: [ruleA, ruleB], mods, downloads: {}, modState: {}, sessionMods: {} };
+    const idA = modRuleId(ruleA);
+    const idB = modRuleId(ruleB);
+
+    const first = buildCollectionItemRows(params);
+
+    // only mod-2 gets a new object, as the immutable reducer would produce on an attribute write
+    const changedMods: Record<string, IMod> = {
+      ...mods,
+      "mod-2": installedMod("mod-2", { version: "2.1.0" }),
+    };
+    const second = buildCollectionItemRows({ ...params, mods: changedMods }, first);
+
+    // mod-1 untouched -> same reference (table skips it); mod-2 changed -> fresh reference
+    expect(second[idA]).toBe(first[idA]);
+    expect(second[idB]).not.toBe(first[idB]);
+    expect(second[idB].attributes?.version).toBe("2.1.0");
   });
 });

@@ -476,4 +476,22 @@ export function testModReference(
   }
 }
 
+/**
+ * Find the rule whose reference matches a mod - the inverse of findModByRef (which finds a mod by a
+ * reference). Answers "which of these rules applies to / pulled in this mod"; pass a mod's or a
+ * collection's `rules`.
+ *
+ * The mod is converted to lookup info once, up front, rather than letting testModReference rebuild
+ * it for every rule in the scan (the same "hoist the constant per-scan work" idea findModByRef uses
+ * for its reference). The per-rule tag/md5/id fast-paths already live inside testRef, so there is
+ * nothing to add here for those.
+ */
+export function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined {
+  if (!Array.isArray(rules)) {
+    return undefined;
+  }
+  const lookup = modAttributesToLookupInfo(mod);
+  return rules.find((rule) => testModReference(lookup, rule.reference));
+}
+
 export default testModReference;
