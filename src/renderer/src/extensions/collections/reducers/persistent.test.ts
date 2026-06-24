@@ -7,16 +7,46 @@ import reducer from "./persistent";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function reduce(state: any, actionCreator: any, payload: any): any {
+// the persistent reducer slices the tests exercise. The production reducer is untyped
+// (IReducerSpec defaults T to { [key: string]: any }); these entry shapes model just the cached
+// fields the tests read back (timestamp + info for collections/revisions, the rating nest written
+// by updateSuccessRate, and the pending-vote record).
+interface ICacheEntry {
+  timestamp?: number;
+  info?: {
+    name?: string;
+    number?: number;
+    metadata?: { ratingValue?: string };
+    rating?: { average: number; total: number };
+  };
+}
+
+interface IPendingVoteEntry {
+  collectionSlug: string;
+  revisionNumber: number;
+  time: number;
+}
+
+interface PersistentState {
+  collections: Record<string, ICacheEntry>;
+  revisions: Record<string, ICacheEntry>;
+  pendingVotes: Record<string, IPendingVoteEntry>;
+}
+
+function reduce(
+  state: PersistentState,
+  actionCreator: { toString(): string },
+  payload: unknown,
+): PersistentState {
   const key = actionCreator.toString();
   const fn = reducer.reducers[key];
   if (!fn) {
     throw new Error(`No reducer registered for action "${key}"`);
   }
-  return fn(state, payload);
+  return fn(state, payload) as PersistentState;
 }
 
-function makeState(overrides: Partial<any> = {}): any {
+function makeState(overrides: Partial<PersistentState> = {}): PersistentState {
   return {
     collections: {},
     revisions: {},

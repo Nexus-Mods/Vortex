@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import { renderModReference } from "../../../../extensions/mod_management/util/modName";
+import { isDependencyRule } from "../../../../extensions/mod_management/util/testModReference";
 import type { TFunction } from "../../../../util/i18n";
 import { DEFAULT_INSTRUCTIONS } from "../../constants";
 import { isEmpty } from "../../util/util";
@@ -29,7 +30,7 @@ function Instructions(props: IInstructionsProps) {
   const { required, optional } = React.useMemo(() => {
     return (collection.rules ?? []).reduce(
       (prev, rule) => {
-        if (isEmpty(rule.extra?.instructions) || !["requires", "recommends"].includes(rule.type)) {
+        if (isEmpty(rule.extra?.instructions) || !isDependencyRule(rule)) {
           return prev;
         }
 

@@ -27,7 +27,7 @@ import type { IMod, IModRule } from "../../../mod_management/types/IMod";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import { findModByRef } from "../../../mod_management/util/findModByRef";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
-import { rulePhase } from "../../../mod_management/util/testModReference";
+import { isDependencyRule, rulePhase } from "../../../mod_management/util/testModReference";
 import { ADULT_CONTENT_URL, INSTRUCTIONS_PLACEHOLDER } from "../../constants";
 import type { ICollectionSourceInfo, SourceType } from "../../types/ICollection";
 import InstallModeRenderer from "./InstallModeRenderer";
@@ -1043,7 +1043,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     }
 
     return Object.values(collection.rules)
-      .filter((rule) => ["requires", "recommends"].indexOf(rule.type) !== -1)
+      .filter((rule) => isDependencyRule(rule))
       .reduce((prev, rule) => {
         const mod = findModByRef(_.omit(rule.reference, ["versionMatch"]), mods);
         const id = mod?.id ?? rule.reference.id ?? rule.reference.idHint;

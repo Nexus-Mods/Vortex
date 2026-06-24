@@ -5,9 +5,18 @@ import * as path from "path";
 
 import { describe, it, expect, afterAll } from "vitest";
 
-import { createPatch, applyPatch, diffFiles, patchFiles } from "./bsdiff";
+import { applyPatchFile, createPatchFile } from "./patch";
+import { applyPatch, createPatch, loadWasm } from "./wasm";
 
 const TEST_DATA_DIR = path.resolve(__dirname, "..", "..", "test-data");
+
+// hdiff.wasm ships with the @hot-updater/bsdiff package. Load the module once
+// and reuse the instance for every case, the same way the worker does at runtime.
+function wasmPath(): string {
+  const pkgEntry = require.resolve("@hot-updater/bsdiff");
+  return path.join(path.resolve(pkgEntry, "..", ".."), "assets", "hdiff.wasm");
+}
+const wasm = loadWasm(fs.readFileSync(wasmPath()));
 
 // --- Helpers ---
 
@@ -63,31 +72,31 @@ function makeTestPair(tc: (typeof TEST_CASES)[0]): {
 
 // --- Data correctness tests ---
 
-describe("bsdiff WASM worker - buffer API", () => {
+describe("bsdiff wasm core - buffer API", () => {
   for (const tc of TEST_CASES) {
-    it(`round-trips ${tc.name}`, async () => {
+    it(`round-trips ${tc.name}`, () => {
       const { oldBuf, newBuf } = makeTestPair(tc);
-      const patch = await createPatch(oldBuf, newBuf);
+      const patch = createPatch(wasm, oldBuf, newBuf);
       expect(patch.length).toBeGreaterThan(0);
       // Verify BSDIFF40 magic
       const magic = Buffer.from(patch.slice(0, 8)).toString("ascii");
       expect(magic).toBe("BSDIFF40");
 
-      const result = await applyPatch(oldBuf, patch);
+      const result = applyPatch(wasm, oldBuf, patch);
       expect(md5(result)).toBe(md5(newBuf));
     });
   }
 
-  it("handles identical files", async () => {
+  it("handles identical files", () => {
     const buf = generateBytes(1024, 999);
-    const patch = await createPatch(buf, buf);
-    const result = await applyPatch(buf, patch);
+    const patch = createPatch(wasm, buf, buf);
+    const result = applyPatch(wasm, buf, patch);
     expect(md5(result)).toBe(md5(buf));
   });
 });
 
-describe("bsdiff WASM worker - file API", () => {
-  it("diffFiles + patchFiles round-trips", async () => {
+describe("bsdiff wasm core - file API", () => {
+  it("createPatchFile + applyPatchFile round-trips", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-file-"));
     const tmpPath = (name: string) => path.join(tmpDir, name);
     try {
@@ -95,10 +104,10 @@ describe("bsdiff WASM worker - file API", () => {
       fs.writeFileSync(tmpPath("old.bin"), oldBuf);
       fs.writeFileSync(tmpPath("new.bin"), newBuf);
 
-      await diffFiles(tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
+      await createPatchFile(wasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
       expect(fs.existsSync(tmpPath("out.diff"))).toBe(true);
 
-      await patchFiles(tmpPath("old.bin"), tmpPath("patched.bin"), tmpPath("out.diff"));
+      await applyPatchFile(wasm, tmpPath("old.bin"), tmpPath("out.diff"), tmpPath("patched.bin"));
       const patched = fs.readFileSync(tmpPath("patched.bin"));
       expect(md5(patched)).toBe(md5(newBuf));
     } finally {
@@ -109,7 +118,7 @@ describe("bsdiff WASM worker - file API", () => {
 
 // --- Cross-compatibility with native patches ---
 
-describe("bsdiff WASM worker - native cross-compatibility", () => {
+describe("bsdiff wasm core - native cross-compatibility", () => {
   function hasNativeBaseline(): boolean {
     return (
       fs.existsSync(path.join(TEST_DATA_DIR, "native-baseline.json")) &&
@@ -127,11 +136,11 @@ describe("bsdiff WASM worker - native cross-compatibility", () => {
   );
 
   for (const tc of TEST_CASES) {
-    it(`applies native patch for ${tc.name}`, async () => {
+    it(`applies native patch for ${tc.name}`, () => {
       const { oldBuf, newBuf } = makeTestPair(tc);
       const nativePatch = fs.readFileSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`));
 
-      const result = await applyPatch(oldBuf, nativePatch);
+      const result = applyPatch(wasm, oldBuf, nativePatch);
       expect(md5(result)).toBe(md5(newBuf));
       expect(md5(result)).toBe(baseline[tc.name].newMd5);
     });
@@ -140,19 +149,19 @@ describe("bsdiff WASM worker - native cross-compatibility", () => {
 
 // --- Performance comparison ---
 
-describe("bsdiff WASM worker - performance", () => {
+describe("bsdiff wasm core - performance", () => {
   const wasmResults: Record<string, { diffMs: number; patchMs: number; patchSize: number }> = {};
 
   for (const tc of TEST_CASES) {
-    it(`benchmarks ${tc.name}`, async () => {
+    it(`benchmarks ${tc.name}`, () => {
       const { oldBuf, newBuf } = makeTestPair(tc);
 
       const diffStart = performance.now();
-      const patch = await createPatch(oldBuf, newBuf);
+      const patch = createPatch(wasm, oldBuf, newBuf);
       const diffMs = performance.now() - diffStart;
 
       const patchStart = performance.now();
-      await applyPatch(oldBuf, patch);
+      applyPatch(wasm, oldBuf, patch);
       const patchMs = performance.now() - patchStart;
 
       wasmResults[tc.name] = {
@@ -168,7 +177,7 @@ describe("bsdiff WASM worker - performance", () => {
     const hasBaseline = fs.existsSync(baselinePath);
     const baseline = hasBaseline ? JSON.parse(fs.readFileSync(baselinePath, "utf8")) : null;
 
-    console.log("\n=== bsdiff Performance: Native vs WASM (inline) ===");
+    console.log("\n=== bsdiff Performance: Native vs WASM ===");
     console.log(
       "| Test Case    | Native Diff | WASM Diff | Native Patch | WASM Patch | Patch Size |",
     );
@@ -188,11 +197,11 @@ describe("bsdiff WASM worker - performance", () => {
   });
 });
 
-describe("bsdiff WASM worker - error handling", () => {
-  it("rejects (does not silently resolve) when applying a malformed patch", async () => {
+describe("bsdiff wasm core - error handling", () => {
+  it("throws (does not silently succeed) when applying a malformed patch", () => {
     // A buffer that is not a valid BSDIFF40 patch: the WASM apply_patch returns
-    // a non-OK status, which must surface as a rejected promise.
+    // a non-OK status, which createPatch/applyPatch surface as a thrown error.
     const garbagePatch = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
-    await expect(applyPatch(new Uint8Array([1, 2, 3]), garbagePatch)).rejects.toThrow();
+    expect(() => applyPatch(wasm, new Uint8Array([1, 2, 3]), garbagePatch)).toThrow();
   });
 });

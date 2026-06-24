@@ -10,8 +10,6 @@ import { describe, expect } from "vitest";
 
 import type { IModRule } from "../extensions/mod_management/types/IMod";
 import {
-  type IApiHarness,
-  type IDriverHarnessState,
   makeInstallState,
   makeMod,
   makeModInstallInfo,
@@ -20,6 +18,7 @@ import {
   makeSession,
 } from "../test-utils/builders";
 import { test } from "../test-utils/harnessTest";
+import type { IApiHarness, IDriverHarnessState } from "../test-utils/harnessTypes";
 import { modRuleId } from "./collectionInstallSession";
 import { getCollectionActiveSessionMod } from "./collectionInstallSessionSelectors";
 import { markCollectionMemberSkipped } from "./collectionSkip";

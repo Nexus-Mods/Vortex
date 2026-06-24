@@ -5,7 +5,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm webpack --config ./webpack.config.cjs && node ./build-bsdiff-worker.mjs",
+    "build": "pnpm webpack --config ./webpack.config.cjs",
     "typecheck": "pnpm tsc -p tsconfig.json",
     "lint": "pnpm eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm eslint --concurrency auto .",
@@ -19,9 +19,7 @@
           "{workspaceRoot}/src/main/build/renderer.js",
           "{workspaceRoot}/src/main/build/renderer.js.map",
           "{workspaceRoot}/src/main/build/splash.js",
-          "{workspaceRoot}/src/main/build/splash.js.map",
-          "{workspaceRoot}/src/main/build/bsdiffWorker.dom.cjs",
-          "{workspaceRoot}/src/main/build/hdiff.wasm"
+          "{workspaceRoot}/src/main/build/splash.js.map"
         ]
       },
       "api": {

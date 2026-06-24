@@ -15,7 +15,6 @@
 import { describe, expect, vi } from "vitest";
 
 import {
-  type IDriverHarness,
   makeCollectionModInfo,
   makeDownload,
   makeFileListItem,
@@ -26,6 +25,7 @@ import {
   makeRule,
 } from "../../../test-utils/builders";
 import { test as driverTest } from "../../../test-utils/driverTest";
+import type { IDriverHarness } from "../../../test-utils/harnessTypes";
 import type { CollectionModStatus } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
 import type { IDownload } from "../../download_management/types/IDownload";

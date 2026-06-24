@@ -8,6 +8,7 @@ import type { IDiscoveryResult } from "../../../../extensions/gamemode_managemen
 import type { IMod } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
+import { isDependencyRule } from "../../../../extensions/mod_management/util/testModReference";
 import type { IState } from "../../../../types/IState";
 import type { TFunction } from "../../../../util/i18n";
 import * as selectors from "../../../../util/selectors";
@@ -39,7 +40,7 @@ function FileOverrides(props: IFileOverridesProps) {
   const modsWithOverrides = React.useMemo(
     () =>
       (collection.rules ?? [])
-        .filter((rule) => ["requires", "recommends"].includes(rule.type))
+        .filter((rule) => isDependencyRule(rule))
         .map((rule) => findModByRef(rule.reference, mods))
         .filter((mod) => (mod?.fileOverrides ?? []).length > 0),
     [collection, mods],

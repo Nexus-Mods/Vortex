@@ -477,6 +477,37 @@ export function testModReference(
 }
 
 /**
+ * The minimal shape the rule-type predicates need: anything carrying a mod-rule `type` discriminant.
+ * Accepts an IModRule directly, plus the session mod-info and table rows that mirror the rule type,
+ * so one predicate classifies all of them.
+ */
+type RuleTyped = Pick<IModRule, "type">;
+
+/**
+ * A "dependency" rule pulls a member into a collection - requires (mandatory) or recommends
+ * (optional). The other rule types (before/after/conflicts) only express ordering or conflicts and
+ * never add a mod. Centralises the `["requires", "recommends"].includes(rule.type)` check that is
+ * otherwise repeated throughout the collection code.
+ */
+export function isDependencyRule(rule: RuleTyped): boolean {
+  return rule.type === "requires" || rule.type === "recommends";
+}
+
+/** A "required" (mandatory) dependency rule - requires. Counterpart to isOptionalRule. */
+export function isRequiredRule(rule: RuleTyped): boolean {
+  return rule.type === "requires";
+}
+
+/**
+ * An "optional" dependency rule - recommends, the collection member offered to the user rather than
+ * installed unconditionally (the counterpart to the mandatory "requires"). Centralises the
+ * `rule.type === "recommends"` check so callers don't re-encode "recommends means optional".
+ */
+export function isOptionalRule(rule: RuleTyped): boolean {
+  return rule.type === "recommends";
+}
+
+/**
  * Find the rule whose reference matches a mod - the inverse of findModByRef (which finds a mod by a
  * reference). Answers "which of these rules applies to / pulled in this mod"; pass a mod's or a
  * collection's `rules`.
@@ -487,7 +518,10 @@ export function testModReference(
  * nothing to add here for those.
  */
 export function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined {
-  if (!Array.isArray(rules)) {
+  // no rule can match a mod that isn't there - a collection row for a not-yet-installed member has
+  // no entry in the installed-mods map. testModReference guards this internally; findRuleByRef must
+  // too, since it converts the mod to lookup info up front (before the per-rule testModReference).
+  if (!Array.isArray(rules) || mod == null) {
     return undefined;
   }
   const lookup = modAttributesToLookupInfo(mod);

@@ -1,21 +1,34 @@
 import { describe, expect, it } from "vitest";
 
+import type { ICollection } from "../../types/ICollection";
+import type {
+  ICollectionConfig,
+  IConfigGeneratorProps,
+  IConfigParserProps,
+} from "../../types/ICollectionConfig";
 import { generateConfig, parseConfig } from "./index";
 
 // ---------------------------------------------------------------------------
 // Factories
 // ---------------------------------------------------------------------------
 
-const makeGeneratorProps = (collectionConfig?: Record<string, any>): any => ({
-  collectionMod: {
-    attributes: collectionConfig ? { collection: { collectionConfig } } : {},
-  },
-});
+const makeGeneratorProps = (collectionConfig?: Record<string, unknown>): IConfigGeneratorProps =>
+  ({
+    collectionMod: {
+      attributes: collectionConfig ? { collection: { collectionConfig } } : {},
+    },
+  }) as unknown as IConfigGeneratorProps;
 
-const makeParserProps = (collection: Record<string, any> = {}, gameId = "skyrimse"): any => ({
-  collection,
-  gameId,
-});
+const makeParserProps = (
+  collection: Partial<Omit<ICollection, "collectionConfig">> & {
+    collectionConfig?: Partial<ICollectionConfig>;
+  } = {},
+  gameId = "skyrimse",
+): IConfigParserProps =>
+  ({
+    collection,
+    gameId,
+  }) as unknown as IConfigParserProps;
 
 // ---------------------------------------------------------------------------
 // generateConfig

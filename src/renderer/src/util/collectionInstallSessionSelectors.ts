@@ -5,7 +5,11 @@ import { createSelector } from "reselect";
 import { activeDownloads } from "../extensions/download_management/selectors";
 import { modsForActiveGame } from "../extensions/mod_management/selectors";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
-import testModReference, { rulePhase } from "../extensions/mod_management/util/testModReference";
+import testModReference, {
+  isOptionalRule,
+  isRequiredRule,
+  rulePhase,
+} from "../extensions/mod_management/util/testModReference";
 import type {
   ICollectionInstallState,
   ICollectionInstallSession,
@@ -184,7 +188,7 @@ export const getCollectionModsByStatus = (
  */
 export const getCollectionRequiredMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
-  return Object.values(mods).filter((mod) => mod.type === "requires");
+  return Object.values(mods).filter(isRequiredRule);
 };
 
 /**
@@ -193,7 +197,7 @@ export const getCollectionRequiredMods = (state: IState): ICollectionModInstallI
  */
 export const getCollectionOptionalMods = (state: IState): ICollectionModInstallInfo[] => {
   const mods = getCollectionActiveSessionMods(state);
-  return Object.values(mods).filter((mod) => mod.type === "recommends");
+  return Object.values(mods).filter(isOptionalRule);
 };
 
 /**
@@ -275,11 +279,7 @@ export const getCollectionInstallProgress = createSelector(
     // but totalRequired only counts 'requires' mods.  When optional mods
     // install before the last required mods the aggregate totals exceed
     // totalRequired, causing a premature isComplete.
-    const requiredMods = session.mods
-      ? Object.values(session.mods).filter(
-          (mod: ICollectionModInstallInfo) => mod.type === "requires",
-        )
-      : [];
+    const requiredMods = session.mods ? Object.values(session.mods).filter(isRequiredRule) : [];
     const installedRequired = requiredMods.filter((mod) => mod.status === "installed").length;
     const completedRequired = requiredMods.filter((mod) =>
       isTerminalMemberStatus(mod.status),
@@ -375,9 +375,9 @@ export const getCollectionStatusBreakdown = createSelector(
       const status = mod.status;
       totalBreakdown[status] = (totalBreakdown[status] || 0) + 1;
 
-      if (mod.type === "requires") {
+      if (isRequiredRule(mod)) {
         requiredBreakdown[status] = (requiredBreakdown[status] || 0) + 1;
-      } else if (mod.type === "recommends") {
+      } else if (isOptionalRule(mod)) {
         optionalBreakdown[status] = (optionalBreakdown[status] || 0) + 1;
       }
     });
@@ -430,7 +430,7 @@ export const getCollectionCompletedMods = (state: IState): ICollectionModInstall
  */
 export const isCollectionPhaseComplete = (state: IState, phase: number): boolean => {
   const phaseMods = getCollectionModsForPhase(state, phase);
-  const requiredPhaseMods = phaseMods.filter((mod) => mod.type === "requires");
+  const requiredPhaseMods = phaseMods.filter(isRequiredRule);
 
   if (requiredPhaseMods.length === 0) {
     return true;
@@ -491,8 +491,8 @@ export const getCollectionPhaseProgress = createSelector(
 
     return phases.map((phase) => {
       const phaseMods = byPhase.get(phase)!;
-      const required = phaseMods.filter((m) => m.type === "requires");
-      const optional = phaseMods.filter((m) => m.type === "recommends");
+      const required = phaseMods.filter(isRequiredRule);
+      const optional = phaseMods.filter(isOptionalRule);
       const installed = required.filter((m) => m.status === "installed").length;
       const failed = required.filter((m) => m.status === "failed").length;
       const skipped = required.filter((m) => m.status === "ignored" || m.rule.ignored).length;

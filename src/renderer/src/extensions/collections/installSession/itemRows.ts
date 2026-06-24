@@ -10,6 +10,7 @@ import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import { renderModReference } from "../../mod_management/util/modName";
+import { isDependencyRule } from "../../mod_management/util/testModReference";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 
 /**
@@ -196,33 +197,31 @@ export function buildCollectionItemRows(
     }
   }
 
-  (rules ?? [])
-    .filter((rule) => rule.type === "requires" || rule.type === "recommends")
-    .forEach((rule) => {
-      const id = modRuleId(rule);
-      const { data, status: persistentStatus } = persistentRow(
-        rule,
-        mods,
-        downloads,
-        modState ?? {},
-        indexes,
-      );
+  (rules ?? []).filter(isDependencyRule).forEach((rule) => {
+    const id = modRuleId(rule);
+    const { data, status: persistentStatus } = persistentRow(
+      rule,
+      mods,
+      downloads,
+      modState ?? {},
+      indexes,
+    );
 
-      // the session is the source of truth while it is tracking this mod
-      const status = sessionMods?.[id]?.status ?? persistentStatus;
+    // the session is the source of truth while it is tracking this mod
+    const status = sessionMods?.[id]?.status ?? persistentStatus;
 
-      const row = { ...data, status };
-      // a row is `{ ...mod, ...modState, collectionRule, status }`; the immutable reducers reuse
-      // the references of unchanged members, so an unchanged member is shallow-equal to its prior
-      // row. Keep the prior reference then, so the table's per-row shouldComponentUpdate skips it.
-      const prev = previous?.[id];
-      if (prev !== undefined && shallowEqual(row, prev)) {
-        result[id] = prev;
-      } else {
-        result[id] = row;
-        changed = true;
-      }
-    });
+    const row = { ...data, status };
+    // a row is `{ ...mod, ...modState, collectionRule, status }`; the immutable reducers reuse
+    // the references of unchanged members, so an unchanged member is shallow-equal to its prior
+    // row. Keep the prior reference then, so the table's per-row shouldComponentUpdate skips it.
+    const prev = previous?.[id];
+    if (prev !== undefined && shallowEqual(row, prev)) {
+      result[id] = prev;
+    } else {
+      result[id] = row;
+      changed = true;
+    }
+  });
 
   // nothing changed and no rule was added or removed -> hand back the previous map so an idle
   // dispatch does not even re-render the table container

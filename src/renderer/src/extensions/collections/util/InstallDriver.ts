@@ -34,6 +34,9 @@ import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import testModReference, {
+  isDependencyRule,
+  isOptionalRule,
+  isRequiredRule,
   ruleInstallSpec,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
@@ -108,10 +111,10 @@ class InstallDriver {
   // Collection installation tracking
   private mCurrentSessionId: string;
   private get requiredMods() {
-    return this.mDependentMods.filter((m) => m.type === "requires");
+    return this.mDependentMods.filter(isRequiredRule);
   }
   private get recommendedMods() {
-    return this.mDependentMods.filter((m) => m.type === "recommends");
+    return this.mDependentMods.filter(isOptionalRule);
   }
 
   // single point that assigns the member rules, so the referenceTag index can never drift from
@@ -223,7 +226,7 @@ class InstallDriver {
           this.mProgressDebouncer.schedule();
           return;
         }
-        if (dependent.type === "requires") {
+        if (isRequiredRule(dependent)) {
           this.mInstalledMods.push(mod);
         }
 
@@ -306,9 +309,7 @@ class InstallDriver {
 
           // Populate mDependentMods so that patches and file overrides can be
           // applied when the optional mods are installed.
-          const required = (collection?.rules ?? []).filter((rule) =>
-            ["requires", "recommends"].includes(rule.type),
-          );
+          const required = (collection?.rules ?? []).filter((rule) => isDependencyRule(rule));
           this.setDependentMods(
             required.filter(
               (rule) =>
@@ -868,9 +869,7 @@ class InstallDriver {
     this.mApi.dismissNotification(getUnfulfilledNotificationId(collection.id));
     this.mApi.store.dispatch(setModEnabled(profile.id, collection.id, true));
 
-    const required = (collection?.rules ?? []).filter((rule) =>
-      ["requires", "recommends"].includes(rule.type),
-    );
+    const required = (collection?.rules ?? []).filter((rule) => isDependencyRule(rule));
     const dependencies: IModRule[] = required.reduce((accum, rule) => {
       const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
       if (mod === undefined) {

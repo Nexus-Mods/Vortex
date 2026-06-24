@@ -1,11 +1,7 @@
 import { test as base, vi } from "vitest";
 
-import {
-  type IApiHarness,
-  type IDriverHarnessState,
-  makeApiHarness,
-  resetHarnessRegistries,
-} from "./builders";
+import { makeApiHarness, resetHarnessRegistries } from "./builders";
+import type { IApiHarness, IDriverHarnessState } from "./harnessTypes";
 
 export interface IHarnessFixtures {
   // build an api-only harness over the given seeded slices (no driver, no game registration)

@@ -1,6 +1,7 @@
 import InstallDriver from "../extensions/collections/util/InstallDriver";
-import { type IDriverHarness, type IDriverHarnessState, makeDriverHarness } from "./builders";
+import { makeDriverHarness } from "./builders";
 import { test as harnessTest } from "./harnessTest";
+import type { IDriverHarness, IDriverHarnessState } from "./harnessTypes";
 
 export interface IDriverFixtures {
   // build a harness around the REAL InstallDriver over the given seeded slices (registers a fake

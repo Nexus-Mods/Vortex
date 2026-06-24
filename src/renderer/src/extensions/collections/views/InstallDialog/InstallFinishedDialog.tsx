@@ -11,6 +11,7 @@ import { getGame } from "../../../../extensions/gamemode_management/util/getGame
 import type { IMod } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
+import { isOptionalRule } from "../../../../extensions/mod_management/util/testModReference";
 import { log } from "../../../../logging";
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import type { IState } from "../../../../types/IState";
@@ -97,7 +98,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
 
   const optionals = React.useMemo(() => {
     return (collection?.rules ?? []).filter(
-      (rule) => rule.type === "recommends" && findModByRef(rule.reference, mods) === undefined,
+      (rule) => isOptionalRule(rule) && findModByRef(rule.reference, mods) === undefined,
     );
   }, [collection?.rules, mods]);
 

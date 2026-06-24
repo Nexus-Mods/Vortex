@@ -1,17 +1,20 @@
+import type { ICollectionPermission } from "@nexusmods/nexus-api";
 import { describe, expect, it } from "vitest";
 
+import type { ICollectionModRuleEx } from "../types/ICollection";
 import { getUnfulfilledNotificationId, hasEditPermissions, isEmpty, md5sum, ruleId } from "./util";
 
 // ---------------------------------------------------------------------------
 // Shared factories
 // ---------------------------------------------------------------------------
 
-const makeRuleEx = (overrides: Record<string, any> = {}): any => ({
-  sourceName: "ModA",
-  type: "after",
-  referenceName: "ModB",
-  ...overrides,
-});
+const makeRuleEx = (overrides: Partial<ICollectionModRuleEx> = {}): ICollectionModRuleEx =>
+  ({
+    sourceName: "ModA",
+    type: "after",
+    referenceName: "ModB",
+    ...overrides,
+  }) as ICollectionModRuleEx;
 
 // ---------------------------------------------------------------------------
 // hasEditPermissions
@@ -19,25 +22,31 @@ const makeRuleEx = (overrides: Record<string, any> = {}): any => ({
 
 describe("hasEditPermissions", () => {
   it("returns false for undefined permissions", () => {
-    expect(hasEditPermissions(undefined as any)).toBe(false);
+    expect(hasEditPermissions(undefined as unknown as ICollectionPermission[])).toBe(false);
   });
 
   it("returns false for null permissions", () => {
-    expect(hasEditPermissions(null as any)).toBe(false);
+    expect(hasEditPermissions(null as ICollectionPermission[])).toBe(false);
   });
 
   it("returns false when collection:edit is not present", () => {
-    const perms: any[] = [{ key: "collection:view" }, { key: "collection:delete" }];
+    const perms = [
+      { key: "collection:view" },
+      { key: "collection:delete" },
+    ] as unknown as ICollectionPermission[];
     expect(hasEditPermissions(perms)).toBe(false);
   });
 
   it("returns true when collection:edit is present", () => {
-    const perms: any[] = [{ key: "collection:view" }, { key: "collection:edit" }];
+    const perms = [
+      { key: "collection:view" },
+      { key: "collection:edit" },
+    ] as unknown as ICollectionPermission[];
     expect(hasEditPermissions(perms)).toBe(true);
   });
 
   it("returns false for empty array", () => {
-    const perms: any[] = [];
+    const perms: ICollectionPermission[] = [];
     expect(hasEditPermissions(perms)).toBe(false);
   });
 });
