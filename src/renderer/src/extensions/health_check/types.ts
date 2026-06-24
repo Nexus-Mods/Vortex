@@ -78,6 +78,10 @@ export interface IModFileInfo {
   isPrimary: boolean;
   /** Thumbnail URL if available */
   thumbnailUrl?: string;
+  /** Mod-level detail, denormalized onto each file (like thumbnailUrl): adult-content flag. */
+  adultContent?: boolean;
+  /** Mod-level detail, denormalized onto each file (like thumbnailUrl): mod summary. */
+  modSummary?: string;
 }
 
 /**

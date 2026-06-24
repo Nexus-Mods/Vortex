@@ -32,7 +32,7 @@ async function fetchModFilesFromApi(
   }
 
   const details = await detailsPromise;
-  const thumbnailUrl = details[0]?.thumbnailUrl;
+  const modDetail = details[0];
 
   // Filter for MAIN category files only (category_id === 1)
   const mainFiles = modFiles.filter((f) => f.category_id === 1);
@@ -50,7 +50,9 @@ async function fetchModFilesFromApi(
       size: f.size,
       uploadedTimestamp: f.uploaded_timestamp,
       isPrimary: f.is_primary,
-      thumbnailUrl,
+      thumbnailUrl: modDetail?.thumbnailUrl,
+      adultContent: modDetail?.adultContent ?? false,
+      modSummary: modDetail?.modSummary,
     }))
     .sort((a, b) => {
       // Sort by upload date (newest first)
