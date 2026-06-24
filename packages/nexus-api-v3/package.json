@@ -50,14 +50,16 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {
-    "openapi-fetch": "catalog:"
-  },
   "devDependencies": {
+    "openapi-fetch": "catalog:",
     "openapi-typescript": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vitest-fetch-mock": "catalog:"
+  },
+  "inlinedDependencies": {
+    "openapi-fetch": "0.17.0",
+    "openapi-typescript-helpers": "0.1.0"
   }
 }
