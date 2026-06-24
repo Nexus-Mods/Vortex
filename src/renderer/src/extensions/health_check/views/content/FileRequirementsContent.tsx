@@ -277,8 +277,9 @@ function FileRequirementsListingRow({ entry, isHidden, onOpen, onToggleHide }: I
       </div>
 
       <Button
-        appearance="moderate"
+        appearance="weak"
         brand="neutral"
+        className="invisible group-focus-within:visible group-hover:visible"
         leftIconPath={isHidden ? mdiEye : mdiEyeOff}
         size="sm"
         title={isHidden ? t("common:::unhide") : t("common:::hide")}
