@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - os-name: vortex-e2e
-          - os-name: public-runner
+          - os-name: platform-cluster
 
     runs-on: ${{ matrix.os-name }}
 
