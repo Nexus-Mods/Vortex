@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { GenericDebouncer } from "./Debouncer";
 
+// The package compiles with a minimal `lib` (no `dom`/`node`), so the global
+// timer functions aren't declared. The `Debouncer` source is generic over the
+// timer type and never touches them; only this test does, passing the real
+// (vitest-faked) timers in. Declare their shapes locally — module-scoped, so
+// they stay a test concern and don't leak into the package's global types.
+declare function setTimeout(callback: (...args: never[]) => void, ms?: number): number;
+declare function clearTimeout(handle?: number): void;
+
 // --- helpers ----------------------------------------------------------------
 
 type Timeout = ReturnType<typeof setTimeout>;
