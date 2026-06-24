@@ -4120,11 +4120,10 @@ importers:
         version: link:../pe-resources
 
   packages/nexus-api-v3:
-    dependencies:
+    devDependencies:
       openapi-fetch:
         specifier: 'catalog:'
         version: 0.17.0
-    devDependencies:
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0(typescript@6.0.3)
@@ -4299,6 +4298,9 @@ importers:
       '@types/uuid':
         specifier: 'catalog:'
         version: 3.4.13
+      '@vortex/nexus-api-v3':
+        specifier: workspace:*
+        version: link:../../packages/nexus-api-v3
       bbcode-to-react:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
