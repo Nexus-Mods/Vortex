@@ -22,6 +22,7 @@ export interface IHealthCheckEntry<TData = unknown> {
 }
 
 export interface IListingRowProps {
+  api: IExtensionApi;
   entry: IHealthCheckEntry;
   isHidden: boolean;
   onOpen: () => void;
