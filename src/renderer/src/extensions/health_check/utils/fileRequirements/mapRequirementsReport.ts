@@ -10,7 +10,7 @@ import type {
   IFileRequirementCandidate,
   IFileRequirementsCheckMetadata,
   IInstalledFile,
-} from "../types";
+} from "@/extensions/health_check/types";
 
 /** Resolves an installed file's display data from its composite file UID. */
 type HydrateInstalledFile = (fileUID: string) => IInstalledFile | undefined;

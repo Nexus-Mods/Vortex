@@ -1,6 +1,5 @@
+import type { IModDetails } from "@/extensions/health_check/types";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-
-import type { IModDetails } from "../types";
 
 /**
  * Fetch mod details for the given mod UIDs in a single batched modsByUid call,

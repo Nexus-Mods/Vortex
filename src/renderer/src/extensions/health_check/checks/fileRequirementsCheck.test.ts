@@ -4,17 +4,24 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 // report mapping, with only the *endpoints* (v3 batch client, mod-details) and
 // the *input* (installed files) mocked. We feed installed files + canned endpoint
 // responses and assert the health-check reports that come out.
-vi.mock("../utils/installedFiles", () => ({
+vi.mock("@/extensions/health_check/utils/fileRequirements/installedFiles", () => ({
   gatherInstalledFiles: vi.fn(),
   makeInstalledFileHydrator: vi.fn(),
 }));
 vi.mock("../../nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3Client: vi.fn(),
 }));
-vi.mock("../utils/modDetails", () => ({ getModDetails: vi.fn() }));
+vi.mock("@/extensions/health_check/utils/shared/modDetails", () => ({ getModDetails: vi.fn() }));
 vi.mock("../../nexus_integration/selectors", () => ({ isLoggedIn: vi.fn() }));
 vi.mock("../../profile_management/selectors", () => ({ activeProfile: vi.fn() }));
 vi.mock("../../../logging", () => ({ log: vi.fn() }));
+
+import {
+  gatherInstalledFiles,
+  makeInstalledFileHydrator,
+  type IInstalledFileRef,
+} from "@/extensions/health_check/utils/fileRequirements/installedFiles";
+import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
@@ -22,12 +29,6 @@ import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import type { IFileRequirementsCheckMetadata, IInstalledFile, IModDetails } from "../types";
-import {
-  gatherInstalledFiles,
-  makeInstalledFileHydrator,
-  type IInstalledFileRef,
-} from "../utils/installedFiles";
-import { getModDetails } from "../utils/modDetails";
 import { checkFileRequirements } from "./fileRequirementsCheck";
 
 const mockActiveProfile = vi.mocked(activeProfile);

@@ -6,6 +6,8 @@
 import type { IModRequirements } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
+import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
+
 import { setModAttribute } from "../../../actions";
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -32,7 +34,6 @@ import type {
   IModRequirementsCheckParams,
   IModRequirementExt,
 } from "../types";
-import { getModFilesWithCache } from "../utils/modFiles";
 
 export const MOD_REQUIREMENTS_CHECK_ID = "check-nexus-mod-requirements";
 

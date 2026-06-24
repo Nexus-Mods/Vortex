@@ -2,6 +2,10 @@ import { mdiChevronRight, mdiDownload, mdiEye, mdiEyeOff, mdiThumbDown, mdiThumb
 import React, { type KeyboardEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import {
+  severityStyleMap,
+  type Severity,
+} from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -10,7 +14,6 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IModRequirementExt } from "../../types";
-import { severityStyleMap, type Severity } from "../../utils/severityStyles";
 import { FeedbackModal } from "../feedback_modal/FeedbackModal";
 import { PremiumModal } from "../premium_modal/PremiumModal";
 import { useModRequirementActions } from "./useModRequirementActions";

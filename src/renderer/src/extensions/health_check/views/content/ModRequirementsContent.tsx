@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
 import { log } from "@/logging";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
@@ -32,7 +33,6 @@ import { useModRequirementActions } from "../../components/mod_requirement/useMo
 import { PremiumModal } from "../../components/premium_modal/PremiumModal";
 import { allModRequirements, getModFiles, hiddenRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
-import { getModFilesWithCache } from "../../utils/modFiles";
 import type { IDetailViewProps, IHealthCheckContent, IListingRowProps } from "./types";
 
 function isModHidden(

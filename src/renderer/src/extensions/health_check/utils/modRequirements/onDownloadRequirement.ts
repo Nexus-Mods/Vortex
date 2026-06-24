@@ -1,10 +1,13 @@
+import { knownGames } from "@/extensions/gamemode_management/selectors";
+import type { IModFileInfo, IModRequirementExt } from "@/extensions/health_check/types";
+import {
+  convertGameIdReverse,
+  nexusGameId,
+} from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
 import { getGame, toPromise } from "@/util/api";
 
-import { knownGames } from "../../gamemode_management/selectors";
-import { convertGameIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
-import type { IModFileInfo, IModRequirementExt } from "../types";
 import { getModFilesWithCache } from "./modFiles";
 
 /**

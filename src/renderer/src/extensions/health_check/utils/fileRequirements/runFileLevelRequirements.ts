@@ -3,9 +3,10 @@ import {
   type InstalledFile,
 } from "@nexusmods/file-dependency-resolver";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { activeProfile } from "../../profile_management/selectors";
-import type { IFileRequirementsCheckMetadata } from "../types";
+import type { IFileRequirementsCheckMetadata } from "@/extensions/health_check/types";
+import { activeProfile } from "@/extensions/profile_management/selectors";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+
 import { createResolverPorts } from "./fileDependencyPorts";
 import { gatherInstalledFiles, makeInstalledFileHydrator } from "./installedFiles";
 import { mapRequirementsReport } from "./mapRequirementsReport";
