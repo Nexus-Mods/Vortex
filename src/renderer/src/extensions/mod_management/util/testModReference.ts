@@ -477,6 +477,16 @@ export function testModReference(
 }
 
 /**
+ * A "dependency" rule pulls a member into a collection - requires (mandatory) or recommends
+ * (optional). The other rule types (before/after/conflicts) only express ordering or conflicts and
+ * never add a mod. Centralises the `["requires", "recommends"].includes(rule.type)` check that is
+ * otherwise repeated throughout the collection code.
+ */
+export function isDependencyRule(rule: IModRule): boolean {
+  return rule.type === "requires" || rule.type === "recommends";
+}
+
+/**
  * Find the rule whose reference matches a mod - the inverse of findModByRef (which finds a mod by a
  * reference). Answers "which of these rules applies to / pulled in this mod"; pass a mod's or a
  * collection's `rules`.

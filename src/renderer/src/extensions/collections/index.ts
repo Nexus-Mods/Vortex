@@ -35,7 +35,7 @@ import type { IMod, IModRule } from "../mod_management/types/IMod";
 import { findDownloadByRef } from "../mod_management/util/dependencies";
 import { findModByRef } from "../mod_management/util/findModByRef";
 import renderModName from "../mod_management/util/modName";
-import testModReference from "../mod_management/util/testModReference";
+import testModReference, { isDependencyRule } from "../mod_management/util/testModReference";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import type { IProfile } from "../profile_management/types/IProfile";
 import { clearPendingVote, updateSuccessRate } from "./actions/persistent";
@@ -107,7 +107,7 @@ function profileCollectionExists(api: IExtensionApi, profileId: string) {
 
 function onlyLocalRules(rule: IModRule) {
   return (
-    ["requires", "recommends"].includes(rule.type) &&
+    isDependencyRule(rule) &&
     rule.reference.fileExpression === undefined &&
     rule.reference.fileMD5 === undefined &&
     rule.reference.logicalFileName === undefined &&
@@ -1358,10 +1358,7 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
         }
         const added = _.difference(curG[id]?.rules, prevG[id]?.rules);
         const removed = _.difference(prevG[id]?.rules, curG[id]?.rules);
-        return (
-          removed.length > 0 ||
-          added.find((rule) => ["requires", "recommends"].includes(rule.type)) !== undefined
-        );
+        return removed.length > 0 || added.find((rule) => isDependencyRule(rule)) !== undefined;
       }) !== undefined;
 
     if (foundRuleChanges) {
@@ -1465,7 +1462,7 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
       const { collection, revisionId } = driver;
 
       const dependency = (collection?.rules ?? []).find((rule) => {
-        const validType = ["requires", "recommends"].includes(rule.type);
+        const validType = isDependencyRule(rule);
         if (!validType) {
           return false;
         }

@@ -186,6 +186,7 @@ import queryGameId from "./util/queryGameId";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
+  isDependencyRule,
   modMatchesInstallSpec,
   referenceEqual,
   ruleInstallSpec,
@@ -421,9 +422,7 @@ function isDependencyRuleIgnored(
   const rules = state.persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
   return rules.some(
     (rule) =>
-      rule.ignored === true &&
-      ["requires", "recommends"].includes(rule.type) &&
-      referenceEqual(rule.reference, reference),
+      rule.ignored === true && isDependencyRule(rule) && referenceEqual(rule.reference, reference),
   );
 }
 

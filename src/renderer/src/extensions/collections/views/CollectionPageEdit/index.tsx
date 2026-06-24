@@ -16,6 +16,7 @@ import type { IMod, IModRule } from "../../../../extensions/mod_management/types
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import { makeModReference } from "../../../../extensions/mod_management/util/modReference";
+import { isDependencyRule } from "../../../../extensions/mod_management/util/testModReference";
 import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
 import type { IState } from "../../../../types/IState";
@@ -88,7 +89,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
   private collectionRules = memoize(
     (rules: IModRule[], mods: { [modId: string]: IMod }): ICollectionModRule[] => {
       const includedMods = rules
-        .filter((rule) => ["requires", "recommends"].includes(rule.type))
+        .filter((rule) => isDependencyRule(rule))
         .reduce((prev, rule) => {
           const mod = findModByRef(rule.reference, mods);
           if (mod !== undefined) {
@@ -102,11 +103,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
         prev = [].concat(
           prev,
           (mod.rules || [])
-            .filter(
-              (rule) =>
-                !["requires", "recommends"].includes(rule.type) &&
-                rule.extra?.["automatic"] !== true,
-            )
+            .filter((rule) => !isDependencyRule(rule) && rule.extra?.["automatic"] !== true)
             .map((rule) => makeBiDirRule(source, rule)),
         );
 
@@ -320,9 +317,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
 
   private testUploadPossible(): string {
     const { t, collection } = this.props;
-    const refMods: IModRule[] = (collection.rules ?? []).filter((rule) =>
-      ["requires", "recommends"].includes(rule.type),
-    );
+    const refMods: IModRule[] = (collection.rules ?? []).filter((rule) => isDependencyRule(rule));
     if (refMods.length === 0) {
       return t("Can't upload an empty collection");
     } else {

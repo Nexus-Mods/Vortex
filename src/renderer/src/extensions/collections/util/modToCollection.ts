@@ -22,7 +22,11 @@ import type {
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import { makeModReference } from "../../mod_management/util/modReference";
-import { findRuleByRef, rulePhase } from "../../mod_management/util/testModReference";
+import {
+  findRuleByRef,
+  isDependencyRule,
+  rulePhase,
+} from "../../mod_management/util/testModReference";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { BUNDLED_PATH, MOD_TYPE, PATCHES_PATH } from "../constants";
 import type {
@@ -321,9 +325,7 @@ function extractModRules(
         // required or recommended, the collection should be including them. Plus, based on (sensible)
         // user request, we're ignoring these during collection installation or else we'd be getting
         // tons of notifications during the installation.
-        const includedRules = (mod.rules || []).filter(
-          (rule) => !["requires", "recommends"].includes(rule.type),
-        );
+        const includedRules = (mod.rules || []).filter((rule) => !isDependencyRule(rule));
 
         return [].concat(
           prev,

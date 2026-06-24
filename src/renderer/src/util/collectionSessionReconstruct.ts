@@ -10,7 +10,11 @@ import type { IDownload } from "../extensions/download_management/types/IDownloa
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import { findDownloadByRef } from "../extensions/mod_management/util/dependencies";
 import { findModByRef } from "../extensions/mod_management/util/findModByRef";
-import { ruleInstallSpec, rulePhase } from "../extensions/mod_management/util/testModReference";
+import {
+  isDependencyRule,
+  ruleInstallSpec,
+  rulePhase,
+} from "../extensions/mod_management/util/testModReference";
 import { log } from "../logging";
 import type { ICollectionModInstallInfo } from "../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../types/IExtensionContext";
@@ -38,27 +42,25 @@ export function reconstructSessionMods(params: {
   const { rules, mods, downloads } = params;
 
   return Object.fromEntries(
-    rules
-      .filter((rule) => rule.type === "requires" || rule.type === "recommends")
-      .map((rule) => {
-        const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
-        const dlId = findDownloadByRef(rule.reference, downloads);
-        const status = reconstructModStatus(rule, mod, dlId != null ? downloads[dlId] : undefined);
+    rules.filter(isDependencyRule).map((rule) => {
+      const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
+      const dlId = findDownloadByRef(rule.reference, downloads);
+      const status = reconstructModStatus(rule, mod, dlId != null ? downloads[dlId] : undefined);
 
-        const info: ICollectionModInstallInfo = {
-          rule,
-          status,
-          type: rule.type as "requires" | "recommends",
-          phase: rulePhase(rule),
-        };
-        // modId is "the installed mod reference (if installed)" - record it only for the
-        // installed status (the only state planSessionResync carries a modId for)
-        if (mod !== undefined && status === "installed") {
-          info.modId = mod.id;
-        }
+      const info: ICollectionModInstallInfo = {
+        rule,
+        status,
+        type: rule.type as "requires" | "recommends",
+        phase: rulePhase(rule),
+      };
+      // modId is "the installed mod reference (if installed)" - record it only for the
+      // installed status (the only state planSessionResync carries a modId for)
+      if (mod !== undefined && status === "installed") {
+        info.modId = mod.id;
+      }
 
-        return [modRuleId(rule), info];
-      }),
+      return [modRuleId(rule), info];
+    }),
   );
 }
 

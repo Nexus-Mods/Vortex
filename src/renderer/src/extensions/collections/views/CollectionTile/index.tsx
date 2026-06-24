@@ -16,6 +16,7 @@ import Image from "../../../../controls/Image";
 import * as tooltip from "../../../../controls/TooltipControls";
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
 import renderModName from "../../../../extensions/mod_management/util/modName";
+import { isDependencyRule } from "../../../../extensions/mod_management/util/testModReference";
 import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import type { IActionDefinition } from "../../../../types/IActionDefinition";
 import type { IState } from "../../../../types/IState";
@@ -178,9 +179,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
 
     const active = getSafe(profile, ["modState", collection.id, "enabled"], false);
 
-    const refMods: IModRule[] = (collection.rules ?? []).filter((rule) =>
-      ["requires", "recommends"].includes(rule.type),
-    );
+    const refMods: IModRule[] = (collection.rules ?? []).filter((rule) => isDependencyRule(rule));
 
     const totalSize: number = Object.values(collection.rules ?? []).reduce((prev, rule) => {
       if (rule.reference.fileSize !== undefined) {
@@ -420,7 +419,7 @@ class CollectionThumbnail extends ComponentEx<IProps, { updating: boolean }> {
         action: (instanceIds: string[]) => this.invoke(onUpload, instanceIds),
         condition: () => {
           const refMods: IModRule[] = (collection.rules ?? []).filter((rule) =>
-            ["requires", "recommends"].includes(rule.type),
+            isDependencyRule(rule),
           );
           if (refMods.length === 0) {
             return this.props.t("Can't upload an empty collection");

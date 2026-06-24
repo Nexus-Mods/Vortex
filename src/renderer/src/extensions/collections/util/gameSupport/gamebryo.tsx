@@ -18,6 +18,7 @@ import { getSafe } from "../../../../util/storeHelper";
 import { batchDispatch } from "../../../../util/util";
 import type { IMod } from "../../../mod_management/types/IMod";
 import { findModByRef } from "../../../mod_management/util/findModByRef";
+import { isDependencyRule } from "../../../mod_management/util/testModReference";
 import type { ICollection } from "../../types/ICollection";
 import type { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";
 
@@ -197,7 +198,7 @@ export async function parser(
   }
 
   const collectionModIds = collectionMod.rules
-    .filter((rule) => ["requires", "recommends"].includes(rule.type))
+    .filter((rule) => isDependencyRule(rule))
     .map((rule) => findModByRef(rule.reference, mods))
     .filter((mod) => !!mod)
     .map((mod) => mod.id);

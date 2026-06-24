@@ -3,6 +3,7 @@ import { unknownToError } from "@vortex/shared";
 import type { IMod } from "../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../extensions/mod_management/util/findModByRef";
 import renderModName, { renderModReference } from "../../../extensions/mod_management/util/modName";
+import { isDependencyRule } from "../../../extensions/mod_management/util/testModReference";
 import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
@@ -64,9 +65,7 @@ export async function uploadCollection(
   api.events.emit("analytics-track-click-event", "Collections", "Upload collection");
 
   const missing = (mods[collectionId]?.rules ?? []).filter(
-    (rule) =>
-      ["requires", "recommends"].includes(rule.type) &&
-      findModByRef(rule.reference, mods) === undefined,
+    (rule) => isDependencyRule(rule) && findModByRef(rule.reference, mods) === undefined,
   );
   if (missing.length > 0) {
     await api.showDialog(

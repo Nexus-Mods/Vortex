@@ -3,6 +3,7 @@ import { addModRule } from "../extensions/mod_management/actions/mods";
 import type { IModReference } from "../extensions/mod_management/types/IMod";
 import { isFuzzyVersion } from "../extensions/mod_management/util/isFuzzyVersion";
 import {
+  isDependencyRule,
   testRefByIdentifiers,
   type IReferenceIdentifiers,
 } from "../extensions/mod_management/util/testModReference";
@@ -111,7 +112,7 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
 
   const { gameId, collectionId, sessionId } = session;
   const rules = (state.persistent.mods[gameId]?.[collectionId]?.rules ?? []).filter((rule) =>
-    ["requires", "recommends"].includes(rule.type),
+    isDependencyRule(rule),
   );
   // NOTE (LAZ-483 follow-up): find() returns the FIRST matching rule. This relies on collection
   // members having distinct identities; if two members share the matched identifier (e.g. the

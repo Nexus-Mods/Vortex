@@ -34,6 +34,7 @@ import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import testModReference, {
+  isDependencyRule,
   ruleInstallSpec,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
@@ -306,9 +307,7 @@ class InstallDriver {
 
           // Populate mDependentMods so that patches and file overrides can be
           // applied when the optional mods are installed.
-          const required = (collection?.rules ?? []).filter((rule) =>
-            ["requires", "recommends"].includes(rule.type),
-          );
+          const required = (collection?.rules ?? []).filter((rule) => isDependencyRule(rule));
           this.setDependentMods(
             required.filter(
               (rule) =>
@@ -868,9 +867,7 @@ class InstallDriver {
     this.mApi.dismissNotification(getUnfulfilledNotificationId(collection.id));
     this.mApi.store.dispatch(setModEnabled(profile.id, collection.id, true));
 
-    const required = (collection?.rules ?? []).filter((rule) =>
-      ["requires", "recommends"].includes(rule.type),
-    );
+    const required = (collection?.rules ?? []).filter((rule) => isDependencyRule(rule));
     const dependencies: IModRule[] = required.reduce((accum, rule) => {
       const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
       if (mod === undefined) {
