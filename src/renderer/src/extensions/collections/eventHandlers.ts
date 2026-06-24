@@ -6,8 +6,7 @@ import Bluebird from "bluebird";
 import SevenZip from "node-7z";
 
 import * as actions from "../../actions";
-import type { IMod, IModRule } from "../../extensions/mod_management/types/IMod";
-import { findModByRef } from "../../extensions/mod_management/util/findModByRef";
+import type { IModRule } from "../../extensions/mod_management/types/IMod";
 import renderModName from "../../extensions/mod_management/util/modName";
 import testModReference from "../../extensions/mod_management/util/testModReference";
 import type { IDialogResult } from "../../types/IDialog";
@@ -18,6 +17,7 @@ import getVortexPath from "../../util/getVortexPath";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, sanitizeFilename, toPromise } from "../../util/util";
+import { findInstalledDependencyMembers, findObsoleteMembers } from "./util/collectionUpdate";
 import { REFERENCE_TAG_SCHEME } from "./util/deterministicReferenceTag";
 import type InstallDriver from "./util/InstallDriver";
 import { readCollection } from "./util/readCollection";
@@ -135,34 +135,10 @@ async function collectionUpdate(
     const oldRules = oldMod?.rules ?? [];
     const mods = api.getState().persistent.mods[gameMode];
 
-    // candidates is any mod that is depended upon by the old revision that was installed
-    // as a dependency
-    const candidates = oldRules
-      .filter((rule) => ["requires", "recommends"].includes(rule.type))
-      .map((rule) => findModByRef(rule.reference, mods))
-      .filter((mod) => mod !== undefined && mod.attributes?.["installedAsDependency"] === true);
-
-    const notCandidates = Object.values(mods).filter(
-      (mod) => !candidates.includes(mod) && mod.id !== oldModId,
-    );
-
-    const references = (rules: IModRule[], mod: IMod) =>
-      (rules ?? []).find(
-        (rule) =>
-          ["requires", "recommends"].includes(rule.type) && testModReference(mod, rule.reference),
-      ) !== undefined;
-
-    // for each dependency of the collection,
-    const obsolete = candidates
-      // see if there is a mod outside candidates that requires it but before anything we
-      // check the new version of the collection because that's the most likely to require it
-      .filter((mod) => !references(newRules, mod))
-      .filter(
-        (mod) =>
-          notCandidates
-            // that depends upon the candidate,
-            .find((other) => references(other.rules, mod)) === undefined,
-      );
+    // the old revision's installed dependency members, reused below for both the obsolete-removal
+    // decision and the enabled-optional snapshot
+    const candidates = findInstalledDependencyMembers(oldRules, mods);
+    const obsolete = findObsoleteMembers(candidates, newRules, mods, oldModId);
 
     await fs.removeAsync(tempDir).catch(() => undefined);
 
