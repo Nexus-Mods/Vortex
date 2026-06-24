@@ -10,6 +10,13 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import {
+  downloadFileRequirement,
+  openModPage,
+  switchActiveVersion,
+  viewInLoadout,
+} from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
+import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -33,13 +40,6 @@ import type {
   IFileRequirementCandidate,
   IInstalledFile,
 } from "../../types";
-import {
-  downloadFileRequirement,
-  openModPage,
-  switchActiveVersion,
-  viewInLoadout,
-} from "../../utils/fileRequirementActions";
-import { severityStyleMap } from "../../utils/severityStyles";
 import type { IDetailViewProps, IHealthCheckContent, IListingRowProps } from "./types";
 
 /** Shared per-detail action context threaded down to the requirement cards. */

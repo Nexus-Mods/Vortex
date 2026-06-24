@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn } from "@/util/api";
 
@@ -9,7 +10,6 @@ import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setFeedbackGiven } from "../../actions/persistent";
 import { feedbackGivenMap } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
-import { onDownloadRequirement } from "../../utils/onDownloadRequirement";
 
 /**
  * Shared action logic for a single mod requirement, used by both the listing row

@@ -1,7 +1,6 @@
+import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/health_check/types";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-
-import type { IFileRequirementCandidate, IInstalledFile } from "../types";
 
 // File-level requirement actions. These are intentionally stubs for now: the UI
 // is wired to call them, but the real behaviour (nxm download, enabling/switching

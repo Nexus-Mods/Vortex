@@ -1,10 +1,9 @@
+import { setModFiles, setModFilesLoading } from "@/extensions/health_check/actions/session";
+import { getModFiles as getModFilesSelector } from "@/extensions/health_check/selectors";
+import type { IModDetails, IModFileInfo } from "@/extensions/health_check/types";
+import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
+import { makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-
-import { makeModUID } from "../../nexus_integration/util/UIDs";
-import { setModFiles, setModFilesLoading } from "../actions/session";
-import { getModFiles as getModFilesSelector } from "../selectors";
-import type { IModDetails, IModFileInfo } from "../types";
-import { getModDetails } from "./modDetails";
 
 /**
  * Fetch available MAIN files for a mod from Nexus
