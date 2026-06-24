@@ -9,10 +9,10 @@ import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Pictogram } from "@/ui/components/pictogram/Pictogram";
-import { TabButton } from "@/ui/components/tabs/Tab";
 import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
-import { TabProvider } from "@/ui/components/tabs/tabs.context";
+import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
 import MainPage from "@/views/MainPage";
 
