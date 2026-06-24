@@ -477,13 +477,34 @@ export function testModReference(
 }
 
 /**
+ * The minimal shape the rule-type predicates need: anything carrying a mod-rule `type` discriminant.
+ * Accepts an IModRule directly, plus the session mod-info and table rows that mirror the rule type,
+ * so one predicate classifies all of them.
+ */
+type RuleTyped = Pick<IModRule, "type">;
+
+/**
  * A "dependency" rule pulls a member into a collection - requires (mandatory) or recommends
  * (optional). The other rule types (before/after/conflicts) only express ordering or conflicts and
  * never add a mod. Centralises the `["requires", "recommends"].includes(rule.type)` check that is
  * otherwise repeated throughout the collection code.
  */
-export function isDependencyRule(rule: IModRule): boolean {
+export function isDependencyRule(rule: RuleTyped): boolean {
   return rule.type === "requires" || rule.type === "recommends";
+}
+
+/** A "required" (mandatory) dependency rule - requires. Counterpart to isOptionalRule. */
+export function isRequiredRule(rule: RuleTyped): boolean {
+  return rule.type === "requires";
+}
+
+/**
+ * An "optional" dependency rule - recommends, the collection member offered to the user rather than
+ * installed unconditionally (the counterpart to the mandatory "requires"). Centralises the
+ * `rule.type === "recommends"` check so callers don't re-encode "recommends means optional".
+ */
+export function isOptionalRule(rule: RuleTyped): boolean {
+  return rule.type === "recommends";
 }
 
 /**

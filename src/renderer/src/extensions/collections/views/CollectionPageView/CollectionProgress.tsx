@@ -10,6 +10,7 @@ import * as tooltip from "../../../../controls/TooltipControls";
 import { bytesToString } from "../../../../util/util";
 import type { IDownload } from "../../../download_management/types/IDownload";
 import renderModName from "../../../mod_management/util/modName";
+import { isRequiredRule } from "../../../mod_management/util/testModReference";
 import type { IProfile } from "../../../profile_management/types/IProfile";
 import type { ICollectionItemRow } from "../../installSession/itemRows";
 import CollectionBanner from "./CollectionBanner";
@@ -23,7 +24,7 @@ function itemRelevant(mod: ICollectionItemRow): boolean {
   if (mod.collectionRule.ignored) {
     return false;
   }
-  return mod.collectionRule.type === "requires";
+  return isRequiredRule(mod.collectionRule);
 }
 
 function itemsSize(mods: Record<string, ICollectionItemRow>): number {
@@ -125,7 +126,7 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
       mods,
     ).reduce<IModGroups>(
       (prev, mod) => {
-        if (mod.collectionRule.type === "requires" && !mod.collectionRule.ignored) {
+        if (isRequiredRule(mod.collectionRule) && !mod.collectionRule.ignored) {
           prev[group(mod, downloads[mod.archiveId])].push(mod);
         }
         return prev;

@@ -43,7 +43,7 @@ import { addModRule, removeModRule } from "../../../mod_management/actions/mods"
 import type { IMod, IModRule } from "../../../mod_management/types/IMod";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
-import { findRuleByRef } from "../../../mod_management/util/testModReference";
+import { findRuleByRef, isRequiredRule } from "../../../mod_management/util/testModReference";
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setModEnabled, setModsEnabled } from "../../../profile_management/actions/profiles";
 import type { IProfile, IProfileMod } from "../../../profile_management/types/IProfile";
@@ -294,7 +294,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         name: "Required",
         description: "Is the mod required for this collection",
         placement: "table",
-        calc: (mod: ICollectionItemRow) => mod.collectionRule.type === "requires",
+        calc: (mod: ICollectionItemRow) => isRequiredRule(mod.collectionRule),
         edit: {},
         filter: new OptionsFilter(
           [
@@ -545,7 +545,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         (mod) =>
           mod.status !== "installed" &&
           !mod.collectionRule.ignored &&
-          mod.collectionRule.type === "requires",
+          isRequiredRule(mod.collectionRule),
       ) !== undefined;
 
     const totalSize = Object.values(itemRows).reduce((prev, mod) => {

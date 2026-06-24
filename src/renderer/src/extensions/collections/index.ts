@@ -35,7 +35,10 @@ import type { IMod, IModRule } from "../mod_management/types/IMod";
 import { findDownloadByRef } from "../mod_management/util/dependencies";
 import { findModByRef } from "../mod_management/util/findModByRef";
 import renderModName from "../mod_management/util/modName";
-import testModReference, { isDependencyRule } from "../mod_management/util/testModReference";
+import testModReference, {
+  isDependencyRule,
+  isRequiredRule,
+} from "../mod_management/util/testModReference";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import type { IProfile } from "../profile_management/types/IProfile";
 import { clearPendingVote, updateSuccessRate } from "./actions/persistent";
@@ -397,7 +400,7 @@ async function removeCollection(
   }
 
   const filter = (rule) =>
-    rule.type === "requires" &&
+    isRequiredRule(rule) &&
     rule["ignored"] !== true &&
     findModByRef(rule.reference, mods) === undefined;
 
@@ -961,32 +964,6 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
       return mod?.type === MOD_TYPE;
     },
   );
-  /*
-  context.registerAction('mods-action-icons', 75, 'start-install', {}, 'Install Optional Mods...',
-    (modIds: string[]) => {
-      const profile: IProfile = selectors.activeProfile(stateFunc());
-      context.api.events.emit('install-recommendations', profile.id, profile.gameId, modIds);
-    }, (modIds: string[]) => {
-      const gameMode = selectors.activeGameId(stateFunc());
-      const mod = stateFunc().persistent.mods[gameMode][modIds[0]];
-      if (mod === undefined) {
-        return false;
-      }
-      if ((mod.rules ?? []).find(rule => rule.type === 'recommends') === undefined) {
-        return context.api.translate('No optional mods') as string;
-      }
-      return (mod.type === MOD_TYPE);
-    });
-  */
-
-  // context.registerAction('global-icons', 100, 'highlight-lab', {}, 'Quick Collection', () => {
-  //   initFromProfile(context.api)
-  //     .catch(err => context.api.showErrorNotification('Failed to init collection', unknownToError(err)));
-  // }, () => {
-  //   const state = context.api.getState();
-  //   const activeProfile = selectors.activeProfile(state);
-  //   return activeProfile !== undefined;
-  // });
 
   context.registerAction(
     "profile-actions",
@@ -1387,7 +1364,7 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
       // have to update here because the reference tags may have been updated during installation
       const collections = mods[driver.lastCollection.id];
       const match = (collections.rules ?? []).find(
-        (rule) => rule.type === "requires" && rule.reference.tag === itemId,
+        (rule) => isRequiredRule(rule) && rule.reference.tag === itemId,
       );
 
       if (match !== undefined) {

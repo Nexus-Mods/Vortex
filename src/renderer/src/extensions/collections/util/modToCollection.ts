@@ -25,6 +25,7 @@ import { makeModReference } from "../../mod_management/util/modReference";
 import {
   findRuleByRef,
   isDependencyRule,
+  isOptionalRule,
   rulePhase,
 } from "../../mod_management/util/testModReference";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
@@ -207,7 +208,7 @@ async function rulesToCollectionMods(
         const res: ICollectionMod = {
           name: modName,
           version: mod.attributes?.version ?? "1.0.0",
-          optional: rule.type === "recommends",
+          optional: isOptionalRule(rule),
           domainName,
           source,
           hashes,
