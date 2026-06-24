@@ -8,16 +8,20 @@ import SevenZip from "node-7z";
 import * as actions from "../../actions";
 import type { IModRule } from "../../extensions/mod_management/types/IMod";
 import renderModName from "../../extensions/mod_management/util/modName";
-import testModReference from "../../extensions/mod_management/util/testModReference";
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, sanitizeFilename, toPromise } from "../../util/util";
-import { findInstalledDependencyMembers, findObsoleteMembers } from "./util/collectionUpdate";
+import {
+  findEnabledOptionalMembers,
+  findInstalledDependencyMembers,
+  findObsoleteMembers,
+  partitionReviewSelection,
+  type IReviewSelection,
+} from "./util/collectionUpdate";
 import { REFERENCE_TAG_SCHEME } from "./util/deterministicReferenceTag";
 import type InstallDriver from "./util/InstallDriver";
 import { readCollection } from "./util/readCollection";
@@ -142,7 +146,7 @@ async function collectionUpdate(
 
     await fs.removeAsync(tempDir).catch(() => undefined);
 
-    let ops = { remove: [], keep: [] };
+    let ops: IReviewSelection = { remove: [], keep: [] };
 
     if (obsolete.length > 0) {
       const collectionName = collection?.name ?? renderModName(oldMod);
@@ -192,17 +196,7 @@ async function collectionUpdate(
         if (reviewResult.action === "Keep All") {
           ops.keep = obsolete.map((mod) => mod.id);
         } else {
-          ops = Object.keys(reviewResult.input).reduce(
-            (prev, value) => {
-              if (reviewResult.input[value]) {
-                prev.remove.push(value);
-              } else {
-                prev.keep.push(value);
-              }
-              return prev;
-            },
-            { remove: [], keep: [] },
-          );
+          ops = partitionReviewSelection(reviewResult.input);
         }
       }
     }
@@ -217,14 +211,7 @@ async function collectionUpdate(
 
     // Snapshot which optional mods are enabled before removing the old collection
     const profile = selectors.activeProfile(api.getState());
-    const enabledOptionalMods: string[] = candidates
-      .filter((mod) => {
-        const isOptional = oldRules.some(
-          (r) => r.type === "recommends" && testModReference(mod, r.reference),
-        );
-        return isOptional && getSafe(profile?.modState, [mod.id, "enabled"], false);
-      })
-      .map((mod) => mod.id);
+    const enabledOptionalMods = findEnabledOptionalMembers(candidates, oldRules, profile?.modState);
 
     // Remove old collection and obsolete mods
     await toPromise((cb) =>

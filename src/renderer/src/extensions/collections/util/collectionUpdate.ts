@@ -1,6 +1,11 @@
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
-import { findRuleByRef, isDependencyRule } from "../../mod_management/util/testModReference";
+import {
+  findRuleByRef,
+  isDependencyRule,
+  isOptionalRule,
+} from "../../mod_management/util/testModReference";
+import type { IProfileMod } from "../../profile_management/types/IProfile";
 
 /**
  * The installed mods a revision pulled in as dependencies. A mod qualifies when a
@@ -40,4 +45,41 @@ export function findObsoleteMembers(
       findRuleByRef(newDependencyRules, mod) === undefined &&
       findRuleByRef(otherDependencyRules, mod) === undefined,
   );
+}
+
+/** The remove/keep split of a member-removal review dialog's checkbox result, keyed by mod id. */
+export interface IReviewSelection {
+  remove: string[];
+  keep: string[];
+}
+
+/**
+ * Partition the member-removal review dialog's result: checked entries are removed, unchecked are
+ * kept.
+ */
+export function partitionReviewSelection(input: Record<string, boolean>): IReviewSelection {
+  const result: IReviewSelection = { remove: [], keep: [] };
+  for (const [modId, selected] of Object.entries(input)) {
+    (selected ? result.remove : result.keep).push(modId);
+  }
+  return result;
+}
+
+/**
+ * Of the old revision's dependency members (`candidates`), the ids of those that are optional
+ * (recommends) and currently enabled in the profile - the set whose enabled state must be restored
+ * after the collection is reinstalled.
+ */
+export function findEnabledOptionalMembers(
+  candidates: IMod[],
+  rules: IModRule[],
+  modState: Record<string, IProfileMod> | undefined,
+): string[] {
+  const optionalRules = (rules ?? []).filter(isOptionalRule);
+  return candidates
+    .filter(
+      (mod) =>
+        findRuleByRef(optionalRules, mod) !== undefined && modState?.[mod.id]?.enabled === true,
+    )
+    .map((mod) => mod.id);
 }

@@ -4,10 +4,22 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { makeMod, makeReference, makeRevision, makeRule } from "../../../test-utils/builders";
+import {
+  makeMod,
+  makeProfileMod,
+  makeReference,
+  makeRevision,
+  makeRule,
+} from "../../../test-utils/builders";
 import type { IRevisionMemberSpec } from "../../../test-utils/harnessTypes";
 import type { IMod } from "../../mod_management/types/IMod";
-import { findInstalledDependencyMembers, findObsoleteMembers } from "./collectionUpdate";
+import type { IProfileMod } from "../../profile_management/types/IProfile";
+import {
+  findEnabledOptionalMembers,
+  findInstalledDependencyMembers,
+  findObsoleteMembers,
+  partitionReviewSelection,
+} from "./collectionUpdate";
 
 // the mods record (keyed by id) the update flow reads: the collection mod plus everything installed
 function modsById(...mods: IMod[]): Record<string, IMod> {
@@ -98,5 +110,49 @@ describe("findObsoleteMembers", () => {
       [other],
     );
     expect(findObsoleteMembers(candidates, newRev.rules, mods, oldModId)).toEqual([]);
+  });
+});
+
+describe("partitionReviewSelection", () => {
+  it("splits checked ids into remove and unchecked into keep", () => {
+    expect(partitionReviewSelection({ a: true, b: false, c: true })).toEqual({
+      remove: ["a", "c"],
+      keep: ["b"],
+    });
+  });
+
+  it("returns empty arrays for an empty selection", () => {
+    expect(partitionReviewSelection({})).toEqual({ remove: [], keep: [] });
+  });
+});
+
+describe("findEnabledOptionalMembers", () => {
+  it("returns optional members that are currently enabled", () => {
+    const rev = makeRevision(1, [
+      { tag: "req" },
+      { tag: "opt-on", optional: true },
+      { tag: "opt-off", optional: true },
+    ]);
+    const modState: Record<string, IProfileMod> = {
+      "inst-opt-on": makeProfileMod({ enabled: true }),
+      "inst-opt-off": makeProfileMod({ enabled: false }),
+      "inst-req": makeProfileMod({ enabled: true }),
+    };
+
+    expect(findEnabledOptionalMembers(rev.installed, rev.rules, modState)).toEqual(["inst-opt-on"]);
+  });
+
+  it("excludes a required (non-optional) member even when enabled", () => {
+    const rev = makeRevision(1, [{ tag: "req" }]);
+    const modState: Record<string, IProfileMod> = { "inst-req": makeProfileMod({ enabled: true }) };
+
+    expect(findEnabledOptionalMembers(rev.installed, rev.rules, modState)).toEqual([]);
+  });
+
+  it("treats missing or undefined modState as not enabled", () => {
+    const rev = makeRevision(1, [{ tag: "opt", optional: true }]);
+
+    expect(findEnabledOptionalMembers(rev.installed, rev.rules, undefined)).toEqual([]);
+    expect(findEnabledOptionalMembers(rev.installed, rev.rules, {})).toEqual([]);
   });
 });
