@@ -4,12 +4,13 @@ import * as actions from "../actions/persistent";
 
 export interface IHealthCheckPersistentState {
   /**
-   * Map of mod nexusModId to array of hidden requirement IDs (from Nexus API)
-   * Uses requirement.id instead of requirement.modId to properly support external requirements
-   * Example: { 95885: ["req-id-1", "req-id-2", "req-id-3"] }
-   * This means mod 95885 has requirements with IDs "req-id-1", "req-id-2", and "req-id-3" hidden
+   * Mod-level hide store: requiring mod nexusModId -> hidden requirement ids.
+   * Persisted key kept as `hiddenRequirements` for backwards compat (selector is
+   * `hiddenModRequirements`).
    */
   hiddenRequirements: { [modId: number]: string[] };
+  /** File-level hide store: source file UID -> hidden requirement definition ids. */
+  hiddenFileRequirements: { [sourceFileUID: string]: string[] };
   /**
    * Map of mod nexusModId to array of requirement IDs that have received feedback
    * Prevents users from submitting feedback multiple times for the same requirement
@@ -32,7 +33,7 @@ export interface IHealthCheckPersistentState {
  */
 export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
   reducers: {
-    [actions.setRequirementHidden as any]: (state, payload) => {
+    [actions.setModRequirementHidden as any]: (state, payload) => {
       const { modId, requirementId, hidden } = payload;
       const currentHidden = state.hiddenRequirements?.[modId] || [];
 
@@ -45,6 +46,25 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
           return deleteOrNop(state, ["hiddenRequirements", modId]);
         }
         return setSafe(state, ["hiddenRequirements", modId], filtered);
+      }
+      return state;
+    },
+    [actions.setFileRequirementHidden as any]: (state, payload) => {
+      const { sourceFileUID, requirementDefId, hidden } = payload;
+      const currentHidden = state.hiddenFileRequirements?.[sourceFileUID] || [];
+
+      if (hidden && !currentHidden.includes(requirementDefId)) {
+        return setSafe(
+          state,
+          ["hiddenFileRequirements", sourceFileUID],
+          [...currentHidden, requirementDefId],
+        );
+      } else if (!hidden && currentHidden.includes(requirementDefId)) {
+        const filtered = currentHidden.filter((id) => id !== requirementDefId);
+        if (filtered.length === 0) {
+          return deleteOrNop(state, ["hiddenFileRequirements", sourceFileUID]);
+        }
+        return setSafe(state, ["hiddenFileRequirements", sourceFileUID], filtered);
       }
       return state;
     },
@@ -78,6 +98,7 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
   },
   defaults: {
     hiddenRequirements: {},
+    hiddenFileRequirements: {},
     feedbackGiven: {},
     modRequirementsEnabled: true,
     fileRequirementsEnabled: true,

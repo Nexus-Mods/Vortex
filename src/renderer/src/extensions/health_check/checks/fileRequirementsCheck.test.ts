@@ -204,7 +204,7 @@ describe("checkFileRequirements / resolution", () => {
 
     const reqs = metadata?.fileRequirements["ms_src"]?.requirements;
     expect(reqs).toHaveLength(1);
-    expect(reqs?.[0]).toMatchObject({ kind: "missing", requirementId: "ms_def" });
+    expect(reqs?.[0]).toMatchObject({ kind: "missing", requirementDefId: "ms_def" });
     expect(reqs?.[0].kind === "missing" && reqs[0].alternatives[0]).toMatchObject({
       fileUID: "ms_cand",
       modName: "SkyUI",
