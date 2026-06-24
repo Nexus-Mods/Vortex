@@ -125,9 +125,9 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
   const mainFile = modFiles?.[0];
   const fileData: IFileRequirementData = {
     fileUID: mod.uid,
-    adultContent: false,
+    adultContent: mainFile?.adultContent ?? false,
     modName: mod.modName || mod.modUrl || mod.notes || "",
-    modDescription: mod.notes || t("detail::item::check_the_description"),
+    modDescription: mod.notes || mainFile?.modSummary || t("detail::item::check_the_description"),
     modImageSrc: mainFile?.thumbnailUrl ?? "",
     fileName: mainFile?.name ?? "",
     fileVersion: mainFile?.version ?? "",
