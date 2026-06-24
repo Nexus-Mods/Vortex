@@ -1,6 +1,7 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { setSafe, deleteOrNop } from "../../../util/storeHelper";
 import * as actions from "../actions/persistent";
+import { reducerFor } from "./reducerFor";
 
 export interface IHealthCheckPersistentState {
   /**
@@ -28,12 +29,14 @@ export interface IHealthCheckPersistentState {
   fileRequirementsFlagEnabled: boolean;
 }
 
+const on = reducerFor<IHealthCheckPersistentState>();
+
 /**
  * Reducer for health check persistent state
  */
 export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
-  reducers: {
-    [actions.setModRequirementHidden as any]: (state, payload) => {
+  reducers: Object.fromEntries([
+    on(actions.setModRequirementHidden, (state, payload) => {
       const { modId, requirementId, hidden } = payload;
       const currentHidden = state.hiddenRequirements?.[modId] || [];
 
@@ -48,8 +51,8 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
         return setSafe(state, ["hiddenRequirements", modId], filtered);
       }
       return state;
-    },
-    [actions.setFileRequirementHidden as any]: (state, payload) => {
+    }),
+    on(actions.setFileRequirementHidden, (state, payload) => {
       const { sourceFileUID, requirementDefId, hidden } = payload;
       const currentHidden = state.hiddenFileRequirements?.[sourceFileUID] || [];
 
@@ -67,35 +70,33 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
         return setSafe(state, ["hiddenFileRequirements", sourceFileUID], filtered);
       }
       return state;
-    },
-    [actions.setAllModRequirementsHidden as any]: (state, payload) => {
+    }),
+    on(actions.setAllModRequirementsHidden, (state, payload) => {
       const { modId, requirementIds } = payload;
       if (requirementIds.length === 0) {
         return deleteOrNop(state, ["hiddenRequirements", modId]);
       }
       return setSafe(state, ["hiddenRequirements", modId], requirementIds);
-    },
-    [actions.clearAllHiddenRequirements as any]: (state) => {
-      return setSafe(state, ["hiddenRequirements"], {});
-    },
-    [actions.setModRequirementsEnabled as any]: (state, payload) => {
-      return setSafe(state, ["modRequirementsEnabled"], payload.enabled);
-    },
-    [actions.setFileRequirementsEnabled as any]: (state, payload) => {
-      return setSafe(state, ["fileRequirementsEnabled"], payload.enabled);
-    },
-    [actions.setFileRequirementsFlagEnabled as any]: (state, payload) => {
-      return setSafe(state, ["fileRequirementsFlagEnabled"], payload.enabled);
-    },
-    [actions.setFeedbackGiven as any]: (state, payload) => {
+    }),
+    on(actions.clearAllHiddenRequirements, (state) => setSafe(state, ["hiddenRequirements"], {})),
+    on(actions.setModRequirementsEnabled, (state, payload) =>
+      setSafe(state, ["modRequirementsEnabled"], payload.enabled),
+    ),
+    on(actions.setFileRequirementsEnabled, (state, payload) =>
+      setSafe(state, ["fileRequirementsEnabled"], payload.enabled),
+    ),
+    on(actions.setFileRequirementsFlagEnabled, (state, payload) =>
+      setSafe(state, ["fileRequirementsFlagEnabled"], payload.enabled),
+    ),
+    on(actions.setFeedbackGiven, (state, payload) => {
       const { modId, requirementId } = payload;
       const current = state.feedbackGiven?.[modId] || [];
       if (current.includes(requirementId)) {
         return state;
       }
       return setSafe(state, ["feedbackGiven", modId], [...current, requirementId]);
-    },
-  },
+    }),
+  ]),
   defaults: {
     hiddenRequirements: {},
     hiddenFileRequirements: {},
