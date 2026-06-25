@@ -1,4 +1,5 @@
 import type { Context } from "@opentelemetry/api";
+import { context, trace } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import type { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
@@ -48,16 +49,18 @@ export const createRendererTelemetryProvider = async (): Promise<void> => {
       resource,
       spanProcessors: [new ForwardingSpanProcessor()],
     });
-    provider.register({
-      // ZoneContextManager (Zone.js) tracks async context entirely in
-      // userland — it patches Promise/setTimeout/microtasks/etc. and does
-      // not touch Node async hooks. AsyncLocalStorageContextManager crashes
-      // in the renderer under Node 24 because V8's AsyncContextFrame and
-      // Chromium fight over the `continuationPreservedEmbedderData` slot.
-      // Zone.js sidesteps that and stays valid when Node integration is
-      // eventually removed from the renderer.
-      contextManager: new ZoneContextManager(),
-    });
+
+    // ZoneContextManager (Zone.js) tracks async context entirely in
+    // userland — it patches Promise/setTimeout/microtasks/etc. and does
+    // not touch Node async hooks. AsyncLocalStorageContextManager crashes
+    // in the renderer under Node 24 because V8's AsyncContextFrame and
+    // Chromium fight over the `continuationPreservedEmbedderData` slot.
+    // Zone.js sidesteps that and stays valid when Node integration is
+    // eventually removed from the renderer.
+    const contextManager = new ZoneContextManager();
+    contextManager.enable();
+    trace.setGlobalTracerProvider(provider);
+    context.setGlobalContextManager(contextManager);
 
     // Bluebird bypasses the global Promise prototype that Zone.js patches,
     // so cross-bluebird `.then()` boundaries still need an explicit hop.
