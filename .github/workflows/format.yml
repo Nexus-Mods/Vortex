@@ -2,7 +2,7 @@ name: Format
 
 on:
   pull_request:
-    branches: [master, laz-483-integration]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
