@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Fixed
 
+- Scripted FOMOD installs failing on Windows because the IPC host (`ModInstallerIPC.exe`) was missing from the packaged build ([#23571](https://github.com/Nexus-Mods/Vortex/pull/23571))
 - Missing `IMembership` export ([#23530](https://github.com/Nexus-Mods/Vortex/pull/23530))
 - Collection downloads failing with `no checkpoint stored for download` ([#23529](https://github.com/Nexus-Mods/Vortex/pull/23529))
 - Collection Mods tab opening the wrong mod page when multiple mods shared the same author ([#23524](https://github.com/Nexus-Mods/Vortex/pull/23524))
