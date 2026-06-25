@@ -18,6 +18,8 @@ export async function getModDetails(api: IExtensionApi, modUIDs: string[]): Prom
   return details.map((detail) => ({
     modUID: detail.uid,
     modName: detail.name ?? "",
+    // TODO: this is empty — the V2 GraphQL batch query short-circuits summary sanitisation for
+    // list results, so a custom batch mods endpoint may later be needed to work around it.
     modSummary: detail.summary,
     thumbnailUrl: detail.thumbnailUrl,
     adultContent: detail.adultContent ?? false,
