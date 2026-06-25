@@ -49,6 +49,7 @@
       "title": "Additional mod may be required for: {{modName}}",
       "description": "Check <modLink>{{modName}} description</modLink> for details.",
       "check_the_description": "Check the description before installing.",
+      "author_note": "Note: {{note}}",
       "open_external_mod_page": "Open external mod page",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
       "confirm_install": "Confirm install",
