@@ -1,8 +1,8 @@
+import type { ICollection, IRevision } from "@nexusmods/nexus-api";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
-import type { ICollectionInstallState } from "../extensions/collections_integration/types";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
@@ -11,6 +11,7 @@ import type { IHealthCheckSessionState } from "../extensions/health_check/reduce
 import type { IHistoryPersistent, IHistoryState } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
+import type { ICollectionInstallState } from "./collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";
@@ -334,6 +335,17 @@ export interface IOverlaysState {
  * @export
  * @interface IState
  */
+// persistent state owned by the collections extension: the cached collection and
+// revision info fetched from the API
+export interface ICollectionsPersistentState {
+  // keyed by collection id
+  collections: Record<string, { timestamp: number; info: ICollection }>;
+  // keyed by revision id
+  revisions: Record<string, { timestamp: number; info: IRevision }>;
+  // keyed by revision id; queued success votes awaiting submission
+  pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
+}
+
 export interface IState {
   app: IApp;
   user: IUser;
@@ -362,6 +374,7 @@ export interface IState {
     profiles: { [profileId: string]: IProfile };
     mods: IModTable;
     downloads: IStateDownloads;
+    collections: ICollectionsPersistentState;
     categories: { [gameId: string]: ICategoryDictionary };
     gameMode: IStateGameMode;
     deployment: {

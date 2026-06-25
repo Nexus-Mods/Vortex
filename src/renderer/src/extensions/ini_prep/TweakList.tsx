@@ -142,9 +142,17 @@ function TweakListWrap(props: ITweakListWrapProps) {
   const mod = useSelector<IState, IMod>((state) => state.persistent.mods[gameMode]?.[modId]);
 
   React.useEffect(() => {
+    let mounted = true;
     getTweaks(modsPath, mod).then((tweakList) => {
-      setCurTweaks(tweakList);
+      // the detail cell can unmount (collapsed, or the mod row changed) before this
+      // resolves; skip the state update then to avoid a leak on the dead component
+      if (mounted) {
+        setCurTweaks(tweakList);
+      }
     });
+    return () => {
+      mounted = false;
+    };
   }, [modId, modsPath, getTweaks]);
 
   if (curTweaks === null) {

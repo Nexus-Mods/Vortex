@@ -1,0 +1,80 @@
+import * as React from "react";
+
+import FlexLayout from "../../../controls/FlexLayout";
+import * as tooltip from "../../../controls/TooltipControls";
+import type { IMod } from "../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../extensions/mod_management/util/modName";
+
+interface IBaseProps {
+  modId: string;
+  collections: IMod[];
+  detailCell: boolean;
+}
+
+type IProps = IBaseProps;
+
+function TooltipItem(props: { name: string }) {
+  const { name } = props;
+  return <li>{name}</li>;
+}
+
+function Tooltip(props: { collectionNames: string[] }) {
+  const { collectionNames } = props;
+
+  return (
+    <ul className="collection-mods-page-attrib-tooltip">
+      {collectionNames.map((name, idx) => (
+        <TooltipItem key={`${name}${idx}`} name={name} />
+      ))}
+    </ul>
+  );
+}
+
+function nop() {
+  // nop
+}
+
+function CollectionCount(props: { collectionNames: string[]; modId: string }) {
+  const { collectionNames, modId } = props;
+  const filtered = collectionNames.slice(1);
+  const tip = <Tooltip collectionNames={filtered} />;
+  return (
+    <tooltip.Button
+      className="collection-mods-page-attr-addendum"
+      id={`${modId}-collection-count`}
+      tooltip={tip}
+      onClick={nop}
+    >
+      {`+${filtered.length}`}
+    </tooltip.Button>
+  );
+}
+
+function CollectionModsPageAttributeRenderer(props: IProps) {
+  const { collections, detailCell, modId } = props;
+
+  const collectionNames = collections.map((collection) => renderModName(collection));
+
+  const count = collectionNames.length;
+  return count > 0 ? (
+    <FlexLayout className="collection-mods-page-attribute-renderer" type="row">
+      <FlexLayout.Fixed>
+        {detailCell ? (
+          <ul>
+            {collectionNames.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        ) : (
+          <div>{collectionNames[0]}</div>
+        )}
+      </FlexLayout.Fixed>
+
+      {count > 1 && !detailCell ? (
+        <CollectionCount collectionNames={collectionNames} modId={modId} />
+      ) : null}
+    </FlexLayout>
+  ) : null;
+}
+
+export default CollectionModsPageAttributeRenderer as React.ComponentType<IBaseProps>;

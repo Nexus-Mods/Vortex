@@ -14,10 +14,14 @@ import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { semverCoerce, truthy } from "../../../util/util";
 import type { IDependency, ILookupResultEx } from "../types/IDependency";
-import type { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from "../types/IMod";
+import type { IDownloadHint, IModReference, IModRule } from "../types/IMod";
 import { findModByRef } from "./findModByRef";
 import { isFuzzyVersion } from "./isFuzzyVersion";
-import testModReference, { testRefByIdentifiers } from "./testModReference";
+import testModReference, {
+  ruleInstallSpec,
+  rulePhase,
+  testRefByIdentifiers,
+} from "./testModReference";
 import type { IModLookupInfo } from "./testModReference";
 
 interface IBrowserResult {
@@ -311,12 +315,18 @@ export function findDownloadByRef(
   }
 }
 
+/**
+ * Internal tree node used while GATHERING the transitive dependency graph. It is an
+ * IDependency plus the tree bookkeeping: child `dependencies`, a `redundant` flag set by
+ * tagDuplicates(), and a re-resolve callback. Once the graph is gathered it is flattened
+ * and these tree-only fields are stripped (see flatten() + the _.omit below), yielding the
+ * flat IDependency[] the installer consumes. Kept separate from IDependency on purpose so
+ * those graph-only fields never travel with a flat install unit; this type stays local to
+ * this module.
+ */
 interface IDependencyNode extends IDependency {
   dependencies: IDependencyNode[];
   redundant: boolean;
-  fileList?: IFileListItem[];
-  installerChoices?: any;
-  patches?: any;
   reresolveDownloadHint?: () => Promise<void>;
 }
 
@@ -346,13 +356,7 @@ async function gatherDependenciesGraph(
       fileSize: rule.reference.fileSize,
     });
   }
-  const modReference: IModReference = {
-    ...rule.reference,
-    fileList: rule.fileList,
-    patches: rule.extra?.patches ?? {},
-    installerChoices: rule.installerChoices ?? {},
-  };
-  const mod = findModByRef(modReference, mods);
+  const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
 
   let urlFromHint: IBrowserResult | undefined;
 
@@ -399,10 +403,10 @@ async function gatherDependenciesGraph(
       dependencies: dependencies.filter(Boolean),
       redundant: false,
       extra: rule.extra,
-      patches: rule.extra?.patches ?? {},
+      patches: ruleInstallSpec(rule).patches ?? {},
       installerChoices: rule.installerChoices,
       fileList: rule.fileList,
-      phase: rule.extra?.["phase"] ?? 0,
+      phase: rulePhase(rule),
     };
 
     if (urlFromHint) {

@@ -30,6 +30,11 @@ export interface IBaseProps {
 
 type IProps = IBaseProps;
 
+// Note: this component is comparatively expensive to update. It has no shouldComponentUpdate,
+// so it re-renders whenever its parent does, and UNSAFE_componentWillReceiveProps rebuilds both
+// d3 arc generators on every prop change even though they depend only on geometry, not on the
+// per-bar value. For frequently-updating or indeterminate progress (e.g. per-mod download/install
+// rows) prefer the lightweight Spinner; reserve RadialProgress for low-frequency, determinate bars.
 class RadialProgress extends React.Component<IProps, {}> {
   private mArcGen: d3.Arc<any, IBar>;
   private mRestArcGen: d3.Arc<any, IBar>;

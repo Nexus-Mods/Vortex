@@ -1,0 +1,108 @@
+import type {
+  IChoiceType,
+  IFileListItem,
+  IModPatches,
+  IModReference,
+} from "../../mod_management/types/IMod";
+import type { ICollectionGamebryo } from "../util/gameSupport/gamebryo";
+import type { ICollectionConfig } from "./ICollectionConfig";
+
+export interface ICollectionInfo {
+  author: string;
+  authorUrl: string;
+  name: string;
+  description: string;
+  installInstructions: string;
+  domainName: string;
+  gameVersions?: string[];
+}
+
+export type UpdatePolicy = "exact" | "latest" | "prefer";
+
+export type SourceType = "browse" | "manual" | "direct" | "nexus" | "bundle";
+
+export interface ICollectionSourceInfo {
+  type: SourceType;
+  url?: string;
+  // textual download/installation instructions (used with source 'manual' and 'browse')
+  instructions?: string;
+  // numerical mod id (used with source 'nexus')
+  modId?: number;
+  // numerical file id (used with source 'nexus')
+  fileId?: number;
+  // determines which file to get if there is an update compared to what's in the mod pack
+  // Not supported with every source type
+  updatePolicy?: UpdatePolicy;
+  adultContent?: boolean;
+
+  md5?: string;
+  fileSize?: number;
+  logicalFilename?: string;
+  fileExpression?: string;
+  tag?: string;
+}
+
+export interface ICollectionModDetails {
+  type?: string;
+  category?: string;
+}
+
+export interface ICollectionMod {
+  name: string;
+  version: string;
+  optional: boolean;
+  domainName: string;
+  source: ICollectionSourceInfo;
+  hashes?: IFileListItem[];
+  // installer-specific data to replicate the choices the author made
+  choices?: IChoiceType;
+  patches?: IModPatches;
+  instructions?: string;
+  author?: string;
+  details?: ICollectionModDetails;
+  phase?: number;
+  fileOverrides?: string[];
+}
+
+export type RuleType = "before" | "after" | "requires" | "conflicts" | "recommends" | "provides";
+
+export interface ICollectionModRule {
+  source: IModReference;
+  type: RuleType;
+  reference: IModReference;
+}
+
+export interface ICollectionTool {
+  name: string;
+  exe: string;
+  args: string[];
+  cwd: string;
+  env: { [key: string]: any };
+  shell: boolean;
+  detach: boolean;
+  onStart: "hide" | "hide_recover" | "close";
+}
+
+export interface ICollection extends Partial<ICollectionGamebryo> {
+  info: ICollectionInfo;
+  mods: ICollectionMod[];
+  modRules: ICollectionModRule[];
+  collectionConfig?: ICollectionConfig;
+}
+
+export interface ICollectionAttributes {
+  instructions?: { [modId: string]: string };
+  source?: {
+    [modId: string]: { type: SourceType; url?: string; instructions?: string };
+  };
+  installMode?: { [modId: string]: string };
+  saveEdits?: { [modId: string]: boolean };
+  fileOverrides?: { [modId: string]: boolean };
+  installInstructions?: string;
+  collectionConfig?: ICollectionConfig;
+}
+
+export interface ICollectionModRuleEx extends ICollectionModRule {
+  sourceName: string;
+  referenceName: string;
+}

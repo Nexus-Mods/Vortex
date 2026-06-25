@@ -1,8 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import type { IExtensionApi, IState } from "../../types/api";
+import { updateModStatus } from "../../actions/collectionInstallTracking";
+import {
+  makeDownload,
+  makeMod,
+  makeModInstallInfo,
+  makeRule,
+  makeSession,
+} from "../../test-utils/builders";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import InstallManager from "./InstallManager";
-import type { IModRule } from "./types/IMod";
+import { lookupFromDownload } from "./util/dependencies";
 
 // Mock dependencies
 vi.mock("./util/dependencies");
@@ -12,10 +21,15 @@ vi.mock("../../util/log", () => {
   return { default: log, log };
 });
 
+// TODO: prefer the shared api/harness fixtures (makeApiHarness and the test.extend fixtures in
+// test-utils) over the hand-built mockApi/mockState in this file; new tests should seed state with
+// the builders instead of adding more bespoke mocks.
+
 /** Subset of InstallManager internals exercised by these tests. */
 interface IInstallManagerTestable {
   ensurePhaseState(sourceModId: string): void;
   maybeAdvancePhase(sourceModId: string, api: IExtensionApi): void;
+  handleDownloadFailed(api: IExtensionApi, downloadId: string): void;
   markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi): void;
   mInstallPhaseState: Map<
     string,
@@ -184,7 +198,7 @@ describe("Phased Installer", () => {
       for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
         const required = allMods.filter((m) => (m.phase ?? 0) === phase && m.type === "requires");
         const completed = required.filter((m) =>
-          ["installed", "failed", "skipped"].includes(m.status),
+          ["installed", "failed", "ignored"].includes(m.status),
         );
         if (completed.length >= required.length && required.length > 0) {
           highest = phase;
@@ -285,40 +299,6 @@ describe("Phased Installer", () => {
     });
   });
 
-  describe("Collection Session Phase Assignment", () => {
-    it("should assign phase 0 when rule.extra.phase is undefined", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(0);
-    });
-
-    it("should use phase from rule.extra.phase when present", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-        extra: { phase: 3 },
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(3);
-    });
-
-    it("should handle null extra field", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-        extra: null,
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(0);
-    });
-  });
-
   describe("Phase Gating", () => {
     it("should allow installation in current phase", () => {
       const sourceModId = "test-collection-1";
@@ -388,5 +368,85 @@ describe("Phased Installer", () => {
       expect(state.pendingByPhase.get(2)?.length).toBe(1);
       expect(state.pendingByPhase.get(3) ?? []).toEqual([]);
     });
+  });
+});
+
+describe("collection download failure handling", () => {
+  let installManager: IInstallManagerTestable;
+  let dispatch: ReturnType<typeof vi.fn>;
+  let state: Record<string, unknown>;
+  let api: IExtensionApi;
+
+  beforeEach(() => {
+    dispatch = vi.fn();
+    state = {
+      persistent: {
+        profiles: { prof1: { id: "prof1", gameId: "skyrimse" } },
+        mods: { skyrimse: { "col-1": makeMod({ id: "col-1", rules: [] }) } },
+        downloads: {
+          files: {
+            "dl-fail": makeDownload({
+              id: "dl-fail",
+              state: "failed",
+              localPath: "member.zip",
+              modInfo: { referenceTag: "member-tag" },
+            }),
+          },
+        },
+      },
+      session: {
+        collections: {
+          activeSession: makeSession({
+            sessionId: "col-1_prof1",
+            collectionId: "col-1",
+            gameId: "skyrimse",
+            mods: {
+              "rule-1": makeModInstallInfo({
+                rule: makeRule({ reference: { tag: "member-tag" } }),
+                status: "downloading",
+              }),
+            },
+          }),
+        },
+      },
+      settings: {
+        downloads: { collectionsInstallWhileDownloading: false },
+        profiles: { activeProfileId: "prof1", nextProfileId: undefined, lastActiveProfile: {} },
+      },
+    };
+
+    api = {
+      getState: () => state as unknown as IState,
+      store: { getState: () => state as unknown as IState, dispatch },
+      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+      sendNotification: vi.fn(),
+      dismissNotification: vi.fn(),
+      showErrorNotification: vi.fn(),
+      translate: vi.fn((key: string) => key),
+      registerInstaller: vi.fn(),
+    } as unknown as IExtensionApi;
+
+    // findCollectionByDownload resolves the member from the download's lookup (referenceTag match)
+    vi.mocked(lookupFromDownload).mockReturnValue({
+      referenceTag: "member-tag",
+      fileName: "member.zip",
+    } as never);
+
+    installManager = new InstallManager(api, vi.fn()) as unknown as IInstallManagerTestable;
+    // mark the collection as actively installing so the failure is not ignored
+    installManager.ensurePhaseState("col-1");
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("settles the member as failed when its download terminally fails", () => {
+    installManager.handleDownloadFailed(api, "dl-fail");
+
+    // status leaves "downloading" so the row is no longer mis-bucketed under the Downloading filter
+    expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
   });
 });

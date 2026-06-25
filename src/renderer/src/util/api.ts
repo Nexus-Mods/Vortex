@@ -12,7 +12,6 @@ import {
   resolveCategoryName,
   resolveCategoryPath,
 } from "../extensions/category_management/util/retrieveCategoryPath";
-import { generateCollectionSessionId, modRuleId } from "../extensions/collections_integration/util";
 import { readExtensibleDir } from "../extensions/extension_manager/util";
 import getDriveList from "../extensions/gamemode_management/util/getDriveList";
 import { getGame, getGames } from "../extensions/gamemode_management/util/getGame";
@@ -36,6 +35,9 @@ import { getModSource, getModSources } from "../extensions/mod_management/util/m
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
+  findRuleByRef,
+  ruleInstallSpec,
+  rulePhase,
   testRefByIdentifiers,
 } from "../extensions/mod_management/util/testModReference";
 import {
@@ -46,6 +48,7 @@ import { getApplication } from "./application";
 import { Archive } from "./archives";
 import calculateFolderSize from "./calculateFolderSize";
 import { checksum, fileMD5 } from "./checksum";
+import { generateCollectionSessionId, modRuleId } from "./collectionInstallSession";
 import ConcurrencyLimiter from "./ConcurrencyLimiter";
 import copyRecursive from "./copyRecursive";
 import {
@@ -187,6 +190,7 @@ export {
   findCommonRootDir,
   findDownloadByRef,
   findModByRef,
+  findRuleByRef,
   GameNotFound,
   GameStoreHelper,
   normalizeStoreQuery,
@@ -246,6 +250,8 @@ export {
   renderModReference,
   resolveCategoryName,
   resolveCategoryPath,
+  ruleInstallSpec,
+  rulePhase,
   runElevated,
   runThreaded,
   sanitizeCSSId,
