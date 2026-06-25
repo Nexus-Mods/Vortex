@@ -268,6 +268,13 @@ export interface ISettings {
 
 export interface IStateTransactions {
   transfer: {};
+  // keyed by profile id, then by collection mod id: a durable "this profile still needs its
+  // plugins sorted/enabled" marker. Set when a collection install begins, cleared only when a
+  // plugin sort actually succeeds, so an interrupted install is recovered on the next activation
+  // of the profile (deploy then sort). Written by the collections install flow but read/cleared by
+  // gamebryo plugin management, so it lives in this cross-extension slice rather than on either
+  // extension's own state. The value is the epoch-ms time the marker was queued.
+  pendingPluginSort: Record<string, Record<string, number>>;
 }
 
 export interface ISessionGameMode {
