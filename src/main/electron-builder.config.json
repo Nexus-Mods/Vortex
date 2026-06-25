@@ -60,7 +60,8 @@
     "!node_modules/@nexusmods/fomod-installer-native/src-native/**",
     "!node_modules/@nexusmods/fomod-installer-native/*.{h,lib,dll}",
     "!node_modules/@nexusmods/fomod-installer-native/build/*.{vcxproj,filters}",
-    "!node_modules/@nexusmods/fomod-installer-native/build/Release/*.{exp,iobj,ipdb,obj,lib,pdb}"
+    "!node_modules/@nexusmods/fomod-installer-native/build/Release/*.{exp,iobj,ipdb,lib,pdb}",
+    "!node_modules/@nexusmods/fomod-installer-native/build/Release/obj/**"
   ],
   "asar": true,
   "asarUnpack": [
