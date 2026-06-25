@@ -179,4 +179,17 @@ describe("planDependencyErrorRecovery", () => {
       planDependencyErrorRecovery({ ...base, isCanceled: true, hasRetriesLeft: false }),
     ).toEqual({ action: "fail", showError: false });
   });
+
+  it("fails a non-retryable error immediately even with retries left (e.g. disk full)", () => {
+    // a disk-full cannot succeed on retry, so settle now instead of burning the retry budget
+    expect(
+      planDependencyErrorRecovery({ ...base, nonRetryable: true, hasRetriesLeft: true }),
+    ).toEqual({ action: "fail", showError: true });
+  });
+
+  it("still leaves a non-retryable error alone when the member is skipped or the install cancelled", () => {
+    expect(planDependencyErrorRecovery({ ...base, nonRetryable: true, ruleIgnored: true })).toEqual(
+      { action: "leave" },
+    );
+  });
 });

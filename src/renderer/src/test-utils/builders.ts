@@ -341,7 +341,8 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
     },
     session: { collections: slices.session },
     settings: {
-      downloads: { collectionsInstallWhileDownloading: false },
+      // download path pattern so downloadPathForGame resolves a concrete per-game folder
+      downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
       interface: { language: "en" },
       gameMode: { discovered: {} },
     },

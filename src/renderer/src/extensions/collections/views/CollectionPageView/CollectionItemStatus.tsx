@@ -78,7 +78,7 @@ class CollectionItemStatus extends React.Component<ICollectionItemStatusProps, {
           <div className="collection-status-failed">
             <Icon name="warning" />
 
-            {t("Install failed")}
+            {t(download?.state === "failed" ? "Download failed" : "Install failed")}
           </div>
         );
       case "downloaded":

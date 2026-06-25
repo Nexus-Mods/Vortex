@@ -68,6 +68,8 @@ export type DependencyErrorRecovery =
  * - an explicitly skipped member (ruleIgnored) or a whole-install cancel (installCanceled) is left
  *   untouched - the skip is terminal and a cancelled install is rebuilt on resume; requeuing a
  *   skipped member would re-prompt the very download a free user just skipped;
+ * - a non-retryable failure (e.g. the disk is full) is settled as failed immediately - retrying
+ *   cannot succeed, so burning the retry budget only leaves the member non-terminal for longer;
  * - otherwise, while retries remain the member is requeued - a transient error or a download
  *   cancelled as collateral (a sibling torn down during the free-user skip cascade) must not
  *   abandon the member non-terminal, which would block completion and re-prompt next pass;
@@ -79,11 +81,12 @@ export function planDependencyErrorRecovery(input: {
   ruleIgnored: boolean;
   isCanceled: boolean;
   hasRetriesLeft: boolean;
+  nonRetryable?: boolean;
 }): DependencyErrorRecovery {
   if (input.installCanceled || input.ruleIgnored) {
     return { action: "leave" };
   }
-  if (input.hasRetriesLeft) {
+  if (!input.nonRetryable && input.hasRetriesLeft) {
     return { action: "requeue" };
   }
   return { action: "fail", showError: !input.isCanceled };
