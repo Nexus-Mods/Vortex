@@ -116,6 +116,8 @@ type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
 
 declare namespace actions {
     export {
+        clearPendingPluginSort,
+        setPendingPluginSort,
         setNextProfile,
         setStateVersion,
         setApplicationVersion,
@@ -536,6 +538,11 @@ const clearModRules: reduxAct.ComplexActionCreator2<string, string, {
 
 // @public (undocumented)
 const clearOAuthCredentials: reduxAct.ComplexActionCreator1<unknown, any, {}>;
+
+// @public
+const clearPendingPluginSort: ComplexActionCreator1<string, {
+profileId: string;
+}, {}>;
 
 // @public (undocumented)
 const clearUIBlocker: ComplexActionCreator1<string, string, {}>;
@@ -1028,9 +1035,9 @@ function findModByRef(reference: IModReference, mods: {
 function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined;
 
 // @public
-const finishDownload: ComplexActionCreator3<string, "failed" | "finished" | "redirect", any, {
+const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
 id: string;
-state: "failed" | "finished" | "redirect";
+state: "finished" | "failed" | "redirect";
 failCause: any;
 }, {}>;
 
@@ -4060,6 +4067,8 @@ interface IStatePaths {
 // @public (undocumented)
 interface IStateTransactions {
     // (undocumented)
+    pendingPluginSort: Record<string, Record<string, number>>;
+    // (undocumented)
     transfer: {};
 }
 
@@ -5639,6 +5648,13 @@ secondary: boolean;
 // @public
 function setOrNop<T>(state: T, path: string[], value: any): T;
 
+// @public
+const setPendingPluginSort: ComplexActionCreator3<string, string, number, {
+profileId: string;
+collectionId: string;
+time: number;
+}, {}>;
+
 // @public (undocumented)
 const setPickerLayout: ComplexActionCreator1<"list" | "small" | "large", {
 layout: "list" | "small" | "large";
@@ -6686,10 +6702,10 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
 // lib/types/IState.d.ts:162:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:376:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:378:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:411:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:412:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:377:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:379:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:412:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:413:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 

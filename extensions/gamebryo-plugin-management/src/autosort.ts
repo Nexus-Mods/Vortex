@@ -15,6 +15,7 @@ import { GHOST_EXT, NAMESPACE } from "./statics";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
+import { invalidPluginsFromError } from "./util/invalidPlugins";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 
 const MAX_RESTARTS = 3;
@@ -39,6 +40,41 @@ enum EdgeType {
 interface ICycleEdge {
   name: string;
   typeOfEdgeToNextVertex: EdgeType;
+}
+
+// Single actionable warning for plugins LOOT could not parse (corrupt/invalid) and that were
+// skipped so the rest could load and sort. The plugin list can be long, so the notification keeps a
+// short message and puts the offending names behind a "More" dialog. Shared by the load and sort
+// recovery paths.
+function reportSkippedInvalidPlugins(api: types.IExtensionApi, plugins: string[]): void {
+  const t = api.translate;
+  api.sendNotification({
+    id: "loot-skipped-invalid-plugins",
+    type: "warning",
+    message: "Some plugins are invalid and were skipped",
+    actions: [
+      {
+        title: "More",
+        action: (dismiss: () => void) => {
+          api
+            .showDialog(
+              "info",
+              "Invalid plugins skipped",
+              {
+                text: t(
+                  "These plugins could not be parsed by LOOT and were skipped so the rest of your " +
+                    "load order could still sort. Reinstall or remove them to fix it:",
+                  { ns: NAMESPACE },
+                ),
+                message: plugins.join("\n"),
+              },
+              [{ label: "Close" }],
+            )
+            .then(() => dismiss());
+        },
+      },
+    ],
+  });
 }
 
 class LootInterface {
@@ -244,7 +280,12 @@ class LootInterface {
     return gameDataPath(activeGameId);
   }
 
-  private async doSort(pluginNames: string[], gameMode: string, loot: typeof LootProm) {
+  private async doSort(
+    pluginNames: string[],
+    gameMode: string,
+    loot: typeof LootProm,
+    excluded: string[] = [],
+  ) {
     const { store } = this.mExtensionApi;
     try {
       this.mExtensionApi.dismissNotification("loot-cycle-warning");
@@ -265,6 +306,19 @@ class LootInterface {
         log("debug", "sorting plugins finished", {
           elapsedMS: Date.now() - timeBefore,
         });
+        // An empty result while plugins were still queued means LOOT closed mid-sort (the
+        // 'already closed' catch above resolves to []), which is an interruption: keep the durable
+        // "sort owed" marker so the sort is retried on the next activation of the profile. A
+        // genuine sort (non-empty, or nothing to sort) satisfies the marker.
+        if (sorted.length > 0 || pluginNames.length === 0) {
+          const sortedProfileId = selectors.activeProfile(state)?.id;
+          if (sortedProfileId !== undefined) {
+            store.dispatch(actions.clearPendingPluginSort(sortedProfileId));
+          }
+          if (excluded.length > 0) {
+            reportSkippedInvalidPlugins(this.mExtensionApi, excluded);
+          }
+        }
       } else {
         // loot didn't return an error but an undefined result. Reviewing the code it doesn't
         // seem to be an error on our end, don't have a clue how to even investigate further.
@@ -273,33 +327,36 @@ class LootInterface {
       }
     } catch (err) {
       log("info", "loot failed", { error: err.message });
+      // sortPlugins is handed the full list (built from state, not the load result), so LOOT throws
+      // PluginNotLoaded for any plugin the load path had to drop. That error carries the offending
+      // plugin name as a structured field; otherwise parse the message for the
+      // "invalid plugin"/"invalid header" forms.
+      const invalidPlugins =
+        err.name === "PluginNotLoaded" && typeof err.plugin === "string" && err.plugin.length > 0
+          ? [err.plugin]
+          : invalidPluginsFromError(err.message);
+      const dropped = new Set(invalidPlugins.map((name) => name.toLowerCase()));
       if (err.message.startsWith("Cyclic interaction")) {
         this.reportCycle(err, loot);
-      } else if (err.message.endsWith("is not a valid plugin")) {
-        const pluginName = err.message.replace(/"([^"]*)" is not a valid plugin/, "$1");
-        const reportErr = () => {
-          this.mExtensionApi.sendNotification({
-            id: "loot-failed",
-            type: "warning",
-            message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
-              replace: { msg: err.message },
-              ns: NAMESPACE,
-            }),
-          });
-        };
-        try {
-          // You just can't sort with invalid plugins that are present in the
-          //  data folder.
-          await fs.statAsync(path.join(this.dataPath, pluginName));
-          reportErr();
-        } catch (fsErr) {
-          const idx = pluginNames.indexOf(pluginName);
-          if (idx !== -1) {
-            const newList = pluginNames.slice();
-            newList.splice(idx, 1);
-            return this.doSort(newList, gameMode, loot);
-          }
+      } else if (invalidPlugins.length > 0) {
+        const newList = pluginNames.filter((name) => !dropped.has(name.toLowerCase()));
+        if (newList.length < pluginNames.length) {
+          // LOOT refuses to sort the whole set when a plugin is corrupt, has an invalid header, or
+          // was never loaded. Drop those plugins and re-sort the rest; the skipped ones are
+          // reported once the sort succeeds (see the `excluded` handling in the success branch).
+          const removed = pluginNames.filter((name) => dropped.has(name.toLowerCase()));
+          log("warn", "excluding invalid plugins from sort", { plugins: removed });
+          return this.doSort(newList, gameMode, loot, [...excluded, ...removed]);
         }
+        // LOOT named plugins we didn't pass in, so dropping them can't help; report it.
+        this.mExtensionApi.sendNotification({
+          id: "loot-failed",
+          type: "warning",
+          message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
+            replace: { msg: err.message },
+            ns: NAMESPACE,
+          }),
+        });
       } else if (err.message.match(/The group "[^"]*" does not exist/)) {
         // A collection (or the user) assigned plugins to a LOOT group that no longer exists -
         // typically a masterlist group that was renamed or removed after the collection was
@@ -504,23 +561,46 @@ class LootInterface {
     const state = this.mExtensionApi.store.getState();
     const pluginList: IPlugins = state.session.plugins.pluginList;
 
-    try {
-      await loot.loadPluginsAsync(
-        plugins
-          .filter((id) => pluginList[id] !== undefined && pluginList[id].deployed)
-          .map((name) => name.toLowerCase()),
-        false,
-      );
-      pluginsLoaded = true;
-    } catch (err) {
-      if (err.message.toLowerCase() === "already closed") {
-        return;
+    // LOOT validates exactly the plugin paths we pass (it does not scan the data folder), so one
+    // corrupt/invalid plugin fails the whole loadPlugins call and nothing loads. Drop the named
+    // plugin(s) and retry so the valid ones load; collect the skipped ones for a single warning.
+    // The list strictly shrinks on each exclusion, so at most deployed.length + 1 attempts run.
+    const deployed = plugins.filter(
+      (id) => pluginList[id] !== undefined && pluginList[id].deployed,
+    );
+    let loadList = deployed;
+    const skippedInvalid: string[] = [];
+    for (let attempt = 0; attempt <= deployed.length && !pluginsLoaded; ++attempt) {
+      try {
+        await loot.loadPluginsAsync(
+          loadList.map((name) => name.toLowerCase()),
+          false,
+        );
+        pluginsLoaded = true;
+      } catch (err) {
+        if (err.message.toLowerCase() === "already closed") {
+          return;
+        }
+        const dropped = new Set(
+          invalidPluginsFromError(err.message).map((name) => name.toLowerCase()),
+        );
+        const remaining = loadList.filter((id) => !dropped.has(id.toLowerCase()));
+        if (remaining.length === loadList.length) {
+          // The failure can't be attributed to a plugin we passed in, so excluding won't help.
+          this.mExtensionApi.showErrorNotification("Failed to parse plugins", err, {
+            allowReport: false,
+            id: `loot-failed-to-parse`,
+          });
+          break;
+        }
+        const removed = loadList.filter((id) => dropped.has(id.toLowerCase()));
+        log("warn", "excluding invalid plugins from load", { plugins: removed });
+        skippedInvalid.push(...removed);
+        loadList = remaining;
       }
-
-      this.mExtensionApi.showErrorNotification("Failed to parse plugins", err, {
-        allowReport: false,
-        id: `loot-failed-to-parse`,
-      });
+    }
+    if (skippedInvalid.length > 0) {
+      reportSkippedInvalidPlugins(this.mExtensionApi, skippedInvalid);
     }
 
     const createEmpty = (): IPluginLoot => ({
