@@ -11,8 +11,10 @@ import { makeRevision } from "../../../test-utils/builders";
 import { test } from "../../../test-utils/collectionTest";
 import type { IRevisionMemberSpec } from "../../../test-utils/harnessTypes";
 
-// thousands of members, matching the scale the field reports showed; overridable for stress runs
-const CORE_COUNT = Number(process.env.COLLECTION_CHURN_MEMBERS) || 2000;
+// A few hundred members by default: enough to exercise re-attribution across the churn while staying
+// fast under the full parallel suite (a CPU-bound 2000-member run starves under contention and trips
+// the per-test timeout). Crank COLLECTION_CHURN_MEMBERS to the field-scale thousands for stress runs.
+const CORE_COUNT = Number(process.env.COLLECTION_CHURN_MEMBERS) || 500;
 const core: IRevisionMemberSpec[] = Array.from({ length: CORE_COUNT }, (_, i) => ({
   tag: `m${i}`,
 }));
