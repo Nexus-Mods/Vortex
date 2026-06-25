@@ -12,7 +12,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
+import { AlreadyDownloaded, DownloadIsHTML, InsufficientDiskSpace } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
@@ -183,6 +183,7 @@ import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
 import modName, { renderModReference } from "./util/modName";
 import queryGameId from "./util/queryGameId";
+import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
@@ -777,8 +778,8 @@ class InstallManager {
       return;
     }
 
-    // Check if this download is part of a collection installation
-    const collectionInfo = findCollectionByDownload(state, download, downloadId);
+    // Check if this download is part of a collection installation.
+    const collectionInfo = findCollectionByDownload(state, download);
     if (!collectionInfo) {
       return;
     }
@@ -826,6 +827,13 @@ class InstallManager {
         },
       );
     }
+
+    // Settle the member as failed on the collection session. A terminally failed download is not
+    // requeued, so without this the member stays on "downloading" while rendering "Download failed"
+    // - bucketed under the Downloading filter and missed by the Failed filter. Mirrors how
+    // handleDownloadSkipped settles a skipped member, then lets the phase advance past it.
+    this.writeCollectionSession(matchingRule.reference, { type: "status", status: "failed" });
+    this.maybeAdvancePhase(collectionId, api);
   }
 
   private handleDownloadSkipped(api: IExtensionApi, sourceModId: string, dep: IDependency) {
@@ -1089,6 +1097,9 @@ class InstallManager {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             return Promise.reject(new ArchiveBrokenError(path.basename(archivePath), critical));
+          }
+          if (errors.some((err) => this.isDiskFull(err))) {
+            return Promise.reject(new InsufficientDiskSpace(path.parse(tempPath).root));
           }
           return this.queryContinue(api, errors, archivePath);
         } else {
@@ -1980,6 +1991,18 @@ class InstallManager {
                       },
                     );
                     promiseCallback?.(errObj, null);
+                  } else if (err instanceof InsufficientDiskSpace) {
+                    return prom.then(() => {
+                      if (installContext !== undefined) {
+                        installContext.reportError(
+                          "Not enough disk space",
+                          "There is not enough free space on the drive to install this mod. " +
+                            "Free up space and try again.",
+                          false,
+                        );
+                      }
+                      promiseCallback?.(err, null);
+                    });
                   } else {
                     return prom
                       .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
@@ -2581,11 +2604,15 @@ class InstallManager {
             dep.reference,
           );
           const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
+          // A disk-full failure will not succeed on retry; settle it now so the member becomes
+          // terminally failed instead of cycling the retry budget while stuck on "installing".
+          const nonRetryable = unknownError instanceof InsufficientDiskSpace;
           const recovery = planDependencyErrorRecovery({
             installCanceled,
             ruleIgnored,
             isCanceled,
             hasRetriesLeft,
+            nonRetryable,
           });
           if (recovery.action === "requeue") {
             // A transient error OR a download cancelled as collateral while the install is still
@@ -3593,6 +3620,15 @@ class InstallManager {
     return patterns.some((pattern) => lowered.includes(pattern));
   }
 
+  // A disk-full extraction error is a genuine system failure, not archive damage: it must not be
+  // routed through the "archive damaged, continue?" prompt (whose Cancel yields a UserCanceled that
+  // leaves a collection member stuck non-terminal). Detected by message so it can be re-thrown as a
+  // real, ENOSPC-coded failure instead.
+  private isDiskFull(errorMessage: string): boolean {
+    const lowered = errorMessage.toLowerCase();
+    return lowered.includes("not enough space") || lowered.includes("enospc");
+  }
+
   private extractWithRetry(
     zip: Zip,
     archivePath: string,
@@ -3722,6 +3758,9 @@ class InstallManager {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
+          }
+          if (errors.some((err) => this.isDiskFull(err))) {
+            throw new InsufficientDiskSpace(path.parse(tempPath).root);
           }
           await this.queryContinue(api, errors, archivePath);
         }
@@ -5857,14 +5896,17 @@ class InstallManager {
       }
       return abort.signal.aborted
         ? Promise.reject(new UserCanceled(false))
-        : this.downloadDependencyAsync(
-            dep.reference,
-            api,
-            dep.lookupResults[0].value,
-            () => abort.signal.aborted,
-            dep.extra?.fileName,
-            parentCollectionId,
-          )
+        : reconcileOrphanedArchive(api, gameId, dep.extra?.fileName)
+            .then(() =>
+              this.downloadDependencyAsync(
+                dep.reference,
+                api,
+                dep.lookupResults[0].value,
+                () => abort.signal.aborted,
+                dep.extra?.fileName,
+                parentCollectionId,
+              ),
+            )
             .then((dlId) => {
               const idx = queuedDownloads.indexOf(dep.reference);
               queuedDownloads.splice(idx, 1);
