@@ -21,8 +21,9 @@
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
     "sbom": "pnpm node ./sbom.mjs",
-    "download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts",
-    "generate:unleash": "pnpm node src/unleash/trim-spec.mjs && pnpm exec openapi-typescript src/unleash/openapi-slim.json --immutable --output src/unleash/schema.d.ts && pnpm exec oxfmt ./src/unleash/*.json ./src/unleash/schema.d.ts"
+    "generate:unleash": "pnpm node src/unleash/trim-spec.mjs && pnpm exec openapi-typescript src/unleash/openapi-slim.json --immutable --output src/unleash/schema.d.ts && pnpm exec oxfmt ./src/unleash/*.json ./src/unleash/schema.d.ts",
+    "duckdb:download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts",
+    "duckdb:update-duckdb-lock": "pnpm tsx ./download-duckdb-extensions.ts --update-duckdb-lock"
   },
   "nx": {
     "targets": {
@@ -149,11 +150,16 @@
         ]
       },
       "download-duckdb-extensions": {
+        "executor": "nx:run-script",
+        "options": {
+          "script": "duckdb:download-duckdb-extensions"
+        },
         "cache": true,
         "inputs": [
           "default",
           "{projectRoot}/download-duckdb-extensions.ts",
-          "{projectRoot}/duckdb-extensions.json"
+          "{projectRoot}/duckdb-extensions.json",
+          "{projectRoot}/duckdb-extensions.lock.json"
         ],
         "outputs": [
           "{projectRoot}/build/duckdb-extensions/"

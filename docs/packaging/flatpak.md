@@ -2,9 +2,9 @@
 
 Use this page when you need to build, install, or bundle the Flatpak package.
 
-> [!WARNING]
-> Flatpak is broken right now.
-> `pnpm` support in Flatpak still needs fixing.
+> [!NOTE]
+> Flatpak dependency source generation uses upstream `flatpak-builder-tools`
+> `pnpm-lock.yaml` support.
 
 ## Flatpak Basics (Linux Packaging)
 

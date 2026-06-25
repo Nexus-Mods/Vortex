@@ -7,7 +7,11 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 
 from _flatpak_env import repo_root, run_command
-from flatpak_sources import sync_generated_nuget_sources, sync_generated_sources
+from flatpak_sources import (
+    sync_generated_duckdb_sources,
+    sync_generated_nuget_sources,
+    sync_generated_sources,
+)
 from update_metainfo_version import update_metainfo_version
 
 
@@ -46,10 +50,9 @@ def resolve_flatpak_paths(build_dir: str, manifest: str, repo: str) -> FlatpakPa
 
 def sync_flatpak_build_inputs(root: Path) -> None:
     sync_generated_sources(
-        lockfile=root / "yarn.lock",
+        lockfile=root / "pnpm-lock.yaml",
         output=root / "flatpak/generated-sources.json",
         hash_file=root / "flatpak/generated-sources.hash",
-        recursive=True,
     )
 
     sync_generated_nuget_sources(
@@ -61,6 +64,13 @@ def sync_flatpak_build_inputs(root: Path) -> None:
         freedesktop="25.08",
         destdir="flatpak-nuget-sources",
         runtime="linux-x64",
+    )
+
+    sync_generated_duckdb_sources(
+        lockfile=root / "src/main/duckdb-extensions.lock.json",
+        output=root / "flatpak/generated-duckdb-sources.json",
+        hash_file=root / "flatpak/generated-duckdb-sources.hash",
+        destdir="flatpak-duckdb-extensions",
     )
 
     update_metainfo_version(root)
