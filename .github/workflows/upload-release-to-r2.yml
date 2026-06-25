@@ -1,0 +1,31 @@
+name: Upload Release to R2
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v2.1.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    if: ${{ !github.event.release.prerelease || github.event_name == 'workflow_dispatch' }}
+    runs-on: platform-cluster
+    steps:
+      - name: Download release asset
+        run: gh release download ${{ github.event.release.tag_name || inputs.tag }} --pattern "vortex-setup-*.exe"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to R2
+        run: aws s3 cp $(ls vortex-setup-*.exe) s3://nexusmodsapp/ --endpoint-url "${{ secrets.NEXUSMODS_R2_ENDPOINT }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.NEXUSMODSAPP_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUSMODSAPP_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto

@@ -30,18 +30,15 @@ class SubPersistor implements IPersistor {
         ) ?? Promise.resolve([]);
     }
 
-    if (this.mWrapped.bulkSetItem) {
-      const wrappedBulkSet: (
-        items: ReadonlyArray<{ key: PersistorKey; value: string }>,
-      ) => PromiseLike<void> = this.mWrapped.bulkSetItem.bind(this.mWrapped);
+    const bulkSetItem = this.mWrapped.bulkSetItem?.bind(this.mWrapped);
+    if (bulkSetItem !== undefined) {
       this.bulkSetItem = (items) =>
-        wrappedBulkSet(items.map((it) => ({ key: [hive, ...it.key], value: it.value })));
+        bulkSetItem(items.map((it) => ({ key: [hive, ...it.key], value: it.value })));
     }
 
-    if (this.mWrapped.bulkRemoveItem) {
-      const wrappedBulkRemove: (keys: ReadonlyArray<PersistorKey>) => PromiseLike<void> =
-        this.mWrapped.bulkRemoveItem.bind(this.mWrapped);
-      this.bulkRemoveItem = (keys) => wrappedBulkRemove(keys.map((k) => [hive, ...k]));
+    const bulkRemoveItem = this.mWrapped.bulkRemoveItem?.bind(this.mWrapped);
+    if (bulkRemoveItem !== undefined) {
+      this.bulkRemoveItem = (keys) => bulkRemoveItem(keys.map((k) => [hive, ...k]));
     }
   }
 

@@ -22,6 +22,9 @@ E2E_NEXUS_PREMIUM_USER_USERNAME=NXMPremium
 E2E_NEXUS_PREMIUM_USER_PASSWORD=...
 ```
 
+Currently, for login to work, a VPN connection to the office network is required.
+Contact Platform Engineering if you need access credentials.
+
 Free-user creds cover login, upgrade, and some smoke tests. Premium-user creds
 are needed for specs that assert premium-only behaviour.
 

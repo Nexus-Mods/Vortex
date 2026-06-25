@@ -25,8 +25,8 @@ export function errorToReportableError(error: Error): ReportableError {
     message: error.message,
     stack: error.stack,
     allowReport: "allowReport" in error && !!error.allowReport,
-    details: Object.keys(error)
-      .map((key) => `${key}: ${error[key]}`)
+    details: Object.entries(error)
+      .map(([key, value]) => `${key}: ${value}`)
       .join("\n"),
   };
 }

@@ -182,8 +182,8 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
             <div>
               <Button
-                buttonType="tertiary"
-                filled="weak"
+                appearance="moderate"
+                brand="neutral"
                 leftIconPath={mdiArrowLeft}
                 size="sm"
                 onClick={onBack}
@@ -201,13 +201,11 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                 <div className="flex grow items-center gap-x-2">
                   <Typography className="font-semibold">{t("premium::banner::title")}</Typography>
 
-                  <Typography appearance="none" className="text-premium-strong">
-                    {t("premium::banner::subtitle")}
-                  </Typography>
+                  <Typography brand="premium">{t("premium::banner::subtitle")}</Typography>
                 </div>
               </div>
 
-              <Button buttonType="premium" size="sm" onClick={goPremium}>
+              <Button brand="premium" size="sm" onClick={goPremium}>
                 {t("premium::banner::button")}
               </Button>
             </div>
@@ -230,7 +228,7 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
                       components={{
                         modLink: (
                           <TypographyLink
-                            appearance="primary"
+                            brand="primary"
                             typographyType="inherit"
                             variant="secondary"
                             onClick={openRequiringModPage}
@@ -246,8 +244,8 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
                 <div className="shrink-0">
                   <Button
-                    buttonType="tertiary"
-                    filled="weak"
+                    appearance="moderate"
+                    brand="neutral"
                     leftIconPath={isHidden ? mdiEye : mdiEyeOff}
                     size="sm"
                     title={isHidden ? t("common:::unhide") : t("common:::hide")}
@@ -278,9 +276,9 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
 
             <div className="flex shrink-0 gap-x-2">
               <Button
-                buttonType="tertiary"
+                appearance="moderate"
+                brand="neutral"
                 disabled={givenFeedBack}
-                filled="weak"
                 leftIconPath={mdiThumbUp}
                 size="sm"
                 title={t("common:::helpful")}
@@ -288,9 +286,9 @@ function HealthCheckDetailPage({ mod, api, onBack, onDownloadMod }: IHealthCheck
               />
 
               <Button
-                buttonType="tertiary"
+                appearance="moderate"
+                brand="neutral"
                 disabled={givenFeedBack}
-                filled="weak"
                 leftIconPath={mdiThumbDown}
                 size="sm"
                 title={t("common:::not_helpful")}

@@ -80,6 +80,8 @@
     "minimist": "catalog:",
     "nx": "catalog:",
     "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "p-limit": "catalog:",
     "rimraf": "catalog:",
     "rolldown": "catalog:",

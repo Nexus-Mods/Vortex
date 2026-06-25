@@ -1,39 +1,52 @@
 import React, { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import type { ResponsiveScreenSizes, XOr } from "../../utils/types";
-import type { IconSize } from "../icon/Icon";
-import { Icon } from "../icon/Icon";
-import { type TypographyProps, type TypographyTypes, getTypographyStyles } from "./Typography";
+import { Icon, type IIconSize } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import type { ResponsiveScreenSizes, XOr } from "@/ui/utils/types";
 
-type TypographyButtonTypes = TypographyTypes | "inherit";
+import {
+  getTypographyColourClass,
+  getTypographyStyles,
+  type ITypographyAppearance,
+  type ITypographyColour,
+  type ITypographyProps,
+  type ITypographyTypes,
+} from "./Typography";
 
-type TypographyButtonTypeObjectDefault = {
-  [key in Extract<ResponsiveScreenSizes, "default">]: TypographyButtonTypes;
+type ITypographyLinkTypes = ITypographyTypes | "inherit";
+
+type ITypographyLinkTypeObjectDefault = {
+  [key in Extract<ResponsiveScreenSizes, "default">]: ITypographyLinkTypes;
 };
-type TypographyButtonTypeObject = TypographyButtonTypeObjectDefault & {
-  [key in Exclude<ResponsiveScreenSizes, "default">]?: TypographyButtonTypes;
+type ITypographyLinkTypeObject = ITypographyLinkTypeObjectDefault & {
+  [key in Exclude<ResponsiveScreenSizes, "default">]?: ITypographyLinkTypes;
 };
 
-export type TypographyButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /**
-   * The text colour
-   */
-  appearance?: "info" | "premium" | "primary" | "moderate" | "strong" | "subdued" | "none";
-  iconSize?: IconSize;
+export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  iconSize?: IIconSize;
   leftIconPath?: string;
   ref?: Ref<HTMLButtonElement>;
   rightIconPath?: string;
-  typographyType?: TypographyButtonTypes | TypographyButtonTypeObject;
+  typographyType?: ITypographyLinkTypes | ITypographyLinkTypeObject;
   variant?: "primary" | "secondary" | "none";
-} & XOr<{ children?: string }, { customContent: ReactNode }>;
+} & XOr<{ children?: string }, { customContent: ReactNode }> &
+  ITypographyColour;
 
-const ButtonContent = ({
+// On hover, the colour shifts one step toward `strong`; `strong` (already the
+// lightest) dims to `moderate` instead, so every appearance gives feedback.
+const hoverAppearanceMap: Record<ITypographyAppearance, ITypographyAppearance> = {
+  weak: "subdued",
+  subdued: "moderate",
+  moderate: "strong",
+  strong: "moderate",
+};
+
+const LinkContent = ({
   iconSize,
   label,
   leftIconPath,
   rightIconPath,
-}: Pick<TypographyButtonProps, "iconSize" | "leftIconPath" | "rightIconPath"> & {
+}: Pick<ITypographyLinkProps, "iconSize" | "leftIconPath" | "rightIconPath"> & {
   label?: string;
 }) => (
   <>
@@ -48,8 +61,9 @@ const ButtonContent = ({
 export const TypographyLink = ({
   appearance = "strong",
   "aria-disabled": ariaDisabled,
+  brand = "neutral",
   children,
-  className: additionalClasses = "",
+  className,
   customContent,
   disabled,
   iconSize,
@@ -59,47 +73,47 @@ export const TypographyLink = ({
   typographyType = "body-md",
   variant = "primary",
   ...props
-}: TypographyButtonProps) => {
-  const variantClasses: Record<Exclude<TypographyButtonProps["variant"], undefined>, string> = {
+}: ITypographyLinkProps) => {
+  const isDisabled = ariaDisabled === true || ariaDisabled === "true" || !!disabled;
+
+  const variantClasses: Record<Exclude<ITypographyLinkProps["variant"], undefined>, string> = {
     none: "",
     primary: "nxm-link-variant-primary",
     secondary: "nxm-link-variant-secondary",
   };
 
-  const appearanceClasses: Record<
-    Exclude<TypographyButtonProps["appearance"], undefined>,
-    string
-  > = {
-    none: "",
-    info: "nxm-link-info",
-    premium: "nxm-link-premium",
-    primary: "nxm-link-primary",
-    moderate: "nxm-link-moderate",
-    strong: "nxm-link-strong",
-    subdued: "nxm-link-subdued",
-  };
+  const hoverColourClass =
+    !isDisabled && brand !== "none" && appearance !== "inverted"
+      ? `hover:${getTypographyColourClass(brand, hoverAppearanceMap[appearance])}`
+      : "";
 
-  const className = joinClasses(
-    [
-      "nxm-link",
-      variantClasses[variant],
-      appearanceClasses[appearance],
-      ...(typographyType !== "inherit"
-        ? getTypographyStyles({
-            typographyType: typographyType as TypographyProps["typographyType"],
-          })
-        : []),
-      additionalClasses,
-    ],
-    {
-      "nxm-link-disabled": ariaDisabled === true || ariaDisabled === "true" || disabled,
-    },
-  );
+  // `inherit` opts out of the typography sizing; otherwise apply the shared styles.
+  const typographyClasses =
+    typographyType === "inherit"
+      ? []
+      : getTypographyStyles({
+          typographyType: typographyType as ITypographyProps["typographyType"],
+        });
 
   return (
-    <button className={className} disabled={disabled} ref={ref} {...props}>
+    <button
+      className={joinClasses(
+        [
+          "nxm-link",
+          variantClasses[variant],
+          getTypographyColourClass(brand, appearance),
+          hoverColourClass,
+          ...typographyClasses,
+          className,
+        ],
+        { "nxm-link-disabled": isDisabled },
+      )}
+      disabled={disabled}
+      ref={ref}
+      {...props}
+    >
       {customContent ?? (
-        <ButtonContent
+        <LinkContent
           iconSize={iconSize}
           label={children}
           leftIconPath={leftIconPath}

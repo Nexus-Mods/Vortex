@@ -92,7 +92,10 @@ export type {
 } from "../extensions/history_management/types";
 export type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 export type { IEnableOptions } from "../extensions/profile_management/actions/profiles";
-export type { IValidateKeyData } from "../extensions/nexus_integration/types/IValidateKeyData";
+export type {
+  IMembership,
+  IValidateKeyData,
+} from "../extensions/nexus_integration/types/IValidateKeyData";
 export type {
   ILoadOrderDisplayItem,
   SortType,

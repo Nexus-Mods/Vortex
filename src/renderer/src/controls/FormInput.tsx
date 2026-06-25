@@ -41,7 +41,7 @@ interface IComponentState {
  * the end of the line when using controlled input.
  */
 class FormInput extends React.PureComponent<IProps, IComponentState> {
-  private mDebouncer: Debouncer;
+  private mDebouncer: Debouncer<[string]>;
   private mLastCommitted: any;
 
   constructor(props: IProps) {

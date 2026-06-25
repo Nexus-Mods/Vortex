@@ -1,11 +1,3 @@
-/**
- * Button Component
- * Adapted from web team's "next" project for Vortex
- *
- * Provides a consistent button system with multiple types, sizes, and states.
- * Uses shared CSS classes from button.css (nxm-button-*) for styling.
- */
-
 import { mdiCircleOutline, mdiLoading } from "@mdi/js";
 import React, {
   type ButtonHTMLAttributes,
@@ -20,83 +12,21 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
-export type ButtonType = "primary" | "secondary" | "tertiary" | "success" | "premium";
+export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "premium";
+export type IButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
 
-type BaseButtonProps = {
-  buttonType?: ButtonType;
-  filled?: "strong" | "weak";
+export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  brand?: IButtonBrand;
+  appearance?: IButtonAppearance;
   isLoading?: boolean;
   size?: "xs" | "sm" | "md";
   children?: string;
   customContent?: ReactNode;
-} & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
-  XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
-
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   disabled?: boolean;
   href?: never;
   isExternal?: never;
-} & BaseButtonProps;
-
-const getButtonClasses = ({
-  buttonType,
-  disabled,
-  filled,
-  iconOnly,
-  size,
-}: {
-  buttonType: ButtonType;
-  disabled: boolean;
-  filled?: ButtonProps["filled"];
-  iconOnly: boolean;
-  size: Required<ButtonProps>["size"];
-}) => {
-  const classes = [
-    "nxm-button",
-    {
-      "nxm-button-disabled": disabled,
-      "nxm-button-icon-only": iconOnly,
-      "nxm-button-xs": size === "xs",
-      "nxm-button-sm": size === "sm",
-    },
-  ];
-
-  switch (buttonType) {
-    case "primary":
-      classes.push("nxm-button-primary");
-      break;
-    case "secondary":
-      if (filled) {
-        classes.push(
-          filled === "strong"
-            ? "nxm-button-secondary-filled-strong"
-            : "nxm-button-secondary-filled-weak",
-        );
-      } else {
-        classes.push("nxm-button-secondary");
-      }
-      break;
-    case "tertiary":
-      if (filled) {
-        classes.push(
-          filled === "strong"
-            ? "nxm-button-tertiary-filled-strong"
-            : "nxm-button-tertiary-filled-weak",
-        );
-      } else {
-        classes.push("nxm-button-tertiary");
-      }
-      break;
-    case "success":
-      classes.push("nxm-button-success");
-      break;
-    case "premium":
-      classes.push("nxm-button-premium");
-      break;
-  }
-
-  return classes;
-};
+} & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
+  XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
 
 const ButtonIcon = ({
   icon,
@@ -132,16 +62,16 @@ const ButtonIcon = ({
   return null;
 };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
   (
     {
       "aria-disabled": ariaDisabled,
-      buttonType = "primary",
+      appearance = "strong",
+      brand = "primary",
       children,
       className,
       customContent,
       disabled,
-      filled,
       isExternal,
       isLoading = false,
       leftIcon,
@@ -149,25 +79,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       rightIconPath,
       size = "md",
+      type,
       ...props
     },
     ref,
   ) => (
     <button
       aria-disabled={ariaDisabled}
-      className={joinClasses([
-        ...getButtonClasses({
-          buttonType,
-          disabled: !!disabled || !!ariaDisabled || isLoading,
-          filled,
-          iconOnly: !customContent && !children,
-          size,
-        }),
-        className || "",
-      ])}
+      className={joinClasses(
+        ["nxm-button", `nxm-button-${brand}`, `nxm-button-${appearance}`, className],
+        {
+          "nxm-button-disabled": !!disabled || !!ariaDisabled || isLoading,
+          "nxm-button-icon-only": !customContent && !children,
+          "nxm-button-xs": size === "xs",
+          "nxm-button-sm": size === "sm",
+        },
+      )}
       disabled={disabled || isLoading}
       ref={ref}
-      type={props.type ?? "button"}
+      type={type ?? "button"}
       {...props}
     >
       {customContent ?? (

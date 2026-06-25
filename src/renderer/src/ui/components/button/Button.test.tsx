@@ -45,9 +45,14 @@ describe("Button", () => {
       expect(getButton()).toHaveAttribute("type", "button");
     });
 
-    it("applies primary class by default", () => {
+    it("applies primary brand class by default", () => {
       render(<Button>Click</Button>);
       expect(getButton()).toHaveClass("nxm-button-primary");
+    });
+
+    it("applies strong appearance class by default", () => {
+      render(<Button>Click</Button>);
+      expect(getButton()).toHaveClass("nxm-button-strong");
     });
 
     it("applies nxm-button base class always", () => {
@@ -56,60 +61,37 @@ describe("Button", () => {
     });
   });
 
-  describe("buttonType", () => {
+  describe("brand", () => {
     it.each([
       ["primary", "nxm-button-primary"],
+      ["info", "nxm-button-info"],
+      ["neutral", "nxm-button-neutral"],
       ["success", "nxm-button-success"],
       ["premium", "nxm-button-premium"],
-    ] as const)('applies correct class for buttonType="%s"', (type, cls) => {
-      render(<Button buttonType={type}>Click</Button>);
+    ] as const)('applies correct class for brand="%s"', (brand, cls) => {
+      render(<Button brand={brand}>Click</Button>);
+      expect(getButton()).toHaveClass(cls);
+    });
+  });
+
+  describe("appearance", () => {
+    it.each([
+      ["weak", "nxm-button-weak"],
+      ["subdued", "nxm-button-subdued"],
+      ["moderate", "nxm-button-moderate"],
+      ["strong", "nxm-button-strong"],
+    ] as const)('applies correct class for appearance="%s"', (appearance, cls) => {
+      render(<Button appearance={appearance}>Click</Button>);
       expect(getButton()).toHaveClass(cls);
     });
 
-    it("applies secondary class when no filled prop", () => {
-      render(<Button buttonType="secondary">Click</Button>);
-      expect(getButton()).toHaveClass("nxm-button-secondary");
-    });
-
-    it("applies secondary filled-strong class", () => {
+    it("combines brand and appearance classes", () => {
       render(
-        <Button buttonType="secondary" filled="strong">
+        <Button appearance="subdued" brand="neutral">
           Click
         </Button>,
       );
-      expect(getButton()).toHaveClass("nxm-button-secondary-filled-strong");
-    });
-
-    it("applies secondary filled-weak class", () => {
-      render(
-        <Button buttonType="secondary" filled="weak">
-          Click
-        </Button>,
-      );
-      expect(getButton()).toHaveClass("nxm-button-secondary-filled-weak");
-    });
-
-    it("applies tertiary class when no filled prop", () => {
-      render(<Button buttonType="tertiary">Click</Button>);
-      expect(getButton()).toHaveClass("nxm-button-tertiary");
-    });
-
-    it("applies tertiary filled-strong class", () => {
-      render(
-        <Button buttonType="tertiary" filled="strong">
-          Click
-        </Button>,
-      );
-      expect(getButton()).toHaveClass("nxm-button-tertiary-filled-strong");
-    });
-
-    it("applies tertiary filled-weak class", () => {
-      render(
-        <Button buttonType="tertiary" filled="weak">
-          Click
-        </Button>,
-      );
-      expect(getButton()).toHaveClass("nxm-button-tertiary-filled-weak");
+      expect(getButton()).toHaveClass("nxm-button-neutral", "nxm-button-subdued");
     });
   });
 

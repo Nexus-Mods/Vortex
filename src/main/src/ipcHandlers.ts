@@ -74,7 +74,7 @@ export function init() {
     // which Electron preserves in app.getPath("userData"), producing mixed
     // separators that break symlink detection (readlink returns OS-normalized paths).
     for (const [key, value] of Object.entries(paths)) {
-      paths[key] = path.normalize(value);
+      paths[key as keyof VortexPaths] = path.normalize(value);
     }
 
     return paths;
@@ -105,7 +105,7 @@ export function init() {
   function selfCL(_udPath: string | undefined): [string, string[]] {
     // The "-d" flag is required so that when Windows appends the NXM URL to the command line,
     // it becomes "-d nxm://..." which commander parses as "--download nxm://..."
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === "development" && process.argv[1]) {
       // Use absolute path for the app entry point - process.argv[1] may be relative (e.g. ".")
       // and would fail when launched from a different working directory (e.g. C:\WINDOWS\system32)
       const appPath = path.resolve(process.argv[1]);
@@ -179,7 +179,7 @@ export function init() {
     },
   );
 
-  betterIpcMain.handle("app:exit", (_event: IpcMainInvokeEvent, exitCode: number) => {
+  betterIpcMain.handle("app:exit", (_event, exitCode) => {
     app.exit(exitCode);
   });
 
@@ -536,12 +536,12 @@ export function init() {
   betterIpcMain.handle("redux:getState", () => {
     const getReduxState = (global as GlobalWithRedux).getReduxState;
     if (typeof getReduxState === "function") {
-      return getReduxState();
+      return Promise.resolve(getReduxState());
     }
-    return undefined;
+    return Promise.resolve(undefined);
   });
 
-  betterIpcMain.handle("redux:getStateMsgpack", (_event: IpcMainInvokeEvent, idx: number) => {
+  betterIpcMain.handle("redux:getStateMsgpack", (_event, idx) => {
     const getReduxStateMsgpack = (global as GlobalWithRedux).getReduxStateMsgpack;
     if (typeof getReduxStateMsgpack === "function") {
       return getReduxStateMsgpack(idx ?? 0);
@@ -580,35 +580,34 @@ export function init() {
   // Menu operations
   // ============================================================================
 
-  betterIpcMain.handle(
-    "menu:setApplicationMenu",
-    (event: IpcMainInvokeEvent, template: SerializableMenuItem[]) => {
-      const processTemplate = (
-        items: SerializableMenuItem[],
-      ): Electron.MenuItemConstructorOptions[] => {
-        return items.map((item): Electron.MenuItemConstructorOptions => {
-          const processed: Electron.MenuItemConstructorOptions = { ...item };
+  betterIpcMain.handle("menu:setApplicationMenu", (event, template) => {
+    const processTemplate = (
+      items: SerializableMenuItem[],
+    ): Electron.MenuItemConstructorOptions[] => {
+      return items.map((item): Electron.MenuItemConstructorOptions => {
+        const processed: Electron.MenuItemConstructorOptions = {
+          ...item,
+        } as Electron.MenuItemConstructorOptions;
 
-          // If item has an ID (from renderer's processMenuTemplate), add a click handler
-          if (item.id) {
-            processed.click = () => {
-              event.sender.send("menu:click", item.id);
-            };
-          }
+        // If item has an ID (from renderer's processMenuTemplate), add a click handler
+        if (item.id) {
+          processed.click = () => {
+            event.sender.send("menu:click", item.id);
+          };
+        }
 
-          // Process submenus recursively
-          if (item.submenu && Array.isArray(item.submenu)) {
-            processed.submenu = processTemplate(item.submenu);
-          }
+        // Process submenus recursively
+        if (item.submenu && Array.isArray(item.submenu)) {
+          processed.submenu = processTemplate(item.submenu);
+        }
 
-          return processed;
-        });
-      };
+        return processed;
+      });
+    };
 
-      const menu = Menu.buildFromTemplate(processTemplate(template));
-      Menu.setApplicationMenu(menu);
-    },
-  );
+    const menu = Menu.buildFromTemplate(processTemplate(template as SerializableMenuItem[]));
+    Menu.setApplicationMenu(menu);
+  });
 
   // ============================================================================
   // Power save blocker

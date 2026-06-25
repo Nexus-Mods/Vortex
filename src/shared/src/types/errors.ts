@@ -114,7 +114,7 @@ export class ProcessCanceled extends Error {
     this.mExtraInfo = extraInfo;
   }
 
-  public get extraInfo(): any {
+  public get extraInfo(): unknown {
     return this.mExtraInfo;
   }
 }

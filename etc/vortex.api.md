@@ -797,8 +797,8 @@ function deBOM(input: string): string;
 // Warning: (ae-forgotten-export) The symbol "GenericDebouncer" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-class Debouncer extends GenericDebouncer<number, typeof window.setTimeout, typeof window.clearTimeout> {
-    constructor(func: (...args: any[]) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
+class Debouncer<Args extends unknown[] = unknown[]> extends GenericDebouncer<number, typeof window.setTimeout, typeof window.clearTimeout, Args> {
+    constructor(func: (...args: Args) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
 }
 
 // @public
@@ -2975,6 +2975,16 @@ interface IMainPageOptions {
     visible?: () => boolean;
 }
 
+// @public
+interface IMembership {
+    // (undocumented)
+    isLifetime: boolean;
+    // (undocumented)
+    isPremium: boolean;
+    // (undocumented)
+    isSupporter: boolean;
+}
+
 // @public (undocumented)
 interface IMergeFilter {
     // (undocumented)
@@ -4070,7 +4080,7 @@ interface IStateVerifier {
     // (undocumented)
     noUndefined?: boolean;
     // (undocumented)
-    repair?: (input: any, def: any) => any;
+    repair?: (input: any, def: any, context?: IVerifierRepairContext) => any;
     // (undocumented)
     required?: boolean;
     // (undocumented)
@@ -4383,13 +4393,9 @@ interface IUser {
 }
 
 // @public
-interface IValidateKeyData {
+interface IValidateKeyData extends Pick<IMembership, "isPremium" | "isSupporter"> {
     // (undocumented)
     email: string;
-    // (undocumented)
-    isPremium: boolean;
-    // (undocumented)
-    isSupporter: boolean;
     // (undocumented)
     name: string;
     // (undocumented)
@@ -4402,6 +4408,16 @@ interface IValidateKeyData {
 interface IValidationResult {
     // (undocumented)
     invalid: IInvalidResult[];
+}
+
+// @public (undocumented)
+interface IVerifierRepairContext {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    parent?: unknown;
+    // (undocumented)
+    parentKey?: string;
 }
 
 // @public (undocumented)
@@ -4864,7 +4880,7 @@ type ProblemSeverity = "warning" | "error" | "fatal";
 class ProcessCanceled extends Error {
     constructor(message: string, extraInfo?: unknown);
     // (undocumented)
-    get extraInfo(): any;
+    get extraInfo(): unknown;
 }
 
 // @public (undocumented)
@@ -6165,6 +6181,7 @@ declare namespace types {
         IProfile,
         IProfileMod,
         IEnableOptions,
+        IMembership,
         IValidateKeyData,
         ILoadOrderDisplayItem,
         SortType,
@@ -6244,6 +6261,7 @@ declare namespace types {
         IApiFuncOptions,
         IExtensionApiExtension,
         IExtensionApi,
+        IVerifierRepairContext,
         IStateVerifier,
         VerifierDrop,
         VerifierDropParent,

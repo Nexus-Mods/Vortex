@@ -28,6 +28,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @tailwindcss/cli | 4.3.0 |
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
+| @vortex/nexus-api-v3 | link:../../packages/nexus-api-v3 |
 | bbcode-to-react | 0.2.11 |
 | big.js | 5.2.2 |
 | bluebird | 3.7.2 |
@@ -76,6 +77,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | node-7z | 0.8.1 |
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
+| openapi-fetch | 0.17.0 |
 | p-queue | 9.3.0 |
 | packery | 2.1.2 |
 | permissions | 2.1.0 |

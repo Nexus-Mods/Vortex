@@ -21,9 +21,9 @@ export class ProgressReporter {
   #chunkProgress: Map<number, ChunkProgress> = new Map();
   #progress: Progress = { bytesReceived: 0, bytesWritten: 0 };
 
-  public size: number | null = null;
-  public etag: string | null = null;
-  public fileName: string | null = null;
+  public size: number | undefined = undefined;
+  public etag: string | undefined = undefined;
+  public fileName: string | undefined = undefined;
 
   public get isChunked(): boolean {
     return this.#isChunked;
@@ -46,7 +46,7 @@ export class ProgressReporter {
     return chunkProgress;
   }
 
-  public init(size: number | null): Progress {
+  public init(size: number | undefined): Progress {
     this.size = size;
     this.#isChunked = false;
 

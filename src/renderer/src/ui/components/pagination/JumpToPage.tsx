@@ -1,15 +1,16 @@
 import React, { useState, type FormEvent } from "react";
 
-import { Button } from "../button/Button";
-import { Input } from "../form/input/Input";
-import type { PaginationProps } from "./Pagination";
+import { Button } from "@/ui/components/button/Button";
+import { Input } from "@/ui/components/form/input/Input";
+
+import type { IPaginationProps } from "./Pagination";
 
 export const JumpToPage = ({
   currentPage,
   onPaginationUpdate,
   recordsPerPage,
   totalPages,
-}: Pick<PaginationProps, "currentPage" | "onPaginationUpdate" | "recordsPerPage"> & {
+}: Pick<IPaginationProps, "currentPage" | "onPaginationUpdate" | "recordsPerPage"> & {
   totalPages: number;
 }) => {
   const [page, setPage] = useState(currentPage);
@@ -54,7 +55,13 @@ export const JumpToPage = ({
         }}
       />
 
-      <Button aria-disabled={!isValid} buttonType="secondary" filled="weak" size="sm" type="submit">
+      <Button
+        aria-disabled={!isValid}
+        brand="neutral"
+        appearance="moderate"
+        size="sm"
+        type="submit"
+      >
         Go
       </Button>
     </form>

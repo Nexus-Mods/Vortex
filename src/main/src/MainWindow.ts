@@ -11,7 +11,6 @@ import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";
-import type TrayIcon from "./TrayIcon";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
@@ -70,8 +69,8 @@ class MainWindow {
   // timers used to prevent window resize/move from constantly causing writes to the
   // store
   private mResizeDebouncer: Debouncer;
-  private mMoveDebouncer: Debouncer;
-  private mShown: boolean;
+  private mMoveDebouncer: Debouncer<[number, number]>;
+  private mShown: boolean = false;
   private mInspector: boolean;
   private mInitialWindowSettings: IWindow | null = null;
   private mRendererPid: number | undefined;
@@ -95,7 +94,7 @@ class MainWindow {
       return Promise.resolve();
     }, 500);
 
-    this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
+    this.mMoveDebouncer = new Debouncer((x, y) => {
       if (this.mWindow !== null) {
         this.sendWindowEvent("window:moved", x, y);
       }
@@ -283,13 +282,6 @@ class MainWindow {
     });
   }
 
-  public connectToTray(tray: TrayIcon) {
-    if (this.mWindow === null) {
-      return;
-    }
-    tray.setMainWindow(this.mWindow);
-  }
-
   public show(maximized: boolean, startMinimized?: boolean) {
     this.mShown = true;
     if (this.mWindow) {
@@ -429,7 +421,8 @@ class MainWindow {
     this.mWindow.on("move", () => {
       if (this.mWindow?.isMaximized?.() === false) {
         const pos: number[] = this.mWindow.getPosition();
-        this.mMoveDebouncer.schedule(undefined, pos[0], pos[1]);
+        const [x, y] = pos;
+        this.mMoveDebouncer.schedule(undefined, x ?? 0, y ?? 0);
       }
     });
   }

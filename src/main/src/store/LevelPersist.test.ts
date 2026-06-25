@@ -10,7 +10,7 @@ const SEPARATOR = "###";
 
 function createMockConnection() {
   return {
-    run: vi.fn().mockResolvedValue(undefined),
+    run: vi.fn<(sql: string, params?: unknown[]) => Promise<void>>().mockResolvedValue(undefined),
     runAndReadAll: vi.fn().mockResolvedValue({ getRows: () => [] }),
   };
 }
@@ -40,7 +40,7 @@ describe("LevelPersist.setItem", () => {
 
     await persist.setItem(["a"], "v");
 
-    const sqls = connection.run.mock.calls.map((c) => c[0] as string);
+    const sqls = connection.run.mock.calls.map((c) => c[0]);
     expect(sqls).not.toContainEqual(expect.stringMatching(/BEGIN/i));
     expect(sqls).not.toContainEqual(expect.stringMatching(/COMMIT/i));
   });
@@ -87,7 +87,7 @@ describe("LevelPersist.bulkSetItem", () => {
     ]);
 
     expect(connection.run).toHaveBeenCalledTimes(1);
-    const [sql, params] = connection.run.mock.calls[0];
+    const [sql, params] = connection.run.mock.calls[0]!;
     expect(sql).toBe("INSERT INTO db.kv VALUES ($1, $2), ($3, $4), ($5, $6)");
     expect(params).toEqual(["a", "1", "b", "2", "c", "3"]);
   });
@@ -97,7 +97,7 @@ describe("LevelPersist.bulkSetItem", () => {
 
     await persist.bulkSetItem([{ key: ["settings", "window", "x"], value: "42" }]);
 
-    const params = connection.run.mock.calls[0][1] as string[];
+    const params = connection.run.mock.calls[0]![1] as string[];
     expect(params[0]).toBe(`settings${SEPARATOR}window${SEPARATOR}x`);
   });
 
@@ -110,11 +110,11 @@ describe("LevelPersist.bulkSetItem", () => {
     }));
     await persist.bulkSetItem(items);
 
-    const sql = connection.run.mock.calls[0][0] as string;
+    const sql = connection.run.mock.calls[0]![0];
     const placeholders = sql.match(/\$\d+/g) ?? [];
     expect(placeholders.length).toBe(200); // 2 per item
 
-    const params = connection.run.mock.calls[0][1] as string[];
+    const params = connection.run.mock.calls[0]![1] as string[];
     expect(params.length).toBe(200);
     expect(params[0]).toBe("k0");
     expect(params[1]).toBe("v0");
@@ -138,7 +138,7 @@ describe("LevelPersist.bulkRemoveItem", () => {
     await persist.bulkRemoveItem([["a"], ["b"], ["c"]]);
 
     expect(connection.run).toHaveBeenCalledTimes(1);
-    const [sql, params] = connection.run.mock.calls[0];
+    const [sql, params] = connection.run.mock.calls[0]!;
     expect(sql).toBe(
       "DELETE FROM db.kv WHERE key = $1 OR starts_with(key, $2) " +
         "OR key = $3 OR starts_with(key, $4) " +
@@ -152,7 +152,7 @@ describe("LevelPersist.bulkRemoveItem", () => {
 
     await persist.bulkRemoveItem([["settings", "window"]]);
 
-    const params = connection.run.mock.calls[0][1] as string[];
+    const params = connection.run.mock.calls[0]![1] as string[];
     expect(params).toEqual([
       `settings${SEPARATOR}window`,
       `settings${SEPARATOR}window${SEPARATOR}`,

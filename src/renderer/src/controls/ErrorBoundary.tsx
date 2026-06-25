@@ -5,7 +5,7 @@ import { Alert, Button } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 
 import { getApplication } from "../util/application";
-import { didIgnoreError, isOutdated } from "../util/errorHandling";
+import { didIgnoreError, isOutdated, reportRenderError } from "../util/errorHandling";
 import { genHash } from "../util/genHash";
 import { renderError } from "../util/message";
 import { ComponentEx, translate } from "./ComponentEx";
@@ -60,6 +60,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    reportRenderError(error, errorInfo);
     if (this.props.canDisplayError === false) {
       this.context.api.sendNotification({
         type: "error",

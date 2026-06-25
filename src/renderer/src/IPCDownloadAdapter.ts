@@ -25,6 +25,7 @@ import {
   initDownload,
   pauseDownload,
   removeDownload,
+  removeDownloadSilent,
   setDownloadFilePath,
   setDownloadHash,
   setDownloadInterrupted,
@@ -33,7 +34,9 @@ import {
   setDownloadSpeed,
 } from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
+import type { IDownload } from "./extensions/download_management/types/IDownload";
 import { knownGames } from "./extensions/gamemode_management/selectors";
+import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
 import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
 import { convertGameIdReverse } from "./extensions/nexus_integration/util/convertGameId";
 import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
@@ -77,6 +80,22 @@ function toInternalGameId(api: IExtensionApi, gameId: string | undefined): strin
   if (gameId === undefined) return undefined;
   const state = api.getState();
   return convertGameIdReverse(knownGames(state), gameId) || gameId;
+}
+
+/**
+ * Expand a download's game id to also include every known game that declares it as a
+ * compatible download source via `details.compatibleDownloads`
+ */
+export function expandCompatibleGameIds(
+  games: IGameStored[],
+  gameId: string | undefined,
+): Array<string | undefined> {
+  const compatible = games
+    .filter((game) =>
+      ((game.details?.compatibleDownloads as string[] | undefined) ?? []).includes(gameId),
+    )
+    .map((game) => game.id);
+  return Array.from(new Set([gameId, ...compatible]));
 }
 
 type StoredDownloadInfo = {
@@ -234,12 +253,31 @@ export class IPCDownloadAdapter {
           this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
         });
       } else {
-        log("debug", "interrupted download has no checkpoint, marking paused", {
-          id,
+        // Without a checkpoint there is no record of which byte ranges completed
+        // (chunks download in parallel, so the partial file may have holes) nor
+        // the etag needed to validate it, so the download cannot be resumed. The
+        // resolved CDN url is also likely expired by now. Discard the stale record
+        // and its unusable partial file so the collection installer (or the user)
+        // re-requests a fresh download instead of attempting a resume that is
+        // guaranteed to fail with "No checkpoint stored for download <id>".
+        log("debug", "interrupted download has no checkpoint, discarding", { id });
+        this.#discardStaleDownload(id, download).catch((err) => {
+          log("error", "failed to discard stale download", { id, err });
         });
-        this.#api.store.dispatch(setDownloadInterrupted(id, download.received));
       }
     }
+  }
+
+  async #discardStaleDownload(downloadId: string, download: IDownload): Promise<void> {
+    if (download.localPath !== undefined) {
+      const state = this.#api.getState();
+      const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(state));
+      const dlPath = downloadPathForGame(state, gameId);
+      await rm(path.join(dlPath, download.localPath), { force: true });
+    }
+    // Silent: this is automatic startup cleanup, not a user-initiated removal,
+    // so it shouldn't raise a "downloads removed" toast.
+    this.#api.store.dispatch(removeDownloadSilent(downloadId));
   }
 
   #emitAnalytics(
@@ -257,7 +295,7 @@ export class IPCDownloadAdapter {
     // Mod downloads triggered by a collection install carry the parent collection's id
     // under `modInfo.nexus.parentCollectionId` (see InstallManager.downloadURL).
     // Cast narrows away the `[key: string]: any` index signature on nexus.
-    const parentCollectionId = download?.modInfo?.nexus?.parentCollectionId as string | undefined;
+    const parentCollectionId = download?.modInfo?.nexus?.parentCollectionId;
     const modCollectionId =
       isCollection || parentCollectionId === undefined ? null : parentCollectionId;
 
@@ -472,6 +510,11 @@ export class IPCDownloadAdapter {
     const gameId = toInternalGameId(this.#api, modInfo.game ?? activeGameId(state));
     const dlPath = downloadPathForGame(state, gameId);
 
+    // Include games that can consume this download (e.g. Skyrim VR <- skyrimse) so
+    // the install handler targets the actively managed game rather than the base
+    // game. See expandCompatibleGameIds.
+    const gameIds = expandCompatibleGameIds(knownGames(state), gameId);
+
     // The per-game subfolder may not exist yet - ensureDownloadsDirectory only
     // creates the active game's folder, but downloads can target any game
     // (SITE_ID extension downloads, compatible domains, collection downloads, etc.).
@@ -558,7 +601,7 @@ export class IPCDownloadAdapter {
 
       // Create the Redux record. nexus_integration's onChangeDownloads watches
       // downloads.files and triggers metadata enrichment when nexus.ids is present.
-      this.#api.store.dispatch(initDownload(downloadId, rawUrls, modInfo, [gameId]));
+      this.#api.store.dispatch(initDownload(downloadId, rawUrls, modInfo, gameIds));
       // Set localPath to the temp name so the UI has something to display.
       this.#api.store.dispatch(setDownloadFilePath(downloadId, tempName));
       // All IPC downloads support pause via checkpoint. DownloadView checks

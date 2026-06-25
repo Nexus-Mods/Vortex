@@ -359,9 +359,9 @@ describe("computeErrorFingerprint", () => {
 // isEnvironmentalError
 // ---------------------------------------------------------------------------
 
-describe("isEnvironmentalError", () => {
-  const withCode = (code: string): Error => Object.assign(new Error(code), { code });
+const withCode = (code: string): Error => Object.assign(new Error(code), { code });
 
+describe("isEnvironmentalError", () => {
   it.each(["EPERM", "EACCES", "ENOSPC", "EROFS"])("returns true for %s", (code) => {
     expect(isEnvironmentalError(withCode(code))).toBe(true);
   });

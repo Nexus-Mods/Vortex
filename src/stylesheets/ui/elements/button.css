@@ -33,25 +33,9 @@
         &:is(a, :enabled):not(.nxm-button-disabled) {
             cursor: pointer;
 
-            &:before {
-                inset: 0;
-                opacity: 0;
-                z-index: -1;
-                content: "";
-                position: absolute;
-                pointer-events: none;
-                border-radius: inherit;
-                transition-property: opacity;
-                transition-timing-function: var(--default-transition-timing-function);
-                transition-duration: var(--default-transition-duration);
-            }
-
-            &:hover,
-            &:focus-visible,
-            &[aria-expanded="true"] {
-                &:before {
-                    opacity: 1;
-                }
+            &:focus-visible {
+                outline: 2px solid var(--color-focus-subdued);
+                outline-offset: 2px;
             }
         }
 
@@ -85,124 +69,235 @@
         }
     }
 
+    /*
+     * Appearance structure (brand-independent).
+     * The "strong" appearance is a solid brand fill (background set per brand
+     * below); the others sit on shared translucent surfaces and only differ by
+     * the brand text colour.
+     */
+    .nxm-button-strong {
+        color: var(--color-neutral-inverted);
+    }
+
+    .nxm-button-moderate {
+        background-color: var(--color-surface-translucent-mid);
+
+        &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:hover,
+            &:focus-visible,
+            &[aria-expanded="true"] {
+                background-color: var(--color-surface-translucent-high);
+            }
+
+            &:active {
+                background-color: var(--color-surface-translucent-low);
+            }
+        }
+    }
+
+    .nxm-button-subdued,
+    .nxm-button-weak {
+        &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:hover,
+            &:focus-visible,
+            &[aria-expanded="true"] {
+                background-color: var(--color-surface-translucent-mid);
+            }
+
+            &:active {
+                background-color: var(--color-surface-translucent-low);
+            }
+        }
+    }
+
+    /* Outlines: only the "subdued" appearance carries a border. */
+    .nxm-button-subdued {
+        border: 1px solid var(--color-stroke-weak);
+    }
+
+    /*
+     * Per-brand colours. Colour brands share one ramp (moderate -> strong on
+     * hover -> subdued on pressed), used as the fill for "strong" and as the
+     * text colour for the other appearances.
+     */
     .nxm-button-primary {
-        color: var(--color-neutral-inverted);
-        background-color: var(--color-primary-moderate);
+        &.nxm-button-strong {
+            background-color: var(--color-primary-moderate);
 
-        &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--color-translucent-200);
-        }
-    }
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    background-color: var(--color-primary-strong);
+                }
 
-    .nxm-button-secondary,
-    .nxm-button-secondary-filled-strong,
-    .nxm-button-secondary-filled-weak {
-        border-width: 1px;
-        border-style: solid;
-    }
-
-    .nxm-button-secondary {
-        color: var(--color-translucent-moderate);
-        border-color: var(--color-stroke-weak);
-
-        &:is(a, :enabled):not(.nxm-button-disabled) {
-            &:before {
-                background-color: var(--color-surface-translucent-mid);
-            }
-
-            &:hover {
-                color: var(--color-translucent-strong);
-                border-color: var(--color-stroke-moderate);
+                &:active {
+                    background-color: var(--color-primary-subdued);
+                }
             }
         }
-    }
 
-    .nxm-button-secondary-filled-strong {
-        color: var(--color-neutral-inverted);
-        border-color: var(--color-stroke-moderate);
-        background-color: var(--color-neutral-strong);
+        &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
+            color: var(--color-primary-moderate);
 
-        &:is(a, :enabled):not(.nxm-button-disabled) {
-            &:before {
-                background-color: var(--color-translucent-dark-200);
-            }
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    color: var(--color-primary-strong);
+                }
 
-            &:hover {
-                border-color: var(--color-stroke-strong);
+                &:active {
+                    color: var(--color-primary-subdued);
+                }
             }
         }
     }
 
-    .nxm-button-secondary-filled-weak {
-        color: var(--color-neutral-moderate);
-        border-color: var(--color-stroke-moderate);
-        background-color: var(--color-neutral-800);
+    .nxm-button-info {
+        &.nxm-button-strong {
+            background-color: var(--color-info-moderate);
 
-        &:is(a, :enabled):not(.nxm-button-disabled) {
-            &:before {
-                background-color: var(--color-translucent-200);
-            }
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    background-color: var(--color-info-strong);
+                }
 
-            &:hover {
-                color: var(--color-neutral-strong);
-                border-color: var(--color-stroke-strong);
-            }
-        }
-    }
-
-    .nxm-button-tertiary {
-        color: var(--color-translucent-moderate);
-
-        &:is(a, :enabled):not(.nxm-button-disabled) {
-            &:before {
-                background-color: var(--color-surface-translucent-mid);
-            }
-
-            &:hover {
-                color: var(--color-translucent-strong);
+                &:active {
+                    background-color: var(--color-info-subdued);
+                }
             }
         }
-    }
 
-    .nxm-button-tertiary-filled-strong {
-        color: var(--color-neutral-inverted);
-        background-color: var(--color-neutral-strong);
+        &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
+            color: var(--color-info-moderate);
 
-        &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--color-translucent-dark-200);
-        }
-    }
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    color: var(--color-info-strong);
+                }
 
-    .nxm-button-tertiary-filled-weak {
-        color: var(--color-neutral-moderate);
-        background-color: var(--color-translucent-100);
-
-        &:is(a, :enabled):not(.nxm-button-disabled) {
-            &:before {
-                background-color: var(--color-translucent-200);
-            }
-
-            &:hover {
-                color: var(--color-neutral-strong);
+                &:active {
+                    color: var(--color-info-subdued);
+                }
             }
         }
     }
 
     .nxm-button-success {
-        color: var(--color-neutral-inverted);
-        background-color: var(--color-success-moderate);
+        &.nxm-button-strong {
+            background-color: var(--color-success-moderate);
 
-        &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--color-translucent-200);
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    background-color: var(--color-success-strong);
+                }
+
+                &:active {
+                    background-color: var(--color-success-subdued);
+                }
+            }
+        }
+
+        &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
+            color: var(--color-success-moderate);
+
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    color: var(--color-success-strong);
+                }
+
+                &:active {
+                    color: var(--color-success-subdued);
+                }
+            }
         }
     }
 
     .nxm-button-premium {
-        color: var(--color-neutral-strong);
-        background-color: var(--color-premium-moderate);
+        /*
+         * Premium's solid fill carries light text (not the inverted dark default),
+         * so its fill must darken on interaction rather than brighten — otherwise
+         * the light label washes out against the lighter "strong" violet.
+         */
+        &.nxm-button-strong {
+            color: var(--color-neutral-strong);
+            background-color: var(--color-premium-moderate);
 
-        &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--color-translucent-200);
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    background-color: var(--color-premium-subdued);
+                }
+
+                &:active {
+                    background-color: var(--color-premium-weak);
+                }
+            }
+        }
+
+        &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
+            color: var(--color-premium-moderate);
+
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    color: var(--color-premium-strong);
+                }
+
+                &:active {
+                    color: var(--color-premium-subdued);
+                }
+            }
+        }
+    }
+
+    /*
+     * Neutral is the odd brand out: its solid fill darkens (strong -> weak)
+     * rather than brightening, "moderate" keeps a constant solid text colour,
+     * and "subdued"/"weak" use the translucent neutral text ramp.
+     */
+    .nxm-button-neutral {
+        &.nxm-button-strong {
+            background-color: var(--color-neutral-strong);
+
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    background-color: var(--color-neutral-subdued);
+                }
+
+                &:active {
+                    background-color: var(--color-neutral-weak);
+                }
+            }
+        }
+
+        &.nxm-button-moderate {
+            color: var(--color-neutral-moderate);
+        }
+
+        &:is(.nxm-button-subdued, .nxm-button-weak) {
+            color: var(--color-translucent-moderate);
+
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    color: var(--color-translucent-strong);
+                }
+            }
         }
     }
 

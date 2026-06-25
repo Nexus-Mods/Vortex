@@ -118,13 +118,14 @@ import {
 import { addNotification, setupNotificationSuppression } from "./actions/notifications";
 import { setMaximized, setWindowPosition, setWindowSize } from "./actions/window";
 import { ApplicationData } from "./applicationData";
+import { FlagsProvider } from "./contexts/FlagsContext";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
 import reducer, { buildReducerTree, Decision, sanitizeHydrationState } from "./reducers/index";
 import { fetchHydrationState } from "./store/hydration";
-import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
+import { flushPendingDiffsSync, persistDiffMiddleware } from "./store/persistDiffMiddleware";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
 import { computeStateDiff } from "./store/stateDiff";
@@ -183,6 +184,14 @@ const middleware = [
   persistDiffMiddleware,
   reduxLogger(),
 ];
+
+// On quit, persistDiffMiddleware may still hold up to DEBOUNCE_MS of un-sent
+// state diffs. window-all-closed fires in main after the renderer is already
+// gone, so flush synchronously here while we're still alive - otherwise the
+// final writes are lost and affected mods reload missing fields (GH#23363).
+window.addEventListener("beforeunload", () => {
+  flushPendingDiffsSync();
+});
 
 function sanityCheckCB(err: StateError) {
   err["attachLogOnReport"] = true;
@@ -836,16 +845,29 @@ async function load(extensions: ExtensionManager): Promise<void> {
   extensions.getApi().events.on("gamemode-activated", () => refresh());
   startupFinished();
   eventEmitter.emit("startup");
+
+  let lastUserId: number | undefined;
+  store.subscribe(() => {
+    const userId: number | undefined = (store.getState() as any).persistent?.nexus?.userInfo
+      ?.userId;
+    if (userId !== lastUserId) {
+      lastUserId = userId;
+      window.api.featureFlags.setContext(userId !== undefined ? { userId: String(userId) } : {});
+    }
+  });
+
   // render the page content
   ReactDOM.render(
     <Provider store={store}>
-      <DndProvider backend={HTML5Backend}>
-        <I18nextProvider i18n={i18n}>
-          <ExtensionContext.Provider value={extensions}>
-            <AppLayout className="full-height" />
-          </ExtensionContext.Provider>
-        </I18nextProvider>
-      </DndProvider>
+      <FlagsProvider>
+        <DndProvider backend={HTML5Backend}>
+          <I18nextProvider i18n={i18n}>
+            <ExtensionContext.Provider value={extensions}>
+              <AppLayout className="full-height" />
+            </ExtensionContext.Provider>
+          </I18nextProvider>
+        </DndProvider>
+      </FlagsProvider>
     </Provider>,
     document.getElementById("content"),
   );

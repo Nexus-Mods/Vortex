@@ -15,17 +15,17 @@ import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
-import { CollectionTile } from "@/ui/components/collectiontile/CollectionTile";
-import { CollectionTileSkeleton } from "@/ui/components/collectiontile/CollectionTileSkeleton";
+import { CollectionTile } from "@/ui/components/collection_tile/CollectionTile";
+import { CollectionTileSkeleton } from "@/ui/components/collection_tile/CollectionTile.skeleton";
 import { Input } from "@/ui/components/form/input/Input";
 import { Listing } from "@/ui/components/listing/Listing";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Pagination } from "@/ui/components/pagination/Pagination";
 import { Picker } from "@/ui/components/picker/Picker";
-import { TabButton } from "@/ui/components/tabs/Tab";
 import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
-import { TabProvider } from "@/ui/components/tabs/tabs.context";
+import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
 import { UserCanceled } from "@/util/api";
 import { activeGameId } from "@/util/selectors";
@@ -282,8 +282,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 />
 
                 <Button
-                  buttonType="tertiary"
-                  filled="weak"
+                  brand="neutral"
+                  appearance="moderate"
                   leftIconPath={mdiMagnify}
                   size="sm"
                   title={t("common:actions.search")}
@@ -294,15 +294,19 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               <div className="flex justify-between">
                 <div className="flex items-center gap-x-2">
                   <Button
-                    buttonType="tertiary"
-                    filled="weak"
+                    brand="neutral"
+                    appearance="moderate"
                     leftIconPath={mdiRefresh}
                     size="sm"
                     title={t("collection:browse.refresh")}
                     onClick={handleRefresh}
                   />
 
-                  <Typography appearance="moderate" isTranslucent={true} typographyType="body-sm">
+                  <Typography
+                    appearance="moderate"
+                    brand="neutral-translucent"
+                    typographyType="body-sm"
+                  >
                     {t("collection:browse.resultsCount", {
                       total: numeral(totalCount).format("0,0"),
                     })}
@@ -329,8 +333,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 isLoading={loading}
                 noResultsChildren={
                   <Button
-                    buttonType="tertiary"
-                    filled="weak"
+                    brand="neutral"
+                    appearance="moderate"
                     leftIconPath={mdiOpenInNew}
                     size="sm"
                     onClick={() =>
@@ -381,8 +385,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               title={t("collection:browse.modsComingSoon.title")}
             >
               <Button
-                buttonType="tertiary"
-                filled="weak"
+                brand="neutral"
+                appearance="moderate"
                 leftIconPath={mdiOpenInNew}
                 size="sm"
                 onClick={() =>

@@ -259,17 +259,19 @@ export async function readPersistedValue<T>(hive: string, path: string[]): Promi
       }
 
       let current: Record<string, unknown> = result;
-      for (let i = 0; i < remainingKey.length - 1; i++) {
-        if (current[remainingKey[i]] === undefined) {
-          current[remainingKey[i]] = {};
+      for (const segment of remainingKey.slice(0, -1)) {
+        if (current[segment] === undefined) {
+          current[segment] = {};
         }
-        current = current[remainingKey[i]] as Record<string, unknown>;
+        current = current[segment] as Record<string, unknown>;
       }
 
+      const lastKey = remainingKey.at(-1);
+      if (lastKey === undefined) continue;
       try {
-        current[remainingKey[remainingKey.length - 1]] = JSON.parse(value);
+        current[lastKey] = JSON.parse(value);
       } catch {
-        current[remainingKey[remainingKey.length - 1]] = value;
+        current[lastKey] = value;
       }
     }
 
@@ -323,7 +325,7 @@ export async function writePersistedValue<T>(
  * @returns Promise resolving to the hive data, or empty object if not found
  */
 export async function readHiveData(hive: string): Promise<{ [key: string]: Serializable }> {
-  if (mainPersistor === undefined) {
+  if (mainPersistor === undefined || levelPersist === undefined) {
     return {};
   }
 

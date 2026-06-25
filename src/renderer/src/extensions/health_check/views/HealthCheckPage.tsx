@@ -17,10 +17,10 @@ import { Button } from "../../../ui/components/button/Button";
 import { Icon } from "../../../ui/components/icon/Icon";
 import { NoResults } from "../../../ui/components/no_results/NoResults";
 import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
-import { TabButton } from "../../../ui/components/tabs/Tab";
 import { TabBar } from "../../../ui/components/tabs/TabBar";
+import { TabButton } from "../../../ui/components/tabs/TabButton";
 import { TabPanel } from "../../../ui/components/tabs/TabPanel";
-import { TabProvider } from "../../../ui/components/tabs/tabs.context";
+import { TabProvider } from "../../../ui/components/tabs/Tabs.context";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { batchDispatch } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
@@ -73,8 +73,8 @@ const Mod = ({
       </div>
 
       <Button
-        buttonType="tertiary"
-        filled="weak"
+        brand="neutral"
+        appearance="moderate"
         leftIconPath={isHidden ? mdiEye : mdiEyeOff}
         size="sm"
         title={isHidden ? t("common:::unhide") : t("common:::hide")}
@@ -193,8 +193,8 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
 
             <div className="flex shrink-0 gap-x-2">
               <Button
-                buttonType="tertiary"
-                filled="weak"
+                brand="neutral"
+                appearance="moderate"
                 leftIconPath={mdiRefresh}
                 size="sm"
                 title={t("common:::refresh")}
@@ -202,8 +202,8 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
               />
 
               <Button
-                buttonType="tertiary"
-                filled="weak"
+                brand="neutral"
+                appearance="moderate"
                 leftIconPath={mdiCog}
                 size="sm"
                 title={t("common:::settings")}
@@ -229,12 +229,12 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
               </TabBar>
 
               <Button
-                buttonType="tertiary"
+                brand="neutral"
+                appearance="moderate"
                 disabled={
                   (selectedTab === "active" && !activeCount) ||
                   (selectedTab === "hidden" && !hiddenCount)
                 }
-                filled="weak"
                 leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
                 size="sm"
                 onClick={selectedTab === "active" ? hideAllActive : unhideAll}

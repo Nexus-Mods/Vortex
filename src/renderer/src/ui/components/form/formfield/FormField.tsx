@@ -7,10 +7,10 @@
 
 import React, { type HTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { joinClasses } from "../../../utils/joinClasses";
-import { Typography, type TypographyTypes } from "../../typography/Typography";
+import { Typography, type ITypographyTypes } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-export interface BaseFormFieldProps {
+export interface IBaseFormFieldProps {
   /**
    * Makes the elements non-interactive
    */
@@ -39,7 +39,7 @@ export interface BaseFormFieldProps {
   /**
    * Typography type for hints
    */
-  hintsTypographyType?: TypographyTypes;
+  hintsTypographyType?: ITypographyTypes;
 
   /**
    * Applies additional hint to the field
@@ -57,7 +57,7 @@ export interface BaseFormFieldProps {
   showRequiredLabel?: boolean;
 }
 
-export interface FormFieldProps extends BaseFormFieldProps, HTMLAttributes<HTMLElement> {
+export interface IFormFieldProps extends IBaseFormFieldProps, HTMLAttributes<HTMLElement> {
   /**
    * Form element to be rendered
    */
@@ -76,6 +76,20 @@ export interface FormFieldProps extends BaseFormFieldProps, HTMLAttributes<HTMLE
   ref?: Ref<HTMLDivElement>;
 }
 
+// Character-count colour: escalates from neutral → warning → danger as the
+// remaining characters run low.
+const characterCountColour = (remaining: number, maxLength: number) => {
+  if (remaining <= maxLength * 0.1) {
+    return { brand: "danger" } as const;
+  }
+
+  if (remaining <= maxLength * 0.25) {
+    return { brand: "warning" } as const;
+  }
+
+  return { brand: "neutral", appearance: "moderate" } as const;
+};
+
 export const FormField = ({
   children,
   className,
@@ -91,7 +105,7 @@ export const FormField = ({
   maxLength,
   ref,
   showRequiredLabel,
-}: FormFieldProps) => {
+}: IFormFieldProps) => {
   // Make sure hints is always an array
   hints = !Array.isArray(hints) ? [hints] : hints;
 
@@ -125,7 +139,7 @@ export const FormField = ({
         <div className="flex justify-between pt-1">
           <div>
             {!!errorMessage && (
-              <Typography appearance="none" className="text-danger-strong" id={`${id}_error`}>
+              <Typography brand="danger" id={`${id}_error`}>
                 {errorMessage}
               </Typography>
             )}
@@ -145,16 +159,9 @@ export const FormField = ({
 
           {!!maxLength && (
             <Typography
-              appearance="none"
               aria-label="remaining character count"
-              className={joinClasses([
-                "font-semibold",
-                maxLength - inputLength <= maxLength * 0.1
-                  ? "text-danger-strong"
-                  : maxLength - inputLength <= maxLength * 0.25
-                    ? "text-warning-strong"
-                    : "text-neutral-moderate",
-              ])}
+              className="font-semibold"
+              {...characterCountColour(maxLength - inputLength, maxLength)}
             >
               {`${maxLength - inputLength} / ${maxLength}`}
             </Typography>

@@ -50,10 +50,14 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   const args = argv.slice(firstArgumentIdx);
   let nextArg = 0;
 
-  const res = [argv[0]];
-  if (argv[0].includes(electronExecutable)) {
+  const executable = argv[0];
+  if (!executable) return [];
+
+  const res = [executable];
+  if (executable.includes(electronExecutable)) {
     // did I say we have no positional arguments? Well, electron does...
-    res.push(args[nextArg]);
+    const next = args[nextArg];
+    if (next) res.push(next);
     nextArg++;
   }
 
@@ -79,7 +83,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
  * I think we are hitting walls atm with having only a single hyphen but with a word and a =
  */
 function transformEpicArguments(argv: string[]): string[] {
-  const epicParameterSwaps: Record<string, string> = {
+  const epicParameterSwaps = {
     "-AUTH_LOGIN": "--epic-auth-login",
     "-AUTH_PASSWORD": "--epic-auth-password",
     "-AUTH_TYPE": "--epic-auth-type",
@@ -90,14 +94,15 @@ function transformEpicArguments(argv: string[]): string[] {
     "-epicuserid": "--epic-userid",
     "-epiclocale": "--epic-locale",
     "-epicsandboxid": "--epic-sandboxid",
-  };
+  } as const;
 
   const resultArr = argv.map((element) => {
-    for (const key in epicParameterSwaps) {
+    for (const [key, value] of Object.entries(epicParameterSwaps)) {
       if (element.indexOf(key) !== -1) {
-        return element.replace(key, epicParameterSwaps[key]);
+        return element.replace(key, value);
       }
     }
+
     return element;
   });
 
@@ -105,7 +110,7 @@ function transformEpicArguments(argv: string[]): string[] {
 }
 
 // arguments that should be dropped when restarting the application
-const SKIP_ARGS = {
+const SKIP_ARGS: Record<string, number> = {
   "-d": 1,
   "--download": 1,
   "-i": 1,
@@ -138,9 +143,10 @@ export function filterArgs(input: string[]): string[] {
   return result;
 }
 
-function assign(input: string, prev: ISetItem[]): ISetItem[] {
+function assign(input: string, prev: ISetItem[]): ISetItem[] | undefined {
   const [key, value] = input.split("=");
-  return (prev ?? []).concat([{ key, value }]);
+  if (key && value) return (prev ?? []).concat([{ key, value }]);
+  return undefined;
 }
 
 function collect(value: string, prev: string[]): string[] {
@@ -178,7 +184,8 @@ export function parseCommandline(argv: string[], electronIsShitHack: boolean): I
   // lets look and replace epic stuff?!
   argv = transformEpicArguments(argv);
 
-  if (!argv[0].includes(electronExecutable)) {
+  const executable = argv[0];
+  if (executable && !executable.includes(electronExecutable)) {
     argv = ["dummy"].concat(argv);
   }
 

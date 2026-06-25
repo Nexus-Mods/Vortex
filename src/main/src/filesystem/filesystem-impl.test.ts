@@ -59,7 +59,7 @@ describe("NodeFileSystemImpl", () => {
     while (true) {
       const step = await iter.next();
       if (step.done) break;
-      const qp = step.value as QualifiedPath;
+      const qp = step.value;
       expect(qp).toBeInstanceOf(QualifiedPath);
       expect(qp.scheme).toBe(platformScheme());
       seen.push(qp.basename);
@@ -92,7 +92,7 @@ describe("NodeFileSystemImpl", () => {
     while (true) {
       const step = await iter.next();
       if (step.done) break;
-      seen.push((step.value as QualifiedPath).path);
+      seen.push(step.value.path);
     }
     expect(seen.some((p) => p.endsWith(`${rootQP.path}/sub/nested.txt`))).toBe(true);
   });

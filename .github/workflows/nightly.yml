@@ -24,7 +24,7 @@ jobs:
       DEBUG: electron-builder # gives electron more verbose logs
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: "recursive"
 
@@ -33,6 +33,6 @@ jobs:
         with:
           nightly: "true"
           create-artifacts: "true"
-          use-codesigning: "true"
+          use-codesigning: "false"
           release: "false"
           staging-release: "false"

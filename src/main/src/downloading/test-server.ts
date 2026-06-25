@@ -288,8 +288,9 @@ export async function writeResponse(
 
   if (opts.body) {
     const chunks = Buffer.isBuffer(opts.body) ? [opts.body] : opts.body;
-    for (let i = 0; i < chunks.length; i++) {
-      const info: ChunkInfo = { index: i, bytes: chunks[i] };
+    let i = 0;
+    for (const chunk of chunks) {
+      const info: ChunkInfo = { index: i++, bytes: chunk };
       await hooks.beforeChunk?.(ctx, info);
       res.write(info.bytes);
       await hooks.afterChunk?.(ctx, info);
@@ -429,7 +430,9 @@ export function connectionClose(): Middleware {
 
 export function injectHeaders(headers: http.OutgoingHttpHeaders): Middleware {
   return (ctx, next) => {
-    for (const [k, v] of Object.entries(headers)) ctx.res.setHeader(k, v);
+    for (const [k, v] of Object.entries(headers)) {
+      if (v !== undefined) ctx.res.setHeader(k, v);
+    }
     return next();
   };
 }
@@ -620,14 +623,14 @@ function parseRange(header: string | undefined): Range | null {
     const ranges: Array<{ start: number; end: number }> = [];
     for (const part of parts) {
       const m = part.match(/^(\d+)-(\d+)$/);
-      if (!m) return null;
+      if (!m || !m[1] || !m[2]) return null;
       ranges.push({ start: parseInt(m[1], 10), end: parseInt(m[2], 10) });
     }
     return { kind: "multi", ranges };
   }
 
   const bounded = value.match(/^(\d+)-(\d+)$/);
-  if (bounded)
+  if (bounded && bounded[1] && bounded[2])
     return {
       kind: "bounded",
       start: parseInt(bounded[1], 10),
@@ -635,10 +638,10 @@ function parseRange(header: string | undefined): Range | null {
     };
 
   const from = value.match(/^(\d+)-$/);
-  if (from) return { kind: "from", start: parseInt(from[1], 10) };
+  if (from && from[1]) return { kind: "from", start: parseInt(from[1], 10) };
 
   const suffix = value.match(/^-(\d+)$/);
-  if (suffix) return { kind: "suffix", length: parseInt(suffix[1], 10) };
+  if (suffix && suffix[1]) return { kind: "suffix", length: parseInt(suffix[1], 10) };
 
   return null;
 }
@@ -658,7 +661,7 @@ function resolveRange(range: Range, totalLength: number): { start: number; end: 
       end: totalLength - 1,
     };
   }
-  if (range.kind === "multi" && range.ranges.length > 0) {
+  if (range.kind === "multi" && range.ranges[0]) {
     return resolveRange({ kind: "bounded", ...range.ranges[0] }, totalLength);
   }
   return null;

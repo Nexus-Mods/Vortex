@@ -83,17 +83,16 @@ function parseFile(filePath: string, content: string): ParsedQuery[] {
     // Parse @description
     const descMatch = trimmed.match(/^--\s*@description\s+(.+)$/);
     if (descMatch !== null) {
-      currentDescription = descMatch[1].trim();
+      const [, desc = ""] = descMatch;
+      currentDescription = desc.trim();
       continue;
     }
 
     // Parse @param
     const paramMatch = trimmed.match(/^--\s*@param\s+(\S+)\s+(\S+)\s*$/);
     if (paramMatch !== null) {
-      currentParams.push({
-        name: paramMatch[1],
-        duckdbType: paramMatch[2],
-      });
+      const [, name = "", duckdbType = ""] = paramMatch;
+      currentParams.push({ name, duckdbType });
       continue;
     }
 

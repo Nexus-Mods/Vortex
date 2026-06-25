@@ -18,7 +18,6 @@
     "targets": {
       "dev": {
         "cache": false,
-        "continuous": true,
         "dependsOn": [
           {
             "target": "build",
@@ -38,7 +37,6 @@
       },
       "e2e": {
         "cache": false,
-        "continuous": true,
         "dependsOn": [
           {
             "target": "build",
@@ -48,7 +46,6 @@
       },
       "e2e:headed": {
         "cache": false,
-        "continuous": true,
         "dependsOn": [
           {
             "target": "build",

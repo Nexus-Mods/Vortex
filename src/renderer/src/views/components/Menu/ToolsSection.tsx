@@ -48,10 +48,10 @@ const PlayButton: FC<PlayButtonProps> = ({
   return (
     <div className="relative w-full">
       <Button
-        buttonType="secondary"
+        brand="neutral"
+        appearance="strong"
         className="w-full transition-all"
         disabled={disabled}
-        filled="strong"
         leftIconPath={mdiPlay}
         onClick={onClick}
       >

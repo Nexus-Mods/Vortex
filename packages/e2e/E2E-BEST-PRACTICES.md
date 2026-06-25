@@ -43,14 +43,18 @@ Every test creates traces that include page snapshots and screenshots if `VORTEX
 
 ## Writing Tests
 
-### With LLMs
+### Exploration
 
-Skills and MCP servers are already configured for Claude Code to help write E2E tests. Start the isolated dev environment to get started:
+Start the isolated dev environment to get started:
 
 ```bash
 # start the isolated dev environment
-pnpm nx run @vortex/e2e:dev
+pnpm nx run @vortex/e2e:dev:isolated
 ```
+
+### Skills
+
+Skills and MCP servers are already configured for Claude Code to help write E2E tests. Use `/e2e-test <linear id | text>`.
 
 ### Fixtures
 

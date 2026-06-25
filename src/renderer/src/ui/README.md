@@ -8,13 +8,15 @@ Components adapted from the web team's "next" project for use in Vortex.
 ui/
 ├── components/
 │   ├── bullet/          - Small rotated-square dot used as an inline marker/separator
-│   ├── button/          - Button system (primary, secondary, tertiary, success, premium)
+│   ├── button/          - Button system (brand × appearance matrix)
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
+│   │   ├── checkbox/    - Checkbox input
 │   │   ├── formfield/   - Form field wrapper with labels and validation
 │   │   ├── input/       - Text input with validation
-│   │   └── select/      - Select dropdown with custom styling
+│   │   ├── select/      - Select dropdown with custom styling
+│   │   └── switch/      - Tri-state toggle switch (off / on / semi-on)
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
@@ -27,7 +29,9 @@ ui/
 │   ├── picker/          - Picker component
 │   ├── pill/            - Compact rounded label for tags and statuses
 │   ├── premium_badge/   - Premium diamond badge
+│   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
+│   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   └── typography/      - Typography system (heading, title, body)
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
@@ -71,7 +75,7 @@ Components use `nxm-` prefixed CSS class names to avoid conflicts with existing 
 
 ```tsx
 // Class naming pattern: nxm-{component}-{variant}-{modifier}
-<button className="nxm-button nxm-button-primary" />
+<button className="nxm-button nxm-button-primary nxm-button-strong" />
 <span className="nxm-tab-button nxm-tab-button-selected" />
 ```
 
@@ -88,29 +92,40 @@ joinClasses(["nxm-button", className], {
 
 ### Button
 
-**Defaults:** `buttonType="primary"`, `size="md"` — only set these when you need something different.
+Styled as a `brand` × `appearance` matrix: `brand` picks the colour family, `appearance` picks the prominence (solid fill → text-only).
+
+**Defaults:** `brand="primary"`, `appearance="strong"`, `size="md"` — only set these when you need something different.
 
 ```tsx
 import { Button } from "../../ui/components/button/Button";
 
-// Uses defaults (primary, md) — no need to specify
+// Uses defaults (primary, strong, md) — a solid primary button
 <Button>Click Me</Button>
 
 // Only override what differs from the default
 <Button size="xs">Small</Button>
-<Button buttonType="secondary" filled="strong">Filled</Button>
-<Button buttonType="success">Saved</Button>
+<Button brand="neutral" appearance="subdued">Outlined</Button>
+<Button brand="neutral" appearance="weak">Quiet</Button>
+<Button brand="success">Saved</Button>
 
 // With icons
 import { mdiDownload } from "@mdi/js";
 <Button leftIconPath={mdiDownload}>Download</Button>
 
+// Icon-only (collapses to a square — always pass an aria-label)
+<Button aria-label="Download" leftIconPath={mdiDownload} />
+
 // Loading state
 <Button isLoading>Processing...</Button>
 ```
 
-**Types:** `primary`, `secondary`, `tertiary`, `success`, `premium`
+**Brands:** `primary`, `info`, `neutral`, `success`, `premium`
+**Appearances:** `strong` (solid fill), `moderate` (subtle surface), `subdued` (outline), `weak` (text only)
 **Sizes:** `xs`, `sm`, `md`
+
+A button with no `children`/`customContent` but an icon renders icon-only (square). Every brand supports every appearance; `success`/`premium` derive their full ramps to match. `appearance` defaults to `strong` so a bare `<Button>` is a solid primary button.
+
+> **Migration note:** the old `buttonType`/`filled` props were replaced by `brand`/`appearance`. `secondary`→`neutral`+`subdued`, `tertiary`→`neutral`+`weak`, `filled="strong"`→`appearance="strong"`, `filled="weak"`→`appearance="moderate"`.
 
 ### Icon
 
@@ -127,20 +142,29 @@ import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
 ### Typography
 
-**Defaults:** `as="p"`, `appearance="strong"`, `typographyType` inferred from `as` — only set these when you need something different.
+Colour is expressed as `brand` × `appearance`: `brand` picks the colour family, `appearance` picks the intensity.
+
+**Defaults:** `as="p"`, `brand="neutral"`, `appearance="strong"`, `typographyType` inferred from `as` — only set these when you need something different.
 
 When `typographyType` is omitted it falls back based on `as`: `h1`→`heading-2xl`, `h2`→`heading-xl`, `h3`→`heading-lg`, `h4`→`heading-md`, `h5`→`heading-sm`, `h6`→`heading-xs`, everything else→`body-md`.
 
 ```tsx
 import { Typography } from "../../ui/components/typography/Typography";
 
-// Defaults to <p> with body-md and strong appearance
+// Defaults to <p> with body-md, neutral brand, strong appearance
 <Typography>Some body text</Typography>
 
 // Only override what differs
 <Typography as="h1">Page Heading</Typography>
-<Typography appearance="subdued">Muted text</Typography>
+<Typography appearance="subdued">Muted text (neutral)</Typography>
+<Typography brand="info" appearance="moderate">Info text</Typography>
 <Typography as="span" typographyType="body-sm">Inline small text</Typography>
+
+// inverted is neutral-only (for light surfaces)
+<Typography appearance="inverted">On a light background</Typography>
+
+// brand="none" opts out of colour entirely — inherits the parent's colour
+<Typography brand="none">Inherits colour</Typography>
 
 // Responsive
 <Typography typographyType={{ default: "body-sm", md: "body-md", lg: "body-lg" }}>
@@ -150,7 +174,34 @@ import { Typography } from "../../ui/components/typography/Typography";
 
 **Elements:** `h1`–`h6`, `p`, `span`, `div`, `ul`
 **Types:** `heading-2xl` through `heading-xs`, `title-md` through `title-xs`, `body-2xl` through `body-xs`
-**Appearances:** `strong`, `moderate`, `subdued`, `weak`, `inverted`, `none`
+**Brands:** `neutral` (default), `primary`, `info`, `success`, `premium`, `danger`, `warning`, `neutral-translucent` (white-alpha translucent ramp), `none` (opt out of colour)
+**Appearances:** `weak`, `subdued`, `moderate`, `strong` — plus `inverted` on `neutral` and `neutral-translucent` only. Setting `appearance` with `brand="none"` is disallowed (it would be redundant).
+
+### TypographyLink
+
+A `<button>` styled as a link. Colour uses the **same `brand` × `appearance` model as Typography** (it shares `getTypographyColourClass`), so the brands and appearances above apply here too. On hover the colour shifts one step toward `strong` (and `strong` dims to `moderate`), consistently across every brand.
+
+**Defaults:** `brand="neutral"`, `appearance="strong"`, `variant="primary"`, `typographyType="body-md"`.
+
+```tsx
+import { TypographyLink } from "../../ui/components/typography/TypographyLink";
+
+// Neutral link, underlined (primary variant)
+<TypographyLink onClick={handleClick}>View details</TypographyLink>
+
+// Branded
+<TypographyLink brand="primary">Primary link</TypographyLink>
+<TypographyLink brand="info" appearance="subdued">Subtle info link</TypographyLink>
+
+// Underline only on hover
+<TypographyLink variant="secondary">Secondary</TypographyLink>
+
+// Icons + inherit the surrounding text size (e.g. inside a Trans/sentence)
+<TypographyLink rightIconPath={mdiOpenInNew} typographyType="inherit">Open</TypographyLink>
+```
+
+**Variants:** `primary` (always underlined), `secondary` (underlines on hover), `none` (no underline)
+**typographyType:** same values as Typography, plus `"inherit"` to take the surrounding font size
 
 ### Tabs
 
@@ -184,6 +235,35 @@ function MyTabs() {
 **Keyboard:** Arrow Left/Right (navigate, wraps), Home/End (jump to first/last)
 **Tab types:** `primary` (default), `secondary` (count displayed with parentheses)
 
+### Toolbar
+
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When a group has more than `maxVisible` actions (default `7`), the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+
+**Defaults:** `maxVisible={7}`. Pass `maxVisible={null}` to disable collapsing and always render every action.
+
+```tsx
+import { Toolbar } from "../../ui/components/toolbar/Toolbar";
+import { type IToolbarAction, ToolbarGroup } from "../../ui/components/toolbar/ToolbarGroup";
+import { mdiFolderOpenOutline, mdiHistory, mdiRefresh } from "@mdi/js";
+
+const actions: IToolbarAction[] = [
+    { label: "Open mods folder", iconPath: mdiFolderOpenOutline, onClick: openFolder },
+    { label: "History", iconPath: mdiHistory, onClick: showHistory },
+    { label: "Refresh", iconPath: mdiRefresh, onClick: refresh, disabled: isBusy },
+];
+
+<Toolbar>
+    <ToolbarGroup actions={actions} />
+
+    {/* Never collapse — show every action regardless of count */}
+    <ToolbarGroup actions={contextualActions} maxVisible={null} />
+</Toolbar>;
+```
+
+**`IToolbarAction` fields:** `label` (required — the accessible name, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill).
+
+Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
+
 ### Form Components
 
 ```tsx
@@ -209,6 +289,29 @@ import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
   <Input id="last" label="Last Name" type="text" required />
 </FormFieldWrap>
 ```
+
+### Switch
+
+A tri-state toggle switch (xs) — `off`, `on`, and a programmatic `semi-on` ("mixed") state. Built on a visually-hidden native `<input type="checkbox">`; setting `indeterminate` renders `semi-on` and reports `aria-checked="mixed"`. Clicking only ever flips on/off — `semi-on` is set by the consumer (e.g. a master control whose children are partially on). It's controlled-visual (appearance follows the `checked`/`indeterminate` props, like `Checkbox`).
+
+```tsx
+import { Switch } from "../../ui/components/form/switch/Switch";
+
+// Controlled on/off
+<Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} aria-label="Enable" />
+
+// Semi-on (mixed) — e.g. a "select all" with some children on
+<Switch
+  checked={allOn}
+  indeterminate={someOn && !allOn}
+  onChange={(e) => setAll(e.target.checked)}
+  aria-label="All settings"
+/>
+```
+
+**Props:** native `<input>` attributes (minus `type`) plus `indeterminate?: boolean`.
+
+> **Porting note:** when `@headlessui/react` reaches v2 (after the React upgrade), reimplement on top of HeadlessUI's `<Switch>`. The `nxm-switch` classes live on the track/thumb so they can move straight across. HeadlessUI's Switch is binary, so the tri-state stays the wrapper's responsibility (`data-state` + `indeterminate`/`aria-checked="mixed"`).
 
 ### Dropdown
 
@@ -246,6 +349,48 @@ import { CollectionTileSkeleton } from "../../ui/components/collectiontile/Colle
 ```tsx
 import { Pagination } from "../../ui/components/pagination/Pagination";
 ```
+
+### Table
+
+Reusable, column-driven data table. Declare the columns and pass the data; sorting, per-column filtering, column show/hide, grouping, optional pagination and an empty state are handled internally.
+
+**Defaults:** filters and the column toggle auto-enable when a column opts in; pagination is **off** unless `pageSize` is set; headers are always left-aligned.
+
+```tsx
+import { Table } from "../../ui/components/table/Table";
+import type { IColumnDef } from "../../ui/components/table/Table.types";
+
+const columns: Array<IColumnDef<Mod>> = [
+    { id: "name", header: "Name", getValue: (m) => m.name, sortable: true, filter: { type: "text" } },
+    {
+        id: "category",
+        header: "Category",
+        getValue: (m) => m.category,
+        groupable: true,
+        filter: { type: "select", options: [{ label: "UI", value: "UI" }] },
+    },
+    {
+        id: "downloads",
+        header: "Downloads",
+        getValue: (m) => m.downloads,
+        sortable: true,
+        align: "right",
+        cell: (m) => m.downloads.toLocaleString(),
+    },
+];
+
+// No pageSize → renders every row, no pager
+<Table columns={columns} data={mods} getRowId={(m) => m.id} />
+
+// With pagination
+<Table columns={columns} data={mods} getRowId={(m) => m.id} pageSize={50} />
+```
+
+**`ITableProps` fields:** `columns`, `data`, `getRowId` (required); `pageSize` (set to paginate), `caption`, `enableFilters`, `enableColumnToggle`, `enableColumnResize` (default `true`), `columnWidths` / `onColumnWidthsChange` (restore/persist resized widths), `emptyState`, `className`.
+
+**`IColumnDef` fields:** `id`, `header` (required); `getValue` (value used for sorting/filtering and the default cell), `cell` (custom renderer), `sortable`/`sortFn`, `filter` (`text` or `select`), `align` (body cells — headers are always left), `width`, `resizable` (drag-to-resize, default `true`), `hideable`/`defaultHidden` (column toggle), `groupable`/`groupValue`/`groupLabel`.
+
+**Notes:** grouping is one column at a time — collapsible groups across the full dataset, with the pager hidden while active. Columns use fixed widths, so when their total exceeds the container the table scrolls horizontally. Users can drag a header's right edge to resize a column (never narrower than its configured `width`) via the `useColumnResize` hook, and the column menu offers a "Reset column widths" action. The table itself stays state-store-agnostic: pass `columnWidths` to restore widths and handle `onColumnWidthsChange` (fired on resize-end and reset with the full px map) to persist them. All interactive state lives in the `useTableState` hook.
 
 ### Listing / ListingLoader / NoResults
 

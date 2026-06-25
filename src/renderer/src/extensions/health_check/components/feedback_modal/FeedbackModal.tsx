@@ -49,12 +49,18 @@ export const FeedbackModal = ({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-x-2">
-        <Button buttonType="tertiary" className="w-full" filled="weak" size="sm" onClick={onClose}>
+        <Button
+          brand="neutral"
+          appearance="moderate"
+          className="w-full"
+          size="sm"
+          onClick={onClose}
+        >
           {t("detail::feedback_modal::buttons::cancel")}
         </Button>
 
         <Button
-          buttonType="primary"
+          brand="primary"
           className="w-full"
           size="sm"
           onClick={() => {

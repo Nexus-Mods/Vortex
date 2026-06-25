@@ -49,7 +49,6 @@ export const defaultTimeout: () => TimeoutOptions = () => ({
   lookup: 5_000,
   connect: 30_000,
   stall: 15_000,
-  request: 5 * 60_000,
 });
 
 export type DownloadManagerOptions = {
@@ -76,7 +75,7 @@ export class DownloadManager {
   readonly #cookieJar: CookieJar | undefined;
   readonly #downloads: Map<string, DownloadHandle> = new Map();
 
-  #rateLimiter: RateLimiter | null;
+  #rateLimiter: RateLimiter | undefined;
 
   constructor(options: DownloadManagerOptions) {
     this.#downloadQueue = new PQueue({
@@ -93,7 +92,7 @@ export class DownloadManager {
         interval: "second",
       });
     } else {
-      this.#rateLimiter = null;
+      this.#rateLimiter = undefined;
     }
 
     this.#timeout = { ...defaultTimeout(), ...timeout };
@@ -147,7 +146,7 @@ export class DownloadManager {
         });
       } else {
         log("info", "download bandwidth limit removed");
-        this.#rateLimiter = null;
+        this.#rateLimiter = undefined;
       }
     }
   }
@@ -295,7 +294,11 @@ export class DownloadManager {
       }
 
       if (currentStatus !== "running") {
-        return { ...getState(), status: currentStatus, error: terminalError };
+        if (currentStatus === "failed") {
+          return { ...getState(), status: currentStatus, error: terminalError! };
+        }
+
+        return { ...getState(), status: currentStatus };
       }
 
       log("debug", "pausing download", { downloadId });
@@ -313,7 +316,7 @@ export class DownloadManager {
       const currentStatus = progressReporter.status;
 
       if (currentStatus === "failed") {
-        return { ...progress, status: currentStatus, error: terminalError };
+        return { ...progress, status: currentStatus, error: terminalError! };
       }
 
       return { ...progress, status: currentStatus };

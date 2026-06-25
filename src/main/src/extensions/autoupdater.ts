@@ -43,7 +43,7 @@ const updateStatus: UpdateStatus = {
  * Handles checking for updates, downloading, and installing.
  */
 export function setupAutoUpdater(installType: string): void {
-  let cancellationToken: CancellationToken;
+  let cancellationToken: CancellationToken | undefined = undefined;
   const currentVersion = semver.parse(app.getVersion());
   let updateChannel = "stable";
 
@@ -161,7 +161,7 @@ export function setupAutoUpdater(installType: string): void {
   });
 
   // Download progress
-  autoUpdater.on("download-progress", (progress) => {
+  autoUpdater.on("download-progress", (progress: { percent: number }) => {
     log("debug", "Download progress", { percent: progress.percent });
     updateStatus.downloadProgress = progress.percent;
   });

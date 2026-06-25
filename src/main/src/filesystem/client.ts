@@ -64,7 +64,7 @@ export function createFileSystemClient(send: FileSystemSendFn): FileSystem {
   const enumerateDirectory = (
     path: QualifiedPath,
     options?: EnumerateWireOptions,
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status]>> =>
+  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> =>
     Promise.resolve(createEnumerationIterator(call, path, options));
 
   return {
@@ -94,7 +94,7 @@ function createEnumerationIterator(
   call: CallFn,
   path: QualifiedPath,
   options: EnumerateWireOptions | undefined,
-): AsyncIterator<QualifiedPath | [QualifiedPath, Status]> {
+): AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined> {
   type Entry = QualifiedPath | [QualifiedPath, Status];
 
   let cursorId: string | undefined;
@@ -131,7 +131,7 @@ function createEnumerationIterator(
     queue = [];
     if (id !== undefined) {
       // Best-effort: the host is authoritative for cursor lifetime; ignore
-      // close-time errors so that early termination never surfaces a new
+      // close-time errors so that early termination undefined surfaces a new
       // exception on top of whatever caused the consumer to bail.
       await call("enumerateClose", [id]).catch(() => undefined);
     }
@@ -144,11 +144,11 @@ function createEnumerationIterator(
       if (next !== undefined) {
         return { done: false, value: next };
       }
-      return { done: true, value: undefined as never };
+      return { done: true, value: undefined };
     },
     async return() {
       await close();
-      return { done: true, value: undefined as never };
+      return { done: true, value: undefined };
     },
     async throw(err) {
       await close();

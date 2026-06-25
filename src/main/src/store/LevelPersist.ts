@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import type { DuckDBConnection } from "@duckdb/node-api";
+import type { DuckDBConnection, DuckDBResultReader } from "@duckdb/node-api";
 import { unknownToError } from "@vortex/shared";
 import { DataInvalid } from "@vortex/shared/errors";
 import type { IPersistor } from "@vortex/shared/state";
@@ -33,7 +33,7 @@ export class DatabaseLocked extends Error {
 
 export class DatabaseOpenError extends Error {
   public readonly path: string;
-  public readonly cause: string;
+  public override readonly cause: string;
   constructor(persistPath: string, cause: string) {
     super(`Failed to open database at ${persistPath}: ${cause}`);
     this.name = this.constructor.name;
@@ -179,12 +179,13 @@ class LevelPersist implements IPersistor {
       [key.join(SEPARATOR)],
     );
     const rows = reader.getRows();
-    if (rows.length === 0) {
+    const firstRow = rows[0];
+    if (firstRow === undefined) {
       const err = new Error(`Key not found: ${key.join(SEPARATOR)}`);
       err.name = "NotFoundError";
       throw err;
     }
-    return rows[0][0] as string;
+    return firstRow[0] as string;
   }
 
   public async getAllKeys(): Promise<string[][]> {
@@ -211,7 +212,7 @@ class LevelPersist implements IPersistor {
   }
 
   public async getAllKVs(prefix?: string): Promise<Array<{ key: string[]; value: string }>> {
-    let reader;
+    let reader: DuckDBResultReader;
     if (prefix === undefined) {
       reader = await this.#mConnection.runAndReadAll(`SELECT key, value FROM ${this.#mAlias}.kv`);
     } else {
@@ -224,10 +225,10 @@ class LevelPersist implements IPersistor {
     return rows.map((row) => ({
       key: (row[0] as string).split(SEPARATOR),
       value: row[1] as string,
-    })) as Array<{ key: string[]; value: string }>;
+    }));
   }
 
-  public async setItem(statePath: string[], newState: string): Promise<void> {
+  public async setItem(statePath: string[], newState: string | null): Promise<void> {
     // No internal BEGIN/COMMIT here. The previous implementation issued
     // three statements (SELECT-then-UPDATE-or-INSERT) and self-wrapped in a
     // transaction to keep them atomic against concurrent writers to the
@@ -280,9 +281,9 @@ class LevelPersist implements IPersistor {
     // Build "VALUES ($1, $2), ($3, $4), ..." with positional params.
     const placeholders: string[] = [];
     const params: string[] = [];
-    for (let i = 0; i < items.length; i++) {
+    for (const [i, item] of items.entries()) {
       placeholders.push(`($${2 * i + 1}, $${2 * i + 2})`);
-      params.push(items[i].key.join(SEPARATOR), items[i].value);
+      params.push(item.key.join(SEPARATOR), item.value);
     }
     await this.timedWrite("bulkSetItem", items.length, () =>
       this.#mConnection.run(
@@ -305,11 +306,11 @@ class LevelPersist implements IPersistor {
     }
     const clauses: string[] = [];
     const params: string[] = [];
-    for (let i = 0; i < keys.length; i++) {
+    for (const [i, keyParts] of keys.entries()) {
       const exact = 2 * i + 1;
       const prefix = 2 * i + 2;
       clauses.push(`key = $${exact} OR starts_with(key, $${prefix})`);
-      const key = keys[i].join(SEPARATOR);
+      const key = keyParts.join(SEPARATOR);
       params.push(key, `${key}${SEPARATOR}`);
     }
     await this.timedWrite("bulkRemoveItem", keys.length, () =>

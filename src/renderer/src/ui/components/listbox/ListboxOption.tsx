@@ -2,9 +2,9 @@ import { Listbox as HeadlessListbox } from "@headlessui/react";
 import { mdiCheck } from "@mdi/js";
 import React, { type ComponentProps, Fragment, type ReactNode } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import type { XOr } from "../../utils/types";
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import type { XOr } from "@/ui/utils/types";
 
 export type IListboxOption<T = unknown> = ComponentProps<typeof HeadlessListbox.Option> & {
   label: string;

@@ -1,7 +1,7 @@
 import React, { type InputHTMLAttributes, type PropsWithChildren } from "react";
 
-import { joinClasses } from "../../../utils/joinClasses";
-import { Icon } from "../../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 export const Checkbox = ({
   checked,

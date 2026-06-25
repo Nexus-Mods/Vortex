@@ -119,7 +119,7 @@ describe("download", () => {
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
@@ -127,7 +127,7 @@ describe("download", () => {
 
       const gets = route.requests.filter((r) => r.method === "GET");
       expect(gets).toHaveLength(1);
-      expect(gets[0].range).toEqual({
+      expect(gets[0]!.range).toEqual({
         kind: "bounded",
         start: resumeOffset,
         end: LARGE_FILE.length - 1,
@@ -146,7 +146,7 @@ describe("download", () => {
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
@@ -168,7 +168,7 @@ describe("download", () => {
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
@@ -199,7 +199,7 @@ describe("download", () => {
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
@@ -238,7 +238,7 @@ describe("download", () => {
       route.requests.length = 0;
 
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [],
       };
 
@@ -246,7 +246,7 @@ describe("download", () => {
 
       const gets = route.requests.filter((r) => r.method === "GET");
       expect(gets).toHaveLength(1);
-      expect(gets[0].range).toBeNull();
+      expect(gets[0]!.range).toBeNull();
     });
 
     it("computes writePosition from contiguous ranges starting at zero", async () => {
@@ -260,7 +260,7 @@ describe("download", () => {
       });
 
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [
           { start: 0, end: 499_999 },
           { start: 500_000, end: 999_999 },
@@ -270,7 +270,7 @@ describe("download", () => {
       await download(route.url, dest, { resolver: urlResolver, chunker: noChunks }, { checkpoint });
 
       const gets = route.requests.filter((r) => r.method === "GET");
-      const resumeGet = gets[gets.length - 1];
+      const resumeGet = gets[gets.length - 1]!;
       expect(resumeGet.range).toEqual({
         kind: "bounded",
         start: 1_000_000,
@@ -292,7 +292,7 @@ describe("download", () => {
       });
 
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [
           { start: 0, end: 499_999 },
           { start: 600_000, end: 999_999 },
@@ -302,7 +302,7 @@ describe("download", () => {
       await download(route.url, dest, { resolver: urlResolver, chunker: noChunks }, { checkpoint });
 
       const gets = route.requests.filter((r) => r.method === "GET");
-      const resumeGet = gets[gets.length - 1];
+      const resumeGet = gets[gets.length - 1]!;
       expect(resumeGet.range).toEqual({
         kind: "bounded",
         start: 500_000,
@@ -374,7 +374,7 @@ describe("download", () => {
       );
 
       const heads = route.requests.filter((r) => r.method === "HEAD");
-      const resumeHead = heads[heads.length - 1];
+      const resumeHead = heads[heads.length - 1]!;
       expect(resumeHead.headers["if-match"]).toBe(etag);
     });
   });
@@ -489,7 +489,7 @@ describe("download", () => {
       expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
       const gets = route.requests.filter((r) => r.method === "GET");
       expect(gets).toHaveLength(1);
-      expect(gets[0].range).toBeNull();
+      expect(gets[0]!.range).toBeNull();
     },
   );
 
@@ -546,7 +546,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const progressReporter = new ProgressReporter();
       await completeDownload(route.url, tmp.dir, { progressReporter });
-      expect(progressReporter.getProgress().size).toBeNull();
+      expect(progressReporter.getProgress().size).toBeUndefined();
     });
 
     test.each([
@@ -678,13 +678,13 @@ describe("download", () => {
       const chunkEndpointFn = vi.fn((_chunk: Chunk) =>
         Promise.resolve<ResolvedEndpoint>({ url: chunkRoute.url }),
       );
-      const resolver: Resolver<never> = () =>
+      const resolver: Resolver<URL> = () =>
         Promise.resolve<ResolvedResource>({
           probeEndpoint: { url: probeRoute.url },
           chunkEndpoint: chunkEndpointFn,
         });
 
-      await completeDownload(null, tmp.dir, { resolver });
+      await completeDownload(null!, tmp.dir, { resolver });
       expect(chunkEndpointFn).toHaveBeenCalledTimes(chunksPerFile);
       expect(probeRoute.requests.filter((r) => r.method === "HEAD")).toHaveLength(1);
       expect(chunkRoute.requests.filter((r) => r.method === "GET")).toHaveLength(chunksPerFile);
@@ -702,21 +702,21 @@ describe("download", () => {
         await using tmp = await makeTmpDir();
         const chunkEndpointFn = vi.fn((chunk: Chunk) =>
           Promise.resolve<ResolvedEndpoint>({
-            url: chunkRoutes[Math.floor(chunk.range.start / chunkSize)].url,
+            url: chunkRoutes[Math.floor(chunk.range.start / chunkSize)]!.url,
           }),
         );
-        const resolver: Resolver<never> = () =>
+        const resolver: Resolver<URL> = () =>
           Promise.resolve<ResolvedResource>({
             probeEndpoint: { url: probeRoute.url },
             chunkEndpoint: chunkEndpointFn,
           });
 
-        await completeDownload(null, tmp.dir, { resolver, chunker });
+        await completeDownload(null!, tmp.dir, { resolver, chunker });
 
         for (const chunkRoute of chunkRoutes) {
           const gets = chunkRoute.requests.filter((r) => r.method === "GET");
           expect(gets).toHaveLength(1);
-          expect(gets[0].range).not.toBeNull();
+          expect(gets[0]!.range).not.toBeNull();
         }
       } finally {
         chunkRoutes.forEach((r) => r.deregister());
@@ -873,44 +873,9 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 30_000,
         lookup: 5_000,
         connect: 5_000,
         stall: 200,
-      };
-
-      await expect(
-        download(
-          route.url,
-          dest,
-          {
-            resolver: urlResolver,
-            chunker: staticChunker(),
-          },
-          {
-            timeout,
-          },
-        ),
-      ).rejects.toMatchObject({
-        payload: { code: "network-timeout" },
-      });
-    }, 1_000);
-
-    it("rejects with a network timeout when the request timeout elapses", async () => {
-      using route = server.route(
-        withHooks(
-          serveFile({ body: LARGE_FILE, acceptRanges: false }),
-          delayAt("onRequest", 5_000),
-        ),
-      );
-      await using tmp = await makeTmpDir();
-      const dest = path.join(tmp.dir, "output");
-
-      const timeout: TimeoutOptions = {
-        request: 200,
-        lookup: 5_000,
-        connect: 5_000,
-        stall: 5_000,
       };
 
       await expect(
@@ -936,7 +901,6 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 30_000,
         lookup: 5_000,
         connect: 5_000,
         stall: 5_000,
@@ -973,7 +937,6 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 30_000,
         lookup: 5_000,
         connect: 5_000,
         stall: 200,
@@ -1007,10 +970,9 @@ describe("download", () => {
       const dest = path.join(tmp.dir, "output");
 
       const timeout: TimeoutOptions = {
-        request: 2_000,
-        lookup: 5_000,
-        connect: 5_000,
-        stall: 5_000,
+        lookup: 2_000,
+        connect: 2_000,
+        stall: 2_000,
       };
 
       const abortController = new AbortController();
@@ -1208,7 +1170,7 @@ describe("download", () => {
 
       const resumeOffset = 1024 * 1024;
       const checkpoint = {
-        etag: null,
+        etag: undefined,
         completedRanges: [{ start: 0, end: resumeOffset - 1 }],
       };
 
@@ -1391,8 +1353,8 @@ describe("download", () => {
 
       const cookies = await jar.getCookies(route.url.toString());
       expect(cookies).toHaveLength(1);
-      expect(cookies[0].key).toBe("token");
-      expect(cookies[0].value).toBe("xyz");
+      expect(cookies[0]!.key).toBe("token");
+      expect(cookies[0]!.value).toBe("xyz");
     });
 
     it("sends a cookie set by the probe response in the download request", async () => {
@@ -1415,10 +1377,10 @@ describe("download", () => {
 
       // First request is the HEAD probe; second is the GET download.
       const [head, get] = route.requests;
-      expect(head.method).toBe("HEAD");
-      expect(get.method).toBe("GET");
+      expect(head!.method).toBe("HEAD");
+      expect(get!.method).toBe("GET");
       // Cookie set in HEAD response must appear in the GET request.
-      expect(get.headers.cookie).toContain("probe=seen");
+      expect(get!.headers.cookie).toContain("probe=seen");
     });
   });
 });

@@ -839,6 +839,18 @@ export interface IExtensionApi {
   NAMESPACE: string;
 }
 
+// Context passed to a verifier's `repair` function, letting it recover a value
+// from the surrounding record's identity rather than only from the broken value.
+export interface IVerifierRepairContext {
+  // key under which the verified object lives in its parent (e.g. a modId for a
+  // mod record), even when the record's own id leaf was lost
+  parentKey?: string;
+  // the object that contains the element being repaired
+  parent?: unknown;
+  // the key of the element being repaired
+  key: string;
+}
+
 export interface IStateVerifier {
   // Human readable description of the problem, emitted if this verifier detects a problem
   description: (input: any) => string;
@@ -857,8 +869,11 @@ export interface IStateVerifier {
   // if set, delete this element or an ancestor element if this one doesn't
   // match the verifier.
   deleteBroken?: boolean | "parent";
-  // if set, this function is called to generate the "repaired" value
-  repair?: (input: any, def: any) => any;
+  // if set, this function is called to generate the "repaired" value. The
+  // optional `context` carries the surrounding record's key/parent so a repair
+  // can recover from identity (e.g. a mod recovering installationPath from its
+  // modId) - see mod_management/reducers/mods.ts.
+  repair?: (input: any, def: any, context?: IVerifierRepairContext) => any;
 }
 
 /**

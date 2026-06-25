@@ -47,6 +47,14 @@ function md5(buf: Buffer | Uint8Array): string {
   return crypto.createHash("md5").update(buf).digest("hex");
 }
 
+// shape of test-data/native-baseline.json, keyed by test-case name
+interface INativeBaselineEntry {
+  newMd5: string;
+  diffMs: number;
+  patchMs: number;
+}
+type NativeBaseline = Record<string, INativeBaselineEntry>;
+
 const TEST_CASES = [
   { name: "1kb-5pct", size: 1024, changePercent: 0.05, seed: 42 },
   { name: "10kb-5pct", size: 10240, changePercent: 0.05, seed: 100 },
@@ -63,7 +71,8 @@ function makeTestPair(tc: (typeof TEST_CASES)[0]): {
   let newBuf: Buffer;
   if (tc.changePercent === 0) {
     newBuf = Buffer.from(oldBuf);
-    newBuf[Math.floor(tc.size / 2)] ^= 0xff;
+    const flipAt = Math.floor(tc.size / 2);
+    newBuf[flipAt] = (newBuf[flipAt] ?? 0) ^ 0xff;
   } else {
     newBuf = modifyBytes(oldBuf, tc.changePercent, tc.seed + 1);
   }
@@ -100,7 +109,7 @@ describe("bsdiff wasm core - file API", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-file-"));
     const tmpPath = (name: string) => path.join(tmpDir, name);
     try {
-      const { oldBuf, newBuf } = makeTestPair(TEST_CASES[1]); // 10kb-5pct
+      const { oldBuf, newBuf } = makeTestPair(TEST_CASES[1]!); // 10kb-5pct
       fs.writeFileSync(tmpPath("old.bin"), oldBuf);
       fs.writeFileSync(tmpPath("new.bin"), newBuf);
 
@@ -133,7 +142,7 @@ describe("bsdiff wasm core - native cross-compatibility", () => {
 
   const baseline = JSON.parse(
     fs.readFileSync(path.join(TEST_DATA_DIR, "native-baseline.json"), "utf8"),
-  );
+  ) as NativeBaseline;
 
   for (const tc of TEST_CASES) {
     it(`applies native patch for ${tc.name}`, () => {
@@ -142,7 +151,7 @@ describe("bsdiff wasm core - native cross-compatibility", () => {
 
       const result = applyPatch(wasm, oldBuf, nativePatch);
       expect(md5(result)).toBe(md5(newBuf));
-      expect(md5(result)).toBe(baseline[tc.name].newMd5);
+      expect(md5(result)).toBe(baseline[tc.name]!.newMd5);
     });
   }
 });
@@ -175,7 +184,9 @@ describe("bsdiff wasm core - performance", () => {
   afterAll(() => {
     const baselinePath = path.join(TEST_DATA_DIR, "native-baseline.json");
     const hasBaseline = fs.existsSync(baselinePath);
-    const baseline = hasBaseline ? JSON.parse(fs.readFileSync(baselinePath, "utf8")) : null;
+    const baseline: NativeBaseline | null = hasBaseline
+      ? (JSON.parse(fs.readFileSync(baselinePath, "utf8")) as NativeBaseline)
+      : null;
 
     console.log("\n=== bsdiff Performance: Native vs WASM ===");
     console.log(
