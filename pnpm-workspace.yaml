@@ -49,8 +49,13 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.7
   "@msgpack/msgpack": 2.8.0
+<<<<<<< HEAD
   "@nexusmods/fomod-installer-ipc": 0.13.2
   "@nexusmods/fomod-installer-native": 0.13.3
+=======
+  "@nexusmods/fomod-installer-ipc": 0.13.3
+  "@nexusmods/fomod-installer-native": 0.13.2
+>>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
   "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.8.0

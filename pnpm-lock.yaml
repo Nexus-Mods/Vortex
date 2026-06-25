@@ -261,6 +261,12 @@ catalogs:
       specifier: 2.8.0
       version: 2.8.0
     '@nexusmods/fomod-installer-ipc':
+<<<<<<< HEAD
+=======
+      specifier: 0.13.3
+      version: 0.13.3
+    '@nexusmods/fomod-installer-native':
+>>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
       specifier: 0.13.2
       version: 0.13.2
     '@nexusmods/fomod-installer-native':
@@ -4261,7 +4267,11 @@ importers:
         version: link:../../packages/adaptor-api
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
+<<<<<<< HEAD
         version: 0.13.2
+=======
+        version: 0.13.3
+>>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.3
@@ -4777,7 +4787,11 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
+<<<<<<< HEAD
         version: 0.13.2
+=======
+        version: 0.13.3
+>>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.3
@@ -6384,8 +6398,13 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
+<<<<<<< HEAD
   '@nexusmods/fomod-installer-ipc@0.13.2':
     resolution: {integrity: sha512-0I6HBu5s9EBQlcEvm3v+YbYMBKrNWjQ/wL8OwOEFAJLAIvpvbIPdquSde4HyQheB69lUpodOryBQuLtPQMm+0g==}
+=======
+  '@nexusmods/fomod-installer-ipc@0.13.3':
+    resolution: {integrity: sha512-Ex7jQJASYemOWoXzZw94jakOqTDOEfFQ6nfPHQFC3nB2oYTzDGd3cgNajZt8kZJOB8x/izBXiIBOPhy2+GGURg==}
+>>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
     engines: {node: '>=22'}
 
   '@nexusmods/fomod-installer-native@0.13.3':
@@ -13985,7 +14004,11 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
+<<<<<<< HEAD
   '@nexusmods/fomod-installer-ipc@0.13.2': {}
+=======
+  '@nexusmods/fomod-installer-ipc@0.13.3': {}
+>>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
 
   '@nexusmods/fomod-installer-native@0.13.3':
     dependencies:
