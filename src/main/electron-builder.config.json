@@ -53,7 +53,13 @@
       "to": "locales"
     }
   ],
-  "files": ["**/*"],
+  "files": [
+    "**/*",
+    "!node_modules/@nexusmods/fomod-installer-native/build/**",
+    "!node_modules/@nexusmods/fomod-installer-native/bin/**",
+    "!node_modules/@nexusmods/fomod-installer-native/src-native/**",
+    "!node_modules/@nexusmods/fomod-installer-native/*.{h,lib,dll}"
+  ],
   "asar": true,
   "asarUnpack": [
     "LICENSE.md",
@@ -62,7 +68,8 @@
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/json-socket",
     "node_modules/react-select/scss",
-    "node_modules/@nexusmods/fomod-installer-native/dist/*.dll",
+    "node_modules/@nexusmods/fomod-installer-native/prebuilds/win32-x64/*.dll",
+    "node_modules/@nexusmods/fomod-installer-native/prebuilds/linux-x64/*.so",
     "node_modules/@nexusmods/fomod-installer-ipc/dist/*.exe",
     "assets/*.exe",
     "assets/css/**",

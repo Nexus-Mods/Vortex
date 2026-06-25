@@ -261,8 +261,8 @@ catalogs:
       specifier: 2.8.0
       version: 2.8.0
     '@nexusmods/fomod-installer-ipc':
-      specifier: 0.13.1
-      version: 0.13.1
+      specifier: 0.13.3
+      version: 0.13.3
     '@nexusmods/fomod-installer-native':
       specifier: 0.13.2
       version: 0.13.2
@@ -4219,7 +4219,7 @@ importers:
         version: link:../../packages/adaptor-api
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-        version: 0.13.1
+        version: 0.13.3
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.2
@@ -4723,7 +4723,7 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-        version: 0.13.1
+        version: 0.13.3
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.2
@@ -6324,8 +6324,8 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@nexusmods/fomod-installer-ipc@0.13.1':
-    resolution: {integrity: sha512-Q3tZIMWjMV0J8wJAe2qPCMQQJP+MlI7fn60UFtRYcO8igdaevQvI0OPprH8bJyFOe3WMDyrpyyQiD9vTjwPqww==}
+  '@nexusmods/fomod-installer-ipc@0.13.3':
+    resolution: {integrity: sha512-Ex7jQJASYemOWoXzZw94jakOqTDOEfFQ6nfPHQFC3nB2oYTzDGd3cgNajZt8kZJOB8x/izBXiIBOPhy2+GGURg==}
     engines: {node: '>=22'}
 
   '@nexusmods/fomod-installer-native@0.13.2':
@@ -13913,7 +13913,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nexusmods/fomod-installer-ipc@0.13.1': {}
+  '@nexusmods/fomod-installer-ipc@0.13.3': {}
 
   '@nexusmods/fomod-installer-native@0.13.2':
     dependencies:
