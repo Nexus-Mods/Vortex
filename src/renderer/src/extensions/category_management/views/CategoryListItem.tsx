@@ -3,12 +3,14 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiDelete,
+  mdiDrag,
   mdiFolderPlus,
   mdiPlus,
+  mdiRename,
   mdiSubdirectoryArrowRight,
-  mdiTagEdit,
 } from "@mdi/js";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import { useDrag, useDrop } from "react-dnd";
 
 import { Button } from "@/ui/components/button/Button";
 import { Input } from "@/ui/components/form/input/Input";
@@ -20,11 +22,18 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import type { ICategoriesTree } from "../types/ITrees";
 
+const CATEGORY_ITEM = "CATEGORY_ITEM";
+
 interface ICategoryListItemProps {
   category: ICategoriesTree;
   expand: (id: string) => void;
   remove: (id: string) => void;
   createSubcategory: (name: string, order: number, parent: string) => void;
+  moveCategory: (
+    sourceId: string,
+    targetId: string,
+    position: "before" | "after" | "inside",
+  ) => void;
 }
 
 export default function CategoryListItem({
@@ -32,17 +41,68 @@ export default function CategoryListItem({
   expand,
   remove,
   createSubcategory,
+  moveCategory,
 }: ICategoryListItemProps) {
+  const { title, subtitle, expanded, children, parentId, categoryId, order } = category;
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<"before" | "after" | "inside" | null>(null);
+  const [{ isDragging: _ }, dragRef] = useDrag({
+    type: CATEGORY_ITEM,
+    item: { id: categoryId, parentId },
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+  });
+  const [{ isOver, canDrop: __ }, dropRef] = useDrop({
+    accept: CATEGORY_ITEM,
+    collect: (monitor) => ({
+      isOver: monitor.isOver({ shallow: true }),
+      canDrop: monitor.canDrop(),
+    }),
+    hover: (dragged: { id: string; parentId: string }, monitor) => {
+      if (dragged.id === categoryId) {
+        setHoverPosition(null);
+        return;
+      }
+      const hoverRect = ref.current?.getBoundingClientRect();
+      const clientOffset = monitor.getClientOffset();
+      if (!hoverRect || !clientOffset) return;
+
+      const relY = clientOffset.y - hoverRect.top;
+      const h = hoverRect.height;
+
+      if (relY < h / 3) setHoverPosition((p) => (p === "before" ? p : "before"));
+      else if (relY > (2 * h) / 3) setHoverPosition((p) => (p === "after" ? p : "after"));
+      else setHoverPosition((p) => (p === "inside" ? p : "inside"));
+    },
+    drop: (dragged: { id: string; parentId: string }, monitor) => {
+      if (!monitor.didDrop()) {
+        const position = hoverPosition ?? "after";
+        moveCategory(dragged.id, categoryId, position);
+      }
+      setHoverPosition(null);
+    },
+  });
+
+  dragRef(dropRef(ref));
+
+  const showHoverPosition = isOver ? hoverPosition : null;
+
+  const indicatorClass =
+    isOver && showHoverPosition === "before"
+      ? "border-t-[3px] border-blue-500"
+      : isOver && showHoverPosition === "after"
+        ? "border-b-[3px] border-blue-500"
+        : isOver && showHoverPosition === "inside"
+          ? "shadow-[inset_0_0_0_2px_rgba(59,130,246,0.12)]"
+          : "";
+
   const [addNew, setAddNew] = useState(false);
   const [editName, setEditName] = useState(false);
   const [newName, setNewName] = useState(category.title);
   const [newSubcategoryName, setNewSubcategoryName] = useState<string>("");
-
-  const { title, subtitle, expanded, children, parentId, categoryId } = category;
   const actions: IToolbarAction[] = [
     {
       label: "Edit",
-      iconPath: mdiTagEdit,
+      iconPath: mdiRename,
       onClick: () => setEditMode("name"),
     },
     {
@@ -83,9 +143,11 @@ export default function CategoryListItem({
 
   return (
     <div className="flex flex-col rounded-sm border border-stroke-weak bg-surface-mid p-4">
-      <div className="flex">
+      <div className={`flex ${indicatorClass}`} ref={ref}>
         <div className="flex grow gap-2">
           <div className="flex items-center gap-2">
+            <Icon className="cursor-move" path={mdiDrag} />
+
             {!!parentId && <Icon path={mdiSubdirectoryArrowRight} />}
 
             {children.length > 0 && (
@@ -102,7 +164,10 @@ export default function CategoryListItem({
 
           <div>
             {!editName && (
-              <Typography title={categoryId} typographyType="body-sm">
+              <Typography
+                title={`Category ID: ${categoryId} - Order ${order}`}
+                typographyType="body-sm"
+              >
                 {title}
               </Typography>
             )}
@@ -194,6 +259,7 @@ export default function CategoryListItem({
               createSubcategory={createSubcategory}
               expand={() => expand(c.categoryId)}
               key={c.categoryId}
+              moveCategory={moveCategory}
               remove={remove}
             />
           ))}

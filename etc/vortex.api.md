@@ -4403,9 +4403,9 @@ function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promi
 // Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-const loadCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictionary, {
-    gameId: string;
-    gameCategories: ICategoryDictionary;
+const loadCategories: ComplexActionCreator2<string, ICategoryDictionary, {
+gameId: string;
+gameCategories: ICategoryDictionary;
 }, {}>;
 
 // @public (undocumented)
@@ -4944,9 +4944,9 @@ function relativeTime(date: Date, t: TFunction): string;
 function removeAsync(remPath: string, options?: IRemoveFileOptions): Promise_2<void>;
 
 // @public (undocumented)
-const removeCategory: reduxAct.ComplexActionCreator2<string, string, {
-    gameId: string;
-    id: string;
+const removeCategory: ComplexActionCreator2<string, string, {
+gameId: string;
+id: string;
 }, {}>;
 
 // @public
@@ -4994,10 +4994,10 @@ function removeValueIf<T extends object>(state: T, path: Array<string | number>,
 function renameAsync(sourcePath: string, destinationPath: string): Promise_2<void>;
 
 // @public (undocumented)
-const renameCategory: reduxAct.ComplexActionCreator3<string, string, string, {
-    gameId: string;
-    categoryId: string;
-    name: string;
+const renameCategory: ComplexActionCreator3<string, string, string, {
+gameId: string;
+categoryId: string;
+name: string;
 }, {}>;
 
 // @public (undocumented)
@@ -5202,16 +5202,16 @@ const setAutoStart: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 // Warning: (ae-forgotten-export) The symbol "ICategory" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-const setCategory: reduxAct.ComplexActionCreator3<string, string, ICategory, {
-    gameId: string;
-    id: string;
-    category: ICategory;
+const setCategory: ComplexActionCreator3<string, string, ICategory, {
+gameId: string;
+id: string;
+category: ICategory;
 }, {}>;
 
 // @public (undocumented)
-const setCategoryOrder: reduxAct.ComplexActionCreator2<string, string[], {
-    gameId: string;
-    categoryIds: string[];
+const setCategoryOrder: ComplexActionCreator2<string, string[], {
+gameId: string;
+categoryIds: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -6284,9 +6284,9 @@ function unlinkAsync(filePath: string, options?: IRemoveFileOptions): Promise_2<
 const UPDATE_CHANNELS: readonly ["stable", "beta", "next", "none"];
 
 // @public (undocumented)
-const updateCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictionary, {
-    gameId: string;
-    gameCategories: ICategoryDictionary;
+const updateCategories: ComplexActionCreator2<string, ICategoryDictionary, {
+gameId: string;
+gameCategories: ICategoryDictionary;
 }, {}>;
 
 // Warning: (ae-forgotten-export) The symbol "ValuesOf" needs to be exported by the entry point api.d.ts

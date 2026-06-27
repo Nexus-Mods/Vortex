@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Modal } from "@/ui/components/modal/Modal";
 
-import CategoryList, { CategoryListFC } from "./CategoryList";
+import CategoryList from "./CategoryList";
 
 interface IProps {
   visible: boolean;
@@ -15,11 +15,7 @@ function CategoryDialog({ visible, onHide }: IProps) {
 
   return (
     <Modal isOpen={visible} size="lg" title={t("Categories")} onClose={() => onHide()}>
-      <CategoryListFC />
-
       <CategoryList />
-
-      <div onClick={() => onHide()}>Close me</div>
     </Modal>
   );
 }

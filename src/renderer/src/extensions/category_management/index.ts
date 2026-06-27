@@ -1,4 +1,3 @@
-import i18next from "i18next";
 import type * as Redux from "redux";
 
 import { setDialogVisible } from "@/actions";
@@ -15,12 +14,9 @@ import { setModAttribute } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/types/IModProps";
 import { isLoggedIn } from "../nexus_integration/selectors";
 import { loadCategories, updateCategories } from "./actions/category";
-import { showCategoriesDialog } from "./actions/session";
 import { categoryReducer } from "./reducers/category";
-import { sessionReducer } from "./reducers/session";
 import { allCategories } from "./selectors";
 import type { ICategoryDictionary } from "./types/ICategoryDictionary";
-import type { ICategoriesTree } from "./types/ITrees";
 import CategoryFilter from "./util/CategoryFilter";
 import { resolveCategoryName, resolveCategoryPath } from "./util/retrieveCategoryPath";
 import CategoryDialog from "./views/CategoryDialog";
@@ -28,16 +24,11 @@ import CategoryDialog from "./views/CategoryDialog";
 // export for api
 export { resolveCategoryName, resolveCategoryPath };
 
-function getModCategory(mod: IModWithState) {
-  return getSafe(mod, ["attributes", "category"], undefined);
-}
+const getModCategory = (mod: IModWithState): string | number | undefined =>
+  mod.attributes?.category;
 
-function getModName(mod: IModWithState) {
-  return (
-    getSafe(mod, ["attributes", "name"], undefined) ||
-    getSafe(mod, ["attributes", "fileName"], undefined)
-  );
-}
+const getModName = (mod: IModWithState): string | undefined =>
+  mod.attributes?.name || mod.attributes?.fileName;
 
 function getCategoryChoices(state: IState) {
   const categories: ICategoryDictionary = allCategories(state);
@@ -49,7 +40,7 @@ function getCategoryChoices(state: IState) {
   );
 }
 
-function undefSort(lhs: any, rhs: any) {
+function undefSort(lhs?: string, rhs?: string) {
   return lhs !== undefined ? 1 : rhs !== undefined ? -1 : 0;
 }
 
@@ -70,7 +61,7 @@ function sortCategories(
   lhs: IModWithState,
   rhs: IModWithState,
   collator: Intl.Collator,
-  state: any,
+  state: IState,
   sortDir: string,
 ): number {
   const lhsCat = resolveCategoryName(getModCategory(lhs), state);
@@ -93,7 +84,6 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.registerReducer(["persistent", "categories"], categoryReducer);
-  context.registerReducer(["session", "categories"], sessionReducer);
 
   context.registerDialog("categories", CategoryDialog);
   context.registerAction("mod-icons", 80, "categories", {}, "Categories", () => {
@@ -106,16 +96,15 @@ function init(context: IExtensionContext): boolean {
     description: "Mod Category",
     icon: "sitemap",
     placement: "table",
-    calc: (mod: IModWithState) =>
-      resolveCategoryName(getModCategory(mod), context.api.store.getState()),
+    calc: (mod: IModWithState) => resolveCategoryName(getModCategory(mod), context.api.getState()),
     isToggleable: true,
     edit: {},
     isSortable: true,
     isGroupable: (mod: IModWithState, t: TFunction) =>
-      resolveCategoryName(getModCategory(mod), context.api.store.getState()) || t("<No category>"),
+      resolveCategoryName(getModCategory(mod), context.api.getState()) || t("<No category>"),
     filter: new CategoryFilter(),
     sortFuncRaw: (lhs: IModWithState, rhs: IModWithState, locale: string): number =>
-      sortCategories(lhs, rhs, getCollator(locale), context.api.store.getState(), sortDirection),
+      sortCategories(lhs, rhs, getCollator(locale), context.api.getState(), sortDirection),
   });
 
   context.registerTableAttribute("mods", {
@@ -124,12 +113,11 @@ function init(context: IExtensionContext): boolean {
     description: "Mod Category",
     icon: "sitemap",
     supportsMultiple: true,
-    calc: (mod: IModWithState) =>
-      resolveCategoryPath(getModCategory(mod), context.api.store.getState()),
+    calc: (mod: IModWithState) => resolveCategoryPath(getModCategory(mod), context.api.getState()),
     edit: {
-      choices: () => getCategoryChoices(context.api.store.getState()),
-      onChangeValue: (rows: IModWithState[], newValue: any) => {
-        const gameMode = activeGameId(context.api.store.getState());
+      choices: () => getCategoryChoices(context.api.getState()),
+      onChangeValue: (rows: IModWithState[], newValue: string | number) => {
+        const gameMode = activeGameId(context.api.getState());
         rows.forEach((row) => {
           if (row.state === "downloaded") {
             context.api.store.dispatch(setDownloadModInfo(row.id, "custom.category", newValue));
@@ -170,23 +158,23 @@ function init(context: IExtensionContext): boolean {
       }
     });
     try {
-      context.api.events.on("update-categories", (gameId, categories, isUpdate) => {
-        if (isUpdate) {
-          context.api.store.dispatch(updateCategories(gameId, categories));
-        } else {
-          context.api.store.dispatch(loadCategories(gameId, categories));
-        }
-      });
+      context.api.events.on(
+        "update-categories",
+        (gameId: string, categories: ICategoryDictionary, isUpdate: boolean) => {
+          if (isUpdate) {
+            context.api.store.dispatch(updateCategories(gameId, categories));
+          } else {
+            context.api.store.dispatch(loadCategories(gameId, categories));
+          }
+        },
+      );
 
       context.api.events.on("gamemode-activated", (gameMode: string) => {
-        const categories: ICategoriesTree[] = getSafe(
-          store.getState(),
-          ["persistent", "categories", gameMode],
-          undefined,
-        );
-        if (categories === undefined && isLoggedIn(store.getState())) {
+        const categories: ICategoryDictionary =
+          context.api.getState().persistent.categories[gameMode];
+        if (categories === undefined && isLoggedIn(context.api.getState())) {
           context.api.events.emit("retrieve-category-list", false, {});
-        } else if (categories !== undefined && categories.length === 0) {
+        } else if (categories !== undefined && Object.values(categories).length === 0) {
           context.api.store.dispatch(updateCategories(gameMode, {}));
         }
       });

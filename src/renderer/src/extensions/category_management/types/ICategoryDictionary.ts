@@ -7,3 +7,7 @@ export interface ICategory {
 export interface ICategoryDictionary {
   [id: string]: ICategory;
 }
+
+export interface ICategoryState {
+  [gameId: string]: ICategoryDictionary;
+}

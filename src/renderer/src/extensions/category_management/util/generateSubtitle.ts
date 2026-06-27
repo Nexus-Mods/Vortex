@@ -1,7 +1,6 @@
 import type { TFunction } from "i18next";
 
 import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
 import type { IMod } from "../../mod_management/types/IMod";
 
 /**
