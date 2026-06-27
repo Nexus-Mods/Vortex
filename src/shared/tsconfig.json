@@ -1,7 +1,11 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.strict.json",
-  "include": ["./src/**/*", "../../typings.custom/promise.d.ts"],
+  "include": [
+    "./src/**/*",
+    "../../typings.custom/promise.d.ts",
+    "../../typings.custom/web-globals.d.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,

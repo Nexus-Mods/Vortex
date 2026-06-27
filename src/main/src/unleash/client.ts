@@ -41,7 +41,7 @@ export class UnleashClient {
   readonly #appVersion: string;
   readonly #channel: "beta" | "stable";
 
-  #flags: FeatureFlag[];
+  #flags: FeatureFlag[] = [];
   #context: FlagContext = {};
 
   constructor(appVersion: string) {
@@ -159,6 +159,7 @@ export class UnleashClient {
     const { toggles } = result.data;
     for (let i = 0; i < toggles.length; i++) {
       const toggle = toggles[i];
+      if (!toggle) continue;
       const flag = parseToggle(toggle);
       if (flag) flags.push(flag);
     }

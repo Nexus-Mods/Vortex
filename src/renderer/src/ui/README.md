@@ -12,9 +12,11 @@ ui/
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
+│   │   ├── checkbox/    - Checkbox input
 │   │   ├── formfield/   - Form field wrapper with labels and validation
 │   │   ├── input/       - Text input with validation
-│   │   └── select/      - Select dropdown with custom styling
+│   │   ├── select/      - Select dropdown with custom styling
+│   │   └── switch/      - Tri-state toggle switch (off / on / semi-on)
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
@@ -287,6 +289,29 @@ import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
   <Input id="last" label="Last Name" type="text" required />
 </FormFieldWrap>
 ```
+
+### Switch
+
+A tri-state toggle switch (xs) — `off`, `on`, and a programmatic `semi-on` ("mixed") state. Built on a visually-hidden native `<input type="checkbox">`; setting `indeterminate` renders `semi-on` and reports `aria-checked="mixed"`. Clicking only ever flips on/off — `semi-on` is set by the consumer (e.g. a master control whose children are partially on). It's controlled-visual (appearance follows the `checked`/`indeterminate` props, like `Checkbox`).
+
+```tsx
+import { Switch } from "../../ui/components/form/switch/Switch";
+
+// Controlled on/off
+<Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} aria-label="Enable" />
+
+// Semi-on (mixed) — e.g. a "select all" with some children on
+<Switch
+  checked={allOn}
+  indeterminate={someOn && !allOn}
+  onChange={(e) => setAll(e.target.checked)}
+  aria-label="All settings"
+/>
+```
+
+**Props:** native `<input>` attributes (minus `type`) plus `indeterminate?: boolean`.
+
+> **Porting note:** when `@headlessui/react` reaches v2 (after the React upgrade), reimplement on top of HeadlessUI's `<Switch>`. The `nxm-switch` classes live on the track/thumb so they can move straight across. HeadlessUI's Switch is binary, so the tri-state stays the wrapper's responsibility (`data-state` + `indeterminate`/`aria-checked="mixed"`).
 
 ### Dropdown
 

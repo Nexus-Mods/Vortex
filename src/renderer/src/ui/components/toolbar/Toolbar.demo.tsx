@@ -21,7 +21,8 @@ import {
 } from "@mdi/js";
 import React from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Toolbar } from "./Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "./ToolbarGroup";
 

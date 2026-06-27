@@ -23,7 +23,7 @@ function wireToResolvedResource(wire: WireResolvedResource): ResolvedResource {
     probeEndpoint: probe,
     chunkEndpoint: (chunk) =>
       Promise.resolve(
-        wireToResolvedEndpoint(wire.chunkEndpoints[chunk.index] ?? wire.probeEndpoint),
+        wireToResolvedEndpoint(wire.chunkEndpoints?.[chunk.index] ?? wire.probeEndpoint),
       ),
   };
 }

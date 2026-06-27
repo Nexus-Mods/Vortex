@@ -7,25 +7,26 @@
 import React, { useState } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { BulletDemo } from "@/ui/components/bullet/BulletDemo";
-import { ButtonDemo } from "@/ui/components/button/ButtonDemo";
-import { CollectionTileDemo } from "@/ui/components/collectiontile/CollectionTileDemo";
-import { DropdownDemo } from "@/ui/components/dropdown/DropdownDemo";
-import { InputDemo } from "@/ui/components/form/input/InputDemo";
-import { SelectDemo } from "@/ui/components/form/select/SelectDemo";
-import { IconDemo } from "@/ui/components/icon/IconDemo";
-import { ImageDemo } from "@/ui/components/image/ImageDemo";
-import { ListingDemo } from "@/ui/components/listing/ListingDemo";
-import { PaginationDemo } from "@/ui/components/pagination/PaginationDemo";
-import { PickerDemo } from "@/ui/components/picker/PickerDemo";
-import { PillDemo } from "@/ui/components/pill/PillDemo";
-import { PremiumBadgeDemo } from "@/ui/components/premium_badge/PremiumBadgeDemo";
+import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
+import { ButtonDemo } from "@/ui/components/button/Button.demo";
+import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
+import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { InputDemo } from "@/ui/components/form/input/Input.demo";
+import { SelectDemo } from "@/ui/components/form/select/Select.demo";
+import { SwitchDemo } from "@/ui/components/form/switch/Switch.demo";
+import { IconDemo } from "@/ui/components/icon/Icon.demo";
+import { ImageDemo } from "@/ui/components/image/Image.demo";
+import { ListingDemo } from "@/ui/components/listing/Listing.demo";
+import { PaginationDemo } from "@/ui/components/pagination/Pagination.demo";
+import { PickerDemo } from "@/ui/components/picker/Picker.demo";
+import { PillDemo } from "@/ui/components/pill/Pill.demo";
+import { PremiumBadgeDemo } from "@/ui/components/premium_badge/PremiumBadge.demo";
 import { TableDemo } from "@/ui/components/table/Table.demo";
-import { TabButton } from "@/ui/components/tabs/Tab";
 import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
-import { TabProvider } from "@/ui/components/tabs/tabs.context";
-import { TabsDemo } from "@/ui/components/tabs/TabsDemo";
+import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import { TabsDemo } from "@/ui/components/tabs/Tabs.demo";
 import { ToolbarDemo } from "@/ui/components/toolbar/Toolbar.demo";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyDemo } from "@/ui/components/typography/Typography.demo";
@@ -130,6 +131,8 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
                     <TabButton name="Input" />
 
                     <TabButton name="Select" />
+
+                    <TabButton name="Switch" />
                   </TabBar>
 
                   <div className="mt-6">
@@ -139,6 +142,10 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
 
                     <TabPanel name="Select">
                       <SelectDemo />
+                    </TabPanel>
+
+                    <TabPanel name="Switch">
+                      <SwitchDemo />
                     </TabPanel>
                   </div>
                 </TabProvider>

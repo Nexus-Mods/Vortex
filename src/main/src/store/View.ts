@@ -32,7 +32,7 @@ export class View<T extends Record<string, unknown>> {
       return this.all();
     }
 
-    const clauses = entries.map((_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`);
+    const clauses = entries.map(([key], i) => `${quoteIdentifier(key)} = $${i + 1}`);
     const values = entries.map(([, v]) => v as DuckDBValue);
     const sql = `SELECT * FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
 
@@ -42,7 +42,7 @@ export class View<T extends Record<string, unknown>> {
 
   async findOne(filter: Partial<T>): Promise<T | null> {
     const entries = Object.entries(filter);
-    const clauses = entries.map((_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`);
+    const clauses = entries.map(([key], i) => `${quoteIdentifier(key)} = $${i + 1}`);
     const values = entries.map(([, v]) => v as DuckDBValue);
 
     let sql = `SELECT * FROM ${this._tableName}`;
@@ -53,7 +53,7 @@ export class View<T extends Record<string, unknown>> {
 
     const reader = await this._connection.runAndReadAll(sql, values);
     const rows = reader.getRowObjectsJson() as T[];
-    return rows.length > 0 ? rows[0] : null;
+    return rows[0] ?? null;
   }
 
   async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {

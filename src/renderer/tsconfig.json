@@ -7,7 +7,17 @@
     "../../typings.custom/*.d.ts",
     "src/typings.custom/*.d.ts"
   ],
-  "exclude": ["src/__mocks__/", "src/__tests__/", "./dist", "./temp", "./lib", "node_modules"],
+  "exclude": [
+    "src/__mocks__/",
+    "src/__tests__/",
+    "./dist",
+    "./temp",
+    "./lib",
+    "node_modules",
+    // Shim for lib-minimal packages (e.g. @vortex/shared); the renderer's `dom`
+    // lib already provides these globals, so including it would redeclare them.
+    "../../typings.custom/web-globals.d.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,

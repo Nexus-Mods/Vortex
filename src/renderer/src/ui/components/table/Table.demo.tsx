@@ -7,15 +7,17 @@
 import {
   mdiCheckCircle,
   mdiCloudDownload,
-  mdiDelete,
+  mdiDotsVertical,
   mdiThumbUp,
   mdiThumbUpOutline,
 } from "@mdi/js";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
-import { Button } from "../button/Button";
-import { Icon } from "../icon/Icon";
-import { Typography } from "../typography/Typography";
+import { Button } from "@/ui/components/button/Button";
+import { Switch } from "@/ui/components/form/switch/Switch";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { Table } from "./Table";
 import type { IColumnDef } from "./Table.types";
 
@@ -31,6 +33,7 @@ interface IDemoMod {
   downloads: number;
   updated: string;
   endorsed: boolean;
+  installed: boolean;
 }
 
 const CATEGORIES = ["Animation", "Armour", "Audio", "Gameplay", "Patches", "UI", "Weapons"];
@@ -53,6 +56,7 @@ const buildMods = (count: number): IDemoMod[] =>
     downloads: (index * 1373) % 100000,
     updated: `${MONTHS[index % MONTHS.length]} 2026`,
     endorsed: index % 3 === 0,
+    installed: (index * 7) % 9 > 2,
   }));
 
 // Stand-in for widths a user previously dragged and we restored from
@@ -64,6 +68,34 @@ const PRESET_COLUMN_WIDTHS: Record<string, number> = {
   version: 160,
   category: 220,
   endorsed: 160,
+};
+
+const ActionsCell = ({ mod }: { mod: IDemoMod }) => {
+  const [enabled, setEnabled] = useState(mod.status === "Enabled");
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      {mod.installed ? (
+        <Switch
+          aria-label={`${enabled ? "Disable" : "Enable"} ${mod.name}`}
+          checked={enabled}
+          onChange={(event) => setEnabled(event.target.checked)}
+        />
+      ) : (
+        <Button appearance="moderate" brand="primary" size="xs">
+          Install
+        </Button>
+      )}
+
+      <Button
+        appearance="weak"
+        aria-label={`More actions for ${mod.name}`}
+        brand="neutral"
+        leftIconPath={mdiDotsVertical}
+        size="xs"
+      />
+    </div>
+  );
 };
 
 export const TableDemo = () => {
@@ -202,11 +234,7 @@ export const TableDemo = () => {
         width: "140px",
         hideable: false,
         resizable: false,
-        cell: () => (
-          <Button appearance="moderate" brand="neutral" leftIconPath={mdiDelete} size="xs">
-            Remove
-          </Button>
-        ),
+        cell: (row) => <ActionsCell mod={row} />,
       },
     ],
     [],
@@ -239,7 +267,7 @@ export const TableDemo = () => {
         onColumnWidthsChange={(widths) => {
           // A consumer would persist this map (e.g. per table id); here we just
           // log it so the design-system demo stays self-contained.
-          // eslint-disable-next-line no-console
+
           console.log("[TableDemo] column widths changed:", widths);
         }}
       />

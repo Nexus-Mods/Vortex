@@ -1,8 +1,8 @@
 import React, { type ReactNode } from "react";
 
+import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { Typography } from "../typography/Typography";
 import type { IColumnDef } from "./Table.types";
 
 interface ITableRowProps<T> {

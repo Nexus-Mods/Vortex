@@ -108,7 +108,7 @@ export function createAdaptorHost(
   }): Promise<ILoadedAdaptor> {
     const adaptorPid = nextPid();
     const bundle = await fs.readFile(config.bundlePath, "utf-8");
-    const handle = createNodeWorker(bootstrapPath);
+    const handle = createNodeWorker(bootstrapPath!);
     const transport = createRpcTransport(handle.worker);
 
     // Build a per-worker handler map. Bare handlers are shared across every

@@ -1,0 +1,135 @@
+@layer components {
+    .nxm-switch {
+        flex-shrink: 0;
+        cursor: pointer;
+        position: relative;
+        display: inline-flex;
+
+        border-radius: 9999px;
+        width: calc(var(--spacing) * 8);
+        height: calc(var(--spacing) * 4);
+
+        border: 2px solid var(--color-translucent-subdued);
+        background-color: transparent;
+
+        transition-property: background-color, border-color, outline-color;
+        transition-duration: var(--default-transition-duration);
+        transition-timing-function: var(--default-transition-timing-function);
+
+        /* override bootstrap styles */
+        &,
+        .nxm-switch-input {
+            margin: 0;
+        }
+
+        &[data-state="on"],
+        &[data-state="semi-on"] {
+            border-color: transparent;
+            background-color: var(--color-translucent-strong);
+        }
+
+        &:has(.nxm-switch-input:focus-visible) {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+
+        .nxm-switch-input {
+            opacity: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .nxm-switch-thumb {
+            top: 50%;
+            position: absolute;
+            box-sizing: border-box;
+            left: calc(var(--spacing) * 0.5);
+
+            border-radius: 9999px;
+            width: calc(var(--spacing) * 2);
+            height: calc(var(--spacing) * 2);
+
+            border: 2px solid transparent;
+            transform: translate(0, -50%);
+            background-color: var(--color-translucent-subdued);
+
+            transition-property: transform, width, height, border-color, background-color;
+            transition-duration: var(--default-transition-duration);
+            transition-timing-function: var(--default-transition-timing-function);
+
+            &::before {
+                top: 50%;
+                left: 50%;
+                content: "";
+                position: absolute;
+
+                border-radius: 9999px;
+                width: calc(var(--spacing) * 6);
+                height: calc(var(--spacing) * 6);
+
+                pointer-events: none;
+                background-color: transparent;
+                transform: translate(-50%, -50%);
+
+                transition-property: background-color;
+                transition-duration: var(--default-transition-duration);
+                transition-timing-function: var(--default-transition-timing-function);
+            }
+        }
+
+        &[data-state="on"] .nxm-switch-thumb,
+        &[data-state="semi-on"] .nxm-switch-thumb {
+            width: calc(var(--spacing) * 3);
+            height: calc(var(--spacing) * 3);
+            transform: translate(calc(var(--spacing) * 3.5), -50%);
+        }
+
+        &[data-state="on"] .nxm-switch-thumb {
+            background-color: var(--color-surface-mid);
+        }
+
+        &[data-state="semi-on"] .nxm-switch-thumb {
+            background-color: transparent;
+            border-color: var(--color-surface-mid);
+        }
+
+        &:not(.nxm-switch-disabled) {
+            &:hover .nxm-switch-thumb::before {
+                background-color: var(--color-translucent-50);
+            }
+
+            &:active .nxm-switch-thumb::before {
+                background-color: var(--color-translucent-100);
+            }
+        }
+
+        .nxm-switch-input:focus-visible ~ .nxm-switch-thumb::before {
+            background-color: var(--color-translucent-100);
+        }
+
+        &.nxm-switch-disabled {
+            cursor: not-allowed;
+
+            &[data-state="off"] {
+                border-color: var(--color-translucent-50);
+
+                .nxm-switch-thumb {
+                    background-color: var(--color-translucent-200);
+                }
+            }
+
+            &[data-state="on"],
+            &[data-state="semi-on"] {
+                background-color: var(--color-translucent-100);
+            }
+
+            &[data-state="on"] .nxm-switch-thumb {
+                background-color: var(--color-surface-low);
+            }
+
+            &[data-state="semi-on"] .nxm-switch-thumb {
+                border-color: var(--color-surface-low);
+            }
+        }
+    }
+}

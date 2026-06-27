@@ -19,7 +19,7 @@ jobs:
     outputs:
       games: ${{ steps.find.outputs.games }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Discover opted-in game extensions
         id: find
@@ -53,7 +53,7 @@ jobs:
         game: ${{ fromJson(needs.discover.outputs.games) }}
     name: test (${{ matrix.game }})
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
 
