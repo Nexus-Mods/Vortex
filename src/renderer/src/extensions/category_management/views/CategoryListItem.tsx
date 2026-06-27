@@ -1,6 +1,4 @@
 import {
-  mdiArrowDown,
-  mdiArrowUp,
   mdiCancel,
   mdiChevronDown,
   mdiChevronRight,
