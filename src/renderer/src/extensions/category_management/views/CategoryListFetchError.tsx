@@ -1,5 +1,5 @@
 import { mdiFolderAlert, mdiUpdate } from "@mdi/js";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";

@@ -9,6 +9,7 @@ import {
   mdiRename,
   mdiSubdirectoryArrowRight,
 } from "@mdi/js";
+import type { TFunction } from "i18next";
 import React, { useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 
@@ -20,15 +21,18 @@ import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 
-import type { ICategoriesTree } from "../types/ITrees";
+import type { ICategoriesTreeEntry } from "../types/ICategoriesTreeEntry";
+import CategorySubtitle from "./CategorySubtitle";
 
 const CATEGORY_ITEM = "CATEGORY_ITEM";
 
 interface ICategoryListItemProps {
-  category: ICategoriesTree;
+  t: TFunction;
+  category: ICategoriesTreeEntry;
   expand: (id: string) => void;
   remove: (id: string) => void;
   createSubcategory: (name: string, order: number, parent: string) => void;
+  renameCategory: (categoryId: string, newCategory: string) => void;
   moveCategory: (
     sourceId: string,
     targetId: string,
@@ -37,13 +41,15 @@ interface ICategoryListItemProps {
 }
 
 export default function CategoryListItem({
+  t,
   category,
   expand,
   remove,
   createSubcategory,
   moveCategory,
+  renameCategory,
 }: ICategoryListItemProps) {
-  const { title, subtitle, expanded, children, parentId, categoryId, order } = category;
+  const { title, expanded, children, parentId, categoryId, order } = category;
   const ref = useRef<HTMLDivElement | null>(null);
   const [hoverPosition, setHoverPosition] = useState<"before" | "after" | "inside" | null>(null);
   const [{ isDragging: _ }, dragRef] = useDrag({
@@ -141,6 +147,11 @@ export default function CategoryListItem({
     expand(categoryId);
   };
 
+  const rename = () => {
+    renameCategory(categoryId, newName);
+    setEditMode();
+  };
+
   return (
     <div className="flex flex-col rounded-sm border border-stroke-weak bg-surface-mid p-4">
       <div className={`flex ${indicatorClass}`} ref={ref}>
@@ -191,6 +202,7 @@ export default function CategoryListItem({
                   brand="primary"
                   leftIconPath={mdiPlus}
                   size="sm"
+                  onClick={rename}
                 />
 
                 <Button
@@ -204,9 +216,7 @@ export default function CategoryListItem({
               </div>
             )}
 
-            <Typography appearance="subdued" typographyType="body-xs">
-              {subtitle}
-            </Typography>
+            <CategorySubtitle category={category} t={t} />
           </div>
         </div>
 
@@ -261,6 +271,8 @@ export default function CategoryListItem({
               key={c.categoryId}
               moveCategory={moveCategory}
               remove={remove}
+              renameCategory={renameCategory}
+              t={t}
             />
           ))}
         </div>

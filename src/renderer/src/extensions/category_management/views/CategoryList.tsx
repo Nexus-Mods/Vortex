@@ -12,13 +12,13 @@ import { CategoryAddParent } from "./CategoryAddParent";
 import CustomCategoryFetchError from "./CategoryListFetchError";
 import CategoryListItem, { CategoryListSkeletonTile } from "./CategoryListItem";
 import CustomNoCategoryResults from "./CategoryListNoResults";
-
 /**
  * displays the list of categories related for the current game.
  *
  */
 export default function CategoryList() {
   const {
+    t,
     searchString,
     setSearchString,
     filteredTreeData,
@@ -28,19 +28,20 @@ export default function CategoryList() {
     removeCategory,
     moveCategory,
     fetchError,
-    isError,
-    isLoading,
-    fetchCategoriesForGame,
+    isFetchError,
+    isFetching,
+    importCategoriesFromNexusMods,
     addParentVisible,
     startCreateParentCategory,
     newParentCategoryName,
     setNewParentCategoryName,
-    clearError,
+    clearFetchError,
+    onRenameCategory,
   } = useCategoryTree();
 
   const fetch = () => {
-    if (isLoading) return;
-    fetchCategoriesForGame().catch(() => undefined);
+    if (isFetching) return;
+    importCategoriesFromNexusMods().catch(() => undefined);
   };
 
   return (
@@ -76,7 +77,7 @@ export default function CategoryList() {
         <Listing
           className="grid min-h-[calc(dvh*0.5)] grid-cols-1 gap-2"
           customError={
-            <CustomCategoryFetchError clear={clearError} error={fetchError} fetch={fetch} />
+            <CustomCategoryFetchError clear={clearFetchError} error={fetchError} fetch={fetch} />
           }
           customNoResults={
             <CustomNoCategoryResults
@@ -86,8 +87,8 @@ export default function CategoryList() {
             />
           }
           entityCount={filteredTreeData?.length ?? 0}
-          isError={isError}
-          isLoading={isLoading}
+          isError={isFetchError}
+          isLoading={isFetching}
           skeletonCount={10}
           SkeletonTile={CategoryListSkeletonTile}
         >
@@ -99,6 +100,8 @@ export default function CategoryList() {
               key={c.categoryId}
               moveCategory={moveCategory}
               remove={removeCategory}
+              renameCategory={onRenameCategory}
+              t={t}
             />
           ))}
         </Listing>
