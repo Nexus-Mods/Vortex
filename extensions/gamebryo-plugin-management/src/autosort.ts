@@ -13,6 +13,7 @@ import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
 import { GHOST_EXT, NAMESPACE } from "./statics";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
+import { findInvalidPlugins } from "./util/findInvalidPlugins";
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
 import { invalidPluginsFromError } from "./util/invalidPlugins";
@@ -288,6 +289,16 @@ class LootInterface {
     excluded: string[] = [],
   ) {
     const { store } = this.mExtensionApi;
+    // Exclude every invalid plugin in one header-parse pass before sorting. sortPlugins is handed
+    // the full state-built list, so a plugin libloot couldn't load would throw PluginNotLoaded;
+    // pre-filtering avoids re-running the whole sort once per bad plugin.
+    const pluginList: IPlugins = store.getState().session.plugins.pluginList ?? {};
+    const invalid = await findInvalidPlugins(pluginNames, pluginList, gameMode);
+    if (invalid.size > 0) {
+      excluded = [...excluded, ...pluginNames.filter((id) => invalid.has(id))];
+      pluginNames = pluginNames.filter((id) => !invalid.has(id));
+      log("warn", "excluding invalid plugins from sort", { plugins: [...invalid] });
+    }
     try {
       this.mExtensionApi.dismissNotification("loot-cycle-warning");
       const timeBefore = Date.now();
@@ -332,24 +343,17 @@ class LootInterface {
       // PluginNotLoaded for any plugin the load path had to drop. That error carries the offending
       // plugin name as a structured field; otherwise parse the message for the
       // "invalid plugin"/"invalid header" forms.
-      const invalidPlugins =
-        err.name === "PluginNotLoaded" && typeof err.plugin === "string" && err.plugin.length > 0
-          ? [err.plugin]
-          : invalidPluginsFromError(err.message);
-      const dropped = new Set(invalidPlugins.map((name) => toPluginId(name)));
+      const isInvalidPluginError =
+        (err.name === "PluginNotLoaded" &&
+          typeof err.plugin === "string" &&
+          err.plugin.length > 0) ||
+        invalidPluginsFromError(err.message).length > 0;
       if (err.message.startsWith("Cyclic interaction")) {
         this.reportCycle(err, loot);
-      } else if (invalidPlugins.length > 0) {
-        const newList = pluginNames.filter((name) => !dropped.has(toPluginId(name)));
-        if (newList.length < pluginNames.length) {
-          // LOOT refuses to sort the whole set when a plugin is corrupt, has an invalid header, or
-          // was never loaded. Drop those plugins and re-sort the rest; the skipped ones are
-          // reported once the sort succeeds (see the `excluded` handling in the success branch).
-          const removed = pluginNames.filter((name) => dropped.has(toPluginId(name)));
-          log("warn", "excluding invalid plugins from sort", { plugins: removed });
-          return this.doSort(newList, gameMode, loot, [...excluded, ...removed]);
-        }
-        // LOOT named plugins we didn't pass in, so dropping them can't help; report it.
+      } else if (isInvalidPluginError) {
+        // Invalid plugins are excluded by header parse before sorting, so reaching here means
+        // libloot rejected a plugin ESPFile considered valid. Report it rather than re-sorting per
+        // plugin, which stalled the app on large lists.
         this.mExtensionApi.sendNotification({
           id: "loot-failed",
           type: "warning",
@@ -562,46 +566,35 @@ class LootInterface {
     const state = this.mExtensionApi.store.getState();
     const pluginList: IPlugins = state.session.plugins.pluginList;
 
-    // LOOT validates exactly the plugin paths we pass (it does not scan the data folder), so one
-    // corrupt/invalid plugin fails the whole loadPlugins call and nothing loads. Drop the named
-    // plugin(s) and retry so the valid ones load; collect the skipped ones for a single warning.
-    // The list strictly shrinks on each exclusion, so at most deployed.length + 1 attempts run.
+    // libloot validates exactly the plugin paths we pass (it does not scan the data folder), so one
+    // corrupt plugin would fail the whole loadPlugins call. Find every invalid plugin in a single
+    // header-parse pass, exclude them so one load covers the rest, then report them once.
     const deployed = plugins.filter(
       (id) => pluginList[id] !== undefined && pluginList[id].deployed,
     );
-    let loadList = deployed;
-    const skippedInvalid: string[] = [];
-    for (let attempt = 0; attempt <= deployed.length && !pluginsLoaded; ++attempt) {
-      try {
-        await loot.loadPluginsAsync(
-          loadList.map((name) => toPluginId(name)),
-          false,
-        );
-        pluginsLoaded = true;
-      } catch (err) {
-        if (err.message.toLowerCase() === "already closed") {
-          return;
-        }
-        const dropped = new Set(
-          invalidPluginsFromError(err.message).map((name) => toPluginId(name)),
-        );
-        const remaining = loadList.filter((id) => !dropped.has(toPluginId(id)));
-        if (remaining.length === loadList.length) {
-          // The failure can't be attributed to a plugin we passed in, so excluding won't help.
-          this.mExtensionApi.showErrorNotification("Failed to parse plugins", err, {
-            allowReport: false,
-            id: `loot-failed-to-parse`,
-          });
-          break;
-        }
-        const removed = loadList.filter((id) => dropped.has(toPluginId(id)));
-        log("warn", "excluding invalid plugins from load", { plugins: removed });
-        skippedInvalid.push(...removed);
-        loadList = remaining;
-      }
+    const invalid = await findInvalidPlugins(deployed, pluginList, gameId);
+    if (invalid.size > 0) {
+      log("warn", "excluding invalid plugins from load", { plugins: [...invalid] });
     }
-    if (skippedInvalid.length > 0) {
-      reportSkippedInvalidPlugins(this.mExtensionApi, skippedInvalid);
+    try {
+      await loot.loadPluginsAsync(
+        deployed.filter((id) => !invalid.has(id)).map((name) => toPluginId(name)),
+        false,
+      );
+      pluginsLoaded = true;
+    } catch (err) {
+      if (err.message.toLowerCase() === "already closed") {
+        return;
+      }
+      // libloot rejected a plugin ESPFile considered valid, so a header-parse exclusion can't help;
+      // surface it rather than retrying per plugin.
+      this.mExtensionApi.showErrorNotification("Failed to parse plugins", err, {
+        allowReport: false,
+        id: "loot-failed-to-parse",
+      });
+    }
+    if (invalid.size > 0) {
+      reportSkippedInvalidPlugins(this.mExtensionApi, [...invalid]);
     }
 
     const createEmpty = (): IPluginLoot => ({

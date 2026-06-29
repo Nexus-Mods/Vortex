@@ -4577,6 +4577,9 @@ function makeUnique<T>(input: T[]): T[];
 function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 
 // @public
+function mapWithConcurrency<T, R>(items: T[], fn: (item: T, index: number) => Promise<R> | R, concurrency: number): Promise<R[]>;
+
+// @public
 function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -6508,6 +6511,7 @@ declare namespace util {
         makeRemoteCall,
         makeUnique,
         makeUniqueByKey,
+        mapWithConcurrency,
         modRuleId,
         MissingInterpreter,
         nexusGameId,
