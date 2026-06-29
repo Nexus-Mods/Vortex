@@ -3,6 +3,7 @@ import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
 import { makeFileUID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
+import type { IProfile } from "@/extensions/profile_management/types/IProfile";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { renderModName } from "@/util/api";
 import { getSafe } from "@/util/storeHelper";
@@ -16,6 +17,7 @@ interface IInstalledModAttributes {
   fileName?: string;
   logicalFileName?: string;
   pictureUrl?: string;
+  referenceTag?: string;
 }
 
 /**
@@ -29,11 +31,36 @@ export interface IInstalledFileRef {
   modId: string;
   /** Whether the file is enabled in the active profile. */
   enabled: boolean;
+  /** False for files installed by a collection on the active profile (they satisfy but don't emit). */
+  emitRequirements: boolean;
+}
+
+/**
+ * Reference tags of mods pulled in by a collection installed on the active
+ * profile; files carrying one satisfy requirements but don't emit their own.
+ * Edit `countsForProfile` to change which collections count.
+ */
+function collectionManagedTags(mods: { [modId: string]: IMod }, profile: IProfile): Set<string> {
+  const countsForProfile = (collection: IMod): boolean => profile.modState?.[collection.id] != null;
+
+  const tags = new Set<string>();
+  for (const mod of Object.values(mods)) {
+    if (mod.type !== "collection" || !countsForProfile(mod)) {
+      continue;
+    }
+    for (const rule of mod.rules ?? []) {
+      if (rule.type === "requires" && rule.reference?.tag != null) {
+        tags.add(rule.reference.tag);
+      }
+    }
+  }
+  return tags;
 }
 
 /**
  * The active game's installed Nexus files (enabled and disabled) as resolver
  * input. Disabled files separate "disabled" / "wrong version" from "missing".
+ * Collection-managed files are flagged `emitRequirements: false`.
  */
 export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstalledFileRef[]> {
   const state = api.getState();
@@ -47,6 +74,7 @@ export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstall
   await nexusGamesProm();
 
   const mods = state.persistent.mods[gameId] ?? {};
+  const collectionTags = collectionManagedTags(mods, profile);
   const refs: IInstalledFileRef[] = [];
 
   for (const mod of Object.values(mods)) {
@@ -70,6 +98,9 @@ export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstall
       fileUID,
       modId: mod.id,
       enabled: getSafe(profile.modState, [mod.id, "enabled"], false),
+      emitRequirements: !(
+        attributes.referenceTag != null && collectionTags.has(attributes.referenceTag)
+      ),
     });
   }
 

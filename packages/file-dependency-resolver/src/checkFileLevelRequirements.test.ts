@@ -170,4 +170,58 @@ describe("checkFileLevelRequirements", () => {
       { fileVersionUid: "2006", fileName: "D file", version: "2.0", modName: "Mod D" },
     ]);
   });
+
+  it("treats emitRequirements:false files as satisfiers but not sources", async () => {
+    // A (1001) depends on depX, satisfiable by collection-managed F (5001).
+    // F would itself depend on depY (missing), which must not surface.
+    const localCandidates: CandidateRow[] = [
+      {
+        sourceFileVersionUid: "1001",
+        definitionId: "depX",
+        modFileId: "g1",
+        fileVersionUid: "5001",
+        position: "1",
+        category: 1,
+        modStatus: "published",
+        modUid: "m1",
+      },
+      {
+        sourceFileVersionUid: "5001",
+        definitionId: "depY",
+        modFileId: "g2",
+        fileVersionUid: "9999",
+        position: "1",
+        category: 1,
+        modStatus: "published",
+        modUid: "m2",
+      },
+    ];
+    const localDetails: Record<string, FileVersionDetail> = {
+      "1001": { fileVersionUid: "1001", modUid: "m0", modFileId: "g0", name: "A", version: "1.0" },
+      "5001": { fileVersionUid: "5001", modUid: "m1", modFileId: "g1", name: "F", version: "1.0" },
+    };
+    const localPorts: ResolverPorts = {
+      fetchCandidates: async (uids) =>
+        localCandidates.filter((c) => uids.includes(c.sourceFileVersionUid)),
+      fetchFileVersionDetails: async (uids) =>
+        uids.map((u) => localDetails[u]).filter((d): d is FileVersionDetail => d !== undefined),
+      fetchModDetails: async () => [],
+    };
+
+    const report = await checkFileLevelRequirements({
+      ports: localPorts,
+      installedFiles: [
+        { fileVersionUid: "1001", enabled: true },
+        { fileVersionUid: "5001", enabled: true, emitRequirements: false },
+      ],
+    });
+
+    // F (5001) does not emit its own requirement...
+    expect(report.sources.map((s) => s.sourceFileVersionUid)).toEqual(["1001"]);
+    // ...but it satisfies A's dependency depX.
+    const a = report.sources.find((s) => s.sourceFileVersionUid === "1001")!;
+    expect(a.dependencies.find((d) => d.definitionId === "depX")!.satisfyingEnabled).toEqual([
+      "5001",
+    ]);
+  });
 });

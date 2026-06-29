@@ -16,8 +16,9 @@ export async function checkFileLevelRequirements(
   context: FileRequirementsContext,
 ): Promise<FileRequirementsReport> {
   const { installedFiles, ports } = context;
-  const enabled = installedFiles.filter((f) => f.enabled);
-  if (enabled.length === 0) return { sources: [] };
+  // Excluded files still satisfy others below; they just don't emit their own.
+  const sourceFiles = installedFiles.filter((f) => f.enabled && f.emitRequirements !== false);
+  if (sourceFiles.length === 0) return { sources: [] };
 
   // Get the installed files update group ids (modFileId)
   // TODO(cache): a file version's update group + position rarely change
@@ -44,7 +45,7 @@ export async function checkFileLevelRequirements(
 
   // TODO(cache): a source file's dependencies rarely change between runs
   // consider caching by sourceFileVersionUid → candidate rows and refresh occasionally.
-  const candidates = await ports.fetchCandidates(enabled.map((f) => f.fileVersionUid));
+  const candidates = await ports.fetchCandidates(sourceFiles.map((f) => f.fileVersionUid));
   if (candidates.length === 0) return { sources: [] };
 
   // Classify each dependency; only recommend when no matching version is owned.
