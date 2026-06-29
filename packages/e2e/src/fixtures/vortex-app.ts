@@ -207,12 +207,18 @@ async function launchVortexApp(
 ): Promise<ElectronApplication> {
   const { env } = prepareVortexInstance(userDataDir);
   const mainDir = resolveMainDir();
-  // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can attach
-  // on 127.0.0.1:9222 alongside Playwright's own connection. Only one process can
-  // own the port, so inspect runs must use --workers=1.
   const app = await electron.launch({
     executablePath: resolveElectronBinary(),
-    args: [...(opts.inspect ? ["--remote-debugging-port=9222"] : []), mainDir],
+    args: [
+      // Disable the GPU process in headless runs, E2E tests don't need GPU
+      // rendering there, and the GPU subprocess can easily crash on CI.
+      ...(!process.env.VORTEX_E2E_HEADED ? ["--disable-gpu"] : []),
+      // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can attach
+      // on 127.0.0.1:9222 alongside Playwright's own connection. Only one process can
+      // own the port, so inspect runs must use --workers=1.
+      ...(opts.inspect ? ["--remote-debugging-port=9222"] : []),
+      mainDir,
+    ],
     env,
     cwd: mainDir,
     timeout: opts.timeout,
