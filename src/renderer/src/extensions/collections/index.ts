@@ -65,6 +65,7 @@ import sessionReducer from "./reducers/session";
 import settingsReducer from "./reducers/settings";
 import { testSupported } from "./testSupported";
 import initTools from "./tools";
+import type { CollectionPauseTrigger } from "./types/CollectionPauseTrigger";
 import type { ICollection } from "./types/ICollection";
 import type { IExtendedInterfaceProps } from "./types/IExtendedInterfaceProps";
 import { cloneCollection } from "./util/cloneCollection";
@@ -347,6 +348,7 @@ async function pauseCollection(
   gameId: string,
   modId: string,
   silent?: boolean,
+  trigger?: CollectionPauseTrigger,
 ) {
   const state = api.getState();
   const mods = state.persistent.mods[gameId];
@@ -356,6 +358,10 @@ async function pauseCollection(
   if (collection === undefined) {
     return;
   }
+
+  // Log here, the single chokepoint, so every pause path (UI button, logout, game
+  // switch, removal) is recorded; trigger says which one.
+  log("info", "pause collection", { gameId, modId, trigger });
 
   (collection?.rules ?? []).forEach((rule) => {
     const dlId = findDownloadByRef(rule.reference, downloads);
@@ -445,7 +451,7 @@ async function removeCollection(
 
   modsBeingRemoved.add(makeModKey(gameId, modId));
 
-  await pauseCollection(api, gameId, modId, true);
+  await pauseCollection(api, gameId, modId, true, "remove");
 
   let progress = 0;
   const notiId = shortid();
@@ -1275,7 +1281,7 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
         log("info", "User logged out during collection install, pausing", {
           modId,
         });
-        pauseCollection(api, gameId, modId, true)
+        pauseCollection(api, gameId, modId, true, "logout")
           .then(() => {
             api.sendNotification({
               type: "warning",
@@ -1564,13 +1570,31 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
 
   api.events.on("resume-collection", (gameId: string, modId: string) => {
     const state = api.getState();
+
+    // Collections need Nexus auth; block resume when logged out. This is the single
+    // chokepoint now that the UI routes through here.
+    const userInfo = state.persistent["nexus"]?.userInfo;
+    if (userInfo == null) {
+      void api.showDialog(
+        "info",
+        "Not logged in",
+        { text: "You have to be logged in with Nexus Mods to install collections." },
+        [{ label: "Continue" }],
+      );
+      return;
+    }
+
+    const mod = state.persistent.mods[gameId]?.[modId];
+    if (mod === undefined) {
+      return;
+    }
+
     const profileId = selectors.lastActiveProfileForGame(state, gameId);
     const profile = state.persistent.profiles[profileId];
-    const mod = state.persistent.mods[gameId]?.[modId];
     log("info", "resume collection", {
       gameId,
       modId,
-      archiveId: mod?.archiveId,
+      archiveId: mod.archiveId,
     });
     driver.start(profile, mod);
   });
@@ -1578,16 +1602,18 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
   // Keeps the full cleanup path (driver, notification, queued downloads,
   // InstallManager cancel) owned by this extension instead of forcing
   // external callers to chain the pieces.
-  api.events.on("pause-collection", (gameId: string, modId: string) => {
-    log("info", "pause collection", { gameId, modId });
-    pauseCollection(api, gameId, modId, true).catch((err: unknown) => {
-      log("error", "failed to pause collection", {
-        gameId,
-        modId,
-        error: getErrorMessageOrDefault(err),
+  api.events.on(
+    "pause-collection",
+    (gameId: string, modId: string, trigger?: CollectionPauseTrigger) => {
+      pauseCollection(api, gameId, modId, true, trigger).catch((err: unknown) => {
+        log("error", "failed to pause collection", {
+          gameId,
+          modId,
+          error: getErrorMessageOrDefault(err),
+        });
       });
-    });
-  });
+    },
+  );
 
   api.onStateChange(["persistent", "collections", "collections"], (prev, cur) => {
     // tslint:disable-next-line:no-shadowed-variable
@@ -1637,7 +1663,13 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
 
   const onGameModeChange = (gameMode: string) => {
     if (driver.profile?.gameId && driver.profile.gameId !== gameMode) {
-      pauseCollection(api, driver.profile?.gameId, driver.collection?.id, false);
+      void pauseCollection(
+        api,
+        driver.profile?.gameId,
+        driver.collection?.id,
+        false,
+        "gamemode-changed",
+      );
     }
 
     updateOwnCollectionsCB(gameMode);
