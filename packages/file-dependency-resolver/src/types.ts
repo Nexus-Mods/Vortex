@@ -1,5 +1,4 @@
 // Schema for the file-level requirements check (LAZ-552 / LAZ-473).
-// Provisional until the V3 endpoints are finalised.
 
 // Server-facing rows returned by the injected ports. camelCase; the Vortex
 // implementation maps the snake_case V3 responses onto these.

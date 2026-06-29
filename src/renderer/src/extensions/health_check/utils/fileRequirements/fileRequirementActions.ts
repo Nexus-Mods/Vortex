@@ -2,12 +2,11 @@ import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/hea
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-// File-level requirement actions. These are intentionally stubs for now: the UI
-// is wired to call them, but the real behaviour (nxm download, enabling/switching
-// the active version, opening the mod page, revealing in the loadout) is
-// implemented once the resolver + v3 ports are bound.
+// File-level requirement actions. The UI is wired to call them, but the real
+// behaviour (nxm download, enabling/switching the active version, opening the mod
+// page, revealing in the loadout) is not implemented yet.
 //
-// TODO(LAZ-590 follow-up): implement each of these.
+// TODO(LAZ-471): implement each of these.
 
 /** Download a file the user doesn't have (missing / wrong-version-installed). */
 export function downloadFileRequirement(
