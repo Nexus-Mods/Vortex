@@ -196,13 +196,28 @@ async function launchVortexApp(
   // When inspecting, open a fixed CDP endpoint so Chrome DevTools MCP can attach
   // on 127.0.0.1:9222 alongside Playwright's own connection. Only one process can
   // own the port, so inspect runs must use --workers=1.
-  return electron.launch({
+  const app = await electron.launch({
     executablePath: resolveElectronBinary(),
     args: [...(opts.inspect ? ["--remote-debugging-port=9222"] : []), mainDir],
     env,
     cwd: mainDir,
     timeout: opts.timeout,
   });
+
+  const proc = app.process();
+  proc.on("error", (err) => {
+    console.error("Electron child process error:", err);
+  });
+
+  proc.on("exit", (code, signal) => {
+    console.warn(`Electron process exited - code=${code ?? "null"} signal=${signal ?? "null"}`);
+  });
+
+  app.on("close", () => {
+    console.warn("Playwright ElectronApplication closed.");
+  });
+
+  return app;
 }
 
 /**
