@@ -50,30 +50,25 @@ async function closeElectronApp(app: ElectronApplication, timeoutMs = 15_000): P
   if (!closed) proc.kill("SIGKILL");
 }
 
-/**
- * Wait for the main window (index.html) to appear, skipping the splash screen.
- */
-async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> {
-  const isMainWindow = (win: Page): boolean => {
-    try {
-      return win.url().includes("index.html");
-    } catch {
-      return false;
-    }
-  };
+function isMainWindow(win: Page): boolean {
+  try {
+    return win.url().includes("index.html");
+  } catch {
+    return false;
+  }
+}
 
-  // Check existing windows first
+/** Wait for the main window to appear. */
+async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> {
+  // Check existing windows first in case the main window is already open.
   for (const win of vortexApp.windows()) {
     if (isMainWindow(win)) {
-      await win.waitForLoadState("domcontentloaded");
       return win;
     }
   }
 
-  // Wait for the main window via event + polling
   return new Promise<Page>((resolve, reject) => {
     const cleanup = () => {
-      clearInterval(interval);
       clearTimeout(timeout);
       vortexApp.off("window", onWindow);
       vortexApp.process().off("exit", onExit);
@@ -98,25 +93,9 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       );
     };
 
-    const interval = setInterval(() => {
-      for (const win of vortexApp.windows()) {
-        if (isMainWindow(win)) {
-          cleanup();
-          resolve(win);
-          return;
-        }
-      }
-    }, 500);
-
     const timeout = setTimeout(() => {
       cleanup();
-      const windows = vortexApp.windows();
-      const lastWindow = windows[windows.length - 1];
-      if (lastWindow) {
-        resolve(lastWindow);
-      } else {
-        reject(new Error("Timed out waiting for the Vortex main window to appear."));
-      }
+      reject(new Error("Timed out waiting for the Vortex main window to appear."));
     }, Timeouts.LIFECYCLE);
 
     vortexApp.on("window", onWindow);
@@ -124,27 +103,8 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
   });
 }
 
-/**
- * Wait for the main window to be fully ready: show-window IPC fired, DOM
- * content loaded, YouTube routes blocked, shell.openExternal stubbed.
- *
- * The show-window listener must be registered before waitForMainWindow so it
- * is in place before React mounts the LoadingScreen (which fires the event).
- * Both the snapshot build and the vortexWindow fixture use this sequence.
- */
+/** Wait for the main window to be fully ready */
 async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Promise<Page> {
-  const showWindowPromise = app.evaluate(
-    ({ ipcMain }, ms) =>
-      new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("Timed out waiting for show-window")), ms);
-        ipcMain.once("show-window", () => {
-          clearTimeout(timer);
-          resolve();
-        });
-      }),
-    timeoutMs,
-  );
-
   const mainWindow = await waitForMainWindow(app);
 
   await mainWindow.route(/youtube(-nocookie)?\.com|youtu\.be/, (route) =>
@@ -152,15 +112,10 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
   );
 
   // Serve a single cached empty image instead of fetching mod thumbnails and
-  // other remote images from the server (e.g. staticdelivery.nexusmods.com).
+  // other remote images from the server.
   await stubRemoteImages(mainWindow);
 
-  await mainWindow.waitForLoadState("domcontentloaded");
-  await showWindowPromise;
-
-  await app.evaluate(({ shell }) => {
-    shell.openExternal = () => Promise.resolve();
-  });
+  await mainWindow.waitForSelector("#loading-screen", { timeout: timeoutMs });
 
   return mainWindow;
 }
