@@ -42,6 +42,8 @@ export interface ResolverPorts {
 export interface InstalledFile {
   fileVersionUid: string;
   enabled: boolean;
+  // Emit this file's own dependencies as requirements (default true); collection-managed files set false.
+  emitRequirements?: boolean;
 }
 
 export interface FileRequirementsContext {

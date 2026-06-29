@@ -29,6 +29,7 @@ export async function runFileLevelRequirements(
   const installedFiles: InstalledFile[] = refs.map((ref) => ({
     fileVersionUid: ref.fileUID,
     enabled: ref.enabled,
+    emitRequirements: ref.emitRequirements,
   }));
 
   const report = await checkFileLevelRequirements({

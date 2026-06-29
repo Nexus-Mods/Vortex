@@ -60,8 +60,8 @@ interface VersionFixture {
   version?: string;
 }
 
-function ref(fileUID: string, enabled = true): IInstalledFileRef {
-  return { fileUID, modId: `vortex-${fileUID}`, enabled };
+function ref(fileUID: string, enabled = true, emitRequirements = true): IInstalledFileRef {
+  return { fileUID, modId: `vortex-${fileUID}`, enabled, emitRequirements };
 }
 
 function installedFile(fileUID: string, enabled: boolean): IInstalledFile {
@@ -93,21 +93,26 @@ function candidate(
 /** A fake v3 client backed by in-memory version + candidate fixtures. */
 function fakeClient(versions: Record<string, VersionFixture>, candidates: V3Candidate[]) {
   return {
-    getModFileVersionsBatch: vi.fn(async (ids: string[]) =>
-      ids
-        .filter((id) => versions[id] !== undefined)
-        .map((id) => ({
-          id,
-          mod_id: versions[id].modId,
-          mod_file_id: versions[id].chain,
-          name: versions[id].name ?? `name-${id}`,
-          version: versions[id].version ?? "1.0",
-        })),
+    getModFileVersionsBatch: vi.fn((ids: string[]) =>
+      Promise.resolve(
+        ids
+          .filter((id) => versions[id] !== undefined)
+          .map((id) => ({
+            id,
+            mod_id: versions[id].modId,
+            mod_file_id: versions[id].chain,
+            name: versions[id].name ?? `name-${id}`,
+            version: versions[id].version ?? "1.0",
+          })),
+      ),
     ),
     getModFileVersionDependencyCandidatesBatch: vi.fn(
-      async (ids: readonly string[], page: number, pageSize: number) => {
+      (ids: readonly string[], page: number, pageSize: number) => {
         const rows = candidates.filter((c) => ids.includes(c.source_version_id));
-        return { candidates: rows, meta: { page, page_size: pageSize, total_count: rows.length } };
+        return Promise.resolve({
+          candidates: rows,
+          meta: { page, page_size: pageSize, total_count: rows.length },
+        });
       },
     ),
   };
@@ -210,6 +215,38 @@ describe("checkFileRequirements / resolution", () => {
       modName: "SkyUI",
       version: "5.2",
     });
+  });
+
+  test("does not emit requirements for collection-managed source files", async () => {
+    const metadata = await runWith({
+      // cm_norm emits; cm_coll is collection-managed (emitRequirements:false).
+      refs: [ref("cm_norm"), ref("cm_coll", true, false)],
+      versions: {
+        cm_norm: { chain: "cm_normChain", modId: "cm_normMod" },
+        cm_coll: { chain: "cm_collChain", modId: "cm_collMod" },
+        cm_cand: { chain: "cm_candChain", modId: "cm_candMod", name: "Dep", version: "1.0" },
+      },
+      candidates: [
+        candidate({
+          source_version_id: "cm_norm",
+          definition_id: "cm_defN",
+          version_id: "cm_cand",
+          mod_file_id: "cm_candChain",
+          mod_id: "cm_candMod",
+        }),
+        candidate({
+          source_version_id: "cm_coll",
+          definition_id: "cm_defC",
+          version_id: "cm_cand",
+          mod_file_id: "cm_candChain",
+          mod_id: "cm_candMod",
+        }),
+      ],
+      modDetails: [{ modUID: "cm_candMod", modName: "Dep", adultContent: false }],
+    });
+
+    expect(metadata?.fileRequirements["cm_norm"]?.requirements).toHaveLength(1);
+    expect(metadata?.fileRequirements["cm_coll"]).toBeUndefined();
   });
 
   test("reports a wrong (out-of-range) version that is installed and enabled", async () => {
