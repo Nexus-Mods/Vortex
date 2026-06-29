@@ -236,7 +236,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const { t, loadOrder, getGameEntry, profile } = this.props;
     const { validationError } = this.state;
     const gameEntry = getGameEntry(profile?.gameId);
-    const chosenItemRenderer = gameEntry.customItemRenderer ?? ItemRenderer;
+    const chosenItemRenderer = gameEntry?.customItemRenderer ?? ItemRenderer;
     const enabled =
       gameEntry !== undefined
         ? loadOrder.reduce((accum, loEntry) => {
