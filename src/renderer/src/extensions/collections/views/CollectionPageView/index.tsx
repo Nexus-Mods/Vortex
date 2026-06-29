@@ -31,7 +31,7 @@ import type { IOverlay, IState } from "../../../../types/IState";
 import type { ITableAttribute } from "../../../../types/ITableAttribute";
 import { getCollectionActiveSession } from "../../../../util/collectionInstallSessionSelectors";
 import {
-  resyncCollectionSessionFromReality,
+  // resyncCollectionSessionFromReality, // re-enable with the commented-out resync action
   resyncCollectionSessionRules,
 } from "../../../../util/collectionSessionReconstruct";
 import { ProcessCanceled, UserCanceled } from "../../../../util/CustomErrors";
@@ -563,7 +563,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     }
 
     // a collection install (this one or another) is in flight; gates Resume ("installing
-    // something else") and disables Resync so a manual resync can't race InstallManager
+    // something else")
     const installInFlight = driver.collection !== undefined && !driver.installDone;
 
     const selection =
@@ -654,7 +654,6 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
               downloads={downloads}
               mods={itemRows}
               profile={profile}
-              resyncDisabled={installInFlight || (activity.mods ?? []).length > 0}
               showPremiumAd={this.props.showPremiumAd}
               t={t}
               totalSize={totalSize}
@@ -667,7 +666,6 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
                     ? null // installing something else
                     : this.resume
               }
-              onResync={this.resync}
             />
           </FlexLayout.Fixed>
         )}
@@ -705,6 +703,10 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     this.props.onResume(this.props.collection.id);
   };
 
+  /*
+   * Re-sync action removed from the UI (button gone): only valid with no active
+   * collection session, and start/resume already refreshes from local state.
+   * Kept commented for easy re-enable.
   private resync = () => {
     const { t } = this.props;
     const changed = resyncCollectionSessionFromReality(this.context.api);
@@ -719,6 +721,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
       displayMS: 4000,
     });
   };
+  */
 
   private setEnabled = (enable: boolean) => {
     const { collection, profile } = this.props;
