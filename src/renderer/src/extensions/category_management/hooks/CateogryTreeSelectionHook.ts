@@ -27,7 +27,7 @@ import type { ICategory } from "../types/ICategoryDictionary";
 
 type IStateWithCreds = IState & {
   confidential: {
-    account: { nexus: { OAuthCredentials: { token: string; refreshToken: string } } };
+    account: { nexus?: { OAuthCredentials?: { token: string; refreshToken: string } } };
   };
 };
 
@@ -38,7 +38,7 @@ export default function useCategoryTreeSelection() {
       const game = getGame(gameId);
       const domainName = nexusGameId(game);
       return {
-        OAuthCredentials: state.confidential.account.nexus.OAuthCredentials,
+        OAuthCredentials: state.confidential.account.nexus?.OAuthCredentials,
         gameId,
         domainName,
         mods: state.persistent.mods[gameId],

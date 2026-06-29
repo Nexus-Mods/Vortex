@@ -21,7 +21,7 @@ interface ICategoryTreeActionsProps {
   onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
   onRemoveCategory: (categoryId: string) => void;
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
-  OAuthCredentials: { token: string };
+  OAuthCredentials?: { token: string };
   isFetching: boolean;
   isFetchError: boolean;
   setIsFetchError: (isError: boolean) => void;
@@ -52,8 +52,8 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
       if (isFetching) return;
       setIsFetching(true);
       setIsFetchError(false);
-      if (!OAuthCredentials.token) throw new Error("You must be logged in to use this feature.");
       try {
+        if (!OAuthCredentials?.token) throw new Error("You must be logged in to use this feature.");
         const apiCategories = await getGameCategories(domainName, OAuthCredentials.token);
         const categoryMap = createDictionaryFromList(apiCategories);
         if (!replaceAll) {
