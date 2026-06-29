@@ -230,11 +230,8 @@ async function launchVortexApp(
   });
 
   proc.on("exit", (code, signal) => {
+    if (code === 0) return;
     console.warn(`Electron process exited - code=${code ?? "null"} signal=${signal ?? "null"}`);
-  });
-
-  app.on("close", () => {
-    console.warn("Playwright ElectronApplication closed.");
   });
 
   return app;
