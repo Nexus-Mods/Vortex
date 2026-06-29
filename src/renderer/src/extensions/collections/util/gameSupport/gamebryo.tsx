@@ -206,7 +206,9 @@ export async function parser(
   const stagingPath = selectors.installPathForGame(state, gameId);
   const includedPlugins = await getIncludedPlugins(gameId, stagingPath, mods, collectionModIds);
   const isEnabled = (pluginName: string) =>
-    collection.plugins.find((plugin) => plugin.name === pluginName && plugin.enabled) !== undefined;
+    collection.plugins.find(
+      (plugin) => plugin.name.toLowerCase() === pluginName.toLowerCase() && plugin.enabled,
+    ) !== undefined;
 
   // set up plugins and their rules
   batchDispatch(
