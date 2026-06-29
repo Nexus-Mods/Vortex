@@ -72,6 +72,7 @@ import {
   profilesPath,
   convertV6toV7,
   convertToV8,
+  fileExists,
 } from "./util";
 
 const STOP_PATTERNS = ["[^/]*\\.pak$"];
@@ -207,19 +208,28 @@ async function onGameModeActivated(api: types.IExtensionApi, gameId: string) {
     await migrate(api);
     const bg3ProfileId = await getActivePlayerProfile(api);
     const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
-    let nodes = await getNodes(gameSettingsPath);
-    const { modsNode, modsOrderNode } = nodes;
-    if (modsNode.children === undefined || (modsNode.children[0] as any) === "") {
-      modsNode.children = [{ node: [] }];
-    }
+    // The game generates modsettings.lsx on first run for the active player
+    // profile. If it's absent (game never launched on this profile, or the
+    // profile resolved to the "global" fallback) there is nothing to read or
+    // convert yet, so skip rather than surfacing "Failed to migrate" on every
+    // startup. The load-order export path guides the user to run the game once.
+    if (!(await fileExists(gameSettingsPath))) {
+      logDebug("modsettings.lsx not found, skipping load order migration", gameSettingsPath);
+    } else {
+      const nodes = await getNodes(gameSettingsPath);
+      const { modsNode, modsOrderNode } = nodes;
+      if (modsNode.children === undefined || (modsNode.children[0] as any) === "") {
+        modsNode.children = [{ node: [] }];
+      }
 
-    const format = await getDefaultModSettingsFormat(api);
-    if (modsOrderNode === undefined && ["v7", "v8"].includes(format)) {
-      const convFunc = format === "v7" ? convertV6toV7 : convertToV8;
-      const data = await fs.readFileAsync(gameSettingsPath, { encoding: "utf8" });
-      const newData = await convFunc(data);
-      await fs.removeAsync(gameSettingsPath).catch((err) => Promise.resolve());
-      await fs.writeFileAsync(gameSettingsPath, newData, { encoding: "utf8" });
+      const format = await getDefaultModSettingsFormat(api);
+      if (modsOrderNode === undefined && ["v7", "v8"].includes(format)) {
+        const convFunc = format === "v7" ? convertV6toV7 : convertToV8;
+        const data = await fs.readFileAsync(gameSettingsPath, { encoding: "utf8" });
+        const newData = await convFunc(data);
+        await fs.removeAsync(gameSettingsPath).catch((err) => Promise.resolve());
+        await fs.writeFileAsync(gameSettingsPath, newData, { encoding: "utf8" });
+      }
     }
   } catch (err) {
     api.showErrorNotification("Failed to migrate", err, {
