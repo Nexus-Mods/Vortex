@@ -153,7 +153,7 @@ export default function CategoryListItem({
   };
 
   return (
-    <div className="flex flex-col rounded-sm border border-stroke-weak bg-surface-mid p-4">
+    <div className="flex flex-col rounded-sm border border-stroke-weak bg-surface-mid px-4 py-3">
       <div className={`flex ${indicatorClass}`} ref={ref}>
         <div className="flex grow gap-2">
           <div className="flex items-center gap-2">
@@ -262,7 +262,7 @@ export default function CategoryListItem({
       )}
 
       {children && expanded && (
-        <div className="mt-2 flex flex-col">
+        <div className="mt-2 flex flex-col space-y-1.5">
           {children.map((c) => (
             <CategoryListItem
               category={c}

@@ -75,7 +75,7 @@ export default function CategoryList() {
         />
 
         <Listing
-          className="grid min-h-[calc(dvh*0.5)] grid-cols-1 gap-2"
+          className="grid min-h-[calc(dvh*0.5)] grid-cols-1 gap-2 space-y-2"
           customError={
             <CustomCategoryFetchError clear={clearFetchError} error={fetchError} fetch={fetch} />
           }
