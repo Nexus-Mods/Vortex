@@ -197,7 +197,10 @@ export async function parser(
     );
   }
 
-  const collectionModIds = collectionMod.rules
+  // use currentMod's rules (read fresh from state above) rather than the passed-in collectionMod:
+  // the latter is a snapshot from when did-install-dependencies fired and its rules may not yet
+  // resolve the installed members by the time postprocess runs after the deploy-mods await.
+  const collectionModIds = (currentMod ?? collectionMod).rules
     .filter((rule) => isDependencyRule(rule))
     .map((rule) => findModByRef(rule.reference, mods))
     .filter((mod) => !!mod)
