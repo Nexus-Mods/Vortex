@@ -115,7 +115,21 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
   // other remote images from the server.
   await stubRemoteImages(mainWindow);
 
-  await mainWindow.waitForSelector("#loading-screen", { timeout: timeoutMs });
+  // Race against process exit so a crash produces a clear error rather than
+  // the generic "Target page, context or browser has been closed".
+  await Promise.race([
+    mainWindow.waitForSelector("#loading-screen", { timeout: timeoutMs }),
+    new Promise<never>((_, reject) => {
+      app.process().once("exit", (code, signal) => {
+        reject(
+          new Error(
+            `Vortex process exited (code=${code ?? "null"} signal=${signal ?? "null"}) ` +
+              `before the LoadingScreen mounted.`,
+          ),
+        );
+      });
+    }),
+  ]);
 
   return mainWindow;
 }
