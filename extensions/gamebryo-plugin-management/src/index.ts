@@ -909,7 +909,7 @@ function startSync(api: types.IExtensionApi): Promise<void> {
           .then(() => true)
           .catch(() => false)
           .then((exists) => {
-            const pluginId = fileName.toLowerCase();
+            const pluginId = toPluginId(fileName);
             const state = store.getState();
             const known =
               state.loadOrder[pluginId] !== undefined &&

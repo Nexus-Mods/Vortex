@@ -17,6 +17,7 @@ import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/g
 import { missingGroupFixes } from "./util/groups";
 import { invalidPluginsFromError } from "./util/invalidPlugins";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
+import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
 
@@ -335,16 +336,16 @@ class LootInterface {
         err.name === "PluginNotLoaded" && typeof err.plugin === "string" && err.plugin.length > 0
           ? [err.plugin]
           : invalidPluginsFromError(err.message);
-      const dropped = new Set(invalidPlugins.map((name) => name.toLowerCase()));
+      const dropped = new Set(invalidPlugins.map((name) => toPluginId(name)));
       if (err.message.startsWith("Cyclic interaction")) {
         this.reportCycle(err, loot);
       } else if (invalidPlugins.length > 0) {
-        const newList = pluginNames.filter((name) => !dropped.has(name.toLowerCase()));
+        const newList = pluginNames.filter((name) => !dropped.has(toPluginId(name)));
         if (newList.length < pluginNames.length) {
           // LOOT refuses to sort the whole set when a plugin is corrupt, has an invalid header, or
           // was never loaded. Drop those plugins and re-sort the rest; the skipped ones are
           // reported once the sort succeeds (see the `excluded` handling in the success branch).
-          const removed = pluginNames.filter((name) => dropped.has(name.toLowerCase()));
+          const removed = pluginNames.filter((name) => dropped.has(toPluginId(name)));
           log("warn", "excluding invalid plugins from sort", { plugins: removed });
           return this.doSort(newList, gameMode, loot, [...excluded, ...removed]);
         }
@@ -573,7 +574,7 @@ class LootInterface {
     for (let attempt = 0; attempt <= deployed.length && !pluginsLoaded; ++attempt) {
       try {
         await loot.loadPluginsAsync(
-          loadList.map((name) => name.toLowerCase()),
+          loadList.map((name) => toPluginId(name)),
           false,
         );
         pluginsLoaded = true;
@@ -582,9 +583,9 @@ class LootInterface {
           return;
         }
         const dropped = new Set(
-          invalidPluginsFromError(err.message).map((name) => name.toLowerCase()),
+          invalidPluginsFromError(err.message).map((name) => toPluginId(name)),
         );
-        const remaining = loadList.filter((id) => !dropped.has(id.toLowerCase()));
+        const remaining = loadList.filter((id) => !dropped.has(toPluginId(id)));
         if (remaining.length === loadList.length) {
           // The failure can't be attributed to a plugin we passed in, so excluding won't help.
           this.mExtensionApi.showErrorNotification("Failed to parse plugins", err, {
@@ -593,7 +594,7 @@ class LootInterface {
           });
           break;
         }
-        const removed = loadList.filter((id) => dropped.has(id.toLowerCase()));
+        const removed = loadList.filter((id) => dropped.has(toPluginId(id)));
         log("warn", "excluding invalid plugins from load", { plugins: removed });
         skippedInvalid.push(...removed);
         loadList = remaining;
@@ -629,7 +630,7 @@ class LootInterface {
           const meta: PluginMetadata = await loot.getPluginMetadataAsync(pluginName);
           let info;
           try {
-            const id = pluginName.toLowerCase();
+            const id = toPluginId(pluginName);
             if (pluginList[id] !== undefined && pluginList[id].deployed) {
               info = await loot.getPluginAsync(pluginName);
             }
