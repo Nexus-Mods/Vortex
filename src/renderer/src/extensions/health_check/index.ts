@@ -3,16 +3,18 @@
  * Provides health check functionality for mods
  */
 
-import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
+import { FlagService } from "@/FlagService";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
 import { HealthCheckTrigger } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
-import { setFileRequirementsFlagEnabled } from "./actions/persistent";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
-import { fileRequirementsHealthCheck } from "./checks/fileRequirementsCheck";
+import {
+  fileRequirementsHealthCheck,
+  FILE_REQUIREMENTS_FLAG,
+} from "./checks/fileRequirementsCheck";
 import { modRequirementsHealthCheck } from "./checks/modRequirementsCheck";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
@@ -25,9 +27,6 @@ import SettingsHealthCheck from "./views/SettingsHealthCheck";
 let registry: HealthCheckRegistry | null = null;
 let legacyAdapter: LegacyTestAdapter | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
-
-/** Unleash flag gating the file-level requirements feature; must match the Unleash toggle. */
-const FILE_REQUIREMENTS_FLAG: KnownFlagName = "vortex-file-requirements-health-check";
 
 function init(context: IExtensionContext): boolean {
   // Create the registry up front so registerHealthCheck routes directly
@@ -52,7 +51,7 @@ function init(context: IExtensionContext): boolean {
     priority: 60,
     hotkey: "H",
     group: "per-game",
-    visible: () => activeGameId(context.api.store.getState()) !== undefined,
+    visible: () => activeGameId(context.api.getState()) !== undefined,
     props: () => ({
       api: context.api,
       onRefresh: () => healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.Manual),
@@ -85,17 +84,15 @@ function init(context: IExtensionContext): boolean {
       void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
     });
 
-    // Mirror the Unleash file-level-requirements flag into persistent state so the
-    // settings UI and the check can gate on it. Flags are pushed only after a
-    // successful Unleash poll, so until then the last-known value is kept (fail-closed).
-    let flagEnabled: boolean | undefined;
-    window.api.featureFlags.onSynchronize((flags: FeatureFlag[]) => {
-      const enabled = flags.some((flag) => flag.name === FILE_REQUIREMENTS_FLAG);
-      if (enabled === flagEnabled) {
+    // Re-run the file-level check when the Unleash flag flips. Reads presence
+    // (not getFlag) since this only triggers a re-run, not a gating decision.
+    let flagAvailable = FlagService.instance.flags.has(FILE_REQUIREMENTS_FLAG);
+    FlagService.instance.subscribe(() => {
+      const available = FlagService.instance.flags.has(FILE_REQUIREMENTS_FLAG);
+      if (available === flagAvailable) {
         return;
       }
-      flagEnabled = enabled;
-      context.api.store?.dispatch(setFileRequirementsFlagEnabled(enabled));
+      flagAvailable = available;
       void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
     });
   });

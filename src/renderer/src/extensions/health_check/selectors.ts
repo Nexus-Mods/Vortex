@@ -130,7 +130,6 @@ export const healthCheckPersistentState = (state: IState): IHealthCheckPersisten
     feedbackGiven: {},
     modRequirementsEnabled: true,
     fileRequirementsEnabled: true,
-    fileRequirementsFlagEnabled: false,
   };
 
 /**
@@ -140,25 +139,11 @@ export const isModRequirementsEnabled = (state: IState): boolean =>
   healthCheckPersistentState(state).modRequirementsEnabled ?? true;
 
 /**
- * Whether the file-level requirements feature is available.
- * The settings toggle and the check both gate on this, so the whole feature
- * appears only when it is available.
- *
- * Backed by the Unleash "vortex-file-requirements-health-check" flag, mirrored into
- * persistent state from window.api.featureFlags.onSynchronize (see the extension
- * init). Persisted so the last-known value is kept across restarts; defaults to
- * false only before any flag state has been received (fail-closed).
+ * Whether the user has enabled file-level requirement warnings in settings.
+ * Feature availability is gated separately on the Unleash flag, then combined with this.
  */
-export const isFileRequirementsFeatureAvailable = (state: IState): boolean =>
-  healthCheckPersistentState(state).fileRequirementsFlagEnabled ?? false;
-
-/**
- * Check if file-level requirements health check suggestions are enabled.
- * Requires both the feature to be available and the user setting to be on.
- */
-export const isFileRequirementsEnabled = (state: IState): boolean =>
-  isFileRequirementsFeatureAvailable(state) &&
-  (healthCheckPersistentState(state).fileRequirementsEnabled ?? true);
+export const isFileRequirementsUserEnabled = (state: IState): boolean =>
+  healthCheckPersistentState(state).fileRequirementsEnabled ?? true;
 
 /** Mod-level hidden requirements, keyed by requiring mod nexusModId. */
 export const hiddenModRequirements = (state: IState): { [modId: number]: string[] } =>
