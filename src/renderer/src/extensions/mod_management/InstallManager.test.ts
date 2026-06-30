@@ -30,6 +30,16 @@ interface IInstallManagerTestable {
   ensurePhaseState(sourceModId: string): void;
   maybeAdvancePhase(sourceModId: string, api: IExtensionApi): void;
   handleDownloadFailed(api: IExtensionApi, downloadId: string): void;
+  doInstallDependenciesPhase(
+    api: IExtensionApi,
+    dependencies: unknown[],
+    gameId: string,
+    sourceModId: string,
+    recommended: boolean,
+    doDownload: (dep: unknown) => Promise<{ updatedDep: unknown; downloadId: string }>,
+    abort: AbortController,
+    silent: boolean,
+  ): Promise<unknown[]>;
   markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi): void;
   mInstallPhaseState: Map<
     string,
@@ -447,6 +457,28 @@ describe("collection download failure handling", () => {
     installManager.handleDownloadFailed(api, "dl-fail");
 
     // status leaves "downloading" so the row is no longer mis-bucketed under the Downloading filter
+    expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
+  });
+
+  it("settles the member as failed when its download terminally fails in the install phase", async () => {
+    // The download is settled from the install phase using the dependency's own reference, so a
+    // failed download that can't be matched back by tag/md5 (e.g. resumed from another install,
+    // and md5-less because it never completed) still moves the member off "downloading".
+    const doDownload = vi
+      .fn()
+      .mockRejectedValue(Object.assign(new Error("Failed to open temp"), { code: "fs-error" }));
+
+    await installManager.doInstallDependenciesPhase(
+      api,
+      [{ reference: { tag: "member-tag" }, phase: 0, extra: {} }],
+      "skyrimse",
+      "col-1",
+      false,
+      doDownload,
+      new AbortController(),
+      true,
+    );
+
     expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
   });
 });
