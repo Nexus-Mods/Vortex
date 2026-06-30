@@ -7,6 +7,8 @@ type EvalEntry = { yes: number; no: number; variants: Record<string, number> };
 type EvalCounts = Record<string, EvalEntry>;
 type FlagByName<N extends KnownFlagName> = Extract<FeatureFlag, { name: N }>;
 
+export type SubscribeCallback = (flags: ReadonlyMap<KnownFlagName, FeatureFlag>) => void;
+
 /**
  * Renderer-side singleton that owns the feature flag lifecycle:
  * - Subscribes to flag pushes from main via window.api.featureFlags.onSynchronize
@@ -21,19 +23,34 @@ export class FlagService {
   #flags: ReadonlyMap<KnownFlagName, FeatureFlag> = new Map();
   #evalCounts: EvalCounts = {};
   #bucketStart: number;
-  #subscribers: Set<() => void> = new Set();
+  #subscribers: Set<SubscribeCallback> = new Set();
+  #flagSubscribers: Map<
+    KnownFlagName,
+    Set<(prev: FeatureFlag | undefined, next: FeatureFlag | undefined) => void>
+  > = new Map();
   #unsubscribeIpc: () => void;
   #intervalId: ReturnType<typeof setInterval>;
 
-  static #instance: FlagService | null = null;
+  static #instance: FlagService | undefined = undefined;
 
   private constructor() {
     this.#bucketStart = Date.now();
 
     this.#unsubscribeIpc = window.api.featureFlags.onSynchronize((updated) => {
+      const prev = this.#flags;
       this.#flags = new Map(updated.map((f) => [f.name, f]));
+
       for (const cb of this.#subscribers) {
-        cb();
+        cb(this.#flags);
+      }
+
+      for (const [name, subs] of this.#flagSubscribers) {
+        const prevFlag = prev.get(name);
+        const nextFlag = this.#flags.get(name);
+        if (prevFlag === nextFlag) continue;
+        for (const cb of subs) {
+          cb(prevFlag, nextFlag);
+        }
       }
     });
 
@@ -42,19 +59,17 @@ export class FlagService {
 
   /** Initialize the singleton. Throws if already initialized without a prior destroy(). */
   static init(): FlagService {
-    if (this.#instance !== null) {
+    if (this.#instance !== undefined) {
       throw new Error("FlagService is already initialized!");
     }
+
     this.#instance = new FlagService();
     return this.#instance;
   }
 
-  /** Returns the initialized instance. Throws if init() has not been called. */
-  static get instance(): FlagService {
-    if (this.#instance !== null) {
-      return this.#instance;
-    }
-    throw new Error("FlagService is not initialized. Call FlagService.init() first.");
+  /** Returns the initialized instance or undefined if not initialized. */
+  static get instance(): FlagService | undefined {
+    return this.#instance;
   }
 
   /** Destroys the instance if one exists. No-op if not yet initialized. Safe to call from beforeunload. */
@@ -70,7 +85,7 @@ export class FlagService {
     this.#unsubscribeIpc();
     clearInterval(this.#intervalId);
     this.#flush();
-    FlagService.#instance = null;
+    FlagService.#instance = undefined;
   }
 
   /**
@@ -104,11 +119,40 @@ export class FlagService {
    * Subscribes to flag map changes. The callback is invoked synchronously
    * inside the onSynchronize handler each time main pushes updated flags.
    * Returns an unsubscribe function.
+   *
+   * Does not count towards metrics.
    */
-  subscribe(callback: () => void): () => void {
+  subscribe(callback: SubscribeCallback): () => void {
     this.#subscribers.add(callback);
     return () => {
       this.#subscribers.delete(callback);
+    };
+  }
+
+  /**
+   * Subscribes to value changes for a single named flag. The callback receives
+   * the previous and next flag values (either may be undefined if the flag was
+   * absent before or after the update). Only called when the value actually
+   * changes between synchronizations. Returns an unsubscribe function.
+   *
+   * Does not count towards metrics.
+   */
+  subscribeToFlag<N extends KnownFlagName>(
+    name: N,
+    callback: (prev: FlagByName<N> | undefined, next: FlagByName<N> | undefined) => void,
+  ): () => void {
+    let subs = this.#flagSubscribers.get(name);
+    if (subs === undefined) {
+      subs = new Set();
+      this.#flagSubscribers.set(name, subs);
+    }
+
+    subs.add(callback);
+    return () => {
+      subs.delete(callback);
+      if (subs.size === 0) {
+        this.#flagSubscribers.delete(name);
+      }
     };
   }
 
