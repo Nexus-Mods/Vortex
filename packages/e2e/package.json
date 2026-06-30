@@ -12,7 +12,8 @@
     "e2e:ui": "pnpm exec cross-env VORTEX_E2E_HEADED=1 pnpm exec playwright test --ui",
     "typecheck": "pnpm exec tsc",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm exec eslint --concurrency auto ."
+    "lint:verbose": "pnpm exec eslint --concurrency auto .",
+    "ci-report": "pnpm exec tsx ./ci-report.ts"
   },
   "nx": {
     "targets": {
@@ -67,7 +68,11 @@
   },
   "devDependencies": {
     "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "electron": "catalog:",
+    "enquirer": "catalog:",
+    "octokit": "catalog:",
     "playwright": "catalog:",
-    "electron": "catalog:"
+    "tsx": "catalog:"
   }
 }
