@@ -5617,6 +5617,13 @@ class InstallManager {
               this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
               return undefined;
             }
+            // A terminal download/install failure settles the member as failed on the collection
+            // session. Keyed on the dependency's own reference, so it does not depend on matching the
+            // (possibly md5-less, tag-drifted) failed download back to a rule - which is how a failed
+            // download would otherwise be left stuck on "downloading". No-ops outside an active
+            // collection session and over an already-terminal status.
+            const settleMemberFailed = () =>
+              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
               if (
@@ -5627,6 +5634,7 @@ class InstallManager {
               ) {
                 return undefined;
               }
+              settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               const message =
                 innerErr.message +
@@ -5647,6 +5655,7 @@ class InstallManager {
               return undefined;
             }
             if (innerErr instanceof DownloadIsHTML) {
+              settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               const message =
                 "The direct download URL for this file is not valid or didn't lead to a file. " +
@@ -5665,6 +5674,7 @@ class InstallManager {
               return undefined;
             }
             if (innerErr instanceof NotFound) {
+              settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               this.showDependencyError(
                 api,
@@ -5687,6 +5697,7 @@ class InstallManager {
                 throw innerErr;
               }
             }
+            settleMemberFailed();
             const err = unknownToError(innerErr);
             const errCode = getErrorCode(err);
             const refName =
