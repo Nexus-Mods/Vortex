@@ -3,15 +3,16 @@ import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { SubscribeCallback } from "../FlagService";
 import { FlagsProvider, useFlag, useFlagsContext } from "./FlagsContext";
 
 const state = vi.hoisted(() => ({
   flags: new Map() as ReadonlyMap<KnownFlagName, FeatureFlag>,
-  subscribeCallback: null as (() => void) | null,
+  subscribeCallback: null as SubscribeCallback | null,
 }));
 
 const mockUnsubscribe = vi.hoisted(() => vi.fn<() => void>());
-const mockSubscribe = vi.hoisted(() => vi.fn<(cb: () => void) => () => void>());
+const mockSubscribe = vi.hoisted(() => vi.fn<(cb: SubscribeCallback) => () => void>());
 const mockGetFlag = vi.hoisted(() => vi.fn<(name: KnownFlagName) => FeatureFlag | undefined>());
 
 vi.mock("../FlagService", () => ({
@@ -32,7 +33,7 @@ function push(flags: FeatureFlag[]) {
   state.flags = new Map(flags.map((f) => [f.name, f]));
   mockGetFlag.mockImplementation((name) => state.flags.get(name));
   act(() => {
-    state.subscribeCallback?.();
+    state.subscribeCallback?.(state.flags);
   });
 }
 
@@ -49,7 +50,7 @@ beforeEach(() => {
   mockUnsubscribe.mockImplementation(() => {
     state.subscribeCallback = null;
   });
-  mockSubscribe.mockImplementation((cb) => {
+  mockSubscribe.mockImplementation((cb: SubscribeCallback) => {
     state.subscribeCallback = cb;
     return mockUnsubscribe;
   });
