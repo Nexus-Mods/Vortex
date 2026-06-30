@@ -49,7 +49,7 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.7
   "@msgpack/msgpack": 2.8.0
-  "@nexusmods/fomod-installer-ipc": 0.13.2
+  "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
   "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   "@opentelemetry/api": 1.9.1
