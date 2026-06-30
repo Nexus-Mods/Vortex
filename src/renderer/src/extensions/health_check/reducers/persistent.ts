@@ -21,12 +21,6 @@ export interface IHealthCheckPersistentState {
   modRequirementsEnabled: boolean;
   /** Whether file-level requirements health check suggestions are enabled */
   fileRequirementsEnabled: boolean;
-  /**
-   * Last-known enabled state of the file-level requirements Unleash flag.
-   * Persisted so the feature keeps its last-known state across restarts / brief outages;
-   * only the default applies before any flag state has ever been received.
-   */
-  fileRequirementsFlagEnabled: boolean;
 }
 
 const on = reducerFor<IHealthCheckPersistentState>();
@@ -85,9 +79,6 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
     on(actions.setFileRequirementsEnabled, (state, payload) =>
       setSafe(state, ["fileRequirementsEnabled"], payload.enabled),
     ),
-    on(actions.setFileRequirementsFlagEnabled, (state, payload) =>
-      setSafe(state, ["fileRequirementsFlagEnabled"], payload.enabled),
-    ),
     on(actions.setFeedbackGiven, (state, payload) => {
       const { modId, requirementId } = payload;
       const current = state.feedbackGiven?.[modId] || [];
@@ -103,6 +94,5 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
     feedbackGiven: {},
     modRequirementsEnabled: true,
     fileRequirementsEnabled: true,
-    fileRequirementsFlagEnabled: false,
   },
 };

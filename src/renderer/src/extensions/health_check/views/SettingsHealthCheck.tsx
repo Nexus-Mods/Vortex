@@ -3,20 +3,19 @@ import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { useFlag } from "@/contexts/FlagsContext";
+
 import Toggle from "../../../controls/Toggle";
 import { setModRequirementsEnabled, setFileRequirementsEnabled } from "../actions/persistent";
-import {
-  isModRequirementsEnabled,
-  isFileRequirementsEnabled,
-  isFileRequirementsFeatureAvailable,
-} from "../selectors";
+import { FILE_REQUIREMENTS_FLAG } from "../checks/fileRequirementsCheck";
+import { isModRequirementsEnabled, isFileRequirementsUserEnabled } from "../selectors";
 
 const SettingsHealthCheck: React.FC = () => {
   const { t } = useTranslation(["health_check"]);
   const dispatch = useDispatch();
   const modRequirementsEnabled = useSelector(isModRequirementsEnabled);
-  const fileRequirementsEnabled = useSelector(isFileRequirementsEnabled);
-  const fileRequirementsAvailable = useSelector(isFileRequirementsFeatureAvailable);
+  const fileRequirementsEnabled = useSelector(isFileRequirementsUserEnabled);
+  const fileRequirementsAvailable = useFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
 
   const onToggleModRequirements = React.useCallback(() => {
     dispatch(setModRequirementsEnabled(!modRequirementsEnabled));

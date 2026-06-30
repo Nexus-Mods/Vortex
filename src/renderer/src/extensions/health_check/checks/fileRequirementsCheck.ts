@@ -4,8 +4,10 @@
  */
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import type { KnownFlagName } from "@vortex/shared/flags";
 
 import { runFileLevelRequirements } from "@/extensions/health_check/utils/fileRequirements/runFileLevelRequirements";
+import { FlagService } from "@/FlagService";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -19,10 +21,13 @@ import {
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
 import { setHealthCheckRunning } from "../actions/session";
-import { isFileRequirementsEnabled } from "../selectors";
+import { isFileRequirementsUserEnabled } from "../selectors";
 import type { IFileRequirementsCheckMetadata } from "../types";
 
 export const FILE_REQUIREMENTS_CHECK_ID = "check-file-level-requirements";
+
+/** Unleash flag gating the file-level requirements feature; must match the Unleash toggle. */
+export const FILE_REQUIREMENTS_FLAG: KnownFlagName = "vortex-file-requirements-health-check";
 
 /**
  * Create a result object for the file requirements check
@@ -132,7 +137,9 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.SettingsChanged,
   ],
   check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
-    if (!isFileRequirementsEnabled(api.getState())) {
+    // Reading the flag through FlagService reports an evaluation metric to the server.
+    const flagEnabled = FlagService.instance.getFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
+    if (!flagEnabled || !isFileRequirementsUserEnabled(api.getState())) {
       return {
         checkId: FILE_REQUIREMENTS_CHECK_ID,
         status: "passed",

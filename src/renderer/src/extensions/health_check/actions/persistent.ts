@@ -59,15 +59,6 @@ export const setFileRequirementsEnabled = createAction(
 );
 
 /**
- * Set whether the file-level requirements Unleash flag is enabled.
- * Persisted so the last-known value survives restarts and brief Unleash outages.
- */
-export const setFileRequirementsFlagEnabled = createAction(
-  "SET_HEALTH_CHECK_FILE_REQUIREMENTS_FLAG",
-  (enabled: boolean) => ({ enabled }),
-);
-
-/**
  * Record that feedback was given for a specific requirement
  */
 export const setFeedbackGiven = createAction(
