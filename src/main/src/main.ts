@@ -285,7 +285,9 @@ async function main(): Promise<void> {
   });
   initTelemetryIpcHandler();
 
-  const unleashClient = new UnleashClient(app.getVersion());
+  const unleashClient = new UnleashClient(app.getVersion(), {
+    cachePath: path.join(app.getPath("userData"), "flag-cache.json"),
+  });
   synchronizeFeatureFlags(unleashClient);
 
   StylesheetCompiler.init();

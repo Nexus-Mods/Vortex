@@ -1,8 +1,16 @@
+import * as fs from "node:fs/promises";
+
+import type { FeatureFlag } from "@vortex/shared/flags";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import createFetchMock from "vitest-fetch-mock";
 
 import { log } from "../logging";
 import { UnleashClient } from "./client";
+
+vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
+}));
 
 vi.mock("../logging", () => ({ log: vi.fn() }));
 
@@ -308,6 +316,174 @@ describe("UnleashClient", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(client.flags).toEqual(expected);
+    });
+  });
+
+  // ============================================================
+  // cache
+  // ============================================================
+
+  describe("cache", () => {
+    const CACHE_PATH = "/tmp/flag-cache.json";
+    const knownToggle = { name: "vortex-test-flag", variant: null };
+    const knownFlag = { name: "vortex-test-flag" as const, variant: undefined };
+
+    function makeCache(overrides?: Partial<{ timestamp: number; toggles: unknown[] }>): string {
+      return JSON.stringify({ timestamp: Date.now(), toggles: [knownToggle], ...overrides });
+    }
+
+    beforeEach(() => {
+      vi.mocked(fs.readFile).mockReset();
+      vi.mocked(fs.writeFile).mockResolvedValue(undefined);
+    });
+
+    describe("#loadCache via start", () => {
+      beforeEach(() => vi.useFakeTimers());
+      afterEach(() => vi.useRealTimers());
+
+      it("calls onUpdate with cached flags before the first fetch when cache is valid", async () => {
+        vi.mocked(fs.readFile).mockImplementation(() => Promise.resolve(makeCache()));
+
+        const onUpdate = vi.fn();
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000, onUpdate);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(onUpdate).toHaveBeenCalledWith([knownFlag]);
+      });
+
+      it("does not call onUpdate from cache when the cache is expired", async () => {
+        const expired = Date.now() - 25 * 60 * 60 * 1000;
+        vi.mocked(fs.readFile).mockImplementation(() =>
+          Promise.resolve(makeCache({ timestamp: expired })),
+        );
+
+        const onUpdate = vi.fn();
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000, onUpdate);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(vi.mocked(log)).toHaveBeenCalledWith("debug", "flag cache is expired, ignoring");
+        const cachedCall = onUpdate.mock.calls.find((args) =>
+          (args[0] as FeatureFlag[]).some((f) => f.name === "vortex-test-flag"),
+        );
+        expect(cachedCall).toBeUndefined();
+      });
+
+      it("does not read from disk when cachePath is not set", async () => {
+        const client = new UnleashClient("1.0.0");
+        vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(fs.readFile).not.toHaveBeenCalled();
+      });
+
+      it("ignores a missing cache file and proceeds to fetch", async () => {
+        vi.mocked(fs.readFile).mockRejectedValue(
+          Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
+        );
+
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        const fetchSpy = vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it("ignores corrupt JSON in the cache file", async () => {
+        vi.mocked(fs.readFile).mockImplementation(() => Promise.resolve("not json"));
+
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000);
+        await vi.advanceTimersByTimeAsync(0);
+        // no assertion needed -- the test passes if nothing throws
+      });
+
+      it("ignores a cache file with wrong shape", async () => {
+        vi.mocked(fs.readFile).mockImplementation(() =>
+          Promise.resolve(JSON.stringify({ wrong: true })),
+        );
+
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(vi.mocked(log)).toHaveBeenCalledWith(
+          "debug",
+          "flag cache has unexpected shape, ignoring",
+        );
+      });
+
+      it("respects a custom cacheTtlMs", async () => {
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        vi.mocked(fs.readFile).mockImplementation(() =>
+          Promise.resolve(makeCache({ timestamp: fiveMinutesAgo })),
+        );
+
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH, cacheTtlMs: 60_000 });
+        vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
+
+        client.start(1_000);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(vi.mocked(log)).toHaveBeenCalledWith("debug", "flag cache is expired, ignoring");
+      });
+    });
+
+    describe("#writeCache via fetchFeatureFlags", () => {
+      it("writes raw toggles and a timestamp after a successful fetch", async () => {
+        fetchMocker.mockResponseOnce(toggleBody([knownToggle]));
+
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        await client.fetchFeatureFlags();
+        await Promise.resolve(); // settle the fire-and-forget write
+
+        expect(fs.writeFile).toHaveBeenCalledOnce();
+        const [writtenPath, writtenContent] = vi.mocked(fs.writeFile).mock.calls[0]!;
+        expect(writtenPath).toBe(CACHE_PATH);
+        const written = JSON.parse(writtenContent as string) as {
+          timestamp: number;
+          toggles: unknown[];
+        };
+        expect(typeof written.timestamp).toBe("number");
+        expect(written.toggles).toEqual([knownToggle]);
+      });
+
+      it("does not write to disk when cachePath is not set", async () => {
+        fetchMocker.mockResponseOnce(toggleBody([knownToggle]));
+
+        await new UnleashClient("1.0.0").fetchFeatureFlags();
+        await Promise.resolve();
+
+        expect(fs.writeFile).not.toHaveBeenCalled();
+      });
+
+      it("swallows write errors and logs a warning", async () => {
+        fetchMocker.mockResponseOnce(toggleBody([knownToggle]));
+        vi.mocked(fs.writeFile).mockRejectedValue(new Error("disk full"));
+
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        await expect(client.fetchFeatureFlags()).resolves.toBeDefined();
+        await Promise.resolve();
+
+        expect(vi.mocked(log)).toHaveBeenCalledWith(
+          "warn",
+          "failed to write flag cache",
+          expect.anything(),
+        );
+      });
     });
   });
 
