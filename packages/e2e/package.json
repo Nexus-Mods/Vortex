@@ -67,7 +67,11 @@
   },
   "devDependencies": {
     "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "electron": "catalog:",
+    "enquirer": "catalog:",
+    "octokit": "catalog:",
     "playwright": "catalog:",
-    "electron": "catalog:"
+    "tsx": "catalog:"
   }
 }
