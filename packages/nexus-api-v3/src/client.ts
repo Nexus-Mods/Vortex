@@ -142,6 +142,19 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       if (error) throw toV3Error(error, response);
       return Array.from(data.data.versions);
     },
+
+    /**
+     * Resolve mod-level display details (name, summary, status, thumbnail, adult
+     * flag) for a set of composite mod UIDs. Up to 2000 `modIds` per call;
+     * unknown ids are omitted from the result.
+     */
+    async getModsBatch(modIds: readonly string[]): Promise<components["schemas"]["ModDetail"][]> {
+      const { data, error, response } = await client.POST("/mods/batch", {
+        body: { mod_ids: [...modIds] },
+      });
+      if (error) throw toV3Error(error, response);
+      return Array.from(data.data.mods);
+    },
   };
 }
 

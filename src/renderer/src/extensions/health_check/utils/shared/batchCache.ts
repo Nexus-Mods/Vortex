@@ -1,8 +1,17 @@
 /**
- * Minimal in-memory cache keyed by string with a per-entry TTL. The file
- * dependency ports use it so re-runs (e.g. on ModsChanged) don't refetch data
- * that rarely changes between runs.
+ * Helpers for chunked, cached batch fetching: split id lists into request-sized
+ * chunks, and memoize fetched rows by key so re-runs (e.g. on ModsChanged) only
+ * fetch what isn't already cached. Shared by the mod- and file-level checks.
  */
+
+/** Yield `items` in successive chunks of at most `size`. */
+export function* chunked<T>(items: T[], size: number): Generator<T[]> {
+  for (let i = 0; i < items.length; i += size) {
+    yield items.slice(i, i + size);
+  }
+}
+
+/** Minimal in-memory cache keyed by string with a per-entry TTL. */
 export interface KeyedCache<V> {
   get(key: string): V | undefined;
   set(key: string, value: V): void;

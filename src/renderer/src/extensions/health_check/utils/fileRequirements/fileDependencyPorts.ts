@@ -6,11 +6,15 @@ import type {
 } from "@nexusmods/file-dependency-resolver";
 import type { components } from "@vortex/nexus-api-v3";
 
+import {
+  chunked,
+  createKeyedCache,
+  resolveCached,
+  type KeyedCache,
+} from "@/extensions/health_check/utils/shared/batchCache";
 import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
 import { createVortexNexusV3Client } from "@/extensions/nexus_integration/nexusV3Client";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-
-import { createKeyedCache, resolveCached, type KeyedCache } from "./fileDependencyCache";
 
 type V3Client = ReturnType<typeof createVortexNexusV3Client>;
 type V3Candidate = components["schemas"]["ModFileVersionDependencyCandidate"];
@@ -22,8 +26,8 @@ const MAX_CANDIDATE_SOURCE_IDS = 5000;
 const MAX_DETAIL_IDS = 2000;
 const CANDIDATE_PAGE_SIZE = 5000;
 
-// Candidates and version details rarely change between runs; cache for a while.
-const CACHE_TTL_MS = 60 * 60 * 1000;
+// Candidate and version details rarely change between runs; cache for a while.
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 // Legacy numeric file category codes the resolver classifies on.
 const CATEGORY_CODES: Record<V3Category, number> = {
@@ -58,12 +62,6 @@ function toFileVersionDetail(row: V3VersionDetail): FileVersionDetail {
     name: row.name,
     version: row.version,
   };
-}
-
-function* chunked<T>(items: T[], size: number): Generator<T[]> {
-  for (let i = 0; i < items.length; i += size) {
-    yield items.slice(i, i + size);
-  }
 }
 
 // --- endpoint interaction + pagination ---
@@ -120,9 +118,9 @@ const candidateCache: KeyedCache<CandidateRow[]> = createKeyedCache(CACHE_TTL_MS
 const detailCache: KeyedCache<FileVersionDetail> = createKeyedCache(CACHE_TTL_MS);
 
 /**
- * Build the resolver ports for the active session. Candidate and version
- * detail data comes from the Nexus v3 batch endpoints (paged and cached); mod
- * details go through the existing v2 GraphQL accessor.
+ * Build the resolver ports for the active session. Candidate and version detail
+ * data come from the Nexus v3 batch endpoints (chunked, paged and cached here);
+ * mod details go through the shared, v3-backed getModDetails accessor.
  */
 export function createResolverPorts(api: IExtensionApi): ResolverPorts {
   const client = createVortexNexusV3Client(api);
