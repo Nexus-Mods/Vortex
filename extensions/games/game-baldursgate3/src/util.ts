@@ -2,6 +2,7 @@
 import * as path from "path";
 
 import { actions, fs, types, selectors, log, util } from "@nexusmods/vortex-api";
+import { getFileVersion } from "exe-version";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import walk from "turbowalk";
@@ -45,6 +46,15 @@ export function profilesPath() {
   return path.join(documentsPath(), "PlayerProfiles");
 }
 
+export async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.statAsync(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function globalProfilePath(api: types.IExtensionApi) {
   const bg3ProfileId = await getActivePlayerProfile(api);
   return path.join(documentsPath(), bg3ProfileId);
@@ -64,13 +74,30 @@ export const getPlayerProfiles = (() => {
   return () => cached;
 })();
 
+// The game's user-facing product version (read via getOwnGameVersion) coerces
+// to 4.1.1 for the public release. Only pre-release/early-access builds below
+// that used per-player-profile modsettings; the public release stores them in
+// the shared "Public" profile. So anything < 4.1.1 keeps the legacy profile
+// path, the public release uses "Public".
 export function gameSupportsProfile(gameVersion: string) {
-  return semver.lt(semver.coerce(gameVersion), "4.1.206");
+  return semver.lt(semver.coerce(gameVersion), "4.1.1");
 }
 
 export async function getOwnGameVersion(state: types.IState): Promise<string> {
   const discovery = selectors.discoveryByGame(state, GAME_ID);
   return await util.getGame(GAME_ID).getInstalledVersion(discovery);
+}
+
+// Patch-tier detection (v6/v7/v8) needs the numeric FileVersion, which is the
+// reliably monotonic patch number (e.g. 4.72.9.685). The reported game version
+// (getOwnGameVersion) is the user-facing product version (4.1.1.x), which no
+// longer tracks the patch, so read the FileVersion straight off the executable.
+export async function getOwnGameFileVersion(state: types.IState): Promise<string> {
+  const discovery = selectors.discoveryByGame(state, GAME_ID);
+  if (!discovery?.path) {
+    return "";
+  }
+  return getFileVersion(path.join(discovery.path, "bin", "bg3.exe"));
 }
 
 export async function getActivePlayerProfile(api: types.IExtensionApi): Promise<string> {
@@ -187,7 +214,7 @@ export async function getDefaultModSettingsFormat(api: types.IExtensionApi): Pro
   _FORMAT = "v8";
   try {
     const state = api.getState();
-    const gameVersion = await getOwnGameVersion(state);
+    const gameVersion = await getOwnGameFileVersion(state);
     const coerced = gameVersion ? semver.coerce(gameVersion) : PATCH_8;
     if (semver.gte(coerced, PATCH_8)) {
       _FORMAT = "v8";

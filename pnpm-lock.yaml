@@ -261,20 +261,14 @@ catalogs:
       specifier: 2.8.0
       version: 2.8.0
     '@nexusmods/fomod-installer-ipc':
-<<<<<<< HEAD
-=======
       specifier: 0.13.3
       version: 0.13.3
-    '@nexusmods/fomod-installer-native':
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
-      specifier: 0.13.2
-      version: 0.13.2
     '@nexusmods/fomod-installer-native':
       specifier: 0.13.3
       version: 0.13.3
     '@nexusmods/nexus-api':
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
-      version: 1.7.0
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
+      version: 1.7.1
     '@opentelemetry/api':
       specifier: 1.9.1
       version: 1.9.1
@@ -714,8 +708,8 @@ catalogs:
       specifier: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
       version: 0.9.3
     nexus-api:
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
-      version: 1.7.0
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
+      version: 1.7.1
     node:
       specifier: runtime:24.15.0
       version: 24.15.0
@@ -1192,7 +1186,7 @@ importers:
         version: 0.30.6
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -2510,7 +2504,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2848,7 +2842,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3793,7 +3787,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3823,7 +3817,7 @@ importers:
         version: 4.17.23
       nexus-api:
         specifier: 'catalog:'
-        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe'
+        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba'
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -4096,7 +4090,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../vortex-api
@@ -4204,7 +4198,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -4267,17 +4261,13 @@ importers:
         version: link:../../packages/adaptor-api
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 0.13.2
-=======
         version: 0.13.3
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.3
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -4787,17 +4777,13 @@ importers:
         version: 2.8.0
       '@nexusmods/fomod-installer-ipc':
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 0.13.2
-=======
         version: 0.13.3
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.3
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -6398,22 +6384,17 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-<<<<<<< HEAD
-  '@nexusmods/fomod-installer-ipc@0.13.2':
-    resolution: {integrity: sha512-0I6HBu5s9EBQlcEvm3v+YbYMBKrNWjQ/wL8OwOEFAJLAIvpvbIPdquSde4HyQheB69lUpodOryBQuLtPQMm+0g==}
-=======
   '@nexusmods/fomod-installer-ipc@0.13.3':
     resolution: {integrity: sha512-Ex7jQJASYemOWoXzZw94jakOqTDOEfFQ6nfPHQFC3nB2oYTzDGd3cgNajZt8kZJOB8x/izBXiIBOPhy2+GGURg==}
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
     engines: {node: '>=22'}
 
   '@nexusmods/fomod-installer-native@0.13.3':
     resolution: {integrity: sha512-Xb05QlkzIy2Ge1Y8N4SheTeOWAKNtsCYZBJO9BUKG7BA3pjwzzmTXjr3Ikn2Fr7UsX5uLMYMa4JhSbgkszUZUA==}
     engines: {node: '>=22'}
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe':
-    resolution: {gitHosted: true, integrity: sha512-djt94OCZU1gokDeuTEiHGN6P9c3REexI8y+IA4d2t54TXgpxo6VBuy5mF6R6AZ5YZXTOQH8939isJ84QP1u+mA==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe}
-    version: 1.7.0
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba':
+    resolution: {gitHosted: true, integrity: sha512-+78ynmZZCtkbSljcu5wTVktuUwRgexyecsWCGWkJvxvKHql8hNNhsmPMCfDBQPKWT20WijfYVMJ589nAD/yhrQ==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba}
+    version: 1.7.1
 
   '@nx/nx-darwin-arm64@22.7.5':
     resolution: {integrity: sha512-eoPtwx0qZqvRUD+VVOHm150AlSYwYoPxkDHBBGqKCn5nzPspb0lLWw8q83crM/L1M928YgK0WmGf3C++7eqsTA==}
@@ -14004,17 +13985,13 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-<<<<<<< HEAD
-  '@nexusmods/fomod-installer-ipc@0.13.2': {}
-=======
   '@nexusmods/fomod-installer-ipc@0.13.3': {}
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
 
   '@nexusmods/fomod-installer-native@0.13.3':
     dependencies:
       node-gyp-build: 4.8.4
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/99a97cd1359527dbf5c46c93723d1846538badfe':
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba':
     dependencies:
       form-data: 4.0.5
       jsonwebtoken: 9.0.3

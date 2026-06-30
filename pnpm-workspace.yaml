@@ -49,14 +49,9 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.7
   "@msgpack/msgpack": 2.8.0
-<<<<<<< HEAD
-  "@nexusmods/fomod-installer-ipc": 0.13.2
-  "@nexusmods/fomod-installer-native": 0.13.3
-=======
   "@nexusmods/fomod-installer-ipc": 0.13.3
-  "@nexusmods/fomod-installer-native": 0.13.2
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
-  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
+  "@nexusmods/fomod-installer-native": 0.13.3
+  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.8.0
   "@opentelemetry/context-zone": 2.8.0
@@ -205,7 +200,7 @@ catalog:
   minimist: 1.2.8
   mixpanel-browser: 2.79.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
+  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   node: runtime:24.15.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0

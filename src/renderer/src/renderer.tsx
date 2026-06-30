@@ -121,6 +121,7 @@ import { ApplicationData } from "./applicationData";
 import { FlagsProvider } from "./contexts/FlagsContext";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
+import { FlagService } from "./FlagService";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
 import reducer, { buildReducerTree, Decision, sanitizeHydrationState } from "./reducers/index";
@@ -191,6 +192,7 @@ const middleware = [
 // final writes are lost and affected mods reload missing fields (GH#23363).
 window.addEventListener("beforeunload", () => {
   flushPendingDiffsSync();
+  FlagService.destroyIfInitialized();
 });
 
 function sanityCheckCB(err: StateError) {
@@ -455,6 +457,7 @@ async function initGlobals(): Promise<void> {
   // Initialize application data asynchronously from main process cache
   // This replaces synchronous IPC calls that were in the preload script
   await ApplicationData.init();
+  FlagService.init();
   readStartupSettings();
 }
 

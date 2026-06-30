@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
-=======
 ## [2.2.0-beta.2] - 2026-06-25
 
 ### Fixed
@@ -16,7 +14,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Collection Mods tab opening the wrong mod page when multiple mods shared the same author ([#23524](https://github.com/Nexus-Mods/Vortex/pull/23524))
 - Avatar and premium banner flickering in a loop on OAuth token refresh ([#23521](https://github.com/Nexus-Mods/Vortex/pull/23521))
 
->>>>>>> fdf65d249 (Merge pull request #23571 from Nexus-Mods/task/fomod-fix)
 ## [2.2.0-beta.1] - 2026-06-16
 
 _First beta of the 2.2 release._
