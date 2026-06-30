@@ -1826,7 +1826,7 @@ function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
     // reset the driver, dismiss the install notification.
     const session = getCollectionActiveSession(api.getState());
     if (session?.collectionId && session.gameId) {
-      api.events.emit("pause-collection", session.gameId, session.collectionId);
+      api.events.emit("pause-collection", session.gameId, session.collectionId, "free-user-cancel");
     }
     return true;
   } else {

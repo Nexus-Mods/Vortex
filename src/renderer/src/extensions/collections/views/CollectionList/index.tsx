@@ -16,7 +16,6 @@ import * as tooltip from "../../../../controls/TooltipControls";
 import type { IDownload } from "../../../../extensions/download_management/types/IDownload";
 import type { IGameStored } from "../../../../extensions/gamemode_management/types/IGameStored";
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
-import { findDownloadByRef } from "../../../../extensions/mod_management/util/dependencies";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
@@ -31,7 +30,7 @@ import { toPromise } from "../../../../util/util";
 import MainPage from "../../../../views/MainPage";
 import { updateSuccessRate } from "../../actions/persistent";
 import { doExportToAPI } from "../../collectionExport";
-import { INSTALLING_NOTIFICATION_ID, MOD_TYPE, NAMESPACE, TOS_URL } from "../../constants";
+import { MOD_TYPE, NAMESPACE } from "../../constants";
 import type { IExtensionFeature } from "../../util/extension";
 import { findExtensions } from "../../util/extension";
 import type InstallDriver from "../../util/InstallDriver";
@@ -302,35 +301,25 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     this.showPage("edit", modId);
   };
 
-  private pause = async (modId: string, silent?: boolean) => {
-    const { downloads, mods } = this.props;
+  private pause = (modId: string) => {
+    const { mods, profile } = this.props;
 
-    const collection = mods[modId];
-    if (collection === undefined) {
+    if (mods[modId] === undefined) {
       return;
     }
 
-    (collection?.rules ?? []).forEach((rule) => {
-      const dlId = findDownloadByRef(rule.reference, downloads);
-      if (dlId !== undefined) {
-        this.context.api.events.emit("pause-download", dlId);
-      }
+    // Route through the canonical pause-collection handler so the pause is logged once
+    // at its chokepoint and shares one cleanup path (driver reset, in-progress-only
+    // download pause) instead of a divergent copy here.
+    this.context.api.events.emit("pause-collection", profile.gameId, modId, "user");
+
+    this.context.api.sendNotification({
+      id: "collection-pausing",
+      type: "success",
+      title: "Collection pausing",
+      message: "Already queued mod installations will still finish",
+      displayMS: 3000,
     });
-    const { api } = this.context;
-    await api.emitAndAwait("cancel-dependency-install", modId);
-
-    this.props.driver.cancel();
-
-    api.dismissNotification(INSTALLING_NOTIFICATION_ID + modId);
-    if (silent !== true) {
-      api.sendNotification({
-        id: "collection-pausing",
-        type: "success",
-        title: "Collection pausing",
-        message: "Already queued mod installations will still finish",
-        displayMS: 3000,
-      });
-    }
   };
 
   private async removeWorkshop(modId: string) {
@@ -530,26 +519,15 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
       });
   };
 
-  private resume = async (modId: string) => {
-    const { driver, mods, profile, userInfo } = this.props;
-
-    if (mods[modId] === undefined) {
+  private resume = (modId: string) => {
+    const { profile } = this.props;
+    if (profile === undefined) {
       return;
     }
 
-    if (userInfo === null || userInfo === undefined) {
-      const { api } = this.context;
-      api.showDialog(
-        "info",
-        "Not logged in",
-        {
-          text: "You have to be logged in with Nexus Mods to install collections.",
-        },
-        [{ label: "Continue" }],
-      );
-    } else if (mods[modId] !== undefined) {
-      driver.start(profile, mods[modId]);
-    }
+    // Route through the canonical resume-collection handler, which owns the not-logged-in
+    // guard, logging, and the start path.
+    this.context.api.events.emit("resume-collection", profile.gameId, modId);
   };
 }
 
