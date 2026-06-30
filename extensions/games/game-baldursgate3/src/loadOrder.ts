@@ -13,6 +13,7 @@ import { GAME_ID, LO_FILE_NAME, NOTIF_IMPORT_ACTIVITY } from "./common";
 import { DivineAborted, DivineExecMissing, DivinePakInvalid } from "./divineCore";
 import { BG3Pak, IModNode, IModSettings, IProps, IRootNode } from "./types";
 import {
+  fileExists,
   findNode,
   forceRefresh,
   getActivePlayerProfile,
@@ -232,6 +233,13 @@ export async function importModSettingsGame(api: types.IExtensionApi): Promise<b
   const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
 
   logDebug("importModSettingsGame gameSettingsPath=", gameSettingsPath);
+
+  // The game writes modsettings.lsx on first run; if it isn't there yet there's
+  // nothing to import, so skip instead of surfacing a "Failed to import" error.
+  if (!(await fileExists(gameSettingsPath))) {
+    logDebug("importModSettingsGame: modsettings.lsx not found, skipping", gameSettingsPath);
+    return;
+  }
 
   processLsxFile(api, gameSettingsPath);
 }

@@ -1,3 +1,4 @@
+import { context, trace } from "@opentelemetry/api";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
@@ -44,7 +45,9 @@ export const createMainTelemetryProvider = (options?: RingBufferOptions): void =
     resource,
     spanProcessors: [processor],
   });
-  provider.register({
-    contextManager: new AsyncLocalStorageContextManager(),
-  });
+
+  const contextManager = new AsyncLocalStorageContextManager();
+  contextManager.enable();
+  trace.setGlobalTracerProvider(provider);
+  context.setGlobalContextManager(contextManager);
 };

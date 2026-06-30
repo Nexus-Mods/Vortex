@@ -1,7 +1,7 @@
-import { type FileHandle as NodeFileHandle, open } from "node:fs/promises";
+import { type FileHandle as NodeFileHandle, access, open } from "node:fs/promises";
 import type { IncomingHttpHeaders } from "node:http";
 
-import { unknownToError } from "@vortex/shared";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import type {
   ByteRange,
   Chunk,
@@ -68,6 +68,21 @@ export async function download<T>(
     throw new DownloadError({ code: "cancellation" }, "Download cancelled");
   }
 
+  // Resuming opens the partial file with r+, which requires it to exist; drop the checkpoint when
+  // that file is missing so the download starts fresh.
+  let checkpoint = options?.checkpoint;
+  if (checkpoint !== undefined) {
+    try {
+      await access(dest);
+    } catch (err) {
+      // Only a missing file (ENOENT) invalidates the checkpoint; any other access error is left for
+      // open() below to surface.
+      if (getErrorCode(err) === "ENOENT") {
+        checkpoint = undefined;
+      }
+    }
+  }
+
   const sessionGot = got.extend({
     cookieJar: options?.cookieJar,
     signal: options?.abortSignal,
@@ -88,7 +103,7 @@ export async function download<T>(
   let probe: ProbeResult;
   try {
     probe = await withRetry(
-      () => probeUrl(sessionGot, resolved.probeEndpoint, options?.checkpoint?.etag ?? undefined),
+      () => probeUrl(sessionGot, resolved.probeEndpoint, checkpoint?.etag ?? undefined),
       strategy.retry,
       options?.abortSignal,
     );
@@ -111,7 +126,7 @@ export async function download<T>(
       : [];
   const isChunked = chunks.length > 1;
 
-  const completedRanges = options?.checkpoint?.completedRanges ?? [];
+  const completedRanges = checkpoint?.completedRanges ?? [];
   const pendingChunks = chunks.filter(
     (chunk) =>
       !completedRanges.some((r) => r.start <= chunk.range.start && r.end >= chunk.range.end),
@@ -123,14 +138,14 @@ export async function download<T>(
     // https://nodejs.org/api/fs.html#file-system-flags
     // 'w+': Open file for reading and writing. The file is created (if it does not exist) or truncated (if it exists).
     // 'r+': Open file for reading and writing. An exception occurs if the file does not exist.
-    const flag = options?.checkpoint ? "r+" : "w+";
+    const flag = checkpoint ? "r+" : "w+";
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
     throw new DownloadError({ code: "fs-error", path: dest }, `Failed to open ${dest}`, err);
   }
 
-  if (options?.checkpoint && probe.size) {
+  if (checkpoint && probe.size) {
     try {
       await handle.fd.truncate(probe.size);
     } catch (err) {
@@ -200,7 +215,7 @@ export async function download<T>(
       // those bytes are already valid on disk.
       let checkpointPosition = 0;
 
-      if (options?.checkpoint && completedRanges.length > 0) {
+      if (checkpoint && completedRanges.length > 0) {
         const sortedRanges = completedRanges.toSorted((a, b) => a.start - b.start);
 
         let currentEnd = -1;
