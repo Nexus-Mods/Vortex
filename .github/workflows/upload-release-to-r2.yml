@@ -29,7 +29,7 @@ jobs:
           rm -rf awscliv2.zip aws
 
       - name: Download release asset
-        run: gh release download ${{ github.event.release.tag_name || inputs.tag }} --pattern "vortex-setup-*.exe"
+        run: gh release download ${{ github.event.release.tag_name || inputs.tag }} --pattern "vortex-setup-*.exe" --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
