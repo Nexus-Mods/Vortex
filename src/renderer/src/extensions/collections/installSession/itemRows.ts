@@ -91,14 +91,17 @@ function persistentRow(
   // mod and its download carry the rule's referenceTag (authoritative), and an installed mod is also
   // keyed by content hash (fileMD5) so a member whose tag drifted, or that was matched by hash rather
   // than tag, is still recognised - a hash match is the same file, so there are no false positives.
-  // Only a rule carrying neither identity needs the full scan.
   const { tag, fileMD5 } = rule.reference;
 
   let mod = tag !== undefined ? indexes.modByTag.get(tag) : undefined;
   if (mod === undefined && fileMD5 !== undefined) {
     mod = indexes.modByMd5.get(fileMD5);
   }
-  if (mod === undefined && tag === undefined && fileMD5 === undefined) {
+  // Neither the tag nor the hash index resolved the mod (e.g. a fuzzy/latest member whose tag
+  // drifted across collections and has no fileMD5). Fall back to findModByRef - the same identity
+  // match reconstructSessionMods uses - so the table agrees with the session rather than showing an
+  // installed member as "pending".
+  if (mod === undefined) {
     mod = findModByRef(rule.reference, mods);
   }
   if (mod !== undefined) {

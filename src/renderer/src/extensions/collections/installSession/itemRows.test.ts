@@ -11,6 +11,7 @@ import { describe, it, expect, vi } from "vitest";
 import { makeDownload, makeMod, makeRule } from "../../../test-utils/builders";
 import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
+import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
 import type { IMod, IModAttributes, IModRule } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { buildCollectionItemRows } from "./itemRows";
@@ -149,6 +150,32 @@ describe("buildCollectionItemRows", () => {
 
     expect(row.id).toBe("m1");
     expect(row.status).toBe("installed");
+  });
+
+  it("resolves a fuzzy member installed under another collection's tag, matching the session", () => {
+    // Two collections include the same member. Collection 1 installed it, so the mod on disk carries
+    // collection 1's referenceTag. Collection 2's rule carries a different tag and, being a
+    // fuzzy/latest member, has no fileMD5 - so the tag index misses and there is no hash fallback.
+    // The session resolves the member by identity (reconstructSessionMods -> findModByRef) and sees
+    // it installed, which is what drives completion; the table must agree, not show it "pending".
+    const rule = requiresRule({ reference: { tag: "tag-col2", logicalFileName: "MCM" } });
+    const mods = {
+      "inst-mcm": installedMod("inst-mcm", { referenceTag: "tag-col1", logicalFileName: "MCM" }),
+    };
+
+    // the session (identity-aware) sees the member installed - so completion treats it as resolved
+    const sessionMods = reconstructSessionMods({ rules: [rule], mods, downloads: {} });
+    expect(sessionMods[modRuleId(rule)].status).toBe("installed");
+
+    // the table must resolve the same installed mod rather than falling back to "pending"
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods,
+      downloads: {},
+      modState: {},
+      sessionMods: {},
+    });
+    expect(rows[modRuleId(rule)].status).toBe("installed");
   });
 
   it("resolves a tagged rule's download via the referenceTag index", () => {
