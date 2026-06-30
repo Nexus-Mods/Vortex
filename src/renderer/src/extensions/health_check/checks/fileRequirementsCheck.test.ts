@@ -11,7 +11,6 @@ vi.mock("@/extensions/health_check/utils/fileRequirements/installedFiles", () =>
 vi.mock("../../nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3Client: vi.fn(),
 }));
-vi.mock("@/extensions/health_check/utils/shared/modDetails", () => ({ getModDetails: vi.fn() }));
 vi.mock("../../nexus_integration/selectors", () => ({ isLoggedIn: vi.fn() }));
 vi.mock("../../profile_management/selectors", () => ({ activeProfile: vi.fn() }));
 vi.mock("../../../logging", () => ({ log: vi.fn() }));
@@ -21,14 +20,13 @@ import {
   makeInstalledFileHydrator,
   type IInstalledFileRef,
 } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
-import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
-import type { IFileRequirementsCheckMetadata, IInstalledFile, IModDetails } from "../types";
+import type { IFileRequirementsCheckMetadata, IInstalledFile } from "../types";
 import { checkFileRequirements } from "./fileRequirementsCheck";
 
 const mockActiveProfile = vi.mocked(activeProfile);
@@ -36,7 +34,6 @@ const mockIsLoggedIn = vi.mocked(isLoggedIn);
 const mockGather = vi.mocked(gatherInstalledFiles);
 const mockHydrator = vi.mocked(makeInstalledFileHydrator);
 const mockCreateClient = vi.mocked(createVortexNexusV3Client);
-const mockGetModDetails = vi.mocked(getModDetails);
 
 const api = { getState: () => ({}) } as unknown as IExtensionApi;
 
@@ -50,6 +47,16 @@ interface V3Candidate {
   category: string;
   mod_status: string;
   mod_id: string;
+}
+
+/** A raw v3 mod-detail row (snake_case, as /mods/batch returns it). */
+interface V3ModDetail {
+  id: string;
+  name: string;
+  summary?: string;
+  status?: string;
+  thumbnail_url?: string | null;
+  adult_content?: boolean;
 }
 
 /** Installed file metadata the resolver needs (its update-group "chain" + mod). */
@@ -90,8 +97,12 @@ function candidate(
   };
 }
 
-/** A fake v3 client backed by in-memory version + candidate fixtures. */
-function fakeClient(versions: Record<string, VersionFixture>, candidates: V3Candidate[]) {
+/** A fake v3 client backed by in-memory version + candidate + mod fixtures. */
+function fakeClient(
+  versions: Record<string, VersionFixture>,
+  candidates: V3Candidate[],
+  modDetails: V3ModDetail[] = [],
+) {
   return {
     getModFileVersionsBatch: vi.fn((ids: string[]) =>
       Promise.resolve(
@@ -115,6 +126,9 @@ function fakeClient(versions: Record<string, VersionFixture>, candidates: V3Cand
         });
       },
     ),
+    getModsBatch: vi.fn((ids: string[]) =>
+      Promise.resolve(modDetails.filter((m) => ids.includes(m.id))),
+    ),
   };
 }
 
@@ -123,7 +137,7 @@ async function runWith(opts: {
   refs: IInstalledFileRef[];
   versions: Record<string, VersionFixture>;
   candidates: V3Candidate[];
-  modDetails?: IModDetails[];
+  modDetails?: V3ModDetail[];
 }): Promise<IFileRequirementsCheckMetadata | undefined> {
   mockGather.mockResolvedValue(opts.refs);
   mockHydrator.mockReturnValue((fileUID: string) => {
@@ -131,11 +145,10 @@ async function runWith(opts: {
     return found ? installedFile(fileUID, found.enabled) : undefined;
   });
   mockCreateClient.mockReturnValue(
-    fakeClient(opts.versions, opts.candidates) as unknown as ReturnType<
+    fakeClient(opts.versions, opts.candidates, opts.modDetails) as unknown as ReturnType<
       typeof createVortexNexusV3Client
     >,
   );
-  mockGetModDetails.mockResolvedValue(opts.modDetails ?? []);
 
   const result = await checkFileRequirements(api);
   return result.metadata as IFileRequirementsCheckMetadata | undefined;
@@ -204,7 +217,7 @@ describe("checkFileRequirements / resolution", () => {
           mod_id: "ms_candMod",
         }),
       ],
-      modDetails: [{ modUID: "ms_candMod", modName: "SkyUI", adultContent: false }],
+      modDetails: [{ id: "ms_candMod", name: "SkyUI", adult_content: false }],
     });
 
     const reqs = metadata?.fileRequirements["ms_src"]?.requirements;
@@ -242,7 +255,7 @@ describe("checkFileRequirements / resolution", () => {
           mod_id: "cm_candMod",
         }),
       ],
-      modDetails: [{ modUID: "cm_candMod", modName: "Dep", adultContent: false }],
+      modDetails: [{ id: "cm_candMod", name: "Dep", adult_content: false }],
     });
 
     expect(metadata?.fileRequirements["cm_norm"]?.requirements).toHaveLength(1);
@@ -267,7 +280,7 @@ describe("checkFileRequirements / resolution", () => {
           mod_id: "wi_depMod",
         }),
       ],
-      modDetails: [{ modUID: "wi_depMod", modName: "SKSE", adultContent: false }],
+      modDetails: [{ id: "wi_depMod", name: "SKSE", adult_content: false }],
     });
 
     const [req] = metadata?.fileRequirements["wi_src"]?.requirements ?? [];
@@ -344,11 +357,9 @@ describe("checkFileRequirements / resolution", () => {
             mod_id: "w_candMod",
           }),
         ],
+        [{ id: "w_candMod", name: "Dep", adult_content: false }],
       ) as unknown as ReturnType<typeof createVortexNexusV3Client>,
     );
-    mockGetModDetails.mockResolvedValue([
-      { modUID: "w_candMod", modName: "Dep", adultContent: false },
-    ]);
 
     const result = await checkFileRequirements(api);
     expect(result.status).toBe("warning");
