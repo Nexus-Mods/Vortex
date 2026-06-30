@@ -3,8 +3,7 @@
   "version": "1.0.1",
   "description": "Support for X Rebirth",
   "scripts": {
-    "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "build": "node build.mjs",
     "test": "pnpm exec vitest run"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -14,17 +13,13 @@
   "config": {
     "game": "X Rebirth"
   },
-  "vortex": {
-    "gameExtensionTest": true
-  },
   "dependencies": {
     "xml2js": "catalog:"
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",
     "@types/xml2js": "catalog:",
-    "@vortex/extension-test-mocks": "workspace:*",
-    "@vortex/game-extension-test": "workspace:*"
+    "@vortex/extension-test-mocks": "workspace:*"
   },
   "nx": {
     "tags": [
@@ -37,16 +32,6 @@
           "typescript",
           "vortex-api"
         ]
-      },
-      "test:game-extensions": {
-        "executor": "nx:run-commands",
-        "options": {
-          "command": "pnpm --filter @vortex/game-extension-test run start -- --game game-xrebirth"
-        },
-        "inputs": [
-          "{projectRoot}/src/**/*.ts"
-        ],
-        "cache": false
       }
     }
   }

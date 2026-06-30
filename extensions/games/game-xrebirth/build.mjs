@@ -1,10 +1,9 @@
 import * as path from "node:path";
 
-import { createConfig, bundle } from "../../../scripts/extensions-rolldown.mjs";
+import { buildGdlExtension } from "../../../scripts/build-gdl-extension.mjs";
 
-const extensionPath = path.resolve(import.meta.dirname);
-const entryPoint = path.resolve(extensionPath, "src", "index.ts");
-const output = path.resolve(extensionPath, "dist", "index.cjs");
-
-const config = createConfig(entryPoint, output);
-await bundle(config);
+// This extension is described declaratively in game.yaml and compiled by the
+// Game Description Language (GDL) toolchain (the game-description-language
+// submodule) into a Vortex-loadable dist/index.js. The imperative bits
+// (content.xml installer, health checks) live in src/hooks.ts.
+await buildGdlExtension(path.resolve(import.meta.dirname));
