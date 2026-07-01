@@ -448,7 +448,7 @@ function FileRequirementsListingRow({
       setShowPremium(true);
       return;
     }
-    candidates.forEach((candidate) => downloadFileRequirement(api, candidate));
+    candidates.forEach((candidate) => void downloadFileRequirement(api, candidate));
   };
 
   return (
@@ -615,11 +615,9 @@ function FileRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
   const { givenFeedback, markFeedback } = useFileRequirementFeedback(api, report.sourceFileUID);
 
   const requestDownload = (candidate: IFileRequirementCandidate) => {
-    if (showPremiumAd) {
-      setPremiumRequest({ scope: "single", candidate });
-      return;
-    }
-    downloadFileRequirement(api, candidate);
+    // downloadFileRequirement routes free users to the file page (open-the-website
+    // fallback) and premium users to the real 1-click download.
+    void downloadFileRequirement(api, candidate);
   };
 
   const ctx: IFileActionContext = { api, showPremiumAd, requestDownload };
@@ -633,7 +631,7 @@ function FileRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
       setPremiumRequest({ scope: "all" });
       return;
     }
-    installAllCandidates.forEach((candidate) => downloadFileRequirement(api, candidate));
+    installAllCandidates.forEach((candidate) => void downloadFileRequirement(api, candidate));
   };
 
   // Report-level intro line, mirroring the per-category detail copy.
@@ -897,7 +895,7 @@ export const fileRequirementsContent: IHealthCheckContent = {
         for (const candidate of downloadCandidates([requirement])) {
           items.push({
             key: candidate.fileUID,
-            install: () => downloadFileRequirement(api, candidate),
+            install: () => void downloadFileRequirement(api, candidate),
           });
         }
       }
