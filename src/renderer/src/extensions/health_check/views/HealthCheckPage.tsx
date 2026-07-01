@@ -233,10 +233,13 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
                 </TabBar>
 
                 <div className="flex items-center gap-x-2">
+                  {/* TODO(LAZ-662): install-all is disabled for the MVP; re-enable once
+                      the bulk download resolution + in-flight de-duplication lands. */}
                   {selectedTab === "active" && installAllItems.length > 0 && (
                     <Button
                       appearance="moderate"
                       brand="neutral"
+                      disabled
                       leftIconPath={mdiDownload}
                       rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                       size="sm"

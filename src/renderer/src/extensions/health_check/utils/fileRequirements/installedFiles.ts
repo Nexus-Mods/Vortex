@@ -1,7 +1,7 @@
 import type { IInstalledFile } from "@/extensions/health_check/types";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
-import { makeFileUID } from "@/extensions/nexus_integration/util/UIDs";
+import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IProfile } from "@/extensions/profile_management/types/IProfile";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -11,6 +11,7 @@ import { getSafe } from "@/util/storeHelper";
 /** The subset of mod attributes the file-level gather/hydrate reads. */
 interface IInstalledModAttributes {
   source?: string;
+  modId?: number | string;
   fileId?: number | string;
   downloadGame?: string;
   version?: string;
@@ -108,12 +109,24 @@ export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstall
 }
 
 /** Build the display shape for one installed file from its Vortex mod. */
-function toInstalledFile(mod: IMod, fileUID: string, enabled: boolean): IInstalledFile {
+function toInstalledFile(
+  mod: IMod,
+  fileUID: string,
+  enabled: boolean,
+  gameId: string,
+): IInstalledFile {
   const attributes: IInstalledModAttributes = mod.attributes ?? {};
   const modName = renderModName(mod);
+  const modUID =
+    makeModUID({
+      gameId: attributes.downloadGame ?? gameId,
+      modId: String(attributes.modId ?? ""),
+      fileId: String(attributes.fileId ?? ""),
+    }) ?? "";
   return {
     modId: mod.id,
     fileUID,
+    modUID,
     modName,
     fileName: attributes.fileName ?? attributes.logicalFileName ?? modName,
     version: attributes.version ?? "",
@@ -145,6 +158,6 @@ export function makeInstalledFileHydrator(
     if (!mod) {
       return undefined;
     }
-    return toInstalledFile(mod, fileUID, ref.enabled);
+    return toInstalledFile(mod, fileUID, ref.enabled, gameId);
   };
 }

@@ -70,9 +70,8 @@ interface IFileActionContext {
   requestDownload: (candidate: IFileRequirementCandidate) => void;
 }
 
-// TODO(LAZ-471): the web links (mod page / file page) are stubbed in
-// fileRequirementActions; the click handlers are wired but currently no-op.
-function fileWebLinks(api: IExtensionApi, ref: { fileUID: string }) {
+/** Mod-page / file-page open handlers for a candidate or installed file. */
+function fileWebLinks(api: IExtensionApi, ref: { fileUID: string; modUID: string }) {
   return {
     onOpenMod: () => openModPage(api, ref),
     onOpenFile: () => openFilePage(api, ref),
@@ -664,7 +663,12 @@ function FileRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
                     brand="primary"
                     typographyType="inherit"
                     variant="secondary"
-                    onClick={() => openModPage(api, { fileUID: report.sourceFileUID })}
+                    onClick={() =>
+                      openModPage(api, {
+                        fileUID: report.sourceFileUID,
+                        modUID: report.sourceModUID,
+                      })
+                    }
                   />
                 ),
               }}
@@ -832,6 +836,7 @@ function pushReportEntries(
       data: {
         sourceFileUID: source.sourceFileUID,
         sourceModName: source.sourceModName,
+        sourceModUID: source.sourceModUID,
         category,
         requirements: reqs,
       },

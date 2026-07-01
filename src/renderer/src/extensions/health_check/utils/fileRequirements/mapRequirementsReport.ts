@@ -20,6 +20,7 @@ type HydrateInstalledFile = (fileUID: string) => IInstalledFile | undefined;
 function toCandidate(candidate: Candidate): IFileRequirementCandidate {
   return {
     fileUID: candidate.fileVersionUid,
+    modUID: candidate.modUid,
     modName: candidate.modName,
     modSummary: candidate.modSummary,
     thumbnailUrl: candidate.thumbnailUrl,
@@ -156,9 +157,11 @@ export function mapRequirementsReport(
       continue;
     }
 
+    const sourceFile = hydrate(source.sourceFileVersionUid);
     fileRequirements[source.sourceFileVersionUid] = {
       sourceFileUID: source.sourceFileVersionUid,
-      sourceModName: hydrate(source.sourceFileVersionUid)?.modName ?? "",
+      sourceModName: sourceFile?.modName ?? "",
+      sourceModUID: sourceFile?.modUID ?? "",
       requirements,
     };
   }
