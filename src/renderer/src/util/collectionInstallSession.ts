@@ -89,6 +89,11 @@ export function reconstructModStatus(
     return mod.state ?? "installed";
   }
   if (download !== undefined) {
+    // a failed download is a terminal failure, not activity: report it as "failed" so the row and
+    // the Mods-tab "Failed" filter treat it as such rather than an in-progress download.
+    if (download.state === "failed") {
+      return "failed";
+    }
     return download.state === "finished" ? "downloaded" : "downloading";
   }
   // bundled mods ship inside the collection archive, so they count as downloaded

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, Media, Panel } from "react-bootstrap";
+import { Button, Media } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -12,9 +12,13 @@ import type { IMod } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import { isOptionalRule } from "../../../../extensions/mod_management/util/testModReference";
-import { log } from "../../../../logging";
+import type { ICollectionModInstallInfo } from "../../../../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import type { IState } from "../../../../types/IState";
+import {
+  getFailedOptionalMods,
+  getFailedRequiredMods,
+} from "../../../../util/collectionInstallSessionSelectors";
 import { NAMESPACE } from "../../constants";
 import type InstallDriver from "../../util/InstallDriver";
 import CollectionThumbnail from "../CollectionTile";
@@ -79,6 +83,21 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
     forceUpdate((i) => i + 1);
   }, []);
 
+  // Open the collection's Mods tab filtered to the failed members. Navigate, clear any existing
+  // filter, then set the status column ("collection_status") filter to "Failed" (a multi-select
+  // OptionsFilter, so the value is an array).
+  const viewFailed = React.useCallback(async () => {
+    if (driver.collection !== undefined) {
+      api.events.emit("view-collection", driver.collection.id, "mods");
+      api.store.dispatch(actions.setAttributeFilter("collection-mods", undefined, undefined));
+      api.store.dispatch(
+        actions.setAttributeFilter("collection-mods", "collection_status", ["Failed"]),
+      );
+      await driver.continue();
+    }
+    forceUpdate((i) => i + 1);
+  }, [driver]);
+
   const clone = React.useCallback(async () => {
     if (driver.collection === undefined) {
       return;
@@ -108,6 +127,20 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
 
   const finalizing = driver.postprocessing;
 
+  // Required members that settled as failed (e.g. a download that failed after a network drop). When
+  // any required member failed the collection isn't fully installed, so the dialog switches to an
+  // "incomplete" variant: reworded copy, a "View failed mods" action, and the optional-mods / clone
+  // actions suppressed - there's no point offering to add optional mods on top of a broken required
+  // set.
+  const failedRequired = useSelector<IState, ICollectionModInstallInfo[]>(getFailedRequiredMods);
+  const hasFailures = failedRequired.length > 0;
+
+  // Optional members the user SELECTED that then failed. A failed optional annotates the result but
+  // does not make the collection "incomplete" (that is driven by failedRequired), so it never
+  // reworks the title or trims the actions.
+  const failedOptional = useSelector<IState, ICollectionModInstallInfo[]>(getFailedOptionalMods);
+  const failedCount = failedRequired.length + failedOptional.length;
+
   return (
     <Modal
       id="install-finished-dialog"
@@ -115,7 +148,11 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
       onHide={nop}
     >
       <Modal.Header>
-        <Modal.Title>{t("Collection installation complete")}</Modal.Title>
+        <Modal.Title>
+          {hasFailures
+            ? t("Collection installation incomplete")
+            : t("Collection installation complete")}
+        </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
@@ -129,6 +166,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
               details={true}
               gameId={driver.profile?.gameId}
               imageTime={42}
+              incomplete={hasFailures}
               t={t}
             />
           </Media.Left>
@@ -140,7 +178,7 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
 
             {driver.collection?.attributes?.shortDescription ?? t("No description")}
 
-            {ownCollection && optionals.length > 0 ? (
+            {!hasFailures && ownCollection && optionals.length > 0 ? (
               <div>
                 <YouCuratedTag t={t} />
 
@@ -150,7 +188,21 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
           </Media.Right>
         </div>
 
-        {optionals.length > 0 ? (
+        {hasFailures ? (
+          <div className="collection-finished-failures">
+            <div className="collection-finished-optionals-text">
+              {t("{{count}} mod could not be installed", { count: failedCount, ns: NAMESPACE })}
+            </div>
+
+            <p>
+              {t(
+                "Some required mods failed to install (for example after a network interruption), " +
+                  "so the collection is not fully installed. Review the failed mods to retry them.",
+                { ns: NAMESPACE },
+              )}
+            </p>
+          </div>
+        ) : optionals.length > 0 ? (
           <div className="collection-finished-optionals">
             <div className="collection-finished-optionals-text">
               {t("{{numOptionals}} optional mods available", {
@@ -192,6 +244,17 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
           </div>
         ) : null}
 
+        {!hasFailures && failedOptional.length > 0 ? (
+          <div className="collection-finished-failures">
+            <div className="collection-finished-optionals-text">
+              {t("{{count}} optional mod could not be installed", {
+                count: failedOptional.length,
+                ns: NAMESPACE,
+              })}
+            </div>
+          </div>
+        ) : null}
+
         {finalizing ? (
           <div
             className="collection-finished-finalizing"
@@ -209,8 +272,24 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
         ) : null}
       </Modal.Body>
 
-      {optionals.length > 0 ? (
+      {hasFailures ? (
         <Modal.Footer>
+          <Button disabled={finalizing} onClick={viewFailed}>
+            {t("View failed mods")}
+          </Button>
+
+          <Button disabled={finalizing} onClick={skip}>
+            {t("Close")}
+          </Button>
+        </Modal.Footer>
+      ) : optionals.length > 0 ? (
+        <Modal.Footer>
+          {failedOptional.length > 0 ? (
+            <Button disabled={finalizing} onClick={viewFailed}>
+              {t("View failed mods")}
+            </Button>
+          ) : null}
+
           <Button disabled={finalizing} onClick={skip}>
             {t("No Thanks")}
           </Button>
@@ -225,6 +304,12 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
         </Modal.Footer>
       ) : (
         <Modal.Footer>
+          {failedOptional.length > 0 ? (
+            <Button disabled={finalizing} onClick={viewFailed}>
+              {t("View failed mods")}
+            </Button>
+          ) : null}
+
           <Button disabled={finalizing} onClick={skip}>
             {t("Done")}
           </Button>

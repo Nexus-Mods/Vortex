@@ -86,6 +86,7 @@ import {
   getCollectionStatusBreakdown,
   isCollectionPhaseComplete,
 } from "../../util/collectionInstallSessionSelectors";
+import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import {
   planDependencyErrorRecovery,
@@ -2315,6 +2316,22 @@ class InstallManager {
       this.mDependencyPipelineLimit.clearQueue();
       this.mInstallPhaseState.delete(sourceModId);
     }
+
+    // Re-derive the collection session from reality. This teardown runs on pause/cancel/stall; a
+    // member that was mid-install keeps a stale "installing" status otherwise (the per-dependency
+    // error path leaves a torn-down install untouched, expecting resume to rebuild it - but a pause
+    // never rebuilds, so the mods tab shows a phantom "installing"). Resyncing drops such a member
+    // back to its real status (downloaded / pending), so it reads as resumable rather than stuck.
+    const state = this.mApi.getState();
+    const session = getCollectionActiveSession(state);
+    if (session?.collectionId === sourceModId) {
+      const rules = (state.persistent.mods[session.gameId]?.[sourceModId]?.rules ?? []).filter(
+        isDependencyRule,
+      );
+      if (rules.length > 0) {
+        resyncCollectionSessionRules(this.mApi, rules);
+      }
+    }
   }
 
   /**
@@ -2606,7 +2623,15 @@ class InstallManager {
           const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
           // A disk-full failure will not succeed on retry; settle it now so the member becomes
           // terminally failed instead of cycling the retry budget while stuck on "installing".
-          const nonRetryable = unknownError instanceof InsufficientDiskSpace;
+          // Likewise a ProcessCanceled from the install itself - Vortex rejects an install that
+          // produced no instructions (empty archive / invalid installer output, e.g. an unreadable
+          // manifest) with ProcessCanceled - is deterministic: retrying reruns the same failing
+          // install, and a requeue never re-drives it, so the member sits stuck on "installing" and
+          // stalls the collection. Settle it failed. A whole-install teardown is excluded here
+          // (installCanceled -> "leave", handled first in planDependencyErrorRecovery).
+          const nonRetryable =
+            unknownError instanceof InsufficientDiskSpace ||
+            (unknownError instanceof ProcessCanceled && !installCanceled);
           const recovery = planDependencyErrorRecovery({
             installCanceled,
             ruleIgnored,

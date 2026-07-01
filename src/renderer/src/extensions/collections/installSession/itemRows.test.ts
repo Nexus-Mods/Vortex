@@ -265,6 +265,27 @@ describe("buildCollectionItemRows", () => {
     expect(row.status).toBe("failed");
   });
 
+  it('lets a terminal download failure override a stale session "downloading"', () => {
+    // The live session keeps a failed member on "downloading"; the row must report "failed" so the
+    // status column's filter/sort agree with the "Download failed" label. Reality wins.
+    const rule = requiresRule({ reference: { tag: "ref-fail" } });
+    const download = makeDownload({ state: "failed", modInfo: { referenceTag: "ref-fail" } });
+    // keyed by rule id: the session snapshot is still the pre-failure "downloading"
+    const session: Record<string, ICollectionModInstallInfo> = {
+      [modRuleId(rule)]: { rule, status: "downloading", type: "requires" },
+    };
+
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: {},
+      downloads: { dlFail: download },
+      modState: {},
+      sessionMods: session,
+    });
+
+    expect(rows[modRuleId(rule)].status).toBe("failed");
+  });
+
   it("reconstructs status from persistent state for rules outside the session", () => {
     const rule = requiresRule({ reference: { id: "mod-1" } });
     // a session entry for a different rule must not bleed into this row

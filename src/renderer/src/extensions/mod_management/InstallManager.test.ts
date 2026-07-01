@@ -10,11 +10,13 @@ import {
 } from "../../test-utils/builders";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import InstallManager from "./InstallManager";
 import { lookupFromDownload } from "./util/dependencies";
 
 // Mock dependencies
 vi.mock("./util/dependencies");
+vi.mock("../../util/collectionSessionReconstruct");
 vi.mock("../../util/api");
 vi.mock("../../util/log", () => {
   const log = vi.fn();
@@ -30,6 +32,7 @@ interface IInstallManagerTestable {
   ensurePhaseState(sourceModId: string): void;
   maybeAdvancePhase(sourceModId: string, api: IExtensionApi): void;
   handleDownloadFailed(api: IExtensionApi, downloadId: string): void;
+  cleanupPendingInstalls(sourceModId: string, hard?: boolean): void;
   doInstallDependenciesPhase(
     api: IExtensionApi,
     dependencies: unknown[],
@@ -480,5 +483,61 @@ describe("collection download failure handling", () => {
     );
 
     expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
+  });
+});
+
+describe("cleanupPendingInstalls session resync", () => {
+  let installManager: IInstallManagerTestable;
+  let state: Record<string, unknown>;
+  let api: IExtensionApi;
+
+  const memberRule = makeRule({ type: "requires", reference: { tag: "m1" } });
+
+  beforeEach(() => {
+    vi.mocked(resyncCollectionSessionRules).mockClear();
+    state = {
+      persistent: {
+        mods: { skyrimse: { "col-1": makeMod({ id: "col-1", rules: [memberRule] }) } },
+        downloads: { files: {} },
+      },
+      session: {
+        collections: {
+          activeSession: makeSession({
+            sessionId: "col-1_prof1",
+            collectionId: "col-1",
+            gameId: "skyrimse",
+            mods: {
+              requires_m1: makeModInstallInfo({ rule: memberRule, status: "installing" }),
+            },
+          }),
+        },
+      },
+    };
+    api = {
+      getState: () => state as unknown as IState,
+      store: { getState: () => state as unknown as IState, dispatch: vi.fn() },
+      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+      sendNotification: vi.fn(),
+      dismissNotification: vi.fn(),
+      showErrorNotification: vi.fn(),
+      translate: vi.fn((key: string) => key),
+      registerInstaller: vi.fn(),
+    } as unknown as IExtensionApi;
+    installManager = new InstallManager(api, vi.fn()) as unknown as IInstallManagerTestable;
+  });
+
+  afterEach(() => vi.clearAllMocks());
+
+  it("re-derives the collection session from reality when tearing down its active install", () => {
+    // a member left mid-"installing" on pause/cancel/stall must not keep the stale status
+    installManager.cleanupPendingInstalls("col-1", true);
+    expect(resyncCollectionSessionRules).toHaveBeenCalledWith(api, [memberRule]);
+  });
+
+  it("does not resync when the torn-down mod is not the active collection", () => {
+    installManager.cleanupPendingInstalls("some-other-mod", true);
+    expect(resyncCollectionSessionRules).not.toHaveBeenCalled();
   });
 });
