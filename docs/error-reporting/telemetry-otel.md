@@ -99,6 +99,72 @@ Main process watches for changes via `persist:diff` IPC in `src/main/telemetry/i
 
 Stable across machines; version-scoped so different releases produce different fingerprints.
 
+## Privacy Sanitisation (allow-list)
+
+**File**: `src/shared/src/telemetry/sanitizer.ts`
+
+Error traces can be exported **without analytics consent** (LAZ-638), with
+consent selecting the **sanitisation mode** per export rather than gating it.
+
+Unconsented export is behind a switch — `isUnconsentedReportingEnabled()` in
+`telemetry/state.ts`, **disabled, used for development only**.
+
+`SanitizingSpanExporter` wraps the OTLP exporter and is the single enforcement
+boundary — both the main-process ring buffer (`telemetry/setup.ts`) and the
+crash reporter (`errorReporting.ts`) export through it, so main spans,
+renderer-forwarded spans and crash reports are all covered regardless of how
+their attributes were set upstream. It is constructed with an `isConsented`
+predicate (wired to `isTelemetryEnabled`); omitting it defaults to **strict**.
+
+### Strict mode (no consent) — deny-by-default
+
+Only allow-listed attributes survive; everything else is dropped. Attributes
+added anywhere in the codebase are excluded until consciously added to the
+allow-list. Per span it:
+
+- **Drops** any span attribute not in the allow-list — including local names and
+  paths such as `context.value`, `mod.baseName`, `mod.modId`, `mod.archiveId`,
+  `mod.installerChoices`, `extension.archive`, `deployment.modPath`, and the
+  `*.transfer.from`/`to` path attributes.
+- **Buckets** counts (`context.mod_count`, `context.active_downloads`,
+  `deployment.modCount`, `mod.fileCount`) into ranges (`0-50`, `51-100`, …) so an
+  exact count can't fingerprint a user.
+- **Reduces** span events to `exception` only, keeping just the standard OTel
+  exception fields (`exception.type`/`message`/`stacktrace`/`escaped`).
+
+Only **public** Nexus identifiers pass from the mod-install span
+(`mod.numericModId`, `mod.fileId`); the internal `mod.modId` (derived from the
+local archive name) is dropped.
+
+The allow-list was cross-checked against ~2 months of collected traces
+(ClickStack `vortex.otel_traces`): every attribute key the app actually emits is
+either allowed (e.g. `error.isCommunityExtension`, `componentStack`) or
+deliberately dropped (`download.fileName`, `download.url`, `context.value`,
+`*.transfer.*`, `mod.baseName`/`installerChoices`/`archiveId`, `extension.archive`).
+
+### Baseline mode (consent given) — richer payload
+
+All span attributes and events are kept and exact counts are included. This is
+where the consented payload can carry local mod names and (per APP-425) a user
+id for cross-session correlation.
+
+### Always-on (both modes)
+
+- String values run through `sanitizeFramePath` (strips install prefixes, redacts
+  the OS username — including multi-word Windows account names) then well-known
+  folders are tokenised (`C:\Program Files` → `programfiles:/`). Username/path
+  redaction is baseline GDPR minimisation and is never gated on consent.
+- The **resource** is always reduced to its allow-list (process metadata only —
+  `service.*`, `process.*`, `os.*`, `host.arch`, `deployment.environment`); never
+  hostnames or usernames.
+
+The crash reporter receives consent explicitly: `createErrorReport` (renderer)
+captures it into `crashinfo.json` while the state is available, and the report
+subprocess reads it back. In-process main callers forward `isTelemetryEnabled()`.
+When consent is unknown (early crash before state exists, or a malformed report
+file) it defaults to `false` → strict, the safe floor for the most sensitive
+payload.
+
 ## Attributes Reference
 
 ### Resource (every span)
