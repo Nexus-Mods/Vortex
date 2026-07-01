@@ -7,6 +7,8 @@ import * as React from "react";
 import { ListGroupItem, Media, Popover } from "react-bootstrap";
 import { Provider } from "react-redux";
 
+import { Image } from "@/ui/components/image/Image";
+
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
 import OverlayTrigger from "../../../controls/OverlayTrigger";
@@ -114,9 +116,12 @@ class GameRow extends ComponentEx<IProps, {}> {
         <Media>
           <Media.Left>
             <div className="game-thumbnail-container-list">
-              <img
-                className="game-thumbnail-img-list"
+              <Image
+                className="w-12"
+                imageType="game"
+                fit="cover"
                 src={imgurl}
+                alt={game.name}
                 loading="lazy"
                 decoding="async"
               />

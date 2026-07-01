@@ -26,6 +26,13 @@ const imageTypes: {
     incorrectSrc: "https://picsum.photos/seed/collection/500/280",
   },
   {
+    imageType: "game",
+    ratio: "2 / 3 (portrait)",
+    className: "w-40",
+    correctSrc: "https://picsum.photos/seed/game/400/600",
+    incorrectSrc: "https://picsum.photos/seed/game/500/280",
+  },
+  {
     imageType: "mod",
     ratio: "16 / 9 (landscape)",
     className: "w-56",

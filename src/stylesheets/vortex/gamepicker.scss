@@ -1,5 +1,5 @@
 @use "sass:color";
-$thumbnail-width: 180px;
+$thumbnail-width: 160px;
 
 #gamepicker-layout {
     text-align: right;
@@ -52,6 +52,15 @@ $thumbnail-width: 180px;
 .game-thumbnail-body {
     @extend .panel-body;
     padding: 0;
+
+    // Overlays live inside the design-system Image wrapper, whose <img> sits at
+    // z-1; lift them above it (but below the wrapper's z-5 border overlay).
+    .bottom,
+    .hover-menu,
+    .game-thumbnail-tags,
+    .game-thumbnail-info {
+        z-index: 2;
+    }
 
     .bottom {
         position: absolute;
@@ -117,24 +126,6 @@ $thumbnail-width: 180px;
             margin-left: 4px;
         }
     }
-
-    .thumbnail-img {
-        width: 100%;
-        aspect-ratio: 2 / 3;
-        object-fit: cover;
-    }
-}
-
-@media (max-width: 1280px) {
-    // .game-thumbnail-body .thumbnail-img {
-    //   max-width: 128px;
-    // }
-}
-
-.game-thumbnail-img-list {
-    width: 48px;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
 }
 
 .game-thumbnail-container-list {

@@ -7,6 +7,8 @@ import * as React from "react";
 import { Button, Panel, Popover } from "react-bootstrap";
 import { Provider } from "react-redux";
 
+import { Image } from "@/ui/components/image/Image";
+
 import { connect, PureComponentEx } from "../../../controls/ComponentEx";
 import Icon from "../../../controls/Icon";
 import IconBar from "../../../controls/IconBar";
@@ -103,35 +105,44 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     return (
       <Panel className={classes.join(" ")} bsStyle={active ? "primary" : "default"}>
         <Panel.Body className="game-thumbnail-body">
-          <img className={"thumbnail-img"} src={imgurl} loading="lazy" decoding="async" />
-          <div className="bottom">
-            <div className="name">{game.name}</div>
-            {modCount !== undefined ? (
-              <div className="active-mods">
-                <Icon name="mods" />
-                <span>{t("{{ count }} active mod", { count: modCount })}</span>
-              </div>
+          <Image
+            className="w-full"
+            imageType="game"
+            fit="cover"
+            src={imgurl}
+            alt={game.name}
+            loading="lazy"
+            decoding="async"
+          >
+            <div className="bottom">
+              <div className="name">{game.name}</div>
+              {modCount !== undefined ? (
+                <div className="active-mods">
+                  <Icon name="mods" />
+                  <span>{t("{{ count }} active mod", { count: modCount })}</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="hover-menu">
+              {type === "launcher" ? this.renderLaunch() : this.renderMenu()}
+            </div>
+            {type !== "launcher" ? (
+              game.contributed ? (
+                <div
+                  className="game-thumbnail-tags"
+                  title={
+                    game.contributed
+                      ? t("Contributed by {{name}}", {
+                          replace: { name: game.contributed },
+                        })
+                      : null
+                  }
+                >
+                  {game.contributed ? "Community" : null}
+                </div>
+              ) : null
             ) : null}
-          </div>
-          <div className="hover-menu">
-            {type === "launcher" ? this.renderLaunch() : this.renderMenu()}
-          </div>
-          {type !== "launcher" ? (
-            game.contributed ? (
-              <div
-                className="game-thumbnail-tags"
-                title={
-                  game.contributed
-                    ? t("Contributed by {{name}}", {
-                        replace: { name: game.contributed },
-                      })
-                    : null
-                }
-              >
-                {game.contributed ? "Community" : null}
-              </div>
-            ) : null
-          ) : null}
+          </Image>
         </Panel.Body>
       </Panel>
     );
