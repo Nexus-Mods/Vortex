@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0-beta.1] - 2026-07-01
+
+_First beta of the 2.3 release._
+
+### Added
+
+- Staging and version indicator in the title bar ([#23590](https://github.com/Nexus-Mods/Vortex/pull/23590))
+- ESL support for Fallout 4 VR, at parity with Skyrim VR ([#23519](https://github.com/Nexus-Mods/Vortex/pull/23519))
+- Tri-state `Switch` design-system component (off / on / semi-on) ([#23542](https://github.com/Nexus-Mods/Vortex/pull/23542))
+- Reusable column-driven `Table` design-system component with sorting, filtering, grouping, column show/hide, and pagination ([#23533](https://github.com/Nexus-Mods/Vortex/pull/23533))
+- `Toolbar` and `ToolbarGroup` design-system components with automatic overflow into a kebab menu ([#23504](https://github.com/Nexus-Mods/Vortex/pull/23504))
+
+### Changed
+
+- Aligned `Typography` and `TypographyLink` to the `brand` × `appearance` colour model used by `Button`, adding `danger`, `warning`, and neutral-translucent brands ([#23511](https://github.com/Nexus-Mods/Vortex/pull/23511))
+
+### Fixed
+
+- Download failing on resume when its checkpoint's partial file was missing; the checkpoint is now discarded and the download restarts fresh under the same id ([#23593](https://github.com/Nexus-Mods/Vortex/pull/23593))
+- Crash when merging archives without a registered archive handler ([#23588](https://github.com/Nexus-Mods/Vortex/pull/23588))
+- Rendering error in the file-based load order (FBLO) page ([#23587](https://github.com/Nexus-Mods/Vortex/pull/23587))
+- BG3: startup failing with "Failed to migrate" and the load order not deploying, after the reported game version switched to `productVersion` left the profile and modsettings-format checks comparing against `FileVersion`-scale thresholds ([#23582](https://github.com/Nexus-Mods/Vortex/pull/23582))
+- "Open folder" options failing on Wine by switching from `shell.openPath` to `shell.openExternal` ([#23557](https://github.com/Nexus-Mods/Vortex/pull/23557))
+- `dotnetprobe` failing to run on systems where the .NET runtime enables CET (Intel shadow stack); CET compatibility is now disabled ([#23546](https://github.com/Nexus-Mods/Vortex/pull/23546))
+
 ## [2.2.0] - 2026-06-30
 
 _Stable 2.2 release. See the beta entries below for the full list of changes since 2.1._
@@ -2014,6 +2039,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.3.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.3.0-beta.1
 [2.2.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.2.0
 [2.2.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.2.0-beta.2
 [2.2.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.2.0-beta.1
