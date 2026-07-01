@@ -280,7 +280,7 @@ function parseToggle({ name, variant }: UnleashToggle): FeatureFlag | undefined 
     variant: variant?.payload
       ? parseVariantData(flagName, variant.name, variant.payload.value)
       : undefined,
-  };
+  } as FeatureFlag;
 }
 
 function parseVariantData(

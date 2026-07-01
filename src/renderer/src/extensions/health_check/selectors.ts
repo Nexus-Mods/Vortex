@@ -4,7 +4,10 @@ import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckSessionState } from "./reducers/session";
 import type {
   HealthCheckId,
+  IFileLevelRequirements,
+  IFileRequirementsCheckMetadata,
   IModMissingRequirements,
+  IModRequirementsCheckMetadata,
   IModRequirementExt,
   IModFileInfo,
 } from "./types";
@@ -44,7 +47,17 @@ export const modRequirementsCheckResult = (
   state: IState,
 ): Record<string, IModMissingRequirements> | undefined => {
   const result = healthCheckResult(state, "check-nexus-mod-requirements");
-  return result?.metadata?.modRequirements;
+  return (result?.metadata as IModRequirementsCheckMetadata | undefined)?.modRequirements;
+};
+
+/**
+ * Get the file requirements from the file-level requirements health check
+ */
+export const fileRequirementsCheckResult = (
+  state: IState,
+): Record<string, IFileLevelRequirements> | undefined => {
+  const result = healthCheckResult(state, "check-file-level-requirements");
+  return (result?.metadata as IFileRequirementsCheckMetadata | undefined)?.fileRequirements;
 };
 
 /**
@@ -82,7 +95,7 @@ export const modRequirementsArray = (state: IState): IModRequirementExt[] => {
     return [];
   }
 
-  const hidden = hiddenRequirements(state);
+  const hidden = hiddenModRequirements(state);
 
   return Object.values(modRequirements).flatMap((mod) =>
     mod.missingMods.filter((req) => !hidden[mod.nexusModId]?.includes(req.id)),
@@ -113,8 +126,10 @@ export const isAnyHealthCheckRunning = (state: IState): boolean =>
 export const healthCheckPersistentState = (state: IState): IHealthCheckPersistentState =>
   state.persistent?.healthCheck ?? {
     hiddenRequirements: {},
+    hiddenFileRequirements: {},
     feedbackGiven: {},
     modRequirementsEnabled: true,
+    fileRequirementsEnabled: true,
   };
 
 /**
@@ -124,21 +139,29 @@ export const isModRequirementsEnabled = (state: IState): boolean =>
   healthCheckPersistentState(state).modRequirementsEnabled ?? true;
 
 /**
- * Get the hidden requirements map
- * Returns a map of mod nexusModId to array of hidden requirement IDs
+ * Whether the user has enabled file-level requirement warnings in settings.
+ * Feature availability is gated separately on the Unleash flag, then combined with this.
  */
-export const hiddenRequirements = (state: IState): { [modId: number]: string[] } =>
+export const isFileRequirementsUserEnabled = (state: IState): boolean =>
+  healthCheckPersistentState(state).fileRequirementsEnabled ?? true;
+
+/** Mod-level hidden requirements, keyed by requiring mod nexusModId. */
+export const hiddenModRequirements = (state: IState): { [modId: number]: string[] } =>
   healthCheckPersistentState(state).hiddenRequirements;
 
+/** File-level hidden requirements, keyed by source file UID. */
+export const hiddenFileRequirements = (state: IState): { [sourceFileUID: string]: string[] } =>
+  healthCheckPersistentState(state).hiddenFileRequirements;
+
 /**
- * Check if a specific requirement is hidden for a mod
+ * Check if a specific mod requirement is hidden for a mod
  */
 export const isDependencyHidden = (
   state: IState,
   modId: number,
   requirementId: string,
 ): boolean => {
-  const hidden = hiddenRequirements(state)[modId] || [];
+  const hidden = hiddenModRequirements(state)[modId] || [];
   return hidden.includes(requirementId);
 };
 
@@ -146,7 +169,7 @@ export const isDependencyHidden = (
  * Get all hidden requirement IDs for a specific mod
  */
 export const getModHiddenRequirements = (state: IState, modId: number): string[] =>
-  hiddenRequirements(state)[modId] || [];
+  hiddenModRequirements(state)[modId] || [];
 
 /**
  * Get the feedback given map

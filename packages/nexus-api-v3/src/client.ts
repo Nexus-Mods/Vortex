@@ -1,7 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
 import { V3ApiError } from "./errors";
-import type { paths } from "./generated/nexus-api-v3";
+import type { components, paths } from "./generated/nexus-api-v3";
 
 export interface NexusV3ClientOptions {
   baseUrl: string;
@@ -105,6 +105,55 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
         body: patch,
       });
       if (error) throw toV3Error(error, response);
+    },
+
+    /**
+     * Fetch one page of materialized dependency candidates for a set of source
+     * mod file versions. Results are paged; callers page until `meta.total_count`
+     * rows have been read. Up to 5000 `versionIds` per call.
+     */
+    async getModFileVersionDependencyCandidatesBatch(
+      versionIds: readonly string[],
+      page: number,
+      pageSize: number,
+    ): Promise<{
+      candidates: components["schemas"]["ModFileVersionDependencyCandidate"][];
+      meta: components["schemas"]["PaginationMeta"];
+    }> {
+      const { data, error, response } = await client.POST(
+        "/mod-file-versions/dependencies/materialized/batch",
+        { body: { version_ids: [...versionIds], page, page_size: pageSize } },
+      );
+      if (error) throw toV3Error(error, response);
+      return { candidates: Array.from(data.data.candidates), meta: data.meta };
+    },
+
+    /**
+     * Resolve mod file version details (mod file/update group, name, version)
+     * for a set of versions. Up to 2000 `versionIds` per call; unknown or
+     * non-visible versions are omitted from the result.
+     */
+    async getModFileVersionsBatch(
+      versionIds: readonly string[],
+    ): Promise<components["schemas"]["ModFileVersionDetail"][]> {
+      const { data, error, response } = await client.POST("/mod-file-versions/batch", {
+        body: { version_ids: [...versionIds] },
+      });
+      if (error) throw toV3Error(error, response);
+      return Array.from(data.data.versions);
+    },
+
+    /**
+     * Resolve mod-level display details (name, summary, status, thumbnail, adult
+     * flag) for a set of composite mod UIDs. Up to 2000 `modIds` per call;
+     * unknown ids are omitted from the result.
+     */
+    async getModsBatch(modIds: readonly string[]): Promise<components["schemas"]["ModDetail"][]> {
+      const { data, error, response } = await client.POST("/mods/batch", {
+        body: { mod_ids: [...modIds] },
+      });
+      if (error) throw toV3Error(error, response);
+      return Array.from(data.data.mods);
     },
   };
 }

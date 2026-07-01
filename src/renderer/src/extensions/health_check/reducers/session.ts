@@ -3,6 +3,7 @@ import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { deleteOrNop, setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/session";
 import type { IModFileInfo } from "../types";
+import { reducerFor } from "./reducerFor";
 
 export interface IHealthCheckSessionState {
   /** Results keyed by check ID */
@@ -17,24 +18,24 @@ export interface IHealthCheckSessionState {
   loadingModFiles: number[];
 }
 
+const on = reducerFor<IHealthCheckSessionState>();
+
 /**
  * Reducer for health check session state
  */
 export const sessionReducer: IReducerSpec<IHealthCheckSessionState> = {
-  reducers: {
-    [actions.setHealthCheckResult as any]: (state, payload) => {
+  reducers: Object.fromEntries([
+    on(actions.setHealthCheckResult, (state, payload) => {
       const { checkId, result } = payload;
       const timestamp = Date.now();
       const newState = setSafe(state, ["results", checkId], result);
       return setSafe(newState, ["lastFullRun"], timestamp);
-    },
-    [actions.clearHealthCheckResult as any]: (state, payload) => {
-      return deleteOrNop(state, ["results", payload]);
-    },
-    [actions.clearAllHealthCheckResults as any]: (state) => {
-      return setSafe(state, ["results"], {});
-    },
-    [actions.setHealthCheckRunning as any]: (state, payload) => {
+    }),
+    on(actions.clearHealthCheckResult, (state, payload) =>
+      deleteOrNop(state, ["results", payload]),
+    ),
+    on(actions.clearAllHealthCheckResults, (state) => setSafe(state, ["results"], {})),
+    on(actions.setHealthCheckRunning, (state, payload) => {
       const { checkId, running } = payload;
       const currentRunning = state.runningChecks || [];
 
@@ -48,12 +49,12 @@ export const sessionReducer: IReducerSpec<IHealthCheckSessionState> = {
         );
       }
       return state;
-    },
-    [actions.setModFiles as any]: (state, payload) => {
+    }),
+    on(actions.setModFiles, (state, payload) => {
       const { modId, files } = payload;
       return setSafe(state, ["modFiles", modId], files);
-    },
-    [actions.setModFilesLoading as any]: (state, payload) => {
+    }),
+    on(actions.setModFilesLoading, (state, payload) => {
       const { modId, loading } = payload;
       const currentLoading = state.loadingModFiles || [];
 
@@ -67,8 +68,8 @@ export const sessionReducer: IReducerSpec<IHealthCheckSessionState> = {
         );
       }
       return state;
-    },
-  },
+    }),
+  ]),
   defaults: {
     results: {},
     runningChecks: [],

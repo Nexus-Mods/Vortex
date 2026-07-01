@@ -30,13 +30,13 @@ export enum HealthCheckTrigger {
   Scheduled = "scheduled",
 }
 
-export interface IHealthCheckResult {
+export interface IHealthCheckResult<TMetadata = unknown> {
   checkId: string;
   status: "passed" | "failed" | "warning" | "error";
   severity: HealthCheckSeverity;
   message: string;
   details?: string;
-  metadata?: { [key: string]: any };
+  metadata?: TMetadata;
   executionTime: number;
   timestamp: Date;
   fixAvailable?: boolean;
