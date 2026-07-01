@@ -56,7 +56,6 @@ import type { IModListItem } from "../news_dashlet/types";
 import { setUserInfo } from "./actions/persistent";
 import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
 import { isLoggedIn } from "./selectors";
-import type { INexusModDetails } from "./types/INexusAPIExtension";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import {
   checkModVersionsImpl,
@@ -883,50 +882,6 @@ export function onGetModInfo(
           doNotReport: true,
         }),
     );
-  };
-}
-
-/**
- * Fetches mod details for many mods in a single batched modsByUid GraphQL call,
- * keyed by composite mod UID.
- */
-export function onGetModDetailsByUid(
-  api: IExtensionApi,
-  nexus: Nexus,
-): (uids: string[]) => Bluebird<INexusModDetails[]> {
-  return (uids: string[]) => {
-    if (uids.length === 0) {
-      return Bluebird.resolve([]);
-    }
-
-    return Bluebird.resolve(
-      nexus.modsByUid(
-        { uid: true, name: true, summary: true, thumbnailUrl: true, adultContent: true },
-        uids,
-      ),
-    )
-      .then((mods) =>
-        mods.flatMap((mod): INexusModDetails[] =>
-          mod.uid === undefined
-            ? []
-            : [
-                {
-                  uid: mod.uid,
-                  name: mod.name,
-                  summary: mod.summary,
-                  thumbnailUrl: mod.thumbnailUrl,
-                  adultContent: mod.adultContent,
-                },
-              ],
-        ),
-      )
-      .catch((err) =>
-        handleGraphError<INexusModDetails[]>(api, err, {
-          title: "Failed to get mod details",
-          fallback: [],
-          doNotReport: true,
-        }),
-      );
   };
 }
 
