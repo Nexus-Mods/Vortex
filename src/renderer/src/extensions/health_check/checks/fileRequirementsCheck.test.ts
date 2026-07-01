@@ -223,7 +223,7 @@ describe("checkFileRequirements / resolution", () => {
     const reqs = metadata?.fileRequirements["ms_src"]?.requirements;
     expect(reqs).toHaveLength(1);
     expect(reqs?.[0]).toMatchObject({ kind: "missing", requirementDefId: "ms_def" });
-    expect(reqs?.[0].kind === "missing" && reqs[0].alternatives[0]).toMatchObject({
+    expect(reqs?.[0].kind === "missing" && reqs[0].candidate).toMatchObject({
       fileUID: "ms_cand",
       modName: "SkyUI",
       version: "5.2",
@@ -288,7 +288,7 @@ describe("checkFileRequirements / resolution", () => {
       kind: "wrong-version-installed",
       installedFile: { fileUID: "wi_old" },
     });
-    expect(req.kind === "wrong-version-installed" && req.alternatives[0].fileUID).toBe("wi_new");
+    expect(req.kind === "wrong-version-installed" && req.candidate.fileUID).toBe("wi_new");
   });
 
   test("reports a wrong version enabled while the correct version is installed-but-disabled", async () => {
@@ -316,6 +316,50 @@ describe("checkFileRequirements / resolution", () => {
       enabledFile: { fileUID: "we_old", enabled: true },
       correctFile: { fileUID: "we_correct", enabled: false },
     });
+  });
+
+  test("reports an OR with a download branch and an owned-but-disabled enable branch", async () => {
+    const metadata = await runWith({
+      // or_src depends on or_def, satisfiable by EITHER group or_g1 (not owned) or
+      // or_g2 (owned but disabled). Neither is enabled, so the OR is unsatisfied.
+      refs: [ref("or_src"), ref("or_g2_file", false)],
+      versions: {
+        or_src: { chain: "or_srcChain", modId: "or_srcMod" },
+        or_g1_file: { chain: "or_g1", modId: "or_g1Mod", name: "Alt A", version: "1.0" },
+        or_g2_file: { chain: "or_g2", modId: "or_g2Mod", name: "Alt B", version: "2.0" },
+      },
+      candidates: [
+        candidate({
+          source_version_id: "or_src",
+          definition_id: "or_def",
+          version_id: "or_g1_file",
+          mod_file_id: "or_g1",
+          mod_id: "or_g1Mod",
+        }),
+        candidate({
+          source_version_id: "or_src",
+          definition_id: "or_def",
+          version_id: "or_g2_file",
+          mod_file_id: "or_g2",
+          mod_id: "or_g2Mod",
+        }),
+      ],
+      modDetails: [{ id: "or_g1Mod", name: "Alt A", adult_content: false }],
+    });
+
+    const [req] = metadata?.fileRequirements["or_src"]?.requirements ?? [];
+    expect(req?.kind).toBe("or");
+    if (req?.kind !== "or") {
+      throw new Error("expected an OR requirement");
+    }
+    expect(req.branches).toHaveLength(2);
+
+    const downloadBranch = req.branches.find((b) => b.kind === "download");
+    const enableBranch = req.branches.find((b) => b.kind === "enable");
+    expect(downloadBranch?.kind === "download" && downloadBranch.candidate.fileUID).toBe(
+      "or_g1_file",
+    );
+    expect(enableBranch?.kind === "enable" && enableBranch.correctFile.fileUID).toBe("or_g2_file");
   });
 
   test("reports nothing when the enabled installed version satisfies the dependency", async () => {

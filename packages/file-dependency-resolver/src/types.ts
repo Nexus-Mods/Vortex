@@ -67,13 +67,22 @@ export interface Candidate {
   sizeBytes?: number;
 }
 
-export interface DependencyResult {
-  definitionId: string;
+// One OR alternative (a single update group); a non-OR requirement has one branch.
+export interface DependencyBranch {
+  modFileId: string;
+  // Acceptable versions the user has, by enabled state.
   satisfyingEnabled: string[];
   satisfyingDisabled: string[];
+  // Other (non-acceptable) versions of the same chain the user has.
   wrongEnabled: string[];
   wrongDisabled: string[];
-  recommended: Candidate[];
+  // Download winner; set only when no acceptable version is owned.
+  recommended?: Candidate;
+}
+
+export interface DependencyResult {
+  definitionId: string;
+  branches: DependencyBranch[];
 }
 
 export interface SourceResult {

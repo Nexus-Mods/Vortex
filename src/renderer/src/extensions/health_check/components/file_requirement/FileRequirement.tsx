@@ -33,9 +33,29 @@ interface IFileRequirementProps {
   actions?: ReactNode;
   file: IFileRequirementData;
   isOr?: boolean;
+  /** Open the mod page (web). When set, the thumbnail and mod name become links. */
+  onOpenMod?: () => void;
+  /** Open the file page (web). When set, the file name becomes a link. */
+  onOpenFile?: () => void;
 }
 
-export function FileRequirement({ actions, file, isOr }: IFileRequirementProps) {
+export function FileRequirement({
+  actions,
+  file,
+  isOr,
+  onOpenMod,
+  onOpenFile,
+}: IFileRequirementProps) {
+  const modImage = (
+    <AdultAwareImage
+      alt={file.modName}
+      className="h-14 rounded-xs"
+      imageType="mod"
+      isAdult={file.adultContent}
+      src={file.modImageSrc}
+    />
+  );
+
   return (
     <div
       className={joinClasses([
@@ -46,17 +66,23 @@ export function FileRequirement({ actions, file, isOr }: IFileRequirementProps) 
       ])}
     >
       <div className="mb-px flex items-center gap-x-4 rounded-t-sm bg-surface-mid p-2">
-        <AdultAwareImage
-          alt={file.modName}
-          className="h-14 rounded-xs"
-          imageType="mod"
-          isAdult={file.adultContent}
-          src={file.modImageSrc}
-        />
+        {onOpenMod ? (
+          <button className="shrink-0" type="button" onClick={onOpenMod}>
+            {modImage}
+          </button>
+        ) : (
+          modImage
+        )}
 
         <div className="max-w-xl space-y-0.5">
           <div className="flex items-center gap-x-2">
-            <Typography appearance="moderate">{file.modName}</Typography>
+            {onOpenMod ? (
+              <button className="text-left hover:underline" type="button" onClick={onOpenMod}>
+                <Typography appearance="moderate">{file.modName}</Typography>
+              </button>
+            ) : (
+              <Typography appearance="moderate">{file.modName}</Typography>
+            )}
 
             {file.adultContent && (
               <>
@@ -84,7 +110,17 @@ export function FileRequirement({ actions, file, isOr }: IFileRequirementProps) 
         >
           <Icon path={mdiFileOutline} size="sm" />
 
-          <div className="truncate">{file.fileName}</div>
+          {onOpenFile ? (
+            <button
+              className="truncate text-left hover:underline"
+              type="button"
+              onClick={onOpenFile}
+            >
+              {file.fileName}
+            </button>
+          ) : (
+            <div className="truncate">{file.fileName}</div>
+          )}
 
           <div className="shrink-0">{file.fileVersion}</div>
         </Typography>

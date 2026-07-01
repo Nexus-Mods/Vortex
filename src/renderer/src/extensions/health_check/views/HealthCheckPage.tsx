@@ -1,4 +1,4 @@
-import { mdiCheckCircle, mdiCog, mdiEye, mdiEyeOff, mdiRefresh } from "@mdi/js";
+import { mdiCheckCircle, mdiCog, mdiDownload, mdiEye, mdiEyeOff, mdiRefresh } from "@mdi/js";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,6 +9,7 @@ import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
@@ -16,9 +17,17 @@ import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
 import MainPage from "@/views/MainPage";
 
+import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
+import { PremiumModal } from "../components/premium_modal/PremiumModal";
+import {
+  fileRequirementsCheckResult,
+  hiddenFileRequirements,
+  hiddenModRequirements,
+  modRequirementsCheckResult,
+} from "../selectors";
 import { healthCheckContent } from "./content/registry";
-import type { IHealthCheckContent, IHealthCheckEntry } from "./content/types";
+import type { IBulkInstallItem, IHealthCheckContent, IHealthCheckEntry } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
 
 interface IHealthCheckPageProps {
@@ -46,13 +55,52 @@ function selectListedEntries(state: IState): IListedEntry[] {
   return items;
 }
 
+/** No-choice install items from every check, de-duplicated across checks by key. */
+function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstallItem[] {
+  const seen = new Set<string>();
+  const out: IBulkInstallItem[] = [];
+  for (const content of Object.values(healthCheckContent)) {
+    for (const item of content?.collectInstallAll?.(state, api) ?? []) {
+      if (!seen.has(item.key)) {
+        seen.add(item.key);
+        out.push(item);
+      }
+    }
+  }
+  return out;
+}
+
 function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
 
-  const items = useSelector(selectListedEntries);
+  // Subscribe only to the slices the listing + install-all derive from, so the
+  // frequent unrelated dispatches during a check run (running-state toggles, mod-file
+  // and mod-attribute caching) neither recompute the list nor re-render the rows.
+  // setSafe preserves these refs across those writes, so the memos recompute only
+  // when results or hidden state actually change.
+  const fileResult = useSelector(fileRequirementsCheckResult);
+  const modResult = useSelector(modRequirementsCheckResult);
+  const hiddenFile = useSelector(hiddenFileRequirements);
+  const hiddenMod = useSelector(hiddenModRequirements);
+  const showPremiumAd = useSelector(shouldShowPremiumAd);
+  const [showInstallAllPremium, setShowInstallAllPremium] = useState(false);
+
+  // selectListedEntries / collectInstallAllItems read the slices above from the live
+  // state; those slices fully determine their results. exhaustive-deps can't see the
+  // getState() read, so it treats the slice deps as "unnecessary" (they are not).
+  const items = useMemo(
+    () => selectListedEntries(api.getState()),
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    [api, fileResult, modResult, hiddenFile, hiddenMod],
+  );
+  const installAllItems = useMemo(
+    () => collectInstallAllItems(api.getState(), api),
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    [api, fileResult, modResult, hiddenFile, hiddenMod],
+  );
 
   const activeItems = useMemo(() => items.filter((item) => !item.hidden), [items]);
   const hiddenItems = useMemo(() => items.filter((item) => item.hidden), [items]);
@@ -92,6 +140,18 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
 
   const unhideAll = () => {
     hiddenItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
+  };
+
+  // 1-click install all the no-choice downloads (premium-gated for free users).
+  // TODO(LAZ-471): the real download resolution and cross-check de-duplication of
+  // in-flight downloads live in the per-item install actions (still stubbed for
+  // file-level); this just fans out to each contributed item.
+  const installAll = () => {
+    if (showPremiumAd) {
+      setShowInstallAllPremium(true);
+      return;
+    }
+    installAllItems.forEach((item) => item.install());
   };
 
   const activeList =
@@ -172,21 +232,36 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
                   <TabButton count={hiddenCount} name={t("common:::hidden")} />
                 </TabBar>
 
-                <Button
-                  appearance="subdued"
-                  brand="neutral"
-                  disabled={
-                    (selectedTab === "active" && !activeCount) ||
-                    (selectedTab === "hidden" && !hiddenCount)
-                  }
-                  leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
-                  size="sm"
-                  onClick={selectedTab === "active" ? hideAllActive : unhideAll}
-                >
-                  {selectedTab === "active"
-                    ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
-                    : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
-                </Button>
+                <div className="flex items-center gap-x-2">
+                  {selectedTab === "active" && installAllItems.length > 0 && (
+                    <Button
+                      appearance="moderate"
+                      brand="neutral"
+                      leftIconPath={mdiDownload}
+                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                      size="sm"
+                      onClick={installAll}
+                    >
+                      {t("actions::install_all", { count: installAllItems.length })}
+                    </Button>
+                  )}
+
+                  <Button
+                    appearance="subdued"
+                    brand="neutral"
+                    disabled={
+                      (selectedTab === "active" && !activeCount) ||
+                      (selectedTab === "hidden" && !hiddenCount)
+                    }
+                    leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
+                    size="sm"
+                    onClick={selectedTab === "active" ? hideAllActive : unhideAll}
+                  >
+                    {selectedTab === "active"
+                      ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
+                      : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
+                  </Button>
+                </div>
               </div>
 
               <TabPanel name="active">{activeList}</TabPanel>
@@ -208,6 +283,13 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
           )}
 
           <PremiumBanner />
+
+          <PremiumModal
+            downloadScope="all"
+            isOpen={showInstallAllPremium}
+            onClose={() => setShowInstallAllPremium(false)}
+            onDownload={() => setShowInstallAllPremium(false)}
+          />
         </div>
       </MainPage.Body>
     </MainPage>

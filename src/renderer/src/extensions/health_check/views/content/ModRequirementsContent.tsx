@@ -13,7 +13,9 @@ import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
+import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
 import { log } from "@/logging";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
@@ -33,7 +35,12 @@ import { useModRequirementActions } from "../../components/mod_requirement/useMo
 import { PremiumModal } from "../../components/premium_modal/PremiumModal";
 import { allModRequirements, getModFiles, hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
-import type { IDetailViewProps, IHealthCheckContent, IListingRowProps } from "./types";
+import type {
+  IBulkInstallItem,
+  IDetailViewProps,
+  IHealthCheckContent,
+  IListingRowProps,
+} from "./types";
 
 function isModHidden(
   state: Parameters<typeof hiddenModRequirements>[0],
@@ -302,4 +309,15 @@ export const modRequirementsContent: IHealthCheckContent = {
     const hidden = isModHidden(api.getState(), mod);
     api.store?.dispatch(setModRequirementHidden(mod.requiredBy.modId, mod.id, !hidden));
   },
+  // Active (non-hidden) Nexus requirements that can be downloaded in-app; external
+  // requirements have no auto-download and are excluded.
+  collectInstallAll: (state: IState, api: IExtensionApi): IBulkInstallItem[] =>
+    allModRequirements(state)
+      .filter((mod) => !isModHidden(state, mod) && !mod.externalRequirement)
+      .map((mod) => ({
+        key: mod.uid || `${mod.gameId}-${mod.modId}`,
+        install: () => {
+          void onDownloadRequirement(api, mod);
+        },
+      })),
 };

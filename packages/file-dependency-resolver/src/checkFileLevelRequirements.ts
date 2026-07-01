@@ -48,69 +48,44 @@ export async function checkFileLevelRequirements(
   const candidates = await ports.fetchCandidates(sourceFiles.map((f) => f.fileVersionUid));
   if (candidates.length === 0) return { sources: [] };
 
-  // Classify each dependency; only recommend when no matching version is owned.
+  // Classify per branch (update group / OR alternative) so one branch never suppresses
+  // the others; a non-OR requirement is just a single branch.
+  // TODO: advanced resolution would do set intersection between dependencies targeting the same file chain.
+  // This would ensure the recommended candidate is compatible with the other dependencies.
+  // But this also adds resolution complexity and many new outcome scenarios:
+  // Outcomes:
+  // - non-empty intersection → recommend from it, not each def's latest
+  //   but user might prefer latest and updating the dep source instead
+  // - empty intersection, no OR escape → conflict (unsatisfiable) between 2 or more files
+  // - empty intersection but an OR-alternative chain works → resolvable via the alternative
+  // - combination of all OR branch choices with different intersections ->
+  //   different recommendations, different incompatibilities
+  // Complexities:
+  // - a conflict can span multiple source files (cross-source diamond)
+  // - combinatorial set of outcomes based on OR branches, different recommendations, different conflicts.
+  // - an installed/enabled version pins a chain's intersection
   const plan = [...groupBy(candidates, (c) => c.sourceFileVersionUid)].map(
     ([sourceFileVersionUid, srcRows]) => ({
       sourceFileVersionUid,
       defs: [...groupBy(srcRows, (c) => c.definitionId)].map(([definitionId, defRows]) => {
-        const candidateFileVersionUids = new Set(defRows.map((r) => r.fileVersionUid));
-        const targetGroups = new Set(defRows.map((r) => r.modFileId));
-
-        const satisfyingEnabled: string[] = [];
-        const satisfyingDisabled: string[] = [];
-        const wrongEnabled: string[] = [];
-        const wrongDisabled: string[] = [];
-
-        // TODO: advanced resolution would do set intersection between dependencies targeting the same file chain.
-        // This would ensure the recommended candidate is compatible with the other dependencies.
-        // But this also adds resolution complexity and many new outcome scenarios:
-        // Outcomes:
-        // - non-empty intersection → recommend from it, not each def's latest
-        //   but user might prefer latest and updating the dep source instead
-        // - empty intersection, no OR escape → conflict (unsatisfiable) between 2 or more files
-        // - empty intersection but an OR-alternative chain works → resolvable via the alternative
-        // - combination of all OR branch choices with different intersections ->
-        //   different recommendations, different incompatibilities
-        // Complexities:
-        // - a conflict can span multiple source files (cross-source diamond)
-        // - combinatorial set of outcomes based on OR branches, different recommendations, different conflicts.
-        // - an installed/enabled version pins a chain's intersection
-
-        // Find matches in installed files
-        for (const fileVersionUid of candidateFileVersionUids) {
-          const isEnabled = enabledByUid.get(fileVersionUid);
-          if (isEnabled === undefined) continue;
-          (isEnabled ? satisfyingEnabled : satisfyingDisabled).push(fileVersionUid);
-          // TODO: could break early on match, if simple resolver and
-          // consumer doesn't want all the matches or the wrong version data.
+        const branches = [...groupBy(defRows, (r) => r.modFileId)].map(([modFileId, branchRows]) =>
+          classifyBranch(modFileId, branchRows, enabledByUid, installedByChain),
+        );
+        // OR satisfied: one branch has an enabled acceptable version, so don't
+        // recommend (or hydrate) downloads for the alternatives.
+        if (branches.some((b) => b.satisfyingEnabled.length > 0)) {
+          for (const b of branches) b.recRow = undefined;
         }
-
-        // Find other versions of a dependency target chain (wrong version).
-        for (const group of targetGroups) {
-          for (const f of installedByChain.get(group) ?? []) {
-            if (candidateFileVersionUids.has(f.fileVersionUid)) continue;
-            (f.enabled ? wrongEnabled : wrongDisabled).push(f.fileVersionUid);
-          }
-        }
-
-        const owned = satisfyingEnabled.length + satisfyingDisabled.length > 0;
-        const recRows = owned ? [] : selectRecommended(defRows);
-
-        return {
-          definitionId,
-          satisfyingEnabled,
-          satisfyingDisabled,
-          wrongEnabled,
-          wrongDisabled,
-          recRows,
-        };
+        return { definitionId, branches };
       }),
     }),
   );
 
   // Hydrate only the recommended candidates (files the user doesn't have).
   // TODO(cache): consider caching candidate display data
-  const recRows = plan.flatMap((s) => s.defs.flatMap((d) => d.recRows));
+  const recRows = plan.flatMap((s) =>
+    s.defs.flatMap((d) => d.branches.flatMap((b) => (b.recRow ? [b.recRow] : []))),
+  );
   const recFileVersionUids = unique(recRows.map((r) => r.fileVersionUid));
   const recModUids = unique(recRows.map((r) => r.modUid));
   const detailByUid = mapByKey(
@@ -124,15 +99,63 @@ export async function checkFileLevelRequirements(
 
   const sources = plan.map(({ sourceFileVersionUid, defs }) => ({
     sourceFileVersionUid,
-    dependencies: defs.map(({ recRows: rec, ...dep }) => ({
-      ...dep,
-      recommended: rec.map((r) =>
-        toCandidate(r, detailByUid.get(r.fileVersionUid), modByUid.get(r.modUid)),
-      ),
+    dependencies: defs.map(({ definitionId, branches }) => ({
+      definitionId,
+      branches: branches.map(({ recRow, ...branch }) => ({
+        ...branch,
+        recommended: recRow
+          ? toCandidate(recRow, detailByUid.get(recRow.fileVersionUid), modByUid.get(recRow.modUid))
+          : undefined,
+      })),
     })),
   }));
 
   return { sources };
+}
+
+interface BranchPlan {
+  modFileId: string;
+  satisfyingEnabled: string[];
+  satisfyingDisabled: string[];
+  wrongEnabled: string[];
+  wrongDisabled: string[];
+  recRow?: CandidateRow;
+}
+
+/** Classify one branch: a single update group within a dependency definition. */
+function classifyBranch(
+  modFileId: string,
+  branchRows: CandidateRow[],
+  enabledByUid: Map<string, boolean>,
+  installedByChain: Map<string, InstalledFile[]>,
+): BranchPlan {
+  const candidateUids = new Set(branchRows.map((r) => r.fileVersionUid));
+
+  const satisfyingEnabled: string[] = [];
+  const satisfyingDisabled: string[] = [];
+  const wrongEnabled: string[] = [];
+  const wrongDisabled: string[] = [];
+
+  // Acceptable versions the user already has, by enabled state.
+  for (const uid of candidateUids) {
+    const isEnabled = enabledByUid.get(uid);
+    if (isEnabled === undefined) continue;
+    (isEnabled ? satisfyingEnabled : satisfyingDisabled).push(uid);
+    // TODO: could break early on match, if simple resolver and
+    // consumer doesn't want all the matches or the wrong version data.
+  }
+
+  // Other (non-acceptable) versions of the same chain the user has installed.
+  for (const f of installedByChain.get(modFileId) ?? []) {
+    if (candidateUids.has(f.fileVersionUid)) continue;
+    (f.enabled ? wrongEnabled : wrongDisabled).push(f.fileVersionUid);
+  }
+
+  // Recommend a download only when this branch has no acceptable version owned.
+  const owned = satisfyingEnabled.length + satisfyingDisabled.length > 0;
+  const recRow = owned ? undefined : selectRecommended(branchRows);
+
+  return { modFileId, satisfyingEnabled, satisfyingDisabled, wrongEnabled, wrongDisabled, recRow };
 }
 
 // Computed from the raw server signals; gates what we recommend, not matching.
@@ -148,18 +171,13 @@ function highestPosition(rows: CandidateRow[]): CandidateRow {
   return rows.reduce((best, r) => (Number(r.position) > Number(best.position) ? r : best));
 }
 
-// One winner per update group: available candidate with the highest position.
-// Matching installed files uses all candidates; eligibility only gates recommendations.
-function selectRecommended(defRows: CandidateRow[]): CandidateRow[] {
-  const byGroup = groupBy(defRows.filter(isAvailable), (r) => r.modFileId);
-
-  // For each group, pick the highest active candidate, if any; otherwise the highest available.
-  // TODO: with game version requirements, we could restrict to candidates matching installed game version.
-  return [...byGroup.values()].map((rows) => {
-    const active = rows.filter(isActive);
-    return highestPosition(active.length > 0 ? active : rows);
-  });
-  // TODO: consider dropping inactive OR group candidates if the other group candidates are active.
+// Highest-position available candidate (preferring active categories). Eligibility
+// gates recommendations only, not matching.
+function selectRecommended(branchRows: CandidateRow[]): CandidateRow | undefined {
+  const available = branchRows.filter(isAvailable);
+  if (available.length === 0) return undefined;
+  const active = available.filter(isActive);
+  return highestPosition(active.length > 0 ? active : available);
 }
 
 function toCandidate(
