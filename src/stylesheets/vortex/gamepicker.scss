@@ -12,6 +12,8 @@ $thumbnail-width: 160px;
 
     > .game-thumbnail {
         margin: $half-gutter !important;
+        // fill the grid column (overrides the default width below)
+        width: auto;
     }
 }
 
@@ -31,6 +33,10 @@ $thumbnail-width: 160px;
     position: relative;
     height: auto;
     border: 0;
+    // Default width so the aspect-ratio Image box can resolve its height when
+    // the tile isn't in the Games-page grid (e.g. dashboard dashlets, which
+    // place it in a plain flex row). The .game-group grid overrides this.
+    width: 160px;
 
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.35);
 

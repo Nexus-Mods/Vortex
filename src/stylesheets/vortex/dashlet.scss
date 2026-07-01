@@ -399,6 +399,24 @@
     }
 }
 
+// The Recently Managed dashlet places GameThumbnail in a short flex row. Size
+// the tile by a fixed height (width follows the 2:3 aspect ratio) so it fits
+// the dashlet instead of overflowing from the default fixed width. The Image
+// wrapper is the direct child of .game-thumbnail-body; make the chain fill the
+// height so the aspect box derives its width from it.
+.dashlet-recently-managed .list-recently-managed .game-thumbnail {
+    width: auto;
+    height: 120px;
+
+    .game-thumbnail-body {
+        height: 100%;
+
+        > * {
+            height: 100%;
+        }
+    }
+}
+
 .dashlet-announcement {
     .placeholder {
         flex: 1 1 0;
