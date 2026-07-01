@@ -201,27 +201,49 @@ export interface IInstalledFile {
 }
 
 /**
+ * Report category for a source file's unsatisfied dependencies. Each category
+ * groups homogeneous requirements with their own copy, buttons and detail layout;
+ * a single source file can surface several categories at once. Maps 1:1 onto the
+ * IFileRequirement kinds via `categoryOf` in the content module.
+ */
+export type FileRequirementCategory =
+  /** Missing: download (and install) a file. No user choice needed. */
+  | "download"
+  /** A wrong version is enabled and the correct one isn't owned: download a different version. */
+  | "download-replace"
+  /**
+   * Correct version downloaded but not installed: install it. Reserved; not
+   * produced until uninstalled-state support lands (no resolver input yet).
+   */
+  | "install-uninstalled"
+  /** Correct version installed but disabled while a wrong one is enabled: switch the active version. */
+  | "toggle"
+  /** Several alternatives satisfy the requirement; the user picks one. */
+  | "or";
+
+/**
  * Dependency not installed; download a file to satisfy it
  */
 export interface IMissingFileRequirement {
   kind: "missing";
-  /** Requirement definition id; alternatives that share it are OR options */
+  /** Requirement definition id */
   requirementDefId: string;
-  /** Files that would satisfy it; more than one is an OR choice */
-  alternatives: IFileRequirementCandidate[];
+  /** The file to download */
+  candidate: IFileRequirementCandidate;
 }
 
 /**
- * Wrong version installed; download a correct version (newer or older)
+ * A wrong version of the chain is enabled and no acceptable version is owned;
+ * download a different (correct) version.
  */
 export interface IWrongVersionInstalledRequirement {
   kind: "wrong-version-installed";
-  /** Requirement definition id; alternatives that share it are OR options */
+  /** Requirement definition id */
   requirementDefId: string;
-  /** The wrong version currently installed */
+  /** The wrong version currently enabled */
   installedFile: IInstalledFile;
-  /** Correct versions the user can download */
-  alternatives: IFileRequirementCandidate[];
+  /** The correct version to download */
+  candidate: IFileRequirementCandidate;
 }
 
 /**
@@ -238,15 +260,51 @@ export interface IWrongVersionEnabledRequirement {
 }
 
 /**
+ * One alternative (update group) of an OR requirement, already classified to the
+ * action it needs if chosen: download a file, or enable an owned-but-disabled one.
+ */
+export type IFileRequirementBranch =
+  | {
+      kind: "download";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The file to download for this alternative */
+      candidate: IFileRequirementCandidate;
+    }
+  | {
+      kind: "enable";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The acceptable, installed-but-disabled version to enable */
+      correctFile: IInstalledFile;
+      /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+      enabledFile?: IInstalledFile;
+    };
+
+/**
+ * Several alternatives satisfy the requirement; the user picks one. Branches that
+ * are owned-but-disabled offer an enable/switch action instead of a download.
+ */
+export interface IOrFileRequirement {
+  kind: "or";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The OR alternatives, one per update group */
+  branches: IFileRequirementBranch[];
+}
+
+/**
  * A single dependency of a source file, discriminated on kind
  */
 export type IFileRequirement =
   | IMissingFileRequirement
   | IWrongVersionInstalledRequirement
-  | IWrongVersionEnabledRequirement;
+  | IWrongVersionEnabledRequirement
+  | IOrFileRequirement;
 
 /**
- * Unsatisfied requirements for one source file; a single health-check entry
+ * Unsatisfied requirements for one source file, as the resolver maps them. The UI
+ * splits this into homogeneous per-category reports (IFileRequirementReport) for display.
  */
 export interface IFileLevelRequirements {
   /** Composite id of the source file version that has the requirements */
@@ -254,6 +312,21 @@ export interface IFileLevelRequirements {
   /** Source mod name, for the listing and detail headings */
   sourceModName: string;
   /** The source file's unsatisfied dependencies (kinds can be mixed) */
+  requirements: IFileRequirement[];
+}
+
+/**
+ * One category's worth of a source file's requirements: a single listing entry /
+ * detail page. `requirements` are homogeneous to `category`.
+ */
+export interface IFileRequirementReport {
+  /** Composite id of the source file version that has the requirements */
+  sourceFileUID: string;
+  /** Source mod name, for the listing and detail headings */
+  sourceModName: string;
+  /** The report category, driving copy, buttons and the detail layout */
+  category: FileRequirementCategory;
+  /** The source file's unsatisfied dependencies in this category */
   requirements: IFileRequirement[];
 }
 

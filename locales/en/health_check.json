@@ -14,7 +14,14 @@
       "may_require_mods_plural": "May require {{ count }} mods",
       "more_count": "+{{ count }} more",
       "requires_files": "Requires {{ count }} file",
-      "requires_files_plural": "Requires {{ count }} files"
+      "requires_files_plural": "Requires {{ count }} files",
+      "missing_for": "Missing required mod for: {{modName}}",
+      "missing_for_plural": "Missing required mods for: {{modName}}",
+      "requires_count": "Requires {{ count }} mod:",
+      "requires_count_plural": "Requires {{ count }} mods:",
+      "requires_pick": "Requires {{ count }} mod to be picked:",
+      "requires_pick_plural": "Requires {{ count }} mods to be picked:",
+      "or_join": "or"
     },
     "no_results_active": {
       "title": "Health check passed",
@@ -53,6 +60,8 @@
       "open_external_mod_page": "Open external mod page",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
       "confirm_install": "Confirm install",
+      "missing_for": "Missing required mod for: <modLink>{{modName}}</modLink>",
+      "missing_for_plural": "Missing required mods for: <modLink>{{modName}}</modLink>",
       "requires_files": "Requires {{ count }} mod file to be installed to work correctly.",
       "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
       "install_via_mod_page": "Install via mod page",
@@ -65,7 +74,8 @@
       "enabled_version": "Currently enabled version:",
       "correct_version": "Correct version:",
       "view_in_loadout": "View in loadout",
-      "switch_version": "Switch version"
+      "switch_version": "Switch version",
+      "enable_this_version": "Enable this version"
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",

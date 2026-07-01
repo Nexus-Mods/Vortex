@@ -2,6 +2,7 @@ export { checkFileLevelRequirements } from "./checkFileLevelRequirements";
 export type {
   Candidate,
   CandidateRow,
+  DependencyBranch,
   DependencyResult,
   FileRequirementsContext,
   FileRequirementsReport,

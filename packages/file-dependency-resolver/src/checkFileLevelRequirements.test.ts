@@ -152,23 +152,38 @@ describe("checkFileLevelRequirements", () => {
       return d;
     };
 
-    expect(dep("3001")).toMatchObject({ satisfyingEnabled: ["2001"], recommended: [] });
-    expect(dep("3002")).toMatchObject({ satisfyingDisabled: ["2002"], recommended: [] });
+    // Every dependency here targets a single update group, so one branch each.
+    const branch = (id: string) => {
+      expect(dep(id).branches).toHaveLength(1);
+      return dep(id).branches[0]!;
+    };
 
-    expect(dep("3003").wrongEnabled).toEqual(["2003"]);
-    expect(dep("3003").recommended).toMatchObject([
-      { fileVersionUid: "2004", fileName: "C file", modName: "Mod C", adultContent: true },
-    ]);
+    expect(branch("3001")).toMatchObject({ satisfyingEnabled: ["2001"] });
+    expect(branch("3001").recommended).toBeUndefined();
 
-    expect(dep("3004")).toMatchObject({
+    expect(branch("3002")).toMatchObject({ satisfyingDisabled: ["2002"] });
+    expect(branch("3002").recommended).toBeUndefined();
+
+    expect(branch("3003").wrongEnabled).toEqual(["2003"]);
+    expect(branch("3003").recommended).toMatchObject({
+      fileVersionUid: "2004",
+      fileName: "C file",
+      modName: "Mod C",
+      adultContent: true,
+    });
+
+    expect(branch("3004")).toMatchObject({
       satisfyingEnabled: [],
       satisfyingDisabled: [],
       wrongEnabled: [],
       wrongDisabled: [],
     });
-    expect(dep("3004").recommended).toMatchObject([
-      { fileVersionUid: "2006", fileName: "D file", version: "2.0", modName: "Mod D" },
-    ]);
+    expect(branch("3004").recommended).toMatchObject({
+      fileVersionUid: "2006",
+      fileName: "D file",
+      version: "2.0",
+      modName: "Mod D",
+    });
   });
 
   it("treats emitRequirements:false files as satisfiers but not sources", async () => {
@@ -220,8 +235,64 @@ describe("checkFileLevelRequirements", () => {
     expect(report.sources.map((s) => s.sourceFileVersionUid)).toEqual(["1001"]);
     // ...but it satisfies A's dependency depX.
     const a = report.sources.find((s) => s.sourceFileVersionUid === "1001")!;
-    expect(a.dependencies.find((d) => d.definitionId === "depX")!.satisfyingEnabled).toEqual([
-      "5001",
-    ]);
+    expect(
+      a.dependencies.find((d) => d.definitionId === "depX")!.branches[0]!.satisfyingEnabled,
+    ).toEqual(["5001"]);
+  });
+
+  it("short-circuits an OR once a branch is satisfied: no recommendation for the alternatives", async () => {
+    // orDef has two branches (g1, g2). The user has the SECOND branch (g2) enabled, so
+    // the OR is satisfied; the first branch (g1) must not be recommended even though it
+    // is missing, regardless of branch order.
+    const orCandidates: CandidateRow[] = [
+      {
+        sourceFileVersionUid: "1001",
+        definitionId: "orDef",
+        modFileId: "g1",
+        fileVersionUid: "fa",
+        position: "1",
+        category: 1,
+        modStatus: "published",
+        modUid: "ma",
+      },
+      {
+        sourceFileVersionUid: "1001",
+        definitionId: "orDef",
+        modFileId: "g2",
+        fileVersionUid: "fb",
+        position: "1",
+        category: 1,
+        modStatus: "published",
+        modUid: "mb",
+      },
+    ];
+    const orDetails: Record<string, FileVersionDetail> = {
+      "1001": { fileVersionUid: "1001", modUid: "m0", modFileId: "g0", name: "A", version: "1.0" },
+      fb: { fileVersionUid: "fb", modUid: "mb", modFileId: "g2", name: "Fb", version: "1.0" },
+    };
+    const orPorts: ResolverPorts = {
+      fetchCandidates: async (uids) =>
+        orCandidates.filter((c) => uids.includes(c.sourceFileVersionUid)),
+      fetchFileVersionDetails: async (uids) =>
+        uids.map((u) => orDetails[u]).filter((d): d is FileVersionDetail => d !== undefined),
+      fetchModDetails: async () => [],
+    };
+
+    const report = await checkFileLevelRequirements({
+      ports: orPorts,
+      installedFiles: [
+        { fileVersionUid: "1001", enabled: true },
+        { fileVersionUid: "fb", enabled: true },
+      ],
+    });
+
+    const dep = report.sources[0]!.dependencies.find((d) => d.definitionId === "orDef")!;
+    const g1 = dep.branches.find((b) => b.modFileId === "g1")!;
+    const g2 = dep.branches.find((b) => b.modFileId === "g2")!;
+    expect(g2.satisfyingEnabled).toEqual(["fb"]);
+    // First branch is missing but dropped because a later branch is satisfied.
+    expect(g1.satisfyingEnabled).toEqual([]);
+    expect(g1.recommended).toBeUndefined();
+    expect(g2.recommended).toBeUndefined();
   });
 });

@@ -36,6 +36,17 @@ export interface IDetailViewProps {
 }
 
 /**
+ * A no-choice download/install item a check contributes to the page-level
+ * "1-click install all" button. Items are de-duplicated across checks by `key`.
+ */
+export interface IBulkInstallItem {
+  /** Stable key for de-duplication across checks (the file/mod to download). */
+  key: string;
+  /** Trigger this item's download/install. */
+  install: () => void;
+}
+
+/**
  * Centralised UI contract for one health check. Implemented by content modules
  * under views/content/ and listed in the registry. The shared shell is
  * agnostic to the contents — it only calls into this contract.
@@ -53,4 +64,11 @@ export interface IHealthCheckContent {
   isHidden?: (state: IState, entry: IHealthCheckEntry) => boolean;
   /** Toggle hidden for the entry the control was activated on (the click context). */
   toggleHide?: (api: IExtensionApi, entry: IHealthCheckEntry) => void;
+  /**
+   * No-choice download/install items contributed to the page-level "1-click
+   * install all" button. Excludes anything needing a user choice (OR) or a
+   * non-download action (enable/switch). Omit when nothing is one-click-installable.
+   * TODO(LAZ-471): extend to enable/switch/reinstall cases once that scope is agreed.
+   */
+  collectInstallAll?: (state: IState, api: IExtensionApi) => IBulkInstallItem[];
 }

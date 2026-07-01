@@ -35,6 +35,11 @@ export function openModPage(_api: IExtensionApi, ref: { fileUID: string }): void
   log("info", "TODO: open mod page", { fileUID: ref.fileUID });
 }
 
+/** Open the file's page on the Nexus website (the specific file, not the mod). */
+export function openFilePage(_api: IExtensionApi, ref: { fileUID: string }): void {
+  log("info", "TODO: open file page", { fileUID: ref.fileUID });
+}
+
 /** Reveal an installed file in the mods/loadout view. */
 export function viewInLoadout(_api: IExtensionApi, file: IInstalledFile): void {
   log("info", "TODO: view in loadout", { modId: file.modId });
