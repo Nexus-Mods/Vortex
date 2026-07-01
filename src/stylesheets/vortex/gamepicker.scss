@@ -33,11 +33,6 @@ $thumbnail-width: 160px;
     border: 0;
 
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.35);
-    transition: $thumbnail-transition-duration ease-out;
-
-    &:hover {
-        transform: scale($thumbnail-zoom-scale);
-    }
 
     &panel-primary {
         border-color: $border-color;
