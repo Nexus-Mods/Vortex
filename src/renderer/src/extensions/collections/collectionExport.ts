@@ -8,6 +8,10 @@ import Zip from "node-7z";
 import { dir as tmpDir } from "tmp";
 
 import * as actions from "../../actions";
+import {
+  CollectionsDraftUpdateUploadedEvent,
+  CollectionsDraftUploadedEvent,
+} from "../../extensions/analytics/mixpanel/MixpanelEvents";
 import { getGame } from "../../extensions/gamemode_management/util/getGame";
 import type { IMod } from "../../extensions/mod_management/types/IMod";
 import renderModName from "../../extensions/mod_management/util/modName";
@@ -325,14 +329,11 @@ export async function doExportToAPI(
       );
 
       if (userInfo?.userId) {
-        const eventName = isNewUpload ? "collection_draft_uploaded" : "collection_draft_updated";
-        api.events.emit("analytics-track-mixpanel-event", {
-          eventName,
-          properties: {
-            collection_name: mod.attributes?.name ?? "Unknown",
-            game_name: game.name,
-          },
-        });
+        const collectionName = mod.attributes?.name ?? "Unknown";
+        const event = isNewUpload
+          ? new CollectionsDraftUploadedEvent(collectionName, game.name)
+          : new CollectionsDraftUpdateUploadedEvent(collectionName, game.name);
+        api.events.emit("analytics-track-mixpanel-event", event);
       }
     });
     progressEnd();

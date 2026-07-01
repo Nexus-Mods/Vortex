@@ -29,6 +29,7 @@ import makeReactive from "../../util/makeReactive";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, setdefault, toPromise } from "../../util/util";
+import { CollectionsDraftedEvent } from "../analytics/mixpanel/MixpanelEvents";
 import type { IDownload } from "../download_management/types/IDownload";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IMod, IModRule } from "../mod_management/types/IMod";
@@ -264,14 +265,10 @@ async function createNewCollection(api: IExtensionApi, profile: IProfile, name: 
   const game = selectors.gameById(state, profile.gameId);
   const userInfo = state.persistent["nexus"]?.userInfo;
   if (userInfo?.userId) {
-    api.events.emit("analytics-track-mixpanel-event", {
-      eventName: "collection_drafted",
-      properties: {
-        collection_name: name,
-        game_name: game.name,
-        creation_method: "empty",
-      },
-    });
+    api.events.emit(
+      "analytics-track-mixpanel-event",
+      new CollectionsDraftedEvent(name, game.name, "empty"),
+    );
   }
 
   api.sendNotification({

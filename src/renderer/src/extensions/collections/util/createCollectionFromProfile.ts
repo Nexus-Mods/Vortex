@@ -11,6 +11,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { batchDispatch } from "../../../util/util";
+import { CollectionsDraftedEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { MOD_TYPE } from "../constants";
 import { importTweaks } from "../initweaks";
 import type { IINITweak } from "../types/IINITweak";
@@ -175,14 +176,10 @@ export async function createCollectionFromProfile(
     if (userInfo?.userId) {
       const game = getGame(profile.gameId);
       const creationMethod = isQuickCollection ? "quick_collection" : "from_profile";
-      api.events.emit("analytics-track-mixpanel-event", {
-        eventName: "collection_drafted",
-        properties: {
-          collection_name: name,
-          game_name: game.name,
-          creation_method: creationMethod,
-        },
-      });
+      api.events.emit(
+        "analytics-track-mixpanel-event",
+        new CollectionsDraftedEvent(name, game.name, creationMethod),
+      );
     }
   } else {
     name = mod.attributes?.name;

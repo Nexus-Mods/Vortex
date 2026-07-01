@@ -48,34 +48,6 @@ export class AppLaunchedEvent implements MixpanelEvent {
 }
 
 /**
- * DNU - NEEDS TO BE FIRED BEFORE ANALYTICS ARE INITIALIZED
- * Event sent when the application is updated.
- * @param from_version Previous version
- * @param to_version New version
- * @param os Operating system (Node.js platform string: win32, darwin, linux)
- */
-export class AppUpdatedEvent implements MixpanelEvent {
-  readonly eventName = "app_updated";
-  readonly properties: Record<string, any>;
-  constructor(from_version: string, to_version: string, os: string) {
-    this.properties = {
-      from_version,
-      to_version,
-      $os: mapPlatformToMixpanel(os),
-    };
-  }
-}
-
-/**
- * Event sent when an upsell prompt is clicked in the application.
- */
-export class AppUpsellClickedEvent implements MixpanelEvent {
-  readonly eventName = "app_upsell_clicked";
-  readonly properties: Record<string, any> = {};
-  constructor() {}
-}
-
-/**
  * COLLECTION EVENTS
  */
 
