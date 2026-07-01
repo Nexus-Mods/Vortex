@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Generate and sync Flatpak source manifests for yarn and NuGet inputs."""
+"""Generate and sync Flatpak source manifests for pnpm and NuGet inputs."""
 
 import argparse
+import hashlib
+import json
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Callable, Iterable, Iterator, List, Optional, Tuple
 
 from _flatpak_env import ensure_venv, repo_root, run_command
 from _flatpak_nuget_hash import (
@@ -12,58 +16,164 @@ from _flatpak_nuget_hash import (
     read_stored_hash as read_nuget_stored_hash,
     write_stored_hash as write_nuget_stored_hash,
 )
-from _flatpak_yarn_hash import (
-    collect_lockfiles,
-    compute_sources_hash,
-    read_stored_hash as read_sources_stored_hash,
-    write_stored_hash as write_sources_stored_hash,
-)
 
-
-DEFAULT_LOCKFILE = "yarn.lock"
-DEFAULT_YARN_OUTPUT = "flatpak/generated-sources.json"
-DEFAULT_YARN_HASH_FILE = "flatpak/generated-sources.hash"
+DEFAULT_LOCKFILE = "pnpm-lock.yaml"
+DEFAULT_NODE_OUTPUT = "flatpak/generated-sources.json"
+DEFAULT_NODE_HASH_FILE = "flatpak/generated-sources.hash"
+DEFAULT_PNPM_STORE_VERSION = "v11"
 DEFAULT_NUGET_SEARCH_ROOT = "extensions"
 DEFAULT_NUGET_OUTPUT = "flatpak/generated-nuget-sources.json"
 DEFAULT_NUGET_HASH_FILE = "flatpak/generated-nuget-sources.hash"
+DEFAULT_DUCKDB_LOCKFILE = "src/main/duckdb-extensions.lock.json"
+DEFAULT_DUCKDB_OUTPUT = "flatpak/generated-duckdb-sources.json"
+DEFAULT_DUCKDB_HASH_FILE = "flatpak/generated-duckdb-sources.hash"
+DEFAULT_DUCKDB_DESTDIR = "flatpak-duckdb-extensions"
 DEFAULT_DOTNET = "9"
 DEFAULT_FREEDESKTOP = "25.08"
 DEFAULT_DESTDIR = "flatpak-nuget-sources"
 DEFAULT_RUNTIME = "linux-x64"
 
 
-def generate_sources(
-    lockfile: Path,
-    output: Path,
-    recursive: bool,
-    lockfiles: Optional[List[Path]] = None,
-) -> None:
-    info = ensure_venv(install_packages=True)
+def _remove_yaml_mapping_entries(
+    text: str, should_remove: Callable[[str], bool]
+) -> str:
+    output: List[str] = []
+    skipping = False
+    entry_indent = 0
 
+    for line in text.splitlines(keepends=True):
+        current = line.rstrip("\n")
+        if not skipping and should_remove(current):
+            skipping = True
+            entry_indent = len(line) - len(line.lstrip())
+            continue
+
+        if skipping:
+            stripped = line.strip()
+            indent = len(line) - len(line.lstrip())
+            if stripped and indent <= entry_indent:
+                skipping = False
+                output.append(line)
+            continue
+
+        output.append(line)
+
+    return "".join(output)
+
+
+def _remove_yaml_mapping_entry(text: str, entry_line: str) -> str:
+    return _remove_yaml_mapping_entries(text, lambda line: line == entry_line)
+
+
+def normalize_pnpm_lockfile_text(text: str) -> str:
+    if "\n---\n" in text:
+        _, text = text.split("\n---\n", 1)
+
+    text = _remove_yaml_mapping_entries(
+        text,
+        lambda line: line.startswith("  node@runtime:"),
+    )
+    text = _remove_yaml_mapping_entry(text, "      node:")
+    return "---\n" + text.lstrip()
+
+
+def normalize_pnpm_lockfile(lockfile: Path) -> str:
+    return normalize_pnpm_lockfile_text(lockfile.read_text(encoding="utf-8"))
+
+
+def collect_lockfiles(lockfile: Path) -> List[Path]:
     root = repo_root()
+    if not lockfile.is_absolute():
+        lockfile = root / lockfile
 
-    cmd = [
-        str(info.flatpak_node_generator),
-        "yarn",
-        str(lockfile),
-        "-o",
-        str(output),
-    ]
-    if recursive:
-        if lockfiles is None:
-            lockfiles = collect_lockfiles(lockfile=lockfile, recursive=True)
-        cmd.append("-r")
-        for lockfile_path in lockfiles:
-            cmd.extend(["-R", str(lockfile_path)])
-
-    run_command(cmd, cwd=root)
+    if not lockfile.exists():
+        raise FileNotFoundError(f"Lockfile not found: {lockfile}")
+    return [lockfile]
 
 
-def sync_generated_sources(
+def compute_sources_hash(lockfile: Path) -> Tuple[str, List[Path]]:
+    root = repo_root()
+    lockfiles = collect_lockfiles(lockfile=lockfile)
+
+    digest = hashlib.sha256()
+    digest.update(b"flatpak-pnpm-generated-sources-hash-v1\n")
+
+    for path in lockfiles:
+        relative = path.relative_to(root).as_posix()
+        contents = path.read_bytes()
+        digest.update(f"path:{relative}\n".encode("utf-8"))
+        digest.update(f"size:{len(contents)}\n".encode("utf-8"))
+        digest.update(contents)
+        digest.update(b"\n")
+
+    return digest.hexdigest(), lockfiles
+
+
+def read_sources_stored_hash(hash_file: Path) -> Optional[str]:
+    if not hash_file.exists():
+        return None
+    value = hash_file.read_text(encoding="utf-8").strip()
+    return value or None
+
+
+def write_text_file(file_path: Path, contents: str) -> None:
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_text(contents, encoding="utf-8")
+
+
+def write_sources_stored_hash(hash_file: Path, value: str) -> None:
+    write_text_file(hash_file, f"{value}\n")
+
+
+def compute_duckdb_sources_hash(lockfile: Path) -> str:
+    """Hash the DuckDB lockfile that generated-duckdb-sources.json derives from."""
+    root = repo_root()
+    if not lockfile.is_absolute():
+        lockfile = root / lockfile
+
+    if not lockfile.exists():
+        raise FileNotFoundError(f"DuckDB extension lockfile not found: {lockfile}")
+
+    digest = hashlib.sha256()
+    digest.update(b"flatpak-duckdb-generated-sources-hash-v1\n")
+    relative = lockfile.relative_to(root).as_posix()
+    contents = lockfile.read_bytes()
+    digest.update(f"path:{relative}\n".encode("utf-8"))
+    digest.update(f"size:{len(contents)}\n".encode("utf-8"))
+    digest.update(contents)
+    digest.update(b"\n")
+
+    return digest.hexdigest()
+
+
+def generate_duckdb_sources(lockfile: Path, output: Path, destdir: str) -> None:
+    """Convert the DuckDB extension lockfile into Flatpak file sources."""
+    lock = json.loads(lockfile.read_text(encoding="utf-8"))
+    duckdb_version = lock["duckdbVersion"]
+    sources = []
+
+    # Flatpak fetches compressed artifacts; the downloader verifies and unpacks them later.
+    for extension in lock["extensions"]:
+        name = extension["name"]
+        for platform, artifact in extension["platforms"].items():
+            sources.append(
+                {
+                    "type": "file",
+                    "url": artifact["url"],
+                    "sha256": artifact["sha256"],
+                    "dest": f"{destdir}/{duckdb_version}/{platform}",
+                    "dest-filename": f"{name}.duckdb_extension.gz",
+                }
+            )
+
+    write_text_file(output, f"{json.dumps(sources, indent=2)}\n")
+
+
+def sync_generated_duckdb_sources(
     lockfile: Path,
     output: Path,
     hash_file: Path,
-    recursive: bool = True,
+    destdir: str,
     force: bool = False,
 ) -> bool:
     root = repo_root()
@@ -74,9 +184,90 @@ def sync_generated_sources(
     if not hash_file.is_absolute():
         hash_file = root / hash_file
 
-    source_hash, lockfiles = compute_sources_hash(
-        lockfile=lockfile, recursive=recursive
-    )
+    duckdb_sources_hash = compute_duckdb_sources_hash(lockfile=lockfile)
+    stored_duckdb_sources_hash = read_sources_stored_hash(hash_file)
+
+    # The sidecar hash is only a freshness check for this generated source list.
+    if not force and output.exists() and stored_duckdb_sources_hash == duckdb_sources_hash:
+        print("Flatpak DuckDB sources are up to date (hash match).")
+        return False
+
+    if force:
+        print("Regenerating Flatpak DuckDB sources (forced by --force).")
+    elif not output.exists():
+        print(f"Regenerating Flatpak DuckDB sources (missing output: {output}).")
+    elif stored_duckdb_sources_hash is None:
+        print(f"Regenerating Flatpak DuckDB sources (missing hash file: {hash_file}).")
+    else:
+        print("Regenerating Flatpak DuckDB sources (lockfile hash changed).")
+
+    generate_duckdb_sources(lockfile=lockfile, output=output, destdir=destdir)
+    write_sources_stored_hash(hash_file=hash_file, value=duckdb_sources_hash)
+    print(f"Updated Flatpak DuckDB sources hash: {hash_file}")
+    return True
+
+
+@contextmanager
+def normalized_pnpm_lockfile(lockfile: Path) -> Iterator[Path]:
+    normalized = normalize_pnpm_lockfile(lockfile)
+
+    if normalized == lockfile.read_text(encoding="utf-8"):
+        yield lockfile
+        return
+
+    with tempfile.NamedTemporaryFile(
+        "w",
+        delete=False,
+        dir=lockfile.parent,
+        encoding="utf-8",
+        prefix=".flatpak-pnpm-lock-",
+        suffix=".yaml",
+    ) as temp_lockfile:
+        temp_lockfile.write(normalized)
+        temp_path = Path(temp_lockfile.name)
+
+    try:
+        yield temp_path
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
+def generate_sources(
+    lockfile: Path,
+    output: Path,
+) -> None:
+    info = ensure_venv(install_packages=True)
+
+    root = repo_root()
+
+    with normalized_pnpm_lockfile(lockfile) as generator_lockfile:
+        cmd = [
+            str(info.flatpak_node_generator),
+            "pnpm",
+            str(generator_lockfile),
+            "-o",
+            str(output),
+            "--pnpm-store-version",
+            DEFAULT_PNPM_STORE_VERSION,
+        ]
+        run_command(cmd, cwd=root)
+
+
+def sync_generated_sources(
+    lockfile: Path,
+    output: Path,
+    hash_file: Path,
+    force: bool = False,
+) -> bool:
+    root = repo_root()
+    if not lockfile.is_absolute():
+        lockfile = root / lockfile
+    if not output.is_absolute():
+        output = root / output
+    if not hash_file.is_absolute():
+        hash_file = root / hash_file
+
+    source_hash, _ = compute_sources_hash(lockfile=lockfile)
     stored_hash = read_sources_stored_hash(hash_file)
 
     if not force and output.exists() and stored_hash == source_hash:
@@ -95,8 +286,6 @@ def sync_generated_sources(
     generate_sources(
         lockfile=lockfile,
         output=output,
-        recursive=recursive,
-        lockfiles=lockfiles,
     )
     write_sources_stored_hash(hash_file=hash_file, value=source_hash)
     print(f"Updated Flatpak sources hash: {hash_file}")
@@ -211,14 +400,14 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Generate Flatpak source manifests. "
-            "By default this updates both generated-sources.json and "
-            "generated-nuget-sources.json."
+            "By default this updates generated-sources.json, "
+            "generated-nuget-sources.json, and generated-duckdb-sources.json."
         )
     )
 
     parser.add_argument(
         "--only",
-        choices=("all", "yarn", "nuget"),
+        choices=("all", "pnpm", "nuget", "duckdb"),
         default="all",
         help="Select which source types to sync (default: all)",
     )
@@ -250,15 +439,15 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = _build_parser().parse_args()
 
-    run_yarn = args.only in {"all", "yarn"}
+    run_pnpm = args.only in {"all", "pnpm"}
     run_nuget = args.only in {"all", "nuget"}
+    run_duckdb = args.only in {"all", "duckdb"}
 
-    if run_yarn:
+    if run_pnpm:
         sync_generated_sources(
             lockfile=Path(DEFAULT_LOCKFILE),
-            output=Path(DEFAULT_YARN_OUTPUT),
-            hash_file=Path(DEFAULT_YARN_HASH_FILE),
-            recursive=True,
+            output=Path(DEFAULT_NODE_OUTPUT),
+            hash_file=Path(DEFAULT_NODE_HASH_FILE),
             force=args.force,
         )
 
@@ -274,6 +463,15 @@ def main() -> None:
             freedesktop=DEFAULT_FREEDESKTOP,
             destdir=DEFAULT_DESTDIR,
             runtime=DEFAULT_RUNTIME,
+            force=args.force,
+        )
+
+    if run_duckdb:
+        sync_generated_duckdb_sources(
+            lockfile=Path(DEFAULT_DUCKDB_LOCKFILE),
+            output=Path(DEFAULT_DUCKDB_OUTPUT),
+            hash_file=Path(DEFAULT_DUCKDB_HASH_FILE),
+            destdir=DEFAULT_DUCKDB_DESTDIR,
             force=args.force,
         )
 
