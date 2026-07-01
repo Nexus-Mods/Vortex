@@ -21,8 +21,6 @@ export async function checkFileLevelRequirements(
   if (sourceFiles.length === 0) return { sources: [] };
 
   // Get the installed files update group ids (modFileId)
-  // TODO(cache): a file version's update group + position rarely change
-  // consider caching by fileVersionUid → detail across runs and refresh occasionally.
   const installedDetails = await ports.fetchFileVersionDetails(
     installedFiles.map((f) => f.fileVersionUid),
   );
@@ -43,8 +41,6 @@ export async function checkFileLevelRequirements(
     else installedByChain.set(chain, [f]);
   }
 
-  // TODO(cache): a source file's dependencies rarely change between runs
-  // consider caching by sourceFileVersionUid → candidate rows and refresh occasionally.
   const candidates = await ports.fetchCandidates(sourceFiles.map((f) => f.fileVersionUid));
   if (candidates.length === 0) return { sources: [] };
 
@@ -82,7 +78,6 @@ export async function checkFileLevelRequirements(
   );
 
   // Hydrate only the recommended candidates (files the user doesn't have).
-  // TODO(cache): consider caching candidate display data
   const recRows = plan.flatMap((s) =>
     s.defs.flatMap((d) => d.branches.flatMap((b) => (b.recRow ? [b.recRow] : []))),
   );
