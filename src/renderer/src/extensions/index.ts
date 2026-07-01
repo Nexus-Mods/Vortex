@@ -8,7 +8,7 @@ import {} from "./announcement_dashlet";
 import {} from "./browse_nexus";
 import {} from "./browser";
 import {} from "./category_management";
-import {} from "./collections_integration";
+import {} from "./collections";
 import {} from "./dashboard";
 import {} from "./design_system_dev";
 import {} from "./diagnostics_files";

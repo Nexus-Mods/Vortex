@@ -658,6 +658,18 @@ export class IPCDownloadAdapter {
     downloadId: string,
     callback?: (err: Error | null) => void,
   ): Promise<void> {
+    // Only downloads still in progress are pausable (same active-download check as
+    // hydrateFromState). For anything else - already finished/failed/paused, or no longer present -
+    // the manager would throw "is not paused: status is ...", so treat it as a no-op success.
+    const download = this.#api.getState().persistent.downloads.files[downloadId];
+    if (download === undefined || !["init", "started"].includes(download.state)) {
+      log("debug", "skipping pause for non-active download", {
+        downloadId,
+        state: download?.state,
+      });
+      callback?.(null);
+      return;
+    }
     try {
       log("debug", "pausing download", { downloadId });
       const checkpoint = await window.api.downloader.pause(downloadId);
@@ -706,6 +718,12 @@ export class IPCDownloadAdapter {
     const now = Date.now();
 
     let totalDeltaBytes = 0;
+    // Non-terminal progress updates are collected and dispatched as ONE batched store update per
+    // poll tick instead of one per download. Each separate dispatch replaces persistent.downloads
+    // and forces every subscriber to recompute; with many concurrent downloads (large collections)
+    // that per-download churn saturates the renderer. Terminal updates stay inline below to keep
+    // their ordering relative to finishDownload/removeDownload.
+    const progressActions: Array<ReturnType<typeof downloadProgress>> = [];
     for (const [downloadId, state] of Object.entries(states)) {
       const activeDownload = this.#activeDownloads.get(downloadId);
       if (activeDownload === undefined) continue;
@@ -730,9 +748,14 @@ export class IPCDownloadAdapter {
         activeDownload.lastProgressDispatch = now;
         // Update received/total bytes. The reducer transitions state from
         // "init" to "started" on first non-zero received, driving the progress bar.
-        this.#api.store.dispatch(
-          downloadProgress(downloadId, state.bytesReceived, state.size ?? 0, []),
-        );
+        const action = downloadProgress(downloadId, state.bytesReceived, state.size ?? 0, []);
+        if (isTerminal) {
+          // dispatch inline so it stays ordered before this download's terminal handling below;
+          // a batched progress landing after finishDownload could resurrect a finished download
+          this.#api.store.dispatch(action);
+        } else {
+          progressActions.push(action);
+        }
       }
 
       if (!isTerminal) continue;
@@ -759,6 +782,11 @@ export class IPCDownloadAdapter {
         this.#api.events.emit("did-finish-download", downloadId, "failed");
         activeDownload.callback?.(err ?? new Error("download failed"), downloadId);
       }
+    }
+
+    // one store update for all of this tick's non-terminal progress (see comment above the loop)
+    if (progressActions.length > 0) {
+      batchDispatch(this.#api.store, progressActions);
     }
 
     this.#speedAccumBytes += totalDeltaBytes;

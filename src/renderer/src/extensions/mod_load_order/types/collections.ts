@@ -1,6 +1,14 @@
 import type { ICollectionInfo, IRevision, SourceType, UpdatePolicy } from "@nexusmods/nexus-api";
 
-import type * as types from "../../../types/api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import type { TFunction } from "../../../util/i18n";
+import type {
+  IChoiceType,
+  IFileListItem,
+  IMod,
+  IModReference,
+} from "../../mod_management/types/IMod";
 import type { ILoadOrder } from "./types";
 
 export interface ICollectionLoadOrder {
@@ -36,10 +44,9 @@ export interface ICollectionMod {
   optional: boolean;
   domainName: string;
   source: ICollectionSourceInfo;
-  // hashes?: types.IFileListItem[];
-  hashes?: any;
+  hashes?: IFileListItem[];
   // installer-specific data to replicate the choices the author made
-  choices?: any;
+  choices?: IChoiceType;
   instructions?: string;
   author?: string;
   details?: ICollectionModDetails;
@@ -47,9 +54,9 @@ export interface ICollectionMod {
 
 export type RuleType = "before" | "after" | "requires" | "conflicts" | "recommends" | "provides";
 export interface ICollectionModRule {
-  source: types.IModReference;
+  source: IModReference;
   type: RuleType;
-  reference: types.IModReference;
+  reference: IModReference;
 }
 
 export interface ICollection extends Partial<ICollectionLoadOrder> {
@@ -60,22 +67,22 @@ export interface ICollection extends Partial<ICollectionLoadOrder> {
 }
 
 export interface IGameSpecificInterfaceProps {
-  t: types.TFunction;
-  collection: types.IMod;
+  t: TFunction;
+  collection: IMod;
   revisionInfo: IRevision;
 }
 
 export interface ICollectionsGameSupportEntry {
   gameId: string;
   generator: (
-    state: types.IState,
+    state: IState,
     gameId: string,
     stagingPath: string,
     modIds: string[],
-    mods: { [modId: string]: types.IMod },
+    mods: { [modId: string]: IMod },
   ) => Promise<any>;
 
-  parser: (api: types.IExtensionApi, gameId: string, collection: ICollection) => Promise<void>;
+  parser: (api: IExtensionApi, gameId: string, collection: ICollection) => Promise<void>;
 
   interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
 }

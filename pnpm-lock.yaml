@@ -1182,123 +1182,6 @@ importers:
         specifier: 'catalog:'
         version: 7.7.4
 
-  extensions/collections:
-    devDependencies:
-      7z-bin:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
-      '@hot-updater/bsdiff':
-        specifier: 'catalog:'
-        version: 0.30.6
-      '@nexusmods/nexus-api':
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/lodash':
-        specifier: 'catalog:'
-        version: 4.17.24
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.12.2
-      '@types/react':
-        specifier: '16'
-        version: 16.14.69
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/react-dom':
-        specifier: '16'
-        version: 16.9.25(@types/react@16.14.69)
-      '@types/react-redux':
-        specifier: 'catalog:'
-        version: 7.1.34
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      crc-32:
-        specifier: 'catalog:'
-        version: 1.2.2
-      happy-dom:
-        specifier: 'catalog:'
-        version: 20.9.0
-      i18next:
-        specifier: 'catalog:'
-        version: 19.9.2
-      immutability-helper:
-        specifier: 'catalog:'
-        version: 3.1.1
-      lodash:
-        specifier: 'catalog:'
-        version: 4.17.23
-      memoize-one:
-        specifier: 'catalog:'
-        version: 5.2.1
-      modmeta-db:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
-      node-7z:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
-      react:
-        specifier: 'catalog:'
-        version: 16.14.0
-      react-bootstrap:
-        specifier: 'catalog:'
-        version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
-      react-dom:
-        specifier: 'catalog:'
-        version: 16.14.0(react@16.14.0)
-      react-i18next:
-        specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
-      react-markdown:
-        specifier: 'catalog:'
-        version: 6.0.3(@types/react@16.14.69)(react@16.14.0)
-      react-redux:
-        specifier: 'catalog:'
-        version: 7.2.9(react-dom@16.14.0)(react@16.14.0)
-      react-select:
-        specifier: 'catalog:'
-        version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
-      redux:
-        specifier: 'catalog:'
-        version: 4.2.1
-      redux-act:
-        specifier: 'catalog:'
-        version: 1.8.0
-      redux-thunk:
-        specifier: 'catalog:'
-        version: 2.4.2(redux@4.2.1)
-      reselect:
-        specifier: 'catalog:'
-        version: 4.1.8
-      semver:
-        specifier: 'catalog:'
-        version: 7.7.4
-      shortid:
-        specifier: 'catalog:'
-        version: 2.2.17
-      tmp:
-        specifier: 'catalog:'
-        version: 0.1.0
-      ts-v-gen:
-        specifier: 'catalog:'
-        version: 1.0.3
-      turbowalk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
   extensions/common-interpreters:
     devDependencies:
       '@nexusmods/vortex-api':
@@ -4268,6 +4151,9 @@ importers:
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
+      '@hot-updater/bsdiff':
+        specifier: 'catalog:'
+        version: 0.30.6
       '@mdi/js':
         specifier: 'catalog:'
         version: 7.4.47
@@ -4343,6 +4229,9 @@ importers:
       content-type:
         specifier: 'catalog:'
         version: 1.0.5
+      crc-32:
+        specifier: 'catalog:'
+        version: 1.2.2
       d3:
         specifier: 'catalog:'
         version: 5.16.0
@@ -4784,6 +4673,9 @@ importers:
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
+      '@hot-updater/bsdiff':
+        specifier: 'catalog:'
+        version: 0.30.6
       '@mdi/js':
         specifier: 'catalog:'
         version: 7.4.47
@@ -4991,6 +4883,9 @@ importers:
       content-type:
         specifier: 'catalog:'
         version: 1.0.5
+      crc-32:
+        specifier: 'catalog:'
+        version: 1.2.2
       csstype:
         specifier: 'catalog:'
         version: 3.2.3
