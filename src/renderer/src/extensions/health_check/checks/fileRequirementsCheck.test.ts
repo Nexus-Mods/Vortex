@@ -75,6 +75,7 @@ function installedFile(fileUID: string, enabled: boolean): IInstalledFile {
   return {
     modId: `vortex-${fileUID}`,
     fileUID,
+    modUID: `moduid-${fileUID}`,
     modName: `Mod ${fileUID}`,
     fileName: `${fileUID}.zip`,
     version: "1.0",

@@ -164,6 +164,8 @@ export interface IModRequirementsCheckMetadata {
 export interface IFileRequirementCandidate {
   /** Composite id for the file version (game-scoped fileId combined with the game id) */
   fileUID: string;
+  /** Composite id for the mod (game-scoped modId combined with the game id) */
+  modUID: string;
   /** Display name of the mod */
   modName: string;
   /** Mod summary */
@@ -186,6 +188,8 @@ export interface IInstalledFile {
   modId: string;
   /** Composite id for the file version (game-scoped fileId combined with the game id) */
   fileUID: string;
+  /** Composite id for the mod (game-scoped modId combined with the game id) */
+  modUID: string;
   /** Display name of the mod */
   modName: string;
   /** Thumbnail URL if available */
@@ -311,6 +315,8 @@ export interface IFileLevelRequirements {
   sourceFileUID: string;
   /** Source mod name, for the listing and detail headings */
   sourceModName: string;
+  /** Composite id for the source mod, for building its Nexus links */
+  sourceModUID: string;
   /** The source file's unsatisfied dependencies (kinds can be mixed) */
   requirements: IFileRequirement[];
 }
@@ -324,6 +330,8 @@ export interface IFileRequirementReport {
   sourceFileUID: string;
   /** Source mod name, for the listing and detail headings */
   sourceModName: string;
+  /** Composite id for the source mod, for building its Nexus links */
+  sourceModUID: string;
   /** The report category, driving copy, buttons and the detail layout */
   category: FileRequirementCategory;
   /** The source file's unsatisfied dependencies in this category */
