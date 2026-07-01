@@ -196,6 +196,44 @@ describe("sanitizeFramePath", () => {
       expect(sanitizeFramePath(input)).toBe(`C:/Users/<USER>/a.txt and C:/Users/<USER>/b.txt`);
     });
 
+    // Username-in-path redaction across OS styles, for both single-word and
+    // multi-word (space-containing) Windows account names. Real telemetry showed
+    // "C:/Users/<USER> Sparshott/..." leaking the surname when the segment was
+    // only redacted up to the first space.
+    it.each([
+      // [description, input, expected]
+      [
+        "Windows backslash, no space",
+        `C:\\Users\\bob\\AppData\\foo.pak`,
+        `C:/Users/<USER>/AppData/foo.pak`,
+      ],
+      [
+        "Windows backslash, with space",
+        `C:\\Users\\John S. Junior\\AppData\\foo.pak`,
+        `C:/Users/<USER>/AppData/foo.pak`,
+      ],
+      [
+        "Windows forward slash, no space",
+        `C:/Users/bob/AppData/foo.pak`,
+        `C:/Users/<USER>/AppData/foo.pak`,
+      ],
+      [
+        "Windows forward slash, with space",
+        `C:/Users/Jane Doe/AppData/foo.pak`,
+        `C:/Users/<USER>/AppData/foo.pak`,
+      ],
+      ["macOS, no space", `/Users/bob/Library/foo.plist`, `/Users/<USER>/Library/foo.plist`],
+      ["macOS, with space", `/Users/Jane Doe/Library/foo.plist`, `/Users/<USER>/Library/foo.plist`],
+      ["Linux, no space", `/home/bob/.config/x`, `/home/<USER>/.config/x`],
+      ["Linux, with space", `/home/jane doe/.config/x`, `/home/<USER>/.config/x`],
+    ])("redacts the username segment (%s)", (_desc, input, expected) => {
+      expect(sanitizeFramePath(input)).toBe(expected);
+    });
+
+    it("redacts a multi-word username at the end of a quoted path", () => {
+      expect(sanitizeFramePath(`open 'C:/Users/Jane Doe'`)).toBe(`open 'C:/Users/<USER>'`);
+    });
+
     it("is idempotent — running twice gives the same result", () => {
       const input = `C:\\Users\\user\\file.txt and /home/user/other.txt`;
       const once = sanitizeFramePath(input);

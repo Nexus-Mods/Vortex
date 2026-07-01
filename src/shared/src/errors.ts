@@ -164,9 +164,11 @@ const INSTALL_PATH_RE = new RegExp(String.raw`(?:${WIN}|${UNIX})${SEGS}(?=${ANCH
 
 /** Matches the username segment of a user-home path (`/Users/<name>` or
  * `/home/<name>`). Run after backslash normalization so only forward slashes
- * need to be considered. The username character class excludes `<` so that
- * already-redacted `<USER>` is not matched again (idempotence). */
-const USER_HOME_RE = /(\/(?:Users|home)\/)([^/\s'"<>:|?*]+)/gi;
+ * need to be considered. The segment runs up to the next `/`, so it captures
+ * multi-word Windows account names (`John S. Junior`) — spaces are allowed, but
+ * other whitespace (tab/newline) and quotes/`<>` bound it so free text and an
+ * already-redacted `<USER>` aren't consumed (the latter keeps it idempotent). */
+const USER_HOME_RE = /(\/(?:Users|home)\/)([^/\t\r\n'"<>:|?*]+)/gi;
 
 /** Strips the trailing `:column` from a `:line:col` position, keeping `:line`.
  *  V8 reports the call-site column for each frame, which differs per invocation
