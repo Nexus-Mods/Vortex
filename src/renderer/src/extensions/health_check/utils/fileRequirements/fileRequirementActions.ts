@@ -3,13 +3,14 @@ import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/hea
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
+import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn, renderModName, sanitizeCSSId, toPromise } from "@/util/api";
 
-// File-level requirement actions. Web links, single-file download, and reveal-in-loadout
-// are implemented; enable / switch active version is still stubbed (TODO(LAZ-471)).
+// File-level requirement actions: web links, single-file download, reveal-in-loadout,
+// and enable / switch active version.
 
 /** A file and its mod on Nexus, referenced by the composite UIDs. */
 interface INexusFileRef {
@@ -90,18 +91,38 @@ export async function downloadFileRequirement(
   }
 }
 
-/** Enable an installed-but-disabled file (wrong-version-enabled). */
-export function enableInstalledFile(_api: IExtensionApi, file: IInstalledFile): void {
-  log("info", "TODO: enable installed file", { modId: file.modId, fileUID: file.fileUID });
+/** Enable an owned-but-disabled file so it satisfies the requirement. */
+export function enableInstalledFile(api: IExtensionApi, file: IInstalledFile): void {
+  const profile = activeProfile(api.getState());
+  if (!profile) {
+    log("warn", "cannot enable installed file: no active profile", { modId: file.modId });
+    return;
+  }
+  void setModsEnabled(api, profile.id, [file.modId], true);
 }
 
 /** Switch the active version: enable `correct`, disabling the currently-enabled `wrong`. */
 export function switchActiveVersion(
-  _api: IExtensionApi,
+  api: IExtensionApi,
   wrong: IInstalledFile,
   correct: IInstalledFile,
 ): void {
-  log("info", "TODO: switch active version", { from: wrong.fileUID, to: correct.fileUID });
+  if (wrong.modId === correct.modId) {
+    return;
+  }
+  const profile = activeProfile(api.getState());
+  if (!profile) {
+    log("warn", "cannot switch active version: no active profile", {
+      from: wrong.modId,
+      to: correct.modId,
+    });
+    return;
+  }
+  // Disable the wrong version before enabling the correct one, mirroring the mod-list
+  // version switcher, so only one version of the chain is ever enabled at a time.
+  void setModsEnabled(api, profile.id, [wrong.modId], false).then(() =>
+    setModsEnabled(api, profile.id, [correct.modId], true),
+  );
 }
 
 /** Open the mod's Nexus page for a candidate or installed file. */
