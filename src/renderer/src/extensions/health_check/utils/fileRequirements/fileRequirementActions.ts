@@ -3,9 +3,10 @@ import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/hea
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
+import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { opn, sanitizeCSSId, toPromise } from "@/util/api";
+import { opn, renderModName, sanitizeCSSId, toPromise } from "@/util/api";
 
 // File-level requirement actions. Web links, single-file download, and reveal-in-loadout
 // are implemented; enable / switch active version is still stubbed (TODO(LAZ-471)).
@@ -128,13 +129,43 @@ export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
 }
 
 /**
+ * The mod-list row to reveal for an installed file. Vortex collapses a mod's installed
+ * versions into one row (the enabled one), so a disabled version has no row of its own;
+ * fall back to the enabled sibling of the same mod so the scroll / highlight lands.
+ */
+function loadoutRowModId(api: IExtensionApi, file: IInstalledFile): string {
+  const state = api.getState();
+  const profile = activeProfile(state);
+  const gameId = profile?.gameId;
+  if (!gameId) {
+    return file.modId;
+  }
+  const mods = state.persistent.mods[gameId] ?? {};
+  const self = mods[file.modId];
+  const isEnabled = (id: string): boolean => profile?.modState?.[id]?.enabled === true;
+  if (self === undefined || isEnabled(file.modId)) {
+    return file.modId;
+  }
+  const name = renderModName(self);
+  const nexusModId = self.attributes?.modId;
+  const sibling = Object.keys(mods).find(
+    (id) =>
+      isEnabled(id) &&
+      mods[id].attributes?.modId === nexusModId &&
+      renderModName(mods[id]) === name,
+  );
+  return sibling ?? file.modId;
+}
+
+/**
  * Reveal the mod in the Mods view: navigate, then scroll to and highlight its row (as the
  * collections "Show in Mods" action does). The delay lets the mods table mount first.
  */
 export function viewInLoadout(api: IExtensionApi, file: IInstalledFile): void {
+  const rowModId = loadoutRowModId(api, file);
   api.events.emit("show-main-page", "Mods");
   setTimeout(() => {
-    api.events.emit("mods-scroll-to", file.modId);
-    api.highlightControl(`.${sanitizeCSSId(file.modId)}`, 5000);
+    api.events.emit("mods-scroll-to", rowModId);
+    api.highlightControl(`.${sanitizeCSSId(rowModId)}`, 5000);
   }, 2000);
 }
