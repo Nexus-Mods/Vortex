@@ -1,5 +1,5 @@
 @use "sass:color";
-$thumbnail-width: 256px;
+$thumbnail-width: 180px;
 
 #gamepicker-layout {
     text-align: right;
@@ -119,10 +119,8 @@ $thumbnail-width: 256px;
     }
 
     .thumbnail-img {
-        max-width: 256px;
-        max-height: 144px;
-        min-height: 144px;
         width: 100%;
+        aspect-ratio: 2 / 3;
         object-fit: cover;
     }
 }
@@ -134,8 +132,9 @@ $thumbnail-width: 256px;
 }
 
 .game-thumbnail-img-list {
-    max-width: 150px;
-    max-height: 70px;
+    width: 48px;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
 }
 
 .game-thumbnail-container-list {

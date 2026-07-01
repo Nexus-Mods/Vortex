@@ -11,8 +11,7 @@ import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
 import OverlayTrigger from "../../../controls/OverlayTrigger";
 import { IconButton } from "../../../controls/TooltipControls";
-import { nexusGames } from "../../../extensions/nexus_integration/util";
-import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
+import { gameTileImageURL } from "../../../extensions/nexus_integration/util/gameTileImageURL";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
@@ -49,19 +48,14 @@ class GameRow extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    let logoPath: string | undefined =
-      game.extensionPath !== undefined && game.logo !== undefined
-        ? path.join(game.extensionPath, game.logo)
-        : game.imageURL;
-
-    // For adaptor-registered games (no local logo), resolve a Nexus thumbnail
+    // Prefer the Nexus "tile" art so it matches the website. Fall back to a
+    // local extension logo / imageURL when no Nexus tile can be resolved.
+    let logoPath: string | undefined = gameTileImageURL(game);
     if (logoPath == null) {
-      const domain = nexusGameId(game);
-      const numericId =
-        domain != null ? nexusGames().find((g) => g.domain_name === domain)?.id : undefined;
-      if (numericId !== undefined) {
-        logoPath = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
-      }
+      logoPath =
+        game.extensionPath !== undefined && game.logo !== undefined
+          ? path.join(game.extensionPath, game.logo)
+          : game.imageURL;
     }
 
     const location =
