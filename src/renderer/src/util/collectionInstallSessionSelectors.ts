@@ -192,6 +192,30 @@ export const getCollectionRequiredMods = (state: IState): ICollectionModInstallI
 };
 
 /**
+ * Required members of the active session that settled as failed (terminal "failed"). Used by the
+ * install-finished dialog to reword the prompt and trim its actions when the collection completed
+ * WITH failures rather than cleanly - a failed required member means the collection isn't really
+ * "installed", so we don't offer to install the optional mods on top of a broken required set.
+ * @returns Array of failed required mods
+ */
+export const getFailedRequiredMods = (state: IState): ICollectionModInstallInfo[] => {
+  const mods = getCollectionActiveSessionMods(state);
+  return Object.values(mods).filter((mod) => isRequiredRule(mod) && mod.status === "failed");
+};
+
+/**
+ * Optional members of the active session that settled as failed. A default-skipped optional is
+ * "ignored", never "failed", so this lists only optionals the user SELECTED and that then failed to
+ * install. Surfaced additively in the install-finished dialog - a failed optional annotates the
+ * result but does not make the collection "incomplete" the way a failed required member does.
+ * @returns Array of failed optional mods
+ */
+export const getFailedOptionalMods = (state: IState): ICollectionModInstallInfo[] => {
+  const mods = getCollectionActiveSessionMods(state);
+  return Object.values(mods).filter((mod) => isOptionalRule(mod) && mod.status === "failed");
+};
+
+/**
  * Get all optional/recommended mods from the active session
  * @returns Array of optional mods
  */

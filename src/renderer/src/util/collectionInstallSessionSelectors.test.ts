@@ -23,6 +23,7 @@ import {
   getCollectionModByReference,
   getCollectionPhaseProgress,
   getCollectionStatusBreakdown,
+  getFailedOptionalMods,
 } from "./collectionInstallSessionSelectors";
 
 interface Entry {
@@ -106,6 +107,18 @@ describe("getCollectionStatusBreakdown", () => {
     expect(breakdown.optional.installed).toBe(1);
     expect(breakdown.total.installed).toBe(2);
     expect(breakdown.total.downloading).toBe(1);
+  });
+});
+
+describe("getFailedOptionalMods", () => {
+  it("returns only optional members with a failed status", () => {
+    const state = stateWith([
+      { ruleId: "r1", type: "requires", status: "failed" },
+      { ruleId: "o1", type: "recommends", status: "failed" },
+      { ruleId: "o2", type: "recommends", status: "ignored" },
+      { ruleId: "o3", type: "recommends", status: "installed" },
+    ]);
+    expect(getFailedOptionalMods(state).map((m) => m.rule.reference.tag)).toEqual(["o1"]);
   });
 });
 

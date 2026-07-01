@@ -41,6 +41,14 @@ describe("reconstructModStatus", () => {
     );
   });
 
+  it('a failed download with no mod is "failed", not "downloading"', () => {
+    // a failed download (e.g. a network drop) is a terminal failure, not an in-progress download, so
+    // it reconstructs to "failed" - what the Mods-tab "Failed" filter and "View failed mods" key on.
+    expect(reconstructModStatus(makeRule(), undefined, makeDownload({ state: "failed" }))).toBe(
+      "failed",
+    );
+  });
+
   it('a bundled rule with no mod or download is "downloaded"', () => {
     // bundled mods ship inside the collection archive, so there is no separate download
     expect(

@@ -210,8 +210,13 @@ export function buildCollectionItemRows(
       indexes,
     );
 
-    // the session is the source of truth while it is tracking this mod
-    const status = sessionMods?.[id]?.status ?? persistentStatus;
+    // The session is the source of truth while it is tracking this mod, except for a terminal
+    // download failure: the live session keeps a failed member on "downloading", so reality
+    // (persistentStatus) wins to keep the status column's filter/sort in agreement with the
+    // "Download failed" label. persistentStatus is "failed" only when no installed mod exists and
+    // the download failed, so it cannot shadow a real install/installing state.
+    const sessionStatus = sessionMods?.[id]?.status;
+    const status = persistentStatus === "failed" ? "failed" : (sessionStatus ?? persistentStatus);
 
     const row = { ...data, status };
     // a row is `{ ...mod, ...modState, collectionRule, status }`; the immutable reducers reuse
