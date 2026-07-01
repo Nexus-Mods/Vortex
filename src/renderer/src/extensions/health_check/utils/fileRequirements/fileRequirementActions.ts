@@ -101,6 +101,38 @@ export function enableInstalledFile(api: IExtensionApi, file: IInstalledFile): v
   void setModsEnabled(api, profile.id, [file.modId], true);
 }
 
+/** One active-version switch: disable `wrong`, enable `correct`. */
+export interface ISwitchTarget {
+  wrong: IInstalledFile;
+  correct: IInstalledFile;
+}
+
+/**
+ * Switch the active version for one or more chains: disable the wrong enabled versions,
+ * then enable the correct ones, so only the correct version of each chain stays enabled.
+ * Batched into two dispatches so switching several versions in a report deploys once,
+ * mirroring the mod-list version switcher.
+ */
+export function switchActiveVersions(api: IExtensionApi, targets: ISwitchTarget[]): void {
+  const profile = activeProfile(api.getState());
+  if (!profile) {
+    log("warn", "cannot switch active version: no active profile", { count: targets.length });
+    return;
+  }
+  const correctIds = [...new Set(targets.map((target) => target.correct.modId))];
+  if (correctIds.length === 0) {
+    return;
+  }
+  const correctSet = new Set(correctIds);
+  // Never disable a version another target is enabling (or that is already correct).
+  const wrongIds = [...new Set(targets.map((target) => target.wrong.modId))].filter(
+    (id) => !correctSet.has(id),
+  );
+  void setModsEnabled(api, profile.id, wrongIds, false).then(() =>
+    setModsEnabled(api, profile.id, correctIds, true),
+  );
+}
+
 /** Switch the active version: enable `correct`, disabling the currently-enabled `wrong`. */
 export function switchActiveVersion(
   api: IExtensionApi,
@@ -110,19 +142,7 @@ export function switchActiveVersion(
   if (wrong.modId === correct.modId) {
     return;
   }
-  const profile = activeProfile(api.getState());
-  if (!profile) {
-    log("warn", "cannot switch active version: no active profile", {
-      from: wrong.modId,
-      to: correct.modId,
-    });
-    return;
-  }
-  // Disable the wrong version before enabling the correct one, mirroring the mod-list
-  // version switcher, so only one version of the chain is ever enabled at a time.
-  void setModsEnabled(api, profile.id, [wrong.modId], false).then(() =>
-    setModsEnabled(api, profile.id, [correct.modId], true),
-  );
+  switchActiveVersions(api, [{ wrong, correct }]);
 }
 
 /** Open the mod's Nexus page for a candidate or installed file. */

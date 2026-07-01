@@ -19,6 +19,7 @@ import {
   openFilePage,
   openModPage,
   switchActiveVersion,
+  switchActiveVersions,
   viewInLoadout,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
@@ -108,6 +109,17 @@ function downloadCandidates(requirements: IFileRequirement[]): IFileRequirementC
 /** Categories whose downloads can be installed in one click (no user choice needed). */
 function canQuickInstall(category: FileRequirementCategory): boolean {
   return category === "download" || category === "download-replace";
+}
+
+/** The wrong -> correct version switches a toggle report needs (one per requirement). */
+function switchTargets(
+  requirements: IFileRequirement[],
+): Array<{ wrong: IInstalledFile; correct: IInstalledFile }> {
+  return requirements.flatMap((requirement) =>
+    requirement.kind === "wrong-version-enabled"
+      ? [{ wrong: requirement.enabledFile, correct: requirement.correctFile }]
+      : [],
+  );
 }
 
 /** The required mod's display name for one OR alternative. */
@@ -432,6 +444,7 @@ function FileRequirementsListingRow({
 
   const candidates = downloadCandidates(report.requirements);
   const quickInstall = canQuickInstall(report.category) && candidates.length > 0;
+  const switches = switchTargets(report.requirements);
   const orJoin = ` ${t("listing::item::or_join")} `;
 
   const names = report.requirements
@@ -551,6 +564,19 @@ function FileRequirementsListingRow({
             }}
           >
             {t("listing::pick_mod_install")}
+          </Button>
+        ) : report.category === "toggle" && switches.length > 0 ? (
+          <Button
+            appearance="moderate"
+            brand="neutral"
+            leftIconPath={mdiSwapHorizontal}
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              switchActiveVersions(api, switches);
+            }}
+          >
+            {t("detail::item::enable_this_version")}
           </Button>
         ) : null}
 
