@@ -17,6 +17,21 @@ import * as actions from "../actions/mods";
 import type { IMod } from "../types/IMod";
 import { referenceEqual } from "../util/testModReference";
 
+// A modId is unusable as a staging-folder name if it was corrupted by an
+// external state clobber - the installationPath self-heal uses this to tell a
+// recoverable key from rubbish. U+FFFD is what a UTF-8 decode
+// of clobbered key bytes yields; anything below U+0020 is a C0 control char.
+// Either means the key can't name a real folder on disk.
+function isUnusableModId(modId: string): boolean {
+  for (let i = 0; i < modId.length; ++i) {
+    const code = modId.charCodeAt(i);
+    if (code === 0xfffd || code < 0x20) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function reduceRule(input: IRule): IRule {
   if (input === undefined) {
     return undefined;
@@ -226,10 +241,14 @@ export const modsReducer: IReducerSpec = {
               // write. Recovering it preserves the mod's archiveId, attributes and
               // rules instead of orphaning the staging folder and splitting the
               // mod from its download. Only drop the record if the modId itself is
-              // unusable.
+              // unusable - i.e. missing/empty, or corrupted by an external state
+              // clobber into a name that can't name a real staging folder (a torn
+              // write / bit-rot leaves U+FFFD replacement chars or control chars,
+              // producing a phantom that would otherwise nag "Mods changed on
+              // disk" every launch.
               repair: (_input, _def, context) => {
                 const modId = context?.parentKey;
-                if (typeof modId === "string" && modId.length > 0) {
+                if (typeof modId === "string" && modId.length > 0 && !isUnusableModId(modId)) {
                   return modId;
                 }
                 throw new VerifierDropParent();
