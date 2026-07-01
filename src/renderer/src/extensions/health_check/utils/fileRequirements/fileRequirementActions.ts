@@ -1,14 +1,14 @@
+import { knownGames } from "@/extensions/gamemode_management/selectors";
 import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/health_check/types";
+import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
+import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { opn } from "@/util/api";
+import { opn, sanitizeCSSId, toPromise } from "@/util/api";
 
-// File-level requirement actions. Web links (mod page / file page) are implemented;
-// the nxm download, enabling/switching the active version, and revealing in the
-// loadout are still stubbed.
-//
-// TODO(LAZ-471): implement download, enable/switch active version, and view-in-loadout.
+// File-level requirement actions. Web links, single-file download, and reveal-in-loadout
+// are implemented; enable / switch active version is still stubbed (TODO(LAZ-471)).
 
 /** A file and its mod on Nexus, referenced by the composite UIDs. */
 interface INexusFileRef {
@@ -41,12 +41,52 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
   return mod && domain ? `https://www.nexusmods.com/${domain}/mods/${mod.id}` : undefined;
 }
 
-/** Download a file the user doesn't have (missing / wrong-version-installed). */
-export function downloadFileRequirement(
-  _api: IExtensionApi,
+/**
+ * Download and install a missing / wrong-version file. Free users can't 1-click install,
+ * so open the file page instead (website download); the premium upsell is out of MVP scope.
+ */
+export async function downloadFileRequirement(
+  api: IExtensionApi,
   candidate: IFileRequirementCandidate,
-): void {
-  log("info", "TODO: download file requirement", { fileUID: candidate.fileUID });
+): Promise<void> {
+  if (shouldShowPremiumAd(api.getState())) {
+    openFilePage(api, candidate);
+    return;
+  }
+
+  const mod = decodeUID(candidate.modUID);
+  const file = decodeUID(candidate.fileUID);
+  const domain = mod ? nexusDomain(mod.gameId) : undefined;
+  if (!mod || !file || !domain) {
+    log("warn", "cannot download file requirement: unresolved ids", {
+      fileUID: candidate.fileUID,
+    });
+    return;
+  }
+
+  // The downloader keys downloads on Vortex's internal game id, not the Nexus domain.
+  const internalGameId = convertGameIdReverse(knownGames(api.getState()), domain) || domain;
+  const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
+  try {
+    const dlId = await toPromise<string>((cb) =>
+      api.events.emit(
+        "start-download",
+        [nxmUrl],
+        { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
+        undefined,
+        cb,
+        undefined,
+        { allowInstall: false },
+      ),
+    );
+    await toPromise<string>((cb) =>
+      api.events.emit("start-install-download", dlId, { allowAutoEnable: true }, cb),
+    );
+  } catch (err) {
+    api.showErrorNotification(`Failed to install requirement: ${candidate.modName}`, err, {
+      allowReport: false,
+    });
+  }
 }
 
 /** Enable an installed-but-disabled file (wrong-version-enabled). */
@@ -87,7 +127,14 @@ export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
   opn(`${base}?tab=files&file_id=${file.id}&nmm=1`).catch(() => undefined);
 }
 
-/** Reveal an installed file in the mods/loadout view. */
-export function viewInLoadout(_api: IExtensionApi, file: IInstalledFile): void {
-  log("info", "TODO: view in loadout", { modId: file.modId });
+/**
+ * Reveal the mod in the Mods view: navigate, then scroll to and highlight its row (as the
+ * collections "Show in Mods" action does). The delay lets the mods table mount first.
+ */
+export function viewInLoadout(api: IExtensionApi, file: IInstalledFile): void {
+  api.events.emit("show-main-page", "Mods");
+  setTimeout(() => {
+    api.events.emit("mods-scroll-to", file.modId);
+    api.highlightControl(`.${sanitizeCSSId(file.modId)}`, 5000);
+  }, 2000);
 }
