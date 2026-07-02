@@ -10,21 +10,23 @@ import * as tooltip from "../../../../controls/TooltipControls";
 import { bytesToString } from "../../../../util/util";
 import type { IDownload } from "../../../download_management/types/IDownload";
 import renderModName from "../../../mod_management/util/modName";
-import { isRequiredRule } from "../../../mod_management/util/testModReference";
+import { isDependencyRule } from "../../../mod_management/util/testModReference";
 import type { IProfile } from "../../../profile_management/types/IProfile";
 import type { ICollectionItemRow } from "../../installSession/itemRows";
 import CollectionBanner from "./CollectionBanner";
 
-// a row counts towards the collection's progress/size if it has been acted on, or is a
-// not-yet-started required (non-ignored) mod (status-based equivalent of util.isRelevant)
+// a row counts towards the collection's progress/size if it is a selected member (a required mod or
+// an optional the user opted into) - either already acted on, or a not-yet-started one. A skipped
+// (ignored) member never counts, whatever its status: an ignored optional reconstructs to status
+// "ignored", so the ignored check must come first. Status-based equivalent of util.isRelevant.
 function itemRelevant(mod: ICollectionItemRow): boolean {
-  if (mod.status !== "pending" && mod.status !== "optional") {
-    return true;
-  }
   if (mod.collectionRule.ignored) {
     return false;
   }
-  return isRequiredRule(mod.collectionRule);
+  if (mod.status !== "pending" && mod.status !== "optional") {
+    return true;
+  }
+  return isDependencyRule(mod.collectionRule);
 }
 
 function itemsSize(mods: Record<string, ICollectionItemRow>): number {
@@ -120,7 +122,9 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
       mods,
     ).reduce<IModGroups>(
       (prev, mod) => {
-        if (isRequiredRule(mod.collectionRule) && !mod.collectionRule.ignored) {
+        // required mods and optionals the user selected (non-ignored); default-skipped
+        // optionals are ignored and excluded so they never hold the progress panel open
+        if (isDependencyRule(mod.collectionRule) && !mod.collectionRule.ignored) {
           prev[group(mod, downloads[mod.archiveId])].push(mod);
         }
         return prev;
@@ -205,7 +209,11 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
     const curInstall =
       installing.length > 0 ? installing.find((iter) => iter.status === "installing") : undefined;
 
-    const downloadProgress = Object.values(mods).reduce((prev, mod) => {
+    const relevant = Object.values(mods).filter(itemRelevant);
+
+    // numerator scoped to the same relevant members as totalSize so a default-skipped
+    // (ignored) optional's file size can't inflate the bar past 100%
+    const downloadProgress = relevant.reduce((prev, mod) => {
       let size = 0;
       if (mod.status === "downloading" || mod.status === "pending") {
         const download = downloads[mod.archiveId];
@@ -215,8 +223,6 @@ class CollectionProgress extends ComponentEx<ICollectionProgressProps, ICompStat
       }
       return prev + size;
     }, 0);
-
-    const relevant = Object.values(mods).filter(itemRelevant);
 
     return (
       <>

@@ -22,11 +22,11 @@ import type {
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import { makeModReference } from "../../mod_management/util/modReference";
+import { rulePhase } from "../../mod_management/util/rulePhase";
 import {
   findRuleByRef,
   isDependencyRule,
   isOptionalRule,
-  rulePhase,
 } from "../../mod_management/util/testModReference";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { BUNDLED_PATH, MOD_TYPE, PATCHES_PATH } from "../constants";

@@ -6,7 +6,9 @@
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
+import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type {
   CollectionModStatus,
@@ -53,6 +55,16 @@ export interface IApiHarness {
 export interface IDriverHarness extends IApiHarness {
   // the driver under test, constructed against the fake api
   driver: InstallDriver;
+}
+
+export interface IInstallManagerHarness extends IApiHarness {
+  // the InstallManager under test, constructed against the fake api (its event handlers are wired
+  // onto the same bus, so harness.emit drives them)
+  manager: InstallManager;
+  // the manager's per-collection phase-gating map. The manager keeps it private (the codebase is
+  // moving toward #private enforcement), so the harness is the single typed seam that exposes it -
+  // suites prime/inspect phase state through this rather than casting the manager per test.
+  phaseTracker: InstallPhaseTracker;
 }
 
 // One member of a collection revision. `tag` is the member's stable identity: keep the same tag

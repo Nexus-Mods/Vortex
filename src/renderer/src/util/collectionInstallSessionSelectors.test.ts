@@ -20,6 +20,7 @@ import type {
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
 import {
+  getCollectionInstallProgress,
   getCollectionModByReference,
   getCollectionPhaseProgress,
   getCollectionStatusBreakdown,
@@ -107,6 +108,48 @@ describe("getCollectionStatusBreakdown", () => {
     expect(breakdown.optional.installed).toBe(1);
     expect(breakdown.total.installed).toBe(2);
     expect(breakdown.total.downloading).toBe(1);
+  });
+});
+
+describe("getCollectionInstallProgress optional handling", () => {
+  it("excludes a default-skipped (ignored) optional from completion and progress", () => {
+    const state = stateWith([
+      { ruleId: "r1", type: "requires", status: "installed" },
+      { ruleId: "o1", type: "recommends", status: "ignored" },
+    ]);
+    const p = getCollectionInstallProgress(state)!;
+    expect(p.isComplete).toBe(true);
+    expect(p.installProgress).toBe(100);
+  });
+
+  it("counts a selected (non-ignored) optional toward completion, inflating the denominator", () => {
+    const state = stateWith([
+      { ruleId: "r1", type: "requires", status: "installed" },
+      { ruleId: "o1", type: "recommends", status: "pending" },
+    ]);
+    const p = getCollectionInstallProgress(state)!;
+    // one of two effective members installed
+    expect(p.isComplete).toBe(false);
+    expect(p.installProgress).toBe(50);
+  });
+
+  it("completes once the selected optional also installs", () => {
+    const state = stateWith([
+      { ruleId: "r1", type: "requires", status: "installed" },
+      { ruleId: "o1", type: "recommends", status: "installed" },
+    ]);
+    const p = getCollectionInstallProgress(state)!;
+    expect(p.isComplete).toBe(true);
+    expect(p.installProgress).toBe(100);
+  });
+
+  it("does not prematurely complete when an optional installs before the last required", () => {
+    const state = stateWith([
+      { ruleId: "r1", type: "requires", status: "installed" },
+      { ruleId: "r2", type: "requires", status: "pending" },
+      { ruleId: "o1", type: "recommends", status: "installed" },
+    ]);
+    expect(getCollectionInstallProgress(state)!.isComplete).toBe(false);
   });
 });
 

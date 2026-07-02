@@ -167,6 +167,60 @@ describe("InstallDriver session lifecycle", () => {
   });
 });
 
+describe("InstallDriver optional default-skip", () => {
+  const reqRule = makeRule({ type: "requires", reference: makeReference({ tag: "req-a" }) });
+  const optRule = makeRule({ type: "recommends", reference: makeReference({ tag: "opt-a" }) });
+
+  const startWith = async (h: IDriverHarness, fixture: ICollectionFixture) => {
+    await h.driver.start(profile, fixture.collection);
+    return h;
+  };
+
+  test("defaults an untouched optional member to skipped (ignored) at start", async ({
+    makeDriver,
+  }) => {
+    const fixture = buildCollectionFixture("col-opt", [reqRule, optRule]);
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
+      downloads: { [fixture.download.id]: fixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    await startWith(h, fixture);
+
+    const session = h.getState().session.collections.activeSession;
+    expect(session?.mods[modRuleId(optRule)].status).toBe("ignored");
+    // the required member is not skipped
+    expect(session?.mods[modRuleId(reqRule)].status).not.toBe("ignored");
+    // the skip is persisted durably on the rule; the required rule is untouched
+    const rules = h.getState().persistent.mods[GAME_ID]["col-opt"].rules ?? [];
+    expect(rules.find((r) => r.reference.tag === "opt-a")?.ignored).toBe(true);
+    expect(rules.find((r) => r.reference.tag === "req-a")?.ignored).toBeUndefined();
+  });
+
+  test("does not re-default an optional the user already selected (ignored:false)", async ({
+    makeDriver,
+  }) => {
+    const selectedOpt = makeRule({
+      type: "recommends",
+      reference: makeReference({ tag: "opt-sel" }),
+      ignored: false,
+    });
+    const fixture = buildCollectionFixture("col-sel", [reqRule, selectedOpt]);
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
+      downloads: { [fixture.download.id]: fixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    await startWith(h, fixture);
+
+    // a defined ignored wins: the prior selection is preserved, not reset to skipped
+    const rules = h.getState().persistent.mods[GAME_ID]["col-sel"].rules ?? [];
+    expect(rules.find((r) => r.reference.tag === "opt-sel")?.ignored).toBe(false);
+    const session = h.getState().session.collections.activeSession;
+    expect(session?.mods[modRuleId(selectedOpt)].status).not.toBe("ignored");
+  });
+});
+
 describe("InstallDriver premium install journey", () => {
   test("counts a member mod toward installedMods when it finishes installing", async ({
     startCollection,
@@ -384,6 +438,41 @@ describe("InstallDriver completion decision", () => {
     setSessionStatus(h, [memberRule], "failed");
 
     expect(h.driver.isInstallComplete(false)).toBe(true);
+  });
+});
+
+describe("InstallDriver installRecommended", () => {
+  // "Install optional mods" (dialog) clears the durable skip on the optional members and re-runs the
+  // NORMAL collection dependency install (the same install-dependencies event begin() uses) rather
+  // than a separate recommendations pass - so the now-selected optionals install at OPTIONAL_PHASE
+  // through the same phase engine and progress UI. installRecommendationsImpl is untouched; it still
+  // serves general, non-collection mod recommendations.
+  const optionalRule = makeRule({
+    type: "recommends",
+    reference: makeReference({ tag: "opt-a" }),
+    ignored: true,
+  });
+
+  test("clears ignored on the optionals and re-runs the normal install pass", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(makeCollectionFixture({ id: "col-opt", rule: optionalRule }));
+
+    const emitted: unknown[][] = [];
+    h.api.events.on("install-dependencies", (...args: unknown[]) => emitted.push(args));
+
+    h.driver.installRecommended();
+
+    // the optional's durable skip is cleared so the dependency gather (filterDependencyRules) keeps it
+    const rules = h.getState().persistent.mods[GAME_ID]["col-opt"].rules ?? [];
+    expect(rules.find((r) => r.reference.tag === "opt-a")?.ignored).toBe(false);
+
+    // routed through the normal pass, targeting the collection, silent like begin() - NOT a
+    // separate install-from-dependencies recommendations pass
+    expect(emitted).toEqual([[profile.id, GAME_ID, ["col-opt"], true]]);
+
+    // the finished dialog hides (step leaves review) while the phase engine installs the optionals
+    expect(h.driver.step).toBe("installing");
   });
 });
 

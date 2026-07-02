@@ -133,7 +133,7 @@ describe("collection install session state machine", () => {
     expect(progress.ignoredCount).toBe(1);
   });
 
-  it("optional (recommends) mods never block completion", () => {
+  it("a default-skipped (ignored) optional does not block completion", () => {
     const store = createSessionStore();
     const sessionId = startSession(
       store,
@@ -143,9 +143,28 @@ describe("collection install session state machine", () => {
       ]),
     );
 
-    // the only required mod installs; the optional one stays pending
+    // optionals default to skipped (ignored) at session start; the required mod installs
+    store.dispatch(updateModStatus(sessionId, "opt", "ignored"));
     store.dispatch(markModInstalled(sessionId, "req", "mod-req"));
 
+    expect(progressOf(store)!.isComplete).toBe(true);
+  });
+
+  it("a selected (non-ignored) optional blocks completion until it is terminal", () => {
+    const store = createSessionStore();
+    const sessionId = startSession(
+      store,
+      modsByRule([
+        { ruleId: "req", type: "requires" },
+        { ruleId: "opt", type: "recommends" },
+      ]),
+    );
+
+    // a selected optional is pending -> it counts toward completion like a required member
+    store.dispatch(markModInstalled(sessionId, "req", "mod-req"));
+    expect(progressOf(store)!.isComplete).toBe(false);
+
+    store.dispatch(markModInstalled(sessionId, "opt", "mod-opt"));
     expect(progressOf(store)!.isComplete).toBe(true);
   });
 

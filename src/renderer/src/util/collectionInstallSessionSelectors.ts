@@ -4,11 +4,11 @@ import { createSelector } from "reselect";
 
 import { activeDownloads } from "../extensions/download_management/selectors";
 import { modsForActiveGame } from "../extensions/mod_management/selectors";
+import { rulePhase } from "../extensions/mod_management/util/rulePhase";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import testModReference, {
   isOptionalRule,
   isRequiredRule,
-  rulePhase,
 } from "../extensions/mod_management/util/testModReference";
 import type {
   ICollectionInstallState,
@@ -309,10 +309,27 @@ export const getCollectionInstallProgress = createSelector(
       isTerminalMemberStatus(mod.status),
     ).length;
 
-    const installProgress =
-      session.totalRequired > 0 ? Math.round((installedRequired / session.totalRequired) * 100) : 0;
+    // A selected (unskipped) optional counts toward completion exactly like a required member: it
+    // inflates the denominator and must reach a terminal status. A default-skipped optional is
+    // "ignored" and stays out of the denominator entirely. Computed per-member (never the mixed
+    // aggregate counters, which caused the premature-complete bug noted above).
+    const activeOptionals = session.mods
+      ? Object.values(session.mods).filter((mod) => isOptionalRule(mod) && mod.status !== "ignored")
+      : [];
+    const installedActiveOptional = activeOptionals.filter(
+      (mod) => mod.status === "installed",
+    ).length;
+    const completedActiveOptional = activeOptionals.filter((mod) =>
+      isTerminalMemberStatus(mod.status),
+    ).length;
 
-    const isComplete = completedRequired >= session.totalRequired;
+    const effectiveTotal = session.totalRequired + activeOptionals.length;
+    const installProgress =
+      effectiveTotal > 0
+        ? Math.round(((installedRequired + installedActiveOptional) / effectiveTotal) * 100)
+        : 0;
+
+    const isComplete = completedRequired + completedActiveOptional >= effectiveTotal;
 
     return {
       totalRequired: session.totalRequired,

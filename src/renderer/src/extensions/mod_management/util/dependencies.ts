@@ -14,15 +14,31 @@ import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { semverCoerce, truthy } from "../../../util/util";
 import type { IDependency, ILookupResultEx } from "../types/IDependency";
-import type { IDownloadHint, IModReference, IModRule } from "../types/IMod";
+import type { IDownloadHint, IMod, IModReference, IModRule } from "../types/IMod";
 import { findModByRef } from "./findModByRef";
 import { isFuzzyVersion } from "./isFuzzyVersion";
+import { rulePhase } from "./rulePhase";
 import testModReference, {
+  isOptionalRule,
   ruleInstallSpec,
-  rulePhase,
   testRefByIdentifiers,
 } from "./testModReference";
 import type { IModLookupInfo } from "./testModReference";
+
+/**
+ * The optional (recommends) members the user has SELECTED (ignored:false) that still need
+ * installing - not already installed with the wanted install spec. Drives the trailing optional
+ * phase from the LIVE rules so a mid-install "Stop Ignoring" is picked up (the start snapshot
+ * missed it). Keyed off the durable `ignored` flag, so it reflects the user's current choice.
+ */
+export function selectedOptionalRules(rules: IModRule[], mods: Record<string, IMod>): IModRule[] {
+  return (rules ?? []).filter(
+    (rule) =>
+      isOptionalRule(rule) &&
+      !rule.ignored &&
+      findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule)) === undefined,
+  );
+}
 
 interface IBrowserResult {
   url: string | (() => PromiseLike<string>);

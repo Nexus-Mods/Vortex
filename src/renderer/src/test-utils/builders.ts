@@ -30,6 +30,7 @@ import type {
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type InstallManager from "../extensions/mod_management/InstallManager";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
 import type {
   IChoiceType,
@@ -39,6 +40,7 @@ import type {
   IModReference,
   IModRule,
 } from "../extensions/mod_management/types/IMod";
+import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import type { IProfileMod } from "../extensions/profile_management/types/IProfile";
 import trackingReducer from "../reducers/collectionInstallTracking";
@@ -57,6 +59,7 @@ import type {
   IApiHarness,
   IDriverHarness,
   IDriverHarnessState,
+  IInstallManagerHarness,
   IRevisionFixture,
   IRevisionMemberSpec,
   ITrackedAction,
@@ -345,6 +348,11 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
       interface: { language: "en" },
       gameMode: { discovered: {} },
+      // empty skeletons so tests can assign settings.mods.installPath[gameId] /
+      // settings.profiles.activeProfileId through the typed draft without a cast (the single
+      // as-unknown-as-IState below covers the omitted fields)
+      mods: { installPath: {} },
+      profiles: { activeProfileId: undefined, nextProfileId: undefined, lastActiveProfile: {} },
     },
   } as unknown as IState;
 }
@@ -512,4 +520,28 @@ export function makeDriverHarness(
   const base = makeApiHarness(overrides);
   const driver = new DriverCtor(base.api);
   return { driver, ...base };
+}
+
+/**
+ * Harness for InstallManager phase-engine tests. Constructs the REAL InstallManager against the
+ * fake api (makeApiHarness), so its event handlers (install-from-dependencies, did-finish-download,
+ * ...) are wired onto the same bus a harness.emit drives. The ctor is passed in (like
+ * makeDriverHarness) to keep the heavy InstallManager import out of builders. Seeds
+ * settings.mods.installPath so installPathForGame resolves a concrete staging folder.
+ */
+export function makeInstallManagerHarness(
+  ManagerCtor: new (api: IExtensionApi, installPath: (gameId: string) => string) => InstallManager,
+  overrides: Partial<IDriverHarnessState> = {},
+  gameId = "skyrimse",
+): IInstallManagerHarness {
+  registerHarnessGame(gameId);
+  const base = makeApiHarness(overrides);
+  base.setState((draft) => {
+    draft.settings.mods.installPath[gameId] = `C:/staging/${gameId}`;
+  });
+  const manager = new ManagerCtor(base.api, (gid: string) => `C:/staging/${gid}`);
+  // single seam: reach the manager's private phase map once here so suites get a typed handle
+  // instead of casting the manager per test
+  const phaseTracker = (manager as unknown as { mPhaseTracker: InstallPhaseTracker }).mPhaseTracker;
+  return { manager, phaseTracker, ...base };
 }

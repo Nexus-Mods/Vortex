@@ -5,7 +5,7 @@ import { makeCollectionMod, makeGameStored } from "../../../test-utils/builders"
 import type { IDialogContent } from "../../../types/IDialog";
 import type { TFunction } from "../../../util/i18n";
 import type { IMod, IModReference, IModRule } from "../../mod_management/types/IMod";
-import { rulePhase } from "../../mod_management/util/testModReference";
+import { rulePhase } from "../../mod_management/util/rulePhase";
 import type {
   ICollectionInfo,
   ICollectionMod,
