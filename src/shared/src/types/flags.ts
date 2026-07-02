@@ -16,13 +16,20 @@ type FlagVariantSchemas = typeof flagVariantSchemas;
 export type KnownFlagName = keyof FlagVariantSchemas;
 export const knownFlagNames: ReadonlySet<string> = new Set(Object.keys(flagVariantSchemas));
 
-type FlagVariantUnion<TVariants extends Record<string, z.ZodType>> = {
-  [K in keyof TVariants]: { name: K; data: z.infer<TVariants[K]> };
-}[keyof TVariants];
+type FlagVariantUnion<TVariants extends Record<string, z.ZodType>> = keyof TVariants extends never
+  ? never
+  : {
+      [K in keyof TVariants]: { name: K; data: z.infer<TVariants[K]> };
+    }[keyof TVariants];
 
 export type FeatureFlag = {
-  [K in keyof FlagVariantSchemas]: {
-    name: K;
-    variant?: FlagVariantUnion<FlagVariantSchemas[K]>;
-  };
+  [K in keyof FlagVariantSchemas]: FlagVariantUnion<FlagVariantSchemas[K]> extends never
+    ? {
+        name: K;
+        variant?: undefined;
+      }
+    : {
+        name: K;
+        variant?: FlagVariantUnion<FlagVariantSchemas[K]>;
+      };
 }[keyof FlagVariantSchemas];

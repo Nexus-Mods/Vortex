@@ -295,6 +295,15 @@ try {
 
     featureFlags: {
       onSynchronize: (callback) => {
+        // Fetch current flags on register (async, but return cleanup function synchronously)
+        betterIpcRenderer
+          .invoke("flags:get-current")
+          .then((currentFlags) => setTimeout(() => callback(currentFlags)))
+          .catch(() => {
+            /* ignored */
+          });
+
+        // Listen for future updates
         const listener = (_: Electron.IpcRendererEvent, flags: Parameters<typeof callback>[0]) =>
           callback(flags);
         ipcRenderer.on("flags:synchronize", listener);

@@ -394,6 +394,9 @@ export interface InvokeChannels {
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
 
+  // Feature flags: get current flags from main process
+  "flags:get-current": () => Promise<FeatureFlag[]>;
+
   // Download channels
   "download:start": (dest: string, collationId: number) => Promise<{ downloadId: string }>;
   "download:pause": (downloadId: string) => Promise<WireDownloadCheckpoint>;

@@ -101,11 +101,18 @@ describe("flags and getFlag", () => {
 // -- Subscriptions -----------------------------------------------------------
 
 describe("subscribe", () => {
+  it("fires callback with current flags on subscribe", () => {
+    const cb = vi.fn();
+    FlagService.instance.subscribe(cb);
+    expect(cb).toHaveBeenCalledOnce();
+    expect(cb).toHaveBeenCalledWith(new Map());
+  });
+
   it("fires callback when flags are pushed", () => {
     const cb = vi.fn();
     FlagService.instance.subscribe(cb);
     push([{ name: "vortex-test-flag" }]);
-    expect(cb).toHaveBeenCalledOnce();
+    expect(cb).toHaveBeenCalledTimes(2);
   });
 
   it("fires callback on each subsequent push", () => {
@@ -113,27 +120,35 @@ describe("subscribe", () => {
     FlagService.instance.subscribe(cb);
     push([{ name: "vortex-test-flag" }]);
     push([]);
-    expect(cb).toHaveBeenCalledTimes(2);
+    expect(cb).toHaveBeenCalledTimes(3);
   });
 
   it("unsubscribe stops the callback from firing", () => {
     const cb = vi.fn();
     const unsubscribe = FlagService.instance.subscribe(cb);
+    expect(cb).toHaveBeenCalledOnce();
     unsubscribe();
     push([{ name: "vortex-test-flag" }]);
-    expect(cb).not.toHaveBeenCalled();
+    expect(cb).toHaveBeenCalledOnce();
   });
 });
 
 // -- Per-flag subscriptions --------------------------------------------------
 
 describe("subscribeToFlag", () => {
+  it("fires callback with current flag on subscribe", () => {
+    const cb = vi.fn();
+    FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
+    expect(cb).toHaveBeenCalledOnce();
+    expect(cb).toHaveBeenCalledWith(undefined, undefined);
+  });
+
   it("fires callback when the subscribed flag appears", () => {
     const cb = vi.fn();
     FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
     push([{ name: "vortex-test-flag" }]);
-    expect(cb).toHaveBeenCalledOnce();
-    expect(cb).toHaveBeenCalledWith(undefined, { name: "vortex-test-flag" });
+    expect(cb).toHaveBeenCalledTimes(2);
+    expect(cb).toHaveBeenLastCalledWith(undefined, { name: "vortex-test-flag" });
   });
 
   it("fires callback when the subscribed flag disappears", () => {
@@ -141,8 +156,9 @@ describe("subscribeToFlag", () => {
     push([{ name: "vortex-test-flag" }]);
     FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
     push([]);
-    expect(cb).toHaveBeenCalledOnce();
-    expect(cb).toHaveBeenCalledWith({ name: "vortex-test-flag" }, undefined);
+    expect(cb).toHaveBeenCalledTimes(2);
+    expect(cb).toHaveBeenNthCalledWith(1, undefined, { name: "vortex-test-flag" });
+    expect(cb).toHaveBeenNthCalledWith(2, { name: "vortex-test-flag" }, undefined);
   });
 
   it("fires callback when the flag variant changes", () => {
@@ -158,7 +174,9 @@ describe("subscribeToFlag", () => {
     const cb = vi.fn();
     FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
     push([after]);
-    expect(cb).toHaveBeenCalledWith(before, after);
+    expect(cb).toHaveBeenCalledTimes(2);
+    expect(cb).toHaveBeenNthCalledWith(1, undefined, before);
+    expect(cb).toHaveBeenNthCalledWith(2, before, after);
   });
 
   it("does not fire when the flag is unchanged between pushes", () => {
@@ -167,7 +185,8 @@ describe("subscribeToFlag", () => {
     const cb = vi.fn();
     FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
     push([flag]);
-    expect(cb).not.toHaveBeenCalled();
+    expect(cb).toHaveBeenCalledOnce();
+    expect(cb).toHaveBeenCalledWith(undefined, flag);
   });
 
   it("does not fire when a push contains no change to the subscribed flag", () => {
@@ -178,15 +197,17 @@ describe("subscribeToFlag", () => {
     FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
     // Push an empty update: subscribed flag goes from undefined -> undefined, no change.
     push([]);
-    expect(cb).not.toHaveBeenCalled();
+    expect(cb).toHaveBeenCalledOnce();
+    expect(cb).toHaveBeenCalledWith(undefined, undefined);
   });
 
   it("unsubscribe stops the callback from firing", () => {
     const cb = vi.fn();
     const unsubscribe = FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
+    expect(cb).toHaveBeenCalledOnce();
     unsubscribe();
     push([{ name: "vortex-test-flag" }]);
-    expect(cb).not.toHaveBeenCalled();
+    expect(cb).toHaveBeenCalledOnce();
   });
 
   it("cleans up the subscriber set after the last unsubscribe", () => {

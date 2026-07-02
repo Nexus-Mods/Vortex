@@ -116,24 +116,25 @@ export class FlagService {
   }
 
   /**
-   * Subscribes to flag map changes. The callback is invoked synchronously
-   * inside the onSynchronize handler each time main pushes updated flags.
-   * Returns an unsubscribe function.
+   * Subscribes to flag map changes. The callback is invoked immediately with
+   * the current flags, then again synchronously inside the onSynchronize handler
+   * each time main pushes updated flags. Returns an unsubscribe function.
    *
    * Does not count towards metrics.
    */
   subscribe(callback: SubscribeCallback): () => void {
     this.#subscribers.add(callback);
+    callback(this.#flags);
     return () => {
       this.#subscribers.delete(callback);
     };
   }
 
   /**
-   * Subscribes to value changes for a single named flag. The callback receives
-   * the previous and next flag values (either may be undefined if the flag was
-   * absent before or after the update). Only called when the value actually
-   * changes between synchronizations. Returns an unsubscribe function.
+   * Subscribes to value changes for a single named flag. The callback is invoked
+   * immediately with prev=undefined and next=current flag (or undefined if absent),
+   * then again only when the value actually changes between synchronizations.
+   * Returns an unsubscribe function.
    *
    * Does not count towards metrics.
    */
@@ -148,6 +149,8 @@ export class FlagService {
     }
 
     subs.add(callback);
+    const currentFlag = this.#flags.get(name) as FlagByName<N> | undefined;
+    callback(undefined, currentFlag);
     return () => {
       subs.delete(callback);
       if (subs.size === 0) {

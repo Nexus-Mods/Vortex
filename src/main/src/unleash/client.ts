@@ -275,12 +275,17 @@ function parseToggle({ name, variant }: UnleashToggle): FeatureFlag | undefined 
     return undefined;
   }
 
-  return {
+  const parsedVariant = variant?.payload
+    ? parseVariantData(flagName, variant.name, variant.payload.value)
+    : undefined;
+
+  const res = {
     name: flagName,
-    variant: variant?.payload
-      ? parseVariantData(flagName, variant.name, variant.payload.value)
-      : undefined,
+    variant: parsedVariant,
   };
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+  return res as FeatureFlag;
 }
 
 function parseVariantData(
