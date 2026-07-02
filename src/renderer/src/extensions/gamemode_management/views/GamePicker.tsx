@@ -84,6 +84,10 @@ interface IComponentState {
   currentFilterValue: string;
   expandManaged: boolean;
   expandUnmanaged: boolean;
+  // How many tiles per list to actually render. Grows a chunk per frame so the
+  // (potentially hundreds of) tiles mount incrementally instead of blocking the
+  // main thread in one synchronous pass.
+  renderLimit: number;
 }
 
 function nop() {
@@ -99,11 +103,16 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   // "PAYDAY 2" vs "Payday 2" or "Resident Evil: Village" vs "Resident Evil Village" are 100 similar
   // "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
   public static SIMILARITY_RATIO: number = 90;
+  // Tiles revealed per frame while streaming in the list.
+  private static RENDER_CHUNK = 60;
   declare public context: IComponentContext;
 
   private buttons: IActionDefinition[];
   private mRef: HTMLElement;
   private mScrollRef: HTMLElement;
+  private mGrowRAF: number;
+  // Largest list length the current render needs to fully reveal; drives the grow loop.
+  private mDisplayedCount = 0;
 
   private nexusGameById = memoizeOne((gameList: IGameListEntry[]) =>
     gameList.reduce<{ [id: string]: IGameListEntry }>((prev, entry) => {
@@ -129,6 +138,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       currentFilterValue: "",
       expandManaged: true,
       expandUnmanaged: true,
+      renderLimit: GamePicker.RENDER_CHUNK,
     });
 
     this.buttons = [
@@ -142,6 +152,33 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       },
     ];
   }
+
+  public componentDidMount() {
+    this.scheduleGrow();
+  }
+
+  public componentDidUpdate() {
+    this.scheduleGrow();
+  }
+
+  public componentWillUnmount() {
+    if (this.mGrowRAF !== undefined) {
+      cancelAnimationFrame(this.mGrowRAF);
+    }
+  }
+
+  // Reveal another chunk of tiles on the next frame until the whole list is
+  // rendered. renderLimit only grows, so it self-heals when more games arrive
+  // and never needs resetting (a smaller filtered list is fully shown at once).
+  private scheduleGrow = () => {
+    if (this.mGrowRAF !== undefined || this.state.renderLimit >= this.mDisplayedCount) {
+      return;
+    }
+    this.mGrowRAF = requestAnimationFrame(() => {
+      this.mGrowRAF = undefined;
+      this.nextState.renderLimit = this.state.renderLimit + GamePicker.RENDER_CHUNK;
+    });
+  };
 
   public render(): JSX.Element {
     const {
@@ -240,6 +277,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const filteredUnmanaged = unmanagedGameList
       .filter((game) => this.applyGameFilter(game))
       .sort(this.sortBy(sortUnmanaged));
+
+    // Drive the incremental grow loop (see scheduleGrow) off the largest list.
+    this.mDisplayedCount = Math.max(filteredManaged.length, filteredUnmanaged.length);
 
     const titleManaged = t("Managed ({{filterCount}})", {
       replace: {
@@ -549,11 +589,14 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     }
 
+    // Only render up to renderLimit tiles; the rest stream in over later frames.
+    const shown = games.slice(0, this.state.renderLimit);
+
     switch (pickerLayout) {
       case "list":
-        return this.renderGamesList(games, type, gameMode);
+        return this.renderGamesList(shown, type, gameMode);
       case "small":
-        return this.renderGamesSmall(games, type, gameMode);
+        return this.renderGamesSmall(shown, type, gameMode);
       default:
         throw new Error("invalid picker layout " + pickerLayout);
     }
