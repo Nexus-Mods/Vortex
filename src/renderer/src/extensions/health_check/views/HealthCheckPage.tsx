@@ -1,180 +1,183 @@
-import {
-  mdiAlertCircle,
-  mdiCheckCircle,
-  mdiChevronRight,
-  mdiCog,
-  mdiEye,
-  mdiEyeOff,
-  mdiRefresh,
-} from "@mdi/js";
-import React, { useCallback, useMemo, useState, type MouseEvent, type KeyboardEvent } from "react";
+import { mdiCheckCircle, mdiCog, mdiDownload, mdiEye, mdiEyeOff, mdiRefresh } from "@mdi/js";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import { setOpenMainPage, setSettingsPage } from "../../../actions/session";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { Button } from "../../../ui/components/button/Button";
-import { Icon } from "../../../ui/components/icon/Icon";
-import { NoResults } from "../../../ui/components/no_results/NoResults";
-import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
-import { TabBar } from "../../../ui/components/tabs/TabBar";
-import { TabButton } from "../../../ui/components/tabs/TabButton";
-import { TabPanel } from "../../../ui/components/tabs/TabPanel";
-import { TabProvider } from "../../../ui/components/tabs/Tabs.context";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { batchDispatch } from "../../../util/util";
-import MainPage from "../../../views/MainPage";
-import { setRequirementHidden, clearAllHiddenRequirements } from "../actions/persistent";
-import { hiddenRequirements, allModRequirements } from "../selectors";
-import type { IModFileInfo, IModRequirementExt } from "../types";
+import { setOpenMainPage, setSettingsPage } from "@/actions/session";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
+import { NoResults } from "@/ui/components/no_results/NoResults";
+import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
+import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabButton } from "@/ui/components/tabs/TabButton";
+import { TabPanel } from "@/ui/components/tabs/TabPanel";
+import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import { Typography } from "@/ui/components/typography/Typography";
+import MainPage from "@/views/MainPage";
+
+import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
+import { PremiumModal } from "../components/premium_modal/PremiumModal";
+import {
+  fileRequirementsCheckResult,
+  hiddenFileRequirements,
+  hiddenModRequirements,
+  modRequirementsCheckResult,
+} from "../selectors";
+import { healthCheckContent } from "./content/registry";
+import type { IBulkInstallItem, IHealthCheckContent, IHealthCheckEntry } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
-
-const Mod = ({
-  isHidden,
-  onClick,
-  onToggleHide,
-  requirementInfo,
-}: {
-  isHidden?: boolean;
-  requirementInfo: IModRequirementExt;
-  onClick: () => void;
-  onToggleHide?: (e: MouseEvent) => void;
-}) => {
-  const { t } = useTranslation("health_check");
-
-  return (
-    <div
-      className="hover-overlay-weak flex w-full cursor-pointer items-center gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-subdued"
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e: KeyboardEvent) => {
-        if (["Enter", " "].includes(e.key)) {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-    >
-      <Icon className="shrink-0 text-info-strong" path={mdiAlertCircle} />
-
-      <div className="grow space-y-0.5 text-left">
-        <Typography>
-          {t("listing::item::title", {
-            modName: requirementInfo.requiredBy.modName,
-          })}
-        </Typography>
-
-        <Typography appearance="subdued" typographyType="body-sm">
-          {t("listing::item::description", {
-            dependencyModName:
-              requirementInfo.modName || requirementInfo.modUrl || requirementInfo.notes,
-          })}
-        </Typography>
-      </div>
-
-      <Button
-        brand="neutral"
-        appearance="moderate"
-        leftIconPath={isHidden ? mdiEye : mdiEyeOff}
-        size="sm"
-        title={isHidden ? t("common:::unhide") : t("common:::hide")}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleHide?.(e);
-        }}
-      />
-
-      <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
-    </div>
-  );
-};
 
 interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
-  onDownloadRequirement?: (mod: IModRequirementExt, file?: IModFileInfo) => Promise<void>;
 }
 
-function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheckPageProps) {
+interface IListedEntry {
+  entry: IHealthCheckEntry;
+  content: IHealthCheckContent;
+  hidden: boolean;
+}
+
+/** Gather entries from every registered health-check content provider. */
+function selectListedEntries(state: IState): IListedEntry[] {
+  const items: IListedEntry[] = [];
+  for (const content of Object.values(healthCheckContent)) {
+    if (!content) {
+      continue;
+    }
+    for (const entry of content.selectEntries(state)) {
+      items.push({ entry, content, hidden: content.isHidden?.(state, entry) ?? false });
+    }
+  }
+  return items;
+}
+
+/** No-choice install items from every check, de-duplicated across checks by key. */
+function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstallItem[] {
+  const seen = new Set<string>();
+  const out: IBulkInstallItem[] = [];
+  for (const content of Object.values(healthCheckContent)) {
+    for (const item of content?.collectInstallAll?.(state, api) ?? []) {
+      if (!seen.has(item.key)) {
+        seen.add(item.key);
+        out.push(item);
+      }
+    }
+  }
+  return out;
+}
+
+function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
-  const [showDetail, setShowDetail] = useState(false);
+  const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
-  const [selectedRequirement, setSelectedRequirement] = useState<IModRequirementExt | null>(null);
 
-  const modRequirements: IModRequirementExt[] = useSelector(allModRequirements);
+  // Subscribe only to the slices the listing + install-all derive from, so the
+  // frequent unrelated dispatches during a check run (running-state toggles, mod-file
+  // and mod-attribute caching) neither recompute the list nor re-render the rows.
+  // setSafe preserves these refs across those writes, so the memos recompute only
+  // when results or hidden state actually change.
+  const fileResult = useSelector(fileRequirementsCheckResult);
+  const modResult = useSelector(modRequirementsCheckResult);
+  const hiddenFile = useSelector(hiddenFileRequirements);
+  const hiddenMod = useSelector(hiddenModRequirements);
+  const showPremiumAd = useSelector(shouldShowPremiumAd);
+  const [showInstallAllPremium, setShowInstallAllPremium] = useState(false);
 
-  const hiddenReqsMap = useSelector(hiddenRequirements);
-
-  const isModRequirementHidden = useCallback(
-    (mod: IModRequirementExt): boolean => {
-      const hiddenReqs = hiddenReqsMap[mod.requiredBy.modId] || [];
-      return hiddenReqs.includes(mod.id);
-    },
-    [hiddenReqsMap],
+  // selectListedEntries / collectInstallAllItems read the slices above from the live
+  // state; those slices fully determine their results. exhaustive-deps can't see the
+  // getState() read, so it treats the slice deps as "unnecessary" (they are not).
+  const items = useMemo(
+    () => selectListedEntries(api.getState()),
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    [api, fileResult, modResult, hiddenFile, hiddenMod],
+  );
+  const installAllItems = useMemo(
+    () => collectInstallAllItems(api.getState(), api),
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    [api, fileResult, modResult, hiddenFile, hiddenMod],
   );
 
-  // Filter active and hidden mods
-  const activeMods = useMemo(
-    () => modRequirements.filter((mod) => !isModRequirementHidden(mod)),
-    [modRequirements, isModRequirementHidden],
-  );
+  const activeItems = useMemo(() => items.filter((item) => !item.hidden), [items]);
+  const hiddenItems = useMemo(() => items.filter((item) => item.hidden), [items]);
+  const supportsHide = useMemo(() => items.some((item) => item.content.supportsHide), [items]);
 
-  const hiddenMods = useMemo(
-    () => modRequirements.filter((mod) => isModRequirementHidden(mod)),
-    [modRequirements, isModRequirementHidden],
-  );
-
-  const toggleHideMod = (mod: IModRequirementExt) => {
-    const isHidden = isModRequirementHidden(mod);
-    if (isHidden) {
-      // Unhide: clear all hidden dependencies for this mod
-      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, false));
-    } else {
-      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
-    }
-  };
-
-  const hideAllActive = () => {
-    const batched = [];
-    activeMods.forEach((mod) => {
-      batched.push(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
-    });
-    batchDispatch(dispatch, batched);
-  };
-
-  const unhideAll = () => {
-    dispatch(clearAllHiddenRequirements(undefined));
-  };
-
-  if (showDetail && selectedRequirement) {
+  if (selected) {
     return (
       <HealthCheckDetailPage
         api={api}
-        mod={selectedRequirement}
-        onBack={() => {
-          setShowDetail(false);
-          setSelectedRequirement(null);
-        }}
-        onDownloadMod={(mod, file) => onDownloadRequirement?.(mod, file)}
+        content={selected.content}
+        entry={selected.entry}
+        onBack={() => setSelected(null)}
       />
     );
   }
 
-  const activeCount = activeMods.length;
-  const hiddenCount = hiddenMods.length;
+  const activeCount = activeItems.length;
+  const hiddenCount = hiddenItems.length;
+
+  const renderRow = (item: IListedEntry) => {
+    const { content, entry } = item;
+    return (
+      <content.ListingRow
+        api={api}
+        entry={entry}
+        isHidden={item.hidden}
+        key={`${entry.checkId}:${entry.id}`}
+        onOpen={() => setSelected(item)}
+        onToggleHide={() => content.toggleHide?.(api, entry)}
+      />
+    );
+  };
+
+  const hideAllActive = () => {
+    activeItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
+  };
+
+  const unhideAll = () => {
+    hiddenItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
+  };
+
+  // 1-click install all the no-choice downloads (premium-gated for free users).
+  // TODO(LAZ-471): the real download resolution and cross-check de-duplication of
+  // in-flight downloads live in the per-item install actions (still stubbed for
+  // file-level); this just fans out to each contributed item.
+  const installAll = () => {
+    if (showPremiumAd) {
+      setShowInstallAllPremium(true);
+      return;
+    }
+    installAllItems.forEach((item) => item.install());
+  };
+
+  const activeList =
+    activeCount > 0 ? (
+      <div className="space-y-2">{activeItems.map(renderRow)}</div>
+    ) : (
+      <NoResults
+        appearance="success"
+        className="py-24"
+        iconPath={mdiCheckCircle}
+        message={t("listing::no_results_active::message")}
+        title={t("listing::no_results_active::title")}
+      />
+    );
 
   return (
     <MainPage id="health-check-page">
       <MainPage.Body>
-        <div className="h-full space-y-4 overflow-y-auto p-6">
+        <div className="h-full space-y-6 overflow-y-auto p-6">
           <div className="flex items-center gap-x-6">
             <div className="flex grow items-center gap-x-2">
               <Pictogram name="health-check" size="sm" />
 
               <div className="grow">
                 <div className="flex items-center gap-x-1.5">
-                  <Typography as="h2" className="m-0" typographyType="heading-xs">
+                  <Typography as="h2" typographyType="heading-xs">
                     {t("listing::title")}
                   </Typography>
 
@@ -193,8 +196,8 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
 
             <div className="flex shrink-0 gap-x-2">
               <Button
+                appearance="subdued"
                 brand="neutral"
-                appearance="moderate"
                 leftIconPath={mdiRefresh}
                 size="sm"
                 title={t("common:::refresh")}
@@ -202,8 +205,8 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
               />
 
               <Button
+                appearance="subdued"
                 brand="neutral"
-                appearance="moderate"
                 leftIconPath={mdiCog}
                 size="sm"
                 title={t("common:::settings")}
@@ -215,87 +218,81 @@ function HealthCheckPage({ api, onRefresh, onDownloadRequirement }: IHealthCheck
             </div>
           </div>
 
-          <TabProvider
-            tab={selectedTab}
-            tabListId="health-check-mods"
-            tabType="secondary"
-            onSetSelectedTab={setSelectedTab}
-          >
-            <div className="flex items-center justify-between">
-              <TabBar>
-                <TabButton count={activeMods.length} name={t("common:::active")} />
+          {supportsHide ? (
+            <TabProvider
+              tab={selectedTab}
+              tabListId="health-check-mods"
+              tabType="secondary"
+              onSetSelectedTab={setSelectedTab}
+            >
+              <div className="flex items-center justify-between">
+                <TabBar>
+                  <TabButton count={activeCount} name={t("common:::active")} />
 
-                <TabButton count={hiddenMods.length} name={t("common:::hidden")} />
-              </TabBar>
+                  <TabButton count={hiddenCount} name={t("common:::hidden")} />
+                </TabBar>
 
-              <Button
-                brand="neutral"
-                appearance="moderate"
-                disabled={
-                  (selectedTab === "active" && !activeCount) ||
-                  (selectedTab === "hidden" && !hiddenCount)
-                }
-                leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
-                size="sm"
-                onClick={selectedTab === "active" ? hideAllActive : unhideAll}
-              >
-                {selectedTab === "active"
-                  ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
-                  : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
-              </Button>
-            </div>
+                <div className="flex items-center gap-x-2">
+                  {/* TODO(LAZ-662): install-all is disabled for the MVP; re-enable once
+                      the bulk download resolution + in-flight de-duplication lands. */}
+                  {selectedTab === "active" && installAllItems.length > 0 && (
+                    <Button
+                      appearance="moderate"
+                      brand="neutral"
+                      disabled
+                      leftIconPath={mdiDownload}
+                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                      size="sm"
+                      onClick={installAll}
+                    >
+                      {t("actions::install_all", { count: installAllItems.length })}
+                    </Button>
+                  )}
 
-            <TabPanel name="active">
-              {!activeCount ? (
-                <NoResults
-                  appearance="success"
-                  className="py-24"
-                  iconPath={mdiCheckCircle}
-                  message={t("listing::no_results_active::message")}
-                  title={t("listing::no_results_active::title")}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {activeMods.map((mod) => (
-                    <Mod
-                      key={`${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`}
-                      requirementInfo={mod}
-                      onClick={() => {
-                        setSelectedRequirement(mod);
-                        setShowDetail(true);
-                      }}
-                      onToggleHide={() => toggleHideMod(mod)}
-                    />
-                  ))}
+                  <Button
+                    appearance="subdued"
+                    brand="neutral"
+                    disabled={
+                      (selectedTab === "active" && !activeCount) ||
+                      (selectedTab === "hidden" && !hiddenCount)
+                    }
+                    leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
+                    size="sm"
+                    onClick={selectedTab === "active" ? hideAllActive : unhideAll}
+                  >
+                    {selectedTab === "active"
+                      ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
+                      : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
+                  </Button>
                 </div>
-              )}
-            </TabPanel>
+              </div>
 
-            <TabPanel name="hidden">
-              {!hiddenCount ? (
-                <NoResults
-                  className="py-24"
-                  iconPath={mdiEyeOff}
-                  title={t("listing::no_results_hidden::title")}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {hiddenMods.map((mod) => (
-                    <Mod
-                      isHidden={true}
-                      key={`${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`}
-                      requirementInfo={mod}
-                      onClick={() => {
-                        setSelectedRequirement(mod);
-                        setShowDetail(true);
-                      }}
-                      onToggleHide={() => toggleHideMod(mod)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabPanel>
-          </TabProvider>
+              <TabPanel name="active">{activeList}</TabPanel>
+
+              <TabPanel name="hidden">
+                {hiddenCount > 0 ? (
+                  <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
+                ) : (
+                  <NoResults
+                    className="py-24"
+                    iconPath={mdiEyeOff}
+                    title={t("listing::no_results_hidden::title")}
+                  />
+                )}
+              </TabPanel>
+            </TabProvider>
+          ) : (
+            activeList
+          )}
+
+          <PremiumBanner />
+
+          <PremiumModal
+            downloadScope="all"
+            isOpen={showInstallAllPremium}
+            onClose={() => setShowInstallAllPremium(false)}
+            onDownload={() => setShowInstallAllPremium(false)}
+          />
         </div>
       </MainPage.Body>
     </MainPage>

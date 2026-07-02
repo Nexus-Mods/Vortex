@@ -10,6 +10,10 @@ export const flagVariantSchemas = {
       .transform((s: string) => JSON.parse(s) as unknown)
       .pipe(z.object({ foo: z.string() })) as z.ZodType<{ foo: string }>,
   },
+  // On/off gate for the file-level requirements health check (no variants).
+  // Prefixed with "vortex-" to qualify it within the shared Unleash application;
+  // the name must match the toggle configured in Unleash.
+  "vortex-file-requirements-health-check": {},
 };
 
 type FlagVariantSchemas = typeof flagVariantSchemas;

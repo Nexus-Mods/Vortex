@@ -2651,7 +2651,7 @@ interface IHealthCheckEntry {
 }
 
 // @public (undocumented)
-interface IHealthCheckResult {
+interface IHealthCheckResult<TMetadata = unknown> {
     // (undocumented)
     checkId: string;
     // (undocumented)
@@ -2665,9 +2665,7 @@ interface IHealthCheckResult {
     // (undocumented)
     message: string;
     // (undocumented)
-    metadata?: {
-        [key: string]: any;
-    };
+    metadata?: TMetadata;
     // (undocumented)
     severity: HealthCheckSeverity;
     // (undocumented)

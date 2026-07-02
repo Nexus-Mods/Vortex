@@ -6,12 +6,21 @@
 import type { IModRequirements } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
+import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
+import { chunked } from "@/extensions/health_check/utils/shared/batchCache";
+import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
+
 import { setModAttribute } from "../../../actions";
+import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IHealthCheckResult } from "../../../types/IHealthCheck";
-import { HealthCheckSeverity } from "../../../types/IHealthCheck";
+import {
+  HealthCheckCategory,
+  HealthCheckSeverity,
+  HealthCheckTrigger,
+  type IHealthCheck,
+  type IHealthCheckResult,
+} from "../../../types/IHealthCheck";
 import { getGame, nexusGameId, renderModName } from "../../../util/api";
-import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
 import type { IMod } from "../../mod_management/types/IMod";
@@ -19,15 +28,20 @@ import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericGameIdToDomainName } from "../../nexus_integration/util";
 import { makeModUID } from "../../nexus_integration/util/UIDs";
 import { activeProfile } from "../../profile_management/selectors";
+import { setHealthCheckRunning } from "../actions/session";
+import { isModRequirementsEnabled } from "../selectors";
 import type {
+  IModFileInfo,
   IModRequirementsCheckMetadata,
   IModMissingRequirements,
   IModRequirementsCheckParams,
   IModRequirementExt,
 } from "../types";
-import { getModFilesWithCache } from "../util";
 
 export const MOD_REQUIREMENTS_CHECK_ID = "check-nexus-mod-requirements";
+
+// Per-mod file-list lookups have no batch endpoint; fan them out this many at a time.
+const FILE_LOOKUP_CONCURRENCY = 20;
 
 /**
  * Create a result object for the mod requirements check
@@ -106,6 +120,24 @@ function getEnabledMods(api: IExtensionApi, gameId: string): IMod[] {
   );
 
   return enabledModIds.map((id) => mods[id]).filter((m) => m !== undefined);
+}
+
+/**
+ * Resolve a non-external requirement to its target mod id and Nexus domain, or
+ * null when it has no usable Nexus mod id.
+ */
+function resolveRequirementTarget(
+  req: { modId: string; gameId?: string | null },
+  fallbackGameId: string,
+): { requiredModId: number; domainName: string | undefined; gameIdForStorage: string } | null {
+  const requiredModId = parseInt(req.modId, 10);
+  if (isNaN(requiredModId) || requiredModId <= 0) {
+    return null;
+  }
+  const requiredGameId = req.gameId ? parseInt(req.gameId, 10) : undefined;
+  const domainName =
+    requiredGameId != null ? numericGameIdToDomainName(requiredGameId) : fallbackGameId;
+  return { requiredModId, domainName, gameIdForStorage: domainName ?? fallbackGameId };
 }
 
 /**
@@ -241,6 +273,63 @@ export async function checkModRequirements(
       }
     }
 
+    // Pre-fetch, batched and in parallel, the per-required-mod data the second pass
+    // needs: mod display details (one batched /mods/batch call, which also warms the
+    // cache the file fetch reuses) and the file list for the "exactly one main file"
+    // rule. Files have no batch endpoint, so fan out with a concurrency cap. The
+    // second pass then reads both from cache instead of awaiting one mod at a time.
+    const requiredTargets = new Map<number, { gameId: string; uid: string | undefined }>();
+    for (const mod of modsToCheck) {
+      const requiringModId = mod.attributes?.modId;
+      const sourceGameId = mod.attributes?.downloadGame;
+      if (!requiringModId || !sourceGameId) {
+        continue;
+      }
+      for (const req of requirementsMap[requiringModId]?.nexusRequirements?.nodes ?? []) {
+        if (req.externalRequirement) {
+          continue;
+        }
+        const target = resolveRequirementTarget(req, sourceGameId);
+        if (!target || installedModIds.has(target.requiredModId)) {
+          continue;
+        }
+        if (!requiredTargets.has(target.requiredModId)) {
+          requiredTargets.set(target.requiredModId, {
+            gameId: target.gameIdForStorage,
+            uid: makeModUID({ modId: req.modId, fileId: "0", gameId: target.gameIdForStorage }),
+          });
+        }
+      }
+    }
+
+    // One batched mod-details call instead of one per required mod.
+    const detailUids = [...requiredTargets.values()]
+      .map((target) => target.uid)
+      .filter((uid): uid is string => !!uid);
+    if (detailUids.length > 0) {
+      try {
+        await getModDetails(api, detailUids);
+      } catch (err) {
+        log("warn", "Failed to batch mod details", { error: (err as Error).message });
+      }
+    }
+
+    // File-list lookups, fanned out in bounded-concurrency waves.
+    const filesByRequiredModId = new Map<number, IModFileInfo[]>();
+    for (const wave of chunked([...requiredTargets], FILE_LOOKUP_CONCURRENCY)) {
+      const fetched = await Promise.all(
+        wave.map(async ([requiredModId, target]) => {
+          const files = await getModFilesWithCache(api, target.gameId, requiredModId).catch(
+            (): IModFileInfo[] => [],
+          );
+          return [requiredModId, files] as const;
+        }),
+      );
+      for (const [requiredModId, files] of fetched) {
+        filesByRequiredModId.set(requiredModId, files);
+      }
+    }
+
     // Second pass: process requirements and check for missing dependencies
     for (const mod of modsToCheck) {
       const modId = mod.attributes?.modId;
@@ -307,27 +396,15 @@ export async function checkModRequirements(
             continue;
           }
 
-          const requiredModId = parseInt(req.modId, 10);
-          if (isNaN(requiredModId) || requiredModId <= 0) {
+          const target = resolveRequirementTarget(req, gameId);
+          if (!target || installedModIds.has(target.requiredModId)) {
             continue;
           }
+          const { requiredModId, domainName, gameIdForStorage } = target;
 
-          if (installedModIds.has(requiredModId)) {
-            continue;
-          }
-
-          const requiredGameId = req.gameId ? parseInt(req.gameId, 10) : undefined;
-          const domainName =
-            requiredGameId != null ? numericGameIdToDomainName(requiredGameId) : gameId;
-          const gameIdForStorage = domainName ?? gameId;
-
-          // Only show items for mods with exactly one main file
-          try {
-            const mainFiles = await getModFilesWithCache(api, gameIdForStorage, requiredModId);
-            if (mainFiles.length !== 1) {
-              continue;
-            }
-          } catch {
+          // Only show items for mods with exactly one main file (pre-fetched above).
+          const mainFiles = filesByRequiredModId.get(requiredModId) ?? [];
+          if (mainFiles.length !== 1) {
             continue;
           }
 
@@ -403,3 +480,49 @@ export async function checkModRequirements(
     );
   }
 }
+
+/**
+ * Registration descriptor for the Nexus mod requirements check. Owns its own
+ * enablement gate, running-state bracket and completion notification so that
+ * index.ts only has to register it.
+ */
+export const modRequirementsHealthCheck: IHealthCheck = {
+  id: MOD_REQUIREMENTS_CHECK_ID,
+  name: "Nexus Mod Requirements",
+  description: "Validates that all Nexus mod requirements are satisfied",
+  category: HealthCheckCategory.Requirements,
+  severity: HealthCheckSeverity.Info,
+  triggers: [
+    HealthCheckTrigger.ModsChanged,
+    HealthCheckTrigger.Manual,
+    HealthCheckTrigger.ProfileChanged,
+    HealthCheckTrigger.GameChanged,
+    HealthCheckTrigger.SettingsChanged,
+  ],
+  check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
+    if (!isModRequirementsEnabled(api.getState())) {
+      return {
+        checkId: MOD_REQUIREMENTS_CHECK_ID,
+        status: "passed",
+        severity: HealthCheckSeverity.Info,
+        message: "Mod requirements check disabled",
+        executionTime: 0,
+        timestamp: new Date(),
+      };
+    }
+
+    api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true));
+    try {
+      const result = await checkModRequirements(api);
+      api.sendNotification({
+        type: "info",
+        message: "Nexus Mod Requirements check completed",
+        displayMS: 5000,
+        id: "health-check:nexus-requirements-complete",
+      });
+      return result;
+    } finally {
+      api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, false));
+    }
+  },
+};
