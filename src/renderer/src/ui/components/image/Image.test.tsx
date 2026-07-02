@@ -68,6 +68,11 @@ describe("Image", () => {
       expect(getContainer()).toHaveClass("aspect-collection");
     });
 
+    it('applies the aspect class for imageType="game"', () => {
+      renderComponent({ imageType: "game" });
+      expect(getContainer()).toHaveClass("aspect-game");
+    });
+
     it("merges className on the container and imageClassName on the img", () => {
       renderComponent({ className: "my-container", imageClassName: "my-img" });
       expect(getContainer()).toHaveClass("my-container");

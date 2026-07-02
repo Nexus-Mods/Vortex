@@ -7,13 +7,14 @@ import * as React from "react";
 import { Button, Panel, Popover } from "react-bootstrap";
 import { Provider } from "react-redux";
 
+import { Image } from "@/ui/components/image/Image";
+
 import { connect, PureComponentEx } from "../../../controls/ComponentEx";
 import Icon from "../../../controls/Icon";
 import IconBar from "../../../controls/IconBar";
 import OverlayTrigger from "../../../controls/OverlayTrigger";
 import { IconButton } from "../../../controls/TooltipControls";
-import { nexusGames } from "../../../extensions/nexus_integration/util";
-import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
+import { gameTileImageURL } from "../../../extensions/nexus_integration/util/gameTileImageURL";
 import type { IActionDefinition } from "../../../types/api";
 import type { IMod, IProfile, IState } from "../../../types/IState";
 import { getSafe } from "../../../util/storeHelper";
@@ -59,19 +60,14 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       return null;
     }
 
-    let logoPath: string | undefined =
-      game.extensionPath !== undefined && game.logo !== undefined
-        ? path.join(game.extensionPath, game.logo)
-        : game.imageURL;
-
-    // For adaptor-registered games (no local logo), resolve a Nexus thumbnail
+    // Prefer the Nexus "tile" art so it matches the website. Fall back to a
+    // local extension logo / imageURL when no Nexus tile can be resolved.
+    let logoPath: string | undefined = gameTileImageURL(game);
     if (logoPath == null) {
-      const domain = nexusGameId(game);
-      const numericId =
-        domain != null ? nexusGames().find((g) => g.domain_name === domain)?.id : undefined;
-      if (numericId !== undefined) {
-        logoPath = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
-      }
+      logoPath =
+        game.extensionPath !== undefined && game.logo !== undefined
+          ? path.join(game.extensionPath, game.logo)
+          : game.imageURL;
     }
 
     // Mod count should only be shown for Managed and Discovered games as
@@ -109,35 +105,44 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     return (
       <Panel className={classes.join(" ")} bsStyle={active ? "primary" : "default"}>
         <Panel.Body className="game-thumbnail-body">
-          <img className={"thumbnail-img"} src={imgurl} loading="lazy" decoding="async" />
-          <div className="bottom">
-            <div className="name">{game.name}</div>
-            {modCount !== undefined ? (
-              <div className="active-mods">
-                <Icon name="mods" />
-                <span>{t("{{ count }} active mod", { count: modCount })}</span>
-              </div>
+          <Image
+            className="w-full"
+            imageType="game"
+            fit="cover"
+            src={imgurl}
+            alt={game.name}
+            loading="lazy"
+            decoding="async"
+          >
+            <div className="bottom">
+              <div className="name">{game.name}</div>
+              {modCount !== undefined ? (
+                <div className="active-mods">
+                  <Icon name="mods" />
+                  <span>{t("{{ count }} active mod", { count: modCount })}</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="hover-menu">
+              {type === "launcher" ? this.renderLaunch() : this.renderMenu()}
+            </div>
+            {type !== "launcher" ? (
+              game.contributed ? (
+                <div
+                  className="game-thumbnail-tags"
+                  title={
+                    game.contributed
+                      ? t("Contributed by {{name}}", {
+                          replace: { name: game.contributed },
+                        })
+                      : null
+                  }
+                >
+                  {game.contributed ? "Community" : null}
+                </div>
+              ) : null
             ) : null}
-          </div>
-          <div className="hover-menu">
-            {type === "launcher" ? this.renderLaunch() : this.renderMenu()}
-          </div>
-          {type !== "launcher" ? (
-            game.contributed ? (
-              <div
-                className="game-thumbnail-tags"
-                title={
-                  game.contributed
-                    ? t("Contributed by {{name}}", {
-                        replace: { name: game.contributed },
-                      })
-                    : null
-                }
-              >
-                {game.contributed ? "Community" : null}
-              </div>
-            ) : null
-          ) : null}
+          </Image>
         </Panel.Body>
       </Panel>
     );

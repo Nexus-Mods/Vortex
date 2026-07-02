@@ -121,6 +121,7 @@
             "dependentTasksOutputFiles": "**/dist/**"
           },
           "{projectRoot}/copy-assets.mjs",
+          "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",
           "{workspaceRoot}/src/queries/",

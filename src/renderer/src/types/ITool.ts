@@ -45,7 +45,9 @@ export interface ITool {
    *  - Preferably the logo should *not* contain the game name because Vortex will display
    *    the name as text near the logo. This way the name can be localised.
    *  - Background should be transparent. The logo will be resized preserving aspect
-   *    ratio, the canvas has a 3:4 (portrait) ratio.
+   *    ratio, the canvas has a 2:3 (portrait) ratio (400x600). This image also serves
+   *    as the offline fallback for the game tile on the Games page (which otherwise
+   *    uses the Nexus tile.jpg), so authoring it at 2:3 avoids an awkward crop.
    *
    * @type {string}
    */
