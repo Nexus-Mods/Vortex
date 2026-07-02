@@ -231,6 +231,9 @@ export const MOD_FILE_INFO: Partial<IModFileQuery> = {
 };
 
 export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
+  // Skip requirements the mod disabled at the mod level (legacy_mod_requirements_enabled),
+  // so the file-level check replaces them instead of both surfacing them (LAZ-680).
+  $filter: { skipDisabledRequirements: true },
   dlcRequirements: {
     gameExpansion: { id: true, name: true },
     notes: true,
