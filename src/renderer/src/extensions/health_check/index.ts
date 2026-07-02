@@ -84,15 +84,14 @@ function init(context: IExtensionContext): boolean {
       void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
     });
 
-    // Re-run the file-level check when the Unleash flag flips. Reads presence
-    // (not getFlag) since this only triggers a re-run, not a gating decision.
-    let flagAvailable = FlagService.instance.flags.has(FILE_REQUIREMENTS_FLAG);
-    FlagService.instance.subscribe(() => {
-      const available = FlagService.instance.flags.has(FILE_REQUIREMENTS_FLAG);
-      if (available === flagAvailable) {
+    // Re-run the file-level check when the Unleash flag flips. subscribeToFlag
+    // fires once immediately (skipped here) and then only on actual changes.
+    let initialFlag = true;
+    FlagService.instance.subscribeToFlag(FILE_REQUIREMENTS_FLAG, () => {
+      if (initialFlag) {
+        initialFlag = false;
         return;
       }
-      flagAvailable = available;
       void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
     });
   });
