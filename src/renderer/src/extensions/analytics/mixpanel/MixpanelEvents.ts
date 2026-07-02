@@ -127,6 +127,7 @@ export class CollectionsDownloadClickedEvent implements MixpanelEvent {
 
 /**
  * Event sent when a collection download is completed.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param collection_id ID of the collection
  * @param revision_id ID of the revision
  * @param game_id ID of the game
@@ -137,6 +138,7 @@ export class CollectionsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = "collections_download_completed";
   readonly properties: Record<string, any>;
   constructor(
+    download_id: string,
     collection_id: string,
     revision_id: string,
     game_id: number,
@@ -144,6 +146,7 @@ export class CollectionsDownloadCompletedEvent implements MixpanelEvent {
     duration_ms: number,
   ) {
     this.properties = {
+      download_id,
       collection_id,
       revision_id,
       game_id,
@@ -155,6 +158,7 @@ export class CollectionsDownloadCompletedEvent implements MixpanelEvent {
 
 /**
  * Event sent when a collection download fails.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param collection_id ID of the collection
  * @param revision_id ID of the revision
  * @param game_id ID of the game
@@ -165,6 +169,7 @@ export class CollectionsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "collections_download_failed";
   readonly properties: Record<string, any>;
   constructor(
+    download_id: string,
     collection_id: string,
     revision_id: string,
     game_id: number,
@@ -172,6 +177,7 @@ export class CollectionsDownloadFailedEvent implements MixpanelEvent {
     error_message: string,
   ) {
     this.properties = {
+      download_id,
       collection_id,
       revision_id,
       game_id,
@@ -183,6 +189,7 @@ export class CollectionsDownloadFailedEvent implements MixpanelEvent {
 
 /**
  * Event sent when a collection download is cancelled.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param collection_id ID of the collection
  * @param revision_id ID of the revision
  * @param game_id ID of the game
@@ -190,8 +197,8 @@ export class CollectionsDownloadFailedEvent implements MixpanelEvent {
 export class CollectionsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = "collections_download_cancelled";
   readonly properties: Record<string, any>;
-  constructor(collection_id: string, revision_id: string, game_id: number) {
-    this.properties = { collection_id, revision_id, game_id };
+  constructor(download_id: string, collection_id: string, revision_id: string, game_id: number) {
+    this.properties = { download_id, collection_id, revision_id, game_id };
   }
 }
 
@@ -290,6 +297,7 @@ export class CollectionsInstallationCancelledEvent implements MixpanelEvent {
  * Event sent when a mod download is started from the client.
  * This client-side event complements the server-side mods_download_started event
  * to enable success rate calculations by matching with _completed or _failed events.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -302,6 +310,7 @@ export class ModsDownloadStartedClientEvent implements MixpanelEvent {
   readonly eventName = "mods_download_started_client";
   readonly properties: Record<string, any>;
   constructor(
+    download_id: string,
     mod_id: string,
     file_id: string,
     game_id: number,
@@ -309,12 +318,13 @@ export class ModsDownloadStartedClientEvent implements MixpanelEvent {
     file_uid: string,
     collection_id: string | null,
   ) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
+    this.properties = { download_id, mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
   }
 }
 
 /** DONE
  * Event sent when a mod download is completed.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -328,6 +338,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_completed";
   readonly properties: Record<string, any>;
   constructor(
+    download_id: string,
     mod_id: string,
     file_id: string,
     game_id: number,
@@ -338,6 +349,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
     collection_id: string | null,
   ) {
     this.properties = {
+      download_id,
       mod_id,
       file_id,
       game_id,
@@ -352,6 +364,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
 
 /**
  * Event sent when mod download is cancelled.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -363,6 +376,7 @@ export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_download_cancelled";
   readonly properties: Record<string, any>;
   constructor(
+    download_id: string,
     mod_id: string,
     file_id: string,
     game_id: number,
@@ -370,12 +384,13 @@ export class ModsDownloadCancelledEvent implements MixpanelEvent {
     file_uid: string,
     collection_id: string | null,
   ) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
+    this.properties = { download_id, mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
   }
 }
 
 /** DONE
  * Event sent when a mod download fails.
+ * @param download_id Unique per-attempt download id (stable across pause/resume), used to pair download events in funnels
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
@@ -389,6 +404,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_failed";
   readonly properties: Record<string, any>;
   constructor(
+    download_id: string,
     mod_id: string,
     file_id: string,
     game_id: number,
@@ -399,6 +415,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
     collection_id: string | null,
   ) {
     this.properties = {
+      download_id,
       mod_id,
       file_id,
       game_id,

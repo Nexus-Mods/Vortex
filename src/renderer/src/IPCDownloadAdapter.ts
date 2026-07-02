@@ -309,6 +309,7 @@ export class IPCDownloadAdapter {
       this.#api.events.emit(
         "analytics-track-mixpanel-event",
         new ModsDownloadStartedClientEvent(
+          downloadId,
           nexusIds.modId,
           nexusIds.fileId,
           nexusIds.numericGameId,
@@ -327,6 +328,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new CollectionsDownloadCompletedEvent(
+            downloadId,
             nexusIds.collectionId,
             nexusIds.revisionId,
             nexusIds.numericGameId,
@@ -343,6 +345,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadCompletedEvent(
+            downloadId,
             nexusIds.modId,
             nexusIds.fileId,
             nexusIds.numericGameId,
@@ -362,6 +365,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new CollectionsDownloadCancelledEvent(
+            downloadId,
             nexusIds.collectionId,
             nexusIds.revisionId,
             nexusIds.numericGameId,
@@ -376,6 +380,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadCancelledEvent(
+            downloadId,
             nexusIds.modId,
             nexusIds.fileId,
             nexusIds.numericGameId,
@@ -394,6 +399,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new CollectionsDownloadFailedEvent(
+            downloadId,
             nexusIds.collectionId,
             nexusIds.revisionId,
             nexusIds.numericGameId,
@@ -410,6 +416,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadFailedEvent(
+            downloadId,
             nexusIds.modId,
             nexusIds.fileId,
             nexusIds.numericGameId,

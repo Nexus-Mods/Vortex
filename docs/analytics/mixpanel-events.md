@@ -45,11 +45,34 @@ collections_download_*  collections_installation_*
 ### Known measurement gaps
 
 - **No deployment event** — the final "link into game folder" step is untracked (see funnel above).
-- **Download reliability** — a `started` → `completed` pair fires `started` only once (guarded by a
-  `startedEventEmitted` flag, `IPCDownloadAdapter.ts:738`). Pauses/resumes and app-restart recoveries
-  are silently absorbed; automatic network/5xx retries happen in the main process and are never
-  reported to the renderer. So a start→complete pair reflects _user intent to download_, not a
-  single clean uninterrupted attempt.
+- **Never-finished downloads** — a download that never terminates (app killed / hung socket) emits
+  no terminal event, so it can only be inferred as funnel leakage (`started` − terminal), never
+  counted directly.
+- **Pauses / resumes / retries are invisible** — a `started → completed` pair does not reveal
+  whether the download paused, resumed, was auto-resumed after a restart, or retried at the socket
+  level. It reflects that the file eventually downloaded, not that it did so in one clean attempt.
+
+## Download Success Rating (KPI)
+
+A day-to-day / month-to-month reliability KPI, computed in Mixpanel from the download events.
+
+| Metric                                 | Formula                                    | Notes                                                                                                                                         |
+| -------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Download Success Rating** (headline) | `completed / (completed + failed)`         | Excludes user cancels (not a failure) and never-finished (no terminal event). Uses only reliable terminal events — no event pairing required. |
+| Intent completion (abandonment proxy)  | `completed / mods_download_started_client` | Gap absorbs fails, cancels, and never-finished.                                                                                               |
+
+**Event pairing / accuracy.** Every download event carries a `download_id` — a unique per-attempt
+id (`randomUUID`, stable across pause/resume, fresh on re-download). Funnels should pair
+`started → completed`/`failed` on `download_id`, **not** on `mod_id`/`file_id` (which identify the
+file, not the attempt, and mis-pair re-downloads). The count-based headline rating needs no pairing;
+a `download_id`-keyed funnel can be built to cross-check it and the two should agree.
+
+**`started` fires on first byte, not initiation.** `mods_download_started_client` is emitted the
+first time bytes are received, so connect-time failures (DNS/403/dead CDN/timeout before any data)
+fire `failed` with **no** matching `started`. Consequences: (1) a `started → completed` funnel's
+denominator omits those failures and reads high; (2) `failed` events can exceed `started` events.
+The headline `completed / (completed + failed)` rating is unaffected — it counts terminal events and
+never depends on `started`. Prefer it over a `started`-anchored funnel for the reliability number.
 
 ### Two granularities of "installation"
 
@@ -69,19 +92,19 @@ pair _plus up to_ 20 individual `mods_installation_*` pairs.
 
 ## Collection events
 
-| Event                                | Fired when                                                                                                                                                 | Properties                                                               |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `collection_drafted`                 | A collection draft is created — from a profile or quick-collection (`createCollectionFromProfile.ts:178`), or an empty draft (`collections/index.ts:267`). | `collection_name`, `game_name`, `creation_method`                        |
-| `collection_draft_uploaded`          | A **new** draft collection is uploaded for the first time (`collectionExport.ts:328`).                                                                     | `collection_name`, `game_name`                                           |
-| `collection_draft_updated`           | An **existing** draft collection is re-uploaded/updated (`collectionExport.ts:328`).                                                                       | `collection_name`, `game_name`                                           |
-| `collections_download_clicked`       | User clicks to download a collection in the in-app browser (`BrowseNexusPage.tsx:140`).                                                                    | `collection_slug`, `game_id`                                             |
-| `collections_download_completed`     | The collection archive **download** (network transfer) finishes (`IPCDownloadAdapter.ts:329`).                                                             | `collection_id`, `revision_id`, `game_id`, `file_size`, `duration_ms`    |
-| `collections_download_cancelled`     | The collection archive download is cancelled (`IPCDownloadAdapter.ts:364`).                                                                                | `collection_id`, `revision_id`, `game_id`                                |
-| `collections_download_failed`        | The collection archive download fails (`IPCDownloadAdapter.ts:396`).                                                                                       | `collection_id`, `revision_id`, `game_id`, `error_code`, `error_message` |
-| `collections_installation_started`   | **Installation of the whole collection** begins — its required-mod batch starts installing (`InstallDriver.ts:896`).                                       | `collection_id`, `revision_id`, `game_id`, `mod_count`                   |
-| `collections_installation_completed` | The full collection batch finishes installing (`InstallDriver.ts:712`).                                                                                    | `collection_id`, `revision_id`, `game_id`, `mod_count`, `duration_ms`    |
-| `collections_installation_failed`    | The collection install fails (`InstallDriver.ts:153`).                                                                                                     | `collection_id`, `revision_id`, `game_id`, `error_code`, `error_message` |
-| `collections_installation_cancelled` | _(Class exists; no active firing site found in source.)_                                                                                                   | `collection_id`, `revision_id`, `game_id`                                |
+| Event                                | Fired when                                                                                                                                                 | Properties                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `collection_drafted`                 | A collection draft is created — from a profile or quick-collection (`createCollectionFromProfile.ts:178`), or an empty draft (`collections/index.ts:267`). | `collection_name`, `game_name`, `creation_method`                                       |
+| `collection_draft_uploaded`          | A **new** draft collection is uploaded for the first time (`collectionExport.ts:328`).                                                                     | `collection_name`, `game_name`                                                          |
+| `collection_draft_updated`           | An **existing** draft collection is re-uploaded/updated (`collectionExport.ts:328`).                                                                       | `collection_name`, `game_name`                                                          |
+| `collections_download_clicked`       | User clicks to download a collection in the in-app browser (`BrowseNexusPage.tsx:140`). No `download_id` (fired pre-download, not via `#emitAnalytics`).   | `collection_slug`, `game_id`                                                            |
+| `collections_download_completed`     | The collection archive **download** (network transfer) finishes (`IPCDownloadAdapter.ts`).                                                                 | `download_id`, `collection_id`, `revision_id`, `game_id`, `file_size`, `duration_ms`    |
+| `collections_download_cancelled`     | The collection archive download is cancelled (`IPCDownloadAdapter.ts`).                                                                                    | `download_id`, `collection_id`, `revision_id`, `game_id`                                |
+| `collections_download_failed`        | The collection archive download fails (`IPCDownloadAdapter.ts`).                                                                                           | `download_id`, `collection_id`, `revision_id`, `game_id`, `error_code`, `error_message` |
+| `collections_installation_started`   | **Installation of the whole collection** begins — its required-mod batch starts installing (`InstallDriver.ts:896`).                                       | `collection_id`, `revision_id`, `game_id`, `mod_count`                                  |
+| `collections_installation_completed` | The full collection batch finishes installing (`InstallDriver.ts:712`).                                                                                    | `collection_id`, `revision_id`, `game_id`, `mod_count`, `duration_ms`                   |
+| `collections_installation_failed`    | The collection install fails (`InstallDriver.ts:153`).                                                                                                     | `collection_id`, `revision_id`, `game_id`, `error_code`, `error_message`                |
+| `collections_installation_cancelled` | _(Class exists; no active firing site found in source.)_                                                                                                   | `collection_id`, `revision_id`, `game_id`                                               |
 
 ## Mod events
 
@@ -90,18 +113,18 @@ archives); installation events fire from `InstallContext.ts` per single archive,
 sent for a collection's bundle/manifest mod. Mods downloaded/installed as part of a collection carry
 the parent's `collection_id`, otherwise `null`.
 
-| Event                          | Fired when                                                                                                                                                                          | Properties                                                             |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `mods_download_started_client` | A single mod file **download** starts (client-side; complements the server-side event) — `IPCDownloadAdapter.ts:311`.                                                               | `mod_id`, `file_id`, `game_id`, `mod_uid`, `file_uid`, `collection_id` |
-| `mods_download_completed`      | The mod file download (network transfer) finishes (`IPCDownloadAdapter.ts:345`).                                                                                                    | _(base)_ + `file_size`, `duration_ms`                                  |
-| `mods_download_cancelled`      | The mod file download is cancelled (`IPCDownloadAdapter.ts:378`).                                                                                                                   | _(base mod props)_                                                     |
-| `mods_download_failed`         | The mod file download fails (`IPCDownloadAdapter.ts:412`).                                                                                                                          | _(base)_ + `error_code`, `error_message`                               |
-| `mods_installation_started`    | **Installation of one mod archive** begins — the mod record is created with `state: "installing"` and extraction/installer work starts (`startInstallCB`, `InstallContext.ts:275`). | `mod_id`, `file_id`, `game_id`, `mod_uid`, `file_uid`                  |
-| `mods_installation_completed`  | The mod reaches `state: "installed"` (extracted to staging + registered) — `success` outcome (`InstallContext.ts:407`). `duration_ms` = install operation only.                     | _(base)_ + `duration_ms`                                               |
-| `mods_installation_cancelled`  | The install is cancelled — `canceled` outcome (`InstallContext.ts:452`).                                                                                                            | _(base mod props)_                                                     |
-| `mods_installation_failed`     | The install fails — default/error outcome; partially-added mod is removed (`InstallContext.ts:481`).                                                                                | _(base)_ + `error_code`, `error_message`                               |
+| Event                          | Fired when                                                                                                                                                                                                                                                                                   | Properties                                            |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `mods_download_started_client` | A single mod file download receives its **first byte** (client-side; complements the server-side event) — `IPCDownloadAdapter.ts`. ⚠️ Fires on first byte, **not** at initiation: a download that fails to connect (DNS/403/dead CDN/timeout) emits `failed` with **no** matching `started`. | _(base)_                                              |
+| `mods_download_completed`      | The mod file download (network transfer) finishes (`IPCDownloadAdapter.ts`).                                                                                                                                                                                                                 | _(base)_ + `file_size`, `duration_ms`                 |
+| `mods_download_cancelled`      | The mod file download is cancelled (`IPCDownloadAdapter.ts`).                                                                                                                                                                                                                                | _(base)_                                              |
+| `mods_download_failed`         | The mod file download fails (`IPCDownloadAdapter.ts`).                                                                                                                                                                                                                                       | _(base)_ + `error_code`, `error_message`              |
+| `mods_installation_started`    | **Installation of one mod archive** begins — the mod record is created with `state: "installing"` and extraction/installer work starts (`startInstallCB`, `InstallContext.ts:275`).                                                                                                          | `mod_id`, `file_id`, `game_id`, `mod_uid`, `file_uid` |
+| `mods_installation_completed`  | The mod reaches `state: "installed"` (extracted to staging + registered) — `success` outcome (`InstallContext.ts:407`). `duration_ms` = install operation only.                                                                                                                              | _(base)_ + `duration_ms`                              |
+| `mods_installation_cancelled`  | The install is cancelled — `canceled` outcome (`InstallContext.ts:452`).                                                                                                                                                                                                                     | _(base mod props)_                                    |
+| `mods_installation_failed`     | The install fails — default/error outcome; partially-added mod is removed (`InstallContext.ts:481`).                                                                                                                                                                                         | _(base)_ + `error_code`, `error_message`              |
 
-_Base mod props = `mod_id`, `file_id`, `game_id`, `mod_uid`, `file_uid` (download events also include `collection_id`)._
+_Base mod props = `mod_id`, `file_id`, `game_id`, `mod_uid`, `file_uid`. **Download** events additionally include `download_id` and `collection_id`; **installation** events do not._
 
 ## Health check event
 
