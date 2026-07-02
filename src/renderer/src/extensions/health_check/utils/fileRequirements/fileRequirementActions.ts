@@ -7,7 +7,7 @@ import { setModsEnabled } from "@/extensions/profile_management/actions/profiles
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { opn, renderModName, sanitizeCSSId, toPromise } from "@/util/api";
+import { opn, renderModName, sanitizeCSSId } from "@/util/api";
 
 // File-level requirement actions: web links, single-file download, reveal-in-loadout,
 // and enable / switch active version.
@@ -70,19 +70,24 @@ export async function downloadFileRequirement(
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), domain) || domain;
   const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
   try {
-    const dlId = await toPromise<string>((cb) =>
+    const dlId = await new Promise<string>((resolve, reject) =>
       api.events.emit(
         "start-download",
         [nxmUrl],
         { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
         undefined,
-        cb,
+        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
         undefined,
         { allowInstall: false },
       ),
     );
-    await toPromise<string>((cb) =>
-      api.events.emit("start-install-download", dlId, { allowAutoEnable: true }, cb),
+    await new Promise<string>((resolve, reject) =>
+      api.events.emit(
+        "start-install-download",
+        dlId,
+        { allowAutoEnable: true },
+        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+      ),
     );
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${candidate.modName}`, err, {
