@@ -1,0 +1,57 @@
+{
+  "_comment": "Log-message markers the watch-log skill depends on, as SOURCE literals (the text inside log('level','<message>',...) calls). The drift-check asserts each still exists in the Vortex code and flags warn/error logs the skill does not yet capture. NOTE: the emitted log line can differ from the source literal (a logger wrapper may add a prefix) - always cross-check a real log too. Matching is substring-based, so a short marker matches a longer literal that contains it.",
+  "core": ["Vortex Version", "startup instance", "Vortex closing", "clean application end"],
+  "sessions": ["Vortex Version", "startup instance", "Vortex closing", "clean application end"],
+  "lifecycle.download": [
+    "start download mod",
+    "starting download",
+    "download resolved",
+    "queuing download",
+    "download starting",
+    "download completed",
+    "download failed"
+  ],
+  "lifecycle.install": [
+    "start mod install",
+    "mod id for newly installed mod",
+    "installing to",
+    "extracting mod archive",
+    "invoking installer",
+    "finish mod install",
+    "Installation completed successfully"
+  ],
+  "lifecycle.collection": [
+    "starting install of collection",
+    "add collection rule",
+    "did install dependencies",
+    "postprocess collection"
+  ],
+  "lifecycle.deploy": ["deployment progress", "starting purge activity"],
+  "persistence": [
+    "Received persist:diff",
+    "level_pivot slow Write",
+    "level_pivot Write enter",
+    "level_pivot Write exit",
+    "Could not read persisted value",
+    "Could not write persisted value",
+    "Could not get persisted hives",
+    "DuckDBSingleton not initialized",
+    "Extension persistor removeItem failed"
+  ],
+  "collection-install.483": [
+    "Called callback for stuck installation",
+    "ignoring download failure",
+    "Found collection for failed download",
+    "reconciling orphaned archive before download",
+    "Failed to install dependency",
+    "Collection Download Failed",
+    "pause collection",
+    "resume collection",
+    "User logged out during collection install",
+    "Collection install stalled, attempting rescue",
+    "Collection install stalled after rescue attempt, resolving",
+    "Critical error in dependency installation",
+    "Error during scheduled phase deployment",
+    "Download not found when trying to resume"
+  ]
+}
