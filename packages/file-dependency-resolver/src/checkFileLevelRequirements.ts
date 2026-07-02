@@ -8,8 +8,33 @@ import type {
   ModDetail,
 } from "./types";
 
-const activeCategories = new Set([1, 2, 3, 5]); // MAIN, UPDATE, OPTIONAL, MISC
-const availableCategories = new Set([1, 2, 3, 4, 5, 7]); // MAIN, UPDATE, OPTIONAL, OLD, MISC, ARCHIVED
+// Nexus numeric file-category codes.
+const FileCategory = {
+  Main: 1,
+  Update: 2,
+  Optional: 3,
+  OldVersion: 4,
+  Miscellaneous: 5,
+  Removed: 6,
+  Archived: 7,
+} as const;
+
+// Categories treated as "active" (preferred when recommending a download).
+const activeCategories = new Set<number>([
+  FileCategory.Main,
+  FileCategory.Update,
+  FileCategory.Optional,
+  FileCategory.Miscellaneous,
+]);
+// Categories still available to download/match even if not active.
+const availableCategories = new Set<number>([
+  FileCategory.Main,
+  FileCategory.Update,
+  FileCategory.Optional,
+  FileCategory.OldVersion,
+  FileCategory.Miscellaneous,
+  FileCategory.Archived,
+]);
 const availableStatuses = new Set(["published", "hidden"]);
 
 export async function checkFileLevelRequirements(
