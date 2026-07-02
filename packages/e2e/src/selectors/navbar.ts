@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 export class NavBar {
   readonly page: Page;
   readonly homeLink: Locator;
+  readonly homeButton: Locator;
   readonly gamesLink: Locator;
   readonly modsLink: Locator;
   readonly settingsLink: Locator;
@@ -14,6 +15,9 @@ export class NavBar {
     this.page = page;
     this.gamesLink = page.getByText("Games", { exact: true }).first();
     this.homeLink = page.getByText("Dashboard", { exact: true }).first();
+    // Top-bar "Home" button that exits the per-game workspace back to the
+    // global one (where the Settings/Dashboard/Extensions spine lives).
+    this.homeButton = page.getByRole("button", { name: "Home", exact: true }).first();
     this.extensionsLink = page.getByText("Extensions", { exact: true }).first();
     // "Settings" is global; "Preferences" is the per-game page that also
     // appears in the menu — keep them as separate locators.
