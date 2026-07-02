@@ -3,6 +3,7 @@ import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/hea
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
+import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
@@ -18,16 +19,6 @@ interface INexusFileRef {
   fileUID: string;
   /** Composite mod id: (gameId << 32) | modId. Empty only when the source data lacks it. */
   modUID: string;
-}
-
-/** Decode a composite UID (gameId << 32 | id) into its game id and low id. */
-function decodeUID(uid: string): { gameId: number; id: number } | undefined {
-  try {
-    const value = BigInt(uid);
-    return { gameId: Number(value >> BigInt(32)), id: Number(value & BigInt(0xffffffff)) };
-  } catch {
-    return undefined;
-  }
 }
 
 /** Nexus domain name (e.g. "stardewvalley") for a numeric game id, if known. */
