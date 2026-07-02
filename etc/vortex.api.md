@@ -1435,6 +1435,12 @@ clearCache: () => void;
 // @public (undocumented)
 function getDriveList(api: IExtensionApi): Promise<string[]>;
 
+// @public
+const getFailedOptionalMods: (state: IState) => ICollectionModInstallInfo[];
+
+// @public
+const getFailedRequiredMods: (state: IState) => ICollectionModInstallInfo[];
+
 // @public (undocumented)
 function getGame(gameId: string): IGame;
 
@@ -4577,9 +4583,6 @@ function makeUnique<T>(input: T[]): T[];
 function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 
 // @public
-function mapWithConcurrency<T, R>(items: T[], fn: (item: T, index: number) => Promise<R> | R, concurrency: number): Promise<R[]>;
-
-// @public
 function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -5212,6 +5215,8 @@ declare namespace selectors {
         getCollectionModByReference,
         getCollectionModsByStatus,
         getCollectionRequiredMods,
+        getFailedRequiredMods,
+        getFailedOptionalMods,
         getCollectionOptionalMods,
         getCollectionModsByPhase,
         getCollectionModsForPhase,
@@ -6511,7 +6516,6 @@ declare namespace util {
         makeRemoteCall,
         makeUnique,
         makeUniqueByKey,
-        mapWithConcurrency,
         modRuleId,
         MissingInterpreter,
         nexusGameId,

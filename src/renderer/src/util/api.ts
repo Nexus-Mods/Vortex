@@ -71,7 +71,6 @@ import {
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
 import GameStoreHelper, { normalizeStoreQuery } from "./GameStoreHelper";
-import mapWithConcurrency from "./mapWithConcurrency";
 
 /**
  * @deprecated Use window.api for IPC communication from renderer to main process.
@@ -231,7 +230,6 @@ export {
   makeRemoteCall,
   makeUnique,
   makeUniqueByKey,
-  mapWithConcurrency,
   modRuleId,
   MissingInterpreter,
   nexusGameId,

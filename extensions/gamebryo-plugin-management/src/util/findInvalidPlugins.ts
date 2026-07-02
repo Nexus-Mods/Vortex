@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import pLimit from "p-limit";
 
 import { ESPFile } from "../esp/ESPFile";
 import { IPlugins } from "../types/IPlugins";
@@ -25,22 +25,23 @@ export async function findInvalidPlugins(
   gameMode: string,
 ): Promise<Set<string>> {
   const invalid = new Set<string>();
-  await util.mapWithConcurrency(
-    pluginIds,
-    async (id: string) => {
-      const filePath = pluginList[id]?.filePath;
-      if (filePath === undefined) {
-        return;
-      }
-      try {
-        await ESPFile.open(filePath, gameMode);
-      } catch (err) {
-        if (err.code === "EINVAL") {
-          invalid.add(id);
+  const limit = pLimit(CONCURRENCY);
+  await Promise.all(
+    pluginIds.map((id: string) =>
+      limit(async () => {
+        const filePath = pluginList[id]?.filePath;
+        if (filePath === undefined) {
+          return;
         }
-      }
-    },
-    CONCURRENCY,
+        try {
+          await ESPFile.open(filePath, gameMode);
+        } catch (err) {
+          if (err.code === "EINVAL") {
+            invalid.add(id);
+          }
+        }
+      }),
+    ),
   );
   return invalid;
 }

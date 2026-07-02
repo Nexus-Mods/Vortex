@@ -14,7 +14,6 @@ import type { IState } from "../../types/IState";
 import { getGame, UserCanceled } from "../../util/api";
 import * as fs from "../../util/fs";
 import type { Normalize } from "../../util/getNormalizeFunc";
-import mapWithConcurrency from "../../util/mapWithConcurrency";
 import { activeGameId } from "../../util/selectors";
 import { truthy } from "../../util/util";
 import type {
@@ -37,6 +36,23 @@ interface IDeploymentContext {
   previousDeployment: IDeployment;
   newDeployment: IDeployment;
   onComplete: () => void;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  fn: (item: T, index: number) => Promise<R> | R,
+  concurrency: number,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIdx = 0;
+  async function worker() {
+    while (nextIdx < items.length) {
+      const idx = nextIdx++;
+      results[idx] = await fn(items[idx], idx);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+  return results;
 }
 
 /**
