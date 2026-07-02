@@ -33,6 +33,7 @@ import {
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
+import { setPendingPluginSort } from "../../mod_management/actions/transactions";
 import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
@@ -54,6 +55,7 @@ import { postprocessCollection } from "../postprocessCollection";
 import type { ICollection } from "../types/ICollection";
 import type { IRevisionEx } from "../types/IRevisionEx";
 import { applyPatches } from "./binaryPatching";
+import { isGamebryoGame } from "./gameSupport";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
 import { getUnfulfilledNotificationId } from "./util";
@@ -817,6 +819,19 @@ class InstallDriver {
     const collection = this.mCollection;
     const profile = this.mProfile;
     const gameId = this.mGameId;
+
+    // Durable "this profile still needs its plugins sorted/enabled" marker, set as soon as the
+    // install begins so an interruption at ANY point (crash, quit mid-install) leaves a record.
+    // Load order and plugin-enable state are per-profile. The marker drains on the next activation
+    // of this profile (deploy then sort) and is cleared only when a plugin sort actually succeeds.
+    // Only plugin-managed (gamebryo) games sort plugins, and only gamebryo clears the marker, so
+    // restrict it to those games or non-gamebryo games would accumulate entries nothing clears.
+    if (profile?.id !== undefined && isGamebryoGame(gameId)) {
+      // Date.now() rather than Temporal: the stored value is a JSON-serialized epoch-ms number and
+      // both produce exactly that. Temporal is only available on the Electron renderer, not under
+      // the vitest (Node) test runner, so using it here would throw in tests for no functional gain.
+      this.mApi.store.dispatch(setPendingPluginSort(profile.id, collection.id, Date.now()));
+    }
 
     const state: IState = this.mApi.store.getState();
     const mods = state.persistent.mods[gameId] ?? {};

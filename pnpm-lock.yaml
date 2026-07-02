@@ -1721,6 +1721,9 @@ importers:
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
+      p-limit:
+        specifier: 'catalog:'
+        version: 7.3.0
       prop-types:
         specifier: 'catalog:'
         version: 15.8.1

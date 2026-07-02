@@ -29,6 +29,7 @@ import type { IDriverHarness } from "../../../test-utils/harnessTypes";
 import type { CollectionModStatus } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
 import type { IDownload } from "../../download_management/types/IDownload";
+import { setPendingPluginSort } from "../../mod_management/actions/transactions";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { MOD_TYPE } from "../constants";
@@ -150,6 +151,20 @@ describe("InstallDriver session lifecycle", () => {
     expect(session?.collectionId).toBe("col-1");
     expect(session?.mods[modRuleId(memberRule)]).toBeDefined();
     expect(h.driver.currentSessionId).toBe(session?.sessionId);
+  });
+
+  test("start() marks the profile as needing a post-install plugin sort", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(defaultFixture);
+
+    // the durable "sort owed" marker is the safety net that re-sorts after an interrupted install;
+    // it is set as soon as the install begins, keyed by profile and collection.
+    const markerType = setPendingPluginSort(profile.id, "col-1", 0).type;
+    const marker = h.dispatched.find((action) => action.type === markerType);
+    expect(marker).toBeDefined();
+    expect(marker?.payload).toMatchObject({ profileId: profile.id, collectionId: "col-1" });
+    expect(typeof (marker?.payload as { time: unknown }).time).toBe("number");
   });
 
   test("refuses to start a second collection while one is still installing", async ({

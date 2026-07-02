@@ -21,6 +21,10 @@ export * from "../extensions/file_based_loadorder/actions/loadOrder";
 export * from "../extensions/mod_management/actions/settings";
 export * from "../extensions/mod_management/actions/deployment";
 export * from "../extensions/mod_management/actions/mods";
+export {
+  clearPendingPluginSort,
+  setPendingPluginSort,
+} from "../extensions/mod_management/actions/transactions";
 
 export * from "../extensions/nexus_integration/actions/account";
 export * from "../extensions/nexus_integration/actions/settings";
