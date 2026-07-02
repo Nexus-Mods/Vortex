@@ -1,4 +1,5 @@
-import { types, util } from "@nexusmods/vortex-api";
+import type { types } from "@nexusmods/vortex-api";
+import update from "immutability-helper";
 
 import * as actions from "../actions/plugins";
 
@@ -8,33 +9,37 @@ import * as actions from "../actions/plugins";
 export const pluginsReducer: types.IReducerSpec = {
   reducers: {
     [actions.setPluginList as any]: (state, payload) =>
-      util.setSafe(state, ["pluginList"], payload.plugins),
+      update(state, { pluginList: { $set: payload.plugins ?? {} } }),
     [actions.setPluginInfo as any]: (state, payload) =>
-      util.setSafe(state, ["pluginInfo"], payload.plugins),
+      update(state, { pluginInfo: { $set: payload.plugins } }),
     [actions.setPluginFilePath as any]: (state, payload) => {
       const { pluginId, filePath } = payload;
-      return util.setSafe(
-        util.setSafe(state, ["pluginList", pluginId, "filePath"], filePath),
-        ["pluginInfo", pluginId, "filePath"],
-        filePath,
-      );
+      const withFilePath = (map: Record<string, any> = {}) => ({
+        ...map,
+        [pluginId]: { ...(map[pluginId] ?? {}), filePath },
+      });
+      return update(state, {
+        pluginList: { $set: withFilePath(state.pluginList) },
+        pluginInfo: { $set: withFilePath(state.pluginInfo) },
+      });
     },
-    [actions.updatePluginWarnings as any]: (state, payload) =>
-      state.pluginList[payload.id] !== undefined
-        ? util.setSafe(
-            state,
-            ["pluginList", payload.id, "warnings", payload.warning],
-            payload.value,
-          )
-        : state,
+    [actions.updatePluginWarnings as any]: (state, payload) => {
+      if (state.pluginList?.[payload.id] === undefined) {
+        return state;
+      }
+      const warnings = state.pluginList[payload.id].warnings ?? {};
+      return update(state, {
+        pluginList: {
+          [payload.id]: { warnings: { $set: { ...warnings, [payload.warning]: payload.value } } },
+        },
+      });
+    },
     [actions.incrementNewPluginCounter as any]: (state, payload) =>
-      util.setSafe(
-        state,
-        ["newlyAddedPlugins"],
-        util.getSafe(state, ["newlyAddedPlugins"], 0) + payload.counter,
-      ),
+      update(state, {
+        newlyAddedPlugins: { $set: (state.newlyAddedPlugins ?? 0) + payload.counter },
+      }),
     [actions.clearNewPluginCounter as any]: (state) =>
-      util.setSafe(state, ["newlyAddedPlugins"], 0),
+      update(state, { newlyAddedPlugins: { $set: 0 } }),
   },
   defaults: {
     pluginList: {},
