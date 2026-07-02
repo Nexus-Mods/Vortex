@@ -17,7 +17,11 @@ import {
   getCollectionActiveSession,
   getCollectionInstallProgress,
 } from "../../../util/collectionInstallSessionSelectors";
-import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
+import {
+  reconstructSessionMods,
+  resyncCollectionSessionRules,
+} from "../../../util/collectionSessionReconstruct";
+import { markCollectionMemberSkipped } from "../../../util/collectionSkip";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
@@ -61,7 +65,6 @@ export type Step =
   | "start"
   | "disclaimer"
   | "installing"
-  | "recommendations"
   | "review";
 
 export type UpdateCB = () => void;
@@ -517,14 +520,34 @@ class InstallDriver {
   }
 
   public installRecommended() {
-    const recommendedRules = this.mCollection.rules.filter((r) => r.type === "recommends");
-    this.mApi.emitAndAwait(
-      "install-from-dependencies",
-      this.mCollection.id,
-      recommendedRules,
-      true,
-    );
-    this.mStep = "recommendations";
+    if (this.mCollection === undefined || this.mProfile?.id === undefined) {
+      return;
+    }
+    const gameId = this.mGameId;
+    const collectionId = this.mCollection.id;
+    const recommendedRules = (this.mCollection.rules ?? []).filter((r) => r.type === "recommends");
+
+    // Optionals default to skipped (ignored). Selecting them all means clearing the skip: the
+    // dependency gather (filterDependencyRules) drops ignored rules, so without this the pass would
+    // install nothing. Clear only those not already selected (ignored===false wins), persist the
+    // flag, and resync so the session counts them toward completion.
+    const toSelect = recommendedRules
+      .filter((rule) => rule.ignored !== false)
+      .map((rule) => ({ ...rule, ignored: false }));
+    if (toSelect.length > 0) {
+      batchDispatch(
+        this.mApi.store,
+        toSelect.map((rule) => addModRule(gameId, collectionId, rule)),
+      );
+      resyncCollectionSessionRules(this.mApi, toSelect);
+    }
+
+    // Re-run the normal collection dependency install (the same event begin() uses). The
+    // already-installed required members are skipped by the gather; the now-selected optionals
+    // install at OPTIONAL_PHASE through the normal phase engine and progress UI - no separate
+    // recommendations pass. Completion returns here via did-install-dependencies -> review.
+    this.mApi.events.emit("install-dependencies", this.mProfile.id, gameId, [collectionId], true);
+    this.mStep = "installing";
     this.triggerUpdate();
   }
 
@@ -537,7 +560,6 @@ class InstallDriver {
         start: this.begin,
         disclaimer: this.closeDisclaimers,
         installing: this.finishInstalling,
-        recommendations: this.finishInstalling,
         review: this.close,
       };
       const res = await steps[this.mStep]?.();
@@ -594,9 +616,12 @@ class InstallDriver {
   /**
    * Whether the active collection has nothing left to install: every required member (and, on the
    * recommendations pass, every recommended member too) has reached a terminal status - installed,
-   * failed, or ignored (see isTerminalMemberStatus). This is the completion DECISION, deliberately
-   * separate from the postprocessing side-effect (finalizeInstalledCollection) so it can be
-   * unit-tested without the staging-path / fs infrastructure.
+   * failed, or ignored (see isTerminalMemberStatus). Optional members default to skipped (ignored)
+   * at session start, so they are terminal and do not block completion until the user selects one
+   * (ignored:false), which returns it to a non-terminal status that blocks the recommendations pass
+   * exactly like a required member. This is the completion DECISION, deliberately separate from the
+   * postprocessing side-effect (finalizeInstalledCollection) so it can be unit-tested without the
+   * staging-path / fs infrastructure.
    */
   public isInstallComplete(recommendations: boolean): boolean {
     if (this.mCollection === undefined || this.mGameId === undefined) {
@@ -931,6 +956,16 @@ class InstallDriver {
         totalOptional,
       }),
     );
+
+    // Default optional members to skipped so they don't block completion. Only optionals with no
+    // explicit ignored choice are defaulted - a defined ignored (a prior skip or select) wins, so
+    // decisions survive re-installs/updates. Reuses the shared skip entry point (writes the durable
+    // rule flag + session status) now that the session exists.
+    for (const rule of optional) {
+      if (rule.ignored === undefined) {
+        markCollectionMemberSkipped(this.mApi, { reference: rule.reference });
+      }
+    }
 
     log("info", "starting install of collection", {
       totalMods: required.length,

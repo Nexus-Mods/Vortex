@@ -33,11 +33,11 @@ import renderModName, { renderModReference } from "../extensions/mod_management/
 import { makeModReference } from "../extensions/mod_management/util/modReference";
 import { getModSource, getModSources } from "../extensions/mod_management/util/modSource";
 import { removeMods } from "../extensions/mod_management/util/removeMods";
+import { rulePhase } from "../extensions/mod_management/util/rulePhase";
 import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
   findRuleByRef,
   ruleInstallSpec,
-  rulePhase,
   testRefByIdentifiers,
 } from "../extensions/mod_management/util/testModReference";
 import {

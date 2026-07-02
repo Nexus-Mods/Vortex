@@ -10,10 +10,10 @@ import type { IDownload } from "../extensions/download_management/types/IDownloa
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import { findDownloadByRef } from "../extensions/mod_management/util/dependencies";
 import { findModByRef } from "../extensions/mod_management/util/findModByRef";
+import { rulePhase } from "../extensions/mod_management/util/rulePhase";
 import {
   isDependencyRule,
   ruleInstallSpec,
-  rulePhase,
 } from "../extensions/mod_management/util/testModReference";
 import { log } from "../logging";
 import type { ICollectionModInstallInfo } from "../types/collections/ICollectionInstallSession";

@@ -1,6 +1,5 @@
 import type { IRating, IRevision } from "@nexusmods/nexus-api";
 import { getErrorCode, unknownToError } from "@vortex/shared";
-import Bluebird from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import type { WithTranslation } from "react-i18next";
@@ -18,6 +17,10 @@ import type { IGameStored } from "../../../../extensions/gamemode_management/typ
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
+import {
+  isOptionalRule,
+  isRequiredRule,
+} from "../../../../extensions/mod_management/util/testModReference";
 import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
 import type { INotification } from "../../../../types/INotification";
@@ -481,42 +484,32 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     uploadCollection(this.context.api, this.props.profile?.id, collectionId);
   };
 
-  private installManually = (collectionId: string, rules: IModRule[]) => {
+  private installManually = async (collectionId: string, rules: IModRule[]) => {
     const { api } = this.context;
 
-    const ruleGroups = rules.reduce(
-      (prev, rule) => {
-        if (prev[rule.type] !== undefined) {
-          prev[rule.type].push(rule);
-        } else {
-          log("error", "unexpected rule encountered", {
-            collectionId,
-            ruleType: rule.type,
-          });
-        }
-        return prev;
-      },
-      { requires: [], recommends: [] },
-    );
+    // This is the no-active-session manual install, so the completion-poll's driveSelectedOptionals
+    // can't drive optionals here. Required members install through the phase engine
+    // (recommended=false); selected optionals install through the recommendations pass
+    // (recommended=true) - the only gather that includes `recommends` rules. The caller
+    // (CollectionPageView.installManually) has already cleared the skip so the gather keeps them.
+    const required = rules.filter((rule) => isRequiredRule(rule));
+    const optional = rules.filter((rule) => isOptionalRule(rule));
 
-    const eaa = (ruleList, recommended) => {
-      if (ruleList.length === 0) {
-        return Bluebird.resolve();
-      } else {
-        return api.emitAndAwait("install-from-dependencies", collectionId, ruleList, recommended);
+    try {
+      if (required.length > 0) {
+        await api.emitAndAwait("install-from-dependencies", collectionId, required, false);
       }
-    };
-
-    eaa(ruleGroups.requires, false)
-      .then(() => eaa(ruleGroups.recommends, true))
-      .catch((err: unknown) => {
-        if (err instanceof UserCanceled) {
-          return;
-        }
-        api.showErrorNotification("Failed to install dependencies", unknownToError(err), {
-          allowReport: !(err instanceof ProcessCanceled),
-        });
+      if (optional.length > 0) {
+        await api.emitAndAwait("install-from-dependencies", collectionId, optional, true);
+      }
+    } catch (err: unknown) {
+      if (err instanceof UserCanceled) {
+        return;
+      }
+      api.showErrorNotification("Failed to install dependencies", unknownToError(err), {
+        allowReport: !(err instanceof ProcessCanceled),
       });
+    }
   };
 
   private resume = (modId: string) => {

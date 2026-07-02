@@ -43,7 +43,11 @@ import { addModRule, removeModRule } from "../../../mod_management/actions/mods"
 import type { IMod, IModRule } from "../../../mod_management/types/IMod";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
-import { findRuleByRef, isRequiredRule } from "../../../mod_management/util/testModReference";
+import {
+  findRuleByRef,
+  isOptionalRule,
+  isRequiredRule,
+} from "../../../mod_management/util/testModReference";
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setModEnabled, setModsEnabled } from "../../../profile_management/actions/profiles";
 import type { IProfile, IProfileMod } from "../../../profile_management/types/IProfile";
@@ -879,11 +883,24 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     if (isInstallingCollection) {
       return;
     }
-    const { collection } = this.props;
-    const { itemRows } = this.props;
-    const rules = modIds
+    const { collection, profile, itemRows } = this.props;
+    const selected = modIds
       .filter((modId) => itemRows[modId] !== undefined)
       .map((modId) => itemRows[modId].collectionRule);
+    // Reuse installRecommended's approach for the SELECTED members only: clear the skip on any
+    // selected optional so the dependency gather keeps it, and hand the installer the cleared rules
+    // (they must deep-equal the persisted collection rules). Required rules pass through unchanged.
+    const rules = selected.map((rule) =>
+      isOptionalRule(rule) && rule.ignored !== false ? { ...rule, ignored: false } : rule,
+    );
+    const changed = rules.filter((rule, i) => rule !== selected[i]);
+    if (changed.length > 0) {
+      batchDispatch(
+        this.context.api.store,
+        changed.map((rule) => addModRule(profile.gameId, collection.id, rule as any)),
+      );
+      resyncCollectionSessionRules(this.context.api, changed);
+    }
     this.props.onInstallManually(collection.id, rules);
   };
 
