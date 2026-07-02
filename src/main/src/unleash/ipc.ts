@@ -5,6 +5,10 @@ import { log } from "../logging";
 import type { UnleashClient } from "./client";
 
 export function synchronizeFeatureFlags(client: UnleashClient): () => void {
+  betterIpcMain.handle("flags:get-current", () => {
+    return client.flags;
+  });
+
   betterIpcMain.on("flags:setContext", (_event, context) => {
     client.setContext(context);
   });
