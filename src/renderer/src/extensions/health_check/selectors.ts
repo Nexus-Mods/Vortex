@@ -35,10 +35,11 @@ export const healthCheckResults = (
 /**
  * Get a specific health check result by ID
  */
-export const healthCheckResult = (
+export const healthCheckResult = <TMetadata = unknown>(
   state: IState,
   checkId: HealthCheckId,
-): IHealthCheckResult | undefined => healthCheckState(state).results[checkId];
+): IHealthCheckResult<TMetadata> | undefined =>
+  healthCheckState(state).results[checkId] as IHealthCheckResult<TMetadata> | undefined;
 
 /**
  * Get the mod requirements from the nexus mod requirements health check
@@ -46,8 +47,11 @@ export const healthCheckResult = (
 export const modRequirementsCheckResult = (
   state: IState,
 ): Record<string, IModMissingRequirements> | undefined => {
-  const result = healthCheckResult(state, "check-nexus-mod-requirements");
-  return (result?.metadata as IModRequirementsCheckMetadata | undefined)?.modRequirements;
+  const result = healthCheckResult<IModRequirementsCheckMetadata>(
+    state,
+    "check-nexus-mod-requirements",
+  );
+  return result?.metadata?.modRequirements;
 };
 
 /**
@@ -56,8 +60,11 @@ export const modRequirementsCheckResult = (
 export const fileRequirementsCheckResult = (
   state: IState,
 ): Record<string, IFileLevelRequirements> | undefined => {
-  const result = healthCheckResult(state, "check-file-level-requirements");
-  return (result?.metadata as IFileRequirementsCheckMetadata | undefined)?.fileRequirements;
+  const result = healthCheckResult<IFileRequirementsCheckMetadata>(
+    state,
+    "check-file-level-requirements",
+  );
+  return result?.metadata?.fileRequirements;
 };
 
 /**
