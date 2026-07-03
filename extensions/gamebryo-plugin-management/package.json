@@ -38,6 +38,7 @@
     "lodash": "catalog:",
     "markdown-ast": "catalog:",
     "memoize-one": "catalog:",
+    "p-limit": "catalog:",
     "prop-types": "catalog:",
     "react": "catalog:",
     "react-dnd": "catalog:",

@@ -1,13 +1,14 @@
-import { mdiCheck, mdiDiamondStone } from "@mdi/js";
+import { mdiCheck, mdiDiamondStone, mdiOpenInNew } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "../../../../ui/components/button/Button";
-import { Icon } from "../../../../ui/components/icon/Icon";
-import { Modal } from "../../../../ui/components/modal/Modal";
-import { Typography } from "../../../../ui/components/typography/Typography";
+import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Modal } from "@/ui/components/modal/Modal";
+import { Typography } from "@/ui/components/typography/Typography";
+import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
+
 import { opn } from "../../../../util/api";
-import { Campaign, Content, Section, nexusModsURL } from "../../../../util/util";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
 
 const ListItem = ({ children }: { children: ReactNode }) => (
@@ -20,10 +21,12 @@ const ListItem = ({ children }: { children: ReactNode }) => (
 
 export const PremiumModal = ({
   isOpen,
+  downloadScope = "single",
   onClose,
   onDownload,
 }: {
   isOpen: boolean;
+  downloadScope?: "single" | "all";
   onClose: () => void;
   onDownload: () => void;
 }) => {
@@ -40,9 +43,9 @@ export const PremiumModal = ({
   }, []);
 
   return (
-    <Modal isOpen={isOpen} title={t("premium::modal::title")} onClose={onClose}>
+    <Modal isOpen={isOpen} title={t(`premium::modal::title::${downloadScope}`)} onClose={onClose}>
       <Typography appearance="subdued" as="div" className="space-y-2" typographyType="body-sm">
-        <p>{t("premium::modal::description")}</p>
+        <p className="whitespace-pre-line">{t(`premium::modal::description::${downloadScope}`)}</p>
 
         <p>{t("premium::modal::benefits_title")}</p>
 
@@ -62,10 +65,11 @@ export const PremiumModal = ({
           brand="neutral"
           appearance="moderate"
           className="w-full"
+          leftIconPath={downloadScope === "single" && mdiOpenInNew}
           size="sm"
           onClick={onDownload}
         >
-          {t("premium::modal::buttons::download")}
+          {t(`premium::modal::buttons::secondary::${downloadScope}`)}
         </Button>
 
         <Button
@@ -75,7 +79,7 @@ export const PremiumModal = ({
           size="sm"
           onClick={goPremium}
         >
-          {t("premium::modal::buttons::premium")}
+          {t("premium::modal::buttons::primary")}
         </Button>
       </div>
     </Modal>

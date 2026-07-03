@@ -1,12 +1,12 @@
-import type { IFileListItem } from "./IMod";
+import type { IChoiceType, IFileListItem, IModPatches } from "./IMod";
 
 export interface IInstallOptions {
   allowAutoEnable?: boolean;
-  choices?: any;
+  choices?: IChoiceType;
   forceInstaller?: string;
   unattended?: boolean;
   fileList?: IFileListItem[];
-  patches?: any;
+  patches?: IModPatches;
   variantNumber?: number;
   profileId?: string;
 }

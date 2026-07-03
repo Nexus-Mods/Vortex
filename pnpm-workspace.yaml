@@ -49,9 +49,9 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.7
   "@msgpack/msgpack": 2.8.0
-  "@nexusmods/fomod-installer-ipc": 0.13.2
+  "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
-  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
+  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.8.0
   "@opentelemetry/context-zone": 2.8.0
@@ -161,6 +161,7 @@ catalog:
   electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: 4.6.5
   encoding-down: 6.3.0
+  enquirer: 2.4.1
   eslint: 10.4.1
   eslint-config-prettier: 10.1.8
   eslint-plugin-better-tailwindcss: 4.5.0
@@ -200,12 +201,13 @@ catalog:
   minimist: 1.2.8
   mixpanel-browser: 2.79.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#99a97cd1359527dbf5c46c93723d1846538badfe
+  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   node: runtime:24.15.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0
   numeral: 2.0.6
   nx: 22.7.5
+  octokit: 5.0.5
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
   oxfmt: 0.53.0

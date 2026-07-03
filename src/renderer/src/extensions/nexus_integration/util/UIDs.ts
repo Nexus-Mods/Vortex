@@ -102,3 +102,13 @@ export function makeModAndFileUIDs(
     fileUID: makeFileUID(repoInfo),
   };
 }
+
+/** Decode a composite UID ((gameId << 32) | id) into its numeric game id and low id. */
+export function decodeUID(uid: string): { gameId: number; id: number } | undefined {
+  try {
+    const value = BigInt(uid);
+    return { gameId: Number(value >> BigInt(32)), id: Number(value & BigInt(0xffffffff)) };
+  } catch {
+    return undefined;
+  }
+}

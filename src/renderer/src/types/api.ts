@@ -34,7 +34,7 @@ export type {
   ICollectionModInstallInfo,
   ICollectionInstallSession,
   CollectionModStatus,
-} from "../extensions/collections_integration/types";
+} from "./collections/ICollectionInstallSession";
 export type { IAvailableExtension, IExtension } from "./extensions";
 export type {
   LoadOrder,
@@ -56,12 +56,20 @@ export type {
 export type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 export type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 export type { IDeploymentManifest } from "../extensions/mod_management/types/IDeploymentManifest";
-export type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 export type {
+  IModLookupInfo,
+  IReferenceIdentifiers,
+} from "../extensions/mod_management/util/testModReference";
+export type {
+  IChoiceType,
+  IFileListItem,
   IMod,
+  IModInstallSpec,
+  IModPatches,
   IModReference,
   IModRepoId,
   IModRule,
+  IModRuleExtra,
 } from "../extensions/mod_management/types/IMod";
 export type { IRemoveModOptions } from "../extensions/mod_management/types/IRemoveModOptions";
 export type { IDeployOptions } from "../extensions/mod_management/types/IDeployOptions";

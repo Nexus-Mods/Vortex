@@ -139,5 +139,6 @@ export const nxmTailwind =
 /** Material panel open and close icons */
 export const nxmPanelOpen =
   "M12.5 8v8l4-4-4-4ZM5 21q-0.825 0-1.4125-0.5875T3 19v-14q0-0.825 0.5875-1.4125T5 3h14q0.825 0 1.4125 0.5875T21 5v14q0 0.825-0.5875 1.4125T19 21H5Zm3-2v-14H5v14h3Zm2 0h9v-14H10v14Zm-2 0H5h3Z";
+
 export const nxmPanelClose =
   "M16.5 16v-8L12.5 12l4 4ZM5 21q-0.825 0-1.4125-0.5875T3 19v-14q0-0.825 0.5875-1.4125T5 3h14q0.825 0 1.4125 0.5875T21 5v14q0 0.825-0.5875 1.4125T19 21H5Zm3-2v-14H5v14h3Zm2 0h9v-14H10v14Zm-2 0H5h3Z";

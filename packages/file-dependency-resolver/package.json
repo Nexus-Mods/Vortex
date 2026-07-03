@@ -1,0 +1,35 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@nexusmods/file-dependency-resolver",
+  "version": "1.0.0",
+  "description": "Pure, platform-agnostic resolver loop and resolve function for file-to-file dependency health checks. Stub - see LAZ-552.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "typecheck": "pnpm tsc -p ./tsconfig.json",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint",
+    "test": "pnpm vitest run"
+  },
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./package.json": "./package.json"
+    }
+  }
+}

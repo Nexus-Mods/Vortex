@@ -6,6 +6,7 @@ import { getErrorCode, unknownToError } from "@vortex/shared";
 import { log } from "../../logging";
 import type { IDeployedFile, IExtensionApi } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
+import { NotSupportedError } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import type { IFileEntry } from "../../util/getFileList";
 import getFileList from "../../util/getFileList";
@@ -242,14 +243,36 @@ async function mergeMods(
   }
 
   for (const relPath of Object.keys(archiveMerges)) {
-    await mergeArchive(
-      api,
-      game,
-      relPath,
-      destinationPath,
-      archiveMerges[relPath].map((iter) => iter.path),
-      mergeDest,
-    );
+    try {
+      await mergeArchive(
+        api,
+        game,
+        relPath,
+        destinationPath,
+        archiveMerges[relPath].map((iter) => iter.path),
+        mergeDest,
+      );
+    } catch (err) {
+      if (err instanceof NotSupportedError) {
+        // No archive handler is registered for this file type (e.g. Dragon's Dogma
+        // .arc files require the ARCtool the user has to install separately). Rather
+        // than failing the entire deployment, skip merging this archive and let its
+        // files deploy individually.
+        log("warn", "skipping archive merge, no handler for archive type", { relPath });
+        // the archive was already excluded from individual deployment (added to
+        // usedInMerge before merging); undo that so the original files still deploy.
+        res.usedInMerge = res.usedInMerge.filter((entry) => entry !== relPath);
+        api.sendNotification?.({
+          id: "archive-merge-unsupported",
+          type: "warning",
+          title: "Some archives could not be merged",
+          message: path.extname(relPath) || relPath,
+          allowSuppress: true,
+        });
+        continue;
+      }
+      throw err;
+    }
     const normalize = await getNormalizeFunc(destinationPath);
     setdefault(res.mergeInfluences, normalize(relPath), {
       modType: "",

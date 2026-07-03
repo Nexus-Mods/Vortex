@@ -274,6 +274,10 @@ export interface InvokeChannels {
   // Examples:
   "example:ping": () => Promise<string>;
 
+  // bsdiff binary patching, run on a main-process worker_thread (only paths cross IPC)
+  "bsdiff:create": (oldPath: string, newPath: string, patchPath: string) => Promise<void>;
+  "bsdiff:apply": (oldPath: string, patchPath: string, outputPath: string) => Promise<void>;
+
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 
@@ -389,6 +393,9 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Feature flags: get current flags from main process
+  "flags:get-current": () => Promise<FeatureFlag[]>;
 
   // Download channels
   "download:start": (dest: string, collationId: number) => Promise<{ downloadId: string }>;

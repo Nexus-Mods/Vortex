@@ -116,6 +116,8 @@ type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
 
 declare namespace actions {
     export {
+        clearPendingPluginSort,
+        setPendingPluginSort,
         setNextProfile,
         setStateVersion,
         setApplicationVersion,
@@ -537,6 +539,11 @@ const clearModRules: reduxAct.ComplexActionCreator2<string, string, {
 // @public (undocumented)
 const clearOAuthCredentials: reduxAct.ComplexActionCreator1<unknown, any, {}>;
 
+// @public
+const clearPendingPluginSort: ComplexActionCreator1<string, {
+profileId: string;
+}, {}>;
+
 // @public (undocumented)
 const clearUIBlocker: ComplexActionCreator1<string, string, {}>;
 
@@ -575,7 +582,7 @@ const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
 }, {}>;
 
 // @public
-type CollectionModStatus = "pending" | "downloading" | "downloaded" | "installing" | "installed" | "failed" | "skipped" | "optional";
+type CollectionModStatus = keyof Pick<Record<ModState, true>, "downloading" | "downloaded" | "installing" | "installed"> | "pending" | "failed" | "ignored" | "optional";
 
 // Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point api.d.ts
 //
@@ -1022,7 +1029,10 @@ function findModByRef(reference: IModReference, mods: {
 }, source?: {
     gameId: string;
     modId: string;
-}): IMod;
+}, installSpec?: IModInstallSpec): IMod;
+
+// @public
+function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined;
 
 // @public
 const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
@@ -1271,9 +1281,10 @@ const getCollectionInstallProgress: ((state: IState) => {
     downloadedCount: number;
     installedCount: number;
     failedCount: number;
-    skippedCount: number;
+    ignoredCount: number;
     downloadProgress: number;
     installProgress: number;
+    combinedProgress: number;
     isComplete: boolean;
 }) & OutputSelectorFields<(args_0: ICollectionInstallSession) => {
 totalRequired: number;
@@ -1281,9 +1292,10 @@ totalOptional: number;
 downloadedCount: number;
 installedCount: number;
 failedCount: number;
-skippedCount: number;
+ignoredCount: number;
 downloadProgress: number;
 installProgress: number;
+combinedProgress: number;
 isComplete: boolean;
 }, {
 clearCache: () => void;
@@ -1298,13 +1310,7 @@ const getCollectionLastActiveSessionId: (state: IState) => string | undefined;
 const getCollectionLastCompletedSession: (state: IState) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionModByReference: (state: IState, searchParams: {
-    tag?: string;
-    modId?: string;
-    fileMD5?: string;
-    fileId?: string;
-    logicalFileName?: string;
-}) => ICollectionModInstallInfo | undefined;
+const getCollectionModByReference: (state: IState, lookup: IModLookupInfo) => ICollectionModInstallInfo | undefined;
 
 // @public
 const getCollectionModsByPhase: (state: IState) => Map<number, ICollectionModInstallInfo[]>;
@@ -1428,6 +1434,12 @@ clearCache: () => void;
 
 // @public (undocumented)
 function getDriveList(api: IExtensionApi): Promise<string[]>;
+
+// @public
+const getFailedOptionalMods: (state: IState) => ICollectionModInstallInfo[];
+
+// @public
+const getFailedRequiredMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public (undocumented)
 function getGame(gameId: string): IGame;
@@ -1743,19 +1755,25 @@ interface ICheckbox extends IControlBase {
     value: boolean;
 }
 
+// @public (undocumented)
+type IChoiceType = {
+    type: string;
+    options: IChoices;
+};
+
 // @public
 interface ICollectionInstallSession {
     collectionId: string;
     downloadedCount: number;
     failedCount: number;
     gameId: string;
+    ignoredCount: number;
     installedCount: number;
     mods: {
         [ruleId: string]: ICollectionModInstallInfo;
     };
     profileId: string;
     sessionId: string;
-    skippedCount: number;
     totalOptional: number;
     totalRequired: number;
 }
@@ -1776,6 +1794,26 @@ interface ICollectionModInstallInfo {
     rule: IModRule;
     status: CollectionModStatus;
     type: "requires" | "recommends";
+}
+
+// @public
+interface ICollectionsPersistentState {
+    // (undocumented)
+    collections: Record<string, {
+        timestamp: number;
+        info: ICollection;
+    }>;
+    // (undocumented)
+    pendingVotes: Record<string, {
+        collectionSlug: string;
+        revisionNumber: number;
+        time: number;
+    }>;
+    // (undocumented)
+    revisions: Record<string, {
+        timestamp: number;
+        info: IRevision;
+    }>;
 }
 
 // @public
@@ -2403,6 +2441,16 @@ interface IFileFilter {
     name: string;
 }
 
+// @public
+interface IFileListItem {
+    // (undocumented)
+    md5?: string;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    xxh64?: string;
+}
+
 // @public (undocumented)
 interface IFilterProps {
     // (undocumented)
@@ -2603,7 +2651,7 @@ interface IHealthCheckEntry {
 }
 
 // @public (undocumented)
-interface IHealthCheckResult {
+interface IHealthCheckResult<TMetadata = unknown> {
     // (undocumented)
     checkId: string;
     // (undocumented)
@@ -2617,9 +2665,7 @@ interface IHealthCheckResult {
     // (undocumented)
     message: string;
     // (undocumented)
-    metadata?: {
-        [key: string]: any;
-    };
+    metadata?: TMetadata;
     // (undocumented)
     severity: HealthCheckSeverity;
     // (undocumented)
@@ -3010,6 +3056,16 @@ interface IModifiers {
     shift: boolean;
 }
 
+// @public
+interface IModInstallSpec {
+    // (undocumented)
+    fileList?: IFileListItem[];
+    // (undocumented)
+    installerChoices?: IChoiceType;
+    // (undocumented)
+    patches?: IModPatches;
+}
+
 // @public (undocumented)
 interface IModLookupInfo {
     // (undocumented)
@@ -3018,8 +3074,6 @@ interface IModLookupInfo {
     customFileName?: string;
     // (undocumented)
     fileId?: string;
-    // Warning: (ae-forgotten-export) The symbol "IFileListItem" needs to be exported by the entry point api.d.ts
-    //
     // (undocumented)
     fileList?: IFileListItem[];
     // (undocumented)
@@ -3033,7 +3087,7 @@ interface IModLookupInfo {
     // (undocumented)
     id?: string;
     // (undocumented)
-    installerChoices?: any;
+    installerChoices?: IChoiceType;
     // (undocumented)
     logicalFileName?: string;
     // (undocumented)
@@ -3041,13 +3095,19 @@ interface IModLookupInfo {
     // (undocumented)
     name?: string;
     // (undocumented)
-    patches?: any;
+    patches?: IModPatches;
     // (undocumented)
     referenceTag?: string;
     // (undocumented)
     source?: string;
     // (undocumented)
     version: string;
+}
+
+// @public
+interface IModPatches {
+    // (undocumented)
+    [filePath: string]: string;
 }
 
 // @public (undocumented)
@@ -3057,19 +3117,13 @@ interface IModReference extends IReference {
     // (undocumented)
     description?: string;
     // (undocumented)
-    fileList?: IFileListItem[];
-    // (undocumented)
     id?: string;
     // (undocumented)
     idHint?: string;
     // (undocumented)
-    installerChoices?: any;
-    // (undocumented)
     instructions?: string;
     // (undocumented)
     md5Hint?: string;
-    // (undocumented)
-    patches?: any;
     // (undocumented)
     repo?: {
         repository: string;
@@ -3090,23 +3144,43 @@ interface IModRepoId {
 }
 
 // @public (undocumented)
-interface IModRule extends IRule {
+interface IModRule extends IRule, IModInstallSpec {
     // Warning: (ae-forgotten-export) The symbol "IDownloadHint" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     downloadHint?: IDownloadHint;
     // (undocumented)
-    extra?: {
-        [key: string]: any;
-    };
-    // (undocumented)
-    fileList?: IFileListItem[];
+    extra?: IModRuleExtra;
     // (undocumented)
     ignored?: boolean;
     // (undocumented)
-    installerChoices?: any;
+    phase?: number;
     // (undocumented)
     reference: IModReference;
+}
+
+// @public
+interface IModRuleExtra {
+    // (undocumented)
+    [key: string]: any;
+    // (undocumented)
+    author?: string;
+    // (undocumented)
+    category?: string;
+    // (undocumented)
+    fileOverrides?: string[];
+    // (undocumented)
+    instructions?: string;
+    // (undocumented)
+    localPath?: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    type?: string;
+    // (undocumented)
+    url?: string;
+    // (undocumented)
+    version?: string;
 }
 
 // @public (undocumented)
@@ -3216,7 +3290,7 @@ type InstallerMatchMode = "any" | "all";
 type InstallerSpecInstallFunc = (files: string[], destinationPath: string) => Promise<IInstallResult>;
 
 // @public (undocumented)
-type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: any, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => PromiseLike<IInstallResult>;
+type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: IChoiceType, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => PromiseLike<IInstallResult>;
 
 // @public
 const installIconSet: (set: string, setPath: string) => Promise<Set<string>>;
@@ -3438,6 +3512,22 @@ interface IReducerSpec<T = {
     verifiers?: {
         [key: string]: IStateVerifier;
     };
+}
+
+// @public
+interface IReferenceIdentifiers {
+    // (undocumented)
+    condition?: () => boolean;
+    // (undocumented)
+    fileId?: number;
+    // (undocumented)
+    fileIds?: string[];
+    // (undocumented)
+    fileNames?: string[];
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    modId?: number;
 }
 
 // @public (undocumented)
@@ -3882,7 +3972,7 @@ interface IStarterInfo {
     workingDirectory: string;
 }
 
-// @public
+// @public (undocumented)
 interface IState {
     // (undocumented)
     app: IApp;
@@ -3897,6 +3987,7 @@ interface IState {
         };
         mods: IModTable;
         downloads: IStateDownloads;
+        collections: ICollectionsPersistentState;
         categories: {
             [gameId: string]: ICategoryDictionary;
         };
@@ -3979,6 +4070,8 @@ interface IStatePaths {
 
 // @public (undocumented)
 interface IStateTransactions {
+    // (undocumented)
+    pendingPluginSort: Record<string, Record<string, number>>;
     // (undocumented)
     transfer: {};
 }
@@ -4539,7 +4632,7 @@ export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props,
 // Warning: (ae-forgotten-export) The symbol "INameOptions" needs to be exported by the entry point api.d.ts
 //
 // @public
-function modName(mod: IMod, options?: INameOptions): string;
+function modName(mod: Pick<IMod, "attributes" | "installationPath">, options?: INameOptions): string;
 
 // @public (undocumented)
 const modPathsForGame: ((state: IState, gameId: string) => {
@@ -5009,7 +5102,7 @@ function renderError(err: string | Error | any, options?: IErrorOptions): IError
 // Warning: (ae-forgotten-export) The symbol "IRenderOptions" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions): string;
+function renderModReference(ref?: IModReference, mod?: Pick<IMod, "attributes" | "installationPath">, options?: IRenderOptions): string;
 
 // @public (undocumented)
 function request(method: Method, reqURL: string, headers: any, cb: (res: IncomingMessage) => void): ClientRequest;
@@ -5028,6 +5121,12 @@ type Revertability = "yes" | "never" | "invalid";
 
 // @public (undocumented)
 function rmdirAsync(dirPath: string): Promise_2<void>;
+
+// @public
+function ruleInstallSpec(rule: IModRule): IModInstallSpec;
+
+// @public
+function rulePhase(rule: IModRule | undefined): number;
 
 // Warning: (ae-forgotten-export) The symbol "IElevatedIpc" needs to be exported by the entry point api.d.ts
 //
@@ -5114,6 +5213,8 @@ declare namespace selectors {
         getCollectionModByReference,
         getCollectionModsByStatus,
         getCollectionRequiredMods,
+        getFailedRequiredMods,
+        getFailedOptionalMods,
         getCollectionOptionalMods,
         getCollectionModsByPhase,
         getCollectionModsForPhase,
@@ -5553,6 +5654,13 @@ secondary: boolean;
 // @public
 function setOrNop<T>(state: T, path: string[], value: any): T;
 
+// @public
+const setPendingPluginSort: ComplexActionCreator3<string, string, number, {
+profileId: string;
+collectionId: string;
+time: number;
+}, {}>;
+
 // @public (undocumented)
 const setPickerLayout: ComplexActionCreator1<"list" | "small" | "large", {
 layout: "list" | "small" | "large";
@@ -5936,14 +6044,7 @@ function testModReference(mod: IMod | IModLookupInfo, reference: IModReference, 
 }, fuzzyVersion?: boolean): boolean;
 
 // @public (undocumented)
-function testRefByIdentifiers(identifiers: {
-    gameId: string;
-    modId?: number;
-    fileId?: number;
-    fileNames?: string[];
-    fileIds?: string[];
-    condition?: () => boolean;
-}, ref: IModReference): boolean;
+function testRefByIdentifiers(identifiers: IReferenceIdentifiers, ref: IModReference): boolean;
 
 // @public (undocumented)
 type TestSupported = (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => PromiseLike<ISupportedResult>;
@@ -6076,10 +6177,16 @@ declare namespace types {
         IGameStored,
         IDeploymentManifest,
         IModLookupInfo,
+        IReferenceIdentifiers,
+        IChoiceType,
+        IFileListItem,
         IMod,
+        IModInstallSpec,
+        IModPatches,
         IModReference,
         IModRepoId,
         IModRule,
+        IModRuleExtra,
         IRemoveModOptions,
         IDeployOptions,
         InstallFunc,
@@ -6255,6 +6362,7 @@ declare namespace types {
         IOverlay,
         IOverlayOptions,
         IOverlaysState,
+        ICollectionsPersistentState,
         IState,
         IDiscoveryPhase,
         IDiscoveryState,
@@ -6366,6 +6474,7 @@ declare namespace util {
         findCommonRootDir,
         findDownloadByRef,
         findModByRef,
+        findRuleByRef,
         GameNotFound,
         instance_2 as GameStoreHelper,
         normalizeStoreQuery,
@@ -6425,6 +6534,8 @@ declare namespace util {
         renderModReference,
         resolveCategoryName,
         resolveCategoryPath,
+        ruleInstallSpec,
+        rulePhase,
         runElevated,
         runThreaded,
         sanitizeCSSId,
@@ -6593,13 +6704,14 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 
 // Warnings were encountered during analysis:
 //
+// lib/extensions/installer_fomod_shared/types/interface.d.ts:76:5 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:161:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:360:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:362:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:394:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:395:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:162:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:377:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:379:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:412:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:413:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 

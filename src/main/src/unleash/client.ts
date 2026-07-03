@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
+import { readFile, writeFile } from "node:fs/promises";
 import { platform } from "node:os";
 
 import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import { flagVariantSchemas } from "@vortex/shared/flags";
 import type { FlagContext, FlagMetricsBucket } from "@vortex/shared/ipc";
 import createClient from "openapi-fetch";
-import type { z } from "zod";
+import { z } from "zod";
 
 import { log } from "../logging";
 import { APP_NAME, BASE_URL, API_KEY, ENVIRONMENT, INTERVAL } from "./constants";
@@ -35,19 +36,37 @@ type CustomPaths = Omit<paths, "/api/frontend"> & {
   };
 };
 
+const DEFAULT_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export type UnleashClientOptions = {
+  cachePath?: string;
+  cacheTtlMs?: number;
+};
+
+const flagCacheSchema = z.object({
+  timestamp: z.number(),
+  toggles: z.array(z.unknown()),
+});
+
+type FlagCache = z.infer<typeof flagCacheSchema>;
+
 export class UnleashClient {
   readonly #apiClient: ReturnType<typeof createClient<CustomPaths>>;
   readonly #sessionId: string;
   readonly #appVersion: string;
   readonly #channel: "beta" | "stable";
+  readonly #cachePath: string | undefined;
+  readonly #cacheTtlMs: number;
 
   #flags: FeatureFlag[] = [];
   #context: FlagContext = {};
 
-  constructor(appVersion: string) {
+  constructor(appVersion: string, options?: UnleashClientOptions) {
     this.#sessionId = randomUUID();
     this.#appVersion = appVersion;
     this.#channel = appVersion.includes("-beta") ? "beta" : "stable";
+    this.#cachePath = options?.cachePath;
+    this.#cacheTtlMs = options?.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
 
     this.#apiClient = createClient({
       baseUrl: BASE_URL,
@@ -101,7 +120,12 @@ export class UnleashClient {
       if (!stopped) schedule();
     };
 
-    void tick();
+    const initialLoad = async (): Promise<void> => {
+      const cached = await this.#loadCache();
+      if (cached !== undefined) onUpdate?.(cached);
+      void tick();
+    };
+    void initialLoad();
 
     return () => {
       stopped = true;
@@ -155,8 +179,8 @@ export class UnleashClient {
       return [];
     }
 
-    const flags: FeatureFlag[] = [];
     const { toggles } = result.data;
+    const flags: FeatureFlag[] = [];
     for (let i = 0; i < toggles.length; i++) {
       const toggle = toggles[i];
       if (!toggle) continue;
@@ -165,7 +189,49 @@ export class UnleashClient {
     }
 
     log("debug", "received feature flags", { num: flags.length });
+    void this.#writeCache(toggles as UnleashToggle[]);
     return flags;
+  }
+
+  async #writeCache(toggles: UnleashToggle[]): Promise<void> {
+    if (!this.#cachePath) return;
+    try {
+      const cache: FlagCache = { timestamp: Date.now(), toggles };
+      await writeFile(this.#cachePath, JSON.stringify(cache), "utf-8");
+    } catch (err) {
+      log("warn", "failed to write flag cache", { err });
+    }
+  }
+
+  async #loadCache(): Promise<FeatureFlag[] | undefined> {
+    if (!this.#cachePath) return undefined;
+
+    try {
+      const raw = await readFile(this.#cachePath, "utf-8");
+      const parsed = flagCacheSchema.safeParse(JSON.parse(raw));
+
+      if (!parsed.success) {
+        log("debug", "flag cache has unexpected shape, ignoring");
+        return undefined;
+      }
+
+      const { timestamp, toggles } = parsed.data;
+      if (Date.now() - timestamp > this.#cacheTtlMs) {
+        log("debug", "flag cache is expired, ignoring");
+        return undefined;
+      }
+
+      const flags: FeatureFlag[] = [];
+      for (const toggle of toggles) {
+        const flag = parseToggle(toggle as UnleashToggle);
+        if (flag) flags.push(flag);
+      }
+      log("debug", "replayed feature flags from cache", { num: flags.length });
+      return flags;
+    } catch (err) {
+      log("debug", "failed to read flag cache", { err });
+      return undefined;
+    }
   }
 
   #createContext(): UnleashContext {
@@ -209,12 +275,17 @@ function parseToggle({ name, variant }: UnleashToggle): FeatureFlag | undefined 
     return undefined;
   }
 
-  return {
+  const parsedVariant = variant?.payload
+    ? parseVariantData(flagName, variant.name, variant.payload.value)
+    : undefined;
+
+  const res = {
     name: flagName,
-    variant: variant?.payload
-      ? parseVariantData(flagName, variant.name, variant.payload.value)
-      : undefined,
+    variant: parsedVariant,
   };
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+  return res as FeatureFlag;
 }
 
 function parseVariantData(

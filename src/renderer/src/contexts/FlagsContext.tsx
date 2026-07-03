@@ -36,8 +36,8 @@ export const FlagsProvider: FC<IFlagsProviderProps> = ({ children }) => {
   );
 
   useEffect(() => {
-    return FlagService.instance.subscribe(() => {
-      setFlags(FlagService.instance.flags);
+    return FlagService.instance.subscribe((flags) => {
+      setFlags(flags);
     });
   }, []);
 

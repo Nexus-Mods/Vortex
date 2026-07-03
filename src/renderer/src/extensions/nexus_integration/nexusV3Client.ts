@@ -12,6 +12,8 @@ import { getOAuthTokenFromState } from "./util";
 
 export type VortexNexusV3ClientOptions = Omit<NexusV3ClientOptions, "baseUrl" | "userAgent">;
 
+const NEXUS_V3_API_URL = `${NEXUS_API_URL}/v3`;
+
 /**
  * Creates a Nexus v3 API client pre-configured for Vortex.
  * Credentials can still be overridden via `options`.
@@ -29,7 +31,7 @@ export function createVortexNexusV3Client(
     bearerToken: getOAuthTokenFromState(api),
     apiKey,
     ...options,
-    baseUrl: NEXUS_API_URL,
+    baseUrl: NEXUS_V3_API_URL,
     userAgent: `Vortex/${getApplication().version}`,
   });
 }

@@ -1,8 +1,22 @@
 import type { IReference, IRule } from "modmeta-db";
 
+import type { IChoiceType } from "../../installer_fomod_shared/types/interface";
+
 export type { IReference, IRule };
+// The installer-choices shape is owned by the fomod installer (the only producer
+// today). Re-exported here so the install-customization fields have one import home.
+export type { IChoiceType };
 
 export type ModState = "downloading" | "downloaded" | "installing" | "installed";
+
+/**
+ * Binary patches applied to a mod's files when it is installed as a dependency,
+ * keyed by file path. The value is the hash of the baseline file the patch is
+ * applied against.
+ */
+export interface IModPatches {
+  [filePath: string]: string;
+}
 
 /**
  * Attributes specific to Nexus Mods Collections (when IMod.type === "collection")
@@ -77,8 +91,8 @@ export interface ICommonModAttributes {
   referenceTag?: string;
 
   // Installer and patching
-  installerChoices?: any;
-  patches?: any;
+  installerChoices?: IChoiceType;
+  patches?: IModPatches;
   fileList?: IFileListItem[];
 
   // Version and updates
@@ -190,9 +204,6 @@ export interface IModReference extends IReference {
   // the user chose for the mod.
   description?: string;
   instructions?: string;
-  installerChoices?: any;
-  fileList?: IFileListItem[];
-  patches?: any;
 }
 
 /**
@@ -217,17 +228,56 @@ export interface IDownloadHint {
   instructions?: string;
 }
 
-export interface IModRule extends IRule {
-  reference: IModReference;
+/**
+ * A mod's "install spec": not which mod it is, but how it was installed - the
+ * installer choices, file list, and binary patches. This is the data that
+ * distinguishes the user-facing "variants" of a mod; it is NOT the named variant
+ * itself (that is the `mod.attributes.variant` string). Declared here so IModRule,
+ * IDependency and the install-spec matchers all draw the same three fields from a
+ * single source rather than re-declaring them and risking drift.
+ */
+export interface IModInstallSpec {
+  installerChoices?: IChoiceType;
   fileList?: IFileListItem[];
-  // the format of these choices is installer-specific
-  installerChoices?: any;
+  // binary patches applied to the referenced mod's files when it is installed as a
+  // dependency
+  patches?: IModPatches;
+}
+
+/**
+ * Free-form metadata bag carried on any mod rule (and copied onto the IDependency built
+ * from it). The bag is general, not collection-specific: keys arrive from mod-metadata /
+ * nexus dependency rules too (e.g. `rules` for nested dependencies, `onlyIfFulfillable`).
+ * The named fields below are the common ones (most populated by the collection converter);
+ * the index signature is kept deliberately so the bag stays open. Legacy `patches` /
+ * `phase` may also live here on older rules; read those through ruleInstallSpec() /
+ * rulePhase() rather than off `extra` directly.
+ */
+export interface IModRuleExtra {
+  author?: string;
+  type?: string;
+  category?: string;
+  version?: string;
+  url?: string;
+  name?: string;
+  instructions?: string;
+  fileOverrides?: string[];
+  // bundled mods ship inside the collection archive; path of the file within it
+  localPath?: string;
+  [key: string]: any;
+}
+
+export interface IModRule extends IRule, IModInstallSpec {
+  reference: IModReference;
   downloadHint?: IDownloadHint;
-  // additional information attached to the rule. This will not have
-  // any effect on the resolution of the rule but may be used to
-  // customize/improve its presentation or used to add details to a mod
-  // after/if it got installed through this rule.
-  extra?: { [key: string]: any };
+  // install-ordering phase, matching IDependency.phase and ICollectionMod.phase. Older
+  // rules persisted this under `extra.phase`; read it via rulePhase() so the legacy
+  // location keeps working without a migration.
+  phase?: number;
+  // additional information attached to the rule. This will not have any effect on the
+  // resolution of the rule but may be used to customize/improve its presentation or to
+  // add details to a mod after/if it got installed through this rule.
+  extra?: IModRuleExtra;
   // if true, the rule is deactivated and will not have an effect
   ignored?: boolean;
 }

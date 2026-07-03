@@ -100,6 +100,9 @@ export interface Api {
   /** Downloader APIs */
   downloader: DownloaderApi;
 
+  /** bsdiff binary patching APIs (run on a main-process worker_thread) */
+  bsdiff: BsdiffApi;
+
   /** Diagnostic APIs */
   diag: Diag;
 
@@ -498,6 +501,14 @@ export interface DownloaderApi {
    * Returns an unsubscribe function.
    */
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
+}
+
+export interface BsdiffApi {
+  /** Create a BSDIFF40 patch file from oldPath and newPath. */
+  diff(oldPath: string, newPath: string, patchPath: string): Promise<void>;
+
+  /** Apply a BSDIFF40 patch file to oldPath, writing the result to outputPath. */
+  patch(oldPath: string, outputPath: string, patchPath: string): Promise<void>;
 }
 
 /** API for receiving feature flag updates pushed from the main process */

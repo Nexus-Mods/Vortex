@@ -50,6 +50,7 @@ export function createErrorReport(
 ) {
   const userData = getVortexPath("userData");
   const reportPath = path.join(userData, "crashinfo.json");
+  const consentGiven = state !== undefined && isTelemetryEnabled(state);
   fs.writeFileSync(
     reportPath,
     JSON.stringify({
@@ -59,9 +60,10 @@ export function createErrorReport(
       reportProcess: process.type,
       sourceProcess,
       userData,
+      consentGiven,
     }),
   );
-  if (state !== undefined && isTelemetryEnabled(state)) {
+  if (consentGiven) {
     spawnSelf(["--report", reportPath]);
   }
 }

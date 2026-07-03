@@ -61,7 +61,10 @@
           "{projectRoot}/build/main.cjs",
           "{projectRoot}/build/main.cjs.map",
           "{projectRoot}/build/bootstrap.mjs",
-          "{projectRoot}/build/bootstrap.mjs.map"
+          "{projectRoot}/build/bootstrap.mjs.map",
+          "{projectRoot}/build/bsdiff-worker.cjs",
+          "{projectRoot}/build/bsdiff-worker.cjs.map",
+          "{projectRoot}/build/hdiff.wasm"
         ]
       },
       "publish": {
@@ -118,6 +121,7 @@
             "dependentTasksOutputFiles": "**/dist/**"
           },
           "{projectRoot}/copy-assets.mjs",
+          "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",
           "{workspaceRoot}/src/queries/",
@@ -213,9 +217,11 @@
     "@duckdb/node-api": "catalog:",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
+    "@hot-updater/bsdiff": "catalog:",
     "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/adaptor-api": "workspace:*",
+    "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
@@ -238,6 +244,7 @@
     "commander": "catalog:",
     "content-disposition": "catalog:",
     "content-type": "catalog:",
+    "crc-32": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",
     "dayjs": "catalog:",
