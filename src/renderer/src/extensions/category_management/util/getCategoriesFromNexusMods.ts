@@ -25,7 +25,7 @@ export default async function getGameCategories(
   } catch (e: unknown) {
     log("warn", "Failed to get categories for game", e);
     if ((e as Error).message === "Failed to fetch")
-      throw new Error("An unexpcted network error occurred.", { cause: e });
+      throw new Error("An unexpected network error occurred.", { cause: e });
     throw e;
   }
 }

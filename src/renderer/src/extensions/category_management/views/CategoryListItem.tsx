@@ -164,8 +164,9 @@ export default function CategoryListItem({
             {children.length > 0 && (
               <Button
                 appearance="weak"
-                aria-label="Exapand/Collapse"
+                aria-label="Expand/Collapse"
                 brand="neutral"
+                className="nxm-category-expand"
                 leftIconPath={expanded ? mdiChevronDown : mdiChevronRight}
                 title="Expand/Collapse"
                 onClick={() => expand(categoryId)}
@@ -188,6 +189,7 @@ export default function CategoryListItem({
                 <Input
                   hideLabel
                   className="grow"
+                  id={`rename-category-${categoryId}`}
                   minLength={1}
                   placeholder="Rename category"
                   size="sm"
