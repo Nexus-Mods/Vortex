@@ -3,14 +3,13 @@ import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { posix as pathPosix } from "node:path";
 
-import type { IMessageHandler } from "@nexusmods/adaptor-api";
 import type { StorePathSnapshot } from "@nexusmods/adaptor-api";
 import { Base, OS, Store } from "@nexusmods/adaptor-api";
 import type { GameInfo } from "@nexusmods/adaptor-api/contracts/game-info";
 import type { IPingService } from "@nexusmods/adaptor-api/contracts/ping";
 import type { FileSystem, PathResolver } from "@nexusmods/adaptor-api/fs";
 import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
-import type { Serializable } from "@vortex/shared/ipc";
+import type { AdaptorSnapshotOptions, Serializable } from "@vortex/shared/ipc";
 import { ipcMain } from "electron";
 import type exeVersionT from "exe-version";
 
@@ -19,6 +18,12 @@ import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
 import { createFileSystemServiceHandler } from "./filesystem/fs-service";
 import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
 import { LinuxPathProviderImpl } from "./filesystem/paths.linux";
+import {
+  decodeProtonCompatDataPath,
+  encodeProtonCompatDataPath,
+  ProtonWindowsPathResolverImpl,
+  resolveProtonWindowsPath,
+} from "./filesystem/paths.proton";
 import { WindowsPathProviderImpl } from "./filesystem/paths.windows";
 
 // Lazy-loaded to avoid pulling the native module at import time.
@@ -65,11 +70,11 @@ const HOST_SERVICES: Record<string, HostService> = {
  * yet.
  */
 function registerFilesystemService(): void {
-  let resolver: PathResolver;
+  let resolvers: PathResolver[];
   if (process.platform === "linux") {
-    resolver = new LinuxPathProviderImpl();
+    resolvers = [new LinuxPathProviderImpl(), new ProtonWindowsPathResolverImpl()];
   } else if (process.platform === "win32") {
-    resolver = new WindowsPathProviderImpl();
+    resolvers = [new WindowsPathProviderImpl()];
   } else {
     log(
       "info",
@@ -80,7 +85,7 @@ function registerFilesystemService(): void {
   }
 
   const backend = new NodeFileSystemBackendImpl();
-  const registry = new PathResolverRegistryImpl([resolver]);
+  const registry = new PathResolverRegistryImpl(resolvers);
   const filesystem: FileSystem = new NodeFileSystemImpl(backend, registry);
 
   HOST_SERVICES["vortex:host/filesystem"] = {
@@ -134,7 +139,7 @@ const cachedGameInfo = new Map<string, GameInfo>();
 //
 // When a game is discovered, the renderer asks us to build a
 // `StorePathSnapshot` for the adaptor. The snapshot carries the host OS,
-// the game's runtime OS (differs on Proton — not detected here yet), and
+// the game's runtime OS (Windows for Steam/Proton on Linux), and
 // a pre-resolved map of every base the adaptor might need. The adaptor
 // wraps this into a `StorePathProvider` without further IPC.
 // ============================================================================
@@ -142,26 +147,21 @@ const cachedGameInfo = new Map<string, GameInfo>();
 /**
  * Converts a native filesystem path into a `windows://` or `linux://`
  * QualifiedPath. Mirrors the renderer bridge's old `nativeToQualifiedPath`.
- *
- * TODO(proton): this only works when `os` matches the host platform. Once
- * Proton support lands and `gameOS === OS.Windows` on a Linux host, the
- * caller must first translate the native Linux path into a Wine-prefix
- * Windows path (e.g. `Z:\home\user\...` or `C:\users\steamuser\...`) and
- * pass that in. Feeding a raw Linux path through this function with
- * `os = Windows` falls past the drive-letter regex and produces
- * `windows:////home/...` — structurally malformed.
+ * `data` is used for Proton snapshots so the Linux host resolver can map
+ * Windows-looking paths back to the matching Steam compatdata directory.
  */
-function nativeToQualifiedPath(nativePath: string, os: OS): QualifiedPath {
+function nativeToQualifiedPath(nativePath: string, os: OS, data?: string): QualifiedPath {
   if (os === OS.Windows) {
     const forward = nativePath.replace(/\\/g, "/");
     const match = /^([A-Za-z]):\/?(.*)$/.exec(forward);
-    if (match && match[1] && match[2]) {
+    if (match && match[1]) {
       const drive = match[1].toUpperCase();
-      const tail = match[2];
+      const tail = match[2] ?? "";
       const inner = tail.length > 0 ? `/${drive}/${tail}` : `/${drive}`;
-      return QualifiedPath.parse(`windows://${inner}`);
+      return QualifiedPath.parse(data ? `windows://${data}//${inner}` : `windows://${inner}`);
     }
-    return QualifiedPath.parse(`windows://${forward}`);
+    const inner = forward.startsWith("/") ? forward : `/${forward}`;
+    return QualifiedPath.parse(data ? `windows://${data}//${inner}` : `windows://${inner}`);
   }
   return QualifiedPath.parse(`linux://${nativePath}`);
 }
@@ -180,20 +180,25 @@ function qualifiedPathToNative(qp: { value?: string; scheme?: string; path?: str
   }
   const parsed = QualifiedPath.parse(value);
 
-  // Reconstruct the full inner path from data + path segments.
-  // QualifiedPath splits "windows:///C/Users/foo" as:
-  //   data="" path="/C/Users/foo"   (no // separator in the rest)
-  // Or "windows://steam//C/Users/foo" as:
-  //   data="steam" path="C/Users/foo"
-  const segments = [parsed.data, parsed.path].filter(Boolean).join("/");
-
   if (parsed.scheme === "windows") {
+    const protonCompatDataPath = decodeProtonCompatDataPath(parsed.data);
+    if (protonCompatDataPath !== undefined) {
+      return resolveProtonWindowsPath(protonCompatDataPath, parsed.path);
+    }
+
+    // Reconstruct the full inner path from data + path segments.
+    // QualifiedPath splits "windows:///C/Users/foo" as:
+    //   data="" path="/C/Users/foo"   (no // separator in the rest)
+    // Or "windows://steam//C/Users/foo" as:
+    //   data="steam" path="C/Users/foo"
+    const segments = [parsed.data, parsed.path].filter(Boolean).join("/");
     const m = /^\/?([A-Za-z])\/(.*)$/.exec(segments);
     if (m && m[1] && m[2]) {
       return `${m[1]}:\\${m[2].replace(/\//g, "\\")}`;
     }
     return segments.replace(/\//g, "\\");
   }
+  const segments = [parsed.data, parsed.path].filter(Boolean).join("/");
   return segments.startsWith("/") ? segments : `/${segments}`;
 }
 
@@ -237,6 +242,45 @@ function resolveLinuxBases(): Map<Base, QualifiedPath> {
   return out;
 }
 
+function linuxHostPathToWinePath(hostPath: string): string {
+  const normalized = pathPosix.resolve(hostPath.replace(/\\/g, "/"));
+  if (normalized === "/") {
+    return "Z:\\";
+  }
+  return `Z:\\${normalized.slice(1).replace(/\//g, "\\")}`;
+}
+
+function isSteamProtonSnapshot(
+  store: Store,
+  baseOS: OS,
+  options?: AdaptorSnapshotOptions,
+): options is AdaptorSnapshotOptions & { compatDataPath: string } {
+  return (
+    baseOS === OS.Linux &&
+    store === Store.Steam &&
+    options?.usesProton === true &&
+    typeof options.compatDataPath === "string" &&
+    options.compatDataPath.trim().length > 0
+  );
+}
+
+function resolveProtonWindowsBases(
+  gamePath: string,
+  compatDataPath: string,
+): Map<Base, QualifiedPath> {
+  const protonData = encodeProtonCompatDataPath(compatDataPath);
+  const toWin = (p: string): QualifiedPath => nativeToQualifiedPath(p, OS.Windows, protonData);
+  const userHome = "C:\\users\\steamuser";
+  const out = new Map<Base, QualifiedPath>();
+  out.set(Base.Game, toWin(linuxHostPathToWinePath(gamePath)));
+  out.set(Base.Home, toWin(userHome));
+  out.set(Base.Temp, toWin(path.win32.join(userHome, "AppData", "Local", "Temp")));
+  out.set(Base.AppData, toWin(path.win32.join(userHome, "AppData")));
+  out.set(Base.Documents, toWin(path.win32.join(userHome, "Documents")));
+  out.set(Base.MyGames, toWin(path.win32.join(userHome, "Documents", "My Games")));
+  return out;
+}
+
 function detectHostOS(): OS {
   if (process.platform === "win32") return OS.Windows;
   if (process.platform === "linux") return OS.Linux;
@@ -249,24 +293,36 @@ const KNOWN_STORES: ReadonlySet<string> = new Set(Object.values(Store));
  * Builds a {@link StorePathSnapshot} for a given discovery.
  *
  * The inner bases map is populated for every OS in `{baseOS, gameOS}`.
- * The `Base.Game` entry is written under both OSes — the host-side path
- * is just the native install path, and the game-side path is currently
- * the same (Proton support will later translate this through the Wine
- * prefix).
+ * Native installs get a single OS map. Steam/Proton installs on Linux get
+ * Linux host bases plus Windows runtime bases tagged with compatdata info.
  */
-function buildStorePathSnapshot(store: Store, gamePath: string): StorePathSnapshot {
+function buildStorePathSnapshot(
+  store: Store,
+  gamePath: string,
+  options?: AdaptorSnapshotOptions,
+): StorePathSnapshot {
   const baseOS = detectHostOS();
-  // TODO: detect Proton on Steam/Linux and set gameOS = OS.Windows, plus
-  // resolve the game-side bases out of the Wine prefix. For now the game
-  // runtime matches the host.
-  const gameOS = baseOS;
+  const protonCompatDataPath = isSteamProtonSnapshot(store, baseOS, options)
+    ? options.compatDataPath
+    : undefined;
+  const gameOS = protonCompatDataPath !== undefined ? OS.Windows : baseOS;
 
   const bases = new Map<OS, ReadonlyMap<Base, QualifiedPath>>();
-  const platforms: OS[] = baseOS === gameOS ? [baseOS] : [baseOS, gameOS];
-  for (const os of platforms) {
-    const inner = os === OS.Windows ? resolveWindowsBases() : resolveLinuxBases();
-    inner.set(Base.Game, nativeToQualifiedPath(gamePath, os));
-    bases.set(os, inner);
+  const hostBases = baseOS === OS.Windows ? resolveWindowsBases() : resolveLinuxBases();
+  hostBases.set(Base.Game, nativeToQualifiedPath(gamePath, baseOS));
+  bases.set(baseOS, hostBases);
+
+  if (gameOS !== baseOS) {
+    const gameBases =
+      protonCompatDataPath !== undefined && gameOS === OS.Windows
+        ? resolveProtonWindowsBases(gamePath, protonCompatDataPath)
+        : gameOS === OS.Windows
+          ? resolveWindowsBases()
+          : resolveLinuxBases();
+    if (!gameBases.has(Base.Game)) {
+      gameBases.set(Base.Game, nativeToQualifiedPath(gamePath, gameOS));
+    }
+    bases.set(gameOS, gameBases);
   }
 
   return { store, baseOS, gameOS, bases };
@@ -442,7 +498,12 @@ function registerIpcHandlers(): void {
    */
   betterIpcMain.handle(
     "adaptors:build-snapshot",
-    (_event: unknown, store: string, gamePath: string) => {
+    (
+      _event: unknown,
+      store: string,
+      gamePath: string,
+      options?: AdaptorSnapshotOptions,
+    ) => {
       if (!KNOWN_STORES.has(store)) {
         return Promise.reject(
           new Error(
@@ -456,7 +517,7 @@ function registerIpcHandlers(): void {
         );
       }
       return Promise.resolve(
-        buildStorePathSnapshot(store as Store, gamePath) as unknown,
+        buildStorePathSnapshot(store as Store, gamePath, options) as unknown,
       ) as Promise<Serializable>;
     },
   );

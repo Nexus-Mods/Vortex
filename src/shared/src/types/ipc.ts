@@ -90,6 +90,12 @@ export type VortexPaths = {
   desktop: string;
 };
 
+export interface AdaptorSnapshotOptions {
+  usesProton?: boolean;
+  compatDataPath?: string;
+  protonPath?: string;
+}
+
 export type WireEndpoint = {
   url: string;
   headers?: Record<string, string>;
@@ -429,7 +435,11 @@ export interface InvokeChannels {
    * renderer uses this instead of constructing path bases itself so the
    * adaptor can be handed a fully-resolved {@link StorePathProvider}.
    */
-  "adaptors:build-snapshot": (store: string, gamePath: string) => Promise<Serializable>;
+  "adaptors:build-snapshot": (
+    store: string,
+    gamePath: string,
+    options?: AdaptorSnapshotOptions,
+  ) => Promise<Serializable>;
 
   /**
    * Executes a declarative version detection strategy on the main

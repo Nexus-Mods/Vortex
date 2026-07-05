@@ -17,6 +17,9 @@ export interface IDiscoveryResult {
   path?: string;
   pathSetManually?: boolean;
   store?: string;
+  usesProton?: boolean;
+  compatDataPath?: string;
+  protonPath?: string;
   tools?: {
     [id: string]: IDiscoveredTool;
   };

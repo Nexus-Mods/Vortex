@@ -21,6 +21,7 @@ import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
+  AdaptorSnapshotOptions,
   Serializable,
   UpdateStatus,
   VortexPaths,
@@ -430,7 +431,11 @@ export interface AdaptorsApi {
    * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
    * types into the preload surface; the bridge casts locally).
    */
-  buildSnapshot(store: string, gamePath: string): Promise<unknown>;
+  buildSnapshot(
+    store: string,
+    gamePath: string,
+    options?: AdaptorSnapshotOptions,
+  ): Promise<unknown>;
   /**
    * Executes a declarative version detection strategy on the main
    * process side. The source describes what to read (PE header, text

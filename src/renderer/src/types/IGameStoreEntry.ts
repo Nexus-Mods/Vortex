@@ -6,4 +6,7 @@ export interface IGameStoreEntry {
   priority?: number;
   lastUpdated?: Date;
   lastUser?: string;
+  usesProton?: boolean;
+  compatDataPath?: string;
+  protonPath?: string;
 }

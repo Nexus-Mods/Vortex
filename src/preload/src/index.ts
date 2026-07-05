@@ -1,6 +1,7 @@
 import { type ErrorOriginTracker, rehydrateSerializedError, serializeError } from "@vortex/shared";
 import type {
   AppInitMetadata,
+  AdaptorSnapshotOptions,
   RendererChannels,
   InvokeChannels,
   MainChannels,
@@ -109,8 +110,8 @@ try {
       listWithInfoSync: () => ipcRenderer.sendSync("adaptors:list-with-info"),
       call: (adaptorName: string, serviceUri: string, method: string, args: unknown[]) =>
         betterIpcRenderer.invoke("adaptors:call", adaptorName, serviceUri, method, args),
-      buildSnapshot: (store: string, gamePath: string) =>
-        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
+      buildSnapshot: (store: string, gamePath: string, options?: AdaptorSnapshotOptions) =>
+        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath, options),
       detectVersion: (source: { type: string; path: { value: string }; regex?: string }) =>
         betterIpcRenderer.invoke("adaptors:detect-version", source),
     },

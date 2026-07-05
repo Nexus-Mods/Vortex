@@ -89,6 +89,12 @@ type OpaqueStorePathSnapshot = unknown;
  */
 type OpaqueGamePaths = unknown;
 
+interface SnapshotOptions {
+  usesProton?: boolean;
+  compatDataPath?: string;
+  protonPath?: string;
+}
+
 interface GameExecutable {
   executable: { value: string; path: string };
   parameters?: string[];
@@ -216,7 +222,53 @@ async function callAdaptor(
 interface SerializedQP {
   value: string;
   scheme: string;
+  data?: string;
   path: string;
+}
+
+function decodeProtonCompatDataPath(data?: string): string | undefined {
+  const prefix = "proton:";
+  if (data === undefined || !data.startsWith(prefix)) {
+    return undefined;
+  }
+
+  const encoded = data.slice(prefix.length);
+  if (encoded.length === 0) {
+    return undefined;
+  }
+
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return undefined;
+  }
+}
+
+function protonWindowsPathToNative(compatDataPath: string, qpPath: string): string {
+  if (!qpPath.startsWith("/")) {
+    throw new Error(`Invalid Proton windows path '${qpPath}': must be rooted`);
+  }
+
+  const rest = qpPath.slice(1);
+  const slash = rest.indexOf("/");
+  const drive = (slash === -1 ? rest : rest.slice(0, slash)).toUpperCase();
+  if (!/^[A-Z]$/.test(drive)) {
+    throw new Error(
+      `Invalid Proton windows path '${qpPath}': first component must be a drive letter`,
+    );
+  }
+  const tail = slash === -1 ? "" : rest.slice(slash + 1);
+  const tailParts = tail.split("/").filter((segment) => segment.length > 0);
+
+  if (drive === "C") {
+    return path.posix.join(compatDataPath, "pfx", "drive_c", ...tailParts);
+  }
+
+  if (drive === "Z") {
+    return tailParts.length === 0 ? "/" : path.posix.join("/", ...tailParts);
+  }
+
+  throw new Error(`Unsupported Proton drive '${drive}:'`);
 }
 
 /**
@@ -235,6 +287,11 @@ interface SerializedQP {
  */
 function qpPathToNative(qp: SerializedQP): string {
   if (qp.scheme === "windows") {
+    const protonCompatDataPath = decodeProtonCompatDataPath(qp.data);
+    if (protonCompatDataPath !== undefined) {
+      return protonWindowsPathToNative(protonCompatDataPath, qp.path);
+    }
+
     const p = qp.path;
     if (p.length >= 3 && p[0] === "/" && p[2] === "/") {
       return p[1] + ":" + p.slice(2).replace(/\//g, "\\");
@@ -463,9 +520,13 @@ function registerAdaptor(context: IExtensionContext, adaptor: AdaptorEntry): voi
   }
 
   /** Resolves game paths. Called once after discovery. */
-  async function getPaths(store: string, gamePath: string): Promise<OpaqueGamePaths | null> {
+  async function getPaths(
+    store: string,
+    gamePath: string,
+    options?: SnapshotOptions,
+  ): Promise<OpaqueGamePaths | null> {
     if (!pathsResolved && pathsUri) {
-      cachedSnapshot = await window.api.adaptors.buildSnapshot(store, gamePath);
+      cachedSnapshot = await window.api.adaptors.buildSnapshot(store, gamePath, options);
       cachedPaths = await callAdaptor(name, pathsUri, "paths", [cachedSnapshot]);
       pathsResolved = true;
     }
@@ -592,7 +653,11 @@ function registerAdaptor(context: IExtensionContext, adaptor: AdaptorEntry): voi
           }
 
           // Step 1: Resolve folder paths (game, saves, preferences, etc.)
-          const paths = await getPaths(store, gamePath);
+          const paths = await getPaths(store, gamePath, {
+            usesProton: discovery.usesProton,
+            compatDataPath: discovery.compatDataPath,
+            protonPath: discovery.protonPath,
+          });
 
           // Step 2: Detect game version (if adaptor declares a strategy)
           const version = await getVersion(paths);

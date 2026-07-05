@@ -201,6 +201,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
       : (gamePath ?? Bluebird.resolve(undefined));
 
   let store: string;
+  let storeEntry: Partial<IGameStoreEntry> = {};
 
   return prom
     .then((resolvedInfo) => {
@@ -218,6 +219,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
       } else if (resolvedInfo === undefined) {
         return Bluebird.reject(new GameEntryNotFound(game.id, "unknown"));
       } else {
+        storeEntry = resolvedInfo;
         store = resolvedInfo.gameStoreId;
         return resolvedInfo.gamePath;
       }
@@ -227,7 +229,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
         ? Bluebird.resolve(undefined)
         : fs
             .statAsync(resolvedPath)
-            .then(() => ({ gamePath: resolvedPath, gameStoreId: store }))
+            .then(() => ({ ...storeEntry, gamePath: resolvedPath, gameStoreId: store }))
             .catch((err) => {
               if (err.code === "ENOENT") {
                 log("warn", "rejecting game discovery, directory doesn't exist", resolvedPath);
@@ -245,6 +247,7 @@ function handleDiscoveredGame(
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
+  storeEntry?: Partial<IGameStoreEntry>,
 ): Bluebird<string> {
   if (!truthy(resolvedPath)) {
     return undefined;
@@ -256,6 +259,15 @@ function handleDiscoveredGame(
     executable: exe !== game.executable() ? exe : undefined,
     store,
   };
+  if (storeEntry?.usesProton !== undefined) {
+    disco.usesProton = storeEntry.usesProton;
+  }
+  if (storeEntry?.compatDataPath !== undefined) {
+    disco.compatDataPath = storeEntry.compatDataPath;
+  }
+  if (storeEntry?.protonPath !== undefined) {
+    disco.protonPath = storeEntry.protonPath;
+  }
   onDiscoveredGame(game.id, disco);
   return getNormalizeFunc(resolvedPath)
     .then((normalize) =>
@@ -312,6 +324,7 @@ export function quickDiscovery(
                 discoveredGames,
                 onDiscoveredGame,
                 onDiscoveredTool,
+                result,
               );
             } else {
               return Bluebird.resolve(undefined);
@@ -329,6 +342,7 @@ export function quickDiscovery(
               discoveredGames,
               onDiscoveredGame,
               onDiscoveredTool,
+              result,
             );
           });
         } else {
