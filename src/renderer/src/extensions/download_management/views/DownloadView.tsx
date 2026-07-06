@@ -422,6 +422,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     }
     const urlInvalid = ["moved permanently", "forbidden", "gone"];
     const title = resume ? "Failed to resume download" : "Failed to start download";
+    // Fall back to `err.code` for raw Node errors that reach here directly.
+    const errno: string | undefined = err.payload?.errno ?? err.code;
     if (err instanceof ProcessCanceled) {
       this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof UserCanceled) {
@@ -526,9 +528,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         undefined,
         false,
       );
-    } else if (err.code === "ENOSPC") {
+    } else if (errno === "ENOSPC") {
       this.props.onShowError(title, "The disk is full", undefined, false);
-    } else if (err.code === "EBADF") {
+    } else if (errno === "EBADF") {
       this.props.onShowError(
         title,
         "Failed to write to disk. If you use a removable media or " +

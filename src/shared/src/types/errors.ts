@@ -6,7 +6,7 @@ export type DownloadErrorPayload =
   | { code: "precondition-failed"; url: URL }
   | { code: "protocol-violation"; url: URL }
   | { code: "is-html"; url: URL }
-  | { code: "fs-error"; path: string }
+  | { code: "fs-error"; path: string; errno?: string }
   | { code: "resolver-error" };
 
 export class DownloadError extends Error {

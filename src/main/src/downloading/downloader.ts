@@ -142,16 +142,24 @@ export async function download<T>(
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
-    throw new DownloadError({ code: "fs-error", path: dest }, `Failed to open ${dest}`, err);
+    const errno = getErrorCode(err) ?? undefined;
+    throw new DownloadError(
+      { code: "fs-error", path: dest, errno },
+      errno ? `Failed to open ${dest} (${errno})` : `Failed to open ${dest}`,
+      err,
+    );
   }
 
   if (checkpoint && probe.size) {
     try {
       await handle.fd.truncate(probe.size);
     } catch (err) {
+      const errno = getErrorCode(err) ?? undefined;
       throw new DownloadError(
-        { code: "fs-error", path: handle.path },
-        `Failed to truncate ${handle.path}`,
+        { code: "fs-error", path: handle.path, errno },
+        errno
+          ? `Failed to truncate ${handle.path} (${errno})`
+          : `Failed to truncate ${handle.path}`,
         err,
       );
     }
@@ -432,9 +440,12 @@ async function downloadStream(
         if (progress) progress.bytesWritten += result.bytesWritten;
         writePosition += result.bytesWritten;
       } catch (err) {
+        const errno = getErrorCode(err) ?? undefined;
         throw new DownloadError(
-          { code: "fs-error", path: handle.path },
-          `Failed to write to ${handle.path}`,
+          { code: "fs-error", path: handle.path, errno },
+          errno
+            ? `Failed to write to ${handle.path} (${errno})`
+            : `Failed to write to ${handle.path}`,
           err,
         );
       }
