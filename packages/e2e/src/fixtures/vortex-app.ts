@@ -131,16 +131,6 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
     }),
   ]);
 
-  // Prevent Vortex from opening URLs in the host's real browser during tests
-  // (the OAuth login page, "Go Premium", external mod links, etc.). The login
-  // helper reads the OAuth URL from the login dialog and drives its own
-  // Playwright browser instead. All external opens funnel through
-  // shell.openExternal (renderer opn() → "shell:openUrl" IPC → main open.ts),
-  // so stubbing it here covers every path.
-  await app.evaluate(({ shell }) => {
-    shell.openExternal = () => Promise.resolve();
-  });
-
   return mainWindow;
 }
 
@@ -302,7 +292,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
-              const loginResult = await loginToNexus(window, user, {
+              const loginResult = await loginToNexus(app, window, user, {
                 skipSteps: true,
                 keepBrowser: true,
                 nexusDiagnostics: { testInfo, prefix: "snapshot-nexus" },

@@ -1,4 +1,10 @@
-import { type Browser, expect, type Page, type TestInfo } from "@playwright/test";
+import {
+  type Browser,
+  type ElectronApplication,
+  expect,
+  type Page,
+  type TestInfo,
+} from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
@@ -43,6 +49,7 @@ export interface LoginToNexusResult {
 }
 
 export async function loginToNexus(
+  vortexApp: ElectronApplication,
   vortexWindow: Page,
   user: NexusUser = freeUser,
   options: LoginToNexusOptions,
@@ -68,6 +75,18 @@ export async function loginToNexus(
 
   await step("Click the login button", async () => {
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
+
+    // Clicking login makes Vortex open the OAuth URL externally (renderer
+    // opn() → "shell:openUrl" IPC → main open.ts → shell.openExternal). This
+    // helper drives its own browser from the URL shown in the login dialog, so
+    // stub openExternal — scoped to the login flow that triggers it — to keep
+    // the OAuth page out of the tester's real browser. Stub only now, once the
+    // login button is visible (startup navigation has settled), so the
+    // main-process evaluate doesn't race a destroyed execution context.
+    await vortexApp.evaluate(({ shell }) => {
+      shell.openExternal = () => Promise.resolve();
+    });
+
     await vortexLoginPage.vortexLoginButton.click();
   });
 
