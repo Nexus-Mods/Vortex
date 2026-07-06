@@ -15,11 +15,11 @@ describe("addLocalDownload", () => {
 
 describe("downloadProgress", () => {
   it("creates the action", () => {
-    const action = actions.downloadProgress("id", 42, 43, []);
+    const action = actions.downloadProgress("id", 42, 43, undefined);
     expect(action).toEqual({
       error: false,
       type: "DOWNLOAD_PROGRESS",
-      payload: { id: "id", received: 42, total: 43, urls: [] },
+      payload: { id: "id", received: 42, total: 43, urls: undefined },
     });
   });
 });
