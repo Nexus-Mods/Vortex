@@ -15,9 +15,10 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
 | @nexusmods/adaptor-api | link:../../packages/adaptor-api |
-| @nexusmods/fomod-installer-ipc | 0.13.2 |
+| @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
+| @nexusmods/fomod-installer-ipc | 0.13.3 |
 | @nexusmods/fomod-installer-native | 0.13.3 |
-| @nexusmods/nexus-api | 1.7.0 |
+| @nexusmods/nexus-api | 1.7.1 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.8.0 |
 | @opentelemetry/context-zone | 2.8.0 |
@@ -25,7 +26,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @opentelemetry/resources | 2.8.0 |
 | @opentelemetry/sdk-trace-base | 2.8.0 |
 | @opentelemetry/semantic-conventions | 1.40.0 |
-| @tailwindcss/cli | 4.3.0 |
+| @tailwindcss/cli | 4.3.2 |
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
 | @vortex/nexus-api-v3 | link:../../packages/nexus-api-v3 |
@@ -108,13 +109,13 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | reselect | 4.1.8 |
 | resolve | 1.22.11 |
 | rimraf | 2.6.2 |
-| sass | 1.100.0 |
+| sass | 1.101.0 |
 | semver | 7.7.4 |
 | shortid | 2.2.17 |
 | simple-vdf | 1.1.3 |
 | source-map-support | 0.5.21 |
 | string-template | 1.0.0 |
-| tailwindcss | 4.3.0 |
+| tailwindcss | 4.3.2 |
 | tmp | 0.1.0 |
 | tough-cookie | 6.0.1 |
 | turbowalk | 3.1.1 |

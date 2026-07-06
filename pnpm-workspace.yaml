@@ -28,7 +28,7 @@ catalog:
   "@hot-updater/bsdiff": 0.30.6
   "@iarna/toml": 2.2.5
   "@mdi/js": 7.4.47
-  "@microsoft/api-extractor": 7.58.7
+  "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
@@ -42,7 +42,7 @@ catalog:
   "@opentelemetry/semantic-conventions": 1.40.0
   "@playwright/test": 1.60.0
   "@stylistic/eslint-plugin": 5.10.0
-  "@tailwindcss/cli": 4.3.0
+  "@tailwindcss/cli": 4.3.2
   "@testing-library/dom": 10.4.1
   "@testing-library/jest-dom": 6.9.1
   "@testing-library/react": 12.1.5
@@ -104,10 +104,10 @@ catalog:
   "@types/write-file-atomic": 3.0.3
   "@types/ws": 7.4.7
   "@types/xml2js": 0.4.14
-  "@typescript-eslint/utils": 8.60.1
+  "@typescript-eslint/utils": 8.62.1
   "@vitejs/plugin-react": 6.0.2
-  "@vitest/coverage-v8": 4.1.8
-  "@vitest/ui": 4.1.8
+  "@vitest/coverage-v8": 4.1.9
+  "@vitest/ui": 4.1.9
   "@welldone-software/why-did-you-render": 10.0.1
   bbcode-to-react: github:TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
@@ -143,17 +143,17 @@ catalog:
   electron-updater: 4.6.5
   encoding-down: 6.3.0
   enquirer: 2.4.1
-  eslint: 10.4.1
+  eslint: 10.6.0
   eslint-config-prettier: 10.1.8
-  eslint-plugin-better-tailwindcss: 4.5.0
-  eslint-plugin-perfectionist: 5.9.0
+  eslint-plugin-better-tailwindcss: 4.6.1
+  eslint-plugin-perfectionist: 5.9.1
   feedparser: 2.3.0
   font-scanner: 0.2.1
   fork-ts-checker-webpack-plugin: 9.1.0
   fs-extra: 9.1.0
   fuzzball: 1.4.0
   glob: 11.1.0
-  globals: 17.6.0
+  globals: 17.7.0
   got: 15.0.5
   graphlib: 2.1.8
   happy-dom: 20.9.0
@@ -172,7 +172,7 @@ catalog:
   leveldown: 5.6.0
   levelup: 4.4.0
   limiter: 3.0.0
-  lint-staged: 17.0.7
+  lint-staged: 17.0.8
   lodash: 4.17.23
   loot: github:Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
   lru-cache: 11.2.7
@@ -191,9 +191,9 @@ catalog:
   octokit: 5.0.5
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
-  oxfmt: 0.53.0
-  oxlint: 1.70.0
-  oxlint-tsgolint: 0.23.0
+  oxfmt: 0.57.0
+  oxlint: 1.72.0
+  oxlint-tsgolint: 0.24.0
   p-limit: 7.3.0
   p-queue: 9.3.0
   packery: 2.1.2
@@ -229,8 +229,8 @@ catalog:
   reselect: 4.1.8
   resolve: 1.22.11
   rimraf: github:TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-  rolldown: 1.0.3
-  sass: 1.100.0
+  rolldown: 1.1.4
+  sass: 1.101.0
   semver: 7.7.4
   shortid: 2.2.17
   simple-git: 3.33.0
@@ -238,28 +238,28 @@ catalog:
   source-map-loader: 5.0.0
   source-map-support: 0.5.21
   string-template: 1.0.0
-  tailwindcss: 4.3.0
+  tailwindcss: 4.3.2
   terser-webpack-plugin: 5.6.1
   tmp: 0.1.0
   tough-cookie: 6.0.1
-  ts-loader: 9.6.0
+  ts-loader: 9.6.2
   ts-v-gen: 1.0.3
   tsconfig-paths-webpack-plugin: 4.2.0
-  tsdown: 0.22.1
-  tsx: 4.22.4
+  tsdown: 0.22.3
+  tsx: 4.23.0
   turbowalk: github:Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: 4.3.3
   typescript: 6.0.3
-  typescript-eslint: 8.60.1
+  typescript-eslint: 8.62.1
   universal-analytics: 0.4.23
   uuid: 3.4.0
-  vite: 8.0.16
+  vite: 8.1.3
   vite-plugin-doctest: 2.0.0
-  vitest: 4.1.8
+  vitest: 4.1.9
   vitest-fetch-mock: 0.4.5
   vortex-parse-ini: github:Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  webpack: 5.107.2
-  webpack-cli: 7.0.3
+  webpack: 5.108.4
+  webpack-cli: 7.2.1
   webpack-node-externals: 3.0.0
   which: 1.3.1
   wholocks: github:Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
