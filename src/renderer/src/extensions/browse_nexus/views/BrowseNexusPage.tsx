@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 
 import { CollectionsDownloadClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import { buildNXMCollectionUrl } from "@/extensions/nexus_integration/NXMUrl";
 import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
@@ -132,7 +133,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const handleAddCollection = (collection: ICollection) => {
     const revisionNumber = collection.latestPublishedRevision?.revisionNumber || "latest";
     // Use the game domain name from the collection data (already converted)
-    const nxmUrl = `nxm://${collection.game.domainName}/collections/${collection.slug}/revisions/${revisionNumber}`;
+    const nxmUrl = buildNXMCollectionUrl(
+      collection.game.domainName,
+      collection.slug,
+      revisionNumber,
+    );
 
     // Track the download click event
     api.events.emit(

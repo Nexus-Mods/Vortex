@@ -471,8 +471,11 @@ export interface DownloaderApi {
    * Enqueues a download. The caller must generate `collationId` and register
    * any resolve handler before calling this, so that the main-side resolve
    * callback cannot arrive before the handler is ready.
+   *
+   * Passing `downloadId` restores an existing download: the transfer starts from
+   * scratch under that id, replacing any previous attempt tracked for it.
    */
-  start(dest: string, collationId: number): Promise<{ downloadId: string }>;
+  start(dest: string, collationId: number, downloadId?: string): Promise<{ downloadId: string }>;
 
   /** Pauses an active download and returns a checkpoint for later resumption. */
   pause(downloadId: string): Promise<WireDownloadCheckpoint>;
