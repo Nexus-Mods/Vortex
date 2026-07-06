@@ -11,27 +11,8 @@ packages:
   - ./extensions/*
   - ./extensions/games/*
 
-allowBuilds:
-  "@nexusmods/fomod-installer-native": true
-  "@parcel/watcher": true
-  bsatk: true
-  core-js: true
-  drivelist: true
-  electron: true
-  esbuild: true
-  font-scanner: true
-  gamebryo-savegame: true
-  leveldown: true
-  loot: true
-  node: true
-  nx: false
-  protobufjs: true
-  unrs-resolver: true
-  winapi-bindings: true
-  xxhash-addon: true
-
 catalog:
-  7z-bin: git+https://github.com/Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
+  7z-bin: github:Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
   "@babel/polyfill": 7.12.1
   "@babel/preset-env": 7.29.2
   "@babel/preset-react": 7.28.5
@@ -39,7 +20,7 @@ catalog:
   "@babel/register": 7.16.8
   "@cyclonedx/cyclonedx-library": 10.0.0
   "@duckdb/node-api": 1.5.1-r.1
-  "@electron/rebuild": 4.0.4
+  "@electron/rebuild": 4.1.0
   "@electron/remote": 2.1.3
   "@eslint-react/eslint-plugin": 3.0.0
   "@eslint/js": 10.0.1
@@ -47,11 +28,11 @@ catalog:
   "@hot-updater/bsdiff": 0.30.6
   "@iarna/toml": 2.2.5
   "@mdi/js": 7.4.47
-  "@microsoft/api-extractor": 7.58.7
+  "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
-  "@nexusmods/nexus-api": git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
+  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.8.0
   "@opentelemetry/context-zone": 2.8.0
@@ -59,9 +40,9 @@ catalog:
   "@opentelemetry/resources": 2.8.0
   "@opentelemetry/sdk-trace-base": 2.8.0
   "@opentelemetry/semantic-conventions": 1.40.0
-  "@playwright/test": 1.60.0
+  "@playwright/test": 1.61.1
   "@stylistic/eslint-plugin": 5.10.0
-  "@tailwindcss/cli": 4.3.0
+  "@tailwindcss/cli": 4.3.2
   "@testing-library/dom": 10.4.1
   "@testing-library/jest-dom": 6.9.1
   "@testing-library/react": 12.1.5
@@ -123,17 +104,17 @@ catalog:
   "@types/write-file-atomic": 3.0.3
   "@types/ws": 7.4.7
   "@types/xml2js": 0.4.14
-  "@typescript-eslint/utils": 8.60.1
-  "@vitejs/plugin-react": 6.0.2
-  "@vitest/coverage-v8": 4.1.8
-  "@vitest/ui": 4.1.8
+  "@typescript-eslint/utils": 8.62.1
+  "@vitejs/plugin-react": 6.0.3
+  "@vitest/coverage-v8": 4.1.9
+  "@vitest/ui": 4.1.9
   "@welldone-software/why-did-you-render": 10.0.1
-  bbcode-to-react: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
+  bbcode-to-react: github:TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
   bluebird: 3.7.2
   bootstrap-sass: 3.4.3
   bs58: 4.0.1
-  bsatk: git+https://github.com/Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
+  bsatk: github:Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
   classnames: 2.5.1
   cli-table3: 0.6.5
   commander: 4.1.1
@@ -153,29 +134,29 @@ catalog:
   dequal: 2.0.3
   dnd-core: 9.5.1
   draggabilly: 2.4.1
-  drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
+  drivelist: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
   electron: 43.0.0
   electron-builder: 24.13.3
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1
-  electron-redux: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
+  electron-redux: github:TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
   electron-updater: 4.6.5
   encoding-down: 6.3.0
   enquirer: 2.4.1
-  eslint: 10.4.1
+  eslint: 10.6.0
   eslint-config-prettier: 10.1.8
-  eslint-plugin-better-tailwindcss: 4.5.0
-  eslint-plugin-perfectionist: 5.9.0
+  eslint-plugin-better-tailwindcss: 4.6.1
+  eslint-plugin-perfectionist: 5.9.1
   feedparser: 2.3.0
   font-scanner: 0.2.1
   fork-ts-checker-webpack-plugin: 9.1.0
   fs-extra: 9.1.0
   fuzzball: 1.4.0
   glob: 11.1.0
-  globals: 17.6.0
+  globals: 17.7.0
   got: 15.0.5
   graphlib: 2.1.8
-  happy-dom: 20.9.0
+  happy-dom: 20.10.6
   husky: 9.1.7
   i18next: 19.9.2
   i18next-fs-backend: 2.6.1
@@ -186,38 +167,38 @@ catalog:
   is-admin: 3.0.0
   js-yaml: 4.1.1
   json-loader: 0.5.7
-  json-socket: git+https://github.com/foi/node-json-socket#d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
+  json-socket: github:foi/node-json-socket#d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
   jsonwebtoken: 9.0.3
   leveldown: 5.6.0
   levelup: 4.4.0
   limiter: 3.0.0
-  lint-staged: 17.0.7
+  lint-staged: 17.0.8
   lodash: 4.17.23
-  loot: git+https://github.com/Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
+  loot: github:Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
   memoize-one: 5.2.1
   minimatch: 3.1.5
   minimist: 1.2.8
   mixpanel-browser: 2.79.0
-  modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
+  modmeta-db: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
+  nexus-api: github:Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
   node: runtime:24.17.0
-  node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
+  node-7z: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0
   numeral: 2.0.6
-  nx: 22.7.5
+  nx: 23.0.1
   octokit: 5.0.5
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
-  oxfmt: 0.53.0
-  oxlint: 1.70.0
-  oxlint-tsgolint: 0.23.0
+  oxfmt: 0.57.0
+  oxlint: 1.72.0
+  oxlint-tsgolint: 0.24.0
   p-limit: 7.3.0
   p-queue: 9.3.0
   packery: 2.1.2
-  permissions: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
-  playwright: 1.60.0
+  permissions: github:Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
+  playwright: 1.61.1
   prop-types: 15.8.1
   ps-list: 7.2.0
   re-reselect: 4.0.1
@@ -247,42 +228,42 @@ catalog:
   relaxed-json: 1.0.3
   reselect: 4.1.8
   resolve: 1.22.11
-  rimraf: git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-  rolldown: 1.0.3
-  sass: 1.100.0
+  rimraf: github:TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
+  rolldown: 1.1.4
+  sass: 1.101.0
   semver: 7.7.4
   shortid: 2.2.17
   simple-git: 3.33.0
-  simple-vdf: git+https://github.com/Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
+  simple-vdf: github:Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
   source-map-loader: 5.0.0
   source-map-support: 0.5.21
   string-template: 1.0.0
-  tailwindcss: 4.3.0
+  tailwindcss: 4.3.2
   terser-webpack-plugin: 5.6.1
   tmp: 0.1.0
   tough-cookie: 6.0.1
-  ts-loader: 9.6.0
+  ts-loader: 9.6.2
   ts-v-gen: 1.0.3
   tsconfig-paths-webpack-plugin: 4.2.0
-  tsdown: 0.22.1
-  tsx: 4.22.4
-  turbowalk: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+  tsdown: 0.22.3
+  tsx: 4.23.0
+  turbowalk: github:Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
   typed-binary: 4.3.3
   typescript: 6.0.3
-  typescript-eslint: 8.60.1
+  typescript-eslint: 8.62.1
   universal-analytics: 0.4.23
   uuid: 3.4.0
-  vite: 8.0.16
+  vite: 8.1.3
   vite-plugin-doctest: 2.0.0
-  vitest: 4.1.8
+  vitest: 4.1.9
   vitest-fetch-mock: 0.4.5
-  vortex-parse-ini: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  webpack: 5.107.2
-  webpack-cli: 7.0.3
+  vortex-parse-ini: github:Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
+  webpack: 5.108.4
+  webpack-cli: 7.2.1
   webpack-node-externals: 3.0.0
   which: 1.3.1
-  wholocks: git+https://github.com/Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
-  winapi-bindings: git+https://github.com/Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
+  wholocks: github:Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
+  winapi-bindings: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
   winston: 2.4.7
   write-file-atomic: 3.0.3
   ws: 7.5.10
@@ -309,3 +290,19 @@ overrides:
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
+
+allowBuilds:
+  "@nexusmods/fomod-installer-native": true
+  "@parcel/watcher": true
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59: true
+  core-js: true
+  drivelist@https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd: true
+  electron: true
+  esbuild: true
+  font-scanner: true
+  leveldown: true
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d: true
+  node@runtime:24.17.0: true
+  nx: false
+  winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1: true
+  xxhash-addon: true
