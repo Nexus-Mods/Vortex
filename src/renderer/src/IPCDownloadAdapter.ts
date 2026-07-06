@@ -868,9 +868,6 @@ export class IPCDownloadAdapter {
         activeDownload.lastProgressDispatch = now;
         // Update received/total bytes. The reducer transitions state from
         // "init" to "started" on first non-zero received, driving the progress bar.
-<<<<<<< HEAD
-        const action = downloadProgress(downloadId, state.bytesReceived, state.size ?? 0, []);
-=======
         // No urls: they would overwrite the download's stored source urls, which #restoreDownload
         // needs to re-resolve a checkpointless download.
         const action = downloadProgress(
@@ -879,7 +876,6 @@ export class IPCDownloadAdapter {
           state.size ?? 0,
           undefined,
         );
->>>>>>> 3ff5d00b7 (Merge pull request #23630 from Nexus-Mods/fix/laz-692)
         if (isTerminal) {
           // dispatch inline so it stays ordered before this download's terminal handling below;
           // a batched progress landing after finishDownload could resurrect a finished download
