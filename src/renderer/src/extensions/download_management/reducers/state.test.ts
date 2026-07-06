@@ -50,6 +50,30 @@ describe("downloadProgress", () => {
       files: { id: { state: "started", received: 42, size: 43 } },
     });
   });
+  it("preserves the stored source urls when the payload carries none", () => {
+    // restart-on-resume re-resolves from urls[0]; a progress tick must not wipe it
+    const input = {
+      files: { id: { state: "started", received: 0, size: 43, urls: ["nxm://game/mods/1"] } },
+    };
+    const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, {
+      id: "id",
+      received: 42,
+      total: 43,
+    });
+    expect(result.files.id.urls).toEqual(["nxm://game/mods/1"]);
+  });
+  it("replaces the stored source urls when the payload carries some", () => {
+    const input = {
+      files: { id: { state: "started", received: 0, size: 43, urls: ["https://old"] } },
+    };
+    const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, {
+      id: "id",
+      received: 42,
+      total: 43,
+      urls: ["https://redirected"],
+    });
+    expect(result.files.id.urls).toEqual(["https://redirected"]);
+  });
   it("updates the total", () => {
     const input = { files: { id: { state: "started", received: 0, size: 0 } } };
     const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, {

@@ -87,7 +87,7 @@ import {
   REVALIDATION_FREQUENCY,
 } from "./constants";
 import * as eh from "./eventHandlers";
-import NXMUrl from "./NXMUrl";
+import NXMUrl, { buildNXMModUrl } from "./NXMUrl";
 import { accountReducer } from "./reducers/account";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
@@ -922,7 +922,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
           fileVersion: modFileInfo.version,
           gameId: modFileInfo.game.id.toString(),
           domainName: modFileInfo.game.domainName,
-          sourceURI: `nxm://${repoInfo.gameId}/mods/${modId}/files/${fileId}`,
+          sourceURI: buildNXMModUrl(repoInfo.gameId, modId, fileId),
           source: "nexus",
           logicalFileName: modFileInfo.name,
           archived: modFileInfo.categoryId === 7,

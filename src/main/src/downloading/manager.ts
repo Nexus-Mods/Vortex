@@ -188,14 +188,22 @@ export class DownloadManager {
     );
   }
 
+  /**
+   * A caller-supplied `downloadId` restores an existing download: the transfer starts
+   * from scratch under that id, replacing any previous attempt tracked for it. Used
+   * when the previous attempt left nothing resumable (no checkpoint, or none with
+   * completed ranges). Restore is only issued for a settled (paused or failed) attempt,
+   * so the replaced handle is never mid-transfer.
+   */
   download<T>(
     resource: T,
     dest: string,
     resolver: Resolver<T>,
     chunker: Chunker<T> = staticChunker(),
     retry: RetryStrategy = defaultRetryStrategy(),
+    downloadId?: string,
   ): DownloadHandle<T> {
-    return this.#download(resource, dest, resolver, chunker, retry);
+    return this.#download(resource, dest, resolver, chunker, retry, undefined, downloadId);
   }
 
   #download<T>(

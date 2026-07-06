@@ -261,7 +261,8 @@ try {
     },
 
     downloader: {
-      start: (dest, collationId) => betterIpcRenderer.invoke("download:start", dest, collationId),
+      start: (dest, collationId, downloadId) =>
+        betterIpcRenderer.invoke("download:start", dest, collationId, downloadId),
       pause: (downloadId) => betterIpcRenderer.invoke("download:pause", downloadId),
       resume: (checkpoint) => betterIpcRenderer.invoke("download:resume", checkpoint),
       cancel: (downloadId) => betterIpcRenderer.invoke("download:cancel", downloadId),
