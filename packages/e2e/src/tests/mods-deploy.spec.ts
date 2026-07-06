@@ -33,17 +33,21 @@ test.describe("Mods - Deploy from mods list", () => {
         managedGame: _g,
         nexusPage,
       }) => {
-        await test.step("Open global Settings → Interface", async () => {
+        await test.step("Navigate to Home", async () => {
           const navbar = new NavBar(vortexWindow);
-          // Settings lives in the global workspace, not the per-game spine, so
-          // leave the game workspace via the top-bar Home button first.
           await navbar.homeButton.click();
           await expect(navbar.settingsLink).toBeVisible({ timeout: Timeouts.NETWORK });
+        });
+        await test.step("Open global Settings", async () => {
+          const navbar = new NavBar(vortexWindow);
           await navbar.settingsLink.click();
-
           const settings = new SettingsPage(vortexWindow);
           await expect(settings.interfaceTab).toBeVisible();
+        });
+        await test.step("Open Interface tab", async () => {
+          const settings = new SettingsPage(vortexWindow);
           await settings.interfaceTab.click();
+          await expect(settings.interfaceTab).toBeEnabled();
         });
 
         await test.step("Turn off auto-enable and auto-deploy (leave auto-install on)", async () => {
@@ -60,19 +64,16 @@ test.describe("Mods - Deploy from mods list", () => {
           await downloadModViaModManager(nexusPage, vortexApp, SDV_MOD_URL);
         });
 
-        await test.step("Open the game's Mods page", async () => {
-          // Re-enter the game workspace (we left it for the global Settings page).
+        await test.step("Open the SDV game page", async () => {
           await vortexWindow
             .getByRole("button", { name: "Stardew Valley", exact: true })
             .first()
             .click();
-          const navbar = new NavBar(vortexWindow);
-          await navbar.modsLink.click();
         });
 
-        await test.step("Wait for the mod to finish auto-installing", async () => {
-          // The download + install runs asynchronously after the nxm forward;
-          // wait for the empty-state to clear before inspecting the mod row.
+        await test.step("Open mod page", async () => {
+          const navbar = new NavBar(vortexWindow);
+          await navbar.modsLink.click();
           await expect(new ModsPage(vortexWindow).emptyState).toBeHidden({
             timeout: Timeouts.NETWORK,
           });
