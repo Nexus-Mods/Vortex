@@ -154,7 +154,7 @@ catalog:
   dnd-core: 9.5.1
   draggabilly: 2.4.1
   drivelist: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 42.3.3
+  electron: 43.0.0
   electron-builder: 24.13.3
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1
@@ -202,7 +202,7 @@ catalog:
   mixpanel-browser: 2.79.0
   modmeta-db: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   nexus-api: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
-  node: runtime:24.15.0
+  node: runtime:24.17.0
   node-7z: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0
   numeral: 2.0.6
