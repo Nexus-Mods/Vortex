@@ -6,12 +6,12 @@
   "type": "commonjs",
   "packageManager": "pnpm@11.5.1+sha512.93f7b57422ea7068257235b4c16eb60762eb68e1dc23723199cc739043ea9be2c4143274a399d8c6defa2b1176226d9ca1c4b63482d6200c1a8fbaa78c1d1485",
   "engines": {
-    "node": "24.15.0"
+    "node": "24.17.0"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "24.15.0",
+      "version": "24.17.0",
       "onFail": "download"
     },
     "packageManager": {
@@ -21,7 +21,7 @@
     }
   },
   "volta": {
-    "node": "24.15.0",
+    "node": "24.17.0",
     "yarn": "1.22.19"
   },
   "scripts": {

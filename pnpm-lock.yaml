@@ -570,8 +570,8 @@ catalogs:
       specifier: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: 10.0.2
     electron:
-      specifier: 42.3.3
-      version: 42.3.3
+      specifier: 43.0.0
+      version: 43.0.0
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -714,8 +714,8 @@ catalogs:
       specifier: git+https://github.com/Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
       version: 1.7.1
     node:
-      specifier: runtime:24.15.0
-      version: 24.15.0
+      specifier: runtime:24.17.0
+      version: 24.17.0
     node-7z:
       specifier: git+https://github.com/Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
       version: 0.8.1
@@ -987,7 +987,7 @@ importers:
     dependencies:
       node:
         specifier: 'catalog:'
-        version: runtime:24.15.0
+        version: runtime:24.17.0
     devDependencies:
       '@eslint-react/eslint-plugin':
         specifier: 'catalog:'
@@ -1696,7 +1696,7 @@ importers:
         version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -2423,7 +2423,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -3175,7 +3175,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3700,7 +3700,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3958,7 +3958,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4119,7 +4119,7 @@ importers:
         version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -4152,7 +4152,7 @@ importers:
         version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@42.3.3)
+        version: 2.1.3(electron@43.0.0)
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
@@ -4627,13 +4627,13 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
       electron-extension-installer:
         specifier: 'catalog:'
-        version: 2.0.1(electron@42.3.3)
+        version: 2.0.1(electron@43.0.0)
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0(typescript@6.0.3)
@@ -4652,7 +4652,7 @@ importers:
     devDependencies:
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
 
   src/renderer:
     dependencies:
@@ -4677,7 +4677,7 @@ importers:
         version: 7.16.8(@babel/core@7.29.0)
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@42.3.3)
+        version: 2.1.3(electron@43.0.0)
       '@headlessui/react':
         specifier: 'catalog:'
         version: 1.7.19(react-dom@16.14.0)(react@16.14.0)
@@ -4923,7 +4923,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 42.3.3
+        version: 43.0.0
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -5874,6 +5874,10 @@ packages:
 
   '@duckdb/node-bindings@1.5.1-r.1':
     resolution: {integrity: sha512-3vmIlY/ACTLutlMup4F+D2Gzo+kiUoMaIL4TvM4x34cMqnKfsZ+4lMjqfSKYmdcgNGXYXwPwIYaJlvMRhU3Tbg==}
+
+  '@electron-internal/extract-zip@1.0.4':
+    resolution: {integrity: sha512-Zr1Vs7E9tpCNhZHDAbFVXc2gEVCG9RqPDjrno5+bdgB6LRAuvgyMHJut4NCVyYwtAieapMzc3fiQ3CSTi75ARg==}
+    engines: {node: '>=22.12.0'}
 
   '@electron/asar@3.4.1':
     resolution: {integrity: sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA==}
@@ -7646,9 +7650,6 @@ packages:
   '@types/xml2js@0.4.14':
     resolution: {integrity: sha512-4YnrRemBShWRO2QjvUin8ESA41rH+9nQGLUGZV/1IDhi3SL9OhdpNC/MrulTWuptXKwhx/aDxE7toV0f/ypIXQ==}
 
-  '@types/yauzl@2.10.3':
-    resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
-
   '@typescript-eslint/eslint-plugin@8.60.1':
     resolution: {integrity: sha512-JQ4S5GB0tfjO8BuJ4fcX+HodkzJjYBV+7OJ+wLygaX7OGQ7FudyHL4NSCA6ob+w3Yn+5MkKIozOwQhXeM7opVg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -8907,8 +8908,8 @@ packages:
   electron-updater@4.6.5:
     resolution: {integrity: sha512-kdTly8O9mSZfm9fslc1mnCY+mYOeaYRy7ERa2Fed240u01BKll3aiupzkd07qKw69KvhBSzuHroIW3mF0D8DWA==}
 
-  electron@42.3.3:
-    resolution: {integrity: sha512-0MwYp9wTb7TrtTalOYqeW+suqd9T/Znstr/nDLKqFGIjHdBZX339guo3mQqTPURRZ/UQmYM4uMpzKpI5wLptfQ==}
+  electron@43.0.0:
+    resolution: {integrity: sha512-PV60GsWU6qufhuOhw3n+Yix3WPDcqDtBqE8orbEQGQGHEkgp9o/JCPgb7L4vIL0r1HnfPdqSRtboOTqbDkcFDQ==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -9191,11 +9192,6 @@ packages:
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
 
-  extract-zip@2.0.1:
-    resolution: {integrity: sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==}
-    engines: {node: '>= 10.17.0'}
-    hasBin: true
-
   extsprintf@1.3.0:
     resolution: {integrity: sha512-11Ndz7Nv+mvAC1j0ktTa7fAb0vLyGGX+rMHNBYQviQDGU0Hw7lhctJANqbPhu9nV9/izT/IntTgZ7Im/9LJs9g==}
     engines: {'0': node >=0.6.0}
@@ -9219,9 +9215,6 @@ packages:
 
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
-
-  fd-slicer@1.1.0:
-    resolution: {integrity: sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==}
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -9424,10 +9417,6 @@ packages:
   get-stream@4.1.0:
     resolution: {integrity: sha512-GMat4EJ5161kIy2HevLlr4luNjBgvmj413KaQA7jt4V8B4RDsfpHk7WQ9GVqfYyyx8OS/L66Kox+rJRNklLK7w==}
     engines: {node: '>=6'}
-
-  get-stream@5.2.0:
-    resolution: {integrity: sha512-nBF+F1rAZVCu/p7rjzgA+Yb4lfYXrpl7a6VmJrU8wF9I1CKvP/QwPNZHnOlwbTkY6dvtFIzFMSyQXbLoTQPRpA==}
-    engines: {node: '>=8'}
 
   get-stream@9.0.1:
     resolution: {integrity: sha512-kVCxPF3vQM/N0B1PmoqVUqgHP+EeVjmZSQn+1oCRPxd2P21P2F19lIgbR3HBosbB1PUhOAoctJnfEn2GbN2eZA==}
@@ -10588,7 +10577,7 @@ packages:
   node-releases@2.0.36:
     resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
 
-  node@runtime:24.15.0:
+  node@runtime:24.17.0:
     resolution:
       type: variations
       variants:
@@ -10596,9 +10585,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-3UvHfctfTJoslkNzm7WTUAzLCUE+xCyqD47w5e8RYJU=
+            integrity: sha256-Men8JJx0o6bf7KR1ginwA2IEWbQsN0n3xCPymZ0Jpyc=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-aix-ppc64.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-aix-ppc64.tar.gz
           targets:
             - cpu: ppc64
               os: aix
@@ -10606,9 +10595,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-NyMxuWl3mrXRW5SYhPxur4jVr+h73ouogdZAC5EA/8Q=
+            integrity: sha256-T8MmajcC7rw5zDdmHPTuzureMH4kKrZOTXznlJGX4R8=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-darwin-arm64.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-darwin-arm64.tar.gz
           targets:
             - cpu: arm64
               os: darwin
@@ -10616,9 +10605,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-/9XuKTRnkn8+5zGlU+uI/R9Iz3TuvC10prq+SvIoZzs=
+            integrity: sha256-gNpVL+A3KQyxMOnepZD17ut6pFBjbwyJq0FBVRHB7Cc=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-darwin-x64.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-darwin-x64.tar.gz
           targets:
             - cpu: x64
               os: darwin
@@ -10626,9 +10615,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-c6/CNNVYwkkZh19RwtHqACoq2k6m+DYBo4OGn++mTu0=
+            integrity: sha256-+qDVm6f+cEXJUO0JsZBXj7ju5z5DWGhtOPzJnKWMFIA=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-arm64.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-arm64.tar.gz
           targets:
             - cpu: arm64
               os: linux
@@ -10636,9 +10625,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-sfiJAKSxY2XqulYmkwT8Edp1gdvwNVLUSV+azh/AX20=
+            integrity: sha256-gE7UoaDvKNWSQIuErCqF6FirkSTa2TPhK0MjYJQRuAk=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-ppc64le.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-ppc64le.tar.gz
           targets:
             - cpu: ppc64le
               os: linux
@@ -10646,9 +10635,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-+YVFVDnVL+m43mqPbQe/7MxzbepSfofqyv5ajXUWo4A=
+            integrity: sha256-plnpwm/NZI8zWdv9KS8HhDQWgEDy+xrPPJwbzT/Deys=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-s390x.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-s390x.tar.gz
           targets:
             - cpu: s390x
               os: linux
@@ -10656,9 +10645,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-RINoctmuxJ8ea1KpqSKHLbmisC0jWmFqVoG2qF/sjYk=
+            integrity: sha256-4EckJ6p5GtgL3EJv98xzzdKO0PYW0f+WiaI6f0fxJl8=
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-x64.tar.gz
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-x64.tar.gz
           targets:
             - cpu: x64
               os: linux
@@ -10666,10 +10655,10 @@ packages:
             archive: zip
             bin:
               node: node.exe
-            integrity: sha256-yet0Au2ibiun5EtnJ/yFqN5WxQlbH3Hr0wYokiEaoRY=
-            prefix: node-v24.15.0-win-arm64
+            integrity: sha256-SVdxL2f85Vd5zHlNm0354OgCoYyEGtWk5C8XvkkOY00=
+            prefix: node-v24.17.0-win-arm64
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-win-arm64.zip
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-win-arm64.zip
           targets:
             - cpu: arm64
               os: win32
@@ -10677,10 +10666,10 @@ packages:
             archive: zip
             bin:
               node: node.exe
-            integrity: sha256-zFFJ6r1Td5zh573FQBZDYi0MfmgAreGJKKdn6UC7DmI=
-            prefix: node-v24.15.0-win-x64
+            integrity: sha256-8qozs1t1rKXz97hWdab2QjIBBT6TgZEeZJYfO9olKKs=
+            prefix: node-v24.17.0-win-x64
             type: binary
-            url: https://nodejs.org/download/release/v24.15.0/node-v24.15.0-win-x64.zip
+            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-win-x64.zip
           targets:
             - cpu: x64
               os: win32
@@ -10688,9 +10677,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-MemKqWCgZ9qR7f/V2TvEZle10qgClhLDWfXyrABgFSo=
+            integrity: sha256-zFT3OhpBCNnjJesgHZCyXuq2DtySsqEyQLKHenTFlto=
             type: binary
-            url: https://unofficial-builds.nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-arm64-musl.tar.gz
+            url: https://unofficial-builds.nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-arm64-musl.tar.gz
           targets:
             - cpu: arm64
               os: linux
@@ -10699,14 +10688,14 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-9Vr1vUicU0exE8pllMrgClSzC6V6xYdTJDEb/G9HYuM=
+            integrity: sha256-+ITJWMBlL3zQ6kP9w53d0amEVuqbGt7KhZZIR+Ljn7A=
             type: binary
-            url: https://unofficial-builds.nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-x64-musl.tar.gz
+            url: https://unofficial-builds.nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-x64-musl.tar.gz
           targets:
             - cpu: x64
               os: linux
               libc: musl
-    version: 24.15.0
+    version: 24.17.0
     hasBin: true
 
   noms@0.0.0:
@@ -10970,9 +10959,6 @@ packages:
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
-
-  pend@1.2.0:
-    resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}
 
   performance-now@2.1.0:
     resolution: {integrity: sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==}
@@ -12719,9 +12705,6 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yauzl@2.10.0:
-    resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
-
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
@@ -13567,6 +13550,8 @@ snapshots:
       '@duckdb/node-bindings-win32-arm64': 1.5.1-r.1
       '@duckdb/node-bindings-win32-x64': 1.5.1-r.1
 
+  '@electron-internal/extract-zip@1.0.4': {}
+
   '@electron/asar@3.4.1':
     dependencies:
       commander: 5.1.0
@@ -13616,9 +13601,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@42.3.3)':
+  '@electron/remote@2.1.3(electron@43.0.0)':
     dependencies:
-      electron: 42.3.3
+      electron: 43.0.0
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -15300,11 +15285,6 @@ snapshots:
     dependencies:
       '@types/node': 25.5.0
 
-  '@types/yauzl@2.10.3':
-    dependencies:
-      '@types/node': 25.5.0
-    optional: true
-
   '@typescript-eslint/eslint-plugin@8.60.1(@typescript-eslint/parser@8.60.1)(eslint@10.4.1)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
@@ -16742,9 +16722,9 @@ snapshots:
       pupa: 2.1.1
       unused-filename: 2.1.0
 
-  electron-extension-installer@2.0.1(electron@42.3.3):
+  electron-extension-installer@2.0.1(electron@43.0.0):
     dependencies:
-      electron: 42.3.3
+      electron: 43.0.0
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -16784,11 +16764,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@42.3.3:
+  electron@43.0.0:
     dependencies:
+      '@electron-internal/extract-zip': 1.0.4
       '@electron/get': 5.0.0
       '@types/node': 24.12.2
-      extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -17186,16 +17166,6 @@ snapshots:
 
   extend@3.0.2: {}
 
-  extract-zip@2.0.1:
-    dependencies:
-      debug: 4.4.3(supports-color@10.2.2)
-      get-stream: 5.2.0
-      yauzl: 2.10.0
-    optionalDependencies:
-      '@types/yauzl': 2.10.3
-    transitivePeerDependencies:
-      - supports-color
-
   extsprintf@1.3.0: {}
 
   extsprintf@1.4.1: {}
@@ -17209,10 +17179,6 @@ snapshots:
   fast-levenshtein@2.0.6: {}
 
   fast-uri@3.1.0: {}
-
-  fd-slicer@1.1.0:
-    dependencies:
-      pend: 1.2.0
 
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
@@ -17453,10 +17419,6 @@ snapshots:
   get-size@2.0.3: {}
 
   get-stream@4.1.0:
-    dependencies:
-      pump: 3.0.4
-
-  get-stream@5.2.0:
     dependencies:
       pump: 3.0.4
 
@@ -18535,7 +18497,7 @@ snapshots:
 
   node-releases@2.0.36: {}
 
-  node@runtime:24.15.0: {}
+  node@runtime:24.17.0: {}
 
   noms@0.0.0:
     dependencies:
@@ -18954,8 +18916,6 @@ snapshots:
   path-type@4.0.0: {}
 
   pathe@2.0.3: {}
-
-  pend@1.2.0: {}
 
   performance-now@2.1.0: {}
 
@@ -20880,11 +20840,6 @@ snapshots:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 21.1.1
-
-  yauzl@2.10.0:
-    dependencies:
-      buffer-crc32: 0.2.13
-      fd-slicer: 1.1.0
 
   yocto-queue@0.1.0: {}
 
