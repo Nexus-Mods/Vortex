@@ -45,6 +45,8 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import { setTelemetryEnabled } from "./telemetry/state";
+import { UnleashClient } from "./unleash/client";
+import { synchronizeFeatureFlags } from "./unleash/ipc";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
 / everything except a patch) compared to what was running last */
@@ -448,6 +450,24 @@ class Application {
         throw err;
       }
     }
+
+    const unleashClient = new UnleashClient(app.getVersion(), {
+      cachePath: path.join(app.getPath("userData"), "flag-cache.json"),
+    });
+
+    // NOTE(erri120): Querying userId so that the first API call contains it.
+    // Otherwise renderer sets context on user changes.
+    const storedUserId = await readPersistedValue<number>("persistent", [
+      "nexus",
+      "userInfo",
+      "userId",
+    ]);
+
+    if (storedUserId !== undefined) {
+      unleashClient.setContext({ userId: String(storedUserId) });
+    }
+
+    synchronizeFeatureFlags(unleashClient);
 
     // Collect metadata before creating the main window — the renderer
     // fetches it via getInitMetadata() early in its boot.
