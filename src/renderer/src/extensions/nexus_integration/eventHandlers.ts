@@ -1120,8 +1120,10 @@ export function onDownloadUpdate(
 
         if (existingId !== undefined) {
           if (downloads[existingId].state === "paused") {
+            // allowInstall: false - the caller (InstallManager.downloadMatching) owns the
+            // installation of this download; auto-install on completion would install it twice.
             return Bluebird.fromCallback((cb) =>
-              api.events.emit("resume-download", existingId, cb),
+              api.events.emit("resume-download", existingId, cb, { allowInstall: false }),
             ).then(() => ({ error: null, dlId: existingId }));
           } else {
             return Bluebird.resolve({ error: null, dlId: existingId });
