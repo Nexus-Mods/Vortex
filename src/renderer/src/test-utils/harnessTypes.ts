@@ -3,6 +3,9 @@
  * factory functions) and the *Test.ts fixture modules so both can import the shapes without pulling
  * in each other's runtime code.
  */
+import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
+import type { Mock } from "vitest";
+
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
@@ -10,6 +13,7 @@ import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
+import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import type {
   CollectionModStatus,
   ICollectionInstallState,
@@ -55,6 +59,32 @@ export interface IApiHarness {
 export interface IDriverHarness extends IApiHarness {
   // the driver under test, constructed against the fake api
   driver: InstallDriver;
+}
+
+// What a download-adapter test arranges: the single seeded download's fields, an optional stored
+// checkpoint, and whether the automation-install setting is on.
+export interface IDownloadAdapterOpts {
+  download?: Partial<IDownload>;
+  checkpoint?: WireDownloadCheckpoint;
+  automationInstall?: boolean;
+}
+
+export interface IDownloadAdapterHarness extends IApiHarness {
+  // the real adapter under test, constructed against the fake api
+  adapter: IPCDownloadAdapter;
+  // the single seeded download's id
+  downloadId: string;
+  // the on-disk destination the adapter computes for it (downloadPathForGame + localPath)
+  dest: string;
+  // the api's global event bus - the adapter registers its start/resume/pause/remove handlers here,
+  // so a test drives it with events.emit and observes emitted events with events.on
+  events: NodeJS.EventEmitter;
+  // resolves once the mocked downloader.start has run (a restart / fresh transfer began)
+  started: { promise: Promise<void>; resolve: () => void };
+  // the mocked window.api.downloader IPC seam (main-process boundary; a real fake is impractical)
+  start: Mock;
+  resume: Mock;
+  getStates: Mock;
 }
 
 export interface IInstallManagerHarness extends IApiHarness {

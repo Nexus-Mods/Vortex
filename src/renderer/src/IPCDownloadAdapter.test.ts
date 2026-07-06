@@ -1,11 +1,5 @@
-import { EventEmitter } from "node:events";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import * as path from "node:path";
-
-import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
-import type { Api, DownloaderApi } from "@vortex/shared/preload";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
+import { describe, expect, it, vi } from "vitest";
 
 import { clearDownloadCheckpoint } from "./actions/downloads";
 import {
@@ -13,16 +7,12 @@ import {
   finishDownload,
   pauseDownload,
 } from "./extensions/download_management/actions/state";
-import type { IDownload } from "./extensions/download_management/types/IDownload";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
-import {
-  expandCompatibleGameIds,
-  IPCDownloadAdapter,
-  isResumableCheckpoint,
-} from "./IPCDownloadAdapter";
+import { expandCompatibleGameIds, isResumableCheckpoint } from "./IPCDownloadAdapter";
+import { test } from "./test-utils/downloadAdapterTest";
 
 // getDownloadPath reads electron's userData dir via ApplicationData, which isn't initialized in the
-// test env. The tests supply an absolute download root, so the value is never used for resolution.
+// test env; the harness computes the same dest through this stub so start()'s dest still matches.
 vi.mock("./util/getVortexPath", () => ({ default: () => "/vortex-userdata" }));
 
 function game(id: string, compatibleDownloads?: string[]): IGameStored {
@@ -80,7 +70,6 @@ describe("expandCompatibleGameIds", () => {
   });
 });
 
-// TODO: in master these tests should be refactored to use test-utils
 function checkpoint(
   completedRanges: Array<{ start: number; end: number }>,
 ): WireDownloadCheckpoint {
@@ -107,108 +96,15 @@ describe("isResumableCheckpoint", () => {
   });
 });
 
+function wireState(status: string, bytesReceived: number) {
+  return { status, error: null, bytesReceived, size: 100, fileName: undefined, isChunked: false };
+}
+
 describe("runtime restore", () => {
-  let savedApi: Api;
-  let idCounter = 0;
-  const tmpDirs: string[] = [];
-
-  beforeEach(() => {
-    savedApi = window.api;
-    // Freeze the constructor's 200ms poll loop so it never fires (and leftover loops never touch a
-    // sibling test's mock). Timers are dropped in afterEach; nothing here advances them.
-    vi.useFakeTimers();
-  });
-
-  afterEach(async () => {
-    vi.useRealTimers();
-    window.api = savedApi;
-    for (const dir of tmpDirs.splice(0)) {
-      await rm(dir, { recursive: true, force: true });
-    }
-  });
-
-  function wireState(status: string, bytesReceived: number) {
-    return { status, error: null, bytesReceived, size: 100, fileName: undefined, isChunked: false };
-  }
-
-  async function makeHarness(opts: {
-    download: Partial<IDownload>;
-    checkpoint?: WireDownloadCheckpoint;
-    automationInstall?: boolean;
-  }) {
-    const downloadId = `dl-${idCounter++}`;
-    const dlRoot = await mkdtemp(path.join(tmpdir(), "vortex-dl-"));
-    tmpDirs.push(dlRoot);
-    const gameDir = path.join(dlRoot, "skyrimse");
-    await mkdir(gameDir, { recursive: true });
-    const dest = path.join(gameDir, "file.bin");
-    await writeFile(dest, "partial-bytes");
-
-    const state = {
-      settings: {
-        downloads: { path: dlRoot },
-        automation: { install: opts.automationInstall ?? false },
-      },
-      session: { gameMode: { known: [] } },
-      persistent: {
-        downloads: {
-          files: {
-            [downloadId]: {
-              urls: ["https://cdn.example/file.bin"],
-              localPath: "file.bin",
-              game: ["skyrimse"],
-              state: "paused",
-              size: 100,
-              ...opts.download,
-            },
-          },
-          checkpoints:
-            opts.checkpoint !== undefined
-              ? { [downloadId]: { ...opts.checkpoint, downloadId } }
-              : {},
-        },
-      },
-    };
-
-    const events = new EventEmitter();
-    const dispatch = vi.fn();
-    const api = { getState: () => state, store: { getState: () => state, dispatch }, events };
-
-    let resolveHandler: ((collationId: number) => Promise<WireResolvedResource>) | undefined;
-    const started = { resolve: (): void => {}, promise: Promise.resolve() };
-    started.promise = new Promise<void>((r) => (started.resolve = r));
-
-    const resume = vi.fn().mockResolvedValue(undefined);
-    const getStates = vi.fn().mockResolvedValue({});
-    const start = vi
-      .fn()
-      .mockImplementation(async (_dest: string, collationId: number, id?: string) => {
-        await resolveHandler?.(collationId);
-        started.resolve();
-        return { downloadId: id ?? `new-${collationId}` };
-      });
-    const downloader: DownloaderApi = {
-      onResolve: vi.fn((handler: (collationId: number) => Promise<WireResolvedResource>) => {
-        resolveHandler = handler;
-        return () => {};
-      }),
-      getState: vi.fn(),
-      getStates,
-      configure: vi.fn().mockResolvedValue(undefined),
-      start,
-      resume,
-      pause: vi.fn(),
-      cancel: vi.fn().mockResolvedValue(undefined),
-    };
-    window.api = { log: vi.fn(), downloader } as unknown as Api;
-
-    const adapter = new IPCDownloadAdapter(api as never);
-
-    return { adapter, events, dispatch, downloadId, dest, start, resume, started, getStates };
-  }
-
-  it("restores a checkpointless paused download under the same id", async () => {
-    const h = await makeHarness({ download: { state: "paused" } });
+  test("restores a checkpointless paused download under the same id", async ({
+    makeDownloadAdapter,
+  }) => {
+    const h = makeDownloadAdapter({ download: { state: "paused" } });
 
     h.events.emit("resume-download", h.downloadId, () => undefined);
     await h.started.promise;
@@ -219,13 +115,13 @@ describe("runtime restore", () => {
 
     // the record is reset to zero and returned to its active state (no urls, so the record's stored
     // source url is left untouched)
-    expect(h.dispatch).toHaveBeenCalledWith(downloadProgress(h.downloadId, 0, 100, undefined));
-    expect(h.dispatch).toHaveBeenCalledWith(pauseDownload(h.downloadId, false));
-    expect(h.dispatch).toHaveBeenCalledWith(clearDownloadCheckpoint(h.downloadId));
+    expect(h.dispatched).toContainEqual(downloadProgress(h.downloadId, 0, 100, undefined));
+    expect(h.dispatched).toContainEqual(pauseDownload(h.downloadId, false));
+    expect(h.dispatched).toContainEqual(clearDownloadCheckpoint(h.downloadId));
   });
 
-  it("restores when the checkpoint has no completed ranges", async () => {
-    const h = await makeHarness({
+  test("restores when the checkpoint has no completed ranges", async ({ makeDownloadAdapter }) => {
+    const h = makeDownloadAdapter({
       download: { state: "paused" },
       checkpoint: {
         downloadId: "",
@@ -243,8 +139,10 @@ describe("runtime restore", () => {
     expect(h.start).toHaveBeenCalledWith(h.dest, expect.any(Number), h.downloadId);
   });
 
-  it("resumes normally when the checkpoint has completed ranges", async () => {
-    const h = await makeHarness({
+  test("resumes normally when the checkpoint has completed ranges", async ({
+    makeDownloadAdapter,
+  }) => {
+    const h = makeDownloadAdapter({
       download: { state: "paused" },
       checkpoint: {
         downloadId: "",
@@ -267,8 +165,10 @@ describe("runtime restore", () => {
     expect(h.start).not.toHaveBeenCalled();
   });
 
-  it("reconstructs the nxm source url when the stored urls were wiped", async () => {
-    const h = await makeHarness({
+  test("reconstructs the nxm source url when the stored urls were wiped", async ({
+    makeDownloadAdapter,
+  }) => {
+    const h = makeDownloadAdapter({
       download: {
         state: "paused",
         urls: [],
@@ -287,14 +187,16 @@ describe("runtime restore", () => {
     // the rebuilt nxm url is resolved through the normal protocol flow
     expect(nxmHandler).toHaveBeenCalledWith("nxm://skyrimse/mods/123/files/456");
     // and healed back onto the record
-    expect(h.dispatch).toHaveBeenCalledWith(
+    expect(h.dispatched).toContainEqual(
       downloadProgress(h.downloadId, 0, 100, ["nxm://skyrimse/mods/123/files/456"]),
     );
     expect(h.start).toHaveBeenCalledWith(h.dest, expect.any(Number), h.downloadId);
   });
 
-  it("honors allowInstall: false from the resume options (no auto-install on completion)", async () => {
-    const h = await makeHarness({ download: { state: "paused" }, automationInstall: true });
+  test("honors allowInstall: false from the resume options (no auto-install on completion)", async ({
+    makeDownloadAdapter,
+  }) => {
+    const h = makeDownloadAdapter({ download: { state: "paused" }, automationInstall: true });
     const installSpy = vi.fn();
     h.events.on("start-install-download", installSpy);
     const finished = new Promise<void>((resolve) =>
@@ -311,8 +213,10 @@ describe("runtime restore", () => {
     expect(installSpy).not.toHaveBeenCalled();
   });
 
-  it("auto-installs a restored download when automation is on and no override is given", async () => {
-    const h = await makeHarness({ download: { state: "paused" }, automationInstall: true });
+  test("auto-installs a restored download when automation is on and no override is given", async ({
+    makeDownloadAdapter,
+  }) => {
+    const h = makeDownloadAdapter({ download: { state: "paused" }, automationInstall: true });
     const installed = new Promise<void>((resolve) =>
       h.events.on("start-install-download", () => resolve()),
     );
@@ -327,8 +231,10 @@ describe("runtime restore", () => {
     await installed;
   });
 
-  it("marks the record failed if the restart cannot be started", async () => {
-    const h = await makeHarness({ download: { state: "paused" } });
+  test("marks the record failed if the restart cannot be started", async ({
+    makeDownloadAdapter,
+  }) => {
+    const h = makeDownloadAdapter({ download: { state: "paused" } });
     h.start.mockRejectedValueOnce(new Error("resolve failed"));
 
     const err = await new Promise<Error | null>((resolve) => {
@@ -338,8 +244,6 @@ describe("runtime restore", () => {
     // the caller gets the error (not left hanging) and the record is marked failed rather than
     // stuck in an active state the poll never tracks
     expect(err).toBeInstanceOf(Error);
-    expect(h.dispatch).toHaveBeenCalledWith(
-      finishDownload(h.downloadId, "failed", expect.anything()),
-    );
+    expect(h.dispatched).toContainEqual(finishDownload(h.downloadId, "failed", expect.anything()));
   });
 });
