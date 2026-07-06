@@ -41,6 +41,7 @@ import { downloadPathForGame } from "./extensions/download_management/selectors"
 import type { IDownload } from "./extensions/download_management/types/IDownload";
 import { knownGames } from "./extensions/gamemode_management/selectors";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
+import { nxmUrlFromDownload } from "./extensions/nexus_integration/NXMUrl";
 import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
 import { convertGameIdReverse } from "./extensions/nexus_integration/util/convertGameId";
 import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
@@ -753,7 +754,7 @@ export class IPCDownloadAdapter {
     const state = this.#api.getState();
     // Treat an empty-string url as absent so a wiped record falls back to reconstruction.
     const storedUrl = download.urls?.[0] || undefined;
-    const rawUrl = storedUrl ?? this.#reconstructSourceUrl(state, downloadId, download);
+    const rawUrl = storedUrl ?? nxmUrlFromDownload(download);
     if (download.localPath === undefined || rawUrl === undefined) {
       throw new Error(`Cannot restore download ${downloadId}: no stored url or path`);
     }
@@ -816,30 +817,6 @@ export class IPCDownloadAdapter {
     } finally {
       this.#restoring.delete(downloadId);
     }
-  }
-
-  // Rebuild an nxm source url from the persisted nexus ids for a record whose stored urls are
-  // empty. The rebuilt url carries no key/expires query, so non-premium accounts get the resolver's
-  // normal free-user handling.
-  #reconstructSourceUrl(
-    state: ReturnType<IExtensionApi["getState"]>,
-    downloadId: string,
-    download: IDownload,
-  ): string | undefined {
-    const ids = nexusIdsFromDownloadId(state, downloadId);
-    if (ids?.gameDomainName === undefined) return undefined;
-
-    if (ids.collectionSlug !== undefined) {
-      const revisionNumber: number | undefined = download.modInfo?.nexus?.ids?.revisionNumber;
-      if (revisionNumber === undefined) return undefined;
-      return `nxm://${ids.gameDomainName}/collections/${ids.collectionSlug}/revisions/${revisionNumber}`;
-    }
-
-    if (ids.modId !== undefined && ids.fileId !== undefined) {
-      return `nxm://${ids.gameDomainName}/mods/${ids.modId}/files/${ids.fileId}`;
-    }
-
-    return undefined;
   }
 
   async #pollLoop(interval: number): Promise<void> {
