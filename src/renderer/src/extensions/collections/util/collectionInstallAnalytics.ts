@@ -146,6 +146,9 @@ function buildOutcomeProps(
     return undefined;
   }
   const nexusIds = nexusIdsFromDownloadId(state, ref.archiveId);
+  if (nexusIds?.collectionId == null) {
+    return undefined;
+  }
   const markers = readMarkers(api, ref);
   const now = Date.now();
   return {

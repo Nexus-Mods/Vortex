@@ -57,10 +57,14 @@ function downloadCodeToken(code: unknown): string {
 
 /** PascalCase / acronym class name -> snake_case token. HTTPError -> http_error. */
 export function errorNameToToken(name: string): string {
-  return name
-    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2") // acronym boundary: HTTPError -> HTTP_Error
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2") // camel boundary: DiskSpace -> Disk_Space
-    .toLowerCase();
+  return (
+    name
+      // acronym boundary (HTTPError -> HTTP_Error): a lookahead, not `[A-Z]+`, so there is no
+      // overlapping quantifier that could backtrack quadratically (ReDoS-safe).
+      .replace(/([A-Z])(?=[A-Z][a-z])/g, "$1_")
+      .replace(/([a-z0-9])([A-Z])/g, "$1_$2") // camel boundary: DiskSpace -> Disk_Space
+      .toLowerCase()
+  );
 }
 
 /**
