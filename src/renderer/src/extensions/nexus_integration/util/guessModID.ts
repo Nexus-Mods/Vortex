@@ -13,8 +13,7 @@ import { setModAttribute } from "../../mod_management/actions/mods";
 import type { IMod } from "../../mod_management/types/IMod";
 import modName from "../../mod_management/util/modName";
 import { activeGameId } from "../../profile_management/selectors";
-import NXMUrl from "../NXMUrl";
-import { toNXMId } from "./convertGameId";
+import NXMUrl, { nxmModUrl } from "../NXMUrl";
 
 export function guessFromFileName(fileName: string): string {
   const match = fileName.match(/-([0-9]+)-/);
@@ -160,7 +159,12 @@ export function fillNexusIdByMD5(
           if (!game) {
             return acc;
           }
-          const url = `nxm://${toNXMId(game, iter.value.gameId)}/mods/${mod.attributes.modId}/files/${mod.attributes.fileId}`;
+          const url = nxmModUrl(
+            game,
+            iter.value.gameId,
+            mod.attributes.modId,
+            mod.attributes.fileId,
+          );
           acc.push({ ...iter, value: { ...iter.value, sourceURI: url } });
         } else if (hasUri) {
           acc.push(iter);

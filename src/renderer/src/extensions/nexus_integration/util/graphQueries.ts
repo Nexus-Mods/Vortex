@@ -231,6 +231,9 @@ export const MOD_FILE_INFO: Partial<IModFileQuery> = {
 };
 
 export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
+  // Prevents pulling in mod to mod requirements when they are
+  // disabled by file to file requirements.
+  $filter: { skipDisabledRequirements: true },
   dlcRequirements: {
     gameExpansion: { id: true, name: true },
     notes: true,

@@ -12,45 +12,45 @@
     @font-face {
         font-family: "Glyphicons Halflings";
         src: url(if(
-            sass($bootstrap-sass-asset-helper): twbs-font-path(
+            sass($bootstrap-sass-asset-helper):twbs-font-path(
                     "#{$icon-font-path}#{$icon-font-name}.eot"
-                )
-                ; else: "#{$icon-font-path}#{$icon-font-name}.eot"
+                );
+                else:"#{$icon-font-path}#{$icon-font-name}.eot"
         ));
         src:
             url(if(
-                    sass($bootstrap-sass-asset-helper): twbs-font-path(
+                    sass($bootstrap-sass-asset-helper):twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.eot?#iefix"
-                        )
-                        ; else: "#{$icon-font-path}#{$icon-font-name}.eot?#iefix"
+                        );
+                        else:"#{$icon-font-path}#{$icon-font-name}.eot?#iefix"
                 ))
                 format("embedded-opentype"),
             url(if(
-                    sass($bootstrap-sass-asset-helper): twbs-font-path(
+                    sass($bootstrap-sass-asset-helper):twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.woff2"
-                        )
-                        ; else: "#{$icon-font-path}#{$icon-font-name}.woff2"
+                        );
+                        else:"#{$icon-font-path}#{$icon-font-name}.woff2"
                 ))
                 format("woff2"),
             url(if(
-                    sass($bootstrap-sass-asset-helper): twbs-font-path(
+                    sass($bootstrap-sass-asset-helper):twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.woff"
-                        )
-                        ; else: "#{$icon-font-path}#{$icon-font-name}.woff"
+                        );
+                        else:"#{$icon-font-path}#{$icon-font-name}.woff"
                 ))
                 format("woff"),
             url(if(
-                    sass($bootstrap-sass-asset-helper): twbs-font-path(
+                    sass($bootstrap-sass-asset-helper):twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.ttf"
-                        )
-                        ; else: "#{$icon-font-path}#{$icon-font-name}.ttf"
+                        );
+                        else:"#{$icon-font-path}#{$icon-font-name}.ttf"
                 ))
                 format("truetype"),
             url(if(
-                    sass($bootstrap-sass-asset-helper): twbs-font-path(
+                    sass($bootstrap-sass-asset-helper):twbs-font-path(
                             "#{$icon-font-path}#{$icon-font-name}.svg##{$icon-font-svg-id}"
-                        )
-                        ; else: "#{$icon-font-path}#{$icon-font-name}.svg##{$icon-font-svg-id}"
+                        );
+                        else:"#{$icon-font-path}#{$icon-font-name}.svg##{$icon-font-svg-id}"
                 ))
                 format("svg");
     }

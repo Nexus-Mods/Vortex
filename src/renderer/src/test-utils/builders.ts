@@ -19,8 +19,12 @@
  * Test-only: nothing in the production tree imports this module.
  */
 import { EventEmitter } from "events";
+import * as path from "path";
 
+import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
+import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import { batch } from "redux-act";
+import { vi } from "vitest";
 
 import { MOD_TYPE } from "../extensions/collections/constants";
 import type {
@@ -28,6 +32,7 @@ import type {
   ICollectionModRule,
 } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
+import { downloadPathForGame } from "../extensions/download_management/selectors";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type InstallManager from "../extensions/mod_management/InstallManager";
@@ -43,6 +48,7 @@ import type {
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import type { IProfileMod } from "../extensions/profile_management/types/IProfile";
+import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
 import type {
   CollectionModStatus,
@@ -57,6 +63,8 @@ import type { IState } from "../types/IState";
 import local from "../util/local";
 import type {
   IApiHarness,
+  IDownloadAdapterHarness,
+  IDownloadAdapterOpts,
   IDriverHarness,
   IDriverHarnessState,
   IInstallManagerHarness,
@@ -544,4 +552,97 @@ export function makeInstallManagerHarness(
   // instead of casting the manager per test
   const phaseTracker = (manager as unknown as { mPhaseTracker: InstallPhaseTracker }).mPhaseTracker;
   return { manager, phaseTracker, ...base };
+}
+
+/**
+ * Harness for the IPCDownloadAdapter (the renderer side of the download IPC). Seeds one paused
+ * download and constructs the REAL adapter against the fake api (makeApiHarness), then replaces the
+ * window.api.downloader IPC boundary with a mock - unlike the driver/manager harnesses there is no
+ * in-process collaborator to fake, only the main-process seam. start() invokes the resolve handler
+ * the adapter registers (as main would) and resolves `started` so a test can await a restart. The
+ * ctor is passed in (like makeDriverHarness) to keep the heavy adapter import out of builders.
+ *
+ * The suite owns the window.api save/restore and fake timers (the adapter's poll loop): capture
+ * window.api in beforeEach and restore it in afterEach.
+ */
+export function makeDownloadAdapterHarness(
+  AdapterCtor: new (api: IExtensionApi) => IPCDownloadAdapter,
+  opts: IDownloadAdapterOpts = {},
+): IDownloadAdapterHarness {
+  const downloadId = "dl-0";
+  const download = makeDownload({
+    id: downloadId,
+    state: "paused",
+    game: ["skyrimse"],
+    urls: ["https://cdn.example/file.bin"],
+    localPath: "file.bin",
+    size: 100,
+    ...opts.download,
+  });
+
+  const base = makeApiHarness({ downloads: { [downloadId]: download } });
+  base.setState((draft) => {
+    // the collection harness only seeds session.collections; the adapter also reads knownGames
+    // (session.gameMode.known), the automation setting, and the checkpoints slice
+    const state = draft as unknown as {
+      session: { gameMode: { known: unknown[] } };
+      settings: { automation: { install: boolean } };
+      persistent: { downloads: { checkpoints: Record<string, WireDownloadCheckpoint> } };
+    };
+    state.session.gameMode = { known: [] };
+    state.settings.automation = { install: opts.automationInstall ?? false };
+    state.persistent.downloads.checkpoints =
+      opts.checkpoint !== undefined ? { [downloadId]: { ...opts.checkpoint, downloadId } } : {};
+  });
+
+  // the same computation the adapter runs, so a test can assert start() was called with this exact
+  // destination regardless of how downloadPathForGame resolves the path pattern
+  const dest = path.join(
+    downloadPathForGame(base.getState(), download.game[0]),
+    download.localPath ?? "",
+  );
+
+  // window.api.downloader is the IPC boundary to the main-process downloader; mock it. start()
+  // drives the resolve handler the adapter registered, then resolves `started`.
+  let resolveHandler: ((collationId: number) => Promise<WireResolvedResource>) | undefined;
+  const started = { resolve: (): void => undefined, promise: Promise.resolve() };
+  started.promise = new Promise<void>((r) => (started.resolve = r));
+
+  const resume = vi.fn().mockResolvedValue(undefined);
+  const getStates = vi.fn().mockResolvedValue({});
+  const start = vi
+    .fn()
+    .mockImplementation(async (_dest: string, collationId: number, id?: string) => {
+      await resolveHandler?.(collationId);
+      started.resolve();
+      return { downloadId: id ?? `new-${collationId}` };
+    });
+  const downloader = {
+    onResolve: vi.fn((handler: (collationId: number) => Promise<WireResolvedResource>) => {
+      resolveHandler = handler;
+      return () => undefined;
+    }),
+    getState: vi.fn(),
+    getStates,
+    configure: vi.fn().mockResolvedValue(undefined),
+    start,
+    resume,
+    pause: vi.fn(),
+    cancel: vi.fn().mockResolvedValue(undefined),
+  } as unknown as DownloaderApi;
+  window.api = { log: vi.fn(), downloader } as unknown as Api;
+
+  const adapter = new AdapterCtor(base.api);
+
+  return {
+    ...base,
+    adapter,
+    downloadId,
+    dest,
+    events: base.api.events,
+    started,
+    start,
+    resume,
+    getStates,
+  };
 }

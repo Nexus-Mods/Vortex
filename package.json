@@ -4,24 +4,19 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "packageManager": "pnpm@11.5.1+sha512.93f7b57422ea7068257235b4c16eb60762eb68e1dc23723199cc739043ea9be2c4143274a399d8c6defa2b1176226d9ca1c4b63482d6200c1a8fbaa78c1d1485",
+  "packageManager": "pnpm@11.10.0+sha512.0b7f8b98060031904c017e3a41eb187a16d40eeb829b95c4f8cb03681761fc4ab53dd219115b9b447f4dce1a05a214764461e7d3703392a9f32f9511ce8c86c8",
   "engines": {
-    "node": "24.15.0"
+    "node": "24.17.0"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "24.15.0",
-      "onFail": "download"
-    },
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.5.1",
+      "version": "24.17.0",
       "onFail": "download"
     }
   },
   "volta": {
-    "node": "24.15.0",
+    "node": "24.17.0",
     "yarn": "1.22.19"
   },
   "scripts": {

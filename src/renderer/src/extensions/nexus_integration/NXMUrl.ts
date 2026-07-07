@@ -1,6 +1,9 @@
 import { URL } from "url";
 
 import { DataInvalid } from "../../util/CustomErrors";
+import type { IDownload } from "../download_management/types/IDownload";
+import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
+import { toNXMId } from "./util/convertGameId";
 
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
 const sCollectionUrlExpression = /\/collections\/(\w+)\/revisions\/(\d+|latest)/i;
@@ -196,6 +199,70 @@ class NXMUrl {
   public getParam(key: string): string {
     return this.mExtraParams[key];
   }
+}
+
+/**
+ * assemble an nxm mod-file url from an already nxm-ready domain. Prefer nxmModUrl when you hold a
+ * game object; use this only when the domain is already resolved (e.g. from a persisted download).
+ */
+export function buildNXMModUrl(
+  domain: string,
+  modId: number | string,
+  fileId: number | string,
+): string {
+  return `nxm://${domain}/mods/${modId}/files/${fileId}`;
+}
+
+/**
+ * assemble an nxm collection url from an already nxm-ready domain.
+ */
+export function buildNXMCollectionUrl(
+  domain: string,
+  slug: string,
+  revisionNumber: number | string,
+): string {
+  return `nxm://${domain}/collections/${slug}/revisions/${revisionNumber}`;
+}
+
+/**
+ * build the canonical nxm mod-file url for a game, resolving the nxm link id via toNXMId.
+ */
+export function nxmModUrl(
+  game: IGameStoredExt,
+  gameId: string,
+  modId: number | string,
+  fileId: number | string,
+): string {
+  return buildNXMModUrl(toNXMId(game, gameId), modId, fileId);
+}
+
+/**
+ * Rebuild the source nxm url for a download from its persisted nexus ids, for records whose stored
+ * urls are empty. Returns undefined when the download carries no usable nexus identity (or a
+ * collection download lacks a revision number). The rebuilt url carries no key/expires query, so
+ * non-premium accounts get the resolver's normal free-user handling.
+ */
+export function nxmUrlFromDownload(download: IDownload): string | undefined {
+  const ids = download?.modInfo?.nexus?.ids;
+  const meta = download?.modInfo?.meta;
+  // A record with neither a nexus nor a meta game id is not a resumable nexus download.
+  if (ids?.gameId == null && meta?.gameId == null) {
+    return undefined;
+  }
+  const domain = ids?.gameId || meta?.domainName;
+  if (!domain) {
+    return undefined;
+  }
+  if (ids?.collectionSlug != null) {
+    if (ids.revisionNumber == null) {
+      return undefined;
+    }
+    return buildNXMCollectionUrl(domain, ids.collectionSlug, ids.revisionNumber);
+  }
+  if (ids?.modId != null && ids?.fileId != null) {
+    return buildNXMModUrl(domain, ids.modId, ids.fileId);
+  }
+  return undefined;
 }
 
 export default NXMUrl;
