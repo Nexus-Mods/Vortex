@@ -8,11 +8,16 @@ import path from "node:path";
 import { load as parseYaml } from "js-yaml";
 import { z } from "zod";
 
+import {
+  mockTreePlatformFromNodePlatform,
+  type MockTreePlatform,
+} from "../../fixtures/game-setup/mock-tree";
 import { freeUser, premiumUser, type NexusUser } from "../users";
 
 const TEST_CASES_ROOT = path.resolve(import.meta.dirname, "..", "..", "fixtures", "test-cases");
 
 const DATA_DRIVEN_FLOW = "manage-download-and-deploy" as const;
+export type DataDrivenFlow = typeof DATA_DRIVEN_FLOW;
 
 const NEXUS_USERS = {
   free: freeUser,
@@ -20,6 +25,20 @@ const NEXUS_USERS = {
 } as const satisfies Record<NexusUserName, NexusUser>;
 
 const REGEXP_FLAGS_PATTERN = /^[dgimsuvy]*$/;
+
+const expectedFilesListSchema = z.array(z.string().min(1)).min(1);
+const expectedFilesByPlatformSchema = z
+  .object({
+    common: expectedFilesListSchema.optional(),
+    linux: expectedFilesListSchema.optional(),
+    macos: expectedFilesListSchema.optional(),
+    windows: expectedFilesListSchema.optional(),
+  })
+  .strict()
+  .refine((value) => Object.values(value).some((files) => files !== undefined), {
+    message: "expectedFiles must define at least one platform list",
+  });
+const expectedFilesSchema = z.union([expectedFilesListSchema, expectedFilesByPlatformSchema]);
 
 const nexusUserNameSchema = z.enum(["free", "premium"]);
 const regexMatcherSchema = z
@@ -46,7 +65,7 @@ const dataDrivenCaseSchema = z
   .object({
     deploy: z
       .object({
-        expectedFiles: z.array(z.string().min(1)).min(1),
+        expectedFiles: expectedFilesSchema,
         message: z.string().min(1).optional(),
       })
       .strict()
@@ -73,13 +92,20 @@ const dataDrivenCaseSchema = z
 
 type ParsedManageDownloadAndDeployCase = z.infer<typeof dataDrivenCaseSchema>;
 
+/**
+ * Supported YAML shapes for `deploy.expectedFiles`.
+ *
+ * Use a flat list for files shared by every platform, or a platform-keyed object
+ * with `common`, `windows`, `linux`, and `macos` entries.
+ */
+export type ExpectedFiles = z.infer<typeof expectedFilesSchema>;
 type NexusUserName = z.infer<typeof nexusUserNameSchema>;
 type RegexMatcher = z.infer<typeof regexMatcherSchema>;
 type TextMatcher = z.infer<typeof textMatcherSchema>;
 
 interface BaseDataDrivenTestCase {
   /** Flow selector that decides which Playwright runner registers this case. */
-  flow: string;
+  flow: DataDrivenFlow;
   /** Game id derived from `fixtures/test-cases/games/<gameId>/`. */
   gameId: string;
   /** Stable case id used in generated Playwright titles. */
@@ -134,9 +160,11 @@ type DataDrivenTestVariant<TCase extends DataDrivenTestCase = DataDrivenTestCase
  *
  * @param rootDir Directory containing recursive `games/<gameId>` YAML case files.
  * @returns Validated test cases sorted by source path.
+ * @throws Error when `rootDir` or a nested case directory cannot be read.
  * @throws Error when a YAML file cannot be read.
  * @throws Error when a YAML file contains invalid YAML.
- * @throws Error when a case fails validation, including when it sets both `fixtures.nexusUser` and `matrix.nexusUser`.
+ * @throws Error when a case omits required fields, includes unknown fields, uses unsupported `flow` or Nexus user values, provides an invalid `download.modUrl`, uses unsupported RegExp flags, or uses an unsupported `deploy.expectedFiles` shape.
+ * @throws Error when a case sets both `fixtures.nexusUser` and `matrix.nexusUser`.
  * @throws Error when a case is outside `games/<gameId>/` or case ids are duplicated.
  */
 export function loadDataDrivenTestCases(rootDir: string = TEST_CASES_ROOT): DataDrivenTestCase[] {
@@ -188,6 +216,30 @@ export function compileTextMatcher(
 }
 
 /**
+ * Resolves flat or per-platform deploy expectations to the active file list.
+ *
+ * @param expectedFiles Flat common list or platform-keyed expected files object.
+ * @param platform Active mock-tree platform. Defaults to the current Node platform.
+ * @returns Common files followed by active-platform files, de-duplicated in order.
+ * @throws Error when a platform object defines neither `common` files nor files for the active platform.
+ * @throws Error when `platform` is omitted and the current Node platform is not `darwin`, `linux`, or `win32`.
+ */
+export function resolveExpectedFiles(
+  expectedFiles: ExpectedFiles,
+  platform: MockTreePlatform = mockTreePlatformFromNodePlatform(),
+): string[] {
+  if (Array.isArray(expectedFiles)) return [...expectedFiles];
+
+  const resolved = [...(expectedFiles.common ?? []), ...(expectedFiles[platform] ?? [])];
+  const unique = [...new Set(resolved)];
+  if (unique.length === 0) {
+    throw new Error(`deploy.expectedFiles resolved to no files for platform: ${platform}`);
+  }
+
+  return unique;
+}
+
+/**
  * Converts a YAML regex matcher into a RegExp.
  *
  * @param matcher Regex matcher from YAML.
@@ -230,6 +282,15 @@ export function variantTitle(variant: DataDrivenTestVariant): string {
   return `${matrixPrefix}${variant.title} @case:${variant.id} @game:${variant.gameId} @user:${variant.nexusUser}`;
 }
 
+/**
+ * Parses one YAML file into a validated data-driven test case.
+ *
+ * @param filePath Absolute path to the YAML case file.
+ * @param rootDir Root directory that contains `games/<gameId>/` case folders.
+ * @returns Normalized test case with derived game id and fixture defaults applied.
+ * @throws Error when `rootDir` or a nested case directory cannot be read.
+ * @throws Error when the YAML cannot be parsed, fails schema validation, or defines conflicting user selectors.
+ */
 function loadDataDrivenTestCase(filePath: string, rootDir: string): DataDrivenTestCase {
   const rawCase = parseYamlFile(filePath);
   const parsed = parseCaseSchema(rawCase, filePath);

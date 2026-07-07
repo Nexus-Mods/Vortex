@@ -19,3 +19,18 @@ download:
     flags: i
 
   missingNxmMessage: No nxm:// URL appeared in the page after the download click
+
+deploy:
+  expectedFiles:
+    common:
+      - Mods/ConsoleCommands/ConsoleCommands.dll
+      - Mods/ErrorHandler/ErrorHandler.dll
+      - Mods/SaveBackup/SaveBackup.dll
+    windows:
+      - StardewModdingAPI.exe
+    linux:
+      - StardewModdingAPI
+    macos:
+      - StardewModdingAPI
+
+  message: Expected SMAPI files to deploy

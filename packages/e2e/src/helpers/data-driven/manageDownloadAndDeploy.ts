@@ -5,6 +5,7 @@ import type {
   DynamicExtensionId,
   DynamicGameExtensionId,
 } from "../../fixtures/extensions/dynamic-extension";
+import type { MockTreePlatform } from "../../fixtures/game-setup/mock-tree";
 import { test } from "../../fixtures/vortex-app";
 import { deployAndExpectFiles, installModManagerDownload } from "../modManagerDownload";
 import { Timeouts } from "../timeouts";
@@ -13,6 +14,7 @@ import {
   compileTextMatcher,
   expandDataDrivenCase,
   nexusUserForName,
+  resolveExpectedFiles,
   variantTitle,
   type ManageDownloadAndDeployTestCase,
 } from "./testCases";
@@ -23,6 +25,8 @@ import {
  * @param testCase Validated YAML case to register.
  * @returns Nothing; variants are registered with Playwright during module load.
  * @throws Error when a case uses an invalid RegExp matcher in `download.expectedModRow` or `download.expectedUrl`.
+ * @throws Error when `deploy.expectedFiles` resolves to no files for the active platform.
+ * @throws Error when `deploy.expectedFiles` is present and the current Node platform is not `darwin`, `linux`, or `win32`.
  * @throws Error when a case defines duplicate `matrix.nexusUser` entries.
  */
 export function registerManageDownloadAndDeployCase(
@@ -42,11 +46,13 @@ export function registerManageDownloadAndDeployCase(
           "download.expectedUrl",
         );
   const deploy = testCase.deploy;
+  const expectedDeployFiles = resolveExpectedDeployFiles(deploy);
 
   test.describe(testCase.suite, () => {
     for (const variant of expandDataDrivenCase(testCase)) {
       registerManageDownloadAndDeployVariant({
         deploy,
+        expectedDeployFiles,
         expectedModRow,
         expectedUrl,
         testCase,
@@ -56,18 +62,44 @@ export function registerManageDownloadAndDeployCase(
   });
 }
 
+/**
+ * Resolves deploy expectations to the active platform file list.
+ *
+ * @param deploy Deploy block from a validated `manage-download-and-deploy` case.
+ * @param platform Active mock-tree platform. Defaults to the current Node platform.
+ * @returns Expected deploy files for the active platform, or `undefined` when the case has no deploy block.
+ * @throws Error when `deploy.expectedFiles` resolves to no files for the active platform.
+ * @throws Error when `platform` is omitted and the current Node platform is not `darwin`, `linux`, or `win32`.
+ */
+export function resolveExpectedDeployFiles(
+  deploy: ManageDownloadAndDeployTestCase["deploy"],
+  platform?: MockTreePlatform,
+): string[] | undefined {
+  return deploy?.expectedFiles === undefined
+    ? undefined
+    : resolveExpectedFiles(deploy.expectedFiles, platform);
+}
+
 interface ManageDownloadAndDeployVariantRegistration {
   deploy: ManageDownloadAndDeployTestCase["deploy"];
+  expectedDeployFiles: string[] | undefined;
   expectedModRow: string | RegExp;
   expectedUrl: RegExp | undefined;
   testCase: ManageDownloadAndDeployTestCase;
   variant: ReturnType<typeof expandDataDrivenCase>[number];
 }
 
+/**
+ * Registers one expanded `manage-download-and-deploy` variant with Playwright.
+ *
+ * @param registration Precomputed expectations and fixture data for the variant.
+ * @returns Nothing; the function adds nested `describe` and `test` blocks during module load.
+ */
 function registerManageDownloadAndDeployVariant(
   registration: ManageDownloadAndDeployVariantRegistration,
 ): void {
-  const { deploy, expectedModRow, expectedUrl, testCase, variant } = registration;
+  const { deploy, expectedDeployFiles, expectedModRow, expectedUrl, testCase, variant } =
+    registration;
 
   test.describe(`${testCase.gameId} / ${variant.nexusUser}`, () => {
     test.use({
@@ -95,10 +127,15 @@ function registerManageDownloadAndDeployVariant(
 
       if (deploy !== undefined) {
         await test.step("Deploy mod and verify expected files", async () => {
-          await deployAndExpectFiles(vortexWindow, managedGame.gamePath, deploy.expectedFiles, {
-            message: deploy.message,
-            timeoutMs: Timeouts.NETWORK,
-          });
+          await deployAndExpectFiles(
+            vortexWindow,
+            managedGame.gamePath,
+            expectedDeployFiles ?? [],
+            {
+              message: deploy.message,
+              timeoutMs: Timeouts.NETWORK,
+            },
+          );
         });
       }
     });

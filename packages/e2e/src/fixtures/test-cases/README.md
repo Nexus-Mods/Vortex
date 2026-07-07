@@ -60,6 +60,15 @@ deploy:
         - G1R/Binaries/Win64/UE4SS.dll
         - G1R/Binaries/Win64/UE4SS-settings.ini
 
+    # Can also specify platform-specific files like this:
+    # expectedFiles:
+    #   common:
+    #       - ...
+    #   linux:
+    #       - ...
+    #   windows:
+    #       - ...
+
     # Error text.
     message: Expected UE4SS files to deploy
 ```

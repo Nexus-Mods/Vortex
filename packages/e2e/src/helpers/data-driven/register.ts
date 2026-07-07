@@ -4,9 +4,7 @@
  */
 import { test } from "../../fixtures/vortex-app";
 import { registerManageDownloadAndDeployCase } from "./manageDownloadAndDeploy";
-import type { DataDrivenTestCase } from "./testCases";
-
-type DataDrivenFlow = DataDrivenTestCase["flow"];
+import type { DataDrivenFlow, DataDrivenTestCase } from "./testCases";
 
 /**
  * Registers YAML-backed E2E cases by dispatching each case to its flow registrar.
