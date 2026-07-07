@@ -4,7 +4,7 @@ import { access, mkdir, rename, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 
-import { unknownToError, wireToDownloadError } from "@vortex/shared";
+import { classifyErrorCode, unknownToError, wireToDownloadError } from "@vortex/shared";
 import { AlreadyDownloaded, UserCanceled } from "@vortex/shared/errors";
 import type {
   WireDownloadCheckpoint,
@@ -23,6 +23,7 @@ import {
   ModsDownloadFailedEvent,
   ModsDownloadStartedClientEvent,
 } from "./extensions/analytics/mixpanel/MixpanelEvents";
+import { makeModAnalyticsIdentity } from "./extensions/analytics/mixpanel/modAnalyticsIdentity";
 import {
   downloadProgress,
   finishDownload,
@@ -44,7 +45,6 @@ import type { IGameStored } from "./extensions/gamemode_management/types/IGameSt
 import { nxmUrlFromDownload } from "./extensions/nexus_integration/NXMUrl";
 import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
 import { convertGameIdReverse } from "./extensions/nexus_integration/util/convertGameId";
-import { makeModAndFileUIDs } from "./extensions/nexus_integration/util/UIDs";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
 import type { IExtensionApi } from "./types/IExtensionContext";
@@ -328,23 +328,15 @@ export class IPCDownloadAdapter {
     const modCollectionId =
       isCollection || parentCollectionId === undefined ? null : parentCollectionId;
 
+    // Durable resume history (persisted on the record, accumulates across restarts).
+    const pause_count = download?.pauseCount ?? 0;
+    const resumeInfo = { pause_count, was_resumed: pause_count > 0 };
+
     if (eventType === "started") {
       if (isCollection || nexusIds.modId === undefined || nexusIds.fileId === undefined) return;
-      const { modUID, fileUID } = makeModAndFileUIDs(
-        nexusIds.numericGameId.toString(),
-        nexusIds.modId,
-        nexusIds.fileId,
-      );
       this.#api.events.emit(
         "analytics-track-mixpanel-event",
-        new ModsDownloadStartedClientEvent(
-          nexusIds.modId,
-          nexusIds.fileId,
-          nexusIds.numericGameId,
-          modUID,
-          fileUID,
-          modCollectionId,
-        ),
+        new ModsDownloadStartedClientEvent(makeModAnalyticsIdentity(nexusIds, modCollectionId)),
       );
       return;
     }
@@ -364,23 +356,14 @@ export class IPCDownloadAdapter {
           ),
         );
       } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
-        const { modUID, fileUID } = makeModAndFileUIDs(
-          nexusIds.numericGameId.toString(),
-          nexusIds.modId,
-          nexusIds.fileId,
-        );
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
-          new ModsDownloadCompletedEvent(
-            nexusIds.modId,
-            nexusIds.fileId,
-            nexusIds.numericGameId,
-            modUID,
-            fileUID,
+          new ModsDownloadCompletedEvent({
+            ...makeModAnalyticsIdentity(nexusIds, modCollectionId),
             file_size,
             duration_ms,
-            modCollectionId,
-          ),
+            ...resumeInfo,
+          }),
         );
       }
       return;
@@ -397,21 +380,9 @@ export class IPCDownloadAdapter {
           ),
         );
       } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
-        const { modUID, fileUID } = makeModAndFileUIDs(
-          nexusIds.numericGameId.toString(),
-          nexusIds.modId,
-          nexusIds.fileId,
-        );
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
-          new ModsDownloadCancelledEvent(
-            nexusIds.modId,
-            nexusIds.fileId,
-            nexusIds.numericGameId,
-            modUID,
-            fileUID,
-            modCollectionId,
-          ),
+          new ModsDownloadCancelledEvent(makeModAnalyticsIdentity(nexusIds, modCollectionId)),
         );
       }
       return;
@@ -419,6 +390,7 @@ export class IPCDownloadAdapter {
 
     if (eventType === "failed") {
       const message = error?.message ?? "";
+      const error_code = classifyErrorCode(error);
       if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
@@ -426,28 +398,19 @@ export class IPCDownloadAdapter {
             nexusIds.collectionId,
             nexusIds.revisionId,
             nexusIds.numericGameId,
-            "",
+            error_code,
             message,
           ),
         );
       } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
-        const { modUID, fileUID } = makeModAndFileUIDs(
-          nexusIds.numericGameId.toString(),
-          nexusIds.modId,
-          nexusIds.fileId,
-        );
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
-          new ModsDownloadFailedEvent(
-            nexusIds.modId,
-            nexusIds.fileId,
-            nexusIds.numericGameId,
-            modUID,
-            fileUID,
-            "",
-            message,
-            modCollectionId,
-          ),
+          new ModsDownloadFailedEvent({
+            ...makeModAnalyticsIdentity(nexusIds, modCollectionId),
+            error_code,
+            error_message: message,
+            ...resumeInfo,
+          }),
         );
       }
     }

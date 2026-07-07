@@ -172,7 +172,14 @@ export const stateReducer: IReducerSpec = {
         : (state.files?.[id]?.received ?? 0) > 0
           ? "started"
           : "init";
-      return setOrNop(state, ["files", id, "state"], newState);
+      const next = setOrNop(state, ["files", id, "state"], newState);
+      // Count each actual pause transition (setOrNop returns the same ref on a no-op, so a
+      // redundant pause doesn't double-count). Persisted, so it accumulates across restarts;
+      // surfaced as pause_count.
+      if (paused && next !== state) {
+        return setSafe(next, ["files", id, "pauseCount"], (state.files[id].pauseCount ?? 0) + 1);
+      }
+      return next;
     },
     [action.setDownloadSpeed as any]: (state, payload) => {
       const temp = setSafe(state, ["speed"], payload);
