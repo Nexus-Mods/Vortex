@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+import type { FileSystemErrorCode } from "@nexusmods/contracts";
+
 import type { Pattern } from "./matcher";
 import type { QualifiedPath, ResolvedPath } from "./paths";
 
@@ -301,16 +303,7 @@ export type DirectoryStatus = StatusTime & {
   readonly hardlinkCount: number;
 };
 
-/** @public */
-export type FileSystemErrorCode =
-  | "already exists"
-  | "directory not empty"
-  | "no permissions"
-  | "no space"
-  | "not a directory"
-  | "not a file"
-  | "not found"
-  | "generic";
+export type { FileSystemErrorCode };
 
 /** @public */
 export class FileSystemError extends Error {

@@ -422,8 +422,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     }
     const urlInvalid = ["moved permanently", "forbidden", "gone"];
     const title = resume ? "Failed to resume download" : "Failed to start download";
-    // Fall back to `err.code` for raw Node errors that reach here directly.
-    const errno: string | undefined = err.payload?.errno ?? err.code;
+    // Semantic filesystem error, normalized in the main process from the raw Node error.
+    const fsReason: string | undefined = err.payload?.reason;
     if (err instanceof ProcessCanceled) {
       this.props.onShowError(title, err, undefined, false);
     } else if (err instanceof UserCanceled) {
@@ -528,14 +528,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         undefined,
         false,
       );
-    } else if (errno === "ENOSPC") {
+    } else if (fsReason === "no space") {
       this.props.onShowError(title, "The disk is full", undefined, false);
-    } else if (errno === "EBADF") {
+    } else if (fsReason === "no permissions") {
       this.props.onShowError(
         title,
-        "Failed to write to disk. If you use a removable media or " +
-          "a network drive, the connection may be unstable. " +
-          "Please try resuming once you checked.",
+        "Vortex doesn't have permission to write the download to disk. " +
+          "Check that the download folder isn't read-only and that another " +
+          "program (such as antivirus) isn't locking the file, then try again.",
         undefined,
         false,
       );

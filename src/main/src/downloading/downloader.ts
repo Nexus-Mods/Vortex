@@ -1,6 +1,7 @@
 import { type FileHandle as NodeFileHandle, access, open } from "node:fs/promises";
 import type { IncomingHttpHeaders } from "node:http";
 
+import type { FileSystemErrorCode } from "@nexusmods/adaptor-api/fs";
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import type {
   ByteRange,
@@ -18,6 +19,7 @@ import type { RateLimiter } from "limiter";
 import PQueue from "p-queue";
 import type { CookieJar } from "tough-cookie";
 
+import { parseNodeError } from "../filesystem/parse-node-error";
 import { isCancellation, toNetworkError } from "./errors";
 import type { ProgressReporter } from "./progress";
 import type { NormalizedResource } from "./resolver";
@@ -43,6 +45,12 @@ export type TimeoutOptions = {
   /** Timeout between received data packets before treating the connection as stalled (ms). */
   stall: number;
 };
+
+function fsErrorMessage(verb: string, filePath: string, reason: FileSystemErrorCode): string {
+  return reason === "generic"
+    ? `Failed to ${verb} ${filePath}`
+    : `Failed to ${verb} ${filePath}: ${reason}`;
+}
 
 /** @internal */
 export async function download<T>(
@@ -142,10 +150,10 @@ export async function download<T>(
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
-    const errno = getErrorCode(err) ?? undefined;
+    const { code: reason, isTransient } = parseNodeError(err);
     throw new DownloadError(
-      { code: "fs-error", path: dest, errno },
-      errno ? `Failed to open ${dest} (${errno})` : `Failed to open ${dest}`,
+      { code: "fs-error", path: dest, reason, isTransient },
+      fsErrorMessage("open", dest, reason),
       err,
     );
   }
@@ -154,12 +162,10 @@ export async function download<T>(
     try {
       await handle.fd.truncate(probe.size);
     } catch (err) {
-      const errno = getErrorCode(err) ?? undefined;
+      const { code: reason, isTransient } = parseNodeError(err);
       throw new DownloadError(
-        { code: "fs-error", path: handle.path, errno },
-        errno
-          ? `Failed to truncate ${handle.path} (${errno})`
-          : `Failed to truncate ${handle.path}`,
+        { code: "fs-error", path: handle.path, reason, isTransient },
+        fsErrorMessage("truncate", handle.path, reason),
         err,
       );
     }
@@ -440,12 +446,10 @@ async function downloadStream(
         if (progress) progress.bytesWritten += result.bytesWritten;
         writePosition += result.bytesWritten;
       } catch (err) {
-        const errno = getErrorCode(err) ?? undefined;
+        const { code: reason, isTransient } = parseNodeError(err);
         throw new DownloadError(
-          { code: "fs-error", path: handle.path, errno },
-          errno
-            ? `Failed to write to ${handle.path} (${errno})`
-            : `Failed to write to ${handle.path}`,
+          { code: "fs-error", path: handle.path, reason, isTransient },
+          fsErrorMessage("write to", handle.path, reason),
           err,
         );
       }
