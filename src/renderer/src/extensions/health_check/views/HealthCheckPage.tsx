@@ -142,16 +142,21 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
     hiddenItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 
-  // 1-click install all the no-choice downloads (premium-gated for free users).
-  // TODO(LAZ-471): the real download resolution and cross-check de-duplication of
-  // in-flight downloads live in the per-item install actions (still stubbed for
-  // file-level); this just fans out to each contributed item.
+  // 1-click install all: premium-gated for free users. Items are de-duplicated first by
+  // collectInstallAllItems (by key) and again here at execution time via the seen set,
+  // so a file shared across multiple source reports is only queued once.
   const installAll = () => {
     if (showPremiumAd) {
       setShowInstallAllPremium(true);
       return;
     }
-    installAllItems.forEach((item) => item.install());
+    const seen = new Set<string>();
+    for (const item of installAllItems) {
+      if (!seen.has(item.key)) {
+        seen.add(item.key);
+        item.install();
+      }
+    }
   };
 
   const activeList =
@@ -233,13 +238,10 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
                 </TabBar>
 
                 <div className="flex items-center gap-x-2">
-                  {/* TODO(LAZ-662): install-all is disabled for the MVP; re-enable once
-                      the bulk download resolution + in-flight de-duplication lands. */}
                   {selectedTab === "active" && installAllItems.length > 0 && (
                     <Button
                       appearance="moderate"
                       brand="neutral"
-                      disabled
                       leftIconPath={mdiDownload}
                       rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                       size="sm"
