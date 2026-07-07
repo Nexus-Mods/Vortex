@@ -292,7 +292,7 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
-              const loginResult = await loginToNexus(window, user, {
+              const loginResult = await loginToNexus(app, window, user, {
                 skipSteps: true,
                 keepBrowser: true,
                 nexusDiagnostics: { testInfo, prefix: "snapshot-nexus" },

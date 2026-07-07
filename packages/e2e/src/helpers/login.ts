@@ -1,4 +1,10 @@
-import { type Browser, expect, type Page, type TestInfo } from "@playwright/test";
+import {
+  type Browser,
+  type ElectronApplication,
+  expect,
+  type Page,
+  type TestInfo,
+} from "@playwright/test";
 
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
@@ -43,6 +49,7 @@ export interface LoginToNexusResult {
 }
 
 export async function loginToNexus(
+  vortexApp: ElectronApplication,
   vortexWindow: Page,
   user: NexusUser = freeUser,
   options: LoginToNexusOptions,
@@ -68,6 +75,13 @@ export async function loginToNexus(
 
   await step("Click the login button", async () => {
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
+
+    await expect(async () => {
+      await vortexApp.evaluate(({ shell }) => {
+        shell.openExternal = () => Promise.resolve();
+      });
+    }).toPass({ timeout: Timeouts.NETWORK });
+
     await vortexLoginPage.vortexLoginButton.click();
   });
 
