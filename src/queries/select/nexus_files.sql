@@ -8,13 +8,10 @@ SELECT
     ma.fileId AS file_id,
     ma.vortex_mod_id
 FROM db.profile_settings_pivot ps
-JOIN db.profiles_pivot pr
-  ON pr.profile_id = ps.activeProfileId
-JOIN db.mod_attributes_pivot ma
-  ON ma.game_id = pr.gameId
-JOIN db.mod_state_pivot ms
-  ON ms.game_id = ma.game_id
- AND ms.vortex_mod_id = ma.vortex_mod_id
+JOIN db.profiles_pivot pr ON pr.profile_id = ps.activeProfileId
+JOIN db.mod_attributes_pivot ma ON ma.game_id = pr.gameId
+JOIN db.mod_state_pivot ms ON ms.game_id = ma.game_id
+  AND ms.vortex_mod_id = ma.vortex_mod_id
 WHERE ps.section = 'profiles'
   AND ma.source = 'nexus'
   AND ms.state  = 'installed'
