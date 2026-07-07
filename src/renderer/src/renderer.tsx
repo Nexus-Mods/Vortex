@@ -118,8 +118,10 @@ import {
 import { addNotification, setupNotificationSuppression } from "./actions/notifications";
 import { setMaximized, setWindowPosition, setWindowSize } from "./actions/window";
 import { ApplicationData } from "./applicationData";
+import { FlagsProvider } from "./contexts/FlagsContext";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
+import { FlagService } from "./FlagService";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
 import reducer, { buildReducerTree, Decision, sanitizeHydrationState } from "./reducers/index";
@@ -190,6 +192,7 @@ const middleware = [
 // final writes are lost and affected mods reload missing fields (GH#23363).
 window.addEventListener("beforeunload", () => {
   flushPendingDiffsSync();
+  FlagService.destroyIfInitialized();
 });
 
 function sanityCheckCB(err: StateError) {
@@ -454,6 +457,7 @@ async function initGlobals(): Promise<void> {
   // Initialize application data asynchronously from main process cache
   // This replaces synchronous IPC calls that were in the preload script
   await ApplicationData.init();
+  FlagService.init();
   readStartupSettings();
 }
 
@@ -844,16 +848,29 @@ async function load(extensions: ExtensionManager): Promise<void> {
   extensions.getApi().events.on("gamemode-activated", () => refresh());
   startupFinished();
   eventEmitter.emit("startup");
+
+  let lastUserId: number | undefined;
+  store.subscribe(() => {
+    const userId: number | undefined = (store.getState() as any).persistent?.nexus?.userInfo
+      ?.userId;
+    if (userId !== lastUserId) {
+      lastUserId = userId;
+      window.api.featureFlags.setContext(userId !== undefined ? { userId: String(userId) } : {});
+    }
+  });
+
   // render the page content
   ReactDOM.render(
     <Provider store={store}>
-      <DndProvider backend={HTML5Backend}>
-        <I18nextProvider i18n={i18n}>
-          <ExtensionContext.Provider value={extensions}>
-            <AppLayout className="full-height" />
-          </ExtensionContext.Provider>
-        </I18nextProvider>
-      </DndProvider>
+      <FlagsProvider>
+        <DndProvider backend={HTML5Backend}>
+          <I18nextProvider i18n={i18n}>
+            <ExtensionContext.Provider value={extensions}>
+              <AppLayout className="full-height" />
+            </ExtensionContext.Provider>
+          </I18nextProvider>
+        </DndProvider>
+      </FlagsProvider>
     </Provider>,
     document.getElementById("content"),
   );

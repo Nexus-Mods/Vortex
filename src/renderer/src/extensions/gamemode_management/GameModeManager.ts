@@ -77,7 +77,7 @@ class GameModeManager {
   /**
    * attach this manager to the specified store
    *
-   * @param {Redux.Store<IStateEx>} store
+   * @param {Redux.Store<IState>} store
    *
    * @memberOf GameModeManager
    */

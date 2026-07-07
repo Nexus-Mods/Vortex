@@ -42,7 +42,7 @@ on:
       - .github/actions/package/**
 
 permissions:
-  contents: read
+  contents: write # needed to create the GitHub release
   id-token: write # OIDC token for provenance attestation
 
 jobs:
@@ -61,7 +61,7 @@ jobs:
       DEBUG: electron-builder # gives electron more verbose logs
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: "recursive"
 

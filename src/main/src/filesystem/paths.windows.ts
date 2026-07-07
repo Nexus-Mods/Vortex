@@ -57,7 +57,7 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
         ),
       );
     }
-    const drive = driveMatch[1].toUpperCase();
+    const drive = driveMatch[1]!.toUpperCase();
     const tail = nativePath.slice(root.length).replace(/\\/g, "/");
     const value =
       tail.length > 0 ? `${this.scheme}:///${drive}/${tail}` : `${this.scheme}:///${drive}`;

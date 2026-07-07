@@ -6,7 +6,16 @@ import * as semver from "semver";
 
 import { truthy } from "../../../util/util";
 import type { IDownload } from "../../download_management/types/IDownload";
-import type { IMod, IModReference, IFileListItem, IModAttributes } from "../types/IMod";
+import type {
+  IChoiceType,
+  IMod,
+  IModInstallSpec,
+  IModReference,
+  IModRule,
+  IFileListItem,
+  IModAttributes,
+  IModPatches,
+} from "../types/IMod";
 import { coerceToSemver, safeCoerce } from "./coerceToSemver";
 import { isFuzzyVersion } from "./isFuzzyVersion";
 
@@ -25,8 +34,8 @@ export interface IModLookupInfo {
   modId?: string;
   source?: string;
   referenceTag?: string;
-  installerChoices?: any;
-  patches?: any;
+  installerChoices?: IChoiceType;
+  patches?: IModPatches;
   fileList?: IFileListItem[];
 }
 
@@ -82,6 +91,65 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
     return lhs.id === rhs.id;
   }
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
+}
+
+/**
+ * Check whether an installed mod matches a requested install spec: the same installer
+ * choices, file list, and binary patches. This is deliberately separate from
+ * testModReference / findModByRef, which match a mod by IDENTITY only (which mod,
+ * not how it was installed). Identity matching answers "is this mod installed";
+ * install-spec matching answers "was it installed the way this rule asks for".
+ *
+ * Matching is purely by CONTENT (the choices / file list / patch data) and does not
+ * use the reference tag: tags are shortid-generated and are neither stable nor
+ * guaranteed unique, so a tag comparison cannot reliably distinguish installs.
+ */
+export function modMatchesInstallSpec(mod: IMod | IModLookupInfo, spec: IModInstallSpec): boolean {
+  const lookup = (mod as IMod).attributes
+    ? modAttributesToLookupInfo(mod)
+    : (mod as IModLookupInfo);
+
+  if (
+    spec.installerChoices != null &&
+    Object.keys(spec.installerChoices).length > 0 &&
+    !_.isEqualWith(lookup.installerChoices, spec.installerChoices)
+  ) {
+    return false;
+  }
+
+  if (
+    spec.fileList != null &&
+    spec.fileList.length > 0 &&
+    !_.isEqual(spec.fileList, lookup.fileList)
+  ) {
+    return false;
+  }
+
+  if (
+    spec.patches != null &&
+    Object.keys(spec.patches).length > 0 &&
+    !_.isEqual(lookup.patches, spec.patches)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * The install spec (installer choices / file list / patches) a collection rule asks
+ * for. This is the single place that reads a rule's install-spec fields, so the
+ * legacy-location fallback for `patches` lives only here.
+ */
+export function ruleInstallSpec(rule: IModRule): IModInstallSpec {
+  return {
+    installerChoices: rule.installerChoices,
+    fileList: rule.fileList,
+    // `patches` is now a first-class IModRule field; fall back to the old
+    // `rule.extra.patches` location so collection rules persisted before that move
+    // still match without a migration.
+    patches: rule.patches ?? rule.extra?.["patches"],
+  };
 }
 
 /**
@@ -162,6 +230,11 @@ function testRef(
   source?: { gameId: string; modId: string },
   fuzzyVersion?: boolean,
 ): boolean {
+  // A reference identifies WHICH mod is wanted, not how it was installed. Installer
+  // choices, file list and patches (the install spec) are matched separately via
+  // modMatchesInstallSpec / ruleInstallSpec, so a correctly-installed mod is still
+  // recognised here even if it was installed with a different spec.
+
   // Additional safety checks for ref parameter
   if (!ref || typeof ref !== "object" || Array.isArray(ref)) {
     return false;
@@ -182,32 +255,6 @@ function testRef(
     // if the reference doesn't have any marker that _could_ match this mod,
     // return !false!, otherwise we might match any random mod that also has no matching marker
     return false;
-  }
-
-  // Right installer choices?
-  if (
-    ref.installerChoices != null &&
-    Object.keys(ref.installerChoices).length > 0 &&
-    !_.isEqualWith(mod.installerChoices, ref.installerChoices)
-  ) {
-    return false;
-  }
-
-  // Right hashes?
-  if (ref.fileList != null && ref.fileList.length > 0 && !_.isEqual(ref.fileList, mod.fileList)) {
-    return false;
-  }
-
-  // Right patches?
-  const refHasPatches = ref.patches != null && Object.keys(ref.patches).length > 0;
-  const modHasPatches = mod.patches != null && Object.keys(mod.patches).length > 0;
-  if (refHasPatches) {
-    if (!_.isEqual(mod.patches, ref.patches)) {
-      return false;
-    }
-    if (mod?.referenceTag !== ref?.tag) {
-      return false;
-    }
   }
 
   if (ref.tag != null) {
@@ -240,8 +287,7 @@ function testRef(
   } else {
     if (!!ref.fileMD5 && ref.fileMD5 === mod.fileMD5) {
       // We don't have repo info which means that this is an external reference.
-      //  If we reached this point, that means we matched patches/installer choices/fileList
-      //  AND MD5 - this is good enough.
+      //  A matching MD5 identifies the file - this is good enough.
       return true;
     }
   }
@@ -317,15 +363,22 @@ function testRef(
   return true;
 }
 
+/**
+ * The loose Nexus identifiers a reference can be matched against (a mod page + file ids/names),
+ * plus an optional caller-supplied fallback predicate. Shared so callers do not re-declare the
+ * shape inline.
+ */
+export interface IReferenceIdentifiers {
+  gameId: string;
+  modId?: number;
+  fileId?: number;
+  fileNames?: string[];
+  fileIds?: string[];
+  condition?: () => boolean;
+}
+
 export function testRefByIdentifiers(
-  identifiers: {
-    gameId: string;
-    modId?: number;
-    fileId?: number;
-    fileNames?: string[];
-    fileIds?: string[];
-    condition?: () => boolean;
-  },
+  identifiers: IReferenceIdentifiers,
   ref: IModReference,
 ): boolean {
   if (identifiers == null || typeof identifiers !== "object" || Array.isArray(identifiers)) {
@@ -411,6 +464,58 @@ export function testModReference(
     const lookup = mod as IModLookupInfo;
     return testRef(lookup, lookup.id, reference, source, fuzzyVersion);
   }
+}
+
+/**
+ * The minimal shape the rule-type predicates need: anything carrying a mod-rule `type` discriminant.
+ * Accepts an IModRule directly, plus the session mod-info and table rows that mirror the rule type,
+ * so one predicate classifies all of them.
+ */
+type RuleTyped = Pick<IModRule, "type">;
+
+/**
+ * A "dependency" rule pulls a member into a collection - requires (mandatory) or recommends
+ * (optional). The other rule types (before/after/conflicts) only express ordering or conflicts and
+ * never add a mod. Centralises the `["requires", "recommends"].includes(rule.type)` check that is
+ * otherwise repeated throughout the collection code.
+ */
+export function isDependencyRule(rule: RuleTyped): boolean {
+  return rule.type === "requires" || rule.type === "recommends";
+}
+
+/** A "required" (mandatory) dependency rule - requires. Counterpart to isOptionalRule. */
+export function isRequiredRule(rule: RuleTyped): boolean {
+  return rule.type === "requires";
+}
+
+/**
+ * An "optional" dependency rule - recommends, the collection member offered to the user rather than
+ * installed unconditionally (the counterpart to the mandatory "requires"). Centralises the
+ * `rule.type === "recommends"` check so callers don't re-encode "recommends means optional".
+ */
+export function isOptionalRule(rule: RuleTyped): boolean {
+  return rule.type === "recommends";
+}
+
+/**
+ * Find the rule whose reference matches a mod - the inverse of findModByRef (which finds a mod by a
+ * reference). Answers "which of these rules applies to / pulled in this mod"; pass a mod's or a
+ * collection's `rules`.
+ *
+ * The mod is converted to lookup info once, up front, rather than letting testModReference rebuild
+ * it for every rule in the scan (the same "hoist the constant per-scan work" idea findModByRef uses
+ * for its reference). The per-rule tag/md5/id fast-paths already live inside testRef, so there is
+ * nothing to add here for those.
+ */
+export function findRuleByRef(rules: IModRule[] | undefined, mod: IMod): IModRule | undefined {
+  // no rule can match a mod that isn't there - a collection row for a not-yet-installed member has
+  // no entry in the installed-mods map. testModReference guards this internally; findRuleByRef must
+  // too, since it converts the mod to lookup info up front (before the per-rule testModReference).
+  if (!Array.isArray(rules) || mod == null) {
+    return undefined;
+  }
+  const lookup = modAttributesToLookupInfo(mod);
+  return rules.find((rule) => testModReference(lookup, rule.reference));
 }
 
 export default testModReference;

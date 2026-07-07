@@ -39,7 +39,7 @@ export interface ReportableError {
 
 function captureStackTrace<T extends Error>(
   self: T,
-  constructor?: new (...args: unknown[]) => T,
+  constructor?: new (...args: never[]) => T,
 ): void {
   if ("captureStackTrace" in Error && typeof Error.captureStackTrace === "function") {
     Error.captureStackTrace(self, constructor);
@@ -260,7 +260,7 @@ export class AlreadyDownloaded extends Error {
   private mId: string | undefined;
   constructor(fileName: string, id?: string) {
     super("File already downloaded");
-    Error.captureStackTrace(this, this.constructor);
+    captureStackTrace(this, AlreadyDownloaded);
     this.name = this.constructor.name;
     this.mFileName = fileName;
     this.mId = id;

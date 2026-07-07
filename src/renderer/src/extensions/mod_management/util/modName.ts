@@ -35,7 +35,12 @@ export function modNameFromAttributes(mod: { [key: string]: any }, options?: INa
  * @param {INameOptions} [options]
  * @returns {string}
  */
-function modName(mod: IMod, options?: INameOptions): string {
+// only the name-bearing fields are read, so callers may pass a mod that omits other
+// IMod members (e.g. a collection item row that carries no ModState)
+function modName(
+  mod: Pick<IMod, "attributes" | "installationPath">,
+  options?: INameOptions,
+): string {
   if (mod === undefined || mod.attributes === undefined) {
     return undefined;
   }
@@ -46,7 +51,11 @@ export interface IRenderOptions {
   version?: boolean;
 }
 
-export function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions) {
+export function renderModReference(
+  ref?: IModReference,
+  mod?: Pick<IMod, "attributes" | "installationPath">,
+  options?: IRenderOptions,
+) {
   const version = options === undefined || options.version !== false;
 
   if (mod !== undefined) {

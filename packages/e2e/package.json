@@ -15,7 +15,8 @@
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm exec eslint --concurrency auto .",
     "fixture:export-tree": "pnpm exec tsx ./src/fixtures/game-setup/export-tree.ts",
-    "fixture:export-platform-trees": "pnpm exec tsx ./src/fixtures/game-setup/export-platform-trees.ts"
+    "fixture:export-platform-trees": "pnpm exec tsx ./src/fixtures/game-setup/export-platform-trees.ts",
+    "ci-report": "pnpm exec tsx ./ci-report.ts"
   },
   "nx": {
     "targets": {
@@ -80,9 +81,13 @@
   "devDependencies": {
     "@playwright/test": "catalog:",
     "@types/js-yaml": "catalog:",
-    "playwright": "catalog:",
+    "@types/node": "catalog:",
     "electron": "catalog:",
+    "enquirer": "catalog:",
     "js-yaml": "catalog:",
+    "octokit": "catalog:",
+    "playwright": "catalog:",
+    "tsx": "catalog:",
     "zod": "catalog:"
   }
 }

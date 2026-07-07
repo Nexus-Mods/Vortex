@@ -43,7 +43,7 @@ const updateStatus: UpdateStatus = {
  * Handles checking for updates, downloading, and installing.
  */
 export function setupAutoUpdater(installType: string): void {
-  let cancellationToken: CancellationToken;
+  let cancellationToken: CancellationToken | undefined = undefined;
   const currentVersion = semver.parse(app.getVersion());
   let updateChannel = "stable";
 

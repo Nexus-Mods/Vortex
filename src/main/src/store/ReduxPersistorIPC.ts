@@ -268,9 +268,11 @@ class ReduxPersistorIPC {
   ): Promise<void> {
     let i = 0;
     while (i < operations.length) {
-      const opType = operations[i].type;
+      const op = operations[i];
+      if (op === undefined) break;
+      const opType = op.type;
       let runEnd = i + 1;
-      while (runEnd < operations.length && operations[runEnd].type === opType) {
+      while (runEnd < operations.length && operations[runEnd]?.type === opType) {
         runEnd++;
       }
       const run = operations.slice(i, runEnd);

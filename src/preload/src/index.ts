@@ -1,4 +1,4 @@
-import { rehydrateSerializedError, serializeError } from "@vortex/shared";
+import { type ErrorOriginTracker, rehydrateSerializedError, serializeError } from "@vortex/shared";
 import type {
   AppInitMetadata,
   RendererChannels,
@@ -25,6 +25,36 @@ const betterIpcRenderer = {
   on: rendererOn,
   off: rendererOff,
   callback: rendererCallback,
+};
+
+// Pass renderer-owned errors by reference across the IPC round-trip: a callback
+// error serialized here (rendererCallback) is stashed live and handed straight
+// back when its proxied copy returns (rendererInvoke) — preserving identity,
+// prototype and the real throw-site stack. Bounded, so a one-way error that
+// never returns is evicted rather than retained; an evicted ref just falls back
+// to generic-Error hydration. The renderer and preload share one V8 context
+// (contextIsolation is off for the main window), so the stashed object is the
+// same one the callback threw. The "renderer" namespace keeps these refs
+// distinct from any tracker main owns.
+const ORIGIN_STASH_MAX = 512;
+const originStash = new Map<string, Error>();
+let originSeq = 0;
+const errorOriginTracker: ErrorOriginTracker = {
+  namespace: "renderer",
+  capture: (err: Error): string => {
+    const id = `${originSeq++}`;
+    originStash.set(id, err);
+    if (originStash.size > ORIGIN_STASH_MAX) {
+      const oldest = originStash.keys().next().value;
+      if (oldest !== undefined) originStash.delete(oldest);
+    }
+    return id;
+  },
+  resolve: (id: string): Error | undefined => {
+    const err = originStash.get(id);
+    if (err !== undefined) originStash.delete(id);
+    return err;
+  },
 };
 
 try {
@@ -231,7 +261,8 @@ try {
     },
 
     downloader: {
-      start: (dest, collationId) => betterIpcRenderer.invoke("download:start", dest, collationId),
+      start: (dest, collationId, downloadId) =>
+        betterIpcRenderer.invoke("download:start", dest, collationId, downloadId),
       pause: (downloadId) => betterIpcRenderer.invoke("download:pause", downloadId),
       resume: (checkpoint) => betterIpcRenderer.invoke("download:resume", checkpoint),
       cancel: (downloadId) => betterIpcRenderer.invoke("download:cancel", downloadId),
@@ -245,6 +276,13 @@ try {
       onResolve: (handler) => betterIpcRenderer.callback("download:resolve", handler),
     },
 
+    bsdiff: {
+      diff: (oldPath, newPath, patchPath) =>
+        betterIpcRenderer.invoke("bsdiff:create", oldPath, newPath, patchPath),
+      patch: (oldPath, outputPath, patchPath) =>
+        betterIpcRenderer.invoke("bsdiff:apply", oldPath, patchPath, outputPath),
+    },
+
     diag: {
       // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
       fatal: (message: string) => {
@@ -254,6 +292,26 @@ try {
           // diagnostic must never throw
         }
       },
+    },
+
+    featureFlags: {
+      onSynchronize: (callback) => {
+        // Fetch current flags on register (async, but return cleanup function synchronously)
+        betterIpcRenderer
+          .invoke("flags:get-current")
+          .then((currentFlags) => setTimeout(() => callback(currentFlags)))
+          .catch(() => {
+            /* ignored */
+          });
+
+        // Listen for future updates
+        const listener = (_: Electron.IpcRendererEvent, flags: Parameters<typeof callback>[0]) =>
+          callback(flags);
+        ipcRenderer.on("flags:synchronize", listener);
+        return () => ipcRenderer.removeListener("flags:synchronize", listener);
+      },
+      reportMetrics: (bucket) => betterIpcRenderer.send("flags:metrics", bucket),
+      setContext: (context) => betterIpcRenderer.send("flags:setContext", context),
     },
   });
 } catch (err) {
@@ -267,6 +325,7 @@ function expose<K extends keyof PreloadWindow>(key: K, value: PreloadWindow[K]) 
     // NOTE(erri120): This looks bad but sadly is correct.
     // When context isolation is disabled, contextBridge becomes unusable
     // so we have to manually set values on the window directly.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     (window as unknown as PreloadWindow)[key] = value;
   }
 }
@@ -275,17 +334,17 @@ async function rendererInvoke<C extends keyof InvokeChannels>(
   channel: C,
   ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
 ): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
-  type Result = WireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>;
-  const reply: unknown = await ipcRenderer.invoke(channel, ...args);
-  if (isWireResult(reply)) {
-    const result = reply as Result;
-    if (result.ok) return result.value;
-    throw rehydrateSerializedError(result.error as unknown as SerializedError);
+  const reply = await ipcRenderer.invoke(channel, ...args);
+  if (isWireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>(reply)) {
+    if (reply.ok) return reply.value;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    throw rehydrateSerializedError(reply.error as unknown as SerializedError, errorOriginTracker);
   }
-  return reply as AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>;
+
+  return reply;
 }
 
-function isWireResult(value: unknown): value is WireResult<unknown> {
+function isWireResult<T>(value: unknown): value is WireResult<T> {
   return (
     typeof value === "object" && value !== null && "ok" in value && typeof value.ok === "boolean"
   );
@@ -342,11 +401,12 @@ function rendererCallback<C extends keyof CallbackChannels>(
           ok: true,
           value,
         });
+        return undefined;
       })
       .catch((err: unknown) => {
         ipcRenderer.send(`callback:${channel}`, collationId, {
           ok: false,
-          error: serializeError(err),
+          error: serializeError(err, errorOriginTracker),
         });
       });
   };

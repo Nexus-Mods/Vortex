@@ -86,15 +86,35 @@ function mainCallback<C extends keyof CallbackChannels>(
     },
   );
 
-  const timer = setTimeout(() => {
+  const settle = () => {
+    resolve = undefined;
+    reject = undefined;
+  };
+
+  // A non-positive timeout disables the wall-clock deadline (used by
+  // download:resolve - see downloading/ipc.ts). The renderer always settles the
+  // callback (resolve on success, reject on cancel/skip, network calls carry
+  // their own timeouts), so the only failure mode left to guard against is the
+  // renderer dying, handled by the destroyed listener below.
+  const timer =
+    timeout > 0
+      ? setTimeout(() => {
+          if (reject) {
+            const rej = reject;
+            settle();
+            rej(new Error(`Callback for channel '${channel}' timed out after ${timeout}ms`));
+          }
+        }, timeout)
+      : undefined;
+
+  const onDestroyed = () => {
     if (reject) {
-      resolve = undefined;
-
-      reject(new Error(`Callback for channel '${channel}' timed out after ${timeout}ms`));
-
-      reject = undefined;
+      const rej = reject;
+      settle();
+      rej(new Error(`Callback for channel '${channel}' aborted: renderer was destroyed`));
     }
-  }, timeout);
+  };
+  webContents.once("destroyed", onDestroyed);
 
   const off = mainOn(`callback:${channel}`, (event, ...args) => {
     const { sender } = event;
@@ -103,7 +123,7 @@ function mainCallback<C extends keyof CallbackChannels>(
     const receivedCollationId = args[0];
     if (receivedCollationId !== collationId) return;
 
-    // The timer may already have settled this promise; bail if so.
+    // The timer or destroyed listener may already have settled this promise; bail if so.
     if (resolve === undefined || reject === undefined) return;
     const res = resolve;
     const rej = reject;
@@ -123,7 +143,8 @@ function mainCallback<C extends keyof CallbackChannels>(
   mainSend(webContents, channel, ...args);
   return promise.finally(() => {
     off();
-    clearTimeout(timer);
+    if (timer !== undefined) clearTimeout(timer);
+    webContents.off("destroyed", onDestroyed);
   });
 }
 

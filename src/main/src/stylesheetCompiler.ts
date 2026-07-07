@@ -22,7 +22,7 @@ export default class StylesheetCompiler {
     const modulesPath = getVortexPath("modules_unpacked");
     this.#loadPaths = [assetsPath, modulesPath];
 
-    log("debug", "using laod paths for stylesheet compilation", this.#loadPaths);
+    log("debug", "using load paths for stylesheet compilation", this.#loadPaths);
 
     betterIpcMain.handle("styles:compile", (_, filePaths) => {
       const started = Date.now();

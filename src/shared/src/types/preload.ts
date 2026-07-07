@@ -16,6 +16,8 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type { FeatureFlag } from "./flags";
+import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
@@ -98,8 +100,14 @@ export interface Api {
   /** Downloader APIs */
   downloader: DownloaderApi;
 
+  /** bsdiff binary patching APIs (run on a main-process worker_thread) */
+  bsdiff: BsdiffApi;
+
   /** Diagnostic APIs */
   diag: Diag;
+
+  /** Feature flags API */
+  featureFlags: FeatureFlagsApi;
 }
 
 export interface Example {
@@ -466,8 +474,11 @@ export interface DownloaderApi {
    * Enqueues a download. The caller must generate `collationId` and register
    * any resolve handler before calling this, so that the main-side resolve
    * callback cannot arrive before the handler is ready.
+   *
+   * Passing `downloadId` restores an existing download: the transfer starts from
+   * scratch under that id, replacing any previous attempt tracked for it.
    */
-  start(dest: string, collationId: number): Promise<{ downloadId: string }>;
+  start(dest: string, collationId: number, downloadId?: string): Promise<{ downloadId: string }>;
 
   /** Pauses an active download and returns a checkpoint for later resumption. */
   pause(downloadId: string): Promise<WireDownloadCheckpoint>;
@@ -493,6 +504,26 @@ export interface DownloaderApi {
    * Returns an unsubscribe function.
    */
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
+}
+
+export interface BsdiffApi {
+  /** Create a BSDIFF40 patch file from oldPath and newPath. */
+  diff(oldPath: string, newPath: string, patchPath: string): Promise<void>;
+
+  /** Apply a BSDIFF40 patch file to oldPath, writing the result to outputPath. */
+  patch(oldPath: string, outputPath: string, patchPath: string): Promise<void>;
+}
+
+/** API for receiving feature flag updates pushed from the main process */
+export interface FeatureFlagsApi {
+  /** Registers a callback invoked whenever main pushes updated flags. Returns an unsubscribe function. */
+  onSynchronize(callback: (flags: FeatureFlag[]) => void): () => void;
+
+  /** Sends a completed evaluation metrics bucket to the main process for forwarding to Unleash. */
+  reportMetrics(bucket: FlagMetricsBucket): void;
+
+  /** Updates context data used for feature flag evaluation (e.g. userId after login). */
+  setContext(context: FlagContext): void;
 }
 
 /** API for forwarding telemetry spans from renderer to main for buffering/export */

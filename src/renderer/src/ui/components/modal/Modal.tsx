@@ -2,16 +2,16 @@ import { Dialog } from "@headlessui/react";
 import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-type ModalSize = "sm" | "md" | "lg" | "xl";
+type IModalSize = "sm" | "md" | "lg" | "xl";
 
-type ModalProps = PropsWithChildren<{
+type IModalProps = PropsWithChildren<{
   className?: string;
   initialFocusRef?: RefObject<HTMLElement | null>;
   isOpen: boolean;
-  size?: ModalSize;
+  size?: IModalSize;
   onClose: () => void;
 }>;
 
@@ -22,7 +22,7 @@ export const ModalWrapper = ({
   isOpen = false,
   size,
   onClose,
-}: ModalProps) => (
+}: IModalProps) => (
   <Dialog
     className={joinClasses([`nxm-modal nxm-modal-${size}`, className])}
     initialFocus={initialFocusRef}
@@ -35,7 +35,7 @@ export const ModalWrapper = ({
   </Dialog>
 );
 
-type ModalPanelProps = {
+type IModalPanelProps = {
   className?: string;
   showCloseButton?: boolean;
   title?: string;
@@ -48,7 +48,7 @@ export const ModalPanel = ({
   showCloseButton = true,
   title,
   onClose,
-}: PropsWithChildren<ModalPanelProps>) => (
+}: PropsWithChildren<IModalPanelProps>) => (
   <Dialog.Panel className={joinClasses(["nxm-modal-panel", className])}>
     {!!title && (
       <Dialog.Title
@@ -77,7 +77,7 @@ export const Modal = ({
   title,
   onClose,
   ...props
-}: ModalProps & ModalPanelProps) => (
+}: IModalProps & IModalPanelProps) => (
   <ModalWrapper {...props} onClose={onClose}>
     <ModalPanel showCloseButton={showCloseButton} title={title} onClose={onClose}>
       {children}

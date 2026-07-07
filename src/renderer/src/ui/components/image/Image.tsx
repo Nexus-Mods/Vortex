@@ -12,12 +12,13 @@ export interface IImageProps extends Omit<
   className?: string;
   fit?: "cover" | "contain";
   imageClassName?: string;
-  imageType?: "collection" | "mod" | "other";
+  imageType?: "collection" | "game" | "mod" | "other";
   isBlurred?: boolean;
 }
 
 const imageTypeMap: Record<NonNullable<IImageProps["imageType"]>, string> = {
   collection: "aspect-collection",
+  game: "aspect-game",
   mod: "aspect-mod",
   other: "",
 };

@@ -381,6 +381,36 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
     expect(mod.attributes).toEqual({ endorsed: "Undecided", allowRating: true, version: "1.0" });
   });
 
+  it("drops a record whose modId key was clobbered by external corruption (GH#23603)", () => {
+    // the #23603 shape: a torn/bit-rot write left the modId key with U+FFFD
+    // replacement chars (here standing in for "irection" of "Directional"),
+    // and the installationPath leaf gone. Healing installationPath from this
+    // key would only recreate a phantom pointing at a folder that can't exist,
+    // so the whole record must be dropped instead.
+    const corruptKey = `D${String.fromCharCode(0xfffd).repeat(8)}al Movement Keys-174499-1-2-1-1775669963`;
+    const state = {
+      skyrimse: {
+        [corruptKey]: {
+          archiveId: "0X09f7lm8",
+          attributes: { name: "Directional Movement Keys", version: "1.2.1" },
+        },
+        "Good Mod-1-0-0": { installationPath: "Good Mod-1-0-0" },
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    );
+
+    // corrupt phantom culled, healthy sibling untouched
+    expect(result.skyrimse).not.toHaveProperty(corruptKey);
+    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
+  });
+
   it("leaves a valid mod untouched", () => {
     const state = {
       skyrimse: {

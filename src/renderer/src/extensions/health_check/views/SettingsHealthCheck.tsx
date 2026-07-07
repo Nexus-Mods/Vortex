@@ -3,18 +3,27 @@ import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { useFlag } from "@/contexts/FlagsContext";
+
 import Toggle from "../../../controls/Toggle";
-import { setModRequirementsEnabled } from "../actions/persistent";
-import { isModRequirementsEnabled } from "../selectors";
+import { setModRequirementsEnabled, setFileRequirementsEnabled } from "../actions/persistent";
+import { FILE_REQUIREMENTS_FLAG } from "../checks/fileRequirementsCheck";
+import { isModRequirementsEnabled, isFileRequirementsUserEnabled } from "../selectors";
 
 const SettingsHealthCheck: React.FC = () => {
   const { t } = useTranslation(["health_check"]);
   const dispatch = useDispatch();
-  const enabled = useSelector(isModRequirementsEnabled);
+  const modRequirementsEnabled = useSelector(isModRequirementsEnabled);
+  const fileRequirementsEnabled = useSelector(isFileRequirementsUserEnabled);
+  const fileRequirementsAvailable = useFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
 
-  const onToggle = React.useCallback(() => {
-    dispatch(setModRequirementsEnabled(!enabled));
-  }, [dispatch, enabled]);
+  const onToggleModRequirements = React.useCallback(() => {
+    dispatch(setModRequirementsEnabled(!modRequirementsEnabled));
+  }, [dispatch, modRequirementsEnabled]);
+
+  const onToggleFileRequirements = React.useCallback(() => {
+    dispatch(setFileRequirementsEnabled(!fileRequirementsEnabled));
+  }, [dispatch, fileRequirementsEnabled]);
 
   return (
     <form>
@@ -23,9 +32,15 @@ const SettingsHealthCheck: React.FC = () => {
 
         <HelpBlock>{t("settings::description")}</HelpBlock>
 
-        <Toggle checked={enabled} onToggle={onToggle}>
+        <Toggle checked={modRequirementsEnabled} onToggle={onToggleModRequirements}>
           {t("settings::mod_requirements")}
         </Toggle>
+
+        {fileRequirementsAvailable && (
+          <Toggle checked={fileRequirementsEnabled} onToggle={onToggleFileRequirements}>
+            {t("settings::file_requirements")}
+          </Toggle>
+        )}
       </FormGroup>
     </form>
   );

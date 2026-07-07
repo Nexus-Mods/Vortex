@@ -47,7 +47,7 @@ export class Table<T extends Record<string, unknown>> extends View<T> {
       throw new Error("delete() requires at least one filter");
     }
 
-    const clauses = entries.map((_, i) => `${quoteIdentifier(entries[i][0])} = $${i + 1}`);
+    const clauses = entries.map(([key], i) => `${quoteIdentifier(key)} = $${i + 1}`);
     const values = entries.map(([, v]) => v as DuckDBValue);
     const sql = `DELETE FROM ${this._tableName} WHERE ${clauses.join(" AND ")}`;
     await this._connection.run(sql, values);

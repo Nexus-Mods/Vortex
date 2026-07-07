@@ -23,7 +23,7 @@ function wireToResolvedResource(wire: WireResolvedResource): ResolvedResource {
     probeEndpoint: probe,
     chunkEndpoint: (chunk) =>
       Promise.resolve(
-        wireToResolvedEndpoint(wire.chunkEndpoints[chunk.index] ?? wire.probeEndpoint),
+        wireToResolvedEndpoint(wire.chunkEndpoints?.[chunk.index] ?? wire.probeEndpoint),
       ),
   };
 }
@@ -40,17 +40,21 @@ export function init(manager: DownloadManager): void {
 
   const webContentsByDownloadId = new Map<string, WebContents>();
 
-  betterIpcMain.handle("download:start", async (event, dest, collationId) => {
+  betterIpcMain.handle("download:start", async (event, dest, collationId, downloadId) => {
     const webContents = event.sender;
+    // free users must click through the website serially at their own pace (~10-13s each),
+    // so any wall-clock timer abandons every download past the first few in a batch.
+    // The renderer reports resolution failures (cancel/skip/network) immediately and
+    // mainCallback rejects if the renderer is destroyed, so a timer is redundant.
     const wireResource = await betterIpcMain.callback(
       "download:resolve",
       webContents,
-      timeout,
+      0,
       collationId,
     );
     const resource = wireToResolvedResource(wireResource);
     const resolver = () => Promise.resolve(resource);
-    const handle = manager.download(resource, dest, resolver);
+    const handle = manager.download(resource, dest, resolver, undefined, undefined, downloadId);
     webContentsByDownloadId.set(handle.downloadId, webContents);
     handle.promise.catch((err) =>
       log("error", "download failed", { downloadId: handle.downloadId, err }),

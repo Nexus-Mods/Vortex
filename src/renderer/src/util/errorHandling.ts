@@ -20,6 +20,7 @@ import type { IError } from "../types/IError";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
+import { genHash } from "./genHash";
 import getVortexPath from "./getVortexPath";
 import { fallbackTFunc } from "./i18n";
 import { log } from "./log";
@@ -49,6 +50,7 @@ export function createErrorReport(
 ) {
   const userData = getVortexPath("userData");
   const reportPath = path.join(userData, "crashinfo.json");
+  const consentGiven = state !== undefined && isTelemetryEnabled(state);
   fs.writeFileSync(
     reportPath,
     JSON.stringify({
@@ -58,9 +60,10 @@ export function createErrorReport(
       reportProcess: process.type,
       sourceProcess,
       userData,
+      consentGiven,
     }),
   );
-  if (state !== undefined && isTelemetryEnabled(state)) {
+  if (consentGiven) {
     spawnSelf(["--report", reportPath]);
   }
 }
@@ -559,4 +562,34 @@ export function recordErrorSpan(
       },
     );
   }
+}
+
+// Hashes of render errors already reported via reportRenderError. React error
+// boundaries re-invoke componentDidCatch on every re-render of a failing tree,
+// so we dedupe to avoid flooding the log and telemetry with identical entries.
+const reportedRenderErrors = new Set<string>();
+
+/**
+ * Record a render-phase error caught by a React error boundary. Writes the
+ * error and its component stack to vortex.log (so user-supplied logs identify
+ * the failing component) and emits an OTel error span (so render crashes show
+ * up in Datadog). Deduped by error hash to survive boundary re-catches.
+ */
+export function reportRenderError(
+  error: Error,
+  errorInfo: { componentStack?: string | null },
+): void {
+  const hash = genHash(error);
+  if (reportedRenderErrors.has(hash)) {
+    return;
+  }
+  reportedRenderErrors.add(hash);
+
+  const componentStack = errorInfo?.componentStack ?? undefined;
+  log("error", "render failure", { error: error.stack, componentStack });
+  recordErrorSpan(
+    "Component render failure",
+    error,
+    componentStack ? { componentStack } : undefined,
+  );
 }

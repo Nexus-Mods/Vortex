@@ -14,6 +14,7 @@ import type {
   IModFileContentPage,
   IModInfo,
   IModRequirements,
+  IOAuthCredentials,
   IRating,
   IRevision,
   IModFileContentPageQuery,
@@ -54,6 +55,7 @@ import { setUpdatingMods } from "../mod_management/actions/session";
 import type { IModListItem } from "../news_dashlet/types";
 import { setUserInfo } from "./actions/persistent";
 import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
+import { nxmModUrl } from "./NXMUrl";
 import { isLoggedIn } from "./selectors";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import {
@@ -67,12 +69,13 @@ import {
   processErrorMessage,
   resolveGraphError,
   startDownload,
+  updateUserInfoFromRefreshedToken,
   transformUserInfoFromApi,
   updateKey,
   updateToken,
 } from "./util";
 import { findLatestUpdate, retrieveModInfo } from "./util/checkModsVersion";
-import { nexusGameId, toNXMId, convertGameIdReverse } from "./util/convertGameId";
+import { nexusGameId, convertGameIdReverse } from "./util/convertGameId";
 import {
   FULL_COLLECTION_INFO,
   FULL_REVISION_INFO,
@@ -80,7 +83,6 @@ import {
   MOD_REQUIREMENTS_INFO,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
-import type { ITokenReply } from "./util/oauth";
 import submitFeedback from "./util/submitFeedback";
 import { makeModUID } from "./util/UIDs";
 
@@ -374,7 +376,7 @@ function downloadFile(
     return Bluebird.reject(new ProcessCanceled("Only available to premium users"));
   }
   // TODO: Need some way to identify if this request is actually for a nexus mod
-  const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
+  const url = nxmModUrl(game, gameId, modId, fileId);
   log("debug", "downloading from generated nxm link", { url, fileName });
 
   const downloads = state.persistent.downloads.files;
@@ -518,7 +520,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
       })
       .catch(DownloadIsHTML, (err) => undefined)
       .catch(DataInvalid, () => {
-        const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
+        const url = nxmModUrl(game, gameId, modId, fileId);
         api.showErrorNotification("Invalid URL", url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
@@ -1101,9 +1103,7 @@ export function onDownloadUpdate(
           updateFileId = fileIdNum;
         }
 
-        const urlParsed = new URL(
-          `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${updateFileId}`,
-        );
+        const urlParsed = new URL(nxmModUrl(game, gameId, modId, updateFileId));
         if (campaign !== undefined) {
           urlParsed.searchParams.set("campaign", campaign);
         }
@@ -1119,8 +1119,10 @@ export function onDownloadUpdate(
 
         if (existingId !== undefined) {
           if (downloads[existingId].state === "paused") {
+            // allowInstall: false - the caller (InstallManager.downloadMatching) owns the
+            // installation of this download; auto-install on completion would install it twice.
             return Bluebird.fromCallback((cb) =>
-              api.events.emit("resume-download", existingId, cb),
+              api.events.emit("resume-download", existingId, cb, { allowInstall: false }),
             ).then(() => ({ error: null, dlId: existingId }));
           } else {
             return Bluebird.resolve({ error: null, dlId: existingId });
@@ -1144,7 +1146,7 @@ export function onDownloadUpdate(
         if (err instanceof UserCanceled) {
           // there is a really good chance that the download will fail
           log("warn", "failed to fetch mod file list", err.message);
-          const urlParsed = new URL(`nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`);
+          const urlParsed = new URL(nxmModUrl(game, gameId, modId, fileId));
           if (campaign !== undefined) {
             urlParsed.searchParams.set("campaign", campaign);
           }
@@ -1343,15 +1345,26 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 
 // fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
 export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
-  return (oldValue: ITokenReply, newValue: ITokenReply) => {
+  // Despite the historical ITokenReply annotation, the value stored in
+  // state (and written by onJWTTokenRefresh / setOAuthCredentials) is the
+  // IOAuthCredentials shape: { token, refreshToken, fingerprint }.
+  return (oldValue: IOAuthCredentials, newValue: IOAuthCredentials) => {
     log("info", "onOAuthTokenChanged event handler.");
 
-    // remove user info
-    api.store.dispatch(setUserInfo(undefined));
-
-    if (newValue !== undefined) {
-      updateToken(api, nexus, newValue);
+    if (newValue === undefined) {
+      // logout: credentials cleared
+      api.store.dispatch(setUserInfo(undefined));
+      return;
     }
+
+    if (oldValue !== undefined) {
+      updateUserInfoFromRefreshedToken(api, newValue);
+      return;
+    }
+
+    // fresh login: undefined -> defined
+    api.store.dispatch(setUserInfo(undefined));
+    updateToken(api, nexus, newValue);
   };
 }
 

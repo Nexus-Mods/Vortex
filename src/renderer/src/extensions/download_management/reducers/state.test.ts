@@ -50,6 +50,30 @@ describe("downloadProgress", () => {
       files: { id: { state: "started", received: 42, size: 43 } },
     });
   });
+  it("preserves the stored source urls when the payload carries none", () => {
+    // restart-on-resume re-resolves from urls[0]; a progress tick must not wipe it
+    const input = {
+      files: { id: { state: "started", received: 0, size: 43, urls: ["nxm://game/mods/1"] } },
+    };
+    const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, {
+      id: "id",
+      received: 42,
+      total: 43,
+    });
+    expect(result.files.id.urls).toEqual(["nxm://game/mods/1"]);
+  });
+  it("replaces the stored source urls when the payload carries some", () => {
+    const input = {
+      files: { id: { state: "started", received: 0, size: 43, urls: ["https://old"] } },
+    };
+    const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, {
+      id: "id",
+      received: 42,
+      total: 43,
+      urls: ["https://redirected"],
+    });
+    expect(result.files.id.urls).toEqual(["https://redirected"]);
+  });
   it("updates the total", () => {
     const input = { files: { id: { state: "started", received: 0, size: 0 } } };
     const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, {
@@ -325,5 +349,28 @@ describe("setDownloadSpeed", () => {
     const input = { speed: 0 };
     const result = stateReducer.reducers.SET_DOWNLOAD_SPEED(input, 42);
     expect(result.speed).toEqual(42);
+  });
+});
+
+describe("setDownloadSpeeds", () => {
+  it("stores the speed history and last speed", () => {
+    const input = { speed: 0, speedHistory: [] };
+    const result = stateReducer.reducers.SET_DOWNLOAD_SPEEDS(input, [1, 2, 3]);
+    expect(result.speedHistory).toEqual([1, 2, 3]);
+    expect(result.speed).toEqual(3);
+  });
+  it("trims to the last NUM_SPEED_DATA_POINTS entries", () => {
+    const input = { speed: 0, speedHistory: [] };
+    const payload = Array.from({ length: 50 }, (_unused, idx) => idx);
+    const result = stateReducer.reducers.SET_DOWNLOAD_SPEEDS(input, payload);
+    expect((result.speedHistory as number[]).length).toEqual(30);
+    expect((result.speedHistory as number[])[0]).toEqual(20);
+    expect(result.speed).toEqual(49);
+  });
+  it("normalizes a non-array payload to an empty history", () => {
+    const input = { speed: 5, speedHistory: [1, 2] };
+    const result = stateReducer.reducers.SET_DOWNLOAD_SPEEDS(input, { foo: "bar" });
+    expect(result.speedHistory).toEqual([]);
+    expect(result.speed).toEqual(0);
   });
 });

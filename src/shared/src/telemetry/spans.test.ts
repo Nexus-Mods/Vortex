@@ -9,6 +9,7 @@ const VERSION = "1.0.0";
 /** Minimal fake span that records the attributes set on it. */
 const fakeSpan = () => {
   const attributes: Record<string, string | number | boolean> = {};
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const span = {
     setAttribute: (key: string, value: string | number | boolean) => {
       attributes[key] = value;
@@ -75,8 +76,7 @@ describe("recordErrorOnSpan fingerprint discriminator", () => {
 
   it("combines constructor name with the error code", () => {
     const { span, attributes } = fakeSpan();
-    const err = errorWithStack(new TypeError("boom")) as TypeError & { code: string };
-    err.code = "ENOENT";
+    const err = Object.assign(errorWithStack(new TypeError("boom")), { code: "ENOENT" });
     recordErrorOnSpan(span, err, VERSION);
     const expected = computeErrorFingerprint(
       ["    at f (src/foo.ts:1:2)", "    at g (src/bar.ts:3:4)"].join("\n"),

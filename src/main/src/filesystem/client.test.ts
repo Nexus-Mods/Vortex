@@ -173,7 +173,7 @@ describe("createFileSystemClient", () => {
       });
       const first = await iterator.next();
       expect(first.done).toBe(false);
-      const [qp, s] = first.value;
+      const [qp, s] = first.value!;
       expect(qp).toBeInstanceOf(QualifiedPath);
       expect(qp.value).toBe("linux:///tmp/fs-client-test//x");
       expect(s).toEqual(status);

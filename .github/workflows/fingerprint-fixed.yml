@@ -19,9 +19,9 @@ jobs:
     if: >-
       github.event.pull_request.merged == true &&
       !startsWith(github.event.pull_request.head.ref, 'cherry-pick/')
-    runs-on: [self-hosted]
+    runs-on: platform-cluster
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/fingerprints
         with:
           mode: pr

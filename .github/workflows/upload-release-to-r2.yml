@@ -1,0 +1,41 @@
+name: Upload Release to R2
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v2.1.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    if: ${{ !github.event.release.prerelease || github.event_name == 'workflow_dispatch' }}
+    runs-on: platform-cluster
+    steps:
+      - name: Install tools
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          unzip -q awscliv2.zip
+          sudo apt-get update -qq && sudo apt-get install -y gh
+          sudo ./aws/install --update
+          rm -rf awscliv2.zip aws
+
+      - name: Download release asset
+        run: gh release download ${{ github.event.release.tag_name || inputs.tag }} --pattern "vortex-setup-*.exe" --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to R2
+        run: aws s3 cp $(ls vortex-setup-*.exe) s3://nexusmodsapp/ --endpoint-url "${{ secrets.NEXUSMODS_R2_ENDPOINT }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.NEXUSMODSAPP_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUSMODSAPP_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto

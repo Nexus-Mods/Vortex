@@ -20,7 +20,7 @@ import ExtensionGate from "../controls/ExtensionGate";
 import Icon from "../controls/Icon";
 import type { IMainPage } from "../types/IMainPage";
 import { getApplication } from "../util/application";
-import { didIgnoreError, isOutdated } from "../util/errorHandling";
+import { didIgnoreError, isOutdated, reportRenderError } from "../util/errorHandling";
 import { genHash } from "../util/genHash";
 import { log } from "../util/log";
 
@@ -56,6 +56,7 @@ class PageErrorBoundary extends Component<IErrorBoundaryProps, IErrorBoundarySta
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    reportRenderError(error, errorInfo);
     this.setState({ error, errorInfo });
   }
 

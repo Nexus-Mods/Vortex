@@ -12,7 +12,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
+import { AlreadyDownloaded, DownloadIsHTML, InsufficientDiskSpace } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
@@ -61,6 +61,7 @@ import { generate as shortid } from "shortid";
  * See AGENTS-COLLECTIONS.md for architectural overview.
  */
 import { removeDownload, setDownloadModInfo, startActivity, stopActivity } from "../../actions";
+import { markModInstalled, updateModStatus } from "../../actions/collectionInstallTracking";
 import {
   type IConditionResult,
   type IDialogContent,
@@ -73,6 +74,26 @@ import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import calculateFolderSize from "../../util/calculateFolderSize";
+import {
+  generateCollectionSessionId,
+  isTerminalMemberStatus,
+  modRuleId,
+} from "../../util/collectionInstallSession";
+import {
+  getCollectionActiveSession,
+  getCollectionInstallProgress,
+  getCollectionModByReference,
+  getCollectionSessionById,
+  getCollectionStatusBreakdown,
+  isCollectionPhaseComplete,
+} from "../../util/collectionInstallSessionSelectors";
+import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
+import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
+import {
+  planDependencyErrorRecovery,
+  sessionWriteForDependency,
+} from "../../util/collectionSessionWrite";
+import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import {
   DataInvalid,
@@ -115,15 +136,6 @@ import {
 } from "../../util/util";
 import walk from "../../util/walk";
 import { resolveCategoryId } from "../category_management/util/retrieveCategoryPath";
-import {
-  getCollectionActiveSession,
-  getCollectionInstallProgress,
-  getCollectionModByReference,
-  getCollectionSessionById,
-  getCollectionStatusBreakdown,
-  isCollectionPhaseComplete,
-} from "../collections_integration/selectors";
-import { generateCollectionSessionId } from "../collections_integration/util";
 import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
@@ -154,22 +166,39 @@ import type { Dependency, IDependency, IDependencyError, IModInfoEx } from "./ty
 import type { IInstallContext } from "./types/IInstallContext";
 import type { IInstallOptions } from "./types/IInstallOptions";
 import type { IInstallResult, IInstruction, InstructionType } from "./types/IInstallResult";
-import type { IFileListItem, IMod, IModAttributes, IModReference, IModRule } from "./types/IMod";
+import type {
+  IChoiceType,
+  IFileListItem,
+  IMod,
+  IModAttributes,
+  IModReference,
+  IModRule,
+} from "./types/IMod";
 import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
-import gatherDependencies, { findDownloadByRef, lookupFromDownload } from "./util/dependencies";
+import gatherDependencies, {
+  findDownloadByRef,
+  lookupFromDownload,
+  selectedOptionalRules,
+} from "./util/dependencies";
 import filterModInfo from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
+import { InstallPhaseTracker, type IDeploymentDetails } from "./util/InstallPhaseTracker";
 import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
 import modName, { renderModReference } from "./util/modName";
 import queryGameId from "./util/queryGameId";
+import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
+import { rulePhase } from "./util/rulePhase";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
+  isDependencyRule,
+  modMatchesInstallSpec,
   referenceEqual,
+  ruleInstallSpec,
   testRefByIdentifiers,
 } from "./util/testModReference";
 
@@ -183,11 +212,6 @@ interface IActiveInstallation {
   callback: (error: Error, id: string) => void;
   startTime: number;
   baseName: string;
-}
-
-interface IDeploymentDetails {
-  deploymentPromise: Promise<void>;
-  deployOnSettle: boolean;
 }
 
 // Function to get current download manager free slots
@@ -341,10 +365,9 @@ function findCollectionByDownload(
 
     // Download lookups will not hold any patch/filelist/installerChoices info.
     //  Which is why in this case we want to ensure that we only match using regular reference fields.
-    const matchingRule = collectionMod.rules?.find((rule) => {
-      const { patches, fileList, installerChoices, ...refWithoutExtras } = rule.reference;
-      return testModReference(lookup, refWithoutExtras);
-    });
+    const matchingRule = collectionMod.rules?.find((rule) =>
+      testModReference(lookup, rule.reference),
+    );
 
     if (matchingRule) {
       return { collectionMod, matchingRule, gameId };
@@ -359,12 +382,7 @@ function findCollectionByDownload(
     return null;
   }
 
-  const matchingRule = getCollectionModByReference(state, {
-    tag: download.modInfo?.referenceTag,
-    fileMD5: download.fileMD5,
-    fileId: download.modInfo?.nexus?.ids?.fileId?.toString(),
-    logicalFileName: download.localPath,
-  });
+  const matchingRule = getCollectionModByReference(state, lookupFromDownload(download));
   if (!matchingRule) {
     log("debug", "No matching rule found in collection for download", {
       downloadId: download.id,
@@ -389,6 +407,25 @@ function findCollectionByDownload(
 function filterDependencyRules(rules: IModRule[]): IModRule[] {
   return (rules ?? []).filter(
     (rule: IModRule) => ["recommends", "requires"].includes(rule.type) && !rule.ignored,
+  );
+}
+
+/**
+ * Whether the collection rule behind a resolved dependency has since been marked ignored.
+ * filterDependencyRules drops ignored rules ONCE, at gather time; this re-reads the durable
+ * flag so a mod the user ignores mid-install (after the dependency list was gathered) is not
+ * installed after the fact.
+ */
+function isDependencyRuleIgnored(
+  state: IState,
+  gameId: string,
+  sourceModId: string,
+  reference: IModReference,
+): boolean {
+  const rules = state.persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
+  return rules.some(
+    (rule) =>
+      rule.ignored === true && isDependencyRule(rule) && referenceEqual(rule.reference, reference),
   );
 }
 
@@ -500,8 +537,14 @@ class InstallManager {
   private mNotificationAggregator: NotificationAggregator;
   private mNotificationAggregationTimeoutMS: number = 5000;
 
-  // This limiter drives the DownloadManager to queue up new downloads.
-  private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
+  // Bounds how many collection dependencies are processed concurrently through the
+  // download -> install pipeline (driving the DownloadManager to queue downloads ahead, and
+  // orchestrating queued installs). This is NOT the install-concurrency cap: the actual install
+  // step runs under mInstallLimit. Sized larger than mInstallLimit on purpose, so downloads are
+  // fetched ahead while a smaller number install. Must stay a DIFFERENT limiter from mInstallLimit
+  // because the orchestration acquires a slot here and then calls this.install() (mInstallLimit) -
+  // gating both on one limiter would nest it and deadlock the pipeline.
+  private mDependencyPipelineLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
 
   // Queues installations for processing - primarily used to keep track of pending installations
   //  for the current dependency phase if/when concurrent download and installation is disabled.
@@ -525,8 +568,11 @@ class InstallManager {
   private mDependencyRetryCount: Map<string, number> = new Map();
   private static readonly MAX_DEPENDENCY_RETRIES = 3;
 
-  // Main installation concurrency limiter - replaces sequential mQueue
-  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
+  // Caps how many mods install (extract/deploy) at once, across BOTH top-level and dependency
+  // installs - every install routes through this.install(), which acquires a slot here. This is
+  // the real install-concurrency cap (MAX_SIMULTANEOUS_INSTALLS); it replaces the old sequential
+  // mQueue. Dependency orchestration/look-ahead is bounded separately by mDependencyPipelineLimit.
+  private mInstallLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
     InstallManager.MAX_SIMULTANEOUS_INSTALLS,
   );
 
@@ -612,7 +658,7 @@ class InstallManager {
       // Clear the dependency installs map
       this.mDependencyInstalls = {};
 
-      this.mDependencyInstallsLimit = new ConcurrencyLimiter(10);
+      this.mDependencyPipelineLimit = new ConcurrencyLimiter(10);
 
       // Clear all retry counters
       this.mDependencyRetryCount.clear();
@@ -663,7 +709,7 @@ class InstallManager {
     }
 
     const isInstallingDependencies = !!this.mDependencyInstalls[collectionId];
-    const hasPhaseState = this.mInstallPhaseState.has(collectionId);
+    const hasPhaseState = this.mPhaseTracker.has(collectionId);
 
     if (!isInstallingDependencies && !hasPhaseState) {
       log(
@@ -675,7 +721,7 @@ class InstallManager {
     }
 
     if (hasPhaseState) {
-      const phaseState = this.mInstallPhaseState.get(collectionId);
+      const phaseState = this.mPhaseTracker.get(collectionId);
       if (phaseState) {
         // Add this download to the cache
         if (download.modInfo?.referenceTag) {
@@ -689,15 +735,20 @@ class InstallManager {
 
     // Create a dependency object and queue the installation
     const dependency: IDependency = {
+      // install-spec triple (installerChoices / fileList / patches) from the single
+      // extraction point, so it stays in sync with the rule and its legacy fallbacks
+      ...ruleInstallSpec(matchingRule),
       extra: matchingRule.extra,
       reference: matchingRule.reference,
       lookupResults: [], // Will be populated if needed
       download: downloadId,
-      phase: matchingRule.extra?.phase || 0,
-      patches: matchingRule.extra?.patches ?? matchingRule.reference.patches,
-      installerChoices: matchingRule.installerChoices,
-      fileList: matchingRule.fileList ?? matchingRule.reference.fileList,
+      phase: rulePhase(matchingRule),
     };
+
+    // record that this collection mod's download is available, coupled to the install
+    // queueing below so we never mark "downloaded" for a download we then don't install
+    // (no-op outside an active collection session)
+    this.writeCollectionSession(dependency.reference, { type: "status", status: "downloaded" });
 
     // Ensure the phase is marked as having downloads finished
     // This is needed when downloads complete after initial dependency processing
@@ -729,8 +780,8 @@ class InstallManager {
       return;
     }
 
-    // Check if this download is part of a collection installation
-    const collectionInfo = findCollectionByDownload(state, download, downloadId);
+    // Check if this download is part of a collection installation.
+    const collectionInfo = findCollectionByDownload(state, download);
     if (!collectionInfo) {
       return;
     }
@@ -744,7 +795,7 @@ class InstallManager {
 
     // Check if we're currently in collection installation for this collection
     const isInstallingCollection =
-      !!this.mDependencyInstalls[collectionId] || this.mInstallPhaseState.has(collectionId);
+      !!this.mDependencyInstalls[collectionId] || this.mPhaseTracker.has(collectionId);
 
     if (!isInstallingCollection) {
       log("debug", "Collection is not currently installing - ignoring download failure", {
@@ -778,6 +829,13 @@ class InstallManager {
         },
       );
     }
+
+    // Settle the member as failed on the collection session. A terminally failed download is not
+    // requeued, so without this the member stays on "downloading" while rendering "Download failed"
+    // - bucketed under the Downloading filter and missed by the Failed filter. Mirrors how
+    // handleDownloadSkipped settles a skipped member, then lets the phase advance past it.
+    this.writeCollectionSession(matchingRule.reference, { type: "status", status: "failed" });
+    this.maybeAdvancePhase(collectionId, api);
   }
 
   private handleDownloadSkipped(api: IExtensionApi, sourceModId: string, dep: IDependency) {
@@ -787,7 +845,7 @@ class InstallManager {
 
     // Check if we're currently in collection installation for this collection
     const isInstallingCollection =
-      !!this.mDependencyInstalls[sourceModId] || this.mInstallPhaseState.has(sourceModId);
+      !!this.mDependencyInstalls[sourceModId] || this.mPhaseTracker.has(sourceModId);
     if (!isInstallingCollection) {
       log("debug", "Collection is not currently installing - ignoring skipped download", {
         sourceModId,
@@ -804,8 +862,9 @@ class InstallManager {
       this.mActiveInstalls.delete(installKey);
     }
 
-    // Notify InstallDriver to update tracking status
-    api.events.emit("collection-mod-skipped", dep.reference);
+    // Mark the skipped member ignored directly against the active session (collections is core
+    // now, so no event round-trip through the InstallDriver is needed).
+    markCollectionMemberSkipped(api, { reference: dep.reference });
 
     // See if we can advance the phase
     this.maybeAdvancePhase(sourceModId, api);
@@ -1041,6 +1100,9 @@ class InstallManager {
           if (critical !== undefined) {
             return Promise.reject(new ArchiveBrokenError(path.basename(archivePath), critical));
           }
+          if (errors.some((err) => this.isDiskFull(err))) {
+            return Promise.reject(new InsufficientDiskSpace(path.parse(tempPath).root));
+          }
           return this.queryContinue(api, errors, archivePath);
         } else {
           return Promise.resolve();
@@ -1187,7 +1249,7 @@ class InstallManager {
     const currentProfile = profileById(state, profileId) ?? activeProfile(state);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
-    this.mMainInstallsLimit
+    this.mInstallLimit
       .do(() => {
         return new Promise<string>((resolve, reject) => {
           const installationZip = new Zip();
@@ -1931,6 +1993,18 @@ class InstallManager {
                       },
                     );
                     promiseCallback?.(errObj, null);
+                  } else if (err instanceof InsufficientDiskSpace) {
+                    return prom.then(() => {
+                      if (installContext !== undefined) {
+                        installContext.reportError(
+                          "Not enough disk space",
+                          "There is not enough free space on the drive to install this mod. " +
+                            "Free up space and try again.",
+                          false,
+                        );
+                      }
+                      promiseCallback?.(err, null);
+                    });
                   } else {
                     return prom
                       .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
@@ -2239,9 +2313,25 @@ class InstallManager {
     retryKeysToRemove.forEach((key) => this.mDependencyRetryCount.delete(key));
 
     if (hard) {
-      this.mMainInstallsLimit.clearQueue();
-      this.mDependencyInstallsLimit.clearQueue();
-      this.mInstallPhaseState.delete(sourceModId);
+      this.mInstallLimit.clearQueue();
+      this.mDependencyPipelineLimit.clearQueue();
+      this.mPhaseTracker.delete(sourceModId);
+    }
+
+    // Re-derive the collection session from reality. This teardown runs on pause/cancel/stall; a
+    // member that was mid-install keeps a stale "installing" status otherwise (the per-dependency
+    // error path leaves a torn-down install untouched, expecting resume to rebuild it - but a pause
+    // never rebuilds, so the mods tab shows a phantom "installing"). Resyncing drops such a member
+    // back to its real status (downloaded / pending), so it reads as resumable rather than stuck.
+    const state = this.mApi.getState();
+    const session = getCollectionActiveSession(state);
+    if (session?.collectionId === sourceModId) {
+      const rules = (state.persistent.mods[session.gameId]?.[sourceModId]?.rules ?? []).filter(
+        isDependencyRule,
+      );
+      if (rules.length > 0) {
+        resyncCollectionSessionRules(this.mApi, rules);
+      }
     }
   }
 
@@ -2258,8 +2348,8 @@ class InstallManager {
     recommended: boolean,
     phase: number = 0,
   ): void {
-    this.ensurePhaseState(sourceModId);
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    this.mPhaseTracker.ensure(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     const phaseNum = phase ?? 0;
 
     // Check if this installation is already active or pending
@@ -2287,10 +2377,11 @@ class InstallManager {
     // Only initialize allowedPhase early if we are allowed to run installers alongside downloads
     if (canStartTasks && phaseState.allowedPhase === undefined) {
       phaseState.allowedPhase = phaseNum;
-      // When setting initial allowed phase, mark all previous phases as downloads finished
-      for (let p = 0; p < phaseNum; p++) {
-        phaseState.downloadsFinished.add(p);
-      }
+      // We can't be at this phase without the earlier ones being done, so mark the collection's
+      // real earlier phases finished (the tracker iterates the actual phase set, never integer
+      // 0..phaseNum, so the OPTIONAL_PHASE sentinel never enumerates).
+      const rules = api.getState().persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
+      this.mPhaseTracker.markPhasesBeforeFinished(sourceModId, phaseNum, rules);
     }
 
     const downloads = api.getState().persistent.downloads.files;
@@ -2327,15 +2418,22 @@ class InstallManager {
     recommended: boolean,
     phase: number,
   ): void {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
     this.mPendingInstalls.set(installKey, dep);
 
     // Track active count for the phase
     phaseState.activeByPhase.set(phase, (phaseState.activeByPhase.get(phase) ?? 0) + 1);
 
-    // Process installation immediately in parallel using concurrency limiter
-    this.mDependencyInstallsLimit
+    // Orchestrate the queued dependency install under mDependencyPipelineLimit. This MUST be a
+    // different limiter from the one the actual install acquires: this callback calls
+    // installModAsync -> this.install(), which takes a slot on mInstallLimit. Gating both on
+    // mInstallLimit nests the same limiter (outer orchestration slot + inner install slot per
+    // dependency), so once every slot is held by an orchestration waiting for an install slot the
+    // whole pipeline deadlocks. The actual install concurrency is already capped at
+    // MAX_SIMULTANEOUS_INSTALLS by that inner mInstallLimit; this outer limiter only bounds
+    // how many downloaded dependencies are orchestrated/queued ahead.
+    this.mDependencyPipelineLimit
       .do(async () => {
         const startTime = Date.now();
 
@@ -2371,20 +2469,39 @@ class InstallManager {
             return;
           }
 
+          // Honour a mid-install ignore: the gathered dependency list is a snapshot from
+          // install start, but the user may have ignored this mod since (flipping the
+          // durable rule.ignored flag). Skip installing it; the phase poller settles the
+          // phase (ignored counts as complete and is excluded from requeue), and the
+          // session already shows it ignored.
+          if (isDependencyRuleIgnored(api.getState(), gameId, sourceModId, currentDep.reference)) {
+            log("info", "skipping install: dependency ignored mid-install", {
+              ref: renderModReference(currentDep.reference),
+            });
+            this.mActiveInstalls.delete(installKey);
+            this.mDependencyRetryCount.delete(installKey);
+            return;
+          }
+
           const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
           const mods = api.getState().persistent.mods[gameId];
 
-          // Mods with patches are always reinstalled as variants so the
-          // correct diffs are applied to clean files - skip the lookup.
-          const hasPatches =
-            currentDep.patches != null && Object.keys(currentDep.patches).length > 0;
-          const fullReference: IModReference = {
-            ...currentDep.reference,
+          // Reuse an already-installed mod only when it matches the dependency by
+          // identity AND was installed with the same install spec (installer choices,
+          // file list, patches). Otherwise (different or absent spec) install it.
+          const existingMod = findModByRef(currentDep.reference, mods, undefined, {
             installerChoices: currentDep.installerChoices,
-            patches: currentDep.patches,
             fileList: currentDep.fileList,
-          };
-          const existingMod = hasPatches ? undefined : findModByRef(fullReference, mods);
+            patches: currentDep.patches,
+          });
+          if (existingMod == null) {
+            // about to actually install (not reusing an existing mod): mark installing so
+            // the collection session reflects the live install phase
+            this.writeCollectionSession(currentDep.reference, {
+              type: "status",
+              status: "installing",
+            });
+          }
           const modId =
             existingMod != null
               ? existingMod.id
@@ -2413,6 +2530,11 @@ class InstallManager {
 
           if (modId) {
             this.mActiveInstalls.delete(installKey);
+
+            // record the successful install on the collection session (no-op outside an
+            // active collection session). This is the sole writer of the "installed"
+            // status, covering both a freshly installed mod and a reused existing one.
+            this.writeCollectionSession(currentDep.reference, { type: "installed", modId });
 
             // Apply any extra attributes
             this.applyExtraFromRule(api, gameId, modId, {
@@ -2483,31 +2605,67 @@ class InstallManager {
           const err = unknownToError(unknownError);
           this.mActiveInstalls.delete(installKey);
           const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
-          // A missing mDependencyInstalls entry means the install was torn down
-          // externally (cancel-dependency-install / clearQueued). Treat the
-          // late error as cancellation so it doesn't surface as a notification
-          // or trigger a retry for a download the user already canceled.
+          // A missing mDependencyInstalls entry means the whole install was torn down
+          // externally (cancel-dependency-install / clearQueued / pause). Treat the late
+          // error as cancellation so it doesn't surface as a notification.
           const installCanceled = !this.mDependencyInstalls[sourceModId];
           const isCanceled =
             installCanceled ||
             unknownError instanceof UserCanceled ||
             unknownError instanceof ProcessCanceled;
+          // An explicitly skipped member already carries the durable `ignored` flag (the skip
+          // site sets it before this rejection arrives). It is terminal: never requeue it (that
+          // would re-prompt the download a free user just skipped) and never re-mark it.
+          const ruleIgnored = isDependencyRuleIgnored(
+            api.getState(),
+            gameId,
+            sourceModId,
+            dep.reference,
+          );
           const hasRetriesLeft = currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
-          if (!isCanceled && hasRetriesLeft) {
-            this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
+          // A disk-full failure will not succeed on retry; settle it now so the member becomes
+          // terminally failed instead of cycling the retry budget while stuck on "installing".
+          // Likewise a ProcessCanceled from the install itself - Vortex rejects an install that
+          // produced no instructions (empty archive / invalid installer output, e.g. an unreadable
+          // manifest) with ProcessCanceled - is deterministic: retrying reruns the same failing
+          // install, and a requeue never re-drives it, so the member sits stuck on "installing" and
+          // stalls the collection. Settle it failed. A whole-install teardown is excluded here
+          // (installCanceled -> "leave", handled first in planDependencyErrorRecovery).
+          const nonRetryable =
+            unknownError instanceof InsufficientDiskSpace ||
+            (unknownError instanceof ProcessCanceled && !installCanceled);
+          const recovery = planDependencyErrorRecovery({
+            installCanceled,
+            ruleIgnored,
+            isCanceled,
+            hasRetriesLeft,
+            nonRetryable,
+          });
+          if (recovery.action === "requeue") {
+            // A transient error OR a download cancelled as collateral while the install is still
+            // live. Requeue rather than abandoning the member non-terminal - a dangling member
+            // both blocks completion and gets re-prompted on the next install pass.
+            this.mPendingInstalls.set(installKey, dep);
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
-          } else if (!isCanceled) {
-            // Max retries exceeded, clean up and show error
-            this.mDependencyRetryCount.delete(installKey);
-            this.showDependencyError(
-              api,
-              sourceModId,
-              "Failed to install dependency",
-              err,
-              renderModReference(dep.reference),
-            );
           } else {
             this.mDependencyRetryCount.delete(installKey);
+            if (recovery.action === "fail") {
+              // Retries exhausted: settle the member as failed (terminal) so the collection can
+              // still complete and the member is not re-prompted. writeCollectionSession no-ops
+              // over an already-terminal status, so this only settles a genuinely stuck member.
+              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
+              if (recovery.showError) {
+                this.showDependencyError(
+                  api,
+                  sourceModId,
+                  "Failed to install dependency",
+                  err,
+                  renderModReference(dep.reference),
+                );
+              }
+            }
+            // action === "leave": whole-install pause/cancel (resume rebuilds) or an explicitly
+            // skipped member - nothing to recover.
           }
           // Don't rethrow to avoid crashing the concurrency limiter
         } finally {
@@ -2548,48 +2706,24 @@ class InstallManager {
    *    - `pendingByPhase.get(phase)?.length === 0` (no pending installations)
    *    Checking only `active === 0` allows deployment during queued installs = BAD.
    *
-   * 3. PHASE GATING: Even optional/recommended mods must wait for their phase.
-   *    Never bypass phase gating - it breaks last-phase advancement logic.
+   * 3. PHASE GATING: Even optional/recommended mods must wait for their phase - never bypass it.
+   *    Optionals map to the dedicated trailing OPTIONAL_PHASE (rulePhase) and install through the
+   *    same phase engine as required members, just last. A selected optional un-ignored after the
+   *    initial gather is driven by driveSelectedOptionals (from the completion poll), which downloads
+   *    or imports it so handleDownloadFinished queues its install at OPTIONAL_PHASE.
    *
    * 4. POST-DEPLOYMENT: Always call `startPendingForPhase()` after deployment
    *    completes to resume any installations that were queued during deployment.
    */
-  // Map tracking phase gating per sourceMod/collection
-  private mInstallPhaseState: Map<
-    string,
-    {
-      allowedPhase?: number;
-      downloadsFinished: Set<number>;
-      pendingByPhase: Map<number, Array<() => void>>;
-      activeByPhase: Map<number, number>;
-      deployedPhases: Set<number>;
-      reQueueAttempted?: Map<number, number>;
-      deploymentPromises?: Map<number, IDeploymentDetails>;
-      isDeploying?: boolean; // Flag to track if deployment is in progress
-      downloadLookupCache?: {
-        // Performance optimization: cache download lookups to avoid O(n*m)
-        byTag: Map<string, string>;
-        byMd5: Map<string, string>;
-      };
-    }
-  > = new Map();
+  // Per-collection phase-gating state (the phase map, its entry shape, and phase-set caching) lives
+  // in InstallPhaseTracker; the orchestration below reaches each collection's entry via
+  // ensure()/get() and drives the sentinel-safe backfill through markPhasesBeforeFinished().
+  private mPhaseTracker = new InstallPhaseTracker();
 
-  private ensurePhaseState(sourceModId: string) {
-    if (!this.mInstallPhaseState.has(sourceModId)) {
-      this.mInstallPhaseState.set(sourceModId, {
-        allowedPhase: undefined,
-        downloadsFinished: new Set<number>(),
-        pendingByPhase: new Map<number, Array<() => void>>(),
-        activeByPhase: new Map<number, number>(),
-        deployedPhases: new Set<number>(),
-        deploymentPromises: new Map<number, IDeploymentDetails>(),
-        downloadLookupCache: {
-          byTag: new Map<string, string>(),
-          byMd5: new Map<string, string>(),
-        },
-      });
-    }
-  }
+  // Optional (recommends) members whose download the completion poll has already kicked off this
+  // session, keyed by rule id. Guards driveSelectedOptionals against re-triggering the same
+  // optional every 500ms poll tick while its download is in flight.
+  private mOptionalDownloadsInFlight = new Set<string>();
 
   private pollAllPhasesComplete(api: IExtensionApi, sourceModId: string): Promise<void> {
     const POLL_MS = 500;
@@ -2603,7 +2737,7 @@ class InstallManager {
       let rescueAttempted = false;
 
       const poll = () => {
-        const phaseState = this.mInstallPhaseState.get(sourceModId);
+        const phaseState = this.mPhaseTracker.get(sourceModId);
         if (!phaseState) {
           log("debug", "Phase state cleared, all phases considered complete", {
             sourceModId,
@@ -2702,6 +2836,11 @@ class InstallManager {
           log("debug", "All phases complete", { sourceModId });
           return resolve();
         } else {
+          // Kick off downloads for optionals the user selected after the initial gather (un-ignored
+          // mid-install); handleDownloadFinished then installs them at OPTIONAL_PHASE. Without this
+          // they sit pending and block isComplete forever.
+          this.driveSelectedOptionals(api, sourceModId);
+
           const collectionStatus = this.checkCollectionPhaseStatus(
             api,
             sourceModId,
@@ -2777,7 +2916,7 @@ class InstallManager {
       let lastTerminalCount = this.getTerminalModCount(api, sourceModId);
 
       const poll = () => {
-        const phaseState = this.mInstallPhaseState.get(sourceModId);
+        const phaseState = this.mPhaseTracker.get(sourceModId);
         if (!phaseState) {
           return resolve();
         }
@@ -2945,7 +3084,7 @@ class InstallManager {
     const downloads = api.getState().persistent.downloads.files;
     let modsNeedingRequeue = 0;
 
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     const cache = phaseState?.downloadLookupCache;
 
     allDownloadedMods.forEach((mod: any) => {
@@ -3023,9 +3162,8 @@ class InstallManager {
       return 0;
     }
 
-    return Object.values(session.mods).filter((mod: any) =>
-      ["installed", "failed", "skipped"].includes(mod.status),
-    ).length;
+    return Object.values(session.mods).filter((mod: any) => isTerminalMemberStatus(mod.status))
+      .length;
   }
 
   // Helper to check if an archiveId has pending or active installations
@@ -3055,7 +3193,7 @@ class InstallManager {
     allMods: any[],
     currentPhase: number,
   ): void {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     if (!phaseState) {
       return;
     }
@@ -3113,15 +3251,12 @@ class InstallManager {
         // Check if mod is already installed with matching installer choices and patches
         const gameId = activeGameId(api.getState());
         const mods = api.getState().persistent.mods[gameId] ?? {};
-        const fullReference: IModReference | undefined = mod.rule?.reference
-          ? {
-              ...mod.rule.reference,
-              installerChoices: mod.rule.installerChoices ?? mod.rule.extra?.installerChoices,
-              patches: mod.rule.extra?.patches,
-              fileList: mod.rule.fileList ?? mod.rule.reference?.fileList,
-            }
+        // Identity + install spec: the mod counts as installed only if the wanted
+        // install spec (installer choices / file list / patches) is present, otherwise
+        // it needs (re)installing.
+        const existingMod = mod.rule?.reference
+          ? findModByRef(mod.rule.reference, mods, undefined, ruleInstallSpec(mod.rule))
           : undefined;
-        const existingMod = fullReference && findModByRef(fullReference, mods);
 
         log("debug", "Requeue check", {
           downloadId,
@@ -3199,13 +3334,13 @@ class InstallManager {
   }
 
   public isPhaseDeployed(sourceModId: string, phase: number): boolean {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     return phaseState?.deployedPhases.has(phase) ?? false;
   }
 
   public markPhaseDeployed(sourceModId: string, phase: number): void {
-    this.ensurePhaseState(sourceModId);
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    this.mPhaseTracker.ensure(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     phaseState.deployedPhases.add(phase);
   }
 
@@ -3216,8 +3351,8 @@ class InstallManager {
     phase: number,
     deployOnSettle?: boolean,
   ): Promise<void> | undefined {
-    this.ensurePhaseState(sourceModId);
-    const state = this.mInstallPhaseState.get(sourceModId);
+    this.mPhaseTracker.ensure(sourceModId);
+    const state = this.mPhaseTracker.get(sourceModId);
     if (state.deployedPhases.has(phase)) {
       // Phase already deployed, nothing to do
       return;
@@ -3252,7 +3387,7 @@ class InstallManager {
         })
         .finally(() => {
           // Remove this promise from the array when it completes
-          const phaseState = this.mInstallPhaseState.get(sourceModId);
+          const phaseState = this.mPhaseTracker.get(sourceModId);
           if (phaseState?.deploymentPromises) {
             phaseState.deploymentPromises.delete(phase);
           }
@@ -3270,20 +3405,110 @@ class InstallManager {
     return deploymentPromise;
   }
 
+  /**
+   * Kick off downloads for optionals the user has SELECTED (ignored:false) that are still sitting
+   * PENDING - i.e. un-ignored AFTER the install's initial dependency gather, so they were never
+   * gathered into the pass and nothing else will download them. Called each completion-poll tick
+   * (sibling of reQueueDownloadedMods, which re-drives already-downloaded members). Only triggers the
+   * download/import (guarded by mOptionalDownloadsInFlight + the "downloading" status write), then
+   * hands the resulting download to handleDownloadFinished, which queues the install at
+   * OPTIONAL_PHASE for maybeAdvancePhase - so the optional flows through the normal phase engine,
+   * not a separate recommendations pass. Handles both nexus downloads and bundled (localPath)
+   * archives. Fire-and-forget; a failure settles the member so it drops out of the completion
+   * denominator instead of stalling.
+   */
+  private driveSelectedOptionals(api: IExtensionApi, sourceModId: string): void {
+    const state = api.getState();
+    const session = getCollectionActiveSession(state);
+    if (session === undefined || session.collectionId !== sourceModId) {
+      return;
+    }
+    const collectionMod = state.persistent.mods[session.gameId]?.[sourceModId];
+    if (collectionMod === undefined) {
+      return;
+    }
+    const parentCollectionId =
+      collectionMod.attributes?.collectionId != null
+        ? String(collectionMod.attributes.collectionId)
+        : undefined;
+    const stagingPath = installPathForGame(state, session.gameId);
+    const pending = selectedOptionalRules(
+      collectionMod.rules ?? [],
+      state.persistent.mods[session.gameId] ?? {},
+    ).filter((rule) => session.mods[modRuleId(rule)]?.status === "pending");
+
+    for (const rule of pending) {
+      const key = modRuleId(rule);
+      if (this.mOptionalDownloadsInFlight.has(key)) {
+        continue;
+      }
+      this.mOptionalDownloadsInFlight.add(key);
+      // mark downloading up front so a subsequent poll tick doesn't re-select it before the async
+      // gather resolves; the in-flight set is the hard guard, this keeps the session status honest.
+      this.writeCollectionSession(rule.reference, { type: "status", status: "downloading" });
+      gatherDependencies([rule], api, true, undefined, this.addToPhaseStateCache(api))
+        .then((deps: IDependency[]): Promise<string | undefined> => {
+          const dep = deps[0];
+          if (dep === undefined) {
+            return Promise.reject(new ProcessCanceled("no dependency for optional"));
+          }
+          if (dep.extra?.localPath !== undefined) {
+            // bundled archive shipped inside the collection; import it rather than downloading
+            return this.importBundledDependencyAsync(
+              api,
+              collectionMod,
+              session.gameId,
+              stagingPath,
+              dep,
+            );
+          }
+          if (dep.lookupResults?.[0]?.value == null) {
+            return Promise.reject(new ProcessCanceled("no download source for optional"));
+          }
+          return this.downloadDependencyAsync(
+            dep.reference,
+            api,
+            dep.lookupResults[0].value,
+            () => !this.mDependencyInstalls[sourceModId],
+            dep.extra?.fileName,
+            parentCollectionId,
+          );
+        })
+        .then((downloadId: string | undefined) => {
+          this.mOptionalDownloadsInFlight.delete(key);
+          // Queue the install explicitly: a bundled import does not emit did-finish-download, and
+          // for a nexus download this is idempotent with the event (queueInstallation dedups by
+          // sourceModId:downloadId, and a not-yet-finished download is a no-op here).
+          if (typeof downloadId === "string" && downloadId.length > 0) {
+            this.handleDownloadFinished(api, downloadId, sourceModId);
+          }
+        })
+        .catch((err: unknown) => {
+          this.mOptionalDownloadsInFlight.delete(key);
+          // leave a canceled/torn-down install alone; otherwise settle failed so the member becomes
+          // terminal and stops blocking completion.
+          if (!(err instanceof UserCanceled) && this.mDependencyInstalls[sourceModId]) {
+            this.writeCollectionSession(rule.reference, { type: "status", status: "failed" });
+          }
+        });
+    }
+  }
+
   // Called when downloads for a phase have been queued/processed
   private markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi) {
-    this.ensurePhaseState(sourceModId);
-    const state = this.mInstallPhaseState.get(sourceModId);
+    this.mPhaseTracker.ensure(sourceModId);
+    const state = this.mPhaseTracker.get(sourceModId);
     state.downloadsFinished.add(phase);
 
     // Initialize allowed phase to the first finished phase if not set
     if (state.allowedPhase === undefined) {
       state.allowedPhase = phase;
-      // When setting initial allowed phase, mark all previous phases as downloads finished
-      // since we can't be in phase N without having completed phases 0 through N-1
-      for (let p = 0; p < phase; p++) {
-        state.downloadsFinished.add(p);
-      }
+      // We can't be at this phase without the earlier ones being done, so mark the collection's
+      // real earlier phases finished (the tracker iterates the actual phase set, never integer
+      // 0..phase, so the OPTIONAL_PHASE sentinel never enumerates).
+      const gameId = activeGameId(api.getState());
+      const rules = api.getState().persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
+      this.mPhaseTracker.markPhasesBeforeFinished(sourceModId, phase, rules);
       this.startPendingForPhase(sourceModId, phase);
     }
 
@@ -3291,7 +3516,7 @@ class InstallManager {
   }
 
   private startPendingForPhase(sourceModId: string, phase: number) {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     if (!phaseState) {
       // Phase state was cleaned up, nothing to start
       return;
@@ -3337,7 +3562,7 @@ class InstallManager {
 
   private maybeAdvancePhase(sourceModId: string, api: IExtensionApi) {
     const state = this.mApi.getState();
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const phaseState = this.mPhaseTracker.get(sourceModId);
     if (!phaseState) {
       // Phase state was cleaned up, nothing to advance
       return;
@@ -3421,8 +3646,8 @@ class InstallManager {
         // state has yet to be updated.
         if (collectionMod?.rules) {
           collectionMod.rules.forEach((rule: any) => {
-            const rulePhase = rule.extra?.phase ?? 0;
-            if (rulePhase === curr && rule.reference?.tag) {
+            const phase = rulePhase(rule);
+            if (phase === curr && rule.reference?.tag) {
               const downloadId = getReadyDownloadId(downloads, rule.reference, (id) =>
                 this.hasActiveOrPendingInstallation(sourceModId, id),
               );
@@ -3491,6 +3716,15 @@ class InstallManager {
     const lowered = errorMessage.toLowerCase();
     const patterns = ["unexpected end of archive", "error: data error"];
     return patterns.some((pattern) => lowered.includes(pattern));
+  }
+
+  // A disk-full extraction error is a genuine system failure, not archive damage: it must not be
+  // routed through the "archive damaged, continue?" prompt (whose Cancel yields a UserCanceled that
+  // leaves a collection member stuck non-terminal). Detected by message so it can be re-thrown as a
+  // real, ENOSPC-coded failure instead.
+  private isDiskFull(errorMessage: string): boolean {
+    const lowered = errorMessage.toLowerCase();
+    return lowered.includes("not enough space") || lowered.includes("enospc");
   }
 
   private extractWithRetry(
@@ -3622,6 +3856,9 @@ class InstallManager {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
+          }
+          if (errors.some((err) => this.isDiskFull(err))) {
+            throw new InsufficientDiskSpace(path.parse(tempPath).root);
           }
           await this.queryContinue(api, errors, archivePath);
         }
@@ -3992,7 +4229,7 @@ class InstallManager {
     destinationPath: string,
     gameId: string,
     modId: string,
-    choices: any,
+    choices: IChoiceType,
     unattended: boolean,
     details: IInstallationDetails,
   ): Promise<void> {
@@ -4178,7 +4415,7 @@ class InstallManager {
       instructions: IInstruction[];
       overrideInstructions?: IInstruction[];
     },
-    choices: any,
+    choices: IChoiceType,
     unattended: boolean,
     details: IInstallationDetails,
   ) {
@@ -4646,16 +4883,16 @@ class InstallManager {
       };
 
       const mod = mods[0];
-      const modReference: IModReference = {
-        id: mod.id,
-        fileList: installOptions?.fileList,
-        archiveId: mod.archiveId,
-        gameId,
-        installerChoices: installOptions?.choices,
-        patches: installOptions?.patches,
-      };
+      // An unattended reinstall of an already-present mod with a different install spec
+      // (installer choices / file list / patches) means it's being pulled in as a
+      // dependency by another mod or collection.
       const isDependency =
-        installOptions?.unattended === true && testModReference(mods[0], modReference) === false;
+        installOptions?.unattended === true &&
+        !modMatchesInstallSpec(mod, {
+          installerChoices: installOptions?.choices,
+          fileList: installOptions?.fileList,
+          patches: installOptions?.patches,
+        });
       const addendum = isDependency
         ? " and is trying to be reinstalled as a dependency by another mod or collection."
         : ".";
@@ -5281,6 +5518,53 @@ class InstallManager {
     }
   }
 
+  /**
+   * Resolve a bundled (localPath) dependency's archive into a download id. The archive ships inside
+   * the collection's staging folder; if it isn't already registered as a download it is imported via
+   * the "import-downloads" event and tagged with the rule's referenceTag so it matches the member.
+   * Shared by the in-engine doDownload closure and driveSelectedOptionals so both handle bundled
+   * optionals identically. Resolves undefined when the import produced no download.
+   */
+  private importBundledDependencyAsync(
+    api: IExtensionApi,
+    sourceMod: IMod,
+    gameId: string,
+    stagingPath: string,
+    dep: IDependency,
+  ): Promise<string | undefined> {
+    const state = api.getState();
+    const downloads = state.persistent.downloads.files;
+    const downloadPath = downloadPathForGame(state, gameId);
+    const fileName = path.basename(dep.extra.localPath);
+    let targetPath = path.join(downloadPath, fileName);
+    // backwards compatibility: during alpha testing the bundles were 7zipped inside the collection
+    if (path.extname(fileName) !== ".7z") {
+      targetPath += ".7z";
+    }
+    return Promise.resolve(fs.statAsync(targetPath))
+      .then(() => Object.keys(downloads).find((dlId) => downloads[dlId].localPath === fileName))
+      .catch(
+        () =>
+          new Promise<string | undefined>((resolve) => {
+            api.events.emit(
+              "import-downloads",
+              [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
+              (dlIds: string[]) => {
+                if (dlIds.length > 0) {
+                  api.store.dispatch(
+                    setDownloadModInfo(dlIds[0], "referenceTag", dep.reference.tag),
+                  );
+                  resolve(dlIds[0]);
+                } else {
+                  resolve(undefined);
+                }
+              },
+              true,
+            );
+          }),
+      );
+  }
+
   private applyExtraFromRule(
     api: IExtensionApi,
     gameId: string,
@@ -5478,6 +5762,13 @@ class InstallManager {
               this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
               return undefined;
             }
+            // A terminal download/install failure settles the member as failed on the collection
+            // session. Keyed on the dependency's own reference, so it does not depend on matching the
+            // (possibly md5-less, tag-drifted) failed download back to a rule - which is how a failed
+            // download would otherwise be left stuck on "downloading". No-ops outside an active
+            // collection session and over an already-terminal status.
+            const settleMemberFailed = () =>
+              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
               if (
@@ -5488,6 +5779,7 @@ class InstallManager {
               ) {
                 return undefined;
               }
+              settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               const message =
                 innerErr.message +
@@ -5508,6 +5800,7 @@ class InstallManager {
               return undefined;
             }
             if (innerErr instanceof DownloadIsHTML) {
+              settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               const message =
                 "The direct download URL for this file is not valid or didn't lead to a file. " +
@@ -5526,6 +5819,7 @@ class InstallManager {
               return undefined;
             }
             if (innerErr instanceof NotFound) {
+              settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               this.showDependencyError(
                 api,
@@ -5548,6 +5842,7 @@ class InstallManager {
                 throw innerErr;
               }
             }
+            settleMemberFailed();
             const err = unknownToError(innerErr);
             const errCode = getErrorCode(err);
             const refName =
@@ -5665,7 +5960,7 @@ class InstallManager {
       return [];
     } finally {
       // Process any pending installations that were queued during dependency installation
-      const phaseState = this.mInstallPhaseState.get(sourceModId);
+      const phaseState = this.mPhaseTracker.get(sourceModId);
       if (phaseState && phaseState.allowedPhase !== undefined) {
         this.startPendingForPhase(sourceModId, phaseState.allowedPhase);
 
@@ -5680,9 +5975,9 @@ class InstallManager {
           );
 
           if (downloadId) {
-            const rulePhase = dep.extra?.phase ?? 0;
+            const depPhase = dep.phase ?? 0;
             // Only process downloads for the current allowed phase or earlier
-            if (rulePhase <= phaseState.allowedPhase) {
+            if (depPhase <= phaseState.allowedPhase) {
               this.handleDownloadFinished(api, downloadId, sourceModId);
               foundCount++;
             }
@@ -5748,19 +6043,26 @@ class InstallManager {
     };
 
     const queueDownload = (dep: IDependency): Promise<string> => {
+      // mark the dependency as downloading on the collection session (no-op outside an
+      // active collection session). Bundled mods are imported, not queued here, so they
+      // are naturally excluded - matching the old driver's bundled skip.
+      this.writeCollectionSession(dep.reference, { type: "status", status: "downloading" });
       if (dep.reference.tag !== undefined) {
         queuedDownloads.push(dep.reference);
       }
       return abort.signal.aborted
         ? Promise.reject(new UserCanceled(false))
-        : this.downloadDependencyAsync(
-            dep.reference,
-            api,
-            dep.lookupResults[0].value,
-            () => abort.signal.aborted,
-            dep.extra?.fileName,
-            parentCollectionId,
-          )
+        : reconcileOrphanedArchive(api, gameId, dep.extra?.fileName)
+            .then(() =>
+              this.downloadDependencyAsync(
+                dep.reference,
+                api,
+                dep.lookupResults[0].value,
+                () => abort.signal.aborted,
+                dep.extra?.fileName,
+                parentCollectionId,
+              ),
+            )
             .then((dlId) => {
               const idx = queuedDownloads.indexOf(dep.reference);
               queuedDownloads.splice(idx, 1);
@@ -5930,7 +6232,7 @@ class InstallManager {
 
     const installDownload = (dep: IDependency, downloadId: string): Promise<string> => {
       return new Promise<string>((resolve, reject) => {
-        return this.mDependencyInstallsLimit.do(async () => {
+        return this.mDependencyPipelineLimit.do(async () => {
           return abort.signal.aborted
             ? reject(new UserCanceled(false))
             : this.withInstructions(
@@ -5976,38 +6278,7 @@ class InstallManager {
       if (dep.download === undefined || downloads[dep.download] === undefined) {
         if (dep.extra?.localPath !== undefined) {
           // the archive is shipped with the mod that has the dependency
-          const downloadPath = downloadPathForGame(state, gameId);
-          const fileName = path.basename(dep.extra.localPath);
-          let targetPath = path.join(downloadPath, fileName);
-          // backwards compatibility: during alpha testing the bundles were 7zipped inside
-          // the collection
-          if (path.extname(fileName) !== ".7z") {
-            targetPath += ".7z";
-          }
-          dlPromise = Promise.resolve(fs.statAsync(targetPath))
-            .then(() =>
-              Object.keys(downloads).find((dlId) => downloads[dlId].localPath === fileName),
-            )
-            .catch(
-              (err) =>
-                new Promise((resolve, reject) => {
-                  api.events.emit(
-                    "import-downloads",
-                    [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
-                    (dlIds: string[]) => {
-                      if (dlIds.length > 0) {
-                        api.store.dispatch(
-                          setDownloadModInfo(dlIds[0], "referenceTag", dep.reference.tag),
-                        );
-                        resolve(dlIds[0]);
-                      } else {
-                        resolve(undefined);
-                      }
-                    },
-                    true,
-                  );
-                }),
-            );
+          dlPromise = this.importBundledDependencyAsync(api, sourceMod, gameId, stagingPath, dep);
         } else {
           // Always allow downloads to be queued - installations will be deferred if needed
           dlPromise =
@@ -6085,9 +6356,6 @@ class InstallManager {
             // being installed having a different tag than the rule
             const reference: IModReference = {
               ...dep.reference,
-              fileList: dep.fileList,
-              patches: dep.patches,
-              installerChoices: dep.installerChoices,
               tag: downloads[downloadId].modInfo.referenceTag,
             };
             dep.reference =
@@ -6113,11 +6381,18 @@ class InstallManager {
           return dep.mod == null
             ? Promise.resolve()
                 .then(() => {
-                  // Queue installation for already-finished downloads that aren't
-                  // installed yet. Without this, mods whose archives already exist
-                  // (e.g. from a prior cancelled install) would never be queued
-                  // because the did-finish-download event only fires for NEW
-                  // downloads. queueInstallation deduplicates internally.
+                  // Queue installation for already-finished downloads that aren't installed yet.
+                  // Without this, mods whose archives already exist (e.g. from a prior cancelled
+                  // install) would never be queued, because the did-finish-download event only
+                  // fires for NEW downloads. queueInstallation deduplicates internally.
+                  //
+                  // Deliberately does NOT write the "downloaded" status. That status is already
+                  // owned elsewhere - handleDownloadFinished writes it for event-driven (fresh /
+                  // resumed) downloads, and the session reconstruction (reconstructSessionMods) seeds
+                  // it for already-present and bundled archives at install start. Writing it here
+                  // as well duplicated it and, arriving after the installer had already advanced
+                  // the member to "installing", regressed the row back to "downloaded" (it read
+                  // "Waiting to install" for the whole install).
                   const freshDownloads = api.getState().persistent.downloads.files;
                   if (
                     downloadId &&
@@ -6171,8 +6446,8 @@ class InstallManager {
 
     // Initialize phase state immediately after determining what phases we have
     if (dependencies.length > 0) {
-      this.ensurePhaseState(sourceModId);
-      const phaseState = this.mInstallPhaseState.get(sourceModId);
+      this.mPhaseTracker.ensure(sourceModId);
+      const phaseState = this.mPhaseTracker.get(sourceModId);
 
       const phaseNumbers = Object.keys(phases)
         .map((p) => parseInt(p, 10))
@@ -6193,21 +6468,25 @@ class InstallManager {
           allPhases.add(mod.phase ?? 0);
         });
 
-        // Find the highest phase where all required mods are complete
+        // The highest phase whose COMPLETE PREFIX is unbroken - i.e. advance only through
+        // consecutively-complete phases and stop at the first incomplete one. Taking the highest
+        // complete phase anywhere would jump the frontier to the trailing optional phase whenever
+        // its members are all ignored (terminal) while a required phase is still pending.
         let highestCompletedPhase = -1;
-        Array.from(allPhases)
-          .sort((a, b) => a - b)
-          .forEach((phase) => {
-            const isPhaseComplete = isCollectionPhaseComplete(api.getState(), phase);
+        for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
+          if (!isCollectionPhaseComplete(api.getState(), phase)) {
+            break;
+          }
+          highestCompletedPhase = phase;
+        }
 
-            if (isPhaseComplete) {
-              highestCompletedPhase = phase;
-            }
-          });
-
-        // Set allowed phase to the next phase after the highest completed one
-        // or to the lowest phase in our current dependencies if higher
-        const nextPhaseAfterCompleted = highestCompletedPhase + 1;
+        // Start at the next real phase after the highest completed one (never +1, which would step
+        // into a non-existent phase and overshoot the OPTIONAL_PHASE sentinel), or the lowest phase
+        // in the current dependencies if that is higher.
+        const rules = api.getState().persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
+        const nextPhaseAfterCompleted =
+          this.mPhaseTracker.phaseSet(sourceModId, rules).find((p) => p > highestCompletedPhase) ??
+          highestCompletedPhase + 1;
         const effectiveStartPhase = Math.max(lowestPhase, nextPhaseAfterCompleted);
 
         if (
@@ -6215,18 +6494,15 @@ class InstallManager {
           phaseState.allowedPhase < effectiveStartPhase
         ) {
           phaseState.allowedPhase = effectiveStartPhase;
-          // When setting allowed phase, mark all previous phases as downloads finished
-          for (let p = 0; p < effectiveStartPhase; p++) {
-            phaseState.downloadsFinished.add(p);
-          }
+          // Mark the collection's real earlier phases finished (the tracker iterates the actual
+          // phase set, never integer 0..effectiveStartPhase, so the sentinel never enumerates).
+          this.mPhaseTracker.markPhasesBeforeFinished(sourceModId, effectiveStartPhase, rules);
         }
       } else if (phaseState.allowedPhase === undefined) {
         // No active session, use the lowest phase from dependencies
         phaseState.allowedPhase = lowestPhase;
-        // When setting initial allowed phase, mark all previous phases as downloads finished
-        for (let p = 0; p < lowestPhase; p++) {
-          phaseState.downloadsFinished.add(p);
-        }
+        const rules = api.getState().persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
+        this.mPhaseTracker.markPhasesBeforeFinished(sourceModId, lowestPhase, rules);
         log("info", "Set initial allowed phase", {
           sourceModId,
           allowedPhase: lowestPhase,
@@ -6274,7 +6550,7 @@ class InstallManager {
 
       await this.pollAllPhasesComplete(api, sourceModId);
     } finally {
-      this.mInstallPhaseState.delete(sourceModId);
+      this.mPhaseTracker.delete(sourceModId);
     }
 
     return res;
@@ -6319,9 +6595,6 @@ class InstallManager {
     dependencies.forEach((dep) => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
-      updatedRef.installerChoices = dep.installerChoices;
-      updatedRef.patches = dep.patches;
-      updatedRef.fileList = dep.fileList;
       this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
     });
     return Promise.resolve();
@@ -6527,8 +6800,8 @@ class InstallManager {
       if (activeCollectionSession == null) {
         return;
       }
-      this.ensurePhaseState(activeCollectionSession.collectionId);
-      const phaseState = this.mInstallPhaseState.get(activeCollectionSession.collectionId);
+      this.mPhaseTracker.ensure(activeCollectionSession.collectionId);
+      const phaseState = this.mPhaseTracker.get(activeCollectionSession.collectionId);
       if (phaseState === undefined) {
         return;
       }
@@ -7220,6 +7493,28 @@ class InstallManager {
     }
 
     return null;
+  }
+
+  /**
+   * Record a dependency install outcome on the active collection session. This is the
+   * direct, in-process write path: the orchestrator already knows which dependency it is
+   * processing, so it matches the rule by reference and dispatches the resulting tracking
+   * action. Additive to the existing api.events.emit calls - it does not replace them.
+   * A no-op when there is no active session, no rule matches, or the write is redundant.
+   */
+  private writeCollectionSession(
+    reference: IModReference,
+    outcome: CollectionInstallOutcome,
+  ): void {
+    const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome);
+    if (plan === null) {
+      return;
+    }
+    const action =
+      plan.write.kind === "markInstalled"
+        ? markModInstalled(plan.sessionId, plan.ruleId, plan.write.modId)
+        : updateModStatus(plan.sessionId, plan.ruleId, plan.write.status);
+    this.mApi.store.dispatch(action);
   }
 
   /**

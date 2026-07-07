@@ -1,5 +1,15 @@
 @source inline("{xs:,sm:,md:,lg:,xl:,2xl:,}text-{body,title,heading}-{xs,sm,md,lg,xl,2xl}");
 
+/* Typography/Link colours are composed dynamically (`text-{brand}-{appearance}`), so the
+   full matrix must be safelisted for Tailwind to emit it. The `hover:` variants are used by
+   TypographyLink. See Typography.tsx / TypographyLink.tsx. */
+@source inline(
+    "{hover:,}text-{neutral,primary,info,success,premium,danger,warning}-{weak,subdued,moderate,strong}"
+);
+@source inline("text-neutral-inverted");
+@source inline("{hover:,}text-translucent-{weak,subdued,moderate,strong}");
+@source inline("text-translucent-inverted");
+
 @theme {
     /* Body */
     --text-body-xs: var(--text-2xs);

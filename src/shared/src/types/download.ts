@@ -93,10 +93,10 @@ export type ChunkProgress = Progress & {
 export type DownloadStatus = "queued" | "running" | "completed" | "paused" | "canceled" | "failed";
 
 export type DownloadProgress = Progress & {
-  /** Size of the file being downloaded. This can be null when the server returns no size. */
-  size: number | null;
-  /** Filename from Content-Disposition header. Null until the probe response is received. */
-  fileName: string | null;
+  /** Size of the file being downloaded. This can be undefined when the server returns no size. */
+  size: number | undefined;
+  /** Filename from Content-Disposition header. Undefined until the probe response is received. */
+  fileName: string | undefined;
 } & ({ isChunked: false } | { isChunked: true; chunks: ChunkProgress[] });
 
 export type DownloadCheckpoint<T = unknown> = {
@@ -104,7 +104,7 @@ export type DownloadCheckpoint<T = unknown> = {
   resource: T;
   dest: string;
   completedRanges: ByteRange[];
-  etag: string | null;
+  etag: string | undefined;
 };
 
 export type DownloadState = DownloadProgress &

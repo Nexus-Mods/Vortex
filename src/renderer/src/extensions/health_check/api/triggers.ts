@@ -4,8 +4,8 @@ import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckTrigger } from "../../../types/IHealthCheck";
+import { hasCollectionActiveSession } from "../../../util/collectionInstallSessionSelectors";
 import Debouncer from "../../../util/Debouncer";
-import { hasCollectionActiveSession } from "../../collections_integration/selectors";
 import type { IHealthCheckApi } from "../types";
 
 /**

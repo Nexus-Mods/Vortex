@@ -1,0 +1,221 @@
+import { act, render, screen } from "@testing-library/react";
+import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
+import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { SubscribeCallback } from "../FlagService";
+import { FlagsProvider, useFlag, useFlagsContext } from "./FlagsContext";
+
+const state = vi.hoisted(() => ({
+  flags: new Map() as ReadonlyMap<KnownFlagName, FeatureFlag>,
+  subscribeCallback: null as SubscribeCallback | null,
+}));
+
+const mockUnsubscribe = vi.hoisted(() => vi.fn<() => void>());
+const mockSubscribe = vi.hoisted(() => vi.fn<(cb: SubscribeCallback) => () => void>());
+const mockGetFlag = vi.hoisted(() => vi.fn<(name: KnownFlagName) => FeatureFlag | undefined>());
+
+vi.mock("../FlagService", () => ({
+  FlagService: {
+    instance: {
+      get flags() {
+        return state.flags;
+      },
+      subscribe: mockSubscribe,
+      getFlag: mockGetFlag,
+    },
+  },
+}));
+
+// -- Helpers -----------------------------------------------------------------
+
+function push(flags: FeatureFlag[]) {
+  state.flags = new Map(flags.map((f) => [f.name, f]));
+  mockGetFlag.mockImplementation((name) => state.flags.get(name));
+  act(() => {
+    state.subscribeCallback?.(state.flags);
+  });
+}
+
+// -- Setup / teardown --------------------------------------------------------
+
+beforeEach(() => {
+  state.flags = new Map();
+  state.subscribeCallback = null;
+
+  mockUnsubscribe.mockReset();
+  mockSubscribe.mockReset();
+  mockGetFlag.mockReset();
+
+  mockUnsubscribe.mockImplementation(() => {
+    state.subscribeCallback = null;
+  });
+  mockSubscribe.mockImplementation((cb: SubscribeCallback) => {
+    state.subscribeCallback = cb;
+    return mockUnsubscribe;
+  });
+  mockGetFlag.mockImplementation((name) => state.flags.get(name));
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+// -- Tests -------------------------------------------------------------------
+
+describe("FlagsProvider", () => {
+  it("subscribes to FlagService on mount", () => {
+    render(
+      <FlagsProvider>
+        <span />
+      </FlagsProvider>,
+    );
+    expect(mockSubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("unsubscribes from FlagService on unmount", () => {
+    const { unmount } = render(
+      <FlagsProvider>
+        <span />
+      </FlagsProvider>,
+    );
+    expect(mockUnsubscribe).not.toHaveBeenCalled();
+    unmount();
+    expect(mockUnsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("provides empty flags before any push", () => {
+    let capturedSize = -1;
+    function Spy() {
+      capturedSize = useFlagsContext().flags.size;
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    expect(capturedSize).toBe(0);
+  });
+
+  it("updates flags map after a push", () => {
+    const sizes: number[] = [];
+    function Spy() {
+      sizes.push(useFlagsContext().flags.size);
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+    expect(sizes.at(-1)).toBe(1);
+  });
+
+  it("replaces flags on subsequent pushes", () => {
+    const sizes: number[] = [];
+    function Spy() {
+      sizes.push(useFlagsContext().flags.size);
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+    push([]);
+    expect(sizes.at(-1)).toBe(0);
+  });
+});
+
+describe("useFlag", () => {
+  it("returns undefined before first push", () => {
+    let captured: ReturnType<typeof useFlag<"vortex-test-flag">> = { name: "vortex-test-flag" };
+    function Spy() {
+      captured = useFlag("vortex-test-flag");
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    expect(captured).toBeUndefined();
+  });
+
+  it("returns the flag after it is pushed", () => {
+    const flag: FeatureFlag = {
+      name: "vortex-test-flag",
+      variant: { name: "variant-1", data: 42 },
+    };
+    const captured: Array<ReturnType<typeof useFlag<"vortex-test-flag">>> = [];
+    function Spy() {
+      captured.push(useFlag("vortex-test-flag"));
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([flag]);
+    expect(captured.at(-1)).toEqual(flag);
+  });
+
+  it("returns undefined when the flag is absent from the latest push", () => {
+    const captured: Array<ReturnType<typeof useFlag<"vortex-test-flag">>> = [];
+    function Spy() {
+      captured.push(useFlag("vortex-test-flag"));
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([{ name: "vortex-test-flag" }]);
+    expect(captured.at(-1)).toBeDefined();
+    push([]);
+    expect(captured.at(-1)).toBeUndefined();
+  });
+
+  it("re-renders a component when flags change", () => {
+    function Indicator() {
+      const flag = useFlag("vortex-test-flag");
+      return <span data-testid="val">{flag ? "on" : "off"}</span>;
+    }
+    render(
+      <FlagsProvider>
+        <Indicator />
+      </FlagsProvider>,
+    );
+    expect(screen.getByTestId("val").textContent).toBe("off");
+
+    push([{ name: "vortex-test-flag" }]);
+    expect(screen.getByTestId("val").textContent).toBe("on");
+  });
+});
+
+describe("getFlag", () => {
+  it("returns the flag typed by name", () => {
+    const flag: FeatureFlag = {
+      name: "vortex-test-flag",
+      variant: { name: "variant-2", data: 7 },
+    };
+    let got: ReturnType<typeof useFlag<"vortex-test-flag">> = undefined;
+    function Spy() {
+      got = useFlagsContext().getFlag("vortex-test-flag");
+      return null;
+    }
+    render(
+      <FlagsProvider>
+        <Spy />
+      </FlagsProvider>,
+    );
+    push([flag]);
+    expect(got?.name).toBe("vortex-test-flag");
+    expect(got?.variant).toEqual({ name: "variant-2", data: 7 });
+  });
+});

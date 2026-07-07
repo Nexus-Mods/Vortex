@@ -18,26 +18,27 @@ export class ElectronCookieStore extends Store {
     return this.#window.webContents.session.cookies;
   }
 
-  async getAllCookies(): Promise<Cookie[]> {
+  override async getAllCookies(): Promise<Cookie[]> {
     const electronCookies = await this.#electronCookies.get({});
     return electronCookies.map<Cookie>(electronToTough);
   }
 
-  async findCookie(
+  override async findCookie(
     domain?: string | null,
     path?: string | null,
     key?: string | null,
   ): Promise<Cookie | undefined> {
     const electronCookies = await this.#electronCookies.get({
-      domain: domain,
-      path: path,
-      name: key,
+      domain: domain ?? undefined,
+      path: path ?? undefined,
+      name: key ?? undefined,
     });
     if (electronCookies.length < 1) return undefined;
-    return electronToTough(electronCookies[0]);
+    const first = electronCookies[0];
+    return first !== undefined ? electronToTough(first) : undefined;
   }
 
-  async findCookies(
+  override async findCookies(
     domain: string,
     path: string,
     _allowSpecialUseDomain?: boolean,
@@ -49,13 +50,14 @@ export class ElectronCookieStore extends Store {
     return electronCookies.map<Cookie>(electronToTough);
   }
 
-  async putCookie(cookie: Cookie): Promise<void> {
+  override async putCookie(cookie: Cookie): Promise<void> {
+    const expires = cookie.expires;
     await this.#electronCookies.set({
-      domain: cookie.domain,
-      expirationDate: cookie.expires === "Infinity" ? undefined : cookie.expires.getTime() / 1000,
+      domain: cookie.domain ?? undefined,
+      expirationDate: !expires || expires === "Infinity" ? undefined : expires.getTime() / 1000,
       httpOnly: cookie.httpOnly,
       name: cookie.key,
-      path: cookie.path,
+      path: cookie.path ?? undefined,
       sameSite: cookie.sameSite as "unspecified",
       secure: cookie.secure,
       url: cookieUrl(cookie),
@@ -63,22 +65,22 @@ export class ElectronCookieStore extends Store {
     });
   }
 
-  async updateCookie(_oldCookie: Cookie, newCookie: Cookie): Promise<void> {
+  override async updateCookie(_oldCookie: Cookie, newCookie: Cookie): Promise<void> {
     await this.putCookie(newCookie);
   }
 
-  async removeCookie(domain: string, path: string, key: string): Promise<void> {
+  override async removeCookie(domain: string, path: string, key: string): Promise<void> {
     const cookie = await this.findCookie(domain, path, key);
     if (cookie === undefined) return;
     await this.#electronCookies.remove(cookieUrl(cookie), key);
   }
 
-  async removeCookies(domain: string, path: string): Promise<void> {
+  override async removeCookies(domain: string, path: string): Promise<void> {
     const cookies = await this.findCookies(domain, path);
     await Promise.all(cookies.map((c) => this.#electronCookies.remove(cookieUrl(c), c.key)));
   }
 
-  removeAllCookies(): Promise<void> {
+  override removeAllCookies(): Promise<void> {
     return Promise.reject(new Error("not supported by the electron store"));
   }
 }
@@ -95,7 +97,10 @@ function cookieUrl(cookie: Cookie): string {
 function electronToTough(electronCookie: ElectronCookie): Cookie {
   const result = new Cookie({
     domain: electronCookie.domain,
-    expires: new Date(electronCookie.expirationDate * 1000),
+    expires:
+      electronCookie.expirationDate !== undefined
+        ? new Date(electronCookie.expirationDate * 1000)
+        : undefined,
     hostOnly: electronCookie.hostOnly,
     httpOnly: electronCookie.httpOnly,
     path: electronCookie.path,

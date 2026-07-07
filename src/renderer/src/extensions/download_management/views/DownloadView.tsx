@@ -48,6 +48,7 @@ import { truthy } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import type { IInstallOptions } from "../../mod_management/types/IInstallOptions";
+import { lookupFromDownload } from "../../mod_management/util/dependencies";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import { setShowDLDropzone, setShowDLGraph } from "../actions/settings";
 import { finishDownload, setDownloadTime } from "../actions/state";
@@ -391,17 +392,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     return (
       downloadIds.find((downloadId) => {
         const download = this.getDownload(downloadId);
-        const tag = download?.modInfo?.referenceTag;
-        const identifiers = this.extractIds(download);
-        if (!identifiers) {
+        if (download === undefined) {
           return false;
         }
         return (
-          getCollectionModByReference(this.context.api.store.getState(), {
-            tag,
-            fileId: identifiers.fileId,
-            modId: identifiers.modId,
-          }) != null
+          getCollectionModByReference(
+            this.context.api.store.getState(),
+            lookupFromDownload(download),
+          ) != null
         );
       }) == null // couldn't find it - allow actions
     );

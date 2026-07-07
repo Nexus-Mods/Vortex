@@ -12,12 +12,12 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
-export type ButtonBrand = "primary" | "info" | "neutral" | "success" | "premium";
-export type ButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
+export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "premium";
+export type IButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  brand?: ButtonBrand;
-  appearance?: ButtonAppearance;
+export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  brand?: IButtonBrand;
+  appearance?: IButtonAppearance;
   isLoading?: boolean;
   size?: "xs" | "sm" | "md";
   children?: string;
@@ -62,7 +62,7 @@ const ButtonIcon = ({
   return null;
 };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
   (
     {
       "aria-disabled": ariaDisabled,

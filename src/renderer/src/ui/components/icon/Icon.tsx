@@ -2,9 +2,9 @@ import React, { type SVGAttributes } from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
+export type IIconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 
-const sizeMap: { [key in IconSize]: string | undefined } = {
+const sizeMap: { [key in IIconSize]: string | undefined } = {
   none: undefined,
   xs: "size-3",
   sm: "size-4",
@@ -22,7 +22,7 @@ export const Icon = ({
   ...props
 }: Omit<SVGAttributes<SVGSVGElement>, "size" | "path"> & {
   path: string;
-  size?: IconSize;
+  size?: IIconSize;
   title?: string;
 }) => (
   <svg

@@ -7,6 +7,8 @@ export const NEXUS_USERS_SUBDOMAIN = process.env["USERS_SUBDOMAIN"] || "users";
 
 export const NEXUS_BASE_URL =
   process.env["NEXUS_BASE_URL"] || `https://${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+export const NEXUS_API_URL =
+  process.env["NEXUS_API_URL"] || `https://${NEXUS_API_SUBDOMAIN}.${NEXUS_DOMAIN}`;
 export const NEXUS_GAMES_URL = process.env["NEXUS_GAMES_URL"] || `https://${NEXUS_DOMAIN}/games`;
 export const NEXUS_PROTOCOL = "https:";
 export const PREMIUM_PATH = ["account", "billing", "premium"];

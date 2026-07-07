@@ -1,4 +1,4 @@
-import { getErrorMessage } from "@vortex/shared";
+import { getErrorMessage, getErrorMessageOrDefault } from "@vortex/shared";
 import { UserCanceled } from "@vortex/shared/errors";
 import { app, dialog } from "electron";
 
@@ -9,6 +9,7 @@ import {
   isErrorReportingDisabled,
 } from "./errorReporting";
 import { log } from "./logging";
+import { isTelemetryEnabled } from "./telemetry/state";
 
 /** Terminates the applpication on an error */
 export function terminate(error: Error): void {
@@ -32,7 +33,13 @@ export async function terminateAsync(error: Error): Promise<void> {
       getErrorMessage(error) + "\n\n" + (error.stack ?? ""),
     );
     if (allowReport) {
-      await reportCrash("Crash", errorToReportableError(error)).catch(() => {
+      await reportCrash(
+        "Crash",
+        errorToReportableError(error),
+        undefined,
+        undefined,
+        isTelemetryEnabled(),
+      ).catch(() => {
         /* best-effort */
       });
     }
@@ -76,7 +83,7 @@ async function showTerminateError(
   const result = await dialog.showMessageBox({
     type: "error",
     title: "An unrecoverable error occurred",
-    message: getErrorMessage(error),
+    message: getErrorMessageOrDefault(error),
     detail: detail,
     buttons: buttons,
     defaultId: buttons.length - 1,
@@ -85,7 +92,13 @@ async function showTerminateError(
 
   const response = buttons[result.response];
   if (response === BUTTON_REPORT) {
-    await reportCrash("Crash", errorToReportableError(error));
+    await reportCrash(
+      "Crash",
+      errorToReportableError(error),
+      undefined,
+      undefined,
+      isTelemetryEnabled(),
+    );
     return false;
   }
 

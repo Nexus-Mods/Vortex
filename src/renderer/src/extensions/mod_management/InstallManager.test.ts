@@ -1,34 +1,51 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import type { IExtensionApi, IState } from "../../types/api";
+import { updateModStatus } from "../../actions/collectionInstallTracking";
+import {
+  makeDownload,
+  makeMod,
+  makeModInstallInfo,
+  makeRule,
+  makeSession,
+} from "../../test-utils/builders";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import InstallManager from "./InstallManager";
-import type { IModRule } from "./types/IMod";
+import { lookupFromDownload } from "./util/dependencies";
+import type { InstallPhaseTracker } from "./util/InstallPhaseTracker";
 
 // Mock dependencies
 vi.mock("./util/dependencies");
+vi.mock("../../util/collectionSessionReconstruct");
 vi.mock("../../util/api");
 vi.mock("../../util/log", () => {
   const log = vi.fn();
   return { default: log, log };
 });
 
+// TODO: prefer the shared api/harness fixtures (makeApiHarness and the test.extend fixtures in
+// test-utils) over the hand-built mockApi/mockState in this file; new tests should seed state with
+// the builders instead of adding more bespoke mocks.
+
 /** Subset of InstallManager internals exercised by these tests. */
 interface IInstallManagerTestable {
-  ensurePhaseState(sourceModId: string): void;
   maybeAdvancePhase(sourceModId: string, api: IExtensionApi): void;
+  handleDownloadFailed(api: IExtensionApi, downloadId: string): void;
+  cleanupPendingInstalls(sourceModId: string, hard?: boolean): void;
+  doInstallDependenciesPhase(
+    api: IExtensionApi,
+    dependencies: unknown[],
+    gameId: string,
+    sourceModId: string,
+    recommended: boolean,
+    doDownload: (dep: unknown) => Promise<{ updatedDep: unknown; downloadId: string }>,
+    abort: AbortController,
+    silent: boolean,
+  ): Promise<unknown[]>;
   markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi): void;
-  mInstallPhaseState: Map<
-    string,
-    {
-      allowedPhase: number | undefined;
-      downloadsFinished: Set<number>;
-      pendingByPhase: Map<number, Array<() => void>>;
-      activeByPhase: Map<number, number>;
-      deploymentPromises: Map<number, Promise<void>>;
-      deployedPhases: Set<number>;
-      reQueueAttempted?: Map<number, number>;
-    }
-  >;
+  // per-collection phase-gating state now lives on the tracker; tests drive it directly
+  mPhaseTracker: InstallPhaseTracker;
 }
 
 describe("Phased Installer", () => {
@@ -88,8 +105,8 @@ describe("Phased Installer", () => {
     it("should initialize phase state correctly", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       expect(state).toBeDefined();
       expect(state.allowedPhase).toBeUndefined();
@@ -103,12 +120,12 @@ describe("Phased Installer", () => {
     it("should not reinitialize existing phase state", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state1 = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state1 = installManager.mPhaseTracker.get(sourceModId);
       state1.allowedPhase = 2;
 
-      installManager.ensurePhaseState(sourceModId);
-      const state2 = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state2 = installManager.mPhaseTracker.get(sourceModId);
 
       expect(state2.allowedPhase).toBe(2);
       expect(state1).toBe(state2);
@@ -119,8 +136,8 @@ describe("Phased Installer", () => {
     it("should advance phase when current phase is complete", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       state.allowedPhase = 0;
       state.downloadsFinished.add(0);
@@ -137,8 +154,8 @@ describe("Phased Installer", () => {
     it("should not advance phase if previous phase not deployed", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       state.allowedPhase = 0;
       state.downloadsFinished.add(0);
@@ -154,8 +171,8 @@ describe("Phased Installer", () => {
     it("should not advance if active installations in current phase", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       state.allowedPhase = 0;
       state.downloadsFinished.add(0);
@@ -184,7 +201,7 @@ describe("Phased Installer", () => {
       for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
         const required = allMods.filter((m) => (m.phase ?? 0) === phase && m.type === "requires");
         const completed = required.filter((m) =>
-          ["installed", "failed", "skipped"].includes(m.status),
+          ["installed", "failed", "ignored"].includes(m.status),
         );
         if (completed.length >= required.length && required.length > 0) {
           highest = phase;
@@ -220,8 +237,8 @@ describe("Phased Installer", () => {
     it("should track re-queue attempts per phase", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       if (!state.reQueueAttempted) {
         state.reQueueAttempted = new Map<number, number>();
@@ -235,8 +252,8 @@ describe("Phased Installer", () => {
     it("should not re-queue same phase twice", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       if (!state.reQueueAttempted) {
         state.reQueueAttempted = new Map<number, number>();
@@ -253,18 +270,18 @@ describe("Phased Installer", () => {
     it("should mark phase downloads as finished", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
       installManager.markPhaseDownloadsFinished(sourceModId, 1, mockApi);
 
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
       expect(state.downloadsFinished.has(1)).toBe(true);
     });
 
     it("should initialize allowed phase on first download finish", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       expect(state.allowedPhase).toBeUndefined();
       installManager.markPhaseDownloadsFinished(sourceModId, 2, mockApi);
@@ -274,8 +291,8 @@ describe("Phased Installer", () => {
     it("should not change allowed phase if already set", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
       state.allowedPhase = 1;
 
       installManager.markPhaseDownloadsFinished(sourceModId, 3, mockApi);
@@ -285,48 +302,17 @@ describe("Phased Installer", () => {
     });
   });
 
-  describe("Collection Session Phase Assignment", () => {
-    it("should assign phase 0 when rule.extra.phase is undefined", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(0);
-    });
-
-    it("should use phase from rule.extra.phase when present", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-        extra: { phase: 3 },
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(3);
-    });
-
-    it("should handle null extra field", () => {
-      const rule: Partial<IModRule> = {
-        reference: { logicalFileName: "test-mod" },
-        type: "requires",
-        extra: null,
-      };
-
-      const phase: number = (rule.extra?.phase as number | undefined) ?? 0;
-      expect(phase).toBe(0);
-    });
-  });
-
   describe("Phase Gating", () => {
     it("should allow installation in current phase", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      // the collection's real phases; the earlier-phase backfill marks the real phases below the
+      // finished one (0 and 1), never phantom integers 0..phase.
+      installManager.mPhaseTracker.get(sourceModId).phaseSet = [0, 1, 2, 3];
       installManager.markPhaseDownloadsFinished(sourceModId, 2, mockApi);
 
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       const canStart = (phase: number) =>
         state.allowedPhase !== undefined &&
@@ -342,8 +328,8 @@ describe("Phased Installer", () => {
     it("should block installation in future phases", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
       state.allowedPhase = 1;
       state.downloadsFinished.add(1);
 
@@ -361,8 +347,8 @@ describe("Phased Installer", () => {
     it("should track active installations per phase", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       state.activeByPhase.set(1, 3);
       state.activeByPhase.set(2, 0);
@@ -375,8 +361,8 @@ describe("Phased Installer", () => {
     it("should track pending installations per phase", () => {
       const sourceModId = "test-collection-1";
 
-      installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      installManager.mPhaseTracker.ensure(sourceModId);
+      const state = installManager.mPhaseTracker.get(sourceModId);
 
       const tasks1 = [vi.fn(), vi.fn()];
       const tasks2 = [vi.fn()];
@@ -388,5 +374,163 @@ describe("Phased Installer", () => {
       expect(state.pendingByPhase.get(2)?.length).toBe(1);
       expect(state.pendingByPhase.get(3) ?? []).toEqual([]);
     });
+  });
+});
+
+describe("collection download failure handling", () => {
+  let installManager: IInstallManagerTestable;
+  let dispatch: ReturnType<typeof vi.fn>;
+  let state: Record<string, unknown>;
+  let api: IExtensionApi;
+
+  beforeEach(() => {
+    dispatch = vi.fn();
+    state = {
+      persistent: {
+        profiles: { prof1: { id: "prof1", gameId: "skyrimse" } },
+        mods: { skyrimse: { "col-1": makeMod({ id: "col-1", rules: [] }) } },
+        downloads: {
+          files: {
+            "dl-fail": makeDownload({
+              id: "dl-fail",
+              state: "failed",
+              localPath: "member.zip",
+              modInfo: { referenceTag: "member-tag" },
+            }),
+          },
+        },
+      },
+      session: {
+        collections: {
+          activeSession: makeSession({
+            sessionId: "col-1_prof1",
+            collectionId: "col-1",
+            gameId: "skyrimse",
+            mods: {
+              "rule-1": makeModInstallInfo({
+                rule: makeRule({ reference: { tag: "member-tag" } }),
+                status: "downloading",
+              }),
+            },
+          }),
+        },
+      },
+      settings: {
+        downloads: { collectionsInstallWhileDownloading: false },
+        profiles: { activeProfileId: "prof1", nextProfileId: undefined, lastActiveProfile: {} },
+      },
+    };
+
+    api = {
+      getState: () => state as unknown as IState,
+      store: { getState: () => state as unknown as IState, dispatch },
+      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+      sendNotification: vi.fn(),
+      dismissNotification: vi.fn(),
+      showErrorNotification: vi.fn(),
+      translate: vi.fn((key: string) => key),
+      registerInstaller: vi.fn(),
+    } as unknown as IExtensionApi;
+
+    // findCollectionByDownload resolves the member from the download's lookup (referenceTag match)
+    vi.mocked(lookupFromDownload).mockReturnValue({
+      referenceTag: "member-tag",
+      fileName: "member.zip",
+    } as never);
+
+    installManager = new InstallManager(api, vi.fn()) as unknown as IInstallManagerTestable;
+    // mark the collection as actively installing so the failure is not ignored
+    installManager.mPhaseTracker.ensure("col-1");
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("settles the member as failed when its download terminally fails", () => {
+    installManager.handleDownloadFailed(api, "dl-fail");
+
+    // status leaves "downloading" so the row is no longer mis-bucketed under the Downloading filter
+    expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
+  });
+
+  it("settles the member as failed when its download terminally fails in the install phase", async () => {
+    // The download is settled from the install phase using the dependency's own reference, so a
+    // failed download that can't be matched back by tag/md5 (e.g. resumed from another install,
+    // and md5-less because it never completed) still moves the member off "downloading".
+    const doDownload = vi
+      .fn()
+      .mockRejectedValue(Object.assign(new Error("Failed to open temp"), { code: "fs-error" }));
+
+    await installManager.doInstallDependenciesPhase(
+      api,
+      [{ reference: { tag: "member-tag" }, phase: 0, extra: {} }],
+      "skyrimse",
+      "col-1",
+      false,
+      doDownload,
+      new AbortController(),
+      true,
+    );
+
+    expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
+  });
+});
+
+describe("cleanupPendingInstalls session resync", () => {
+  let installManager: IInstallManagerTestable;
+  let state: Record<string, unknown>;
+  let api: IExtensionApi;
+
+  const memberRule = makeRule({ type: "requires", reference: { tag: "m1" } });
+
+  beforeEach(() => {
+    vi.mocked(resyncCollectionSessionRules).mockClear();
+    state = {
+      persistent: {
+        mods: { skyrimse: { "col-1": makeMod({ id: "col-1", rules: [memberRule] }) } },
+        downloads: { files: {} },
+      },
+      session: {
+        collections: {
+          activeSession: makeSession({
+            sessionId: "col-1_prof1",
+            collectionId: "col-1",
+            gameId: "skyrimse",
+            mods: {
+              requires_m1: makeModInstallInfo({ rule: memberRule, status: "installing" }),
+            },
+          }),
+        },
+      },
+    };
+    api = {
+      getState: () => state as unknown as IState,
+      store: { getState: () => state as unknown as IState, dispatch: vi.fn() },
+      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+      sendNotification: vi.fn(),
+      dismissNotification: vi.fn(),
+      showErrorNotification: vi.fn(),
+      translate: vi.fn((key: string) => key),
+      registerInstaller: vi.fn(),
+    } as unknown as IExtensionApi;
+    installManager = new InstallManager(api, vi.fn()) as unknown as IInstallManagerTestable;
+  });
+
+  afterEach(() => vi.clearAllMocks());
+
+  it("re-derives the collection session from reality when tearing down its active install", () => {
+    // a member left mid-"installing" on pause/cancel/stall must not keep the stale status
+    installManager.cleanupPendingInstalls("col-1", true);
+    expect(resyncCollectionSessionRules).toHaveBeenCalledWith(api, [memberRule]);
+  });
+
+  it("does not resync when the torn-down mod is not the active collection", () => {
+    installManager.cleanupPendingInstalls("some-other-mod", true);
+    expect(resyncCollectionSessionRules).not.toHaveBeenCalled();
   });
 });

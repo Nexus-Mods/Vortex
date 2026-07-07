@@ -2,8 +2,8 @@ import { Listbox as HeadlessListbox } from "@headlessui/react";
 import { mdiUnfoldMoreHorizontal } from "@mdi/js";
 import React, { type ComponentProps } from "react";
 
-import { joinClasses } from "../../utils/joinClasses";
-import { Icon } from "../icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 export const ListboxButton = ({
   children,

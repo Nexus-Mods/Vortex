@@ -4,7 +4,7 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { sanitizeFramePath } from "@vortex/shared";
 import type { ReportableError } from "@vortex/shared/errors";
-import { recordErrorOnSpan } from "@vortex/shared/telemetry";
+import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/telemetry";
 import { app } from "electron";
 
 import { createVortexResource } from "./telemetry/resources";
@@ -25,8 +25,8 @@ export function errorToReportableError(error: Error): ReportableError {
     message: error.message,
     stack: error.stack,
     allowReport: "allowReport" in error && !!error.allowReport,
-    details: Object.keys(error)
-      .map((key) => `${key}: ${error[key]}`)
+    details: Object.entries(error)
+      .map(([key, value]) => `${key}: ${value}`)
       .join("\n"),
   };
 }
@@ -36,12 +36,13 @@ interface ICrashInfo {
   error: ReportableError;
   context?: Record<string, string>;
   reportProcess?: string;
+  consentGiven?: boolean;
 }
 
 export async function sendReportFile(filePath: string): Promise<void> {
   const contents = await readFile(filePath, "utf8");
   const json: ICrashInfo = JSON.parse(contents) as ICrashInfo;
-  await reportCrash(json.type, json.error, json.context, json.reportProcess);
+  await reportCrash(json.type, json.error, json.context, json.reportProcess, json.consentGiven);
 }
 
 /**
@@ -53,13 +54,17 @@ export async function reportCrash(
   error: ReportableError,
   context?: Record<string, string>,
   sourceProcess?: string,
+  consentGiven = false,
 ): Promise<void> {
   const resource = createVortexResource("report");
 
-  const exporter = new OTLPTraceExporter({
-    url: `${COLLECTOR_URL}/v1/traces`,
-    headers: OTLP_HEADERS,
-  });
+  const exporter = new SanitizingSpanExporter(
+    new OTLPTraceExporter({
+      url: `${COLLECTOR_URL}/v1/traces`,
+      headers: OTLP_HEADERS,
+    }),
+    () => consentGiven,
+  );
 
   const provider = new BasicTracerProvider({
     resource,

@@ -45,7 +45,8 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import { setTelemetryEnabled } from "./telemetry/state";
-import TrayIcon from "./TrayIcon";
+import { UnleashClient } from "./unleash/client";
+import { synchronizeFeatureFlags } from "./unleash/ipc";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
 / everything except a patch) compared to what was running last */
@@ -97,7 +98,7 @@ class Application {
         "net::ERR_HTTP2_PROTOCOL_ERROR",
         "net::ERR_INCOMPLETE_CHUNKED_ENCODING",
       ].includes(err.message) ||
-      ["ETIMEDOUT", "ECONNRESET", "EPIPE"].includes(code)
+      (code && ["ETIMEDOUT", "ECONNRESET", "EPIPE"].includes(code))
     ) {
       log("warn", "network error unhandled", err.stack);
       return true;
@@ -115,8 +116,7 @@ class Application {
   private mArgs: IParameters;
   private mMainWindow: MainWindow | undefined;
   private mMainWindowReady: Promise<Electron.WebContents | undefined> | undefined;
-  private mTray: TrayIcon;
-  private mAppMetadata: AppInitMetadata;
+  private mAppMetadata: AppInitMetadata | undefined;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
 
@@ -166,7 +166,7 @@ class Application {
   private async initMainWindow(): Promise<void> {
     const windowSettings = await readPersistedValue<IWindow>("settings", ["window"]);
 
-    this.mMainWindow = new MainWindow(this.mArgs.inspector, windowSettings);
+    this.mMainWindow = new MainWindow(this.mArgs.inspector ?? false, windowSettings);
     log("debug", "creating main window");
 
     // Start window creation but don't wait for ready-to-show.
@@ -206,9 +206,6 @@ class Application {
         .then(() => {
           log("info", "clean application end");
           DuckDBSingleton.getInstance().close();
-          if (this.mTray !== undefined) {
-            this.mTray.close();
-          }
           if (process.platform !== "darwin") {
             app.quit();
           }
@@ -229,7 +226,7 @@ class Application {
       }
     });
 
-    app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
+    app.on("second-instance", (_event, secondaryArgv) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch((err: unknown) =>
         log("error", "error applying arguments", unknownToError(err)),
@@ -303,7 +300,6 @@ class Application {
   private attachWebView = (
     _event: Electron.Event,
     webPreferences: Electron.WebPreferences & { preloadURL?: string },
-    _params,
   ) => {
     // disallow creation of insecure webviews
 
@@ -455,14 +451,32 @@ class Application {
       }
     }
 
+    const unleashClient = new UnleashClient(app.getVersion(), {
+      cachePath: path.join(app.getPath("userData"), "flag-cache.json"),
+    });
+
+    // NOTE(erri120): Querying userId so that the first API call contains it.
+    // Otherwise renderer sets context on user changes.
+    const storedUserId = await readPersistedValue<number>("persistent", [
+      "nexus",
+      "userInfo",
+      "userId",
+    ]);
+
+    if (storedUserId !== undefined) {
+      unleashClient.setContext({ userId: String(storedUserId) });
+    }
+
+    synchronizeFeatureFlags(unleashClient);
+
     // Collect metadata before creating the main window — the renderer
     // fetches it via getInitMetadata() early in its boot.
     log("debug", "checking how Vortex was installed");
     await this.identifyInstallType();
-    this.mAppMetadata.version = app.getVersion();
+    this.mAppMetadata!.version = app.getVersion();
 
     log("debug", "checking if migration is required");
-    await this.migrateIfNecessary(this.mAppMetadata.version);
+    await this.migrateIfNecessary(this.mAppMetadata!.version);
 
     // Install dev tools extensions before creating the main window so the
     // extension content scripts are registered on the session before the
@@ -489,15 +503,10 @@ class Application {
     log("debug", "waiting for user interface");
     await this.awaitMainWindowReady();
 
-    log("debug", "setting up tray icon");
-    this.createTray();
-
     if (splash) {
       log("debug", "removing splash screen");
       await splash.fadeOut();
     }
-
-    this.connectTrayAndWindow();
   }
 
   private isUACEnabled(): boolean {
@@ -553,9 +562,9 @@ class Application {
     try {
       await stat(path.join(getVortexPath("application"), "Uninstall Vortex.exe"));
       // Collect metadata - renderer will dispatch the action
-      this.mAppMetadata.installType = "regular";
+      this.mAppMetadata!.installType = "regular";
     } catch {
-      this.mAppMetadata.installType = "managed";
+      this.mAppMetadata!.installType = "managed";
     }
   }
 
@@ -597,7 +606,7 @@ class Application {
       app.quit();
     } else {
       // Collect metadata - renderer will dispatch the action
-      this.mAppMetadata.warnedAdmin = 1;
+      this.mAppMetadata!.warnedAdmin = 1;
     }
   }
 
@@ -674,8 +683,7 @@ class Application {
     try {
       const promises = setParameters.map(async (setParameter) => {
         const pathArray = this.splitPath(setParameter.key);
-        const newValue: string | undefined =
-          setParameter.value.length === 0 ? undefined : setParameter.value;
+        const newValue = setParameter.value.length === 0 ? null : setParameter.value;
         await persist.setItem(pathArray, newValue);
       });
 
@@ -783,18 +791,6 @@ class Application {
     }
 
     log("info", "state backup imported");
-  }
-
-  private createTray(): void {
-    // Pass null api since ExtensionManager is now renderer-only
-    //  and TrayIcon used to receive the api from there.
-    this.mTray = new TrayIcon();
-  }
-
-  private connectTrayAndWindow() {
-    if (this.mTray.initialized) {
-      this.mMainWindow.connectToTray(this.mTray);
-    }
   }
 
   private multiUserPath() {
@@ -1161,8 +1157,9 @@ class Application {
       return;
     }
 
-    if (args.download || args.install) {
-      this.mMainWindow.sendExternalURL(args.download || args.install, args.install !== undefined);
+    const url = args.download || args.install;
+    if (url) {
+      this.mMainWindow.sendExternalURL(url, args.install !== undefined);
     }
 
     if (args.installArchive) {

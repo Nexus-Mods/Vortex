@@ -6,16 +6,15 @@
  */
 
 import { mdiMenuDown } from "@mdi/js";
-import type { Ref, SelectHTMLAttributes } from "react";
-import * as React from "react";
+import React, { type Ref, type SelectHTMLAttributes } from "react";
 
-import { joinClasses } from "../../../utils/joinClasses";
-import { Icon } from "../../icon/Icon";
-import type { BaseFormFieldProps } from "../formfield/FormField";
-import { FormField } from "../formfield/FormField";
+import type { IBaseFormFieldProps } from "@/ui/components/form/formfield/FormField";
+import { FormField } from "@/ui/components/form/formfield/FormField";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> &
-  BaseFormFieldProps & {
+export type ISelectProps = SelectHTMLAttributes<HTMLSelectElement> &
+  IBaseFormFieldProps & {
     ref?: Ref<HTMLSelectElement>;
   };
 
@@ -32,7 +31,7 @@ export const Select = ({
   required,
   showRequiredLabel,
   ...props
-}: SelectProps) => {
+}: ISelectProps) => {
   // Make sure hints is always an array
   hints = !Array.isArray(hints) ? [hints] : hints;
 

@@ -1,5 +1,5 @@
 import type { Attributes } from "@opentelemetry/api";
-import { Resource } from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 
 /** Serializable span representation for IPC transport.
@@ -46,7 +46,7 @@ export const serializeSpan = (span: ReadableSpan): SerializedSpan => {
     traceId: ctx.traceId,
     spanId: ctx.spanId,
     traceFlags: ctx.traceFlags,
-    parentSpanId: span.parentSpanId,
+    parentSpanId: span.parentSpanContext?.spanId,
     startTime: span.startTime,
     endTime: span.endTime,
     status: { code: span.status.code, message: span.status.message },
@@ -67,9 +67,9 @@ export const serializeSpan = (span: ReadableSpan): SerializedSpan => {
     duration: span.duration,
     resource: { ...span.resource.attributes },
     instrumentationLibrary: {
-      name: span.instrumentationLibrary.name,
-      version: span.instrumentationLibrary.version,
-      schemaUrl: span.instrumentationLibrary.schemaUrl,
+      name: span.instrumentationScope.name,
+      version: span.instrumentationScope.version,
+      schemaUrl: span.instrumentationScope.schemaUrl,
     },
     droppedAttributesCount: span.droppedAttributesCount,
     droppedEventsCount: span.droppedEventsCount,
@@ -87,7 +87,16 @@ export const deserializeSpan = (data: SerializedSpan): ReadableSpan => {
       spanId: data.spanId,
       traceFlags: data.traceFlags,
     }),
-    parentSpanId: data.parentSpanId,
+    parentSpanContext:
+      data.parentSpanId !== undefined
+        ? {
+            // A child shares its parent's traceId and traceFlags, so reuse the
+            // span's own values to reconstruct the parent SpanContext.
+            traceId: data.traceId,
+            spanId: data.parentSpanId,
+            traceFlags: data.traceFlags,
+          }
+        : undefined,
     startTime: data.startTime,
     endTime: data.endTime,
     status: data.status,
@@ -107,8 +116,8 @@ export const deserializeSpan = (data: SerializedSpan): ReadableSpan => {
     })),
     duration: data.duration,
     ended: true,
-    resource: new Resource(data.resource),
-    instrumentationLibrary: data.instrumentationLibrary,
+    resource: resourceFromAttributes(data.resource),
+    instrumentationScope: data.instrumentationLibrary,
     droppedAttributesCount: data.droppedAttributesCount,
     droppedEventsCount: data.droppedEventsCount,
     droppedLinksCount: data.droppedLinksCount,

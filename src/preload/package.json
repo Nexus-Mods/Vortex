@@ -7,8 +7,8 @@
   "scripts": {
     "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
-    "lint": "pnpm eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm eslint --concurrency auto ."
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint"
   },
   "nx": {
     "targets": {

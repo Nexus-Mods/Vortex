@@ -189,21 +189,25 @@ describe("DownloadManager", () => {
       expect(Buffer.compare(LARGE_FILE, result)).toBe(0);
     });
 
-    it("throws when resuming with checkpoint for non-existent dest", async () => {
+    it("downloads fresh when resuming with a checkpoint whose partial file is missing", async () => {
+      // A checkpoint whose partial file is missing is discarded so the download starts fresh.
       using route = server.route(serveFile({ body: SMALL_FILE, acceptRanges: true }));
       await using tmp = await makeTmpDir();
       const manager = new DownloadManager({ concurrency: 1 });
 
+      const dest = path.join(tmp.dir, "does-not-exist");
       const checkpoint = {
         downloadId: "test-id",
         resource: route.url,
-        dest: path.join(tmp.dir, "does-not-exist"),
+        dest,
         completedRanges: [],
-        etag: null,
+        etag: undefined,
       } satisfies DownloadCheckpoint<URL>;
 
       const resumed = manager.resume(checkpoint, urlResolver, staticChunker());
-      await expect(resumed.promise).rejects.toThrow();
+      await resumed.promise;
+
+      expect(Buffer.compare(SMALL_FILE, await readFile(dest))).toBe(0);
     });
 
     it("decrements numRunning after resume settles on pause", async () => {
@@ -306,9 +310,9 @@ describe("DownloadManager", () => {
       const completedRanges = pauseResult.checkpoint.completedRanges;
       if (completedRanges.length > 0) {
         const [range] = completedRanges;
-        expect(range.start).toBe(0);
-        expect(range.end).toBeGreaterThan(0);
-        expect(range.end).toBeLessThanOrEqual(LARGE_FILE.length);
+        expect(range!.start).toBe(0);
+        expect(range!.end).toBeGreaterThan(0);
+        expect(range!.end).toBeLessThanOrEqual(LARGE_FILE.length);
       }
       // an empty array is also acceptable if the download hadn't written anything yet
     });

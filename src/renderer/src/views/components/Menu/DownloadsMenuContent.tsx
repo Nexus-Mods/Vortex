@@ -76,8 +76,8 @@ const GameMenuEntry: FC<{
       )}
 
       <Typography
-        appearance="none"
         as="span"
+        brand="none"
         className="truncate font-semibold"
         typographyType="body-sm"
       >

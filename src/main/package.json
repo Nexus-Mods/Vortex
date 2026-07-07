@@ -21,7 +21,8 @@
     "package": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --config.win.forceCodeSigning=true --config.win.sign=./sign.cjs --publish never",
     "package:nosign": "cd ./dist && pnpm electron-builder --config ./electron-builder.config.json --publish never",
     "sbom": "pnpm node ./sbom.mjs",
-    "download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts"
+    "download-duckdb-extensions": "pnpm tsx ./download-duckdb-extensions.ts",
+    "generate:unleash": "pnpm node src/unleash/trim-spec.mjs && pnpm exec openapi-typescript src/unleash/openapi-slim.json --immutable --output src/unleash/schema.d.ts && pnpm exec oxfmt ./src/unleash/*.json ./src/unleash/schema.d.ts"
   },
   "nx": {
     "targets": {
@@ -44,6 +45,7 @@
           "copy-assets",
           "copy-extensions",
           "download-duckdb-extensions",
+          "generate:unleash",
           "^build",
           {
             "target": "build",
@@ -59,7 +61,10 @@
           "{projectRoot}/build/main.cjs",
           "{projectRoot}/build/main.cjs.map",
           "{projectRoot}/build/bootstrap.mjs",
-          "{projectRoot}/build/bootstrap.mjs.map"
+          "{projectRoot}/build/bootstrap.mjs.map",
+          "{projectRoot}/build/bsdiff-worker.cjs",
+          "{projectRoot}/build/bsdiff-worker.cjs.map",
+          "{projectRoot}/build/hdiff.wasm"
         ]
       },
       "publish": {
@@ -116,6 +121,7 @@
             "dependentTasksOutputFiles": "**/dist/**"
           },
           "{projectRoot}/copy-assets.mjs",
+          "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",
           "{workspaceRoot}/src/queries/",
@@ -185,6 +191,17 @@
         "dependsOn": [
           "build"
         ]
+      },
+      "generate:unleash": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/src/unleash/openapi.json",
+          "{projectRoot}/src/unleash/trim-spec.mjs"
+        ],
+        "outputs": [
+          "{projectRoot}/src/unleash/schema.d.ts"
+        ]
       }
     }
   },
@@ -200,9 +217,11 @@
     "@duckdb/node-api": "catalog:",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
+    "@hot-updater/bsdiff": "catalog:",
     "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/adaptor-api": "workspace:*",
+    "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
@@ -216,6 +235,7 @@
     "@tailwindcss/cli": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
+    "@vortex/nexus-api-v3": "workspace:*",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
     "bluebird": "catalog:",
@@ -224,6 +244,7 @@
     "commander": "catalog:",
     "content-disposition": "catalog:",
     "content-type": "catalog:",
+    "crc-32": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",
     "dayjs": "catalog:",
@@ -263,6 +284,7 @@
     "node-7z": "catalog:",
     "normalize-url": "catalog:",
     "numeral": "catalog:",
+    "openapi-fetch": "catalog:",
     "p-queue": "catalog:",
     "packery": "catalog:",
     "permissions": "catalog:",
@@ -356,6 +378,8 @@
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
-    "redux-freeze": "catalog:"
+    "openapi-typescript": "catalog:",
+    "redux-freeze": "catalog:",
+    "vitest-fetch-mock": "catalog:"
   }
 }
