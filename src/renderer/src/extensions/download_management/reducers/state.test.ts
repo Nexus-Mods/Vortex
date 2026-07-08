@@ -187,7 +187,17 @@ describe("pauseDownload", () => {
       paused: true,
     });
     expect(result).toEqual({
-      files: { id: { state: "paused", received: 1, size: 2 } },
+      files: { id: { state: "paused", received: 1, size: 2, pauseCount: 1 } },
+    });
+  });
+  it("increments pauseCount on each pause", () => {
+    const input = { files: { id: { state: "started", received: 1, size: 2, pauseCount: 2 } } };
+    const result = stateReducer.reducers.PAUSE_DOWNLOAD(input, {
+      id: "id",
+      paused: true,
+    });
+    expect(result).toEqual({
+      files: { id: { state: "paused", received: 1, size: 2, pauseCount: 3 } },
     });
   });
   it("resumes a paused download", () => {

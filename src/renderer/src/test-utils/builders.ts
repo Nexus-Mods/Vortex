@@ -26,6 +26,7 @@ import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import { batch } from "redux-act";
 import { vi } from "vitest";
 
+import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import { MOD_TYPE } from "../extensions/collections/constants";
 import type {
   ICollectionMod,
@@ -35,6 +36,7 @@ import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import { downloadPathForGame } from "../extensions/download_management/selectors";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
 import type {
@@ -67,6 +69,7 @@ import type {
   IDownloadAdapterOpts,
   IDriverHarness,
   IDriverHarnessState,
+  IInstallContextHarness,
   IInstallManagerHarness,
   IRevisionFixture,
   IRevisionMemberSpec,
@@ -513,6 +516,27 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
 }
 
 /**
+ * Resolve once the driver reaches `step`. The driver fires onUpdate on every step transition, so
+ * this awaits that exact event rather than a fixed delay (a fixed tick races the async
+ * did-install-dependencies handler under load). A driver that never reaches the step is bounded by
+ * the caller's per-test timeout.
+ */
+export function waitForDriverStep(driver: InstallDriver, step: string): Promise<void> {
+  return new Promise((resolve) => {
+    if (driver.step === step) {
+      resolve();
+      return;
+    }
+    const dispose = driver.onUpdate(() => {
+      if (driver.step === step) {
+        dispose();
+        resolve();
+      }
+    });
+  });
+}
+
+/**
  * Harness for InstallDriver orchestration tests. The driver is a singleton reacting to a
  * GLOBAL event bus while mutating a SINGLE redux install session - the surface that
  * misbehaves under churn (many member mods installing/updating/downgrading at once, events
@@ -552,6 +576,28 @@ export function makeInstallManagerHarness(
   // instead of casting the manager per test
   const phaseTracker = (manager as unknown as { mPhaseTracker: InstallPhaseTracker }).mPhaseTracker;
   return { manager, phaseTracker, ...base };
+}
+
+/**
+ * Harness for InstallContext analytics tests. Constructs the REAL InstallContext against the fake
+ * api (makeApiHarness) - its ctor wires every callback from the api, so no external stubs are
+ * needed - and collects the per-mod analytics it emits on the bus. A test seeds the member's
+ * download, then drives ctx.startInstallCB / finishInstallCB and asserts mixpanelEvents. The ctor
+ * is passed in (like the other harnesses) to keep the heavy InstallContext import out of builders.
+ */
+export function makeInstallContextHarness(
+  ContextCtor: new (gameMode: string, api: IExtensionApi, silent: boolean) => InstallContext,
+  overrides: Partial<IDriverHarnessState> = {},
+  opts: { gameId?: string; silent?: boolean } = {},
+): IInstallContextHarness {
+  const gameId = opts.gameId ?? "skyrimse";
+  const base = makeApiHarness(overrides);
+  const mixpanelEvents: MixpanelEvent[] = [];
+  base.api.events.on("analytics-track-mixpanel-event", (e: MixpanelEvent) =>
+    mixpanelEvents.push(e),
+  );
+  const ctx = new ContextCtor(gameId, base.api, opts.silent ?? false);
+  return { ctx, mixpanelEvents, ...base };
 }
 
 /**

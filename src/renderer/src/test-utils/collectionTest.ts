@@ -1,6 +1,7 @@
 import type { IModRule } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import { modRuleId } from "../util/collectionInstallSession";
+import { waitForDriverStep } from "./builders";
 import { test as driverTest } from "./driverTest";
 import type { ICollectionHarness, IDriverHarnessState } from "./harnessTypes";
 
@@ -29,24 +30,6 @@ export const test = driverTest.extend<ICollectionFixtures>({
       const harness = makeDriver({ profiles: { [profile.id]: profile }, ...overrides });
       let currentRules: IModRule[] = [];
       let currentCollectionId = "";
-
-      // resolve once the driver reaches a step. The driver fires onUpdate on every step
-      // transition, so we await that exact event rather than guessing a fixed delay (the old
-      // fixed tick raced the async did-install-dependencies handler under load). A driver that
-      // never reaches the step is bounded by the caller's per-test timeout.
-      const waitForStep = (step: string): Promise<void> =>
-        new Promise((resolve) => {
-          if (harness.driver.step === step) {
-            resolve();
-            return;
-          }
-          const dispose = harness.driver.onUpdate(() => {
-            if (harness.driver.step === step) {
-              dispose();
-              resolve();
-            }
-          });
-        });
 
       const collection: ICollectionHarness = {
         ...harness,
@@ -77,7 +60,7 @@ export const test = driverTest.extend<ICollectionFixtures>({
           // once it sees the deps are installed; wait for that state (not a fixed tick) so the
           // continue below cannot race it under load, then proceed past review to close
           harness.emit("did-install-dependencies", GAME_ID, currentCollectionId, false);
-          await waitForStep("review");
+          await waitForDriverStep(harness.driver, "review");
           await harness.driver.continue();
         },
         memberStatus: (tag) => {
