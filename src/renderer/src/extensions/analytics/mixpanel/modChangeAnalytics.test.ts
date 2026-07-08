@@ -8,7 +8,6 @@ import { expect } from "vitest";
 import { makeMod, makeProfile, makeProfileMod } from "../../../test-utils/builders";
 import type { IModChangeHarness } from "../../../test-utils/harnessTypes";
 import { test } from "../../../test-utils/modChangeTest";
-import { onRemoveMods } from "../../mod_management/eventHandlers";
 import type InstallManager from "../../mod_management/InstallManager";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
@@ -129,6 +128,7 @@ test("emitModRemoved does not emit for a non-Nexus mod", ({ makeModChange }) => 
 });
 
 test("onRemoveMods threads the removal reason onto mods_removed", async ({ makeModChange }) => {
+  const { onRemoveMods } = await import("../../mod_management/eventHandlers");
   // no installationPath -> undeploy filters it out and the fs removal branch is skipped
   const mod = nexusMod();
   mod.installationPath = undefined;
