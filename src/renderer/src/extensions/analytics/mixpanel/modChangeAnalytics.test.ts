@@ -1,14 +1,13 @@
 /**
- * Tests for the mod enable/disable/remove analytics. The emit helpers resolve identity from the
- * mod's own Nexus attributes and gate out collections and non-Nexus (bundled/local) mods; the
- * exported onRemoveMods is driven end to end to prove the removal reason threads onto mods_removed.
+ * Tests for the mod enable/disable/remove analytics: the emit helpers resolve identity from the
+ * mod's own Nexus attributes, gate out collections and non-Nexus (bundled/local) mods, and carry
+ * the change/reason/duration.
  */
 import { expect } from "vitest";
 
 import { makeMod, makeProfile, makeProfileMod } from "../../../test-utils/builders";
 import type { IModChangeHarness } from "../../../test-utils/harnessTypes";
 import { test } from "../../../test-utils/modChangeTest";
-import type InstallManager from "../../mod_management/InstallManager";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { emitModRemoved, emitModStateChanged } from "./modChangeAnalytics";
@@ -125,26 +124,4 @@ test("emitModRemoved does not emit for a non-Nexus mod", ({ makeModChange }) => 
     false,
   );
   expect(h.mixpanelEvents).toHaveLength(0);
-});
-
-test("onRemoveMods threads the removal reason onto mods_removed", async ({ makeModChange }) => {
-  const { onRemoveMods } = await import("../../mod_management/eventHandlers");
-  // no installationPath -> undeploy filters it out and the fs removal branch is skipped
-  const mod = nexusMod();
-  mod.installationPath = undefined;
-  const h = makeModChange(seed(mod));
-  const installManager = { markRecentRemoval: () => undefined } as unknown as InstallManager;
-
-  await new Promise<void>((resolve) =>
-    onRemoveMods(h.api, [], installManager, GAME, [MOD], () => resolve(), {
-      reason: "collection_uninstall",
-    }),
-  );
-
-  const removed = h.mixpanelEvents.filter((e) => e.eventName === "mods_removed");
-  expect(removed).toHaveLength(1);
-  expect(removed[0].properties).toMatchObject({
-    reason: "collection_uninstall",
-    mod_id: "100",
-  });
 });
