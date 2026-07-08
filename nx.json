@@ -36,7 +36,8 @@
       "inputs": [
         "default",
         "typescript",
-        "!{projectRoot}/src/**/*.test.{ts,tsx}",
+        "{projectRoot}/**/*",
+        "!{projectRoot}/**/*.test.{ts,tsx}",
         { "dependentTasksOutputFiles": "**/dist/**" }
       ],
       "outputs": ["{projectRoot}/dist/"]
