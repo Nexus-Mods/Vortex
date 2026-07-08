@@ -167,7 +167,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 {getTextMod("downloadspath", t)}
               </More>
             </ControlLabel>
-            <FlexLayout type="row">
+            <FlexLayout type="row" fill={false} className="download-path-row">
               <FlexLayout.Fixed>
                 <InputGroup>
                   <FormControl
