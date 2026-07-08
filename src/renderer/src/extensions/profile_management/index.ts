@@ -735,13 +735,19 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
 
 function removeMod(api: IExtensionApi, gameId: string, modId: string): PromiseBB<void> {
   return new PromiseBB((resolve, reject) => {
-    api.events.emit("remove-mod", gameId, modId, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
+    api.events.emit(
+      "remove-mod",
+      gameId,
+      modId,
+      (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      },
+      { reason: "stop_managing_game" },
+    );
   });
 }
 

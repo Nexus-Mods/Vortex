@@ -421,11 +421,30 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
   }
 }
 
+/**
+ * What kind of install produced a mod, on the mods_installation_* events. Lets the data team
+ * separate fresh installs from version bumps, reinstalls, and the two name-conflict resolutions.
+ *   - fresh: no prior version of this mod was installed.
+ *   - version_update: a different file (version) of an already-installed mod.
+ *   - reinstall: the same file (version) reinstalled over itself.
+ *   - variant: installed as a second, coexisting copy under a different variant name.
+ *   - profile_replace: replaced the existing mod across all local profiles.
+ */
+export type ModInstallKind =
+  | "fresh"
+  | "version_update"
+  | "reinstall"
+  | "variant"
+  | "profile_replace";
+
+/** Fields shared by every per-mod install event: identity + how the install came about. */
+type ModInstallProps = ModAnalyticsIdentity & { install_kind: ModInstallKind };
+
 /** Event sent when mod installation is started. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationStartedEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_started";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity) {
+  constructor(props: ModInstallProps) {
     this.properties = { ...props };
   }
 }
@@ -434,7 +453,7 @@ export class ModsInstallationStartedEvent implements MixpanelEvent {
 export class ModsInstallationCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_completed";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity & { duration_ms: number }) {
+  constructor(props: ModInstallProps & { duration_ms: number }) {
     this.properties = { ...props };
   }
 }
@@ -443,7 +462,7 @@ export class ModsInstallationCompletedEvent implements MixpanelEvent {
 export class ModsInstallationCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_cancelled";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity) {
+  constructor(props: ModInstallProps) {
     this.properties = { ...props };
   }
 }
@@ -452,7 +471,62 @@ export class ModsInstallationCancelledEvent implements MixpanelEvent {
 export class ModsInstallationFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_failed";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity & { error_code: string; error_message: string }) {
+  constructor(props: ModInstallProps & { error_code: string; error_message: string }) {
+    this.properties = { ...props };
+  }
+}
+
+/**
+ * Why a mod was enabled/disabled/removed, on the ModsStateChanged / ModsRemoved events.
+ * A small, closed vocabulary so the data team can slice programmatic churn (collection
+ * updates/uninstalls, variant/version/profile replacement, health-check remediation) from
+ * user-driven changes. Install-completion enables are not represented here: they are covered
+ * by the mods_installation_* events, so no enable is emitted for them.
+ */
+export type ModChangeReason =
+  | "user_manual"
+  | "variant_replace"
+  | "version_update"
+  | "profile_replace"
+  | "collection_update"
+  | "collection_uninstall"
+  | "stop_managing_game"
+  | "health_check";
+
+/**
+ * Event sent when a mod is enabled or disabled in a profile. Shares the per-mod identity
+ * so it joins to the mod's download/install events; `reason` records what drove the change.
+ * Not sent for the collection mod itself (collections have their own lifecycle events) nor
+ * for mods without a Nexus file id (bundled/local), matching the other per-mod events.
+ *
+ * `duration_ms` is how long the mod spent in the prior state before this change: time enabled on
+ * a disable, time disabled on an enable. 0 when that span is unknown (never in that state).
+ */
+export class ModsStateChangedEvent implements MixpanelEvent {
+  readonly eventName = "mods_state_changed";
+  readonly properties: Record<string, any>;
+  constructor(
+    props: ModAnalyticsIdentity & {
+      change: "enabled" | "disabled";
+      reason: ModChangeReason;
+      duration_ms: number;
+    },
+  ) {
+    this.properties = { ...props };
+  }
+}
+
+/**
+ * Event sent when a mod is removed. `will_be_replaced` marks removals that are part of a
+ * reinstall/variant/version replacement (a new mod takes its place) rather than a genuine
+ * uninstall. Same gating and identity as ModsStateChangedEvent.
+ */
+export class ModsRemovedEvent implements MixpanelEvent {
+  readonly eventName = "mods_removed";
+  readonly properties: Record<string, any>;
+  constructor(
+    props: ModAnalyticsIdentity & { reason: ModChangeReason; will_be_replaced: boolean },
+  ) {
     this.properties = { ...props };
   }
 }

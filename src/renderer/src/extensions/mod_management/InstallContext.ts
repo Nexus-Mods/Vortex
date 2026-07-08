@@ -14,6 +14,7 @@ import { log } from "../../util/log";
 import type { IPrettifiedError } from "../../util/message";
 import { showError } from "../../util/message";
 import { getSafe } from "../../util/storeHelper";
+import type { ModInstallKind } from "../analytics/mixpanel/MixpanelEvents";
 import {
   emitModInstallOutcome,
   emitModInstallStarted,
@@ -59,6 +60,7 @@ class InstallContext implements IInstallContext {
   private mIndicatorId: string;
   private mGameId: string;
   private mArchiveId: string;
+  private mInstallKind: ModInstallKind = "fresh";
   private mInstallOutcome: InstallOutcome;
   private mFailReason: string;
   private mFailError: IPrettifiedError;
@@ -138,7 +140,8 @@ class InstallContext implements IInstallContext {
     this.mEnableMod = (modId: string) => {
       const state: IState = store.getState();
       const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
-      return setModsEnabled(api, profileId, [modId], true);
+      // enabling on install completion is implied by the install event.
+      return setModsEnabled(api, profileId, [modId], true, { skipStateChangeEvent: true });
     };
     this.mIsEnabled = (modId) => {
       const state: IState = store.getState();
@@ -238,7 +241,12 @@ class InstallContext implements IInstallContext {
     }
   }
 
-  public startInstallCB(id: string, gameId: string, archiveId: string): void {
+  public startInstallCB(
+    id: string,
+    gameId: string,
+    archiveId: string,
+    installKind: ModInstallKind = "fresh",
+  ): void {
     this.mAddMod({
       id,
       type: "",
@@ -253,8 +261,10 @@ class InstallContext implements IInstallContext {
     this.mAddedId = id;
     this.mGameId = gameId;
     this.mArchiveId = archiveId;
+    // Kept for the terminal events, which fire from finishInstallCB.
+    this.mInstallKind = installKind;
 
-    emitModInstallStarted(this.mApi, archiveId);
+    emitModInstallStarted(this.mApi, archiveId, installKind);
   }
 
   public finishInstallCB(
@@ -300,13 +310,13 @@ class InstallContext implements IInstallContext {
     // download record intact regardless of mod removal. "ignore" (bundled/subsumed) is not tracked.
     if (this.mArchiveId !== undefined) {
       if (outcome === "success") {
-        emitModInstallOutcome(this.mApi, this.mArchiveId, "completed", {
+        emitModInstallOutcome(this.mApi, this.mArchiveId, "completed", this.mInstallKind, {
           durationMs: Date.now() - this.mStartTime,
         });
       } else if (outcome === "canceled") {
-        emitModInstallOutcome(this.mApi, this.mArchiveId, "cancelled");
+        emitModInstallOutcome(this.mApi, this.mArchiveId, "cancelled", this.mInstallKind);
       } else if (outcome === "failed") {
-        emitModInstallOutcome(this.mApi, this.mArchiveId, "failed", {
+        emitModInstallOutcome(this.mApi, this.mArchiveId, "failed", this.mInstallKind, {
           error: this.mFailError,
           failReason: this.mFailReason,
         });

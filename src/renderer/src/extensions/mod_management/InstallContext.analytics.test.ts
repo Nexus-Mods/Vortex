@@ -39,6 +39,45 @@ describe("InstallContext per-mod analytics", () => {
     });
   });
 
+  test("defaults install_kind to fresh when startInstallCB is called without one", ({
+    makeInstallContext,
+  }) => {
+    const h = makeInstallContext(withDownload(memberInfo()));
+    h.ctx.startInstallCB(MOD, GAME, ARCHIVE);
+    expect(h.mixpanelEvents[0].properties.install_kind).toBe("fresh");
+  });
+
+  // The passed install_kind must ride the started event and whichever terminal event fires.
+  const terminalCases = [
+    { outcome: "success" as const, terminal: "mods_installation_completed" },
+    { outcome: "canceled" as const, terminal: "mods_installation_cancelled" },
+    { outcome: "failed" as const, terminal: "mods_installation_failed" },
+  ];
+  for (const { outcome, terminal } of terminalCases) {
+    test(`threads install_kind onto started and ${terminal}`, ({ makeInstallContext }) => {
+      const h = makeInstallContext(withDownload(memberInfo()));
+      h.ctx.startInstallCB(MOD, GAME, ARCHIVE, "variant");
+      if (outcome === "failed") {
+        h.ctx.finishInstallCB("failed", undefined, "bad archive", new DataInvalid("bad archive"));
+      } else {
+        h.ctx.finishInstallCB(outcome, {});
+      }
+      expect(names(h)).toEqual(["mods_installation_started", terminal]);
+      expect(h.mixpanelEvents[0].properties.install_kind).toBe("variant");
+      expect(h.mixpanelEvents[1].properties.install_kind).toBe("variant");
+    });
+  }
+
+  test("carries a profile_replace install_kind through to the completed event", ({
+    makeInstallContext,
+  }) => {
+    const h = makeInstallContext(withDownload(memberInfo()));
+    h.ctx.startInstallCB(MOD, GAME, ARCHIVE, "profile_replace");
+    h.ctx.finishInstallCB("success", {});
+    const completed = h.mixpanelEvents.find((e) => e.eventName === "mods_installation_completed");
+    expect(completed?.properties.install_kind).toBe("profile_replace");
+  });
+
   test("carries the parent collection_id for a collection member", ({ makeInstallContext }) => {
     const h = makeInstallContext(withDownload(memberInfo({ parentCollectionId: "col-9" })));
     h.ctx.startInstallCB(MOD, GAME, ARCHIVE);

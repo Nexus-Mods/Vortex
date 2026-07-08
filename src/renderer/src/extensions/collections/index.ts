@@ -517,6 +517,7 @@ async function removeCollection(
       await toPromise((cb) =>
         api.events.emit("remove-mods", gameId, removeMods, cb, {
           silent: true,
+          reason: "collection_uninstall",
           progressCB: (idx: number, length: number, name: string) => {
             // Progress will still be reported via activity notification
             doProgress(name, 50 + (50 * idx) / length);
@@ -541,6 +542,7 @@ async function removeCollection(
         api.events.emit("remove-mod", gameId, modId, cb, {
           silent: true,
           incomplete: true,
+          reason: "collection_uninstall",
         }),
       );
     }

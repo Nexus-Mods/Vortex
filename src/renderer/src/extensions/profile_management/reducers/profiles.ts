@@ -28,9 +28,10 @@ export const profilesReducer: IReducerSpec = {
         return state;
       }
 
-      if (enable) {
-        state = setSafe(state, [profileId, "modState", modId, "enabledTime"], Date.now());
-      }
+      // Stamp only the timestamp for this transition; the other is left intact so the analytics
+      // can measure how long the mod spent in the prior state.
+      const timeKey = enable ? "enabledTime" : "disabledTime";
+      state = setSafe(state, [profileId, "modState", modId, timeKey], Date.now());
 
       return setSafe(state, [profileId, "modState", modId, "enabled"], enable);
     },
