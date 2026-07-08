@@ -22,6 +22,7 @@
       "{projectRoot}/tsdown.config.ts",
       "{projectRoot}/src/**/*.{ts,tsx}"
     ],
+    "stylesheets": ["{projectRoot}/**/*.{scss,css}"],
     "eslint": ["{projectRoot}/eslint.config.mjs", "{workspaceRoot}/eslint.config.base.mjs"],
     "oxlint": ["{workspaceRoot}/oxlint.base.config.json", "{projectRoot}/.oxlintrc.json"],
     "vortex-api": [
@@ -36,8 +37,7 @@
       "inputs": [
         "default",
         "typescript",
-        "{projectRoot}/**/*",
-        "!{projectRoot}/**/*.test.{ts,tsx}",
+        "!{projectRoot}/src/**/*.test.{ts,tsx}",
         { "dependentTasksOutputFiles": "**/dist/**" }
       ],
       "outputs": ["{projectRoot}/dist/"]
