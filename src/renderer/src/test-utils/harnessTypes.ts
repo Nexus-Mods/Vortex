@@ -6,9 +6,11 @@
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
 import type { Mock } from "vitest";
 
+import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
@@ -85,6 +87,14 @@ export interface IDownloadAdapterHarness extends IApiHarness {
   start: Mock;
   resume: Mock;
   getStates: Mock;
+}
+
+export interface IInstallContextHarness extends IApiHarness {
+  // the real InstallContext under test, constructed against the fake api. A test drives it with
+  // startInstallCB/finishInstallCB and observes the per-mod analytics via mixpanelEvents.
+  ctx: InstallContext;
+  // mixpanel events emitted on the api bus, collected in order
+  mixpanelEvents: MixpanelEvent[];
 }
 
 export interface IInstallManagerHarness extends IApiHarness {

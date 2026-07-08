@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 // responses and assert the health-check reports that come out.
 vi.mock("@/extensions/health_check/utils/fileRequirements/installedFiles", () => ({
   gatherInstalledFiles: vi.fn(),
+  gatherDownloadedFileRefs: vi.fn(),
   makeInstalledFileHydrator: vi.fn(),
+  makeDownloadedFileHydrator: vi.fn(),
 }));
 vi.mock("../../nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3Client: vi.fn(),
@@ -16,8 +18,11 @@ vi.mock("../../profile_management/selectors", () => ({ activeProfile: vi.fn() })
 vi.mock("../../../logging", () => ({ log: vi.fn() }));
 
 import {
+  gatherDownloadedFileRefs,
   gatherInstalledFiles,
+  makeDownloadedFileHydrator,
   makeInstalledFileHydrator,
+  type IDownloadedFileRef,
   type IInstalledFileRef,
 } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 
@@ -32,7 +37,9 @@ import { checkFileRequirements } from "./fileRequirementsCheck";
 const mockActiveProfile = vi.mocked(activeProfile);
 const mockIsLoggedIn = vi.mocked(isLoggedIn);
 const mockGather = vi.mocked(gatherInstalledFiles);
+const mockGatherDownloaded = vi.mocked(gatherDownloadedFileRefs);
 const mockHydrator = vi.mocked(makeInstalledFileHydrator);
+const mockDownloadedHydrator = vi.mocked(makeDownloadedFileHydrator);
 const mockCreateClient = vi.mocked(createVortexNexusV3Client);
 
 const api = { getState: () => ({}) } as unknown as IExtensionApi;
@@ -69,6 +76,10 @@ interface VersionFixture {
 
 function ref(fileUID: string, enabled = true, emitRequirements = true): IInstalledFileRef {
   return { fileUID, modId: `vortex-${fileUID}`, enabled, emitRequirements };
+}
+
+function downloadedRef(fileUID: string): IDownloadedFileRef {
+  return { fileUID, downloadId: `download-${fileUID}` };
 }
 
 function installedFile(fileUID: string, enabled: boolean): IInstalledFile {
@@ -136,14 +147,30 @@ function fakeClient(
 /** Wire the mocks for one resolution run and return the metadata it produces. */
 async function runWith(opts: {
   refs: IInstalledFileRef[];
+  downloadedRefs?: IDownloadedFileRef[];
   versions: Record<string, VersionFixture>;
   candidates: V3Candidate[];
   modDetails?: V3ModDetail[];
 }): Promise<IFileRequirementsCheckMetadata | undefined> {
+  const downloadedRefs = opts.downloadedRefs ?? [];
   mockGather.mockResolvedValue(opts.refs);
+  mockGatherDownloaded.mockResolvedValue(downloadedRefs);
   mockHydrator.mockReturnValue((fileUID: string) => {
     const found = opts.refs.find((r) => r.fileUID === fileUID);
     return found ? installedFile(fileUID, found.enabled) : undefined;
+  });
+  mockDownloadedHydrator.mockReturnValue((fileUID: string) => {
+    const found = downloadedRefs.find((r) => r.fileUID === fileUID);
+    if (!found) return undefined;
+    return {
+      downloadId: found.downloadId,
+      fileUID,
+      modUID: `moduid-${fileUID}`,
+      modName: `Downloaded ${fileUID}`,
+      fileName: `${fileUID}.zip`,
+      version: "1.0",
+      adultContent: false,
+    };
   });
   mockCreateClient.mockReturnValue(
     fakeClient(opts.versions, opts.candidates, opts.modDetails) as unknown as ReturnType<
@@ -160,6 +187,8 @@ describe("checkFileRequirements / guards", () => {
     vi.clearAllMocks();
     mockActiveProfile.mockReturnValue({ gameId: "skyrimse" } as unknown as IProfile);
     mockIsLoggedIn.mockReturnValue(true);
+    mockGatherDownloaded.mockResolvedValue([]);
+    mockDownloadedHydrator.mockReturnValue(() => undefined);
   });
 
   test("passes without resolving when there is no active profile", async () => {
@@ -197,6 +226,8 @@ describe("checkFileRequirements / resolution", () => {
     vi.clearAllMocks();
     mockActiveProfile.mockReturnValue({ gameId: "skyrimse" } as unknown as IProfile);
     mockIsLoggedIn.mockReturnValue(true);
+    mockGatherDownloaded.mockResolvedValue([]);
+    mockDownloadedHydrator.mockReturnValue(() => undefined);
   });
 
   // NOTE: fileDependencyPorts caches by UID across runs, so each case below uses
@@ -409,5 +440,46 @@ describe("checkFileRequirements / resolution", () => {
     const result = await checkFileRequirements(api);
     expect(result.status).toBe("warning");
     expect(result.message).toContain("1 file requirements");
+  });
+
+  test("reports a correct-version-uninstalled requirement when the required file is downloaded but not installed", async () => {
+    // sourceWithUninstalledDep is installed and enabled. Its dependency is satisfied by
+    // uninstalledDependency, which the user has downloaded but not installed.
+    const metadata = await runWith({
+      refs: [ref("sourceWithUninstalledDep")],
+      downloadedRefs: [downloadedRef("uninstalledDependency")],
+      versions: {
+        sourceWithUninstalledDep: {
+          chain: "sourceWithUninstalledDepChain",
+          modId: "sourceWithUninstalledDepMod",
+        },
+        uninstalledDependency: {
+          chain: "uninstalledDependencyChain",
+          modId: "uninstalledDependencyMod",
+          name: "Downloaded Dep",
+          version: "1.0",
+        },
+      },
+      candidates: [
+        candidate({
+          source_version_id: "sourceWithUninstalledDep",
+          definition_id: "uninstalledDependencyDefinition",
+          version_id: "uninstalledDependency",
+          mod_file_id: "uninstalledDependencyChain",
+          mod_id: "uninstalledDependencyMod",
+        }),
+      ],
+    });
+
+    const reqs = metadata?.fileRequirements["sourceWithUninstalledDep"]?.requirements;
+    expect(reqs).toHaveLength(1);
+    expect(reqs?.[0]).toMatchObject({
+      kind: "correct-version-uninstalled",
+      requirementDefId: "uninstalledDependencyDefinition",
+      uninstalledFile: {
+        fileUID: "uninstalledDependency",
+        downloadId: "download-uninstalledDependency",
+      },
+    });
   });
 });

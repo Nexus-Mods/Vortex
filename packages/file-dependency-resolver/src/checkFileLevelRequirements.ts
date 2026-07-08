@@ -40,7 +40,7 @@ const availableStatuses = new Set(["published", "hidden"]);
 export async function checkFileLevelRequirements(
   context: FileRequirementsContext,
 ): Promise<FileRequirementsReport> {
-  const { installedFiles, ports } = context;
+  const { installedFiles, uninstalledFileVersionUids, ports } = context;
   // Excluded files still satisfy others below; they just don't emit their own.
   const sourceFiles = installedFiles.filter((f) => f.enabled && f.emitRequirements !== false);
   if (sourceFiles.length === 0) return { sources: [] };
@@ -90,7 +90,13 @@ export async function checkFileLevelRequirements(
       sourceFileVersionUid,
       defs: [...groupBy(srcRows, (c) => c.definitionId)].map(([definitionId, defRows]) => {
         const branches = [...groupBy(defRows, (r) => r.modFileId)].map(([modFileId, branchRows]) =>
-          classifyBranch(modFileId, branchRows, enabledByUid, installedByChain),
+          classifyBranch(
+            modFileId,
+            branchRows,
+            enabledByUid,
+            installedByChain,
+            uninstalledFileVersionUids,
+          ),
         );
         // OR satisfied: one branch has an enabled acceptable version, so don't
         // recommend (or hydrate) downloads for the alternatives.
@@ -137,6 +143,7 @@ interface BranchPlan {
   modFileId: string;
   satisfyingEnabled: string[];
   satisfyingDisabled: string[];
+  satisfyingUninstalled: string[];
   wrongEnabled: string[];
   wrongDisabled: string[];
   recRow?: CandidateRow;
@@ -148,18 +155,24 @@ function classifyBranch(
   branchRows: CandidateRow[],
   enabledByUid: Map<string, boolean>,
   installedByChain: Map<string, InstalledFile[]>,
+  uninstalledUids: Set<string>,
 ): BranchPlan {
   const candidateUids = new Set(branchRows.map((r) => r.fileVersionUid));
 
   const satisfyingEnabled: string[] = [];
   const satisfyingDisabled: string[] = [];
+  const satisfyingUninstalled: string[] = [];
   const wrongEnabled: string[] = [];
   const wrongDisabled: string[] = [];
 
   // Acceptable versions the user already has, by enabled state.
   for (const uid of candidateUids) {
     const isEnabled = enabledByUid.get(uid);
-    if (isEnabled === undefined) continue;
+    if (isEnabled === undefined) {
+      // Not installed; check if it's downloaded but not yet installed.
+      if (uninstalledUids.has(uid)) satisfyingUninstalled.push(uid);
+      continue;
+    }
     (isEnabled ? satisfyingEnabled : satisfyingDisabled).push(uid);
     // TODO: could break early on match, if simple resolver and
     // consumer doesn't want all the matches or the wrong version data.
@@ -171,11 +184,20 @@ function classifyBranch(
     (f.enabled ? wrongEnabled : wrongDisabled).push(f.fileVersionUid);
   }
 
-  // Recommend a download only when this branch has no acceptable version owned.
-  const owned = satisfyingEnabled.length + satisfyingDisabled.length > 0;
+  // Recommend a download only when this branch has no acceptable version owned or downloaded.
+  const owned =
+    satisfyingEnabled.length + satisfyingDisabled.length + satisfyingUninstalled.length > 0;
   const recRow = owned ? undefined : selectRecommended(branchRows);
 
-  return { modFileId, satisfyingEnabled, satisfyingDisabled, wrongEnabled, wrongDisabled, recRow };
+  return {
+    modFileId,
+    satisfyingEnabled,
+    satisfyingDisabled,
+    satisfyingUninstalled,
+    wrongEnabled,
+    wrongDisabled,
+    recRow,
+  };
 }
 
 // Computed from the raw server signals; gates what we recommend, not matching.

@@ -124,6 +124,8 @@ import {
   CollectionsDraftUploadedEvent,
   CollectionsDraftUpdateUploadedEvent,
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
+// Prop type used by the exported collection-install event constructors.
+export type { CollectionInstallOutcomeProps } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import getTextModManagement from "../extensions/mod_management/texts";
 import getTextProfileManagement from "../extensions/profile_management/texts";
 import deepMerge from "./deepMerge";

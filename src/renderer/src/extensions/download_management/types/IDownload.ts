@@ -197,4 +197,11 @@ export interface IDownload {
    * whether the download server supports resuming downloads
    */
   pausable?: boolean;
+
+  /**
+   * number of times this download has been resumed after a pause/interruption.
+   * Persisted, so it accumulates across app restarts (free users pause/resume the
+   * same download over multiple days). Surfaced on download analytics as pause_count.
+   */
+  pauseCount?: number;
 }

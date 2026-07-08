@@ -375,7 +375,14 @@ async function pauseCollection(
   });
   await api.emitAndAwait("cancel-dependency-install", modId);
 
-  driver.cancel();
+  // Only "remove" (deleting the collection via the overview UI) abandons the install
+  // as a terminal cancel. Everything else - user pause, logout, game switch, and the
+  // free-user dialog's cancel button - is a resumable pause tracked as a paused event.
+  if (trigger === "remove") {
+    driver.cancel();
+  } else {
+    driver.pause(trigger ?? "user");
+  }
 
   api.dismissNotification(INSTALLING_NOTIFICATION_ID + modId);
   if (silent !== true) {

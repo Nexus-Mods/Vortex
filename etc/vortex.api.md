@@ -582,6 +582,26 @@ const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
 }, {}>;
 
 // @public
+interface CollectionInstallOutcomeProps {
+    // (undocumented)
+    collection_id: string;
+    duration_ms: number;
+    failed: number;
+    // (undocumented)
+    game_id: number;
+    ignored: number;
+    installed: number;
+    optional: number;
+    pause_count: number;
+    required_total: number;
+    resume_count: number;
+    // (undocumented)
+    revision_id: string;
+    total_duration_ms: number;
+    was_resumed: boolean;
+}
+
+// @public
 type CollectionModStatus = keyof Pick<Record<ModState, true>, "downloading" | "downloaded" | "installing" | "installed"> | "pending" | "failed" | "ignored" | "optional";
 
 // Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point api.d.ts
@@ -651,7 +671,7 @@ class CollectionsDraftUploadedEvent implements MixpanelEvent {
 
 // @public
 class CollectionsInstallationCancelledEvent implements MixpanelEvent {
-    constructor(collection_id: string, revision_id: string, game_id: number);
+    constructor(props: CollectionInstallOutcomeProps);
     // (undocumented)
     readonly eventName = "collections_installation_cancelled";
     // (undocumented)
@@ -660,7 +680,7 @@ class CollectionsInstallationCancelledEvent implements MixpanelEvent {
 
 // @public
 class CollectionsInstallationCompletedEvent implements MixpanelEvent {
-    constructor(collection_id: string, revision_id: string, game_id: number, mod_count: number, duration_ms: number);
+    constructor(props: CollectionInstallOutcomeProps);
     // (undocumented)
     readonly eventName = "collections_installation_completed";
     // (undocumented)
@@ -669,7 +689,10 @@ class CollectionsInstallationCompletedEvent implements MixpanelEvent {
 
 // @public
 class CollectionsInstallationFailedEvent implements MixpanelEvent {
-    constructor(collection_id: string, revision_id: string, game_id: number, error_code: string, error_message: string);
+    constructor(props: CollectionInstallOutcomeProps & {
+        failure_stage: "member_install" | "postprocessing";
+        error_code?: string;
+    });
     // (undocumented)
     readonly eventName = "collections_installation_failed";
     // (undocumented)
@@ -678,7 +701,7 @@ class CollectionsInstallationFailedEvent implements MixpanelEvent {
 
 // @public
 class CollectionsInstallationStartedEvent implements MixpanelEvent {
-    constructor(collection_id: string, revision_id: string, game_id: number, mod_count: number);
+    constructor(props: CollectionInstallOutcomeProps);
     // (undocumented)
     readonly eventName = "collections_installation_started";
     // (undocumented)
@@ -2139,6 +2162,7 @@ interface IDownload {
     // Warning: (ae-forgotten-export) The symbol "IModInfo_3" needs to be exported by the entry point api.d.ts
     modInfo: IModInfo_3;
     pausable?: boolean;
+    pauseCount?: number;
     received: number;
     size: number;
     startTime: number;
@@ -6443,6 +6467,7 @@ declare namespace util {
         getText,
         Normalize,
         ISteamEntry,
+        CollectionInstallOutcomeProps,
         Archive,
         ArgumentInvalid,
         batchDispatch,
