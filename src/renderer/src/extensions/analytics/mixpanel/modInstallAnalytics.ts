@@ -1,7 +1,6 @@
-import { classifyErrorCode } from "@vortex/shared";
-
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
+import { classifyErrorCode } from "./error-code";
 import type { ModAnalyticsIdentity } from "./MixpanelEvents";
 import {
   ModsInstallationCancelledEvent,

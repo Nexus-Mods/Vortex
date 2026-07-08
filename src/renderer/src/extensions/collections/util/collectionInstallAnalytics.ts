@@ -1,6 +1,5 @@
-import { classifyErrorCode } from "@vortex/shared";
-
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { classifyErrorCode } from "../../analytics/mixpanel/error-code";
 import type {
   CollectionInstallOutcomeProps,
   MixpanelEvent,

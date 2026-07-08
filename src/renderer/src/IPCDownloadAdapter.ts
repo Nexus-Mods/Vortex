@@ -4,7 +4,7 @@ import { access, mkdir, rename, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 
-import { classifyErrorCode, unknownToError, wireToDownloadError } from "@vortex/shared";
+import { unknownToError, wireToDownloadError } from "@vortex/shared";
 import { AlreadyDownloaded, UserCanceled } from "@vortex/shared/errors";
 import type {
   WireDownloadCheckpoint,
@@ -14,6 +14,7 @@ import type {
 import { z } from "zod";
 
 import { clearDownloadCheckpoint, setDownloadCheckpoint } from "./actions/downloads";
+import { classifyErrorCode } from "./extensions/analytics/mixpanel/error-code";
 import {
   CollectionsDownloadCancelledEvent,
   CollectionsDownloadCompletedEvent,
