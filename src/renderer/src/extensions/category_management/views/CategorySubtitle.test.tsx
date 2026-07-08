@@ -47,6 +47,6 @@ describe("CategorySubtitle", () => {
         subCategoryCount: 1,
       },
     });
-    expect(screen.getByText("5 mod(s) (1 sub-categories with 10 mods)")).toBeInTheDocument();
+    expect(screen.getByText("5 mod(s) (1 sub-categories with 10 mod(s))")).toBeInTheDocument();
   });
 });

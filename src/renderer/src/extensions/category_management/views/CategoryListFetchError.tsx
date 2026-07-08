@@ -1,4 +1,5 @@
 import { mdiFolderAlert, mdiUpdate } from "@mdi/js";
+import type { TFunction } from "i18next";
 import React, { useEffect } from "react";
 
 import { Button } from "@/ui/components/button/Button";
@@ -8,13 +9,14 @@ import { Typography } from "@/ui/components/typography/Typography";
 interface ICustomCategoryFetchErrorProps {
   fetch: () => void;
   clear: () => void;
+  t: TFunction;
   error: {
     title: string;
     detail?: string;
   };
 }
 
-const CustomCategoryFetchError = ({ fetch, clear, error }: ICustomCategoryFetchErrorProps) => {
+const CustomCategoryFetchError = ({ fetch, clear, error, t }: ICustomCategoryFetchErrorProps) => {
   useEffect(() => {
     const timer = window.setTimeout(clear, 10000);
     return () => window.clearTimeout(timer);
@@ -41,7 +43,7 @@ const CustomCategoryFetchError = ({ fetch, clear, error }: ICustomCategoryFetchE
         size="sm"
         onClick={fetch}
       >
-        Try again
+        {t("Try again")}
       </Button>
     </div>
   );

@@ -1,26 +1,9 @@
-import { randomUUID } from "crypto";
-
 import { useCallback, useMemo } from "react";
 import { useSelector, useStore } from "react-redux";
-import type { AnyAction } from "redux";
 
-import {
-  removeCategory,
-  renameCategory,
-  setCategory,
-  setCategoryOrder,
-  showDialog,
-} from "@/actions";
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-  IErrorOptions,
-  IMod,
-  IState,
-} from "@/types/api";
+import { removeCategory, renameCategory, setCategory, setCategoryOrder } from "@/actions";
+import type { IMod, IState } from "@/types/api";
 import { getGame, nexusGameId } from "@/util/api";
-import { showError } from "@/util/message";
 import { activeGameId } from "@/util/selectors";
 
 import type { ICategory } from "../types/ICategoryDictionary";
@@ -79,7 +62,6 @@ export default function useCategoryTreeSelection() {
 
   const onRemoveCategory = useCallback(
     (categoryId: string) => {
-      console.log("Dispatching remove", gameId, categoryId);
       store.dispatch(removeCategory(gameId, categoryId));
     },
     [store, gameId],
@@ -91,26 +73,6 @@ export default function useCategoryTreeSelection() {
     [store],
   );
 
-  const onShowError = useCallback(
-    (message: string, details: string | Error, options: IErrorOptions) =>
-      showError(store.dispatch, message, details, options),
-    [store],
-  );
-
-  const onShowDialog = useCallback(
-    (type: DialogType, title: string, content: IDialogContent, actions: DialogActions) =>
-      store.dispatch(showDialog(type, title, content, actions) as unknown as AnyAction),
-    [store],
-  );
-
-  const onCreateCategory = useCallback(
-    (name: string, order: number = 0, parentCategory?: string) => {
-      const uid = randomUUID();
-      onSetCategory(gameId, uid, { name, parentCategory, order });
-    },
-    [gameId, onSetCategory],
-  );
-
   return {
     categories,
     mods,
@@ -118,10 +80,7 @@ export default function useCategoryTreeSelection() {
     gameId,
     domainName,
     OAuthCredentials,
-    onShowDialog,
-    onShowError,
     onSetCategoryOrder,
-    onCreateCategory,
     onRemoveCategory,
     onRenameCategory,
     onSetCategory,

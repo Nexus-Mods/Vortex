@@ -39,7 +39,7 @@ export const categoryReducer: IReducerSpec = {
       const { gameId, categoryIds } = payload;
       let newState = state;
       categoryIds.forEach((id, idx) => {
-        const oldOrder = state[gameId]?.[id].order;
+        const oldOrder = state[gameId]?.[id]?.order;
         if (oldOrder !== undefined && oldOrder !== idx) {
           newState = setSafe(newState, [gameId, id, "order"], idx);
         }

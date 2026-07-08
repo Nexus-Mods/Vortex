@@ -10,8 +10,10 @@ import {
 import { useMemo } from "react";
 
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+import type { TFunction } from "@/util/i18n";
 
 import type { ICategoriesTreeEntry } from "../types/ICategoriesTreeEntry";
+import { flattenTreeToIDs } from "../util/flattenCategoryTree";
 
 interface ICategoryToolbarActionsProps {
   expanded: Set<string>;
@@ -24,6 +26,7 @@ interface ICategoryToolbarActionsProps {
   toggleEmpty: () => void;
   sortAlphabetically: () => void;
   importCategoriesFromNexusMods: (replace?: boolean) => void;
+  t: TFunction;
 }
 
 export default function useCategoryToolbarActions(props: ICategoryToolbarActionsProps) {
@@ -38,35 +41,36 @@ export default function useCategoryToolbarActions(props: ICategoryToolbarActions
     toggleEmpty,
     sortAlphabetically,
     importCategoriesFromNexusMods,
+    t,
   } = props;
 
   const toolbarActions: IToolbarAction[] = useMemo(
     () => [
       {
-        label: expanded.size === 0 ? "Expand All" : "Collapse All",
+        label: expanded.size === 0 ? t("Expand All") : t("Collapse All"),
         iconPath: expanded.size === 0 ? mdiExpandAll : mdiCollapseAll,
         showLabel: true,
         onClick: () =>
-          expanded.size === 0 ? expandAll(treeData.flatMap((t) => t.categoryId)) : collapseAll(),
+          expanded.size === 0 ? expandAll(flattenTreeToIDs(treeData)) : collapseAll(),
       },
       {
-        label: showEmpty ? "Hide Empty" : "Show Empty",
+        label: showEmpty ? t("Hide Empty") : t("Show Empty"),
         iconPath: showEmpty ? mdiEyeOff : mdiEye,
         showLabel: true,
         onClick: toggleEmpty,
       },
       {
-        label: "Add Top Level",
+        label: t("Add Top Level"),
         iconPath: mdiFolderPlus,
         onClick: () => setAddParentVisible(!addParentVisible),
       },
       {
-        label: "Sort A-Z",
+        label: t("Sort A-Z"),
         iconPath: mdiSortAlphabeticalAscending,
         onClick: sortAlphabetically,
       },
       {
-        label: "Fetch from Nexus Mods",
+        label: t("Fetch from Nexus Mods"),
         iconPath: mdiSync,
         onClick: () => {
           void importCategoriesFromNexusMods(false);
@@ -84,6 +88,7 @@ export default function useCategoryToolbarActions(props: ICategoryToolbarActions
       addParentVisible,
       setAddParentVisible,
       treeData,
+      t,
     ],
   );
   return toolbarActions;

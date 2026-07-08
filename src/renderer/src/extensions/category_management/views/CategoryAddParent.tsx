@@ -1,4 +1,5 @@
 import { mdiCancel, mdiPlus } from "@mdi/js";
+import type { TFunction } from "i18next";
 import React, { useCallback } from "react";
 
 import { Input } from "@/ui/components/form/input/Input";
@@ -12,6 +13,7 @@ interface ICategoryAddParentProps {
   create: (name: string, order: number, parent?: string) => void;
   newName: string;
   setNewName: (newName: string) => void;
+  t: TFunction;
 }
 
 export function CategoryAddParent({
@@ -20,6 +22,7 @@ export function CategoryAddParent({
   create,
   newName,
   setNewName,
+  t,
 }: ICategoryAddParentProps) {
   const makeCategory = useCallback(() => {
     create(newName, 0, undefined);
@@ -28,7 +31,7 @@ export function CategoryAddParent({
 
   const actions: IToolbarAction[] = [
     {
-      label: "Create",
+      label: t("Create"),
       iconPath: mdiPlus,
       showLabel: true,
       onClick: makeCategory,
@@ -36,7 +39,7 @@ export function CategoryAddParent({
       disabled: newName.length < 2,
     },
     {
-      label: "Cancel",
+      label: t("Cancel"),
       iconPath: mdiCancel,
       showLabel: true,
       onClick: toggle,
@@ -55,7 +58,7 @@ export function CategoryAddParent({
             showRequiredLabel
             className="grow"
             minLength={1}
-            placeholder="Add category name..."
+            placeholder={t("Add category name...")}
             size="sm"
             type="text"
             value={newName}

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 
 import type { IModCategory } from "@nexusmods/nexus-api";
+import type { TFunction } from "i18next";
 import { useCallback } from "react";
 import { useStore } from "react-redux";
 
@@ -12,6 +13,7 @@ import type { ICategoriesTreeEntry } from "../types/ICategoriesTreeEntry";
 import type { ICategory } from "../types/ICategoryDictionary";
 import type { ICategoryDictionary } from "../types/ICategoryDictionary";
 import buildCategoryTree from "../util/buildCategoryTree";
+import { flattenTreeToIDs } from "../util/flattenCategoryTree";
 import getGameCategories from "../util/getCategoriesFromNexusMods";
 
 interface ICategoryTreeActionsProps {
@@ -28,6 +30,7 @@ interface ICategoryTreeActionsProps {
   setFetchError: (err: { title: string; detail: string }) => void;
   setIsFetching: (fetching: boolean) => void;
   domainName: string;
+  t: TFunction;
 }
 export default function useCategoryTreeActions(props: ICategoryTreeActionsProps) {
   const {
@@ -43,6 +46,7 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
     setIsFetchError,
     gameId,
     domainName,
+    t,
   } = props;
 
   const store = useStore();
@@ -68,7 +72,7 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
         const err = e as Error;
         setIsFetchError(true);
         setFetchError({
-          title: "Failed to fetch categories from Nexus Mods",
+          title: t("Failed to fetch categories from Nexus Mods"),
           detail: err.message,
         });
       } finally {
@@ -85,6 +89,7 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
       setIsFetching,
       store,
       isFetching,
+      t,
     ],
   );
 
@@ -176,11 +181,7 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
         sourceNode.parentId = destinationParent?.categoryId;
       }
 
-      // Flatten the treee
-      const flatten = (nodes: ICategoriesTreeEntry[]): string[] =>
-        nodes.flatMap((node) => [node.categoryId, ...flatten(node.children)]);
-
-      const newOrder = flatten(tree);
+      const newOrder = flattenTreeToIDs(tree);
 
       if (sourceNode.parentId !== categories[sourceId].parentCategory) {
         onSetCategory(gameId, sourceId, {

@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import useCategoryToolbarActions from "./CategoryToolbarActionsHook";
 import useCategoryTreeActions from "./CategoryTreeActionsHook";
 import useCategoryTreeData from "./CategoryTreeDataHook";
-import useCategoryTreeState from "./CategroyTreeStateHook";
-import useCategoryTreeSelection from "./CateogryTreeSelectionHook";
+import useCategoryTreeSelection from "./CategoryTreeSelectionHook";
+import useCategoryTreeState from "./CategoryTreeStateHook";
 
 export default function useCategoryTree() {
   const { t } = useTranslation("common");
@@ -21,6 +21,7 @@ export default function useCategoryTree() {
   });
 
   const actions = useCategoryTreeActions({
+    t,
     categories: selection.categories,
     modsByCategory: selection.modsByCategory,
     gameId: selection.gameId,
@@ -37,6 +38,7 @@ export default function useCategoryTree() {
   });
 
   const toolbarActions = useCategoryToolbarActions({
+    t,
     expanded: state.expanded,
     showEmpty: state.showEmpty,
     treeData: tree.treeData,

@@ -18,7 +18,7 @@ export default function CategorySubtitle({ category, t }: ICategorySubtitleProps
   if (subCategoryCount > 0)
     subtitle =
       subtitle +
-      t(" ({{ sub }} sub-categories with {{ nested }} mods)", {
+      t(" ({{ sub }} sub-categories with {{ nested }} mod(s))", {
         nested: nestedModCount,
         sub: subCategoryCount,
       });

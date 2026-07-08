@@ -246,7 +246,7 @@ export default function CategoryListItem({
             appearance="moderate"
             aria-label="Save"
             brand="primary"
-            disabled={newSubcategoryName.length <= 2}
+            disabled={newSubcategoryName.length < 2}
             leftIconPath={mdiPlus}
             size="sm"
             onClick={() => createCategory(newSubcategoryName)}

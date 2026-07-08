@@ -1,5 +1,6 @@
 import { mdiFolderPlus, mdiUpdate } from "@mdi/js";
 import React from "react";
+import type { TFunction } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -7,16 +8,22 @@ import { Typography } from "@/ui/components/typography/Typography";
 interface ICustomNoCategoryResultsProps {
   fetch: () => void;
   create: () => void;
+  t: TFunction;
   searchTerm?: string;
 }
 
-const CustomNoCategoryResults = ({ fetch, create, searchTerm }: ICustomNoCategoryResultsProps) => {
+const CustomNoCategoryResults = ({
+  fetch,
+  create,
+  searchTerm,
+  t,
+}: ICustomNoCategoryResultsProps) => {
   return (
     <div className="flex flex-col items-center gap-y-4 py-16">
       <Typography appearance="subdued" typographyType="body-md">
-        {!searchTerm && "No categories"}
+        {!searchTerm && t("No categories")}
 
-        {!!searchTerm && `No categories matching "${searchTerm}"`}
+        {!!searchTerm && t(`No categories matching "{{searchTerm}}"`, { searchTerm })}
       </Typography>
 
       <Button
@@ -26,7 +33,7 @@ const CustomNoCategoryResults = ({ fetch, create, searchTerm }: ICustomNoCategor
         size="sm"
         onClick={create}
       >
-        Create Category
+        {t("Create Category")}
       </Button>
 
       <Button
@@ -36,7 +43,7 @@ const CustomNoCategoryResults = ({ fetch, create, searchTerm }: ICustomNoCategor
         size="sm"
         onClick={fetch}
       >
-        Sync with Nexus Mods
+        {t("Sync with Nexus Mods")}
       </Button>
     </div>
   );

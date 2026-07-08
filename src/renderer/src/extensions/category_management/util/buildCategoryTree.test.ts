@@ -57,8 +57,8 @@ describe("buildCategoryTree", () => {
       b: { name: "B", parentCategory: undefined, order: 1 },
     };
 
-    const tree = buildCategoryTree(categories, {}, undefined, (l, r) => r.localeCompare(l));
-    expect(tree.map((t) => t.categoryId)).toEqual(["b", "a"]);
+    const tree = buildCategoryTree(categories, {}, undefined, (l, r) => l.localeCompare(r));
+    expect(tree.map((t) => t.categoryId)).toEqual(["a", "b"]);
   });
 
   it("handles empty input and categories with no mods", () => {

@@ -65,25 +65,32 @@ export default function CategoryList() {
         />
       </div>
 
-      <div className="my-2 max-h-[calc(dvh*0.75)] overflow-auto">
+      <div className="min-h-[50dvh]s my-2 max-h-[75dvh] overflow-auto">
         <CategoryAddParent
           create={createCategory}
           newName={newParentCategoryName}
           setNewName={setNewParentCategoryName}
+          t={t}
           toggle={() => startCreateParentCategory(!addParentVisible)}
           visible={addParentVisible}
         />
 
         <Listing
-          className="grid min-h-[calc(dvh*0.5)] grid-cols-1 gap-2 space-y-2"
+          className="grid grid-cols-1 gap-2 space-y-2"
           customError={
-            <CustomCategoryFetchError clear={clearFetchError} error={fetchError} fetch={fetch} />
+            <CustomCategoryFetchError
+              clear={clearFetchError}
+              error={fetchError}
+              fetch={fetch}
+              t={t}
+            />
           }
           customNoResults={
             <CustomNoCategoryResults
               create={startCreateParentCategory}
               fetch={fetch}
               searchTerm={searchString}
+              t={t}
             />
           }
           entityCount={filteredTreeData?.length ?? 0}
