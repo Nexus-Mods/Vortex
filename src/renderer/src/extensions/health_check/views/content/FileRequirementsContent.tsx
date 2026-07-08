@@ -16,10 +16,12 @@ import { useSelector } from "react-redux";
 import {
   downloadFileRequirement,
   enableInstalledFile,
+  installDownloadedFile,
   openFilePage,
   openModPage,
   switchActiveVersion,
   switchActiveVersions,
+  viewDownloadInMods,
   viewInLoadout,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
@@ -48,12 +50,14 @@ import {
 } from "../../selectors";
 import type {
   FileRequirementCategory,
+  IDownloadedFile,
   IFileLevelRequirements,
   IFileRequirement,
   IFileRequirementBranch,
   IFileRequirementCandidate,
   IFileRequirementReport,
   IInstalledFile,
+  IUninstalledFileRequirement,
 } from "../../types";
 import type {
   IBulkInstallItem,
@@ -86,6 +90,8 @@ function categoryOf(requirement: IFileRequirement): FileRequirementCategory {
       return "download";
     case "wrong-version-installed":
       return "download-replace";
+    case "correct-version-uninstalled":
+      return "install-uninstalled";
     case "wrong-version-enabled":
       return "toggle";
     case "or":
@@ -93,7 +99,7 @@ function categoryOf(requirement: IFileRequirement): FileRequirementCategory {
   }
 }
 
-/** Files to download for a report; OR/toggle need a user choice and contribute none. */
+/** Files to download for a report; OR/toggle/install-uninstalled need a user choice or different action. */
 function downloadCandidates(requirements: IFileRequirement[]): IFileRequirementCandidate[] {
   return requirements.flatMap((requirement) => {
     switch (requirement.kind) {
@@ -109,6 +115,16 @@ function downloadCandidates(requirements: IFileRequirement[]): IFileRequirementC
 /** Categories whose downloads can be installed in one click (no user choice needed). */
 function canQuickInstall(category: FileRequirementCategory): boolean {
   return category === "download" || category === "download-replace";
+}
+
+/** Uninstalled files for a report; only the install-uninstalled category contributes. */
+function uninstalledFiles(
+  requirements: IFileRequirement[],
+): Extract<IFileRequirement, IUninstalledFileRequirement>[] {
+  return requirements.filter(
+    (r): r is Extract<IFileRequirement, IUninstalledFileRequirement> =>
+      r.kind === "correct-version-uninstalled",
+  );
 }
 
 /** The wrong -> correct version switches a toggle report needs (one per requirement). */
@@ -134,6 +150,8 @@ function requirementModName(requirement: IFileRequirement, orJoin: string): stri
       return requirement.candidate.modName;
     case "wrong-version-installed":
       return requirement.candidate.modName || requirement.installedFile.modName;
+    case "correct-version-uninstalled":
+      return requirement.uninstalledFile.modName;
     case "wrong-version-enabled":
       return requirement.correctFile.modName;
     case "or":
@@ -166,6 +184,20 @@ function installedToFileData(file: IInstalledFile): IFileRequirementData {
     fileVersion: file.version,
     installed: true,
     enabled: file.enabled,
+  };
+}
+
+function downloadedToFileData(file: IDownloadedFile): IFileRequirementData {
+  return {
+    fileUID: file.fileUID,
+    adultContent: file.adultContent,
+    modName: file.modName,
+    modDescription: "",
+    modImageSrc: file.thumbnailUrl ?? "",
+    fileName: file.fileName,
+    fileVersion: file.version,
+    installed: false,
+    enabled: false,
   };
 }
 
@@ -355,6 +387,44 @@ function ToggleRequirement({
   );
 }
 
+/** Install-uninstalled report: the correct version is downloaded but not installed. */
+function InstallUninstalledRequirement({
+  api,
+  requirement,
+}: {
+  api: IExtensionApi;
+  requirement: Extract<IFileRequirement, { kind: "correct-version-uninstalled" }>;
+}) {
+  const { t } = useTranslation("health_check");
+  return (
+    <FileRequirement
+      actions={
+        <>
+          <Button
+            appearance="moderate"
+            brand="neutral"
+            size="sm"
+            onClick={() => viewDownloadInMods(api, requirement.uninstalledFile)}
+          >
+            {t("detail::item::view_in_mods")}
+          </Button>
+
+          <Button
+            appearance="strong"
+            brand="neutral"
+            size="sm"
+            onClick={() => void installDownloadedFile(api, requirement.uninstalledFile)}
+          >
+            {t("detail::item::install_uninstalled")}
+          </Button>
+        </>
+      }
+      file={downloadedToFileData(requirement.uninstalledFile)}
+      {...fileWebLinks(api, requirement.uninstalledFile)}
+    />
+  );
+}
+
 /** OR report: pick one alternative. Each branch is a download or an enable/switch action. */
 function OrRequirement({
   ctx,
@@ -445,6 +515,7 @@ function FileRequirementsListingRow({
   const candidates = downloadCandidates(report.requirements);
   const quickInstall = canQuickInstall(report.category) && candidates.length > 0;
   const switches = switchTargets(report.requirements);
+  const toInstall = uninstalledFiles(report.requirements);
   const orJoin = ` ${t("listing::item::or_join")} `;
 
   const names = report.requirements
@@ -578,6 +649,18 @@ function FileRequirementsListingRow({
           >
             {t("detail::item::enable_this_version")}
           </Button>
+        ) : report.category === "install-uninstalled" && toInstall.length > 0 ? (
+          <Button
+            appearance="moderate"
+            brand="neutral"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              toInstall.forEach((req) => void installDownloadedFile(api, req.uninstalledFile));
+            }}
+          >
+            {t("listing::install_uninstalled")}
+          </Button>
         ) : null}
 
         <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
@@ -666,9 +749,11 @@ function FileRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
       ? t("detail::item::wrong_version_enabled")
       : report.category === "download-replace"
         ? t("detail::item::wrong_version_installed")
-        : t(count > 1 ? "detail::item::requires_files_plural" : "detail::item::requires_files", {
-            count,
-          });
+        : report.category === "install-uninstalled"
+          ? t("detail::item::correct_version_downloaded")
+          : t(count > 1 ? "detail::item::requires_files_plural" : "detail::item::requires_files", {
+              count,
+            });
 
   return (
     <div className="space-y-6">
@@ -772,6 +857,14 @@ function FileRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
               return (
                 <ReplaceRequirement
                   ctx={ctx}
+                  key={requirement.requirementDefId}
+                  requirement={requirement}
+                />
+              );
+            case "correct-version-uninstalled":
+              return (
+                <InstallUninstalledRequirement
+                  api={api}
                   key={requirement.requirementDefId}
                   requirement={requirement}
                 />
@@ -922,6 +1015,12 @@ export const fileRequirementsContent: IHealthCheckContent = {
           items.push({
             key: candidate.fileUID,
             install: () => void downloadFileRequirement(api, candidate),
+          });
+        }
+        if (requirement.kind === "correct-version-uninstalled") {
+          items.push({
+            key: requirement.uninstalledFile.fileUID,
+            install: () => void installDownloadedFile(api, requirement.uninstalledFile),
           });
         }
       }
