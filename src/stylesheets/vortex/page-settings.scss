@@ -65,7 +65,10 @@
     }
     .input-group-btn {
         width: initial;
-        padding-left: 4px;
+    }
+    .download-path-row {
+        align-items: center;
+        gap: 8px;
     }
     #download-bandwidth-limit input {
         margin-right: 0.5em;
