@@ -298,12 +298,46 @@ export interface IOrFileRequirement {
 }
 
 /**
+ * A file the user has downloaded but not yet installed
+ */
+export interface IDownloadedFile {
+  /** Download ID - passed directly to start-install-download as the archive ID */
+  downloadId: string;
+  /** Composite id for the file version */
+  fileUID: string;
+  /** Composite id for the mod, for building its Nexus links */
+  modUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+}
+
+/**
+ * Correct version downloaded but not installed; install it to satisfy the requirement
+ */
+export interface IUninstalledFileRequirement {
+  kind: "correct-version-uninstalled";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The downloaded-but-not-installed file to install */
+  uninstalledFile: IDownloadedFile;
+}
+
+/**
  * A single dependency of a source file, discriminated on kind
  */
 export type IFileRequirement =
   | IMissingFileRequirement
   | IWrongVersionInstalledRequirement
   | IWrongVersionEnabledRequirement
+  | IUninstalledFileRequirement
   | IOrFileRequirement;
 
 /**

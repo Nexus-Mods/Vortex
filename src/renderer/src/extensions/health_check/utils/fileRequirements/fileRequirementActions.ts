@@ -1,5 +1,9 @@
 import { knownGames } from "@/extensions/gamemode_management/selectors";
-import type { IFileRequirementCandidate, IInstalledFile } from "@/extensions/health_check/types";
+import type {
+  IDownloadedFile,
+  IFileRequirementCandidate,
+  IInstalledFile,
+} from "@/extensions/health_check/types";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
@@ -82,6 +86,31 @@ export async function downloadFileRequirement(
     );
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${candidate.modName}`, err, {
+      allowReport: false,
+    });
+  }
+}
+
+/**
+ * Install a file that has already been downloaded. Uses the download ID directly
+ * as the archive ID - no mod-store lookup needed. No premium gate applies since
+ * the file is already local.
+ */
+export async function installDownloadedFile(
+  api: IExtensionApi,
+  file: IDownloadedFile,
+): Promise<void> {
+  try {
+    await new Promise<string>((resolve, reject) =>
+      api.events.emit(
+        "start-install-download",
+        file.downloadId,
+        { allowAutoEnable: true },
+        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+      ),
+    );
+  } catch (err) {
+    api.showErrorNotification(`Failed to install requirement: ${file.modName}`, err, {
       allowReport: false,
     });
   }
@@ -192,6 +221,18 @@ function loadoutRowModId(api: IExtensionApi, file: IInstalledFile): string {
       renderModName(mods[id]) === name,
   );
   return sibling ?? file.modId;
+}
+
+/**
+ * Navigate to the Mods page and highlight the row for a downloaded-but-not-installed
+ * archive, using the download ID as the row key.
+ */
+export function viewDownloadInMods(api: IExtensionApi, file: IDownloadedFile): void {
+  api.events.emit("show-main-page", "Mods");
+  setTimeout(() => {
+    api.events.emit("mods-scroll-to", file.downloadId);
+    api.highlightControl(`.${sanitizeCSSId(file.downloadId)}`, 5000);
+  }, 2000);
 }
 
 /**

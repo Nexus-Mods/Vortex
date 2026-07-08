@@ -31,6 +31,7 @@
       "title": "No hidden items"
     },
     "install_one_click": "1-click install ({{count}})",
+    "install_uninstalled": "Install (downloaded)",
     "pick_mod_install": "Pick mod install",
     "premium_banner": {
       "description": "Download requirements in 1-click. No page visits or waiting. <premiumLink>Go premium</premiumLink>"
@@ -74,8 +75,11 @@
       "enabled_version": "Currently enabled version:",
       "correct_version": "Correct version:",
       "view_in_loadout": "View in loadout",
+      "view_in_mods": "View in Mods",
       "switch_version": "Switch version",
-      "enable_this_version": "Enable this version"
+      "enable_this_version": "Enable this version",
+      "correct_version_downloaded": "The required version is downloaded but not installed.",
+      "install_uninstalled": "Install (downloaded)"
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",
