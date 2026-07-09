@@ -17,6 +17,7 @@ import { freeUser, premiumUser, type NexusUser } from "../users";
 const TEST_CASES_ROOT = path.resolve(import.meta.dirname, "..", "..", "fixtures", "test-cases");
 
 const DATA_DRIVEN_FLOW = "manage-download-and-deploy" as const;
+/** Supported YAML `flow` values that map a case to its Playwright registration path. */
 export type DataDrivenFlow = typeof DATA_DRIVEN_FLOW;
 
 const NEXUS_USERS = {
@@ -74,6 +75,7 @@ const dataDrivenCaseSchema = z
       .object({
         expectedModRow: textMatcherSchema,
         expectedUrl: regexMatcherSchema.optional(),
+        fileName: textMatcherSchema.optional(),
         missingNxmMessage: z.string().min(1).optional(),
         modUrl: z.string().url(),
       })
@@ -160,12 +162,12 @@ type DataDrivenTestVariant<TCase extends DataDrivenTestCase = DataDrivenTestCase
  *
  * @param rootDir Directory containing recursive `games/<gameId>` YAML case files.
  * @returns Validated test cases sorted by source path.
- * @throws Error when `rootDir` or a nested case directory cannot be read.
+ * @throws Error when `rootDir` exists but cannot be read as a directory, or a nested case directory cannot be read during recursive discovery.
  * @throws Error when a YAML file cannot be read.
  * @throws Error when a YAML file contains invalid YAML.
- * @throws Error when a case omits required fields, includes unknown fields, uses unsupported `flow` or Nexus user values, provides an invalid `download.modUrl`, uses unsupported RegExp flags, or uses an unsupported `deploy.expectedFiles` shape.
+ * @throws Error when a case omits required fields, includes unknown fields, uses empty strings or empty arrays where the schema requires values, uses an invalid `id`, uses unsupported `flow` or Nexus user values, provides an invalid `download.modUrl`, provides an invalid `download.expectedModRow`, `download.fileName`, or `download.expectedUrl` matcher object, or uses an unsupported `deploy.expectedFiles` shape.
  * @throws Error when a case sets both `fixtures.nexusUser` and `matrix.nexusUser`.
- * @throws Error when a case is outside `games/<gameId>/` or case ids are duplicated.
+ * @throws Error when a case path does not start with `games` and a non-empty second relative path segment, or case ids are duplicated.
  */
 export function loadDataDrivenTestCases(rootDir: string = TEST_CASES_ROOT): DataDrivenTestCase[] {
   const cases = findYamlFiles(rootDir).map((filePath) => loadDataDrivenTestCase(filePath, rootDir));
@@ -288,8 +290,8 @@ export function variantTitle(variant: DataDrivenTestVariant): string {
  * @param filePath Absolute path to the YAML case file.
  * @param rootDir Root directory that contains `games/<gameId>/` case folders.
  * @returns Normalized test case with derived game id and fixture defaults applied.
- * @throws Error when `rootDir` or a nested case directory cannot be read.
- * @throws Error when the YAML cannot be parsed, fails schema validation, or defines conflicting user selectors.
+ * @throws Error when the YAML file cannot be read, parsed, or validated against the case schema.
+ * @throws Error when the case sets both `fixtures.nexusUser` and `matrix.nexusUser`, or is not stored under `games/<gameId>/` relative to `rootDir`.
  */
 function loadDataDrivenTestCase(filePath: string, rootDir: string): DataDrivenTestCase {
   const rawCase = parseYamlFile(filePath);
@@ -324,6 +326,13 @@ function loadDataDrivenTestCase(filePath: string, rootDir: string): DataDrivenTe
   };
 }
 
+/**
+ * Reads and parses one YAML-backed E2E case file.
+ *
+ * @param filePath Absolute path to the YAML case file.
+ * @returns Parsed YAML document as raw data before schema validation.
+ * @throws Error when the file cannot be read or parsed as YAML.
+ */
 function parseYamlFile(filePath: string): unknown {
   try {
     return parseYaml(fs.readFileSync(filePath, "utf8"));
@@ -333,6 +342,14 @@ function parseYamlFile(filePath: string): unknown {
   }
 }
 
+/**
+ * Validates parsed YAML against the data-driven case schema.
+ *
+ * @param rawCase Parsed YAML document to validate.
+ * @param filePath Absolute path used to prefix validation errors.
+ * @returns Schema-validated manage-download-and-deploy case data.
+ * @throws Error when schema validation fails.
+ */
 function parseCaseSchema(rawCase: unknown, filePath: string): ParsedManageDownloadAndDeployCase {
   const result = dataDrivenCaseSchema.safeParse(rawCase);
   if (result.success) return result.data;
@@ -343,6 +360,12 @@ function parseCaseSchema(rawCase: unknown, filePath: string): ParsedManageDownlo
   throw new Error(`${filePath}: invalid data-driven test case: ${details}`);
 }
 
+/**
+ * Recursively collects YAML case files below the data-driven cases root.
+ *
+ * @param rootDir Directory to scan for `games/<gameId>` case files.
+ * @returns Absolute YAML file paths sorted for stable registration order.
+ */
 function findYamlFiles(rootDir: string): string[] {
   if (!fs.existsSync(rootDir)) return [];
 
@@ -362,6 +385,14 @@ function findYamlFiles(rootDir: string): string[] {
   return files.sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Derives the game id from a `games/<gameId>/...` case path.
+ *
+ * @param filePath Absolute path to one YAML case file.
+ * @param rootDir Root directory used to compute the relative games path.
+ * @returns Game id segment from the case path.
+ * @throws Error when the case is not stored under `games/<gameId>/`.
+ */
 function gameIdFromPath(filePath: string, rootDir: string): string {
   const relativePath = path.relative(rootDir, filePath);
   const [namespace, gameId] = relativePath.split(path.sep);
@@ -371,6 +402,12 @@ function gameIdFromPath(filePath: string, rootDir: string): string {
   return gameId;
 }
 
+/**
+ * Rejects duplicate case ids across the loaded YAML case set.
+ *
+ * @param cases Validated cases to inspect.
+ * @throws Error when two cases declare the same `id`.
+ */
 function assertUniqueCaseIds(cases: DataDrivenTestCase[]): void {
   const seen = new Map<string, string>();
   for (const testCase of cases) {

@@ -86,7 +86,7 @@ packages/e2e/
     dashboard.spec.ts          # Dashboard tiles, getting started, what's new
     settings.spec.ts           # Settings page toggles and tab navigation
     game-management.spec.ts    # Games page, fake game fixture verification
-    login.spec.ts              # Login UI (stub — auth flow needs fixtures)
+    login.spec.ts              # Login UI smoke test with configured Nexus user
   playwright.config.ts
 ```
 
@@ -152,7 +152,7 @@ No inline `page.screenshot()` in tests. Diagnostics are handled by the Playwrigh
 View reports after a run:
 
 ```bash
-pnpm e2e:report
+pnpm -F @vortex/e2e exec playwright show-report
 ```
 
 ### Fake Game Installations
@@ -176,7 +176,7 @@ Game layouts live in `src/fixtures/game-setup/trees/`; see
 
 Per-game YAML cases live under `src/fixtures/test-cases/games/<gameId>/`.
 
-They are registered by `tests/data-driven.spec.ts`, so `pnpm e2e` includes them
+They are registered by `src/tests/data-driven.spec.ts`, so `pnpm e2e` includes them
 and Playwright lists each matrix variant as an individual test.
 
 The first supported flow is `manage-download-and-deploy`. It:

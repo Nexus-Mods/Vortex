@@ -1,6 +1,14 @@
 {
   "gameName": "Skyrim Special Edition",
   "executable": "SkyrimSE.exe",
-  "requiredFiles": ["SkyrimSE.exe", "SkyrimSELauncher.exe", "binkw64.dll", "steam_api64.dll"],
+  "requiredFiles": [
+    "SkyrimSE.exe",
+    "SkyrimSELauncher.exe",
+    "bink2w64.dll",
+    "steam_api64.dll",
+    "steam_appid.txt",
+    "Data/Skyrim.esm",
+    "Data/Update.esm"
+  ],
   "modFolderPath": "Data"
 }

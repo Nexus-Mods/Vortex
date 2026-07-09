@@ -1,0 +1,35 @@
+id: skyrimse-skse64-steam
+flow: manage-download-and-deploy
+suite: Skyrim SE - SKSE64
+title: installs Steam SKSE64 from Nexus and deploys script extender files
+
+matrix:
+  nexusUser:
+    - free
+    - premium
+
+download:
+  modUrl: https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files
+
+  expectedUrl:
+    regex: skyrimspecialedition/mods/30379
+
+  expectedModRow:
+    regex: Skyrim Script Extender|SKSE64
+    flags: i
+
+  fileName:
+    regex: Skyrim Script Extender \(SKSE64\)\s+Steam
+    flags: i
+
+  missingNxmMessage: No nxm:// URL appeared after the SKSE64 download click
+
+deploy:
+  expectedFiles:
+    - skse64_loader.exe
+    - skse64_1_6_1170.dll
+    - skse64_readme.txt
+    - Data/Scripts/skse.pex
+    - Data/Scripts/Source/SKSE.psc
+
+  message: Expected SKSE64 files to deploy

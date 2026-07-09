@@ -50,6 +50,11 @@ download:
         regex: UE4SS-3
         flags: i
 
+    # Optional: choose one file row when Nexus page has multiple Mod Manager links.
+    fileName:
+        regex: UE4SS
+        flags: i
+
     # No nxm://.
     missingNxmMessage: No nxm:// URL appeared in the page after the UE4SS download click
 

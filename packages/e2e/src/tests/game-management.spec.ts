@@ -93,6 +93,28 @@ test.describe("Game Management", () => {
         for (const requiredFile of getGameConfig(gameId).requiredFiles) {
           expect(fs.existsSync(fixturePathToNative(fakeGame.gamePath, requiredFile))).toBe(true);
         }
+
+        if (gameId === "skyrimse") {
+          const requiredFiles = getGameConfig(gameId).requiredFiles;
+
+          expect(requiredFiles).toEqual(
+            expect.arrayContaining([
+              "SkyrimSE.exe",
+              "SkyrimSELauncher.exe",
+              "steam_api64.dll",
+              "bink2w64.dll",
+              "steam_appid.txt",
+              "Data/Skyrim.esm",
+              "Data/Update.esm",
+            ]),
+          );
+          expect(requiredFiles).not.toContain("binkw64.dll");
+          expect(fs.readFileSync(path.join(fakeGame.gamePath, "steam_appid.txt"), "utf8")).toBe(
+            "489830",
+          );
+          expect(fs.existsSync(path.join(fakeGame.gamePath, "Data", "Skyrim.esm"))).toBe(true);
+          expect(fs.existsSync(path.join(fakeGame.gamePath, "Data", "Update.esm"))).toBe(true);
+        }
       }
     } finally {
       for (const basePath of gameInstalls) cleanupFakeGame(basePath);

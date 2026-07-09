@@ -5,8 +5,9 @@ d	Data/Meshes
 d	Data/Scripts
 d	Data/Textures
 f	Data/Skyrim.esm
+f	Data/Update.esm
 f	SkyrimSE.exe
 f	SkyrimSELauncher.exe
-f	binkw64.dll
+f	bink2w64.dll
 f	steam_api64.dll
 f	steam_appid.txt

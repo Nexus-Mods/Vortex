@@ -70,6 +70,28 @@ deploy:
 
     expect(() => loadDataDrivenTestCases(rootDir)).toThrow(/deploy\.expectedFiles: Invalid input/i);
   });
+
+  test("loads the Skyrim SE SKSE64 case with expected deployed files", () => {
+    const cases = loadDataDrivenTestCases();
+    const skseCase = cases.find((testCase) => testCase.id === "skyrimse-skse64-steam");
+
+    if (skseCase === undefined) throw new Error("Missing skyrimse-skse64-steam data-driven case");
+    if (skseCase.deploy === undefined) throw new Error("Missing SKSE64 deploy expectations");
+
+    expect(skseCase.flow).toBe("manage-download-and-deploy");
+    expect(skseCase.download.modUrl).toContain("skyrimspecialedition/mods/30379");
+    expect(skseCase.download.fileName).toEqual({
+      flags: "i",
+      regex: "Skyrim Script Extender \\(SKSE64\\)\\s+Steam",
+    });
+    expect(resolveExpectedFiles(skseCase.deploy.expectedFiles, "windows")).toEqual([
+      "skse64_loader.exe",
+      "skse64_1_6_1170.dll",
+      "skse64_readme.txt",
+      "Data/Scripts/skse.pex",
+      "Data/Scripts/Source/SKSE.psc",
+    ]);
+  });
 });
 
 test.describe("resolveExpectedFiles", () => {

@@ -24,7 +24,7 @@ import {
  *
  * @param testCase Validated YAML case to register.
  * @returns Nothing; variants are registered with Playwright during module load.
- * @throws Error when a case uses an invalid RegExp matcher in `download.expectedModRow` or `download.expectedUrl`.
+ * @throws Error when a case uses an invalid RegExp matcher in `download.expectedModRow`, `download.expectedUrl`, or `download.fileName`.
  * @throws Error when `deploy.expectedFiles` resolves to no files for the active platform.
  * @throws Error when `deploy.expectedFiles` is present and the current Node platform is not `darwin`, `linux`, or `win32`.
  * @throws Error when a case defines duplicate `matrix.nexusUser` entries.
@@ -45,6 +45,10 @@ export function registerManageDownloadAndDeployCase(
           testCase.sourcePath,
           "download.expectedUrl",
         );
+  const fileName =
+    testCase.download.fileName === undefined
+      ? undefined
+      : compileTextMatcher(testCase.download.fileName, testCase.sourcePath, "download.fileName");
   const deploy = testCase.deploy;
   const expectedDeployFiles = resolveExpectedDeployFiles(deploy);
 
@@ -55,6 +59,7 @@ export function registerManageDownloadAndDeployCase(
         expectedDeployFiles,
         expectedModRow,
         expectedUrl,
+        fileName,
         testCase,
         variant,
       });
@@ -85,6 +90,7 @@ interface ManageDownloadAndDeployVariantRegistration {
   expectedDeployFiles: string[] | undefined;
   expectedModRow: string | RegExp;
   expectedUrl: RegExp | undefined;
+  fileName: string | RegExp | undefined;
   testCase: ManageDownloadAndDeployTestCase;
   variant: ReturnType<typeof expandDataDrivenCase>[number];
 }
@@ -98,7 +104,7 @@ interface ManageDownloadAndDeployVariantRegistration {
 function registerManageDownloadAndDeployVariant(
   registration: ManageDownloadAndDeployVariantRegistration,
 ): void {
-  const { deploy, expectedDeployFiles, expectedModRow, expectedUrl, testCase, variant } =
+  const { deploy, expectedDeployFiles, expectedModRow, expectedUrl, fileName, testCase, variant } =
     registration;
 
   test.describe(`${testCase.gameId} / ${variant.nexusUser}`, () => {
@@ -116,6 +122,7 @@ function registerManageDownloadAndDeployVariant(
         await installModManagerDownload({
           expectedModRow,
           expectedUrl,
+          fileName,
           missingNxmMessage: testCase.download.missingNxmMessage,
           modUrl: testCase.download.modUrl,
           nexusPage,
