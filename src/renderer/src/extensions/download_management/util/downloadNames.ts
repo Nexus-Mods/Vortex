@@ -19,9 +19,6 @@ export function nameFromUrl(input: string | undefined): string | undefined {
 
   try {
     const pathname = new URL(input).pathname;
-    if (!truthy(pathname)) {
-      return undefined;
-    }
     return decodeURI(path.basename(pathname));
   } catch (err) {
     return undefined;
