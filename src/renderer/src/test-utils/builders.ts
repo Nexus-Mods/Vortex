@@ -21,6 +21,7 @@
 import { EventEmitter } from "events";
 import * as path from "path";
 
+import type { IFileInfo } from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import { batch } from "redux-act";
@@ -140,6 +141,28 @@ export function makeDownload(overrides: Partial<IDownload> = {}): IDownload {
     size: 0,
     received: 0,
     verified: 0,
+    ...overrides,
+  };
+}
+
+export function makeFileInfo(overrides: Partial<IFileInfo> = {}): IFileInfo {
+  return {
+    file_id: 1,
+    category_id: 1,
+    category_name: "MAIN",
+    changelog_html: "",
+    content_preview_link: "",
+    name: "file",
+    description: "",
+    version: "1.0.0",
+    size: 0,
+    size_kb: 0,
+    file_name: "file.7z",
+    uploaded_timestamp: 0,
+    uploaded_time: "",
+    mod_version: "1.0.0",
+    external_virus_scan_url: "",
+    is_primary: true,
     ...overrides,
   };
 }

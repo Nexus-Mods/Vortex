@@ -41,6 +41,7 @@ import {
 } from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
 import type { IDownload } from "./extensions/download_management/types/IDownload";
+import { TEMP_DOWNLOAD_PREFIX } from "./extensions/download_management/util/downloadNames";
 import { knownGames } from "./extensions/gamemode_management/selectors";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
 import { nxmUrlFromDownload } from "./extensions/nexus_integration/NXMUrl";
@@ -564,7 +565,7 @@ export class IPCDownloadAdapter {
       // #completeDownload renames to the final name derived from Content-Disposition.
       // The real filename is passed as a hint; the server name takes priority.
       const collationStr = collationId.toString().padStart(8, "0");
-      const tempName = `__vortex_tmp_${collationStr}`;
+      const tempName = `${TEMP_DOWNLOAD_PREFIX}${collationStr}`;
       const dest = path.join(dlPath, tempName);
 
       log("debug", "starting download", {
@@ -592,6 +593,11 @@ export class IPCDownloadAdapter {
       this.#api.store.dispatch(initDownload(downloadId, rawUrls, modInfo, gameIds));
       // Set localPath to the temp name so the UI has something to display.
       this.#api.store.dispatch(setDownloadFilePath(downloadId, tempName));
+      // Seed a friendly name from the caller's hint so the UI shows it instead of
+      // the temp name; nxm downloads without a hint fall back to enriched metadata.
+      if (fileName !== undefined) {
+        this.#api.store.dispatch(setDownloadModInfo(downloadId, "name", fileName));
+      }
       // All IPC downloads support pause via checkpoint. DownloadView checks
       // download.pausable to show/hide the pause button.
       this.#api.store.dispatch(setDownloadPausable(downloadId, true));
@@ -622,20 +628,30 @@ export class IPCDownloadAdapter {
     callback?: (err: Error | null) => void,
   ): Promise<void> {
     try {
-      if (this.#activeDownloads.has(downloadId)) {
+      const state = this.#api.getState();
+      const download = state.persistent.downloads.files?.[downloadId];
+      const isRunning = download !== undefined && ["init", "started"].includes(download.state);
+
+      if (this.#activeDownloads.has(downloadId) && isRunning) {
+        // Still actively downloading: cancel it and let the poll loop's terminal
+        // "canceled" handling remove the record and fire the UserCanceled callback.
         log("debug", "cancelling download", { downloadId });
         await window.api.downloader.cancel(downloadId);
-      } else {
-        const state = this.#api.getState();
-        const download = state.persistent.downloads.files?.[downloadId];
-        if (download?.localPath) {
-          const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(state));
-          const dlPath = downloadPathForGame(state, gameId);
-          await rm(path.join(dlPath, download.localPath), { force: true });
-        }
-        // Remove record from Redux to clear it from the downloads list.
-        this.#api.store.dispatch(removeDownload(downloadId));
+        callback?.(null);
+        return;
       }
+
+      // Non-running downloads: the main-process cancel is a no-op (Manager cancel()
+      // only acts while running), so the poll loop never removes the record. Delete
+      // the temp file and Redux record directly.
+      this.#activeDownloads.delete(downloadId);
+      if (download?.localPath) {
+        const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(state));
+        const dlPath = downloadPathForGame(state, gameId);
+        await rm(path.join(dlPath, download.localPath), { force: true });
+      }
+      this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
+      this.#api.store.dispatch(removeDownload(downloadId));
       callback?.(null);
     } catch (err) {
       callback?.(unknownToError(err));
