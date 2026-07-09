@@ -53,6 +53,7 @@ import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId
 import { setShowDLDropzone, setShowDLGraph } from "../actions/settings";
 import { finishDownload, setDownloadTime } from "../actions/state";
 import type { IDownload } from "../types/IDownload";
+import { friendlyDownloadName } from "../util/downloadNames";
 import getDownloadGames from "../util/getDownloadGames";
 import DownloadGraph from "./DownloadGraph";
 
@@ -598,7 +599,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     const downloadNames = downloadIds
       .filter((downloadId) => this.getDownload(downloadId) !== undefined)
-      .map((downloadId: string) => this.getDownload(downloadId).localPath);
+      .map((downloadId: string) => friendlyDownloadName(this.getDownload(downloadId)));
 
     onShowDialog(
       "question",
@@ -707,8 +708,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     }
   };
 
-  private inspect = (downloadId: string) => {
+  private inspect = (downloadIds: string[]) => {
     const { t, onShowDialog } = this.props;
+    // Row actions receive an array of instance ids (see IconBar); take the first.
+    // Passing the array on leaks it into the strictly-validated remove-download event.
+    const downloadId = downloadIds[0];
     const download = this.getDownload(downloadId);
     if (download === undefined) {
       // the download has been removed in the meantime?
