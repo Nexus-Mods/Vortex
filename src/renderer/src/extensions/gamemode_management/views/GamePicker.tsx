@@ -1,59 +1,59 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
 import type PromiseBB from "bluebird";
 import { ratio } from "fuzzball";
-import update from "immutability-helper";
 import memoizeOne from "memoize-one";
-import * as React from "react";
-import { InputGroup, ListGroup, Panel, PanelGroup } from "react-bootstrap";
-import Select from "react-select";
+import React, {
+  type ComponentClass,
+  type UIEvent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { WithTranslation } from "react-i18next";
 
-import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import FlexLayout from "../../../controls/FlexLayout";
-import FormInput from "../../../controls/FormInput";
-import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
-import { ToggleButton } from "../../../controls/TooltipControls";
-import type { IAvailableExtension, IExtension } from "../../../types/extensions";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IComponentContext } from "../../../types/IComponentContext";
-import type { IState } from "../../../types/IState";
-import opn from "../../../util/opn";
+import type { IAvailableExtension, IExtension } from "@/types/extensions";
+import type { IState } from "@/types/IState";
+import { Listing } from "@/ui/components/listing/Listing";
+import { Pagination } from "@/ui/components/pagination/Pagination";
+import { Picker } from "@/ui/components/picker/Picker";
+import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import { getSafe } from "@/util/storeHelper";
+
+import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
-import MainPage from "../../../views/MainPage";
+import PageRoot from "../../../views/PageRoot";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
+import { CollapsibleSection } from "../components/CollapsibleSection";
+import { DisplayOptions } from "../components/DisplayOptions";
+import { GamesGrid } from "../components/GamesGrid";
+import { GamesList } from "../components/GamesList";
+import { NoGamesFound } from "../components/NoGamesFound";
+import { Search } from "../components/Search";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
-import GameRow from "./GameRow";
-import GameThumbnail from "./GameThumbnail";
-import ShowHiddenButton from "./ShowHiddenButton";
 
-function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
-  return {
-    id,
-    name: discovered.name ?? id,
-    shortName: discovered.shortName,
-    executable: discovered.executable,
-    extensionPath: discovered.extensionPath,
-    logo: discovered.logo,
-    requiredFiles: [],
-    supportedTools: [],
-  };
-}
+const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
+  id,
+  name: discovered.name ?? id,
+  shortName: discovered.shortName,
+  executable: discovered.executable,
+  extensionPath: discovered.extensionPath,
+  logo: discovered.logo,
+  requiredFiles: [],
+  supportedTools: [],
+});
 
-function captureClick(evt: React.MouseEvent) {
-  evt.preventDefault();
-}
-
-function byGameName(lhs: IGameStored, rhs: IGameStored): number {
-  return lhs.name.localeCompare(rhs.name);
-}
+const byGameName = (lhs: IGameStored, rhs: IGameStored): number => lhs.name.localeCompare(rhs.name);
 
 interface IBaseProps {
+  active?: boolean;
+  pageId?: string;
+  secondary?: boolean;
   onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
   onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
   nexusGames: IGameListEntry[];
@@ -77,581 +77,422 @@ interface IActionProps {
   onSetSortUnmanaged: (sorting: string) => void;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 
-interface IComponentState {
-  showHidden: boolean;
-  currentFilterValue: string;
-  expandManaged: boolean;
-  expandUnmanaged: boolean;
-  // How many tiles per list to actually render. Grows a chunk per frame so the
-  // (potentially hundreds of) tiles mount incrementally instead of blocking the
-  // main thread in one synchronous pass.
-  renderLimit: number;
-}
-
-function nop() {
-  // nop
-}
+// "PAYDAY 2" vs "Payday 2" or "Resident Evil: Village" vs "Resident Evil Village" are 100 similar
+// "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
+const SIMILARITY_RATIO = 90;
+// The unmanaged list can be large, so it's paginated this many games per page.
+const UNMANAGED_PAGE_SIZE = 50;
 
 /**
  * picker/configuration for game modes
- *
- * @class GamePicker
  */
-class GamePicker extends ComponentEx<IProps, IComponentState> {
-  // "PAYDAY 2" vs "Payday 2" or "Resident Evil: Village" vs "Resident Evil Village" are 100 similar
-  // "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
-  public static SIMILARITY_RATIO: number = 90;
-  // Tiles revealed per frame while streaming in the list.
-  private static RENDER_CHUNK = 60;
-  declare public context: IComponentContext;
+const GamePicker = ({
+  t,
+  active,
+  pageId,
+  discoveredGames,
+  extensions,
+  extensionsInstalled,
+  knownGames,
+  pickerLayout,
+  profiles,
+  sortManaged,
+  sortUnmanaged,
+  gameMode,
+  nexusGames,
+  onRefreshGameInfo,
+  onBrowseGameLocation,
+  onSetPickerLayout,
+  onSetSortManaged,
+  onSetSortUnmanaged,
+}: IProps) => {
+  const [scrolled, setScrolled] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
+  const [currentFilterValue, setCurrentFilterValue] = useState("");
+  const [unmanagedPage, setUnmanagedPage] = useState(1);
 
-  private buttons: IActionDefinition[];
-  private mRef: HTMLElement;
-  private mScrollRef: HTMLElement;
-  private mGrowRAF: number;
-  // Largest list length the current render needs to fully reveal; drives the grow loop.
-  private mDisplayedCount = 0;
+  const [rootEl, setRootEl] = useState<HTMLElement | null>(null);
+  const nameLookupRef = useRef<{ [name: string]: string }>({});
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const unmanagedSectionRef = useRef<HTMLDivElement>(null);
 
-  private nexusGameById = memoizeOne((gameList: IGameListEntry[]) =>
-    gameList.reduce<{ [id: string]: IGameListEntry }>((prev, entry) => {
-      prev[entry.domain_name] = entry;
-      return prev;
-    }, {}),
+  const nexusGameById = useMemo(
+    () =>
+      memoizeOne((gameList: IGameListEntry[]) =>
+        gameList.reduce<{ [id: string]: IGameListEntry }>((prev, entry) => {
+          prev[entry.domain_name] = entry;
+          return prev;
+        }, {}),
+      ),
+    [],
   );
 
-  private nexusGameByName = memoizeOne((gameList: IGameListEntry[]) =>
-    gameList.reduce<{ [name: string]: IGameListEntry }>((prev, entry) => {
-      prev[entry.name] = entry;
-      return prev;
-    }, {}),
+  const nexusGameByName = useMemo(
+    () =>
+      memoizeOne((gameList: IGameListEntry[]) =>
+        gameList.reduce<{ [name: string]: IGameListEntry }>((prev, entry) => {
+          prev[entry.name] = entry;
+          return prev;
+        }, {}),
+      ),
+    [],
   );
 
-  private mNameLookup: { [name: string]: string } = {};
+  const getBounds = useCallback(() => rootEl.getBoundingClientRect(), [rootEl]);
 
-  constructor(props: IProps) {
-    super(props);
-
-    this.initState({
-      showHidden: false,
-      currentFilterValue: "",
-      expandManaged: true,
-      expandUnmanaged: true,
-      renderLimit: GamePicker.RENDER_CHUNK,
-    });
-
-    this.buttons = [
-      {
-        component: ShowHiddenButton,
-        props: () => ({
-          t: this.props.t,
-          showHidden: this.state.showHidden,
-          toggleHidden: this.toggleHidden,
-        }),
-      },
-    ];
-  }
-
-  public componentDidMount() {
-    this.scheduleGrow();
-  }
-
-  public componentDidUpdate() {
-    this.scheduleGrow();
-  }
-
-  public componentWillUnmount() {
-    if (this.mGrowRAF !== undefined) {
-      cancelAnimationFrame(this.mGrowRAF);
-    }
-  }
-
-  // Reveal another chunk of tiles on the next frame until the whole list is
-  // rendered. renderLimit only grows, so it self-heals when more games arrive
-  // and never needs resetting (a smaller filtered list is fully shown at once).
-  private scheduleGrow = () => {
-    if (this.mGrowRAF !== undefined || this.state.renderLimit >= this.mDisplayedCount) {
-      return;
-    }
-    this.mGrowRAF = requestAnimationFrame(() => {
-      this.mGrowRAF = undefined;
-      this.nextState.renderLimit = this.state.renderLimit + GamePicker.RENDER_CHUNK;
-    });
-  };
-
-  public render(): JSX.Element {
-    const {
-      t,
-      discoveredGames,
-      extensions,
-      extensionsInstalled,
-      knownGames,
-      pickerLayout,
-      profiles,
-      sortManaged,
-      sortUnmanaged,
-    } = this.props;
-    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
-
-    const installedExtIds = new Set(Object.values(extensionsInstalled).map((ext) => ext.modId));
-    const installedNames = new Set(Object.values(extensionsInstalled).map((ext) => ext.name));
-
-    // figuring out if a manually installed extension corresponds to a remotely available extension
-    // isn't trivial, because the unique id and the game name stored in the extension list are both
-    // assigned by us, when we compile it, there is no id in the original author-provided info.json
-    // because we can't rely on authors to be consistent here.
-    // Therefore we will also filter out based on game name, meaning there can only be one entry
-    // for each game name, the one installed locally taking precedence.
-    const installedGameNames = new Set(knownGames.map((game) => game.name.replace(/\t/g, " ")));
-
-    // contains the extensions we don't have installed locally
-    const extensionsUninstalled = extensions
-      .filter((ext) => ext.type === "game")
-      .filter(
-        (ext) =>
-          !installedExtIds.has(ext.modId) &&
-          !installedNames.has(ext.name) &&
-          !installedGameNames.has(ext.gameName),
-      );
-
-    // TODO: lots of computation and it doesn't actually change except through discovery
-    //   or when adding a profile
-    const displayedGames: IGameStored[] =
-      showHidden || !!currentFilterValue
-        ? knownGames
-        : knownGames.filter((game: IGameStored) => !(discoveredGames[game.id]?.hidden ?? false));
-
-    const profileGames = new Set<string>(
-      Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId),
-    );
-
-    const managedGameList: IGameStored[] = [];
-    const discoveredGameList: IGameStored[] = [];
-    const supportedGameList: IGameStored[] = [];
-
-    displayedGames.forEach((game: IGameStored) => {
-      if (getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined) {
-        if (profileGames.has(game.id)) {
-          managedGameList.push(game);
-        } else {
-          discoveredGameList.push(game);
-        }
-      } else {
-        supportedGameList.push(game);
-      }
-    });
-
-    supportedGameList.push(
-      ...extensionsUninstalled
-        .map((ext) => ({
-          id: ext.gameId || ext.name,
-          name: ext.gameName || ext.name,
-          extensionPath: undefined,
-          imageURL: ext.image,
-          requiredFiles: [],
-          executable: undefined,
-          contributed: ext.author,
-        }))
-        .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
-    );
-
-    Object.keys(discoveredGames).forEach((gameId) => {
-      if (knownGames.find((game) => game.id === gameId) === undefined) {
-        if (discoveredGames[gameId].extensionPath === undefined) {
-          return;
-        }
-        if (profileGames.has(gameId)) {
-          managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
-        } else {
-          discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
-        }
-      }
-    });
-
-    const unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
-
-    const filteredManaged = managedGameList
-      .filter((game) => this.applyGameFilter(game))
-      .sort(this.sortBy(sortManaged));
-    const filteredUnmanaged = unmanagedGameList
-      .filter((game) => this.applyGameFilter(game))
-      .sort(this.sortBy(sortUnmanaged));
-
-    // Drive the incremental grow loop (see scheduleGrow) off the largest list.
-    this.mDisplayedCount = Math.max(filteredManaged.length, filteredUnmanaged.length);
-
-    const titleManaged = t("Managed ({{filterCount}})", {
-      replace: {
-        filterCount: this.getTabGameNumber(managedGameList, filteredManaged),
-      },
-    });
-    const titleUnmanaged = t("Unmanaged ({{filterCount}})", {
-      replace: {
-        filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged),
-      },
-    });
-
-    return (
-      <MainPage domRef={this.setRef}>
-        <MainPage.Header>
-          <IconBar group="game-icons" staticElements={[]} className="menubar" t={t} />
-          <div className="flex-fill" />
-          <IconBar
-            id="gamepicker-layout-list"
-            group="gamepicker-layout-icons"
-            staticElements={[]}
-            className="menubar"
-            t={t}
-          >
-            <ShowHiddenButton
-              t={this.props.t}
-              showHidden={this.state.showHidden}
-              toggleHidden={this.toggleHidden}
-            />
-            <ToggleButton
-              id="gamepicker-layout-list"
-              onClick={this.setLayoutList}
-              onIcon="layout-list"
-              offIcon="layout-list"
-              tooltip={t("List")}
-              offTooltip={t("List")}
-              state={pickerLayout === "list"}
-            >
-              <span className="button-text">{t("List View")}</span>
-            </ToggleButton>
-            <ToggleButton
-              id="gamepicker-layout-grid"
-              onClick={this.setLayoutSmall}
-              onIcon="layout-grid"
-              offIcon="layout-grid"
-              tooltip={t("Grid")}
-              offTooltip={t("Grid")}
-              state={pickerLayout === "small"}
-            >
-              <span className="button-text">{t("Grid View")}</span>
-            </ToggleButton>
-          </IconBar>
-        </MainPage.Header>
-        <MainPage.Body>
-          <FlexLayout type="column" className="game-page">
-            <FlexLayout.Fixed>
-              <Panel className="game-filter-container">
-                <Panel.Body>
-                  <InputGroup>
-                    <FormInput
-                      className="game-filter-input"
-                      value={currentFilterValue}
-                      placeholder={t("Search for a game...")}
-                      onChange={this.onFilterInputChange}
-                      debounceTimer={100}
-                      emptyIcon="search"
-                      clearable
-                    />
-                  </InputGroup>
-                </Panel.Body>
-              </Panel>
-            </FlexLayout.Fixed>
-            <FlexLayout.Flex>
-              <div ref={this.setScrollRef} className="gamepicker-body">
-                <PanelGroup id="game-panel-group">
-                  <Panel expanded={expandManaged} eventKey="managed" onToggle={nop}>
-                    <Panel.Heading onClick={this.toggleManaged}>
-                      <Icon name={expandManaged ? "showhide-down" : "showhide-right"} />
-                      <Panel.Title>{titleManaged}</Panel.Title>
-                      <div className="flex-fill" />
-                      {expandManaged ? (
-                        <div className="game-sort-container" onClick={captureClick}>
-                          {t("Sort by:")}
-                          <Select
-                            className="select-compact"
-                            options={[
-                              { value: "alphabetical", label: t("Name A-Z") },
-                              {
-                                value: "recentlyused",
-                                label: t("Recently used"),
-                              },
-                            ]}
-                            value={sortManaged}
-                            onChange={this.setSortManaged}
-                            clearable={false}
-                            autosize={false}
-                            searchable={false}
-                          />
-                        </div>
-                      ) : null}
-                    </Panel.Heading>
-                    <Panel.Body collapsible>
-                      {this.renderGames(filteredManaged, "managed")}
-                    </Panel.Body>
-                  </Panel>
-                  <Panel expanded={expandUnmanaged} eventKey="unmanaged" onToggle={nop}>
-                    <Panel.Heading onClick={this.toggleUnmanaged}>
-                      <Icon name={expandUnmanaged ? "showhide-down" : "showhide-right"} />
-                      <Panel.Title>{titleUnmanaged}</Panel.Title>
-                      <div className="flex-fill" />
-                      {expandUnmanaged ? (
-                        <div className="game-sort-container" onClick={captureClick}>
-                          {t("Sort by:")}
-                          <Select
-                            className="select-compact"
-                            options={[
-                              { value: "popular", label: t("Most Popular") },
-                              { value: "alphabetical", label: t("Name A-Z") },
-                              { value: "recent", label: t("Most Recent") },
-                            ]}
-                            value={sortUnmanaged}
-                            onChange={this.setSortUnmanaged}
-                            clearable={false}
-                            autosize={false}
-                            searchable={false}
-                          />
-                        </div>
-                      ) : null}
-                    </Panel.Heading>
-                    <Panel.Body collapsible>
-                      {this.renderGames(filteredUnmanaged, "unmanaged")}
-                      <EmptyPlaceholder
-                        icon="in-progress"
-                        text={t("Can't find the game you're looking for?")}
-                        subtext={
-                          <a onClick={this.openGameExtWiki}>
-                            {t(
-                              "Your game may not be supported yet but adding it yourself " +
-                                "may be easier than you think. Click to learn how!",
-                            )}
-                          </a>
-                        }
-                      />
-                    </Panel.Body>
-                  </Panel>
-                </PanelGroup>
-              </div>
-            </FlexLayout.Flex>
-          </FlexLayout>
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
-
-  private openGameExtWiki = () => {
-    opn(
-      "https://github.com/Nexus-Mods/Vortex/wiki/MODDINGWIKI-Developers-General-Creating-a-game-extension",
-    ).catch(() => null);
-  };
-
-  private setSortManaged = (value: { value: string; label: string }) => {
-    if (truthy(value)) {
-      this.props.onSetSortManaged(value.value);
+  const onScroll = (evt: UIEvent<HTMLDivElement>) => {
+    const isScrolled = evt.currentTarget.scrollTop > 0;
+    if (isScrolled !== scrolled) {
+      setScrolled(isScrolled);
     }
   };
 
-  private setSortUnmanaged = (value: { value: string; label: string }) => {
-    if (truthy(value)) {
-      this.props.onSetSortUnmanaged(value.value);
-    }
-  };
+  const getTabGameNumber = (unfiltered: IGameStored[], filtered: IGameStored[]): string =>
+    currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
 
-  private toggleManaged = (evt: React.MouseEvent<any>) => {
-    if (!evt.isDefaultPrevented()) {
-      this.nextState.expandManaged = !this.state.expandManaged;
-    }
-  };
+  const applyGameFilter = (game: IGameStored): boolean =>
+    !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase());
 
-  private toggleUnmanaged = (evt: React.MouseEvent<any>) => {
-    if (!evt.isDefaultPrevented()) {
-      this.nextState.expandUnmanaged = !this.state.expandUnmanaged;
-    }
-  };
-
-  private onFilterInputChange = (input) => {
-    this.nextState.currentFilterValue = input;
-  };
-
-  private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
-    const { currentFilterValue } = this.state;
-    return currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
-  }
-
-  private applyGameFilter = (game: IGameStored): boolean => {
-    const { currentFilterValue } = this.state;
-    return (
-      !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase())
-    );
-  };
-
-  private setRef = (ref) => {
-    this.mRef = ref;
-  };
-
-  private setScrollRef = (ref) => {
-    this.mScrollRef = ref;
-    this.forceUpdate();
-  };
-
-  private getBounds = () => this.mRef.getBoundingClientRect();
-
-  private toggleHidden = () => {
-    this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
-  };
-
-  private setLayoutList = () => {
-    this.props.onSetPickerLayout("list");
-  };
-
-  private setLayoutSmall = () => {
-    this.props.onSetPickerLayout("small");
-  };
-
-  private lastUsed(game: IGameStored): number {
-    const { profiles } = this.props;
-    return Math.max(
+  const lastUsed = (game: IGameStored): number =>
+    Math.max(
       ...Object.values(profiles)
         .filter((prof) => prof.gameId === game.id)
         .map((prof) => prof.lastActivated),
     );
-  }
 
-  private byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number => {
-    return this.lastUsed(rhs) - this.lastUsed(lhs);
-  };
+  const byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number =>
+    lastUsed(rhs) - lastUsed(lhs);
 
-  private lookupName(input: string) {
-    const { nexusGames } = this.props;
-    if (this.mNameLookup[input] === undefined) {
+  const lookupName = (input: string): string => {
+    if (nameLookupRef.current[input] === undefined) {
       const exactMatch = nexusGames.find((i) => i.name === input);
       if (exactMatch !== undefined) {
-        this.mNameLookup[input] = input;
+        nameLookupRef.current[input] = input;
       } else {
         const sorted = nexusGames
           .map((item) => ({ item, ratio: ratio(item.name, input) }))
-          .filter((iter) => iter.ratio > GamePicker.SIMILARITY_RATIO)
+          .filter((iter) => iter.ratio > SIMILARITY_RATIO)
           .sort((lhs, rhs) => rhs.ratio - lhs.ratio);
 
-        this.mNameLookup[input] = sorted.length > 0 ? sorted[0].item.name : input;
+        nameLookupRef.current[input] = sorted.length > 0 ? sorted[0].item.name : input;
       }
     }
 
-    return this.mNameLookup[input];
-  }
+    return nameLookupRef.current[input];
+  };
 
-  private identifyGame(game: IGameStored): IGameListEntry {
-    const { nexusGames } = this.props;
-    return (
-      this.nexusGameById(nexusGames)[nexusGameId(game)] ??
-      this.nexusGameByName(nexusGames)[this.lookupName(game.name)]
+  const identifyGame = (game: IGameStored): IGameListEntry =>
+    nexusGameById(nexusGames)[nexusGameId(game)] ??
+    nexusGameByName(nexusGames)[lookupName(game.name)];
+
+  const approvedTime = (game: IGameStored): number => identifyGame(game)?.approved_date ?? 0;
+
+  const byRecent = (lhs: IGameStored, rhs: IGameStored): number =>
+    approvedTime(rhs) - approvedTime(lhs);
+
+  const gameFileCount = (game: IGameStored): number => identifyGame(game)?.downloads ?? 0;
+
+  const byPopular = (lhs: IGameStored, rhs: IGameStored): number =>
+    gameFileCount(rhs) - gameFileCount(lhs);
+
+  const sortBy = (sortMode: string) =>
+    ({
+      recentlyused: byRecentlyUsed,
+      recent: byRecent,
+      popular: byPopular,
+    })[sortMode] ?? byGameName;
+
+  const installedExtIds = new Set(Object.values(extensionsInstalled).map((ext) => ext.modId));
+  const installedNames = new Set(Object.values(extensionsInstalled).map((ext) => ext.name));
+
+  // figuring out if a manually installed extension corresponds to a remotely available extension
+  // isn't trivial, because the unique id and the game name stored in the extension list are both
+  // assigned by us, when we compile it, there is no id in the original author-provided info.json
+  // because we can't rely on authors to be consistent here.
+  // Therefore we will also filter out based on game name, meaning there can only be one entry
+  // for each game name, the one installed locally taking precedence.
+  const installedGameNames = new Set(knownGames.map((game) => game.name.replace(/\t/g, " ")));
+
+  // contains the extensions we don't have installed locally
+  const extensionsUninstalled = extensions
+    .filter((ext) => ext.type === "game")
+    .filter(
+      (ext) =>
+        !installedExtIds.has(ext.modId) &&
+        !installedNames.has(ext.name) &&
+        !installedGameNames.has(ext.gameName),
     );
-  }
 
-  private approvedTime(game: IGameStored): number {
-    const nexusGame = this.identifyGame(game);
-    return nexusGame?.approved_date ?? 0;
-  }
+  // TODO: lots of computation and it doesn't actually change except through discovery
+  //   or when adding a profile
+  const displayedGames: IGameStored[] =
+    showHidden || !!currentFilterValue
+      ? knownGames
+      : knownGames.filter((game: IGameStored) => !(discoveredGames[game.id]?.hidden ?? false));
 
-  private byRecent = (lhs: IGameStored, rhs: IGameStored): number => {
-    return this.approvedTime(rhs) - this.approvedTime(lhs);
-  };
+  const profileGames = new Set<string>(
+    Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId),
+  );
 
-  private gameFileCount(game: IGameStored): number {
-    const nexusGame = this.identifyGame(game);
-    return nexusGame?.downloads ?? 0;
-  }
+  const managedGameList: IGameStored[] = [];
+  const discoveredGameList: IGameStored[] = [];
+  const supportedGameList: IGameStored[] = [];
 
-  private byPopular = (lhs: IGameStored, rhs: IGameStored): number => {
-    return this.gameFileCount(rhs) - this.gameFileCount(lhs);
-  };
+  displayedGames.forEach((game: IGameStored) => {
+    if (getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined) {
+      if (profileGames.has(game.id)) {
+        managedGameList.push(game);
+      } else {
+        discoveredGameList.push(game);
+      }
+    } else {
+      supportedGameList.push(game);
+    }
+  });
 
-  private sortBy = (sortMode: string) => {
-    return (
-      {
-        recentlyused: this.byRecentlyUsed,
-        recent: this.byRecent,
-        popular: this.byPopular,
-      }[sortMode] ?? byGameName
-    );
-  };
+  supportedGameList.push(
+    ...extensionsUninstalled
+      .map((ext) => ({
+        id: ext.gameId || ext.name,
+        name: ext.gameName || ext.name,
+        extensionPath: undefined,
+        imageURL: ext.image,
+        requiredFiles: [],
+        executable: undefined,
+        contributed: ext.author,
+      }))
+      .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
+  );
 
-  private renderGames = (games: IGameStored[], type: string): JSX.Element => {
-    const { t, gameMode, pickerLayout } = this.props;
-    const { currentFilterValue } = this.state;
+  Object.keys(discoveredGames).forEach((gameId) => {
+    if (knownGames.find((game) => game.id === gameId) === undefined) {
+      if (discoveredGames[gameId].extensionPath === undefined) {
+        return;
+      }
+      if (profileGames.has(gameId)) {
+        managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+      } else {
+        discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+      }
+    }
+  });
 
-    if (games.length === 0) {
-      if (truthy(currentFilterValue)) {
-        return null;
-      } else if (type === "managed") {
-        return (
-          <EmptyPlaceholder
-            icon="game"
-            text={t("You haven't managed any games yet")}
-            subtext={t('To start managing a game, go to "Unmanaged" and activate a game there.')}
+  const unmanagedGameList: IGameStored[] = [...discoveredGameList, ...supportedGameList];
+
+  const filteredManaged = managedGameList.filter(applyGameFilter).sort(sortBy(sortManaged));
+  const filteredUnmanaged = unmanagedGameList.filter(applyGameFilter).sort(sortBy(sortUnmanaged));
+
+  // Paginate the (potentially large) unmanaged list. The page is clamped so the
+  // view stays valid when filtering/sorting shrinks the list under the cursor.
+  const unmanagedPageCount = Math.max(1, Math.ceil(filteredUnmanaged.length / UNMANAGED_PAGE_SIZE));
+  const currentUnmanagedPage = Math.min(unmanagedPage, unmanagedPageCount);
+  const pagedUnmanaged = filteredUnmanaged.slice(
+    (currentUnmanagedPage - 1) * UNMANAGED_PAGE_SIZE,
+    currentUnmanagedPage * UNMANAGED_PAGE_SIZE,
+  );
+
+  return (
+    <PageRoot active={active} domRef={(el) => setRootEl(el)} pageId={pageId} scrollable={false}>
+      <div
+        className={joinClasses([
+          "relative flex items-center gap-x-6 px-6 pb-3 transition-[padding]",
+          scrolled ? "pt-3 shadow-md" : "pt-6",
+        ])}
+      >
+        <div className="flex grow items-center gap-x-2">
+          <Pictogram
+            className={joinClasses(["transition-[width,height]", scrolled ? "size-7" : "size-14"])}
+            name="game"
+            size="none"
           />
-        );
-      }
-    }
 
-    // Only render up to renderLimit tiles; the rest stream in over later frames.
-    const shown = games.slice(0, this.state.renderLimit);
+          <div className="grow">
+            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+              {t("Games")}
+            </Typography>
 
-    switch (pickerLayout) {
-      case "list":
-        return this.renderGamesList(shown, type, gameMode);
-      case "small":
-        return this.renderGamesSmall(shown, type, gameMode);
-      default:
-        throw new Error("invalid picker layout " + pickerLayout);
-    }
-  };
+            <Typography appearance="subdued" className={joinClasses({ hidden: scrolled })}>
+              {t("Manage games to get started.")}
+            </Typography>
+          </div>
+        </div>
 
-  private renderGamesList(games: IGameStored[], type: string, gameMode: string): JSX.Element {
-    const { t, discoveredGames, onRefreshGameInfo } = this.props;
+        <div className="flex shrink-0 items-center gap-x-2">
+          <Search
+            placeholder={t("Search games...")}
+            value={currentFilterValue}
+            onChange={(value) => {
+              setCurrentFilterValue(value);
+              setUnmanagedPage(1);
+            }}
+          />
 
-    return (
-      <ListGroup>
-        {games.map((game) => (
-          <GameRow
+          <DisplayOptions
+            pickerLayout={pickerLayout}
+            showHidden={showHidden}
             t={t}
-            getBounds={this.getBounds}
-            container={this.mScrollRef}
-            key={game.id}
-            game={game}
-            discovery={discoveredGames[game.id]}
-            type={type}
-            active={game.id === gameMode}
-            onRefreshGameInfo={onRefreshGameInfo}
-            onBrowseGameLocation={this.props.onBrowseGameLocation}
+            onReset={() => {
+              onSetPickerLayout("small");
+              onSetSortManaged("alphabetical");
+              onSetSortUnmanaged("popular");
+              setShowHidden(false);
+              setUnmanagedPage(1);
+            }}
+            onSetPickerLayout={onSetPickerLayout}
+            onToggleHidden={() => {
+              setShowHidden((prev) => !prev);
+              setUnmanagedPage(1);
+            }}
           />
-        ))}
-      </ListGroup>
-    );
-  }
-
-  private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
-    const { t, discoveredGames, onRefreshGameInfo } = this.props;
-
-    const isDiscovered = (gameId: string) =>
-      getSafe(discoveredGames, [gameId, "path"], undefined) !== undefined;
-
-    return (
-      <div>
-        <div className="game-group">
-          {games.map((game) => (
-            <GameThumbnail
-              t={t}
-              key={game.id + "_" + (game.contributed ?? "official")}
-              game={game}
-              type={type}
-              active={game.id === gameMode}
-              onRefreshGameInfo={onRefreshGameInfo}
-              getBounds={this.getBounds}
-              container={this.mScrollRef}
-              discovered={isDiscovered(game.id)}
-            />
-          ))}
         </div>
       </div>
-    );
-  }
-}
+
+      <PageRoot.Scroll ref={scrollAreaRef} onScroll={onScroll}>
+        <CollapsibleSection
+          actions={
+            <Picker
+              button={{ appearance: "subdued", size: "xs" }}
+              options={[
+                { label: t("Name A-Z"), value: "alphabetical" },
+                { label: t("Recently used"), value: "recentlyused" },
+              ]}
+              value={sortManaged}
+              onChange={onSetSortManaged}
+            />
+          }
+          title={
+            <span className="flex items-center gap-x-2">
+              {t("Managed")}
+
+              <span className="text-neutral-subdued">
+                {getTabGameNumber(managedGameList, filteredManaged)}
+              </span>
+            </span>
+          }
+        >
+          <Listing
+            entityCount={filteredManaged.length}
+            noResultsMessage={
+              currentFilterValue
+                ? t("Try adjusting your search terms.")
+                : t('To start managing a game, go to "Unmanaged" and activate a game there.')
+            }
+            noResultsTitle={
+              currentFilterValue ? t("No games found") : t("You haven't managed any games yet")
+            }
+          >
+            {pickerLayout === "list" ? (
+              <GamesList
+                container={rootEl}
+                discoveredGames={discoveredGames}
+                gameMode={gameMode}
+                games={filteredManaged}
+                getBounds={getBounds}
+                t={t}
+                type="managed"
+                onBrowseGameLocation={onBrowseGameLocation}
+                onRefreshGameInfo={onRefreshGameInfo}
+              />
+            ) : (
+              <GamesGrid
+                container={rootEl}
+                discoveredGames={discoveredGames}
+                gameMode={gameMode}
+                games={filteredManaged}
+                getBounds={getBounds}
+                t={t}
+                type="managed"
+                onRefreshGameInfo={onRefreshGameInfo}
+              />
+            )}
+          </Listing>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          actions={
+            <Picker
+              button={{ appearance: "subdued", size: "xs" }}
+              options={[
+                { label: t("Most Popular"), value: "popular" },
+                { label: t("Name A-Z"), value: "alphabetical" },
+                { label: t("Most Recent"), value: "recent" },
+              ]}
+              value={sortUnmanaged}
+              onChange={(value) => {
+                onSetSortUnmanaged(value);
+                setUnmanagedPage(1);
+              }}
+            />
+          }
+          ref={unmanagedSectionRef}
+          title={
+            <span className="flex items-center gap-x-2">
+              {t("Unmanaged")}
+
+              <span className="text-neutral-subdued">
+                {getTabGameNumber(unmanagedGameList, filteredUnmanaged)}
+              </span>
+            </span>
+          }
+        >
+          <div className="space-y-6">
+            <Listing
+              customNoResults={<NoGamesFound className="py-16" t={t} />}
+              entityCount={filteredUnmanaged.length}
+            >
+              {pickerLayout === "list" ? (
+                <GamesList
+                  container={rootEl}
+                  discoveredGames={discoveredGames}
+                  gameMode={gameMode}
+                  games={pagedUnmanaged}
+                  getBounds={getBounds}
+                  t={t}
+                  type="unmanaged"
+                  onBrowseGameLocation={onBrowseGameLocation}
+                  onRefreshGameInfo={onRefreshGameInfo}
+                />
+              ) : (
+                <GamesGrid
+                  container={rootEl}
+                  discoveredGames={discoveredGames}
+                  gameMode={gameMode}
+                  games={pagedUnmanaged}
+                  getBounds={getBounds}
+                  t={t}
+                  type="unmanaged"
+                  onRefreshGameInfo={onRefreshGameInfo}
+                />
+              )}
+            </Listing>
+
+            {!!filteredUnmanaged.length && currentUnmanagedPage === unmanagedPageCount && (
+              <NoGamesFound className="py-6" t={t} />
+            )}
+
+            <Pagination
+              currentPage={currentUnmanagedPage}
+              recordsPerPage={UNMANAGED_PAGE_SIZE}
+              totalRecords={filteredUnmanaged.length}
+              onPaginationUpdate={(page) => {
+                setUnmanagedPage(page);
+
+                const container = scrollAreaRef.current;
+                const section = unmanagedSectionRef.current;
+                if (container && section) {
+                  container.scrollTop +=
+                    section.getBoundingClientRect().top - container.getBoundingClientRect().top;
+                }
+              }}
+            />
+          </div>
+        </CollapsibleSection>
+      </PageRoot.Scroll>
+    </PageRoot>
+  );
+};
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
@@ -677,4 +518,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 
 export default translate(["common"])(
   connect(mapStateToProps, mapDispatchToProps)(GamePicker),
-) as React.ComponentClass<{}>;
+) as ComponentClass<{}>;

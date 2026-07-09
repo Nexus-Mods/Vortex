@@ -28,6 +28,7 @@ const registerMainPage = (
     group: options.group,
     isClassicOnly: options.isClassicOnly,
     isModernOnly: options.isModernOnly,
+    newLayout: options.newLayout,
     badge: options.badge,
     activity: options.activity,
     priority: options.priority !== undefined ? options.priority : 100,

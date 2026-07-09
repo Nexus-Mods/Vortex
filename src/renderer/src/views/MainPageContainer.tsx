@@ -158,19 +158,29 @@ export const MainPageContainer: React.FC<IBaseProps> = ({ page, active, secondar
   let content: JSX.Element;
   try {
     const props = page.propsFunc();
-    content = (
-      <PageHeaderProvider value={headerContextValue}>
-        <div className={classes.join(" ")} id={`page-${page.id}`}>
-          <div className="mainpage-header-container" ref={handleHeaderRef} />
+    if (page.newLayout) {
+      // Redesigned pages render their own PageRoot, so we skip the legacy
+      // `.main-page` / header / body-container chrome to keep the subtree flat.
+      content = (
+        <ExtensionGate id={page.id}>
+          <page.component active={active} pageId={page.id} secondary={secondary} {...props} />
+        </ExtensionGate>
+      );
+    } else {
+      content = (
+        <PageHeaderProvider value={headerContextValue}>
+          <div className={classes.join(" ")} id={`page-${page.id}`}>
+            <div className="mainpage-header-container" ref={handleHeaderRef} />
 
-          <div className="mainpage-body-container">
-            <ExtensionGate id={page.id}>
-              <page.component active={active} secondary={secondary} {...props} />
-            </ExtensionGate>
+            <div className="mainpage-body-container">
+              <ExtensionGate id={page.id}>
+                <page.component active={active} secondary={secondary} {...props} />
+              </ExtensionGate>
+            </div>
           </div>
-        </div>
-      </PageHeaderProvider>
-    );
+        </PageHeaderProvider>
+      );
+    }
   } catch (err) {
     log("warn", "error rendering extension main page", err);
     content = (

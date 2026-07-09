@@ -5,7 +5,8 @@
 
 import { mdiPalette } from "@mdi/js";
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "@/types/IExtensionContext";
+
 import DesignSystemPage from "./views/DesignSystemPage";
 
 function init(context: IExtensionContext): boolean {
@@ -21,6 +22,7 @@ function init(context: IExtensionContext): boolean {
     priority: 40,
     group: "global",
     mdi: mdiPalette,
+    newLayout: true,
   });
 
   return true;
