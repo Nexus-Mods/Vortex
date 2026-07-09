@@ -1,6 +1,5 @@
 import * as path from "path";
 
-import { truthy } from "../../../util/util";
 import type { IDownload } from "../types/IDownload";
 
 // Placeholder filename a download uses on disk while in progress, renamed to the
@@ -20,7 +19,7 @@ export function nameFromUrl(input: string | undefined): string | undefined {
   try {
     const pathname = new URL(input).pathname;
     return decodeURI(path.basename(pathname));
-  } catch (err) {
+  } catch {
     return undefined;
   }
 }
