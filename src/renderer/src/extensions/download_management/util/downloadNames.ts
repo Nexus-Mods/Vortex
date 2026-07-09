@@ -43,7 +43,7 @@ export function friendlyDownloadName(download: IDownload): string | undefined {
     download.modInfo?.nexus?.fileInfo?.name,
     nameFromUrl(download.urls?.[0]),
   ];
-  const friendly = candidates.find(truthy);
+  const friendly = candidates.find(Boolean);
 
   // Fall back to the temp name so sort/filter stay stable before metadata resolves.
   return friendly ?? localPath;
