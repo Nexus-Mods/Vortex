@@ -35,7 +35,7 @@ export function nameFromUrl(input: string | undefined): string | undefined {
  */
 export function friendlyDownloadName(download: IDownload): string | undefined {
   const localPath = download.localPath;
-  if (truthy(localPath) && !isTempDownloadName(localPath)) {
+  if (localPath && !isTempDownloadName(localPath)) {
     return localPath;
   }
 
