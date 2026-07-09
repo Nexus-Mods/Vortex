@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+import { makeFileInfo } from "../../../test-utils/builders";
 import type { IDownload } from "../types/IDownload";
 import {
   TEMP_DOWNLOAD_PREFIX,
@@ -85,7 +86,10 @@ describe("friendlyDownloadName", () => {
 
   it("falls back to the resolved nexus file info name", () => {
     const result = friendlyDownloadName(
-      download({ localPath: tempName, modInfo: { nexus: { fileInfo: { name: "Nexus File" } } } }),
+      download({
+        localPath: tempName,
+        modInfo: { nexus: { fileInfo: makeFileInfo({ name: "Nexus File" }) } },
+      }),
     );
     expect(result).toBe("Nexus File");
   });
