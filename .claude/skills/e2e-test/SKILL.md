@@ -31,6 +31,10 @@ Read the relevant existing files to understand patterns and available building b
 - `packages/e2e/src/selectors/` — existing POMs (check if a relevant one already exists)
 - `packages/e2e/src/helpers/` — shared utilities (navigation, timeouts, users, etc.)
 - `packages/e2e/src/fixtures/vortex-app.ts` — available fixtures
+- `packages/e2e/src/tests/` — existing specs; skim them for flows you'll need
+  (download a mod, log in, manage a game, navigate to a page). If another test
+  already does what you're about to write, that's a signal to reuse or extract
+  it — see "Reuse over duplication" in Step 3.
 - Source code under `src/renderer/` for UI component structure and text strings
 
 ## Step 3 — Write a first draft
@@ -50,6 +54,14 @@ await llmBreakpoint(vortexWindow, "after manage game");
 
 `llmBreakpoint` is a no-op unless `VORTEX_E2E_INSPECT` is set, so the calls are
 safe to leave in the spec while iterating. Strip them once the test is green.
+
+### Reuse over duplication (DRY)
+
+Before writing a block of logic, check whether an existing spec already does the
+same thing (a download flow, a login sequence, a multi-step navigation). If so,
+don't copy it — follow the **Helpers** guidance in `E2E-BEST-PRACTICES.md`:
+extract it into a `packages/e2e/src/helpers/` function, call it from your test,
+and update the other spec(s) to use the same helper.
 
 ## Step 4 — Inspector loop (run, walk, fix, repeat)
 
