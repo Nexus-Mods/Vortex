@@ -48,6 +48,10 @@ export interface InstalledFile {
 export interface FileRequirementsContext {
   // Enabled AND disabled installed files for the active game.
   installedFiles: InstalledFile[];
+  // File version UIDs the user has downloaded but not yet installed. These are
+  // checked against dependency candidates so the resolver can surface them as
+  // "install-uninstalled" rather than "missing".
+  uninstalledFileVersionUids: Set<string>;
   ports: ResolverPorts;
 }
 
@@ -73,6 +77,8 @@ export interface DependencyBranch {
   // Acceptable versions the user has, by enabled state.
   satisfyingEnabled: string[];
   satisfyingDisabled: string[];
+  // Acceptable versions the user has downloaded but not yet installed.
+  satisfyingUninstalled: string[];
   // Other (non-acceptable) versions of the same chain the user has.
   wrongEnabled: string[];
   wrongDisabled: string[];

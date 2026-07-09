@@ -1,4 +1,5 @@
-import type { IInstalledFile } from "@/extensions/health_check/types";
+import type { IDownload } from "@/extensions/download_management/types/IDownload";
+import type { IDownloadedFile, IInstalledFile } from "@/extensions/health_check/types";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
 import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
@@ -59,9 +60,25 @@ function collectionManagedTags(mods: { [modId: string]: IMod }, profile: IProfil
 }
 
 /**
+ * Resolve a Nexus file UID for a mod, or return undefined if not possible.
+ * Shared by both gather functions below.
+ */
+function resolveFileUID(attributes: IInstalledModAttributes, gameId: string): string | undefined {
+  if (attributes.fileId === undefined) return undefined;
+  return (
+    makeFileUID({
+      gameId: attributes.downloadGame ?? gameId,
+      fileId: attributes.fileId.toString(),
+    }) ?? undefined
+  );
+}
+
+/**
  * The active game's installed Nexus files (enabled and disabled) as resolver
  * input. Disabled files separate "disabled" / "wrong version" from "missing".
  * Collection-managed files are flagged `emitRequirements: false`.
+ * Only includes mods with state "installed" - downloaded-not-installed mods
+ * are gathered separately by gatherDownloadedFileRefs.
  */
 export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstalledFileRef[]> {
   const state = api.getState();
@@ -79,18 +96,13 @@ export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstall
   const refs: IInstalledFileRef[] = [];
 
   for (const mod of Object.values(mods)) {
+    if (mod.state !== "installed") continue;
     const attributes: IInstalledModAttributes = mod.attributes ?? {};
     if (attributes.source !== "nexus" || mod.type === "collection") {
       continue;
     }
-    if (attributes.fileId === undefined) {
-      continue;
-    }
 
-    const fileUID = makeFileUID({
-      gameId: attributes.downloadGame ?? gameId,
-      fileId: attributes.fileId.toString(),
-    });
+    const fileUID = resolveFileUID(attributes, gameId);
     if (!fileUID) {
       continue;
     }
@@ -106,6 +118,107 @@ export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstall
   }
 
   return refs;
+}
+
+/**
+ * A downloaded-but-not-installed Nexus archive. The download ID doubles as the
+ * archive ID for start-install-download, so no mod-store lookup is needed.
+ */
+export interface IDownloadedFileRef {
+  /** Composite file version id for the resolver's uninstalledFileVersionUids set. */
+  fileUID: string;
+  /** Download ID - passed directly to start-install-download as the archive ID. */
+  downloadId: string;
+}
+
+/**
+ * The active game's downloaded-but-not-installed Nexus archives, read from the
+ * downloads store. A download is considered "not installed" when its corresponding
+ * mod entry is absent from the mod store (covers both never-installed and
+ * previously-installed-then-removed archives).
+ */
+export async function gatherDownloadedFileRefs(api: IExtensionApi): Promise<IDownloadedFileRef[]> {
+  const state = api.getState();
+  const profile = activeProfile(state);
+  const gameId = profile?.gameId;
+  if (!gameId) {
+    return [];
+  }
+
+  await nexusGamesProm();
+
+  const downloads: { [dlId: string]: IDownload } = state.persistent.downloads?.files ?? {};
+  const refs: IDownloadedFileRef[] = [];
+
+  for (const [downloadId, download] of Object.entries(downloads)) {
+    if (download.state !== "finished") continue;
+    if (!download.game.includes(gameId)) continue;
+
+    const nexusIds = download.modInfo?.nexus?.ids;
+    if (!nexusIds?.fileId) continue;
+
+    // Skip if currently installed: the installed mod entry still exists in the store.
+    if (download.installed != null) {
+      const installedMod =
+        state.persistent.mods[download.installed.gameId]?.[download.installed.modId];
+      if (installedMod?.state === "installed") continue;
+    }
+
+    const nexusGameId = nexusIds.gameId ?? gameId;
+    const fileUID = makeFileUID({ gameId: nexusGameId, fileId: String(nexusIds.fileId) });
+    if (!fileUID) continue;
+
+    refs.push({ fileUID, downloadId });
+  }
+
+  return refs;
+}
+
+/** Build the display shape for one downloaded-but-not-installed archive. */
+function toDownloadedFile(
+  downloadId: string,
+  download: IDownload,
+  fileUID: string,
+): IDownloadedFile {
+  const nexusIds = download.modInfo?.nexus?.ids;
+  const nexusGameId = nexusIds?.gameId ?? download.game[0] ?? "";
+  const modUID =
+    makeModUID({
+      gameId: nexusGameId,
+      modId: String(nexusIds?.modId ?? ""),
+      fileId: String(nexusIds?.fileId ?? ""),
+    }) ?? "";
+  const modName = download.modInfo?.name ?? download.localPath ?? downloadId;
+  return {
+    downloadId,
+    fileUID,
+    modUID,
+    modName,
+    fileName: download.modInfo?.meta?.fileName ?? download.localPath ?? modName,
+    version: download.modInfo?.meta?.fileVersion ?? "",
+    thumbnailUrl: download.modInfo?.nexus?.modInfo?.picture_url ?? undefined,
+    adultContent: download.modInfo?.nexus?.modInfo?.contains_adult_content ?? false,
+  };
+}
+
+/**
+ * A fileUID -> IDownloadedFile hydrator over downloaded-but-not-installed refs.
+ */
+export function makeDownloadedFileHydrator(
+  api: IExtensionApi,
+  refs: IDownloadedFileRef[],
+): (fileUID: string) => IDownloadedFile | undefined {
+  const state = api.getState();
+  const downloads: { [dlId: string]: IDownload } = state.persistent.downloads?.files ?? {};
+  const refByUID = new Map(refs.map((ref): [string, IDownloadedFileRef] => [ref.fileUID, ref]));
+
+  return (fileUID) => {
+    const ref = refByUID.get(fileUID);
+    if (!ref) return undefined;
+    const download = downloads[ref.downloadId];
+    if (!download) return undefined;
+    return toDownloadedFile(ref.downloadId, download, fileUID);
+  };
 }
 
 /** Build the display shape for one installed file from its Vortex mod. */

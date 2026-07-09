@@ -6,16 +6,23 @@ import type {
 } from "@nexusmods/file-dependency-resolver";
 
 import type {
+  IDownloadedFile,
   IFileLevelRequirements,
   IFileRequirement,
   IFileRequirementBranch,
   IFileRequirementCandidate,
   IFileRequirementsCheckMetadata,
   IInstalledFile,
+  IUninstalledFileRequirement,
 } from "@/extensions/health_check/types";
 
-/** Resolves an installed file's display data from its composite file UID. */
-type HydrateInstalledFile = (fileUID: string) => IInstalledFile | undefined;
+/** Discriminated union of the two file shapes the hydrator can return. */
+export type HydratedFile =
+  | { kind: "installed"; file: IInstalledFile }
+  | { kind: "downloaded"; file: IDownloadedFile };
+
+/** Resolves a file's display data from its composite file UID. */
+export type HydrateFile = (fileUID: string) => HydratedFile | undefined;
 
 function toCandidate(candidate: Candidate): IFileRequirementCandidate {
   return {
@@ -37,7 +44,7 @@ function toCandidate(candidate: Candidate): IFileRequirementCandidate {
  */
 function classifyDependency(
   dependency: DependencyResult,
-  hydrate: HydrateInstalledFile,
+  hydrate: HydrateFile,
 ): IFileRequirement | undefined {
   const { definitionId, branches } = dependency;
 
@@ -66,21 +73,39 @@ function classifyDependency(
   if (branch.satisfyingDisabled.length > 0) {
     // A wrong version is enabled too: offer switching the active version.
     if (branch.wrongEnabled.length > 0) {
-      const enabledFile = hydrate(branch.wrongEnabled[0]);
-      const correctFile = hydrate(branch.satisfyingDisabled[0]);
-      if (!enabledFile || !correctFile) {
+      const hydratedEnabled = hydrate(branch.wrongEnabled[0]);
+      const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
+      if (
+        !hydratedEnabled ||
+        hydratedEnabled.kind !== "installed" ||
+        !hydratedCorrect ||
+        hydratedCorrect.kind !== "installed"
+      ) {
         return undefined;
       }
       return {
         kind: "wrong-version-enabled",
         requirementDefId: definitionId,
-        enabledFile,
-        correctFile,
+        enabledFile: hydratedEnabled.file,
+        correctFile: hydratedCorrect.file,
       };
     }
     // Owned-but-disabled with nothing wrong enabled is a deliberate choice.
     // TODO(future): optionally surface "enable the disabled correct version".
     return undefined;
+  }
+
+  // Correct version downloaded but not yet installed.
+  if (branch.satisfyingUninstalled.length > 0) {
+    const hydrated = hydrate(branch.satisfyingUninstalled[0]);
+    if (!hydrated || hydrated.kind !== "downloaded") {
+      return undefined;
+    }
+    return {
+      kind: "correct-version-uninstalled",
+      requirementDefId: definitionId,
+      uninstalledFile: hydrated.file,
+    } satisfies IUninstalledFileRequirement;
   }
 
   // No acceptable version owned: download one, when the resolver found a candidate.
@@ -91,14 +116,14 @@ function classifyDependency(
 
   // A wrong version is enabled: this is a "requires a different version" download.
   if (branch.wrongEnabled.length > 0) {
-    const installedFile = hydrate(branch.wrongEnabled[0]);
-    if (!installedFile) {
+    const hydrated = hydrate(branch.wrongEnabled[0]);
+    if (!hydrated || hydrated.kind !== "installed") {
       return undefined;
     }
     return {
       kind: "wrong-version-installed",
       requirementDefId: definitionId,
-      installedFile,
+      installedFile: hydrated.file,
       candidate,
     };
   }
@@ -113,17 +138,23 @@ function classifyDependency(
  */
 function classifyOrBranch(
   branch: DependencyBranch,
-  hydrate: HydrateInstalledFile,
+  hydrate: HydrateFile,
 ): IFileRequirementBranch | undefined {
   // Owned-but-disabled alternative: enabling it satisfies the OR without a download.
   if (branch.satisfyingDisabled.length > 0) {
-    const correctFile = hydrate(branch.satisfyingDisabled[0]);
-    if (!correctFile) {
+    const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
+    if (!hydratedCorrect || hydratedCorrect.kind !== "installed") {
       return undefined;
     }
-    const enabledFile =
+    const hydratedEnabled =
       branch.wrongEnabled.length > 0 ? hydrate(branch.wrongEnabled[0]) : undefined;
-    return { kind: "enable", modFileId: branch.modFileId, correctFile, enabledFile };
+    const enabledFile = hydratedEnabled?.kind === "installed" ? hydratedEnabled.file : undefined;
+    return {
+      kind: "enable",
+      modFileId: branch.modFileId,
+      correctFile: hydratedCorrect.file,
+      enabledFile,
+    };
   }
 
   // Otherwise offer the recommended download for this alternative.
@@ -139,11 +170,11 @@ function classifyOrBranch(
 
 /**
  * Map the resolver report onto Vortex's file-requirements metadata, hydrating
- * installed files only for surfaced dependencies.
+ * files only for surfaced dependencies.
  */
 export function mapRequirementsReport(
   report: FileRequirementsReport,
-  hydrate: HydrateInstalledFile,
+  hydrate: HydrateFile,
   context: { gameId: string; modsChecked: number; errors: string[] },
 ): IFileRequirementsCheckMetadata {
   const fileRequirements: { [fileUID: string]: IFileLevelRequirements } = {};
@@ -160,8 +191,8 @@ export function mapRequirementsReport(
     const sourceFile = hydrate(source.sourceFileVersionUid);
     fileRequirements[source.sourceFileVersionUid] = {
       sourceFileUID: source.sourceFileVersionUid,
-      sourceModName: sourceFile?.modName ?? "",
-      sourceModUID: sourceFile?.modUID ?? "",
+      sourceModName: sourceFile?.file.modName ?? "",
+      sourceModUID: sourceFile?.file.modUID ?? "",
       requirements,
     };
   }

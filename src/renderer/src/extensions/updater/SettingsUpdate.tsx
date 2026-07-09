@@ -1,9 +1,10 @@
 import * as React from "react";
-import { Alert, Button, ControlLabel, FormControl, FormGroup, InputGroup } from "react-bootstrap";
+import { Alert, Button, ControlLabel, FormControl, FormGroup } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
+import FlexLayout from "../../controls/FlexLayout";
 import More from "../../controls/More";
 import type { UpdateChannel, IState } from "../../types/IState";
 import { UPDATE_CHANNELS } from "../../types/IState";
@@ -133,27 +134,31 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
             </More>
           </ControlLabel>
 
-          <InputGroup>
-            <FormControl
-              componentClass="select"
-              value={updateChannel}
-              onChange={this.selectChannel}
-            >
-              <option value="stable">{t("Stable")}</option>
+          <FlexLayout type="row" fill={false} className="update-channel-row">
+            <FlexLayout.Fixed>
+              <FormControl
+                componentClass="select"
+                value={updateChannel}
+                onChange={this.selectChannel}
+              >
+                <option value="stable">{t("Stable")}</option>
 
-              <option value="beta">{t("Beta")}</option>
+                <option value="beta">{t("Beta")}</option>
 
-              <option value="none">{t("No automatic updates")}</option>
-            </FormControl>
+                <option value="none">{t("No automatic updates")}</option>
+              </FormControl>
+            </FlexLayout.Fixed>
 
-            <Button
-              disabled={checkUpdateButtonDisabled}
-              key="manual-update-button"
-              onClick={this.manualUpdateCheck}
-            >
-              {t("Check now")}
-            </Button>
-          </InputGroup>
+            <FlexLayout.Fixed>
+              <Button
+                disabled={checkUpdateButtonDisabled}
+                key="manual-update-button"
+                onClick={this.manualUpdateCheck}
+              >
+                {t("Check now")}
+              </Button>
+            </FlexLayout.Fixed>
+          </FlexLayout>
 
           {renderPreviewAlert()}
 

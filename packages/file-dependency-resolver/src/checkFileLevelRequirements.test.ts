@@ -136,6 +136,7 @@ describe("checkFileLevelRequirements", () => {
   it("classifies satisfied / disabled / wrong-version / missing and recommends only when unowned", async () => {
     const report = await checkFileLevelRequirements({
       ports,
+      uninstalledFileVersionUids: new Set(),
       installedFiles: [
         { fileVersionUid: "1001", enabled: true },
         { fileVersionUid: "2001", enabled: true },
@@ -225,6 +226,7 @@ describe("checkFileLevelRequirements", () => {
 
     const report = await checkFileLevelRequirements({
       ports: localPorts,
+      uninstalledFileVersionUids: new Set(),
       installedFiles: [
         { fileVersionUid: "1001", enabled: true },
         { fileVersionUid: "5001", enabled: true, emitRequirements: false },
@@ -280,6 +282,7 @@ describe("checkFileLevelRequirements", () => {
 
     const report = await checkFileLevelRequirements({
       ports: orPorts,
+      uninstalledFileVersionUids: new Set(),
       installedFiles: [
         { fileVersionUid: "1001", enabled: true },
         { fileVersionUid: "fb", enabled: true },
@@ -294,5 +297,67 @@ describe("checkFileLevelRequirements", () => {
     expect(g1.satisfyingEnabled).toEqual([]);
     expect(g1.recommended).toBeUndefined();
     expect(g2.recommended).toBeUndefined();
+  });
+
+  it("classifies a downloaded-but-not-installed candidate as satisfyingUninstalled with no recommendation", async () => {
+    // sourceFile depends on downloadedDependencyDefinition, satisfiable by downloadedDependencyFile
+    // (group downloadedDependencyChain). downloadedDependencyFile is downloaded but not installed:
+    // it appears in uninstalledFileVersionUids but not in installedFiles.
+    const sourceFile = "sourceFile";
+    const downloadedDependencyFile = "downloadedDependencyFile";
+    const downloadedDependencyChain = "downloadedDependencyChain";
+    const downloadedDependencyMod = "downloadedDependencyMod";
+    const downloadedDependencyDefinition = "downloadedDependencyDefinition";
+
+    const uninstalledCandidates: CandidateRow[] = [
+      {
+        sourceFileVersionUid: sourceFile,
+        definitionId: downloadedDependencyDefinition,
+        modFileId: downloadedDependencyChain,
+        fileVersionUid: downloadedDependencyFile,
+        position: "1",
+        category: 1,
+        modStatus: "published",
+        modUid: downloadedDependencyMod,
+      },
+    ];
+    const uninstalledDetails: Record<string, FileVersionDetail> = {
+      [sourceFile]: {
+        fileVersionUid: sourceFile,
+        modUid: "sourceMod",
+        modFileId: "sourceChain",
+        name: "Source File",
+        version: "1.0",
+      },
+      [downloadedDependencyFile]: {
+        fileVersionUid: downloadedDependencyFile,
+        modUid: downloadedDependencyMod,
+        modFileId: downloadedDependencyChain,
+        name: "Downloaded Dependency",
+        version: "1.0",
+      },
+    };
+    const uninstalledPorts: ResolverPorts = {
+      fetchCandidates: async (uids) =>
+        uninstalledCandidates.filter((c) => uids.includes(c.sourceFileVersionUid)),
+      fetchFileVersionDetails: async (uids) =>
+        uids
+          .map((uid) => uninstalledDetails[uid])
+          .filter((d): d is FileVersionDetail => d !== undefined),
+      fetchModDetails: async () => [],
+    };
+
+    const report = await checkFileLevelRequirements({
+      ports: uninstalledPorts,
+      installedFiles: [{ fileVersionUid: sourceFile, enabled: true }],
+      uninstalledFileVersionUids: new Set([downloadedDependencyFile]),
+    });
+
+    const branch = report.sources[0]!.dependencies[0]!.branches[0]!;
+    expect(branch.satisfyingUninstalled).toEqual([downloadedDependencyFile]);
+    expect(branch.satisfyingEnabled).toEqual([]);
+    expect(branch.satisfyingDisabled).toEqual([]);
+    // Already downloaded - no further download recommendation needed.
+    expect(branch.recommended).toBeUndefined();
   });
 });

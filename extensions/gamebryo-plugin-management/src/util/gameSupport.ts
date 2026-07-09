@@ -140,6 +140,9 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
       appDataPath: "Fallout4VR",
       pluginTXTFormat: "fallout4",
       nativePlugins: ["fallout4.esm", "fallout4_vr.esm"],
+      // fo4 vr does *not* support esls by default. However, it is possible to enable them
+      //  with a mod https://www.nexusmods.com/fallout4/mods/91141
+      supportsESL: false,
     },
     falloutnv: {
       appDataPath: "falloutnv",
@@ -334,6 +337,12 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
         const game = selectors.gameById(state, "skyrimvr");
         if (game?.details?.supportsESL !== undefined) {
           gameSupport["skyrimvr"].supportsESL = game.details.supportsESL;
+        }
+      }
+      if (discovered["fallout4vr"]?.path !== undefined) {
+        const game = selectors.gameById(state, "fallout4vr");
+        if (game?.details?.supportsESL !== undefined) {
+          gameSupport["fallout4vr"].supportsESL = game.details.supportsESL;
         }
       }
       if (discovered["oblivionremastered"]?.path !== undefined) {

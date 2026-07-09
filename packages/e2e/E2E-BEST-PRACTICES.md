@@ -177,6 +177,20 @@ test("settings loads", async ({ vortexWindow }) => {
 });
 ```
 
+When you catch yourself writing logic that another spec already contains (a
+download flow, a login sequence, a multi-step navigation, forwarding an `nxm://`
+URL to Vortex), **do not copy it**:
+
+1. Extract the shared logic into a helper under `packages/e2e/src/helpers/`
+   (parameterized as needed); keep selectors in POMs — helpers orchestrate POMs
+   and fixtures, they don't hold their own selectors.
+2. Call the helper from your test.
+3. Update the other spec(s) that had the inline copy to use the same helper.
+
+The behavior then lives in exactly one place, so an app change is fixed once.
+Prefer a small, well-named helper (e.g. `downloadModViaModManager`) over
+near-identical copies across specs.
+
 ### Auth Fixtures
 
 Tests that require a logged-in user use the `nexusUser` fixture option. Set it

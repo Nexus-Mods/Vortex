@@ -225,88 +225,123 @@ export class CollectionsDownloadCancelledEvent implements MixpanelEvent {
 
 /* COLLECTION INSTALLATION */
 
-/** *
- * Event sent when a collection installation is started.
- * @param collection_id ID of the collection
- * @param revision_id ID of the revision
- * @param game_id ID of the game
- * @param mod_count Number of mods in the collection
+/**
+ * Event sent when a collection installation is started (genuine first start). Carries the full
+ * count snapshot (required/installed/failed/ignored/optional) + durations, the same shape as the
+ * terminal events, so start and end reconcile against the same fields. `mod_count` equals
+ * `required_total`.
  */
 export class CollectionsInstallationStartedEvent implements MixpanelEvent {
   readonly eventName = "collections_installation_started";
   readonly properties: Record<string, any>;
-  constructor(collection_id: string, revision_id: string, game_id: number, mod_count: number) {
-    this.properties = { collection_id, revision_id, game_id, mod_count };
+  constructor(props: CollectionInstallOutcomeProps) {
+    this.properties = { ...props, mod_count: props.required_total };
   }
 }
 
 /**
- * Event sent when a collection installation is completed.
- * @param collection_id ID of the collection
- * @param revision_id ID of the revision
- * @param game_id ID of the game
- * @param mod_count Number of mods in the collection
- * @param duration_ms Duration in milliseconds
+ * Event sent when a paused collection installation is resumed (distinct from started, which
+ * fires once at the genuine first start). Started fires once per install; resumed fires once per
+ * resume, so started stays clean as "first start" and reconciles with the terminal events.
+ * Carries the full count snapshot (its `resume_count` is part of that shared shape).
+ */
+export class CollectionsInstallationResumedEvent implements MixpanelEvent {
+  readonly eventName = "collections_installation_resumed";
+  readonly properties: Record<string, any>;
+  constructor(props: CollectionInstallOutcomeProps) {
+    this.properties = { ...props };
+  }
+}
+
+/**
+ * Shared outcome + count properties for the three terminal collection-install
+ * events (completed / failed / cancelled). Sourced from the install session SSOT
+ * so the outcomes reconcile: started == completed + failed + cancelled.
+ */
+export interface CollectionInstallOutcomeProps {
+  collection_id: string;
+  revision_id: string;
+  game_id: number;
+  /** Total required members in the collection. */
+  required_total: number;
+  /** Members (required + optional) that reached "installed". */
+  installed: number;
+  /** Members that ended in "failed". */
+  failed: number;
+  /** Members skipped/ignored (unselected optionals, user-ignored). */
+  ignored: number;
+  /** Total optional (recommended) members. */
+  optional: number;
+  /** Elapsed time for the current install segment (resets on resume) in milliseconds. */
+  duration_ms: number;
+  /** Elapsed time from the first start across all pause/resume segments, in milliseconds. */
+  total_duration_ms: number;
+  /** Times the install was paused, accumulated across restarts. */
+  pause_count: number;
+  /** Times the install was resumed, accumulated across restarts. */
+  resume_count: number;
+  /** Whether the install was resumed at least once. */
+  was_resumed: boolean;
+}
+
+/**
+ * Event sent when a collection installation completes with every required mod installed.
  */
 export class CollectionsInstallationCompletedEvent implements MixpanelEvent {
   readonly eventName = "collections_installation_completed";
   readonly properties: Record<string, any>;
-  constructor(
-    collection_id: string,
-    revision_id: string,
-    game_id: number,
-    mod_count: number,
-    duration_ms: number,
-  ) {
-    this.properties = {
-      collection_id,
-      revision_id,
-      game_id,
-      mod_count,
-      duration_ms,
-    };
+  constructor(props: CollectionInstallOutcomeProps) {
+    // mod_count equals the installed count.
+    this.properties = { ...props, mod_count: props.installed };
   }
 }
 
 /**
- * Event sent when a collection installation fails.
- * @param collection_id ID of the collection
- * @param revision_id ID of the revision
- * @param game_id ID of the game
- * @param error_code Error code
- * @param error_message Error message
+ * Event sent when a collection installation finishes in a failed state.
+ *
+ * `failure_stage` distinguishes the two failure modes:
+ *   - "member_install": one or more required members failed to install. There is no
+ *     single error (failures happen per-member in InstallManager and can be many); the
+ *     `failed` count reports how many, and the per-member causes are on the individual
+ *     mods_installation_failed events (joinable via collection_id).
+ *   - "postprocessing": applying the collection's mod rules threw a single error, which
+ *     is classified into `error_code`.
  */
 export class CollectionsInstallationFailedEvent implements MixpanelEvent {
   readonly eventName = "collections_installation_failed";
   readonly properties: Record<string, any>;
   constructor(
-    collection_id: string,
-    revision_id: string,
-    game_id: number,
-    error_code: string,
-    error_message: string,
+    props: CollectionInstallOutcomeProps & {
+      failure_stage: "member_install" | "postprocessing";
+      error_code?: string;
+    },
   ) {
-    this.properties = {
-      collection_id,
-      revision_id,
-      game_id,
-      error_code,
-      error_message,
-    };
+    this.properties = { ...props };
   }
 }
 
 /**
- * Event sent when a collection installation is cancelled.
- * @param collection_id ID of the collection
- * @param revision_id ID of the revision
- * @param game_id ID of the game
+ * Event sent when a collection installation is cancelled (user abandon, removal, free-user cancel).
  */
 export class CollectionsInstallationCancelledEvent implements MixpanelEvent {
   readonly eventName = "collections_installation_cancelled";
   readonly properties: Record<string, any>;
-  constructor(collection_id: string, revision_id: string, game_id: number) {
-    this.properties = { collection_id, revision_id, game_id };
+  constructor(props: CollectionInstallOutcomeProps) {
+    this.properties = { ...props };
+  }
+}
+
+/**
+ * Event sent when a collection installation is paused (resumable). Distinct from
+ * cancelled: the install is expected to resume, so it is not a terminal outcome and
+ * does not count toward completed/failed/cancelled. `trigger` records why it paused
+ * (user, logout, gamemode-changed).
+ */
+export class CollectionsInstallationPausedEvent implements MixpanelEvent {
+  readonly eventName = "collections_installation_paused";
+  readonly properties: Record<string, any>;
+  constructor(props: CollectionInstallOutcomeProps & { trigger: string }) {
+    this.properties = { ...props };
   }
 }
 
@@ -315,224 +350,110 @@ export class CollectionsInstallationCancelledEvent implements MixpanelEvent {
  */
 
 /**
- * Event sent when a mod download is started from the client.
- * This client-side event complements the server-side mods_download_started event
- * to enable success rate calculations by matching with _completed or _failed events.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
- * @note "mods_download_started" event name is taken by server-side. Use "mods_download_started_client" instead.
+ * Identity shared by every per-mod analytics event (download and install), so the
+ * mod-level events stay consistent with one another and joinable to their collection.
+ * `collection_id` is the parent collection id when the mod is downloaded/installed as
+ * part of a collection, otherwise null.
+ */
+export interface ModAnalyticsIdentity {
+  mod_id: string;
+  file_id: string;
+  game_id: number;
+  mod_uid: string;
+  file_uid: string;
+  collection_id: string | null;
+}
+
+/**
+ * Event sent when a mod download is started from the client. Complements the
+ * server-side mods_download_started event to enable success-rate calculations by
+ * matching with _completed or _failed.
+ * @note "mods_download_started" is taken by the server side; use "mods_download_started_client".
  */
 export class ModsDownloadStartedClientEvent implements MixpanelEvent {
   readonly eventName = "mods_download_started_client";
   readonly properties: Record<string, any>;
-  constructor(
-    mod_id: string,
-    file_id: string,
-    game_id: number,
-    mod_uid: string,
-    file_uid: string,
-    collection_id: string | null,
-  ) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
+  constructor(props: ModAnalyticsIdentity) {
+    this.properties = { ...props };
   }
 }
 
-/** DONE
- * Event sent when a mod download is completed.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- * @param file_size Size of the file
- * @param duration_ms Duration in milliseconds
- * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
+/**
+ * Resume history for a download, surfaced on terminal download events. `pause_count`
+ * accumulates across app restarts.
  */
+export interface DownloadResumeInfo {
+  pause_count: number;
+  was_resumed: boolean;
+}
+
+/** Event sent when a mod download is completed. */
 export class ModsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_completed";
   readonly properties: Record<string, any>;
   constructor(
-    mod_id: string,
-    file_id: string,
-    game_id: number,
-    mod_uid: string,
-    file_uid: string,
-    file_size: number,
-    duration_ms: number,
-    collection_id: string | null,
+    props: ModAnalyticsIdentity & { file_size: number; duration_ms: number } & DownloadResumeInfo,
   ) {
-    this.properties = {
-      mod_id,
-      file_id,
-      game_id,
-      mod_uid,
-      file_uid,
-      file_size,
-      duration_ms,
-      collection_id,
-    };
+    this.properties = { ...props };
   }
 }
 
-/**
- * Event sent when mod download is cancelled.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
- */
+/** Event sent when a mod download is cancelled. */
 export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_download_cancelled";
   readonly properties: Record<string, any>;
-  constructor(
-    mod_id: string,
-    file_id: string,
-    game_id: number,
-    mod_uid: string,
-    file_uid: string,
-    collection_id: string | null,
-  ) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid, collection_id };
+  constructor(props: ModAnalyticsIdentity) {
+    this.properties = { ...props };
   }
 }
 
-/** DONE
- * Event sent when a mod download fails.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- * @param error_code Error code
- * @param error_message Error message
- * @param collection_id ID of the parent collection when the mod is downloaded as part of a collection install, otherwise null
- */
+/** Event sent when a mod download fails. */
 export class ModsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_failed";
   readonly properties: Record<string, any>;
   constructor(
-    mod_id: string,
-    file_id: string,
-    game_id: number,
-    mod_uid: string,
-    file_uid: string,
-    error_code: string,
-    error_message: string,
-    collection_id: string | null,
+    props: ModAnalyticsIdentity & {
+      error_code: string;
+      error_message: string;
+    } & DownloadResumeInfo,
   ) {
-    this.properties = {
-      mod_id,
-      file_id,
-      game_id,
-      mod_uid,
-      file_uid,
-      error_code,
-      error_message,
-      collection_id,
-    };
+    this.properties = { ...props };
   }
 }
 
-/** DONE
- * Event sent when mod installation is started. Not sent for collection bundle/manifest mod.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- */
+/** Event sent when mod installation is started. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationStartedEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_started";
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: number, mod_uid: string, file_uid: string) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
+  constructor(props: ModAnalyticsIdentity) {
+    this.properties = { ...props };
   }
 }
 
-/** DONE
- * Event sent when mod installation is completed. Not sent for collection bundle/manifest mod.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- * @param duration_ms Duration in milliseconds
- */
+/** Event sent when mod installation is completed. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_completed";
   readonly properties: Record<string, any>;
-  constructor(
-    mod_id: string,
-    file_id: string,
-    game_id: number,
-    mod_uid: string,
-    file_uid: string,
-    duration_ms: number,
-  ) {
-    this.properties = {
-      mod_id,
-      file_id,
-      game_id,
-      mod_uid,
-      file_uid,
-      duration_ms,
-    };
+  constructor(props: ModAnalyticsIdentity & { duration_ms: number }) {
+    this.properties = { ...props };
   }
 }
 
-/**
- * Event sent when mod installation is cancelled. Not sent for collection bundle/manifest mod.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- */
+/** Event sent when mod installation is cancelled. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_cancelled";
   readonly properties: Record<string, any>;
-  constructor(mod_id: string, file_id: string, game_id: number, mod_uid: string, file_uid: string) {
-    this.properties = { mod_id, file_id, game_id, mod_uid, file_uid };
+  constructor(props: ModAnalyticsIdentity) {
+    this.properties = { ...props };
   }
 }
 
-/** DONE
- * Event sent when mod installation fails. Not sent for collection bundle/manifest mod.
- * @param mod_id ID of the mod
- * @param file_id ID of the file
- * @param game_id ID of the game
- * @param mod_uid UID of the mod
- * @param file_uid UID of the file
- * @param error_code Error code
- * @param error_message Error message
- */
+/** Event sent when mod installation fails. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_installation_failed";
   readonly properties: Record<string, any>;
-  constructor(
-    mod_id: string,
-    file_id: string,
-    game_id: number,
-    mod_uid: string,
-    file_uid: string,
-    error_code: string,
-    error_message: string,
-  ) {
-    this.properties = {
-      mod_id,
-      file_id,
-      game_id,
-      mod_uid,
-      file_uid,
-      error_code,
-      error_message,
-    };
+  constructor(props: ModAnalyticsIdentity & { error_code: string; error_message: string }) {
+    this.properties = { ...props };
   }
 }
 

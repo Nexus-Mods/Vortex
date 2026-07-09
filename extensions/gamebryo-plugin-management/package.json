@@ -67,7 +67,8 @@
         "inputs": [
           "default",
           "typescript",
-          "vortex-api"
+          "vortex-api",
+          "stylesheets"
         ]
       },
       "typecheck": {

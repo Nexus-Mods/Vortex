@@ -31,9 +31,7 @@ export async function showQuickCollectionRestrictionsDialog(api: IExtensionApi) 
           "[*] Alterations you have made mods after installing them." +
           "[*] Outputs of automated tools generated on your PC (FNIS, Script Merger, etc)." +
           "[*] Mods that you have created on your PC and added to Vortex." +
-          "[/list][br][/br]" +
-          "If you are using this feature migrate your mod list to the Nexus Mods app, see the " +
-          `[url=https://nexus-mods.github.io/NexusMods.App/users/gettingstarted/MovingToTheApp/]full guide here.[/url]`,
+          "[/list]",
       ),
     },
     [{ label: "Cancel" }, { label: "Proceed" }],

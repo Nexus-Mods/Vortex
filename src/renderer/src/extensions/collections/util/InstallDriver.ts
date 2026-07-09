@@ -16,6 +16,7 @@ import {
 import {
   getCollectionActiveSession,
   getCollectionInstallProgress,
+  getFailedRequiredMods,
 } from "../../../util/collectionInstallSessionSelectors";
 import {
   reconstructSessionMods,
@@ -25,11 +26,6 @@ import { markCollectionMemberSkipped } from "../../../util/collectionSkip";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
-import {
-  CollectionsInstallationCompletedEvent,
-  CollectionsInstallationFailedEvent,
-  CollectionsInstallationStartedEvent,
-} from "../../analytics/mixpanel/MixpanelEvents";
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
@@ -45,16 +41,23 @@ import testModReference, {
   ruleInstallSpec,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
-import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
 import { setModEnabled } from "../../profile_management/actions/profiles";
 import { activeGameId, profileById } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPendingVote } from "../actions/persistent";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
 import { postprocessCollection } from "../postprocessCollection";
+import type { CollectionPauseTrigger } from "../types/CollectionPauseTrigger";
 import type { ICollection } from "../types/ICollection";
 import type { IRevisionEx } from "../types/IRevisionEx";
 import { applyPatches } from "./binaryPatching";
+import {
+  type CollectionInstallOutcome,
+  type CollectionInstallOutcomeContext,
+  type CollectionInstallRef,
+  emitCollectionInstallOutcome,
+  emitCollectionInstallStartOrResume,
+} from "./collectionInstallAnalytics";
 import { isGamebryoGame } from "./gameSupport";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
@@ -135,38 +138,36 @@ class InstallDriver {
     }
   }
 
-  private completeInstallationTracking(success: boolean) {
+  private completeInstallationTracking(
+    outcome: CollectionInstallOutcome,
+    context: CollectionInstallOutcomeContext = {},
+  ) {
     if (!this.mCurrentSessionId) {
       return;
     }
 
-    this.mApi.store.dispatch(installActions.finishInstallSession(this.mCurrentSessionId, success));
+    // Emit analytics BEFORE finishing the session: the snapshot reads the active
+    // session, which finishInstallSession moves into history. A paused install emits
+    // its own event and stays out of the completed/failed/cancelled reconciliation.
+    const ref: CollectionInstallRef = {
+      archiveId: this.mCollection?.archiveId,
+      collectionModId: this.mCollection?.id,
+      gameId: this.mGameId,
+    };
+    emitCollectionInstallOutcome(this.mApi, outcome, ref, this.mTimeStarted, context);
+
+    this.mApi.store.dispatch(
+      installActions.finishInstallSession(this.mCurrentSessionId, outcome === "completed"),
+    );
     this.mCurrentSessionId = undefined;
   }
 
   private mDebounce: Debouncer = new Debouncer(
-    (collectionSlug: string, revisionNumber: number, error: Error | undefined) => {
-      // this.mApi.events.emit('analytics-track-event-with-payload', 'Collection Installation Failed', {
-      //   collection_slug: collectionSlug,
-      //   collection_revision_number: revisionNumber,
-      // });
-
-      const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), this.mCollection.archiveId);
-
-      this.mApi.events.emit(
-        "analytics-track-mixpanel-event",
-        new CollectionsInstallationFailedEvent(
-          nexusIds.collectionId,
-          nexusIds.revisionId,
-          nexusIds.numericGameId,
-          "",
-          error?.message,
-        ),
-      );
-
-      // Complete tracking with failure
-      this.completeInstallationTracking(false);
-
+    (_collectionSlug: string, _revisionNumber: number, error: Error | undefined) => {
+      // Postprocessing threw (applying the collection's mod rules failed). Route
+      // through the single terminal funnel so it emits exactly one "failed" outcome
+      // with the classified error code.
+      this.completeInstallationTracking("failed", { postprocessError: error });
       return null;
     },
     1000,
@@ -515,9 +516,15 @@ class InstallDriver {
     return this.mInstallDone;
   }
 
+  /** Terminal cancel: the install is abandoned (user decline, removal, free-user cancel). */
   public cancel() {
-    this.onStop();
+    this.onStop("cancelled");
+    this.triggerUpdate();
+  }
 
+  /** Resumable pause: finishes the current session but is not a terminal outcome. */
+  public pause(trigger: CollectionPauseTrigger) {
+    this.onStop("paused", { pauseTrigger: trigger });
     this.triggerUpdate();
   }
 
@@ -728,27 +735,8 @@ class InstallDriver {
       // (and have the finalization step cleared)
       this.triggerUpdate();
 
-      /* COLLECTIONS COMPLETED ANALYTICS */
-
-      const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), this.mCollection.archiveId);
-
-      const duration_ms = Date.now() - this.mTimeStarted;
-
-      this.mApi.events.emit(
-        "analytics-track-mixpanel-event",
-        new CollectionsInstallationCompletedEvent(
-          nexusIds.collectionId,
-          nexusIds.revisionId,
-          nexusIds.numericGameId,
-          this.installedMods.length,
-          duration_ms,
-        ),
-      );
-
-      // this.mApi.events.emit('analytics-track-event-with-payload', 'Collection Installation Completed', {
-      //   collection_slug: this.collectionSlug,
-      //   collection_revision_number: this.revisionNumber
-      // });
+      // Terminal install analytics are emitted from the completeInstallationTracking
+      // funnel (via close/onStop), sourced from the session SSOT.
     } catch (err) {
       this.mPostprocessing = false;
       log(
@@ -760,7 +748,10 @@ class InstallDriver {
     }
   }
 
-  private onStop() {
+  private onStop(
+    outcome: "cancelled" | "paused" = "cancelled",
+    context: CollectionInstallOutcomeContext = {},
+  ) {
     this.mPostprocessing = false;
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
@@ -777,8 +768,9 @@ class InstallDriver {
         .catch(() => undefined);
     }
 
-    // Complete the installation tracking as cancelled/failed
-    this.completeInstallationTracking(false);
+    // Finish tracking: "cancelled" is terminal, "paused" is resumable (emits its
+    // own event and finishes the session for reconstruction on resume).
+    this.completeInstallationTracking(outcome, context);
 
     this.mCollection = undefined;
     this.mProfile = undefined;
@@ -922,25 +914,11 @@ class InstallDriver {
 
     /* COLLECTIONS START ANALYTICS */
 
+    // Per-segment timer (resets on resume); total duration is anchored durably in the
+    // analytics module via the installStartedAt marker. The started/resumed events are emitted
+    // AFTER the session is created + optionals defaulted (below), so they carry the full count
+    // snapshot (required/installed/failed/ignored/optional).
     this.mTimeStarted = Date.now();
-
-    // this.mApi.events.emit('analytics-track-event-with-payload', 'Collection Installation Started', {
-    //   collection_slug: this.collectionSlug,
-    //   collection_revision_number: this.revisionNumber
-    // });
-
-    const nexusIds = nexusIdsFromDownloadId(this.mApi.getState(), collection.archiveId);
-    if (nexusIds?.collectionId != null) {
-      this.mApi.events.emit(
-        "analytics-track-mixpanel-event",
-        new CollectionsInstallationStartedEvent(
-          nexusIds.collectionId,
-          nexusIds.revisionId,
-          nexusIds.numericGameId,
-          this.numRequired,
-        ),
-      );
-    }
 
     if (this.requiredMods.length === 0) {
       this.mInstallDone = false;
@@ -981,6 +959,15 @@ class InstallDriver {
         markCollectionMemberSkipped(this.mApi, { reference: rule.reference });
       }
     }
+
+    // Emit started (genuine first start) or resumed (durable installStartedAt marker present),
+    // now that the session exists and optionals are defaulted, so the event carries the full
+    // count snapshot. Start vs resume is decided by the marker, not member-install counts.
+    emitCollectionInstallStartOrResume(
+      this.mApi,
+      { archiveId: collection.archiveId, collectionModId: collection.id, gameId: this.mGameId },
+      this.mTimeStarted,
+    );
 
     log("info", "starting install of collection", {
       totalMods: required.length,
@@ -1064,7 +1051,14 @@ class InstallDriver {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
     }
 
-    this.completeInstallationTracking(true);
+    // completed = every required member installed; failed = finished with required
+    // failures (partial). Both reach here via the review step; the count comes from
+    // the session SSOT while the collection is still set (before teardown below).
+    const outcome: CollectionInstallOutcome =
+      this.isInstallComplete(true) && getFailedRequiredMods(this.mApi.getState()).length === 0
+        ? "completed"
+        : "failed";
+    this.completeInstallationTracking(outcome);
     this.mCollection = undefined;
     this.setDependentMods([]);
     this.mInstallDone = true;
