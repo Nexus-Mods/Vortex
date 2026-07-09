@@ -221,12 +221,18 @@ export function makeDownloadedFileHydrator(
   };
 }
 
-/** Build the display shape for one installed file from its Vortex mod. */
+/**
+ * Build the display shape for one installed file from its Vortex mod. The
+ * adult-content flag isn't part of a mod's own attributes, but its originating
+ * download (linked via `archiveId`) carries the same Nexus modInfo used by
+ * `toDownloadedFile`, so it's read from there when the download still exists.
+ */
 function toInstalledFile(
   mod: IMod,
   fileUID: string,
   enabled: boolean,
   gameId: string,
+  downloads: Record<string, IDownload>,
 ): IInstalledFile {
   const attributes: IInstalledModAttributes = mod.attributes ?? {};
   const modName = renderModName(mod);
@@ -236,6 +242,7 @@ function toInstalledFile(
       modId: String(attributes.modId ?? ""),
       fileId: String(attributes.fileId ?? ""),
     }) ?? "";
+  const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
   return {
     modId: mod.id,
     fileUID,
@@ -244,7 +251,7 @@ function toInstalledFile(
     fileName: attributes.fileName ?? attributes.logicalFileName ?? modName,
     version: attributes.version ?? "",
     thumbnailUrl: attributes.pictureUrl,
-    adultContent: false, // TODO: enrich via mod details
+    adultContent: download?.modInfo?.nexus?.modInfo?.contains_adult_content ?? false,
     enabled,
   };
 }
@@ -260,6 +267,7 @@ export function makeInstalledFileHydrator(
   const state = api.getState();
   const gameId = activeProfile(state)?.gameId;
   const mods = gameId ? (state.persistent.mods[gameId] ?? {}) : {};
+  const downloads = state.persistent.downloads?.files ?? {};
   const refByUID = new Map(refs.map((ref): [string, IInstalledFileRef] => [ref.fileUID, ref]));
 
   return (fileUID) => {
@@ -271,6 +279,6 @@ export function makeInstalledFileHydrator(
     if (!mod) {
       return undefined;
     }
-    return toInstalledFile(mod, fileUID, ref.enabled, gameId);
+    return toInstalledFile(mod, fileUID, ref.enabled, gameId, downloads);
   };
 }
