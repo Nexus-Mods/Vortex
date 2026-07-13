@@ -97,6 +97,11 @@ export interface IInstallContextHarness extends IApiHarness {
   mixpanelEvents: MixpanelEvent[];
 }
 
+export interface IModChangeHarness extends IApiHarness {
+  // mods_state_changed / mods_removed events emitted on the api bus, collected in order
+  mixpanelEvents: MixpanelEvent[];
+}
+
 export interface IInstallManagerHarness extends IApiHarness {
   // the InstallManager under test, constructed against the fake api (its event handlers are wired
   // onto the same bus, so harness.emit drives them)

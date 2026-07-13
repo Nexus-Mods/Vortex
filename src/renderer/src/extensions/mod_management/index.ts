@@ -53,6 +53,7 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from "../../util/util";
 import { waitForCondition } from "../../util/waitForCondition";
+import { emitModStateChanged } from "../analytics/mixpanel/modChangeAnalytics";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
@@ -1170,6 +1171,15 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
       const notiId = `may-enable-${modId}`;
       if (notiIds.has(notiId)) {
         api.dismissNotification(notiId);
+      }
+      if (options?.skipStateChangeEvent !== true) {
+        emitModStateChanged(
+          api,
+          gameId,
+          modId,
+          enabled ? "enabled" : "disabled",
+          options?.reason ?? "user_manual",
+        );
       }
     });
     if (state.settings.automation.deploy && options?.allowAutoDeploy !== false) {

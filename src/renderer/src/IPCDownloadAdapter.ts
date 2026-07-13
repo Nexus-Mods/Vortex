@@ -344,7 +344,12 @@ export class IPCDownloadAdapter {
     }
 
     if (eventType === "completed") {
-      const duration_ms = Date.now() - (download?.fileTime ?? Date.now());
+      // Elapsed since the download's durable startTime (stamped when it first transitions to
+      // "started", preserved across pause/resume and restarts). 0 when there is no start stamp
+      // (e.g. locally-added archives).
+      const startTime = download?.startTime;
+      const duration_ms =
+        typeof startTime === "number" && startTime > 0 ? Date.now() - startTime : 0;
       const file_size = download?.size ?? 0;
       if (isCollection && nexusIds.collectionId && nexusIds.revisionId) {
         this.#api.events.emit(
