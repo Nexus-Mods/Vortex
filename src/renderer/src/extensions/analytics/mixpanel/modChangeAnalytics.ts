@@ -1,12 +1,10 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
-import { getGame } from "../../gamemode_management/util/getGame";
 import type { IMod } from "../../mod_management/types/IMod";
-import { nexusGames } from "../../nexus_integration/util";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { ModAnalyticsIdentity, ModChangeReason } from "./MixpanelEvents";
 import { ModsRemovedEvent, ModsStateChangedEvent } from "./MixpanelEvents";
 import { makeModAnalyticsIdentity } from "./modAnalyticsIdentity";
+import { numericNexusGameId } from "./numericGameId";
 
 /**
  * Resolves the per-mod analytics identity from an installed mod's own attributes, or undefined
@@ -28,13 +26,11 @@ function resolveModIdentity(
   if (attributes.source !== "nexus" || modId == null || fileId == null) {
     return undefined;
   }
-  // downloadGame is our internal game id; the games cache is keyed by Nexus domain, so convert
-  // (skyrimse -> skyrimspecialedition) before matching. NaN when the game/cache can't resolve.
-  const domain =
-    attributes.downloadGame != null
-      ? nexusGameId(getGame(attributes.downloadGame), attributes.downloadGame)
-      : undefined;
-  const numericGameId = nexusGames().find((game) => game.domain_name === domain)?.id ?? Number.NaN;
+  // downloadGame is our internal game id. NaN when the game/cache can't resolve, so the mod
+  // identity's numeric game_id stays a number (it feeds the mod/file UID computation).
+  const numericGameId =
+    (attributes.downloadGame != null ? numericNexusGameId(attributes.downloadGame) : null) ??
+    Number.NaN;
   // revision_id is null: the mod's own attributes don't record the parent collection revision.
   return makeModAnalyticsIdentity(
     { numericGameId, modId: modId.toString(), fileId: fileId.toString() },

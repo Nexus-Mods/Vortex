@@ -5,9 +5,7 @@ import {
   AppGameLaunchedEvent,
   type GameLaunchMethod,
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
-import { getGame } from "../extensions/gamemode_management/util/getGame";
-import { nexusGames } from "../extensions/nexus_integration/util";
-import { nexusGameId } from "../extensions/nexus_integration/util/convertGameId";
+import { numericNexusGameId } from "../extensions/analytics/mixpanel/numericGameId";
 import {
   enabledModCountForProfile,
   lastActiveProfileForGame,
@@ -26,12 +24,6 @@ interface ILaunchRecord {
 // Recorded launches awaiting their exit, keyed by exe id (makeExeId).
 const pendingLaunches = new Map<string, ILaunchRecord>();
 let exitWatcherInstalled = false;
-
-/** Numeric Nexus game id for an internal game id, matching the other analytics events; null when unresolved. */
-function toNumericGameId(internalGameId: string): number | null {
-  const domain = nexusGameId(getGame(internalGameId), internalGameId);
-  return nexusGames().find((game) => game.domain_name === domain)?.id ?? null;
-}
 
 function launchMethod(info: IStarterInfo): GameLaunchMethod {
   if (info.isGame) {
@@ -84,7 +76,7 @@ function ensureExitWatcher(api: IExtensionApi): void {
 export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   ensureExitWatcher(api);
   const state: IState = api.getState();
-  const gameId = toNumericGameId(info.gameId);
+  const gameId = numericNexusGameId(info.gameId);
   const sessionId = shortid();
   pendingLaunches.set(makeExeId(info.exePath), { sessionId, gameId, launchTime: Date.now() });
   const profileId = lastActiveProfileForGame(state, info.gameId);
