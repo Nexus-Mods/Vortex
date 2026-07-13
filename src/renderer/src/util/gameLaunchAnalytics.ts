@@ -19,6 +19,8 @@ interface ILaunchRecord {
   sessionId: string;
   gameId: number | null;
   launchTime: number;
+  // Set from runExecutable's exit for Vortex-spawned launches; stays null for store launches.
+  exitCode: number | null;
 }
 
 // Recorded launches awaiting their exit, keyed by exe id (makeExeId).
@@ -31,6 +33,17 @@ function launchMethod(info: IStarterInfo): GameLaunchMethod {
   }
   // Extensions flag script-extender tools (skse64, f4se, ...) with defaultPrimary.
   return info.defaultPrimary ? "script_extender" : "tool";
+}
+
+/**
+ * Records the exit code for a launched exe (from runExecutable) so the paired app_game_exited can
+ * report it. No-op when the launch isn't tracked, e.g. a store launch Vortex didn't spawn itself.
+ */
+export function recordLaunchExit(exePath: string, code: number | null): void {
+  const record = pendingLaunches.get(makeExeId(exePath));
+  if (record !== undefined) {
+    record.exitCode = code;
+  }
 }
 
 /** Emits app_game_exited for each recorded launch whose exe is in `previous` but absent from `current`. */
@@ -54,6 +67,7 @@ export function emitExitsForStoppedTools(
         game_id: record.gameId,
         launch_session_id: record.sessionId,
         duration_ms: Date.now() - record.launchTime,
+        exit_code: record.exitCode,
       }),
     );
   }
@@ -78,7 +92,12 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   const state: IState = api.getState();
   const gameId = numericNexusGameId(info.gameId);
   const sessionId = shortid();
-  pendingLaunches.set(makeExeId(info.exePath), { sessionId, gameId, launchTime: Date.now() });
+  pendingLaunches.set(makeExeId(info.exePath), {
+    sessionId,
+    gameId,
+    launchTime: Date.now(),
+    exitCode: null,
+  });
   const profileId = lastActiveProfileForGame(state, info.gameId);
   api.events.emit(
     "analytics-track-mixpanel-event",
