@@ -32,4 +32,26 @@ export class ModsPage {
   modRow(name: string | RegExp): Locator {
     return this.page.getByText(name).first();
   }
+
+  /** Full table row in the Mods table for the mod matching `name`. */
+  row(name: string | RegExp): Locator {
+    return this.page.getByRole("row").filter({ hasText: name }).first();
+  }
+
+  /**
+   * Row-scoped variant of `statusButton` for tests with more than one mod
+   * installed (the button id is duplicated across rows).
+   */
+  statusButtonInRow(name: string | RegExp): Locator {
+    return this.row(name).locator("#btn-mods-enabled");
+  }
+
+  /**
+   * Default action button in the row's actions cell (ActionDropdown). "Remove"
+   * is the default table action for an installed mod, so the visible button
+   * carries the "Remove" label.
+   */
+  removeButtonInRow(name: string | RegExp): Locator {
+    return this.row(name).getByRole("button", { name: "Remove", exact: true });
+  }
 }
