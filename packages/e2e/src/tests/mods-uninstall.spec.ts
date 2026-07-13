@@ -1,21 +1,5 @@
 import type { ElectronApplication, Page } from "@playwright/test";
 
-/**
- * QA-246: Mods [9.7] — I can uninstall a mod.
- *
- * Scenario 1 (two steps): remove the mod (archive kept), then remove again to
- * delete the archive — including a Cancel pass to prove nothing is removed.
- * Scenario 2 (one step): tick "Delete Archive" alongside "Remove Mod" and
- * remove both at once.
- *
- * Setup installs SMAPI first (the target mod depends on it), then the target
- * mod. The ticket's "verify the mod changes the main menu" step is skipped:
- * the fake-game fixture has no real launcher, so install/uninstall state is
- * asserted via the Mods list instead (same approach as QA-176).
- *
- * Uninstall behaviour is tier-independent (tier only affects the download
- * interstitial, covered by QA-108), so this runs as freeUser only.
- */
 import { test, expect } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { Timeouts } from "../helpers/timeouts";
@@ -30,7 +14,6 @@ const TARGET_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/4697";
 const SMAPI_NAME = /SMAPI/i;
 const TARGET_MOD_NAME = /Vintage Interface/i;
 
-/** Install SMAPI, then the target mod, and land on the Mods page. */
 async function installTestMods(
   nexusPage: Page,
   vortexApp: ElectronApplication,
