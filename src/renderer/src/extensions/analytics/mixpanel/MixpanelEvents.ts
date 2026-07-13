@@ -75,6 +75,33 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
   constructor() {}
 }
 
+/** Fields on the app_game_manage event. */
+export interface GameManagedProps {
+  game_id: number | null;
+  extension_version: string;
+}
+
+/**
+ * Sent the first time a game is managed, when its first profile is created.
+ * `extension_version` is the version of the game's support extension.
+ */
+export class AppGameManagedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_manage";
+  readonly properties: Record<string, unknown>;
+  constructor(props: GameManagedProps) {
+    this.properties = { ...props };
+  }
+}
+
+/** Sent when a game is unmanaged (its profiles and mods are removed). */
+export class AppGameUnmanagedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_unmanage";
+  readonly properties: Record<string, unknown>;
+  constructor(props: { game_id: number | null }) {
+    this.properties = { ...props };
+  }
+}
+
 /**
  * COLLECTION EVENTS
  */
