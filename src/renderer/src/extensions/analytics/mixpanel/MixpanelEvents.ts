@@ -532,6 +532,33 @@ export class ModsRemovedEvent implements MixpanelEvent {
 }
 
 /**
+ * DEPLOYMENT EVENTS
+ */
+
+/** Fields on the mods_deployed event. */
+export interface ModsDeployedProps {
+  game_id: number | null;
+  deployment_method: string;
+  file_count: number;
+  enabled_mod_count: number;
+  manual: boolean;
+  is_collection_postprocess: boolean;
+}
+
+/**
+ * Sent when a deployment to the game directory completes successfully. `deployment_method` is the
+ * activator (hardlink, symlink, ...); `manual` marks a user-triggered deploy over an automatic one;
+ * `is_collection_postprocess` marks the deploy Vortex runs while finishing a collection install.
+ */
+export class ModsDeployedEvent implements MixpanelEvent {
+  readonly eventName = "mods_deployed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: ModsDeployedProps) {
+    this.properties = { ...props };
+  }
+}
+
+/**
  * HEALTH CHECK EVENTS
  */
 

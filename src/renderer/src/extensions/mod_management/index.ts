@@ -53,6 +53,7 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from "../../util/util";
 import { waitForCondition } from "../../util/waitForCondition";
+import { emitModsDeployed } from "../analytics/mixpanel/deployAnalytics";
 import { emitModStateChanged } from "../analytics/mixpanel/modChangeAnalytics";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -863,6 +864,15 @@ function genUpdateModDeployment(installManager: InstallManager) {
             await bakeSettings(api, profile, sortedModList);
 
             api.store.dispatch(setDeploymentNecessary(game.id, false));
+
+            emitModsDeployed(api, {
+              gameId,
+              deploymentMethod: activator.name,
+              fileCount: Object.values(newDeployment).reduce((sum, files) => sum + files.length, 0),
+              enabledModCount,
+              manual,
+              isCollectionPostprocess: deployOptions?.isCollectionPostprocessCall ?? false,
+            });
           } catch (unknownErr) {
             const err = unknownToError(unknownErr);
             if (err instanceof UserCanceled) {
