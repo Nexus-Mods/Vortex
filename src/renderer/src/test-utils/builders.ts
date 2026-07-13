@@ -64,6 +64,7 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IState } from "../types/IState";
 import local from "../util/local";
+import type { IStarterInfo } from "../util/StarterInfo";
 import type {
   IApiHarness,
   IDownloadAdapterHarness,
@@ -179,6 +180,29 @@ export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
     name: "Profile",
     modState: {},
     lastActivated: 0,
+    ...overrides,
+  };
+}
+
+// A launch target as StarterInfo.run receives it. Defaults to the skyrimse game exe (isGame),
+// launched directly (no store); override isGame/store/defaultPrimary to model store/tool/SE launches.
+export function makeStarterInfo(overrides: Partial<IStarterInfo> = {}): IStarterInfo {
+  return {
+    id: "skyrimse",
+    gameId: "skyrimse",
+    isGame: true,
+    iconOutPath: "",
+    name: "Skyrim Special Edition",
+    exePath: "C:/games/skyrimse/SkyrimSE.exe",
+    commandLine: [],
+    workingDirectory: "",
+    exclusive: false,
+    detach: true,
+    shell: false,
+    store: "",
+    environment: {},
+    extensionPath: "",
+    logoName: "",
     ...overrides,
   };
 }
