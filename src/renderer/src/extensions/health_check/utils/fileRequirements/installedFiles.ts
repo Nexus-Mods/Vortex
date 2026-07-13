@@ -222,17 +222,14 @@ export function makeDownloadedFileHydrator(
 }
 
 /**
- * Build the display shape for one installed file from its Vortex mod. The
- * adult-content flag isn't part of a mod's own attributes, but its originating
- * download (linked via `archiveId`) carries the same Nexus modInfo used by
- * `toDownloadedFile`, so it's read from there when the download still exists.
+ * Build the display shape for one installed file from its Vortex mod.
  */
 function toInstalledFile(
   mod: IMod,
   fileUID: string,
   enabled: boolean,
   gameId: string,
-  downloads: Record<string, IDownload>,
+  adultContent: boolean,
 ): IInstalledFile {
   const attributes: IInstalledModAttributes = mod.attributes ?? {};
   const modName = renderModName(mod);
@@ -242,7 +239,6 @@ function toInstalledFile(
       modId: String(attributes.modId ?? ""),
       fileId: String(attributes.fileId ?? ""),
     }) ?? "";
-  const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
   return {
     modId: mod.id,
     fileUID,
@@ -251,14 +247,15 @@ function toInstalledFile(
     fileName: attributes.fileName ?? attributes.logicalFileName ?? modName,
     version: attributes.version ?? "",
     thumbnailUrl: attributes.pictureUrl,
-    adultContent: download?.modInfo?.nexus?.modInfo?.contains_adult_content ?? false,
+    adultContent,
     enabled,
   };
 }
 
 /**
  * A `fileUID -> IInstalledFile` hydrator over the gathered refs, reading the mod
- * store on demand so only surfaced files are hydrated.
+ * store on demand so only surfaced files are hydrated. The adult-content flag is
+ * read from the originating download (linked via `archiveId`), or defaults to false.
  */
 export function makeInstalledFileHydrator(
   api: IExtensionApi,
@@ -279,6 +276,8 @@ export function makeInstalledFileHydrator(
     if (!mod) {
       return undefined;
     }
-    return toInstalledFile(mod, fileUID, ref.enabled, gameId, downloads);
+    const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
+    const adultContent = download?.modInfo?.nexus?.modInfo?.contains_adult_content ?? false;
+    return toInstalledFile(mod, fileUID, ref.enabled, gameId, adultContent);
   };
 }
