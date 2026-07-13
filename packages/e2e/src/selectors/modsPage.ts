@@ -1,5 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
 
+export const MOD_STATUS = {
+  enabled: "Enabled",
+  disabled: "Disabled",
+  uninstalled: "Uninstalled",
+} as const;
+
+export type ModStatus = (typeof MOD_STATUS)[keyof typeof MOD_STATUS];
+
 export class ModsPage {
   readonly page: Page;
   readonly installFromFileButton: Locator;
@@ -31,5 +39,17 @@ export class ModsPage {
 
   modRow(name: string | RegExp): Locator {
     return this.page.getByText(name).first();
+  }
+
+  row(name: string | RegExp): Locator {
+    return this.page.getByRole("row").filter({ hasText: name }).first();
+  }
+
+  statusButtonInRow(name: string | RegExp): Locator {
+    return this.row(name).locator("#btn-mods-enabled");
+  }
+
+  removeButtonInRow(name: string | RegExp): Locator {
+    return this.row(name).getByRole("button", { name: "Remove", exact: true });
   }
 }
