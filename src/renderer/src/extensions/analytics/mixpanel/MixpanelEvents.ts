@@ -129,6 +129,8 @@ export interface GameExitedProps {
   game_id: number | null;
   launch_session_id: string;
   duration_ms: number;
+  // Process exit code, when Vortex launched the process itself; null for store launches.
+  exit_code: number | null;
 }
 
 /**

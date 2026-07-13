@@ -22,7 +22,7 @@ import {
   ProcessCanceled,
   UserCanceled,
 } from "./CustomErrors";
-import { emitGameLaunched } from "./gameLaunchAnalytics";
+import { emitGameLaunched, recordLaunchExit } from "./gameLaunchAnalytics";
 import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
@@ -290,6 +290,7 @@ class StarterInfo implements IStarterInfo {
         shell: info.shell,
         detach: info.detach || info.onStart === "close",
         onSpawned: spawned,
+        onExit: (code) => recordLaunchExit(info.exePath, code),
       })
       .catch(ProcessCanceled, () => undefined)
       .catch(UserCanceled, () => undefined)

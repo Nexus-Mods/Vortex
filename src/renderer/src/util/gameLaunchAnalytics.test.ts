@@ -10,7 +10,11 @@ import type {
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import { makeExeId } from "../reducers/session";
 import { makeApiHarness, makeStarterInfo } from "../test-utils/builders";
-import { emitExitsForStoppedTools, emitGameLaunched } from "./gameLaunchAnalytics";
+import {
+  emitExitsForStoppedTools,
+  emitGameLaunched,
+  recordLaunchExit,
+} from "./gameLaunchAnalytics";
 import type { IStarterInfo } from "./StarterInfo";
 
 function harness() {
@@ -59,6 +63,19 @@ describe("game launch analytics", () => {
     expect(exited).toBeDefined();
     expect(exited?.properties.launch_session_id).toBe(sessionId);
     expect(typeof exited?.properties.duration_ms).toBe("number");
+    expect(exited?.properties.exit_code).toBeNull();
+  });
+
+  it("reports the exit code recorded from runExecutable on app_game_exited", () => {
+    const h = harness();
+    const info = makeStarterInfo({ exePath: "C:/g/coded.exe" });
+    emitGameLaunched(h.api, info);
+    recordLaunchExit(info.exePath, 0);
+
+    emitExitsForStoppedTools(h.api, { [makeExeId(info.exePath)]: { started: 0 } }, {});
+
+    const exited = h.events.find((e) => e.eventName === "app_game_exited");
+    expect(exited?.properties.exit_code).toBe(0);
   });
 
   it("does not emit app_game_exited for an exe that was not a tracked launch", () => {
