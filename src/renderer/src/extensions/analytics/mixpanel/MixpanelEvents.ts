@@ -102,6 +102,47 @@ export class AppGameUnmanagedEvent implements MixpanelEvent {
   }
 }
 
+/** How a game/tool launch was started, on the app_game_launched event. */
+export type GameLaunchMethod = "direct_exe" | "store" | "script_extender" | "tool";
+
+/**
+ * Sent when the user launches the game or a tool from Vortex. `launch_session_id` pairs it with
+ * the matching app_game_exited so launch and exit can be joined (and a duration derived).
+ */
+export interface GameLaunchedProps {
+  game_id: number | null;
+  launch_method: GameLaunchMethod;
+  enabled_mod_count: number;
+  launch_session_id: string;
+}
+
+export class AppGameLaunchedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_launched";
+  readonly properties: Record<string, unknown>;
+  constructor(props: GameLaunchedProps) {
+    this.properties = { ...props };
+  }
+}
+
+/** Fields on the app_game_exited event. */
+export interface GameExitedProps {
+  game_id: number | null;
+  launch_session_id: string;
+  duration_ms: number;
+}
+
+/**
+ * Sent when a launched game/tool process exits. `duration_ms` is the time since its launch;
+ * `launch_session_id` matches the app_game_launched it pairs with.
+ */
+export class AppGameExitedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_exited";
+  readonly properties: Record<string, unknown>;
+  constructor(props: GameExitedProps) {
+    this.properties = { ...props };
+  }
+}
+
 /**
  * COLLECTION EVENTS
  */
