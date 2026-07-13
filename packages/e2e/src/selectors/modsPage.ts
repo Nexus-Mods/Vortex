@@ -1,5 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
 
+export const MOD_STATUS = {
+  enabled: "Enabled",
+  disabled: "Disabled",
+  uninstalled: "Uninstalled",
+} as const;
+
+export type ModStatus = (typeof MOD_STATUS)[keyof typeof MOD_STATUS];
+
 export class ModsPage {
   readonly page: Page;
   readonly installFromFileButton: Locator;
