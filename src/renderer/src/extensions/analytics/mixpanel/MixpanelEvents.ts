@@ -1,3 +1,5 @@
+import type { ExtensionInstallSource } from "./extensionInstallAnalytics";
+
 /**
  * Interface for all Mixpanel events
  */
@@ -623,6 +625,39 @@ export class ModsDeployedEvent implements MixpanelEvent {
   readonly eventName = "mods_deployed";
   readonly properties: Record<string, unknown>;
   constructor(props: ModsDeployedProps) {
+    this.properties = { ...props };
+  }
+}
+
+/**
+ * EXTENSION EVENTS
+ */
+
+/**
+ * Fields on the extension_installed event. The identity is sourced from the installed IExtension
+ * but reported in snake_case like every other event. `extension_type` collapses to "game" vs
+ * "other" (only game-support extensions are distinguished). `game_domain` / `game_name` name the
+ * supported game for game extensions (from the central manifest, so absent on manual installs).
+ * `is_update` marks an install that replaced a previous version.
+ */
+export interface ExtensionInstalledProps {
+  extension_id?: string;
+  extension_name: string;
+  author: string;
+  version: string;
+  mod_id?: number;
+  extension_type: "game" | "other";
+  game_domain?: string;
+  game_name?: string;
+  source: ExtensionInstallSource;
+  is_update: boolean;
+}
+
+/** Sent when a Vortex extension finishes installing. */
+export class ExtensionInstalledEvent implements MixpanelEvent {
+  readonly eventName = "extension_installed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: ExtensionInstalledProps) {
     this.properties = { ...props };
   }
 }
