@@ -13,13 +13,15 @@ export interface ModNexusIds {
 }
 
 /**
- * Builds the shared per-mod analytics identity (mod/file ids + UIDs + collection_id)
+ * Builds the shared per-mod analytics identity (mod/file ids + UIDs + collection_id + revision_id)
  * from resolved nexus ids, so the download and install emit sites produce an identical
- * identity. `collectionId` is the parent collection when installed as part of one, else null.
+ * identity. `collectionId`/`revisionId` are the parent collection and its revision when installed
+ * as part of one, else null.
  */
 export function makeModAnalyticsIdentity(
   nexusIds: ModNexusIds,
   collectionId: string | null,
+  revisionId: string | null,
 ): ModAnalyticsIdentity {
   const { modUID, fileUID } = makeModAndFileUIDs(
     nexusIds.numericGameId.toString(),
@@ -33,5 +35,6 @@ export function makeModAnalyticsIdentity(
     mod_uid: modUID,
     file_uid: fileUID,
     collection_id: collectionId,
+    revision_id: revisionId,
   };
 }

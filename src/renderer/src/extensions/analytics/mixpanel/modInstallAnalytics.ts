@@ -55,8 +55,8 @@ export interface ModInstallOutcomeContext {
  * Resolves the per-mod analytics identity for an install archive, or undefined when the
  * install should not be tracked: no nexus fileId (manual/bundled mods), or the archive is
  * the collection container itself (the collection has its own installation events). A mod
- * installed as part of a collection carries that collection's id under
- * modInfo.nexus.parentCollectionId.
+ * installed as part of a collection carries that collection's id and revision under
+ * modInfo.nexus.parentCollectionId/parentRevisionId.
  */
 function resolveModIdentity(
   api: IExtensionApi,
@@ -68,8 +68,12 @@ function resolveModIdentity(
   if (nexusIds?.fileId == null || isCollection) {
     return undefined;
   }
-  const download = state.persistent.downloads.files?.[archiveId];
-  return makeModAnalyticsIdentity(nexusIds, download?.modInfo?.nexus?.parentCollectionId ?? null);
+  const parent = state.persistent.downloads.files?.[archiveId]?.modInfo?.nexus;
+  return makeModAnalyticsIdentity(
+    nexusIds,
+    parent?.parentCollectionId ?? null,
+    parent?.parentRevisionId ?? null,
+  );
 }
 
 /** Emits mods_installation_started for a mod (standalone or collection member). */

@@ -35,9 +35,11 @@ function resolveModIdentity(
       ? nexusGameId(getGame(attributes.downloadGame), attributes.downloadGame)
       : undefined;
   const numericGameId = nexusGames().find((game) => game.domain_name === domain)?.id ?? Number.NaN;
+  // revision_id is null: the mod's own attributes don't record the parent collection revision.
   return makeModAnalyticsIdentity(
     { numericGameId, modId: modId.toString(), fileId: fileId.toString() },
     collectionId,
+    null,
   );
 }
 
