@@ -352,8 +352,8 @@ export class CollectionsInstallationPausedEvent implements MixpanelEvent {
 /**
  * Identity shared by every per-mod analytics event (download and install), so the
  * mod-level events stay consistent with one another and joinable to their collection.
- * `collection_id` is the parent collection id when the mod is downloaded/installed as
- * part of a collection, otherwise null.
+ * `collection_id`/`revision_id` are the parent collection and its revision when the mod
+ * is downloaded/installed as part of a collection, otherwise null.
  */
 export interface ModAnalyticsIdentity {
   mod_id: string;
@@ -362,6 +362,7 @@ export interface ModAnalyticsIdentity {
   mod_uid: string;
   file_uid: string;
   collection_id: string | null;
+  revision_id: string | null;
 }
 
 /**

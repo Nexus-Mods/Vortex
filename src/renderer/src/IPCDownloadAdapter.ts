@@ -323,12 +323,14 @@ export class IPCDownloadAdapter {
     const download = state.persistent.downloads.files?.[downloadId];
     const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-    // Mod downloads triggered by a collection install carry the parent collection's id
-    // under `modInfo.nexus.parentCollectionId` (see InstallManager.downloadURL).
-    // Cast narrows away the `[key: string]: any` index signature on nexus.
+    // Mod downloads triggered by a collection install carry the parent collection's id and
+    // revision under `modInfo.nexus.parentCollectionId`/`parentRevisionId` (see
+    // InstallManager.downloadURL).
     const parentCollectionId = download?.modInfo?.nexus?.parentCollectionId;
     const modCollectionId =
       isCollection || parentCollectionId === undefined ? null : parentCollectionId;
+    const parentRevisionId = download?.modInfo?.nexus?.parentRevisionId;
+    const modRevisionId = isCollection || parentRevisionId === undefined ? null : parentRevisionId;
 
     // Durable resume history (persisted on the record, accumulates across restarts).
     const pause_count = download?.pauseCount ?? 0;
@@ -338,7 +340,9 @@ export class IPCDownloadAdapter {
       if (isCollection || nexusIds.modId === undefined || nexusIds.fileId === undefined) return;
       this.#api.events.emit(
         "analytics-track-mixpanel-event",
-        new ModsDownloadStartedClientEvent(makeModAnalyticsIdentity(nexusIds, modCollectionId)),
+        new ModsDownloadStartedClientEvent(
+          makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
+        ),
       );
       return;
     }
@@ -366,7 +370,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadCompletedEvent({
-            ...makeModAnalyticsIdentity(nexusIds, modCollectionId),
+            ...makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
             file_size,
             duration_ms,
             ...resumeInfo,
@@ -389,7 +393,9 @@ export class IPCDownloadAdapter {
       } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
-          new ModsDownloadCancelledEvent(makeModAnalyticsIdentity(nexusIds, modCollectionId)),
+          new ModsDownloadCancelledEvent(
+            makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
+          ),
         );
       }
       return;
@@ -413,7 +419,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadFailedEvent({
-            ...makeModAnalyticsIdentity(nexusIds, modCollectionId),
+            ...makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
             error_code,
             error_message: message,
             ...resumeInfo,

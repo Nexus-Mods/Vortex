@@ -216,6 +216,12 @@ interface IInvalidInstruction {
   error: string;
 }
 
+/** The collection (and its revision) a dependency download belongs to, for download analytics. */
+interface IParentCollection {
+  collectionId: string;
+  revisionId?: string;
+}
+
 class InstructionGroups {
   public copy: IInstruction[] = [];
   public mkdir: IInstruction[] = [];
@@ -3434,9 +3440,15 @@ class InstallManager {
     if (collectionMod === undefined) {
       return;
     }
-    const parentCollectionId =
+    const parentCollection: IParentCollection | undefined =
       collectionMod.attributes?.collectionId != null
-        ? String(collectionMod.attributes.collectionId)
+        ? {
+            collectionId: String(collectionMod.attributes.collectionId),
+            revisionId:
+              collectionMod.attributes.revisionId != null
+                ? String(collectionMod.attributes.revisionId)
+                : undefined,
+          }
         : undefined;
     const stagingPath = installPathForGame(state, session.gameId);
     const pending = selectedOptionalRules(
@@ -3478,7 +3490,7 @@ class InstallManager {
             dep.lookupResults[0].value,
             () => !this.mDependencyInstalls[sourceModId],
             dep.extra?.fileName,
-            parentCollectionId,
+            parentCollection,
           );
         })
         .then((downloadId: string | undefined) => {
@@ -5272,7 +5284,7 @@ class InstallManager {
     referenceTag?: string,
     campaign?: string,
     fileName?: string,
-    parentCollectionId?: string,
+    parentCollection?: IParentCollection,
   ): Promise<string> {
     const call = (input: string | (() => PromiseLike<string>)): Promise<string> =>
       input !== undefined && typeof input === "function"
@@ -5306,12 +5318,15 @@ class InstallManager {
               referenceTag,
               meta: lookupResult,
             };
-            if (parentCollectionId !== undefined) {
-              // Tag the download with the parent collection's id for analytics only.
+            if (parentCollection !== undefined) {
+              // Tag the download with the parent collection's id and revision for analytics only.
               // Kept off `nexus.ids.collectionId` because the install attribute
               // extractor copies that field onto the installed mod, which would
               // make a regular mod look like a collection downstream.
-              startDownloadModInfo.nexus = { parentCollectionId };
+              startDownloadModInfo.nexus = {
+                parentCollectionId: parentCollection.collectionId,
+                parentRevisionId: parentCollection.revisionId,
+              };
             }
 
             if (
@@ -5350,7 +5365,7 @@ class InstallManager {
                         referenceTag,
                         campaign,
                         fileName,
-                        parentCollectionId,
+                        parentCollection,
                       );
                       return resolve(id);
                     } else {
@@ -5378,7 +5393,7 @@ class InstallManager {
     wasCanceled: () => boolean,
     campaign: string,
     fileName?: string,
-    parentCollectionId?: string,
+    parentCollection?: IParentCollection,
   ): Promise<string> {
     const modId: string = getSafe(lookupResult, ["details", "modId"], undefined);
     const fileId: string = getSafe(lookupResult, ["details", "fileId"], undefined);
@@ -5390,7 +5405,7 @@ class InstallManager {
         referenceTag,
         fileName,
         undefined,
-        parentCollectionId,
+        parentCollection,
       );
     }
 
@@ -5429,16 +5444,25 @@ class InstallManager {
                 api.store.dispatch(
                   setDownloadModInfo(results[0].dlId, "referenceTag", referenceTag),
                 );
-                if (parentCollectionId !== undefined) {
+                if (parentCollection !== undefined) {
                   // See downloadURL: kept off nexus.ids.collectionId to avoid the
                   // install attribute extractor copying it onto the installed mod.
                   api.store.dispatch(
                     setDownloadModInfo(
                       results[0].dlId,
                       "nexus.parentCollectionId",
-                      parentCollectionId,
+                      parentCollection.collectionId,
                     ),
                   );
+                  if (parentCollection.revisionId !== undefined) {
+                    api.store.dispatch(
+                      setDownloadModInfo(
+                        results[0].dlId,
+                        "nexus.parentRevisionId",
+                        parentCollection.revisionId,
+                      ),
+                    );
+                  }
                 }
                 return Promise.resolve(results[0].dlId);
               }
@@ -5454,7 +5478,7 @@ class InstallManager {
     lookupResult: IModInfoEx,
     wasCanceled: () => boolean,
     fileName: string,
-    parentCollectionId?: string,
+    parentCollection?: IParentCollection,
   ): Promise<string> {
     const referenceTag = requirement["tag"];
     const { campaign } = requirement["repo"] ?? {};
@@ -5473,7 +5497,7 @@ class InstallManager {
         wasCanceled,
         campaign,
         fileName,
-        parentCollectionId,
+        parentCollection,
       )
         .catch((err) => {
           if (err instanceof HTTPError) {
@@ -5493,7 +5517,7 @@ class InstallManager {
                 referenceTag,
                 campaign,
                 fileName,
-                parentCollectionId,
+                parentCollection,
               )
             : res,
         );
@@ -5505,7 +5529,7 @@ class InstallManager {
         referenceTag,
         campaign,
         fileName,
-        parentCollectionId,
+        parentCollection,
       ).catch((err) => {
         if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
           return Promise.reject(err);
@@ -5520,7 +5544,7 @@ class InstallManager {
             wasCanceled,
             campaign,
             fileName,
-            parentCollectionId,
+            parentCollection,
           );
         } else {
           return Promise.reject(err);
@@ -6030,10 +6054,16 @@ class InstallManager {
     }
 
     // When installing a collection, tag each dependency download with the parent
-    // collection id so the Mixpanel mod download events can carry collection_id.
-    const parentCollectionId: string | undefined =
+    // collection id and revision so the Mixpanel mod download events can carry them.
+    const parentCollection: IParentCollection | undefined =
       sourceMod.type === "collection" && sourceMod.attributes?.collectionId !== undefined
-        ? String(sourceMod.attributes.collectionId)
+        ? {
+            collectionId: String(sourceMod.attributes.collectionId),
+            revisionId:
+              sourceMod.attributes.revisionId !== undefined
+                ? String(sourceMod.attributes.revisionId)
+                : undefined,
+          }
         : undefined;
 
     let queuedDownloads: IModReference[] = [];
@@ -6079,7 +6109,7 @@ class InstallManager {
                 dep.lookupResults[0].value,
                 () => abort.signal.aborted,
                 dep.extra?.fileName,
-                parentCollectionId,
+                parentCollection,
               ),
             )
             .then((dlId) => {

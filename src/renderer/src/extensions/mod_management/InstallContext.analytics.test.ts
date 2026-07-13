@@ -36,6 +36,7 @@ describe("InstallContext per-mod analytics", () => {
       mod_id: "100",
       file_id: "200",
       collection_id: null,
+      revision_id: null,
     });
   });
 
@@ -78,10 +79,17 @@ describe("InstallContext per-mod analytics", () => {
     expect(completed?.properties.install_kind).toBe("profile_replace");
   });
 
-  test("carries the parent collection_id for a collection member", ({ makeInstallContext }) => {
-    const h = makeInstallContext(withDownload(memberInfo({ parentCollectionId: "col-9" })));
+  test("carries the parent collection_id and revision_id for a collection member", ({
+    makeInstallContext,
+  }) => {
+    const h = makeInstallContext(
+      withDownload(memberInfo({ parentCollectionId: "col-9", parentRevisionId: "rev-3" })),
+    );
     h.ctx.startInstallCB(MOD, GAME, ARCHIVE);
-    expect(h.mixpanelEvents[0].properties.collection_id).toBe("col-9");
+    expect(h.mixpanelEvents[0].properties).toMatchObject({
+      collection_id: "col-9",
+      revision_id: "rev-3",
+    });
   });
 
   test("does not emit for the collection container itself", ({ makeInstallContext }) => {

@@ -47,6 +47,7 @@ test("emitModStateChanged emits mods_state_changed with the change, reason and N
     mod_id: "100",
     file_id: "200",
     collection_id: null,
+    revision_id: null,
   });
 });
 
