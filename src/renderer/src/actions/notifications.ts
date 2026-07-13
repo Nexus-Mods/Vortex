@@ -1,6 +1,5 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import { ipcMain, ipcRenderer } from "electron";
 import { generate as shortid } from "shortid";
 
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
@@ -77,47 +76,20 @@ export function fireNotificationAction(
   action: number,
   dismiss: NotificationDismiss,
 ) {
-  if (notiProcess === process.type) {
-    if (notificationActions[notiId] === undefined) {
-      // this can happen if vortex was restarted and so the notification is still in the store but
-      // the callbacks are no longer available.
-      return;
-    }
-    const func = notificationActions[notiId]?.[action];
-    if (func !== undefined) {
-      func(dismiss);
-    }
-  } else {
-    // assumption is that notification actions are only triggered by the ui
-    // TODO: have to send synchronously because we need to know if we should dismiss
-    const res: boolean = ipcRenderer.sendSync("fire-notification-action", notiId, action);
-    if (res) {
-      dismiss();
-    }
+  // Action callbacks live in the process that created the notification; there's nothing to invoke
+  // for one created in another process.
+  if (notiProcess !== process.type) {
+    return;
   }
-}
-
-if (ipcMain !== undefined) {
-  ipcMain.on("fire-notification-action", (event: any, notiId: string, action: number) => {
-    const func = notificationActions[notiId]?.[action];
-    let res = false;
-    if (func !== undefined) {
-      func(() => {
-        res = true;
-      });
-    }
-
-    event.returnValue = res;
-  });
-
-  ipcMain.on("fire-dialog-action", (event: any, dialogId: string, action: string, input: any) => {
-    const func = DialogCallbacks.instance()[dialogId];
-    if (func !== undefined) {
-      func(action, input);
-      delete DialogCallbacks.instance()[dialogId];
-    }
-    event.returnValue = true;
-  });
+  if (notificationActions[notiId] === undefined) {
+    // this can happen if vortex was restarted and so the notification is still in the store but
+    // the callbacks are no longer available.
+    return;
+  }
+  const func = notificationActions[notiId]?.[action];
+  if (func !== undefined) {
+    func(dismiss);
+  }
 }
 
 let suppressNotification: (id: string) => boolean = () => false;
@@ -298,8 +270,6 @@ export function closeDialog(id: string, actionKey?: string, input?: any) {
       if (actionKey !== undefined) {
         if (DialogCallbacks.instance()[id] !== undefined) {
           DialogCallbacks.instance()[id](actionKey, input);
-        } else if (ipcRenderer !== undefined) {
-          ipcRenderer.sendSync("fire-dialog-action", id, actionKey, input);
         }
       }
     } catch (err) {
@@ -318,8 +288,6 @@ export function closeDialogs(ids: string[], actionKey?: string, input?: any) {
         if (actionKey !== undefined) {
           if (DialogCallbacks.instance()[id] !== undefined) {
             DialogCallbacks.instance()[id](actionKey, input);
-          } else if (ipcRenderer !== undefined) {
-            ipcRenderer.sendSync("fire-dialog-action", id, actionKey, input);
           }
         }
       } catch (err) {
