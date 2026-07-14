@@ -120,8 +120,8 @@ export async function checkFileRequirements(api: IExtensionApi): Promise<IHealth
 
 /**
  * Registration descriptor for the file-level requirements check. Owns its own
- * enablement gate, running-state bracket and completion notification so that
- * index.ts only has to register it.
+ * enablement gate and running-state bracket so that index.ts only has to
+ * register it.
  */
 export const fileRequirementsHealthCheck: IHealthCheck = {
   id: FILE_REQUIREMENTS_CHECK_ID,
@@ -152,14 +152,7 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
 
     api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, true));
     try {
-      const result = await checkFileRequirements(api);
-      api.sendNotification({
-        type: "info",
-        message: "File Requirements check completed",
-        displayMS: 5000,
-        id: "health-check:file-requirements-complete",
-      });
-      return result;
+      return await checkFileRequirements(api);
     } finally {
       api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, false));
     }

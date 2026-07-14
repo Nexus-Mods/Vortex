@@ -15,6 +15,7 @@ import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
+import { useRelativeTime } from "@/util/useRelativeTime";
 import MainPage from "@/views/MainPage";
 
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
@@ -24,6 +25,8 @@ import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
   hiddenModRequirements,
+  isAnyHealthCheckRunning,
+  lastHealthCheckRun,
   modRequirementsCheckResult,
 } from "../selectors";
 import { healthCheckContent } from "./content/registry";
@@ -55,6 +58,25 @@ function selectListedEntries(state: IState): IListedEntry[] {
   return items;
 }
 
+/**
+ * "Last updated" header label. Leaf component: its periodic age tick and
+ * per-result lastFullRun subscription re-render only this label. Renders
+ * nothing until the first check run of the session.
+ */
+function LastUpdated() {
+  const { t } = useTranslation(["health_check", "common"]);
+  const lastRun = useSelector(lastHealthCheckRun);
+  const time = useRelativeTime(lastRun, t);
+  if (time === undefined) {
+    return null;
+  }
+  return (
+    <Typography appearance="moderate" typographyType="body-sm">
+      {t("listing::last_updated", { time })}
+    </Typography>
+  );
+}
+
 /** No-choice install items from every check, de-duplicated across checks by key. */
 function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstallItem[] {
   const seen = new Set<string>();
@@ -77,16 +99,19 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
   const [selectedTab, setSelectedTab] = useState("active");
 
   // Subscribe only to the slices the listing + install-all derive from, so the
-  // frequent unrelated dispatches during a check run (running-state toggles, mod-file
-  // and mod-attribute caching) neither recompute the list nor re-render the rows.
-  // setSafe preserves these refs across those writes, so the memos recompute only
-  // when results or hidden state actually change.
+  // frequent unrelated dispatches during a check run (mod-file and mod-attribute
+  // caching) don't recompute the list. setSafe preserves these refs across those
+  // writes, so the memos recompute only when results or hidden state actually
+  // change. The running-state boolean drives the refresh spinner, re-rendering
+  // (not recomputing) the page on run start/finish; the per-result lastFullRun
+  // subscription lives in LastUpdated.
   const fileResult = useSelector(fileRequirementsCheckResult);
   const modResult = useSelector(modRequirementsCheckResult);
   const hiddenFile = useSelector(hiddenFileRequirements);
   const hiddenMod = useSelector(hiddenModRequirements);
   const showPremiumAd = useSelector(shouldShowPremiumAd);
   const [showInstallAllPremium, setShowInstallAllPremium] = useState(false);
+  const isRefreshing = useSelector(isAnyHealthCheckRunning);
 
   // selectListedEntries / collectInstallAllItems read the slices above from the live
   // state; those slices fully determine their results. exhaustive-deps can't see the
@@ -199,10 +224,13 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
               </div>
             </div>
 
-            <div className="flex shrink-0 gap-x-2">
+            <div className="flex shrink-0 items-center gap-x-2">
+              <LastUpdated />
+
               <Button
                 appearance="subdued"
                 brand="neutral"
+                isLoading={isRefreshing}
                 leftIconPath={mdiRefresh}
                 size="sm"
                 title={t("common:::refresh")}
