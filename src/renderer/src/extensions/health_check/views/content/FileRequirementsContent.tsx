@@ -192,7 +192,7 @@ function downloadedToFileData(file: IDownloadedFile): IFileRequirementData {
     fileUID: file.fileUID,
     adultContent: file.adultContent,
     modName: file.modName,
-    modDescription: "",
+    modDescription: file.modSummary ?? "",
     modImageSrc: file.thumbnailUrl ?? "",
     fileName: file.fileName,
     fileVersion: file.version,

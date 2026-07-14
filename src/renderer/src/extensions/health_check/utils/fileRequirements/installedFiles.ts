@@ -194,6 +194,7 @@ function toDownloadedFile(
     fileUID,
     modUID,
     modName,
+    modSummary: download.modInfo?.nexus?.modInfo?.summary ?? undefined,
     fileName: download.modInfo?.meta?.fileName ?? download.localPath ?? modName,
     version: download.modInfo?.meta?.fileVersion ?? "",
     thumbnailUrl: download.modInfo?.nexus?.modInfo?.picture_url ?? undefined,

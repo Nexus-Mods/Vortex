@@ -309,6 +309,8 @@ export interface IDownloadedFile {
   modUID: string;
   /** Display name of the mod */
   modName: string;
+  /** Mod short description/summary */
+  modSummary?: string;
   /** File name */
   fileName: string;
   /** File version */
