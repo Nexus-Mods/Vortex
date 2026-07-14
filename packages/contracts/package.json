@@ -1,0 +1,33 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@nexusmods/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsdown",
+    "typecheck": "pnpm tsc -p ./tsconfig.json",
+    "lint": "pnpm eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm eslint --concurrency auto ."
+  },
+  "exports": {
+    ".": {
+      "development": "./src/lib.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts"
+}

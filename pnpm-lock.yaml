@@ -4033,6 +4033,10 @@ importers:
         version: 6.0.3
 
   packages/adaptor-api:
+    dependencies:
+      '@nexusmods/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -4061,6 +4065,8 @@ importers:
       '@nexusmods/adaptor-api':
         specifier: workspace:*
         version: link:../../adaptor-api
+
+  packages/contracts: {}
 
   packages/e2e:
     devDependencies:
@@ -5258,6 +5264,9 @@ importers:
 
   src/shared:
     dependencies:
+      '@nexusmods/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1

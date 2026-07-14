@@ -3,6 +3,9 @@
   "files": [],
   "references": [
     {
+      "path": "./packages/contracts/tsconfig.json"
+    },
+    {
       "path": "./packages/adaptor-api/tsconfig.json"
     },
     {

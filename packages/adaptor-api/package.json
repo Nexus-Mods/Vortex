@@ -11,6 +11,9 @@
     "lint": "pnpm eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm eslint --concurrency auto ."
   },
+  "dependencies": {
+    "@nexusmods/contracts": "workspace:*"
+  },
   "peerDependencies": {
     "rolldown": "catalog:"
   },

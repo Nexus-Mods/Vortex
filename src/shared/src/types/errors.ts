@@ -1,3 +1,5 @@
+import type { FileSystemErrorCode } from "@nexusmods/contracts";
+
 export type DownloadErrorPayload =
   | { code: "cancellation" }
   | { code: "network-error"; url: URL }
@@ -6,7 +8,7 @@ export type DownloadErrorPayload =
   | { code: "precondition-failed"; url: URL }
   | { code: "protocol-violation"; url: URL }
   | { code: "is-html"; url: URL }
-  | { code: "fs-error"; path: string }
+  | { code: "fs-error"; path: string; reason?: FileSystemErrorCode; isTransient?: boolean }
   | { code: "resolver-error" };
 
 export class DownloadError extends Error {
