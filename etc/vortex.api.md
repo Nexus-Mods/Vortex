@@ -3653,6 +3653,8 @@ interface IRunOptions {
     // (undocumented)
     expectSuccess?: boolean;
     // (undocumented)
+    onExit?: (code: number | null) => void;
+    // (undocumented)
     onSpawned?: (pid?: number) => void;
     // (undocumented)
     shell?: boolean;
