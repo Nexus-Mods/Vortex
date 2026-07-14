@@ -1,5 +1,6 @@
 import { test, expect } from "../fixtures/vortex-app";
 import {
+  clickRemoveInRow,
   expectArchiveOnDisk,
   expectModStatus,
   installStardewTestMods,
@@ -26,8 +27,7 @@ test.describe("Mods - Uninstall", () => {
     const dialog = new ConfirmRemovalDialog(vortexWindow);
 
     await test.step("Click Remove on the target mod's row", async () => {
-      await modsPage.row(TARGET_MOD_NAME).hover();
-      await modsPage.removeButtonInRow(TARGET_MOD_NAME).click();
+      await clickRemoveInRow(vortexWindow, TARGET_MOD_NAME);
       await expect(dialog.root).toBeVisible();
     });
 
@@ -49,8 +49,7 @@ test.describe("Mods - Uninstall", () => {
     });
 
     await test.step("Open the removal dialog again", async () => {
-      await modsPage.row(TARGET_MOD_NAME).hover();
-      await modsPage.removeButtonInRow(TARGET_MOD_NAME).click();
+      await clickRemoveInRow(vortexWindow, TARGET_MOD_NAME);
       await expect(dialog.root).toBeVisible();
     });
 
@@ -70,8 +69,7 @@ test.describe("Mods - Uninstall", () => {
     });
 
     await test.step("Open the removal dialog for the archive", async () => {
-      await modsPage.row(TARGET_MOD_NAME).hover();
-      await modsPage.removeButtonInRow(TARGET_MOD_NAME).click();
+      await clickRemoveInRow(vortexWindow, TARGET_MOD_NAME);
       await expect(dialog.root).toBeVisible();
     });
 
@@ -115,8 +113,7 @@ test.describe("Mods - Uninstall", () => {
     });
 
     await test.step("Click Remove on the target mod's row", async () => {
-      await modsPage.row(TARGET_MOD_NAME).hover();
-      await modsPage.removeButtonInRow(TARGET_MOD_NAME).click();
+      await clickRemoveInRow(vortexWindow, TARGET_MOD_NAME);
       await expect(dialog.root).toBeVisible();
     });
 

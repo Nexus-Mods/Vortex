@@ -38,6 +38,19 @@ export async function installStardewTestMods(
   });
 }
 
+export async function clickRemoveInRow(
+  vortexWindow: Page,
+  modName: string | RegExp,
+): Promise<void> {
+  const modsPage = new ModsPage(vortexWindow);
+  const row = modsPage.row(modName);
+  await row.evaluate((el: { scrollIntoView: (options: { block: string }) => void }) => {
+    el.scrollIntoView({ block: "center" });
+  });
+  await row.hover();
+  await modsPage.removeButtonInRow(modName).click();
+}
+
 export async function expectModStatus(
   vortexWindow: Page,
   modName: string | RegExp,
