@@ -4,3 +4,5 @@ export * from "./errors";
 export * from "./error-serialization";
 export * from "./download-errors";
 export * from "./types/logging";
+
+export * from "./errors/base";

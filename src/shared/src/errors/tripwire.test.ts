@@ -39,6 +39,18 @@ describe("VortexError module tripwire", () => {
     await expect(import("./base")).rejects.toThrow(/Duplicate @vortex\/shared error module/);
   });
 
+  it("includes where each instance was loaded from in the error message", async () => {
+    clearMark();
+    vi.resetModules();
+
+    await import("./base");
+    vi.resetModules();
+
+    await expect(import("./base")).rejects.toThrow(
+      /First instance loaded at:.*\n.*This instance loaded at:/,
+    );
+  });
+
   it("does not throw for the same cached module instance", async () => {
     clearMark();
     vi.resetModules();

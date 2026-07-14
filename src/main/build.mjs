@@ -10,8 +10,6 @@ const INPUT = path.resolve(import.meta.dirname, "src", "main.ts");
 const OUTPUT = path.join(mainOutputDirectory, "main.cjs");
 
 const config = createConfig(INPUT, OUTPUT, "cjs", [], (id) => {
-  if (id.startsWith("@vortex/shared")) return false;
-
   if (id.startsWith(".")) return false;
   if (path.isAbsolute(id)) return false;
 
@@ -38,8 +36,6 @@ const BSDIFF_WORKER_INPUT = path.resolve(import.meta.dirname, "./src/bsdiff/work
 const BSDIFF_WORKER_OUTPUT = path.join(mainOutputDirectory, "bsdiff-worker.cjs");
 
 const bsdiffConfig = createConfig(BSDIFF_WORKER_INPUT, BSDIFF_WORKER_OUTPUT, "cjs", [], (id) => {
-  if (id.startsWith("@vortex/shared")) return false;
-
   if (id.startsWith(".")) return false;
   if (path.isAbsolute(id)) return false;
 

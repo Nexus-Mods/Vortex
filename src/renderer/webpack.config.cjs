@@ -70,11 +70,7 @@ const config = {
     // NOTE(erri120): can't use eval source maps due to CSP.
     // Use full source-map for accurate breakpoint support in VSCode.
     devtool: "source-map",
-    externals: [
-        nodeExternals({
-            allowlist: [/@vortex\/shared/],
-        }),
-    ],
+    externals: [nodeExternals()],
 };
 
 module.exports = config;

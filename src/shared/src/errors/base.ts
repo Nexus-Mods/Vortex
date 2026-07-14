@@ -178,9 +178,53 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
 
 const MARK = Symbol.for("vortex.errors.VortexError");
 
-const existing = (globalThis as Record<symbol, unknown>)[MARK];
-if (existing !== undefined && existing !== VortexError) {
-  throw new Error("Duplicate @vortex/shared error module discovered.");
+interface TripwireRegistration {
+  ctor: typeof VortexError;
+  /** Where this copy of the module was loaded from, for the error message below. */
+  origin: string;
 }
 
-(globalThis as Record<symbol, unknown>)[MARK] = VortexError;
+/**
+ * Best-effort "loaded from here" string for the tripwire's error message.
+ * Deliberately stack-based rather than `import.meta.url`/`__filename`:
+ * this package ships both ESM and CJS builds, and each of those only works
+ * in one of the two module formats, `import.meta` throws in CJS output,
+ * `__filename` doesn't exist in ESM. A captured stack works identically in
+ * both, and in any JS runtime, at the cost of being a rough diagnostic
+ * string rather than a precisely parsed path.
+ */
+const captureOrigin = (): string => {
+  const stack = new Error().stack ?? "";
+  // First line is the "Error" header, not a frame; the one after it is
+  // wherever this module's own top-level code is executing from.
+  const frame = stack.split("\n")[1]?.trim();
+  return frame ?? "<unknown origin>";
+};
+
+const isTripwireRegistration = (value: unknown): value is TripwireRegistration =>
+  typeof value === "object" &&
+  value !== null &&
+  "ctor" in value &&
+  typeof value.ctor === "function" &&
+  "origin" in value &&
+  typeof value.origin === "string";
+
+const existingRaw = (globalThis as Record<symbol, unknown>)[MARK];
+const existing = isTripwireRegistration(existingRaw) ? existingRaw : undefined;
+
+if (existing !== undefined && existing.ctor !== VortexError) {
+  throw new Error(
+    "Duplicate @vortex/shared error module detected in this process. " +
+      "A package is bundling @vortex/shared directly instead of going " +
+      "through vortex-api, or @src/main's build is inlining it.\n" +
+      `First instance loaded at: ${existing.origin}\n` +
+      `This instance loaded at:  ${captureOrigin()}`,
+  );
+}
+
+if (existing === undefined) {
+  (globalThis as Record<symbol, unknown>)[MARK] = {
+    ctor: VortexError,
+    origin: captureOrigin(),
+  } satisfies TripwireRegistration;
+}

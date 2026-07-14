@@ -4213,6 +4213,9 @@ importers:
       '@vortex/nexus-api-v3':
         specifier: workspace:*
         version: link:../../packages/nexus-api-v3
+      '@vortex/shared':
+        specifier: workspace:*
+        version: link:../shared
       bbcode-to-react:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
@@ -4616,9 +4619,6 @@ importers:
       '@vortex/adaptor-cyberpunk2077':
         specifier: workspace:*
         version: link:../../packages/adaptors/cyberpunk2077
-      '@vortex/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@welldone-software/why-did-you-render':
         specifier: 'catalog:'
         version: 10.0.1(react@16.14.0)
@@ -4645,11 +4645,10 @@ importers:
         version: 0.4.5(vitest@4.1.9)
 
   src/preload:
-    dependencies:
+    devDependencies:
       '@vortex/shared':
         specifier: workspace:*
         version: link:../shared
-    devDependencies:
       electron:
         specifier: 'catalog:'
         version: 43.0.0(supports-color@10.2.2)
