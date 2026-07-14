@@ -43,11 +43,6 @@ export async function clickRemoveInRow(
   modName: string | RegExp,
 ): Promise<void> {
   const modsPage = new ModsPage(vortexWindow);
-  const row = modsPage.row(modName);
-  await row.evaluate((el: { scrollIntoView: (options: { block: string }) => void }) => {
-    el.scrollIntoView({ block: "center" });
-  });
-  await row.hover();
   await modsPage.removeButtonInRow(modName).click();
 }
 
