@@ -1,42 +1,15 @@
-import type { ElectronApplication, Page } from "@playwright/test";
-
 import { test, expect } from "../fixtures/vortex-app";
-import { downloadModViaModManager } from "../helpers/modDownload";
-import { expectArchiveOnDisk, expectModStatus } from "../helpers/mods";
+import {
+  expectArchiveOnDisk,
+  expectModStatus,
+  installStardewTestMods,
+  SDV_GAME_ID,
+  TARGET_MOD_NAME,
+} from "../helpers/mods";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser } from "../helpers/users";
 import { MOD_STATUS, ModsPage } from "../selectors/modsPage";
-import { NavBar } from "../selectors/navbar";
 import { ConfirmRemovalDialog } from "../selectors/removeDialog";
-
-const SMAPI_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
-const TARGET_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/4697";
-
-const SMAPI_NAME = /SMAPI/i;
-const TARGET_MOD_NAME = /Vintage Interface/i;
-const GAME_ID = "stardewvalley";
-
-async function installTestMods(
-  nexusPage: Page,
-  vortexApp: ElectronApplication,
-  vortexWindow: Page,
-): Promise<void> {
-  await downloadModViaModManager(nexusPage, vortexApp, SMAPI_MOD_URL);
-  await downloadModViaModManager(nexusPage, vortexApp, TARGET_MOD_URL);
-
-  await test.step("Open the Mods page", async () => {
-    const navbar = new NavBar(vortexWindow);
-    await navbar.modsLink.click();
-    const modsPage = new ModsPage(vortexWindow);
-    await expect(modsPage.row(SMAPI_NAME)).toBeVisible({ timeout: Timeouts.NETWORK });
-  });
-
-  await test.step("The target mod is installed and enabled", async () => {
-    await expectModStatus(vortexWindow, TARGET_MOD_NAME, MOD_STATUS.enabled, {
-      timeout: Timeouts.NETWORK,
-    });
-  });
-}
 
 test.describe("Mods - Uninstall", () => {
   test.use({ nexusUser: freeUser });
@@ -48,7 +21,7 @@ test.describe("Mods - Uninstall", () => {
     managedGame: _g,
     nexusPage,
   }) => {
-    await installTestMods(nexusPage, vortexApp, vortexWindow);
+    await installStardewTestMods(nexusPage, vortexApp, vortexWindow);
     const modsPage = new ModsPage(vortexWindow);
     const dialog = new ConfirmRemovalDialog(vortexWindow);
 
@@ -93,7 +66,7 @@ test.describe("Mods - Uninstall", () => {
     });
 
     await test.step("The archive is still on disk", async () => {
-      await expectArchiveOnDisk(vortexUserDataDir, GAME_ID, TARGET_MOD_NAME, true);
+      await expectArchiveOnDisk(vortexUserDataDir, SDV_GAME_ID, TARGET_MOD_NAME, true);
     });
 
     await test.step("Open the removal dialog for the archive", async () => {
@@ -120,7 +93,7 @@ test.describe("Mods - Uninstall", () => {
     });
 
     await test.step("The archive is deleted from disk", async () => {
-      await expectArchiveOnDisk(vortexUserDataDir, GAME_ID, TARGET_MOD_NAME, false, {
+      await expectArchiveOnDisk(vortexUserDataDir, SDV_GAME_ID, TARGET_MOD_NAME, false, {
         timeout: Timeouts.NETWORK,
       });
     });
@@ -133,12 +106,12 @@ test.describe("Mods - Uninstall", () => {
     managedGame: _g,
     nexusPage,
   }) => {
-    await installTestMods(nexusPage, vortexApp, vortexWindow);
+    await installStardewTestMods(nexusPage, vortexApp, vortexWindow);
     const modsPage = new ModsPage(vortexWindow);
     const dialog = new ConfirmRemovalDialog(vortexWindow);
 
     await test.step("The archive is on disk", async () => {
-      await expectArchiveOnDisk(vortexUserDataDir, GAME_ID, TARGET_MOD_NAME, true);
+      await expectArchiveOnDisk(vortexUserDataDir, SDV_GAME_ID, TARGET_MOD_NAME, true);
     });
 
     await test.step("Click Remove on the target mod's row", async () => {
@@ -166,7 +139,7 @@ test.describe("Mods - Uninstall", () => {
     });
 
     await test.step("The archive is deleted from disk", async () => {
-      await expectArchiveOnDisk(vortexUserDataDir, GAME_ID, TARGET_MOD_NAME, false, {
+      await expectArchiveOnDisk(vortexUserDataDir, SDV_GAME_ID, TARGET_MOD_NAME, false, {
         timeout: Timeouts.NETWORK,
       });
     });
