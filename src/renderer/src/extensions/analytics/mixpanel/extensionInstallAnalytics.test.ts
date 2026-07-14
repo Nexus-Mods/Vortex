@@ -1,5 +1,5 @@
 /**
- * Tests for the extension-install analytics: extension_installed carries the picked IExtension
+ * Tests for the extension install analytics: app_extension_installed carries the picked IExtension
  * identity, collapses extension_type to game vs other, and surfaces the analytics-only source /
  * game / is_update fields.
  */
@@ -19,7 +19,7 @@ function harness() {
 }
 
 describe("extension install analytics", () => {
-  it("emits extension_installed as a game extension with the manifest game", () => {
+  it("emits app_extension_installed as a game extension with the manifest game", () => {
     const h = harness();
     emitExtensionInstalled(
       h.api,
@@ -39,7 +39,7 @@ describe("extension install analytics", () => {
       },
     );
     expect(h.events).toHaveLength(1);
-    expect(h.events[0].eventName).toBe("extension_installed");
+    expect(h.events[0].eventName).toBe("app_extension_installed");
     expect(h.events[0].properties).toMatchObject({
       extension_id: "game-skyrimse",
       extension_name: "Skyrim SE Support",
