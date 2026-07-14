@@ -1,5 +1,6 @@
 import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import type { FlagMetricsBucket } from "@vortex/shared/ipc";
+import { dequal } from "dequal";
 
 const METRICS_INTERVAL_MS = 60_000;
 
@@ -47,7 +48,9 @@ export class FlagService {
       for (const [name, subs] of this.#flagSubscribers) {
         const prevFlag = prev.get(name);
         const nextFlag = this.#flags.get(name);
-        if (prevFlag === nextFlag) continue;
+        // by value: IPC structured-clones the payload, so object identity
+        // never survives a push
+        if (dequal(prevFlag, nextFlag)) continue;
         for (const cb of subs) {
           cb(prevFlag, nextFlag);
         }

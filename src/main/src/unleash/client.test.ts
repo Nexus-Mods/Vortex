@@ -317,6 +317,77 @@ describe("UnleashClient", () => {
 
       expect(client.flags).toEqual(expected);
     });
+
+    it("does not call onUpdate again when a fetch returns a value-equal flag set", async () => {
+      const client = new UnleashClient("1.0.0");
+      vi.spyOn(client, "fetchFeatureFlags").mockImplementation(() =>
+        // fresh objects per fetch, like a real HTTP response
+        Promise.resolve([{ name: "vortex-test-flag" as const, variant: undefined }]),
+      );
+      const onUpdate = vi.fn();
+
+      client.start(1_000, onUpdate);
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not call onUpdate again when a fetch returns the same flags reordered", async () => {
+      const client = new UnleashClient("1.0.0");
+      vi.spyOn(client, "fetchFeatureFlags")
+        .mockResolvedValueOnce([
+          { name: "vortex-test-flag", variant: undefined },
+          { name: "vortex-file-requirements-health-check", variant: undefined },
+        ])
+        .mockResolvedValueOnce([
+          { name: "vortex-file-requirements-health-check", variant: undefined },
+          { name: "vortex-test-flag", variant: undefined },
+        ]);
+      const onUpdate = vi.fn();
+
+      client.start(1_000, onUpdate);
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls onUpdate again when the flag set changes", async () => {
+      const client = new UnleashClient("1.0.0");
+      vi.spyOn(client, "fetchFeatureFlags")
+        .mockResolvedValueOnce([{ name: "vortex-test-flag", variant: undefined }])
+        .mockResolvedValueOnce([
+          { name: "vortex-test-flag", variant: { name: "variant-1", data: 1 } },
+        ]);
+      const onUpdate = vi.fn();
+
+      client.start(1_000, onUpdate);
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(onUpdate).toHaveBeenCalledTimes(2);
+      expect(onUpdate).toHaveBeenLastCalledWith([
+        { name: "vortex-test-flag", variant: { name: "variant-1", data: 1 } },
+      ]);
+    });
+
+    it("updates the flags getter even when onUpdate is skipped", async () => {
+      const flags = [{ name: "vortex-test-flag" as const, variant: undefined }];
+      const client = new UnleashClient("1.0.0");
+      vi.spyOn(client, "fetchFeatureFlags").mockImplementation(() =>
+        Promise.resolve(structuredClone(flags)),
+      );
+      const onUpdate = vi.fn();
+
+      client.start(1_000, onUpdate);
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(client.flags).toEqual(flags);
+    });
   });
 
   // ============================================================
@@ -351,6 +422,22 @@ describe("UnleashClient", () => {
         client.start(1_000, onUpdate);
         await vi.advanceTimersByTimeAsync(0);
 
+        expect(onUpdate).toHaveBeenCalledWith([knownFlag]);
+      });
+
+      it("does not call onUpdate for a first fetch that matches the cache replay", async () => {
+        vi.mocked(fs.readFile).mockImplementation(() => Promise.resolve(makeCache()));
+
+        const onUpdate = vi.fn();
+        const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
+        vi.spyOn(client, "fetchFeatureFlags").mockImplementation(() =>
+          Promise.resolve([structuredClone(knownFlag)]),
+        );
+
+        client.start(1_000, onUpdate);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(onUpdate).toHaveBeenCalledTimes(1);
         expect(onUpdate).toHaveBeenCalledWith([knownFlag]);
       });
 

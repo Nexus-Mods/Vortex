@@ -180,13 +180,34 @@ describe("subscribeToFlag", () => {
   });
 
   it("does not fire when the flag is unchanged between pushes", () => {
-    const flag: FeatureFlag = { name: "vortex-test-flag" };
-    push([flag]);
+    // distinct-but-equal objects per push: IPC structured-clones the payload,
+    // so production never redelivers the same reference
+    push([{ name: "vortex-test-flag" }]);
     const cb = vi.fn();
     FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
-    push([flag]);
+    push([{ name: "vortex-test-flag" }]);
     expect(cb).toHaveBeenCalledOnce();
-    expect(cb).toHaveBeenCalledWith(undefined, flag);
+    expect(cb).toHaveBeenCalledWith(undefined, { name: "vortex-test-flag" });
+  });
+
+  it("does not fire when an equal variant arrives as a new object", () => {
+    push([{ name: "vortex-test-flag", variant: { name: "variant-3", data: { foo: "bar" } } }]);
+    const cb = vi.fn();
+    FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
+    push([{ name: "vortex-test-flag", variant: { name: "variant-3", data: { foo: "bar" } } }]);
+    expect(cb).toHaveBeenCalledOnce();
+  });
+
+  it("fires when only the variant data changes", () => {
+    push([{ name: "vortex-test-flag", variant: { name: "variant-1", data: 1 } }]);
+    const cb = vi.fn();
+    FlagService.instance.subscribeToFlag("vortex-test-flag", cb);
+    push([{ name: "vortex-test-flag", variant: { name: "variant-1", data: 2 } }]);
+    expect(cb).toHaveBeenCalledTimes(2);
+    expect(cb).toHaveBeenLastCalledWith(
+      { name: "vortex-test-flag", variant: { name: "variant-1", data: 1 } },
+      { name: "vortex-test-flag", variant: { name: "variant-1", data: 2 } },
+    );
   });
 
   it("does not fire when a push contains no change to the subscribed flag", () => {

@@ -5,6 +5,7 @@ import { platform } from "node:os";
 import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import { flagVariantSchemas } from "@vortex/shared/flags";
 import type { FlagContext, FlagMetricsBucket } from "@vortex/shared/ipc";
+import { dequal } from "dequal";
 import createClient from "openapi-fetch";
 import { z } from "zod";
 
@@ -90,6 +91,16 @@ export class UnleashClient {
     let fetching = false;
     let consecutiveFailures = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let lastNotified: FeatureFlag[] | undefined;
+
+    // Subscribers treat every push as a change, so only notify when the flag
+    // set differs by value from the last notification. New windows get the
+    // current set on demand via flags:get-current, not from this push.
+    const notify = (flags: FeatureFlag[]): void => {
+      if (lastNotified !== undefined && flagSetsEqual(lastNotified, flags)) return;
+      lastNotified = flags;
+      onUpdate?.(flags);
+    };
 
     const schedule = (): void => {
       const backoffMs = interval * Math.pow(2, consecutiveFailures);
@@ -103,7 +114,7 @@ export class UnleashClient {
       try {
         this.#flags = await this.fetchFeatureFlags();
         consecutiveFailures = 0;
-        onUpdate?.(this.#flags);
+        notify(this.#flags);
       } catch (err) {
         consecutiveFailures++;
         log("warn", "unleash fetch failed", { consecutiveFailures, err });
@@ -122,7 +133,7 @@ export class UnleashClient {
 
     const initialLoad = async (): Promise<void> => {
       const cached = await this.#loadCache();
-      if (cached !== undefined) onUpdate?.(cached);
+      if (cached !== undefined) notify(cached);
       void tick();
     };
     void initialLoad();
@@ -248,6 +259,14 @@ export class UnleashClient {
       },
     };
   }
+}
+
+/** Value equality for a whole flag set, independent of order. */
+function flagSetsEqual(a: readonly FeatureFlag[], b: readonly FeatureFlag[]): boolean {
+  if (a.length !== b.length) return false;
+  // Record<flag name, flag>
+  const byName = new Map<string, FeatureFlag>(a.map((flag) => [flag.name, flag]));
+  return b.every((flag) => dequal(byName.get(flag.name), flag));
 }
 
 function serializeContext(context: UnleashContext): string {

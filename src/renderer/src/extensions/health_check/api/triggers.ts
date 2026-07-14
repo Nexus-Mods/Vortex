@@ -70,13 +70,6 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged);
     });
 
-    api.onStateChange?.(["session", "healthCheck", "lastFullRun"], (lastFullRun) => {
-      log("debug", "Triggering requirements change health checks", {
-        lastFullRun,
-      });
-      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ResultsChanged);
-    });
-
     log("debug", "Automatic triggers setup complete");
   } catch (error) {
     const err = error as Error;
