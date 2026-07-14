@@ -2,6 +2,7 @@ import { test, expect } from "../fixtures/vortex-app";
 import {
   clickRemoveInRow,
   expectArchiveOnDisk,
+  expectModDeployed,
   expectModStatus,
   installStardewTestMods,
   SDV_GAME_ID,
@@ -19,7 +20,7 @@ test.describe("Mods - Uninstall", () => {
     vortexApp,
     vortexWindow,
     vortexUserDataDir,
-    managedGame: _g,
+    managedGame,
     nexusPage,
   }) => {
     await installStardewTestMods(nexusPage, vortexApp, vortexWindow);
@@ -95,13 +96,19 @@ test.describe("Mods - Uninstall", () => {
         timeout: Timeouts.NETWORK,
       });
     });
+
+    await test.step("The mod's files are removed from the game folder", async () => {
+      await expectModDeployed(managedGame.gamePath, SDV_GAME_ID, TARGET_MOD_NAME, false, {
+        timeout: Timeouts.NETWORK,
+      });
+    });
   });
 
   test("[QA-246] free user can uninstall a mod and delete its archive in one step", async ({
     vortexApp,
     vortexWindow,
     vortexUserDataDir,
-    managedGame: _g,
+    managedGame,
     nexusPage,
   }) => {
     await installStardewTestMods(nexusPage, vortexApp, vortexWindow);
@@ -137,6 +144,12 @@ test.describe("Mods - Uninstall", () => {
 
     await test.step("The archive is deleted from disk", async () => {
       await expectArchiveOnDisk(vortexUserDataDir, SDV_GAME_ID, TARGET_MOD_NAME, false, {
+        timeout: Timeouts.NETWORK,
+      });
+    });
+
+    await test.step("The mod's files are removed from the game folder", async () => {
+      await expectModDeployed(managedGame.gamePath, SDV_GAME_ID, TARGET_MOD_NAME, false, {
         timeout: Timeouts.NETWORK,
       });
     });
