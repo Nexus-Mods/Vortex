@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-07-14
+
+_Stable 2.3 release. See the beta entries below for the full list of changes since 2.2._
+
+### Fixed
+
+- Paused downloads with no usable checkpoint (missing or empty) failing to resume with `No checkpoint stored`, leaving collection installs and the Downloads page retrying forever; such downloads now restart fresh under the same id ([#23630](https://github.com/Nexus-Mods/Vortex/pull/23630))
+- Crash (`Cannot read properties of undefined`) when a plugin-warning update arrived after the plugin list was cleared on a profile change ([#23617](https://github.com/Nexus-Mods/Vortex/pull/23617))
+- Corrupt mod with an unusable id causing a repeated "Mods changed on disk" prompt and refusing to delete ([#23610](https://github.com/Nexus-Mods/Vortex/pull/23610))
+
 ## [2.3.0-beta.1] - 2026-07-01
 
 _First beta of the 2.3 release._
@@ -2039,6 +2049,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.3.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.3.0
 [2.3.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.3.0-beta.1
 [2.2.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.2.0
 [2.2.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.2.0-beta.2
