@@ -2,6 +2,7 @@
 
 import type { Database } from "../Database";
 import type { Table } from "../Table";
+import type { View } from "../View";
 
 /** Row type for the 'mods_pivot' pivot table */
 export type ModsPivotRow = {
@@ -19,20 +20,58 @@ export type ProfilesPivotRow = {
   lastActivated: bigint;
 };
 
+/** Row type for the 'profile_settings_pivot' pivot table */
+export type ProfileSettingsPivotRow = {
+  section: string;
+  activeProfileId: string;
+};
+
+/** Row type for the 'mod_attributes_pivot' pivot table */
+export type ModAttributesPivotRow = {
+  game_id: string;
+  vortex_mod_id: string;
+  source: string;
+  modId: bigint;
+  fileId: bigint;
+  downloadGame: string;
+};
+
+/** Row type for the 'mod_state_pivot' pivot table */
+export type ModStatePivotRow = {
+  game_id: string;
+  vortex_mod_id: string;
+  state: string;
+};
+
+/** Parameters for the 'active_profile_nexus_files' query (no parameters) */
+export type ActiveProfileNexusFilesParams = Record<string, never>;
+
+/** Result row for the 'active_profile_nexus_files' query */
+export type ActiveProfileNexusFilesRow = {
+  game_id: string;
+  mod_id: bigint;
+  file_id: bigint;
+  vortex_mod_id: string;
+};
+
 /** Parameters for the 'recently_managed_games' query */
 export interface RecentlyManagedGamesParams {
   current_game_id: string;
 }
 
 /** Result row for the 'recently_managed_games' query */
-export interface RecentlyManagedGamesRow {
+export type RecentlyManagedGamesRow = {
   game_id: string;
-}
+};
 
 /** Typed model accessors — generated from SQL definitions */
 export interface Models {
   mods: Table<ModsPivotRow>;
   profiles: Table<ProfilesPivotRow>;
+  profileSettings: Table<ProfileSettingsPivotRow>;
+  modAttributes: Table<ModAttributesPivotRow>;
+  modState: Table<ModStatePivotRow>;
+  activeProfileNexusFiles: View<ActiveProfileNexusFilesRow>;
 }
 
 /** Create typed model accessors from a Database instance */
@@ -40,16 +79,22 @@ export function createModels(db: Database): Models {
   return {
     mods: db.createTable("mods_pivot"),
     profiles: db.createTable("profiles_pivot"),
+    profileSettings: db.createTable("profile_settings_pivot"),
+    modAttributes: db.createTable("mod_attributes_pivot"),
+    modState: db.createTable("mod_state_pivot"),
+    activeProfileNexusFiles: db.createView("active_profile_nexus_files"),
   };
 }
 
 /** Maps query names to their parameter types */
 export interface QueryParamsMap {
+  active_profile_nexus_files: ActiveProfileNexusFilesParams;
   recently_managed_games: RecentlyManagedGamesParams;
 }
 
 /** Maps query names to their result row types */
 export interface QueryResultMap {
+  active_profile_nexus_files: ActiveProfileNexusFilesRow;
   recently_managed_games: RecentlyManagedGamesRow;
 }
 
