@@ -380,9 +380,6 @@ catalogs:
     '@types/minimist':
       specifier: 1.2.5
       version: 1.2.5
-    '@types/node':
-      specifier: 24.12.2
-      version: 24.12.2
     '@types/node-7z':
       specifier: 2.1.11
       version: 2.1.11
@@ -980,6 +977,7 @@ overrides:
   '@types/react-dom': '16'
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
+  '@types/node': 24.12.2
 
 importers:
 
@@ -1011,7 +1009,7 @@ importers:
         specifier: 'catalog:'
         version: 1.2.5
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/webpack-node-externals':
         specifier: 'catalog:'
@@ -1188,7 +1186,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -1263,7 +1261,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -1368,7 +1366,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -1443,7 +1441,7 @@ importers:
         specifier: 'catalog:'
         version: 12.1.0
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/redux':
         specifier: 'catalog:'
@@ -1566,7 +1564,7 @@ importers:
         specifier: 'catalog:'
         version: 12.1.0
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/rimraf':
         specifier: 'catalog:'
@@ -1732,7 +1730,7 @@ importers:
         version: 16.14.0
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -1945,7 +1943,7 @@ importers:
         version: link:../../../packages/vortex-api
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
+        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
 
   extensions/games/game-battletech:
     devDependencies:
@@ -2238,7 +2236,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -2401,7 +2399,7 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -2582,7 +2580,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       bluebird:
         specifier: 'catalog:'
@@ -2636,7 +2634,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       bluebird:
         specifier: 'catalog:'
@@ -2660,7 +2658,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/redux':
         specifier: 'catalog:'
@@ -2700,7 +2698,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -2742,7 +2740,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -2835,7 +2833,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -2964,7 +2962,7 @@ importers:
         specifier: 'catalog:'
         version: 12.1.0
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -3079,7 +3077,7 @@ importers:
         version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -3165,7 +3163,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       bs58:
         specifier: 'catalog:'
@@ -3411,7 +3409,7 @@ importers:
         version: 3.1.1
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0)(react@16.14.0)
@@ -3464,7 +3462,7 @@ importers:
         specifier: 'catalog:'
         version: 3.5.20
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       bluebird:
         specifier: 'catalog:'
@@ -3488,7 +3486,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -3638,7 +3636,7 @@ importers:
         specifier: 'catalog:'
         version: 12.1.0
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -3690,7 +3688,7 @@ importers:
         specifier: 'catalog:'
         version: 4.17.24
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       bluebird:
         specifier: 'catalog:'
@@ -3789,7 +3787,7 @@ importers:
         specifier: 'catalog:'
         version: 12.1.0
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       bluebird:
         specifier: 'catalog:'
@@ -3888,7 +3886,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/react':
         specifier: '16'
@@ -3921,7 +3919,7 @@ importers:
   packages/adaptor-api:
     devDependencies:
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       rolldown:
         specifier: 'catalog:'
@@ -3954,7 +3952,7 @@ importers:
         specifier: 'catalog:'
         version: 1.61.1
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       electron:
         specifier: 'catalog:'
@@ -3981,7 +3979,7 @@ importers:
   packages/extension-test-mocks:
     devDependencies:
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       typescript:
         specifier: 'catalog:'
@@ -4001,7 +3999,7 @@ importers:
         specifier: workspace:*
         version: link:../vortex-api
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@vortex/extension-test-mocks':
         specifier: workspace:*
@@ -4041,7 +4039,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
+        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
       vitest-fetch-mock:
         specifier: 'catalog:'
         version: 0.4.5(vitest@4.1.9)
@@ -4143,7 +4141,7 @@ importers:
         version: 4.1.8
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
+        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
 
   src/main:
     dependencies:
@@ -4516,7 +4514,7 @@ importers:
     devDependencies:
       '@electron/rebuild':
         specifier: 'catalog:'
-        version: 4.1.0
+        version: 4.1.0(supports-color@10.2.2)
       '@types/bbcode-to-react':
         specifier: 'catalog:'
         version: 0.2.4
@@ -4554,7 +4552,7 @@ importers:
         specifier: 'catalog:'
         version: 4.17.24
       '@types/node':
-        specifier: 'catalog:'
+        specifier: 24.12.2
         version: 24.12.2
       '@types/node-7z':
         specifier: 'catalog:'
@@ -4689,7 +4687,7 @@ importers:
         version: 7.4.47
       '@microsoft/api-extractor':
         specifier: 'catalog:'
-        version: 7.58.9(@types/node@25.5.0)
+        version: 7.58.9(@types/node@24.12.2)
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
@@ -5040,7 +5038,7 @@ importers:
         version: 3.8.0(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
         specifier: 'catalog:'
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
+        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
         version: 14.1.0
@@ -7149,7 +7147,7 @@ packages:
   '@rushstack/node-core-library@5.23.1':
     resolution: {integrity: sha512-wlKmIKIYCKuCASbITvOxLZXepPbwXvrv7S6ig6XNWFchSyhL/E2txmVXspHY49Wu2dzf7nI27a2k/yV5BA3EiA==}
     peerDependencies:
-      '@types/node': '*'
+      '@types/node': 24.12.2
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -7157,7 +7155,7 @@ packages:
   '@rushstack/problem-matcher@0.2.1':
     resolution: {integrity: sha512-gulfhBs6n+I5b7DvjKRfhMGyUejtSgOHTclF/eONr8hcgF1APEDjhxIsfdUYYMzC3rvLwGluqLjbwCFZ8nxrog==}
     peerDependencies:
-      '@types/node': '*'
+      '@types/node': 24.12.2
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -7168,7 +7166,7 @@ packages:
   '@rushstack/terminal@0.24.0':
     resolution: {integrity: sha512-8ZQS4MMaGsv27EXCBiH7WMPkRZrffeDoIevs6z9TM5dzqiY6+Hn4evfK/G+gvgBTjfvfkHIZPQQmalmI2sM4TQ==}
     peerDependencies:
-      '@types/node': '*'
+      '@types/node': 24.12.2
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -7591,14 +7589,8 @@ packages:
   '@types/node-7z@2.1.11':
     resolution: {integrity: sha512-7gwLx44tqZqjyrvjkX41CWW4h7+aXrazFg/JR6N5g+R5BW1eqsNuw8SNLWrh7KcnfKhAYFiWyNb10ti5v5eCmQ==}
 
-  '@types/node@16.18.126':
-    resolution: {integrity: sha512-OTcgaiwfGFBKacvfwuHzzn1KLxH/er8mluiy8/uM3sGXHaRe73RrSIj01jow9t4kJEW633Ov+cOexXeiApTyAw==}
-
   '@types/node@24.12.2':
     resolution: {integrity: sha512-A1sre26ke7HDIuY/M23nd9gfB+nrmhtYyMINbjI1zHJxYteKR6qSMX56FsmjMcDb3SMcjJg5BiRRgOCC/yBD0g==}
-
-  '@types/node@25.5.0':
-    resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
 
   '@types/numeral@2.0.5':
     resolution: {integrity: sha512-kH8I7OSSwQu9DS9JYdFWbuvhVzvFRoCPCkGxNwoGgaPeDfEPJlcxNvEOypZhQ3XXHsGbfIuYcxcJxKUfJHnRfw==}
@@ -11390,7 +11382,7 @@ packages:
     resolution: {integrity: sha512-9i1jSgbyVw0ELlEVt/NkCUkxy1hmhJOkePoCH713u75vzHGyXhPDm28oLfc2NMSBjZRM1Y+wRjHXJT3sPrTy+A==}
     peerDependencies:
       '@types/hoist-non-react-statics': '>= 3.3.1'
-      '@types/node': '>= 12'
+      '@types/node': 24.12.2
       '@types/react': '16'
       react: '>= 16.14'
     peerDependenciesMeta:
@@ -12450,9 +12442,6 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
-  undici-types@7.18.2:
-    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
-
   undici@6.25.0:
     resolution: {integrity: sha512-ZgpWDC5gmNiuY9CnLVXEH8rl50xhRCuLNA97fAUnKi8RRuV4E6KG31pDTsLVUKnohJE0I3XDrTeEydAXRw47xg==}
     engines: {node: '>=18.17'}
@@ -12601,7 +12590,7 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
-      '@types/node': ^20.19.0 || >=22.12.0
+      '@types/node': 24.12.2
       '@vitejs/devtools': ^0.3.0
       esbuild: ^0.27.0 || ^0.28.0
       jiti: '>=1.21.0'
@@ -12652,7 +12641,7 @@ packages:
     peerDependencies:
       '@edge-runtime/vm': '*'
       '@opentelemetry/api': ^1.9.0
-      '@types/node': ^20.0.0 || ^22.0.0 || >=24.0.0
+      '@types/node': 24.12.2
       '@vitest/browser-playwright': 4.1.9
       '@vitest/browser-preview': 4.1.9
       '@vitest/browser-webdriverio': 4.1.9
@@ -13805,14 +13794,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/rebuild@4.1.0':
+  '@electron/rebuild@4.1.0(supports-color@10.2.2)':
     dependencies:
       '@malept/cross-spawn-promise': 2.0.0
       debug: 4.4.3(supports-color@10.2.2)
       node-abi: 4.31.0
       node-api-version: 0.2.1
       node-gyp: 12.3.0
-      read-binary-file-arch: 1.0.6
+      read-binary-file-arch: 1.0.6(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -14154,14 +14143,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor-model@7.33.8(@types/node@25.5.0)':
-    dependencies:
-      '@microsoft/tsdoc': 0.16.0
-      '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.1(@types/node@25.5.0)
-    transitivePeerDependencies:
-      - '@types/node'
-
   '@microsoft/api-extractor@7.58.9(@types/node@24.12.2)':
     dependencies:
       '@microsoft/api-extractor-model': 7.33.8(@types/node@24.12.2)
@@ -14171,24 +14152,6 @@ snapshots:
       '@rushstack/rig-package': 0.7.3
       '@rushstack/terminal': 0.24.0(@types/node@24.12.2)
       '@rushstack/ts-command-line': 5.3.10(@types/node@24.12.2)
-      diff: 8.0.4
-      minimatch: 10.2.3
-      resolve: 1.22.11
-      semver: 7.7.4
-      source-map: 0.6.1
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - '@types/node'
-
-  '@microsoft/api-extractor@7.58.9(@types/node@25.5.0)':
-    dependencies:
-      '@microsoft/api-extractor-model': 7.33.8(@types/node@25.5.0)
-      '@microsoft/tsdoc': 0.16.0
-      '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.1(@types/node@25.5.0)
-      '@rushstack/rig-package': 0.7.3
-      '@rushstack/terminal': 0.24.0(@types/node@25.5.0)
-      '@rushstack/ts-command-line': 5.3.10(@types/node@25.5.0)
       diff: 8.0.4
       minimatch: 10.2.3
       resolve: 1.22.11
@@ -14887,26 +14850,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.12.2
 
-  '@rushstack/node-core-library@5.23.1(@types/node@25.5.0)':
-    dependencies:
-      ajv: 8.18.0
-      ajv-draft-04: 1.0.0(ajv@8.18.0)
-      ajv-formats: 3.0.1(ajv@8.18.0)
-      fs-extra: 11.3.4
-      import-lazy: 4.0.0
-      jju: 1.4.0
-      resolve: 1.22.11
-      semver: 7.7.4
-    optionalDependencies:
-      '@types/node': 25.5.0
-
   '@rushstack/problem-matcher@0.2.1(@types/node@24.12.2)':
     optionalDependencies:
       '@types/node': 24.12.2
-
-  '@rushstack/problem-matcher@0.2.1(@types/node@25.5.0)':
-    optionalDependencies:
-      '@types/node': 25.5.0
 
   '@rushstack/rig-package@0.7.3':
     dependencies:
@@ -14921,26 +14867,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.12.2
 
-  '@rushstack/terminal@0.24.0(@types/node@25.5.0)':
-    dependencies:
-      '@rushstack/node-core-library': 5.23.1(@types/node@25.5.0)
-      '@rushstack/problem-matcher': 0.2.1(@types/node@25.5.0)
-      supports-color: 8.1.1
-    optionalDependencies:
-      '@types/node': 25.5.0
-
   '@rushstack/ts-command-line@5.3.10(@types/node@24.12.2)':
     dependencies:
       '@rushstack/terminal': 0.24.0(@types/node@24.12.2)
-      '@types/argparse': 1.0.38
-      argparse: 1.0.10
-      string-argv: 0.3.2
-    transitivePeerDependencies:
-      - '@types/node'
-
-  '@rushstack/ts-command-line@5.3.10(@types/node@25.5.0)':
-    dependencies:
-      '@rushstack/terminal': 0.24.0(@types/node@25.5.0)
       '@types/argparse': 1.0.38
       argparse: 1.0.10
       string-argv: 0.3.2
@@ -15294,17 +15223,17 @@ snapshots:
 
   '@types/feedparser@2.2.8':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
       '@types/sax': 1.2.7
 
   '@types/fs-extra@11.0.4':
     dependencies:
       '@types/jsonfile': 6.1.4
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/fs-extra@9.0.13':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/geojson@7946.0.16': {}
 
@@ -15331,7 +15260,7 @@ snapshots:
 
   '@types/iconv-lite@0.0.1':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/invariant@2.2.37': {}
 
@@ -15347,22 +15276,22 @@ snapshots:
 
   '@types/json-socket@0.1.21':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/jsonfile@6.1.4':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/jsonwebtoken@9.0.10':
     dependencies:
       '@types/ms': 2.1.0
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/level-codec@9.0.4': {}
 
   '@types/libxmljs@0.18.13':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/lodash@4.17.24': {}
 
@@ -15378,17 +15307,11 @@ snapshots:
 
   '@types/node-7z@2.1.11':
     dependencies:
-      '@types/node': 25.5.0
-
-  '@types/node@16.18.126': {}
+      '@types/node': 24.12.2
 
   '@types/node@24.12.2':
     dependencies:
       undici-types: 7.16.0
-
-  '@types/node@25.5.0':
-    dependencies:
-      undici-types: 7.18.2
 
   '@types/numeral@2.0.5': {}
 
@@ -15398,7 +15321,7 @@ snapshots:
 
   '@types/plist@3.0.5':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
       xmlbuilder: 15.1.1
     optional: true
 
@@ -15493,11 +15416,11 @@ snapshots:
   '@types/rimraf@2.0.5':
     dependencies:
       '@types/glob': 9.0.0
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/scheduler@0.16.8': {}
 
@@ -15524,7 +15447,7 @@ snapshots:
 
   '@types/webpack-node-externals@3.0.4(esbuild@0.28.0)(webpack-cli@7.2.1)':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
       webpack: 5.108.4(esbuild@0.28.0)(webpack-cli@7.2.1)
     transitivePeerDependencies:
       - '@minify-html/node'
@@ -15547,19 +15470,19 @@ snapshots:
 
   '@types/write-file-atomic@3.0.3':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@types/xml2js@0.4.14':
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   '@typescript-eslint/eslint-plugin@8.62.1(@typescript-eslint/parser@8.62.1)(eslint@10.6.0)(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
@@ -15722,7 +15645,7 @@ snapshots:
   '@vitejs/plugin-react@6.0.3(vite@8.1.3)':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.1.3(@types/node@25.5.0)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.101.0)(terser@5.46.1)(tsx@4.23.0)(yaml@2.9.0)
+      vite: 8.1.3(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.101.0)(terser@5.46.1)(tsx@4.23.0)(yaml@2.9.0)
 
   '@vitest/coverage-v8@4.1.9(vitest@4.1.9)':
     dependencies:
@@ -16294,7 +16217,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
 
   buffer@5.7.1:
     dependencies:
@@ -17689,7 +17612,7 @@ snapshots:
       raf: 3.4.1
       react: 16.14.0
       react-display-name: 0.2.5
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dom: 16.14.0(react@16.14.0)
 
   fs-constants@1.0.0: {}
@@ -17872,7 +17795,7 @@ snapshots:
 
   happy-dom@20.10.6:
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
@@ -18256,7 +18179,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 24.12.2
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -19574,19 +19497,6 @@ snapshots:
       '@types/node': 24.12.2
       '@types/react': 16.14.69
 
-  react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0):
-    dependencies:
-      '@react-dnd/invariant': 2.0.0
-      '@react-dnd/shallowequal': 2.0.0
-      dnd-core: 14.0.1
-      fast-deep-equal: 3.1.3
-      hoist-non-react-statics: 3.3.2
-      react: 16.14.0
-    optionalDependencies:
-      '@types/hoist-non-react-statics': 3.3.7(@types/react@16.14.69)
-      '@types/node': 25.5.0
-      '@types/react': 16.14.69
-
   react-dnd@2.5.4(react@16.14.0):
     dependencies:
       disposables: 1.0.2
@@ -19762,7 +19672,7 @@ snapshots:
       lodash.isequal: 4.5.0
       prop-types: 15.8.1
       react: 16.14.0
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@25.5.0)(@types/react@16.14.69)(react@16.14.0)
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend: 11.1.3
       react-dom: 16.14.0(react@16.14.0)
       react-lifecycles-compat: 3.0.4
@@ -19799,7 +19709,7 @@ snapshots:
       lodash: 4.17.23
       react: 16.14.0
 
-  read-binary-file-arch@1.0.6:
+  read-binary-file-arch@1.0.6(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -20599,7 +20509,7 @@ snapshots:
 
   ts-v-gen@1.0.3:
     dependencies:
-      '@types/node': 16.18.126
+      '@types/node': 24.12.2
       ajv: 8.18.0
       copyfiles: 2.4.1
       lodash: 4.17.23
@@ -20731,8 +20641,6 @@ snapshots:
       react-lifecycles-compat: 3.0.4
 
   undici-types@7.16.0: {}
-
-  undici-types@7.18.2: {}
 
   undici@6.25.0: {}
 
@@ -20890,26 +20798,9 @@ snapshots:
       tsx: 4.23.0
       yaml: 2.9.0
 
-  vite@8.1.3(@types/node@25.5.0)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.101.0)(terser@5.46.1)(tsx@4.23.0)(yaml@2.9.0):
-    dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.4
-      postcss: 8.5.16
-      rolldown: 1.1.4
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 25.5.0
-      esbuild: 0.28.0
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      sass: 1.101.0
-      terser: 5.46.1
-      tsx: 4.23.0
-      yaml: 2.9.0
-
   vitest-fetch-mock@0.4.5(vitest@4.1.9):
     dependencies:
-      vitest: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
+      vitest: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
 
   vitest@4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3):
     dependencies:
@@ -20936,37 +20827,6 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@types/node': 24.12.2
-      '@vitest/coverage-v8': 4.1.9(vitest@4.1.9)
-      '@vitest/ui': 4.1.9(vitest@4.1.9)
-      happy-dom: 20.10.6
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3):
-    dependencies:
-      '@vitest/expect': 4.1.9
-      '@vitest/mocker': 4.1.9(vite@8.1.3)
-      '@vitest/pretty-format': 4.1.9
-      '@vitest/runner': 4.1.9
-      '@vitest/snapshot': 4.1.9
-      '@vitest/spy': 4.1.9
-      '@vitest/utils': 4.1.9
-      es-module-lexer: 2.1.0
-      expect-type: 1.3.0
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.4
-      std-env: 4.0.0
-      tinybench: 2.9.0
-      tinyexec: 1.2.4
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
-      vite: 8.1.3(@types/node@25.5.0)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.101.0)(terser@5.46.1)(tsx@4.23.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.1
-      '@types/node': 25.5.0
       '@vitest/coverage-v8': 4.1.9(vitest@4.1.9)
       '@vitest/ui': 4.1.9(vitest@4.1.9)
       happy-dom: 20.10.6
