@@ -290,6 +290,11 @@ overrides:
   "@types/react-dom": "16"
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
+  # @types/node is a peer of react-dnd; differing versions across the tree fork
+  # react-dnd into separate instances with distinct React contexts, breaking
+  # react-sortable-tree's drag-and-drop context. Pin one version so a single
+  # react-dnd instance is shared. Types-only, no runtime effect. See LAZ-731.
+  "@types/node": 24.12.2
 
 allowBuilds:
   "@nexusmods/fomod-installer-native": true
