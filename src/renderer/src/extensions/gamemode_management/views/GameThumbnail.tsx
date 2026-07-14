@@ -20,7 +20,9 @@ import type { IMod, IProfile, IState } from "../../../types/IState";
 import { getSafe } from "../../../util/storeHelper";
 import { countIf } from "../../../util/util";
 import type { IGameStored } from "../types/IGameStored";
+import ActiveModCount from "./ActiveModCount";
 import GameInfoPopover from "./GameInfoPopover";
+import GameName from "./GameName";
 
 export interface IBaseProps {
   t: TFunction;
@@ -32,6 +34,10 @@ export interface IBaseProps {
   getBounds?: () => ClientRect;
   container?: HTMLElement;
   onLaunch?: () => void;
+  // artwork-only tile for tight spots like the Recently Managed dashlet:
+  // hides the name (exposed as a tooltip on the tile instead) and reduces
+  // the mod counter to icon and count
+  compact?: boolean;
 }
 
 interface IConnectedProps {
@@ -40,10 +46,6 @@ interface IConnectedProps {
 }
 
 type IProps = IBaseProps & IConnectedProps;
-
-function nop() {
-  // nop
-}
 
 /**
  * thumbnail + controls for a single game mode within the game picker
@@ -54,7 +56,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, discovered, game, mods, profile, type } = this.props;
+    const { t, active, compact, discovered, game, mods, profile, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -80,8 +82,6 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           )
         : undefined;
 
-    const nameParts = game.name.split("\t");
-
     const classes = [
       "game-thumbnail",
       `game-thumbnail-${discovered !== false ? "discovered" : "undiscovered"}`,
@@ -103,29 +103,31 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     }
 
     return (
-      <Panel className={classes.join(" ")} bsStyle={active ? "primary" : "default"}>
+      <Panel
+        bsStyle={active ? "primary" : "default"}
+        className={classes.join(" ")}
+        title={compact ? game.name.replace(/\t/g, " ") : undefined}
+      >
         <Panel.Body className="game-thumbnail-body">
           <Image
-            className="w-full"
-            imageType="game"
-            fit="cover"
-            src={imgurl}
             alt={game.name}
-            loading="lazy"
+            className="w-full"
             decoding="async"
+            fit="cover"
+            imageType="game"
+            loading="lazy"
+            src={imgurl}
           >
             <div className="bottom">
-              <div className="name">{game.name}</div>
-              {modCount !== undefined ? (
-                <div className="active-mods">
-                  <Icon name="mods" />
-                  <span>{t("{{ count }} active mod", { count: modCount })}</span>
-                </div>
-              ) : null}
+              <GameName compact={compact} name={game.name} />
+
+              <ActiveModCount compact={compact} count={modCount} t={t} />
             </div>
+
             <div className="hover-menu">
               {type === "launcher" ? this.renderLaunch() : this.renderMenu()}
             </div>
+
             {type !== "launcher" ? (
               game.contributed ? (
                 <div
@@ -152,7 +154,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     const { onLaunch } = this.props;
     return (
       <div className="hover-content hover-launcher">
-        <Button style={{ width: "100%", height: "100%" }} onClick={onLaunch} className="btn-embed">
+        <Button className="btn-embed" style={{ width: "100%", height: "100%" }} onClick={onLaunch}>
           <Icon name="launch-application" />
         </Button>
       </div>
@@ -162,61 +164,62 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private renderMenu(): JSX.Element[] {
     const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} className="popover-game-info">
+      <Popover className="popover-game-info" id={`popover-info-${game.id}`}>
         <Provider store={this.context.api.store}>
           <IconBar
-            id={`game-thumbnail-${game.id}`}
-            className="buttons"
-            group={`game-${type}-buttons`}
-            instanceId={game.id}
-            staticElements={[]}
-            collapse={false}
             buttonType="text"
-            orientation="vertical"
+            className="buttons"
+            collapse={false}
             filter={this.lowPriorityButtons}
+            group={`game-${type}-buttons`}
+            id={`game-thumbnail-${game.id}`}
+            instanceId={game.id}
+            orientation="vertical"
+            staticElements={[]}
             t={t}
           />
+
           <GameInfoPopover
-            t={t}
             game={game}
-            onRefreshGameInfo={onRefreshGameInfo}
+            t={t}
             onChange={this.redraw}
+            onRefreshGameInfo={onRefreshGameInfo}
           />
         </Provider>
       </Popover>
     );
 
     return [
-      <div key="primary-buttons" className="hover-content">
+      <div className="hover-content" key="primary-buttons">
         <IconBar
-          id={`game-thumbnail-${game.id}`}
-          className="buttons"
-          group={`game-${type}-buttons`}
-          instanceId={game.id}
-          staticElements={[]}
-          collapse={false}
           buttonType="text"
-          orientation="vertical"
-          filter={this.priorityButtons}
+          className="buttons"
           clickAnywhere={true}
+          collapse={false}
+          filter={this.priorityButtons}
+          group={`game-${type}-buttons`}
+          id={`game-thumbnail-${game.id}`}
+          instanceId={game.id}
+          orientation="vertical"
+          staticElements={[]}
           t={t}
         />
       </div>,
       <OverlayTrigger
-        key="info-overlay"
-        overlay={gameInfoPopover}
-        triggerRef={this.setRef}
-        getBounds={getBounds || this.getWindowBounds}
         container={container}
+        getBounds={getBounds || this.getWindowBounds}
+        key="info-overlay"
         orientation="horizontal"
+        overlay={gameInfoPopover}
+        rootClose={true}
         shouldUpdatePosition={true}
         trigger="click"
-        rootClose={true}
+        triggerRef={this.setRef}
       >
         <IconButton
-          id={`btn-info-${game.id}`}
-          icon="game-menu"
           className="game-thumbnail-info btn-embed"
+          icon="game-menu"
+          id={`btn-info-${game.id}`}
           tooltip={t("Show Details")}
         />
       </OverlayTrigger>,

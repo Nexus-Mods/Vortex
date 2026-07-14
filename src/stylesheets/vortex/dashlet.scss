@@ -392,21 +392,29 @@
 .dashlet-recently-managed {
     .list-recently-managed {
         display: flex;
-        //overflow-x: auto;
+        // take the dashlet height left over by the title so the tiles can
+        // scale to it; show as many whole tiles as fit the width by letting
+        // the rest wrap (not shrink) onto a line the fixed height clips away
+        flex: 1;
+        min-height: 0;
+        flex-wrap: wrap;
+        overflow: hidden;
         > * {
+            flex: 0 0 auto;
+            height: 100%;
             margin: 0 8px;
         }
     }
 }
 
-// The Recently Managed dashlet places GameThumbnail in a short flex row. Size
-// the tile by a fixed height (width follows the 2:3 aspect ratio) so it fits
-// the dashlet instead of overflowing from the default fixed width. The Image
-// wrapper is the direct child of .game-thumbnail-body; make the chain fill the
-// height so the aspect box derives its width from it.
+// The Recently Managed dashlet places GameThumbnail in a flex row that fills
+// the dashlet. Size the tile by the row height (width follows the 2:3 aspect
+// ratio) so it fits the dashlet instead of overflowing from the default fixed
+// width. The Image wrapper is the direct child of .game-thumbnail-body; make
+// the chain fill the height so the aspect box derives its width from it.
 .dashlet-recently-managed .list-recently-managed .game-thumbnail {
     width: auto;
-    height: 120px;
+    height: 100%;
 
     .game-thumbnail-body {
         height: 100%;
