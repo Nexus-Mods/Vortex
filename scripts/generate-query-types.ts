@@ -8,7 +8,7 @@
  *   pnpm run generate:query-types
  *
  * What it does:
- * 1. Creates a temporary DuckDB instance + loads level_pivot
+ * 1. Creates a temporary DuckDB instance + loads the locked level_pivot extension
  * 2. ATTACHes a temp empty LevelDB (for schema-only operation)
  * 3. Runs all `setup` queries (pivot table definitions)
  * 4. Runs all `view` queries (creates views)
@@ -28,11 +28,25 @@ const mainRequire = createRequire(path.resolve(__dirname, "..", "src", "main", "
 
 import type { DuckDBConnection, DuckDBInstance, DuckDBType } from "@duckdb/node-api";
 
+import {
+  DUCKDB_EXTENSION_DOWNLOAD_COMMAND,
+  getDuckDBExtensionsOutputDir,
+  getDuckDBNodeApiPackagePath,
+  getDuckDBPlatform,
+  getLockedExtensionArtifact,
+  getUnpackedExtensionPath,
+  parseDuckDBVersion,
+  readDuckDBExtensionConfig,
+  readDuckDBExtensionLock,
+  readJsonFile,
+  validateExtensionLock,
+} from "../src/main/download-duckdb-extensions";
 // Import the parser from source
 import { parseAllQueries } from "../src/main/src/store/queryParser";
 import type { ParsedQuery } from "../src/main/src/store/queryParser";
 
 const QUERIES_DIR = path.resolve(__dirname, "..", "src", "queries");
+const MAIN_DIR = path.resolve(__dirname, "..", "src", "main");
 const OUTPUT_FILE = path.resolve(
   __dirname,
   "..",
@@ -43,6 +57,7 @@ const OUTPUT_FILE = path.resolve(
   "generated",
   "queryTypes.ts",
 );
+const DUCKDB_EXTENSION_NAME = "level_pivot";
 
 /** Map DuckDB type string to TypeScript type */
 function duckdbTypeToTS(duckdbType: string): string {
@@ -126,6 +141,41 @@ function derivePropertyName(query: ParsedQuery, type: "table" | "view"): string 
   return toCamelCase(name);
 }
 
+function getLockedDuckDBExtensionDir(): string {
+  const duckdbNodeApiPackage = readJsonFile<{ version: string }>(
+    getDuckDBNodeApiPackagePath(MAIN_DIR),
+  );
+  const duckdbVersion = parseDuckDBVersion(duckdbNodeApiPackage.version);
+  const duckdbPlatform = getDuckDBPlatform();
+  const config = readDuckDBExtensionConfig();
+  const lock = readDuckDBExtensionLock();
+
+  validateExtensionLock(config, lock, duckdbVersion);
+  if (!config.platforms.includes(duckdbPlatform)) {
+    throw new Error(
+      `DuckDB extension lockfile is missing ${DUCKDB_EXTENSION_NAME} for ${duckdbPlatform}.`,
+    );
+  }
+  getLockedExtensionArtifact(lock, DUCKDB_EXTENSION_NAME, duckdbPlatform);
+
+  const extensionDir = getDuckDBExtensionsOutputDir(config, MAIN_DIR);
+  const extensionPath = getUnpackedExtensionPath(
+    extensionDir,
+    duckdbVersion,
+    duckdbPlatform,
+    DUCKDB_EXTENSION_NAME,
+  );
+
+  if (!fs.existsSync(extensionPath)) {
+    throw new Error(
+      `Locked DuckDB extension not found at ${extensionPath}. ` +
+        `Run ${DUCKDB_EXTENSION_DOWNLOAD_COMMAND} before generating query types.`,
+    );
+  }
+
+  return extensionDir;
+}
+
 interface TableTypeInfo {
   query: ParsedQuery;
   propName: string;
@@ -146,8 +196,10 @@ async function main(): Promise<void> {
 
   // Create temporary DuckDB instance for schema introspection
   const { DuckDBInstance: DuckDBInstanceCtor } = mainRequire("@duckdb/node-api");
+  const duckdbExtensionDir = getLockedDuckDBExtensionDir();
   const instance: DuckDBInstance = await DuckDBInstanceCtor.create(":memory:", {
     allow_unsigned_extensions: "true",
+    extension_directory: duckdbExtensionDir,
   });
   const connection: DuckDBConnection = await instance.connect();
 
@@ -155,12 +207,9 @@ async function main(): Promise<void> {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vortex-gen-"));
 
   try {
-    // Install and load level_pivot
-    console.log("Installing level_pivot...");
-    await connection.run(
-      "FORCE INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'",
-    );
-    await connection.run("LOAD level_pivot");
+    // Load the same locked extension artifact that normal builds package.
+    console.log(`Loading ${DUCKDB_EXTENSION_NAME} from ${duckdbExtensionDir}...`);
+    await connection.run(`LOAD ${DUCKDB_EXTENSION_NAME}`);
     const tmpDbPath = path.join(tmpDir, "gen.db");
     await connection.run(
       `ATTACH '${tmpDbPath.replace(/'/g, "''")}' AS db (TYPE level_pivot, CREATE_IF_MISSING true)`,
