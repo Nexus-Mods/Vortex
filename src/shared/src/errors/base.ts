@@ -215,8 +215,6 @@ const existing = isTripwireRegistration(existingRaw) ? existingRaw : undefined;
 if (existing !== undefined && existing.ctor !== VortexError) {
   throw new Error(
     "Duplicate @vortex/shared error module detected in this process. " +
-      "A package is bundling @vortex/shared directly instead of going " +
-      "through vortex-api, or @src/main's build is inlining it.\n" +
       `First instance loaded at: ${existing.origin}\n` +
       `This instance loaded at:  ${captureOrigin()}`,
   );
