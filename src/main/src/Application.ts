@@ -45,6 +45,7 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import { setTelemetryEnabled } from "./telemetry/state";
+import TrayIcon from "./TrayIcon";
 import { UnleashClient } from "./unleash/client";
 import { synchronizeFeatureFlags } from "./unleash/ipc";
 
@@ -116,6 +117,7 @@ class Application {
   private mArgs: IParameters;
   private mMainWindow: MainWindow | undefined;
   private mMainWindowReady: Promise<Electron.WebContents | undefined> | undefined;
+  private mTray: TrayIcon | undefined;
   private mAppMetadata: AppInitMetadata | undefined;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
@@ -206,6 +208,7 @@ class Application {
         .then(() => {
           log("info", "clean application end");
           DuckDBSingleton.getInstance().close();
+          this.mTray?.close();
           if (process.platform !== "darwin") {
             app.quit();
           }
@@ -503,9 +506,17 @@ class Application {
     log("debug", "waiting for user interface");
     await this.awaitMainWindowReady();
 
+    log("debug", "setting up tray icon");
+    this.mTray = new TrayIcon();
+
     if (splash) {
       log("debug", "removing splash screen");
       await splash.fadeOut();
+    }
+
+    const windowHandle = this.mMainWindow?.getHandle();
+    if (this.mTray.initialized && windowHandle) {
+      this.mTray.setMainWindow(windowHandle);
     }
   }
 
