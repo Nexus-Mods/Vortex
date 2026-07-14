@@ -1581,8 +1581,6 @@ enum HealthCheckTrigger {
     // (undocumented)
     ProfileChanged = "profile-changed",
     // (undocumented)
-    ResultsChanged = "health-check-results-changed",
-    // (undocumented)
     Scheduled = "scheduled",
     // (undocumented)
     SettingsChanged = "settings-changed",
