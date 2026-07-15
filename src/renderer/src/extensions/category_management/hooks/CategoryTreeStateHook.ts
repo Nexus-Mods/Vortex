@@ -17,6 +17,7 @@ export default function useCategoryTreeState() {
       const next = new Set(prev);
       if (next.has(categoryId)) next.delete(categoryId);
       else next.add(categoryId);
+      console.log("Updating expanded categories", { prev, next, categoryId });
       return next;
     });
   }, []);

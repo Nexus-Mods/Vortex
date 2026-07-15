@@ -103,9 +103,31 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
 
   const removeCategory = useCallback(
     (id: string) => {
-      onRemoveCategory(id);
+      const tree = buildCategoryTree(categories, modsByCategory);
+
+      const findNode = (
+        nodes: ICategoriesTreeEntry[],
+        targetId: string,
+      ): ICategoriesTreeEntry | undefined => {
+        for (const node of nodes) {
+          if (node.categoryId === targetId) return node;
+          const child = findNode(node.children, targetId);
+          if (child) return child;
+        }
+      };
+
+      const collectIds = (node: ICategoriesTreeEntry): string[] =>
+        node.children.flatMap((child) => collectIds(child)).concat(node.categoryId);
+
+      const node = findNode(tree, id);
+      const idsToRemove = node ? collectIds(node) : [id];
+
+      idsToRemove
+        .slice()
+        .reverse()
+        .forEach((removeId) => onRemoveCategory(removeId));
     },
-    [onRemoveCategory],
+    [categories, modsByCategory, onRemoveCategory],
   );
 
   const sortAlphabetically = useCallback(() => {
@@ -149,6 +171,14 @@ export default function useCategoryTreeActions(props: ICategoryTreeActionsProps)
       const sourceParent = findNode(tree, sourceNode?.parentId);
       const targetNode = findNode(tree, targetId);
       if (!sourceNode || !targetNode) return;
+
+      const isDescendantOf = (node: ICategoriesTreeEntry, candidateId: string): boolean =>
+        node.children.some(
+          (child) => child.categoryId === candidateId || isDescendantOf(child, candidateId),
+        );
+
+      if (sourceId === targetId) return;
+      if (isDescendantOf(sourceNode, targetId)) return;
 
       // Remove the source from it's current list
       if (sourceParent) {

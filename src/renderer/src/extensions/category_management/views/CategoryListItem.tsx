@@ -80,6 +80,10 @@ export default function CategoryListItem({
       else setHoverPosition((p) => (p === "inside" ? p : "inside"));
     },
     drop: (dragged: { id: string; parentId: string }, monitor) => {
+      if (dragged.id === categoryId) {
+        setHoverPosition(null);
+        return;
+      }
       if (!monitor.didDrop()) {
         const position = hoverPosition ?? "after";
         moveCategory(dragged.id, categoryId, position);
@@ -269,7 +273,7 @@ export default function CategoryListItem({
             <CategoryListItem
               category={c}
               createSubcategory={createSubcategory}
-              expand={() => expand(c.categoryId)}
+              expand={expand}
               key={c.categoryId}
               moveCategory={moveCategory}
               remove={remove}
