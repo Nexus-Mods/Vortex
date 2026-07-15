@@ -96,11 +96,14 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
   const loadOrder: LoadOrder = Array.isArray(newState[profile.id]) ? newState[profile.id] : [];
   const prevIds = prevLO.map((lo) => lo.id);
   const newIds = loadOrder.map((lo) => lo.id);
+  // Map of entry id to its index in the previous load order
+  const prevIdIndices = new Map(prevIds.map((id, idx): [string, number] => [id, idx]));
+  const newIdSet = new Set(newIds);
 
-  const added = newIds.filter((id) => !prevIds.includes(id));
-  const removed = prevIds.filter((id) => !newIds.includes(id));
+  const added = newIds.filter((id) => !prevIdIndices.has(id));
+  const removed = prevIds.filter((id) => !newIdSet.has(id));
   const same = loadOrder.reduce((acc, lo, idx) => {
-    if (!prevIds.includes(lo.id) || prevIds.indexOf(lo.id) !== idx) {
+    if (prevIdIndices.get(lo.id) !== idx) {
       return acc;
     }
     const currFileId = util.getSafe(

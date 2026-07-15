@@ -11,7 +11,14 @@ import {
   LoadOrderSerializationError,
   LoadOrderValidationError,
   type ILoadOrderEntryExt,
+  type LockedState,
 } from "./types/types";
+
+// A load order entry is locked (pinned, not user-orderable) for any of the
+//  truthy LockedState values.
+export function isEntryLocked(locked: LockedState): boolean {
+  return locked === true || locked === "true" || locked === "always";
+}
 
 export const toExtendedLoadOrderEntry = (api: types.IExtensionApi) => {
   return (entry: types.ILoadOrderEntry, index: number) => {

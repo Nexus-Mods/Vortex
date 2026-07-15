@@ -29,6 +29,7 @@ import {
   type LoadOrder,
   LoadOrderValidationError,
 } from "../types/types";
+import { isEntryLocked } from "../util";
 import FilterBox from "./FilterBox";
 import InfoPanel from "./InfoPanel";
 import ItemRenderer from "./ItemRenderer";
@@ -84,6 +85,21 @@ type IComponentState = IBaseState;
 
 class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private mStaticButtons: types.IActionDefinition[];
+
+  // Memoize the per-row props so an unrelated re-render keeps the same row
+  //  object identities, preserving the rows' React.memo and avoiding a layout
+  //  measure in DraggableList.
+  private mRendOpsCache:
+    | {
+        loadOrder: LoadOrder;
+        invalid: IItemRendererProps["invalidEntries"];
+        toggleable: boolean;
+        result: IItemRendererProps[];
+      }
+    | undefined;
+  private mFilterCache:
+    | { rendOps: IItemRendererProps[]; filterText: string; result: IItemRendererProps[] }
+    | undefined;
 
   constructor(props: IProps) {
     super(props);
@@ -239,22 +255,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const chosenItemRenderer = gameEntry?.customItemRenderer ?? ItemRenderer;
     const enabled =
       gameEntry !== undefined
-        ? loadOrder.reduce((accum, loEntry) => {
-            const rendOps: IItemRendererProps = {
-              loEntry,
-              displayCheckboxes: gameEntry.toggleableEntries || false,
-              invalidEntries: validationError?.validationResult?.invalid,
-            };
-            // Filter based on the filterText, matching on loEntry.name or other attributes as needed
-            const entryName = loEntry.name ?? loEntry.id;
-            if (!entryName) {
-              return accum; // Skip entries without a name
-            }
-            if (entryName.toLowerCase().includes(this.state.filterText.toLowerCase())) {
-              accum.push(rendOps);
-            }
-            return accum;
-          }, [])
+        ? this.getRenderRows(gameEntry, loadOrder, this.state.filterText)
         : [];
 
     const infoPanel = () => (
@@ -274,6 +275,9 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           apply={this.onApply}
           idFunc={this.getItemId}
           isLocked={this.isLocked}
+          virtualized={
+            gameEntry?.customItemRenderer === undefined || gameEntry?.uniformRowHeight === true
+          }
         />
       ) : (
         <EmptyPlaceholder
@@ -333,8 +337,61 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
 
   private isLocked = (item: IItemRendererProps): boolean => {
-    return [true, "true", "always"].includes(item?.loEntry?.locked);
+    return item?.loEntry?.locked !== undefined && isEntryLocked(item.loEntry.locked);
   };
+
+  // Builds the filtered per-row props, memoizing the (expensive) full-list
+  //  build separately from the (cheap) filter so an unrelated re-render reuses
+  //  the same row objects and the filter only recomputes on a keystroke.
+  private getRenderRows(
+    gameEntry: ILoadOrderGameInfo,
+    loadOrder: LoadOrder,
+    filterText: string,
+  ): IItemRendererProps[] {
+    const invalid = this.state.validationError?.validationResult?.invalid;
+    const toggleable = gameEntry.toggleableEntries || false;
+    const cache = this.mRendOpsCache;
+    let rendOps: IItemRendererProps[];
+    if (
+      cache !== undefined &&
+      cache.loadOrder === loadOrder &&
+      cache.invalid === invalid &&
+      cache.toggleable === toggleable
+    ) {
+      rendOps = cache.result;
+    } else {
+      const lockedEntriesCount = loadOrder.filter((entry) => isEntryLocked(entry.locked)).length;
+      rendOps = loadOrder.map(
+        (loEntry, idx): IItemRendererProps => ({
+          loEntry,
+          displayCheckboxes: toggleable,
+          invalidEntries: invalid,
+          position: idx + 1,
+          lockedEntriesCount,
+        }),
+      );
+      this.mRendOpsCache = { loadOrder, invalid, toggleable, result: rendOps };
+    }
+
+    if (filterText === "") {
+      return rendOps;
+    }
+    const filterCache = this.mFilterCache;
+    if (
+      filterCache !== undefined &&
+      filterCache.rendOps === rendOps &&
+      filterCache.filterText === filterText
+    ) {
+      return filterCache.result;
+    }
+    const lower = filterText.toLowerCase();
+    const result = rendOps.filter((rendOp) => {
+      const entryName = rendOp.loEntry.name ?? rendOp.loEntry.id;
+      return !!entryName && entryName.toLowerCase().includes(lower);
+    });
+    this.mFilterCache = { rendOps, filterText, result };
+    return result;
+  }
 
   private onApply = (ordered: IItemRendererProps[]) => {
     const { t } = this.props;
