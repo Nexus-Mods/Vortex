@@ -10,13 +10,13 @@ _First beta of the 2.4 release._
 
 ### Added
 
-- Support for downloaded but not-yet-installed files in the Mods list ([#23648](https://github.com/Nexus-Mods/Vortex/pull/23648))
-- Bulk mod install ([#23642](https://github.com/Nexus-Mods/Vortex/pull/23642))
+- Health check page: Support for downloaded but not-yet-installed files in the Mods list ([#23648](https://github.com/Nexus-Mods/Vortex/pull/23648))
+- Health check page: Bulk mod install ([#23642](https://github.com/Nexus-Mods/Vortex/pull/23642))
 
 ### Changed
 
 - Health check page: dropped the per-run success toasts in favour of a `Last updated` label ([#23688](https://github.com/Nexus-Mods/Vortex/pull/23688))
-- Mod summary now shown for downloaded but not-yet-installed files ([#23682](https://github.com/Nexus-Mods/Vortex/pull/23682))
+- Health check page: Mod summary now shown for downloaded but not-yet-installed files ([#23682](https://github.com/Nexus-Mods/Vortex/pull/23682))
 - Reworked the Recently Managed dashlet for portrait game tiles ([#23680](https://github.com/Nexus-Mods/Vortex/pull/23680))
 - Removed the in-app Nexus Mods app migration guide ([#23651](https://github.com/Nexus-Mods/Vortex/pull/23651))
 - Upgraded Electron 42.3.3 → 43.0.0 and Node 24.15.0 → 24.17.0 ([#23631](https://github.com/Nexus-Mods/Vortex/pull/23631))
@@ -33,7 +33,7 @@ _First beta of the 2.4 release._
 - FOMOD dialog buttons overflowing ([#23650](https://github.com/Nexus-Mods/Vortex/pull/23650))
 - Fallout 4 VR light (ESL) plugins not appearing because the game extension's `supportESL` override was never applied ([#23644](https://github.com/Nexus-Mods/Vortex/pull/23644))
 - Mods incorrectly pulled in as requirements of other mods ([#23633](https://github.com/Nexus-Mods/Vortex/pull/23633))
-- Collection plugins left unsorted or disabled after install, and plugin loading now resilient to a single invalid plugin file ([#23612](https://github.com/Nexus-Mods/Vortex/pull/23612))
+- Collection plugins left unsorted or disabled after install, and plugin loading now resilient to a invalid plugin file ([#23612](https://github.com/Nexus-Mods/Vortex/pull/23612))
 - Collection installs stalling near completion (~9X%) and never showing as finished; the Redux install session is now the single source of truth for completion ([#23568](https://github.com/Nexus-Mods/Vortex/pull/23568))
 
 ## [2.3.0] - 2026-07-14
@@ -70,6 +70,9 @@ _First beta of the 2.3 release._
 - BG3: startup failing with "Failed to migrate" and the load order not deploying, after the reported game version switched to `productVersion` left the profile and modsettings-format checks comparing against `FileVersion`-scale thresholds ([#23582](https://github.com/Nexus-Mods/Vortex/pull/23582))
 - "Open folder" options failing on Wine by switching from `shell.openPath` to `shell.openExternal` ([#23557](https://github.com/Nexus-Mods/Vortex/pull/23557))
 - `dotnetprobe` failing to run on systems where the .NET runtime enables CET (Intel shadow stack); CET compatibility is now disabled ([#23546](https://github.com/Nexus-Mods/Vortex/pull/23546))
+- Paused downloads with no usable checkpoint (missing or empty) failing to resume with `No checkpoint stored`, leaving collection installs and the Downloads page retrying forever; such downloads now restart fresh under the same id ([#23630](https://github.com/Nexus-Mods/Vortex/pull/23630))
+- Crash (`Cannot read properties of undefined`) when a plugin-warning update arrived after the plugin list was cleared on a profile change ([#23617](https://github.com/Nexus-Mods/Vortex/pull/23617))
+- Corrupt mod with an unusable id causing a repeated "Mods changed on disk" prompt and refusing to delete ([#23610](https://github.com/Nexus-Mods/Vortex/pull/23610))
 
 ## [2.2.0] - 2026-06-30
 
