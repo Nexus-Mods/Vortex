@@ -36,6 +36,8 @@ import type {
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import { downloadPathForGame } from "../extensions/download_management/selectors";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
+import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
+import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
@@ -71,6 +73,8 @@ import type {
   IDownloadAdapterOpts,
   IDriverHarness,
   IDriverHarnessState,
+  IFbloHarness,
+  IFbloHarnessOpts,
   IInstallContextHarness,
   IInstallManagerHarness,
   IModChangeHarness,
@@ -575,6 +579,29 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
 }
 
 /**
+ * A file-based load order harness: a fake api seeded with an active profile and the game's mods,
+ * plus an UpdateSet constructed against it. UpdateSet is injected so builders.ts stays free of the
+ * renderer view layer, mirroring makeDriverHarness.
+ */
+export function makeFbloHarness(
+  UpdateSetCtor: new (api: IExtensionApi, isFBLO: (gameId: string) => boolean) => UpdateSet,
+  opts: IFbloHarnessOpts = {},
+): IFbloHarness {
+  const gameId = opts.gameId ?? "skyrimse";
+  const profileId = opts.profileId ?? "profile-1";
+  const base = makeApiHarness({
+    profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
+    mods: { [gameId]: opts.mods ?? {} },
+  });
+  base.setState((draft) => {
+    draft.settings.profiles.activeProfileId = profileId;
+    draft.settings.profiles.lastActiveProfile = { [gameId]: profileId };
+  });
+  const updateSet = new UpdateSetCtor(base.api, opts.isFBLO ?? (() => true));
+  return { ...base, updateSet, gameId, profileId };
+}
+
+/**
  * Resolve once the driver reaches `step`. The driver fires onUpdate on every step transition, so
  * this awaits that exact event rather than a fixed delay (a fixed tick races the async
  * did-install-dependencies handler under load). A driver that never reaches the step is bounded by
@@ -766,5 +793,17 @@ export function makeDownloadAdapterHarness(
     start,
     resume,
     getStates,
+  };
+}
+
+let loEntrySeq = 0;
+
+export function makeLoadOrderEntry(overrides: Partial<ILoadOrderEntry> = {}): ILoadOrderEntry {
+  const id = overrides.id ?? `entry-${(loEntrySeq += 1)}.pak`;
+  return {
+    id,
+    name: id,
+    enabled: true,
+    ...overrides,
   };
 }

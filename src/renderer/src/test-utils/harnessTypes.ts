@@ -10,6 +10,7 @@ import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEve
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
@@ -61,6 +62,25 @@ export interface IApiHarness {
 export interface IDriverHarness extends IApiHarness {
   // the driver under test, constructed against the fake api
   driver: InstallDriver;
+}
+
+/** What a file-based load order test arranges. */
+export interface IFbloHarnessOpts {
+  // the managed game (defaults to skyrimse); set active + last-active in state
+  gameId?: string;
+  // the active profile id (defaults to profile-1)
+  profileId?: string;
+  // the game's installed mods, keyed by modId (state.persistent.mods[gameId])
+  mods?: Record<string, IMod>;
+  // whether a game uses FBLO, as UpdateSet asks (defaults to always true)
+  isFBLO?: (gameId: string) => boolean;
+}
+
+export interface IFbloHarness extends IApiHarness {
+  // an UpdateSet constructed against the fake api
+  updateSet: UpdateSet;
+  gameId: string;
+  profileId: string;
 }
 
 // What a download-adapter test arranges: the single seeded download's fields, an optional stored

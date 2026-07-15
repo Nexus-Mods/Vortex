@@ -9,9 +9,10 @@ import {
   type DropTargetSpec,
 } from "react-dnd";
 
-import { ListWindow } from "../util/ListWindow";
+import { keepIndicesInRange, ListWindow } from "../util/ListWindow";
 import { ComponentEx } from "./ComponentEx";
 import DraggableItem from "./DraggableListItem";
+import { moveItems } from "./dragReorder";
 
 export interface IDraggableListProps {
   disabled?: boolean;
@@ -98,21 +99,15 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     let end = length - 1;
     let listStyle: React.CSSProperties;
     if (this.virtualized()) {
-      const range = this.mWindow.range(length);
+      // Keep dragged rows inside the rendered slice so their react-dnd source
+      //  is never unmounted mid-drag (which would drop the reorder).
+      const range = keepIndicesInRange(
+        this.mWindow.range(length),
+        draggedItems.map((item) => this.findItemIndex(item)),
+      );
       start = range.start;
       end = range.end;
-      // Keep dragged rows inside the rendered slice so their react-dnd source
-      //  is never unmounted mid-drag (which would drop the reorder). During a
-      //  drag the dragged row tracks the hovered - and therefore visible -
-      //  index, so this stays close to the base window.
-      for (const item of draggedItems) {
-        const idx = this.findItemIndex(item);
-        if (idx !== -1) {
-          start = Math.min(start, idx);
-          end = Math.max(end, idx);
-        }
-      }
-      listStyle = this.mWindow.padding(start, end, length);
+      listStyle = this.mWindow.padding(range, length);
     }
 
     return connectDropTarget(
@@ -191,27 +186,12 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     const { selectedItems, ordered } = this.state;
     const copy = ordered.slice();
 
-    // If multiple items are selected, handle reordering for all of them
-    let itemsToMove = selectedItems.includes(copy[oldIndex])
+    // If multiple items are selected, move all of them; otherwise the single item
+    const itemsToMove = selectedItems.includes(copy[oldIndex])
       ? selectedItems
-      : [take(changeContainer ? undefined : copy)]; // Fall back to single item
+      : [take(changeContainer ? undefined : copy)];
 
-    // Remove selected items from their old position
-    itemsToMove.forEach((item) => {
-      const index = copy.indexOf(item);
-      if (index !== -1) {
-        copy.splice(index, 1);
-      }
-    });
-
-    // Insert items in new position
-    itemsToMove.forEach((itm) => {
-      const item = Array.isArray(itm) ? itm[0] : itm;
-      copy.splice(newIndex, 0, item);
-      newIndex++;
-    });
-
-    this.nextState.ordered = copy;
+    this.nextState.ordered = moveItems(copy, itemsToMove, newIndex);
   };
 
   private itemLocked(item: any) {

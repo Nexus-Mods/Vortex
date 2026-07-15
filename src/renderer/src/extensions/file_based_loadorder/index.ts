@@ -13,6 +13,7 @@ import { setFBLoadOrder } from "./actions/loadOrder";
 import { setValidationResult } from "./actions/session";
 import { generate, Interface, parser } from "./collections/loadOrder";
 import { addGameEntry, addGameEntryInline, findGameEntry } from "./gameSupport";
+import { diffLoadOrder } from "./loadOrderDiff";
 import { modLoadOrderReducer } from "./reducers/loadOrder";
 import { sessionReducer } from "./reducers/session";
 import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
@@ -94,42 +95,25 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
 
   const prevLO: LoadOrder = Array.isArray(oldState[profile.id]) ? oldState[profile.id] : [];
   const loadOrder: LoadOrder = Array.isArray(newState[profile.id]) ? newState[profile.id] : [];
-  const prevIds = prevLO.map((lo) => lo.id);
-  const newIds = loadOrder.map((lo) => lo.id);
-  // Map of entry id to its index in the previous load order
-  const prevIdIndices = new Map(prevIds.map((id, idx): [string, number] => [id, idx]));
-  const newIdSet = new Set(newIds);
 
-  const added = newIds.filter((id) => !prevIdIndices.has(id));
-  const removed = prevIds.filter((id) => !newIdSet.has(id));
-  const same = loadOrder.reduce((acc, lo, idx) => {
-    if (prevIdIndices.get(lo.id) !== idx) {
-      return acc;
-    }
-    const currFileId = util.getSafe(
-      state,
-      ["persistent", "mods", profile.gameId, lo?.modId, "attributes", "fileId"],
-      undefined,
-    );
-    const prevFileId =
+  const diff = diffLoadOrder(prevLO, loadOrder, {
+    currentFileId: (lo) =>
+      util.getSafe(
+        state,
+        ["persistent", "mods", profile.gameId, lo?.modId, "attributes", "fileId"],
+        undefined,
+      ),
+    storedFileId: (lo) =>
       updateSet.findEntry(lo)?.entries?.filter((e) => e.id === lo.id && e.name === lo.name)?.[0]
-        ?.fileId ?? -1;
-    if (!!currFileId && currFileId !== prevFileId) {
-      updateSet.shouldRestore = true;
-      return acc;
-    }
-
-    if (lo.enabled !== prevLO[idx].enabled) {
-      return acc;
-    }
-
-    acc.push(lo.id);
-    return acc;
-  }, []);
+        ?.fileId,
+  });
+  if (diff.shouldRestore) {
+    updateSet.shouldRestore = true;
+  }
 
   if (
     !updateSet.shouldRestore &&
-    (added.length > 0 || removed.length > 0 || same.length !== newIds.length)
+    (diff.added.length > 0 || diff.removed.length > 0 || diff.same.length !== loadOrder.length)
   ) {
     try {
       // This is the only place where we want applyNewLoadOrder to be called

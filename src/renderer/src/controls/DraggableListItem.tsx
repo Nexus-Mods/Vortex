@@ -2,6 +2,8 @@
 import React, { useCallback, useRef } from "react";
 import { type DragSourceMonitor, useDrag, useDrop } from "react-dnd";
 
+import { shouldReorder } from "./dragReorder";
+
 export interface IDraggableListItemProps {
   disabled?: boolean;
   index: number;
@@ -108,10 +110,9 @@ const DraggableItem: React.FC<IDraggableListItemProps> = ({
 
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
       const hoverActualY = clientOffset.y - hoverBoundingRect.top;
-      // dragging down: swap only once the cursor passes this row's middle
-      if (dragIndex < hoverIndex && hoverActualY < hoverMiddleY) return;
-      // dragging up: swap only once the cursor passes this row's middle
-      if (dragIndex > hoverIndex && hoverActualY > hoverMiddleY) return;
+      if (!shouldReorder(dragIndex, hoverIndex, hoverActualY, hoverMiddleY)) {
+        return;
+      }
 
       onChangeIndex(dragIndex, hoverIndex, sourceContainerId !== containerId, (list) =>
         items.map((item) => take(item, list)),
