@@ -72,7 +72,7 @@ export interface VortexErrorKindMap {
   "http:protocol-violation": { url: string };
   "http:timeout": { url: string };
   /** Catch-all for a failed request that isn't one of the above. */
-  "http:generic": { url: string };
+  "http:generic": { url: string } & Partial<OsErrorData>;
 
   // Downloads
   /** The downloaded content is an HTML page. */
@@ -103,7 +103,9 @@ export interface VortexErrorKindMap {
 
 /** Payload shared by mechanical OS-level errors. */
 type OsErrorData = {
-  originalCode: string | number;
+  originalCode: string;
+  errno: number;
+  syscall: string;
 };
 
 /** Payload for filesystem errors. */
