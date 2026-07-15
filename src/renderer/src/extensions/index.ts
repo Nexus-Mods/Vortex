@@ -4,7 +4,6 @@
 import {} from "./about_dialog";
 import {} from "./adaptor_bridge";
 import {} from "./analytics";
-import {} from "./announcement_dashlet";
 import {} from "./browse_nexus";
 import {} from "./browser";
 import {} from "./category_management";
@@ -31,7 +30,6 @@ import {} from "./installer_nested_fomod";
 import {} from "./instructions_overlay";
 import {} from "./mod_load_order";
 import {} from "./mod_management";
-import {} from "./mod_spotlights_dashlet";
 import {} from "./move_activator";
 import {} from "./news_dashlet";
 import {} from "./nexus_integration";
