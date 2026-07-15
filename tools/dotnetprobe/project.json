@@ -12,7 +12,8 @@
       "inputs": [
         "{projectRoot}/dotnetprobe.csproj",
         "{projectRoot}/Program.cs",
-        { "runtime": "dotnet --version" }
+        { "runtime": "dotnet --version" },
+        { "runtime": "node -p process.platform" }
       ],
       "outputs": ["{projectRoot}/dist"]
     },
