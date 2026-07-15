@@ -40,7 +40,9 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
           getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined,
       )
       .sort((lhs, rhs) => lastManaged(rhs.id) - lastManaged(lhs.id))
-      .slice(0, 3);
+      // render enough candidates to fill a wide dashlet; the stylesheet clips
+      // whatever doesn't fit on one row
+      .slice(0, 10);
 
     let content: JSX.Element;
     if (games.length === 0) {
@@ -62,6 +64,7 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
                 game={game}
                 type="managed"
                 active={false}
+                compact={true}
                 onRefreshGameInfo={this.refreshGameInfo}
               />
             </div>
