@@ -4,6 +4,7 @@ import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
 import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
+import { stubOpenDialog } from "./dialogs";
 import { Timeouts } from "./timeouts";
 
 // VORTEX_E2E=1 disables automatic discovery, so all games go through the
@@ -30,9 +31,7 @@ export async function manageGame(
     await expect(navbar.gamesLink).toBeVisible();
     await navbar.gamesLink.click();
 
-    await electronApp.evaluate(({ dialog }, gamePath) => {
-      dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [gamePath] });
-    }, fakeGame.gamePath);
+    await stubOpenDialog(electronApp, fakeGame.gamePath);
 
     const row = gamesPage.gameRow(gameName);
     await expect(row).toBeVisible({ timeout: Timeouts.NETWORK });
@@ -43,9 +42,8 @@ export async function manageGame(
     await expect(manageButton).toBeVisible();
     await manageButton.click();
 
-    const continueButton = vortexWindow.getByRole("button", { name: "Continue" });
-    await expect(continueButton).toBeVisible();
-    await continueButton.click();
+    await expect(gamesPage.continueButton).toBeVisible();
+    await gamesPage.continueButton.click();
 
     await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
   });

@@ -9,6 +9,7 @@ import path from "node:path";
  */
 import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { acceptConsent } from "../helpers/consent";
+import { stubOpenDialog } from "../helpers/dialogs";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { ModsPage } from "../selectors/modsPage";
@@ -78,13 +79,7 @@ test.describe("Mods - Manual Downloads", () => {
           if (downloadedFilePath === null) {
             throw new Error("File path was not captured");
           }
-          await vortexApp.evaluate(({ dialog }, filePath) => {
-            dialog.showOpenDialog = () =>
-              Promise.resolve({
-                canceled: false,
-                filePaths: [filePath],
-              });
-          }, downloadedFilePath);
+          await stubOpenDialog(vortexApp, downloadedFilePath);
         });
 
         await test.step("Click Install From File in Vortex", async () => {
