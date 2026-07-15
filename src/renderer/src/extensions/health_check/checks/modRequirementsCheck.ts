@@ -483,8 +483,8 @@ export async function checkModRequirements(
 
 /**
  * Registration descriptor for the Nexus mod requirements check. Owns its own
- * enablement gate, running-state bracket and completion notification so that
- * index.ts only has to register it.
+ * enablement gate and running-state bracket so that index.ts only has to
+ * register it.
  */
 export const modRequirementsHealthCheck: IHealthCheck = {
   id: MOD_REQUIREMENTS_CHECK_ID,
@@ -513,14 +513,7 @@ export const modRequirementsHealthCheck: IHealthCheck = {
 
     api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true));
     try {
-      const result = await checkModRequirements(api);
-      api.sendNotification({
-        type: "info",
-        message: "Nexus Mod Requirements check completed",
-        displayMS: 5000,
-        id: "health-check:nexus-requirements-complete",
-      });
-      return result;
+      return await checkModRequirements(api);
     } finally {
       api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, false));
     }
