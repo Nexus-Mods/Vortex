@@ -70,9 +70,6 @@ _First beta of the 2.3 release._
 - BG3: startup failing with "Failed to migrate" and the load order not deploying, after the reported game version switched to `productVersion` left the profile and modsettings-format checks comparing against `FileVersion`-scale thresholds ([#23582](https://github.com/Nexus-Mods/Vortex/pull/23582))
 - "Open folder" options failing on Wine by switching from `shell.openPath` to `shell.openExternal` ([#23557](https://github.com/Nexus-Mods/Vortex/pull/23557))
 - `dotnetprobe` failing to run on systems where the .NET runtime enables CET (Intel shadow stack); CET compatibility is now disabled ([#23546](https://github.com/Nexus-Mods/Vortex/pull/23546))
-- Paused downloads with no usable checkpoint (missing or empty) failing to resume with `No checkpoint stored`, leaving collection installs and the Downloads page retrying forever; such downloads now restart fresh under the same id ([#23630](https://github.com/Nexus-Mods/Vortex/pull/23630))
-- Crash (`Cannot read properties of undefined`) when a plugin-warning update arrived after the plugin list was cleared on a profile change ([#23617](https://github.com/Nexus-Mods/Vortex/pull/23617))
-- Corrupt mod with an unusable id causing a repeated "Mods changed on disk" prompt and refusing to delete ([#23610](https://github.com/Nexus-Mods/Vortex/pull/23610))
 
 ## [2.2.0] - 2026-06-30
 
