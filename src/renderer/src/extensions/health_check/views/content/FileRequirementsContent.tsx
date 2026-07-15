@@ -1,13 +1,9 @@
 import {
   mdiCallSplit,
   mdiChevronRight,
-  mdiDownload,
-  mdiEye,
-  mdiEyeOff,
+  mdiTrayArrowDown,
   mdiOpenInNew,
   mdiSwapHorizontal,
-  mdiThumbDown,
-  mdiThumbUp,
 } from "@mdi/js";
 import React, { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -37,6 +33,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setFeedbackGiven, setFileRequirementHidden } from "../../actions/persistent";
 import { FILE_REQUIREMENTS_CHECK_ID } from "../../checks/fileRequirementsCheck";
+import { EntryActions } from "../../components/entry_actions/EntryActions";
 import { FeedbackModal } from "../../components/feedback_modal/FeedbackModal";
 import {
   FileRequirement,
@@ -229,7 +226,7 @@ function CandidateCard({
           <Button
             appearance="strong"
             brand="neutral"
-            leftIconPath={mdiDownload}
+            leftIconPath={mdiTrayArrowDown}
             rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
             size="sm"
             onClick={() => ctx.requestDownload(candidate)}
@@ -568,45 +565,14 @@ function FileRequirementsListingRow({
               </Typography>
             </div>
 
-            <div className="invisible flex shrink-0 gap-x-1 group-focus-within:visible group-hover:visible">
-              <Button
-                appearance="weak"
-                brand="neutral"
-                disabled={givenFeedback}
-                leftIconPath={mdiThumbUp}
-                size="sm"
-                title={t("common:::helpful")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  markFeedback();
-                }}
-              />
-
-              <Button
-                appearance="weak"
-                brand="neutral"
-                disabled={givenFeedback}
-                leftIconPath={mdiThumbDown}
-                size="sm"
-                title={t("common:::not_helpful")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowFeedbackModal(true);
-                }}
-              />
-
-              <Button
-                appearance="weak"
-                brand="neutral"
-                leftIconPath={isHidden ? mdiEye : mdiEyeOff}
-                size="sm"
-                title={isHidden ? t("common:::unhide") : t("common:::hide")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleHide();
-                }}
-              />
-            </div>
+            <EntryActions
+              givenFeedback={givenFeedback}
+              isHidden={isHidden}
+              variant="listing"
+              onHelpful={markFeedback}
+              onNotHelpful={() => setShowFeedbackModal(true)}
+              onToggleHide={onToggleHide}
+            />
           </div>
         </div>
 
@@ -614,7 +580,7 @@ function FileRequirementsListingRow({
           <Button
             appearance="moderate"
             brand="neutral"
-            leftIconPath={mdiDownload}
+            leftIconPath={mdiTrayArrowDown}
             rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
             size="sm"
             onClick={doQuickInstall}
@@ -790,46 +756,21 @@ function FileRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
         </div>
 
         <div className="flex shrink-0 items-center gap-x-2">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {givenFeedback
-              ? t("common:::thanks_for_your_feedback")
-              : t(`detail::was_this_helpful::${entry.severity}`)}
-          </Typography>
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            disabled={givenFeedback}
-            leftIconPath={mdiThumbUp}
-            size="sm"
-            title={t("common:::helpful")}
-            onClick={markFeedback}
-          />
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            disabled={givenFeedback}
-            leftIconPath={mdiThumbDown}
-            size="sm"
-            title={t("common:::not_helpful")}
-            onClick={() => setShowFeedbackModal(true)}
-          />
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            leftIconPath={isHidden ? mdiEye : mdiEyeOff}
-            size="sm"
-            title={isHidden ? t("common:::unhide") : t("common:::hide")}
-            onClick={toggleHideEntry}
+          <EntryActions
+            givenFeedback={givenFeedback}
+            isHidden={isHidden}
+            severity={entry.severity}
+            variant="detail"
+            onHelpful={markFeedback}
+            onNotHelpful={() => setShowFeedbackModal(true)}
+            onToggleHide={toggleHideEntry}
           />
 
           {installAllCandidates.length > 1 && (
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiDownload}
+              leftIconPath={mdiTrayArrowDown}
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={installAll}
@@ -961,6 +902,7 @@ function pushReportEntries(
   }
 }
 
+// todo can we split this file up, if not can we move the template components out?
 export const fileRequirementsContent: IHealthCheckContent = {
   // Split each source file into per-category reports, and each report into a visible
   // and a hidden entry, so a partially dismissed file shows its live issues under

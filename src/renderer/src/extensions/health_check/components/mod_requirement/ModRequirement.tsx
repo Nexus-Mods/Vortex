@@ -1,5 +1,5 @@
-import { mdiChevronRight, mdiDownload, mdiEye, mdiEyeOff, mdiThumbDown, mdiThumbUp } from "@mdi/js";
-import React, { type KeyboardEvent, type MouseEvent } from "react";
+import { mdiChevronRight, mdiDownload } from "@mdi/js";
+import React, { type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -14,6 +14,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IModRequirementExt } from "../../types";
+import { EntryActions } from "../entry_actions/EntryActions";
 import { FeedbackModal } from "../feedback_modal/FeedbackModal";
 import { PremiumModal } from "../premium_modal/PremiumModal";
 import { useModRequirementActions } from "./useModRequirementActions";
@@ -24,7 +25,7 @@ interface IModRequirementProps {
   severity: Severity;
   requirementInfo: IModRequirementExt;
   onClick: () => void;
-  onToggleHide?: (e: MouseEvent) => void;
+  onToggleHide?: () => void;
 }
 
 export const ModRequirement = ({
@@ -85,45 +86,14 @@ export const ModRequirement = ({
               </Typography>
             </div>
 
-            <div className="invisible flex shrink-0 gap-x-1 group-focus-within:visible group-hover:visible">
-              <Button
-                appearance="weak"
-                brand="neutral"
-                disabled={givenFeedback}
-                leftIconPath={mdiThumbUp}
-                size="sm"
-                title={t("common:::helpful")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePositiveFeedback();
-                }}
-              />
-
-              <Button
-                appearance="weak"
-                brand="neutral"
-                disabled={givenFeedback}
-                leftIconPath={mdiThumbDown}
-                size="sm"
-                title={t("common:::not_helpful")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowFeedbackModal(true);
-                }}
-              />
-
-              <Button
-                appearance="weak"
-                brand="neutral"
-                leftIconPath={isHidden ? mdiEye : mdiEyeOff}
-                size="sm"
-                title={isHidden ? t("common:::unhide") : t("common:::hide")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleHide?.(e);
-                }}
-              />
-            </div>
+            <EntryActions
+              givenFeedback={givenFeedback}
+              isHidden={isHidden}
+              variant="listing"
+              onHelpful={handlePositiveFeedback}
+              onNotHelpful={() => setShowFeedbackModal(true)}
+              onToggleHide={() => onToggleHide?.()}
+            />
           </div>
         </div>
 

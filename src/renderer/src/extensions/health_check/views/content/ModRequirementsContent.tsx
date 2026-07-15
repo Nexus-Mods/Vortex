@@ -1,12 +1,4 @@
-import {
-  mdiCheck,
-  mdiDownload,
-  mdiEye,
-  mdiEyeOff,
-  mdiOpenInNew,
-  mdiThumbDown,
-  mdiThumbUp,
-} from "@mdi/js";
+import { mdiCheck, mdiDownload, mdiOpenInNew } from "@mdi/js";
 import { unknownToError } from "@vortex/shared";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -25,6 +17,7 @@ import { opn } from "@/util/api";
 
 import { setModRequirementHidden } from "../../actions/persistent";
 import { MOD_REQUIREMENTS_CHECK_ID } from "../../checks/modRequirementsCheck";
+import { EntryActions } from "../../components/entry_actions/EntryActions";
 import { FeedbackModal } from "../../components/feedback_modal/FeedbackModal";
 import {
   FileRequirement,
@@ -210,42 +203,15 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
           </Typography>
         </div>
 
-        <div className="flex shrink-0 items-center gap-x-2">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {givenFeedback
-              ? t("common:::thanks_for_your_feedback")
-              : t(`detail::was_this_helpful::${entry.severity}`)}
-          </Typography>
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            disabled={givenFeedback}
-            leftIconPath={mdiThumbUp}
-            size="sm"
-            title={t("common:::helpful")}
-            onClick={handlePositiveFeedback}
-          />
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            disabled={givenFeedback}
-            leftIconPath={mdiThumbDown}
-            size="sm"
-            title={t("common:::not_helpful")}
-            onClick={() => setShowFeedbackModal(true)}
-          />
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            leftIconPath={isHidden ? mdiEye : mdiEyeOff}
-            size="sm"
-            title={isHidden ? t("common:::unhide") : t("common:::hide")}
-            onClick={handleToggleHide}
-          />
-        </div>
+        <EntryActions
+          givenFeedback={givenFeedback}
+          isHidden={isHidden}
+          severity={entry.severity}
+          variant="detail"
+          onHelpful={handlePositiveFeedback}
+          onNotHelpful={() => setShowFeedbackModal(true)}
+          onToggleHide={handleToggleHide}
+        />
       </div>
 
       {mod.notes ? (

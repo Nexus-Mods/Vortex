@@ -7,15 +7,9 @@
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "last_updated": "Last updated: {{time}}",
     "item": {
-      "title": "Additional mod may be required for: {{modName}}",
+      "title": "Additional mod file may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}",
-      "requires_mods": "Requires {{ count }} mod",
-      "requires_mods_plural": "Requires {{ count }} mods",
-      "may_require_mods": "May require {{ count }} mod",
-      "may_require_mods_plural": "May require {{ count }} mods",
       "more_count": "+{{ count }} more",
-      "requires_files": "Requires {{ count }} file",
-      "requires_files_plural": "Requires {{ count }} files",
       "missing_for": "Missing required mod for: {{modName}}",
       "missing_for_plural": "Missing required mods for: {{modName}}",
       "requires_count": "Requires {{ count }} mod:",
@@ -57,7 +51,6 @@
     "item": {
       "title": "Additional mod may be required for: {{modName}}",
       "description": "Check <modLink>{{modName}} description</modLink> for details.",
-      "check_the_description": "Check the description before installing.",
       "author_note": "Note: {{note}}",
       "open_external_mod_page": "Open external mod page",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
@@ -77,7 +70,6 @@
       "correct_version": "Correct version:",
       "view_in_loadout": "View in loadout",
       "view_in_mods": "View in Mods",
-      "switch_version": "Switch version",
       "enable_this_version": "Enable this version",
       "correct_version_downloaded": "The required version is downloaded but not installed.",
       "install_uninstalled": "Install (downloaded)"

@@ -1,4 +1,11 @@
-import { mdiCheckCircle, mdiCog, mdiDownload, mdiEye, mdiEyeOff, mdiRefresh } from "@mdi/js";
+import {
+  mdiCheckCircle,
+  mdiCog,
+  mdiMonitorArrowDownVariant,
+  mdiEye,
+  mdiEyeOff,
+  mdiRefresh,
+} from "@mdi/js";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -266,19 +273,6 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
                 </TabBar>
 
                 <div className="flex items-center gap-x-2">
-                  {selectedTab === "active" && installAllItems.length > 0 && (
-                    <Button
-                      appearance="moderate"
-                      brand="neutral"
-                      leftIconPath={mdiDownload}
-                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-                      size="sm"
-                      onClick={installAll}
-                    >
-                      {t("actions::install_all", { count: installAllItems.length })}
-                    </Button>
-                  )}
-
                   <Button
                     appearance="subdued"
                     brand="neutral"
@@ -294,6 +288,22 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
                       ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
                       : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
                   </Button>
+
+                  {selectedTab === "active" && installAllItems.length > 0 && (
+                    <>
+                      <div className="w-px self-stretch bg-stroke-weak" />
+
+                      <Button
+                        brand="neutral"
+                        leftIconPath={mdiMonitorArrowDownVariant}
+                        rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                        size="sm"
+                        onClick={installAll}
+                      >
+                        {t("actions::install_all", { count: installAllItems.length })}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
