@@ -1,0 +1,2771 @@
+---
+openapi: 3.0.3
+info:
+  title: Nexus Mods API
+  version: 3.0.0
+  description: "## Overview\nBuild tools and integrations for the Nexus Mods platform
+    using our API.\n\n* Access mod data, user information, and platform features to
+    power your own applications, services, and workflows.\n* Use our OpenAPI specification
+    to explore and integrate the API.\n\n### I want to\n#### upload a mod\n* **Using
+    GitHub to manage your mod workflow?** Try our [GitHub action](https://github.com/marketplace/actions/upload-to-nexus-mods)\n
+    \ and [sample workflow](https://github.com/Nexus-Mods/API-Example)!\n* Or get
+    started at [creating a new upload session](#tag/uploads/operation/createUpload).\n\n###
+    Legacy APIs    \nLegacy integrations may still be using our [v1 API](https://app.swaggerhub.com/apis-docs/NexusMods/nexus-mods_public_api_params_in_form_data/1.0#/).\n\n###
+    API Stability\n\nEndpoints are marked with badges indicating their stability level:\n\n|
+    Badge | Meaning |\n| ----- | ------- |\n| *(none)* | **Stable** - Production ready.
+    No breaking changes. |\n| Beta | Feature complete but may have minor changes before
+    stabilisation. |\n| Experimental | May change significantly or be removed. Not
+    recommended for production. |\n\nStable endpoints may receive additive enhancements
+    (new optional fields/parameters)\nthat won't break existing integrations.\n\n###
+    Deprecation Policy\n\n**Stable endpoints:** If a field or endpoint needs to change,
+    it will be marked as\n`deprecated` with a minimum **90-day deprecation period**
+    and migration guidance.\n\n**Beta endpoints:** Changes will be marked as `deprecated`
+    with a minimum **10-day\ndeprecation period** and migration guidance.\n\nDeprecated
+    fields continue to function during the deprecation period.\n"
+  contact:
+    name: Nexus Mods
+    url: https://nexusmods.com
+  x-logo:
+    url: https://api-docs.nexusmods.com/logo-light.png
+    altText: Nexus Mods
+tags:
+  - name: collections
+    description: Collection management
+  - name: mod-files
+    description: Mod file management
+  - name: mods
+    description: Mod management
+  - name: uploads
+    description: Upload management
+servers:
+  - url: https://api.nexusmods.com/v3
+    description: Production server
+security:
+  - ApiKeyAuth: []
+  - BearerJwtAuth: []
+paths:
+  "/collections/{id}":
+    patch:
+      tags:
+        - collections
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Edit collection
+      description: "Update the core details of a collection such as the name, summary,
+        description, and category.
+
+        "
+      operationId: editCollection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the collection.
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/EditCollectionRequest"
+      responses:
+        "204":
+          description: Successfully updated the collection.
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The collection was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/games/{game_domain}/trending-mods":
+    get:
+      tags:
+        - mods
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Get trending mods for a game
+      description:
+        "Public feed of the top 5 trending mods for a game over the past\n`game.hot_mods_days`
+        days, ranked by total endorsements. \nExcludes adult and unpublished mods.\n"
+      operationId: getTrendingMods
+      security: []
+      parameters:
+        - name: game_domain
+          in: path
+          required: true
+          description: "Game domain name (e.g. `skyrimspecialedition`).
+
+            "
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Top trending mods.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/TrendingModsResponse"
+        "404":
+          description: Game not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/games/{game_domain}/mods/{game_scoped_id}":
+    get:
+      tags:
+        - mods
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Get mod
+      description: "Retrieve specified mod, from a specified game.
+
+        "
+      operationId: getMod
+      parameters:
+        - name: game_domain
+          in: path
+          required: true
+          description: |
+            Game domain name.
+
+            This is the human readable game name which appears in URLs on the site e.g. `skyrimspecialedition` and `fallout4`.
+          schema:
+            type: string
+        - name: game_scoped_id
+          in: path
+          required: true
+          description: |
+            The game-scoped identifier for the mod.
+
+            This is the mod identifier which appears in URLs on the site e.g. `12604` from path `/skyrimspecialedition/mods/12604`.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Mod details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/GetModDetails"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/games/{game_domain}/mod-file-versions/{game_scoped_id}":
+    get:
+      tags:
+        - mods
+      summary: Get mod file version by game-scoped ID
+      description: "Retrieve a specific mod file version for a game by its game-scoped
+        identifier.
+
+        "
+      operationId: getModFileVersionByGameScopedId
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: game_domain
+          in: path
+          required: true
+          description: |
+            Game domain name.
+
+            This is the human readable game name which appears in URLs on the site e.g. `skyrimspecialedition` and `fallout4`.
+          schema:
+            type: string
+        - name: game_scoped_id
+          in: path
+          required: true
+          description: "The game-scoped identifier for the mod file version.
+
+            "
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file version.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersion"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mods/{id}/files":
+    get:
+      tags:
+        - mods
+      summary: Get mod files
+      description: "Retrieve all mod files for a given mod.
+
+        "
+      operationId: getModFiles
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod's mod files.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFilesResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Access to the mod is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mods/{id}/toggle-legacy-mod-requirements":
+    put:
+      tags:
+        - mods
+      summary: Toggle legacy mod requirements for a mod
+      description: |
+        Sets whether the given mod should use the legacy mod-level requirements.
+        When `enabled` is `true`, the mod uses legacy mod-level requirements; when
+        `false`, it uses file-to-file requirements.
+      operationId: toggleLegacyModRequirements
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ToggleLegacyModRequirementsRequest"
+      responses:
+        "204":
+          description: Successfully updated the mod's legacy mod requirements enabled
+            state.
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-files/{id}":
+    get:
+      tags:
+        - mods
+      summary: Get mod file
+      description: "Retrieve a single mod file by its identifier.
+
+        "
+      operationId: getModFile
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileWithAggregates"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    put:
+      tags:
+        - mods
+      summary: Update a mod file
+      description: Updates the name of an existing mod file by its ID.
+      operationId: updateModFile
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the mod file to update.
+          schema:
+            type: string
+      requestBody:
+        description: The new data for the mod file.
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateModFileRequest"
+      responses:
+        "204":
+          description: Successfully updated the mod file.
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}/dependencies/ranges":
+    get:
+      tags:
+        - mods
+      summary: Get mod file version dependency ranges
+      description: |
+        Retrieve dependency ranges for a given mod file version. Each dependency definition
+        contains a set of version ranges within mod files that satisfy the dependency.
+      operationId: getModFileVersionDependencyRanges
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file version's dependency ranges.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ModFileVersionDependencyRangesResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    put:
+      tags:
+        - mods
+      summary: Update mod file version dependency ranges
+      description: |
+        Replace all dependency range definitions for a given mod file version. Each
+        dependency definition contains an array of version ranges. Ranges
+        within the same definition represent alternatives (OR). Separate
+        definitions are independent requirements (AND).
+
+        A range is defined by a min_version_id (required) and an optional
+        max_version_id. Both must refer to versions within the same mod file.
+        When max_version_id is null the range is open-ended (no upper bound).
+      operationId: setModFileVersionDependencyRanges
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version (i.e. the version
+            to create dependency ranges for).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateModFileVersionDependencyRangesRequest"
+      responses:
+        "204":
+          description: Successfully updated the mod file version dependency ranges.
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}/dependencies/materialized":
+    get:
+      tags:
+        - mods
+      summary: Get mod file version materialized dependencies
+      description: |
+        Retrieve materialized dependencies for a given mod file version. Resolves the
+        stored dependency ranges into concrete candidate versions grouped by mod file.
+      operationId: getModFileVersionDependencyMaterialized
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file version's materialized dependencies.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ModFileVersionDependencyMaterializedResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/dependencies/materialized/batch":
+    post:
+      tags:
+        - mods
+      summary: Batch get mod file version materialized dependency candidates
+      description: |
+        Resolves the materialized dependency candidates for a set of source mod file versions —
+        the versions a client could install or recommend to satisfy each source version's
+        dependencies.
+
+        Each row is one candidate version for one source version's dependency definition. Rows
+        sharing a `definition_id` are OR-alternatives (any one satisfies that dependency); rows
+        sharing a `mod_file_id` are versions of the same mod file (update group/chain). Only
+        candidates on published, non-moderated mods are included.
+
+        Results are paged with a stable order, so the full candidate set can be fetched across
+        pages. Source version ids with no resolvable candidates contribute no rows.
+
+        `meta.total_count` is only meaningful on a non-empty page; a page past the end returns no
+        candidates and `total_count` 0.
+      operationId: getModFileVersionDependencyCandidatesBatch
+      x-badges:
+        - name: Experimental
+          color: orange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ModFileVersionDependencyCandidatesBatchRequest"
+      responses:
+        "200":
+          description: A page of materialized dependency candidate rows.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersionDependencyCandidatesBatchResponse"
+                  meta:
+                    "$ref": "#/components/schemas/PaginationMeta"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/batch":
+    post:
+      tags:
+        - mods
+      summary: Batch get mod file version details
+      description: |
+        Resolves a set of mod file versions to their mod file (update group/chain) along with the
+        identifying details — name, version, and position within the chain.
+
+        Only versions on visible mods are returned (non-moderated mods, excluding not-published,
+        publish-with-game and wastebinned), matching the dependency candidates endpoint. Unknown
+        version ids and versions on non-visible mods contribute no rows.
+      operationId: getModFileVersionsBatch
+      x-badges:
+        - name: Experimental
+          color: orange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ModFileVersionsBatchRequest"
+      responses:
+        "200":
+          description: The resolved mod file version detail rows.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersionsBatchResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mods/batch":
+    post:
+      tags:
+        - mods
+      summary: Batch get mod display details
+      description: |
+        Resolves a set of composite mod unique ids to their mod-level display details — name,
+        summary, status, thumbnail and adult flag. The ids are the same id space as the `mod_id`
+        returned by the dependency candidates and mod file version batch endpoints.
+
+        Unknown ids contribute no rows. Mods that exist but are moderated / hidden / removed are
+        returned with their `status`, so a now-unavailable mod can be told apart from one that
+        never existed. Result order is not guaranteed.
+      operationId: getModsBatch
+      x-badges:
+        - name: Experimental
+          color: orange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ModsBatchRequest"
+      responses:
+        "200":
+          description: The resolved mod detail rows.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModsBatchResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-files/{id}/versions":
+    get:
+      tags:
+        - mods
+      summary: Get mod file versions
+      description: "Retrieve all versions for a given mod file.
+
+        "
+      operationId: getModFileVersions
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file's versions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersionsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    post:
+      tags:
+        - mod-files
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Create a new mod file version
+      description: |
+        Creates a new version of an existing mod file. The upload specified in the request becomes
+        the most recent entry in the update chain.
+      operationId: createModFileVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file to add a version to.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateModFileVersionRequest"
+      responses:
+        "201":
+          description: The created mod file version.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateModFileVersionSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}":
+    get:
+      tags:
+        - mods
+      summary: Get mod file version
+      description: "Retrieve a single mod file version by its identifier.
+
+        "
+      operationId: getModFileVersion
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file version.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersion"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/move":
+    post:
+      tags:
+        - mods
+      summary: Move multiple mod file versions
+      description: |
+        Moves one or more mod file versions to a new position relative to
+        another version, which may be in a different mod file.
+
+        Versions are inserted in the order given by `version_ids`.
+        `version_ids` is expected to be ordered from earliest to latest version.
+
+        **Example:** Given a mod file with versions `[v1.0.0, v1.1.0, v2.0.0]`
+        (earliest to latest), moving `[v1.0.1, v1.0.2]` with `relative_placement: "after"`
+        targeting `v1.0.0` produces `[v1.0.0, v1.0.1, v1.0.2, v1.1.0, v2.0.0]`.
+      operationId: moveModFileVersions
+      x-badges:
+        - name: Experimental
+          color: orange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MoveModFileVersionsRequest"
+      responses:
+        "200":
+          description: The versions were moved successfully.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MoveModFileVersionsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/move-to-new-mod-file":
+    post:
+      tags:
+        - mods
+      summary: Move multiple mod file versions into a new mod file
+      description: |
+        Moves one or more mod file versions into a new mod file with the specified name.
+
+        Versions are inserted in the order given by `version_ids`.
+        `version_ids` is expected to be ordered from earliest to latest version.
+      operationId: moveModFileVersionsToNewModFile
+      x-badges:
+        - name: Experimental
+          color: orange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MoveModFileVersionsToNewModFileRequest"
+      responses:
+        "200":
+          description: The new mod file was created, and the versions were moved successfully.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MoveModFileVersionsToNewModFileResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/uploads/{id}":
+    get:
+      tags:
+        - uploads
+      summary: Get upload
+      description: |
+        Get the state of an upload session.
+        ### Next steps
+        * Once the `state` is `available`, the upload may be used to [create a mod file](#tag/mod-files/operation/createModFile).
+        ### FAQ
+        * How do I create an upload?
+           * Use [create upload](#tag/uploads/operation/createUpload) to start a new upload session.
+      operationId: getUpload
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the upload.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Upload
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/GetUploadSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/uploads":
+    post:
+      tags:
+        - uploads
+      summary: Create upload
+      description: |
+        Creates a new upload session. This allows you to upload data for a new mod file.
+
+        ⚠️ Files larger than 100 MiB must use a [multi part upload](#tag/uploads/operation/createMultipartUpload).
+
+        ### Next steps
+        * Call `PUT` with your file data to the returned `presigned_url`. Recommended for files up to 100 MiB.
+        * Once all data is uploaded, [finalise the upload](#tag/uploads/operation/finaliseUpload).
+      operationId: createUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateUploadRequest"
+      responses:
+        "201":
+          description: Upload ID and presigned URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateUploadSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/uploads/multipart":
+    post:
+      tags:
+        - uploads
+      summary: Create multipart upload
+      description: "Creates a new multipart upload session. This allows you to upload
+        data for a new mod file.\n\n\U0001F4A1 Files smaller than 100 MiB can use
+        the simpler [single part upload](#tag/uploads/operation/createUpload).\n\n###
+        Next steps\nMultipart upload uses the [Amazon S3 multipart upload specification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html).\n\n*
+        Call `PUT` with your file data to each `part_presigned_urls`.\n   * Each part
+        must be `part_size_bytes` bytes, apart from the final part which may be smaller.\n
+        \  * Retrieve the `ETag` response header value from each part upload.\n* Once
+        all parts are uploaded, call `POST` to the `complete presigned_url` with [XML
+        post data](#multipart-resources) describing\n  the `ETag` for each part.\n*
+        Once multipart complete is called, [finalise the upload](#tag/uploads/operation/finaliseUpload).\n\n###
+        Multipart resources\n\nSample XML for completing the multipart upload:\n\n```xml\n<CompleteMultipartUpload>
+        \                                                                                                                                                                                                         \n
+        \ <Part>                                                                                                                                                                                                                                                                           \n
+        \   <PartNumber>1</PartNumber>                                                                                                                                                                                                                                                     \n
+        \   <ETag>a54357aff0632cce46d942af68356b38</ETag>                                                                                                                                                                                                                                \n
+        \ </Part>                                                                                                                                                                                                                                                                          \n
+        \ <Part>                                                                                                                                                                                                                                                                           \n
+        \   <PartNumber>2</PartNumber>                                                                                                                                                                                                                                                     \n
+        \   <ETag>0c78aef83f66abc1fa1e8477f296d394</ETag>                                                                                                                                                                                                                                \n
+        \ </Part>                                                                                                                                                                                                                                                                          \n
+        \ <Part>                                                                                                                                                                                                                                                                           \n
+        \   <PartNumber>3</PartNumber>                                                                                                                                                                                                                                                     \n
+        \   <ETag>acbd18db4cc2f85cedef654fccc4a4d8</ETag>                                                                                                                                                                                                                                \n
+        \ </Part>                                                                                                                                                                                                                                                                          \n</CompleteMultipartUpload>\n```\n"
+      operationId: createMultipartUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateUploadRequest"
+      responses:
+        "201":
+          description: Upload ID and presigned URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateMultipartUploadSuccess"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/uploads/{id}/finalise":
+    post:
+      tags:
+        - uploads
+      summary: Finalise upload
+      description: |
+        Closes the upload session once all data is uploaded. Sessions must be closed before you can use the upload as a mod file.
+        ### Next steps
+        * Wait for the upload to be ready for use as a mod file. Use [get upload](#tag/uploads/operation/getUpload) to check that `state`
+          is `available`.
+        * [Create a mod file](#tag/mod-files/operation/createModFile) from this upload.
+      operationId: finaliseUpload
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the upload.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Upload
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/FinaliseUploadSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/collections":
+    post:
+      tags:
+        - collections
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Create a collection
+      description: "Creates a collection and claims an upload using the upload_id
+        from a finalised [upload session](#tag/uploads/operation/createUpload).
+
+        "
+      operationId: createCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateCollectionRequest"
+      responses:
+        "200":
+          description: Upload
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateCollectionSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                anyOf:
+                  - "$ref": "#/components/schemas/ProblemDetails"
+                  - "$ref": "#/components/schemas/ValidationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/collections/{id}/revisions":
+    post:
+      tags:
+        - collections
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Create a collection revision
+      description: "Creates a collection revision claims an upload using the upload_id
+        from a finalised [upload session](#tag/uploads/operation/createUpload).
+
+        "
+      operationId: createCollectionRevision
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the collection this revision will belong
+            to.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateCollectionRevisionRequest"
+      responses:
+        "200":
+          description: Upload
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateCollectionRevisionSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                anyOf:
+                  - "$ref": "#/components/schemas/ProblemDetails"
+                  - "$ref": "#/components/schemas/ValidationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-files":
+    post:
+      tags:
+        - mod-files
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Create mod file
+      description: |
+        Creates a new mod file using the data from a finalised [upload session](#tag/uploads/operation/createUpload).
+
+        Note that this is for entirely new files, not new versions of existing files.
+      operationId: createModFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateModFileRequest"
+      responses:
+        "201":
+          description: ModFile
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateModFileSuccess"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-update-groups/{group_id}/versions":
+    post:
+      tags:
+        - mod-files
+      summary: Create a new update group version (updates a mod file)
+      description: |
+        Creates a new version of an update group (tied to a mod file), the upload specified in the request becomes the most recent entry in the update chain.
+
+        **Deprecated** since 2026-06-11. Use "Create a new mod file version"
+        (`POST /mod-files/{id}/versions`, operationId `createModFileVersion`) instead.
+
+        This endpoint is stable, so it remains available for a minimum 90-day deprecation
+        period from the deprecation date: it will be removed on or after 2026-09-09.
+      operationId: createUpdateGroupVersion
+      deprecated: true
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          description: The unique identifier for the update group.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateUpdateGroupVersionRequest"
+      responses:
+        "201":
+          description: UpdateGroupVersion
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/CreateUpdateGroupVersionSuccess"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Get your personal API key from https://www.nexusmods.com/settings/api-keys
+    BearerJwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "A signed JWT sent as `Authorization: Bearer <token>`."
+  schemas:
+    ProblemDetails:
+      type: object
+      description: An RFC 9457 Problem Details object.
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the problem type.
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+        status:
+          type: integer
+          description: The HTTP status code.
+          example: 404
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of
+            the problem.
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence of
+            the problem.
+    ValidationProblem:
+      description: RFC 9457 Problem Details extended with validation errors.
+      allOf:
+        - "$ref": "#/components/schemas/ProblemDetails"
+        - type: object
+          required:
+            - errors
+          properties:
+            errors:
+              type: array
+              description: List of validation errors.
+              items:
+                "$ref": "#/components/schemas/ValidationProblemItem"
+    ValidationProblemItem:
+      type: object
+      description: A single validation error with a JSON pointer to the problematic
+        field.
+      required:
+        - detail
+        - pointer
+      properties:
+        detail:
+          type: string
+          description: Human-readable description of the validation error.
+        pointer:
+          type: string
+          description: A JSON Pointer (RFC 6901) to the field that caused the error.
+          example: "/collection_data/collection_manifest/mods/0/source/mod_id"
+    PaginationMeta:
+      type: object
+      description: Pagination metadata for paginated responses.
+      required:
+        - page
+        - page_size
+        - total_count
+      properties:
+        page:
+          type: integer
+          description: Current page number (1-indexed).
+          example: 1
+        page_size:
+          type: integer
+          description: Number of items per page.
+          example: 20
+        total_count:
+          type: integer
+          description: Total number of items matching the query across all pages.
+          example: 4123
+    EditCollectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the collection.
+          minLength: 3
+          maxLength: 36
+        summary:
+          type: string
+          description: Collection summary.
+          maxLength: 255
+        description:
+          type: string
+          description: Description of the collection.
+        category_id:
+          type: integer
+          nullable: true
+          description: ID of the parent category.
+    TrendingModsResponse:
+      type: object
+      required:
+        - mods
+      properties:
+        mods:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TrendingMod"
+    TrendingMod:
+      type: object
+      description: A trending mod entry in the public marketing feed.
+      required:
+        - name
+        - mod_page_url
+      properties:
+        name:
+          type: string
+          description: The mod name.
+        author:
+          type: string
+          nullable: true
+          description: The display name of the user who uploaded the mod.
+        summary:
+          type: string
+          nullable: true
+          description: Short summary shown on the mod listing.
+        picture_url:
+          type: string
+          nullable: true
+          description: URL of the mod's main image.
+        mod_page_url:
+          type: string
+          description: Canonical URL of the mod page on nexusmods.com.
+    GetModDetails:
+      allOf:
+        - "$ref": "#/components/schemas/Mod"
+    Mod:
+      type: object
+      required:
+        - id
+        - game_scoped_id
+        - game_id
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod.
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod.
+        game_id:
+          type: string
+          description: The unique identifier for game this mod belongs to.
+        name:
+          type: string
+          nullable: true
+          description: Mod name (only shown if mod is available).
+    ModFile:
+      type: object
+      description: A mod file - the persistent, updatable file on a mod page. Its
+        versions are mod file versions.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file.
+          readOnly: true
+        name:
+          type: string
+          description: The name of the mod file.
+    ModFileWithAggregates:
+      description: A mod file enriched with aggregate stats across its versions.
+      allOf:
+        - "$ref": "#/components/schemas/ModFile"
+        - type: object
+          required:
+            - is_active
+            - last_file_uploaded_at
+            - versions_count
+            - archived_count
+            - removed_count
+          properties:
+            is_active:
+              type: boolean
+              description: True if the mod file has at least one version with an active
+                category (main, update, optional, or miscellaneous).
+            last_file_uploaded_at:
+              type: string
+              format: date-time
+              nullable: true
+              description: The most recent file upload date across all versions. Null
+                if the mod file has no versions.
+            versions_count:
+              type: integer
+              description: The total number of versions in the mod file.
+            archived_count:
+              type: integer
+              description: The number of archived versions in the mod file.
+            removed_count:
+              type: integer
+              description: The number of removed versions in the mod file.
+    ModFileWithMod:
+      description: A mod file with its associated mod.
+      allOf:
+        - "$ref": "#/components/schemas/ModFile"
+        - type: object
+          required:
+            - mod
+          properties:
+            mod:
+              "$ref": "#/components/schemas/MinimalMod"
+    ModFileVersion:
+      type: object
+      description: A single version of a mod file, merging the physical file and its
+        position within the mod file.
+      required:
+        - id
+        - file
+        - position
+        - game_scoped_id
+        - name
+        - version
+        - category
+        - uploaded_at
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file version.
+        file:
+          "$ref": "#/components/schemas/ModFile"
+        position:
+          type: string
+          format: decimal
+          description: Position within the mod file.
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod file version.
+        name:
+          type: string
+          description: The name of the mod file version.
+        version:
+          type: string
+          description: The version string of the mod file version.
+        category:
+          "$ref": "#/components/schemas/ModFileCategory"
+        uploaded_at:
+          type: string
+          format: date-time
+          description: The date and time the version was uploaded.
+        is_primary:
+          type: boolean
+          description: Whether this version is the primary file for the mod. The primary
+            file represents the default download file for a mod page. There can be
+            at most one primary file per mod. Defaults to false if omitted.
+    ModFilesResponse:
+      type: object
+      required:
+        - mod_files
+      properties:
+        mod_files:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileWithAggregates"
+    ModFileVersionsResponse:
+      type: object
+      required:
+        - versions
+      properties:
+        versions:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersion"
+    ModFileCategory:
+      type: string
+      enum:
+        - main
+        - update
+        - optional
+        - old_version
+        - miscellaneous
+        - removed
+        - archived
+        - unknown
+    MinimalMod:
+      type: object
+      description: A minimal representation of a mod.
+      required:
+        - id
+        - game_scoped_id
+        - name
+        - game
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod.
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod.
+        name:
+          type: string
+          description: The name of the mod.
+        game:
+          "$ref": "#/components/schemas/MinimalGame"
+        thumbnail_url:
+          type: string
+          nullable: true
+          description: The URL of the mod's thumbnail image.
+        status:
+          "$ref": "#/components/schemas/ModStatus"
+        adult_content:
+          type: boolean
+          nullable: true
+          description: Whether the mod is marked as adult content.
+    ModStatus:
+      type: string
+      description: The effective visibility status of a mod.
+      enum:
+        - published
+        - not_published
+        - hidden
+        - under_moderation
+        - removed
+        - removed_by_staff
+    MinimalGame:
+      type: object
+      description: A minimal representation of a game.
+      required:
+        - id
+        - name
+        - domain_name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the game.
+        name:
+          type: string
+          description: The name of the game.
+        domain_name:
+          type: string
+          description: The URL-friendly slug for the game.
+          example: skyrimspecialedition
+    ToggleLegacyModRequirementsRequest:
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: Whether legacy mod-level requirements should be used for this
+            mod.
+    UpdateModFileRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name of the mod file.
+          maxLength: 255
+          pattern: "^[a-zA-Z0-9 _'().-]+$"
+    MoveModFileVersionsRequest:
+      type: object
+      required:
+        - version_ids
+        - target
+      properties:
+        version_ids:
+          type: array
+          description: |
+            The unique identifiers for the mod file versions to move.
+            Versions are inserted in this order, and `version_ids` is expected to be ordered from earliest to latest version.
+          items:
+            type: string
+          minItems: 1
+        target:
+          "$ref": "#/components/schemas/MoveToPosition"
+    MoveModFileVersionsResponse:
+      type: object
+      description: The result of a bulk move operation.
+      required:
+        - versions
+        - target_mod_file
+      properties:
+        versions:
+          type: array
+          description: The updated versions reflecting their new mod file and order.
+          items:
+            "$ref": "#/components/schemas/ModFileVersion"
+        modified_source_mod_files:
+          type: array
+          description: "A list of source mod files that had versions removed but still
+            contain other versions.
+
+            "
+          items:
+            "$ref": "#/components/schemas/ModFileWithAggregates"
+        deleted_source_mod_file_ids:
+          type: array
+          description: |
+            A list of IDs for any source mod files that were automatically deleted because they became
+            empty as a result of this move.
+          items:
+            type: string
+        target_mod_file:
+          "$ref": "#/components/schemas/ModFileWithAggregates"
+    MoveModFileVersionsToNewModFileRequest:
+      type: object
+      required:
+        - version_ids
+        - mod_file_name
+      properties:
+        version_ids:
+          type: array
+          description: |
+            The unique identifiers for the mod file versions to move.
+            Versions are inserted in this order, and `version_ids` is expected to be ordered from earliest to latest version.
+          items:
+            type: string
+          minItems: 1
+        mod_file_name:
+          type: string
+          description: The name of the new mod file.
+          maxLength: 255
+          pattern: "^[a-zA-Z0-9 _'().-]+$"
+    MoveModFileVersionsToNewModFileResponse:
+      type: object
+      description: The result of a bulk move operation.
+      required:
+        - versions
+        - new_mod_file
+      properties:
+        versions:
+          type: array
+          description: The updated versions reflecting their new mod file and order.
+          items:
+            "$ref": "#/components/schemas/ModFileVersion"
+        modified_source_mod_files:
+          type: array
+          description: "A list of source mod files that had versions removed but still
+            contain other versions.
+
+            "
+          items:
+            "$ref": "#/components/schemas/ModFileWithAggregates"
+        deleted_source_mod_file_ids:
+          type: array
+          description: |
+            A list of IDs for any source mod files that were automatically deleted because they became
+            empty as a result of this move.
+          items:
+            type: string
+        new_mod_file:
+          "$ref": "#/components/schemas/ModFileWithAggregates"
+    MoveToPosition:
+      type: object
+      description: Place the moved versions earlier (`before`) or later (`after`)
+        with respect to the target version.
+      required:
+        - target_version_id
+        - relative_placement
+      properties:
+        target_version_id:
+          type: string
+          description: The unique identifier of the version to position relative to.
+        relative_placement:
+          "$ref": "#/components/schemas/RelativePlacement"
+    RelativePlacement:
+      type: string
+      description: "`before`: earlier than the target. `after`: later than the target."
+      enum:
+        - before
+        - after
+    UpdateModFileVersionDependencyRangesRequest:
+      type: object
+      required:
+        - dependency_definitions
+      properties:
+        dependency_definitions:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDependencyRangeDefinitionInput"
+    ModFileVersionDependencyRangeDefinitionInput:
+      type: object
+      required:
+        - ranges
+      properties:
+        ranges:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDependencyRangeInput"
+    ModFileVersionDependencyRangeInput:
+      type: object
+      required:
+        - min_version_id
+      properties:
+        min_version_id:
+          type: string
+          description: The ID of the mod file version representing the lower bound
+            of the range.
+        max_version_id:
+          type: string
+          nullable: true
+          description: The ID of the mod file version representing the upper bound
+            of the range. Null means open-ended (no upper bound).
+    ModFileVersionDependencyRangesResponse:
+      type: object
+      required:
+        - dependency_definitions
+      properties:
+        dependency_definitions:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDependencyDefinitionWithRanges"
+    ModFileVersionDependencyDefinitionWithRanges:
+      type: object
+      required:
+        - id
+        - ranges
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the dependency definition.
+        ranges:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDependencyRange"
+    ModFileVersionDependencyRange:
+      type: object
+      required:
+        - id
+        - target_mod_file
+        - min_version
+        - max_version
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the dependency range.
+        target_mod_file:
+          "$ref": "#/components/schemas/ModFileWithMod"
+        min_version:
+          "$ref": "#/components/schemas/ModFileVersion"
+        max_version:
+          nullable: true
+          allOf:
+            - "$ref": "#/components/schemas/ModFileVersion"
+    ModFileVersionDependencyMaterializedResponse:
+      type: object
+      required:
+        - dependencies
+      properties:
+        dependencies:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MaterializedModFileVersionDependency"
+    MaterializedModFileVersionDependency:
+      type: object
+      description: A materialized dependency definition with its resolved candidate
+        mod files and versions.
+      required:
+        - id
+        - candidate_mod_files
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the dependency definition.
+        candidate_mod_files:
+          type: array
+          items:
+            "$ref": "#/components/schemas/DependencyCandidateModFile"
+    DependencyCandidateModFile:
+      type: object
+      description: A mod file with its associated mod and candidate versions.
+      required:
+        - id
+        - name
+        - mod
+        - candidate_versions
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file.
+        name:
+          type: string
+          description: The name of the mod file.
+        mod:
+          "$ref": "#/components/schemas/MinimalMod"
+        candidate_versions:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersion"
+    ModFileVersionDependencyCandidatesBatchRequest:
+      type: object
+      required:
+        - version_ids
+      properties:
+        version_ids:
+          type: array
+          description: |
+            The source mod file version ids to resolve dependency candidates for. These are the
+            installed/enabled versions whose dependencies are being matched.
+          items:
+            type: string
+          minItems: 1
+          maxItems: 5000
+        page:
+          type: integer
+          description: Page number (1-indexed).
+          default: 1
+          minimum: 1
+        page_size:
+          type: integer
+          description: Number of candidate rows per page.
+          default: 1000
+          minimum: 1
+          maximum: 5000
+    ModFileVersionDependencyCandidatesBatchResponse:
+      type: object
+      required:
+        - candidates
+      properties:
+        candidates:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDependencyCandidate"
+    ModFileVersionDependencyCandidate:
+      type: object
+      description: |
+        A single materialized dependency candidate row. Rows sharing the same
+        (`source_version_id`, `definition_id`) are OR-alternatives for one dependency of the
+        source version. Rows sharing the same `mod_file_id` belong to the same update group/chain.
+      required:
+        - source_version_id
+        - definition_id
+        - mod_file_id
+        - version_id
+        - position
+        - category
+        - mod_status
+        - mod_id
+      properties:
+        source_version_id:
+          type: string
+          description: The requesting (installed/enabled) mod file version id.
+        definition_id:
+          type: string
+          description: The dependency definition id. Rows sharing this id are OR-alternatives.
+        mod_file_id:
+          type: string
+          description: The mod file (update group/chain) the candidate belongs to.
+        version_id:
+          type: string
+          description: The candidate mod file version id.
+        position:
+          type: string
+          format: decimal
+          description: Position within the mod file. Higher = newer within the chain.
+        category:
+          "$ref": "#/components/schemas/ModFileCategory"
+        mod_status:
+          "$ref": "#/components/schemas/ModStatus"
+        mod_id:
+          type: string
+          description: The id of the mod the candidate belongs to.
+    ModFileVersionsBatchRequest:
+      type: object
+      required:
+        - version_ids
+      properties:
+        version_ids:
+          type: array
+          description: The mod file version ids to resolve details for.
+          items:
+            type: string
+          minItems: 1
+          maxItems: 2000
+    ModFileVersionsBatchResponse:
+      type: object
+      required:
+        - versions
+      properties:
+        versions:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDetail"
+    ModFileVersionDetail:
+      type: object
+      description: |
+        Lightweight mod file version detail used to resolve an installed file's mod file
+        (update group) and to hydrate recommended candidates.
+      required:
+        - id
+        - mod_id
+        - mod_file_id
+        - name
+        - version
+        - position
+      properties:
+        id:
+          type: string
+          description: The mod file version id.
+        mod_id:
+          type: string
+          description: The id of the mod this version belongs to.
+        mod_file_id:
+          type: string
+          description: The id of the mod file (update group/chain) this version belongs
+            to.
+        name:
+          type: string
+          description: The name of the mod file version.
+        version:
+          type: string
+          description: The version string of the mod file version.
+        position:
+          type: string
+          format: decimal
+          description: Position within the mod file. Higher = newer within the chain.
+    ModsBatchRequest:
+      type: object
+      required:
+        - mod_ids
+      properties:
+        mod_ids:
+          type: array
+          description: |
+            Composite mod UIDs (gameId << 32 | modId) to resolve. Same id space as the `mod_id`
+            returned by the dependency candidates and mod file version batch endpoints.
+          items:
+            type: string
+          minItems: 1
+          maxItems: 2000
+    ModsBatchResponse:
+      type: object
+      required:
+        - mods
+      properties:
+        mods:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModDetail"
+    ModDetail:
+      type: object
+      description: |
+        Mod-level display details. The game-scoped mod id and game id can be derived from `id` by
+        bit-decomposition (modId = id & 0xFFFFFFFF, gameId = id >> 32); `game_id` is also returned
+        directly for convenience.
+      required:
+        - id
+        - game_id
+        - name
+        - summary
+        - status
+        - adult_content
+      properties:
+        id:
+          type: string
+          description: Composite mod UID. Echoes the request value so the caller can
+            key results back.
+        game_id:
+          type: string
+          description: The id of the game this mod belongs to.
+        name:
+          type: string
+          description: Mod display name.
+        summary:
+          type: string
+          description: |
+            Sanitised short summary (plain text, as shown on mod cards). Empty string when the mod
+            has none.
+        status:
+          "$ref": "#/components/schemas/ModStatus"
+        thumbnail_url:
+          type: string
+          nullable: true
+          description: |
+            Mod thumbnail image URL. Null when the mod has no image, or when suppressed because the
+            mod is under moderation or removed by staff.
+        adult_content:
+          type: boolean
+          description: Whether the mod is flagged as adult content.
+    CreateModFileRequest:
+      type: object
+      required:
+        - upload_id
+        - mod_id
+        - name
+        - version
+        - file_category
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          description: The unique identifier for the upload.
+        mod_id:
+          type: string
+          description: |
+            The unique identifier for the mod this file belongs to.
+
+            * Use [get mod](#tag/mods/operation/getMod) to get the game scoped ID for a mod using the data from a site URL e.g.
+              `/skyrimspecialedition/mods/12604`.
+        name:
+          type: string
+          description: Mod file name.
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9 _'().-]+$"
+        version:
+          type: string
+          description: Mod file version.
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9.-]+$"
+        description:
+          type: string
+          description: Description of the mod file.
+          nullable: true
+        file_category:
+          "$ref": "#/components/schemas/NewModFileCategory"
+        primary_mod_manager_download:
+          type: boolean
+          description: Whether this file is the default download for mod managers.
+          default: false
+        allow_mod_manager_download:
+          type: boolean
+          description: Whether mod manager downloads are enabled for this file.
+          default: true
+        show_requirements_pop_up:
+          type: boolean
+          description: Whether to show a requirements popup when downloading this
+            file.
+          default: false
+        update_mod_version:
+          type: boolean
+          description: Whether to update the mod's version to match this file's version.
+          default: false
+    CreateUploadRequest:
+      type: object
+      required:
+        - size_bytes
+        - filename
+      properties:
+        size_bytes:
+          type: integer
+          format: int64
+          nullable: false
+          description: Size of file in bytes.
+        filename:
+          type: string
+          nullable: false
+          description: User-defined filename.
+    CreateUploadSuccess:
+      type: object
+      allOf:
+        - "$ref": "#/components/schemas/Upload"
+      required:
+        - presigned_url
+      properties:
+        presigned_url:
+          type: string
+          description: Presigned URL.
+    CreateMultipartUploadSuccess:
+      type: object
+      allOf:
+        - "$ref": "#/components/schemas/Upload"
+      required:
+        - part_size_bytes
+        - part_presigned_urls
+        - complete_presigned_url
+      properties:
+        part_size_bytes:
+          type: integer
+          format: int64
+          description: Size of each part in bytes.
+        part_presigned_urls:
+          type: array
+          items:
+            type: string
+          description: Presigned URLs for each upload part.
+        complete_presigned_url:
+          type: string
+          description: Presigned URL to complete upload.
+    FinaliseUploadSuccess:
+      allOf:
+        - "$ref": "#/components/schemas/Upload"
+    GetUploadSuccess:
+      allOf:
+        - "$ref": "#/components/schemas/Upload"
+    CreateModFileSuccess:
+      allOf:
+        - "$ref": "#/components/schemas/UploadModFile"
+    Upload:
+      type: object
+      required:
+        - id
+        - user
+        - state
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier for the upload.
+        user:
+          "$ref": "#/components/schemas/UploadUser"
+        state:
+          "$ref": "#/components/schemas/UploadState"
+    UploadUser:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the user who owns this upload.
+    UploadModFile:
+      type: object
+      required:
+        - id
+        - game_scoped_id
+        - name
+        - file_category
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file.
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod file.
+        name:
+          type: string
+          description: Mod file name.
+        file_category:
+          "$ref": "#/components/schemas/NewModFileCategory"
+    UploadState:
+      type: string
+      enum:
+        - created
+        - available
+    NewModFileCategory:
+      type: string
+      enum:
+        - main
+        - optional
+        - miscellaneous
+    CreateUpdateGroupVersionRequest:
+      type: object
+      required:
+        - upload_id
+        - name
+        - version
+        - file_category
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          description: The unique identifier for the upload.
+        name:
+          type: string
+          description: Mod file name
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9 _'().-]+$"
+        description:
+          type: string
+          description: Description of the mod file
+          nullable: true
+        version:
+          type: string
+          description: Mod file version
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9.-]+$"
+        file_category:
+          "$ref": "#/components/schemas/NewModFileCategory"
+        primary_mod_manager_download:
+          type: boolean
+          description: Whether this file is the default download for mod managers.
+        allow_mod_manager_download:
+          type: boolean
+          description: Whether mod manager downloads are enabled for this file.
+        show_requirements_pop_up:
+          type: boolean
+          description: Whether to show a requirements popup when downloading this
+            file.
+        archive_existing_file:
+          type: boolean
+          description: Whether to archive the existing file when uploading a new version.
+          default: false
+        previous_version_id:
+          type: string
+          nullable: true
+          description: The unique identifier for the mod file version this version
+            is replacing.
+    CreateUpdateGroupVersionSuccess:
+      allOf:
+        - "$ref": "#/components/schemas/UploadModFile"
+    CreateModFileVersionRequest:
+      type: object
+      required:
+        - upload_id
+        - name
+        - version
+        - file_category
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          description: The unique identifier for the upload.
+        name:
+          type: string
+          description: Mod file name
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9 _'().-]+$"
+        description:
+          type: string
+          description: Description of the mod file
+          nullable: true
+        version:
+          type: string
+          description: Mod file version
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9.-]+$"
+        file_category:
+          "$ref": "#/components/schemas/NewModFileCategory"
+        primary_mod_manager_download:
+          type: boolean
+          description: Whether this file is the default download for mod managers.
+        allow_mod_manager_download:
+          type: boolean
+          description: Whether mod manager downloads are enabled for this file.
+        show_requirements_pop_up:
+          type: boolean
+          description: Whether to show a requirements popup when downloading this
+            file.
+        update_mod_version:
+          type: boolean
+          description: Whether to update the mod's version to match this file's version.
+          default: false
+        archive_existing_file:
+          type: boolean
+          description: Whether to archive the existing file when uploading a new version.
+          default: false
+        previous_version_id:
+          type: string
+          nullable: true
+          description: The unique identifier for the mod file version this version
+            is replacing.
+    CreateModFileVersionSuccess:
+      type: object
+      required:
+        - file
+        - version
+      properties:
+        file:
+          "$ref": "#/components/schemas/UploadModFile"
+        version:
+          "$ref": "#/components/schemas/CreatedModFileVersion"
+    CreatedModFileVersion:
+      type: object
+      required:
+        - id
+        - position
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the created mod file version.
+        position:
+          type: string
+          format: decimal
+          description: Position within the mod file.
+    CreateCollectionRequest:
+      type: object
+      required:
+        - upload_id
+        - collection_data
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: The unique identifier for the upload to claim against this
+            new collection.
+        collection_data:
+          "$ref": "#/components/schemas/CollectionPayload"
+    CreateCollectionSuccess:
+      type: object
+      required:
+        - id
+        - slug
+        - revision_id
+        - revision_number
+        - revision_status
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the collection.
+        slug:
+          type: string
+          description: The slug for the collection.
+        revision_id:
+          type: string
+          description: The unique identifier for the initial collection revision.
+        revision_number:
+          type: integer
+          description: The revision number.
+        revision_status:
+          "$ref": "#/components/schemas/RevisionStatus"
+    CreateCollectionRevisionRequest:
+      type: object
+      required:
+        - upload_id
+        - collection_data
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: The unique identifier for the upload to claim against this
+            new collection.
+        collection_data:
+          "$ref": "#/components/schemas/CollectionPayload"
+    CreateCollectionRevisionSuccess:
+      type: object
+      required:
+        - id
+        - collection_id
+        - revision_number
+        - revision_status
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the revision.
+        collection_id:
+          type: string
+          description: The unique identifier for the collection this revision belongs
+            to.
+        revision_number:
+          type: integer
+          description: The revision number.
+        revision_status:
+          "$ref": "#/components/schemas/RevisionStatus"
+    CollectionPayload:
+      type: object
+      description: The data payload used to create a collection revision.
+      required:
+        - adult_content
+        - collection_manifest
+        - collection_schema_id
+      properties:
+        adult_content:
+          type: boolean
+          description: Whether the collection includes adult content.
+        collection_manifest:
+          "$ref": "#/components/schemas/CollectionManifest"
+        collection_schema_id:
+          type: integer
+          description: Collection schema id.
+    CollectionManifest:
+      type: object
+      description: The JSON manifest that defines a collection.
+      required:
+        - info
+        - mods
+      properties:
+        info:
+          "$ref": "#/components/schemas/CollectionManifestInfo"
+        mods:
+          type: array
+          items:
+            "$ref": "#/components/schemas/CollectionManifestMod"
+          description: List of mod resources for the manifest.
+    CollectionManifestInfo:
+      type: object
+      description: The info section of the JSON manifest.
+      required:
+        - author
+        - name
+        - domain_name
+      properties:
+        author:
+          type: string
+          description: The collection author's name.
+        author_url:
+          type: string
+          nullable: true
+          description: The url of the author's profile.
+        name:
+          type: string
+          description: The name of the collection.
+        description:
+          type: string
+          nullable: true
+          description: A description of the collection.
+        summary:
+          type: string
+          nullable: true
+          description: A short summary of the collection.
+        domain_name:
+          type: string
+          description: The domain name of the game.
+        game_versions:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: A list of game versions that this revision has been tested
+            with.
+    CollectionManifestMod:
+      type: object
+      description: Defines a mod to be used in a collection as part of the manifest.
+      required:
+        - name
+        - version
+        - optional
+        - domain_name
+        - source
+      properties:
+        name:
+          type: string
+          description: The name of the mod.
+        version:
+          type: string
+          description: The mod version.
+        optional:
+          type: boolean
+          description: Whether the mod is required for this collection.
+        domain_name:
+          type: string
+          description: The domain name of the game for the mod.
+        source:
+          "$ref": "#/components/schemas/CollectionManifestModSource"
+        author:
+          type: string
+          nullable: true
+          description: The name of the mod author.
+    CollectionManifestModSource:
+      type: object
+      description: Source information for a mod (nexus or other) as part of the manifest.
+      required:
+        - type
+      properties:
+        type:
+          "$ref": "#/components/schemas/ModSource"
+        mod_id:
+          type: string
+          description: The identifier of the mod source for this collection manifest.
+        file_id:
+          type: string
+          description: The identifier of the file associated with the mod in this
+            collection manifest.
+        md5:
+          type: string
+          nullable: true
+          description: An MD5 hash of the file for verification.
+        file_size:
+          type: integer
+          nullable: true
+          description: The file size in kb.
+        update_policy:
+          "$ref": "#/components/schemas/UpdatePolicy"
+        logical_filename:
+          type: string
+          nullable: true
+          description: Logical file name of the mod resource.
+        file_expression:
+          type: string
+          nullable: true
+          description: File expression of the mod resource.
+        url:
+          type: string
+          nullable: true
+          description: The direct url of the file.
+        adult_content:
+          type: boolean
+          nullable: true
+          description: Does the mod include adult content.
+    ModSource:
+      type: string
+      description: Used to define the source of a mod. Useful for informing Collections
+        how to retrieve mods.
+      enum:
+        - nexus
+        - direct
+        - browse
+        - manual
+        - bundle
+    RevisionStatus:
+      type: string
+      description: The status of a collection revision.
+      enum:
+        - draft
+        - published
+        - retracted
+    UpdatePolicy:
+      type: string
+      description: Available update policies of a file resource
+      enum:
+        - exact
+        - latest
+        - prefer
