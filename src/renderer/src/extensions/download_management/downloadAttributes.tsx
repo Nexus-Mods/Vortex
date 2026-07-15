@@ -17,10 +17,11 @@ import type { ITableAttribute } from "../../types/ITableAttribute";
 import * as fs from "../../util/fs";
 import { getCurrentLanguage } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";
-import { bytesToString, truthy } from "../../util/util";
+import { bytesToString } from "../../util/util";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameName } from "../gamemode_management/selectors";
 import type { IDownload } from "./types/IDownload";
+import { friendlyDownloadName } from "./util/downloadNames";
 import getDownloadGames from "./util/getDownloadGames";
 import setDownloadGames from "./util/setDownloadGames";
 import DownloadGameList from "./views/DownloadGameList";
@@ -101,23 +102,6 @@ function downloadTime(download: IDownload) {
   return download.fileTime !== undefined ? new Date(download.fileTime) : undefined;
 }
 
-function nameFromUrl(input: string) {
-  if (input === undefined) {
-    return undefined;
-  }
-
-  const pathname = new URL(input).pathname;
-  if (!truthy(pathname)) {
-    return undefined;
-  }
-
-  try {
-    return decodeURI(path.basename(pathname));
-  } catch (err) {
-    return path.basename(pathname);
-  }
-}
-
 function createColumns(
   api: IExtensionApi,
   props: () => IDownloadViewProps,
@@ -147,8 +131,7 @@ function createColumns(
       name: "Filename",
       description: "Filename of the download",
       icon: "",
-      calc: (attributes: IDownload) =>
-        attributes.localPath || nameFromUrl(getSafe(attributes, ["urls", 0], undefined)),
+      calc: (attributes: IDownload) => friendlyDownloadName(attributes),
       placement: "both",
       isToggleable: true,
       edit: {},

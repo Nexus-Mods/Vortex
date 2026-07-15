@@ -21,6 +21,7 @@
 import { EventEmitter } from "events";
 import * as path from "path";
 
+import type { IFileInfo } from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import { batch } from "redux-act";
@@ -50,7 +51,7 @@ import type {
 } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
-import type { IProfileMod } from "../extensions/profile_management/types/IProfile";
+import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
 import type {
@@ -64,6 +65,7 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IState } from "../types/IState";
 import local from "../util/local";
+import type { IStarterInfo } from "../util/StarterInfo";
 import type {
   IApiHarness,
   IDownloadAdapterHarness,
@@ -72,6 +74,7 @@ import type {
   IDriverHarnessState,
   IInstallContextHarness,
   IInstallManagerHarness,
+  IModChangeHarness,
   IRevisionFixture,
   IRevisionMemberSpec,
   ITrackedAction,
@@ -149,8 +152,64 @@ export function makeDownload(overrides: Partial<IDownload> = {}): IDownload {
   };
 }
 
+export function makeFileInfo(overrides: Partial<IFileInfo> = {}): IFileInfo {
+  return {
+    file_id: 1,
+    category_id: 1,
+    category_name: "MAIN",
+    changelog_html: "",
+    content_preview_link: "",
+    name: "file",
+    description: "",
+    version: "1.0.0",
+    size: 0,
+    size_kb: 0,
+    file_name: "file.7z",
+    uploaded_timestamp: 0,
+    uploaded_time: "",
+    mod_version: "1.0.0",
+    external_virus_scan_url: "",
+    is_primary: true,
+    ...overrides,
+  };
+}
+
 export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMod {
   return { enabled: true, enabledTime: 0, ...overrides };
+}
+
+export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
+  return {
+    id: "profile-1",
+    gameId: "skyrimse",
+    name: "Profile",
+    modState: {},
+    lastActivated: 0,
+    ...overrides,
+  };
+}
+
+// A launch target as StarterInfo.run receives it. Defaults to the skyrimse game exe (isGame),
+// launched directly (no store); override isGame/store/defaultPrimary to model store/tool/SE launches.
+export function makeStarterInfo(overrides: Partial<IStarterInfo> = {}): IStarterInfo {
+  return {
+    id: "skyrimse",
+    gameId: "skyrimse",
+    isGame: true,
+    iconOutPath: "",
+    name: "Skyrim Special Edition",
+    exePath: "C:/games/skyrimse/SkyrimSE.exe",
+    commandLine: [],
+    workingDirectory: "",
+    exclusive: false,
+    detach: true,
+    shell: false,
+    store: "",
+    environment: {},
+    extensionPath: "",
+    logoName: "",
+    ...overrides,
+  };
 }
 
 // A cached game entry. Defaults to skyrimse with its nexus page id under `details`, so
@@ -590,6 +649,13 @@ export function makeInstallManagerHarness(
  * download, then drives ctx.startInstallCB / finishInstallCB and asserts mixpanelEvents. The ctor
  * is passed in (like the other harnesses) to keep the heavy InstallContext import out of builders.
  */
+/** Collects every mixpanel event emitted on an api's bus, in order, into the returned array. */
+export function collectMixpanelEvents(api: IExtensionApi): MixpanelEvent[] {
+  const mixpanelEvents: MixpanelEvent[] = [];
+  api.events.on("analytics-track-mixpanel-event", (e: MixpanelEvent) => mixpanelEvents.push(e));
+  return mixpanelEvents;
+}
+
 export function makeInstallContextHarness(
   ContextCtor: new (gameMode: string, api: IExtensionApi, silent: boolean) => InstallContext,
   overrides: Partial<IDriverHarnessState> = {},
@@ -597,12 +663,22 @@ export function makeInstallContextHarness(
 ): IInstallContextHarness {
   const gameId = opts.gameId ?? "skyrimse";
   const base = makeApiHarness(overrides);
-  const mixpanelEvents: MixpanelEvent[] = [];
-  base.api.events.on("analytics-track-mixpanel-event", (e: MixpanelEvent) =>
-    mixpanelEvents.push(e),
-  );
+  const mixpanelEvents = collectMixpanelEvents(base.api);
   const ctx = new ContextCtor(gameId, base.api, opts.silent ?? false);
   return { ctx, mixpanelEvents, ...base };
+}
+
+/**
+ * Api harness for the mod enable/disable/remove analytics: a seeded fake api plus a mixpanel
+ * collector. Tests seed mods/profiles via `overrides` then either call the emit helpers directly
+ * or drive the real (exported) onRemoveMods and assert the mods_state_changed / mods_removed events.
+ */
+export function makeModChangeHarness(
+  overrides: Partial<IDriverHarnessState> = {},
+): IModChangeHarness {
+  const base = makeApiHarness(overrides);
+  const mixpanelEvents = collectMixpanelEvents(base.api);
+  return { ...base, mixpanelEvents };
 }
 
 /**

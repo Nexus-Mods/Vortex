@@ -18,6 +18,10 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { INVALID_FILENAME_RE } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
+import {
+  emitExtensionInstalled,
+  type ExtensionInstallSource,
+} from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
 import { readExtensionInfo } from "./util";
 
@@ -312,17 +316,24 @@ function validateInstall(extPath: string, info?: IExtension): PromiseBB<Extensio
 // another process" (#23454). Dedupe them onto a single in-flight promise.
 const activeInstalls: Map<string, PromiseBB<void>> = new Map();
 
+interface InstallAnalytics {
+  source: ExtensionInstallSource;
+  gameDomain?: string;
+  gameName?: string;
+}
+
 function installExtension(
   api: IExtensionApi,
   archivePath: string,
   info?: IExtension,
+  analytics: InstallAnalytics = { source: "manual" },
 ): PromiseBB<void> {
   const key = path.basename(archivePath).toLowerCase();
   const active = activeInstalls.get(key);
   if (active !== undefined) {
     return active;
   }
-  const result = installExtensionImpl(api, archivePath, info).finally(() => {
+  const result = installExtensionImpl(api, archivePath, info, analytics).finally(() => {
     activeInstalls.delete(key);
   });
   activeInstalls.set(key, result);
@@ -332,7 +343,8 @@ function installExtension(
 function installExtensionImpl(
   api: IExtensionApi,
   archivePath: string,
-  info?: IExtension,
+  info: IExtension | undefined,
+  analytics: InstallAnalytics,
 ): PromiseBB<void> {
   const extensionsPath = path.join(getVortexPath("userData"), "plugins");
   let destPath: string;
@@ -459,6 +471,16 @@ function installExtensionImpl(
           .then(() => fs.renameAsync(tempPath, destPath))
           .then(() => {
             clearStaleRemovalFlags(api, removedKeys, destPath);
+            emitExtensionInstalled(
+              api,
+              { ...fullInfo, type, id: extName },
+              {
+                source: analytics.source,
+                isUpdate: removedKeys.length > 0,
+                gameDomain: analytics.gameDomain,
+                gameName: analytics.gameName,
+              },
+            );
             if (type === "translation") {
               return fs
                 .readdirAsync(destPath)

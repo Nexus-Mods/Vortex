@@ -16,6 +16,20 @@ import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "./convertGameId";
 
+/**
+ * Rate-limit, timeout, protocol and Nexus API errors are expected/transient
+ * conditions, not Vortex bugs, so they must not be surfaced with a "report"
+ * button (nor recorded as actionable errors in telemetry).
+ */
+function allowReportTrackingError(err: unknown): boolean {
+  return (
+    !(err instanceof RateLimitError) &&
+    !(err instanceof TimeoutError) &&
+    !(err instanceof ProtocolError) &&
+    !(err instanceof NexusError)
+  );
+}
+
 class Tracking {
   private mApi: IExtensionApi;
   private mNexus: Nexus;
@@ -157,13 +171,8 @@ class Tracking {
         if (err instanceof ProcessCanceled) {
           return;
         }
-        const allowReport =
-          !(err instanceof RateLimitError) &&
-          !(err instanceof TimeoutError) &&
-          !(err instanceof ProtocolError) &&
-          !(err instanceof NexusError);
         this.mApi.showErrorNotification("Failed to get list of tracked mods", err, {
-          allowReport,
+          allowReport: allowReportTrackingError(err),
         });
       });
   }
@@ -209,7 +218,7 @@ class Tracking {
       })
       .catch((err: Error) => {
         this.mApi.showErrorNotification("Failed to track/untrack mod", err, {
-          allowReport: err instanceof RateLimitError,
+          allowReport: allowReportTrackingError(err),
         });
       });
   }
@@ -235,7 +244,9 @@ class Tracking {
           this.mTrackedMods[nexusId]?.delete?.(nexusModId);
           this.mOnChanged?.();
         } else {
-          this.mApi.showErrorNotification("Failed to track/untrack mod", err);
+          this.mApi.showErrorNotification("Failed to track/untrack mod", err, {
+            allowReport: allowReportTrackingError(err),
+          });
         }
       });
   }

@@ -194,6 +194,7 @@ function toDownloadedFile(
     fileUID,
     modUID,
     modName,
+    modSummary: download.modInfo?.nexus?.modInfo?.summary ?? undefined,
     fileName: download.modInfo?.meta?.fileName ?? download.localPath ?? modName,
     version: download.modInfo?.meta?.fileVersion ?? "",
     thumbnailUrl: download.modInfo?.nexus?.modInfo?.picture_url ?? undefined,
@@ -221,12 +222,15 @@ export function makeDownloadedFileHydrator(
   };
 }
 
-/** Build the display shape for one installed file from its Vortex mod. */
+/**
+ * Build the display shape for one installed file from its Vortex mod.
+ */
 function toInstalledFile(
   mod: IMod,
   fileUID: string,
   enabled: boolean,
   gameId: string,
+  adultContent: boolean,
 ): IInstalledFile {
   const attributes: IInstalledModAttributes = mod.attributes ?? {};
   const modName = renderModName(mod);
@@ -244,14 +248,15 @@ function toInstalledFile(
     fileName: attributes.fileName ?? attributes.logicalFileName ?? modName,
     version: attributes.version ?? "",
     thumbnailUrl: attributes.pictureUrl,
-    adultContent: false, // TODO: enrich via mod details
+    adultContent,
     enabled,
   };
 }
 
 /**
  * A `fileUID -> IInstalledFile` hydrator over the gathered refs, reading the mod
- * store on demand so only surfaced files are hydrated.
+ * store on demand so only surfaced files are hydrated. The adult-content flag is
+ * read from the originating download (linked via `archiveId`), or defaults to false.
  */
 export function makeInstalledFileHydrator(
   api: IExtensionApi,
@@ -260,6 +265,7 @@ export function makeInstalledFileHydrator(
   const state = api.getState();
   const gameId = activeProfile(state)?.gameId;
   const mods = gameId ? (state.persistent.mods[gameId] ?? {}) : {};
+  const downloads = state.persistent.downloads?.files ?? {};
   const refByUID = new Map(refs.map((ref): [string, IInstalledFileRef] => [ref.fileUID, ref]));
 
   return (fileUID) => {
@@ -271,6 +277,8 @@ export function makeInstalledFileHydrator(
     if (!mod) {
       return undefined;
     }
-    return toInstalledFile(mod, fileUID, ref.enabled, gameId);
+    const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
+    const adultContent = download?.modInfo?.nexus?.modInfo?.contains_adult_content ?? false;
+    return toInstalledFile(mod, fileUID, ref.enabled, gameId, adultContent);
   };
 }

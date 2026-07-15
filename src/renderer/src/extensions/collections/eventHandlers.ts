@@ -6,6 +6,7 @@ import Bluebird from "bluebird";
 import SevenZip from "node-7z";
 
 import * as actions from "../../actions";
+import { emitModStateChanged } from "../../extensions/analytics/mixpanel/modChangeAnalytics";
 import type { IModRule } from "../../extensions/mod_management/types/IMod";
 import renderModName from "../../extensions/mod_management/util/modName";
 import type { IDialogResult } from "../../types/IDialog";
@@ -218,6 +219,7 @@ async function collectionUpdate(
       api.events.emit("remove-mods", gameMode, [oldModId, ...ops.remove], cb, {
         incomplete: true,
         ignoreInstalling: true,
+        reason: "collection_update",
       }),
     );
 
@@ -234,11 +236,14 @@ async function collectionUpdate(
     // Restore enabled state for optional mods that survived the update
     if (profile !== undefined && enabledOptionalMods.length > 0) {
       const currentMods = api.getState().persistent.mods[gameMode];
+      const restoreIds = enabledOptionalMods.filter((id) => currentMods?.[id] !== undefined);
       batchDispatch(
         api.store,
-        enabledOptionalMods
-          .filter((id) => currentMods?.[id] !== undefined)
-          .map((id) => actions.setModEnabled(profile.id, id, true)),
+        restoreIds.map((id) => actions.setModEnabled(profile.id, id, true)),
+      );
+      // this re-enable bypasses the mods-enabled event, so emit the state change directly.
+      restoreIds.forEach((id) =>
+        emitModStateChanged(api, gameMode, id, "enabled", "collection_update"),
       );
     }
   } catch (err) {

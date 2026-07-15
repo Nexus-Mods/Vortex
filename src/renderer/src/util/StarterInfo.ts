@@ -22,6 +22,7 @@ import {
   ProcessCanceled,
   UserCanceled,
 } from "./CustomErrors";
+import { emitGameLaunched, recordLaunchExit } from "./gameLaunchAnalytics";
 import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
@@ -159,6 +160,7 @@ class StarterInfo implements IStarterInfo {
 
     const onSpawned = () => {
       api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
+      emitGameLaunched(api, info);
 
       // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
       // for now. We'll come up with a better solution/design in the future.
@@ -288,6 +290,7 @@ class StarterInfo implements IStarterInfo {
         shell: info.shell,
         detach: info.detach || info.onStart === "close",
         onSpawned: spawned,
+        onExit: (code) => recordLaunchExit(info.exePath, code),
       })
       .catch(ProcessCanceled, () => undefined)
       .catch(UserCanceled, () => undefined)

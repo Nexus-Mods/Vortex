@@ -1,21 +1,27 @@
-import type { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
 import { makeModAndFileUIDs } from "../../nexus_integration/util/UIDs";
 import type { ModAnalyticsIdentity } from "./MixpanelEvents";
 
 /**
- * The resolved nexus identity of a download record. A collection is itself a mod, so
- * this same shape describes both a mod and a collection - we take the mod fields here.
+ * The nexus fields needed to build an analytics identity. A collection is itself a mod, so
+ * this same shape describes both; satisfied both by a resolved download record
+ * (nexusIdsFromDownloadId) and by an installed mod's own attributes.
  */
-type ResolvedNexusIds = NonNullable<ReturnType<typeof nexusIdsFromDownloadId>>;
+export interface ModNexusIds {
+  numericGameId: number;
+  modId: string;
+  fileId: string;
+}
 
 /**
- * Builds the shared per-mod analytics identity (mod/file ids + UIDs + collection_id)
+ * Builds the shared per-mod analytics identity (mod/file ids + UIDs + collection_id + revision_id)
  * from resolved nexus ids, so the download and install emit sites produce an identical
- * identity. `collectionId` is the parent collection when installed as part of one, else null.
+ * identity. `collectionId`/`revisionId` are the parent collection and its revision when installed
+ * as part of one, else null.
  */
 export function makeModAnalyticsIdentity(
-  nexusIds: ResolvedNexusIds,
+  nexusIds: ModNexusIds,
   collectionId: string | null,
+  revisionId: string | null,
 ): ModAnalyticsIdentity {
   const { modUID, fileUID } = makeModAndFileUIDs(
     nexusIds.numericGameId.toString(),
@@ -29,5 +35,6 @@ export function makeModAnalyticsIdentity(
     mod_uid: modUID,
     file_uid: fileUID,
     collection_id: collectionId,
+    revision_id: revisionId,
   };
 }

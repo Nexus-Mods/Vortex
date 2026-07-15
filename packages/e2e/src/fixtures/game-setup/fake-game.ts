@@ -103,5 +103,7 @@ export function setupFakeGame(configKey: keyof typeof GAME_CONFIGS): {
 
 /** Removes a fake game installation directory. */
 export function cleanupFakeGame(basePath: string): void {
-  fs.rmSync(basePath, { recursive: true, force: true });
+  // Retry on Windows: Vortex's async (un)deployment can still be touching
+  // files in the game folder when the test ends, causing transient ENOTEMPTY.
+  fs.rmSync(basePath, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 }

@@ -21,9 +21,7 @@
     }
   },
   "devDependencies": {
+    "@vortex/shared": "workspace:*",
     "electron": "catalog:"
-  },
-  "dependencies": {
-    "@vortex/shared": "workspace:*"
   }
 }

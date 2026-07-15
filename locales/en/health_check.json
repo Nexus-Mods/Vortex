@@ -5,6 +5,7 @@
   "listing": {
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
+    "last_updated": "Last updated: {{time}}",
     "item": {
       "title": "Additional mod may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}",

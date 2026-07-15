@@ -915,20 +915,28 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private openOverrideDialog = (evt: React.MouseEvent<any>) => {
-    const { gameId, onOverrideDialog } = this.props;
+    const { gameId, onBatchDispatch, onOverrideDialog } = this.props;
     const modId = evt.currentTarget.getAttribute("data-modid");
+    // The override editor only exposes file-level overrides once the conflict is
+    // resolved by a saved mod rule, so commit this mod's pending rule edits before
+    // opening it.
+    const actions = this.buildRuleActions(modId);
+    if (actions.length > 0) {
+      onBatchDispatch(actions);
+    }
     onOverrideDialog(gameId, modId);
     document.body.click();
   };
 
-  private save = () => {
-    const { gameId, mods, onBatchDispatch } = this.props;
+  private buildRuleActions(onlyModId?: string): Redux.Action[] {
+    const { gameId, mods } = this.props;
     const { rules } = this.state;
 
     const actions: Redux.Action[] = [];
 
-    Object.keys(rules).forEach((modId) => {
-      if (mods[modId] === undefined) {
+    const modIds = onlyModId !== undefined ? [onlyModId] : Object.keys(rules);
+    modIds.forEach((modId) => {
+      if (rules[modId] === undefined || mods[modId] === undefined) {
         return;
       }
       Object.keys(rules[modId]).forEach((otherId) => {
@@ -961,8 +969,12 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
         }
       });
     });
-    onBatchDispatch(actions);
 
+    return actions;
+  }
+
+  private save = () => {
+    this.props.onBatchDispatch(this.buildRuleActions());
     this.close();
   };
 }

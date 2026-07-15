@@ -1581,8 +1581,6 @@ enum HealthCheckTrigger {
     // (undocumented)
     ProfileChanged = "profile-changed",
     // (undocumented)
-    ResultsChanged = "health-check-results-changed",
-    // (undocumented)
     Scheduled = "scheduled",
     // (undocumented)
     SettingsChanged = "settings-changed",
@@ -2191,6 +2189,10 @@ interface IEnableOptions {
     allowAutoDeploy?: boolean;
     // (undocumented)
     installed?: boolean;
+    // (undocumented)
+    reason?: ModChangeReason;
+    // (undocumented)
+    skipStateChangeEvent?: boolean;
     // (undocumented)
     willBeReplaced?: boolean;
 }
@@ -3486,6 +3488,8 @@ interface IProfile {
 // @public (undocumented)
 interface IProfileMod {
     // (undocumented)
+    disabledTime?: number;
+    // (undocumented)
     enabled: boolean;
     // (undocumented)
     enabledTime: number;
@@ -3601,6 +3605,8 @@ interface IRemoveModOptions {
     // (undocumented)
     progressCB?: (numRemoved: number, numTotal: number, name: string) => void;
     // (undocumented)
+    reason?: ModChangeReason;
+    // (undocumented)
     silent?: boolean;
     // (undocumented)
     willBeReplaced?: boolean;
@@ -3644,6 +3650,8 @@ interface IRunOptions {
     };
     // (undocumented)
     expectSuccess?: boolean;
+    // (undocumented)
+    onExit?: (code: number | null) => void;
     // (undocumented)
     onSpawned?: (pid?: number) => void;
     // (undocumented)
@@ -4652,6 +4660,9 @@ export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props,
     // (undocumented)
     static Title: typeof ModalTitle;
 }
+
+// @public
+type ModChangeReason = "user_manual" | "variant_replace" | "version_update" | "profile_replace" | "collection_update" | "collection_uninstall" | "stop_managing_game" | "health_check";
 
 // Warning: (ae-forgotten-export) The symbol "INameOptions" needs to be exported by the entry point api.d.ts
 //
@@ -6468,6 +6479,7 @@ declare namespace util {
         Normalize,
         ISteamEntry,
         CollectionInstallOutcomeProps,
+        ModChangeReason,
         Archive,
         ArgumentInvalid,
         batchDispatch,

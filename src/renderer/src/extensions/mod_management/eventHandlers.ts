@@ -25,6 +25,7 @@ import { downloadPathForGame } from "../../util/selectors";
 import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
+import { emitModRemoved } from "../analytics/mixpanel/modChangeAnalytics";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -798,6 +799,8 @@ export function onRemoveMods(
       installed: options?.incomplete,
       allowAutoDeploy: false,
       willBeReplaced: options?.willBeReplaced,
+      // this disable is a mechanical step of removal; the removal itself is tracked separately.
+      skipStateChangeEvent: true,
     });
   }
 
@@ -854,6 +857,13 @@ export function onRemoveMods(
               batchDispatch(store, batched);
               batched = [];
             }
+
+            emitModRemoved(
+              api,
+              mod,
+              options?.reason ?? "user_manual",
+              options?.willBeReplaced ?? false,
+            );
 
             // Update progress after successful removal
             completedCount++;

@@ -133,8 +133,11 @@ import {
   setdefault,
   toPromise,
   truthy,
+  unique,
 } from "../../util/util";
 import walk from "../../util/walk";
+import { emitModStateChanged } from "../analytics/mixpanel/modChangeAnalytics";
+import { classifyInstallKind } from "../analytics/mixpanel/modInstallAnalytics";
 import { resolveCategoryId } from "../category_management/util/retrieveCategoryPath";
 import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
@@ -166,16 +169,10 @@ import type { Dependency, IDependency, IDependencyError, IModInfoEx } from "./ty
 import type { IInstallContext } from "./types/IInstallContext";
 import type { IInstallOptions } from "./types/IInstallOptions";
 import type { IInstallResult, IInstruction, InstructionType } from "./types/IInstallResult";
-import type {
-  IChoiceType,
-  IFileListItem,
-  IMod,
-  IModAttributes,
-  IModReference,
-  IModRule,
-} from "./types/IMod";
+import type { IChoiceType, IFileListItem, IMod, IModReference, IModRule } from "./types/IMod";
 import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
+import type { IReplaceChoice, ReplaceChoice } from "./types/IReplaceChoice";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
@@ -214,21 +211,15 @@ interface IActiveInstallation {
   baseName: string;
 }
 
-// Function to get current download manager free slots
-
-type ReplaceChoice = "replace" | "variant";
-interface IReplaceChoice {
-  id: string;
-  variant: string;
-  enable: boolean;
-  attributes: IModAttributes;
-  rules: IRule[];
-  replaceChoice: ReplaceChoice;
-}
-
 interface IInvalidInstruction {
   type: InstructionType;
   error: string;
+}
+
+/** The collection (and its revision) a dependency download belongs to, for download analytics. */
+interface IParentCollection {
+  collectionId: string;
+  revisionId?: string;
 }
 
 class InstructionGroups {
@@ -1293,6 +1284,9 @@ class InstallManager {
           };
           let existingMod: IMod;
           let installingFileId: number;
+          // How the user resolved a name conflict (variant vs replace), if one arose; read at
+          // startInstallCB to classify the install for analytics.
+          let replacementChoice: ReplaceChoice;
           // Start the installation process - the promise will resolve when callback is called
           const dlInfo =
             archiveId != null ? api.getState().persistent.downloads.files[archiveId] : undefined;
@@ -1444,7 +1438,7 @@ class InstallManager {
                   // mod or provided a new, unused name
 
                   let variantCounter: number = 0;
-                  let replacementChoice: ReplaceChoice = undefined;
+                  replacementChoice = undefined;
                   const checkNameLoop = () => {
                     if (replacementChoice === "replace") {
                       log("debug", '(nameloop) replacement choice "replace"', {
@@ -1639,6 +1633,8 @@ class InstallManager {
                           setModsEnabled(api, installProfile.id, [existingMod.id], false, {
                             allowAutoDeploy,
                             installed: true,
+                            // mechanical disable for the reinstall, not a user-visible change.
+                            skipStateChangeEvent: true,
                           });
                         }
                         rules = existingMod.rules || [];
@@ -1668,7 +1664,7 @@ class InstallManager {
                                 resolve();
                               }
                             },
-                            { willBeReplaced: true },
+                            { willBeReplaced: true, reason: "version_update" },
                           );
                         });
                       }
@@ -1678,7 +1674,14 @@ class InstallManager {
                   }
                 })
                 .then(() => {
-                  installContext.startInstallCB(modId, installGameId, archiveId);
+                  // Classify for analytics: existingMod is the prior version (if any),
+                  // replacementChoice the name-conflict resolution (variant vs replace).
+                  const installKind = classifyInstallKind(
+                    existingMod,
+                    installingFileId,
+                    replacementChoice,
+                  );
+                  installContext.startInstallCB(modId, installGameId, archiveId, installKind);
 
                   destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
                   log("info", "installing to", { modId, destinationPath });
@@ -1833,6 +1836,8 @@ class InstallManager {
                       setModsEnabled(api, installProfile.id, [modId], true, {
                         allowAutoDeploy,
                         installed: true,
+                        // enabling on install completion is implied by the install event.
+                        skipStateChangeEvent: true,
                       });
                     }
                   }
@@ -2556,10 +2561,12 @@ class InstallManager {
               batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
             const targetProfile = targetProfileId ? profileById(state, targetProfileId) : undefined;
 
+            // Superseded variants disabled here; the same set is disabled in every affected
+            // profile, so it's computed once for both the dispatch and the analytics emit.
+            const supersededVariantIds = this.checkModVariantsExist(api, gameId, downloadId);
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
-              const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
-              for (const otherModId of otherModIds) {
+              for (const otherModId of supersededVariantIds) {
                 batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
               }
               batchedActions.push(setModEnabled(targetProfile.id, modId, true));
@@ -2569,8 +2576,7 @@ class InstallManager {
                 (prof) => prof.gameId === gameId && prof.modState?.[sourceModId]?.enabled,
               );
               profiles.forEach((prof) => {
-                const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
-                for (const otherModId of otherModIds) {
+                for (const otherModId of supersededVariantIds) {
                   batchedActions.push(setModEnabled(prof.id, otherModId, false));
                 }
                 batchedActions.push(setModEnabled(prof.id, modId, true));
@@ -2580,6 +2586,13 @@ class InstallManager {
             // Mark as installed as dependency
             batchedActions.push(setModAttribute(gameId, modId, "installedAsDependency", true));
             batchDispatch(api.store, batchedActions);
+
+            // Disabling superseded variants bypasses the mods-enabled event; emit directly.
+            // checkModVariantsExist includes modId itself (it shares the archive) - exclude it,
+            // since it ends up enabled and its enable is covered by mods_installation_completed.
+            supersededVariantIds
+              .filter((id) => id !== modId)
+              .forEach((id) => emitModStateChanged(api, gameId, id, "disabled", "variant_replace"));
 
             // Clear retry counter on successful installation
             this.mDependencyRetryCount.delete(installKey);
@@ -3427,9 +3440,15 @@ class InstallManager {
     if (collectionMod === undefined) {
       return;
     }
-    const parentCollectionId =
+    const parentCollection: IParentCollection | undefined =
       collectionMod.attributes?.collectionId != null
-        ? String(collectionMod.attributes.collectionId)
+        ? {
+            collectionId: String(collectionMod.attributes.collectionId),
+            revisionId:
+              collectionMod.attributes.revisionId != null
+                ? String(collectionMod.attributes.revisionId)
+                : undefined,
+          }
         : undefined;
     const stagingPath = installPathForGame(state, session.gameId);
     const pending = selectedOptionalRules(
@@ -3471,7 +3490,7 @@ class InstallManager {
             dep.lookupResults[0].value,
             () => !this.mDependencyInstalls[sourceModId],
             dep.extra?.fileName,
-            parentCollectionId,
+            parentCollection,
           );
         })
         .then((downloadId: string | undefined) => {
@@ -5135,7 +5154,7 @@ class InstallManager {
                     });
                   }
                 },
-                { willBeReplaced: true },
+                { willBeReplaced: true, reason: "profile_replace" },
               );
             };
 
@@ -5147,6 +5166,10 @@ class InstallManager {
               if (currentProfile !== undefined) {
                 const actions = modIds.map((id) => setModEnabled(currentProfile.id, id, false));
                 batchDispatch(api.store.dispatch, actions);
+                // this disable bypasses the mods-enabled event; emit the state change directly.
+                unique(modIds).forEach((id) =>
+                  emitModStateChanged(api, gameId, id, "disabled", "variant_replace"),
+                );
               }
               // We want the shortest possible modId paired against this archive
               //  before adding the variant name to it.
@@ -5261,7 +5284,7 @@ class InstallManager {
     referenceTag?: string,
     campaign?: string,
     fileName?: string,
-    parentCollectionId?: string,
+    parentCollection?: IParentCollection,
   ): Promise<string> {
     const call = (input: string | (() => PromiseLike<string>)): Promise<string> =>
       input !== undefined && typeof input === "function"
@@ -5295,12 +5318,15 @@ class InstallManager {
               referenceTag,
               meta: lookupResult,
             };
-            if (parentCollectionId !== undefined) {
-              // Tag the download with the parent collection's id for analytics only.
+            if (parentCollection !== undefined) {
+              // Tag the download with the parent collection's id and revision for analytics only.
               // Kept off `nexus.ids.collectionId` because the install attribute
               // extractor copies that field onto the installed mod, which would
               // make a regular mod look like a collection downstream.
-              startDownloadModInfo.nexus = { parentCollectionId };
+              startDownloadModInfo.nexus = {
+                parentCollectionId: parentCollection.collectionId,
+                parentRevisionId: parentCollection.revisionId,
+              };
             }
 
             if (
@@ -5339,7 +5365,7 @@ class InstallManager {
                         referenceTag,
                         campaign,
                         fileName,
-                        parentCollectionId,
+                        parentCollection,
                       );
                       return resolve(id);
                     } else {
@@ -5367,7 +5393,7 @@ class InstallManager {
     wasCanceled: () => boolean,
     campaign: string,
     fileName?: string,
-    parentCollectionId?: string,
+    parentCollection?: IParentCollection,
   ): Promise<string> {
     const modId: string = getSafe(lookupResult, ["details", "modId"], undefined);
     const fileId: string = getSafe(lookupResult, ["details", "fileId"], undefined);
@@ -5379,7 +5405,7 @@ class InstallManager {
         referenceTag,
         fileName,
         undefined,
-        parentCollectionId,
+        parentCollection,
       );
     }
 
@@ -5418,16 +5444,25 @@ class InstallManager {
                 api.store.dispatch(
                   setDownloadModInfo(results[0].dlId, "referenceTag", referenceTag),
                 );
-                if (parentCollectionId !== undefined) {
+                if (parentCollection !== undefined) {
                   // See downloadURL: kept off nexus.ids.collectionId to avoid the
                   // install attribute extractor copying it onto the installed mod.
                   api.store.dispatch(
                     setDownloadModInfo(
                       results[0].dlId,
                       "nexus.parentCollectionId",
-                      parentCollectionId,
+                      parentCollection.collectionId,
                     ),
                   );
+                  if (parentCollection.revisionId !== undefined) {
+                    api.store.dispatch(
+                      setDownloadModInfo(
+                        results[0].dlId,
+                        "nexus.parentRevisionId",
+                        parentCollection.revisionId,
+                      ),
+                    );
+                  }
                 }
                 return Promise.resolve(results[0].dlId);
               }
@@ -5443,7 +5478,7 @@ class InstallManager {
     lookupResult: IModInfoEx,
     wasCanceled: () => boolean,
     fileName: string,
-    parentCollectionId?: string,
+    parentCollection?: IParentCollection,
   ): Promise<string> {
     const referenceTag = requirement["tag"];
     const { campaign } = requirement["repo"] ?? {};
@@ -5462,7 +5497,7 @@ class InstallManager {
         wasCanceled,
         campaign,
         fileName,
-        parentCollectionId,
+        parentCollection,
       )
         .catch((err) => {
           if (err instanceof HTTPError) {
@@ -5482,7 +5517,7 @@ class InstallManager {
                 referenceTag,
                 campaign,
                 fileName,
-                parentCollectionId,
+                parentCollection,
               )
             : res,
         );
@@ -5494,7 +5529,7 @@ class InstallManager {
         referenceTag,
         campaign,
         fileName,
-        parentCollectionId,
+        parentCollection,
       ).catch((err) => {
         if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
           return Promise.reject(err);
@@ -5509,7 +5544,7 @@ class InstallManager {
             wasCanceled,
             campaign,
             fileName,
-            parentCollectionId,
+            parentCollection,
           );
         } else {
           return Promise.reject(err);
@@ -5718,10 +5753,12 @@ class InstallManager {
               batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
             const targetProfile = targetProfileId ? profileById(state, targetProfileId) : undefined;
 
+            // Superseded variants disabled here; the same set is disabled in every affected
+            // profile, so it's computed once for both the dispatch and the analytics emit.
+            const supersededVariantIds = this.checkModVariantsExist(api, gameId, downloadId);
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
-              const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
-              for (const otherModId of otherModIds) {
+              for (const otherModId of supersededVariantIds) {
                 batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
               }
               batchedActions.push(setModEnabled(targetProfile.id, modId, true));
@@ -5731,8 +5768,7 @@ class InstallManager {
                 (prof) => prof.gameId === gameId && prof.modState?.[sourceModId]?.enabled,
               );
               profiles.forEach((prof) => {
-                const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
-                for (const otherModId of otherModIds) {
+                for (const otherModId of supersededVariantIds) {
                   batchedActions.push(setModEnabled(prof.id, otherModId, false));
                 }
                 batchedActions.push(setModEnabled(prof.id, modId, true));
@@ -5740,6 +5776,13 @@ class InstallManager {
             }
 
             batchDispatch(api.store, batchedActions);
+
+            // Disabling superseded variants bypasses the mods-enabled event; emit directly.
+            // checkModVariantsExist includes modId itself (it shares the archive) - exclude it,
+            // since it ends up enabled and its enable is covered by mods_installation_completed.
+            supersededVariantIds
+              .filter((id) => id !== modId)
+              .forEach((id) => emitModStateChanged(api, gameId, id, "disabled", "variant_replace"));
 
             this.applyExtraFromRule(api, gameId, modId, {
               ...dep.extra,
@@ -6011,10 +6054,16 @@ class InstallManager {
     }
 
     // When installing a collection, tag each dependency download with the parent
-    // collection id so the Mixpanel mod download events can carry collection_id.
-    const parentCollectionId: string | undefined =
+    // collection id and revision so the Mixpanel mod download events can carry them.
+    const parentCollection: IParentCollection | undefined =
       sourceMod.type === "collection" && sourceMod.attributes?.collectionId !== undefined
-        ? String(sourceMod.attributes.collectionId)
+        ? {
+            collectionId: String(sourceMod.attributes.collectionId),
+            revisionId:
+              sourceMod.attributes.revisionId !== undefined
+                ? String(sourceMod.attributes.revisionId)
+                : undefined,
+          }
         : undefined;
 
     let queuedDownloads: IModReference[] = [];
@@ -6060,7 +6109,7 @@ class InstallManager {
                 dep.lookupResults[0].value,
                 () => abort.signal.aborted,
                 dep.extra?.fileName,
-                parentCollectionId,
+                parentCollection,
               ),
             )
             .then((dlId) => {

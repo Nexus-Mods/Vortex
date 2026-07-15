@@ -346,7 +346,11 @@ export function downloadAndInstallExtension(
 
       const state: IState = api.store.getState();
       const downloadPath = downloadPathForGame(state, SITE_ID);
-      return installExtension(api, path.join(downloadPath, download.localPath), info);
+      return installExtension(api, path.join(downloadPath, download.localPath), info, {
+        source: ext.modId !== undefined ? "nexusmods" : "github",
+        gameDomain: extDetail?.gameId,
+        gameName: extDetail?.gameName,
+      });
     })
     .then(() => PromiseBB.resolve(true))
     .catch(UserCanceled, () => null)

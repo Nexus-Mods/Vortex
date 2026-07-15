@@ -110,6 +110,13 @@ export const modRequirementsArray = (state: IState): IModRequirementExt[] => {
 };
 
 /**
+ * Timestamp (epoch ms) of the most recently stored health check result, or
+ * undefined if no check has run this session.
+ */
+export const lastHealthCheckRun = (state: IState): number | undefined =>
+  healthCheckState(state).lastFullRun || undefined;
+
+/**
  * Get the list of currently running check IDs
  */
 export const runningHealthChecks = (state: IState): HealthCheckId[] =>

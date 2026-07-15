@@ -55,6 +55,7 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
+import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
 import { readExtensions } from "../extension_manager/util";
 import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
@@ -540,6 +541,7 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
         }),
       );
       api.store.dispatch(setNextProfile(profileId));
+      emitGameManaged(api, gameId);
     })
     .catch((err) => {
       const instPath = installPathForGame(api.store.getState(), gameId);
@@ -735,13 +737,19 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
 
 function removeMod(api: IExtensionApi, gameId: string, modId: string): PromiseBB<void> {
   return new PromiseBB((resolve, reject) => {
-    api.events.emit("remove-mod", gameId, modId, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
+    api.events.emit(
+      "remove-mod",
+      gameId,
+      modId,
+      (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      },
+      { reason: "stop_managing_game" },
+    );
   });
 }
 
@@ -790,7 +798,9 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
             ),
           )
           .then(() => PromiseBB.map(profileIds, (profileId) => removeProfileImpl(api, profileId)))
-          .then(() => PromiseBB.resolve())
+          .then(() => {
+            emitGameUnmanaged(api, gameId);
+          })
           .catch((err) => {
             if (err instanceof UserCanceled) {
               return PromiseBB.resolve();

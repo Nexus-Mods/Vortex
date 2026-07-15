@@ -123,7 +123,7 @@ export function enableInstalledFile(api: IExtensionApi, file: IInstalledFile): v
     log("warn", "cannot enable installed file: no active profile", { modId: file.modId });
     return;
   }
-  void setModsEnabled(api, profile.id, [file.modId], true);
+  void setModsEnabled(api, profile.id, [file.modId], true, { reason: "health_check" });
 }
 
 /** One active-version switch: disable `wrong`, enable `correct`. */
@@ -153,8 +153,8 @@ export function switchActiveVersions(api: IExtensionApi, targets: ISwitchTarget[
   const wrongIds = [...new Set(targets.map((target) => target.wrong.modId))].filter(
     (id) => !correctSet.has(id),
   );
-  void setModsEnabled(api, profile.id, wrongIds, false).then(() =>
-    setModsEnabled(api, profile.id, correctIds, true),
+  void setModsEnabled(api, profile.id, wrongIds, false, { reason: "health_check" }).then(() =>
+    setModsEnabled(api, profile.id, correctIds, true, { reason: "health_check" }),
   );
 }
 

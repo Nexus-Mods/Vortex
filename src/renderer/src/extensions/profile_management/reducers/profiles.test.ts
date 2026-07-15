@@ -78,6 +78,26 @@ describe("setModEnabled", () => {
     expect(result.profileId1.modState.modId1.enabled).toBe(true);
     expect(result.profileId2.modState.modId1.enabled).toBe(false);
   });
+
+  it("stamps disabledTime on disable and leaves enabledTime intact", () => {
+    const input: ProfilesState = {
+      profileId1: {
+        id: "profileId1",
+        gameId: "game",
+        name: "Profile 1",
+        modState: { modId1: { enabled: true, enabledTime: 111 } },
+        lastActivated: 0,
+      },
+    };
+    const result = reduce.SET_MOD_ENABLED(input, {
+      profileId: "profileId1",
+      modId: "modId1",
+      enable: false,
+    });
+    expect(result.profileId1.modState.modId1.enabled).toBe(false);
+    expect(result.profileId1.modState.modId1.enabledTime).toBe(111);
+    expect(result.profileId1.modState.modId1.disabledTime).toBeGreaterThan(0);
+  });
 });
 
 describe("setFeature", () => {

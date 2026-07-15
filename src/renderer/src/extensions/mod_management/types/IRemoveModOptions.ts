@@ -1,8 +1,13 @@
+import type { ModChangeReason } from "../../analytics/mixpanel/MixpanelEvents";
 import type { IMod } from "./IMod";
 
 export interface IRemoveModOptions {
   // if true will not raise any notifications/toasts
   silent?: boolean;
+
+  // why the mod is being removed, for the mods_removed analytics event. Defaults to
+  // user_manual when unset (a direct user action). Programmatic removals should set it.
+  reason?: ModChangeReason;
 
   // Event emitters should set this to true if the mod is being replaced.
   //  e.g. when reinstalling or updating a mod.

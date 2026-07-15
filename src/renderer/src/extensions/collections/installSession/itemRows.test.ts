@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-import { makeDownload, makeMod, makeRule } from "../../../test-utils/builders";
+import { makeDownload, makeFileInfo, makeMod, makeRule } from "../../../test-utils/builders";
 import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
 import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
@@ -75,7 +75,7 @@ describe("buildCollectionItemRows", () => {
       received: 50,
       size: 200,
       fileMD5: "abc",
-      modInfo: { nexus: { fileInfo: { name: "file.7z", mod_version: "2.0" } } },
+      modInfo: { nexus: { fileInfo: makeFileInfo({ name: "file.7z", mod_version: "2.0" }) } },
     });
 
     const rows = buildCollectionItemRows({

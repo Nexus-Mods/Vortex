@@ -1,3 +1,5 @@
+import type { IFileInfo } from "@nexusmods/nexus-api";
+
 export type RedownloadMode = "always" | "never" | "ask" | "replace";
 
 export type DownloadState =
@@ -77,6 +79,9 @@ export interface IModInfo {
      * install attribute extractor. Consumed by Mixpanel mod download analytics.
      */
     parentCollectionId?: string;
+    /** Revision of the collection in `parentCollectionId`. Set together with it; analytics only. */
+    parentRevisionId?: string;
+    fileInfo?: IFileInfo;
     [key: string]: any;
   };
   referenceTag?: string;
