@@ -62,12 +62,12 @@ describe("Listbox", () => {
 
   it("renders the trigger with a chevron icon by default", () => {
     renderComponent();
-    expect(getTrigger().querySelector(".nxm-dropdown-button-icon")).toBeInTheDocument();
+    expect(getTrigger().querySelector(".nxm-button-icon")).toBeInTheDocument();
   });
 
   it("hides the chevron when showChevron is false", () => {
     renderComponent({ showChevron: false });
-    expect(getTrigger().querySelector(".nxm-dropdown-button-icon")).not.toBeInTheDocument();
+    expect(getTrigger().querySelector(".nxm-button-icon")).not.toBeInTheDocument();
   });
 
   it("does not show options until opened", () => {

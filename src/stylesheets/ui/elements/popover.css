@@ -1,0 +1,18 @@
+@layer components {
+    .nxm-popover {
+        position: relative;
+    }
+
+    .nxm-popover-panel {
+        right: 0;
+        outline: none;
+        position: absolute;
+        box-shadow: var(--shadow-md);
+        z-index: var(--z-index-dropdown);
+        min-width: calc(var(--spacing) * 70);
+        margin-top: calc(var(--spacing) * 1);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--color-stroke-weak);
+        background-color: var(--color-surface-mid);
+    }
+}

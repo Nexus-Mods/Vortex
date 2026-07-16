@@ -26,8 +26,9 @@ ui/
 │   ├── listing_loader/  - Loading skeleton for lists
 │   ├── no_results/      - Empty state component
 │   ├── pagination/      - Pagination controls with jump-to-page
-│   ├── picker/          - Picker component
+│   ├── picker/          - Single-value selector (Headless UI Listbox)
 │   ├── pill/            - Compact rounded label for tags and statuses
+│   ├── popover/         - Floating panel of interactive content (Headless UI Popover)
 │   ├── premium_badge/   - Premium diamond badge
 │   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
@@ -324,6 +325,27 @@ import { DropdownItems } from "../../ui/components/dropdown/DropdownItems";
 import { DropdownDivider } from "../../ui/components/dropdown/DropdownDivider";
 ```
 
+`DropdownButton` renders a `Button` as the `Menu.Button` trigger, so it takes all the same props as `Button`.
+
+### Popover
+
+A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content.
+
+```tsx
+import { Popover } from "../../ui/components/popover/Popover";
+import { PopoverButton } from "../../ui/components/popover/PopoverButton";
+import { PopoverPanel } from "../../ui/components/popover/PopoverPanel";
+import { mdiTune } from "@mdi/js";
+
+<Popover>
+    <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiTune} size="sm" />
+
+    <PopoverPanel>{/* pickers, switches, buttons, … */}</PopoverPanel>
+</Popover>;
+```
+
+> **Positioning note:** the panel is positioned manually (absolute) until `@headlessui/react` reaches v2, which brings dynamic anchor positioning and proper z-index handling.
+
 ### Listbox
 
 Select component built on Headless UI `Listbox`.
@@ -458,9 +480,24 @@ import { Pictogram } from "../../ui/components/pictogram/Pictogram";
 
 ### Picker
 
+Single-value selector built on Headless UI `Listbox` — the chosen option shows in the trigger button. Use it when the user picks one value from a list (as opposed to `Dropdown`, which fires actions). `value` is generic, so options can carry strings, numbers, or objects.
+
 ```tsx
 import { Picker } from "../../ui/components/picker/Picker";
+import { mdiViewGrid } from "@mdi/js";
+
+<Picker options={options} value={value} onChange={setValue} />
+
+// Style the trigger via `button` — it forwards all Button props (+ showChevron)
+<Picker
+  button={{ size: "xs", leftIconPath: mdiViewGrid }}
+  options={options}
+  value={value}
+  onChange={setValue}
+/>
 ```
+
+**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — temporary until Headless UI v2), `className`.
 
 ### Pill
 

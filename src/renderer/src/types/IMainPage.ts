@@ -21,6 +21,13 @@ export interface IMainPage {
   group: "global" | "per-game" | "support" | "hidden" | "dashboard";
   isClassicOnly?: boolean;
   isModernOnly?: boolean;
+  /**
+   * Opt this page into the redesigned UI. When set, MainPageContainer skips the
+   * legacy `.main-page` / header / body-container chrome and renders the page
+   * component as the sole root (it is expected to render its own PageRoot),
+   * keeping the DOM subtree flat.
+   */
+  newLayout?: boolean;
   priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;

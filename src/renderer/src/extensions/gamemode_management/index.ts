@@ -692,6 +692,7 @@ function init(context: IExtensionContext): boolean {
       priority: 10,
       hotkey: "G",
       group: "global",
+      newLayout: true,
       props: () => ({
         onRefreshGameInfo,
         onBrowseGameLocation,

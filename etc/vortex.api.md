@@ -3002,6 +3002,7 @@ interface IMainPageOptions {
     isModernOnly?: boolean;
     // (undocumented)
     mdi?: string;
+    newLayout?: boolean;
     // (undocumented)
     onReset?: () => void;
     // (undocumented)

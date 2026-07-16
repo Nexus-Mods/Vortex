@@ -8,7 +8,7 @@ export const ListingLoader = ({
   skeletonCount,
   SkeletonTile,
 }: PropsWithChildren<{
-  SkeletonTile: ComponentType;
+  SkeletonTile?: ComponentType;
   append?: boolean;
   className?: string;
   isLoading?: boolean;
@@ -19,9 +19,10 @@ export const ListingLoader = ({
       <>
         {append && children}
 
-        {Array.from({ length: skeletonCount }, (_, i) => `skeleton-${i}`).map((key) => (
-          <SkeletonTile key={key} />
-        ))}
+        {!!SkeletonTile &&
+          Array.from({ length: skeletonCount }, (_, i) => `skeleton-${i}`).map((key) => (
+            <SkeletonTile key={key} />
+          ))}
       </>
     ) : (
       children

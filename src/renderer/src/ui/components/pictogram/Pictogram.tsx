@@ -13,6 +13,7 @@ const sizeMap = {
   lg: "size-24",
   xl: "size-28",
   "2xl": "size-40",
+  none: "",
 } as const satisfies Record<string, string>;
 
 type ITheme = "creator" | "info" | "none" | "premium" | "primary";
@@ -25,7 +26,7 @@ const themeMap = {
   primary: "text-primary-moderate",
 } as const satisfies Record<ITheme, string>;
 
-export type IPictogramName = "health-check" | "tools";
+export type IPictogramName = "game" | "health-check" | "tools";
 
 export const Pictogram = ({
   className,
