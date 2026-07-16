@@ -18,6 +18,8 @@ import type { IStarterInfo } from "./StarterInfo";
 interface ILaunchRecord {
   sessionId: string;
   gameId: number | null;
+  launchMethod: GameLaunchMethod;
+  enabledModCount: number;
   launchTime: number;
   // Set from runExecutable's exit for Vortex-spawned launches; stays null for store launches.
   exitCode: number | null;
@@ -65,6 +67,8 @@ export function emitExitsForStoppedTools(
       "analytics-track-mixpanel-event",
       new AppGameExitedEvent({
         game_id: record.gameId,
+        launch_method: record.launchMethod,
+        enabled_mod_count: record.enabledModCount,
         launch_session_id: record.sessionId,
         duration_ms: Date.now() - record.launchTime,
         exit_code: record.exitCode,
@@ -92,19 +96,23 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   const state: IState = api.getState();
   const gameId = numericNexusGameId(info.gameId);
   const sessionId = shortid();
+  const method = launchMethod(info);
+  const profileId = lastActiveProfileForGame(state, info.gameId);
+  const enabledModCount = enabledModCountForProfile(state, profileId);
   pendingLaunches.set(makeExeId(info.exePath), {
     sessionId,
     gameId,
+    launchMethod: method,
+    enabledModCount,
     launchTime: Date.now(),
     exitCode: null,
   });
-  const profileId = lastActiveProfileForGame(state, info.gameId);
   api.events.emit(
     "analytics-track-mixpanel-event",
     new AppGameLaunchedEvent({
       game_id: gameId,
-      launch_method: launchMethod(info),
-      enabled_mod_count: enabledModCountForProfile(state, profileId),
+      launch_method: method,
+      enabled_mod_count: enabledModCount,
       launch_session_id: sessionId,
     }),
   );
