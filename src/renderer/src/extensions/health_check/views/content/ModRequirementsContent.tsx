@@ -32,6 +32,9 @@ import type {
   IListingRowProps,
 } from "./types";
 
+// todo break this into smaller files like the FileRequirementsContent
+// fix the broken styling on the View component
+
 function isModHidden(
   state: Parameters<typeof hiddenModRequirements>[0],
   mod: IModRequirementExt,

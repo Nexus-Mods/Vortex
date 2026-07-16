@@ -31,6 +31,7 @@ export const EnableCard = ({
   isOr?: boolean;
 }) => {
   const { t } = useTranslation("health_check");
+
   return (
     <FileRequirement
       actions={

@@ -24,6 +24,7 @@ import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
 import { useRelativeTime } from "@/util/useRelativeTime";
 import MainPage from "@/views/MainPage";
+import PageRoot from "@/views/PageRoot";
 
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
@@ -205,137 +206,135 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
     );
 
   return (
-    <MainPage id="health-check-page">
-      <MainPage.Body>
-        <div className="h-full space-y-6 overflow-y-auto p-6">
-          <div className="flex items-center gap-x-6">
-            <div className="flex grow items-center gap-x-2">
-              <Pictogram name="health-check" size="sm" />
+    <PageRoot id="health-check-page">
+      <div className="space-y-6 p-6">
+        <div className="flex items-center gap-x-6">
+          <div className="flex grow items-center gap-x-2">
+            <Pictogram name="health-check" size="sm" />
 
-              <div className="grow">
-                <div className="flex items-center gap-x-1.5">
-                  <Typography as="h2" typographyType="heading-xs">
-                    {t("listing::title")}
-                  </Typography>
+            <div className="grow">
+              <div className="flex items-center gap-x-1.5">
+                <Typography as="h2" typographyType="heading-xs">
+                  {t("listing::title")}
+                </Typography>
 
-                  <Typography
-                    as="div"
-                    className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1 leading-4"
-                    typographyType="title-xs"
-                  >
-                    {t("common:::beta")}
-                  </Typography>
-                </div>
-
-                <Typography appearance="moderate">{t("listing::subtitle")}</Typography>
+                <Typography
+                  as="div"
+                  className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1 leading-4"
+                  typographyType="title-xs"
+                >
+                  {t("common:::beta")}
+                </Typography>
               </div>
-            </div>
 
-            <div className="flex shrink-0 items-center gap-x-2">
-              <LastUpdated />
-
-              <Button
-                appearance="subdued"
-                brand="neutral"
-                isLoading={isRefreshing}
-                leftIconPath={mdiRefresh}
-                size="sm"
-                title={t("common:::refresh")}
-                onClick={() => onRefresh?.()}
-              />
-
-              <Button
-                appearance="subdued"
-                brand="neutral"
-                leftIconPath={mdiCog}
-                size="sm"
-                title={t("common:::settings")}
-                onClick={() => {
-                  dispatch(setOpenMainPage("application_settings", false));
-                  dispatch(setSettingsPage("Vortex"));
-                }}
-              />
+              <Typography appearance="moderate">{t("listing::subtitle")}</Typography>
             </div>
           </div>
 
-          {supportsHide ? (
-            <TabProvider
-              tab={selectedTab}
-              tabListId="health-check-mods"
-              tabType="secondary"
-              onSetSelectedTab={setSelectedTab}
-            >
-              <div className="flex items-center justify-between">
-                <TabBar>
-                  <TabButton count={activeCount} name={t("common:::active")} />
+          <div className="flex shrink-0 items-center gap-x-2">
+            <LastUpdated />
 
-                  <TabButton count={hiddenCount} name={t("common:::hidden")} />
-                </TabBar>
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              isLoading={isRefreshing}
+              leftIconPath={mdiRefresh}
+              size="sm"
+              title={t("common:::refresh")}
+              onClick={() => onRefresh?.()}
+            />
 
-                <div className="flex items-center gap-x-2">
-                  <Button
-                    appearance="subdued"
-                    brand="neutral"
-                    disabled={
-                      (selectedTab === "active" && !activeCount) ||
-                      (selectedTab === "hidden" && !hiddenCount)
-                    }
-                    leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
-                    size="sm"
-                    onClick={selectedTab === "active" ? hideAllActive : unhideAll}
-                  >
-                    {selectedTab === "active"
-                      ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
-                      : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
-                  </Button>
-
-                  {selectedTab === "active" && installAllItems.length > 0 && (
-                    <>
-                      <div className="w-px self-stretch bg-stroke-weak" />
-
-                      <Button
-                        brand="neutral"
-                        leftIconPath={mdiMonitorArrowDownVariant}
-                        rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-                        size="sm"
-                        onClick={installAll}
-                      >
-                        {t("actions::install_all", { count: installAllItems.length })}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <TabPanel name="active">{activeList}</TabPanel>
-
-              <TabPanel name="hidden">
-                {hiddenCount > 0 ? (
-                  <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
-                ) : (
-                  <NoResults
-                    className="py-24"
-                    iconPath={mdiEyeOff}
-                    title={t("listing::no_results_hidden::title")}
-                  />
-                )}
-              </TabPanel>
-            </TabProvider>
-          ) : (
-            activeList
-          )}
-
-          <PremiumBanner />
-
-          <PremiumModal
-            downloadScope="all"
-            isOpen={showInstallAllPremium}
-            onClose={() => setShowInstallAllPremium(false)}
-            onDownload={() => setShowInstallAllPremium(false)}
-          />
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              leftIconPath={mdiCog}
+              size="sm"
+              title={t("common:::settings")}
+              onClick={() => {
+                dispatch(setOpenMainPage("application_settings", false));
+                dispatch(setSettingsPage("Vortex"));
+              }}
+            />
+          </div>
         </div>
-      </MainPage.Body>
-    </MainPage>
+
+        {supportsHide ? (
+          <TabProvider
+            tab={selectedTab}
+            tabListId="health-check-mods"
+            tabType="secondary"
+            onSetSelectedTab={setSelectedTab}
+          >
+            <div className="flex items-center justify-between">
+              <TabBar>
+                <TabButton count={activeCount} name={t("common:::active")} />
+
+                <TabButton count={hiddenCount} name={t("common:::hidden")} />
+              </TabBar>
+
+              <div className="flex items-center gap-x-2">
+                <Button
+                  appearance="subdued"
+                  brand="neutral"
+                  disabled={
+                    (selectedTab === "active" && !activeCount) ||
+                    (selectedTab === "hidden" && !hiddenCount)
+                  }
+                  leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
+                  size="sm"
+                  onClick={selectedTab === "active" ? hideAllActive : unhideAll}
+                >
+                  {selectedTab === "active"
+                    ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
+                    : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
+                </Button>
+
+                {selectedTab === "active" && installAllItems.length > 0 && (
+                  <>
+                    <div className="w-px self-stretch bg-stroke-weak" />
+
+                    <Button
+                      brand="neutral"
+                      leftIconPath={mdiMonitorArrowDownVariant}
+                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                      size="sm"
+                      onClick={installAll}
+                    >
+                      {t("actions::install_all", { count: installAllItems.length })}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <TabPanel name="active">{activeList}</TabPanel>
+
+            <TabPanel name="hidden">
+              {hiddenCount > 0 ? (
+                <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
+              ) : (
+                <NoResults
+                  className="py-24"
+                  iconPath={mdiEyeOff}
+                  title={t("listing::no_results_hidden::title")}
+                />
+              )}
+            </TabPanel>
+          </TabProvider>
+        ) : (
+          activeList
+        )}
+
+        <PremiumBanner />
+
+        <PremiumModal
+          downloadScope="all"
+          isOpen={showInstallAllPremium}
+          onClose={() => setShowInstallAllPremium(false)}
+          onDownload={() => setShowInstallAllPremium(false)}
+        />
+      </div>
+    </PageRoot>
   );
 }
 

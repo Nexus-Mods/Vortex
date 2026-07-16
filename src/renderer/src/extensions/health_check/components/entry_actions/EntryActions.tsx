@@ -30,7 +30,7 @@ export function EntryActions({
 }: IEntryActionsProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const appearance = variant === "listing" ? "weak" : "moderate";
+  const appearance = variant === "listing" ? "weak" : "subdued";
 
   const handle = (fn: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,6 +74,8 @@ export function EntryActions({
         title={t("common:::not_helpful")}
         onClick={handle(() => setShowFeedbackModal(true))}
       />
+
+      {variant === "detail" && <div className="w-px self-stretch bg-stroke-weak" />}
 
       <Button
         appearance={appearance}

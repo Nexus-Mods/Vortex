@@ -11,6 +11,7 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
+import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IFileRequirementData } from "../../utils/fileRequirements/cardHelpers";
@@ -19,6 +20,7 @@ interface IFileRequirementProps {
   actions?: ReactNode;
   file: IFileRequirementData;
   isOr?: boolean;
+  showMod?: boolean;
   /** Open the mod page (web). When set, the thumbnail and mod name become links. */
   onOpenMod?: () => void;
   /** Open the file page (web). When set, the file name becomes a link. */
@@ -29,6 +31,7 @@ export function FileRequirement({
   actions,
   file,
   isOr,
+  showMod = true,
   onOpenMod,
   onOpenFile,
 }: IFileRequirementProps) {
@@ -45,49 +48,54 @@ export function FileRequirement({
   return (
     <div
       className={joinClasses([
-        "group/file relative",
-        isOr
-          ? "border-b-stroke-weak not-last:mb-6 not-last:border-b not-last:pb-6"
-          : "not-last:mb-4",
+        "group/file relative px-6",
+        isOr ? "not-last:mb-8 not-last:pb-8" : "not-last:mb-4",
       ])}
     >
-      <div className="mb-px flex items-center gap-x-4 rounded-t-sm bg-surface-mid p-2">
-        {onOpenMod ? (
-          <button className="shrink-0" type="button" onClick={onOpenMod}>
-            {modImage}
-          </button>
-        ) : (
-          modImage
-        )}
+      {showMod && (
+        <div className="mb-px flex items-center gap-x-4 rounded-t-sm bg-surface-mid p-2">
+          {onOpenMod ? (
+            <button className="shrink-0" type="button" onClick={onOpenMod}>
+              {modImage}
+            </button>
+          ) : (
+            modImage
+          )}
 
-        <div className="max-w-xl space-y-0.5">
-          <div className="flex items-center gap-x-2">
-            {onOpenMod ? (
-              <button className="text-left hover:underline" type="button" onClick={onOpenMod}>
+          <div className="max-w-xl space-y-0.5">
+            <div className="flex items-center gap-x-2">
+              {onOpenMod ? (
+                <TypographyLink appearance="moderate" variant="secondary" onClick={onOpenMod}>
+                  {file.modName}
+                </TypographyLink>
+              ) : (
                 <Typography appearance="moderate">{file.modName}</Typography>
-              </button>
-            ) : (
-              <Typography appearance="moderate">{file.modName}</Typography>
-            )}
+              )}
 
-            {file.adultContent && (
-              <>
-                <Bullet />
+              {file.adultContent && (
+                <>
+                  <Bullet />
 
-                <Typography brand="danger" typographyType="body-sm">
-                  Adult
-                </Typography>
-              </>
-            )}
+                  <Typography brand="danger" typographyType="body-sm">
+                    Adult
+                  </Typography>
+                </>
+              )}
+            </div>
+
+            <Typography appearance="subdued" className="line-clamp-2" typographyType="body-sm">
+              {file.modDescription}
+            </Typography>
           </div>
-
-          <Typography appearance="subdued" className="line-clamp-2" typographyType="body-sm">
-            {file.modDescription}
-          </Typography>
         </div>
-      </div>
+      )}
 
-      <div className="flex items-center justify-between gap-x-2 rounded-b-sm bg-surface-mid px-4 py-3">
+      <div
+        className={joinClasses([
+          "flex items-center justify-between gap-x-2 bg-surface-mid px-4 py-3",
+          showMod ? "rounded-b-sm" : "rounded-sm",
+        ])}
+      >
         <Typography
           appearance="subdued"
           as="div"
@@ -97,13 +105,15 @@ export function FileRequirement({
           <Icon path={mdiFileOutline} size="sm" />
 
           {onOpenFile ? (
-            <button
-              className="truncate text-left hover:underline"
-              type="button"
+            <TypographyLink
+              appearance="subdued"
+              className="truncate"
+              typographyType="inherit"
+              variant="secondary"
               onClick={onOpenFile}
             >
               {file.fileName}
-            </button>
+            </TypographyLink>
           ) : (
             <div className="truncate">{file.fileName}</div>
           )}
@@ -133,15 +143,18 @@ export function FileRequirement({
       </div>
 
       {isOr && (
-        <Typography
-          appearance="moderate"
-          as="div"
-          brand="neutral-translucent"
-          className="absolute -bottom-2 left-4.5 bg-surface-low px-3 font-semibold group-last/file:hidden"
-          typographyType="body-sm"
+        <div
+          aria-hidden
+          className="absolute inset-x-0 -bottom-2 flex h-5 items-center gap-x-3 group-last/file:hidden"
         >
-          or
-        </Typography>
+          <div className="h-px w-3 bg-surface-mid" />
+
+          <Typography as="div" className="font-semibold">
+            Or
+          </Typography>
+
+          <div className="h-px grow bg-surface-mid" />
+        </div>
       )}
     </div>
   );

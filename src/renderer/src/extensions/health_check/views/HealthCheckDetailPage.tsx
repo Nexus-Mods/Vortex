@@ -67,7 +67,7 @@ function HealthCheckDetailPage({ api, content, entry, onBack }: IHealthCheckDeta
             </Button>
           </div>
 
-          <div className="rounded-lg border border-stroke-weak p-6">
+          <div className="rounded-lg border border-stroke-weak">
             <DetailView api={api} entry={entry} onBack={onBack} />
           </div>
 
