@@ -7,6 +7,7 @@ import path from "node:path";
  * has no real launcher). Native file picker is bypassed by overriding
  * dialog.showOpenDialog from the test side.
  */
+import { SDV_MOD_URL } from "../constants";
 import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { acceptConsent } from "../helpers/consent";
 import { Timeouts } from "../helpers/timeouts";
@@ -14,8 +15,6 @@ import { freeUser, premiumUser } from "../helpers/users";
 import { ModsPage } from "../selectors/modsPage";
 import { NavBar } from "../selectors/navbar";
 import { NexusModPage } from "../selectors/nexusModPage";
-
-const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
 
 const TIERS = [
   { tier: "free", user: freeUser },
