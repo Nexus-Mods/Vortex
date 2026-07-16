@@ -15,7 +15,6 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IModRequirementExt } from "../../types";
 import { EntryActions } from "../entry_actions/EntryActions";
-import { FeedbackModal } from "../feedback_modal/FeedbackModal";
 import { PremiumModal } from "../premium_modal/PremiumModal";
 import { useModRequirementActions } from "./useModRequirementActions";
 
@@ -42,8 +41,6 @@ export const ModRequirement = ({
   const {
     givenFeedback,
     showPremiumAd,
-    showFeedbackModal,
-    setShowFeedbackModal,
     showPremiumModal,
     setShowPremiumModal,
     openModPage,
@@ -91,7 +88,7 @@ export const ModRequirement = ({
               isHidden={isHidden}
               variant="listing"
               onHelpful={handlePositiveFeedback}
-              onNotHelpful={() => setShowFeedbackModal(true)}
+              onNotHelpful={handleFeedbackSuccess}
               onToggleHide={() => onToggleHide?.()}
             />
           </div>
@@ -122,12 +119,6 @@ export const ModRequirement = ({
           setShowPremiumModal(false);
           openModPage();
         }}
-      />
-
-      <FeedbackModal
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        onSuccess={handleFeedbackSuccess}
       />
     </>
   );

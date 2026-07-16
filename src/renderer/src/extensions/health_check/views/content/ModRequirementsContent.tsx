@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import type { IFileRequirementData } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
 import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
 import { log } from "@/logging";
@@ -18,11 +19,7 @@ import { opn } from "@/util/api";
 import { setModRequirementHidden } from "../../actions/persistent";
 import { MOD_REQUIREMENTS_CHECK_ID } from "../../checks/modRequirementsCheck";
 import { EntryActions } from "../../components/entry_actions/EntryActions";
-import { FeedbackModal } from "../../components/feedback_modal/FeedbackModal";
-import {
-  FileRequirement,
-  type IFileRequirementData,
-} from "../../components/file_requirement/FileRequirement";
+import { FileRequirement } from "../../components/file_requirement/FileRequirement";
 import { ModRequirement } from "../../components/mod_requirement/ModRequirement";
 import { useModRequirementActions } from "../../components/mod_requirement/useModRequirementActions";
 import { PremiumModal } from "../../components/premium_modal/PremiumModal";
@@ -75,8 +72,6 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
   const {
     givenFeedback,
     showPremiumAd,
-    showFeedbackModal,
-    setShowFeedbackModal,
     showPremiumModal,
     setShowPremiumModal,
     openModPage,
@@ -209,7 +204,7 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
           severity={entry.severity}
           variant="detail"
           onHelpful={handlePositiveFeedback}
-          onNotHelpful={() => setShowFeedbackModal(true)}
+          onNotHelpful={handleFeedbackSuccess}
           onToggleHide={handleToggleHide}
         />
       </div>
@@ -247,12 +242,6 @@ function ModRequirementsDetailView({ entry, api, onBack }: IDetailViewProps) {
           setShowPremiumModal(false);
           openModPage();
         }}
-      />
-
-      <FeedbackModal
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        onSuccess={handleFeedbackSuccess}
       />
     </div>
   );

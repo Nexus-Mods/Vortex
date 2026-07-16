@@ -4,13 +4,15 @@ import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckSessionState } from "./reducers/session";
 import type {
   HealthCheckId,
-  IFileLevelRequirements,
-  IFileRequirementsCheckMetadata,
   IModMissingRequirements,
   IModRequirementsCheckMetadata,
   IModRequirementExt,
   IModFileInfo,
 } from "./types";
+import type {
+  IFileLevelRequirements,
+  IFileRequirementsCheckMetadata,
+} from "./utils/fileRequirements/mapRequirementsReport";
 
 export type { HealthCheckId } from "./types";
 

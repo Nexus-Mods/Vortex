@@ -13,21 +13,7 @@ import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-/** Display data for one file in a requirement — a download candidate or an installed file. */
-export interface IFileRequirementData {
-  /** Composite file version id, used by the action handlers. */
-  fileUID: string;
-  adultContent: boolean;
-  modName: string;
-  modDescription: string;
-  modImageSrc: string;
-  fileName: string;
-  fileVersion: string;
-  /** Whether this file is installed (false for a download candidate). */
-  installed: boolean;
-  /** Whether this installed file is enabled (ignored when not installed). */
-  enabled: boolean;
-}
+import type { IFileRequirementData } from "../../utils/fileRequirements/cardHelpers";
 
 interface IFileRequirementProps {
   actions?: ReactNode;

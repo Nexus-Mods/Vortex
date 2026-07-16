@@ -24,7 +24,6 @@ export function useModRequirementActions(
   mod: IModRequirementExt,
   onInstalled?: () => void,
 ) {
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const feedbackMap = useSelector(feedbackGivenMap);
@@ -73,7 +72,6 @@ export function useModRequirementActions(
           reasons,
         ),
       );
-      setShowFeedbackModal(false);
     },
     [api, mod],
   );
@@ -81,8 +79,6 @@ export function useModRequirementActions(
   return {
     givenFeedback,
     showPremiumAd,
-    showFeedbackModal,
-    setShowFeedbackModal,
     showPremiumModal,
     setShowPremiumModal,
     openModPage,

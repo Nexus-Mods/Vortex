@@ -1,5 +1,5 @@
 import { mdiEye, mdiEyeOff, mdiThumbDownOutline, mdiThumbUpOutline } from "@mdi/js";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Severity } from "@/extensions/health_check/utils/shared/severityStyles";
@@ -7,13 +7,15 @@ import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { FeedbackModal } from "../feedback_modal/FeedbackModal";
+
 interface IEntryActionsProps {
   variant: "listing" | "detail";
   givenFeedback: boolean;
   isHidden?: boolean;
   severity?: Severity;
   onHelpful: () => void;
-  onNotHelpful: () => void;
+  onNotHelpful: (reasons: string[]) => void;
   onToggleHide: () => void;
 }
 
@@ -27,6 +29,7 @@ export function EntryActions({
   onToggleHide,
 }: IEntryActionsProps) {
   const { t } = useTranslation(["health_check", "common"]);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const appearance = variant === "listing" ? "weak" : "moderate";
 
   const handle = (fn: () => void) => (e: React.MouseEvent) => {
@@ -42,6 +45,7 @@ export function EntryActions({
           ? "invisible gap-x-1 group-focus-within:visible group-hover:visible"
           : "gap-x-2",
       ])}
+      onClick={(e) => e.stopPropagation()}
     >
       {variant === "detail" && !!severity && (
         <Typography appearance="subdued" typographyType="body-sm">
@@ -68,7 +72,7 @@ export function EntryActions({
         leftIconPath={mdiThumbDownOutline}
         size="sm"
         title={t("common:::not_helpful")}
-        onClick={handle(onNotHelpful)}
+        onClick={handle(() => setShowFeedbackModal(true))}
       />
 
       <Button
@@ -78,6 +82,15 @@ export function EntryActions({
         size="sm"
         title={isHidden ? t("common:::unhide") : t("common:::hide")}
         onClick={handle(onToggleHide)}
+      />
+
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        onSuccess={(reasons) => {
+          onNotHelpful(reasons);
+          setShowFeedbackModal(false);
+        }}
       />
     </div>
   );
