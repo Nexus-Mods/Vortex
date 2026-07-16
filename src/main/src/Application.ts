@@ -35,6 +35,7 @@ import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
 import DuckDBSingleton from "./store/DuckDBSingleton";
 import { flattenState } from "./store/flattenState";
+import { healInvalidKeys } from "./store/healInvalidKeys";
 import LevelPersist, { DatabaseLocked, DatabaseOpenError } from "./store/LevelPersist";
 import {
   initMainPersistence,
@@ -971,6 +972,18 @@ class Application {
         await this.importBackup(finalPersistor, this.mArgs.restore, true);
       } else if (this.mArgs.merge !== undefined) {
         await this.importBackup(finalPersistor, this.mArgs.merge, false);
+      }
+
+      // 5b. Self-heal keys clobbered into non-UTF-8 bytes (LAZ-788). Such keys
+      // are unremovable through the normal delete path and otherwise re-trigger
+      // the state-corruption dialog on every launch. Do this before hydration so
+      // the renderer never sees them. Best-effort — never block startup on it.
+      try {
+        await healInvalidKeys(finalPersistor);
+      } catch (err) {
+        log("warn", "state heal failed", {
+          error: getErrorMessageOrDefault(err),
+        });
       }
 
       // 6. Initialize the IPC-based persistence system
