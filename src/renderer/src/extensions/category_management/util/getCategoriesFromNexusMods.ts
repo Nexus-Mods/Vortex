@@ -1,7 +1,8 @@
 import type { IGameInfo, IModCategory } from "@nexusmods/nexus-api";
 
 import { log } from "@/logging";
-import { getApplication } from "@/util/api";
+
+import { getApplication } from "../../../util/application";
 
 const GameV1URL = (domainName: string) => `https://api.nexusmods.com/v1/games/${domainName}.json`;
 
