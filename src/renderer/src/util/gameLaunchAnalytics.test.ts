@@ -62,6 +62,7 @@ describe("game launch analytics", () => {
     const exited = h.events.find((e) => e.eventName === "app_game_exited");
     expect(exited).toBeDefined();
     expect(exited?.properties.launch_session_id).toBe(sessionId);
+    expect(exited?.properties.launch_method).toBe("direct_exe");
     expect(typeof exited?.properties.duration_ms).toBe("number");
     expect(exited?.properties.exit_code).toBeNull();
   });

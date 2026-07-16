@@ -18,6 +18,7 @@ import type { IStarterInfo } from "./StarterInfo";
 interface ILaunchRecord {
   sessionId: string;
   gameId: number | null;
+  launchMethod: GameLaunchMethod;
   launchTime: number;
   // Set from runExecutable's exit for Vortex-spawned launches; stays null for store launches.
   exitCode: number | null;
@@ -65,6 +66,7 @@ export function emitExitsForStoppedTools(
       "analytics-track-mixpanel-event",
       new AppGameExitedEvent({
         game_id: record.gameId,
+        launch_method: record.launchMethod,
         launch_session_id: record.sessionId,
         duration_ms: Date.now() - record.launchTime,
         exit_code: record.exitCode,
@@ -92,9 +94,11 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   const state: IState = api.getState();
   const gameId = numericNexusGameId(info.gameId);
   const sessionId = shortid();
+  const method = launchMethod(info);
   pendingLaunches.set(makeExeId(info.exePath), {
     sessionId,
     gameId,
+    launchMethod: method,
     launchTime: Date.now(),
     exitCode: null,
   });
@@ -103,7 +107,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
     "analytics-track-mixpanel-event",
     new AppGameLaunchedEvent({
       game_id: gameId,
-      launch_method: launchMethod(info),
+      launch_method: method,
       enabled_mod_count: enabledModCountForProfile(state, profileId),
       launch_session_id: sessionId,
     }),

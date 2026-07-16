@@ -129,6 +129,7 @@ export class AppGameLaunchedEvent implements MixpanelEvent {
 /** Fields on the app_game_exited event. */
 export interface GameExitedProps {
   game_id: number | null;
+  launch_method: GameLaunchMethod;
   launch_session_id: string;
   duration_ms: number;
   // Process exit code, when Vortex launched the process itself; null for store launches.
@@ -137,7 +138,7 @@ export interface GameExitedProps {
 
 /**
  * Sent when a launched game/tool process exits. `duration_ms` is the time since its launch;
- * `launch_session_id` matches the app_game_launched it pairs with.
+ * `launch_method` and `launch_session_id` match the app_game_launched it pairs with.
  */
 export class AppGameExitedEvent implements MixpanelEvent {
   readonly eventName = "app_game_exited";
