@@ -80,7 +80,7 @@ import {
   FULL_COLLECTION_INFO,
   FULL_REVISION_INFO,
   COLLECTION_SEARCH_QUERY,
-  MOD_REQUIREMENTS_INFO,
+  getModRequirementsInfo,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
@@ -945,7 +945,7 @@ export function onGetModRequirements(
         return nexus.modsByUid(
           {
             modId: true,
-            modRequirements: MOD_REQUIREMENTS_INFO,
+            modRequirements: getModRequirementsInfo(),
             uid: true,
             thumbnailUrl: true,
           },
