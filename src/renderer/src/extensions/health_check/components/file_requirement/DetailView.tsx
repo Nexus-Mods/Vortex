@@ -40,6 +40,9 @@ import { OrGroup } from "./groups/OrGroup";
 import { ReplaceGroup } from "./groups/ReplaceGroup";
 import { ToggleGroup } from "./groups/ToggleGroup";
 
+// todo create a "body" wrapper to handle OR/AND, prop in the title and type
+// missing / correct-version-uninstalled won't have AND's
+
 /** The group for a single requirement, dispatched on its kind. */
 const renderRequirementGroup = ({
   requirement,
@@ -125,7 +128,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
             });
 
   return (
-    <>
+    <div className="rounded-lg border border-stroke-weak">
       <div className="flex items-center justify-between gap-x-4 border-b border-stroke-weak p-3">
         <div className="flex min-w-0 items-center gap-x-2">
           <Icon
@@ -221,6 +224,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
           }}
         />
       </div>
-    </>
+    </div>
   );
 };

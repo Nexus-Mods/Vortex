@@ -2,41 +2,23 @@ import { mdiChevronRight, mdiDownload } from "@mdi/js";
 import React, { type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  severityStyleMap,
-  type Severity,
-} from "@/extensions/health_check/utils/shared/severityStyles";
-import type { IExtensionApi } from "@/types/IExtensionContext";
+import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import type { IModRequirementExt } from "../../types";
+import type { IListingRowProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { PremiumModal } from "../premium_modal/PremiumModal";
-import { useModRequirementActions } from "./useModRequirementActions";
 
-interface IModRequirementProps {
-  api: IExtensionApi;
-  isHidden?: boolean;
-  severity: Severity;
-  requirementInfo: IModRequirementExt;
-  onClick: () => void;
-  onToggleHide?: () => void;
-}
-
-export const ModRequirement = ({
-  api,
-  isHidden,
-  severity,
-  onClick,
-  onToggleHide,
-  requirementInfo,
-}: IModRequirementProps) => {
+export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IListingRowProps) => {
   const { t } = useTranslation(["health_check", "common"]);
-  const severityStyle = severityStyleMap[severity];
+  const mod = entry.data as IModRequirementExt;
+  const severityStyle = severityStyleMap[entry.severity];
 
   const {
     givenFeedback,
@@ -47,7 +29,7 @@ export const ModRequirement = ({
     installInApp,
     handlePositiveFeedback,
     handleFeedbackSuccess,
-  } = useModRequirementActions(api, requirementInfo);
+  } = useModRequirementActions(api, mod);
 
   return (
     <>
@@ -55,11 +37,11 @@ export const ModRequirement = ({
         className="group hover-overlay-weak flex w-full cursor-pointer items-center gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-subdued"
         role="button"
         tabIndex={0}
-        onClick={onClick}
+        onClick={onOpen}
         onKeyDown={(e: KeyboardEvent) => {
           if (["Enter", " "].includes(e.key)) {
             e.preventDefault();
-            onClick();
+            onOpen();
           }
         }}
       >
@@ -72,13 +54,12 @@ export const ModRequirement = ({
           <div className="flex items-start justify-between gap-x-4">
             <div className="min-w-0">
               <Typography className="truncate">
-                {t("listing::item::title", { modName: requirementInfo.requiredBy.modName })}
+                {t("listing::item::title", { modName: mod.requiredBy.modName })}
               </Typography>
 
               <Typography appearance="subdued" className="truncate" typographyType="body-sm">
                 {t("listing::item::description", {
-                  dependencyModName:
-                    requirementInfo.modName || requirementInfo.modUrl || requirementInfo.notes,
+                  dependencyModName: mod.modName || mod.modUrl || mod.notes,
                 })}
               </Typography>
             </div>
@@ -89,7 +70,7 @@ export const ModRequirement = ({
               variant="listing"
               onHelpful={handlePositiveFeedback}
               onNotHelpful={handleFeedbackSuccess}
-              onToggleHide={() => onToggleHide?.()}
+              onToggleHide={onToggleHide}
             />
           </div>
         </div>

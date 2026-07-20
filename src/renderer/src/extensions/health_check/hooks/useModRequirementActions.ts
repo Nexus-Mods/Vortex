@@ -5,11 +5,11 @@ import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequir
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn } from "@/util/api";
 
-import { HealthCheckFeedbackEvent } from "../../../analytics/mixpanel/MixpanelEvents";
-import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
-import { setFeedbackGiven } from "../../actions/persistent";
-import { feedbackGivenMap } from "../../selectors";
-import type { IModRequirementExt } from "../../types";
+import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
+import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import { setFeedbackGiven } from "../actions/persistent";
+import { feedbackGivenMap } from "../selectors";
+import type { IModRequirementExt } from "../types";
 
 /**
  * Shared action logic for a single mod requirement, used by both the listing row

@@ -49,9 +49,9 @@
       "error": "Was this error helpful?"
     },
     "item": {
-      "title": "Additional mod may be required for: {{modName}}",
-      "description": "Check <modLink>{{modName}} description</modLink> for details.",
+      "title": "Possible missing required mod for: {{modName}}",
       "author_note": "Note: {{note}}",
+      "mod_page_source_note": "This requirement was identified from the mod page rather than the file-level requirement system, so it may not be required for your specific configuration. <modLink>View the mod page to get full details</modLink>.",
       "open_external_mod_page": "Open external mod page",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
       "confirm_install": "Confirm install",
