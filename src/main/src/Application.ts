@@ -13,7 +13,7 @@ import {
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { IWindow } from "@vortex/shared/state";
 import { currentStatePath } from "@vortex/shared/state";
-import { app, crashReporter, dialog, ipcMain, protocol, shell } from "electron";
+import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
@@ -26,7 +26,7 @@ import winapi from "winapi-bindings";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
 import { terminate, terminateAsync } from "./errorHandling";
-import { disableErrorReporting, reportCrash, reportPendingNativeCrashes } from "./errorReporting";
+import { disableErrorReporting, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { getVortexPath, setVortexPath } from "./getVortexPath";
@@ -140,11 +140,6 @@ class Application {
     mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 
     this.mStartupLogPath = path.join(tempPath, "startup.log");
-
-    app.setPath("crashDumps", path.join(tempPath, "dumps"));
-    crashReporter.start({
-      uploadToServer: false,
-    });
 
     const enableLogging =
       process.env.NODE_ENV === "development" || process.env.VORTEX_ENABLE_LOGGING === "1";
@@ -353,9 +348,6 @@ class Application {
   }
 
   private async regularStart(args: IParameters): Promise<void> {
-    // not awaited so the network round-trip doesn't delay startup
-    void reportPendingNativeCrashes();
-
     try {
       await writeFile(this.mStartupLogPath, new Date().toUTCString());
     } catch {
