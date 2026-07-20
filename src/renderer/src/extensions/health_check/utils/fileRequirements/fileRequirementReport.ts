@@ -48,6 +48,25 @@ export interface IFileRequirementReport {
   requirements: IFileRequirement[];
 }
 
+export type RequirementJoin = "collapse" | "and";
+
+export const groupJoin = (category: FileRequirementCategory): RequirementJoin =>
+  category === "download" || category === "install-uninstalled" ? "collapse" : "and";
+
+export const groupTitleKey = (category: FileRequirementCategory): string => {
+  switch (category) {
+    case "download":
+    case "install-uninstalled":
+      return "detail::item::install_required";
+    case "download-replace":
+      return "detail::item::different_version_required";
+    case "toggle":
+      return "detail::item::enabled_version";
+    case "or":
+      return "detail::item::pick_one";
+  }
+};
+
 /** The report category a requirement belongs to; drives grouping, copy and layout. */
 export const categoryOf = (requirement: IFileRequirement): FileRequirementCategory => {
   switch (requirement.kind) {

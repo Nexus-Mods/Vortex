@@ -12,10 +12,8 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import { CandidateCard } from "../cards/CandidateCard";
 import { FileRequirement } from "../FileRequirement";
-import { RequirementGroup } from "../RequirementGroup";
 
-/** Download-replace report: a wrong version is enabled; download a different one. */
-export const ReplaceGroup = ({
+export const ReplaceRows = ({
   ctx,
   requirement,
 }: {
@@ -25,7 +23,7 @@ export const ReplaceGroup = ({
   const { t } = useTranslation("health_check");
 
   return (
-    <RequirementGroup title={t("detail::item::different_version_required")}>
+    <>
       <div className="space-y-3 border-b border-surface-mid pb-6">
         <Typography appearance="subdued" className="px-6 font-semibold" typographyType="body-sm">
           {t("detail::item::required_version")}
@@ -54,6 +52,6 @@ export const ReplaceGroup = ({
           showMod={false}
         />
       </div>
-    </RequirementGroup>
+    </>
   );
 };

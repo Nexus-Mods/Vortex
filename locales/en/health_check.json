@@ -50,6 +50,7 @@
     },
     "item": {
       "title": "Possible missing required mod for: {{modName}}",
+      "may_require_file": "May require this additional mod file to be installed to work correctly:",
       "author_note": "Note: {{note}}",
       "mod_page_source_note": "This requirement was identified from the mod page rather than the file-level requirement system, so it may not be required for your specific configuration. <modLink>View the mod page to get full details</modLink>.",
       "open_external_mod_page": "Open external mod page",

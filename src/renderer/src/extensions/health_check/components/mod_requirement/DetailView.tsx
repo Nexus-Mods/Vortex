@@ -103,18 +103,30 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
           />
         </div>
 
-        <div className="pt-4 pb-6">
-          {!!mod.notes && (
-            <Typography appearance="subdued" className="mb-4 px-6">
-              {t("detail::item::author_note", { note: mod.notes })}
-            </Typography>
-          )}
+        <div className="space-y-4 pt-4 pb-6">
+          <Typography appearance="subdued" as="div" className="mb-4 space-y-4 px-6">
+            <p>{t("detail::item::may_require_file")}</p>
 
-          <div className="space-y-4">
-            <FileRequirement
-              actions={
-                mod.externalRequirement ? (
-                  !!mod.modUrl && (
+            {!!mod.notes && <p>{t("detail::item::author_note", { note: mod.notes })}</p>}
+          </Typography>
+
+          <FileRequirement
+            actions={
+              mod.externalRequirement ? (
+                !!mod.modUrl && (
+                  <Button
+                    appearance="moderate"
+                    brand="neutral"
+                    leftIconPath={mdiOpenInNew}
+                    size="sm"
+                    onClick={openModPage}
+                  >
+                    {t("detail::item::open_external_mod_page")}
+                  </Button>
+                )
+              ) : (
+                <>
+                  {!!mod.modUrl && (
                     <Button
                       appearance="moderate"
                       brand="neutral"
@@ -122,62 +134,43 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                       size="sm"
                       onClick={openModPage}
                     >
-                      {t("detail::item::open_external_mod_page")}
+                      {t("detail::item::install_via_mod_page")}
                     </Button>
-                  )
-                ) : (
-                  <>
-                    {!!mod.modUrl && (
-                      <Button
-                        appearance="moderate"
-                        brand="neutral"
-                        leftIconPath={mdiOpenInNew}
-                        size="sm"
-                        onClick={openModPage}
-                      >
-                        {t("detail::item::install_via_mod_page")}
-                      </Button>
-                    )}
+                  )}
 
-                    <Button
-                      appearance="strong"
-                      brand="neutral"
-                      leftIconPath={mdiDownload}
-                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-                      size="sm"
-                      onClick={() => void installInApp()}
-                    >
-                      {t("detail::item::install_one_click")}
-                    </Button>
-                  </>
-                )
-              }
-              file={fileData}
-            />
+                  <Button
+                    appearance="strong"
+                    brand="neutral"
+                    leftIconPath={mdiDownload}
+                    rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                    size="sm"
+                    onClick={() => void installInApp()}
+                  >
+                    {t("detail::item::install_one_click")}
+                  </Button>
+                </>
+              )
+            }
+            file={fileData}
+          />
 
-            {mod.externalRequirement && (
-              <div className="flex items-center gap-x-3 rounded-sm bg-info-weak/20 p-3">
-                <Typography
-                  appearance="moderate"
-                  as="div"
-                  className="grow"
-                  typographyType="body-sm"
-                >
-                  {t("detail::item::after_installing")}
-                </Typography>
+          {mod.externalRequirement && (
+            <div className="flex items-center gap-x-3 rounded-sm bg-info-weak/20 p-3">
+              <Typography appearance="moderate" as="div" className="grow" typographyType="body-sm">
+                {t("detail::item::after_installing")}
+              </Typography>
 
-                <Button
-                  appearance="moderate"
-                  brand="neutral"
-                  leftIconPath={mdiCheck}
-                  size="sm"
-                  onClick={handleConfirmInstall}
-                >
-                  {t("detail::item::confirm_install")}
-                </Button>
-              </div>
-            )}
-          </div>
+              <Button
+                appearance="moderate"
+                brand="neutral"
+                leftIconPath={mdiCheck}
+                size="sm"
+                onClick={handleConfirmInstall}
+              >
+                {t("detail::item::confirm_install")}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

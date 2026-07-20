@@ -11,14 +11,12 @@ import {
 import {
   canQuickInstall,
   downloadCandidates,
+  groupJoin,
+  groupTitleKey,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IFileRequirementReport } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
-import type {
-  IFileRequirement,
-  IFileRequirementCandidate,
-} from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
+import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -34,38 +32,7 @@ import { isFileEntryHidden } from "../../views/content/fileRequirementEntries";
 import type { IDetailViewProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { PremiumModal } from "../premium_modal/PremiumModal";
-import { DownloadGroup } from "./groups/DownloadGroup";
-import { InstallUninstalledGroup } from "./groups/InstallUninstalledGroup";
-import { OrGroup } from "./groups/OrGroup";
-import { ReplaceGroup } from "./groups/ReplaceGroup";
-import { ToggleGroup } from "./groups/ToggleGroup";
-
-// todo create a "body" wrapper to handle OR/AND, prop in the title and type
-// missing / correct-version-uninstalled won't have AND's
-
-/** The group for a single requirement, dispatched on its kind. */
-const renderRequirementGroup = ({
-  requirement,
-  ctx,
-  api,
-}: {
-  requirement: IFileRequirement;
-  ctx: IFileActionContext;
-  api: IExtensionApi;
-}) => {
-  switch (requirement.kind) {
-    case "missing":
-      return <DownloadGroup ctx={ctx} requirement={requirement} />;
-    case "wrong-version-installed":
-      return <ReplaceGroup ctx={ctx} requirement={requirement} />;
-    case "correct-version-uninstalled":
-      return <InstallUninstalledGroup api={api} requirement={requirement} />;
-    case "wrong-version-enabled":
-      return <ToggleGroup api={api} requirement={requirement} />;
-    case "or":
-      return <OrGroup ctx={ctx} requirement={requirement} />;
-  }
-};
+import { RequirementBody } from "./RequirementBody";
 
 export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const { t } = useTranslation(["health_check", "common"]);
@@ -192,23 +159,13 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         </Typography>
 
         <div className="space-y-4">
-          {report.requirements.map((requirement, index) => (
-            <React.Fragment key={requirement.requirementDefId}>
-              {index > 0 && (
-                <div aria-hidden className="flex h-9.5 items-center gap-x-3">
-                  <div className="h-px w-3 bg-surface-mid" />
-
-                  <Typography as="div" className="font-semibold">
-                    And
-                  </Typography>
-
-                  <div className="h-px grow bg-surface-mid" />
-                </div>
-              )}
-
-              {renderRequirementGroup({ api, ctx, requirement })}
-            </React.Fragment>
-          ))}
+          <RequirementBody
+            api={api}
+            ctx={ctx}
+            join={groupJoin(report.category)}
+            requirements={report.requirements}
+            title={t(groupTitleKey(report.category))}
+          />
         </div>
 
         <PremiumModal

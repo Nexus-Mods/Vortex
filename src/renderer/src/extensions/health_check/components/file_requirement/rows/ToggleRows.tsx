@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { RequirementGroup } from "@/extensions/health_check/components/file_requirement/RequirementGroup";
 import { installedToFileData } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import { viewInLoadout } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
@@ -12,8 +11,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { EnableCard } from "../cards/EnableCard";
 import { FileRequirement } from "../FileRequirement";
 
-/** Toggle report: the correct version is installed-but-disabled; switch the active version. */
-export const ToggleGroup = ({
+export const ToggleRows = ({
   api,
   requirement,
 }: {
@@ -23,7 +21,7 @@ export const ToggleGroup = ({
   const { t } = useTranslation("health_check");
 
   return (
-    <RequirementGroup title={t("detail::item::enabled_version")}>
+    <>
       <div className="space-y-3 border-b border-surface-mid pb-6">
         <Typography appearance="subdued" className="px-6 font-semibold" typographyType="body-sm">
           {t("detail::item::required_version")}
@@ -56,6 +54,6 @@ export const ToggleGroup = ({
           showMod={false}
         />
       </div>
-    </RequirementGroup>
+    </>
   );
 };
