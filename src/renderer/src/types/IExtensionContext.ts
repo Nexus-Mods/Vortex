@@ -83,7 +83,26 @@ export type { PersistorKey, IPersistor };
  * Open interface type registry for API events. Enhance using `declare module` syntax.
  * @public
  */
-export interface ApiEvents {}
+export interface ApiEvents {
+  "start-download": (
+    rawUrls: string[],
+    modInfo: { game?: string; name?: string } & Record<string, unknown>,
+    fileName?: string,
+    callback?: (err: Error | null, id?: string) => void,
+    redownload?: "never" | "ask" | "replace" | "always",
+    options?: { allowInstall?: boolean | "force" },
+  ) => string;
+
+  "remove-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+
+  "pause-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+
+  "resume-download": (
+    downloadId: string,
+    callback?: (err: Error | null, id?: string) => void,
+    options?: { allowInstall?: boolean | "force" },
+  ) => void;
+}
 
 /** Represents all event names.
  * @public
