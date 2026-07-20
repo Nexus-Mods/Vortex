@@ -11,7 +11,7 @@ import {
   enabledModCountForProfile,
   lastActiveProfileForGame,
 } from "../extensions/profile_management/selectors";
-import { makeExeId } from "../reducers/session";
+import { isExeIdRunning, makeExeId } from "../reducers/session";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import type { IStarterInfo } from "./StarterInfo";
@@ -134,8 +134,8 @@ export function emitExitsForStoppedTools(
   current: Record<string, unknown>,
 ): void {
   for (const [key, record] of [...pendingLaunches.entries()]) {
-    const wasRunning = previous?.[record.watchExeId] !== undefined;
-    const isRunning = current?.[record.watchExeId] !== undefined;
+    const wasRunning = isExeIdRunning(previous, record.watchExeId);
+    const isRunning = isExeIdRunning(current, record.watchExeId);
 
     if (!record.started && isRunning) {
       // The watched (game) process has come up; from here its disappearance ends the session.
@@ -183,7 +183,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   let started = true;
   if (gameExeId !== undefined && gameExeId !== launchedExeId) {
     watchExeId = gameExeId;
-    started = state.session?.base?.toolsRunning?.[gameExeId] !== undefined;
+    started = isExeIdRunning(state.session?.base?.toolsRunning ?? {}, gameExeId);
   }
 
   const record: ILaunchRecord = {

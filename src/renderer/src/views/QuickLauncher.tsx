@@ -11,7 +11,7 @@ import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";
 import { useExtensionContext } from "../ExtensionProvider";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-import { makeExeId } from "../reducers/session";
+import { hasExclusiveToolRunning, isExeRunning } from "../reducers/session";
 import type { IState } from "../types/IState";
 import Debouncer from "../util/Debouncer";
 import { log } from "../util/log";
@@ -291,11 +291,8 @@ export const QuickLauncher: React.FC = () => {
     return null;
   }
 
-  const exclusiveRunning =
-    Object.keys(toolsRunning).find((exeId) => toolsRunning[exeId].exclusive) !== undefined;
-  const primaryRunning =
-    truthy(starter.exePath) &&
-    Object.keys(toolsRunning).find((exeId) => exeId === makeExeId(starter.exePath)) !== undefined;
+  const exclusiveRunning = hasExclusiveToolRunning(toolsRunning);
+  const primaryRunning = isExeRunning(toolsRunning, starter.exePath);
 
   return (
     <div className="container-quicklaunch">

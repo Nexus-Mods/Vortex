@@ -2,6 +2,7 @@ import * as path from "path";
 
 import * as actions from "../actions/session";
 import type { IReducerSpec } from "../types/IExtensionContext";
+import type { IRunningTool } from "../types/IState";
 import { addUniqueSafe, deleteOrNop, pushSafe, removeValue, setSafe } from "../util/storeHelper";
 
 export function makeExeId(exePath: string): string {
@@ -11,6 +12,32 @@ export function makeExeId(exePath: string): string {
   // On the flipside, if we _don't_ use the basename, lookup will be more complicated and
   // thus slower.
   return path.basename(exePath).toLowerCase();
+}
+
+/** True when the exe with this id (from makeExeId) appears in a session.base.toolsRunning map. */
+export function isExeIdRunning(
+  toolsRunning: Readonly<Record<string, unknown>>,
+  exeId: string,
+): boolean {
+  return toolsRunning[exeId] !== undefined;
+}
+
+/** True when the exe at this path is running (its basename appears in toolsRunning). */
+export function isExeRunning(
+  toolsRunning: Readonly<Record<string, unknown>>,
+  exePath: string,
+): boolean {
+  if (!exePath) {
+    return false;
+  }
+  return isExeIdRunning(toolsRunning, makeExeId(exePath));
+}
+
+/** True when any running tool holds the exclusive lock (which blocks other launches). */
+export function hasExclusiveToolRunning(
+  toolsRunning: Readonly<Record<string, IRunningTool>>,
+): boolean {
+  return Object.values(toolsRunning).some((tool) => tool.exclusive);
 }
 
 /**
