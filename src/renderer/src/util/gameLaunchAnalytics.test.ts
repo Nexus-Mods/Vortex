@@ -54,14 +54,16 @@ describe("game launch analytics", () => {
     const h = harness();
     const info = makeStarterInfo({ exePath: "C:/g/exited.exe" });
     emitGameLaunched(h.api, info);
-    const sessionId = h.events.find((e) => e.eventName === "app_game_launched")?.properties
-      .launch_session_id;
+    const launched = h.events.find((e) => e.eventName === "app_game_launched");
+    const sessionId = launched?.properties.launch_session_id;
 
     emitExitsForStoppedTools(h.api, { [makeExeId(info.exePath)]: { started: 0 } }, {});
 
     const exited = h.events.find((e) => e.eventName === "app_game_exited");
     expect(exited).toBeDefined();
     expect(exited?.properties.launch_session_id).toBe(sessionId);
+    expect(exited?.properties.launch_method).toBe("direct_exe");
+    expect(exited?.properties.enabled_mod_count).toBe(launched?.properties.enabled_mod_count);
     expect(typeof exited?.properties.duration_ms).toBe("number");
     expect(exited?.properties.exit_code).toBeNull();
   });
