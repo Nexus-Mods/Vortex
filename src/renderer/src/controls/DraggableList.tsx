@@ -9,8 +9,10 @@ import {
   type DropTargetSpec,
 } from "react-dnd";
 
+import { keepIndicesInRange, ListWindow } from "../util/ListWindow";
 import { ComponentEx } from "./ComponentEx";
 import DraggableItem from "./DraggableListItem";
+import { moveItems } from "./dragReorder";
 
 export interface IDraggableListProps {
   disabled?: boolean;
@@ -23,6 +25,9 @@ export interface IDraggableListProps {
   apply: (ordered: any[]) => void;
   style?: React.CSSProperties;
   className?: string;
+  // Window the rendered rows to the visible scroll range. Requires uniform
+  //  row heights (the pitch is measured from the first two rendered rows).
+  virtualized?: boolean;
 }
 
 interface IDraggableListState {
@@ -34,6 +39,9 @@ interface IDraggableListState {
 
 type IProps = IDraggableListProps & { connectDropTarget: ConnectDropTarget };
 
+// below this row count everything is rendered; windowing isn't worth it
+const VIRTUALIZE_THRESHOLD = 100;
+
 /**
  * A list component that allows the user to manually re-order the items
  * in it.
@@ -43,6 +51,8 @@ type IProps = IDraggableListProps & { connectDropTarget: ConnectDropTarget };
  *   to specify idFunc through props
  */
 class DraggableList extends ComponentEx<IProps, IDraggableListState> {
+  private mWindow = new ListWindow({ onChange: () => this.forceUpdate() });
+
   constructor(props: IProps) {
     super(props);
 
@@ -54,46 +64,87 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     });
   }
 
+  public componentDidMount() {
+    if (this.virtualized()) {
+      this.mWindow.attach();
+      this.mWindow.measurePitch(this.props.items);
+    }
+  }
+
+  public componentWillUnmount() {
+    this.mWindow.detach();
+  }
+
   public componentDidUpdate(prevProps: IProps) {
     if (prevProps.items !== this.props.items) {
       this.nextState.ordered = this.props.items.slice(0);
+      // The row count changed (filter cleared, mods deployed); recompute the
+      //  window from the current scroll position, otherwise a stale window
+      //  can leave the viewport showing only padding.
+      this.mWindow.update();
+    }
+    if (this.virtualized()) {
+      this.mWindow.attach();
+      this.mWindow.measurePitch(this.props.items);
     }
   }
 
   public render(): JSX.Element {
     const { connectDropTarget, id, itemRenderer, style, className } = this.props;
     const { ordered, selectedItems, draggedItems } = this.state;
-    const isSelected = (item) => selectedItems.some((it) => this.itemId(item) === this.itemId(it));
+    const selectedIds = new Set(selectedItems.map((it) => this.itemId(it)));
+
+    const length = ordered.length;
+    let start = 0;
+    let end = length - 1;
+    let listStyle: React.CSSProperties;
+    if (this.virtualized()) {
+      // Keep dragged rows inside the rendered slice so their react-dnd source
+      //  is never unmounted mid-drag (which would drop the reorder).
+      const range = keepIndicesInRange(
+        this.mWindow.range(length),
+        draggedItems.map((item) => this.findItemIndex(item)),
+      );
+      start = range.start;
+      end = range.end;
+      listStyle = this.mWindow.padding(range, length);
+    }
 
     return connectDropTarget(
       <div style={style} className={className}>
-        <ListGroup>
-          {ordered.map((item, idx) => (
-            <DraggableItem
-              disabled={this.props.disabled}
-              containerId={id}
-              key={this.itemId(item)}
-              item={item}
-              index={idx}
-              findItemIndex={this.findItemIndex}
-              isLocked={this.itemLocked(item)}
-              itemRenderer={itemRenderer}
-              take={this.take}
-              onChangeIndex={this.changeIndex}
-              apply={this.apply}
-              onClick={this.handleItemClick(idx)}
-              selectedItems={selectedItems}
-              isSelected={isSelected(item)}
-              draggedItems={draggedItems}
-              onDragStart={this.handleDragStart}
-            />
-          ))}
-        </ListGroup>
+        <div ref={this.mWindow.setContent}>
+          <ListGroup style={listStyle}>
+            {ordered.slice(start, end + 1).map((item, idx) => (
+              <DraggableItem
+                disabled={this.props.disabled}
+                containerId={id}
+                key={this.itemId(item)}
+                item={item}
+                index={start + idx}
+                findItemIndex={this.findItemIndex}
+                isLocked={this.itemLocked(item)}
+                itemRenderer={itemRenderer}
+                take={this.take}
+                onChangeIndex={this.changeIndex}
+                apply={this.apply}
+                onClick={this.handleItemClick}
+                selectedItems={selectedItems}
+                isSelected={selectedIds.has(this.itemId(item))}
+                draggedItems={draggedItems}
+                onDragStart={this.handleDragStart}
+              />
+            ))}
+          </ListGroup>
+        </div>
       </div>,
     );
   }
 
-  private handleItemClick = (index: number) => (event: React.MouseEvent) => {
+  private virtualized(): boolean {
+    return this.props.virtualized === true && this.props.items.length > VIRTUALIZE_THRESHOLD;
+  }
+
+  private handleItemClick = (index: number, event: React.MouseEvent) => {
     const { ordered, selectedItems, lastSelectedIndex } = this.state;
     const item = ordered[index];
     if (this.itemLocked(item) || this.props.disabled) {
@@ -135,27 +186,12 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     const { selectedItems, ordered } = this.state;
     const copy = ordered.slice();
 
-    // If multiple items are selected, handle reordering for all of them
-    let itemsToMove = selectedItems.includes(copy[oldIndex])
+    // If multiple items are selected, move all of them; otherwise the single item
+    const itemsToMove = selectedItems.includes(copy[oldIndex])
       ? selectedItems
-      : [take(changeContainer ? undefined : copy)]; // Fall back to single item
+      : [take(changeContainer ? undefined : copy)];
 
-    // Remove selected items from their old position
-    itemsToMove.forEach((item) => {
-      const index = copy.indexOf(item);
-      if (index !== -1) {
-        copy.splice(index, 1);
-      }
-    });
-
-    // Insert items in new position
-    itemsToMove.forEach((itm) => {
-      const item = Array.isArray(itm) ? itm[0] : itm;
-      copy.splice(newIndex, 0, item);
-      newIndex++;
-    });
-
-    this.nextState.ordered = copy;
+    this.nextState.ordered = moveItems(copy, itemsToMove, newIndex);
   };
 
   private itemLocked(item: any) {

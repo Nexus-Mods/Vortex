@@ -12,6 +12,13 @@ export interface IItemRendererProps {
   //  describing the issue directly on the mod entry in the LO page.
   invalidEntries?: IInvalidResult[];
 
+  // 1-based position of this entry in the full load order, precomputed by
+  //  the page.
+  position?: number;
+
+  // Number of locked entries in the load order, precomputed by the page.
+  lockedEntriesCount?: number;
+
   // Function components cannot be given refs, which means that DnD
   //  will not work when using the Vortex API's DraggableItem without
   //  forwarding the ref to the itemRenderer.
@@ -112,6 +119,14 @@ export interface ILoadOrderGameInfo {
     item: IItemRendererProps;
     forwardedRef?: (ref: any) => void;
   }>;
+
+  /**
+   * Set to true if a custom item renderer produces rows of a single, uniform
+   *  height. The load order page virtualizes long lists (rendering only the
+   *  rows on screen), which requires uniform row heights; the default renderer
+   *  guarantees this, so custom renderers must opt in.
+   */
+  uniformRowHeight?: boolean;
 
   /**
    * By default the FBLO extension will attempt to automatically generate the data

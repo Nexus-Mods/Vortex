@@ -2867,7 +2867,11 @@ interface IItemRendererProps {
     // (undocumented)
     invalidEntries?: IInvalidResult[];
     // (undocumented)
+    lockedEntriesCount?: number;
+    // (undocumented)
     loEntry: ILoadOrderEntry_2;
+    // (undocumented)
+    position?: number;
     // (undocumented)
     setRef?: (ref: any) => void;
 }
@@ -2961,6 +2965,7 @@ interface ILoadOrderGameInfo {
     noCollectionGeneration?: boolean;
     serializeLoadOrder: (loadOrder: LoadOrder, prev: LoadOrder) => Promise<void>;
     toggleableEntries?: boolean;
+    uniformRowHeight?: boolean;
     usageInstructions?: string | React.ComponentType<{}>;
     validate: (prev: LoadOrder, current: LoadOrder) => Promise<IValidationResult>;
 }

@@ -8,12 +8,12 @@ import { ComponentEx } from "../../../controls/ComponentEx";
 import type { IProfile, IState } from "../../../types/api";
 import * as selectors from "../../../util/selectors";
 import { setFBLoadOrder, setFBLoadOrderEntry } from "../actions/loadOrder";
-import { currentLoadOrderForProfile, currentModStateForProfile } from "../selectors";
+import { currentLoadOrderForProfile } from "../selectors";
 import type { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
+import { isEntryLocked } from "../util";
 import { LoadOrderIndexInput } from "./loadOrderIndex";
 
 interface IConnectedProps {
-  modState: any;
   loadOrder: LoadOrder;
   profile: IProfile;
 }
@@ -68,7 +68,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     const { loadOrder, className } = this.props;
     const key = !!item.name ? `${item.name}` : `${item.id}`;
 
-    let classes = ["load-order-entry"];
+    let classes = ["load-order-entry", "fblo-uniform-row"];
     if (className !== undefined) {
       classes = classes.concat(className.split(" "));
     }
@@ -82,13 +82,13 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
         <Checkbox
           className="entry-checkbox"
           checked={item.enabled}
-          disabled={this.isLocked(item)}
+          disabled={isEntryLocked(item.locked)}
           onChange={this.onStatusChange}
         />
       ) : null;
 
     const lock = () =>
-      this.isLocked(item) ? <Icon className="locked-entry-logo" name="locked" /> : null;
+      isEntryLocked(item.locked) ? <Icon className="locked-entry-logo" name="locked" /> : null;
 
     return (
       <ListGroupItem key={key} className={classes.join(" ")} ref={this.props.item.setRef}>
@@ -100,20 +100,17 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
           currentPosition={this.currentPosition()}
           lockedEntriesCount={this.lockedEntriesCount()}
           loadOrder={loadOrder}
-          isLocked={this.isLocked}
           onApplyIndex={this.onApplyIndex}
         />
         {this.renderValidationError()}
-        <p className="load-order-name">{key}</p>
+        <p className="load-order-name" title={key}>
+          {key}
+        </p>
         {this.renderExternalBanner(item)}
         {checkBox()}
         {lock()}
       </ListGroupItem>
     );
-  }
-
-  private isLocked(item: ILoadOrderEntry): boolean {
-    return [true, "true", "always"].includes(item.locked);
   }
 
   private isExternal(item: ILoadOrderEntry): boolean {
@@ -131,7 +128,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
 
   private currentPosition = (): number => {
     const { item, loadOrder } = this.props;
-    return loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
+    return item.position ?? loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
   };
 
   private onApplyIndex = (idx: number) => {
@@ -152,9 +149,10 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   };
 
   private lockedEntriesCount = (): number => {
-    const { loadOrder } = this.props;
-    const locked = loadOrder.filter((item) => this.isLocked(item));
-    return locked.length;
+    const { item, loadOrder } = this.props;
+    return (
+      item.lockedEntriesCount ?? loadOrder.filter((entry) => isEntryLocked(entry.locked)).length
+    );
   };
 }
 
@@ -163,7 +161,6 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   return {
     profile: profile,
     loadOrder: currentLoadOrderForProfile(state, profile.id),
-    modState: currentModStateForProfile(state, profile.id),
   };
 }
 
