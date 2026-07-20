@@ -973,20 +973,20 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    context.api.onAsync("discover-game", (gameId: string) => {
+    context.api.onAsync<string[]>("discover-game", (gameId: string) => {
       if (process.env.VORTEX_E2E === "1") {
         log(
           "debug",
           "discover-game suppressed: VORTEX_E2E=1, tests manage game paths explicitly to ensure deterministic behaviour across machines",
           { gameId },
         );
-        return PromiseBB.resolve();
+        return PromiseBB.resolve<string[]>([]);
       }
       const game = getGame(gameId);
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
       } else {
-        return PromiseBB.resolve();
+        return PromiseBB.resolve<string[]>([]);
       }
     });
 

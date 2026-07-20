@@ -474,7 +474,7 @@ export default function init(context: IExtensionContext) {
 
     context.api.onAsync(
       "will-remove-mod",
-      (gameId: string, modId, removeOpts: types.IRemoveModOptions) =>
+      (gameId: string, modId: string, removeOpts: types.IRemoveModOptions) =>
         onWillRemoveMods(context.api, gameId, [modId], removeOpts),
     );
   });

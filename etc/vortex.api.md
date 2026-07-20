@@ -2310,7 +2310,7 @@ interface IExtensionApi {
     lookupModReference: (ref: IModReference, options?: ILookupOptions) => Promise_2<IModLookupResult[]>;
     // (undocumented)
     NAMESPACE: string;
-    onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
+    onAsync: <TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(eventName: string, listener: (...args: TArgs) => PromiseLike<TResult>) => void;
     onStateChange?: <T = any>(path: string[], callback: StateChangeCallback<T>) => void;
     openArchive: (archivePath: string, options?: IArchiveOptions, extension?: string) => Promise_2<Archive>;
     registerProtocol: IRegisterProtocol;

@@ -781,7 +781,10 @@ export interface IExtensionApi {
    * returns a rejected promise.
    * If errors do need to be reported they have to be part of the resolved valued
    */
-  onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
+  onAsync: <TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
+    eventName: string,
+    listener: (...args: TArgs) => PromiseLike<TResult>,
+  ) => void;
 
   /**
    * wraps a function such that it will emitAndAwait will-eventName and did-eventName events
@@ -1320,15 +1323,6 @@ export interface IExtensionContext {
    * In extreme cases you could instead throw an exception from the check (which would bubble up
    * through the dispatch call) which will likely crash Vortex.
    * That might be preferrable to corrupting state
-   * Further: Most actions are processed twice, once in the UI process where they got triggered and
-   *   in the main process where they get persisted to disk. If you stop an action in the UI
-   *   process it will not get forwarded to the main process, so this check only runs once. If you
-   *   allow it through though, this check is done a second time in the main process and you *need*
-   *   to generate the same result, you can't allow an action in the UI process and then reject it
-   *   in the main process!
-   *   Due to checks being run twice, if you write a log message that also will happen twice. You
-   *   can check "process.type === 'browser') to log only in the main (aka browser) process but
-   *   again: The result of the check *has to has to has to* be the same between all processes.
    * @param {string} actionType type of the action (like STORE_WINDOW_SIZE)
    * @param {SanityCheck} check the check to run for the specified action
    */

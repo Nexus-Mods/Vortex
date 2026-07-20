@@ -1927,19 +1927,27 @@ function init(context: IExtensionContextExt) {
         );
 
         // this handles the case that the content of a profile changes
-        context.api.onAsync("did-deploy", (profileId, deployment, progressCB, deployOptions) => {
-          deploying = false;
-          if (pluginsChangedQueued) {
-            pluginsChangedQueued = false;
-            context.api.events.emit("trigger-test-run", "plugins-changed", 500);
-          }
-          const activeCollection = selectors.getCollectionActiveSession(context.api.getState());
-          if (activeCollection || deployOptions?.isCollectionPostprocessCall) {
-            // handled in 'collection-postprocess-complete' event
-            return Promise.resolve();
-          }
-          return onDidDeploy(context.api, profileId);
-        });
+        context.api.onAsync(
+          "did-deploy",
+          (
+            profileId: string,
+            deployment,
+            progressCB,
+            deployOptions?: { isCollectionPostprocessCall?: boolean },
+          ) => {
+            deploying = false;
+            if (pluginsChangedQueued) {
+              pluginsChangedQueued = false;
+              context.api.events.emit("trigger-test-run", "plugins-changed", 500);
+            }
+            const activeCollection = selectors.getCollectionActiveSession(context.api.getState());
+            if (activeCollection || deployOptions?.isCollectionPostprocessCall) {
+              // handled in 'collection-postprocess-complete' event
+              return Promise.resolve();
+            }
+            return onDidDeploy(context.api, profileId);
+          },
+        );
 
         context.api.onAsync("did-purge", (profileId: string) => {
           return onDidDeploy(context.api, profileId);
