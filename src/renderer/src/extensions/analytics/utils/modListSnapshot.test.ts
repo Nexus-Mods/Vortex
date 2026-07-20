@@ -41,15 +41,21 @@ describe("buildModListSnapshot", () => {
     const snapshot = buildModListSnapshot(mods, modState, meta);
 
     expect(snapshot).toMatchObject({
-      user_id: 123,
-      instance_id: "inst-1",
+      user: { id: "123" },
+      instance: { id: "inst-1" },
       captured_at: "2026-07-16T10:00:00.000Z",
       vortex_version: "2.4.0",
-      game_id: 1704,
+      game: { id: "1704" },
     });
     expect(snapshot.mods).toEqual([
-      { source: "nexus", mod_id: 111, file_id: 98765, version: "1.0", enabled: true },
-      { source: "generic", mod_id: null, file_id: null, version: "manual-2.3", enabled: false },
+      {
+        source: "nexus",
+        mod: { id: "111" },
+        file: { id: "98765" },
+        version: "1.0",
+        enabled: true,
+      },
+      { source: "generic", mod: null, file: null, version: "manual-2.3", enabled: false },
     ]);
   });
 
@@ -62,7 +68,7 @@ describe("buildModListSnapshot", () => {
     const snapshot = buildModListSnapshot(mods, {}, meta);
 
     expect(snapshot.mods).toHaveLength(1);
-    expect(snapshot.mods[0]?.mod_id).toBe(1);
+    expect(snapshot.mods[0]?.mod).toEqual({ id: "1" });
   });
 
   it('defaults a missing source to "unknown"', () => {
@@ -140,15 +146,19 @@ describe("emitModListSnapshot", () => {
 
     const snapshot = await emitModListSnapshot(harness.api, "skyrimse");
 
-    expect(snapshot).toMatchObject({ user_id: 123, instance_id: "inst-1", game_id: 1704 });
+    expect(snapshot).toMatchObject({
+      user: { id: "123" },
+      instance: { id: "inst-1" },
+      game: { id: "1704" },
+    });
     expect(snapshot?.mods).toEqual([
-      { source: "nexus", mod_id: 111, file_id: 98765, version: "1.0", enabled: true },
+      { source: "nexus", mod: { id: "111" }, file: { id: "98765" }, version: "1.0", enabled: true },
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("/v3/");
     const body = JSON.parse(init.body as string) as ModListSnapshot;
-    expect(body.user_id).toBe(123);
+    expect(body.user).toEqual({ id: "123" });
   });
 
   test("skips (no post) when analytics consent is off", async ({ makeApi }) => {
