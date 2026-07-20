@@ -1,12 +1,14 @@
-import { readFile } from "node:fs/promises";
+import { readFile, rename, unlink } from "node:fs/promises";
+import * as path from "node:path";
 
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { sanitizeFramePath } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, sanitizeFramePath } from "@vortex/shared";
 import type { ReportableError } from "@vortex/shared/errors";
 import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/telemetry";
 import { app } from "electron";
 
+import { log } from "./logging";
 import { createVortexResource } from "./telemetry/resources";
 import { COLLECTOR_URL, OTLP_HEADERS } from "./telemetry/setup";
 
@@ -40,9 +42,55 @@ interface ICrashInfo {
 }
 
 export async function sendReportFile(filePath: string): Promise<void> {
-  const contents = await readFile(filePath, "utf8");
-  const json: ICrashInfo = JSON.parse(contents) as ICrashInfo;
+  let json: ICrashInfo;
+  try {
+    const contents = await readFile(filePath, "utf8");
+    json = JSON.parse(contents) as ICrashInfo;
+  } catch (err) {
+    // an unreadable report can never be sent — remove it so it isn't retried
+    if (getErrorCode(err) !== "ENOENT") {
+      await unlink(filePath).catch(() => {
+        /* ignored */
+      });
+    }
+    throw err;
+  }
   await reportCrash(json.type, json.error, json.context, json.reportProcess, json.consentGiven);
+  await unlink(filePath).catch(() => {
+    /* ignored */
+  });
+}
+
+/**
+ * Send a crashinfo.json left behind by a previous session, then remove it.
+ * Runs before the single-instance lock, so the file is claimed by an atomic
+ * rename first.
+ */
+export async function sendPendingCrashReport(): Promise<void> {
+  const reportPath = path.join(app.getPath("userData"), "crashinfo.json");
+  const claimedPath = reportPath + ".sending";
+  try {
+    await rename(reportPath, claimedPath);
+  } catch (err) {
+    if (getErrorCode(err) !== "ENOENT") {
+      log("warn", "failed to claim pending crash report", {
+        error: getErrorMessageOrDefault(err),
+      });
+    }
+    return;
+  }
+  try {
+    await sendReportFile(claimedPath);
+    log("info", "sent pending crash report from previous session");
+  } catch (err) {
+    log("warn", "failed to send pending crash report", {
+      error: getErrorMessageOrDefault(err),
+    });
+    // retry on next startup; unreadable reports were already deleted
+    await rename(claimedPath, reportPath).catch(() => {
+      /* ignored */
+    });
+  }
 }
 
 /**

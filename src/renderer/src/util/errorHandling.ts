@@ -63,9 +63,7 @@ export function createErrorReport(
       consentGiven,
     }),
   );
-  if (consentGiven) {
-    spawnSelf(["--report", reportPath]);
-  }
+  spawnSelf(["--report", reportPath]);
 }
 
 let outdated: boolean = false;
