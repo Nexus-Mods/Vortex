@@ -549,6 +549,7 @@ export function getInfoGraphQL(
         id: true,
         name: true,
       },
+      name: true, // required, else modInfo.name is undefined
       pictureUrl: true,
       status: true,
       uid: true,
@@ -669,7 +670,7 @@ function transformGraphQLFileToIFileInfo(file: Partial<IModFile>): IFileInfo {
     uploaded_timestamp: file.mod?.updatedAt ? new Date(file.mod.updatedAt).getTime() : file.date,
     uploaded_time: file.mod?.updatedAt || new Date(file.date).toString(),
     changelog_html: null, // Changelog HTML is not included in the GraphQL response
-    file_name: file.uri,
+    file_name: file.uri, // file.uri is the CDN storage path ("5c/d3/1f/<guid>")
     description: file.description || "",
     content_preview_link: "", // Default value
     external_virus_scan_url: "", // Default value
@@ -775,7 +776,7 @@ function startDownloadMod(
               fileInfo,
             },
           },
-          fileName ?? nexusFileInfo.file_name,
+          fileName ?? nexusFileInfo.name,
           (err, downloadId) => (truthy(err) ? reject(contextify(err)) : resolve(downloadId)),
           redownload,
           { allowInstall },
@@ -816,12 +817,7 @@ function startDownloadMod(
                   undefined,
                   (err: any, id: string) => {
                     if (err) {
-                      processInstallError(
-                        api,
-                        err,
-                        downloadId,
-                        fileName ?? nexusFileInfo.file_name,
-                      );
+                      processInstallError(api, err, downloadId, fileName ?? nexusFileInfo.name);
                     }
                   },
                 );

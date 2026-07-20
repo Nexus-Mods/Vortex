@@ -604,9 +604,9 @@ export class IPCDownloadAdapter {
       this.#api.store.dispatch(initDownload(downloadId, rawUrls, modInfo, gameIds));
       // Set localPath to the temp name so the UI has something to display.
       this.#api.store.dispatch(setDownloadFilePath(downloadId, tempName));
-      // Seed a friendly name from the caller's hint so the UI shows it instead of
-      // the temp name; nxm downloads without a hint fall back to enriched metadata.
-      if (fileName !== undefined) {
+      // Fall back to the filename hint for the display name only when the caller didn't
+      // provide a semantic name in modInfo, so the hint can't override it.
+      if (fileName !== undefined && !modInfo?.name) {
         this.#api.store.dispatch(setDownloadModInfo(downloadId, "name", fileName));
       }
       // All IPC downloads support pause via checkpoint. DownloadView checks
