@@ -74,6 +74,7 @@ import { ParametricKeySelector } from 're-reselect';
 import { ParametricSelector } from 're-reselect';
 import { default as Promise_2 } from 'bluebird';
 import type * as Promise_3 from 'bluebird';
+import type { RatingOptions } from '@nexusmods/nexus-api';
 import * as React_2 from 'react';
 import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
@@ -412,6 +413,39 @@ function addUniqueSafe<T>(state: T, path: Array<string | number>, value: any): T
 
 // @public (undocumented)
 export const Advanced: React_2.ComponentType<{}>;
+
+// @public
+type ApiEventArgs<TEvent extends ApiEventName> = Readonly<Parameters<ApiEvents[TEvent]>>;
+
+// @public
+type ApiEventMap = {
+    [K in ApiEventName]: Parameters<ApiEvents[K]>;
+};
+
+// @public
+type ApiEventName = keyof ApiEvents;
+
+// @public
+type ApiEventResult<TEvent extends ApiEventName> = ReturnType<ApiEvents[TEvent]>;
+
+// @public
+interface ApiEvents {
+    // (undocumented)
+    "pause-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+    // (undocumented)
+    "remove-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+    // (undocumented)
+    "resume-download": (downloadId: string, callback?: (err: Error | null, id?: string) => void, options?: {
+        allowInstall?: boolean | "force";
+    }) => void;
+    // (undocumented)
+    "start-download": (rawUrls: string[], modInfo: {
+        game?: string;
+        name?: string;
+    } & Record<string, unknown>, fileName?: string, callback?: (err: Error | null, id?: string) => void, redownload?: "never" | "ask" | "replace" | "always", options?: {
+        allowInstall?: boolean | "force";
+    }) => string;
+}
 
 // @public (undocumented)
 const apiKey: (state: IState) => string;
@@ -2291,8 +2325,8 @@ interface IExtensionApi {
     // (undocumented)
     dismissAllNotifications?: () => void;
     dismissNotification?: (id: string) => void;
-    emitAndAwait: <T = any>(eventName: string, ...args: any[]) => Promise_2<T>;
-    events: NodeJS.EventEmitter;
+    emitAndAwait: (<TEvent extends ApiEventName>(eventName: TEvent, ...args: ApiEventArgs<TEvent>) => Promise<ApiEventResult<TEvent> extends void ? void : ApiEventResult<TEvent>[]>) & (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(eventName: string, ...args: TArgs) => Promise<TResult[]>);
+    events: NodeJS.EventEmitter<ApiEventMap & Record<string, any[]>>;
     ext: IExtensionApiExtension;
     extension?: IRegisteredExtension;
     genMd5Hash: (data: string | Buffer, progressFunc?: (progress: number, total: number) => void) => Promise_2<IHashResult>;
@@ -2310,7 +2344,7 @@ interface IExtensionApi {
     lookupModReference: (ref: IModReference, options?: ILookupOptions) => Promise_2<IModLookupResult[]>;
     // (undocumented)
     NAMESPACE: string;
-    onAsync: <TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(eventName: string, listener: (...args: TArgs) => PromiseLike<TResult>) => void;
+    onAsync: (<TEvent extends ApiEventName>(eventName: TEvent, listener: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>) => void) & (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(eventName: string, listener: (...args: TArgs) => PromiseLike<TResult>) => void);
     onStateChange?: <T = any>(path: string[], callback: StateChangeCallback<T>) => void;
     openArchive: (archivePath: string, options?: IArchiveOptions, extension?: string) => Promise_2<Archive>;
     registerProtocol: IRegisterProtocol;
@@ -2328,7 +2362,7 @@ interface IExtensionApi {
     store?: ThunkStore<any>;
     suppressNotification?: (id: string, suppress?: boolean) => void;
     translate: TFunction;
-    withPrePost: <T>(eventName: string, callback: (...args: any[]) => Promise_2<T>) => (...args: any[]) => Promise_2<T>;
+    withPrePost: (<TEvent extends ApiEventName>(eventName: string, callback: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>) => (...args: ApiEventArgs<TEvent>) => Promise<ApiEventResult<TEvent>>) & (<TResult, TArgs extends readonly unknown[] = unknown[]>(eventName: string, callback: (...args: TArgs) => PromiseLike<TResult>) => (...args: TArgs) => Promise<TResult>);
 }
 
 // Warning: (ae-forgotten-export) The symbol "INexusAPIExtension" needs to be exported by the entry point api.d.ts
@@ -6279,6 +6313,11 @@ declare namespace types {
         IReference,
         PersistorKey,
         IPersistor,
+        ApiEvents,
+        ApiEventName,
+        ApiEventArgs,
+        ApiEventResult,
+        ApiEventMap,
         ThunkStore,
         PropsCallback,
         PropsCallbackTyped,
