@@ -51,7 +51,7 @@
     "item": {
       "title": "Possible missing required mod for: {{modName}}",
       "may_require_file": "May require this additional mod file to be installed to work correctly:",
-      "author_note": "Note: {{note}}",
+      "author_note": "Author note: {{note}}",
       "mod_page_source_note": "This requirement was identified from the mod page rather than the file-level requirement system, so it may not be required for your specific configuration. <modLink>View the mod page to get full details</modLink>.",
       "open_external_mod_page": "Open external mod page",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
@@ -62,6 +62,8 @@
       "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
       "install_via_mod_page": "Install via mod page",
       "install_one_click": "1-click install",
+      "downloading": "Downloading...",
+      "installing": "Installing...",
       "pick_one": "Pick one of these",
       "install_required": "Install required",
       "wrong_version_installed": "A different version of an installed file is required. Only one version can be enabled at a time.",

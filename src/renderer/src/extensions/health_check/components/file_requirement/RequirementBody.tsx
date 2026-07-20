@@ -83,6 +83,7 @@ export const RequirementBody = ({
 }) => {
   const { t } = useTranslation("health_check");
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const title = t(groupTitleKey(report.category));
   const { requirements } = report;
@@ -93,9 +94,11 @@ export const RequirementBody = ({
 
   const hasInstallAll = installAllCandidates.length > 1;
 
+  // While "install all" runs, every card's install button also shows loading.
   const rowCtx: IFileActionContext = {
     ...ctx,
     installButtonAppearance: hasInstallAll ? "moderate" : "strong",
+    isDownloadingAll: downloadingAll,
   };
 
   const installAll = () => {
@@ -103,19 +106,31 @@ export const RequirementBody = ({
       setPremiumOpen(true);
       return;
     }
-    installAllCandidates.forEach((candidate) => void downloadFileRequirement(api, candidate));
+    setDownloadingAll(true);
+    void Promise.all(
+      installAllCandidates.map((candidate) => downloadFileRequirement(api, candidate)),
+    ).then((results) => {
+      // On full success the requirements clear and this view unmounts; only reset
+      // when something failed and the buttons are still around.
+      if (results.some((ok) => !ok)) {
+        setDownloadingAll(false);
+      }
+    });
   };
 
   const installAllAction = hasInstallAll && (
     <Button
       appearance="strong"
       brand="neutral"
+      isLoading={downloadingAll}
       leftIconPath={mdiMonitorArrowDownVariant}
       rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
       size="sm"
       onClick={installAll}
     >
-      {t("actions::install_all", { count: installAllCandidates.length })}
+      {downloadingAll
+        ? t("detail::item::downloading")
+        : t("actions::install_all", { count: installAllCandidates.length })}
     </Button>
   );
 

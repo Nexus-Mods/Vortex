@@ -2,7 +2,6 @@ import React from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IFileActionContext } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import {
   downloadFileRequirement,
   openModPage,
@@ -46,14 +45,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   // file-level feedback is persisted only, it does not emit a Mixpanel event yet
   // (HealthCheckFeedbackEvent is mod-shaped).
   const { givenFeedback, markFeedback } = useFileRequirementFeedback(api, report.sourceFileUID);
-
-  const requestDownload = (candidate: IFileRequirementCandidate) => {
-    // downloadFileRequirement routes free users to the file page (open-the-website
-    // fallback) and premium users to the real 1-click download.
-    void downloadFileRequirement(api, candidate);
-  };
-
-  const ctx: IFileActionContext = { api, showPremiumAd, requestDownload };
 
   // Report-level intro line, mirroring the per-category detail copy.
   const subtitle =
@@ -117,7 +108,15 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         </Typography>
 
         <div className="space-y-4">
-          <RequirementBody api={api} ctx={ctx} report={report} />
+          <RequirementBody
+            api={api}
+            ctx={{
+              api,
+              showPremiumAd,
+              requestDownload: (candidate) => downloadFileRequirement(api, candidate),
+            }}
+            report={report}
+          />
         </div>
       </div>
     </div>

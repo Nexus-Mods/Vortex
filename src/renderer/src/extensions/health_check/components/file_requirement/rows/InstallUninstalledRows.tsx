@@ -13,6 +13,7 @@ import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequi
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 
+import { useInstallButton } from "../../../hooks/useInstallButton";
 import { FileRequirement } from "../FileRequirement";
 
 export const InstallUninstalledRows = ({
@@ -23,6 +24,9 @@ export const InstallUninstalledRows = ({
   requirement: Extract<IFileRequirement, { kind: "correct-version-uninstalled" }>;
 }) => {
   const { t } = useTranslation("health_check");
+  const { isLoading, onClick } = useInstallButton(() =>
+    installDownloadedFile(api, requirement.uninstalledFile),
+  );
 
   return (
     <FileRequirement
@@ -40,10 +44,11 @@ export const InstallUninstalledRows = ({
           <Button
             appearance="strong"
             brand="neutral"
+            isLoading={isLoading}
             size="sm"
-            onClick={() => void installDownloadedFile(api, requirement.uninstalledFile)}
+            onClick={onClick}
           >
-            {t("detail::item::install_uninstalled")}
+            {isLoading ? t("detail::item::installing") : t("detail::item::install_uninstalled")}
           </Button>
         </>
       }

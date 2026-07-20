@@ -12,6 +12,7 @@ import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
+import { useInstallButton } from "../../../hooks/useInstallButton";
 import { FileRequirement } from "../FileRequirement";
 
 /** A download/enable card for one candidate (used by download + OR cards). */
@@ -25,6 +26,11 @@ export const CandidateCard = ({
   isOr?: boolean;
 }) => {
   const { t } = useTranslation(["health_check", "common"]);
+  const { isLoading, onClick } = useInstallButton(
+    () => ctx.requestDownload(candidate),
+    ctx.showPremiumAd,
+  );
+  const loading = isLoading || !!ctx.isDownloadingAll;
   return (
     <FileRequirement
       actions={
@@ -42,12 +48,13 @@ export const CandidateCard = ({
           <Button
             appearance={ctx.installButtonAppearance ?? "strong"}
             brand="neutral"
+            isLoading={loading}
             leftIconPath={mdiTrayArrowDown}
             rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
             size="sm"
-            onClick={() => ctx.requestDownload(candidate)}
+            onClick={onClick}
           >
-            {t("detail::item::install_one_click")}
+            {loading ? t("detail::item::downloading") : t("detail::item::install_one_click")}
           </Button>
         </>
       }

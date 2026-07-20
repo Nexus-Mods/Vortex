@@ -44,6 +44,8 @@ import HealthCheckDetailPage from "./HealthCheckDetailPage";
 interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
+  /** Passed by MainPageContainer for newLayout pages; drives the page-hidden styling. */
+  active?: boolean;
 }
 
 interface IListedEntry {
@@ -100,7 +102,7 @@ function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstall
   return out;
 }
 
-function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
+function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
@@ -142,6 +144,7 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
   if (selected) {
     return (
       <HealthCheckDetailPage
+        active={active}
         api={api}
         content={selected.content}
         entry={selected.entry}
@@ -206,7 +209,7 @@ function HealthCheckPage({ api, onRefresh }: IHealthCheckPageProps) {
     );
 
   return (
-    <PageRoot id="health-check-page">
+    <PageRoot active={active} id="health-check-page">
       <div className="space-y-6 p-6">
         <div className="flex items-center gap-x-6">
           <div className="flex grow items-center gap-x-2">

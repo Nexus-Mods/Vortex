@@ -28,10 +28,12 @@ export interface IFileRequirementData {
 export interface IFileActionContext {
   api: IExtensionApi;
   showPremiumAd: boolean;
-  /** Download a candidate, opening the premium upsell first for free users. */
-  requestDownload: (candidate: IFileRequirementCandidate) => void;
+  /** Download a candidate, opening the premium upsell first for free users. Resolves to whether a download ran. */
+  requestDownload: (candidate: IFileRequirementCandidate) => Promise<boolean>;
   /** Appearance for a card's install button; demoted to "moderate" when an "install all" is shown. */
   installButtonAppearance?: "strong" | "moderate";
+  /** True while "install all" is running; puts every card's install button into the loading state. */
+  isDownloadingAll?: boolean;
 }
 
 /** Mod-page / file-page open handlers for a candidate or installed file. */
