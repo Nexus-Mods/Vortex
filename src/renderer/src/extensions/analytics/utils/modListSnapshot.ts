@@ -13,28 +13,37 @@ import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 
 /**
+ * Reference to a related entity. Nexus REST API guidelines: relations are nested objects
+ * (`user: { id }`) not flat `_id` fields, and every id is typed String, never a number.
+ */
+export interface EntityRef {
+  id: string;
+}
+
+/**
  * One mod in a snapshot. All sources are supported: `source` is the mod's
- * `attributes.source` (nexus / site / generic / ...); `mod_id` and `file_id` are the numeric
- * Nexus ids and are null for mods that did not come from Nexus.
+ * `attributes.source` (nexus / site / generic / ...); `mod` and `file` carry the Nexus ids and
+ * are null for mods that did not come from Nexus.
  */
 export interface ModSnapshotEntry {
   source: string;
-  mod_id: number | null;
-  file_id: number | null;
+  mod: EntityRef | null;
+  file: EntityRef | null;
   version: string | null;
   enabled: boolean;
 }
 
 /**
  * The LAZ-701 mod-list payload for one game. Sent as-is (a single JSON) to the ingest endpoint;
- * the ClickHouse side flattens `mods[]` into one row per mod.
+ * the ClickHouse side flattens `mods[]` into one row per mod. Shape follows the Nexus REST API
+ * guidelines: related entities nested, all ids String.
  */
 export interface ModListSnapshot {
-  user_id: number;
-  instance_id: string;
+  user: EntityRef;
+  instance: EntityRef;
+  game: EntityRef;
   captured_at: string;
   vortex_version: string;
-  game_id: number;
   mods: ModSnapshotEntry[];
 }
 
@@ -51,6 +60,11 @@ export interface ModListSnapshotMeta {
 // already functional against it the moment it exists.
 const MOD_LIST_INGEST_URL = `${NEXUS_API_URL}/v3/telemetry/mod-lists`;
 
+/** Nest an id as an entity reference, stringifying it. Null when the id is absent. */
+function entityRef(id: number | string | undefined | null): EntityRef | null {
+  return id === undefined || id === null ? null : { id: String(id) };
+}
+
 /**
  * Build the mod-list snapshot from a game's installed mods and the active profile's mod state.
  * Pure: the caller resolves `meta` and passes the mods + mod state read from persistence.
@@ -66,19 +80,19 @@ export function buildModListSnapshot(
       const attributes = mod.attributes ?? {};
       return {
         source: attributes.source ?? "unknown",
-        mod_id: attributes.modId ?? null,
-        file_id: attributes.fileId ?? null,
+        mod: entityRef(attributes.modId),
+        file: entityRef(attributes.fileId),
         version: attributes.version ?? null,
         enabled: modState[mod.id]?.enabled ?? false,
       };
     });
 
   return {
-    user_id: meta.userId,
-    instance_id: meta.instanceId,
+    user: { id: String(meta.userId) },
+    instance: { id: meta.instanceId },
+    game: { id: String(meta.gameId) },
     captured_at: meta.capturedAt,
     vortex_version: meta.vortexVersion,
-    game_id: meta.gameId,
     mods: entries,
   };
 }
