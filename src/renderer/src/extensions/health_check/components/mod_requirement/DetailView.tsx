@@ -87,7 +87,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
           <div className="flex min-w-0 items-center gap-x-2">
             <Icon className={severityStyle.textClassName} path={severityStyle.iconPath} />
 
-            <Typography as="div" className="truncate font-semibold">
+            <Typography as="div" className="font-semibold">
               {t("detail::item::title", { modName: mod.requiredBy.modName })}
             </Typography>
           </div>

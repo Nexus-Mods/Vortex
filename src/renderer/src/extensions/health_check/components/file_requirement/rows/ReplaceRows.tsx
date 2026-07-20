@@ -40,7 +40,7 @@ export const ReplaceRows = ({
         <FileRequirement
           actions={
             <Button
-              appearance="moderate"
+              appearance="subdued"
               brand="neutral"
               size="sm"
               onClick={() => viewInLoadout(ctx.api, requirement.installedFile)}

@@ -1,5 +1,4 @@
-import { mdiTrayArrowDown } from "@mdi/js";
-import React, { useState } from "react";
+import React from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -8,19 +7,11 @@ import {
   downloadFileRequirement,
   openModPage,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
-import {
-  canQuickInstall,
-  downloadCandidates,
-  groupJoin,
-  groupTitleKey,
-} from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IFileRequirementReport } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IState } from "@/types/IState";
-import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
-import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -31,7 +22,6 @@ import { useFileRequirementFeedback } from "../../hooks/useFileRequirementFeedba
 import { isFileEntryHidden } from "../../views/content/fileRequirementEntries";
 import type { IDetailViewProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
-import { PremiumModal } from "../premium_modal/PremiumModal";
 import { RequirementBody } from "./RequirementBody";
 
 export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
@@ -51,11 +41,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   };
 
   const showPremiumAd = useSelector(shouldShowPremiumAd);
-  // null = closed; otherwise the scope that triggered the upsell (single keeps the
-  // candidate so its mod page can be opened on the free fallback action).
-  const [premiumRequest, setPremiumRequest] = useState<
-    { scope: "single"; candidate: IFileRequirementCandidate } | { scope: "all" } | null
-  >(null);
 
   // Feedback is keyed per source file (see useFileRequirementFeedback). NOTE:
   // file-level feedback is persisted only, it does not emit a Mixpanel event yet
@@ -69,18 +54,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   };
 
   const ctx: IFileActionContext = { api, showPremiumAd, requestDownload };
-
-  const installAllCandidates = canQuickInstall(report.category)
-    ? downloadCandidates(report.requirements)
-    : [];
-
-  const installAll = () => {
-    if (showPremiumAd) {
-      setPremiumRequest({ scope: "all" });
-      return;
-    }
-    installAllCandidates.forEach((candidate) => void downloadFileRequirement(api, candidate));
-  };
 
   // Report-level intro line, mirroring the per-category detail copy.
   const subtitle =
@@ -127,30 +100,15 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
           </Typography>
         </div>
 
-        <div className="flex shrink-0 items-center gap-x-2">
-          <EntryActions
-            givenFeedback={givenFeedback}
-            isHidden={isHidden}
-            severity={entry.severity}
-            variant="detail"
-            onHelpful={markFeedback}
-            onNotHelpful={markFeedback}
-            onToggleHide={toggleHideEntry}
-          />
-
-          {installAllCandidates.length > 1 && (
-            <Button
-              appearance="moderate"
-              brand="neutral"
-              leftIconPath={mdiTrayArrowDown}
-              rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-              size="sm"
-              onClick={installAll}
-            >
-              {t("actions::install_all", { count: installAllCandidates.length })}
-            </Button>
-          )}
-        </div>
+        <EntryActions
+          givenFeedback={givenFeedback}
+          isHidden={isHidden}
+          severity={entry.severity}
+          variant="detail"
+          onHelpful={markFeedback}
+          onNotHelpful={markFeedback}
+          onToggleHide={toggleHideEntry}
+        />
       </div>
 
       <div className="pt-4 pb-6">
@@ -159,27 +117,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         </Typography>
 
         <div className="space-y-4">
-          <RequirementBody
-            api={api}
-            ctx={ctx}
-            join={groupJoin(report.category)}
-            requirements={report.requirements}
-            title={t(groupTitleKey(report.category))}
-          />
+          <RequirementBody api={api} ctx={ctx} report={report} />
         </div>
-
-        <PremiumModal
-          downloadScope={premiumRequest?.scope ?? "single"}
-          isOpen={premiumRequest !== null}
-          onClose={() => setPremiumRequest(null)}
-          onDownload={() => {
-            // Free-user fallback: for a single candidate, open its mod page.
-            if (premiumRequest?.scope === "single") {
-              openModPage(api, premiumRequest.candidate);
-            }
-            setPremiumRequest(null);
-          }}
-        />
       </div>
     </div>
   );

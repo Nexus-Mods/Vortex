@@ -30,6 +30,8 @@ export interface IFileActionContext {
   showPremiumAd: boolean;
   /** Download a candidate, opening the premium upsell first for free users. */
   requestDownload: (candidate: IFileRequirementCandidate) => void;
+  /** Appearance for a card's install button; demoted to "moderate" when an "install all" is shown. */
+  installButtonAppearance?: "strong" | "moderate";
 }
 
 /** Mod-page / file-page open handlers for a candidate or installed file. */

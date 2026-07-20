@@ -37,7 +37,7 @@ export const EnableCard = ({
       actions={
         <>
           <Button
-            appearance="moderate"
+            appearance="subdued"
             brand="neutral"
             size="sm"
             onClick={() => viewInLoadout(api, correctFile)}

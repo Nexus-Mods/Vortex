@@ -30,7 +30,7 @@ export const CandidateCard = ({
       actions={
         <>
           <Button
-            appearance="moderate"
+            appearance="subdued"
             brand="neutral"
             leftIconPath={mdiOpenInNew}
             size="sm"
@@ -40,7 +40,7 @@ export const CandidateCard = ({
           </Button>
 
           <Button
-            appearance="strong"
+            appearance={ctx.installButtonAppearance ?? "strong"}
             brand="neutral"
             leftIconPath={mdiTrayArrowDown}
             rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}

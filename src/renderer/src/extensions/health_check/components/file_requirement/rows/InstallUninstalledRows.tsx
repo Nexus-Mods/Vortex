@@ -29,7 +29,7 @@ export const InstallUninstalledRows = ({
       actions={
         <>
           <Button
-            appearance="moderate"
+            appearance="subdued"
             brand="neutral"
             size="sm"
             onClick={() => viewDownloadInMods(api, requirement.uninstalledFile)}

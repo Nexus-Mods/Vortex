@@ -42,7 +42,7 @@ export const ToggleRows = ({
         <FileRequirement
           actions={
             <Button
-              appearance="moderate"
+              appearance="subdued"
               brand="neutral"
               size="sm"
               onClick={() => viewInLoadout(api, requirement.enabledFile)}
