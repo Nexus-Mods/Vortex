@@ -47,7 +47,12 @@ import { parseCommandline } from "./cli";
 import { init as initDownloadIpc } from "./downloading/ipc";
 import { DownloadManager } from "./downloading/manager";
 import { terminateAsync } from "./errorHandling";
-import { reportCrash, errorToReportableError, sendReportFile } from "./errorReporting";
+import {
+  reportCrash,
+  errorToReportableError,
+  sendPendingCrashReport,
+  sendReportFile,
+} from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -249,6 +254,10 @@ async function main(): Promise<void> {
     app.quit();
     return;
   }
+
+  // Sent as early as possible — startup may crash before getting any
+  // further. Not awaited so it doesn't delay startup.
+  void sendPendingCrashReport();
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
   process.env.NODE_OPTIONS =

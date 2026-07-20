@@ -7,10 +7,12 @@ import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
 import { terminate } from "./errorHandling";
+import { reportCrash } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";
+import { isTelemetryEnabled } from "./telemetry/state";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
@@ -174,6 +176,26 @@ class MainWindow {
           exitCode: details.exitCode,
           reason: details.reason,
         });
+
+        // hard renderer crashes never reach the JS error handlers, so this
+        // is the only place they can be reported
+        if (!["clean-exit", "killed"].includes(details.reason)) {
+          reportCrash(
+            "RenderProcessGone",
+            {
+              message: `Renderer process gone: ${details.reason} (exit code ${details.exitCode})`,
+              code: details.reason,
+            },
+            undefined,
+            "renderer",
+            isTelemetryEnabled(),
+          ).catch((err: unknown) => {
+            log("warn", "failed to report renderer crash", {
+              error: getErrorMessageOrDefault(err),
+            });
+          });
+        }
+
         if (details.reason !== "killed") {
           // workaround for electron issue #19887
           setImmediate(() => {

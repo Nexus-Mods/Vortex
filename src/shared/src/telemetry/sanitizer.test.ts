@@ -90,6 +90,19 @@ describe("sanitizeSpanAttributes (strict / no consent)", () => {
     });
   });
 
+  it("keeps native crash facts extracted from minidumps", () => {
+    const attributes = {
+      "crash.native.dumpCount": 1,
+      "crash.native.exceptionCode": "0xc0000005",
+      "crash.native.exceptionAddress": "0x7ff800008a40",
+      "crash.native.module": "nvwgf2umx.dll",
+      "crash.native.moduleVersion": "31.0.15.5222",
+      "crash.native.moduleOffset": "0x8a40",
+      "crash.native.processType": "gpu-process",
+    };
+    expect(sanitizeSpanAttributes(attributes)).toEqual(attributes);
+  });
+
   it("buckets count attributes (numbers and numeric strings)", () => {
     const result = sanitizeSpanAttributes({
       "context.mod_count": "73",
