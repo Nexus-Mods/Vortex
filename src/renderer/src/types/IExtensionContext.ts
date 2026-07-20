@@ -772,7 +772,10 @@ export interface IExtensionApi {
    * after all these Promises are resolved.
    * If the event handlers return a value, this returns an array of results
    */
-  emitAndAwait: <T = any>(eventName: string, ...args: any[]) => PromiseBB<T>;
+  emitAndAwait: <TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
+    eventName: string,
+    ...args: TArgs
+  ) => Promise<TResult[]>;
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
@@ -787,16 +790,16 @@ export interface IExtensionApi {
   ) => void;
 
   /**
-   * wraps a function such that it will emitAndAwait will-eventName and did-eventName events
+   * wraps a function such that it will emitAndAwait `will-${eventName}` and `did-${eventName}` events
    * before and after invoking the actual callback.
    * both these events receive the arguments passed to the callback, the did-event also receives
    * the result of the callback if any (the result is the first argument because the number
    * of arguments may be variable)
    */
-  withPrePost: <T>(
+  withPrePost: <TResult, TArgs extends readonly unknown[] = unknown[]>(
     eventName: string,
-    callback: (...args: any[]) => PromiseBB<T>,
-  ) => (...args: any[]) => PromiseBB<T>;
+    callback: (...args: TArgs) => PromiseLike<TResult>,
+  ) => (...args: TArgs) => Promise<TResult>;
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used

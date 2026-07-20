@@ -4,7 +4,7 @@ import { EventEmitter } from "events";
 import * as net from "net";
 import * as path from "path";
 
-import { VCREDIST_URL } from "@vortex/shared";
+import { isPromiseLike, VCREDIST_URL } from "@vortex/shared";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import PromiseBB from "bluebird";
@@ -111,6 +111,8 @@ import { webpackRequireHack } from "./util/webpack-hacks";
 import { isToastSystemDisabled } from "./views/layout/ToastContainer";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
+
+const ENQUEUE_TAG = Symbol("emitAndAwaitEnqueue");
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -2531,66 +2533,87 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): PromiseBB<any> => {
-    let queue = PromiseBB.resolve();
-    const results: any[] = [];
-    const enqueue = (prom: PromiseBB<any>) => {
-      if (prom !== undefined) {
-        queue = queue.then(() =>
-          prom
-            .then((res) => {
-              if (res !== undefined && res !== null) {
-                results.push(res);
-              }
-            })
-            .catch((err) => {
-              this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
-            }),
-        );
-      }
+  private emitAndAwait: IExtensionApi["emitAndAwait"] = <
+    TResult = unknown,
+    TArgs extends readonly unknown[] = unknown[],
+  >(
+    event: string,
+    ...args: TArgs
+  ): Promise<TResult[]> => {
+    const pending: Promise<void>[] = [];
+    const results: TResult[] = [];
+
+    const enqueue = (promise?: unknown) => {
+      if (!isPromiseLike<TResult>(promise)) return;
+
+      pending.push(
+        Promise.resolve(promise)
+          .then((res) => {
+            if (res !== undefined && res !== null) {
+              results.push(res);
+            }
+          })
+          .catch((err) => {
+            this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
+          }),
+      );
     };
 
-    this.mEventEmitter.emit(event, ...args, enqueue);
+    enqueue[ENQUEUE_TAG] = true;
 
-    return queue.then(() => results);
+    this.mEventEmitter.emit(event, ...args, enqueue);
+    return Promise.all(pending).then(() => results);
   };
 
-  private onAsync = (
+  private onAsync: IExtensionApi["onAsync"] = <
+    TResult = unknown,
+    TArgs extends readonly unknown[] = unknown[],
+  >(
     event: string,
-    listener: (...args) => PromiseLike<any>,
+    listener: (...args: TArgs) => PromiseLike<TResult>,
     extInfo?: { name: string; official: boolean },
   ) => {
     const effectiveListener = wrapExtCBAsync(listener, extInfo);
-    this.mEventEmitter.on(event, (...args: any[]) => {
-      const enqueue = args.pop();
-      if (enqueue === undefined || typeof enqueue !== "function") {
-        // no arguments, this is not an emitAndAwait event!
+
+    this.mEventEmitter.on(event, (...rawArgs: unknown[]) => {
+      const last = rawArgs[rawArgs.length - 1];
+      const isEnqueue = typeof last === "function" && last[ENQUEUE_TAG] === true;
+      const args = (isEnqueue ? rawArgs.slice(0, -1) : rawArgs) as unknown as TArgs;
+
+      const callListener = (): Promise<TResult> => {
+        try {
+          return Promise.resolve(effectiveListener(...args));
+        } catch (err) {
+          return Promise.reject(unknownToError(err));
+        }
+      };
+
+      if (!isEnqueue) {
         this.mApi.showErrorNotification("Invalid event handler", { event });
-        if (enqueue !== undefined) {
-          args.push(enqueue);
-        }
-        // call the listener anyway
-        const prom = effectiveListener(...args);
-        if (prom["catch"] !== undefined) {
-          prom["catch"]((err) => {
-            this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
-          });
-        }
+        callListener().catch((err) => {
+          this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
+        });
       } else {
-        enqueue(effectiveListener(...args));
+        (last as (p: PromiseLike<unknown>) => void)(callListener());
       }
     });
   };
 
-  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => PromiseBB<T>) => {
-    return (...args: any[]) => {
-      return this.emitAndAwait(`will-${eventName}`, ...args)
-        .then(() => cb(...args))
-        .then((res: T) => this.emitAndAwait(`did-${eventName}`, res, ...args).then(() => res));
+  private withPrePost: IExtensionApi["withPrePost"] = <
+    TResult,
+    TArgs extends readonly unknown[] = unknown[],
+  >(
+    eventName: string,
+    cb: (...args: TArgs) => PromiseLike<TResult>,
+  ) => {
+    return async (...args: TArgs) => {
+      await this.emitAndAwait(`will-${eventName}`, ...args);
+      const res = await Promise.resolve(cb(...args));
+      await this.emitAndAwait(`did-${eventName}`, res, ...args);
+      return res;
     };
   };
 
-  // tslint:disable-next-line:member-ordering
   private highlightCSS = (() => {
     let highlightCSS: CSSStyleRule;
     let highlightCSSAlt: CSSStyleRule;
