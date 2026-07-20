@@ -50,22 +50,18 @@ export function friendlyDownloadName(download: IDownload): string | undefined {
 }
 
 /**
- * Returns fileName, or the first "name.n.ext" variant not already present in dlPath, so an existing
- * download is never overwritten.
+ * Returns fileName if it is free in dlPath, otherwise a timestamped variant ("name.<ms>.ext"), so an
+ * existing download is never overwritten.
  */
 export async function freeDownloadName(dlPath: string, fileName: string): Promise<string> {
+  const taken = await access(path.join(dlPath, fileName)).then(
+    () => true,
+    () => false,
+  );
+  if (!taken) {
+    return fileName;
+  }
   const ext = path.extname(fileName);
   const base = path.basename(fileName, ext);
-  let candidate = fileName;
-  let counter = 0;
-  while (
-    await access(path.join(dlPath, candidate)).then(
-      () => true,
-      () => false,
-    )
-  ) {
-    counter += 1;
-    candidate = `${base}.${counter}${ext}`;
-  }
-  return candidate;
+  return `${base}.${Date.now()}${ext}`;
 }

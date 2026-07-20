@@ -159,20 +159,16 @@ describe("freeDownloadName", () => {
     expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.7z");
   });
 
-  it("appends .1 before the extension on the first collision", async () => {
+  it("inserts a timestamp before the extension when the name is taken", async () => {
     await writeFile(path.join(dir, "Mod.7z"), "x");
-    expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.1.7z");
+    const name = await freeDownloadName(dir, "Mod.7z");
+    expect(name).not.toBe("Mod.7z");
+    expect(name).toMatch(/^Mod\.\d+\.7z$/);
   });
 
-  it("increments the counter until a free name is found", async () => {
-    await writeFile(path.join(dir, "Mod.7z"), "x");
-    await writeFile(path.join(dir, "Mod.1.7z"), "x");
-    await writeFile(path.join(dir, "Mod.2.7z"), "x");
-    expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.3.7z");
-  });
-
-  it("handles a name with no extension", async () => {
+  it("appends the timestamp when a name has no extension", async () => {
     await writeFile(path.join(dir, "README"), "x");
-    expect(await freeDownloadName(dir, "README")).toBe("README.1");
+    const name = await freeDownloadName(dir, "README");
+    expect(name).toMatch(/^README\.\d+$/);
   });
 });
