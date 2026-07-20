@@ -695,7 +695,7 @@ class ExtensionManager {
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
   private mTranslator: i18n;
-  private mEventEmitter: NodeJS.EventEmitter;
+  private mEventEmitter: IExtensionApi["events"];
   private mStyleManager: StyleManager;
   private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
@@ -751,7 +751,7 @@ class ExtensionManager {
    */
   constructor(
     extensionState?: { [extId: string]: IExtensionState },
-    eventEmitter?: NodeJS.EventEmitter,
+    eventEmitter?: IExtensionApi["events"],
   ) {
     this.mEventEmitter = eventEmitter;
     if (eventEmitter !== undefined) {
@@ -2533,18 +2533,12 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait: IExtensionApi["emitAndAwait"] = <
-    TResult = unknown,
-    TArgs extends readonly unknown[] = unknown[],
-  >(
-    event: string,
-    ...args: TArgs
-  ): Promise<TResult[]> => {
+  private emitAndAwait = ((eventName: string, ...args: unknown[]): Promise<unknown> => {
     const pending: Promise<void>[] = [];
-    const results: TResult[] = [];
+    const results: unknown[] = [];
 
     const enqueue = (promise?: unknown) => {
-      if (!isPromiseLike<TResult>(promise)) return;
+      if (!isPromiseLike(promise)) return;
 
       pending.push(
         Promise.resolve(promise)
@@ -2554,16 +2548,16 @@ class ExtensionManager {
             }
           })
           .catch((err) => {
-            this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
+            this.mApi.showErrorNotification(`Unhandled error in event "${eventName}"`, err);
           }),
       );
     };
 
     enqueue[ENQUEUE_TAG] = true;
 
-    this.mEventEmitter.emit(event, ...args, enqueue);
+    this.mEventEmitter.emit(eventName, ...args, enqueue);
     return Promise.all(pending).then(() => results);
-  };
+  }) as IExtensionApi["emitAndAwait"];
 
   private onAsync: IExtensionApi["onAsync"] = <
     TResult = unknown,

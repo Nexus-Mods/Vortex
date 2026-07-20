@@ -133,7 +133,7 @@ import { computeStateDiff } from "./store/stateDiff";
 import StyleManager from "./StyleManager";
 import { createRendererTelemetryProvider } from "./telemetry/setup";
 import type { IExtensionReducer } from "./types/extensions";
-import type { ThunkStore } from "./types/IExtensionContext";
+import type { ApiEventMap, IExtensionApi, ThunkStore } from "./types/IExtensionContext";
 import { GameEntryNotFound } from "./types/IGameStore";
 import type { IState } from "./types/IState";
 import { relaunch } from "./util/commandLine";
@@ -433,7 +433,9 @@ window.addEventListener("error", errorHandler);
 window.addEventListener("unhandledrejection", errorHandler);
 window.removeEventListener("error", earlyErrHandler);
 window.removeEventListener("unhandledrejection", earlyErrHandler);
-const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
+const eventEmitter: IExtensionApi["events"] = new EventEmitter<
+  ApiEventMap & Record<string, any[]>
+>();
 
 let enhancer = null;
 

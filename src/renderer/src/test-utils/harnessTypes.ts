@@ -100,7 +100,7 @@ export interface IDownloadAdapterHarness extends IApiHarness {
   dest: string;
   // the api's global event bus - the adapter registers its start/resume/pause/remove handlers here,
   // so a test drives it with events.emit and observes emitted events with events.on
-  events: NodeJS.EventEmitter;
+  events: IExtensionApi["events"];
   // resolves once the mocked downloader.start has run (a restart / fresh transfer began)
   started: { promise: Promise<void>; resolve: () => void };
   // the mocked window.api.downloader IPC seam (main-process boundary; a real fake is impractical)

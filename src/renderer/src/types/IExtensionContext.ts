@@ -79,7 +79,30 @@ export type {
 import type { PersistorKey, IPersistor } from "@vortex/shared/state";
 export type { PersistorKey, IPersistor };
 
-// tslint:disable-next-line:interface-name
+/**
+ * Open interface type registry for API events. Enhance using `declare module` syntax.
+ * @public
+ */
+export interface ApiEvents {}
+
+/** Represents all event names.
+ * @public
+ * */
+export type ApiEventName = keyof ApiEvents;
+/** Represents all event args.
+ * @public
+ * */
+export type ApiEventArgs<TEvent extends ApiEventName> = Readonly<Parameters<ApiEvents[TEvent]>>;
+/** Represents all event results.
+ * @public
+ * */
+export type ApiEventResult<TEvent extends ApiEventName> = ReturnType<ApiEvents[TEvent]>;
+
+/** Compat for NodeJS Event Map */
+export type ApiEventMap = {
+  [K in ApiEventName]: Parameters<ApiEvents[K]>;
+};
+
 export interface ThunkStore<S> extends Redux.Store<S> {
   dispatch: ThunkDispatch<S, null, Redux.Action>;
 }
@@ -590,7 +613,7 @@ export interface IExtensionApi {
    * @type {NodeJS.EventEmitter}
    * @memberOf IExtensionApi
    */
-  events: NodeJS.EventEmitter;
+  events: NodeJS.EventEmitter<ApiEventMap & Record<string, any[]>>; // TODO: remove fallback definition
 
   /**
    * translation function
@@ -772,10 +795,15 @@ export interface IExtensionApi {
    * after all these Promises are resolved.
    * If the event handlers return a value, this returns an array of results
    */
-  emitAndAwait: <TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
-    eventName: string,
-    ...args: TArgs
-  ) => Promise<TResult[]>;
+  emitAndAwait: (<TEvent extends ApiEventName>(
+    eventName: TEvent,
+    ...args: ApiEventArgs<TEvent>
+  ) => Promise<ApiEventResult<TEvent> extends void ? void : ApiEventResult<TEvent>[]>) &
+    // TODO: remove fallback definition
+    (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
+      eventName: string,
+      ...args: TArgs
+    ) => Promise<TResult[]>);
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
@@ -784,10 +812,15 @@ export interface IExtensionApi {
    * returns a rejected promise.
    * If errors do need to be reported they have to be part of the resolved valued
    */
-  onAsync: <TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
-    eventName: string,
-    listener: (...args: TArgs) => PromiseLike<TResult>,
-  ) => void;
+  onAsync: (<TEvent extends ApiEventName>(
+    eventName: TEvent,
+    listener: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>,
+  ) => void) &
+    // TODO: remove fallback definition
+    (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
+      eventName: string,
+      listener: (...args: TArgs) => PromiseLike<TResult>,
+    ) => void);
 
   /**
    * wraps a function such that it will emitAndAwait `will-${eventName}` and `did-${eventName}` events
@@ -796,10 +829,15 @@ export interface IExtensionApi {
    * the result of the callback if any (the result is the first argument because the number
    * of arguments may be variable)
    */
-  withPrePost: <TResult, TArgs extends readonly unknown[] = unknown[]>(
+  withPrePost: (<TEvent extends ApiEventName>(
     eventName: string,
-    callback: (...args: TArgs) => PromiseLike<TResult>,
-  ) => (...args: TArgs) => Promise<TResult>;
+    callback: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>,
+  ) => (...args: ApiEventArgs<TEvent>) => Promise<ApiEventResult<TEvent>>) &
+    // TODO: remove fallback definition
+    (<TResult, TArgs extends readonly unknown[] = unknown[]>(
+      eventName: string,
+      callback: (...args: TArgs) => PromiseLike<TResult>,
+    ) => (...args: TArgs) => Promise<TResult>);
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
