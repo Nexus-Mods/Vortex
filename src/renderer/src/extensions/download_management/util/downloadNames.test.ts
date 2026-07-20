@@ -1,9 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
+
+import { afterEach, beforeEach, describe, it, expect } from "vitest";
 
 import { makeFileInfo } from "../../../test-utils/builders";
 import type { IDownload } from "../types/IDownload";
 import {
   TEMP_DOWNLOAD_PREFIX,
+  freeDownloadName,
   friendlyDownloadName,
   isTempDownloadName,
   nameFromUrl,
@@ -136,5 +141,38 @@ describe("friendlyDownloadName", () => {
       }),
     );
     expect(result).toBe("Cool Mod");
+  });
+});
+
+describe("freeDownloadName", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "vortex-dl-"));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("returns the name unchanged when nothing collides", async () => {
+    expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.7z");
+  });
+
+  it("appends .1 before the extension on the first collision", async () => {
+    await writeFile(path.join(dir, "Mod.7z"), "x");
+    expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.1.7z");
+  });
+
+  it("increments the counter until a free name is found", async () => {
+    await writeFile(path.join(dir, "Mod.7z"), "x");
+    await writeFile(path.join(dir, "Mod.1.7z"), "x");
+    await writeFile(path.join(dir, "Mod.2.7z"), "x");
+    expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.3.7z");
+  });
+
+  it("handles a name with no extension", async () => {
+    await writeFile(path.join(dir, "README"), "x");
+    expect(await freeDownloadName(dir, "README")).toBe("README.1");
   });
 });
