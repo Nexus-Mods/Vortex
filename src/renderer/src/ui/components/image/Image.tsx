@@ -58,7 +58,7 @@ export const Image = ({
           className={joinClasses(
             [
               "absolute z-1 rounded-[inherit]",
-              fit === "cover" ? "size-full object-cover" : "max-h-full",
+              isBlurred || fit === "cover" ? "size-full object-cover" : "max-h-full",
               imageClassName,
             ],
             {
