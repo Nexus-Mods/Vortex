@@ -54,7 +54,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         ? t("detail::item::wrong_version_installed")
         : report.category === "install-uninstalled"
           ? t("detail::item::correct_version_downloaded")
-          : t(count > 1 ? "detail::item::requires_files_plural" : "detail::item::requires_files", {
+          : t(count > 1 ? "shared::requires_files_plural" : "shared::requires_files", {
               count,
             });
 

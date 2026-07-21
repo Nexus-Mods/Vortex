@@ -1,4 +1,4 @@
-import { mdiSwapHorizontal } from "@mdi/js";
+import { mdiCheck } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +14,7 @@ import {
 import type { IInstalledFile } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import { FileRequirement } from "../FileRequirement";
 
@@ -39,6 +40,7 @@ export const EnableCard = ({
           <Button
             appearance="subdued"
             brand="neutral"
+            leftIconPath={nxmModOutline}
             size="sm"
             onClick={() => viewInLoadout(api, correctFile)}
           >
@@ -48,7 +50,7 @@ export const EnableCard = ({
           <Button
             appearance="strong"
             brand="neutral"
-            leftIconPath={mdiSwapHorizontal}
+            leftIconPath={mdiCheck}
             size="sm"
             onClick={() =>
               enabledFile

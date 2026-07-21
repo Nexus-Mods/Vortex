@@ -1,4 +1,4 @@
-import { mdiChevronRight, mdiDownload } from "@mdi/js";
+import { mdiChevronRight, mdiMonitorArrowDownVariant } from "@mdi/js";
 import React, { type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -53,8 +53,14 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         <div className="min-w-0 grow text-left">
           <div className="flex items-start justify-between gap-x-4">
             <div className="min-w-0">
-              <Typography className="truncate">
+              <Typography brand="neutral-translucent" className="truncate">
                 {t("listing::item::title", { modName: mod.requiredBy.modName })}
+              </Typography>
+
+              <Typography appearance="subdued" className="truncate" typographyType="body-sm">
+                {mod.notes
+                  ? t("detail::item::author_note", { note: mod.notes })
+                  : t("detail::item::may_require_file")}
               </Typography>
 
               <Typography appearance="subdued" className="truncate" typographyType="body-sm">
@@ -79,7 +85,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
           appearance="moderate"
           brand="neutral"
           className="shrink-0 self-center"
-          leftIconPath={mdiDownload}
+          leftIconPath={mdiMonitorArrowDownVariant}
           rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
           size="sm"
           onClick={(e) => {

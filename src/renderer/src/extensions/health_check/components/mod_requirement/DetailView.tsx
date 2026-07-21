@@ -1,4 +1,4 @@
-import { mdiCheck, mdiDownload, mdiHelpCircleOutline, mdiOpenInNew } from "@mdi/js";
+import { mdiCheck, mdiHelpCircleOutline, mdiMonitorArrowDownVariant, mdiOpenInNew } from "@mdi/js";
 import React, { useCallback, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -125,7 +125,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   <Button
                     appearance="strong"
                     brand="neutral"
-                    leftIconPath={mdiDownload}
+                    leftIconPath={mdiMonitorArrowDownVariant}
                     rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                     size="sm"
                     onClick={() => void installInApp()}

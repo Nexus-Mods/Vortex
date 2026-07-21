@@ -7,6 +7,7 @@ import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequi
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import { EnableCard } from "../cards/EnableCard";
 import { FileRequirement } from "../FileRequirement";
@@ -44,6 +45,7 @@ export const ToggleRows = ({
             <Button
               appearance="subdued"
               brand="neutral"
+              leftIconPath={nxmModOutline}
               size="sm"
               onClick={() => viewInLoadout(api, requirement.enabledFile)}
             >

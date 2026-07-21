@@ -1,4 +1,10 @@
-import { mdiCallSplit, mdiChevronRight, mdiSwapHorizontal, mdiTrayArrowDown } from "@mdi/js";
+import {
+  mdiCallSplit,
+  mdiCheck,
+  mdiChevronRight,
+  mdiSwapHorizontal,
+  mdiTrayArrowDown,
+} from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -86,9 +92,11 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         <div className="min-w-0 grow text-left">
           <div className="flex items-start justify-between gap-x-4">
             <div className="min-w-0">
-              <Typography className="truncate">{title}</Typography>
+              <Typography brand="neutral-translucent" className="truncate">
+                {title}
+              </Typography>
 
-              <Typography appearance="subdued" as="div" typographyType="body-sm">
+              <Typography appearance="subdued" className="truncate" typographyType="body-sm">
                 {summary}
               </Typography>
 
@@ -151,6 +159,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
           <Button
             appearance="moderate"
             brand="neutral"
+            leftIconPath={mdiCheck}
             size="sm"
             onClick={(e) => {
               e.stopPropagation();

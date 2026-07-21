@@ -14,7 +14,7 @@ export const useReportCopy = (report: IFileRequirementReport) => {
       ? t(count > 1 ? "listing::item::requires_pick_plural" : "listing::item::requires_pick", {
           count,
         })
-      : t(count > 1 ? "listing::item::requires_count_plural" : "listing::item::requires_count", {
+      : t(count > 1 ? "shared::requires_files_plural" : "shared::requires_files", {
           count,
         });
   return { title, summary };
