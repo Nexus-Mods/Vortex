@@ -235,68 +235,69 @@ function installDependency(
 
 function checkMissingDependencies(
   api: IExtensionApi,
-  loadFailures: { [extId: string]: IExtensionLoadFailure[] },
-) {
-  const missingDependencies = Object.keys(loadFailures).reduce((prev, extId) => {
-    const deps = loadFailures[extId].filter((fail) => fail.id === "dependency");
-    deps.forEach((dep) => {
-      const depId = dep.args.dependencyId;
-      if (prev[depId] === undefined) {
-        prev[depId] = [];
-      }
-      prev[depId].push(extId);
-    });
-    return prev;
-  }, {});
+  loadFailures: Record<string, IExtensionLoadFailure[]>,
+): void {
+  const missingDependencies = Object.values(loadFailures).reduce<Set<string>>((prev, failures) => {
+    for (const failure of failures) {
+      if (failure.id !== "dependency") continue;
 
-  if (Object.keys(missingDependencies).length > 0) {
-    const updateInstalled = genUpdateInstalledExtensions(api);
-    api.sendNotification({
-      type: "warning",
-      message:
-        "Some of the installed extensions couldn't be loaded because " +
-        "they have missing or incompatible dependencies.",
-      actions: [
-        {
-          title: "Fix",
-          action: (dismiss: NotificationDismiss) => {
-            PromiseBB.map(Object.keys(missingDependencies), (depId) =>
-              installDependency(api, depId, updateInstalled)
-                .then((results) => {
-                  if (results) {
-                    api.sendNotification({
-                      type: "success",
-                      message: "Missing dependencies were installed - please restart Vortex",
-                      actions: [
-                        {
-                          title: "Restart now",
-                          action: () => {
-                            relaunch();
-                          },
-                        },
-                      ],
-                    });
-                    dismiss();
-                  }
-                })
-                .catch((err) => {
-                  api.showErrorNotification("Failed to install extension", err, {
-                    message: depId,
-                  });
-                }),
-            );
-          },
+      const { dependencyId } = failure.args;
+      prev.add(dependencyId);
+    }
+
+    return prev;
+  }, new Set<string>());
+
+  if (missingDependencies.size === 0) return;
+
+  // TODO: native Promise
+  const updateInstalled = genUpdateInstalledExtensions(api);
+
+  // TODO: native Promise
+  const promises = missingDependencies.values().map((dependencyId) =>
+    Promise.resolve(installDependency(api, dependencyId, updateInstalled)).catch((err) => {
+      api.showErrorNotification("Failed to install extension", err, {
+        message: dependencyId,
+      });
+    }),
+  );
+
+  api.sendNotification({
+    type: "warning",
+    message:
+      "Some of the installed extensions couldn't be loaded because " +
+      "they have missing or incompatible dependencies.",
+    actions: [
+      {
+        title: "Fix",
+        action: (dismiss) => {
+          void (async () => {
+            await Promise.all(promises);
+            api.sendNotification({
+              type: "success",
+              message: "Missing dependencies were installed - please restart Vortex",
+              actions: [
+                {
+                  title: "Restart now",
+                  action: () => {
+                    relaunch();
+                  },
+                },
+              ],
+            });
+            dismiss();
+          })();
         },
-      ],
-    });
-  }
+      },
+    ],
+  });
 }
 
 function genUpdateInstalledExtensions(api: IExtensionApi) {
   return (initial: boolean): PromiseBB<void> => {
     return readExtensions(true)
       .then((ext) => {
-        const state: IState = api.store.getState();
+        const state = api.getState();
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
           if (!localState.reloadNecessary) {
             localState.reloadNecessary = true;
