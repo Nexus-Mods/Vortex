@@ -115,6 +115,7 @@ import {
 import { checkModVersion } from "./util/checkModsVersion";
 import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
+import { isStoragePathName } from "./util/healStoragePathNames";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -525,17 +526,6 @@ const ATTRIBUTES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 function processAttributes(state: IState, input: any, quick: boolean): PromiseBB<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
-  const modName = decodeHTML(
-    input.download?.modInfo?.nexus?.modInfo?.name ?? input.download?.modInfo?.name,
-  );
-  const fileName = decodeHTML(
-    input.download?.modInfo?.nexus?.fileInfo?.name ??
-      input.download?.localPath ??
-      input.meta?.fileName,
-  );
-  const fuzzRatio =
-    modName !== undefined && fileName !== undefined ? fuzz.ratio(modName, fileName) : 100;
-
   let fetchPromise: PromiseBB<IRemoteInfo> = PromiseBB.resolve(undefined);
 
   let gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
@@ -636,6 +626,17 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
     const nexusCollectionInfo: IRevision =
       info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
 
+    // never accept a CDN storage path as a name (LAZ-807); `?? undefined`
+    // normalizes an explicit null, which would otherwise make decodeHTML
+    // return "" and defeat the fuzz-ratio guard below
+    const rawModName = nexusModInfo?.name ?? input.download?.modInfo?.name ?? undefined;
+    const modName = decodeHTML(isStoragePathName(rawModName) ? undefined : rawModName);
+    const fileName = decodeHTML(
+      nexusFileInfo?.name ?? input.download?.localPath ?? input.meta?.fileName,
+    );
+    const fuzzRatio =
+      modName !== undefined && fileName !== undefined ? fuzz.ratio(modName, fileName) : 100;
+
     const gameMode = activeGameId(state);
     const category = remapCategory(state, nexusModInfo?.category_id, gameId, gameMode);
 
@@ -646,7 +647,7 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       collectionId:
         input.download?.modInfo?.nexus?.ids?.collectionId ?? nexusCollectionInfo?.collection?.id,
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId ?? nexusCollectionInfo?.id,
-      collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection["slug"],
+      collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection?.["slug"],
       revisionNumber: nexusIds?.revisionNumber ?? nexusCollectionInfo?.revisionNumber,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
       uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
