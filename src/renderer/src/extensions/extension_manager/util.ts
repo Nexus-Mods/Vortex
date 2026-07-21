@@ -1,4 +1,5 @@
-import * as path from "path";
+import { rm, readdir, mkdir, rename, writeFile } from "node:fs/promises";
+import * as path from "node:path";
 
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import PromiseBB from "bluebird";
@@ -6,6 +7,9 @@ import * as _ from "lodash";
 import SevenZip from "node-7z";
 import { SemVer } from "semver";
 import { generate as shortid } from "shortid";
+import { z } from "zod";
+
+import { log } from "@/logging";
 
 import type {
   ExtensionType,
@@ -26,7 +30,6 @@ import {
 import * as fs from "../../util/fs";
 import { writeFileAtomic } from "../../util/fsAtomic";
 import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
 import { jsonRequest, rawRequest } from "../../util/network";
 import { INVALID_FILENAME_RE, truthy } from "../../util/util";
 import { addLocalDownload, setDownloadModInfo } from "../download_management/actions/state";
@@ -304,14 +307,11 @@ export async function downloadAndInstallExtension(
     let downloadPromise: Promise<string[]>;
 
     if (ext.modId !== undefined) {
-      // TODO: native Promise
-      downloadPromise = Promise.resolve(downloadFromNexus(api, ext));
+      downloadPromise = downloadFromNexus(api, ext);
     } else if (ext.githubRawPath) {
-      // TODO: native Promise
-      downloadPromise = Promise.resolve(downloadGithubRaw(api, ext));
+      downloadPromise = downloadGithubRaw(api, ext);
     } else if (ext.githubRelease) {
-      // TODO: native Promise
-      downloadPromise = Promise.resolve(downloadGithubRelease(api, ext));
+      downloadPromise = downloadGithubRelease(api, ext);
     } else {
       return false;
     }
@@ -396,10 +396,10 @@ function archiveFileName(ext: IExtensionDownloadInfo): string {
     : `${sanitize(name)}.7z`;
 }
 
-export function downloadFromNexus(
+async function downloadFromNexus(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
-): PromiseBB<string[]> {
+): Promise<string[]> {
   if (ext.fileId === undefined && ext.modId !== undefined) {
     const state = api.getState();
     const availableExt = state.session.extensions.available.find(
@@ -408,109 +408,105 @@ export function downloadFromNexus(
     if (availableExt !== undefined) {
       ext.fileId = availableExt.fileId;
     } else {
-      return PromiseBB.reject(new Error("unavailable nexus extension"));
+      throw new Error("unavailable nexus extension");
     }
   }
 
   log("debug", "download from nexus", archiveFileName(ext));
-  // TODO: remove evil
-  return PromiseBB.resolve(
-    api.emitAndAwait<"nexus-download">(
-      "nexus-download",
-      SITE_ID,
-      ext.modId,
-      ext.fileId,
-      archiveFileName(ext),
-      false,
-    ),
+  return await api.emitAndAwait<"nexus-download">(
+    "nexus-download",
+    SITE_ID,
+    ext.modId,
+    ext.fileId,
+    archiveFileName(ext),
+    false,
   );
 }
 
-export function downloadGithubRelease(
+async function downloadGithubRelease(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
-): PromiseBB<string[]> {
-  return new PromiseBB<string[]>((resolve, reject) => {
-    api.events.emit(
+): Promise<string[]> {
+  try {
+    const downloadIds = await api.emitAndAwait<"start-download">(
       "start-download",
       [ext.githubRelease],
       { game: SITE_ID },
       archiveFileName(ext),
-      (err: Error, dlId: string) => {
-        if (err !== null) {
-          if (err instanceof AlreadyDownloaded) {
-            const state = api.getState();
-            const downloads = state.persistent.downloads.files;
-            const existingId = Object.keys(downloads).find(
-              (iter) => downloads[iter].localPath === err.fileName,
-            );
-
-            return existingId !== undefined ? resolve([existingId]) : reject(err);
-          }
-          return reject(err);
-        } else {
-          return resolve([dlId]);
-        }
-      },
-      "always",
-      { allowInstall: false },
     );
-  }).catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
-    const state = api.getState();
-    const downloads = state.persistent.downloads.files;
-    const dlId = Object.keys(downloads).find((iter) => downloads[iter].localPath === err.fileName);
-    return [dlId];
-  });
-}
-
-export function downloadFile(url: string, outputPath: string): PromiseBB<void> {
-  return PromiseBB.resolve(rawRequest(url)).then((data: Buffer) =>
-    fs.writeFileAsync(outputPath, data),
-  );
-}
-
-function downloadGithubRawRecursive(repo: string, source: string, destination: string) {
-  const apiUrl = githubApiUrl(repo, "contents", source) + "?ref=" + GAMES_BRANCH;
-
-  return PromiseBB.resolve(rawRequest(apiUrl, { encoding: "utf8" })).then((content: string) => {
-    const data = JSON.parse(content);
-    if (!Array.isArray(data)) {
-      if (typeof data === "object" && data.message !== undefined) {
-        return PromiseBB.reject(new ServiceTemporarilyUnavailable(data.message));
-      } else {
-        log("info", "unexpected response from github", content);
-        return PromiseBB.reject(new Error("Unexpected response from github (see log file)"));
-      }
+    return downloadIds;
+  } catch (err) {
+    if (!(err instanceof AlreadyDownloaded)) {
+      throw err;
     }
 
-    const repoFiles: string[] = data
-      .filter((iter) => iter.type === "file")
-      .map((iter) => iter.name);
-
-    const repoDirs: string[] = data.filter((iter) => iter.type === "dir").map((iter) => iter.name);
-
-    return PromiseBB.map(repoFiles, (fileName) =>
-      downloadFile(
-        githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
-        path.join(destination, fileName),
-      ),
-    ).then(() =>
-      PromiseBB.map(repoDirs, (fileName) => {
-        const sourcePath = `${source}/${fileName}`;
-        const outPath = path.join(destination, fileName);
-        return fs
-          .mkdirAsync(outPath)
-          .then(() => downloadGithubRawRecursive(repo, sourcePath, outPath));
-      }),
+    const state = api.getState();
+    const downloads = state.persistent.downloads.files;
+    const existingId = Object.keys(downloads).find(
+      (iter) => downloads[iter].localPath === err.fileName,
     );
-  });
+
+    if (existingId) return [existingId];
+    throw err;
+  }
 }
 
-export function downloadGithubRaw(
+const githubContentsApiSchema = z.array(
+  z.looseObject({
+    name: z.string(),
+    type: z.union([z.literal("file"), z.literal("dir")]),
+  }),
+);
+
+async function downloadGithubRawRecursive(
+  repo: string,
+  source: string,
+  destination: string,
+): Promise<void> {
+  const apiUrl = githubApiUrl(repo, "contents", source) + "?ref=" + GAMES_BRANCH;
+
+  const content = (await rawRequest(apiUrl, { encoding: "utf8" })) as string;
+  const data: unknown = JSON.parse(content);
+
+  if (!Array.isArray(data)) {
+    if (typeof data === "object" && "message" in data && typeof data.message === "string") {
+      throw new ServiceTemporarilyUnavailable(data.message);
+    } else {
+      log("info", "unexpected response from github", content);
+      throw new Error("Unexpected response from github (see log file)");
+    }
+  }
+
+  const result = githubContentsApiSchema.safeParse(data);
+  if (result.error) throw result.error;
+
+  const repoFiles = result.data.filter((item) => item.type === "file").map((item) => item.name);
+  const repoDirs = result.data.filter((item) => item.type === "dir").map((item) => item.name);
+
+  const filePromises = repoFiles.map(async (fileName) => {
+    const url = githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`);
+    const dest = path.join(destination, fileName);
+
+    const buffer = (await rawRequest(url)) as Buffer;
+    await writeFile(dest, buffer);
+  });
+
+  const dirPromises = repoDirs.map(async (dirName) => {
+    const sourcePath = `${source}/${dirName}`;
+    const outPath = path.join(destination, dirName);
+
+    await mkdir(outPath, { recursive: true });
+    await downloadGithubRawRecursive(repo, sourcePath, outPath);
+  });
+
+  await Promise.all([...filePromises, ...dirPromises]);
+}
+
+async function downloadGithubRaw(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
-): PromiseBB<string[]> {
-  const state: IState = api.store.getState();
+): Promise<string[]> {
+  const state = api.getState();
   const downloadPath = downloadPathForGame(state, SITE_ID);
 
   const archiveName = archiveFileName(ext);
@@ -523,42 +519,33 @@ export function downloadGithubRaw(
   // the only plausible reason the file could already exist is if a previous install failed
   // or if we don't know the version. We could create a new new, numbered, download, but considering
   // these are small files I think that is more likely to frustrate the user
-  const cleanProm: PromiseBB<void> =
-    existing !== undefined
-      ? fs.removeAsync(path.join(downloadPath, archiveName)).then(() => {
-          api.events.emit("remove-download", existing, undefined, {
-            confirmed: true,
-          });
-        })
-      : PromiseBB.resolve();
+  if (existing !== undefined) {
+    const toDelete = path.join(downloadPath, archiveName);
+    await rm(toDelete, { force: true });
+    api.events.emit("remove-download", existing, undefined, {
+      confirmed: true,
+    });
+  }
 
-  return cleanProm.then(() =>
-    fs.withTmpDir((tmpPath: string) => {
-      const archivePath = path.join(tmpPath, archiveName);
+  const tmpPath = path.join(getVortexPath("temp"), shortid());
+  await mkdir(tmpPath, { recursive: true });
 
-      return downloadGithubRawRecursive(ext.github, ext.githubRawPath, tmpPath)
-        .then(() => {
-          return fs.readdirAsync(tmpPath);
-        })
-        .then((repoFiles: string[]) => {
-          const pack = new SevenZip();
-          return pack.add(
-            archivePath,
-            repoFiles.map((fileName) => path.join(tmpPath, fileName)),
-          );
-        })
-        .then(() =>
-          fs.moveAsync(archivePath, path.join(downloadPath, archiveName), {
-            overwrite: true,
-          }),
-        )
-        .then(() => {
-          const archiveId = shortid();
-          api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
-          return [archiveId];
-        });
-    }),
+  await downloadGithubRawRecursive(ext.github, ext.githubRawPath, tmpPath);
+  const repoFiles = await readdir(tmpPath, { recursive: true, withFileTypes: true });
+
+  const archivePath = path.join(tmpPath, archiveName);
+  const pack = new SevenZip();
+  await Promise.resolve(
+    pack.add(
+      archivePath,
+      repoFiles.map((x) => path.join(x.name, x.parentPath)),
+    ),
   );
+
+  await rename(archivePath, path.join(downloadPath, archiveName));
+  const archiveId = shortid();
+  api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
+  return [archiveId];
 }
 
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
