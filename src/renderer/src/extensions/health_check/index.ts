@@ -51,6 +51,7 @@ function init(context: IExtensionContext): boolean {
     priority: 60,
     hotkey: "H",
     group: "per-game",
+    newLayout: true,
     visible: () => activeGameId(context.api.getState()) !== undefined,
     props: () => ({
       api: context.api,

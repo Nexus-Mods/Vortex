@@ -23,6 +23,7 @@ import {
   makeDownloadedFileHydrator,
   makeInstalledFileHydrator,
   type IDownloadedFileRef,
+  type IInstalledFile,
   type IInstalledFileRef,
 } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 
@@ -31,7 +32,7 @@ import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
-import type { IFileRequirementsCheckMetadata, IInstalledFile } from "../types";
+import type { IFileRequirementsCheckMetadata } from "../utils/fileRequirements/mapRequirementsReport";
 import { checkFileRequirements } from "./fileRequirementsCheck";
 
 const mockActiveProfile = vi.mocked(activeProfile);

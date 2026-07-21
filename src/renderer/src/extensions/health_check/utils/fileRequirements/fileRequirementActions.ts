@@ -1,9 +1,4 @@
 import { knownGames } from "@/extensions/gamemode_management/selectors";
-import type {
-  IDownloadedFile,
-  IFileRequirementCandidate,
-  IInstalledFile,
-} from "@/extensions/health_check/types";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
@@ -13,6 +8,9 @@ import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn, renderModName, sanitizeCSSId } from "@/util/api";
+
+import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
+import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
 // File-level requirement actions: web links, single-file download, reveal-in-loadout,
 // and enable / switch active version.
@@ -45,25 +43,28 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 export async function downloadFileRequirement(
   api: IExtensionApi,
   candidate: IFileRequirementCandidate,
-): Promise<void> {
+): Promise<boolean> {
   if (shouldShowPremiumAd(api.getState())) {
     openFilePage(api, candidate);
-    return;
+    return false;
   }
 
   const mod = decodeUID(candidate.modUID);
   const file = decodeUID(candidate.fileUID);
+
   const domain = mod ? nexusDomain(mod.gameId) : undefined;
   if (!mod || !file || !domain) {
     log("warn", "cannot download file requirement: unresolved ids", {
       fileUID: candidate.fileUID,
     });
-    return;
+
+    return false;
   }
 
   // The downloader keys downloads on Vortex's internal game id, not the Nexus domain.
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), domain) || domain;
   const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
+
   try {
     const dlId = await new Promise<string>((resolve, reject) =>
       api.events.emit(
@@ -76,6 +77,7 @@ export async function downloadFileRequirement(
         { allowInstall: false },
       ),
     );
+
     await new Promise<string>((resolve, reject) =>
       api.events.emit(
         "start-install-download",
@@ -84,10 +86,14 @@ export async function downloadFileRequirement(
         (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
       ),
     );
+
+    return true;
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${candidate.modName}`, err, {
       allowReport: false,
     });
+
+    return false;
   }
 }
 
@@ -99,7 +105,7 @@ export async function downloadFileRequirement(
 export async function installDownloadedFile(
   api: IExtensionApi,
   file: IDownloadedFile,
-): Promise<void> {
+): Promise<boolean> {
   try {
     await new Promise<string>((resolve, reject) =>
       api.events.emit(
@@ -109,10 +115,12 @@ export async function installDownloadedFile(
         (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
       ),
     );
+    return true;
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${file.modName}`, err, {
       allowReport: false,
     });
+    return false;
   }
 }
 

@@ -3,7 +3,6 @@ import {
   type InstalledFile,
 } from "@nexusmods/file-dependency-resolver";
 
-import type { IFileRequirementsCheckMetadata } from "@/extensions/health_check/types";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -14,7 +13,11 @@ import {
   makeDownloadedFileHydrator,
   makeInstalledFileHydrator,
 } from "./installedFiles";
-import { type HydratedFile, mapRequirementsReport } from "./mapRequirementsReport";
+import {
+  type HydratedFile,
+  type IFileRequirementsCheckMetadata,
+  mapRequirementsReport,
+} from "./mapRequirementsReport";
 
 /**
  * Resolve the active game's file-level requirements: gather installed and

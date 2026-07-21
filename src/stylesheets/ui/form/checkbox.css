@@ -70,6 +70,8 @@
 
             & .nxm-checkbox-icon {
                 opacity: 0;
+                width: calc(var(--spacing) * 4);
+                height: calc(var(--spacing) * 4);
                 transition-property: opacity;
                 transition-timing-function: var(--default-transition-timing-function);
                 transition-duration: var(--default-transition-duration);

@@ -5,16 +5,151 @@ import type {
   FileRequirementsReport,
 } from "@nexusmods/file-dependency-resolver";
 
-import type {
-  IDownloadedFile,
-  IFileLevelRequirements,
-  IFileRequirement,
-  IFileRequirementBranch,
-  IFileRequirementCandidate,
-  IFileRequirementsCheckMetadata,
-  IInstalledFile,
-  IUninstalledFileRequirement,
-} from "@/extensions/health_check/types";
+import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
+
+/**
+ * A downloadable file the user can fetch to satisfy a requirement
+ */
+export interface IFileRequirementCandidate {
+  /** Composite id for the file version (game-scoped fileId combined with the game id) */
+  fileUID: string;
+  /** Composite id for the mod (game-scoped modId combined with the game id) */
+  modUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Mod summary */
+  modSummary?: string;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+}
+
+/**
+ * Dependency not installed; download a file to satisfy it
+ */
+export interface IMissingFileRequirement {
+  kind: "missing";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The file to download */
+  candidate: IFileRequirementCandidate;
+}
+
+/**
+ * A wrong version of the chain is enabled and no acceptable version is owned;
+ * download a different (correct) version.
+ */
+export interface IWrongVersionInstalledRequirement {
+  kind: "wrong-version-installed";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The wrong version currently enabled */
+  installedFile: IInstalledFile;
+  /** The correct version to download */
+  candidate: IFileRequirementCandidate;
+}
+
+/**
+ * Correct and wrong versions installed, wrong one enabled; switch the active version
+ */
+export interface IWrongVersionEnabledRequirement {
+  kind: "wrong-version-enabled";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The wrong version currently enabled */
+  enabledFile: IInstalledFile;
+  /** The correct, disabled version to enable */
+  correctFile: IInstalledFile;
+}
+
+/**
+ * One alternative (update group) of an OR requirement, already classified to the
+ * action it needs if chosen: download a file, or enable an owned-but-disabled one.
+ */
+export type IFileRequirementBranch =
+  | {
+      kind: "download";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The file to download for this alternative */
+      candidate: IFileRequirementCandidate;
+    }
+  | {
+      kind: "enable";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The acceptable, installed-but-disabled version to enable */
+      correctFile: IInstalledFile;
+      /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+      enabledFile?: IInstalledFile;
+    };
+
+/**
+ * Several alternatives satisfy the requirement; the user picks one. Branches that
+ * are owned-but-disabled offer an enable/switch action instead of a download.
+ */
+export interface IOrFileRequirement {
+  kind: "or";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The OR alternatives, one per update group */
+  branches: IFileRequirementBranch[];
+}
+
+/**
+ * Correct version downloaded but not installed; install it to satisfy the requirement
+ */
+export interface IUninstalledFileRequirement {
+  kind: "correct-version-uninstalled";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The downloaded-but-not-installed file to install */
+  uninstalledFile: IDownloadedFile;
+}
+
+/**
+ * A single dependency of a source file, discriminated on kind
+ */
+export type IFileRequirement =
+  | IMissingFileRequirement
+  | IWrongVersionInstalledRequirement
+  | IWrongVersionEnabledRequirement
+  | IUninstalledFileRequirement
+  | IOrFileRequirement;
+
+/**
+ * Unsatisfied requirements for one source file, as the resolver maps them. The UI
+ * splits this into homogeneous per-category reports (IFileRequirementReport) for display.
+ */
+export interface IFileLevelRequirements {
+  /** Composite id of the source file version that has the requirements */
+  sourceFileUID: string;
+  /** Source mod name, for the listing and detail headings */
+  sourceModName: string;
+  /** Composite id for the source mod, for building its Nexus links */
+  sourceModUID: string;
+  /** The source file's unsatisfied dependencies (kinds can be mixed) */
+  requirements: IFileRequirement[];
+}
+
+/**
+ * Metadata for the file-level requirements health check result
+ */
+export interface IFileRequirementsCheckMetadata {
+  /** Game ID this check was run for */
+  gameId: string;
+  /** Total number of installed files inspected */
+  modsChecked: number;
+  /** Requirements keyed by source file UID */
+  fileRequirements: { [fileUID: string]: IFileLevelRequirements };
+  /** Any errors encountered during the check */
+  errors: string[];
+}
 
 /** Discriminated union of the two file shapes the hydrator can return. */
 export type HydratedFile =

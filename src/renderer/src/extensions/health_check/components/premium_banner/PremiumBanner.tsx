@@ -22,11 +22,12 @@ export const PremiumBanner = () => {
     <div className="flex items-center gap-x-2 rounded-lg border border-stroke-weak p-3">
       <PremiumBadge />
 
-      <Typography brand="neutral-translucent">
+      <Typography appearance="moderate" brand="neutral-translucent">
         <Trans
           components={{
             premiumLink: (
               <TypographyLink
+                brand="neutral-translucent"
                 typographyType="inherit"
                 onClick={() => {
                   opn(

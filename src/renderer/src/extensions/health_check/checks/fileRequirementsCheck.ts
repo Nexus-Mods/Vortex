@@ -22,7 +22,7 @@ import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
 import { setHealthCheckRunning } from "../actions/session";
 import { isFileRequirementsUserEnabled } from "../selectors";
-import type { IFileRequirementsCheckMetadata } from "../types";
+import type { IFileRequirementsCheckMetadata } from "../utils/fileRequirements/mapRequirementsReport";
 
 export const FILE_REQUIREMENTS_CHECK_ID = "check-file-level-requirements";
 

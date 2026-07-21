@@ -1,5 +1,4 @@
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
-import type { IDownloadedFile, IInstalledFile } from "@/extensions/health_check/types";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
 import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
@@ -8,6 +7,54 @@ import type { IProfile } from "@/extensions/profile_management/types/IProfile";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { renderModName } from "@/util/api";
 import { getSafe } from "@/util/storeHelper";
+
+/**
+ * A file the user already has installed (a Vortex mod)
+ */
+export interface IInstalledFile {
+  /** Vortex mod id (key into persistent.mods and profile.modState) */
+  modId: string;
+  /** Composite id for the file version (game-scoped fileId combined with the game id) */
+  fileUID: string;
+  /** Composite id for the mod (game-scoped modId combined with the game id) */
+  modUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+  /** Whether this file is currently enabled in the active profile */
+  enabled: boolean;
+}
+
+/**
+ * A file the user has downloaded but not yet installed
+ */
+export interface IDownloadedFile {
+  /** Download ID - passed directly to start-install-download as the archive ID */
+  downloadId: string;
+  /** Composite id for the file version */
+  fileUID: string;
+  /** Composite id for the mod, for building its Nexus links */
+  modUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Mod short description/summary */
+  modSummary?: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+}
 
 /** The subset of mod attributes the file-level gather/hydrate reads. */
 interface IInstalledModAttributes {
