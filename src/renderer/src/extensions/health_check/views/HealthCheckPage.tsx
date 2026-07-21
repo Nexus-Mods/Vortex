@@ -11,6 +11,8 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setOpenMainPage, setSettingsPage } from "@/actions/session";
+import { DisplayOptions } from "@/extensions/gamemode_management/components/DisplayOptions";
+import { Search } from "@/extensions/gamemode_management/components/Search";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
@@ -23,8 +25,9 @@ import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
 import { useRelativeTime } from "@/util/useRelativeTime";
-import MainPage from "@/views/MainPage";
-import PageRoot from "@/views/PageRoot";
+import { Page } from "@/views/components/Page/Page";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
@@ -44,7 +47,6 @@ import HealthCheckDetailPage from "./HealthCheckDetailPage";
 interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
-  /** Passed by MainPageContainer for newLayout pages; drives the page-hidden styling. */
   active?: boolean;
 }
 
@@ -209,58 +211,40 @@ function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
     );
 
   return (
-    <PageRoot active={active} id="health-check-page">
-      <div className="space-y-6 p-6">
-        <div className="flex items-center gap-x-6">
-          <div className="flex grow items-center gap-x-2">
-            <Pictogram name="health-check" size="sm" />
+    <Page active={active} id="health-check-page" scrollable={false}>
+      <PageHeader
+        pictogramName="health-check"
+        subtitle={t("listing::subtitle")}
+        title={t("listing::title")}
+      >
+        <div className="flex shrink-0 items-center gap-x-2">
+          <LastUpdated />
 
-            <div className="grow">
-              <div className="flex items-center gap-x-1.5">
-                <Typography as="h2" typographyType="heading-xs">
-                  {t("listing::title")}
-                </Typography>
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            isLoading={isRefreshing}
+            leftIconPath={mdiRefresh}
+            size="sm"
+            title={t("common:::refresh")}
+            onClick={() => onRefresh?.()}
+          />
 
-                <Typography
-                  as="div"
-                  className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1 leading-4"
-                  typographyType="title-xs"
-                >
-                  {t("common:::beta")}
-                </Typography>
-              </div>
-
-              <Typography appearance="moderate">{t("listing::subtitle")}</Typography>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-x-2">
-            <LastUpdated />
-
-            <Button
-              appearance="subdued"
-              brand="neutral"
-              isLoading={isRefreshing}
-              leftIconPath={mdiRefresh}
-              size="sm"
-              title={t("common:::refresh")}
-              onClick={() => onRefresh?.()}
-            />
-
-            <Button
-              appearance="subdued"
-              brand="neutral"
-              leftIconPath={mdiCog}
-              size="sm"
-              title={t("common:::settings")}
-              onClick={() => {
-                dispatch(setOpenMainPage("application_settings", false));
-                dispatch(setSettingsPage("Vortex"));
-              }}
-            />
-          </div>
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            leftIconPath={mdiCog}
+            size="sm"
+            title={t("common:::settings")}
+            onClick={() => {
+              dispatch(setOpenMainPage("application_settings", false));
+              dispatch(setSettingsPage("Vortex"));
+            }}
+          />
         </div>
+      </PageHeader>
 
+      <PageScroll className="space-y-6 p-6">
         {supportsHide ? (
           <TabProvider
             tab={selectedTab}
@@ -336,8 +320,8 @@ function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
           onClose={() => setShowInstallAllPremium(false)}
           onDownload={() => setShowInstallAllPremium(false)}
         />
-      </div>
-    </PageRoot>
+      </PageScroll>
+    </Page>
   );
 }
 

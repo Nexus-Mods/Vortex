@@ -159,7 +159,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({ page, active, secondar
   try {
     const props = page.propsFunc();
     if (page.newLayout) {
-      // Redesigned pages render their own PageRoot, so we skip the legacy
+      // Redesigned pages render their own Page, so we skip the legacy
       // `.main-page` / header / body-container chrome to keep the subtree flat.
       content = (
         <ExtensionGate id={page.id}>

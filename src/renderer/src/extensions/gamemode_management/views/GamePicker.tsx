@@ -2,14 +2,7 @@ import type { IGameListEntry } from "@nexusmods/nexus-api";
 import type PromiseBB from "bluebird";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
-import React, {
-  type ComponentClass,
-  type UIEvent,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { type ComponentClass, useCallback, useMemo, useRef, useState } from "react";
 import type { WithTranslation } from "react-i18next";
 
 import type { IAvailableExtension, IExtension } from "@/types/extensions";
@@ -24,7 +17,9 @@ import { getSafe } from "@/util/storeHelper";
 
 import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import PageRoot from "../../../views/PageRoot";
+import { Page } from "../../../views/components/Page/Page";
+import { PageHeader } from "../../../views/components/Page/PageHeader";
+import { PageScroll } from "../../../views/components/Page/PageScroll";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
@@ -108,7 +103,6 @@ const GamePicker = ({
   onSetSortManaged,
   onSetSortUnmanaged,
 }: IProps) => {
-  const [scrolled, setScrolled] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [currentFilterValue, setCurrentFilterValue] = useState("");
   const [unmanagedPage, setUnmanagedPage] = useState(1);
@@ -141,13 +135,6 @@ const GamePicker = ({
   );
 
   const getBounds = useCallback(() => rootEl.getBoundingClientRect(), [rootEl]);
-
-  const onScroll = (evt: UIEvent<HTMLDivElement>) => {
-    const isScrolled = evt.currentTarget.scrollTop > 0;
-    if (isScrolled !== scrolled) {
-      setScrolled(isScrolled);
-    }
-  };
 
   const getTabGameNumber = (unfiltered: IGameStored[], filtered: IGameStored[]): string =>
     currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
@@ -294,31 +281,12 @@ const GamePicker = ({
   );
 
   return (
-    <PageRoot active={active} domRef={(el) => setRootEl(el)} pageId={pageId} scrollable={false}>
-      <div
-        className={joinClasses([
-          "relative flex items-center gap-x-6 px-6 pb-3 transition-[padding]",
-          scrolled ? "pt-3 shadow-md" : "pt-6",
-        ])}
+    <Page active={active} domRef={(el) => setRootEl(el)} pageId={pageId} scrollable={false}>
+      <PageHeader
+        pictogramName="game"
+        subtitle={t("Manage games to get started.")}
+        title={t("Games")}
       >
-        <div className="flex grow items-center gap-x-2">
-          <Pictogram
-            className={joinClasses(["transition-[width,height]", scrolled ? "size-7" : "size-14"])}
-            name="game"
-            size="none"
-          />
-
-          <div className="grow">
-            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
-              {t("Games")}
-            </Typography>
-
-            <Typography appearance="subdued" className={joinClasses({ hidden: scrolled })}>
-              {t("Manage games to get started.")}
-            </Typography>
-          </div>
-        </div>
-
         <div className="flex shrink-0 items-center gap-x-2">
           <Search
             placeholder={t("Search games...")}
@@ -347,9 +315,9 @@ const GamePicker = ({
             }}
           />
         </div>
-      </div>
+      </PageHeader>
 
-      <PageRoot.Scroll ref={scrollAreaRef} onScroll={onScroll}>
+      <PageScroll ref={scrollAreaRef}>
         <CollapsibleSection
           actions={
             <Picker
@@ -489,8 +457,8 @@ const GamePicker = ({
             />
           </div>
         </CollapsibleSection>
-      </PageRoot.Scroll>
-    </PageRoot>
+      </PageScroll>
+    </Page>
   );
 };
 

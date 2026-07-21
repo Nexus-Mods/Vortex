@@ -207,7 +207,7 @@ export interface IMainPageOptions {
   /**
    * Opt this page into the redesigned UI. When set, the page is rendered without
    * the legacy `.main-page` / header / body-container wrappers and is expected
-   * to render its own PageRoot as the flat subtree root.
+   * to render its own Page as the flat subtree root.
    */
   newLayout?: boolean;
   priority?: number;

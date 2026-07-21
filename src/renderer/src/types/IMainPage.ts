@@ -24,7 +24,7 @@ export interface IMainPage {
   /**
    * Opt this page into the redesigned UI. When set, MainPageContainer skips the
    * legacy `.main-page` / header / body-container chrome and renders the page
-   * component as the sole root (it is expected to render its own PageRoot),
+   * component as the sole root (it is expected to render its own Page),
    * keeping the DOM subtree flat.
    */
   newLayout?: boolean;

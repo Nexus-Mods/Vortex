@@ -5,9 +5,10 @@ import { useSelector } from "react-redux";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
-import { Pictogram } from "@/ui/components/pictogram/Pictogram";
 import { Typography } from "@/ui/components/typography/Typography";
-import PageRoot from "@/views/PageRoot";
+import { Page } from "@/views/components/Page/Page";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import {
@@ -24,7 +25,6 @@ interface IHealthCheckDetailPageProps {
   content: IHealthCheckContent;
   entry: IHealthCheckEntry;
   onBack: () => void;
-  /** Forwarded from the listing (which gets it from MainPageContainer); drives page-hidden styling. */
   active?: boolean;
 }
 
@@ -67,32 +67,26 @@ function HealthCheckDetailPage({
   const shownEntry = liveEntry ?? entry;
 
   return (
-    <PageRoot active={active} className="space-y-6 p-6" id="health-check-detail-page">
-      <div className="flex items-center justify-between gap-x-6">
-        <div className="flex grow items-center gap-x-2">
-          <Pictogram name="health-check" size="sm" />
+    <Page active={active} id="health-check-detail-page" scrollable={false}>
+      <PageHeader
+        customTitle={
+          <div className="flex items-center gap-x-1.5">
+            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+              {t(`detail::title::${shownEntry.severity}`)}
+            </Typography>
 
-          <div className="grow">
-            <div className="flex items-center gap-x-1.5">
-              <Typography as="h2" typographyType="heading-xs">
-                {t(`detail::title::${shownEntry.severity}`)}
-              </Typography>
-
-              <Typography
-                as="div"
-                className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1"
-                typographyType="title-xs"
-              >
-                {t("common:::beta")}
-              </Typography>
-            </div>
-
-            <Typography appearance="moderate">
-              {t(`detail::subtitle::${shownEntry.severity}`)}
+            <Typography
+              as="div"
+              className="flex min-h-4 items-center justify-center rounded-sm border border-neutral-strong px-1"
+              typographyType="title-xs"
+            >
+              {t("common:::beta")}
             </Typography>
           </div>
-        </div>
-
+        }
+        pictogramName="health-check"
+        subtitle={t(`detail::subtitle::${shownEntry.severity}`)}
+      >
         <Button
           appearance="subdued"
           brand="neutral"
@@ -102,12 +96,14 @@ function HealthCheckDetailPage({
         >
           {t("common:::back")}
         </Button>
-      </div>
+      </PageHeader>
 
-      <DetailView api={api} entry={shownEntry} onBack={onBack} />
+      <PageScroll className="space-y-6 p-6">
+        <DetailView api={api} entry={shownEntry} onBack={onBack} />
 
-      <PremiumBanner />
-    </PageRoot>
+        <PremiumBanner />
+      </PageScroll>
+    </Page>
   );
 }
 
