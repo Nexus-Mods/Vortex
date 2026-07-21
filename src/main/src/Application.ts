@@ -13,7 +13,7 @@ import {
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import type { IWindow } from "@vortex/shared/state";
 import { currentStatePath } from "@vortex/shared/state";
-import { app, crashReporter, dialog, ipcMain, protocol, shell } from "electron";
+import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
@@ -26,7 +26,7 @@ import winapi from "winapi-bindings";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
 import { terminate, terminateAsync } from "./errorHandling";
-import { disableErrorReporting } from "./errorReporting";
+import { disableErrorReporting, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { getVortexPath, setVortexPath } from "./getVortexPath";
@@ -45,7 +45,7 @@ import {
   finalizeMainWrite,
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
-import { setTelemetryEnabled } from "./telemetry/state";
+import { isTelemetryEnabled, setTelemetryEnabled } from "./telemetry/state";
 import TrayIcon from "./TrayIcon";
 import { UnleashClient } from "./unleash/client";
 import { synchronizeFeatureFlags } from "./unleash/ipc";
@@ -141,11 +141,6 @@ class Application {
 
     this.mStartupLogPath = path.join(tempPath, "startup.log");
 
-    app.setPath("crashDumps", path.join(tempPath, "dumps"));
-    crashReporter.start({
-      uploadToServer: false,
-    });
-
     const enableLogging =
       process.env.NODE_ENV === "development" || process.env.VORTEX_ENABLE_LOGGING === "1";
     setupLogging(app.getPath("userData"), enableLogging);
@@ -235,6 +230,33 @@ class Application {
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch((err: unknown) =>
         log("error", "error applying arguments", unknownToError(err)),
       );
+    });
+
+    app.on("child-process-gone", (_event, details) => {
+      log("error", "child process gone", {
+        type: details.type,
+        name: details.name,
+        reason: details.reason,
+        exitCode: details.exitCode,
+      });
+
+      // GPU/utility crashes never reach the JS error handlers
+      if (!["clean-exit", "killed"].includes(details.reason)) {
+        reportCrash(
+          "ChildProcessGone",
+          {
+            message: `${details.type} process gone: ${details.reason} (exit code ${details.exitCode})`,
+            code: details.reason,
+          },
+          undefined,
+          details.type.toLowerCase(),
+          isTelemetryEnabled(),
+        ).catch((err: unknown) => {
+          log("warn", "failed to report child process crash", {
+            error: getErrorMessageOrDefault(err),
+          });
+        });
+      }
     });
 
     const onReady = () => {

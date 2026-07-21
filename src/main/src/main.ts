@@ -19,13 +19,13 @@ if (process.send) {
 }
 
 import child_process from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
 import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
-import { app, dialog } from "electron";
+import { app, crashReporter, dialog } from "electron";
 import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
@@ -51,6 +51,7 @@ import {
   reportCrash,
   errorToReportableError,
   sendPendingCrashReport,
+  sendPendingNativeCrashReport,
   sendReportFile,
 } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
@@ -255,9 +256,23 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Sent as early as possible — startup may crash before getting any
-  // further. Not awaited so it doesn't delay startup.
+  // Start Crashpad as early as possible so even startup crashes produce a
+  // dump; sendPendingNativeCrashReport picks it up on the next start. Must
+  // run before the sweeps below — they read the crashDumps path.
+  const dumpsPath = path.join(app.getPath("userData"), "temp", "dumps");
+  try {
+    mkdirSync(dumpsPath, { recursive: true });
+  } catch {
+    // ignored
+  }
+  app.setPath("crashDumps", dumpsPath);
+  crashReporter.start({ uploadToServer: false });
+
+  // Reports left by previous sessions, sent as early as possible — this
+  // startup may crash before getting any further. Not awaited so
+  // they don't delay startup.
   void sendPendingCrashReport();
+  void sendPendingNativeCrashReport();
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
   process.env.NODE_OPTIONS =
