@@ -16,6 +16,7 @@ import type {
   IRevision,
   IModRequirements,
   IModInfo,
+  RatingOptions,
 } from "@nexusmods/nexus-api";
 
 import type { IMod } from "../../mod_management/types/IMod";
@@ -49,7 +50,7 @@ export interface INexusAPIExtension {
     collectionSlug: string,
     revisionNumber: number,
   ) => PromiseLike<IRevision>;
-  nexusRateCollectionRevision?: (revisionId: number, rating: number) => PromiseLike<any>;
+  nexusRateCollectionRevision?: (revisionId: number, rating: RatingOptions) => PromiseLike<any>;
   nexusGetLatestMods?: (gameId: string) => PromiseLike<any>;
   nexusGetTrendingMods?: (gameId: string) => PromiseLike<any>;
   nexusEndorseDirect?: (

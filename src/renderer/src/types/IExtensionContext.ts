@@ -79,7 +79,49 @@ export type {
 import type { PersistorKey, IPersistor } from "@vortex/shared/state";
 export type { PersistorKey, IPersistor };
 
-// tslint:disable-next-line:interface-name
+/**
+ * Open interface type registry for API events. Enhance using `declare module` syntax.
+ * @public
+ */
+export interface ApiEvents {
+  "start-download": (
+    rawUrls: string[],
+    modInfo: { game?: string; name?: string } & Record<string, unknown>,
+    fileName?: string,
+    callback?: (err: Error | null, id?: string) => void,
+    redownload?: "never" | "ask" | "replace" | "always",
+    options?: { allowInstall?: boolean | "force" },
+  ) => string;
+
+  "remove-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+
+  "pause-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+
+  "resume-download": (
+    downloadId: string,
+    callback?: (err: Error | null, id?: string) => void,
+    options?: { allowInstall?: boolean | "force" },
+  ) => void;
+}
+
+/** Represents all event names.
+ * @public
+ * */
+export type ApiEventName = keyof ApiEvents;
+/** Represents all event args.
+ * @public
+ * */
+export type ApiEventArgs<TEvent extends ApiEventName> = Readonly<Parameters<ApiEvents[TEvent]>>;
+/** Represents all event results.
+ * @public
+ * */
+export type ApiEventResult<TEvent extends ApiEventName> = ReturnType<ApiEvents[TEvent]>;
+
+/** Compat for NodeJS Event Map */
+export type ApiEventMap = {
+  [K in ApiEventName]: Parameters<ApiEvents[K]>;
+};
+
 export interface ThunkStore<S> extends Redux.Store<S> {
   dispatch: ThunkDispatch<S, null, Redux.Action>;
 }
@@ -590,7 +632,7 @@ export interface IExtensionApi {
    * @type {NodeJS.EventEmitter}
    * @memberOf IExtensionApi
    */
-  events: NodeJS.EventEmitter;
+  events: NodeJS.EventEmitter<ApiEventMap & Record<string, any[]>>; // TODO: remove fallback definition
 
   /**
    * translation function
@@ -772,7 +814,15 @@ export interface IExtensionApi {
    * after all these Promises are resolved.
    * If the event handlers return a value, this returns an array of results
    */
-  emitAndAwait: <T = any>(eventName: string, ...args: any[]) => PromiseBB<T>;
+  emitAndAwait: (<TEvent extends ApiEventName>(
+    eventName: TEvent,
+    ...args: ApiEventArgs<TEvent>
+  ) => Promise<ApiEventResult<TEvent> extends void ? void : ApiEventResult<TEvent>[]>) &
+    // TODO: remove fallback definition
+    (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
+      eventName: string,
+      ...args: TArgs
+    ) => Promise<TResult[]>);
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
@@ -781,19 +831,32 @@ export interface IExtensionApi {
    * returns a rejected promise.
    * If errors do need to be reported they have to be part of the resolved valued
    */
-  onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
+  onAsync: (<TEvent extends ApiEventName>(
+    eventName: TEvent,
+    listener: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>,
+  ) => void) &
+    // TODO: remove fallback definition
+    (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(
+      eventName: string,
+      listener: (...args: TArgs) => PromiseLike<TResult>,
+    ) => void);
 
   /**
-   * wraps a function such that it will emitAndAwait will-eventName and did-eventName events
+   * wraps a function such that it will emitAndAwait `will-${eventName}` and `did-${eventName}` events
    * before and after invoking the actual callback.
    * both these events receive the arguments passed to the callback, the did-event also receives
    * the result of the callback if any (the result is the first argument because the number
    * of arguments may be variable)
    */
-  withPrePost: <T>(
+  withPrePost: (<TEvent extends ApiEventName>(
     eventName: string,
-    callback: (...args: any[]) => PromiseBB<T>,
-  ) => (...args: any[]) => PromiseBB<T>;
+    callback: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>,
+  ) => (...args: ApiEventArgs<TEvent>) => Promise<ApiEventResult<TEvent>>) &
+    // TODO: remove fallback definition
+    (<TResult, TArgs extends readonly unknown[] = unknown[]>(
+      eventName: string,
+      callback: (...args: TArgs) => PromiseLike<TResult>,
+    ) => (...args: TArgs) => Promise<TResult>);
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
@@ -1320,15 +1383,6 @@ export interface IExtensionContext {
    * In extreme cases you could instead throw an exception from the check (which would bubble up
    * through the dispatch call) which will likely crash Vortex.
    * That might be preferrable to corrupting state
-   * Further: Most actions are processed twice, once in the UI process where they got triggered and
-   *   in the main process where they get persisted to disk. If you stop an action in the UI
-   *   process it will not get forwarded to the main process, so this check only runs once. If you
-   *   allow it through though, this check is done a second time in the main process and you *need*
-   *   to generate the same result, you can't allow an action in the UI process and then reject it
-   *   in the main process!
-   *   Due to checks being run twice, if you write a log message that also will happen twice. You
-   *   can check "process.type === 'browser') to log only in the main (aka browser) process but
-   *   again: The result of the check *has to has to has to* be the same between all processes.
    * @param {string} actionType type of the action (like STORE_WINDOW_SIZE)
    * @param {SanityCheck} check the check to run for the specified action
    */

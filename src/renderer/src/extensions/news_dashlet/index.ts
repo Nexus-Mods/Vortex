@@ -1,7 +1,6 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 import { activeGameId } from "../profile_management/selectors";
-import APIDashlet from "./APIDashlet";
 import { GAMEID_PLACEHOLDER } from "./constants";
 import RSSDashlet from "./RSSDashlet";
 
@@ -62,24 +61,6 @@ function init(context: IExtensionContext): boolean {
     },
     undefined,
   );
-
-  /*
-  context.registerDashlet(
-    'Latest Mods', 1, 3, 300, APIDashlet,
-    state => activeGameId(state) !== undefined, () => ({
-      title: t('New Files'),
-      emptyText: t('No New Files'),
-      eventName: 'get-latest-mods',
-    }), undefined);
-
-  context.registerDashlet(
-    'Trending Mods', 1, 3, 300, APIDashlet,
-    state => activeGameId(state) !== undefined, () => ({
-      title: t('Trending Files'),
-      emptyText: t('No Trending Files'),
-      eventName: 'get-trending-mods',
-    }), undefined);
-  */
 
   return true;
 }

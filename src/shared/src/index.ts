@@ -6,3 +6,5 @@ export * from "./download-errors";
 export * from "./types/logging";
 
 export * from "./errors/base";
+
+export { isPromiseLike } from "./guard";

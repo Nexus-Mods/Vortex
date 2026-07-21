@@ -218,13 +218,18 @@ function queryInfoInternal(api: IExtensionApi, dlId: string, ignoreCache: boolea
           // Run game assignment asynchronously without blocking metadata lookup completion
           // Pass extra parameter to indicate this is from metadata lookup
           return api
-            .emitAndAwait("set-download-games", dlId, [metaGameId, gameId], true)
+            .emitAndAwait<"set-download-games">(
+              "set-download-games",
+              dlId,
+              [metaGameId, gameId],
+              true,
+            )
             .catch((err) => {
               log("warn", "failed to set download games", {
                 dlId,
                 gameId,
                 metaGameId,
-                error: err.message,
+                error: getErrorMessageOrDefault(err),
               });
             });
         }

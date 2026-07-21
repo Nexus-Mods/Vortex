@@ -61,7 +61,7 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
         onWillEnableMods(context.api, profileId, modIds, enabled, options) as any,
     );
 
-    context.api.onAsync("did-deploy", async (profileId) => {
+    context.api.onAsync("did-deploy", async (profileId: string) => {
       const state = context.api.getState();
       const profile = selectors.profileById(state, profileId);
       if (profile?.gameId !== GAME_ID) {
@@ -79,7 +79,7 @@ export function registerRuntimeEvents(context: types.IExtensionContext) {
       }
     });
 
-    context.api.onAsync("did-purge", async (profileId) => {
+    context.api.onAsync("did-purge", async (profileId: string) => {
       const state = context.api.getState();
       const profile = selectors.profileById(state, profileId);
       if (profile?.gameId !== GAME_ID) {

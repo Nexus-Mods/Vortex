@@ -21,6 +21,7 @@ import type {
   IModFileContentSearchFilter,
   IPreferenceQuery,
   IPreference,
+  RatingOptions,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
@@ -812,8 +813,8 @@ interface IRateRevisionResult {
 export function onRateRevision(
   api: IExtensionApi,
   nexus: Nexus,
-): (revisionId: number, rating: number) => Bluebird<IRateRevisionResult> {
-  return (revisionId: number, rating: any): Bluebird<IRateRevisionResult> => {
+): (revisionId: number, rating: RatingOptions) => Bluebird<IRateRevisionResult> {
+  return (revisionId: number, rating: RatingOptions): Bluebird<IRateRevisionResult> => {
     return Bluebird.resolve(nexus.rateRevision(revisionId, rating)).catch((err) => {
       reportRateError(api, err, revisionId);
       return Bluebird.resolve({ success: false });

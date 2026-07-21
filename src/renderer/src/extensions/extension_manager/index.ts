@@ -23,6 +23,12 @@ import ExtensionManager from "./ExtensionManager";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from "./util";
 
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "install-extension": (info: IExtensionDownloadInfo) => boolean;
+  }
+}
+
 interface ILocalState {
   reloadNecessary: boolean;
   preselectModId: number;
@@ -401,7 +407,7 @@ function init(context: IExtensionContext) {
     updateExtensions(true)
       .then(() => updateAvailableExtensions(context.api))
       .then(() => onDidFetch());
-    context.api.onAsync("install-extension", (ext: IExtensionDownloadInfo) => {
+    context.api.onAsync<"install-extension">("install-extension", (ext) => {
       return didFetchAvailableExtensions
         .then(() => downloadAndInstallExtension(context.api, ext))
         .then((success) => {
@@ -478,7 +484,7 @@ function init(context: IExtensionContext) {
         });
       }
     });
-    context.api.onAsync("install-extension-from-download", (archiveId: string) => {
+    context.api.onAsync<boolean>("install-extension-from-download", (archiveId: string) => {
       const state = context.api.getState();
       const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
       const ext = state.session.extensions.available.find((iter) => iter.modId === modId);
@@ -495,7 +501,7 @@ function init(context: IExtensionContext) {
           type: "info",
           message: "Vortex extension is already installed",
         });
-        return PromiseBB.resolve();
+        return PromiseBB.resolve<boolean>(false);
       }
 
       if (modId !== undefined && ext !== undefined) {
@@ -511,7 +517,7 @@ function init(context: IExtensionContext) {
           title: "Archive not recognized as a Vortex extension.",
           message: "If this is a new extension it may not have been approved yet.",
         });
-        return PromiseBB.resolve();
+        return PromiseBB.resolve<boolean>(false);
       }
     });
 

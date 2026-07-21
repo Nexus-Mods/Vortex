@@ -7,9 +7,12 @@ import type {
   IModFile,
   IModFileQuery,
   IModInfo,
+  ICollection,
   IRevision,
   IRevisionQuery,
   IValidateKeyResponse,
+  IRating,
+  RatingOptions,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
@@ -132,6 +135,26 @@ export class APIDisabled extends Error {
   constructor(instruction: string) {
     super(`Network functionality disabled "${instruction}"`);
     this.name = this.constructor.name;
+  }
+}
+
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "nexus-download": (
+      gameId: string,
+      modId: number,
+      fileId: number,
+      fileName?: string,
+      allowInstall?: boolean,
+    ) => string;
+    "get-my-collections": (gameId: string, count?: number, offset?: number) => Partial<IRevision>[];
+    "get-nexus-collection": (slug: string) => ICollection;
+    "get-nexus-collection-revision": (collectionSlug: string, revisionNumber: number) => IRevision;
+    "resolve-collection-url": (apiLink: string) => IDownloadURL[];
+    "rate-nexus-collection-revision": (
+      revisionId: number,
+      vote: RatingOptions,
+    ) => { success: boolean; averageRating?: IRating };
   }
 }
 
@@ -1199,13 +1222,22 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   }
 
   api.onAsync("check-mods-version", eh.onCheckModsVersion(api, nexus));
-  api.onAsync("nexus-download", eh.onNexusDownload(api, nexus));
-  api.onAsync("get-nexus-collection", eh.onGetNexusCollection(api, nexus));
+  api.onAsync<"nexus-download">("nexus-download", eh.onNexusDownload(api, nexus));
+  api.onAsync<"get-nexus-collection">("get-nexus-collection", eh.onGetNexusCollection(api, nexus));
   api.onAsync("get-nexus-collections", eh.onGetNexusCollections(api, nexus));
-  api.onAsync("get-my-collections", eh.onGetMyCollections(api, nexus));
-  api.onAsync("resolve-collection-url", eh.onResolveCollectionUrl(api, nexus));
-  api.onAsync("get-nexus-collection-revision", eh.onGetNexusCollectionRevision(api, nexus));
-  api.onAsync("rate-nexus-collection-revision", eh.onRateRevision(api, nexus));
+  api.onAsync<"get-my-collections">("get-my-collections", eh.onGetMyCollections(api, nexus));
+  api.onAsync<"resolve-collection-url">(
+    "resolve-collection-url",
+    eh.onResolveCollectionUrl(api, nexus),
+  );
+  api.onAsync<"get-nexus-collection-revision">(
+    "get-nexus-collection-revision",
+    eh.onGetNexusCollectionRevision(api, nexus),
+  );
+  api.onAsync<"rate-nexus-collection-revision">(
+    "rate-nexus-collection-revision",
+    eh.onRateRevision(api, nexus),
+  );
   api.onAsync("endorse-nexus-mod", eh.onEndorseDirect(api, nexus));
   api.onAsync("get-latest-mods", eh.onGetLatestMods(api, nexus));
   api.onAsync("get-trending-mods", eh.onGetTrendingMods(api, nexus));

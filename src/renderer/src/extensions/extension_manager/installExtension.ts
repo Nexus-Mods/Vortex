@@ -102,7 +102,10 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
         if (alreadyInstalled) {
           return;
         }
-        return api.emitAndAwait("install-extension", ext);
+        // TODO: remove evil
+        return PromiseBB.resolve(
+          api.emitAndAwait<"install-extension">("install-extension", ext).then(() => undefined),
+        );
       } else {
         return PromiseBB.resolve();
       }

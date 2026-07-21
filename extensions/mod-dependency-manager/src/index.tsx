@@ -1497,7 +1497,12 @@ function once(api: types.IExtensionApi) {
 
   api.onAsync(
     "will-enable-mods",
-    (profileId: string, modIds: string[], enabled: boolean, options) => {
+    (
+      profileId: string,
+      modIds: string[],
+      enabled: boolean,
+      options?: { installed?: boolean; willBeReplaced?: boolean },
+    ) => {
       // don't query to enable dependencies right after installing the mod
       // (the dependencies will be getting installed/enabled as part of that
       //  installation process automatically)
