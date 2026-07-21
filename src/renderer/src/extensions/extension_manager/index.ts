@@ -2,6 +2,8 @@ import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
 
+import { log } from "@/logging";
+
 import { setDialogVisible, setExtensionEnabled } from "../../actions";
 import { isExtSame } from "../../ExtensionManager";
 import type {
@@ -19,7 +21,6 @@ import type { IExtensionLoadFailure, IState } from "../../types/IState";
 import { getGame } from "../../util/api";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
-import { log } from "../../util/log";
 import makeReactive from "../../util/makeReactive";
 import { setAvailableExtensions, setExtensionsUpdate, setInstalledExtensions } from "./actions";
 import BrowseExtensions from "./BrowseExtensions";
@@ -43,14 +44,13 @@ const localState: ILocalState = makeReactive({
   preselectModId: undefined,
 });
 
-function checkForUpdates(api: IExtensionApi) {
-  const state: IState = api.store.getState();
+async function checkForUpdates(api: IExtensionApi): Promise<void> {
+  const state = api.getState();
   const { available, installed } = state.session.extensions;
 
-  const updateable: Array<{
-    update: IAvailableExtension;
-    current: IExtension;
-  }> = Object.values(installed).reduce((prev, ext) => {
+  const updateable = Object.values(installed).reduce<
+    { current: IExtension; update: IAvailableExtension }[]
+  >((prev, ext) => {
     const update = available.find((iter) => isExtSame(ext, iter));
 
     if (update === undefined || update.version === undefined) {
@@ -84,33 +84,28 @@ function checkForUpdates(api: IExtensionApi) {
 
   let forceRestart: boolean = false;
 
-  {
-    const state = api.getState();
-    const { commandLine } = state.session.base;
-    if (commandLine.installExtension !== undefined) {
-      const request = parseInstallCmdLine(commandLine.installExtension);
-      const update = available.find(
-        (ext) => request.modId !== undefined && ext.modId === request.modId,
-      );
+  const { commandLine } = state.session.base;
+  if (commandLine.installExtension !== undefined) {
+    const request = parseInstallCmdLine(commandLine.installExtension);
+    const update = available.find(
+      (ext) => request.modId !== undefined && ext.modId === request.modId,
+    );
 
-      if (update !== undefined) {
-        forceRestart = true;
-        updateable.push({
-          current: {
-            author: update.author,
-            description: update.description.short,
-            name: update.name,
-            version: "",
-          },
-          update,
-        });
-      }
+    if (update !== undefined) {
+      forceRestart = true;
+      updateable.push({
+        current: {
+          author: update.author,
+          description: update.description.short,
+          name: update.name,
+          version: "",
+        },
+        update,
+      });
     }
   }
 
-  if (updateable.length === 0) {
-    return PromiseBB.resolve();
-  }
+  if (updateable.length === 0) return;
 
   api.sendNotification({
     id: "extension-updates",
@@ -119,7 +114,7 @@ function checkForUpdates(api: IExtensionApi) {
     replace: { count: updateable.length },
   });
 
-  log("info", "extensions can be updated", {
+  log("info", "extensions will be updated", {
     updateable: updateable.map(
       (ext) =>
         `${ext.current.name} v${ext.current.version} ` +
@@ -127,38 +122,41 @@ function checkForUpdates(api: IExtensionApi) {
     ),
   });
 
-  return PromiseBB.map(updateable, (update) =>
-    downloadAndInstallExtension(api, update.update),
-  ).then((success: boolean[]) => {
-    api.dismissNotification("extension-updates");
-    localState.reloadNecessary = true;
-    if (success.find((iter) => iter === true)) {
-      if (forceRestart) {
-        relaunch();
-      } else {
-        api.sendNotification({
-          id: "extension-updates",
-          type: "success",
-          message: "Extensions updated, please restart to apply them",
-          actions: [
-            {
-              title: "Restart now",
-              action: () => {
-                relaunch();
-              },
+  // TODO: native Promise
+  const promises = updateable.map((update) =>
+    Promise.resolve(downloadAndInstallExtension(api, update.update)),
+  );
+  const success = await Promise.all(promises);
+
+  api.dismissNotification("extension-updates");
+  localState.reloadNecessary = true;
+
+  if (success.find((iter) => iter === true)) {
+    if (forceRestart) {
+      relaunch();
+    } else {
+      api.sendNotification({
+        id: "extension-updates",
+        type: "success",
+        message: "Extensions updated, please restart to apply them",
+        actions: [
+          {
+            title: "Restart now",
+            action: () => {
+              relaunch();
             },
-          ],
-        });
-      }
+          },
+        ],
+      });
     }
-  });
+  }
 }
 
 async function updateAvailableExtensions(
   api: IExtensionApi,
   force: boolean = false,
 ): Promise<void> {
-  const state: IState = api.store.getState();
+  const state = api.getState();
   if (!state.session.base.networkConnected) {
     return;
   }
@@ -167,7 +165,7 @@ async function updateAvailableExtensions(
     const { time, extensions } = await Promise.resolve(fetchAvailableExtensions(true, force));
     api.store.dispatch(setExtensionsUpdate(time.getTime()));
     api.store.dispatch(setAvailableExtensions(extensions));
-    await Promise.resolve(checkForUpdates(api));
+    await checkForUpdates(api);
   } catch (err) {
     const allowReport = !(err instanceof DataInvalid);
 
@@ -182,7 +180,7 @@ function installDependency(
   depId: string,
   updateInstalled: (initial: boolean) => PromiseBB<void>,
 ): PromiseBB<boolean> {
-  const state: IState = api.store.getState();
+  const state = api.getState();
   const availableExtensions = state.session.extensions.available;
   const installedExtensions = state.session.extensions.installed;
 
@@ -399,13 +397,15 @@ function init(context: IExtensionContext) {
     const didFetchAvailableExtensions = new Promise<void>((resolve) => (onDidFetch = resolve));
 
     void (async () => {
+      // TODO: native Promises
       await Promise.resolve(updateExtensions(true));
       await updateAvailableExtensions(context.api);
       onDidFetch();
     })();
 
-    context.api.onAsync("install-extension", async (ext: IExtensionDownloadInfo) => {
+    context.api.onAsync<"install-extension">("install-extension", async (ext) => {
       await didFetchAvailableExtensions;
+      // TODO: native Promise
       const success = await Promise.resolve(downloadAndInstallExtension(context.api, ext));
 
       if (success) void Promise.resolve(updateExtensions(false));
@@ -458,6 +458,7 @@ function init(context: IExtensionContext) {
                       label: "Install",
                       action: () => {
                         dismiss();
+                        // TODO: native Promises
                         const promises = requiredIds.map((id) =>
                           Promise.resolve(installDependency(context.api, id, updateExtensions)),
                         );
@@ -471,6 +472,7 @@ function init(context: IExtensionContext) {
             {
               title: "Install Extension/s",
               action: () => {
+                // TODO: native Promises
                 const promises = requiredIds.map((id) =>
                   Promise.resolve(installDependency(context.api, id, updateExtensions)),
                 );
@@ -505,6 +507,7 @@ function init(context: IExtensionContext) {
       }
 
       if (modId !== undefined && ext !== undefined) {
+        // TODO: native Promises
         const success = await Promise.resolve(downloadAndInstallExtension(context.api, ext));
         if (success) void Promise.resolve(updateExtensions(false));
         return success;
