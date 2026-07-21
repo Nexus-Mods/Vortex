@@ -36,6 +36,7 @@ export const builtInPages: IMainPage[] = [
     group: "per-game",
     priority: 50,
     isModernOnly: true,
+    newLayout: true,
     component: ToolsPage,
     icon: "tools",
   }),

@@ -29,10 +29,11 @@ import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { TabsDemo } from "@/ui/components/tabs/Tabs.demo";
 import { ToolbarDemo } from "@/ui/components/toolbar/Toolbar.demo";
-import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyDemo } from "@/ui/components/typography/Typography.demo";
 import { TypographyLinkDemo } from "@/ui/components/typography/TypographyLink.demo";
-import PageRoot from "@/views/PageRoot";
+import { Page } from "@/views/components/Page/Page";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
 export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExtensionApi }) => {
   const [selectedTab, setSelectedTab] = useState("button");
@@ -42,206 +43,205 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
 
   return (
-    <PageRoot active={active} className="space-y-6 p-6" id="page-design-system-dev">
-      <div>
-        <Typography typographyType="heading-md">Design system</Typography>
+    <Page active={active} id="page-design-system-dev" scrollable={false}>
+      <PageHeader
+        pictogramName="tools"
+        subtitle="This page is only visible in development mode and provides a testing ground for design system components."
+        title="Design system"
+      />
 
-        <Typography appearance="subdued" typographyType="body-md">
-          This page is only visible in development mode and provides a testing ground for design
-          system components.
-        </Typography>
-      </div>
+      <PageScroll className="space-y-6 p-6">
+        <TabProvider
+          tab={selectedTab}
+          tabListId="design-system-demo-tabs"
+          onSetSelectedTab={setSelectedTab}
+        >
+          <TabBar>
+            <TabButton name="Button" />
 
-      <TabProvider
-        tab={selectedTab}
-        tabListId="design-system-demo-tabs"
-        onSetSelectedTab={setSelectedTab}
-      >
-        <TabBar>
-          <TabButton name="Button" />
+            <TabButton name="Pill" />
 
-          <TabButton name="Pill" />
+            <TabButton name="Typography" />
 
-          <TabButton name="Typography" />
+            <TabButton name="Form" />
 
-          <TabButton name="Form" />
+            <TabButton name="Tabs" />
 
-          <TabButton name="Tabs" />
+            <TabButton name="Icon" />
 
-          <TabButton name="Icon" />
+            <TabButton name="Image" />
 
-          <TabButton name="Image" />
+            <TabButton name="Dropdown" />
 
-          <TabButton name="Dropdown" />
+            <TabButton name="Listing" />
 
-          <TabButton name="Listing" />
+            <TabButton name="Pagination" />
 
-          <TabButton name="Pagination" />
+            <TabButton name="Table" />
 
-          <TabButton name="Table" />
+            <TabButton name="Collection Tile" />
 
-          <TabButton name="Collection Tile" />
+            <TabButton name="Toolbar" />
+          </TabBar>
 
-          <TabButton name="Toolbar" />
-        </TabBar>
+          <div className="mt-6">
+            <TabPanel name="Button">
+              <ButtonDemo />
+            </TabPanel>
 
-        <div className="mt-6">
-          <TabPanel name="Button">
-            <ButtonDemo />
-          </TabPanel>
+            <TabPanel name="Pill">
+              <PillDemo />
+            </TabPanel>
 
-          <TabPanel name="Pill">
-            <PillDemo />
-          </TabPanel>
+            <TabPanel name="Typography">
+              <TabProvider
+                tab={selectedTypographyTab}
+                tabListId="typography-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedTypographyTab}
+              >
+                <TabBar>
+                  <TabButton name="Typography" />
 
-          <TabPanel name="Typography">
-            <TabProvider
-              tab={selectedTypographyTab}
-              tabListId="typography-demo-tabs"
-              tabType="secondary"
-              onSetSelectedTab={setSelectedTypographyTab}
-            >
-              <TabBar>
-                <TabButton name="Typography" />
+                  <TabButton name="Link" />
+                </TabBar>
 
-                <TabButton name="Link" />
-              </TabBar>
+                <div className="mt-6">
+                  <TabPanel name="Typography">
+                    <TypographyDemo />
+                  </TabPanel>
 
-              <div className="mt-6">
-                <TabPanel name="Typography">
-                  <TypographyDemo />
-                </TabPanel>
+                  <TabPanel name="Link">
+                    <TypographyLinkDemo />
+                  </TabPanel>
+                </div>
+              </TabProvider>
+            </TabPanel>
 
-                <TabPanel name="Link">
-                  <TypographyLinkDemo />
-                </TabPanel>
-              </div>
-            </TabProvider>
-          </TabPanel>
+            <TabPanel name="Form">
+              <TabProvider
+                tab={selectedFormTab}
+                tabListId="form-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedFormTab}
+              >
+                <TabBar>
+                  <TabButton name="Input" />
 
-          <TabPanel name="Form">
-            <TabProvider
-              tab={selectedFormTab}
-              tabListId="form-demo-tabs"
-              tabType="secondary"
-              onSetSelectedTab={setSelectedFormTab}
-            >
-              <TabBar>
-                <TabButton name="Input" />
+                  <TabButton name="Select" />
 
-                <TabButton name="Select" />
+                  <TabButton name="Switch" />
+                </TabBar>
 
-                <TabButton name="Switch" />
-              </TabBar>
+                <div className="mt-6">
+                  <TabPanel name="Input">
+                    <InputDemo />
+                  </TabPanel>
 
-              <div className="mt-6">
-                <TabPanel name="Input">
-                  <InputDemo />
-                </TabPanel>
+                  <TabPanel name="Select">
+                    <SelectDemo />
+                  </TabPanel>
 
-                <TabPanel name="Select">
-                  <SelectDemo />
-                </TabPanel>
+                  <TabPanel name="Switch">
+                    <SwitchDemo />
+                  </TabPanel>
+                </div>
+              </TabProvider>
+            </TabPanel>
 
-                <TabPanel name="Switch">
-                  <SwitchDemo />
-                </TabPanel>
-              </div>
-            </TabProvider>
-          </TabPanel>
+            <TabPanel name="Tabs">
+              <TabsDemo />
+            </TabPanel>
 
-          <TabPanel name="Tabs">
-            <TabsDemo />
-          </TabPanel>
+            <TabPanel name="Icon">
+              <TabProvider
+                tab={selectedIconTab}
+                tabListId="icon-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedIconTab}
+              >
+                <TabBar>
+                  <TabButton name="Icon" />
 
-          <TabPanel name="Icon">
-            <TabProvider
-              tab={selectedIconTab}
-              tabListId="icon-demo-tabs"
-              tabType="secondary"
-              onSetSelectedTab={setSelectedIconTab}
-            >
-              <TabBar>
-                <TabButton name="Icon" />
+                  <TabButton name="Premium Badge" />
 
-                <TabButton name="Premium Badge" />
+                  <TabButton name="Bullet" />
+                </TabBar>
 
-                <TabButton name="Bullet" />
-              </TabBar>
+                <div className="mt-6">
+                  <TabPanel name="Icon">
+                    <IconDemo />
+                  </TabPanel>
 
-              <div className="mt-6">
-                <TabPanel name="Icon">
-                  <IconDemo />
-                </TabPanel>
+                  <TabPanel name="Premium Badge">
+                    <PremiumBadgeDemo />
+                  </TabPanel>
 
-                <TabPanel name="Premium Badge">
-                  <PremiumBadgeDemo />
-                </TabPanel>
+                  <TabPanel name="Bullet">
+                    <BulletDemo />
+                  </TabPanel>
+                </div>
+              </TabProvider>
+            </TabPanel>
 
-                <TabPanel name="Bullet">
-                  <BulletDemo />
-                </TabPanel>
-              </div>
-            </TabProvider>
-          </TabPanel>
+            <TabPanel name="Image">
+              <ImageDemo />
+            </TabPanel>
 
-          <TabPanel name="Image">
-            <ImageDemo />
-          </TabPanel>
+            <TabPanel name="Dropdown">
+              <TabProvider
+                tab={selectedDropdownTab}
+                tabListId="dropdown-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedDropdownTab}
+              >
+                <TabBar>
+                  <TabButton name="Dropdown" />
 
-          <TabPanel name="Dropdown">
-            <TabProvider
-              tab={selectedDropdownTab}
-              tabListId="dropdown-demo-tabs"
-              tabType="secondary"
-              onSetSelectedTab={setSelectedDropdownTab}
-            >
-              <TabBar>
-                <TabButton name="Dropdown" />
+                  <TabButton name="Picker" />
 
-                <TabButton name="Picker" />
+                  <TabButton name="Popover" />
+                </TabBar>
 
-                <TabButton name="Popover" />
-              </TabBar>
+                <div className="mt-6">
+                  <TabPanel name="Dropdown">
+                    <DropdownDemo />
+                  </TabPanel>
 
-              <div className="mt-6">
-                <TabPanel name="Dropdown">
-                  <DropdownDemo />
-                </TabPanel>
+                  <TabPanel name="Picker">
+                    <PickerDemo />
+                  </TabPanel>
 
-                <TabPanel name="Picker">
-                  <PickerDemo />
-                </TabPanel>
+                  <TabPanel name="Popover">
+                    <PopoverDemo />
+                  </TabPanel>
+                </div>
+              </TabProvider>
+            </TabPanel>
 
-                <TabPanel name="Popover">
-                  <PopoverDemo />
-                </TabPanel>
-              </div>
-            </TabProvider>
-          </TabPanel>
+            <TabPanel name="Listing">
+              <ListingDemo />
+            </TabPanel>
 
-          <TabPanel name="Listing">
-            <ListingDemo />
-          </TabPanel>
+            <TabPanel name="Pagination">
+              <PaginationDemo />
+            </TabPanel>
 
-          <TabPanel name="Pagination">
-            <PaginationDemo />
-          </TabPanel>
+            <TabPanel name="Table">
+              <TableDemo />
+            </TabPanel>
 
-          <TabPanel name="Table">
-            <TableDemo />
-          </TabPanel>
+            <TabPanel name="Collection Tile">
+              <CollectionTileDemo api={api} />
+            </TabPanel>
 
-          <TabPanel name="Collection Tile">
-            <CollectionTileDemo api={api} />
-          </TabPanel>
-
-          <TabPanel name="Toolbar">
-            <ToolbarDemo />
-          </TabPanel>
-        </div>
-      </TabProvider>
-    </PageRoot>
+            <TabPanel name="Toolbar">
+              <ToolbarDemo />
+            </TabPanel>
+          </div>
+        </TabProvider>
+      </PageScroll>
+    </Page>
   );
 };
 

@@ -4,12 +4,13 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
-import { Pictogram } from "@/ui/components/pictogram/Pictogram";
 import { Typography } from "@/ui/components/typography/Typography";
+import { Page } from "@/views/components/Page/Page";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
 import ToolEditDialog from "../../../extensions/starter_dashlet/ToolEditDialog";
-import MainPage from "../../MainPage";
 import { ToolRow } from "./ToolRow";
 import { useToolsPage } from "./useToolsPage";
 
@@ -44,7 +45,7 @@ const Panel = ({
   </div>
 );
 
-export const ToolsPage: FC = () => {
+export const ToolsPage: FC<{ active?: boolean }> = ({ active }) => {
   const { t } = useTranslation();
   const {
     gameMode,
@@ -69,42 +70,23 @@ export const ToolsPage: FC = () => {
     closeEditDialog,
   } = useToolsPage();
 
-  if (gameMode === undefined) {
-    return (
-      <MainPage id="tools-page">
-        <MainPage.Body>
-          <div className="h-full p-6">
-            <EmptyPlaceholder
-              fill={true}
-              icon="game"
-              text={t("When you are managing a game, supported tools will appear here")}
-            />
-          </div>
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
-
   return (
-    <MainPage id="tools-page">
-      <MainPage.Body>
-        <div className="h-full overflow-y-auto p-6">
-          {/* Header */}
-          <div className="mb-4 flex items-start gap-x-2 border-b border-stroke-weak pb-4">
-            <Pictogram name="tools" size="sm" />
+    <Page active={active} id="tools-page" scrollable={false}>
+      <PageHeader
+        pictogramName="tools"
+        subtitle={t("Tools are external programs or launch options used alongside the game.")}
+        title={t("Tools")}
+      />
 
-            <div className="grow">
-              <Typography as="h2" typographyType="heading-xs">
-                {t("Tools")}
-              </Typography>
-
-              <Typography appearance="moderate">
-                {t("Tools are external programs or launch options used alongside the game.")}
-              </Typography>
-            </div>
-          </div>
-
-          <div className="space-y-6">
+      <PageScroll className="space-y-6 p-6">
+        {gameMode === undefined ? (
+          <EmptyPlaceholder
+            fill={true}
+            icon="game"
+            text={t("When you are managing a game, supported tools will appear here")}
+          />
+        ) : (
+          <>
             {/* Edit dialog */}
             {toolBeingEdited !== undefined && (
               <ToolEditDialog tool={toolBeingEdited} onClose={closeEditDialog} />
@@ -184,8 +166,8 @@ export const ToolsPage: FC = () => {
             <Panel
               actions={() => (
                 <Button
-                  brand="neutral"
                   appearance="moderate"
+                  brand="neutral"
                   leftIconPath={mdiPlus}
                   size="sm"
                   title={t("Add tool")}
@@ -224,9 +206,9 @@ export const ToolsPage: FC = () => {
                 </Typography>
               )}
             </Panel>
-          </div>
-        </div>
-      </MainPage.Body>
-    </MainPage>
+          </>
+        )}
+      </PageScroll>
+    </Page>
   );
 };

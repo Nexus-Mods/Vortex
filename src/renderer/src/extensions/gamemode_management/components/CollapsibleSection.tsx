@@ -19,7 +19,7 @@ export const CollapsibleSection = forwardRef<HTMLDivElement, ICollapsibleSection
     const toggle = () => setExpanded((prev) => !prev);
 
     return (
-      <div className={joinClasses(["border-t border-stroke-weak", className])}>
+      <div className={className}>
         <div
           aria-expanded={expanded}
           className="flex cursor-pointer items-center justify-between gap-x-2 px-6 py-3 transition-colors hover:bg-surface-mid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-info-subdued"
