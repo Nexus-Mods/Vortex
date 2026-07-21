@@ -1,4 +1,4 @@
-import PromiseBB from "bluebird";
+import type PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
 
@@ -175,61 +175,58 @@ async function updateAvailableExtensions(
   }
 }
 
-function installDependency(
+async function installDependency(
   api: IExtensionApi,
-  depId: string,
+  dependencyId: string,
   updateInstalled: (initial: boolean) => PromiseBB<void>,
-): PromiseBB<boolean> {
+): Promise<boolean> {
   const state = api.getState();
   const availableExtensions = state.session.extensions.available;
   const installedExtensions = state.session.extensions.installed;
 
-  if (installedExtensions[depId] !== undefined) {
+  if (installedExtensions[dependencyId] !== undefined) {
     // installed, probably failed to load or disabled
-    if (!state.app.extensions[depId].enabled) {
-      api.store.dispatch(setExtensionEnabled(depId, true));
-      return PromiseBB.resolve(true);
+    if (!state.app.extensions[dependencyId].enabled) {
+      api.store.dispatch(setExtensionEnabled(dependencyId, true));
+      return true;
     } else {
       api.showErrorNotification(
         "Failed to install extension",
         'The extension "{{ name }}" is already installed but failed to load, ' +
           'please review the load error on the "Extensions" tab.',
         {
-          message: depId,
+          message: dependencyId,
           allowReport: false,
-          replace: { name: depId },
+          replace: { name: dependencyId },
         },
       );
 
-      return PromiseBB.resolve(false);
+      return false;
     }
   }
 
-  const ext = availableExtensions.find(
-    (iter) => !iter.type && (iter.name === depId || iter.id === depId),
+  const toDownload = availableExtensions.find(
+    (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
   );
-  if (ext !== undefined) {
-    return downloadAndInstallExtension(api, ext).then((success) => {
-      if (success) {
-        updateInstalled(false);
-      } else {
-        api.showErrorNotification(
-          "Failed to install extension",
-          'The extension "{{ name }}" wasn\'t found in the repository. ' +
-            "This might mean that the extension isn't available at all or " +
-            "has been excluded for compatibility reasons. " +
-            "Please check the installation instructions for this extension.",
-          {
-            message: depId,
-            allowReport: false,
-            replace: { name: depId },
-          },
-        );
-      }
-      return success;
-    });
+
+  if (toDownload === undefined) return false;
+
+  const success = await Promise.resolve(downloadAndInstallExtension(api, toDownload));
+  if (success) {
+    await Promise.resolve(updateInstalled(false));
   } else {
-    return PromiseBB.resolve(false);
+    api.showErrorNotification(
+      "Failed to install extension",
+      'The extension "{{ name }}" wasn\'t found in the repository. ' +
+        "This might mean that the extension isn't available at all or " +
+        "has been excluded for compatibility reasons. " +
+        "Please check the installation instructions for this extension.",
+      {
+        message: dependencyId,
+        allowReport: false,
+        replace: { name: dependencyId },
+      },
+    );
   }
 }
 
@@ -253,9 +250,8 @@ function checkMissingDependencies(
   // TODO: native Promise
   const updateInstalled = genUpdateInstalledExtensions(api);
 
-  // TODO: native Promise
   const promises = missingDependencies.values().map((dependencyId) =>
-    Promise.resolve(installDependency(api, dependencyId, updateInstalled)).catch((err) => {
+    installDependency(api, dependencyId, updateInstalled).catch((err) => {
       api.showErrorNotification("Failed to install extension", err, {
         message: dependencyId,
       });
@@ -459,9 +455,8 @@ function init(context: IExtensionContext) {
                       label: "Install",
                       action: () => {
                         dismiss();
-                        // TODO: native Promises
                         const promises = requiredIds.map((id) =>
-                          Promise.resolve(installDependency(context.api, id, updateExtensions)),
+                          installDependency(context.api, id, updateExtensions),
                         );
                         void Promise.all(promises);
                       },
@@ -473,9 +468,8 @@ function init(context: IExtensionContext) {
             {
               title: "Install Extension/s",
               action: () => {
-                // TODO: native Promises
                 const promises = requiredIds.map((id) =>
-                  Promise.resolve(installDependency(context.api, id, updateExtensions)),
+                  installDependency(context.api, id, updateExtensions),
                 );
                 void Promise.all(promises);
               },
