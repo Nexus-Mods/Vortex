@@ -76,9 +76,9 @@ export default function (rules: CSSStyleRule[]) {
       selector: "edge.userlist",
       style: {
         "line-color": variables["link-color"],
-        "mid-target-arrow-shape": "triangle",
-        "mid-target-arrow-color": variables["link-color"],
-        "target-endpoint": "inside-to-node",
+        "mid-source-arrow-shape": "triangle",
+        "mid-source-arrow-color": variables["link-color"],
+        "source-endpoint": "inside-to-node",
       },
     },
     {

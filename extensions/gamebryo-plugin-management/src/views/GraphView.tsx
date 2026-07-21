@@ -54,13 +54,10 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private mEdgeHandler: any;
   private mMousePos: { x: number; y: number } = { x: 0, y: 0 };
   private mHoveredNode: any;
-  private mRecentlyCreatedEdges: Set<string> = new Set();
-  private mIsHandlingEdgeCreation: boolean = false;
 
   public componentDidUpdate(prevProps: IGraphViewProps) {
     if (!this.mGraph) return;
     if (prevProps.elements === this.props.elements) return;
-    if (this.mIsHandlingEdgeCreation) return;
 
     const elements = this.props.elements;
     let needsLayout = false;
@@ -256,52 +253,21 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   };
 
   private handleEHComplete = (evt, source, target, added) => {
-    // Prevent sync conflicts during edge creation
-    this.mIsHandlingEdgeCreation = true;
-
     const sourceTitle = source.data().title;
     const targetTitle = target.data().title;
 
-    // For newly created connections, invert the direction
-    // When user drags from A to B, we want B to depend on A
-    // So the data model edge should go from B to A
-    const dataSourceTitle = targetTitle; // inverted: target becomes source
-    const dataTargetTitle = sourceTitle; // inverted: source becomes target
-
-    // Keep the automatically created edge and update it with proper data
-    if (added.data() !== undefined && this.mGraph !== undefined) {
-      const edgeId = `${san(dataSourceTitle)}-to-${san(dataTargetTitle)}`;
-
-      // Update the edge data to match our expected format (inverted)
-      added.data("id", edgeId);
-      added.data("source", san(dataSourceTitle));
-      added.data("target", san(dataTargetTitle));
-
-      // Store sourceOrig/targetOrig as the inverted data model values
-      // This matches the inverted direction we're using for the data
-      added.data("sourceOrig", dataSourceTitle);
-      added.data("targetOrig", dataTargetTitle);
-      added.data("readonly", false);
-
-      // Ensure it has the correct styling - userlist for user-created edges
-      added.addClass(this.props.className + "-edge");
-      added.addClass("userlist");
-
-      // Mark this edge as recently created to prevent accidental removal
-      this.mRecentlyCreatedEdges.add(edgeId);
-
-      // Force a render to ensure the connection is visible
-      this.mGraph.forceRender();
+    // Drop the transient edge edgehandles just created. cytoscape ignores
+    // data('id', ...), so it can never take the "group-to-ref" id that genElements
+    // derives, which left a stale, wrongly-oriented edge behind. The userlist state
+    // is the single source of truth: onConnect updates it and componentDidUpdate
+    // renders the edge in the correct direction (source = the group that gains the
+    // `after` entry).
+    if (added?.data() !== undefined && this.mGraph !== undefined) {
+      this.mGraph.remove(added);
     }
 
-    // Clear the flag after a short delay to allow edge creation to complete
-    setTimeout(() => {
-      this.mIsHandlingEdgeCreation = false;
-      this.mRecentlyCreatedEdges.delete(`${san(dataSourceTitle)}-to-${san(dataTargetTitle)}`);
-    }, 100);
-
-    // Notify parent component with inverted direction
-    this.props.onConnect(dataSourceTitle, dataTargetTitle);
+    // Dragging from A to B records "A after B" (A gains B in its `after` list).
+    this.props.onConnect(targetTitle, sourceTitle);
   };
 
   private addElements(elements: { [id: string]: IGraphElement }) {
