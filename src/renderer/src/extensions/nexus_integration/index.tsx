@@ -649,14 +649,24 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
     const nexusCollectionInfo: IRevision =
       info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
 
+    // collections are identified by their revision info, not a downloaded file. Their
+    // display name is the collection name; the archive on disk is not a meaningful name.
+    const isCollection = nexusCollectionInfo !== undefined;
+    const collectionName = nexusCollectionInfo?.collection?.name;
+
     // never accept a CDN storage path as a name (LAZ-807); `?? undefined`
     // normalizes an explicit null, which would otherwise make decodeHTML
     // return "" and defeat the fuzz-ratio guard below
-    const rawModName = nexusModInfo?.name ?? input.download?.modInfo?.name ?? undefined;
+    const rawModName =
+      nexusModInfo?.name ?? collectionName ?? input.download?.modInfo?.name ?? undefined;
     const modName = decodeHTML(isStoragePathName(rawModName) ? undefined : rawModName);
-    const fileName = decodeHTML(
-      nexusFileInfo?.name ?? input.download?.localPath ?? input.meta?.fileName,
-    );
+    // for collections the "file name" is the collection name, never the archive/localPath:
+    // deriving logicalFileName/customFileName from the archive is what surfaced archive
+    // and storage-path names on collection cards
+    const rawFileName = isCollection
+      ? (collectionName ?? input.download?.modInfo?.name)
+      : (nexusFileInfo?.name ?? input.download?.localPath ?? input.meta?.fileName);
+    const fileName = decodeHTML(isStoragePathName(rawFileName) ? undefined : rawFileName);
     const fuzzRatio =
       modName !== undefined && fileName !== undefined ? fuzz.ratio(modName, fileName) : 100;
 
