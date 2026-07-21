@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0-beta.2] - 2026-07-21
+
+### Fixed
+
+- Repaired download and mod names already polluted with CDN storage paths by the 2.4.0-beta.1 regression, restoring them to their friendly form ([#23735](https://github.com/Nexus-Mods/Vortex/pull/23735))
+- Restored downloads from mega.nz and Google Drive (and similar hosts that deliver files via client-side JavaScript) ([#23731](https://github.com/Nexus-Mods/Vortex/pull/23731))
+- Downloads and mods now use the proper Nexus file name instead of the CDN storage path (e.g. `5c/d3/1f/<guid>`) ([#23726](https://github.com/Nexus-Mods/Vortex/pull/23726))
+- Corrected the import and use of `removeMods` ([#23710](https://github.com/Nexus-Mods/Vortex/pull/23710))
+- Persisted state keys with invalid UTF-8 bytes being unremovable and re-triggering the state-corruption dialog on every launch ([#23704](https://github.com/Nexus-Mods/Vortex/pull/23704))
+- Mod requirements not showing for mods that have both mod-to-mod and file-to-file requirements ([#23702](https://github.com/Nexus-Mods/Vortex/pull/23702))
+
 ## [2.4.0-beta.1] - 2026-07-15
 
 _First beta of the 2.4 release._
@@ -2081,6 +2092,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.4.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0-beta.2
 [2.4.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0-beta.1
 [2.3.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.3.0
 [2.3.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.3.0-beta.1
