@@ -270,7 +270,7 @@ export function waitForDownloadRecord(
   intervalMS: number = 250,
 ): PromiseBB<IDownload> {
   const tryFetch = (remainingMS: number): PromiseBB<IDownload> => {
-    const state: IState = api.store.getState();
+    const state = api.getState();
     const download: IDownload = state.persistent?.downloads?.files?.[dlId];
     if (download?.state === "failed") {
       return PromiseBB.reject(new ProcessCanceled("Extension download failed"));
@@ -294,109 +294,95 @@ export function waitForDownloadRecord(
   return tryFetch(timeoutMS);
 }
 
-export function downloadAndInstallExtension(
+export async function downloadAndInstallExtension(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
-): PromiseBB<boolean> {
-  let download: IDownload;
+): Promise<boolean> {
+  const sourceName = ext.modId !== undefined ? "nexusmods.com" : "github.com";
 
-  let dlPromise: PromiseBB<string[]>;
+  try {
+    let downloadPromise: Promise<string[]>;
 
-  if (truthy(ext.modId)) {
-    dlPromise = downloadFromNexus(api, ext);
-  } else if (truthy(ext.githubRawPath)) {
-    dlPromise = downloadGithubRaw(api, ext);
-  } else if (truthy(ext.githubRelease)) {
-    dlPromise = downloadGithubRelease(api, ext);
-  } else {
-    // don't report an error if the extension list contains invalid data
-    return PromiseBB.resolve(false);
-  }
+    if (ext.modId !== undefined) {
+      // TODO: native Promise
+      downloadPromise = Promise.resolve(downloadFromNexus(api, ext));
+    } else if (ext.githubRawPath) {
+      // TODO: native Promise
+      downloadPromise = Promise.resolve(downloadGithubRaw(api, ext));
+    } else if (ext.githubRelease) {
+      // TODO: native Promise
+      downloadPromise = Promise.resolve(downloadGithubRelease(api, ext));
+    } else {
+      return false;
+    }
 
-  const sourceName: string = truthy(ext.modId) ? "nexusmods.com" : "github.com";
+    const downloadIds = await downloadPromise;
+    if (downloadIds.length === 0) {
+      throw new ProcessCanceled("No download found");
+    }
 
-  return dlPromise
-    .then((dlIds: string[]) => {
-      if (dlIds === undefined || dlIds.length !== 1) {
-        return PromiseBB.reject(new ProcessCanceled("No download found"));
-      }
-      api.store.dispatch(setDownloadModInfo(dlIds[0], "internal", true));
-      return waitForDownloadRecord(api, dlIds[0]).then((dl) => {
-        download = dl;
-        return fetchAvailableExtensions(false);
-      });
-    })
-    .then((availableExtensions: { time: Date; extensions: IAvailableExtension[] }) => {
-      const extDetail = availableExtensions.extensions.find(
-        (iter) =>
-          (ext.modId === undefined || iter.modId === ext.modId) &&
-          (ext.fileId === undefined || iter.fileId === ext.fileId) &&
-          ext.name === iter.name,
-      );
+    const downloadId = downloadIds[0];
 
-      const info: IExtension =
-        extDetail !== undefined
-          ? {
-              ..._.pick(extDetail, ["id", "name", "author", "version", "type"]),
-              bundled: false,
-              description: extDetail.description.short,
-              modId: ext.modId,
-            }
-          : undefined;
+    api.store.dispatch(setDownloadModInfo(downloadId, "internal", true));
+    // TODO: native Promise
+    const download = await Promise.resolve(waitForDownloadRecord(api, downloadId));
+    // TODO: native Promise
+    const { extensions: availableExtensions } = await Promise.resolve(
+      fetchAvailableExtensions(false),
+    );
 
-      const state: IState = api.store.getState();
-      const downloadPath = downloadPathForGame(state, SITE_ID);
-      return installExtension(api, path.join(downloadPath, download.localPath), info, {
+    const extDetail = availableExtensions.find(
+      (iter) =>
+        (ext.modId === undefined || iter.modId === ext.modId) &&
+        (ext.fileId === undefined || iter.fileId === ext.fileId) &&
+        ext.name === iter.name,
+    );
+
+    const info: IExtension | undefined =
+      extDetail !== undefined
+        ? {
+            ..._.pick(extDetail, ["id", "name", "author", "version", "type"]),
+            bundled: false,
+            description: extDetail.description.short,
+            modId: ext.modId,
+          }
+        : undefined;
+
+    const state = api.getState();
+    const downloadPath = downloadPathForGame(state, SITE_ID);
+
+    // TODO: native Promise
+    await Promise.resolve(
+      installExtension(api, path.join(downloadPath, download.localPath), info, {
         source: ext.modId !== undefined ? "nexusmods" : "github",
         gameDomain: extDetail?.gameId,
         gameName: extDetail?.gameName,
-      });
-    })
-    .then(() => PromiseBB.resolve(true))
-    .catch(UserCanceled, () => null)
-    .catch(ProcessCanceled, () => {
-      api.showDialog(
-        "error",
-        "Installation failed",
-        {
-          text:
-            'Failed to install the extension "{{extensionName}}" from "{{sourceName}}", ' +
-            "please check the notifications.",
-          parameters: {
-            extensionName: ext.name,
-            sourceName,
-          },
-          options: {
-            hideMessage: true,
-          },
+      }),
+    );
+
+    return true;
+  } catch (err) {
+    if (err instanceof UserCanceled) return false;
+
+    api.showDialog(
+      "error",
+      "Installation failed",
+      {
+        text:
+          'Failed to install the extension "{{extensionName}}" from "{{sourceName}}", ' +
+          "please check the notifications.",
+        parameters: {
+          extensionName: ext.name,
+          sourceName,
         },
-        [{ label: "Close" }],
-      );
-      return PromiseBB.resolve(false);
-    })
-    .catch(ServiceTemporarilyUnavailable, (err) => {
-      log("warn", "Failed to download from github", { message: err.message });
-      return PromiseBB.resolve(false);
-    })
-    .catch((err) => {
-      api.showDialog(
-        "error",
-        "Installation failed",
-        {
-          text: 'Failed to install the extension "{{extensionName}}" from "{{sourceName}}"',
-          parameters: {
-            extensionName: ext.name,
-            sourceName,
-          },
-          message: err.stack,
-          options: {
-            hideMessage: true,
-          },
+        options: {
+          hideMessage: true,
         },
-        [{ label: "Close" }],
-      );
-      return PromiseBB.resolve(false);
-    });
+      },
+      [{ label: "Close" }],
+    );
+    return false;
+  }
 }
 
 const UPDATE_PREFIX = "Vortex Extension Update -";

@@ -122,10 +122,7 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
     ),
   });
 
-  // TODO: native Promise
-  const promises = updateable.map((update) =>
-    Promise.resolve(downloadAndInstallExtension(api, update.update)),
-  );
+  const promises = updateable.map((update) => downloadAndInstallExtension(api, update.update));
   const success = await Promise.all(promises);
 
   api.dismissNotification("extension-updates");
@@ -211,7 +208,7 @@ async function installDependency(
 
   if (toDownload === undefined) return false;
 
-  const success = await Promise.resolve(downloadAndInstallExtension(api, toDownload));
+  const success = await downloadAndInstallExtension(api, toDownload);
   if (success) {
     await Promise.resolve(updateInstalled(false));
   } else {
@@ -402,8 +399,7 @@ function init(context: IExtensionContext) {
 
     context.api.onAsync<"install-extension">("install-extension", async (ext) => {
       await didFetchAvailableExtensions;
-      // TODO: native Promise
-      const success = await Promise.resolve(downloadAndInstallExtension(context.api, ext));
+      const success = await downloadAndInstallExtension(context.api, ext);
 
       if (success) void Promise.resolve(updateExtensions(false));
       return success;
@@ -502,8 +498,7 @@ function init(context: IExtensionContext) {
       }
 
       if (modId !== undefined && ext !== undefined) {
-        // TODO: native Promises
-        const success = await Promise.resolve(downloadAndInstallExtension(context.api, ext));
+        const success = await downloadAndInstallExtension(context.api, ext);
         if (success) void Promise.resolve(updateExtensions(false));
         return success;
       } else {
