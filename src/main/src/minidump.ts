@@ -31,6 +31,7 @@ const MINIDUMP_SIGNATURE = 0x504d444d; // "MDMP"
 
 const STREAM_MODULE_LIST = 4;
 const STREAM_EXCEPTION = 6;
+const STREAM_SYSTEM_INFO = 7;
 const STREAM_CRASHPAD_INFO = 0x43500001;
 
 const MODULE_ENTRY_SIZE = 108;
@@ -39,7 +40,7 @@ const VS_FIXEDFILEINFO_SIGNATURE = 0xfeef04bd;
 // dumps hold only stack memory by default; anything bigger is not one of ours
 const MAX_DUMP_SIZE = 64 * 1024 * 1024;
 
-const EXCEPTION_NAMES: Record<number, string> = {
+const WINDOWS_EXCEPTION_NAMES: Record<number, string> = {
   0x80000003: "BREAKPOINT",
   0xc0000005: "ACCESS_VIOLATION",
   0xc0000006: "IN_PAGE_ERROR",
@@ -52,6 +53,21 @@ const EXCEPTION_NAMES: Record<number, string> = {
   0xc0000409: "STACK_BUFFER_OVERRUN",
   0xc0000602: "FAIL_FAST",
 };
+
+// On Linux, Crashpad stores the signal number as the exception code
+const LINUX_SIGNAL_NAMES: Record<number, string> = {
+  4: "SIGILL",
+  5: "SIGTRAP",
+  6: "SIGABRT",
+  7: "SIGBUS",
+  8: "SIGFPE",
+  11: "SIGSEGV",
+  31: "SIGSYS",
+};
+
+// MDOSPlatform values from the SystemInfoStream PlatformId field
+const MD_OS_LINUX = 0x8201;
+const MD_OS_ANDROID = 0x8202; // why not? xD
 
 interface ILocation {
   size: number;
@@ -103,7 +119,7 @@ export function parseMinidump(buffer: Buffer): IMinidumpSummary | undefined {
 
     const summary: IMinidumpSummary = {
       exceptionCode: hex(code),
-      exceptionName: EXCEPTION_NAMES[code],
+      exceptionName: exceptionName(code, view, streams.get(STREAM_SYSTEM_INFO)),
       exceptionAddress: hex(address),
     };
 
@@ -124,6 +140,22 @@ export function parseMinidump(buffer: Buffer): IMinidumpSummary | undefined {
 }
 
 const hex = (value: number): string => `0x${value.toString(16)}`;
+
+/** Pick the name table by dump origin: MINIDUMP_SYSTEM_INFO PlatformId(20)
+ *  distinguishes NT status codes from POSIX signal numbers. */
+function exceptionName(
+  code: number,
+  view: DataView,
+  systemInfo: ILocation | undefined,
+): string | undefined {
+  if (systemInfo !== undefined) {
+    const platformId = view.getUint32(systemInfo.rva + 20, true);
+    if (platformId === MD_OS_LINUX || platformId === MD_OS_ANDROID) {
+      return LINUX_SIGNAL_NAMES[code];
+    }
+  }
+  return WINDOWS_EXCEPTION_NAMES[code];
+}
 
 interface IFaultingModule {
   name: string;
