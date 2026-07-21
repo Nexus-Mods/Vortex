@@ -7,27 +7,14 @@ import { describe, expect, it } from "vitest";
 import { parseMinidump } from "./minidump";
 
 // Real Crashpad dumps written by Electron 43 (process.crash() in each process
-// type), with the captured process memory zeroed for privacy — the metadata
-// streams the parser reads are untouched.
+// type) on Windows and Linux, with captured process memory and usernames
+// scrubbed for privacy — the metadata streams the parser reads are untouched.
 const loadFixture = (name: string): Buffer =>
   gunzipSync(readFileSync(path.join(__dirname, "__fixtures__", name)));
 
-/** Locate a stream's RVA via the minidump directory. */
-const findStream = (dump: Buffer, type: number): number => {
-  const count = dump.readUInt32LE(8);
-  const directoryRva = dump.readUInt32LE(12);
-  for (let i = 0; i < count; i++) {
-    const entry = directoryRva + i * 12;
-    if (dump.readUInt32LE(entry) === type) {
-      return dump.readUInt32LE(entry + 8);
-    }
-  }
-  throw new Error(`stream ${type} not found`);
-};
-
 describe("parseMinidump", () => {
-  it("parses a main-process crash", () => {
-    expect(parseMinidump(loadFixture("electron43-main-crash.dmp.gz"))).toEqual({
+  it("parses a Windows main-process crash", () => {
+    expect(parseMinidump(loadFixture("windows-main.dmp.gz"))).toEqual({
       exceptionCode: "0xc0000005",
       exceptionName: "ACCESS_VIOLATION",
       exceptionAddress: "0x7ff68eb5aef0",
@@ -38,8 +25,8 @@ describe("parseMinidump", () => {
     });
   });
 
-  it("parses a renderer crash", () => {
-    expect(parseMinidump(loadFixture("electron43-renderer-crash.dmp.gz"))).toEqual({
+  it("parses a Windows renderer crash", () => {
+    expect(parseMinidump(loadFixture("windows-renderer.dmp.gz"))).toEqual({
       exceptionCode: "0xc0000005",
       exceptionName: "ACCESS_VIOLATION",
       exceptionAddress: "0x7ff68eb5aef0",
@@ -50,15 +37,23 @@ describe("parseMinidump", () => {
     });
   });
 
-  it("names signals instead of NT status codes for Linux dumps", () => {
-    // the real Windows dump with PlatformId and exception code patched —
-    // replace with a genuine Linux fixture once one is generated on Linux
-    const dump = loadFixture("electron43-main-crash.dmp.gz");
-    dump.writeUInt32LE(0x8201, findStream(dump, 7) + 20); // MD_OS_LINUX
-    dump.writeUInt32LE(11, findStream(dump, 6) + 8); // SIGSEGV
-    const result = parseMinidump(dump);
-    expect(result?.exceptionCode).toBe("0xb");
-    expect(result?.exceptionName).toBe("SIGSEGV");
+  it("parses a Linux main-process crash with signal names", () => {
+    // null-pointer segfault: the faulting address resolves to no module
+    expect(parseMinidump(loadFixture("linux-main.dmp.gz"))).toEqual({
+      exceptionCode: "0xb",
+      exceptionName: "SIGSEGV",
+      exceptionAddress: "0x0",
+      processType: "browser",
+    });
+  });
+
+  it("parses a Linux renderer crash", () => {
+    expect(parseMinidump(loadFixture("linux-renderer.dmp.gz"))).toEqual({
+      exceptionCode: "0xb",
+      exceptionName: "SIGSEGV",
+      exceptionAddress: "0x0",
+      processType: "renderer",
+    });
   });
 
   it("returns undefined for non-minidump data", () => {
@@ -66,7 +61,7 @@ describe("parseMinidump", () => {
   });
 
   it("returns undefined for truncated dumps", () => {
-    const dump = loadFixture("electron43-main-crash.dmp.gz");
+    const dump = loadFixture("windows-main.dmp.gz");
     expect(parseMinidump(dump.subarray(0, 128))).toBeUndefined();
   });
 });
