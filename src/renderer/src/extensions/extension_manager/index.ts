@@ -154,31 +154,27 @@ function checkForUpdates(api: IExtensionApi) {
   });
 }
 
-function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
+async function updateAvailableExtensions(
+  api: IExtensionApi,
+  force: boolean = false,
+): Promise<void> {
   const state: IState = api.store.getState();
   if (!state.session.base.networkConnected) {
-    return PromiseBB.resolve();
+    return;
   }
-  return fetchAvailableExtensions(true, force)
-    .catch(DataInvalid, (err) => {
-      api.showErrorNotification("Failed to fetch available extensions", err, {
-        allowReport: false,
-      });
-      return { time: null, extensions: [] };
-    })
-    .catch((err) => {
-      api.showErrorNotification("Failed to fetch available extensions", err);
-      return { time: null, extensions: [] };
-    })
-    .then(({ time, extensions }: { time: Date; extensions: IAvailableExtension[] }) => {
-      if (time !== null) {
-        api.store.dispatch(setExtensionsUpdate(time.getTime()));
-        api.store.dispatch(setAvailableExtensions(extensions));
-        return checkForUpdates(api);
-      } else {
-        return PromiseBB.resolve();
-      }
+
+  try {
+    const { time, extensions } = await Promise.resolve(fetchAvailableExtensions(true, force));
+    api.store.dispatch(setExtensionsUpdate(time.getTime()));
+    api.store.dispatch(setAvailableExtensions(extensions));
+    await Promise.resolve(checkForUpdates(api));
+  } catch (err) {
+    const allowReport = !(err instanceof DataInvalid);
+
+    api.showErrorNotification("Failed to fetch available extensions", err, {
+      allowReport,
     });
+  }
 }
 
 function installDependency(
@@ -404,7 +400,7 @@ function init(context: IExtensionContext) {
 
     void (async () => {
       await Promise.resolve(updateExtensions(true));
-      await Promise.resolve(updateAvailableExtensions(context.api));
+      await updateAvailableExtensions(context.api);
       onDidFetch();
     })();
 
