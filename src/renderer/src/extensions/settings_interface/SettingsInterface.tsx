@@ -343,12 +343,14 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     }
     const ext: { modId?: number } = extensions.find((iter) => iter.name === extName) || {};
     const { value } = target;
+
     const dlProm: PromiseBB<boolean[]> =
       ext.modId !== undefined
-        ? this.context.api
-            .emitAndAwait("install-extension", ext)
-            .tap((success) => (success ? this.props.onReloadLanguages() : PromiseBB.resolve()))
+        ? PromiseBB.resolve<boolean[]>(this.context.api.emitAndAwait("install-extension", ext)).tap(
+            (success) => (success ? this.props.onReloadLanguages() : PromiseBB.resolve()),
+          )
         : PromiseBB.resolve([true]);
+
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
         this.props.onSetLanguage(value);

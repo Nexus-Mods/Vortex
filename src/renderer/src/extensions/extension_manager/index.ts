@@ -23,6 +23,12 @@ import ExtensionManager from "./ExtensionManager";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from "./util";
 
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "install-extension": (info: IExtensionDownloadInfo) => boolean;
+  }
+}
+
 interface ILocalState {
   reloadNecessary: boolean;
   preselectModId: number;
@@ -401,7 +407,7 @@ function init(context: IExtensionContext) {
     updateExtensions(true)
       .then(() => updateAvailableExtensions(context.api))
       .then(() => onDidFetch());
-    context.api.onAsync("install-extension", (ext: IExtensionDownloadInfo) => {
+    context.api.onAsync<"install-extension">("install-extension", (ext) => {
       return didFetchAvailableExtensions
         .then(() => downloadAndInstallExtension(context.api, ext))
         .then((success) => {

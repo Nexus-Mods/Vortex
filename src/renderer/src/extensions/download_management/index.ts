@@ -53,6 +53,12 @@ import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
 
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "set-download-games": (dlId: string, gameIds: string[], fromMetadata?: boolean) => void;
+  }
+}
+
 let updateDebouncer: Debouncer;
 
 import { knownArchiveExt } from "../../util/archives";
@@ -1217,7 +1223,7 @@ function init(context: IExtensionContext): boolean {
       },
     );
 
-    context.api.onAsync(
+    context.api.onAsync<"set-download-games">(
       "set-download-games",
       (dlId: string, gameIds: string[], fromMetadata?: boolean) =>
         setDownloadGames(

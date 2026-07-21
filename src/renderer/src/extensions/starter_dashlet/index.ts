@@ -87,15 +87,14 @@ function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
   return PromiseBB.resolve(undefined);
 }
 
-const onDeploymentEvent = (api: IExtensionApi): PromiseBB<void> => {
+const onDeploymentEvent = async (api: IExtensionApi): Promise<void> => {
   const state = api.store.getState();
   const gameMode = activeGameId(state);
   if (gameMode !== undefined) {
     // Increment deployment counter to trigger tool validation update
     api.store.dispatch(incrementDeploymentCounter(gameMode));
-    return api.emitAndAwait("discover-tools", gameMode);
+    await api.emitAndAwait("discover-tools", gameMode);
   }
-  return PromiseBB.resolve();
 };
 
 const toolsValidation = memoize(validateTools);

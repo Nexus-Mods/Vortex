@@ -427,13 +427,16 @@ export function downloadFromNexus(
   }
 
   log("debug", "download from nexus", archiveFileName(ext));
-  return api.emitAndAwait(
-    "nexus-download",
-    SITE_ID,
-    ext.modId,
-    ext.fileId,
-    archiveFileName(ext),
-    false,
+  // TODO: remove evil
+  return PromiseBB.resolve(
+    api.emitAndAwait<"nexus-download">(
+      "nexus-download",
+      SITE_ID,
+      ext.modId,
+      ext.fileId,
+      archiveFileName(ext),
+      false,
+    ),
   );
 }
 

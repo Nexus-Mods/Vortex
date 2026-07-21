@@ -704,7 +704,10 @@ async function updateMeta(api: IExtensionApi, collectionId?: string) {
     }
   }
 
-  localState.ownCollections = (await api.emitAndAwait("get-my-collections", gameMode))[0] || [];
+  localState.ownCollections =
+    ((
+      await api.emitAndAwait<"get-my-collections">("get-my-collections", gameMode)
+    )[0] as IRevision[]) || [];
 
   api.dismissNotification(notiId);
 }
@@ -1162,8 +1165,12 @@ async function triggerVoteNotification(
 
   const sendRating = async (success: boolean) => {
     const vote = success ? "positive" : "negative";
-    const voted: { success: boolean; averageRating?: nexusApi.IRating } = (
-      await api.emitAndAwait("rate-nexus-collection-revision", revisionId, vote)
+    const voted = (
+      await api.emitAndAwait<"rate-nexus-collection-revision">(
+        "rate-nexus-collection-revision",
+        revisionId,
+        vote,
+      )
     )[0];
     if (voted.success) {
       api.store.dispatch(
@@ -1666,8 +1673,8 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
     .style.setProperty("--collection-icon", `url(${pathToFileURL(iconPath).href})`);
 
   const updateOwnCollectionsCB = (gameId: string) =>
-    api.emitAndAwait("get-my-collections", gameId).then((result) => {
-      localState.ownCollections = result[0] ?? [];
+    api.emitAndAwait<"get-my-collections">("get-my-collections", gameId).then((result) => {
+      localState.ownCollections = (result[0] as IRevision[]) ?? [];
     });
 
   const onGameModeChange = (gameMode: string) => {

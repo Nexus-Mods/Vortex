@@ -424,7 +424,11 @@ function main(context: IExtensionContext) {
       }
 
       const onApplySettings = (fileName: string, parser: IniFile<any>): PromiseBB<void> =>
-        context.api.emitAndAwait("apply-settings", profile, fileName, parser);
+        PromiseBB.resolve(
+          context.api
+            .emitAndAwait("apply-settings", profile, fileName, parser)
+            .then(() => undefined),
+        );
 
       return discoverSettingsChanges(context.api, profile.gameId, discovery)
         .then(() =>
