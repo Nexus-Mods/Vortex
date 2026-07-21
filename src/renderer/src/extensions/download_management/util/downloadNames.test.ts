@@ -1,9 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
+
+import { afterEach, beforeEach, describe, it, expect } from "vitest";
 
 import { makeFileInfo } from "../../../test-utils/builders";
 import type { IDownload } from "../types/IDownload";
 import {
   TEMP_DOWNLOAD_PREFIX,
+  freeDownloadName,
   friendlyDownloadName,
   isTempDownloadName,
   nameFromUrl,
@@ -136,5 +141,34 @@ describe("friendlyDownloadName", () => {
       }),
     );
     expect(result).toBe("Cool Mod");
+  });
+});
+
+describe("freeDownloadName", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "vortex-dl-"));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("returns the name unchanged when nothing collides", async () => {
+    expect(await freeDownloadName(dir, "Mod.7z")).toBe("Mod.7z");
+  });
+
+  it("inserts a timestamp before the extension when the name is taken", async () => {
+    await writeFile(path.join(dir, "Mod.7z"), "x");
+    const name = await freeDownloadName(dir, "Mod.7z");
+    expect(name).not.toBe("Mod.7z");
+    expect(name).toMatch(/^Mod\.\d+\.7z$/);
+  });
+
+  it("appends the timestamp when a name has no extension", async () => {
+    await writeFile(path.join(dir, "README"), "x");
+    const name = await freeDownloadName(dir, "README");
+    expect(name).toMatch(/^README\.\d+$/);
   });
 });

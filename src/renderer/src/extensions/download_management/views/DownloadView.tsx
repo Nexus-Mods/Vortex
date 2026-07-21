@@ -823,10 +823,15 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === "urls") {
+      // A pasted url can't be fetched reliably without a browser: some sites (mega.nz, google
+      // drive, ...) deliver the file through client-side JavaScript as a blob, others sit behind a
+      // challenge/login page. There's no dependable way to tell those apart from a plain download
+      // link up front, so every pasted url goes through the embedded browser. A direct file link
+      // resolves and closes it near-instantly; anything else lets the user complete the download.
       dlPaths.forEach((url) =>
-        this.context.api.events.emit("start-download", [url], {}, undefined, (err: Error) => {
-          this.reportDownloadError(err, false);
-        }),
+        this.context.api.events.emit("browse-download-url", url, (err: Error) =>
+          this.reportDownloadError(err, false),
+        ),
       );
     } else {
       this.context.api.events.emit("import-downloads", dlPaths);

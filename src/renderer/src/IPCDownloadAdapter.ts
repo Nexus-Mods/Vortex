@@ -1,6 +1,6 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { access, mkdir, rename, rm } from "node:fs/promises";
+import { access, copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import * as path from "node:path";
 import { pipeline } from "node:stream/promises";
 
@@ -41,7 +41,10 @@ import {
 } from "./extensions/download_management/actions/state";
 import { downloadPathForGame } from "./extensions/download_management/selectors";
 import type { IDownload } from "./extensions/download_management/types/IDownload";
-import { TEMP_DOWNLOAD_PREFIX } from "./extensions/download_management/util/downloadNames";
+import {
+  freeDownloadName,
+  TEMP_DOWNLOAD_PREFIX,
+} from "./extensions/download_management/util/downloadNames";
 import { knownGames } from "./extensions/gamemode_management/selectors";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
 import { nxmUrlFromDownload } from "./extensions/nexus_integration/NXMUrl";
@@ -50,6 +53,8 @@ import { convertGameIdReverse } from "./extensions/nexus_integration/util/conver
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
 import type { IExtensionApi } from "./types/IExtensionContext";
+import type { IState } from "./types/IState";
+import getVortexPath from "./util/getVortexPath";
 import { batchDispatch, flatten } from "./util/util";
 
 function rehydrateDownloadError(state: WireDownloadState): Error | null {
@@ -509,21 +514,19 @@ export class IPCDownloadAdapter {
     // TODO: decide how to handle multiple URL inputs
     const rawUrl = rawUrls[0];
 
+    // A blob: url can't be fetched - the embedded browser already downloaded the file to the temp
+    // folder (see MainWindow's will-download handler). Adopt that file as a finished download rather
+    // than routing it through the network path. Pasted urls, collection browse dependencies, and
+    // community extensions all feed the browse-for-download result into start-download, so handling
+    // it here covers every caller.
+    if (rawUrl.toString().startsWith("blob:")) {
+      await this.#adoptBrowserDownload(rawUrls, modInfo, fileName, callback, options);
+      return;
+    }
+
     const encodedUrl = parseEncodedUrl(rawUrl.toString());
 
-    const state = this.#api.getState();
-    const gameId = toInternalGameId(this.#api, modInfo.game ?? activeGameId(state));
-    const dlPath = downloadPathForGame(state, gameId);
-
-    // Include games that can consume this download (e.g. Skyrim VR <- skyrimse) so
-    // the install handler targets the actively managed game rather than the base
-    // game. See expandCompatibleGameIds.
-    const gameIds = expandCompatibleGameIds(knownGames(state), gameId);
-
-    // The per-game subfolder may not exist yet - ensureDownloadsDirectory only
-    // creates the active game's folder, but downloads can target any game
-    // (SITE_ID extension downloads, compatible domains, collection downloads, etc.).
-    await mkdir(dlPath, { recursive: true });
+    const { state, dlPath, gameIds } = await this.#resolveDownloadTarget(modInfo);
 
     // Check for an existing file using the caller-supplied name before queuing.
     // We can only do this when a name is provided; temp-named downloads are always new.
@@ -630,6 +633,82 @@ export class IPCDownloadAdapter {
       }
     } catch (err) {
       this.#resolvedMeta.delete(collationId);
+      callback?.(unknownToError(err));
+    }
+  }
+
+  // Resolves where a download for the given modInfo goes: the game's download folder (created if
+  // missing) and the set of games that can consume it (e.g. Skyrim VR <- skyrimse, so the install
+  // handler targets the actively managed game rather than the base game). Shared by the network
+  // download path and the browser-adoption path.
+  async #resolveDownloadTarget(
+    modInfo: ModInfo,
+  ): Promise<{ state: IState; dlPath: string; gameIds: Array<string | undefined> }> {
+    const state = this.#api.getState();
+    const gameId = toInternalGameId(this.#api, modInfo.game ?? activeGameId(state));
+    const dlPath = downloadPathForGame(state, gameId);
+    const gameIds = expandCompatibleGameIds(knownGames(state), gameId);
+    await mkdir(dlPath, { recursive: true });
+    return { state, dlPath, gameIds };
+  }
+
+  // Adopts a file the embedded browser already downloaded (a blob) as a finished download. The main
+  // process saved it to <temp>/<fileName>.tmp; this moves it into the download folder under a free
+  // name and hands off to #completeDownload, so it takes the exact same finish/hash/callback/install
+  // path as a network download (and emits did-finish-download, which collections and auto-install
+  // wait on). browse-for-download encodes its result as "<url>|<fileName><<referer>".
+  async #adoptBrowserDownload(
+    rawUrls: string[],
+    modInfo: ModInfo,
+    fileNameHint: string | undefined,
+    callback?: (err: Error | null, id?: string) => void,
+    options?: { allowInstall?: boolean | "force" },
+  ): Promise<void> {
+    try {
+      const [urlPart] = rawUrls[0].toString().split("<");
+      const [, encodedName] = urlPart.split("|");
+      const fileName = encodedName !== undefined && encodedName !== "" ? encodedName : fileNameHint;
+      if (fileName === undefined || fileName === "") {
+        throw new Error("browser download has no file name to adopt");
+      }
+
+      const { dlPath, gameIds } = await this.#resolveDownloadTarget(modInfo);
+
+      const blobPath = path.join(getVortexPath("temp"), `${fileName}.tmp`);
+      const finalName = await freeDownloadName(dlPath, fileName);
+      const finalPath = path.join(dlPath, finalName);
+      await copyFile(blobPath, finalPath);
+      const { size } = await stat(finalPath);
+      // The file is already safely in the download folder; a failed temp cleanup must not fail the
+      // adoption (a lingering temp file is harmless).
+      await rm(blobPath, { force: true }).catch(() => undefined);
+
+      // Register the record already at its final name, so #completeDownload skips the rename and
+      // just hashes, marks it finished, fires the callback, and triggers install. A blob url isn't
+      // fetchable, so the record stores no source urls.
+      const id = randomUUID();
+      this.#api.store.dispatch(initDownload(id, [], modInfo, gameIds));
+      this.#api.store.dispatch(setDownloadFilePath(id, finalName));
+      this.#api.store.dispatch(downloadProgress(id, size, size, undefined));
+
+      const wireState: WireDownloadState = {
+        status: "completed",
+        error: null,
+        bytesReceived: size,
+        bytesWritten: size,
+        size,
+        fileName: finalName,
+        isChunked: false,
+      };
+      await this.#completeDownload(id, wireState, {
+        callback,
+        fileNameHint,
+        allowInstall: normalizeAllowInstall(options?.allowInstall),
+        lastBytesReceived: size,
+        lastProgressDispatch: 0,
+        startedEventEmitted: true,
+      });
+    } catch (err) {
       callback?.(unknownToError(err));
     }
   }
