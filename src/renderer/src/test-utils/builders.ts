@@ -28,6 +28,7 @@ import { batch } from "redux-act";
 import { vi } from "vitest";
 
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
+import type { ICategory } from "../extensions/category_management/types/ICategoryDictionary";
 import { MOD_TYPE } from "../extensions/collections/constants";
 import type {
   ICollectionMod,
@@ -122,6 +123,10 @@ export function makeCollectionModRule(
     reference: makeReference(),
     ...overrides,
   };
+}
+
+export function makeCategory(overrides: Partial<ICategory> = {}): ICategory {
+  return { name: "Category", parentCategory: undefined, order: 0, ...overrides };
 }
 
 export function makeMod(overrides: Partial<IMod> = {}): IMod {

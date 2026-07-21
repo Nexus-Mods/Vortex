@@ -1,7 +1,9 @@
-import { activeGameId } from "../../util/selectors";
+import type { IState } from "@/types/api";
 
-export function allCategories(state: any) {
+import { activeGameId } from "../../util/selectors";
+import type { ICategoryDictionary } from "./types/ICategoryDictionary";
+
+export function allCategories(state: IState): ICategoryDictionary {
   const gameMode = activeGameId(state);
-  const categories = state.persistent.categories[gameMode];
-  return categories !== undefined ? categories : [];
+  return state.persistent.categories[gameMode] ?? {};
 }
