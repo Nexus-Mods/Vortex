@@ -9,6 +9,7 @@ import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 import winapi from "winapi-bindings";
 
+import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
@@ -20,7 +21,6 @@ import { setErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import type { Normalize } from "../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
 import * as selectors from "../../util/selectors";
 import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
@@ -646,6 +646,32 @@ function genImportDownloadsHandler(api: IExtensionApi) {
   };
 }
 
+/**
+ * Opens a url in the embedded browser and downloads whatever it resolves to. Pasted urls can't be
+ * fetched reliably up front: some sites (mega.nz, google drive, ...) assemble the file client-side
+ * and hand it over as a blob, others sit behind a challenge/login page. The browser resolves to
+ * either a blob (the main process saves it to temp; the download adapter adopts it) or a direct
+ * link; both are handed to start-download, which routes a blob to adoption and everything else to
+ * the network downloader.
+ */
+async function browseAndDownload(
+  api: IExtensionApi,
+  navUrl: string,
+  onComplete?: (err: Error | null, dlId?: string) => void,
+): Promise<void> {
+  const instructions = api.translate(
+    "This site delivers the file through your browser. Start the download on the page and " +
+      "Vortex will pick it up automatically.",
+  );
+  const results: string[] = await api.emitAndAwait("browse-for-download", navUrl, instructions);
+  const raw = (results ?? []).find(truthy);
+  // No/err result means the user closed or canceled the browser.
+  if (raw === undefined || raw.startsWith("err:")) {
+    return;
+  }
+  api.events.emit("start-download", [raw], {}, undefined, onComplete ?? (() => null));
+}
+
 function checkPendingTransfer(api: IExtensionApi): PromiseBB<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
@@ -1179,6 +1205,17 @@ function init(context: IExtensionContext): boolean {
     });
 
     context.api.events.on("import-downloads", genImportDownloadsHandler(context.api));
+
+    context.api.events.on(
+      "browse-download-url",
+      (navUrl: string, onComplete?: (err: Error | null, dlId?: string) => void) => {
+        // browse-for-download surfaces its own browse-level failures and treats cancel as a no-op;
+        // download failures reach onComplete. This catch is only unhandled-rejection hygiene.
+        browseAndDownload(context.api, navUrl, onComplete).catch((err) => {
+          log("error", "browse-download-url failed", { err });
+        });
+      },
+    );
 
     context.api.onAsync(
       "set-download-games",
