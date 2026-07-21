@@ -9,7 +9,11 @@ import type {
   IExtension,
   IExtensionDownloadInfo,
 } from "../../types/extensions";
-import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
+import type {
+  IExtensionApi,
+  IExtensionContext,
+  ISupportedResult,
+} from "../../types/IExtensionContext";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IExtensionLoadFailure, IState } from "../../types/IState";
 import { getGame } from "../../util/api";
@@ -366,7 +370,7 @@ function init(context: IExtensionContext) {
   });
 
   const forceUpdateExtensions = () => {
-    updateAvailableExtensions(context.api, true);
+    void updateAvailableExtensions(context.api, true);
   };
 
   context.registerAction("extensions-layout-icons", 500, "refresh", {}, "Update Extensions", () => {
@@ -379,23 +383,16 @@ function init(context: IExtensionContext) {
     onRefreshExtensions: forceUpdateExtensions,
   }));
 
-  context.registerActionCheck("SET_EXTENSION_ENABLED", (state, action: any) => {
-    if (process.type === "browser") {
-      log("info", "changing extension enabled", action.payload);
-    }
-    return undefined;
-  });
-
   context.registerInstaller(
     "site-installer",
     0,
-    (files: string[], gameId: string) =>
-      PromiseBB.resolve({
+    (_, gameId: string) =>
+      Promise.resolve<ISupportedResult>({
         supported: gameId === "site",
         requiredFiles: [],
       }),
     () => {
-      return PromiseBB.reject(
+      return Promise.reject(
         new ProcessCanceled("Extensions have to be installed from the extensions page."),
       );
     },
@@ -403,20 +400,20 @@ function init(context: IExtensionContext) {
 
   context.once(() => {
     let onDidFetch: () => void;
-    const didFetchAvailableExtensions = new PromiseBB((resolve) => (onDidFetch = resolve));
-    updateExtensions(true)
-      .then(() => updateAvailableExtensions(context.api))
-      .then(() => onDidFetch());
-    context.api.onAsync<"install-extension">("install-extension", (ext) => {
-      return didFetchAvailableExtensions
-        .then(() => downloadAndInstallExtension(context.api, ext))
-        .then((success) => {
-          if (success) {
-            return updateExtensions(false).then(() => success);
-          } else {
-            return PromiseBB.resolve().then(() => success);
-          }
-        });
+    const didFetchAvailableExtensions = new Promise<void>((resolve) => (onDidFetch = resolve));
+
+    void (async () => {
+      await Promise.resolve(updateExtensions(true));
+      await Promise.resolve(updateAvailableExtensions(context.api));
+      onDidFetch();
+    })();
+
+    context.api.onAsync("install-extension", async (ext: IExtensionDownloadInfo) => {
+      await didFetchAvailableExtensions;
+      const success = await Promise.resolve(downloadAndInstallExtension(context.api, ext));
+
+      if (success) void Promise.resolve(updateExtensions(false));
+      return success;
     });
 
     context.api.events.on("gamemode-activated", (gameMode: string) => {
@@ -425,10 +422,12 @@ function init(context: IExtensionContext) {
       const gameExtId = Object.keys(state.session.extensions.installed).find(
         (key) => game.extensionPath === state.session.extensions.installed[key].path,
       );
+
       if (!gameExtId || !state.session.extensions.optional[gameExtId]) {
         return;
       }
-      const requiredIds = [];
+
+      const requiredIds: string[] = [];
       for (const ext of state.session.extensions.optional[gameExtId]) {
         if (!state.session.extensions.installed[ext.id]) {
           requiredIds.push(ext.id);
@@ -461,11 +460,12 @@ function init(context: IExtensionContext) {
                     { label: "Cancel", action: () => dismiss() },
                     {
                       label: "Install",
-                      action: async () => {
+                      action: () => {
                         dismiss();
-                        for (const id of requiredIds) {
-                          await installDependency(context.api, id, updateExtensions);
-                        }
+                        const promises = requiredIds.map((id) =>
+                          Promise.resolve(installDependency(context.api, id, updateExtensions)),
+                        );
+                        void Promise.all(promises);
                       },
                     },
                   ],
@@ -474,17 +474,19 @@ function init(context: IExtensionContext) {
             },
             {
               title: "Install Extension/s",
-              action: async () => {
-                for (const id of requiredIds) {
-                  await installDependency(context.api, id, updateExtensions);
-                }
+              action: () => {
+                const promises = requiredIds.map((id) =>
+                  Promise.resolve(installDependency(context.api, id, updateExtensions)),
+                );
+                void Promise.all(promises);
               },
             },
           ],
         });
       }
     });
-    context.api.onAsync<boolean>("install-extension-from-download", (archiveId: string) => {
+
+    context.api.onAsync<boolean>("install-extension-from-download", async (archiveId: string) => {
       const state = context.api.getState();
       const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
       const ext = state.session.extensions.available.find((iter) => iter.modId === modId);
@@ -495,21 +497,21 @@ function init(context: IExtensionContext) {
             inst.modId === ext?.modId &&
             inst.version === ext?.version,
         ) !== undefined;
+
       if (isInstalled) {
         context.api.sendNotification({
           id: "extension-already-installed",
           type: "info",
           message: "Vortex extension is already installed",
         });
-        return PromiseBB.resolve<boolean>(false);
+
+        return false;
       }
 
       if (modId !== undefined && ext !== undefined) {
-        return downloadAndInstallExtension(context.api, ext).tap((success) => {
-          if (success) {
-            updateExtensions(false);
-          }
-        });
+        const success = await Promise.resolve(downloadAndInstallExtension(context.api, ext));
+        if (success) void Promise.resolve(updateExtensions(false));
+        return success;
       } else {
         context.api.sendNotification({
           id: "not-an-extension",
@@ -517,7 +519,8 @@ function init(context: IExtensionContext) {
           title: "Archive not recognized as a Vortex extension.",
           message: "If this is a new extension it may not have been approved yet.",
         });
-        return PromiseBB.resolve<boolean>(false);
+
+        return false;
       }
     });
 
