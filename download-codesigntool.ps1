@@ -9,7 +9,9 @@ $ProgressPreference = 'SilentlyContinue' #'Continue
 Write-Host "Sandbox = $Sandbox"
         
 $rootDir = Resolve-Path "."
-$downloadUrl = "https://www.ssl.com/download/codesigntool-for-windows/"
+# Latest CodeSignTool Windows release (asset name embeds the version, so resolve it dynamically).
+$release = Invoke-RestMethod -Uri "https://api.github.com/repos/SSLcom/CodeSignTool/releases/latest"
+$downloadUrl = ($release.assets | Where-Object { $_.name -like "*-windows.zip" }).browser_download_url
 $downloadedFile = Join-Path $rootDir "CodeSignTool.zip"
 $extractFolder = Join-Path $rootDir "CodeSignTool"
 $configPath = "/conf/code_sign_tool.properties"
