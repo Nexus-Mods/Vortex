@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Fixed
 
+- Collection name shown as the downloaded archive's file name on collection cards ([#23741](https://github.com/Nexus-Mods/Vortex/pull/23741))
 - Repaired download and mod names already polluted with CDN storage paths by the 2.4.0-beta.1 regression, restoring them to their friendly form ([#23735](https://github.com/Nexus-Mods/Vortex/pull/23735))
 - Restored downloads from mega.nz and Google Drive (and similar hosts that deliver files via client-side JavaScript) ([#23731](https://github.com/Nexus-Mods/Vortex/pull/23731))
 - Downloads and mods now use the proper Nexus file name instead of the CDN storage path (e.g. `5c/d3/1f/<guid>`) ([#23726](https://github.com/Nexus-Mods/Vortex/pull/23726))
