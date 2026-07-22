@@ -5,7 +5,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
-import { usePageScrolled } from "./Page.context";
+import { usePageContext } from "./Page.context";
 import { PageContent } from "./PageContent";
 
 export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
@@ -36,13 +36,14 @@ export const PageHeader = ({
   subtitle,
   ...rest
 }: IPageHeaderProps) => {
-  const scrolled = usePageScrolled();
+  const { scrolled, collapsed } = usePageContext();
 
   return (
     <div
       className={joinClasses([
-        "relative z-10 w-full pb-3 transition-[padding]",
-        scrolled ? "pt-3 shadow-md" : "border-b border-stroke-weak pt-6",
+        "relative z-10 w-full border-b pb-3 transition-[padding]",
+        collapsed ? "pt-3" : "pt-6",
+        scrolled ? "border-transparent shadow-md" : "border-stroke-weak",
         className,
       ])}
       {...rest}
@@ -53,7 +54,7 @@ export const PageHeader = ({
             <Pictogram
               className={joinClasses([
                 "transition-[width,height]",
-                scrolled ? "size-7" : "size-14",
+                collapsed ? "size-7" : "size-14",
               ])}
               name={pictogramName}
               size="none"
@@ -68,7 +69,7 @@ export const PageHeader = ({
             )}
 
             {!!subtitle && (
-              <Typography appearance="subdued" className={joinClasses({ hidden: scrolled })}>
+              <Typography appearance="subdued" className={joinClasses({ hidden: collapsed })}>
                 {subtitle}
               </Typography>
             )}
