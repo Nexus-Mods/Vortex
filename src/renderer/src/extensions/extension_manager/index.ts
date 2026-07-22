@@ -226,6 +226,8 @@ async function installDependency(
       },
     );
   }
+
+  return success;
 }
 
 function checkMissingDependencies(
