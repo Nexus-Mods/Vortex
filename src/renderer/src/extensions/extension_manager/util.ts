@@ -502,22 +502,26 @@ async function downloadGithubRaw(
   const tmpPath = path.join(getVortexPath("temp"), shortid());
   await mkdir(tmpPath, { recursive: true });
 
-  await downloadGithubRawRecursive(ext.github, ext.githubRawPath, tmpPath);
-  const repoFiles = await readdir(tmpPath, { recursive: true, withFileTypes: true });
+  try {
+    await downloadGithubRawRecursive(ext.github, ext.githubRawPath, tmpPath);
+    const repoFiles = await readdir(tmpPath, { recursive: true, withFileTypes: true });
 
-  const archivePath = path.join(tmpPath, archiveName);
-  const pack = new SevenZip();
-  await Promise.resolve(
-    pack.add(
-      archivePath,
-      repoFiles.map((x) => path.join(x.parentPath, x.name)),
-    ),
-  );
+    const archivePath = path.join(tmpPath, archiveName);
+    const pack = new SevenZip();
+    await Promise.resolve(
+      pack.add(
+        archivePath,
+        repoFiles.map((x) => path.join(x.parentPath, x.name)),
+      ),
+    );
 
-  await rename(archivePath, path.join(downloadPath, archiveName));
-  const archiveId = shortid();
-  api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
-  return [archiveId];
+    await rename(archivePath, path.join(downloadPath, archiveName));
+    const archiveId = shortid();
+    api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
+    return [archiveId];
+  } finally {
+    await rm(tmpPath, { recursive: true, force: true });
+  }
 }
 
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
