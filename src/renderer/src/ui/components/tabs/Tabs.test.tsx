@@ -16,7 +16,7 @@ afterEach(() => {
 
 const ControlledTabs = ({
   disabledThird = false,
-  initial = "One",
+  initial = "one",
   tabType,
 }: {
   disabledThird?: boolean;
@@ -28,14 +28,18 @@ const ControlledTabs = ({
   return (
     <TabProvider tab={tab} tabListId="test" tabType={tabType} onSetSelectedTab={setTab}>
       <TabBar>
-        <TabButton name="One" />
-        <TabButton count={5} name="Two" />
-        <TabButton disabled={disabledThird} name="Three" />
+        <TabButton name="One" panelId="one" />
+
+        <TabButton count={5} name="Two" panelId="two" />
+
+        <TabButton disabled={disabledThird} name="Three" panelId="three" />
       </TabBar>
 
-      <TabPanel name="One">Panel One</TabPanel>
-      <TabPanel name="Two">Panel Two</TabPanel>
-      <TabPanel name="Three">Panel Three</TabPanel>
+      <TabPanel id="one">Panel One</TabPanel>
+
+      <TabPanel id="two">Panel Two</TabPanel>
+
+      <TabPanel id="three">Panel Three</TabPanel>
     </TabProvider>
   );
 };
@@ -102,14 +106,14 @@ describe("Tabs", () => {
     });
 
     it("wraps to the first tab on ArrowRight from the last", async () => {
-      renderComponent({ initial: "Three" });
+      renderComponent({ initial: "three" });
       getTab(/three/i).focus();
       await userEvent.keyboard("{ArrowRight}");
       expect(screen.getByText("Panel One")).toBeInTheDocument();
     });
 
     it("jumps to the first tab on Home", async () => {
-      renderComponent({ initial: "Three" });
+      renderComponent({ initial: "three" });
       getTab(/three/i).focus();
       await userEvent.keyboard("{Home}");
       expect(screen.getByText("Panel One")).toBeInTheDocument();
