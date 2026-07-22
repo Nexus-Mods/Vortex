@@ -1,11 +1,10 @@
-import { rename, rm, writeFile } from "node:fs/promises";
+import { stat, rename, rm, writeFile, readdir } from "node:fs/promises";
 import * as path from "node:path";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import SevenZip from "node-7z";
-import rimraf from "rimraf";
 
 import { forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
@@ -15,7 +14,6 @@ import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import { withTrackedActivity } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { INVALID_FILENAME_RE } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
@@ -25,9 +23,6 @@ import {
 } from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
 import { readExtensionInfo } from "./util";
-
-const rimrafAsync: (removePath: string, options: any) => PromiseBB<void> =
-  PromiseBB.promisify(rimraf);
 
 class ContextProxyHandler implements ProxyHandler<any> {
   private mDependencies: string[] = [];
@@ -179,37 +174,31 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): PromiseBB<strin
   return PromiseBB.resolve(previousVersions);
 }
 
+const requiredThemeFiles = ["variables.scss", "style.scss", "fonts.scss"];
+
 /**
  * validate a theme extension. A theme extension can contain multiple themes, one directory
  * per theme, each is expected to contain at least one of
  * "variables.scss", "style.scss" or "fonts.scss"
  */
-function validateTheme(extPath: string): PromiseBB<void> {
-  return fs
-    .readdirAsync(extPath)
-    .filter((fileName: string) =>
-      fs.statAsync(path.join(extPath, fileName)).then((stats) => stats.isDirectory()),
-    )
-    .then((dirNames) => {
-      if (dirNames.length === 0) {
-        return PromiseBB.reject(
-          new DataInvalid("Expected a subdirectory containing the stylesheets"),
-        );
-      }
-      return PromiseBB.map(dirNames, (dirName) =>
-        fs.readdirAsync(path.join(extPath, dirName)).then((files) => {
-          if (
-            !files.includes("variables.scss") &&
-            !files.includes("style.scss") &&
-            !files.includes("fonts.scss")
-          ) {
-            return PromiseBB.reject(new DataInvalid("Theme not found"));
-          } else {
-            return PromiseBB.resolve();
-          }
-        }),
-      ).then(() => null);
+async function validateTheme(extPath: string): Promise<void> {
+  const entries = await readdir(extPath, { recursive: false, withFileTypes: true });
+  const directories = entries.filter((entry) => entry.isDirectory());
+
+  if (directories.length === 0)
+    throw new DataInvalid("Expected a subdirectory containing the stylesheets");
+  const promises = directories.map(async (dir) => {
+    const files = await readdir(path.join(dir.parentPath, dir.name), {
+      recursive: false,
+      withFileTypes: true,
     });
+    const hasOneRequiredFile = !!requiredThemeFiles.find((required) =>
+      files.find((x) => x.name === required),
+    );
+    if (!hasOneRequiredFile) throw new DataInvalid("Theme not found");
+  });
+
+  await Promise.all(promises);
 }
 
 function isLocaleCode(input: string): boolean {
@@ -225,93 +214,80 @@ function isLocaleCode(input: string): boolean {
  * validate a translation extension. Can only contain one iso-code named directory (other
  * directories are ignored) which needs to contain at least one json file
  */
-function validateTranslation(extPath: string): PromiseBB<void> {
-  return fs
-    .readdirAsync(extPath)
-    .filter((fileName: string) => isLocaleCode(fileName))
-    .filter((fileName: string) =>
-      fs.statAsync(path.join(extPath, fileName)).then((stats) => stats.isDirectory()),
-    )
-    .then((dirNames) => {
-      if (dirNames.length !== 1) {
-        return PromiseBB.reject(new DataInvalid("Expected exactly one language subdirectory"));
-      }
-      // the check in isLocaleCode is extremely unreliable because it will fall back to
-      // iso on everything. Was it always like that or was that changed in a recent
-      // node release?
-      const [language, country] = dirNames[0].split("-");
-      if (!languageExists(language) || (country !== undefined && !countryExists(country))) {
-        return PromiseBB.reject(new DataInvalid("Directory isn't a language code"));
-      }
-      return fs.readdirAsync(path.join(extPath, dirNames[0])).then((files) => {
-        if (files.find((fileName) => path.extname(fileName) === ".json") === undefined) {
-          return PromiseBB.reject(new DataInvalid("No translation files"));
-        }
+async function validateTranslation(extPath: string): Promise<void> {
+  const entries = await readdir(extPath, { withFileTypes: true });
+  const languageDirectories = entries.filter(
+    (entry) => entry.isDirectory() && isLocaleCode(entry.name),
+  );
+  if (languageDirectories.length !== 1)
+    throw new DataInvalid("Expected exactly one language subdirectory");
 
-        return PromiseBB.resolve();
-      });
-    });
+  const languageDirectory = languageDirectories[0];
+
+  // the check in isLocaleCode is extremely unreliable because it will fall back to
+  // iso on everything. Was it always like that or was that changed in a recent
+  // node release?
+  const [language, country] = languageDirectory.name.split("-");
+  if (!languageExists(language) || (country !== undefined && !countryExists(country))) {
+    throw new DataInvalid("Directory isn't a language code");
+  }
+
+  const languageEntries = await readdir(
+    path.join(extPath, path.join(languageDirectory.parentPath, languageDirectory.name)),
+    { withFileTypes: true },
+  );
+  const hasJSONFile = languageEntries.find((x) => x.isFile() && path.extname(x.name) === ".json");
+  if (!hasJSONFile) throw new DataInvalid("No translation files");
 }
 
 /**
  * validate an extension. It has to contain an index.js and info.json on the top-level
  */
-function validateExtension(extPath: string): PromiseBB<void> {
-  return PromiseBB.all([
-    fs.statAsync(path.join(extPath, "index.js")),
-    fs.statAsync(path.join(extPath, "info.json")),
-  ])
-    .then(() => null)
-    .catch({ code: "ENOENT" }, () => {
-      return PromiseBB.reject(
-        new DataInvalid("Extension needs to include index.js and info.json on top-level"),
-      );
-    });
+async function validateExtension(extPath: string): Promise<void> {
+  await Promise.all([stat(path.join(extPath, "index.js")), stat(path.join(extPath, "info.json"))]);
 }
 
-function validateInstall(extPath: string, info?: IExtension): PromiseBB<ExtensionType> {
-  if (info === undefined) {
-    let validAsTheme: boolean = true;
-    let validAsTranslation: boolean = true;
-    let validAsExtension: boolean = true;
-
-    const guessedType: ExtensionType = undefined;
-    // if we don't know the type we can only check if _any_ extension type applies
-    return validateTheme(extPath)
-      .catch(DataInvalid, () => (validAsTheme = false))
-      .then(() => validateTranslation(extPath))
-      .catch(DataInvalid, () => (validAsTranslation = false))
-      .then(() => validateExtension(extPath))
-      .catch(DataInvalid, () => (validAsExtension = false))
-      .then(() => {
-        if (!validAsExtension && !validAsTheme && !validAsTranslation) {
-          return PromiseBB.reject(
-            new DataInvalid(
-              "Doesn't seem to contain a correctly packaged extension, " + "theme or translation",
-            ),
-          );
-        }
-
-        // at least one type was valid, let's guess what it really is
-        if (validAsExtension) {
-          return PromiseBB.resolve(undefined);
-        } else if (validAsTranslation) {
-          // it's unlikely we would mistake a theme for a translation since it would require
-          // it to contain a directory named like a iso language code including json files.
-          return PromiseBB.resolve("translation" as ExtensionType);
-        } else {
-          return PromiseBB.resolve("theme" as ExtensionType);
-        }
-      });
-  } else if (info.type === "theme") {
-    return validateTheme(extPath).then(() => PromiseBB.resolve("theme" as ExtensionType));
-  } else if (info.type === "translation") {
-    return validateTranslation(extPath).then(() =>
-      PromiseBB.resolve("translation" as ExtensionType),
-    );
-  } else {
-    return validateExtension(extPath).then(() => PromiseBB.resolve(undefined));
+async function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
+  if (info?.type === "theme") {
+    await validateTheme(extPath);
+    return "theme";
   }
+
+  if (info?.type === "translation") {
+    await validateTranslation(extPath);
+    return "translation";
+  }
+
+  if (info !== undefined) {
+    await validateExtension(extPath);
+    return info?.type;
+  }
+
+  // if we don't know the type we can only check if _any_ extension type applies
+  try {
+    await validateTheme(extPath);
+    return "theme";
+  } catch {
+    // ignored
+  }
+
+  try {
+    await validateTranslation(extPath);
+    return "translation";
+  } catch {
+    // ignored
+  }
+
+  try {
+    await validateExtension(extPath);
+    return undefined;
+  } catch {
+    // ignored
+  }
+
+  throw new DataInvalid(
+    "Doesn't seem to contain a correctly packaged extension, theme or translation",
+  );
 }
 
 interface InstallAnalytics {
@@ -410,8 +386,7 @@ async function installExtensionImpl(
       // is data we may only know at runtime (e.g. the modId)
       const fullInfo = { ...(manifestInfo.info || {}), ...info };
       if (fullInfo.type === undefined) {
-        // TODO: native Promise
-        fullInfo.type = await Promise.resolve(validateInstall(tempPath, info));
+        fullInfo.type = await validateInstall(tempPath, info);
       }
 
       // update the manifest on disc, in case we had new info from the caller
