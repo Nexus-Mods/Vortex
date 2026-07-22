@@ -117,9 +117,13 @@ export function FileRequirement({
             <div className="truncate">{file.fileName}</div>
           )}
 
-          <Bullet />
+          {!!file.fileVersion && (
+            <>
+              <Bullet />
 
-          <div className="shrink-0">{file.fileVersion}</div>
+              <div className="shrink-0">{file.fileVersion}</div>
+            </>
+          )}
         </Typography>
 
         <div className="flex items-center gap-x-2">

@@ -30,6 +30,7 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
 import {
@@ -203,9 +204,17 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
   return (
     <Page active={active} id="health-check-page" scrollable={false}>
       <PageHeader
+        customTitle={
+          <div className="flex items-center gap-x-1.5">
+            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+              {t("listing::title")}
+            </Typography>
+
+            <BetaBadge />
+          </div>
+        }
         pictogramName="health-check"
         subtitle={t("listing::subtitle")}
-        title={t("listing::title")}
       >
         <div className="flex shrink-0 items-center gap-x-2">
           <LastUpdated />

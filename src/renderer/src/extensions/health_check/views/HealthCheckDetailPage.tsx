@@ -10,6 +10,7 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import {
   fileRequirementsCheckResult,
@@ -75,13 +76,7 @@ function HealthCheckDetailPage({
               {t(`detail::title::${shownEntry.severity}`)}
             </Typography>
 
-            <Typography
-              as="div"
-              className="flex min-h-4 items-center justify-center rounded-sm border border-neutral-strong px-1"
-              typographyType="title-xs"
-            >
-              {t("common:::beta")}
-            </Typography>
+            <BetaBadge />
           </div>
         }
         pictogramName="health-check"
