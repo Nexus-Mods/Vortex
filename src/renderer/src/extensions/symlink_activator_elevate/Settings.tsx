@@ -1,6 +1,6 @@
 import type PromiseBB from "bluebird";
 import * as React from "react";
-import { ControlLabel, FormGroup } from "react-bootstrap";
+import { Alert, ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
@@ -11,7 +11,6 @@ import { ComponentEx } from "../../controls/ComponentEx";
 import Toggle from "../../controls/Toggle";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
-import { Typography } from "../../ui/components/typography/Typography";
 import { enableUserSymlinks } from "./actions";
 
 export interface IBaseProps {
@@ -62,26 +61,22 @@ class Settings extends ComponentEx<IProps, {}> {
             {t("Allow Symlinks without elevation")}
           </Toggle>
           {this.mInitialSymlinkPrivilege !== localState.symlinkRight ? (
-            <div className="rounded-lg border border-info-weak bg-info-950 p-3">
-              <Typography appearance="strong" brand="neutral-translucent">
-                {t(
-                  "You have to log out the user account or reboot windows for this change to be " +
-                    "applied.",
-                )}
-              </Typography>
-            </div>
+            <Alert>
+              {t(
+                "You have to log out the user account or reboot windows for this change to be " +
+                  "applied.",
+              )}
+            </Alert>
           ) : null}
           <Toggle checked={userSymlinks} onToggle={this.toggle} disabled={supported !== null}>
             {t("Allow Symlinks without elevation (old mechanism, pre Vortex v1.4.3)")}
           </Toggle>
           {supported !== null ? (
-            <div className="rounded-lg border border-info-weak bg-info-950 p-3">
-              <Typography appearance="strong" brand="neutral-translucent">
-                {t("This feature doesn't seem to be supported on your system: {{reason}}", {
-                  replace: { reason: supported },
-                })}
-              </Typography>
-            </div>
+            <Alert>
+              {t("This feature doesn't seem to be supported on your system: {{reason}}", {
+                replace: { reason: supported },
+              })}
+            </Alert>
           ) : null}
         </FormGroup>
       </form>
