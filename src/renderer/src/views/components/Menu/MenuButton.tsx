@@ -1,4 +1,4 @@
-import React, { type ButtonHTMLAttributes, type FC } from "react";
+import React, { type ButtonHTMLAttributes, type ComponentType, type FC } from "react";
 
 import { useWindowContext } from "@/contexts";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -9,9 +9,16 @@ interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: string;
   iconPath: string;
   isActive?: boolean;
+  Badge?: ComponentType;
 }
 
-export const MenuButton: FC<MenuButtonProps> = ({ children, iconPath, isActive, ...props }) => {
+export const MenuButton: FC<MenuButtonProps> = ({
+  children,
+  iconPath,
+  isActive,
+  Badge,
+  ...props
+}) => {
   const { menuIsCollapsed } = useWindowContext();
 
   return (
@@ -35,17 +42,7 @@ export const MenuButton: FC<MenuButtonProps> = ({ children, iconPath, isActive, 
         {children}
       </Typography>
 
-      {/* todo show only when there is a health check item, and pick the
-       * severity from the worst item rather than hardcoding warning
-       * <span
-       *  className={joinClasses([
-       *    "size-1.5 shrink-0 rounded-full",
-       *    severityStyleMap.warning.backgroundClassName,
-       *  ], {
-       *    'absolute top-1.5 right-1.5': menuIsCollapsed,
-       *  })}
-       * />
-       */}
+      {Badge && <Badge />}
     </button>
   );
 };

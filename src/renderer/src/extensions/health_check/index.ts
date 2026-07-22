@@ -4,10 +4,10 @@
  */
 
 import { FlagService } from "@/FlagService";
+import type { IExtensionContext } from "@/types/IExtensionContext";
+import type { IHealthCheck, IModHealthCheck } from "@/types/IHealthCheck";
+import { HealthCheckTrigger } from "@/types/IHealthCheck";
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
-import { HealthCheckTrigger } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
@@ -16,6 +16,7 @@ import {
   FILE_REQUIREMENTS_FLAG,
 } from "./checks/fileRequirementsCheck";
 import { modRequirementsHealthCheck } from "./checks/modRequirementsCheck";
+import { HealthCheckMenuBadge } from "./components/menu_badge/HealthCheckMenuBadge";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
 import { persistentReducer } from "./reducers/persistent";
@@ -53,6 +54,7 @@ function init(context: IExtensionContext): boolean {
     group: "per-game",
     newLayout: true,
     visible: () => activeGameId(context.api.getState()) !== undefined,
+    menuBadge: HealthCheckMenuBadge,
     props: () => ({
       api: context.api,
       onRefresh: () => healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.Manual),

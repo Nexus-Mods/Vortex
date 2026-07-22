@@ -33,4 +33,5 @@ export interface IMainPage {
   activity?: ReduxProp<boolean>;
   namespace?: string;
   onReset?: () => void;
+  menuBadge?: React.ComponentType;
 }

@@ -3041,6 +3041,7 @@ interface IMainPageOptions {
     isModernOnly?: boolean;
     // (undocumented)
     mdi?: string;
+    menuBadge?: React_2.ComponentType;
     newLayout?: boolean;
     // (undocumented)
     onReset?: () => void;

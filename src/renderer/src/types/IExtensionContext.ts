@@ -216,6 +216,8 @@ export interface IMainPageOptions {
   activity?: ReduxProp<boolean>;
   onReset?: () => void;
   mdi?: string;
+  /** Self-subscribing status badge shown on this page's left-menu item. */
+  menuBadge?: React.ComponentType;
 }
 
 export type RegisterMainPage = (

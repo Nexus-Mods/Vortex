@@ -40,34 +40,15 @@ import {
   lastHealthCheckRun,
   modRequirementsCheckResult,
 } from "../selectors";
+import { type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
 import { healthCheckContent } from "./content/registry";
-import type { IBulkInstallItem, IHealthCheckContent, IHealthCheckEntry } from "./content/types";
+import type { IBulkInstallItem } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
 
 interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
   active?: boolean;
-}
-
-interface IListedEntry {
-  entry: IHealthCheckEntry;
-  content: IHealthCheckContent;
-  hidden: boolean;
-}
-
-/** Gather entries from every registered health-check content provider. */
-function selectListedEntries(state: IState): IListedEntry[] {
-  const items: IListedEntry[] = [];
-  for (const content of Object.values(healthCheckContent)) {
-    if (!content) {
-      continue;
-    }
-    for (const entry of content.selectEntries(state)) {
-      items.push({ entry, content, hidden: content.isHidden?.(state, entry) ?? false });
-    }
-  }
-  return items;
 }
 
 /**
