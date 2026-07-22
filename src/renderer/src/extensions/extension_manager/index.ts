@@ -1,4 +1,3 @@
-import type PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
 
