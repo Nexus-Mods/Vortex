@@ -27,6 +27,7 @@ export const builtInPages: IMainPage[] = [
     title: "Settings",
     group: "global",
     priority: 30,
+    newLayout: true,
     component: Settings,
     icon: "settings",
   }),

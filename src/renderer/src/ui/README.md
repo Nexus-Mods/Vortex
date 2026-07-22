@@ -473,10 +473,15 @@ import { Pictogram } from "../../ui/components/pictogram/Pictogram";
 
 **Adding a new pictogram:**
 
+The source pictogram library is the **flamework** repo at `apps/next/public/assets/images/pictograms/`.
+
 1. Add the SVG file to `assets/pictograms/` (the filename becomes the pictogram name)
 2. Set the SVG dimensions to `width="200" height="200" viewBox="0 0 200 200"`
 3. Replace the main fill colour with `style="fill: currentColor"` so it responds to the `theme` prop
-4. Add the filename (without `.svg`) to the `PictogramName` type in `Pictogram.tsx`
+4. Add the filename (without `.svg`) to the `IPictogramName` type in `Pictogram.tsx`
+
+> Migrating a whole page to the new `Page` layout (header + pictogram + tabs)? See
+> [`docs/design-system/page-migration.md`](../../../../docs/design-system/page-migration.md).
 
 ### Picker
 

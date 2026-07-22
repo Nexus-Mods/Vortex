@@ -9,13 +9,27 @@ import { useTabContext } from "./Tabs.context";
 export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   count?: number;
   name: string;
+  label?: React.ReactNode;
 };
 
 /**
  * Standard tab component, implemented as a button. Clicking it will reveal the
  * content for the selected tab.
+ *
+ * `name` is the stable identity used to match this button to its `TabPanel` and
+ * to key the selection (via `getTabId`); keep it language-independent when the
+ * selection is persisted or deep-linked. Pass `label` to display something other
+ * than `name` (e.g. a translated string) while keeping `name` stable; it defaults
+ * to `name`.
  */
-export const TabButton = ({ className, count, disabled, name, ...props }: ITabButtonProps) => {
+export const TabButton = ({
+  className,
+  count,
+  disabled,
+  label,
+  name,
+  ...props
+}: ITabButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null!);
   const { onKeyDown, onTabClick, registerTab, selectedTab, tabListId, tabType } = useTabContext();
 
@@ -44,7 +58,7 @@ export const TabButton = ({ className, count, disabled, name, ...props }: ITabBu
       {...props}
     >
       <span className="nxm-tab-button-content">
-        {name}
+        {label ?? name}
 
         {count !== undefined && (
           <span className="nxm-tab-button-count">
