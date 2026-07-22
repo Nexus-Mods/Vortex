@@ -47,6 +47,7 @@ export const builtInPages: IMainPage[] = [
     group: "per-game",
     priority: 80,
     isModernOnly: true,
+    newLayout: true,
     component: GameSettings,
     icon: "tune",
   }),
