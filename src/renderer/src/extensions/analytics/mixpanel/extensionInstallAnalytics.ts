@@ -3,7 +3,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { AppExtensionInstalledEvent } from "./MixpanelEvents";
 
 /** Where an extension install originated. */
-export type ExtensionInstallSource = "nexusmods" | "github" | "manual";
+export type ExtensionInstallSource = "nexusmods" | "manual";
 
 /**
  * Emits app_extension_installed for a Vortex extension that finished installing. The identity comes

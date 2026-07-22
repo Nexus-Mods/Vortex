@@ -1,13 +1,7 @@
-import { rm, readdir, mkdir, rename, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
-import { AlreadyDownloaded } from "@vortex/shared/errors";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
-import SevenZip from "node-7z";
-import { SemVer } from "semver";
-import { generate as shortid } from "shortid";
-import { z } from "zod";
 
 import { log } from "@/logging";
 
@@ -20,19 +14,13 @@ import type {
   ISelector,
 } from "../../types/extensions";
 import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IDownload, IState } from "../../types/IState";
-import {
-  DataInvalid,
-  ProcessCanceled,
-  ServiceTemporarilyUnavailable,
-  UserCanceled,
-} from "../../util/CustomErrors";
+import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { writeFileAtomic } from "../../util/fsAtomic";
 import getVortexPath from "../../util/getVortexPath";
-import { jsonRequest, rawRequest } from "../../util/network";
-import { INVALID_FILENAME_RE, truthy } from "../../util/util";
-import { addLocalDownload, setDownloadModInfo } from "../download_management/actions/state";
+import { jsonRequest } from "../../util/network";
+import { INVALID_FILENAME_RE } from "../../util/util";
+import { setDownloadModInfo } from "../download_management/actions/state";
 import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
 import installExtension from "./installExtension";
@@ -47,11 +35,6 @@ const caches: {
 
 // don't fetch more than once per hour
 const UPDATE_FREQUENCY = 60 * 60 * 1000;
-const GAMES_BRANCH = "release";
-
-function githubApiUrl(repo: string, api: string, args: string) {
-  return `https://api.github.com/repos/${repo}/${api}/${args}`;
-}
 
 function githubRawUrl(repo: string, branch: string, repoPath: string) {
   return `https://raw.githubusercontent.com/${repo}/${branch}/${repoPath}`;
@@ -122,13 +105,8 @@ function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback:
 export function selectorMatch(ext: IAvailableExtension, selector: ISelector): boolean {
   if (selector === undefined) {
     return false;
-  } else if (truthy(selector.modId)) {
-    return ext.modId === selector.modId;
-  } else if (truthy(selector.githubRawPath)) {
-    return ext.github === selector.github && ext.githubRawPath === selector.githubRawPath;
-  } else {
-    return ext.github === selector.github;
   }
+  return ext.modId === selector.modId;
 }
 
 export function sanitize(input: string): string {
@@ -259,6 +237,16 @@ function doFetchAvailableExtensions(
       return PromiseBB.resolve([]);
     })
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
+    .then((extensions: IAvailableExtension[]) => {
+      const filtered = extensions.filter(
+        (ext) => ext.modId !== undefined && ext.fileId !== undefined,
+      );
+      const dropped = extensions.length - filtered.length;
+      if (dropped > 0) {
+        log("debug", "dropped extensions without modId/fileId", { dropped });
+      }
+      return filtered;
+    })
     .then((extensions) => ({ time, extensions }));
 }
 
@@ -266,22 +254,12 @@ export async function downloadAndInstallExtension(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
 ): Promise<boolean> {
-  const sourceName = ext.modId !== undefined ? "nexusmods.com" : "github.com";
-
   try {
-    let downloadPromise: Promise<string[]>;
-
-    if (ext.modId !== undefined) {
-      downloadPromise = downloadFromNexus(api, ext);
-    } else if (ext.githubRawPath) {
-      downloadPromise = downloadGithubRaw(api, ext);
-    } else if (ext.githubRelease) {
-      downloadPromise = downloadGithubRelease(api, ext);
-    } else {
+    if (ext.modId === undefined) {
       return false;
     }
 
-    const downloadIds = await downloadPromise;
+    const downloadIds = await downloadFromNexus(api, ext);
     if (downloadIds.length === 0) {
       throw new ProcessCanceled("No download found");
     }
@@ -295,12 +273,7 @@ export async function downloadAndInstallExtension(
       fetchAvailableExtensions(false),
     );
 
-    const extDetail = availableExtensions.find(
-      (iter) =>
-        (ext.modId === undefined || iter.modId === ext.modId) &&
-        (ext.fileId === undefined || iter.fileId === ext.fileId) &&
-        ext.name === iter.name,
-    );
+    const extDetail = availableExtensions.find((iter) => iter.modId === ext.modId);
 
     const info: IExtension | undefined =
       extDetail !== undefined
@@ -316,7 +289,7 @@ export async function downloadAndInstallExtension(
     const downloadPath = downloadPathForGame(state, SITE_ID);
 
     await installExtension(api, path.join(downloadPath, download.localPath), info, {
-      source: ext.modId !== undefined ? "nexusmods" : "github",
+      source: "nexusmods",
       gameDomain: extDetail?.gameId,
       gameName: extDetail?.gameName,
     });
@@ -330,11 +303,10 @@ export async function downloadAndInstallExtension(
       "Installation failed",
       {
         text:
-          'Failed to install the extension "{{extensionName}}" from "{{sourceName}}", ' +
+          'Failed to install the extension "{{extensionName}}", ' +
           "please check the notifications.",
         parameters: {
           extensionName: ext.name,
-          sourceName,
         },
         options: {
           hideMessage: true,
@@ -382,146 +354,6 @@ async function downloadFromNexus(
     archiveFileName(ext),
     false,
   );
-}
-
-async function downloadGithubRelease(
-  api: IExtensionApi,
-  ext: IExtensionDownloadInfo,
-): Promise<string[]> {
-  try {
-    const downloadId = await new Promise<string>((resolve, reject) =>
-      api.events.emit<"start-download">(
-        "start-download",
-        [ext.githubRelease],
-        { game: SITE_ID },
-        archiveFileName(ext),
-        (err, downloadId) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          resolve(downloadId);
-        },
-      ),
-    );
-
-    return [downloadId];
-  } catch (err) {
-    if (!(err instanceof AlreadyDownloaded)) {
-      throw err;
-    }
-
-    const state = api.getState();
-    const downloads = state.persistent.downloads.files;
-    const existingId = Object.keys(downloads).find(
-      (iter) => downloads[iter].localPath === err.fileName,
-    );
-
-    if (existingId) return [existingId];
-    throw err;
-  }
-}
-
-const githubContentsApiSchema = z.array(
-  z.looseObject({
-    name: z.string(),
-    type: z.union([z.literal("file"), z.literal("dir")]),
-  }),
-);
-
-async function downloadGithubRawRecursive(
-  repo: string,
-  source: string,
-  destination: string,
-): Promise<void> {
-  const apiUrl = githubApiUrl(repo, "contents", source) + "?ref=" + GAMES_BRANCH;
-
-  const content = (await rawRequest(apiUrl, { encoding: "utf8" })) as string;
-  const data: unknown = JSON.parse(content);
-
-  if (!Array.isArray(data)) {
-    if (typeof data === "object" && "message" in data && typeof data.message === "string") {
-      throw new ServiceTemporarilyUnavailable(data.message);
-    } else {
-      log("info", "unexpected response from github", content);
-      throw new Error("Unexpected response from github (see log file)");
-    }
-  }
-
-  const result = githubContentsApiSchema.safeParse(data);
-  if (result.error) throw result.error;
-
-  const repoFiles = result.data.filter((item) => item.type === "file").map((item) => item.name);
-  const repoDirs = result.data.filter((item) => item.type === "dir").map((item) => item.name);
-
-  const filePromises = repoFiles.map(async (fileName) => {
-    const url = githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`);
-    const dest = path.join(destination, fileName);
-
-    const buffer = (await rawRequest(url)) as Buffer;
-    await writeFile(dest, buffer);
-  });
-
-  const dirPromises = repoDirs.map(async (dirName) => {
-    const sourcePath = `${source}/${dirName}`;
-    const outPath = path.join(destination, dirName);
-
-    await mkdir(outPath, { recursive: true });
-    await downloadGithubRawRecursive(repo, sourcePath, outPath);
-  });
-
-  await Promise.all([...filePromises, ...dirPromises]);
-}
-
-async function downloadGithubRaw(
-  api: IExtensionApi,
-  ext: IExtensionDownloadInfo,
-): Promise<string[]> {
-  const state = api.getState();
-  const downloadPath = downloadPathForGame(state, SITE_ID);
-
-  const archiveName = archiveFileName(ext);
-
-  const { files } = state.persistent.downloads;
-  const existing = Object.keys(files).find(
-    (dlId) => (files[dlId].game ?? []).includes(SITE_ID) && files[dlId].localPath === archiveName,
-  );
-
-  // the only plausible reason the file could already exist is if a previous install failed
-  // or if we don't know the version. We could create a new new, numbered, download, but considering
-  // these are small files I think that is more likely to frustrate the user
-  if (existing !== undefined) {
-    const toDelete = path.join(downloadPath, archiveName);
-    await rm(toDelete, { force: true });
-    api.events.emit("remove-download", existing, undefined, {
-      confirmed: true,
-    });
-  }
-
-  const tmpPath = path.join(getVortexPath("temp"), shortid());
-  await mkdir(tmpPath, { recursive: true });
-
-  try {
-    await downloadGithubRawRecursive(ext.github, ext.githubRawPath, tmpPath);
-    const repoFiles = await readdir(tmpPath, { recursive: true, withFileTypes: true });
-
-    const archivePath = path.join(tmpPath, archiveName);
-    const pack = new SevenZip();
-    await Promise.resolve(
-      pack.add(
-        archivePath,
-        repoFiles.map((x) => path.join(x.parentPath, x.name)),
-      ),
-    );
-
-    await rename(archivePath, path.join(downloadPath, archiveName));
-    const archiveId = shortid();
-    api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
-    return [archiveId];
-  } finally {
-    await rm(tmpPath, { recursive: true, force: true });
-  }
 }
 
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
