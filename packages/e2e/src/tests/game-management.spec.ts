@@ -5,7 +5,7 @@ import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-s
  * Covers test cases: #8.1A, #8.8A
  */
 import { test, expect } from "../fixtures/vortex-app";
-import { stubOpenDialog } from "../helpers/dialogs";
+import { manageGame } from "../helpers/games";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { SMAPI_MOD_URL, SMAPI_NAME } from "../helpers/mods";
 import { navigateToGames } from "../helpers/navigation";
@@ -80,7 +80,6 @@ test.describe("Game Management - Manually set game location", () => {
     vortexWindow,
     nexusPage,
   }) => {
-    fakeGame = setupFakeGame("stardewvalley");
     const gamesPage = new GamesPage(vortexWindow);
     const navbar = new NavBar(vortexWindow);
 
@@ -95,33 +94,7 @@ test.describe("Game Management - Manually set game location", () => {
       ).toBeVisible({ timeout: Timeouts.NETWORK });
     });
 
-    await test.step("Stub the file browser with the game's location", async () => {
-      if (fakeGame === undefined) throw new Error("fake game was not set up");
-      await stubOpenDialog(vortexApp, fakeGame.gamePath);
-    });
-
-    await test.step("Click Manage on Stardew Valley", async () => {
-      const row = gamesPage.gameRowInSection(gamesPage.unmanagedSection, "Stardew Valley");
-      await row.scrollIntoViewIfNeeded();
-      await row.hover();
-      await gamesPage.manageButton("Stardew Valley").click();
-      await expect(gamesPage.notDiscoveredDialog).toBeVisible();
-    });
-
-    await test.step("The dialog confirms the location could not be detected", async () => {
-      await expect(gamesPage.notDiscoveredDialog).toContainText(
-        "hasn't been automatically discovered",
-      );
-    });
-
-    await test.step("Click Continue and select the game folder", async () => {
-      await gamesPage.continueButton.click();
-      await expect(gamesPage.notDiscoveredDialog).toBeHidden();
-    });
-
-    await test.step("The location is accepted and the game is prepared for modding", async () => {
-      await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
-    });
+    fakeGame = await manageGame(vortexWindow, vortexApp, "stardewvalley");
 
     await test.step("No error is shown", async () => {
       await expect(vortexWindow.getByText("Failed to manage game")).toBeHidden();

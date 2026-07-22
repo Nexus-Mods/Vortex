@@ -42,8 +42,12 @@ export async function manageGame(
     await expect(manageButton).toBeVisible();
     await manageButton.click();
 
-    await expect(gamesPage.continueButton).toBeVisible();
+    await expect(gamesPage.notDiscoveredDialog).toBeVisible();
+    await expect(gamesPage.notDiscoveredDialog).toContainText(
+      "hasn't been automatically discovered",
+    );
     await gamesPage.continueButton.click();
+    await expect(gamesPage.notDiscoveredDialog).toBeHidden();
 
     await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
   });
