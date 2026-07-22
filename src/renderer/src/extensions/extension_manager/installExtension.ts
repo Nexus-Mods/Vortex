@@ -2,7 +2,6 @@ import { stat, rename, rm, writeFile, readdir } from "node:fs/promises";
 import * as path from "node:path";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import SevenZip from "node-7z";
 
@@ -10,7 +9,7 @@ import { forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
 import { log } from "../../logging";
 import type { ExtensionType, IExtension } from "../../types/extensions";
-import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import { withTrackedActivity } from "../../util/errorHandling";
@@ -55,65 +54,51 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 }
 
-function installExtensionDependencies(api: IExtensionApi, extPath: string): PromiseBB<void> {
+async function installExtensionDependencies(api: IExtensionApi, extPath: string): Promise<void> {
   const handler = new ContextProxyHandler();
-  const context = new Proxy({}, handler);
+  const context = new Proxy<IExtensionContext>({} as IExtensionContext, handler);
 
   try {
-    const extension = webpackRequireHack(path.join(extPath, "index.js"));
+    const extension: unknown = webpackRequireHack(path.join(extPath, "index.js"));
     const initFunc = ExtensionManager.getExtensionInitFunc(extension);
     if (initFunc === undefined) {
       log("warn", "extension has no init function, skipping dependency scan", {
         extPath,
       });
-      return PromiseBB.resolve();
+
+      return;
     }
+
     initFunc(context);
 
-    const state: IState = api.store.getState();
-
+    const state = api.getState();
     const { installed, available } = state.session.extensions;
 
-    return PromiseBB.map(handler.dependencies, (depId) => {
-      if (installed[depId] !== undefined) {
-        return;
-      }
+    const promises = handler.dependencies.map(async (dependencyId) => {
+      if (installed[dependencyId]) return;
 
-      const ext = available.find(
-        (iter) => !iter.type && (iter.name === depId || iter.id === depId),
+      const toInstall = available.find(
+        (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
       );
 
-      // Direct key lookup can miss when the dependent calls
-      // requireExtension(<Nexus display name>) but the installed map is
-      // keyed by info.json `id` (or folder basename). UEMI is the canonical
-      // case: published as "Unreal Engine Mod Installer", but its info.json
-      // name is "Unreal Engine Game Library", so neither key nor name match.
-      // Cross-reference via the Nexus available manifest and compare modId,
-      // which is populated on every Nexus install.
-      if (ext !== undefined) {
-        const alreadyInstalled = Object.values(installed).some(
-          (entry) =>
-            (ext.modId !== undefined && entry.modId === ext.modId) || entry.name === ext.name,
-        );
-        if (alreadyInstalled) {
-          return;
-        }
-        // TODO: remove evil
-        return PromiseBB.resolve(
-          api.emitAndAwait<"install-extension">("install-extension", ext).then(() => undefined),
-        );
-      } else {
-        return PromiseBB.resolve();
-      }
-    }).then(() => null);
+      if (!toInstall) return;
+      const alreadyInstalled = Object.values(installed).some(
+        (entry) =>
+          (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
+          entry.name === toInstall.name,
+      );
+      if (alreadyInstalled) return;
+
+      await api.emitAndAwait<"install-extension">("install-extension", toInstall);
+    });
+
+    await Promise.all(promises);
   } catch (unknownErr) {
     const err = unknownToError(unknownErr);
     // TODO: can't check for dependencies if the extension is already loaded
     //   and registers actions
-    if (err.name === "TypeError" && err.message.startsWith("Duplicate action type")) {
-      return PromiseBB.resolve();
-    }
-    return PromiseBB.reject(err);
+    if (err.name === "TypeError" && err.message.startsWith("Duplicate action type")) return;
+    throw err;
   }
 }
 
@@ -422,8 +407,7 @@ async function installExtensionImpl(
       // don't install dependencies for extensions that are already loaded because
       // doing so could cause an exception
       if (api.getLoadedExtensions().find((ext) => ext.name === manifestInfo.id) === undefined) {
-        // TODO: native Promise
-        await Promise.resolve(installExtensionDependencies(api, destPath));
+        await installExtensionDependencies(api, destPath);
       }
     },
   );
