@@ -3,7 +3,7 @@ import * as path from "path";
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 import * as React from "react";
-import { Button, ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+import { FormGroup } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
@@ -20,6 +20,8 @@ import { showDialog } from "../../actions";
 import { ComponentEx } from "../../controls/ComponentEx";
 import { FULL_BACKUP_PATH } from "../../store/store";
 import type { IState } from "../../types/IState";
+import { Button } from "../../ui/components/button/Button";
+import { Typography } from "../../ui/components/typography/Typography";
 import { relaunch } from "../../util/commandLine";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
@@ -52,15 +54,22 @@ class Settings extends ComponentEx<IProps, {}> {
         <div className="danger-heading">{t("Caution")}</div>
         <form>
           <FormGroup id="database-backups" controlId="restore-backup">
-            <ControlLabel>{t("Database backup")}</ControlLabel>
-            <div className="button-container">
-              <Button onClick={this.onSelectBackup}>{t("Restore") + "..."}</Button>
-            </div>
-            <div className="button-container">
-              <Button onClick={onCreateManualBackup}>{t("Create Backup")}</Button>
-            </div>
-            <HelpBlock>
-              <div>
+            <div className="flex flex-col items-start gap-y-2">
+              <Typography as="span" typographyType="body-md">
+                {t("Database backup")}
+              </Typography>
+
+              <div className="flex items-center gap-x-2">
+                <Button brand="neutral" size="sm" onClick={this.onSelectBackup}>
+                  {t("Restore") + "..."}
+                </Button>
+
+                <Button brand="neutral" size="sm" onClick={onCreateManualBackup}>
+                  {t("Create Backup")}
+                </Button>
+              </div>
+
+              <Typography appearance="subdued" typographyType="body-sm">
                 {t(
                   "Vortex stores application settings as well as mod meta data and a lot " +
                     "of other important things in a database. Here you can restore a " +
@@ -71,15 +80,16 @@ class Settings extends ComponentEx<IProps, {}> {
                     'We strongly advise you use this only in an emergency, not as an "undo" ' +
                     "function.",
                 )}
-              </div>
-              <div>
+              </Typography>
+
+              <Typography appearance="subdued" typographyType="body-sm">
                 {t(
                   "You can have up to 3 backups: One is automatically created whenever Vortex " +
                     "starts up with no issue, one is automatically created hourly (while using " +
                     "Vortex) and one you can create manually.",
                 )}
-              </div>
-            </HelpBlock>
+              </Typography>
+            </div>
           </FormGroup>
         </form>
       </div>
