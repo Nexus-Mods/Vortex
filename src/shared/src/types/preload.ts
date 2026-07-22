@@ -21,6 +21,7 @@ import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
+  HashAlgorithm,
   Serializable,
   UpdateStatus,
   VortexPaths,
@@ -102,6 +103,9 @@ export interface Api {
 
   /** bsdiff binary patching APIs (run on a main-process worker_thread) */
   bsdiff: BsdiffApi;
+
+  /** file hashing API (run on a main-process worker_thread) */
+  hash: HashApi;
 
   /** Diagnostic APIs */
   diag: Diag;
@@ -512,6 +516,11 @@ export interface BsdiffApi {
 
   /** Apply a BSDIFF40 patch file to oldPath, writing the result to outputPath. */
   patch(oldPath: string, outputPath: string, patchPath: string): Promise<void>;
+}
+
+export interface HashApi {
+  /** Compute the hex digest of a file off the renderer thread. */
+  compute(algorithm: HashAlgorithm, filePath: string): Promise<{ hash: string; numBytes: number }>;
 }
 
 /** API for receiving feature flag updates pushed from the main process */

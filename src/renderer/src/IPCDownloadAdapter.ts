@@ -1,8 +1,6 @@
-import { createHash, randomUUID } from "node:crypto";
-import { createReadStream } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { access, copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import * as path from "node:path";
-import { pipeline } from "node:stream/promises";
 
 import { unknownToError, wireToDownloadError } from "@vortex/shared";
 import { AlreadyDownloaded, UserCanceled } from "@vortex/shared/errors";
@@ -467,13 +465,11 @@ export class IPCDownloadAdapter {
       }
 
       try {
-        // TODO: move hashing into main process
-
-        // MD5 is used as a fallback identifier for collection rule matching and
-        // reverse ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
-        const hash = createHash("md5");
-        await pipeline(createReadStream(finalPath), hash);
-        this.#api.store.dispatch(setDownloadHash(downloadId, hash.digest("hex")));
+        // MD5 is a fallback identifier for collection rule matching and reverse
+        // ModDB lookups for files that lack Nexus IDs (e.g. non-NXM downloads).
+        // Hash on a main-process worker_thread so a large file doesn't block the renderer.
+        const { hash } = await window.api.hash.compute("md5", finalPath);
+        this.#api.store.dispatch(setDownloadHash(downloadId, hash));
       } catch (err) {
         log("warn", "failed to compute MD5 for download", { downloadId, err });
       }

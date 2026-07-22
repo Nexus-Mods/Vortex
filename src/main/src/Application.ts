@@ -23,6 +23,7 @@ import uuidpkg from "uuid";
 const { v4: uuidv4 } = uuidpkg;
 import winapi from "winapi-bindings";
 
+import { shutdownBsdiffWorker } from "./bsdiff/host";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
 import { terminate, terminateAsync } from "./errorHandling";
@@ -30,6 +31,7 @@ import { disableErrorReporting, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { getVortexPath, setVortexPath } from "./getVortexPath";
+import { shutdownHashWorker } from "./hash/host";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -205,6 +207,9 @@ class Application {
           log("info", "clean application end");
           DuckDBSingleton.getInstance().close();
           this.mTray?.close();
+          // Terminate the worker_thread pools so no idle worker lingers past quit.
+          void shutdownHashWorker();
+          void shutdownBsdiffWorker();
           if (process.platform !== "darwin") {
             app.quit();
           }

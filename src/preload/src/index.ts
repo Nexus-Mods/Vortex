@@ -283,6 +283,11 @@ try {
         betterIpcRenderer.invoke("bsdiff:apply", oldPath, patchPath, outputPath),
     },
 
+    hash: {
+      compute: (algorithm, filePath) =>
+        betterIpcRenderer.invoke("hash:compute", algorithm, filePath),
+    },
+
     diag: {
       // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
       fatal: (message: string) => {

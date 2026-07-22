@@ -7,7 +7,7 @@ import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { VortexPaths } from "@vortex/shared/ipc";
+import type { HashAlgorithm, VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
   IpcMainInvokeEvent,
@@ -33,6 +33,7 @@ import {
 import { diffFiles as bsdiffDiff, patchFiles as bsdiffPatch } from "./bsdiff/host";
 import { relaunch } from "./cli";
 import { getVortexPath } from "./getVortexPath";
+import { hashFile } from "./hash/host";
 import { betterIpcMain } from "./ipc";
 import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
@@ -642,5 +643,15 @@ export function init() {
     "bsdiff:apply",
     (_event: IpcMainInvokeEvent, oldPath: string, patchPath: string, outputPath: string) =>
       bsdiffPatch(oldPath, outputPath, patchPath),
+  );
+
+  // ============================================================================
+  // file hashing (delegated to a worker_thread, off the main and renderer loops)
+  // ============================================================================
+
+  betterIpcMain.handle(
+    "hash:compute",
+    (_event: IpcMainInvokeEvent, algorithm: HashAlgorithm, filePath: string) =>
+      hashFile(algorithm, filePath),
   );
 }
