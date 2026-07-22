@@ -12,9 +12,7 @@ import { waitForDownloadRecord } from "./util";
 describe("waitForDownloadRecord", () => {
   const makeApi = (files: () => Record<string, Partial<IDownload>>): IExtensionApi =>
     ({
-      store: {
-        getState: () => ({ persistent: { downloads: { files: files() } } }),
-      },
+      getState: () => ({ persistent: { downloads: { files: files() } } }),
     }) as unknown as IExtensionApi;
 
   it("resolves immediately when the download is finished", async () => {
