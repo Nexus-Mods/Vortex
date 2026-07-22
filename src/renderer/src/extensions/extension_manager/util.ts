@@ -428,13 +428,24 @@ async function downloadGithubRelease(
   ext: IExtensionDownloadInfo,
 ): Promise<string[]> {
   try {
-    const downloadIds = await api.emitAndAwait<"start-download">(
-      "start-download",
-      [ext.githubRelease],
-      { game: SITE_ID },
-      archiveFileName(ext),
+    const downloadId = await new Promise<string>((resolve, reject) =>
+      api.events.emit<"start-download">(
+        "start-download",
+        [ext.githubRelease],
+        { game: SITE_ID },
+        archiveFileName(ext),
+        (err, downloadId) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(downloadId);
+        },
+      ),
     );
-    return downloadIds;
+
+    return [downloadId];
   } catch (err) {
     if (!(err instanceof AlreadyDownloaded)) {
       throw err;
