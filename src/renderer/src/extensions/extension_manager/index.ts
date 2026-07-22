@@ -254,6 +254,8 @@ function checkMissingDependencies(
       api.showErrorNotification("Failed to install extension", err, {
         message: dependencyId,
       });
+
+      return false;
     }),
   );
 
@@ -267,20 +269,22 @@ function checkMissingDependencies(
         title: "Fix",
         action: (dismiss) => {
           void (async () => {
-            await Promise.all(promises);
-            api.sendNotification({
-              type: "success",
-              message: "Missing dependencies were installed - please restart Vortex",
-              actions: [
-                {
-                  title: "Restart now",
-                  action: () => {
-                    relaunch();
+            const results = await Promise.all(promises);
+            if (results.some((success) => success)) {
+              api.sendNotification({
+                type: "success",
+                message: "Missing dependencies were installed - please restart Vortex",
+                actions: [
+                  {
+                    title: "Restart now",
+                    action: () => {
+                      relaunch();
+                    },
                   },
-                },
-              ],
-            });
-            dismiss();
+                ],
+              });
+              dismiss();
+            }
           })();
         },
       },
