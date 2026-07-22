@@ -707,7 +707,6 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       newestVersion:
         nexusCollectionInfo?.collection?.latestPublishedRevision?.revisionNumber?.toString?.(),
       rating: nexusCollectionInfo?.rating,
-      requirements: nexusModInfo?.requirements,
     };
   });
 }

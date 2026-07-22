@@ -133,16 +133,6 @@ export interface IModMissingRequirements {
 }
 
 /**
- * Parameters for the check-nexus-mod-requirements check
- */
-export interface IModRequirementsCheckParams {
-  /** Skip API calls and only use cached requirements data */
-  cachedOnly?: boolean;
-  /** Limit the number of mods to check */
-  limit?: number;
-}
-
-/**
  * Metadata for the mod requirements health check result
  */
 export interface IModRequirementsCheckMetadata {
