@@ -50,11 +50,14 @@ class Settings extends ComponentEx<IProps, {}> {
     const { t, onCreateManualBackup } = this.props;
 
     return (
-      <div className="danger-outline">
-        <div className="danger-heading">{t("Caution")}</div>
+      <div className="rounded-lg border border-warning-weak bg-warning-950 p-3">
         <form>
           <FormGroup id="database-backups" controlId="restore-backup">
             <div className="flex flex-col items-start gap-y-2">
+              <Typography appearance="strong" brand="warning" typographyType="heading-xs">
+                {t("Caution")}
+              </Typography>
+
               <Typography as="span" typographyType="body-md">
                 {t("Database backup")}
               </Typography>
