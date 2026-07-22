@@ -34,10 +34,27 @@ export interface INotificationState {
   dialogs: IDialog[];
 }
 
-export interface IExtensionLoadFailure {
-  id: string;
-  args?: { [key: string]: any };
-}
+export type ExtensionLoadFailureException = {
+  id: "exception";
+  args: {
+    message: string;
+  };
+};
+
+export type ExtensionLoadFailureDependency = {
+  id: "dependency";
+  args: {
+    dependencyId: string;
+    version?: string;
+  };
+};
+
+export type IExtensionLoadFailure =
+  | {
+      id: "unsupported-api" | "unsupported-version";
+    }
+  | ExtensionLoadFailureException
+  | ExtensionLoadFailureDependency;
 
 export interface IExtensionOptional {
   id: string;

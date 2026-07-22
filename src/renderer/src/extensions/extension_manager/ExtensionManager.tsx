@@ -1,12 +1,13 @@
 import * as path from "path";
 
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
-import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as React from "react";
 import { Alert, Button, Panel } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+
+import { log } from "@/logging";
 
 import { setDialogVisible } from "../../actions";
 import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from "../../actions/app";
@@ -22,7 +23,6 @@ import type { IExtension, IExtensionWithState } from "../../types/extensions";
 import type { IExtensionLoadFailure, IExtensionState, IState } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import { relaunch } from "../../util/commandLine";
-import { log } from "../../util/log";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import MainPage from "../../views/MainPage";
@@ -35,7 +35,7 @@ export interface IExtensionManagerProps {
   localState: {
     reloadNecessary: boolean;
   };
-  updateExtensions: () => void;
+  updateExtensions: () => Promise<void>;
 }
 
 interface IConnectedProps {
@@ -213,52 +213,60 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
-    let success = false;
     log("info", "installing extension(s) via drag and drop", { extPaths });
-    const prop: PromiseBB<void[]> =
-      type === "files"
-        ? PromiseBB.map(extPaths, (extPath) =>
-            installExtension(this.context.api, extPath)
-              .then(() => {
-                success = true;
-              })
-              .catch((err) => {
-                this.context.api.showErrorNotification("Failed to install extension", err, {
-                  allowReport: false,
-                });
-              }),
-          )
-        : PromiseBB.map(
-            extPaths,
-            (url) =>
-              new PromiseBB<void>((resolve, reject) => {
-                this.context.api.events.emit(
-                  "start-download",
-                  [url],
-                  undefined,
-                  (error: Error, id: string) => {
-                    const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
-                    installExtension(this.context.api, dlPath)
-                      .then(() => {
-                        success = true;
-                      })
-                      .catch((err) => {
-                        this.context.api.showErrorNotification("Failed to install extension", err, {
-                          allowReport: false,
-                        });
-                      })
-                      .finally(() => {
-                        resolve();
-                      });
-                  },
-                );
-              }),
+
+    let promises: Promise<boolean>[];
+
+    if (type === "files") {
+      promises = extPaths.map((extPath) =>
+        installExtension(this.context.api, extPath)
+          .then(() => true)
+          .catch((err) => {
+            this.context.api.showErrorNotification("Failed to install extension", err, {
+              allowReport: false,
+            });
+
+            return false;
+          }),
+      );
+    } else {
+      promises = extPaths.map(async (url) => {
+        const downloadId = await new Promise<string>((resolve, reject) => {
+          this.context.api.events.emit<"start-download">(
+            "start-download",
+            [url],
+            { game: SITE_ID },
+            undefined,
+            (err, downloadId) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+
+              resolve(downloadId);
+            },
           );
-    prop.then(() => {
-      if (success) {
-        this.props.updateExtensions();
+        });
+
+        const downloadPath = path.join(this.props.downloadPath, downloads[downloadId].localPath);
+        return await installExtension(this.context.api, downloadPath)
+          .then(() => true)
+          .catch((err) => {
+            this.context.api.showErrorNotification("Failed to install extension", err, {
+              allowReport: false,
+            });
+
+            return false;
+          });
+      });
+    }
+
+    void (async () => {
+      const results = await Promise.all(promises);
+      if (results.some((success) => success)) {
+        await this.props.updateExtensions();
       }
-    });
+    })();
   };
 
   private renderReload(): JSX.Element {

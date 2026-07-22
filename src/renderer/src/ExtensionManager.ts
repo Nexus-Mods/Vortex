@@ -69,6 +69,7 @@ import type {
 import type { ILookupOptions, IModLookupResult } from "./types/IModLookupResult";
 import type { INotification } from "./types/INotification";
 import type {
+  ExtensionLoadFailureException,
   IExtensionLoadFailure,
   IExtensionOptional,
   IExtensionState,
@@ -1078,12 +1079,17 @@ class ExtensionManager {
   }
 
   private reportExtLoadErrors() {
-    const nodeLoadErr = Object.values(this.mLoadFailures)
-      .flat(1)
-      .find((_) => {
-        const msg = _.args?.message ?? "";
-        return msg.includes("The specified module could not be found.") && msg.includes(".node");
-      });
+    let nodeLoadErr: ExtensionLoadFailureException | undefined = undefined;
+    for (const x of Object.values(this.mLoadFailures).flat(1)) {
+      if (x.id !== "exception") continue;
+      if (
+        x.args.message.includes("The specified module could not be found.") &&
+        x.args.message.includes(".node")
+      ) {
+        nodeLoadErr = x;
+      }
+    }
+
     if (nodeLoadErr !== undefined) {
       this.mApi.store?.dispatch?.(
         showDialog(
