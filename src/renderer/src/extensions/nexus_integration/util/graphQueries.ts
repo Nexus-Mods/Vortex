@@ -258,10 +258,6 @@ export function getModRequirementsInfo(): IModRequirementsQuery {
       },
       totalCount: true,
     },
-    modsRequiringThisMod: {
-      nodes: { id: true, modId: true, modName: true },
-      totalCount: true,
-    },
   };
 
   if (flagEnabled) {
