@@ -510,7 +510,7 @@ async function downloadGithubRaw(
   await Promise.resolve(
     pack.add(
       archivePath,
-      repoFiles.map((x) => path.join(x.name, x.parentPath)),
+      repoFiles.map((x) => path.join(x.parentPath, x.name)),
     ),
   );
 
