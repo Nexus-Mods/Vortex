@@ -263,7 +263,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     void (async () => {
       const results = await Promise.all(promises);
-      if (results.reduce((prev, current) => prev && current)) {
+      if (results.some((success) => success)) {
         await this.props.updateExtensions();
       }
     })();
