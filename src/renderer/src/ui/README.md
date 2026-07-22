@@ -37,7 +37,6 @@ ui/
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
 ├── utils/
-│   ├── get_tab_id/      - Converts tab names to valid HTML element IDs
 │   ├── join_classes/     - Joins class names with conditional support
 │   └── types.ts         - Shared types (XOr, ResponsiveScreenSizes)
 └── README.md
@@ -59,7 +58,6 @@ import { Typography } from "../../ui/components/typography/Typography";
 
 ```tsx
 import { joinClasses } from "../../ui/utils/join_classes/joinClasses";
-import { getTabId } from "../../ui/utils/get_tab_id/getTabId";
 import type { XOr, ResponsiveScreenSizes } from "../../ui/utils/types";
 ```
 
@@ -208,11 +206,15 @@ import { TypographyLink } from "../../ui/components/typography/TypographyLink";
 
 Context-based tab system with keyboard navigation.
 
+`TabButton` takes a `name` (the visible, possibly localized label) and a stable
+`panelId`; `TabPanel` takes the matching `id`. Identity is always the id, never
+the label, so tabs keep working when the language changes.
+
 ```tsx
-import { TabButton } from "../../ui/components/tabs/Tab";
 import { TabBar } from "../../ui/components/tabs/TabBar";
+import { TabButton } from "../../ui/components/tabs/TabButton";
 import { TabPanel } from "../../ui/components/tabs/TabPanel";
-import { TabProvider } from "../../ui/components/tabs/tabs.context";
+import { TabProvider } from "../../ui/components/tabs/Tabs.context";
 
 function MyTabs() {
     const [selectedTab, setSelectedTab] = useState("overview");
@@ -220,14 +222,14 @@ function MyTabs() {
     return (
         <TabProvider tab={selectedTab} tabListId="my-tabs" onSetSelectedTab={setSelectedTab}>
             <TabBar>
-                <TabButton name="Overview" />
-                <TabButton name="Files" count={42} />
-                <TabButton name="Settings" disabled />
+                <TabButton name="Overview" panelId="overview" />
+                <TabButton name="Files" panelId="files" count={42} />
+                <TabButton name="Settings" panelId="settings" disabled />
             </TabBar>
 
-            <TabPanel name="Overview">Overview content</TabPanel>
-            <TabPanel name="Files">Files content</TabPanel>
-            <TabPanel name="Settings">Settings content</TabPanel>
+            <TabPanel id="overview">Overview content</TabPanel>
+            <TabPanel id="files">Files content</TabPanel>
+            <TabPanel id="settings">Settings content</TabPanel>
         </TabProvider>
     );
 }

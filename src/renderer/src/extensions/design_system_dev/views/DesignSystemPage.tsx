@@ -57,43 +57,43 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
           onSetSelectedTab={setSelectedTab}
         >
           <TabBar>
-            <TabButton name="Button" />
+            <TabButton name="Button" panelId="button" />
 
-            <TabButton name="Pill" />
+            <TabButton name="Pill" panelId="pill" />
 
-            <TabButton name="Typography" />
+            <TabButton name="Typography" panelId="typography" />
 
-            <TabButton name="Form" />
+            <TabButton name="Form" panelId="form" />
 
-            <TabButton name="Tabs" />
+            <TabButton name="Tabs" panelId="tabs" />
 
-            <TabButton name="Icon" />
+            <TabButton name="Icon" panelId="icon" />
 
-            <TabButton name="Image" />
+            <TabButton name="Image" panelId="image" />
 
-            <TabButton name="Dropdown" />
+            <TabButton name="Dropdown" panelId="dropdown" />
 
-            <TabButton name="Listing" />
+            <TabButton name="Listing" panelId="listing" />
 
-            <TabButton name="Pagination" />
+            <TabButton name="Pagination" panelId="pagination" />
 
-            <TabButton name="Table" />
+            <TabButton name="Table" panelId="table" />
 
-            <TabButton name="Collection Tile" />
+            <TabButton name="Collection Tile" panelId="collection-tile" />
 
-            <TabButton name="Toolbar" />
+            <TabButton name="Toolbar" panelId="toolbar" />
           </TabBar>
 
           <div className="mt-6">
-            <TabPanel name="Button">
+            <TabPanel id="button">
               <ButtonDemo />
             </TabPanel>
 
-            <TabPanel name="Pill">
+            <TabPanel id="pill">
               <PillDemo />
             </TabPanel>
 
-            <TabPanel name="Typography">
+            <TabPanel id="typography">
               <TabProvider
                 tab={selectedTypographyTab}
                 tabListId="typography-demo-tabs"
@@ -101,24 +101,24 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                 onSetSelectedTab={setSelectedTypographyTab}
               >
                 <TabBar>
-                  <TabButton name="Typography" />
+                  <TabButton name="Typography" panelId="typography" />
 
-                  <TabButton name="Link" />
+                  <TabButton name="Link" panelId="link" />
                 </TabBar>
 
                 <div className="mt-6">
-                  <TabPanel name="Typography">
+                  <TabPanel id="typography">
                     <TypographyDemo />
                   </TabPanel>
 
-                  <TabPanel name="Link">
+                  <TabPanel id="link">
                     <TypographyLinkDemo />
                   </TabPanel>
                 </div>
               </TabProvider>
             </TabPanel>
 
-            <TabPanel name="Form">
+            <TabPanel id="form">
               <TabProvider
                 tab={selectedFormTab}
                 tabListId="form-demo-tabs"
@@ -126,34 +126,34 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                 onSetSelectedTab={setSelectedFormTab}
               >
                 <TabBar>
-                  <TabButton name="Input" />
+                  <TabButton name="Input" panelId="input" />
 
-                  <TabButton name="Select" />
+                  <TabButton name="Select" panelId="select" />
 
-                  <TabButton name="Switch" />
+                  <TabButton name="Switch" panelId="switch" />
                 </TabBar>
 
                 <div className="mt-6">
-                  <TabPanel name="Input">
+                  <TabPanel id="input">
                     <InputDemo />
                   </TabPanel>
 
-                  <TabPanel name="Select">
+                  <TabPanel id="select">
                     <SelectDemo />
                   </TabPanel>
 
-                  <TabPanel name="Switch">
+                  <TabPanel id="switch">
                     <SwitchDemo />
                   </TabPanel>
                 </div>
               </TabProvider>
             </TabPanel>
 
-            <TabPanel name="Tabs">
+            <TabPanel id="tabs">
               <TabsDemo />
             </TabPanel>
 
-            <TabPanel name="Icon">
+            <TabPanel id="icon">
               <TabProvider
                 tab={selectedIconTab}
                 tabListId="icon-demo-tabs"
@@ -161,34 +161,34 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                 onSetSelectedTab={setSelectedIconTab}
               >
                 <TabBar>
-                  <TabButton name="Icon" />
+                  <TabButton name="Icon" panelId="icon" />
 
-                  <TabButton name="Premium Badge" />
+                  <TabButton name="Premium Badge" panelId="premium-badge" />
 
-                  <TabButton name="Bullet" />
+                  <TabButton name="Bullet" panelId="bullet" />
                 </TabBar>
 
                 <div className="mt-6">
-                  <TabPanel name="Icon">
+                  <TabPanel id="icon">
                     <IconDemo />
                   </TabPanel>
 
-                  <TabPanel name="Premium Badge">
+                  <TabPanel id="premium-badge">
                     <PremiumBadgeDemo />
                   </TabPanel>
 
-                  <TabPanel name="Bullet">
+                  <TabPanel id="bullet">
                     <BulletDemo />
                   </TabPanel>
                 </div>
               </TabProvider>
             </TabPanel>
 
-            <TabPanel name="Image">
+            <TabPanel id="image">
               <ImageDemo />
             </TabPanel>
 
-            <TabPanel name="Dropdown">
+            <TabPanel id="dropdown">
               <TabProvider
                 tab={selectedDropdownTab}
                 tabListId="dropdown-demo-tabs"
@@ -196,46 +196,46 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                 onSetSelectedTab={setSelectedDropdownTab}
               >
                 <TabBar>
-                  <TabButton name="Dropdown" />
+                  <TabButton name="Dropdown" panelId="dropdown" />
 
-                  <TabButton name="Picker" />
+                  <TabButton name="Picker" panelId="picker" />
 
-                  <TabButton name="Popover" />
+                  <TabButton name="Popover" panelId="popover" />
                 </TabBar>
 
                 <div className="mt-6">
-                  <TabPanel name="Dropdown">
+                  <TabPanel id="dropdown">
                     <DropdownDemo />
                   </TabPanel>
 
-                  <TabPanel name="Picker">
+                  <TabPanel id="picker">
                     <PickerDemo />
                   </TabPanel>
 
-                  <TabPanel name="Popover">
+                  <TabPanel id="popover">
                     <PopoverDemo />
                   </TabPanel>
                 </div>
               </TabProvider>
             </TabPanel>
 
-            <TabPanel name="Listing">
+            <TabPanel id="listing">
               <ListingDemo />
             </TabPanel>
 
-            <TabPanel name="Pagination">
+            <TabPanel id="pagination">
               <PaginationDemo />
             </TabPanel>
 
-            <TabPanel name="Table">
+            <TabPanel id="table">
               <TableDemo />
             </TabPanel>
 
-            <TabPanel name="Collection Tile">
+            <TabPanel id="collection-tile">
               <CollectionTileDemo api={api} />
             </TabPanel>
 
-            <TabPanel name="Toolbar">
+            <TabPanel id="toolbar">
               <ToolbarDemo />
             </TabPanel>
           </div>

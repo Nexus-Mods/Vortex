@@ -1,7 +1,6 @@
 import numeral from "numeral";
 import React, { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 
-import { getTabId } from "@/ui/utils/getTabId";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { useTabContext } from "./Tabs.context";
@@ -9,56 +8,52 @@ import { useTabContext } from "./Tabs.context";
 export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   count?: number;
   name: string;
-  label?: React.ReactNode;
+  panelId: string;
 };
 
 /**
  * Standard tab component, implemented as a button. Clicking it will reveal the
  * content for the selected tab.
  *
- * `name` is the stable identity used to match this button to its `TabPanel` and
- * to key the selection (via `getTabId`); keep it language-independent when the
- * selection is persisted or deep-linked. Pass `label` to display something other
- * than `name` (e.g. a translated string) while keeping `name` stable; it defaults
- * to `name`.
+ * `panelId` is the stable identity that matches this button to its `TabPanel` and
+ * keys the selection; keep it language-independent when the selection is persisted
+ * or deep-linked. `name` is the visible (translatable) label.
  */
 export const TabButton = ({
   className,
   count,
   disabled,
-  label,
   name,
+  panelId,
   ...props
 }: ITabButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null!);
   const { onKeyDown, onTabClick, registerTab, selectedTab, tabListId, tabType } = useTabContext();
 
-  const tabId = getTabId(name);
-  const selected = selectedTab === getTabId(name);
+  const selected = selectedTab === panelId;
 
-  // Register the tab ref with the parent tab bar to set focus on keydown
-  useEffect(() => registerTab({ disabled, name: tabId, ref }), [disabled, tabId, registerTab]);
+  useEffect(() => registerTab({ disabled, name: panelId, ref }), [disabled, panelId, registerTab]);
 
   return (
     <button
-      aria-controls={`tabcontent-${tabId}`}
+      aria-controls={`tabcontent-${panelId}`}
       aria-selected={selected}
       className={joinClasses(["nxm-tab-button", className], {
         "nxm-tab-button-disabled": disabled,
         "nxm-tab-button-selected": selected,
       })}
       disabled={disabled}
-      id={`tablist-${tabListId}-${tabId}`}
+      id={`tablist-${tabListId}-${panelId}`}
       ref={ref}
       role="tab"
       tabIndex={selected ? 0 : -1}
       type="button"
-      onClick={() => onTabClick(tabId)}
+      onClick={() => onTabClick(panelId)}
       onKeyDown={onKeyDown}
       {...props}
     >
       <span className="nxm-tab-button-content">
-        {label ?? name}
+        {name}
 
         {count !== undefined && (
           <span className="nxm-tab-button-count">

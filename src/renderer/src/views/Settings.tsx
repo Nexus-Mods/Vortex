@@ -12,7 +12,6 @@ import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
-import { getTabId } from "@/ui/utils/getTabId";
 import lazyRequire from "@/util/lazyRequire";
 import makeReactive from "@/util/makeReactive";
 import type startupSettingsT from "@/util/startupSettings";
@@ -134,22 +133,17 @@ export const Settings: React.FC<{ active?: boolean; pageId?: string }> = ({ acti
 
   // The active tab is persisted (and deep-linked into, e.g. from Health Check via
   // setSettingsPage("Vortex")) by its untranslated title, so that stays the tab
-  // identity. The new Tabs match on getTabId(name), so drive them with the raw title
-  // and map the id the provider hands back to onSetSelectedTab (getTabId(title)) back
-  // to the original title before persisting.
+  // identity (panelId). The label shown is the translated title.
   const page =
     visibleTabs.find((iter) => iter.title === settingsPage) !== undefined
       ? settingsPage
       : visibleTabs[0]?.title;
 
   const setCurrentPage = React.useCallback(
-    (tabId: string) => {
-      const match = visibleTabs.find((iter) => getTabId(iter.title) === tabId);
-      if (match !== undefined) {
-        dispatch(setSettingsPage(match.title));
-      }
+    (panelId: string) => {
+      dispatch(setSettingsPage(panelId));
     },
-    [dispatch, visibleTabs],
+    [dispatch],
   );
 
   return (
@@ -164,12 +158,12 @@ export const Settings: React.FC<{ active?: boolean; pageId?: string }> = ({ acti
         <TabProvider tab={page ?? ""} tabListId="settings" onSetSelectedTab={setCurrentPage}>
           <TabBar>
             {visibleTabs.map((tabPage) => (
-              <TabButton key={tabPage.title} label={t(tabPage.title)} name={tabPage.title} />
+              <TabButton key={tabPage.title} name={t(tabPage.title)} panelId={tabPage.title} />
             ))}
           </TabBar>
 
           {visibleTabs.map((tabPage) => (
-            <TabPanel key={tabPage.title} name={tabPage.title}>
+            <TabPanel id={tabPage.title} key={tabPage.title}>
               {renderTabPanel(tabPage)}
             </TabPanel>
           ))}

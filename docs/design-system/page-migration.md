@@ -79,12 +79,12 @@ import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 
 <TabProvider tab={selectedTab} tabListId="my-page" onSetSelectedTab={setSelectedTab}>
     <TabBar>
-        <TabButton name="Overview" />
-        <TabButton count={42} name="Files" />
+        <TabButton name="Overview" panelId="overview" />
+        <TabButton count={42} name="Files" panelId="files" />
     </TabBar>
 
-    <TabPanel name="Overview">…</TabPanel>
-    <TabPanel name="Files">…</TabPanel>
+    <TabPanel id="overview">…</TabPanel>
+    <TabPanel id="files">…</TabPanel>
 </TabProvider>;
 ```
 
@@ -92,13 +92,12 @@ Key facts:
 
 - The provider is **controlled**: you hold the selected tab in state and feed it via
   `tab` + `onSetSelectedTab`.
-- `TabButton` and `TabPanel` are matched by **`name`**, but internally everything keys
-  off `getTabId(name)` (lowercased, whitespace → `_`). **The value passed to
-  `onSetSelectedTab` is `getTabId(name)`, not the raw name** — see the gotcha below.
-- `TabButton` renders `name` as its visible label by default. When the label must
-  differ from the identity — e.g. a **translated** label over a stable, persisted key —
-  pass `label` (any node) as well: `<TabButton name={rawKey} label={t(rawKey)} />`. Keep
-  `name` language-independent so `getTabId(name)` stays stable; `label` is display-only.
+- Tab identity is an **explicit id**, separate from the label: `TabButton` takes a
+  `panelId`, `TabPanel` takes a matching `id`, and selection is `selectedTab === panelId`
+  (exact match — no slugging). **The value passed to `onSetSelectedTab` is the `panelId`.**
+- `TabButton`'s `name` is purely the **visible (translatable) label** — set `name={t(…)}`
+  freely while keeping `panelId` a stable, language-independent identity. This is what
+  makes localized labels safe (see the gotcha below).
 - `tabType="secondary"` gives the smaller sub-tab style and parenthesises the `count`
   badge; sub-tabs can be nested inside a panel with their own `TabProvider`.
 - Keyboard nav (Arrow Left/Right with wrap, Home, End, skipping disabled tabs) is
@@ -133,17 +132,17 @@ artwork) — a dedicated mark can later overwrite that one file with no code cha
 
 ## Gotcha — persisted / deep-linked tab keys
 
-If the active tab is persisted (redux) or **deep-linked into from elsewhere**, the tab
-identity must stay stable and language-independent — do **not** key it off translated
-strings, and account for `getTabId`.
+If the active tab is persisted (redux) or **deep-linked into from elsewhere**, use a
+stable, language-independent value as the `panelId` — do **not** derive it from the
+translated label.
 
 Concrete case: Settings persists its active tab as the **untranslated** section title
 (e.g. `"Vortex"`), and Health Check deep-links via `dispatch(setSettingsPage("Vortex"))`.
-Because `onSetSelectedTab` hands back `getTabId(name)` (e.g. `"vortex"`), Settings maps
-that id back to the original title before dispatching, and drives `TabProvider` /
-`TabButton` / `TabPanel` with the raw title (which `getTabId` normalises consistently on
-both sides), while passing `label={t(title)}` for the visible, translated text. Net
-effect: the stored/deep-linked value stays `"Vortex"` and the label is translated.
+Settings uses that untranslated title as the `panelId` (and the `TabPanel` `id`), and the
+translated title as the `name` label. `onSetSelectedTab` hands back the `panelId`
+verbatim, so it dispatches `setSettingsPage(panelId)` directly. Net effect: the
+stored/deep-linked value stays `"Vortex"` and the label is translated — with no
+slug round-trip to get wrong.
 
 ## Reference implementations
 

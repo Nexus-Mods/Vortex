@@ -235,9 +235,9 @@ function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
           >
             <div className="flex items-center justify-between">
               <TabBar>
-                <TabButton count={activeCount} name={t("common:::active")} />
+                <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
 
-                <TabButton count={hiddenCount} name={t("common:::hidden")} />
+                <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
               </TabBar>
 
               <div className="flex items-center gap-x-2">
@@ -275,9 +275,9 @@ function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
               </div>
             </div>
 
-            <TabPanel name="active">{activeList}</TabPanel>
+            <TabPanel id="active">{activeList}</TabPanel>
 
-            <TabPanel name="hidden">
+            <TabPanel id="hidden">
               {hiddenCount > 0 ? (
                 <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
               ) : (

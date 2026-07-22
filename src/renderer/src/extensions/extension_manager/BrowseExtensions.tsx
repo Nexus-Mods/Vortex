@@ -29,7 +29,7 @@ export interface IBrowseExtensionsProps {
     reloadNecessary: boolean;
     preselectModId: number;
   };
-  updateExtensions: () => void;
+  updateExtensions: () => Promise<void>;
   onRefreshExtensions: () => void;
 }
 
@@ -434,18 +434,18 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     this.nextState.installing.push(ext.name);
 
-    downloadAndInstallExtension(this.context.api, ext)
-      .then((success: boolean) => {
+    void (async () => {
+      try {
+        const success = await downloadAndInstallExtension(this.context.api, ext);
         if (success) {
-          this.props.updateExtensions();
+          await this.props.updateExtensions();
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         this.context.api.showErrorNotification("Failed to install extension", err);
-      })
-      .finally(() => {
+      } finally {
         this.nextState.installing = this.state.installing.filter((name) => name !== ext.name);
-      });
+      }
+    })();
   };
 
   private select = (evt: React.MouseEvent<any>) => {

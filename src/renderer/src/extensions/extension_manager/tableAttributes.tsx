@@ -18,20 +18,28 @@ interface IAttributesContext {
 }
 
 function renderLoadFailure(t: TFunction, fail: IExtensionLoadFailure) {
-  const pattern = getSafe(
-    {
-      "unsupported-version": "Not compatible with this version of Vortex",
-      "unsupported-api": "Unsupported API",
-      dependency:
-        fail.args?.["version"] !== undefined
-          ? 'Depends on "{{dependencyId}}" version "{{version}}"'
-          : 'Depends on "{{dependencyId}}"',
-      exception: "Failed to load: {{message}}",
-    },
-    [fail.id],
-    "Unknown error",
-  );
-  return t(pattern, { replace: fail.args });
+  if (fail.id === "unsupported-version") {
+    return t("Not compatible with this version of Vortex");
+  }
+
+  if (fail.id === "unsupported-api") {
+    return t("Unsupported API");
+  }
+
+  if (fail.id === "exception") {
+    return t("Failed to load: {{message}}", { replace: fail.args });
+  }
+
+  if (fail.id === "dependency") {
+    if (fail.args.version) {
+      return t("Depends on '{{dependencyId}}' version '{{version}}'", { replace: fail.args });
+    }
+
+    return t("Depends on '{{dependencyId}}'");
+  }
+
+  const id = fail.id satisfies never;
+  return t("Unknown error '{{id}}'", { replace: { id } });
 }
 
 function createEndorsedIcon(ext: IExtensionWithState, onEndorse: EndorseMod, t: TFunction) {
