@@ -166,7 +166,7 @@ const requiredThemeFiles = ["variables.scss", "style.scss", "fonts.scss"];
  * per theme, each is expected to contain at least one of
  * "variables.scss", "style.scss" or "fonts.scss"
  */
-async function validateTheme(extPath: string): Promise<void> {
+export async function validateTheme(extPath: string): Promise<void> {
   const entries = await readdir(extPath, { recursive: false, withFileTypes: true });
   const directories = entries.filter((entry) => entry.isDirectory());
 
@@ -199,7 +199,7 @@ function isLocaleCode(input: string): boolean {
  * validate a translation extension. Can only contain one iso-code named directory (other
  * directories are ignored) which needs to contain at least one json file
  */
-async function validateTranslation(extPath: string): Promise<void> {
+export async function validateTranslation(extPath: string): Promise<void> {
   const entries = await readdir(extPath, { withFileTypes: true });
   const languageDirectories = entries.filter(
     (entry) => entry.isDirectory() && isLocaleCode(entry.name),
@@ -228,11 +228,11 @@ async function validateTranslation(extPath: string): Promise<void> {
 /**
  * validate an extension. It has to contain an index.js and info.json on the top-level
  */
-async function validateExtension(extPath: string): Promise<void> {
+export async function validateExtension(extPath: string): Promise<void> {
   await Promise.all([stat(path.join(extPath, "index.js")), stat(path.join(extPath, "info.json"))]);
 }
 
-async function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
+export async function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
   if (info?.type === "theme") {
     await validateTheme(extPath);
     return "theme";
