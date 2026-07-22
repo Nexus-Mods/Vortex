@@ -262,41 +262,6 @@ function doFetchAvailableExtensions(
     .then((extensions) => ({ time, extensions }));
 }
 
-// Downloads run in the main process and the renderer state is synced
-// asynchronously, so when the download callback resolves, the renderer-side
-// record may not exist yet or may still be "finalizing" (#23454). Poll for it
-// to reach a terminal state instead of reading the store once.
-export function waitForDownloadRecord(
-  api: IExtensionApi,
-  dlId: string,
-  timeoutMS: number = 30000,
-  intervalMS: number = 250,
-): PromiseBB<IDownload> {
-  const tryFetch = (remainingMS: number): PromiseBB<IDownload> => {
-    const state = api.getState();
-    const download: IDownload = state.persistent?.downloads?.files?.[dlId];
-    if (download?.state === "failed") {
-      return PromiseBB.reject(new ProcessCanceled("Extension download failed"));
-    }
-    if (download?.state === "finished" && truthy(download.localPath)) {
-      return PromiseBB.resolve(download);
-    }
-    if (remainingMS <= 0) {
-      log("warn", "timeout waiting for extension download record", {
-        dlId,
-        state: download?.state,
-      });
-      return PromiseBB.reject(
-        download === undefined
-          ? new Error("Download not found")
-          : new Error(`Download not finished (state: ${download.state})`),
-      );
-    }
-    return PromiseBB.delay(intervalMS).then(() => tryFetch(remainingMS - intervalMS));
-  };
-  return tryFetch(timeoutMS);
-}
-
 export async function downloadAndInstallExtension(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
@@ -322,10 +287,9 @@ export async function downloadAndInstallExtension(
     }
 
     const downloadId = downloadIds[0];
+    const download = api.getState().persistent.downloads.files[downloadId];
 
     api.store.dispatch(setDownloadModInfo(downloadId, "internal", true));
-    // TODO: native Promise
-    const download = await Promise.resolve(waitForDownloadRecord(api, downloadId));
     // TODO: native Promise
     const { extensions: availableExtensions } = await Promise.resolve(
       fetchAvailableExtensions(false),
