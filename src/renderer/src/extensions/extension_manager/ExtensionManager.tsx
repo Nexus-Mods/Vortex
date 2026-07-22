@@ -219,7 +219,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     if (type === "files") {
       promises = extPaths.map((extPath) =>
-        Promise.resolve(installExtension(this.context.api, extPath))
+        installExtension(this.context.api, extPath)
           .then(() => true)
           .catch((err) => {
             this.context.api.showErrorNotification("Failed to install extension", err, {
@@ -249,7 +249,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         });
 
         const downloadPath = path.join(this.props.downloadPath, downloads[downloadId].localPath);
-        return await Promise.resolve(installExtension(this.context.api, downloadPath))
+        return await installExtension(this.context.api, downloadPath)
           .then(() => true)
           .catch((err) => {
             this.context.api.showErrorNotification("Failed to install extension", err, {

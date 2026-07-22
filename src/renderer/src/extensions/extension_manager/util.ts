@@ -351,14 +351,11 @@ export async function downloadAndInstallExtension(
     const state = api.getState();
     const downloadPath = downloadPathForGame(state, SITE_ID);
 
-    // TODO: native Promise
-    await Promise.resolve(
-      installExtension(api, path.join(downloadPath, download.localPath), info, {
-        source: ext.modId !== undefined ? "nexusmods" : "github",
-        gameDomain: extDetail?.gameId,
-        gameName: extDetail?.gameName,
-      }),
-    );
+    await installExtension(api, path.join(downloadPath, download.localPath), info, {
+      source: ext.modId !== undefined ? "nexusmods" : "github",
+      gameDomain: extDetail?.gameId,
+      gameName: extDetail?.gameName,
+    });
 
     return true;
   } catch (err) {

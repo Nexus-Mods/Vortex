@@ -1,9 +1,10 @@
-import * as path from "path";
+import { rename, rm, writeFile } from "node:fs/promises";
+import * as path from "node:path";
 
-import { unknownToError } from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
-import type ZipT from "node-7z";
+import SevenZip from "node-7z";
 import rimraf from "rimraf";
 
 import { forgetExtension, removeExtension } from "../../actions";
@@ -313,207 +314,144 @@ function validateInstall(extPath: string, info?: IExtension): PromiseBB<Extensio
   }
 }
 
-// Concurrent install attempts of the same archive (e.g. the update check firing
-// more than once) would extract into the same ".installing" directory
-// simultaneously and fail with "Cannot delete output file ... being used by
-// another process" (#23454). Dedupe them onto a single in-flight promise.
-const activeInstalls: Map<string, PromiseBB<void>> = new Map();
-
 interface InstallAnalytics {
   source: ExtensionInstallSource;
   gameDomain?: string;
   gameName?: string;
 }
 
+// Concurrent install attempts of the same archive (e.g. the update check firing
+// more than once) would extract into the same ".installing" directory
+// simultaneously and fail with "Cannot delete output file ... being used by
+// another process" (#23454). Dedupe them onto a single in-flight promise.
+const activeInstalls: Map<string, Promise<void>> = new Map();
+
 function installExtension(
   api: IExtensionApi,
   archivePath: string,
   info?: IExtension,
   analytics: InstallAnalytics = { source: "manual" },
-): PromiseBB<void> {
+): Promise<void> {
   const key = path.basename(archivePath).toLowerCase();
   const active = activeInstalls.get(key);
+
   if (active !== undefined) {
     return active;
   }
+
   const result = installExtensionImpl(api, archivePath, info, analytics).finally(() => {
     activeInstalls.delete(key);
   });
+
   activeInstalls.set(key, result);
   return result;
 }
 
-function installExtensionImpl(
+async function installExtensionImpl(
   api: IExtensionApi,
   archivePath: string,
   info: IExtension | undefined,
   analytics: InstallAnalytics,
-): PromiseBB<void> {
+): Promise<void> {
   const extensionsPath = path.join(getVortexPath("userData"), "plugins");
   let destPath: string;
   const tempPath = path.join(extensionsPath, path.basename(archivePath)) + ".installing";
 
-  const Zip: typeof ZipT = require("node-7z");
-  const extractor = new Zip();
+  const extractor = new SevenZip();
 
-  let fullInfo: any = info || {};
+  await withTrackedActivity(
+    "vortex.extension-manager",
+    "extension.install",
+    {
+      "extension.archive": path.basename(archivePath),
+      "extension.name": info?.name,
+      "extension.type": info?.type,
+    },
+    async () => {
+      try {
+        await rm(tempPath, { recursive: true, force: true, maxRetries: 3 });
+      } catch (err) {
+        throw new DataInvalid(
+          "Failed to remove files left over from a previous install attempt: " +
+            `${getErrorMessageOrDefault(err)}. They may be locked by another process ` +
+            "(e.g. an antivirus scan); please try again or restart your computer.",
+        );
+      }
 
-  let type: ExtensionType;
+      const result = await Promise.resolve(
+        extractor.extractFull(archivePath, tempPath, { ssc: false }),
+      );
 
-  let extName: string;
-  // Keys whose previous-version state entries were marked for removal during
-  // this install. Cleared after the rename succeeds so the next launch's
-  // state-flag-driven removal path in ExtensionManager doesn't wipe the
-  // just-installed folder (#19527).
-  let removedKeys: string[] = [];
-  return PromiseBB.resolve(
-    withTrackedActivity(
-      "vortex.extension-manager",
-      "extension.install",
-      {
-        "extension.archive": path.basename(archivePath),
-        "extension.name": info?.name,
-        "extension.type": info?.type,
-      },
-      () =>
-        // clear leftovers from a previous failed or interrupted attempt -
-        // extracting on top of them fails if any file is locked (#23454)
-        rimrafAsync(tempPath, { glob: false })
-          .catch((err) =>
-            PromiseBB.reject(
-              new DataInvalid(
-                "Failed to remove files left over from a previous install attempt: " +
-                  `${err.message}. They may be locked by another process ` +
-                  "(e.g. an antivirus scan); please try again or restart your computer.",
-              ),
-            ),
-          )
-          .then(() =>
-            extractor.extractFull(
-              archivePath,
-              tempPath,
-              { ssc: false },
-              () => undefined,
-              () => undefined,
-            ),
-          )
-          .then((result: { code: number; errors: string[] }) => {
-            // node-7z can resolve (not reject) with a non-zero exit code or
-            // a populated errors array on partial/failed extraction. Without
-            // this check, validateInstall runs against an empty or partial
-            // tempPath and we surface a misleading "needs index.js and
-            // info.json on top-level" error instead of the real cause
-            // (locked file, AV quarantine, corrupt download, etc.).
-            const code = result?.code ?? 0;
-            const errors = result?.errors ?? [];
-            if (code !== 0 || errors.length > 0) {
-              log(code !== 0 ? "error" : "warn", "extension extraction reported issues", {
-                archivePath,
-                tempPath,
-                code,
-                errors: errors.join("; "),
-              });
-            }
-            if (code !== 0) {
-              const detail = errors.length > 0 ? errors.join("; ") : `exit code ${code}`;
-              return PromiseBB.reject(
-                new DataInvalid(`Failed to extract extension archive: ${detail}`),
-              );
-            }
-            return PromiseBB.resolve();
-          })
-          .then(() => validateInstall(tempPath, info).then((guessedType) => (type = guessedType)))
-          .then(() => readExtensionInfo(tempPath, false, info))
-          // merge the caller-provided info with the stuff parsed from the info.json file because there
-          // is data we may only know at runtime (e.g. the modId)
-          .then((manifestInfo) => {
-            fullInfo = { ...(manifestInfo.info || {}), ...fullInfo };
-            const res: { id: string; info: Partial<IExtension> } = {
-              id: manifestInfo.id,
-              info: fullInfo,
-            };
+      // node-7z can resolve (not reject) with a non-zero exit code or
+      // a populated errors array on partial/failed extraction. Without
+      // this check, validateInstall runs against an empty or partial
+      // tempPath and we surface a misleading "needs index.js and
+      // info.json on top-level" error instead of the real cause
+      // (locked file, AV quarantine, corrupt download, etc.).
+      const code = result?.code ?? 0;
+      const errors = result?.errors ?? [];
+      if (code !== 0 || errors.length > 0) {
+        log(code !== 0 ? "error" : "warn", "extension extraction reported issues", {
+          archivePath,
+          tempPath,
+          code,
+          errors: errors.join("; "),
+        });
+      }
 
-            if (res.info.type === undefined) {
-              res.info.type = type;
-            }
+      if (code !== 0) {
+        const detail = errors.length > 0 ? errors.join("; ") : `exit code ${code}`;
+        throw new DataInvalid(`Failed to extract extension archive: ${detail}`);
+      }
 
-            return res;
-          })
-          .catch({ code: "ENOENT" }, () =>
-            info !== undefined
-              ? PromiseBB.resolve({
-                  id: path.basename(archivePath, path.extname(archivePath)),
-                  info,
-                })
-              : PromiseBB.reject(new Error("not an extension, info.json missing")),
-          )
-          .then((manifestInfo) =>
-            // update the manifest on disc, in case we had new info from the caller
-            fs
-              .writeFileAsync(
-                path.join(tempPath, "info.json"),
-                JSON.stringify(manifestInfo.info, undefined, 2),
-              )
-              .then(() => manifestInfo),
-          )
-          .then((manifestInfo: { id: string; info: IExtension }) => {
-            extName = manifestInfo.id;
+      const manifestInfo = await Promise.resolve(readExtensionInfo(tempPath, false, info));
 
-            const dirName = sanitize(manifestInfo.id);
-            destPath = path.join(extensionsPath, dirName);
-            if (manifestInfo.info.type !== undefined) {
-              type = manifestInfo.info.type;
-            }
-            return removeOldVersion(api, manifestInfo.info);
-          })
-          .then((keys) => {
-            removedKeys = keys;
-            // we don't actually expect the output directory to exist
-            return fs.removeAsync(destPath);
-          })
-          .then(() => fs.renameAsync(tempPath, destPath))
-          .then(() => {
-            clearStaleRemovalFlags(api, removedKeys, destPath);
-            emitExtensionInstalled(
-              api,
-              { ...fullInfo, type, id: extName },
-              {
-                source: analytics.source,
-                isUpdate: removedKeys.length > 0,
-                gameDomain: analytics.gameDomain,
-                gameName: analytics.gameName,
-              },
-            );
-            if (type === "translation") {
-              return fs
-                .readdirAsync(destPath)
-                .map((entry: string) =>
-                  fs.statAsync(path.join(destPath, entry)).then((stat) => ({ name: entry, stat })),
-                )
-                .then(() => null);
-            } else if (type === "theme") {
-              return PromiseBB.resolve();
-            } else {
-              // don't install dependencies for extensions that are already loaded because
-              // doing so could cause an exception
-              if (api.getLoadedExtensions().find((ext) => ext.name === extName) === undefined) {
-                return installExtensionDependencies(api, destPath);
-              } else {
-                return PromiseBB.resolve();
-              }
-            }
-          })
-          .catch(DataInvalid, (err) =>
-            rimrafAsync(tempPath, { glob: false }).then(() => {
-              api.showErrorNotification("Invalid Extension", err, {
-                allowReport: false,
-                message: archivePath,
-              });
-              return Promise.reject(err);
-            }),
-          )
-          .catch((err) => rimrafAsync(tempPath, { glob: false }).then(() => PromiseBB.reject(err))),
-    ),
+      // merge the caller-provided info with the stuff parsed from the info.json file because there
+      // is data we may only know at runtime (e.g. the modId)
+      const fullInfo = { ...(manifestInfo.info || {}), ...info };
+      if (fullInfo.type === undefined) {
+        // TODO: native Promise
+        fullInfo.type = await Promise.resolve(validateInstall(tempPath, info));
+      }
+
+      // update the manifest on disc, in case we had new info from the caller
+      await writeFile(path.join(tempPath, "info.json"), JSON.stringify(fullInfo, undefined, 2));
+
+      const dirName = sanitize(manifestInfo.id);
+      destPath = path.join(extensionsPath, dirName);
+
+      // Keys whose previous-version state entries were marked for removal during
+      // this install. Cleared after the rename succeeds so the next launch's
+      // state-flag-driven removal path in ExtensionManager doesn't wipe the
+      // just-installed folder (#19527).
+      // TODO: native Promise
+      const removedKeys = await Promise.resolve(removeOldVersion(api, fullInfo));
+
+      // we don't actually expect the output directory to exist
+      await rm(destPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      await rename(tempPath, destPath);
+
+      clearStaleRemovalFlags(api, removedKeys, destPath);
+      emitExtensionInstalled(
+        api,
+        { ...fullInfo, type: fullInfo.type, id: manifestInfo.id },
+        {
+          source: analytics.source,
+          isUpdate: removedKeys.length > 0,
+          gameDomain: analytics.gameDomain,
+          gameName: analytics.gameName,
+        },
+      );
+
+      if (fullInfo.type === "theme" || fullInfo.type === "translation") return;
+
+      // don't install dependencies for extensions that are already loaded because
+      // doing so could cause an exception
+      if (api.getLoadedExtensions().find((ext) => ext.name === manifestInfo.id) === undefined) {
+        // TODO: native Promise
+        await Promise.resolve(installExtensionDependencies(api, destPath));
+      }
+    },
   );
 }
 
