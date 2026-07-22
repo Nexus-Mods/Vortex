@@ -218,7 +218,7 @@ async function validateTranslation(extPath: string): Promise<void> {
   }
 
   const languageEntries = await readdir(
-    path.join(extPath, path.join(languageDirectory.parentPath, languageDirectory.name)),
+    path.join(languageDirectory.parentPath, languageDirectory.name),
     { withFileTypes: true },
   );
   const hasJSONFile = languageEntries.find((x) => x.isFile() && path.extname(x.name) === ".json");
