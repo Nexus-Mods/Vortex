@@ -1056,6 +1056,23 @@ function ensureFileAsync(filePath: string): Promise_2<void>;
 export const ErrorBoundary: any;
 
 // @public (undocumented)
+type ExtensionLoadFailureDependency = {
+    id: "dependency";
+    args: {
+        dependencyId: string;
+        version?: string;
+    };
+};
+
+// @public (undocumented)
+type ExtensionLoadFailureException = {
+    id: "exception";
+    args: {
+        message: string;
+    };
+};
+
+// @public (undocumented)
 function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 
 // @public (undocumented)
@@ -2451,14 +2468,9 @@ interface IExtensionContext {
 }
 
 // @public (undocumented)
-interface IExtensionLoadFailure {
-    // (undocumented)
-    args?: {
-        [key: string]: any;
-    };
-    // (undocumented)
-    id: string;
-}
+type IExtensionLoadFailure = {
+    id: "unsupported-api" | "unsupported-version";
+} | ExtensionLoadFailureException | ExtensionLoadFailureDependency;
 
 // @public (undocumented)
 interface IExtensionOptional {
@@ -6402,6 +6414,8 @@ declare namespace types {
         IPosition,
         IWindow,
         INotificationState,
+        ExtensionLoadFailureException,
+        ExtensionLoadFailureDependency,
         IExtensionLoadFailure,
         IExtensionOptional,
         IProgress,
@@ -6789,11 +6803,11 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // lib/extensions/installer_fomod_shared/types/interface.d.ts:76:5 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:162:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:377:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:379:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:412:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:413:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:172:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:387:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:389:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:422:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:423:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
