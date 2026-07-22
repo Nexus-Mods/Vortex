@@ -278,6 +278,12 @@ export interface InvokeChannels {
   "bsdiff:create": (oldPath: string, newPath: string, patchPath: string) => Promise<void>;
   "bsdiff:apply": (oldPath: string, patchPath: string, outputPath: string) => Promise<void>;
 
+  // file hashing, run on a main-process worker_thread (only the path crosses IPC)
+  "hash:compute": (
+    algorithm: string,
+    filePath: string,
+  ) => Promise<{ hash: string; numBytes: number }>;
+
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 
