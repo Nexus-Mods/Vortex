@@ -3,7 +3,7 @@ import * as path from "path";
 import type { IParameters } from "@vortex/shared/cli";
 import PromiseBB from "bluebird";
 import * as React from "react";
-import { Alert, Button, ControlLabel, FormControl, FormGroup, HelpBlock } from "react-bootstrap";
+import { Alert, ControlLabel, FormGroup } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -14,9 +14,12 @@ import { setCustomTitlebar } from "../../actions/window";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import Toggle from "../../controls/Toggle";
-import type { IAvailableExtension, IExtensionDownloadInfo } from "../../types/extensions";
+import type { IAvailableExtension } from "../../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
+import { Button } from "../../ui/components/button/Button";
+import { Picker } from "../../ui/components/picker/Picker";
+import { Typography } from "../../ui/components/typography/Typography";
 import { relaunch } from "../../util/commandLine";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
@@ -42,14 +45,8 @@ import {
   setRelativeTimes,
 } from "./actions/interface";
 import { nativeCountryName, nativeLanguageName } from "./languagemap";
+import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
 import getText from "./texts";
-
-interface ILanguage {
-  key: string;
-  language: string;
-  country?: string;
-  ext: Array<Partial<IExtensionDownloadInfo>>;
-}
 
 export interface IBaseProps {
   startup: IParameters;
@@ -107,6 +104,9 @@ type IProps = IBaseProps &
 
 class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   private mInitialTitlebar: boolean;
+  // The flat option model built each render from `languages`; selectLanguage looks the
+  // chosen id up here rather than reading it back off the DOM.
+  private languageOptions: ILanguageOption[] = [];
 
   constructor(props: IProps) {
     super(props);
@@ -152,44 +152,48 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     ) : null;
 
     const restartNotification = needRestart ? (
-      <HelpBlock>
-        <Alert>
+      <div className="flex items-center gap-x-4 rounded-lg border border-info-weak bg-info-950 p-3">
+        <Typography appearance="strong" brand="neutral-translucent" className="grow">
           {t("You need to restart Vortex to activate this change")}
+        </Typography>
 
-          <Button style={{ marginLeft: "1em" }} onClick={this.restart}>
-            {t("Restart now")}
-          </Button>
-        </Alert>
-      </HelpBlock>
+        <Button brand="neutral" size="sm" onClick={this.restart}>
+          {t("Restart now")}
+        </Button>
+      </div>
     ) : null;
 
     const numSuppressed = Object.values(suppressedNotifications).filter(
       (val) => val === true,
     ).length;
 
+    this.languageOptions = buildLanguageOptions(languages, t);
+    // Show the current language; a language may appear under more than one option (one
+    // per extension), so pick the first matching entry as the native <select> did.
+    const selectedLanguageId =
+      this.languageOptions.find((option) => option.key === currentLanguage)?.id ?? "";
+
     return (
       <form>
         <FormGroup controlId="languageSelect">
-          <ControlLabel>{t("Language")}</ControlLabel>
+          <div className="flex flex-col items-start gap-y-2">
+            <Typography as="span" typographyType="body-md">
+              {t("Language")}
+            </Typography>
 
-          <FormControl
-            componentClass="select"
-            value={currentLanguage}
-            onChange={this.selectLanguage}
-          >
-            {languages.reduce((prev, language) => {
-              if (language.ext.length < 2) {
-                prev.push(this.renderLanguage(language));
-              } else {
-                language.ext.forEach((ext) => prev.push(this.renderLanguage(language, ext)));
-              }
-              return prev;
-            }, [])}
-          </FormControl>
+            <Picker<string>
+              options={this.languageOptions.map((option) => ({
+                label: option.label,
+                value: option.id,
+              }))}
+              value={selectedLanguageId}
+              onChange={this.selectLanguage}
+            />
 
-          <ControlLabel>
-            {t("When you select a language for the first time you may have to restart Vortex.")}
-          </ControlLabel>
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t("When you select a language for the first time you may have to restart Vortex.")}
+            </Typography>
+          </div>
         </FormGroup>
 
         <FormGroup controlId="customization">
@@ -312,11 +316,16 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
         <FormGroup controlId="notifications">
           <ControlLabel>{t("Notifications")}</ControlLabel>
 
-          <div>
-            <Button onClick={this.resetSuppression}>{t("Reset suppressed notifications")}</Button>{" "}
-            {t("({{count}} notification is being suppressed)", {
-              replace: { count: numSuppressed },
-            })}
+          <div className="flex items-center gap-x-2">
+            <Button brand="neutral" size="sm" onClick={this.resetSuppression}>
+              {t("Reset suppressed notifications")}
+            </Button>
+
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t("({{count}} notification is being suppressed)", {
+                replace: { count: numSuppressed },
+              })}
+            </Typography>
           </div>
         </FormGroup>
 
@@ -333,16 +342,17 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     this.props.onSetRelativeTimes(!this.props.relativeTimes);
   };
 
-  private selectLanguage = (evt) => {
+  private selectLanguage = (id: string) => {
     const { extensions } = this.props;
-    const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    const extName: string = target.selectedOptions[0]?.getAttribute("data-ext");
-    if (extName === undefined) {
+    const option = this.languageOptions.find((iter) => iter.id === id);
+    if (option === undefined) {
       // no language selected? How did this happen?
       return;
     }
-    const ext: { modId?: number } = extensions.find((iter) => iter.name === extName) || {};
-    const { value } = target;
+    // extName carries what the old <option data-ext> did: when the language is provided
+    // by an extension with a modId, selecting it installs that extension on demand and
+    // reloads the language list before applying the language.
+    const ext: { modId?: number } = extensions.find((iter) => iter.name === option.extName) || {};
 
     const dlProm: PromiseBB<boolean[]> =
       ext.modId !== undefined
@@ -353,36 +363,10 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
-        this.props.onSetLanguage(value);
+        this.props.onSetLanguage(option.key);
       }
     });
   };
-
-  private languageName(language: ILanguage): string {
-    return language.country === undefined
-      ? language.language
-      : `${language.language} (${language.country})`;
-  }
-
-  private renderLanguage(language: ILanguage, ext?: Partial<IExtensionDownloadInfo>): JSX.Element {
-    const { t } = this.props;
-    if (ext === undefined) {
-      ext = language.ext.length > 0 ? language.ext[0] : { name: undefined };
-    }
-    return (
-      <option
-        data-ext={ext.name}
-        key={`${language.key}-${ext["author"] || "local"}`}
-        value={language.key}
-      >
-        {this.languageName(language)}
-
-        {ext.modId !== undefined
-          ? ` (${t("Extension")} by ${ext["author"] || "unknown author"})`
-          : null}
-      </option>
-    );
-  }
 
   private toggleAutoDeployment = () => {
     const { autoDeployment, onSetAutoDeployment } = this.props;
