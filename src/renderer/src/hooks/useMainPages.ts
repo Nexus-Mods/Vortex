@@ -31,6 +31,7 @@ const registerMainPage = (
     newLayout: options.newLayout,
     badge: options.badge,
     activity: options.activity,
+    menuBadge: options.menuBadge,
     priority: options.priority !== undefined ? options.priority : 100,
     onReset: options.onReset,
     namespace: extInfo.namespace,

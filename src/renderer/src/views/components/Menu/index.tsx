@@ -75,6 +75,7 @@ const MenuContent: FC = () => {
           ) : (
             visiblePages.map((page) => (
               <MenuButton
+                Badge={page.menuBadge}
                 iconPath={page.mdi ?? getIconPath(page.icon)}
                 isActive={mainPage === page.id}
                 key={page.id}
