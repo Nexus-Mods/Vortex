@@ -5,10 +5,11 @@
  * file contents.
  */
 
+import type { HashAlgorithm } from "@vortex/shared/ipc";
+
 export interface HashJob {
   id: number;
-  // any algorithm name accepted by crypto.createHash / listed by crypto.getHashes()
-  algorithm: string;
+  algorithm: HashAlgorithm;
   filePath: string;
 }
 

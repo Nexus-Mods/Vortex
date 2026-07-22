@@ -7,7 +7,7 @@ import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { VortexPaths } from "@vortex/shared/ipc";
+import type { HashAlgorithm, VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
   IpcMainInvokeEvent,
@@ -651,7 +651,7 @@ export function init() {
 
   betterIpcMain.handle(
     "hash:compute",
-    (_event: IpcMainInvokeEvent, algorithm: string, filePath: string) =>
+    (_event: IpcMainInvokeEvent, algorithm: HashAlgorithm, filePath: string) =>
       hashFile(algorithm, filePath),
   );
 }

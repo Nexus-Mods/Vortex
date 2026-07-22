@@ -267,6 +267,9 @@ export interface FlagMetricsBucket {
   toggles: Record<string, { yes: number; no: number; variants?: Record<string, number> }>;
 }
 
+/** Hash algorithms the app requests over `hash:compute`. Closed set; extend as callers need. */
+export type HashAlgorithm = "md5";
+
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
 export interface InvokeChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be Promises resolving serializable content.
@@ -280,7 +283,7 @@ export interface InvokeChannels {
 
   // file hashing, run on a main-process worker_thread (only the path crosses IPC)
   "hash:compute": (
-    algorithm: string,
+    algorithm: HashAlgorithm,
     filePath: string,
   ) => Promise<{ hash: string; numBytes: number }>;
 

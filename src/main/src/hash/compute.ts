@@ -4,7 +4,8 @@
  */
 
 import { createHash, getHashes } from "node:crypto";
-import * as fs from "node:fs";
+import { createReadStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
 
 const supportedAlgorithms = new Set(getHashes());
 
@@ -17,23 +18,15 @@ export function isSupportedAlgorithm(algorithm: string): boolean {
  * Stream a file and compute its hex digest. Rejects on an unsupported algorithm
  * or any read error. numBytes is the number of bytes hashed (the file size).
  */
-export function hashFileStream(
+export async function hashFileStream(
   algorithm: string,
   filePath: string,
 ): Promise<{ hash: string; numBytes: number }> {
-  return new Promise((resolve, reject) => {
-    if (!isSupportedAlgorithm(algorithm)) {
-      reject(new Error(`unsupported hash algorithm: ${algorithm}`));
-      return;
-    }
-    const hash = createHash(algorithm);
-    let numBytes = 0;
-    const stream = fs.createReadStream(filePath);
-    stream.on("data", (chunk: string | Buffer) => {
-      hash.update(chunk);
-      numBytes += chunk.length;
-    });
-    stream.on("end", () => resolve({ hash: hash.digest("hex"), numBytes }));
-    stream.on("error", reject);
-  });
+  if (!isSupportedAlgorithm(algorithm)) {
+    throw new Error(`unsupported hash algorithm: ${algorithm}`);
+  }
+  const hash = createHash(algorithm);
+  const source = createReadStream(filePath);
+  await pipeline(source, hash);
+  return { hash: hash.digest("hex"), numBytes: source.bytesRead };
 }

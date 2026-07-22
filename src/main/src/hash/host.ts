@@ -16,6 +16,7 @@ import * as path from "node:path";
 import { Worker } from "node:worker_threads";
 
 import { getErrorMessageOrDefault, VortexError } from "@vortex/shared";
+import type { HashAlgorithm } from "@vortex/shared/ipc";
 
 import type { HashJob, HashResult } from "./protocol";
 
@@ -45,7 +46,7 @@ export interface HashWorker {
 
 interface Job {
   id: number;
-  algorithm: string;
+  algorithm: HashAlgorithm;
   filePath: string;
   resolve: (result: HashFileResult) => void;
   reject: (err: Error) => void;
@@ -80,11 +81,10 @@ export class HashWorkerPool {
   }
 
   /**
-   * Compute the hex digest of a file off-thread. algorithm is any name accepted
-   * by crypto.createHash / listed by crypto.getHashes(). Concurrent calls run in
+   * Compute the hex digest of a file off-thread. Concurrent calls run in
    * parallel up to the pool size; the rest queue.
    */
-  hashFile(algorithm: string, filePath: string): Promise<HashFileResult> {
+  hashFile(algorithm: HashAlgorithm, filePath: string): Promise<HashFileResult> {
     return new Promise<HashFileResult>((resolve, reject) => {
       const job: Job = { id: this.#nextId++, algorithm, filePath, resolve, reject };
       this.#queue.push(job);
@@ -195,11 +195,8 @@ export class HashWorkerPool {
 
 const defaultPool = new HashWorkerPool();
 
-/**
- * Compute the hex digest of a file off-thread on the shared pool. algorithm is
- * any name accepted by crypto.createHash / listed by crypto.getHashes().
- */
-export function hashFile(algorithm: string, filePath: string): Promise<HashFileResult> {
+/** Compute the hex digest of a file off-thread on the shared pool. */
+export function hashFile(algorithm: HashAlgorithm, filePath: string): Promise<HashFileResult> {
   return defaultPool.hashFile(algorithm, filePath);
 }
 

@@ -21,6 +21,7 @@ import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
+  HashAlgorithm,
   Serializable,
   UpdateStatus,
   VortexPaths,
@@ -518,11 +519,8 @@ export interface BsdiffApi {
 }
 
 export interface HashApi {
-  /**
-   * Compute the hex digest of a file off the renderer thread. algorithm is any
-   * name accepted by crypto.createHash / listed by crypto.getHashes().
-   */
-  compute(algorithm: string, filePath: string): Promise<{ hash: string; numBytes: number }>;
+  /** Compute the hex digest of a file off the renderer thread. */
+  compute(algorithm: HashAlgorithm, filePath: string): Promise<{ hash: string; numBytes: number }>;
 }
 
 /** API for receiving feature flag updates pushed from the main process */
