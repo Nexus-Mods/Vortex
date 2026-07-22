@@ -150,28 +150,28 @@ export function clearStaleRemovalFlags(
   });
 }
 
-function removeOldVersion(api: IExtensionApi, info: IExtension): PromiseBB<string[]> {
-  const state: IState = api.store.getState();
+function removeOldVersion(api: IExtensionApi, info: IExtension): string[] {
+  const state = api.getState();
   const { installed } = state.session.extensions;
 
   // should never be more than one but let's handle multiple to be safe
-  const previousVersions = Object.keys(installed).filter(
-    (key) =>
-      !installed[key].bundled &&
-      ((info.id !== undefined && installed[key].id === info.id) ||
-        (info.modId !== undefined && installed[key].modId === info.modId) ||
-        installed[key].name === info.name),
-  );
+  const previousVersions = Object.entries(installed).filter(([_, ext]) => {
+    if (ext.bundled) return false;
+    if (info.id !== undefined && ext.id === info.id) return true;
+    if (info.modId !== undefined && ext.modId === info.modId) return true;
+    return info.name === ext.name;
+  });
+
   if (previousVersions.length > 0) {
     log("info", "removing previous versions of the extension", {
       previousVersions,
       newPath: info.path,
-      paths: previousVersions.map((iter) => installed[iter].path),
+      paths: previousVersions.map(([_, ext]) => ext.path),
     });
   }
 
   previousVersions.forEach((key) => api.store.dispatch(removeExtension(key)));
-  return PromiseBB.resolve(previousVersions);
+  return previousVersions.map(([key, _]) => key);
 }
 
 const requiredThemeFiles = ["variables.scss", "style.scss", "fonts.scss"];
@@ -399,8 +399,7 @@ async function installExtensionImpl(
       // this install. Cleared after the rename succeeds so the next launch's
       // state-flag-driven removal path in ExtensionManager doesn't wipe the
       // just-installed folder (#19527).
-      // TODO: native Promise
-      const removedKeys = await Promise.resolve(removeOldVersion(api, fullInfo));
+      const removedKeys = removeOldVersion(api, fullInfo);
 
       // we don't actually expect the output directory to exist
       await rm(destPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
