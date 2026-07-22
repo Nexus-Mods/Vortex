@@ -29,7 +29,7 @@ export interface IBrowseExtensionsProps {
     reloadNecessary: boolean;
     preselectModId: number;
   };
-  updateExtensions: () => void;
+  updateExtensions: () => Promise<void>;
   onRefreshExtensions: () => void;
 }
 
@@ -438,7 +438,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       try {
         const success = await downloadAndInstallExtension(this.context.api, ext);
         if (success) {
-          this.props.updateExtensions();
+          await this.props.updateExtensions();
         }
       } catch (err) {
         this.context.api.showErrorNotification("Failed to install extension", err);

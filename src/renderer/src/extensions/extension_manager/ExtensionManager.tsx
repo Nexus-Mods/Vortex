@@ -35,7 +35,7 @@ export interface IExtensionManagerProps {
   localState: {
     reloadNecessary: boolean;
   };
-  updateExtensions: () => void;
+  updateExtensions: () => Promise<void>;
 }
 
 interface IConnectedProps {
@@ -256,7 +256,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           );
     prop.then(() => {
       if (success) {
-        this.props.updateExtensions();
+        void this.props.updateExtensions();
       }
     });
   };
