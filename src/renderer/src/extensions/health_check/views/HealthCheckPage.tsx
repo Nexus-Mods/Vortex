@@ -6,7 +6,7 @@ import {
   mdiEyeOff,
   mdiRefresh,
 } from "@mdi/js";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -49,6 +49,8 @@ interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
   active?: boolean;
+  /** Registers a handler the Menu calls when Health check is clicked while already active. */
+  registerReset?: (cb: () => void) => void;
 }
 
 /**
@@ -85,11 +87,18 @@ function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstall
   return out;
 }
 
-function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
+function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
+
+  // Clicking the Health check menu item while already on the page returns to
+  // the listing (closes any open detail). setSelected is stable, so registering
+  // once on mount is enough.
+  useEffect(() => {
+    registerReset?.(() => setSelected(null));
+  }, [registerReset]);
 
   // Subscribe only to the slices the listing + install-all derive from, so the
   // frequent unrelated dispatches during a check run (mod-file and mod-attribute
