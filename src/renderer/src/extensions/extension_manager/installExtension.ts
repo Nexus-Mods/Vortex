@@ -250,6 +250,13 @@ async function validateInstall(extPath: string, info?: IExtension): Promise<Exte
 
   // if we don't know the type we can only check if _any_ extension type applies
   try {
+    await validateExtension(extPath);
+    return undefined;
+  } catch {
+    // ignored
+  }
+
+  try {
     await validateTheme(extPath);
     return "theme";
   } catch {
@@ -259,13 +266,6 @@ async function validateInstall(extPath: string, info?: IExtension): Promise<Exte
   try {
     await validateTranslation(extPath);
     return "translation";
-  } catch {
-    // ignored
-  }
-
-  try {
-    await validateExtension(extPath);
-    return undefined;
   } catch {
     // ignored
   }
