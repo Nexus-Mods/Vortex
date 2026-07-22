@@ -1,5 +1,6 @@
 // NOTE(erri120): yes, the library is called "jest-dom" but it works for vitest as well with this import:
 // https://www.npmjs.com/package/@testing-library/jest-dom#with-vitest
+import os from "node:os";
 import path from "node:path";
 
 import "@testing-library/jest-dom/vitest";
@@ -10,7 +11,7 @@ import { ApplicationData } from "./src/applicationData";
 
 // Every path keyed off a single absolute test root so getVortexPath-backed selectors
 // (downloadPathForGame, etc.) resolve real strings instead of throwing in tests.
-const TEST_ROOT = process.platform === "win32" ? "C:\\vortex-test" : "/vortex-test";
+const TEST_ROOT = path.join(os.tmpdir(), "vortex-test");
 const p = (...segments: string[]): string => path.join(TEST_ROOT, ...segments);
 const testPaths: VortexPaths = {
   base: TEST_ROOT,
