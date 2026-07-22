@@ -1,5 +1,8 @@
 // NOTE(erri120): yes, the library is called "jest-dom" but it works for vitest as well with this import:
 // https://www.npmjs.com/package/@testing-library/jest-dom#with-vitest
+import os from "node:os";
+import path from "node:path";
+
 import "@testing-library/jest-dom/vitest";
 import type { VortexPaths } from "@vortex/shared/ipc";
 import { beforeAll, vi } from "vitest";
@@ -8,27 +11,28 @@ import { ApplicationData } from "./src/applicationData";
 
 // Every path keyed off a single absolute test root so getVortexPath-backed selectors
 // (downloadPathForGame, etc.) resolve real strings instead of throwing in tests.
-const TEST_ROOT = "C:\\vortex-test";
+const TEST_ROOT = path.join(os.tmpdir(), "vortex-test");
+const p = (...segments: string[]): string => path.join(TEST_ROOT, ...segments);
 const testPaths: VortexPaths = {
   base: TEST_ROOT,
   base_unpacked: TEST_ROOT,
-  assets: `${TEST_ROOT}\\assets`,
-  assets_unpacked: `${TEST_ROOT}\\assets`,
-  modules: `${TEST_ROOT}\\modules`,
-  modules_unpacked: `${TEST_ROOT}\\modules`,
-  bundledPlugins: `${TEST_ROOT}\\plugins`,
-  locales: `${TEST_ROOT}\\locales`,
-  package: `${TEST_ROOT}\\package`,
-  package_unpacked: `${TEST_ROOT}\\package`,
+  assets: p("assets"),
+  assets_unpacked: p("assets"),
+  modules: p("modules"),
+  modules_unpacked: p("modules"),
+  bundledPlugins: p("plugins"),
+  locales: p("locales"),
+  package: p("package"),
+  package_unpacked: p("package"),
   application: TEST_ROOT,
-  userData: `${TEST_ROOT}\\userData`,
-  appData: `${TEST_ROOT}\\appData`,
-  localAppData: `${TEST_ROOT}\\localAppData`,
-  temp: `${TEST_ROOT}\\temp`,
-  home: `${TEST_ROOT}\\home`,
-  documents: `${TEST_ROOT}\\documents`,
-  exe: `${TEST_ROOT}\\vortex.exe`,
-  desktop: `${TEST_ROOT}\\desktop`,
+  userData: p("userData"),
+  appData: p("appData"),
+  localAppData: p("localAppData"),
+  temp: p("temp"),
+  home: p("home"),
+  documents: p("documents"),
+  exe: p(process.platform === "win32" ? "vortex.exe" : "vortex"),
+  desktop: p("desktop"),
 };
 
 // Many modules access window.api.* during import, so provide a default stub.
