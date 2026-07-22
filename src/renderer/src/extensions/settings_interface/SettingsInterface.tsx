@@ -3,7 +3,7 @@ import * as path from "path";
 import type { IParameters } from "@vortex/shared/cli";
 import PromiseBB from "bluebird";
 import * as React from "react";
-import { Alert, ControlLabel, FormGroup } from "react-bootstrap";
+import { ControlLabel, FormGroup } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -272,14 +272,14 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
               </Toggle>
 
               {startup.disableGPU === true ? (
-                <ControlLabel>
-                  <Alert bsStyle="warning">
+                <div className="rounded-lg border border-warning-weak bg-warning-950 p-3">
+                  <Typography appearance="strong" brand="neutral-translucent">
                     {t(
                       "Disabling GPU acceleration will make the Vortex UI significantly less " +
                         "responsive in places.",
                     )}
-                  </Alert>
-                </ControlLabel>
+                  </Typography>
+                </div>
               ) : null}
             </div>
           </div>
