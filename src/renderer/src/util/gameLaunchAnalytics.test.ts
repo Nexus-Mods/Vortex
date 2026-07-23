@@ -65,6 +65,7 @@ describe("game launch analytics", () => {
     expect(exited?.properties.launch_method).toBe("direct_exe");
     expect(exited?.properties.enabled_mod_count).toBe(launched?.properties.enabled_mod_count);
     expect(typeof exited?.properties.duration_ms).toBe("number");
+    expect(exited?.properties.duration_reliable).toBe(true);
     expect(exited?.properties.exit_code).toBeNull();
   });
 
@@ -134,6 +135,8 @@ describe("exit detection for launches that hand off to the game", () => {
     expect(exited).toHaveLength(1);
     expect(exited[0].properties.launch_session_id).toBe(sessionId);
     expect(typeof exited[0].properties.duration_ms).toBe("number");
+    // the game was seen running and then stopped, so this duration is trusted
+    expect(exited[0].properties.duration_reliable).toBe(true);
   });
 
   it("keeps watching its own process for a plain utility tool", () => {
@@ -174,6 +177,8 @@ describe("exit detection for launches that hand off to the game", () => {
       const exited = h.events.filter((e) => e.eventName === "app_game_exited");
       expect(exited).toHaveLength(1);
       expect(exited[0].properties.exit_code).toBe(1);
+      // the game process never appeared, so this is a best-effort exit with an untrusted duration
+      expect(exited[0].properties.duration_reliable).toBe(false);
     } finally {
       vi.useRealTimers();
     }
