@@ -589,7 +589,7 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
-  "/mod-file-versions/dependencies/materialized/batch":
+  "/mod-file-versions/dependencies/ranges/materialized/batch":
     post:
       tags:
         - mods
@@ -609,7 +609,7 @@ paths:
 
         `meta.total_count` is only meaningful on a non-empty page; a page past the end returns no
         candidates and `total_count` 0.
-      operationId: getModFileVersionDependencyCandidatesBatch
+      operationId: getModFileVersionDependencyRangesMaterializedBatch
       x-badges:
         - name: Experimental
           color: orange
