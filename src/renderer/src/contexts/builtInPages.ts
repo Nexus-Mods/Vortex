@@ -43,12 +43,12 @@ export const builtInPages: IMainPage[] = [
   }),
   definePage({
     id: "game_settings",
-    title: "Preferences",
+    title: "Game settings",
     group: "per-game",
     priority: 80,
     isModernOnly: true,
     newLayout: true,
     component: GameSettings,
-    icon: "tune",
+    icon: "settings",
   }),
 ];

@@ -21,6 +21,7 @@ import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionCon
 import type { INotification } from "../../types/INotification";
 import type { IState } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
+import { nxmCollectionOutline } from "../../ui/icon-paths";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import getVortexPath from "../../util/getVortexPath";
@@ -87,11 +88,6 @@ import {
   InstallFinishDialog,
   InstallStartDialog,
 } from "./views/InstallDialog";
-
-// TODO: Import from vortex-api once the dependency is updated
-/** Collection icon (single) - stacked triangles */
-export const nxmCollection =
-  "M11.7229 15.369L6.21146 11.084L5 12.0262L11.7304 17.261L18.4607 12.0262L17.2418 11.0765L11.7229 15.369ZM11.7229 19.1079L6.21146 14.823L5 15.7652L11.7304 20.9999L18.4607 15.7652L17.2418 14.8155L11.7229 19.1079ZM11.7304 13.4694L17.2343 9.18445L18.4607 8.23472L11.7304 3L5 8.23472L6.21894 9.18445L11.7304 13.4694Z";
 
 function isEditableCollection(state: IState, modIds: string[]): boolean {
   const gameMode = selectors.activeGameId(state);
@@ -840,7 +836,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
       pathTool,
     }),
     onReset: () => resetPageCB?.(),
-    mdi: nxmCollection,
+    mdi: nxmCollectionOutline,
   } as any);
 
   context.registerModType(
