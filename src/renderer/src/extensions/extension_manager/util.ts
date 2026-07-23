@@ -77,16 +77,21 @@ function getAllDirectories(searchPath: string): PromiseBB<string[]> {
     .catch({ code: "ENOENT" }, () => []);
 }
 
-function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback: any): IExtension {
+function applyExtensionInfo(
+  id: string,
+  bundled: boolean,
+  values: Partial<IExtension>,
+  fallback: Partial<IExtension>,
+): IExtension {
   const res = {
     name: values.name || fallback.name || id,
     author: values.author || fallback.author || "Unknown",
     version: values.version || fallback.version || "0.0.0",
     description: values.description || fallback.description || "Missing",
-  };
+  } satisfies IExtension;
 
   // add optional settings if we have them
-  const add = (key: string, value: any, fallbackValue: any) => {
+  const add = <T>(key: string, value: T, fallbackValue: T) => {
     if (value !== undefined) {
       res[key] = value;
     } else if (fallbackValue !== undefined) {
@@ -97,7 +102,11 @@ function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback:
   add("type", values.type, fallback.type);
   add("path", values.path, fallback.path);
   add("bundled", bundled, undefined);
-  add("modId", values.modId, fallback.modId);
+  // modId/fileId are identity data assigned by the Nexus Mods manifest, not
+  // something an extension author controls via their own info.json, so the
+  // trusted, install-time-supplied fallback takes priority over the archive.
+  add("modId", fallback.modId, values.modId);
+  add("fileId", fallback.fileId, values.fileId);
 
   return res;
 }
@@ -116,14 +125,14 @@ export function sanitize(input: string): string {
 export function readExtensionInfo(
   extensionPath: string,
   bundled: boolean,
-  fallback: any = {},
+  fallback: Partial<IExtension> = {},
 ): PromiseBB<{ id: string; info: IExtension }> {
   const finalPath = extensionPath.replace(/\.installing$/, "");
 
   return fs
     .readFileAsync(path.join(extensionPath, "info.json"), { encoding: "utf-8" })
-    .then((info) => {
-      const data: IExtension = JSON.parse(info);
+    .then((info: string) => {
+      const data = JSON.parse(info) as unknown as Partial<IExtension>;
       data.path = finalPath;
       const id = data.id || path.basename(finalPath);
       return {
@@ -282,6 +291,7 @@ export async function downloadAndInstallExtension(
             bundled: false,
             description: extDetail.description.short,
             modId: ext.modId,
+            fileId: extDetail.fileId,
           }
         : undefined;
 

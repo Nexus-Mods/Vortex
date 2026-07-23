@@ -41,6 +41,7 @@ export interface IExtension {
   bundled?: boolean;
   path?: string;
   modId?: number;
+  fileId?: number;
   issueTrackerURL?: string;
 }
 
