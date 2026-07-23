@@ -442,6 +442,8 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
               fileId: "0",
               gameId: gameIdForStorage,
             }),
+            // Denormalized for the detail view; see IModRequirementExt.mainFile.
+            mainFile: mainFiles[0],
             requiredBy,
             modUrl:
               (req.url && req.url.trim()) ||
