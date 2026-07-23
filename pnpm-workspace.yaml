@@ -32,7 +32,7 @@ catalog:
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
-  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
+  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.8.0
   "@opentelemetry/context-zone": 2.8.0
@@ -182,7 +182,7 @@ catalog:
   minimist: 1.2.8
   mixpanel-browser: 2.79.0
   modmeta-db: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: github:Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
+  nexus-api: github:Nexus-Mods/node-nexus-api#ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
   node: runtime:24.17.0
   node-7z: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0

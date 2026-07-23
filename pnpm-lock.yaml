@@ -267,8 +267,8 @@ catalogs:
       specifier: 0.13.3
       version: 0.13.3
     '@nexusmods/nexus-api':
-      specifier: github:Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
-      version: 1.7.1
+      specifier: github:Nexus-Mods/node-nexus-api#ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
+      version: 1.7.2
     '@opentelemetry/api':
       specifier: 1.9.1
       version: 1.9.1
@@ -708,8 +708,8 @@ catalogs:
       specifier: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
       version: 0.9.3
     nexus-api:
-      specifier: github:Nexus-Mods/node-nexus-api#97ad222d2d7aca05e581390eb85be9af22833fba
-      version: 1.7.1
+      specifier: github:Nexus-Mods/node-nexus-api#ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
+      version: 1.7.2
     node:
       specifier: runtime:24.17.0
       version: 24.17.0
@@ -2394,7 +2394,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2732,7 +2732,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3677,7 +3677,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3707,7 +3707,7 @@ importers:
         version: 4.17.23
       nexus-api:
         specifier: 'catalog:'
-        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba'
+        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0'
       react:
         specifier: 'catalog:'
         version: 16.14.0
@@ -3994,7 +3994,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../vortex-api
@@ -4102,7 +4102,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@types/react':
         specifier: '16'
         version: 16.14.69
@@ -4177,7 +4177,7 @@ importers:
         version: 0.13.3
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -4701,7 +4701,7 @@ importers:
         version: 0.13.3
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -6312,9 +6312,9 @@ packages:
     resolution: {integrity: sha512-Xb05QlkzIy2Ge1Y8N4SheTeOWAKNtsCYZBJO9BUKG7BA3pjwzzmTXjr3Ikn2Fr7UsX5uLMYMa4JhSbgkszUZUA==}
     engines: {node: '>=22'}
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba':
-    resolution: {gitHosted: true, integrity: sha512-+78ynmZZCtkbSljcu5wTVktuUwRgexyecsWCGWkJvxvKHql8hNNhsmPMCfDBQPKWT20WijfYVMJ589nAD/yhrQ==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba}
-    version: 1.7.1
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0':
+    resolution: {gitHosted: true, integrity: sha512-RFtUty2OkGOezRPWHLadZgltJK6mpCAlq8OaYHoFo3o0w8VcBWORm2w0CDxE/bgHzkoYP30bYDxUfIPnJjM9iQ==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0}
+    version: 1.7.2
 
   '@nx/nx-darwin-arm64@23.0.1':
     resolution: {integrity: sha512-gQJvgPnbI91DBe23Th2CqD9R/S54cPS3C1f0DhyQ8YEf9rR7EEc+sVGjhgVxlhfOk2W7I1Gy6EkXwpN4aDoW4w==}
@@ -14218,9 +14218,9 @@ snapshots:
     dependencies:
       node-gyp-build: 4.8.4
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/97ad222d2d7aca05e581390eb85be9af22833fba':
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0':
     dependencies:
-      form-data: 4.0.5
+      form-data: 4.0.6
       jsonwebtoken: 9.0.3
       request: 2.88.2
       set-cookie-parser: 2.7.2
