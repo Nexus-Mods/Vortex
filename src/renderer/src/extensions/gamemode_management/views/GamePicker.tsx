@@ -13,6 +13,7 @@ import { Picker } from "@/ui/components/picker/Picker";
 import { Pictogram } from "@/ui/components/pictogram/Pictogram";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
+import { isContributed } from "@/util/isContributed";
 import { getSafe } from "@/util/storeHelper";
 
 import { connect, translate } from "../../../controls/ComponentEx";
@@ -248,7 +249,7 @@ const GamePicker = ({
         imageURL: ext.image,
         requiredFiles: [],
         executable: undefined,
-        contributed: ext.author,
+        contributed: isContributed(ext.author) ? ext.author : undefined,
       }))
       .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
   );
