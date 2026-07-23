@@ -269,6 +269,12 @@ catalogs:
     '@nexusmods/nexus-api':
       specifier: github:Nexus-Mods/node-nexus-api#ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
       version: 1.7.2
+    '@nosferatu500/react-sortable-tree':
+      specifier: 4.4.0
+      version: 4.4.0
+    '@nosferatu500/theme-file-explorer':
+      specifier: 3.0.21
+      version: 3.0.21
     '@opentelemetry/api':
       specifier: 1.9.1
       version: 1.9.1
@@ -413,9 +419,6 @@ catalogs:
     '@types/react-select':
       specifier: 1.3.6
       version: 1.3.6
-    '@types/react-sortable-tree':
-      specifier: 0.3.23
-      version: 0.3.23
     '@types/react-transition-group':
       specifier: 4.4.12
       version: 4.4.12
@@ -782,9 +785,6 @@ catalogs:
     react-datepicker:
       specifier: 3.8.0
       version: 3.8.0
-    react-dnd:
-      specifier: 14.0.5
-      version: 14.0.5
     react-dnd-html5-backend:
       specifier: 14.1.0
       version: 14.1.0
@@ -809,12 +809,6 @@ catalogs:
     react-select:
       specifier: 1.3.0
       version: 1.3.0
-    react-sortable-tree:
-      specifier: 2.8.0
-      version: 2.8.0
-    react-sortable-tree-theme-file-explorer:
-      specifier: 2.0.0
-      version: 2.0.0
     recharts:
       specifier: ^2.15.4
       version: 2.15.4
@@ -975,6 +969,7 @@ overrides:
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
   '@types/node': 24.12.2
+  react-dnd: 14.0.5
 
 importers:
 
@@ -1726,7 +1721,7 @@ importers:
         specifier: 'catalog:'
         version: 16.14.0
       react-dnd:
-        specifier: 'catalog:'
+        specifier: 14.0.5
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
@@ -2263,7 +2258,7 @@ importers:
         specifier: 'catalog:'
         version: 16.14.0
       react-dnd:
-        specifier: 'catalog:'
+        specifier: 14.0.5
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
@@ -3003,6 +2998,12 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
+      '@nosferatu500/react-sortable-tree':
+        specifier: 'catalog:'
+        version: 4.4.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
+      '@nosferatu500/theme-file-explorer':
+        specifier: 'catalog:'
+        version: 3.0.21(@nosferatu500/react-sortable-tree@4.4.0)(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react-dom@16.14.0)(react@16.14.0)
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
@@ -3024,9 +3025,6 @@ importers:
       '@types/react-router':
         specifier: 'catalog:'
         version: 2.0.61
-      '@types/react-sortable-tree':
-        specifier: 'catalog:'
-        version: 0.3.23(react-dom@16.14.0)(react@16.14.0)
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
@@ -3073,7 +3071,7 @@ importers:
         specifier: 'catalog:'
         version: 0.33.1(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
-        specifier: 'catalog:'
+        specifier: 14.0.5
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
@@ -3090,12 +3088,6 @@ importers:
       react-select:
         specifier: 'catalog:'
         version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
-      react-sortable-tree:
-        specifier: 'catalog:'
-        version: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
-      react-sortable-tree-theme-file-explorer:
-        specifier: 'catalog:'
-        version: 2.0.0(react-dom@16.14.0)(react-sortable-tree@2.8.0)(react@16.14.0)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3405,7 +3397,7 @@ importers:
         specifier: 'catalog:'
         version: 3.1.1
       react-dnd:
-        specifier: 'catalog:'
+        specifier: 14.0.5
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-i18next:
         specifier: 'catalog:'
@@ -4175,6 +4167,12 @@ importers:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
+      '@nosferatu500/react-sortable-tree':
+        specifier: 'catalog:'
+        version: 4.4.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
+      '@nosferatu500/theme-file-explorer':
+        specifier: 'catalog:'
+        version: 3.0.21(@nosferatu500/react-sortable-tree@4.4.0)(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react-dom@16.14.0)(react@16.14.0)
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -4389,7 +4387,7 @@ importers:
         specifier: 'catalog:'
         version: 3.8.0(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
-        specifier: 'catalog:'
+        specifier: 14.0.5
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
@@ -4415,9 +4413,6 @@ importers:
       react-select:
         specifier: 'catalog:'
         version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
-      react-sortable-tree:
-        specifier: 'catalog:'
-        version: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
       recharts:
         specifier: 'catalog:'
         version: 2.15.4(react-dom@16.14.0)(react@16.14.0)
@@ -4572,9 +4567,6 @@ importers:
       '@types/react-redux':
         specifier: 'catalog:'
         version: 7.1.34
-      '@types/react-sortable-tree':
-        specifier: 'catalog:'
-        version: 0.3.23(react-dom@16.14.0)(react@16.14.0)
       '@types/relaxed-json':
         specifier: 'catalog:'
         version: 1.0.4
@@ -4693,6 +4685,9 @@ importers:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
+      '@nosferatu500/react-sortable-tree':
+        specifier: 'catalog:'
+        version: 4.4.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -4798,9 +4793,6 @@ importers:
       '@types/react-select':
         specifier: 'catalog:'
         version: 1.3.6
-      '@types/react-sortable-tree':
-        specifier: 'catalog:'
-        version: 0.3.23(react-dom@16.14.0)(react@16.14.0)
       '@types/react-transition-group':
         specifier: 'catalog:'
         version: 4.4.12(@types/react@16.14.69)
@@ -5027,7 +5019,7 @@ importers:
         specifier: 'catalog:'
         version: 3.8.0(react-dom@16.14.0)(react@16.14.0)
       react-dnd:
-        specifier: 'catalog:'
+        specifier: 14.0.5
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
       react-dnd-html5-backend:
         specifier: 'catalog:'
@@ -5053,9 +5045,6 @@ importers:
       react-select:
         specifier: 'catalog:'
         version: 1.3.0(react-dom@16.14.0)(react@16.14.0)
-      react-sortable-tree:
-        specifier: 'catalog:'
-        version: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
       recharts:
         specifier: 'catalog:'
         version: 2.15.4(react-dom@16.14.0)(react@16.14.0)
@@ -6303,6 +6292,30 @@ packages:
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0':
     resolution: {gitHosted: true, integrity: sha512-RFtUty2OkGOezRPWHLadZgltJK6mpCAlq8OaYHoFo3o0w8VcBWORm2w0CDxE/bgHzkoYP30bYDxUfIPnJjM9iQ==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0}
     version: 1.7.2
+
+  '@nosferatu500/react-dnd-scrollzone@2.0.10':
+    resolution: {integrity: sha512-PBJtyBQrm47ifesOfIOsJd2SaxSpjkfKSoQOHewkI4UeYLyEc4hX0BY3vlVxW0zzak2+IneJghmGnp5lznVo6A==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      react: '>=17.0.2'
+      react-dnd: 14.0.5
+      react-dom: '>=17.0.2'
+
+  '@nosferatu500/react-sortable-tree@4.4.0':
+    resolution: {integrity: sha512-TN3IYLM1y+ZZAM3ulMXnxwcwX6TPokTczkf3UZ9h0dZ/GE3wSlC1Db4crFjvrEgyHWRGX73lA779Um9wtS9tAQ==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0
+      react-dnd: 14.0.5
+      react-dom: ^17.0.0 || ^18.0.0
+
+  '@nosferatu500/theme-file-explorer@3.0.21':
+    resolution: {integrity: sha512-5Yxm0VQjlEBJTti0Q5tcO/LKH1UjLBKJLTz9I6/n4hyxGX/N+NJAxvdVdoOrX1USXnuDZ3fwbq5lFn5RuzbiFg==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      '@nosferatu500/react-sortable-tree': ^4.1.3
+      react: '>=17.0.2'
+      react-dom: '>=17.0.2'
 
   '@nx/nx-darwin-arm64@23.0.1':
     resolution: {integrity: sha512-gQJvgPnbI91DBe23Th2CqD9R/S54cPS3C1f0DhyQ8YEf9rR7EEc+sVGjhgVxlhfOk2W7I1Gy6EkXwpN4aDoW4w==}
@@ -7619,16 +7632,10 @@ packages:
   '@types/react-select@1.3.6':
     resolution: {integrity: sha512-uUQAYTg5uib77FwRj4KQqOwZX+sr1wrKxXlokAkoPsTq7IrBAW+McsnGyZcq4vqmwmlnRIFyChHQUq76M7Mvcg==}
 
-  '@types/react-sortable-tree@0.3.23':
-    resolution: {integrity: sha512-dPyt47T3LiffOsoO3wNUQYIv0eLKvZLJymOv4aApejgVIGYaLy1ifhm23i8NJqxEO99ZF1tqTjzjnHmH6Egw/A==}
-
   '@types/react-transition-group@4.4.12':
     resolution: {integrity: sha512-8TV6R3h2j7a91c+1DXdJi3Syo69zzIZbz7Lg5tORM5LEJG7X/E6a1V3drRyBRZq7/utz7A+c4OgYLiLcYGHG6w==}
     peerDependencies:
       '@types/react': '16'
-
-  '@types/react-virtualized@9.22.3':
-    resolution: {integrity: sha512-UKRWeBIrECaKhE4O//TSFhlgwntMwyiEIOA7WZoVkr52Jahv0dH6YIOorqc358N2V3oKFclsq5XxPmx2PiYB5A==}
 
   '@types/react@16.14.69':
     resolution: {integrity: sha512-NdnAamzkxLX9LBssSdt9Q0tQ3LR94hYxotI4/sRUs1vHKFXaDx9xDbK8S4wuw5bwrxiiXbTYyhKeITtFnwDvEA==}
@@ -8476,10 +8483,6 @@ packages:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
 
-  clsx@1.2.1:
-    resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
-    engines: {node: '>=6'}
-
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -8923,9 +8926,6 @@ packages:
   dir-compare@3.3.0:
     resolution: {integrity: sha512-J7/et3WlGUCxjdnD3HAAzQ6nsnc0WL6DD7WcwJb7c39iH1+AWfg+9OqzJNaI6PkBwBvm1mhZNL9iY/nRiZXlPg==}
 
-  disposables@1.0.2:
-    resolution: {integrity: sha512-q1XTvs/XGdfubRSemB2+QRhJjIX4PerKkSom+i8Nkw3hCv6xISNrgaN442n2BunyBI4x77Om4ZAzSlqmhM9pwA==}
-
   dmg-builder@24.13.3:
     resolution: {integrity: sha512-rcJUkMfnJpfCboZoOOPf4L29TRtEieHNOeAbYPWPxlaBw/Z1RKrRA86dOI9rwaI4tQSc/RD82zTNHprfUHXsoQ==}
 
@@ -8935,14 +8935,8 @@ packages:
     os: [darwin]
     hasBin: true
 
-  dnd-core@11.1.3:
-    resolution: {integrity: sha512-QugF55dNW+h+vzxVJ/LSJeTeUw9MCJ2cllhmVThVPEtF16ooBkxj0WBE5RB+AceFxMFo1rO6bJKXtqKl+JNnyA==}
-
   dnd-core@14.0.1:
     resolution: {integrity: sha512-+PVS2VPTgKFPYWo3vAFEA8WPbTf7/xo43TifH9G8S1KqnrQu0o77A3unrF5yOugy4mIz7K5wAVFHUcha7wsz6A==}
-
-  dnd-core@2.6.0:
-    resolution: {integrity: sha512-5BfQHIp0XVd4ioF0q4GyUeHQQNCbqP+0SnUiP9TssoQ50wrP1NgSzDqZkjD5pFngsVz9txGin6rvTQD7w0qC3w==}
 
   dnd-core@9.5.1:
     resolution: {integrity: sha512-/yEWFF2jg51yyB8uA2UbvBr9Qis0Oo/4p9cqHLEKZdxzHHVSPfq0a/ool8NG6dIS6Q4uN+oKGObY0rNWiopJDA==}
@@ -9498,11 +9492,6 @@ packages:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
     engines: {node: '>= 0.6'}
 
-  frontend-collective-react-dnd-scrollzone@1.0.2:
-    resolution: {integrity: sha512-me/D9PZJq9j/sjEjs/OPmm6V6nbaHbhgeQiwrWu0t35lhwAOKWc+QBzzKKcZQeboYTkgE8UvCD9el+5ANp+g5Q==}
-    peerDependencies:
-      react-dnd: ^7.3.0
-
   fs-constants@1.0.0:
     resolution: {integrity: sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow==}
 
@@ -9697,12 +9686,6 @@ packages:
 
   heap@0.2.7:
     resolution: {integrity: sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==}
-
-  hoist-non-react-statics@1.2.0:
-    resolution: {integrity: sha512-r8huvKK+m+VraiRipdZYc+U4XW43j6OFG/oIafe7GfDbRpCduRoX9JI/DRxqgtBSCeL+et6N6ibZoedHS2NyOQ==}
-
-  hoist-non-react-statics@2.5.5:
-    resolution: {integrity: sha512-rqcy4pJo55FTTLWt+bU8ukscqHeE/e9KWvsOW2b/a3afxQZhwkQdT1rPPCJ0rYXdj4vNcasY8zHTH+jF/qStxw==}
 
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
@@ -11331,9 +11314,6 @@ packages:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
 
-  raf@3.4.1:
-    resolution: {integrity: sha512-Sq4CW4QhwOHE8ucn6J34MqtZCeWFP2aQSmrlroYgqAV1PjStIhJXxYuTgUIfkEk7zTLjmIjLmU5q+fbD1NnOJA==}
-
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
     engines: {node: '>= 0.6'}
@@ -11379,26 +11359,8 @@ packages:
       react: ^16.9.0 || ^17
       react-dom: ^16.9.0 || ^17
 
-  react-display-name@0.2.5:
-    resolution: {integrity: sha512-I+vcaK9t4+kypiSgaiVWAipqHRXYmZIuAiS8vzFvXHHXVigg/sMKwlRgLy6LH2i3rmP+0Vzfl5lFsFRwF1r3pg==}
-
-  react-dnd-html5-backend@11.1.3:
-    resolution: {integrity: sha512-/1FjNlJbW/ivkUxlxQd7o3trA5DE33QiRZgxent3zKme8DwF4Nbw3OFVhTRFGaYhHFNL1rZt6Rdj1D78BjnNLw==}
-
   react-dnd-html5-backend@14.1.0:
     resolution: {integrity: sha512-6ONeqEC3XKVf4eVmMTe0oPds+c5B9Foyj8p/ZKLb7kL2qh9COYxiBHv3szd6gztqi/efkmriywLUVlPotqoJyw==}
-
-  react-dnd-html5-backend@2.5.4:
-    resolution: {integrity: sha512-jDqAkm/hI8Tl4HcsbhkBgB6HgpJR1e+ML1SbfxaegXYiuMxEVQm0FOwEH5WxUoo6fmIG4N+H0rSm59POuZOCaA==}
-
-  react-dnd-scrollzone@4.0.0:
-    resolution: {integrity: sha512-yu9Z/K/7Fy4MtlGYp5eoaZY+Zz+wOccWdC98IeiMvkgoEP+YsC6UCjjMoZMJdeqpi8f1j3agPb4D5uB1OCwuKg==}
-
-  react-dnd@11.1.3:
-    resolution: {integrity: sha512-8rtzzT8iwHgdSC89VktwhqdKKtfXaAyC4wiqp0SywpHG12TTLvfOoL6xNEIUWXwIEWu+CFfDn4GZJyynCEuHIQ==}
-    peerDependencies:
-      react: '>= 16.9.0'
-      react-dom: '>= 16.9.0'
 
   react-dnd@14.0.5:
     resolution: {integrity: sha512-9i1jSgbyVw0ELlEVt/NkCUkxy1hmhJOkePoCH713u75vzHGyXhPDm28oLfc2NMSBjZRM1Y+wRjHXJT3sPrTy+A==}
@@ -11414,11 +11376,6 @@ packages:
         optional: true
       '@types/react':
         optional: true
-
-  react-dnd@2.5.4:
-    resolution: {integrity: sha512-y9YmnusURc+3KPgvhYKvZ9oCucj51MSZWODyaeV0KFU0cquzA7dCD1g/OIYUKtNoZ+MXtacDngkdud2TklMSjw==}
-    peerDependencies:
-      react: '*'
 
   react-dom@16.14.0:
     resolution: {integrity: sha512-1gCeQXDLoIqMgqD3IO2Ah9bnf0w9kzhwN5q4FGnHZ67hBm9yePzB5JJAIQCc8x3pFnNlwFq4RidZggNAAkzWWw==}
@@ -11520,20 +11477,6 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  react-sortable-tree-theme-file-explorer@2.0.0:
-    resolution: {integrity: sha512-44U3pl56Ucy5Zv1xOEKshFHJU085cO1XZ3w9j2fA/ga15aQ6PzlaNdNfFIeyrhb9J8aem7SvCLiCBNEzhkF0Uw==}
-    peerDependencies:
-      react: ^15.3.0 || ^16.0.0
-      react-dom: ^15.3.0 || ^16.0.0
-      react-sortable-tree: ^2.2.0
-
-  react-sortable-tree@2.8.0:
-    resolution: {integrity: sha512-gTjwxRNt7z0FC76KeNTnGqx1qUSlV3N78mMPRushBpSUXzZYhiFNsWHUIruyPnaAbw4SA7LgpItV7VieAuwDpw==}
-    peerDependencies:
-      react: ^16.3.0
-      react-dnd: ^7.3.0
-      react-dom: ^16.3.0
-
   react-transition-group@2.9.0:
     resolution: {integrity: sha512-+HzNTCHpeQyl4MJ/bdE0u6XRMe9+XG/+aL4mCxVN4DnPBQ0/5bfHWPDuOZUzYdMj94daZaZdCCc1Dzt9R/xSSg==}
     peerDependencies:
@@ -11546,11 +11489,11 @@ packages:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
 
-  react-virtualized@9.22.6:
-    resolution: {integrity: sha512-U5j7KuUQt3AaMatlMJ0UJddqSiX+Km0YJxSqbAzIiGw5EmNz0khMyqP2hzgu4+QUtm+QPIrxzUX4raJxmVJnHg==}
+  react-virtuoso@4.18.11:
+    resolution: {integrity: sha512-Qeeq9vqa5seCxACvzbQTUeq3s2/Bu+VlwOMF0jfy3E/ZKHLiXWwJpXBhv2rckqYkvm1XRVFLCBMCmqCU8JNEJg==}
     peerDependencies:
-      react: ^16.3.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^16.3.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react: '>=16 || >=17 || >= 18 || >= 19'
+      react-dom: '>=16 || >=17 || >= 18 || >=19'
 
   react@16.14.0:
     resolution: {integrity: sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==}
@@ -14246,6 +14189,36 @@ snapshots:
       string-template: 1.0.0
       typed-emitter: 1.4.0
 
+  '@nosferatu500/react-dnd-scrollzone@2.0.10(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)':
+    dependencies:
+      hoist-non-react-statics: 3.3.2
+      lodash.throttle: 4.1.1
+      react: 16.14.0
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
+      react-dom: 16.14.0(react@16.14.0)
+
+  '@nosferatu500/react-sortable-tree@4.4.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)':
+    dependencies:
+      '@nosferatu500/react-dnd-scrollzone': 2.0.10(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
+      lodash.isequal: 4.5.0
+      react: 16.14.0
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
+      react-dnd-html5-backend: 14.1.0
+      react-dom: 16.14.0(react@16.14.0)
+      react-virtuoso: 4.18.11(react-dom@16.14.0)(react@16.14.0)
+
+  '@nosferatu500/theme-file-explorer@3.0.21(@nosferatu500/react-sortable-tree@4.4.0)(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react-dom@16.14.0)(react@16.14.0)':
+    dependencies:
+      '@nosferatu500/react-sortable-tree': 4.4.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
+      prop-types: 15.8.1
+      react: 16.14.0
+      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
+      react-dom: 16.14.0(react@16.14.0)
+    transitivePeerDependencies:
+      - '@types/hoist-non-react-statics'
+      - '@types/node'
+      - '@types/react'
+
   '@nx/nx-darwin-arm64@23.0.1':
     optional: true
 
@@ -15384,22 +15357,8 @@ snapshots:
     dependencies:
       '@types/react': 16.14.69
 
-  '@types/react-sortable-tree@0.3.23(react-dom@16.14.0)(react@16.14.0)':
-    dependencies:
-      '@types/react': 16.14.69
-      '@types/react-virtualized': 9.22.3
-      react-dnd: 11.1.3(@types/react@16.14.69)(react-dom@16.14.0)(react@16.14.0)
-    transitivePeerDependencies:
-      - react
-      - react-dom
-
   '@types/react-transition-group@4.4.12(@types/react@16.14.69)':
     dependencies:
-      '@types/react': 16.14.69
-
-  '@types/react-virtualized@9.22.3':
-    dependencies:
-      '@types/prop-types': 15.7.15
       '@types/react': 16.14.69
 
   '@types/react@16.14.69':
@@ -16409,8 +16368,6 @@ snapshots:
 
   clone@1.0.4: {}
 
-  clsx@1.2.1: {}
-
   clsx@2.1.1: {}
 
   code-point-at@1.1.0: {}
@@ -16878,8 +16835,6 @@ snapshots:
       buffer-equal: 1.0.1
       minimatch: 3.1.5
 
-  disposables@1.0.2: {}
-
   dmg-builder@24.13.3(electron-builder-squirrel-windows@24.13.3):
     dependencies:
       app-builder-lib: 24.13.3(dmg-builder@24.13.3)(electron-builder-squirrel-windows@24.13.3)
@@ -16906,24 +16861,11 @@ snapshots:
       verror: 1.10.1
     optional: true
 
-  dnd-core@11.1.3:
-    dependencies:
-      '@react-dnd/asap': 4.0.1
-      '@react-dnd/invariant': 2.0.0
-      redux: 4.2.1
-
   dnd-core@14.0.1:
     dependencies:
       '@react-dnd/asap': 4.0.1
       '@react-dnd/invariant': 2.0.0
       redux: 4.2.1
-
-  dnd-core@2.6.0:
-    dependencies:
-      asap: 2.0.6
-      invariant: 2.2.4
-      lodash: 4.17.23
-      redux: 3.7.2
 
   dnd-core@9.5.1:
     dependencies:
@@ -17654,17 +17596,6 @@ snapshots:
 
   fresh@0.5.2: {}
 
-  frontend-collective-react-dnd-scrollzone@1.0.2(react-dnd@14.0.5):
-    dependencies:
-      hoist-non-react-statics: 3.3.2
-      lodash.throttle: 4.1.1
-      prop-types: 15.8.1
-      raf: 3.4.1
-      react: 16.14.0
-      react-display-name: 0.2.5
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
-      react-dom: 16.14.0(react@16.14.0)
-
   fs-constants@1.0.0: {}
 
   fs-extra@10.1.0:
@@ -17890,10 +17821,6 @@ snapshots:
       function-bind: 1.1.2
 
   heap@0.2.7: {}
-
-  hoist-non-react-statics@1.2.0: {}
-
-  hoist-non-react-statics@2.5.5: {}
 
   hoist-non-react-statics@3.3.2:
     dependencies:
@@ -19428,10 +19355,6 @@ snapshots:
 
   quick-lru@5.1.1: {}
 
-  raf@3.4.1:
-    dependencies:
-      performance-now: 2.1.0
-
   range-parser@1.2.1: {}
 
   raw-body@2.5.3:
@@ -19499,38 +19422,9 @@ snapshots:
       react-onclickoutside: 6.13.2(react-dom@16.14.0)(react@16.14.0)
       react-popper: 1.3.11(react@16.14.0)
 
-  react-display-name@0.2.5: {}
-
-  react-dnd-html5-backend@11.1.3:
-    dependencies:
-      dnd-core: 11.1.3
-
   react-dnd-html5-backend@14.1.0:
     dependencies:
       dnd-core: 14.0.1
-
-  react-dnd-html5-backend@2.5.4:
-    dependencies:
-      lodash: 4.17.23
-
-  react-dnd-scrollzone@4.0.0:
-    dependencies:
-      hoist-non-react-statics: 1.2.0
-      lodash.throttle: 4.1.1
-      prop-types: 15.8.1
-      raf: 3.4.1
-      react-display-name: 0.2.5
-
-  react-dnd@11.1.3(@types/react@16.14.69)(react-dom@16.14.0)(react@16.14.0):
-    dependencies:
-      '@react-dnd/shallowequal': 2.0.0
-      '@types/hoist-non-react-statics': 3.3.7(@types/react@16.14.69)
-      dnd-core: 11.1.3
-      hoist-non-react-statics: 3.3.2
-      react: 16.14.0
-      react-dom: 16.14.0(react@16.14.0)
-    transitivePeerDependencies:
-      - '@types/react'
 
   react-dnd@14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0):
     dependencies:
@@ -19544,16 +19438,6 @@ snapshots:
       '@types/hoist-non-react-statics': 3.3.7(@types/react@16.14.69)
       '@types/node': 24.12.2
       '@types/react': 16.14.69
-
-  react-dnd@2.5.4(react@16.14.0):
-    dependencies:
-      disposables: 1.0.2
-      dnd-core: 2.6.0
-      hoist-non-react-statics: 2.5.5
-      invariant: 2.2.4
-      lodash: 4.17.23
-      prop-types: 15.8.1
-      react: 16.14.0
 
   react-dom@16.14.0(react@16.14.0):
     dependencies:
@@ -19685,30 +19569,6 @@ snapshots:
       react-dom: 16.14.0(react@16.14.0)
       react-transition-group: 4.4.5(react-dom@16.14.0)(react@16.14.0)
 
-  react-sortable-tree-theme-file-explorer@2.0.0(react-dom@16.14.0)(react-sortable-tree@2.8.0)(react@16.14.0):
-    dependencies:
-      lodash.isequal: 4.5.0
-      prop-types: 15.8.1
-      react: 16.14.0
-      react-dnd: 2.5.4(react@16.14.0)
-      react-dnd-html5-backend: 2.5.4
-      react-dnd-scrollzone: 4.0.0
-      react-dom: 16.14.0(react@16.14.0)
-      react-sortable-tree: 2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0)
-      react-virtualized: 9.22.6(react-dom@16.14.0)(react@16.14.0)
-
-  react-sortable-tree@2.8.0(react-dnd@14.0.5)(react-dom@16.14.0)(react@16.14.0):
-    dependencies:
-      frontend-collective-react-dnd-scrollzone: 1.0.2(react-dnd@14.0.5)
-      lodash.isequal: 4.5.0
-      prop-types: 15.8.1
-      react: 16.14.0
-      react-dnd: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@16.14.69)(react@16.14.0)
-      react-dnd-html5-backend: 11.1.3
-      react-dom: 16.14.0(react@16.14.0)
-      react-lifecycles-compat: 3.0.4
-      react-virtualized: 9.22.6(react-dom@16.14.0)(react@16.14.0)
-
   react-transition-group@2.9.0(react-dom@16.14.0)(react@16.14.0):
     dependencies:
       dom-helpers: 3.4.0
@@ -19727,16 +19587,10 @@ snapshots:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
 
-  react-virtualized@9.22.6(react-dom@16.14.0)(react@16.14.0):
+  react-virtuoso@4.18.11(react-dom@16.14.0)(react@16.14.0):
     dependencies:
-      '@babel/runtime': 7.29.2
-      clsx: 1.2.1
-      dom-helpers: 5.2.1
-      loose-envify: 1.4.0
-      prop-types: 15.8.1
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
-      react-lifecycles-compat: 3.0.4
 
   react@16.14.0:
     dependencies:

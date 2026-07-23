@@ -33,6 +33,8 @@ catalog:
   "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
   "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#ac96897d5ea4eb1288dae4ed43a01ce9cdc075c0
+  "@nosferatu500/react-sortable-tree": 4.4.0
+  "@nosferatu500/theme-file-explorer": 3.0.21
   "@opentelemetry/api": 1.9.1
   "@opentelemetry/context-async-hooks": 2.8.0
   "@opentelemetry/context-zone": 2.8.0
@@ -84,7 +86,6 @@ catalog:
   "@types/react-redux": 7.1.34
   "@types/react-router": 2.0.61
   "@types/react-select": 1.3.6
-  "@types/react-sortable-tree": 0.3.23
   "@types/react-transition-group": 4.4.12
   "@types/redux": 3.6.0
   "@types/redux-devtools-log-monitor": 1.0.35
@@ -216,8 +217,6 @@ catalog:
   react-overlays: 1.2.0
   react-redux: 7.2.9
   react-select: 1.3.0
-  react-sortable-tree: 2.8.0
-  react-sortable-tree-theme-file-explorer: 2.0.0
   recharts: ^2.15.4
   redux: 4.2.1
   redux-act: 1.8.0
@@ -293,6 +292,15 @@ peerDependencyRules:
     # react-select's own dependency react-input-autosize@2.2.2 also caps at ^16
     # (react peer only, no react-dom peer)
     "react-input-autosize>react": "17"
+    "@nosferatu500/react-sortable-tree>react-dnd": "14"
+    "@nosferatu500/react-dnd-scrollzone>react-dnd": "14"
+    # temporary until the core React 17 bump (Task 4) — fork peers want >=17:
+    "@nosferatu500/react-sortable-tree>react": ">=16.14.0"
+    "@nosferatu500/react-sortable-tree>react-dom": ">=16.14.0"
+    "@nosferatu500/theme-file-explorer>react": ">=16.14.0"
+    "@nosferatu500/theme-file-explorer>react-dom": ">=16.14.0"
+    "@nosferatu500/react-dnd-scrollzone>react": ">=16.14.0"
+    "@nosferatu500/react-dnd-scrollzone>react-dom": ">=16.14.0"
 
 overrides:
   "@types/react": "16"
@@ -304,6 +312,10 @@ overrides:
   # react-sortable-tree's drag-and-drop context. Pin one version so a single
   # react-dnd instance is shared. Types-only, no runtime effect. See LAZ-731.
   "@types/node": 24.12.2
+  # @nosferatu500/react-sortable-tree pins react-dnd@14.0.4 exact as a regular
+  # dependency; force the host copy so a single react-dnd instance (and
+  # DndContext) is shared. Keep in sync with the react-dnd catalog entry.
+  react-dnd: 14.0.5
 
 allowBuilds:
   "@nexusmods/fomod-installer-native": true

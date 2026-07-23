@@ -334,6 +334,8 @@ function errorHandler(evt: any) {
   }
 
   if (error.stack.includes("react-sortable-tree")) {
+    // matches the @nosferatu500/react-sortable-tree fork too (the scoped package
+    // path still contains "react-sortable-tree").
     // bug in external library. I know where the bug is but fixing that causes a new problem and
     // i just don't want to pull that thread.
     // To elaborate: there is no logic in react-sortable-tree to stop users
