@@ -2,7 +2,7 @@ import React, { forwardRef, type HTMLAttributes, useCallback, useMemo, useState 
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { type IPageContext, type IPageState, PageContext } from "./Page.context";
+import { type IPageScrollContext, PageScrollContext } from "./Page.context";
 import { PageContent } from "./PageContent";
 
 export interface IPageProps extends HTMLAttributes<HTMLDivElement> {
@@ -51,9 +51,11 @@ export const Page = forwardRef<HTMLDivElement, IPageProps>(
     },
     ref,
   ) => {
-    const [pageState, setPageState] = useState<IPageState>({ scrolled: false, collapsed: false });
-
-    const pageContext = useMemo<IPageContext>(() => ({ ...pageState, setPageState }), [pageState]);
+    const [scrolled, setScrolled] = useState(false);
+    const scrollContext = useMemo<IPageScrollContext>(
+      () => ({ scrolled, setScrolled }),
+      [scrolled],
+    );
 
     const setRef = useCallback(
       (element: HTMLDivElement | null) => {
@@ -70,7 +72,7 @@ export const Page = forwardRef<HTMLDivElement, IPageProps>(
     );
 
     return (
-      <PageContext.Provider value={pageContext}>
+      <PageScrollContext.Provider value={scrollContext}>
         <div
           className={joinClasses([
             "my-0.5 mr-0.5 flex flex-1 flex-col transition-opacity",
@@ -90,7 +92,7 @@ export const Page = forwardRef<HTMLDivElement, IPageProps>(
             {children}
           </PageContent>
         </div>
-      </PageContext.Provider>
+      </PageScrollContext.Provider>
     );
   },
 );

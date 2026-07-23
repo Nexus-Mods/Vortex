@@ -1,18 +1,15 @@
 import { createContext, useContext } from "react";
 
-export interface IPageState {
+export interface IPageScrollContext {
   scrolled: boolean;
-  collapsed: boolean;
+  setScrolled: (scrolled: boolean) => void;
 }
 
-export interface IPageContext extends IPageState {
-  setPageState: (state: IPageState) => void;
-}
+export const PageScrollContext = createContext<IPageScrollContext | null>(null);
 
-export const PageContext = createContext<IPageContext>({
-  scrolled: false,
-  collapsed: false,
-  setPageState: () => {},
-});
-
-export const usePageContext = (): IPageContext => useContext(PageContext);
+/**
+ * Whether the page's `PageScroll` region has been scrolled away from the top.
+ * Returns false outside a `Page`. Use it in descendants of a `PageHeader` /
+ * `PageScroll` to drive scroll-linked transitions.
+ */
+export const usePageScrolled = (): boolean => useContext(PageScrollContext)?.scrolled ?? false;

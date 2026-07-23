@@ -11,6 +11,14 @@ export type ITabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   panelId: string;
 };
 
+/**
+ * Standard tab component, implemented as a button. Clicking it will reveal the
+ * content for the selected tab.
+ *
+ * `panelId` is the stable identity that matches this button to its `TabPanel` and
+ * keys the selection; keep it language-independent when the selection is persisted
+ * or deep-linked. `name` is the visible (translatable) label.
+ */
 export const TabButton = ({
   className,
   count,

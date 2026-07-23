@@ -1,17 +1,22 @@
 import React, { useCallback, useRef, type FC } from "react";
-import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setSettingsPage } from "../actions/session";
-import EmptyPlaceholder from "../controls/EmptyPlaceholder";
-import { useExtensionObjects } from "../ExtensionProvider";
-import type { IBaseProps } from "../extensions/settings_interface/SettingsInterface";
-import type { PropsCallbackTyped } from "../types/IExtensionContext";
-import type { IState } from "../types/IState";
-import makeReactive from "../util/makeReactive";
-import startupSettings from "../util/startupSettings";
-import MainPage from "./MainPage";
+import { setSettingsPage } from "@/actions/session";
+import EmptyPlaceholder from "@/controls/EmptyPlaceholder";
+import { useExtensionObjects } from "@/ExtensionProvider";
+import type { IBaseProps } from "@/extensions/settings_interface/SettingsInterface";
+import type { PropsCallbackTyped } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
+import { TabBar } from "@/ui/components/tabs/TabBar";
+import { TabButton } from "@/ui/components/tabs/TabButton";
+import { TabPanel } from "@/ui/components/tabs/TabPanel";
+import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import makeReactive from "@/util/makeReactive";
+import startupSettings from "@/util/startupSettings";
+import { Page } from "@/views/components/Page/Page";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
 interface ISettingsPage {
   title: string;
@@ -27,8 +32,6 @@ interface ICombinedSettingsPage {
   elements: ISettingsPage[];
 }
 
-type TabSelectHandler = React.ComponentProps<typeof Tabs>["onSelect"];
-
 const registerSettings = (
   _instanceGroup: undefined,
   title: string,
@@ -40,7 +43,7 @@ const registerSettings = (
   return { title, component, props, visible, priority: priority || 100 };
 };
 
-export const GameSettings: FC = () => {
+export const GameSettings: FC<{ active?: boolean; pageId?: string }> = ({ active, pageId }) => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 
@@ -55,15 +58,6 @@ export const GameSettings: FC = () => {
     startupSettingsRef.current[key] = value;
   }, []);
 
-  const setCurrentPage: TabSelectHandler = useCallback(
-    (eventKey) => {
-      if (typeof eventKey === "string") {
-        dispatch(setSettingsPage(eventKey));
-      }
-    },
-    [dispatch],
-  );
-
   const sortByPriority = (lhs: ICombinedSettingsPage, rhs: ICombinedSettingsPage) => {
     return lhs.priority - rhs.priority;
   };
@@ -71,17 +65,15 @@ export const GameSettings: FC = () => {
   const renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
     const props = page.props ? page.props() : {};
     return (
-      <Panel key={idx}>
-        <Panel.Body>
-          {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
+      <div key={idx}>
+        {idx !== 0 ? <hr className="my-6 border-stroke-weak" /> : null}
 
-          <page.component
-            {...props}
-            changeStartup={changeStartup}
-            startup={startupSettingsRef.current}
-          />
-        </Panel.Body>
-      </Panel>
+        <page.component
+          {...props}
+          changeStartup={changeStartup}
+          startup={startupSettingsRef.current}
+        />
+      </div>
     );
   };
 
@@ -89,28 +81,21 @@ export const GameSettings: FC = () => {
   const isPerGameSetting = (ele: ISettingsPage): boolean =>
     ele.visible !== undefined && ele.visible();
 
-  const renderTab = (page: ICombinedSettingsPage): JSX.Element => {
+  const renderTabPanel = (page: ICombinedSettingsPage): JSX.Element => {
     // Only show per-game settings (has visibility condition AND currently visible)
     const elements = page.elements
       .filter(isPerGameSetting)
       .sort((lhs, rhs) => lhs.priority - rhs.priority);
 
-    const content =
-      elements.length > 0 ? (
-        <div>{elements.map(renderTabElement)}</div>
-      ) : (
-        <EmptyPlaceholder
-          fill={true}
-          icon="settings"
-          subtext={t("This game has no specific settings in this category.")}
-          text={t("Nothing to configure.")}
-        />
-      );
-
-    return (
-      <Tab eventKey={page.title} key={page.title} title={t(page.title)}>
-        <div>{content}</div>
-      </Tab>
+    return elements.length > 0 ? (
+      <div>{elements.map(renderTabElement)}</div>
+    ) : (
+      <EmptyPlaceholder
+        fill={true}
+        icon="settings"
+        subtext={t("This game has no specific settings in this category.")}
+        text={t("Nothing to configure.")}
+      />
     );
   };
 
@@ -140,34 +125,53 @@ export const GameSettings: FC = () => {
   // Only show tabs that have at least one per-game setting for the current game
   const visibleTabs = tabsWithPerGameSettings(combined).sort(sortByPriority);
 
-  if (visibleTabs.length === 0) {
-    return (
-      <MainPage>
-        <MainPage.Body>
+  // The active tab is persisted by its untranslated title (shared with the Settings
+  // page), so that stays the tab identity (panelId); the label shown is translated.
+  const page =
+    visibleTabs.find((iter) => iter.title === settingsPage) !== undefined
+      ? settingsPage
+      : visibleTabs[0]?.title;
+
+  const setCurrentPage = useCallback(
+    (panelId: string) => {
+      dispatch(setSettingsPage(panelId));
+    },
+    [dispatch],
+  );
+
+  return (
+    <Page active={active} pageId={pageId} scrollable={false}>
+      <PageHeader
+        pictogramName="preferences"
+        subtitle={t("Settings specific to the game you are managing.")}
+        title={t("Preferences")}
+      />
+
+      <PageScroll className="space-y-6 p-6">
+        {visibleTabs.length === 0 ? (
           <EmptyPlaceholder
             fill={true}
             icon="settings"
             subtext={t("No game-specific settings available.")}
             text={t("Nothing to configure.")}
           />
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
+        ) : (
+          <TabProvider tab={page ?? ""} tabListId="game-settings" onSetSelectedTab={setCurrentPage}>
+            <TabBar>
+              {visibleTabs.map((tabPage) => (
+                <TabButton key={tabPage.title} name={t(tabPage.title)} panelId={tabPage.title} />
+              ))}
+            </TabBar>
 
-  const page =
-    visibleTabs.find((iter) => iter.title === settingsPage) !== undefined
-      ? settingsPage
-      : visibleTabs[0].title;
-
-  return (
-    <MainPage>
-      <MainPage.Body>
-        <Tabs activeKey={page} id="game-settings-tab" onSelect={setCurrentPage}>
-          {visibleTabs.map(renderTab)}
-        </Tabs>
-      </MainPage.Body>
-    </MainPage>
+            {visibleTabs.map((tabPage) => (
+              <TabPanel id={tabPage.title} key={tabPage.title}>
+                {renderTabPanel(tabPage)}
+              </TabPanel>
+            ))}
+          </TabProvider>
+        )}
+      </PageScroll>
+    </Page>
   );
 };
 

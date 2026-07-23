@@ -50,6 +50,11 @@ defaults when there's no local precedent.
   `eslint --fix` / `format`.
 - Prefer composition and small leaf components over large ones.
 - Self-closing tags for empty elements (lint-enforced).
+- **Omit props equal to their default.** Don't pass a prop whose value is the
+  component's default (e.g. `Button`/`Typography` `appearance="strong"`, `Typography`
+  `brand="neutral"`, `Pictogram` `size="md"`). Redundant assignments pin call sites to
+  today's default and block a future sweeping change from applying consistently. Set a
+  prop only when it differs from the default.
 
 ## Imports
 
