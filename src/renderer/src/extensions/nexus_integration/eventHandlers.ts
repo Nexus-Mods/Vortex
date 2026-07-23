@@ -66,7 +66,6 @@ import {
   ensureLoggedIn,
   graphErrorContext,
   handleGraphError,
-  nexusGamesProm,
   processErrorMessage,
   resolveGraphError,
   startDownload,
@@ -85,7 +84,6 @@ import {
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
-import { makeModUID } from "./util/UIDs";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -888,110 +886,56 @@ export function onGetModInfo(
 }
 
 /**
- * Fetches mod requirements (dependencies) from the Nexus Mods API.
- * Uses modsByUid to fetch mod data with nested modRequirements field.
- * Supports fetching multiple mods in a single API call for efficiency.
+ * Fetches mod requirements (dependencies) for the given mod UIDs. The result is
+ * keyed by UID, which keeps mods from different games distinct in one batch.
  *
- * @param api - The extension API
  * @param nexus - The Nexus API client
- * @returns A function that accepts gameId and modIds and returns a map of modId to requirements
- *
+ * @returns A function mapping mod UIDs to their requirements
  */
 export function onGetModRequirements(
-  api: IExtensionApi,
   nexus: Nexus,
-): (gameId: string, modIds: number[]) => Bluebird<{ [modId: number]: Partial<IModRequirements> }> {
-  return (gameId: string, modIds: number[]) => {
-    const state = api.getState();
-    const game = gameById(state, gameId);
-    const nexusGameDomain = nexusGameId(game, gameId) || gameId;
-
-    if (modIds.length === 0) {
+): (uids: string[]) => Bluebird<{ [uid: string]: Partial<IModRequirements> }> {
+  return (uids: string[]) => {
+    if (uids.length === 0) {
       return Bluebird.resolve({});
     }
 
     return Bluebird.resolve(
-      (async () => {
-        // makeModUID needs the nexus games list to map domain -> numeric game id.
-        // This should've been done on startup, but there appears to be
-        // a race condition https://github.com/Nexus-Mods/Vortex/issues/22466
-        await nexusGamesProm();
-
-        // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
-        // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
-        const validUids: string[] = [];
-
-        for (const modId of modIds) {
-          const modUid = makeModUID({
-            gameId,
-            modId: modId.toString(),
-            fileId: "0", // Not needed for mod UID but required by interface
-          });
-
-          if (modUid) {
-            validUids.push(modUid);
-          } else {
-            log("warn", "Failed to create mod UID for requirements lookup", {
-              gameId: nexusGameDomain,
-              modId,
-            });
-          }
-        }
-
-        if (validUids.length === 0) {
-          return [];
-        }
-
-        // Query must include modId to map results back to mods
-        return nexus.modsByUid(
-          {
-            modId: true,
-            modRequirements: getModRequirementsInfo(),
-            uid: true,
-          },
-          validUids,
-        );
-      })(),
+      nexus.modsByUid(
+        {
+          modRequirements: getModRequirementsInfo(),
+          uid: true,
+        },
+        uids,
+      ),
     )
       .then((mods) => {
-        const result: Record<number, Partial<IModRequirements>> = {};
+        const result: Record<string, Partial<IModRequirements>> = {};
         for (const mod of mods) {
-          if (mod.modId !== undefined) {
-            result[mod.modId] = mod.modRequirements || {
+          if (mod.uid !== undefined) {
+            result[mod.uid] = mod.modRequirements || {
               dlcRequirements: [],
               nexusRequirements: { nodes: [], nodesCount: 0, totalCount: 0 },
               modsRequiringThisMod: { nodes: [], nodesCount: 0, totalCount: 0 },
             };
           }
         }
-
-        const resultKeys = Object.keys(result);
-        log("debug", "onGetModRequirements result", {
-          resultKeys,
-          firstResultValue:
-            resultKeys.length > 0 ? JSON.stringify(result[parseInt(resultKeys[0], 10)]) : null,
+        log("debug", "fetched mod requirements", {
+          requested: uids.length,
+          resolved: Object.keys(result).length,
         });
-
         return result;
       })
       .catch((err) => {
-        const defaultDetails = {
-          gameId: nexusGameDomain,
-          modIds,
-        };
+        const details = { uidCount: uids.length };
         if (err instanceof RateLimitError) {
-          log("warn", "Rate limited when fetching mod requirements", {
-            ...defaultDetails,
-          });
+          log("warn", "Rate limited when fetching mod requirements", details);
         } else if (err instanceof TimeoutError) {
-          log("warn", "Timeout when fetching mod requirements", {
-            ...defaultDetails,
-          });
+          log("warn", "Timeout when fetching mod requirements", details);
         } else {
-          const detail = processErrorMessage(err as NexusError);
           log("warn", "Failed to get mod requirements", {
-            ...defaultDetails,
-            ...detail,
+            ...details,
+            ...processErrorMessage(err as NexusError),
             ...graphErrorContext(err),
           });
         }
