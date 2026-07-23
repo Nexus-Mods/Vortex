@@ -98,10 +98,9 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | react-markdown | 6.0.3 |
 | react-overlays | 1.2.0 |
 | react-redux | 7.2.9 |
-| react-resize-detector | 4.2.3 |
 | react-select | 1.3.0 |
 | react-sortable-tree | 2.8.0 |
-| recharts | 1.8.6 |
+| recharts | 2.15.4 |
 | redux | 4.2.1 |
 | redux-act | 1.8.0 |
 | redux-batched-actions | 0.5.0 |

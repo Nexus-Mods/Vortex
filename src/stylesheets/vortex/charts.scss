@@ -13,13 +13,10 @@
 }
 
 .download-chart .recharts-area {
-    // unfortunately stroke and area are two separate groups that
-    // are indistinguishable by class/id so we have to rely on their order
-    // here (which is an implementation detail)
-    :first-child {
+    .recharts-area-area {
         fill: url(#graph-gradient);
     }
-    :last-child {
+    .recharts-area-curve {
         stroke: $brand-clickable;
         stroke-width: 1.2px;
     }
