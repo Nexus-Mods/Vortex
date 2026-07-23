@@ -255,7 +255,14 @@ function toDownloadedFile(
     modUID: ref.modUID,
     modName,
     modSummary: modInfo.summary ?? details?.modSummary ?? undefined,
-    fileName: download.modInfo?.meta?.fileName ?? download.localPath ?? modName,
+    // fileInfo.name / logicalFileName are the friendly display name; meta.fileName and
+    // localPath are the raw archive name, shown only when no display name was stored.
+    fileName:
+      download.modInfo?.nexus?.fileInfo?.name ??
+      download.modInfo?.meta?.logicalFileName ??
+      download.modInfo?.meta?.fileName ??
+      download.localPath ??
+      modName,
     version: download.modInfo?.meta?.fileVersion ?? "",
     thumbnailUrl: modInfo.picture_url ?? details?.thumbnailUrl ?? undefined,
     adultContent: modInfo.contains_adult_content ?? details?.adultContent ?? false,
@@ -307,7 +314,9 @@ function toInstalledFile(
     fileUID,
     modUID,
     modName,
-    fileName: attributes.fileName ?? attributes.logicalFileName ?? modName,
+    // logicalFileName is the friendly display name; fileName is the raw archive name,
+    // used only as a fallback when no display name was stored.
+    fileName: attributes.logicalFileName ?? attributes.fileName ?? modName,
     version: attributes.version ?? "",
     thumbnailUrl: attributes.pictureUrl,
     adultContent,
