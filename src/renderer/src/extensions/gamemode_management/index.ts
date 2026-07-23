@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { mdiGamepadSquare } from "@mdi/js";
+import { mdiGamepadSquareOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
@@ -699,7 +699,7 @@ function init(context: IExtensionContext): boolean {
         nexusGames: nexusGames(),
       }),
       activity,
-      mdi: mdiGamepadSquare,
+      mdi: mdiGamepadSquareOutline,
     },
   );
   context.registerFooter("discovery-progress", ProgressFooter);

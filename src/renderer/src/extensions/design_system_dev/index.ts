@@ -3,7 +3,7 @@
  * Only registers when running in development mode
  */
 
-import { mdiPalette } from "@mdi/js";
+import { mdiPaletteOutline } from "@mdi/js";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
 
@@ -21,7 +21,7 @@ function init(context: IExtensionContext): boolean {
   context.registerMainPage("highlight-ui", "Design System", DesignSystemPage, {
     priority: 40,
     group: "global",
-    mdi: mdiPalette,
+    mdi: mdiPaletteOutline,
     newLayout: true,
   });
 
