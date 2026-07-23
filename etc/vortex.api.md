@@ -2315,6 +2315,8 @@ interface IExtension {
     // (undocumented)
     description: string;
     // (undocumented)
+    fileId?: number;
+    // (undocumented)
     id?: string;
     // (undocumented)
     issueTrackerURL?: string;
