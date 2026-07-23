@@ -60,7 +60,7 @@ module.exports = (env) => {
         entry: {
             renderer: enableHMR
                 ? [
-                      path.resolve(__dirname, "tools", "hmr-client.cjs"),
+                      path.resolve(__dirname, "src", "hmr-client.ts"),
                       path.resolve(__dirname, "src", "renderer.tsx"),
                   ]
                 : path.resolve(__dirname, "src", "renderer.tsx"),
