@@ -340,6 +340,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "catalog:",
+    "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",
@@ -379,6 +380,7 @@
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
     "openapi-typescript": "catalog:",
+    "react-refresh": "catalog:",
     "redux-freeze": "catalog:",
     "vitest-fetch-mock": "catalog:"
   }

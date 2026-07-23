@@ -122,10 +122,7 @@ const config = {
     // NOTE(erri120): can't use eval source maps due to CSP.
     // Use full source-map for accurate breakpoint support in VSCode.
     devtool: "source-map",
-    // the react-refresh runtime is not resolvable from the build directory at
-    // runtime, so it must be bundled rather than externalized
-    externals: [nodeExternals(hmr ? { allowlist: [/^react-refresh($|\/)/, /^@pmmmwh\//] } : {})],
-    ...(hmr ? { cache: { type: "filesystem" } } : {}),
+    externals: [nodeExternals()],
 };
 
 module.exports = config;

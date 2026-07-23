@@ -49,11 +49,9 @@
     "node": "catalog:"
   },
   "devDependencies": {
-    "@babel/core": "catalog:",
     "@eslint-react/eslint-plugin": "catalog:",
     "@eslint/js": "catalog:",
     "@microsoft/api-extractor": "catalog:",
-    "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@tailwindcss/cli": "catalog:",
     "@types/copyfiles": "catalog:",
@@ -63,7 +61,6 @@
     "@typescript-eslint/utils": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
-    "babel-loader": "catalog:",
     "cli-table3": "catalog:",
     "copyfiles": "catalog:",
     "cross-env": "catalog:",
@@ -82,7 +79,6 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "p-limit": "catalog:",
-    "react-refresh": "catalog:",
     "rimraf": "catalog:",
     "rolldown": "catalog:",
     "sass": "catalog:",
