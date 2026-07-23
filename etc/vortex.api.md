@@ -104,7 +104,7 @@ import { writeSync } from 'original-fs';
 // @public (undocumented)
 export class ActionContextMenu extends React_2.Component<ExportType> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ExportType_2" needs to be exported by the entry point api.d.ts
@@ -502,7 +502,7 @@ function buildCopyInstructions(files: readonly string[], opts: {
 // @public
 class Button_2 extends React_2.PureComponent<ButtonProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -977,7 +977,7 @@ const downloadsForGame: (state: IState, gameId: string) => {
 // Warning: (ae-forgotten-export) The symbol "IDraggableListProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function DraggableList(props: IDraggableListProps): JSX.Element;
+export function DraggableList(props: IDraggableListProps): React_2.JSX.Element;
 
 // Warning: (ae-forgotten-export) The symbol "IProps" needs to be exported by the entry point api.d.ts
 //
@@ -999,7 +999,7 @@ export class Dropdown extends React_2.Component<IProps, {
 // Warning: (ae-forgotten-export) The symbol "IProps_2" needs to be exported by the entry point api.d.ts
 //
 // @public
-export function DropdownButton(props: IProps_2): JSX.Element;
+export function DropdownButton(props: IProps_2): React_2.JSX.Element;
 
 // Warning: (ae-forgotten-export) The symbol "IBaseProps_5" needs to be exported by the entry point api.d.ts
 //
@@ -1123,11 +1123,11 @@ function fireNotificationAction(notiId: string, notiProcess: string, action: num
 // @public (undocumented)
 export class FlexLayout extends React_2.PureComponent<IProps_3, {}> {
     // (undocumented)
-    static Fixed: (props: React_2.HTMLAttributes<HTMLDivElement>) => JSX.Element;
+    static Fixed: (props: React_2.HTMLAttributes<HTMLDivElement>) => React_2.JSX.Element;
     // Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
-    static Flex: (props: IFlexProps & React_2.HTMLAttributes<HTMLDivElement>) => JSX.Element;
+    static Flex: (props: IFlexProps & React_2.HTMLAttributes<HTMLDivElement>) => React_2.JSX.Element;
     // (undocumented)
     render(): JSX.Element;
 }
@@ -1149,7 +1149,7 @@ const forgetMod: reduxAct.ComplexActionCreator2<string, string, {
 // @public (undocumented)
 export class FormCheckboxItem extends React_2.Component<IFormItemProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // Warning: (ae-forgotten-export) The symbol "IFormFeedbackProps" needs to be exported by the entry point api.d.ts
@@ -1182,7 +1182,7 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
 // @public (undocumented)
 export class FormTextItem extends React_2.Component<IFormItemProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 declare namespace fs {
@@ -1906,7 +1906,7 @@ export const Icon: FC<IIconProps>;
 // @public
 class Icon_2 extends React_2.Component<IconProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ExportType_4" needs to be exported by the entry point api.d.ts
@@ -1917,7 +1917,7 @@ export const IconBar: React_2.ComponentClass<ExportType_4>;
 // @public (undocumented)
 class IconButton extends React_2.Component<IconButtonProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -4572,7 +4572,7 @@ const lastActiveProfiles: (state: IState) => {
 };
 
 // @public (undocumented)
-function LazyComponent<T>(load: () => any): (props: any) => JSX.Element;
+function LazyComponent<T>(load: () => any): (props: any) => React_2.JSX.Element;
 
 // @public (undocumented)
 function lazyRequire<T>(delayed: () => T, exportId?: string): T;
@@ -4594,7 +4594,7 @@ type LoadOrder = ILoadOrderEntry_2[];
 // Warning: (ae-forgotten-export) The symbol "IProps_5" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function LoadOrderIndexInput(props: IProps_5): JSX.Element;
+export function LoadOrderIndexInput(props: IProps_5): React_3.JSX.Element;
 
 // @public
 function local<T>(id: string, init: T): T;
@@ -4771,7 +4771,7 @@ function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void
 // @public (undocumented)
 class NavItem_2 extends React_2.Component<NavItemProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -4897,7 +4897,7 @@ export class Overlay extends React_2.Component<IProps_6, {
 }> {
     constructor(props: any);
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -4925,7 +4925,7 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
     // (undocumented)
     componentDidMount(): void;
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -4967,7 +4967,7 @@ export class PortalMenu extends React_2.Component<IPortalMenuProps, {
     // (undocumented)
     static contextTypes: React_2.ValidationMap<any>;
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -5951,7 +5951,7 @@ type SortType = "ascending" | "descending";
 // Warning: (ae-forgotten-export) The symbol "ISpinnerProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function Spinner(props: ISpinnerProps): JSX.Element;
+export function Spinner(props: ISpinnerProps): React_2.JSX.Element;
 
 // @public (undocumented)
 const startActivity: ComplexActionCreator2<string, string, {
@@ -6154,7 +6154,7 @@ interface ThunkStore<S> extends Redux.Store<S> {
 // Warning: (ae-forgotten-export) The symbol "ITimerProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function Timer(props: ITimerProps): JSX.Element;
+export function Timer(props: ITimerProps): React_2.JSX.Element;
 
 // @public (undocumented)
 function toBlue<T, ArgsT extends any[]>(func: (...args: ArgsT) => Promise<T>): (...args: ArgsT) => Bluebird<T>;
@@ -6173,7 +6173,7 @@ export class Toggle extends React_2.PureComponent<IProps_10, {}> {
 // @public (undocumented)
 class ToggleButton extends React_2.Component<ToggleButtonProps, {}> {
     // (undocumented)
-    render(): JSX.Element;
+    render(): React_2.JSX.Element;
 }
 
 // @public (undocumented)
@@ -6190,7 +6190,7 @@ export class ToolbarIcon extends React_2.PureComponent<IToolbarIconProps, {}> {
 // Warning: (ae-forgotten-export) The symbol "IToolIconProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export const ToolIcon: (props: IToolIconProps) => JSX.Element;
+export const ToolIcon: (props: IToolIconProps) => React_2.JSX.Element;
 
 // @public
 type ToolParameterCB = (options: IRunParameters) => {
