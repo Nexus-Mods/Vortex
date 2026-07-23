@@ -97,7 +97,9 @@ function clearStartTimer(record: ILaunchRecord): void {
   }
 }
 
-function emitExited(api: IExtensionApi, record: ILaunchRecord): void {
+// reliable is true when the watched process was observed running and then stopped, so duration_ms
+// is the real session; false for a best-effort exit fired because the game process never appeared.
+function emitExited(api: IExtensionApi, record: ILaunchRecord, reliable: boolean): void {
   api.events.emit(
     "analytics-track-mixpanel-event",
     new AppGameExitedEvent({
@@ -106,6 +108,7 @@ function emitExited(api: IExtensionApi, record: ILaunchRecord): void {
       enabled_mod_count: record.enabledModCount,
       launch_session_id: record.sessionId,
       duration_ms: Date.now() - record.launchTime,
+      duration_reliable: reliable,
       exit_code: record.exitCode,
     }),
   );
@@ -146,7 +149,7 @@ export function emitExitsForStoppedTools(
     if (record.started && wasRunning && !isRunning) {
       clearStartTimer(record);
       pendingLaunches.delete(key);
-      emitExited(api, record);
+      emitExited(api, record, true);
     }
   }
 }
@@ -203,7 +206,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
     record.startTimer = setTimeout(() => {
       if (pendingLaunches.get(launchedExeId) === record && !record.started) {
         pendingLaunches.delete(launchedExeId);
-        emitExited(api, record);
+        emitExited(api, record, false);
       }
     }, GAME_START_TIMEOUT_MS);
   }

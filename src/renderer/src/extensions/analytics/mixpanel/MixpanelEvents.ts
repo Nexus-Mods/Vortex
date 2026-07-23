@@ -133,6 +133,10 @@ export interface GameExitedProps {
   enabled_mod_count: number;
   launch_session_id: string;
   duration_ms: number;
+  // True when duration_ms reflects the real session: the watched process was seen running and then
+  // stopped. False for a best-effort exit emitted because the game process never appeared (e.g. a
+  // failed or undetected script-extender / mod-loader handoff), so its duration_ms is not trusted.
+  duration_reliable: boolean;
   // Process exit code, when Vortex launched the process itself; null for store launches.
   exit_code: number | null;
 }
