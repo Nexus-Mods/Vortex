@@ -22,7 +22,7 @@
   "scripts": {
     "prepare": "husky",
     "preinstall": "node ./scripts/create-env-file.mjs",
-    "dev": "pnpm nx run dev",
+    "dev": "pnpm nx run @vortex/main:dev",
     "start": "pnpm nx run @vortex/main:start",
     "build": "pnpm nx run-many -t build lint typecheck && pnpm run assets",
     "assets": "node ./scripts/dependency-report.mjs",
@@ -41,25 +41,6 @@
     "e2e:debug": "pnpm nx run @vortex/e2e:e2e:debug",
     "e2e:report": "pnpm nx run @vortex/e2e:e2e:report",
     "generate:query-types": "pnpm tsx scripts/generate-query-types.ts"
-  },
-  "nx": {
-    "targets": {
-      "dev": {
-        "cache": false,
-        "continuous": true,
-        "executor": "nx:noop",
-        "dependsOn": [
-          {
-            "projects": "@vortex/stylesheets",
-            "target": "tailwind:watch"
-          },
-          {
-            "projects": "@vortex/renderer",
-            "target": "build:watch"
-          }
-        ]
-      }
-    }
   },
   "lint-staged": {
     "*": "pnpm exec oxfmt --no-error-on-unmatched-pattern"

@@ -22,7 +22,7 @@
           "{workspaceRoot}/src/main/build/splash.js.map"
         ]
       },
-      "build:watch": {
+      "watch": {
         "cache": false,
         "continuous": true,
         "dependsOn": [

@@ -26,6 +26,21 @@
   },
   "nx": {
     "targets": {
+      "dev": {
+        "cache": false,
+        "continuous": true,
+        "executor": "nx:noop",
+        "dependsOn": [
+          {
+            "projects": "@vortex/stylesheets",
+            "target": "tailwind:watch"
+          },
+          {
+            "projects": "@vortex/renderer",
+            "target": "watch"
+          }
+        ]
+      },
       "start": {
         "continuous": true,
         "cache": false,
