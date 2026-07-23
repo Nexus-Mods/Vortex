@@ -1,17 +1,7 @@
-import React, {
-  forwardRef,
-  type HTMLAttributes,
-  type UIEvent,
-  useCallback,
-  useContext,
-} from "react";
+import React, { forwardRef, type HTMLAttributes, type UIEvent, useCallback } from "react";
 
-import { PageScrollContext } from "./Page.context";
+import { usePageContext } from "./Page.context";
 import { PageContent } from "./PageContent";
-
-export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
-  isFullWidth?: boolean;
-};
 
 /**
  * Scrolling region for a non-scrolling `Page`. Fills the remaining space and
@@ -27,13 +17,31 @@ export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
  * Only use inside a `Page` with `scrollable={false}`; nesting it in a scrollable
  * `Page` stacks two scroll containers (double scrollbars).
  */
+
+const COLLAPSE_OVERFLOW_THRESHOLD = 64;
+
+export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
+  isFullWidth?: boolean;
+};
+
 export const PageScroll = forwardRef<HTMLDivElement, IPageScrollProps>(
   ({ children, className, isFullWidth = false, onScroll, ...rest }, ref) => {
-    const context = useContext(PageScrollContext);
+    const context = usePageContext();
 
     const handleScroll = useCallback(
       (event: UIEvent<HTMLDivElement>) => {
-        context?.setScrolled(event.currentTarget.scrollTop > 0);
+        const el = event.currentTarget;
+        const atTop = el.scrollTop <= 0;
+        const overflow = el.scrollHeight - el.clientHeight;
+        const scrolled = !atTop;
+        const collapsed = context.collapsed
+          ? !atTop
+          : !atTop && overflow > COLLAPSE_OVERFLOW_THRESHOLD;
+
+        if (scrolled !== context.scrolled || collapsed !== context.collapsed) {
+          context.setPageState({ scrolled, collapsed });
+        }
+
         onScroll?.(event);
       },
       [context, onScroll],
