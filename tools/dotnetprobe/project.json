@@ -12,7 +12,9 @@
       "inputs": [
         "{projectRoot}/dotnetprobe.csproj",
         "{projectRoot}/Program.cs",
-        { "runtime": "dotnet --version" }
+        "{projectRoot}/nuget.config",
+        { "runtime": "dotnet --version" },
+        { "runtime": "node -p process.platform" }
       ],
       "outputs": ["{projectRoot}/dist"]
     },
@@ -26,6 +28,7 @@
       "inputs": [
         "{projectRoot}/dotnetprobe.csproj",
         "{projectRoot}/Program.cs",
+        "{projectRoot}/nuget.config",
         { "runtime": "dotnet --version" }
       ],
       "outputs": ["{projectRoot}/temp/dotnetprobe.exe"]
