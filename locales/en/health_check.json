@@ -76,7 +76,6 @@
       "current_version": "Current version",
       "required_version": "Required version:",
       "enable_required": "Enable required version",
-      "view_in_loadout": "View in loadout",
       "view_in_mods": "View in Mods",
       "enable_this_version": "Enable this version",
       "install_uninstalled": "Install (downloaded)"

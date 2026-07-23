@@ -67,7 +67,7 @@ function LastUpdated() {
     return null;
   }
   return (
-    <Typography appearance="moderate" typographyType="body-sm">
+    <Typography appearance="subdued" brand="neutral-translucent" typographyType="body-sm">
       {t("listing::last_updated", { time })}
     </Typography>
   );

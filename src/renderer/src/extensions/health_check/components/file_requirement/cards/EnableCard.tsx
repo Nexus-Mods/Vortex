@@ -1,4 +1,4 @@
-import { mdiCheck } from "@mdi/js";
+import { mdiSwapHorizontal } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -44,13 +44,13 @@ export const EnableCard = ({
             size="sm"
             onClick={() => viewInLoadout(api, correctFile)}
           >
-            {t("detail::item::view_in_loadout")}
+            {t("detail::item::view_in_mods")}
           </Button>
 
           <Button
             appearance="strong"
             brand="neutral"
-            leftIconPath={mdiCheck}
+            leftIconPath={mdiSwapHorizontal}
             size="sm"
             onClick={() =>
               enabledFile

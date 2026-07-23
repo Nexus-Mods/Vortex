@@ -49,7 +49,7 @@ export const ToggleRows = ({
               size="sm"
               onClick={() => viewInLoadout(api, requirement.enabledFile)}
             >
-              {t("detail::item::view_in_loadout")}
+              {t("detail::item::view_in_mods")}
             </Button>
           }
           file={installedToFileData(requirement.enabledFile)}

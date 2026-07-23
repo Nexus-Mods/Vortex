@@ -47,7 +47,7 @@ export const ReplaceRows = ({
               size="sm"
               onClick={() => viewInLoadout(ctx.api, requirement.installedFile)}
             >
-              {t("detail::item::view_in_loadout")}
+              {t("detail::item::view_in_mods")}
             </Button>
           }
           file={installedToFileData(requirement.installedFile)}
