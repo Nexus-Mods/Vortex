@@ -372,7 +372,6 @@
     "@types/write-file-atomic": "catalog:",
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
-    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "cross-env": "catalog:",
     "electron": "catalog:",

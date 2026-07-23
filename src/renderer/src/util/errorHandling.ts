@@ -18,11 +18,11 @@ import { isTelemetryEnabled } from "../telemetry/selectors";
 import type { IErrorOptions, IExtensionApi, IState } from "../types/api";
 import type { IError } from "../types/IError";
 import { getApplication } from "./application";
-import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
 import { genHash } from "./genHash";
 import getVortexPath from "./getVortexPath";
 import { fallbackTFunc } from "./i18n";
+import { isContributed } from "./isContributed";
 import { log } from "./log";
 import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
@@ -206,6 +206,24 @@ async function showTerminateError(
 }
 
 /**
+ * Decides whether a terminating error may be reported. An explicit caller
+ * value wins; otherwise an error that opts out isn't reportable, and a crash
+ * from a first-party extension is reportable while a community one is not.
+ */
+export function resolveAllowReport(error: IError, allowReport?: boolean): boolean | undefined {
+  if (allowReport !== undefined) {
+    return allowReport;
+  }
+  if (error.allowReport === false) {
+    return false;
+  }
+  if (error.extension !== undefined) {
+    return !isContributed(error.extension);
+  }
+  return undefined;
+}
+
+/**
  * display an error message and quit the application
  * on confirmation.
  * Use this whenever the application state is unknown and thus
@@ -220,13 +238,7 @@ export function terminate(
   allowReport?: boolean,
   source?: string,
 ) {
-  if (allowReport === undefined && error.allowReport === false) {
-    allowReport = false;
-  }
-
-  if (allowReport === undefined && error.extension !== undefined) {
-    allowReport = error.extension === COMPANY_ID;
-  }
+  allowReport = resolveAllowReport(error, allowReport);
 
   log("error", "unrecoverable error", { error, process: process.type });
 

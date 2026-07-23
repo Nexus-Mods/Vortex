@@ -1,7 +1,7 @@
 import path from "path";
 
-import { COMPANY_ID } from "../../util/constants";
 import * as fs from "../../util/fs";
+import { isContributed } from "../../util/isContributed";
 import { log } from "../../util/log";
 import type { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from "./types/types";
 
@@ -37,7 +37,7 @@ export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
 
   gameSupport.push({
     ...gameEntry,
-    isContributed: gameExtInfo.author !== COMPANY_ID,
+    isContributed: isContributed(gameExtInfo.author),
   });
 }
 

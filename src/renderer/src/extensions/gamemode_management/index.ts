@@ -26,10 +26,10 @@ import type { IGameStore } from "../../types/IGameStore";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
-import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
+import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
@@ -740,10 +740,7 @@ function init(context: IExtensionContext): boolean {
             encoding: "utf8",
           }),
         );
-        game.contributed =
-          gameExtInfo.author === COMPANY_ID || gameExtInfo.author === NEXUSMODS_EXT_ID
-            ? undefined
-            : gameExtInfo.author;
+        game.contributed = isContributed(gameExtInfo.author) ? gameExtInfo.author : undefined;
         game.final = semver.gte(gameExtInfo.version, "1.0.0");
         game.version = gameExtInfo.version;
       } else {
