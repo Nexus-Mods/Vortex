@@ -41,6 +41,7 @@ export interface IExtension {
   bundled?: boolean;
   path?: string;
   modId?: number;
+  fileId?: number;
   issueTrackerURL?: string;
 }
 
@@ -53,9 +54,6 @@ export interface IExtensionDownloadInfo {
   name: string;
   modId?: number;
   fileId?: number;
-  github?: string;
-  githubRawPath?: string;
-  githubRelease?: string;
 }
 
 /**
@@ -90,8 +88,6 @@ export interface IExtensionManifest {
 
 export interface ISelector {
   modId: number;
-  github: string;
-  githubRawPath: string;
 }
 
 export interface IRegisteredExtension {

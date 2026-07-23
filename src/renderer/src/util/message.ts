@@ -219,15 +219,15 @@ export function showError(
             },
           };
 
+  const extModId = options.extension?.info?.modId ?? options.extensionRemote?.modId;
+
   let extIssueTrackerURL: string | undefined = undefined;
   if (options.extension?.info?.issueTrackerURL !== undefined) {
     extIssueTrackerURL = options.extension.info.issueTrackerURL;
-  } else if (options.extension?.info?.modId !== undefined) {
-    extIssueTrackerURL = nexusModsURL(["site", "mods", options.extension.info.modId.toString()], {
+  } else if (extModId !== undefined) {
+    extIssueTrackerURL = nexusModsURL(["site", "mods", extModId.toString()], {
       parameters: ["tab=bugs"],
     });
-  } else if (options.extensionRemote?.github !== undefined) {
-    extIssueTrackerURL = "https://github.com/" + options.extensionRemote?.github + "/issues";
   }
 
   if (
