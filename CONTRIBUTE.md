@@ -46,9 +46,6 @@ module replacement instead of the build/start cycle:
   changes still need a restart of `pnpm run dev`; the dynamic extensions in
   `extensions/` and `extensions/games/` still require an app relaunch.
 
-Extra CLI arguments are passed through to Electron
-(e.g. `pnpm run dev --inspect=9229`).
-
 ## Debugging
 
 ### VS Code
