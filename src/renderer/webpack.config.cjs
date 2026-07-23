@@ -1,9 +1,10 @@
-const webpack = require("webpack");
-const nodeExternals = require("webpack-node-externals");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const nodeExternals = require("webpack-node-externals");
 const path = require("node:path");
+const webpack = require("webpack");
 
 const mode = process.env.NODE_ENV === "production" ? "production" : "development";
 
@@ -16,7 +17,6 @@ const hmr = mode === "development" && process.env.VORTEX_HMR === "1";
 const plugins = [new ForkTsCheckerWebpackPlugin()];
 
 if (hmr) {
-    const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
     plugins.push(
         new webpack.HotModuleReplacementPlugin(),
         // overlay needs a dev-server socket; updates arrive via the poll
@@ -67,7 +67,7 @@ const refreshLoader = {
     options: {
         babelrc: false,
         configFile: false,
-        plugins: [require.resolve("react-refresh/babel")],
+        plugins: ["react-refresh/babel"],
     },
 };
 
