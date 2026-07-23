@@ -6,8 +6,9 @@ import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UID
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IProfile } from "@/extensions/profile_management/types/IProfile";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { renderModName } from "@/util/api";
 import { getSafe } from "@/util/storeHelper";
+
+import renderModName from "../../../mod_management/util/modName";
 
 /**
  * A file the user already has installed (a Vortex mod)
