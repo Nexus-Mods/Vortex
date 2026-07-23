@@ -305,6 +305,7 @@ allowBuilds:
   "@parcel/watcher": true
   bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59: true
   core-js: true
+  core-js-pure: false
   drivelist@https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd: true
   electron: true
   esbuild: true
