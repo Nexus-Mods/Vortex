@@ -246,17 +246,24 @@ function doFetchAvailableExtensions(
       return PromiseBB.resolve([]);
     })
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
-    .then((extensions: IAvailableExtension[]) => {
-      const filtered = extensions.filter(
-        (ext) => ext.modId !== undefined && ext.fileId !== undefined,
-      );
-      const dropped = extensions.length - filtered.length;
-      if (dropped > 0) {
-        log("debug", "dropped extensions without modId/fileId", { dropped });
-      }
-      return filtered;
-    })
+    .then((extensions: IAvailableExtension[]) => filterInstallableExtensions(extensions))
     .then((extensions) => ({ time, extensions }));
+}
+
+/**
+ * Only extensions with both a modId and a fileId can be installed/updated: identity is
+ * keyed on modId, with fileId identifying the specific version. Entries missing either
+ * (e.g. legacy GitHub-hosted extensions) are dropped from the manifest client-side.
+ */
+export function filterInstallableExtensions(
+  extensions: IAvailableExtension[],
+): IAvailableExtension[] {
+  const filtered = extensions.filter((ext) => ext.modId !== undefined && ext.fileId !== undefined);
+  const dropped = extensions.length - filtered.length;
+  if (dropped > 0) {
+    log("debug", "dropped extensions without modId/fileId", { dropped });
+  }
+  return filtered;
 }
 
 export async function downloadAndInstallExtension(
