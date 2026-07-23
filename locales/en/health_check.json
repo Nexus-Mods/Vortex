@@ -2,6 +2,18 @@
   "actions": {
     "install_all": "1-click install all ({{count}})"
   },
+  "shared": {
+    "requires_files": "Requires {{ count }} additional mod file to be installed to work correctly:",
+    "requires_files_plural": "Requires {{ count }} additional mod files to be installed to work correctly:",
+    "requires_pick": "Requires {{ count }} additional mod file to be picked to work correctly:",
+    "requires_pick_plural": "Requires {{ count }} additional mod files to be picked to work correctly:",
+    "wrong_version_installed": "Requires installing a different version of this existing mod file to work correctly:",
+    "wrong_version_installed_plural": "Requires installing a different version of {{ count }} existing mod files to work correctly:",
+    "wrong_version_enabled": "Requires enabling a different version of this installed mod file to work correctly:",
+    "wrong_version_enabled_plural": "Requires enabling a different version of {{ count }} installed mod files to work correctly:",
+    "correct_version_uninstalled": "Requires installing this previously downloaded mod file to work correctly:",
+    "correct_version_uninstalled_plural": "Requires installing {{ count }} previously downloaded mod files to work correctly:"
+  },
   "listing": {
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
@@ -12,10 +24,6 @@
       "more_count": "+{{ count }} more",
       "missing_for": "Missing required mod for: {{modName}}",
       "missing_for_plural": "Missing required mods for: {{modName}}",
-      "requires_count": "Requires {{ count }} mod:",
-      "requires_count_plural": "Requires {{ count }} mods:",
-      "requires_pick": "Requires {{ count }} mod to be picked:",
-      "requires_pick_plural": "Requires {{ count }} mods to be picked:",
       "or_join": "or"
     },
     "no_results_active": {
@@ -58,24 +66,18 @@
       "confirm_install": "Confirm install",
       "missing_for": "Missing required mod for: <modLink>{{modName}}</modLink>",
       "missing_for_plural": "Missing required mods for: <modLink>{{modName}}</modLink>",
-      "requires_files": "Requires {{ count }} mod file to be installed to work correctly.",
-      "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
       "install_via_mod_page": "Install via mod page",
       "install_one_click": "1-click install",
       "downloading": "Downloading...",
       "installing": "Installing...",
       "pick_one": "Pick one of these",
       "install_required": "Install required",
-      "wrong_version_installed": "A different version of an installed file is required. Only one version can be enabled at a time.",
       "different_version_required": "Different version install required",
       "current_version": "Current version",
       "required_version": "Required version:",
-      "wrong_version_enabled": "The correct version is installed but a different version is enabled. Only one version can be enabled at a time.",
-      "enabled_version": "Currently enabled version:",
-      "view_in_loadout": "View in loadout",
+      "enable_required": "Enable required version",
       "view_in_mods": "View in Mods",
       "enable_this_version": "Enable this version",
-      "correct_version_downloaded": "The required version is downloaded but not installed.",
       "install_uninstalled": "Install (downloaded)"
     },
     "feedback_modal": {

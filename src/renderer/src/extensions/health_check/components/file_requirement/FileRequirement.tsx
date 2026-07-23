@@ -92,7 +92,7 @@ export function FileRequirement({
 
       <div
         className={joinClasses([
-          "flex items-center justify-between gap-x-2 bg-surface-mid px-4 py-3",
+          "flex items-center justify-between gap-x-12 bg-surface-mid px-4 py-3",
           showMod ? "rounded-b-sm" : "rounded-sm",
         ])}
       >
@@ -107,18 +107,23 @@ export function FileRequirement({
           {onOpenFile ? (
             <TypographyLink
               appearance="subdued"
-              className="truncate"
+              className="min-w-0"
+              customContent={<span className="truncate">{file.fileName}</span>}
               typographyType="inherit"
               variant="secondary"
               onClick={onOpenFile}
-            >
-              {file.fileName}
-            </TypographyLink>
+            />
           ) : (
             <div className="truncate">{file.fileName}</div>
           )}
 
-          <div className="shrink-0">{file.fileVersion}</div>
+          {!!file.fileVersion && (
+            <>
+              <Bullet />
+
+              <div className="shrink-0">{file.fileVersion}</div>
+            </>
+          )}
         </Typography>
 
         <div className="flex items-center gap-x-2">
@@ -133,10 +138,10 @@ export function FileRequirement({
               ) : (
                 <Pill iconPath={mdiCloseCircleOutline}>Disabled</Pill>
               )}
+
+              {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}
             </>
           )}
-
-          {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}
 
           {actions}
         </div>

@@ -7,18 +7,18 @@ export const severityStyleMap: Record<
   { backgroundClassName: string; iconPath: string; textClassName: string }
 > = {
   error: {
-    backgroundClassName: "bg-danger-strong",
+    backgroundClassName: "bg-danger-moderate",
     iconPath: mdiAlertOctagonOutline,
     textClassName: "text-danger-strong",
   },
   suggestion: {
     backgroundClassName: "bg-info-moderate",
     iconPath: mdiInformationOutline,
-    textClassName: "text-info-moderate",
+    textClassName: "text-info-strong",
   },
   warning: {
     backgroundClassName: "bg-warning-moderate",
     iconPath: mdiAlertOutline,
-    textClassName: "text-warning-moderate",
+    textClassName: "text-warning-strong",
   },
 };

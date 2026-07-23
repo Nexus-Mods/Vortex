@@ -9,6 +9,7 @@ import { viewInLoadout } from "@/extensions/health_check/utils/fileRequirements/
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import { CandidateCard } from "../cards/CandidateCard";
 import { FileRequirement } from "../FileRequirement";
@@ -42,10 +43,11 @@ export const ReplaceRows = ({
             <Button
               appearance="subdued"
               brand="neutral"
+              leftIconPath={nxmModOutline}
               size="sm"
               onClick={() => viewInLoadout(ctx.api, requirement.installedFile)}
             >
-              {t("detail::item::view_in_loadout")}
+              {t("detail::item::view_in_mods")}
             </Button>
           }
           file={installedToFileData(requirement.installedFile)}

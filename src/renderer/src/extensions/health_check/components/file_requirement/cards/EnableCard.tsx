@@ -14,6 +14,7 @@ import {
 import type { IInstalledFile } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import { FileRequirement } from "../FileRequirement";
 
@@ -39,10 +40,11 @@ export const EnableCard = ({
           <Button
             appearance="subdued"
             brand="neutral"
+            leftIconPath={nxmModOutline}
             size="sm"
             onClick={() => viewInLoadout(api, correctFile)}
           >
-            {t("detail::item::view_in_loadout")}
+            {t("detail::item::view_in_mods")}
           </Button>
 
           <Button

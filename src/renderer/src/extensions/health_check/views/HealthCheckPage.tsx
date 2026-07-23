@@ -6,7 +6,7 @@ import {
   mdiEyeOff,
   mdiRefresh,
 } from "@mdi/js";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -30,6 +30,7 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
 import {
@@ -49,6 +50,8 @@ interface IHealthCheckPageProps {
   api: IExtensionApi;
   onRefresh?: () => void;
   active?: boolean;
+  /** Registers a handler the Menu calls when Health check is clicked while already active. */
+  registerReset?: (cb: () => void) => void;
 }
 
 /**
@@ -64,7 +67,7 @@ function LastUpdated() {
     return null;
   }
   return (
-    <Typography appearance="moderate" typographyType="body-sm">
+    <Typography appearance="subdued" brand="neutral-translucent" typographyType="body-sm">
       {t("listing::last_updated", { time })}
     </Typography>
   );
@@ -85,11 +88,18 @@ function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstall
   return out;
 }
 
-function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
+function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
+
+  // Clicking the Health check menu item while already on the page returns to
+  // the listing (closes any open detail). setSelected is stable, so registering
+  // once on mount is enough.
+  useEffect(() => {
+    registerReset?.(() => setSelected(null));
+  }, [registerReset]);
 
   // Subscribe only to the slices the listing + install-all derive from, so the
   // frequent unrelated dispatches during a check run (mod-file and mod-attribute
@@ -194,9 +204,17 @@ function HealthCheckPage({ api, onRefresh, active }: IHealthCheckPageProps) {
   return (
     <Page active={active} id="health-check-page" scrollable={false}>
       <PageHeader
+        customTitle={
+          <div className="flex items-center gap-x-1.5">
+            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+              {t("listing::title")}
+            </Typography>
+
+            <BetaBadge />
+          </div>
+        }
         pictogramName="health-check"
         subtitle={t("listing::subtitle")}
-        title={t("listing::title")}
       >
         <div className="flex shrink-0 items-center gap-x-2">
           <LastUpdated />
