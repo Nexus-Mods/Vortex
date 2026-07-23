@@ -153,7 +153,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
     const restartNotification = needRestart ? (
       <div className="flex items-center gap-x-4 rounded-lg border border-info-weak bg-info-950 p-3">
-        <Typography appearance="strong" brand="neutral-translucent" className="grow">
+        <Typography brand="neutral-translucent" className="grow">
           {t("You need to restart Vortex to activate this change")}
         </Typography>
 
@@ -273,7 +273,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
               {startup.disableGPU === true ? (
                 <div className="rounded-lg border border-warning-weak bg-warning-950 p-3">
-                  <Typography appearance="strong" brand="neutral-translucent">
+                  <Typography brand="neutral-translucent">
                     {t(
                       "Disabling GPU acceleration will make the Vortex UI significantly less " +
                         "responsive in places.",

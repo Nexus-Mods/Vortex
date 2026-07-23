@@ -68,9 +68,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
     const border = brand === "warning" ? "border-warning-weak" : "border-info-weak";
     return (
       <div className={`rounded-lg border ${border} ${bg} p-3`}>
-        <Typography appearance="strong" brand="neutral-translucent">
-          {text}
-        </Typography>
+        <Typography brand="neutral-translucent">{text}</Typography>
       </div>
     );
   }

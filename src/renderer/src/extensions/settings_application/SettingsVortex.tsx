@@ -43,7 +43,7 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
     const restartNoti =
       multiUser === oldMultiUser ? null : (
         <div className="flex items-center gap-x-4 rounded-lg border border-info-weak bg-info-950 p-3">
-          <Typography appearance="strong" brand="neutral-translucent" className="grow">
+          <Typography brand="neutral-translucent" className="grow">
             {t("You need to restart Vortex to activate this change")}
           </Typography>
 
