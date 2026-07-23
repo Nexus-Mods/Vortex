@@ -177,9 +177,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       <form>
         <FormGroup controlId="languageSelect">
           <div className="flex flex-col items-start gap-y-2">
-            <Typography as="span" typographyType="body-md">
-              {t("Language")}
-            </Typography>
+            <Typography as="span">{t("Language")}</Typography>
 
             <Picker<string>
               options={this.languageOptions.map((option) => ({

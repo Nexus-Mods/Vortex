@@ -105,7 +105,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
                 )
               : null}
 
-            <Typography as="span" typographyType="body-md">
+            <Typography as="span">
               {t("Update")}
 
               <More id="more-update-channel" name={t("Update Channel")}>

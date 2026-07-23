@@ -57,7 +57,7 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
       <form>
         <FormGroup controlId="muMode">
           <div className="flex flex-col items-start gap-y-2">
-            <Typography as="span" typographyType="body-md">
+            <Typography as="span">
               {t("Multi-User Mode")}
 
               <More id="more-multi-user" name={t("Multi-User Mode")}>
