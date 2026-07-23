@@ -8,26 +8,15 @@ const webpack = require("webpack");
 
 module.exports = (env) => {
     const mode = process.env.NODE_ENV === "production" ? "production" : "development";
-    const enableHMR = mode === "development" && env.WEBPACK_WATCH === true;
+    const enableHMR = mode === "development" && env?.WEBPACK_WATCH === true;
 
     const plugins = [new ForkTsCheckerWebpackPlugin()];
 
     if (enableHMR) {
         plugins.push(
             new webpack.HotModuleReplacementPlugin(),
-            // overlay needs a dev-server socket; updates arrive via the poll
-            // client in tools/hmr-client.cjs instead
+            // overlay needs a dev-server socket; updates arrive via custom poll client instead
             new ReactRefreshWebpackPlugin({ overlay: false }),
-            {
-                // readiness/progress sentinel parsed by scripts/dev.mjs
-                apply: (compiler) => {
-                    compiler.hooks.done.tap("VortexHmrSignal", (stats) => {
-                        if (!stats.hasErrors()) {
-                            console.log(`[vortex-hmr] compiled ${stats.hash}`);
-                        }
-                    });
-                },
-            },
         );
     }
 

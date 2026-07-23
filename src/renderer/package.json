@@ -5,11 +5,11 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm webpack --config ./webpack.config.cjs",
-    "typecheck": "pnpm tsc -p tsconfig.json",
-    "lint": "pnpm eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm eslint --concurrency auto .",
-    "api": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json && pnpm api-extractor run --local",
+    "build": "pnpm exec webpack --config ./webpack.config.cjs",
+    "typecheck": "pnpm exec tsc -p tsconfig.json",
+    "lint": "pnpm exec eslint --quiet --concurrency auto .",
+    "lint:verbose": "pnpm exec eslint --concurrency auto .",
+    "api": "pnpm exec rimraf ./lib && pnpm exec tsc -p tsconfig.api.json && pnpm exec api-extractor run --local",
     "test": "pnpm exec vitest run"
   },
   "nx": {
@@ -21,6 +21,21 @@
           "{workspaceRoot}/src/main/build/splash.js",
           "{workspaceRoot}/src/main/build/splash.js.map"
         ]
+      },
+      "build:watch": {
+        "cache": false,
+        "continuous": true,
+        "dependsOn": [
+          "^build",
+          {
+            "projects": "@vortex/main",
+            "target": "build"
+          }
+        ],
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm -F @vortex/renderer exec node ./dev.mjs"
+        }
       },
       "api": {
         "dependsOn": [
