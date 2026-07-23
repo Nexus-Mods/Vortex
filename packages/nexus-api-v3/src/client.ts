@@ -121,7 +121,7 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       meta: components["schemas"]["PaginationMeta"];
     }> {
       const { data, error, response } = await client.POST(
-        "/mod-file-versions/dependencies/materialized/batch",
+        "/mod-file-versions/dependencies/ranges/materialized/batch",
         { body: { version_ids: [...versionIds], page, page_size: pageSize } },
       );
       if (error) throw toV3Error(error, response);
