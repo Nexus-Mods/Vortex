@@ -2,6 +2,10 @@
   "actions": {
     "install_all": "1-click install all ({{count}})"
   },
+  "divider": {
+    "and": "And",
+    "or": "Or"
+  },
   "shared": {
     "requires_files": "Requires {{ count }} additional mod file to be installed to work correctly:",
     "requires_files_plural": "Requires {{ count }} additional mod files to be installed to work correctly:",
@@ -33,6 +37,7 @@
     "no_results_hidden": {
       "title": "No hidden items"
     },
+    "external_mod_install": "External mod install",
     "install_one_click": "1-click install ({{count}})",
     "install_uninstalled": "Install (downloaded)",
     "pick_mod_install": "Pick mod install",
@@ -62,6 +67,7 @@
       "author_note": "Author note: {{note}}",
       "mod_page_source_note": "This requirement was identified from the mod page rather than the file-level requirement system, so it may not be required for your specific configuration. <modLink>View the mod page to get full details</modLink>.",
       "open_external_mod_page": "Open external mod page",
+      "external_hosted_note": "This mod is hosted outside Nexus Mods. Check the description before installing.",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
       "confirm_install": "Confirm install",
       "missing_for": "Missing required mod for: <modLink>{{modName}}</modLink>",

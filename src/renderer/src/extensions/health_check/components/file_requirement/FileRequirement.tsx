@@ -15,21 +15,24 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IFileRequirementData } from "../../utils/fileRequirements/cardHelpers";
+import { Divider } from "../divider/Divider";
 
 interface IFileRequirementProps {
   actions?: ReactNode;
   file: IFileRequirementData;
+  fileIconPath?: string;
+  hideImage?: boolean;
   isOr?: boolean;
   showMod?: boolean;
-  /** Open the mod page (web). When set, the thumbnail and mod name become links. */
   onOpenMod?: () => void;
-  /** Open the file page (web). When set, the file name becomes a link. */
   onOpenFile?: () => void;
 }
 
 export function FileRequirement({
   actions,
   file,
+  fileIconPath = mdiFileOutline,
+  hideImage = false,
   isOr,
   showMod = true,
   onOpenMod,
@@ -54,13 +57,14 @@ export function FileRequirement({
     >
       {showMod && (
         <div className="mb-px flex items-center gap-x-4 rounded-t-sm bg-surface-mid p-2">
-          {onOpenMod ? (
-            <button className="shrink-0" type="button" onClick={onOpenMod}>
-              {modImage}
-            </button>
-          ) : (
-            modImage
-          )}
+          {!hideImage &&
+            (onOpenMod ? (
+              <button className="shrink-0" type="button" onClick={onOpenMod}>
+                {modImage}
+              </button>
+            ) : (
+              modImage
+            ))}
 
           <div className="max-w-xl space-y-0.5">
             <div className="flex items-center gap-x-2">
@@ -102,7 +106,7 @@ export function FileRequirement({
           className="flex min-w-0 items-center gap-x-1.5"
           typographyType="body-sm"
         >
-          <Icon path={mdiFileOutline} size="sm" />
+          <Icon path={fileIconPath} size="sm" />
 
           {onOpenFile ? (
             <TypographyLink
@@ -148,18 +152,7 @@ export function FileRequirement({
       </div>
 
       {isOr && (
-        <div
-          aria-hidden
-          className="absolute inset-x-0 -bottom-2 flex h-5 items-center gap-x-3 group-last/file:hidden"
-        >
-          <div className="h-px w-3 bg-surface-mid" />
-
-          <Typography as="div" className="font-semibold">
-            Or
-          </Typography>
-
-          <div className="h-px grow bg-surface-mid" />
-        </div>
+        <Divider className="absolute inset-x-0 -bottom-2 h-5 group-last/file:hidden" variant="or" />
       )}
     </div>
   );

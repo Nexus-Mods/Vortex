@@ -31,19 +31,33 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     <>
       <ListingRowShell
         action={
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            leftIconPath={mdiMonitorArrowDownVariant}
-            rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              void installInApp();
-            }}
-          >
-            {t("detail::item::install_one_click")}
-          </Button>
+          mod.externalRequirement ? (
+            <Button
+              appearance="moderate"
+              brand="neutral"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen();
+              }}
+            >
+              {t("listing::external_mod_install")}
+            </Button>
+          ) : (
+            <Button
+              appearance="moderate"
+              brand="neutral"
+              leftIconPath={mdiMonitorArrowDownVariant}
+              rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                void installInApp();
+              }}
+            >
+              {t("detail::item::install_one_click")}
+            </Button>
+          )
         }
         detail={t("listing::item::description", {
           dependencyModName: mod.modName || mod.modUrl || mod.notes,
