@@ -1,14 +1,10 @@
 import { mdiCheck, mdiDownload, mdiHelpCircleOutline, mdiOpenInNew } from "@mdi/js";
-import { unknownToError } from "@vortex/shared";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
 import { modToFileData } from "@/extensions/health_check/utils/modRequirements/modRequirementData";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
-import { log } from "@/logging";
-import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
@@ -18,7 +14,7 @@ import { opn } from "@/util/api";
 
 import { setModRequirementHidden } from "../../actions/persistent";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";
-import { getModFiles, hiddenModRequirements } from "../../selectors";
+import { hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
 import type { IDetailViewProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
@@ -40,24 +36,11 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     handleFeedbackSuccess,
   } = useModRequirementActions(api, mod, onBack);
 
-  const modFiles = useSelector((state: IState) => getModFiles(state, mod.modId));
-
   const hiddenRequirementMap = useSelector(hiddenModRequirements);
   const isHidden = useMemo(
     () => (hiddenRequirementMap[mod.requiredBy.modId] ?? []).includes(mod.id),
     [hiddenRequirementMap, mod.requiredBy.modId, mod.id],
   );
-
-  // Fetch the required mod's files for the preview/version; skipped for external
-  // requirements, which have no Nexus files.
-  useEffect(() => {
-    if (mod.externalRequirement) {
-      return;
-    }
-    getModFilesWithCache(api, mod.gameId, mod.modId).catch((err: unknown) => {
-      log("warn", "health check: failed to fetch requirement mod files", unknownToError(err));
-    });
-  }, [api, mod.gameId, mod.modId, mod.externalRequirement]);
 
   const openRequiringModPage = useCallback(() => {
     if (mod.requiredBy.modUrl) {
@@ -77,7 +60,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     onBack();
   }, [api, mod.requiredBy.modId, mod.id, onBack]);
 
-  const fileData = modToFileData(mod, modFiles?.[0]);
+  // mainFile is denormalized by the check, so no fetch is needed here.
+  const fileData = modToFileData(mod, mod.mainFile);
   const severityStyle = severityStyleMap[entry.severity];
 
   return (

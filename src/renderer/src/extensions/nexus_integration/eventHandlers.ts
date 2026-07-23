@@ -948,7 +948,6 @@ export function onGetModRequirements(
             modId: true,
             modRequirements: getModRequirementsInfo(),
             uid: true,
-            thumbnailUrl: true,
           },
           validUids,
         );

@@ -35,6 +35,11 @@ export interface IModRequirementExt extends Omit<IModRequirement, "modId" | "gam
   gameId: string;
   /** Url to view mod information; undefined if no URL could be derived (e.g., game has no Nexus domain mapping) */
   modUrl?: string;
+  /**
+   * The required mod's single main file, denormalized by the check so the detail
+   * view needs no separate fetch. Undefined for external requirements.
+   */
+  mainFile?: IModFileInfo;
 }
 
 /**
@@ -130,16 +135,6 @@ export interface IModMissingRequirements {
   missingMods: IModRequirementExt[];
   /** List of DLC requirements (informational, cannot be auto-verified) */
   dlcRequirements: IMissingRequiredDlc[];
-}
-
-/**
- * Parameters for the check-nexus-mod-requirements check
- */
-export interface IModRequirementsCheckParams {
-  /** Skip API calls and only use cached requirements data */
-  cachedOnly?: boolean;
-  /** Limit the number of mods to check */
-  limit?: number;
 }
 
 /**

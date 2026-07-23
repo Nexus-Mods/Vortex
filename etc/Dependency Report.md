@@ -18,7 +18,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
 | @nexusmods/fomod-installer-ipc | 0.13.3 |
 | @nexusmods/fomod-installer-native | 0.13.3 |
-| @nexusmods/nexus-api | 1.7.1 |
+| @nexusmods/nexus-api | 1.7.2 |
 | @opentelemetry/api | 1.9.1 |
 | @opentelemetry/context-async-hooks | 2.8.0 |
 | @opentelemetry/context-zone | 2.8.0 |

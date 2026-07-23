@@ -7,7 +7,6 @@ import type {
   IModMissingRequirements,
   IModRequirementsCheckMetadata,
   IModRequirementExt,
-  IModFileInfo,
 } from "./types";
 import type {
   IFileLevelRequirements,
@@ -23,8 +22,6 @@ export const healthCheckState = (state: IState): IHealthCheckSessionState =>
   state.session?.healthCheck ?? {
     results: {},
     runningChecks: [],
-    modFiles: {},
-    loadingModFiles: [],
   };
 
 /**
@@ -193,15 +190,3 @@ export const getModHiddenRequirements = (state: IState, modId: number): string[]
  */
 export const feedbackGivenMap = (state: IState): { [modId: number]: string[] } =>
   healthCheckPersistentState(state).feedbackGiven ?? {};
-
-/**
- * Get cached mod files for a specific mod
- */
-export const getModFiles = (state: IState, modId: number): IModFileInfo[] | undefined =>
-  healthCheckState(state).modFiles?.[modId];
-
-/**
- * Check if mod files are currently being loaded
- */
-export const isModFilesLoading = (state: IState, modId: number): boolean =>
-  healthCheckState(state).loadingModFiles?.includes(modId) ?? false;

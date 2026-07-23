@@ -247,6 +247,9 @@ export function getModRequirementsInfo(): IModRequirementsQuery {
       notes: true,
     },
     nexusRequirements: {
+      // count caps the page and multiplies its inner selection for complexity, so a
+      // low cap keeps the query cheap; mods realistically never have 10+ requirements.
+      $filter: { count: 10 },
       nodes: {
         id: true,
         gameId: true,
@@ -256,10 +259,6 @@ export function getModRequirementsInfo(): IModRequirementsQuery {
         url: true,
         externalRequirement: true,
       },
-      totalCount: true,
-    },
-    modsRequiringThisMod: {
-      nodes: { id: true, modId: true, modName: true },
       totalCount: true,
     },
   };
