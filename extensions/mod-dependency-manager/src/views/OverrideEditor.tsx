@@ -10,12 +10,11 @@ import {
   Usage,
   util,
 } from "@nexusmods/vortex-api";
+import * as TreeT from "@nosferatu500/react-sortable-tree";
 import * as React from "react";
 import { Button, Dropdown, MenuItem, Modal } from "react-bootstrap";
 import { Trans, withTranslation, WithTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as TreeT from "react-sortable-tree";
-import {} from "react-sortable-tree-theme-file-explorer";
 import { Action } from "redux-act";
 
 import { setConflictDialog, setFileOverrideDialog } from "../actions";
@@ -25,6 +24,10 @@ import type { IConflict } from "../types/IConflict";
 import type { IModLookupInfo } from "../types/IModLookupInfo";
 import type { ILocalState } from "./DependencyIcon";
 import SearchBox, { ISearchMatch } from "./SearchBox";
+
+// the fork does not re-export ReactSortableTreeProps through its package index,
+// so derive the prop type from the exported component instead
+type TreeProps = Parameters<typeof TreeT.SortableTreeWithoutDndContext>[0];
 
 interface IFileTree {
   title: string;
@@ -187,8 +190,9 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
       );
     } else {
       const Tree: typeof TreeT.SortableTreeWithoutDndContext =
-        require("react-sortable-tree").SortableTreeWithoutDndContext;
-      const FileExplorerTheme = require("react-sortable-tree-theme-file-explorer");
+        require("@nosferatu500/react-sortable-tree").SortableTreeWithoutDndContext;
+      const themeModule = require("@nosferatu500/theme-file-explorer");
+      const FileExplorerTheme = themeModule.default ?? themeModule;
 
       content = (
         <DNDContainer>
@@ -205,13 +209,19 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
               treeData={treeState}
               onChange={this.onChangeTree}
               theme={FileExplorerTheme}
-              canDrag={false}
+              // the fork types canDrag as a function, but its runtime accepts a
+              // plain boolean too (typeof check) — this tree is never draggable
+              canDrag={false as unknown as TreeProps["canDrag"]}
               getNodeKey={this.getNodeKey}
               generateNodeProps={this.generateNodeProps}
               searchMethod={this.searchMethod}
               searchQuery={searchString}
               searchFocusOffset={searchIndex}
-              searchFinishCallback={this.searchFinishCallback}
+              // the fork types match.path as number[]; getNodeKey yields strings,
+              // so ISearchMatch uses string[] — the shapes are otherwise identical
+              searchFinishCallback={
+                this.searchFinishCallback as unknown as TreeProps["searchFinishCallback"]
+              }
             />
             <Usage persistent infoId="override-editor">
               <div>{t("Use this dialog to select which mod should provide a file.")}</div>
@@ -354,7 +364,11 @@ class OverrideEditor extends ComponentEx<IProps, IComponentState> {
 
   private getNodeKey = (node: TreeT.TreeNode) => (node.node as IFileTree).path;
 
-  private generateNodeProps = (rowInfo: TreeT.ExtendedNodeData) => {
+  private generateNodeProps = (rowInfo: {
+    node: TreeT.TreeItem;
+    path: Array<string | number>;
+    treeIndex: number;
+  }) => {
     const { t, mods } = this.props;
     const node = rowInfo.node as IFileTree;
 
