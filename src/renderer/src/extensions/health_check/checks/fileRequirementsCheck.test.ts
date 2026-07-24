@@ -80,7 +80,7 @@ function ref(fileUID: string, enabled = true, emitRequirements = true): IInstall
 }
 
 function downloadedRef(fileUID: string): IDownloadedFileRef {
-  return { fileUID, downloadId: `download-${fileUID}` };
+  return { fileUID, modUID: `moduid-${fileUID}`, downloadId: `download-${fileUID}` };
 }
 
 function installedFile(fileUID: string, enabled: boolean): IInstalledFile {

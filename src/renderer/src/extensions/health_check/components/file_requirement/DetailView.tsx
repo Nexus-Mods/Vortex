@@ -1,5 +1,5 @@
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { Trans } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import {
@@ -7,7 +7,6 @@ import {
   openModPage,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IFileRequirementReport } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
-import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IState } from "@/types/IState";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -18,16 +17,17 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setFileRequirementHidden } from "../../actions/persistent";
 import { useFileRequirementFeedback } from "../../hooks/useFileRequirementFeedback";
+import { useReportCopy } from "../../hooks/useReportCopy";
 import { isFileEntryHidden } from "../../views/content/fileRequirementEntries";
 import type { IDetailViewProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { RequirementBody } from "./RequirementBody";
 
 export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
-  const { t } = useTranslation(["health_check", "common"]);
   const report = entry.data as IFileRequirementReport;
   const severityStyle = severityStyleMap[entry.severity];
   const count = report.requirements.length;
+  const { summary } = useReportCopy(report);
 
   const isHidden = useSelector((state: IState) => isFileEntryHidden(state, entry));
   const toggleHideEntry = () => {
@@ -45,18 +45,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   // file-level feedback is persisted only, it does not emit a Mixpanel event yet
   // (HealthCheckFeedbackEvent is mod-shaped).
   const { givenFeedback, markFeedback } = useFileRequirementFeedback(api, report.sourceFileUID);
-
-  // Report-level intro line, mirroring the per-category detail copy.
-  const subtitle =
-    report.category === "toggle"
-      ? t("detail::item::wrong_version_enabled")
-      : report.category === "download-replace"
-        ? t("detail::item::wrong_version_installed")
-        : report.category === "install-uninstalled"
-          ? t("detail::item::correct_version_downloaded")
-          : t(count > 1 ? "detail::item::requires_files_plural" : "detail::item::requires_files", {
-              count,
-            });
 
   return (
     <div className="rounded-lg border border-stroke-weak">
@@ -104,7 +92,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
       <div className="pt-4 pb-6">
         <Typography appearance="subdued" className="mb-4 px-6">
-          {subtitle}
+          {summary}
         </Typography>
 
         <div className="space-y-4">

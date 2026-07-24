@@ -28,7 +28,7 @@ import type { INotification } from "../../types/INotification";
 import type { IDiscoveryResult, IState } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import type { ITestResult } from "../../types/ITestResult";
-import { nxmMod } from "../../ui/icon-paths";
+import { nxmModOutline } from "../../ui/icon-paths";
 import { opn } from "../../util/api";
 import { ProcessCanceled, TemporaryError, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
@@ -2082,7 +2082,7 @@ function init(context: IExtensionContext): boolean {
         modSources: getModSources(),
         onDropNonArchiveFiles,
       }),
-      mdi: nxmMod,
+      mdi: nxmModOutline,
     },
   );
 

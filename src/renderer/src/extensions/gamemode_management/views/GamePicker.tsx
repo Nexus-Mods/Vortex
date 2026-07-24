@@ -10,17 +10,14 @@ import type { IState } from "@/types/IState";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Pagination } from "@/ui/components/pagination/Pagination";
 import { Picker } from "@/ui/components/picker/Picker";
-import { Pictogram } from "@/ui/components/pictogram/Pictogram";
-import { Typography } from "@/ui/components/typography/Typography";
-import { joinClasses } from "@/ui/utils/joinClasses";
 import { isContributed } from "@/util/isContributed";
 import { getSafe } from "@/util/storeHelper";
+import { Page } from "@/views/components/Page/Page";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import { Page } from "../../../views/components/Page/Page";
-import { PageHeader } from "../../../views/components/Page/PageHeader";
-import { PageScroll } from "../../../views/components/Page/PageScroll";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
@@ -79,7 +76,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 // "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
 const SIMILARITY_RATIO = 90;
 // The unmanaged list can be large, so it's paginated this many games per page.
-const UNMANAGED_PAGE_SIZE = 50;
+const UNMANAGED_PAGE_SIZE = 49;
 
 /**
  * picker/configuration for game modes

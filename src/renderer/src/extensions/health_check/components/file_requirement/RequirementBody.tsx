@@ -35,7 +35,7 @@ const groupTitleKey = (category: FileRequirementCategory): string => {
     case "download-replace":
       return "detail::item::different_version_required";
     case "toggle":
-      return "detail::item::enabled_version";
+      return "detail::item::enable_required";
     case "or":
       return "detail::item::pick_one";
   }

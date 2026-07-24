@@ -1,4 +1,4 @@
-import { mdiEye, mdiEyeOff, mdiThumbDownOutline, mdiThumbUpOutline } from "@mdi/js";
+import { mdiEyeOutline, mdiEyeOffOutline, mdiThumbDownOutline, mdiThumbUpOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -80,7 +80,7 @@ export function EntryActions({
       <Button
         appearance={appearance}
         brand="neutral"
-        leftIconPath={isHidden ? mdiEye : mdiEyeOff}
+        leftIconPath={isHidden ? mdiEyeOutline : mdiEyeOffOutline}
         size="sm"
         title={isHidden ? t("common:::unhide") : t("common:::hide")}
         onClick={handle(onToggleHide)}

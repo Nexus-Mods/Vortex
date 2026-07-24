@@ -106,9 +106,8 @@ export interface INexusAPIExtension {
   nexusGetModInfo?: (gameId: string, modId: number) => PromiseLike<Partial<IModInfo>>;
 
   nexusGetModRequirements?: (
-    gameId: string,
-    modIds: number[],
-  ) => PromiseLike<{ [modId: number]: Partial<IModRequirements> }>;
+    uids: string[],
+  ) => PromiseLike<{ [uid: string]: Partial<IModRequirements> }>;
 
   // Retrieves user data which is persistently stored in Vortex's state.
   nexusGetUserKeyData?: () => PromiseLike<IValidateKeyDataV2>;

@@ -34,6 +34,16 @@ function init(context: IExtensionContext): boolean {
   // through it — no buffering, no two-phase setup.
   registry = new HealthCheckRegistry(context.api);
 
+  // Bridge so clicking the "Health check" menu item while already on the page
+  // returns to the listing. HealthCheckPage registers its "back to listing"
+  // handler here; the Menu calls onReset (below) only when the page is already
+  // active. When navigating in from elsewhere the page stays mounted, so its
+  // selected-detail state is preserved and the last-viewed check is restored.
+  let resetHealthCheckPage: (() => void) | undefined;
+  const registerReset = (cb: () => void) => {
+    resetHealthCheckPage = cb;
+  };
+
   context.registerHealthCheck = (hc: IHealthCheck | IModHealthCheck) => {
     registry.register(hc);
   };
@@ -58,7 +68,9 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       api: context.api,
       onRefresh: () => healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.Manual),
+      registerReset,
     }),
+    onReset: () => resetHealthCheckPage?.(),
   });
 
   context.once(() => {

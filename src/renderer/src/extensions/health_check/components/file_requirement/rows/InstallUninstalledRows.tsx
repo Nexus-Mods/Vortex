@@ -1,3 +1,4 @@
+import { mdiCheck } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +13,7 @@ import {
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import { useInstallButton } from "../../../hooks/useInstallButton";
 import { FileRequirement } from "../FileRequirement";
@@ -35,6 +37,7 @@ export const InstallUninstalledRows = ({
           <Button
             appearance="subdued"
             brand="neutral"
+            leftIconPath={nxmModOutline}
             size="sm"
             onClick={() => viewDownloadInMods(api, requirement.uninstalledFile)}
           >
@@ -45,6 +48,7 @@ export const InstallUninstalledRows = ({
             appearance="strong"
             brand="neutral"
             isLoading={isLoading}
+            leftIconPath={mdiCheck}
             size="sm"
             onClick={onClick}
           >

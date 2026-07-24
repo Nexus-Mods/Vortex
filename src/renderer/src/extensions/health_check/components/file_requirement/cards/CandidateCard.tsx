@@ -30,7 +30,9 @@ export const CandidateCard = ({
     () => ctx.requestDownload(candidate),
     ctx.showPremiumAd,
   );
+
   const loading = isLoading || !!ctx.isDownloadingAll;
+
   return (
     <FileRequirement
       actions={
