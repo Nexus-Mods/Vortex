@@ -12,6 +12,7 @@ import updateState, { isIdValid } from "./modUpdateState";
 const PRESET_OPTIONS = [
   { value: "has-update", label: "Update available" },
   { value: "missing-meta", label: "Missing Meta ID" },
+  { value: "multi-version", label: "Multiple versions installed" },
 ];
 
 interface IConnectedProps {
@@ -79,7 +80,7 @@ class VersionFilter implements ITableFilter {
   public raw = true;
   public dataId = "$";
 
-  public matches(filter: any, value: any): boolean {
+  public matches(filter: any, value: any, state: any): boolean {
     if (value === undefined) {
       return undefined;
     }
@@ -94,6 +95,20 @@ class VersionFilter implements ITableFilter {
 
     if (filter.includes("has-update") && updateState(value.attributes) !== "current") {
       return true;
+    }
+
+    if (filter.includes("multi-version")) {
+      const modId = getSafe(value, ["attributes", "modId"], undefined);
+      if (modId !== undefined) {
+        const gameId = activeGameId(state);
+        const mods = gameId !== undefined ? getSafe(state, ["persistent", "mods", gameId], {}) : {};
+        const count = Object.values(mods).filter(
+          (mod: IMod) => getSafe(mod, ["attributes", "modId"], undefined) === modId,
+        ).length;
+        if (count > 1) {
+          return true;
+        }
+      }
     }
 
     const versionFilters = filter
