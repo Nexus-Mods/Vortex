@@ -385,17 +385,14 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
         };
 
         for (const req of requirements.nexusRequirements.nodes) {
-          // External requirements (e.g. tools from GitHub) don't have valid
-          // Nexus mod IDs — report them as missing but skip the API lookup
+          // External (non-Nexus) requirements are temporarily suppressed because there
+          // is no way to invalidate them. They can't be auto-detected, so the only way
+          // to clear one is for the user to confirm it's installed — which just hides
+          // it permanently, with no path back if they later uninstall it. Skip them
+          // until that lifecycle is handled. Restore the push below (see git history /
+          // commit 015dfa493) to re-enable the "External mod install" listing + detail
+          // UI, which is left in place for that.
           if (req.externalRequirement) {
-            getModEntry().missingMods.push({
-              ...req,
-              modId: 0,
-              gameId,
-              uid: `external-${req.id}`,
-              requiredBy,
-              modUrl: req.url,
-            });
             continue;
           }
 

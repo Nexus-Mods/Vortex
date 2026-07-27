@@ -1,4 +1,10 @@
-import { mdiCheck, mdiHelpCircleOutline, mdiMonitorArrowDownVariant, mdiOpenInNew } from "@mdi/js";
+import {
+  mdiCheck,
+  mdiHelpCircleOutline,
+  mdiMonitorArrowDownVariant,
+  mdiOpenInNew,
+  mdiWeb,
+} from "@mdi/js";
 import React, { useCallback, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -17,6 +23,7 @@ import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import { hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
 import type { IDetailViewProps } from "../../views/content/types";
+import { Divider } from "../divider/Divider";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { FileRequirement } from "../file_requirement/FileRequirement";
 import { PremiumModal } from "../premium_modal/PremiumModal";
@@ -60,8 +67,17 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     onBack();
   }, [api, mod.requiredBy.modId, mod.id, onBack]);
 
-  // mainFile is denormalized by the check, so no fetch is needed here.
-  const fileData = modToFileData(mod, mod.mainFile);
+  // mainFile is denormalized by the check, so no fetch is needed here. External
+  // requirements aren't hosted on Nexus, so surface the URL and a caution note
+  // in place of the file name and mod summary.
+  const fileData = mod.externalRequirement
+    ? {
+        ...modToFileData(mod, mod.mainFile),
+        modDescription: t("detail::item::external_hosted_note"),
+        fileName: mod.modUrl ?? "",
+        fileVersion: "",
+      }
+    : modToFileData(mod, mod.mainFile);
   const severityStyle = severityStyleMap[entry.severity];
 
   return (
@@ -136,24 +152,36 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
               )
             }
             file={fileData}
+            {...(mod.externalRequirement
+              ? { fileIconPath: mdiWeb, hideImage: true, onOpenFile: openModPage }
+              : {})}
           />
 
           {mod.externalRequirement && (
-            <div className="flex items-center gap-x-3 rounded-sm bg-info-weak/20 p-3">
-              <Typography appearance="moderate" as="div" className="grow" typographyType="body-sm">
-                {t("detail::item::after_installing")}
-              </Typography>
+            <>
+              <Divider variant="and" />
 
-              <Button
-                appearance="moderate"
-                brand="neutral"
-                leftIconPath={mdiCheck}
-                size="sm"
-                onClick={handleConfirmInstall}
-              >
-                {t("detail::item::confirm_install")}
-              </Button>
-            </div>
+              <div className="mx-6 flex items-center gap-x-3 rounded-sm bg-info-weak/20 p-3">
+                <Typography
+                  appearance="moderate"
+                  as="div"
+                  className="grow"
+                  typographyType="body-sm"
+                >
+                  {t("detail::item::after_installing")}
+                </Typography>
+
+                <Button
+                  appearance="moderate"
+                  brand="neutral"
+                  leftIconPath={mdiCheck}
+                  size="sm"
+                  onClick={handleConfirmInstall}
+                >
+                  {t("detail::item::confirm_install")}
+                </Button>
+              </div>
+            </>
           )}
         </div>
       </div>
