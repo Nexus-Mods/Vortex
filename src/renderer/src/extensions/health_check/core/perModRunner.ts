@@ -13,6 +13,7 @@ import { HealthCheckSeverity } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
 import { activeGameId } from "../../../util/selectors";
 import { installPathForGame } from "../../mod_management/selectors";
+import { chunked } from "../utils/shared/batchCache";
 
 /** Map an installed mod's redux state row to an IModCheckContext. */
 export interface IInstalledModEntry {
@@ -85,13 +86,25 @@ async function walkRelative(root: string): Promise<string[]> {
 }
 
 /**
+ * How many mods are walked at a time. Each in-flight mod holds its whole file list in memory for
+ * as long as `checkMod` runs. The walk is filesystem-bound, so wider waves buy no measurable
+ * speedup.
+ */
+export const MOD_WALK_CONCURRENCY = 16;
+
+/** How many failing mod ids the summary log names before it stops listing them. */
+const LOGGED_MOD_SAMPLE = 10;
+
+/**
  * Run a per-mod healthcheck across all installed mods for the active game and
  * fold the per-mod results into a single IHealthCheckResult (worst severity
  * wins; per-mod messages are concatenated into `details`).
  *
- * `deps` is a seam for unit tests; production callers pass nothing.
+ * On `signal`, the walk stops at the next wave boundary and aggregates what it has.
+ * `enumerate` / `buildContext` are a seam for unit tests; production callers pass neither.
  */
-export interface IPerModCheckDeps {
+export interface IPerModCheckOpts {
+  signal?: AbortSignal;
   enumerate?: typeof enumerateInstalledMods;
   buildContext?: typeof buildModCheckContext;
 }
@@ -99,10 +112,11 @@ export interface IPerModCheckDeps {
 export async function runPerModCheck(
   hc: IModHealthCheck,
   api: IExtensionApi,
-  deps: IPerModCheckDeps = {},
+  opts: IPerModCheckOpts = {},
 ): Promise<IHealthCheckResult> {
-  const enumerate = deps.enumerate ?? enumerateInstalledMods;
-  const buildContext = deps.buildContext ?? buildModCheckContext;
+  const enumerate = opts.enumerate ?? enumerateInstalledMods;
+  const buildContext = opts.buildContext ?? buildModCheckContext;
+  const signal = opts.signal;
   const startedAt = Date.now();
   const mods = enumerate(api);
   if (mods.length === 0) {
@@ -115,28 +129,75 @@ export async function runPerModCheck(
       timestamp: new Date(),
     };
   }
-  const perMod = await Promise.all(
-    mods.map(async (entry): Promise<IHealthCheckResult> => {
-      // Context construction (FS walk, state lookup) is harness-controlled — if
-      // it throws, that's a bug in this module, not the extension's check.
-      // Let it propagate so the registry sees the real stack. Only wrap the
-      // extension-supplied `checkMod` call.
-      const ctx = await buildContext(entry);
-      try {
-        return await hc.checkMod(api, ctx);
-      } catch (err: unknown) {
-        return {
-          checkId: hc.id,
-          status: "error",
-          severity: HealthCheckSeverity.Error,
-          message: `checkMod threw for ${entry.modId}: ${unknownToError(err).message || "unknown error"}`,
-          executionTime: 0,
-          timestamp: new Date(),
-        };
+
+  const errorFor = (modId: string, prefix: string, err: unknown): IHealthCheckResult => {
+    const error = unknownToError(err);
+    return {
+      checkId: hc.id,
+      status: "error",
+      severity: HealthCheckSeverity.Error,
+      message: `${prefix} ${modId}: ${error.message || "unknown error"}`,
+      details: error.stack,
+      executionTime: 0,
+      timestamp: new Date(),
+    };
+  };
+
+  const checkOne = async (entry: IInstalledModEntry): Promise<IHealthCheckResult> => {
+    // A throw from buildContext is a fault in this module or the staging folder, not in the
+    // extension's check; the rejected branch below attributes it to this mod.
+    const ctx = await buildContext(entry);
+    try {
+      return await hc.checkMod(api, ctx, signal);
+    } catch (err: unknown) {
+      return errorFor(entry.modId, "checkMod threw for", err);
+    }
+  };
+
+  const perMod: IHealthCheckResult[] = [];
+  const unreadable: string[] = [];
+  let abandoned = false;
+
+  for (const wave of chunked(mods, MOD_WALK_CONCURRENCY)) {
+    if (signal?.aborted) {
+      abandoned = true;
+      break;
+    }
+    // An unreadable staging folder (scanner lock, mod removed mid-walk) fails that mod alone.
+    const waveResults = await Promise.allSettled(wave.map(checkOne));
+    for (let i = 0; i < waveResults.length; i += 1) {
+      const settled = waveResults[i];
+      if (settled.status === "fulfilled") {
+        perMod.push(settled.value);
+        continue;
       }
-    }),
-  );
-  return aggregateResults(hc.id, perMod, startedAt);
+      const modId = wave[i].modId;
+      unreadable.push(modId);
+      perMod.push(errorFor(modId, "Could not read staging folder for", settled.reason));
+    }
+  }
+
+  // One line per run, not per mod: a staging drive that has gone away would flood the log. Each
+  // failure is spelled out in the aggregate's `details`.
+  if (unreadable.length > 0) {
+    log("error", "per-mod check could not read some mods", {
+      id: hc.id,
+      count: unreadable.length,
+      mods: unreadable.slice(0, LOGGED_MOD_SAMPLE),
+    });
+  }
+
+  const result = aggregateResults(hc.id, perMod, startedAt);
+  if (abandoned) {
+    log("debug", "per-mod check abandoned mid-walk", {
+      id: hc.id,
+      checked: perMod.length,
+      total: mods.length,
+    });
+    // A partial walk is not a clean bill of health for the library.
+    result.message = `${result.message} (stopped after ${perMod.length} of ${mods.length} mods)`;
+  }
+  return result;
 }
 
 export function aggregateResults(

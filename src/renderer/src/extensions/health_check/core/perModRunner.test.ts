@@ -2,15 +2,21 @@ import * as fs from "fs";
 
 import { afterEach, describe, test, expect, vi } from "vitest";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
 import {
-  HealthCheckCategory,
-  HealthCheckSeverity,
-  HealthCheckTrigger,
-  type IModCheckContext,
-  type IModHealthCheck,
-} from "../../../types/IHealthCheck";
-import { aggregateResults, buildModCheckContext, runPerModCheck } from "./perModRunner";
+  makeConcurrencyProbe,
+  makeHealthCheckResult,
+  makeModCheckContext,
+  makeModHealthCheck,
+} from "../../../test-utils/builders";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { HealthCheckSeverity } from "../../../types/IHealthCheck";
+import type { IInstalledModEntry } from "./perModRunner";
+import {
+  aggregateResults,
+  buildModCheckContext,
+  MOD_WALK_CONCURRENCY,
+  runPerModCheck,
+} from "./perModRunner";
 
 const baseResult = (
   status: "passed" | "failed" | "warning" | "error",
@@ -88,29 +94,13 @@ describe("aggregateResults", () => {
 
 describe("runPerModCheck error handling", () => {
   const fakeApi = {} as IExtensionApi;
-
-  const makeCheck = (
-    checkMod: (api: IExtensionApi, mod: IModCheckContext) => Promise<any>,
-  ): IModHealthCheck => ({
-    id: "test-check",
-    name: "Test",
-    description: "",
-    category: HealthCheckCategory.Mods,
-    severity: HealthCheckSeverity.Warning,
-    triggers: [HealthCheckTrigger.Manual],
-    checkMod,
-  });
-
-  const emptyContext: IModCheckContext = {
-    modId: "m1",
-    files: [],
-    readFile: async () => Buffer.alloc(0),
-    attributes: {},
-  };
+  const emptyContext = makeModCheckContext({ modId: "m1" });
 
   test("checkMod throw is converted to an error-status result (not propagated)", async () => {
-    const hc = makeCheck(async () => {
-      throw new Error("boom in extension code");
+    const hc = makeModHealthCheck({
+      checkMod: async () => {
+        throw new Error("boom in extension code");
+      },
     });
     const result = await runPerModCheck(hc, fakeApi, {
       enumerate: () => [{ modId: "m1", stagingPath: "/fake", attributes: {} }],
@@ -121,29 +111,50 @@ describe("runPerModCheck error handling", () => {
     expect(result.details).toMatch(/checkMod threw for m1.*boom/);
   });
 
-  test("buildModCheckContext throw propagates (harness bug, not extension)", async () => {
-    const hc = makeCheck(async () => ({
-      checkId: "test-check",
-      status: "passed" as const,
-      severity: HealthCheckSeverity.Info,
-      message: "ok",
-      executionTime: 0,
-      timestamp: new Date(),
-    }));
+  test("buildModCheckContext throw is reported against its mod (not propagated)", async () => {
+    const hc = makeModHealthCheck();
 
-    await expect(
-      runPerModCheck(hc, fakeApi, {
-        enumerate: () => [{ modId: "m1", stagingPath: "/fake", attributes: {} }],
-        buildContext: async () => {
-          throw new Error("EACCES walking staging dir");
-        },
-      }),
-    ).rejects.toThrow(/EACCES/);
+    const result = await runPerModCheck(hc, fakeApi, {
+      enumerate: () => [{ modId: "m1", stagingPath: "/fake", attributes: {} }],
+      buildContext: async () => {
+        throw new Error("EACCES walking staging dir");
+      },
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.severity).toBe(HealthCheckSeverity.Error);
+    expect(result.details).toMatch(/Could not read staging folder for m1.*EACCES/);
+  });
+
+  test("one unreadable mod does not discard the rest of the wave", async () => {
+    const hc = makeModHealthCheck({
+      checkMod: async (_api, mod) => makeHealthCheckResult({ message: `checked ${mod.modId}` }),
+    });
+
+    const result = await runPerModCheck(hc, fakeApi, {
+      enumerate: () =>
+        ["m1", "locked", "m3"].map((modId) => ({
+          modId,
+          stagingPath: `/fake/${modId}`,
+          attributes: {},
+        })),
+      buildContext: async (entry) => {
+        if (entry.modId === "locked") {
+          throw new Error("EPERM: file is locked");
+        }
+        return makeModCheckContext({ modId: entry.modId });
+      },
+    });
+
+    expect(result.message).toContain("1 failed / 0 warned of 3 mods");
+    expect(result.details).toMatch(/Could not read staging folder for locked.*EPERM/);
   });
 
   test("no mods → passed/info short-circuit", async () => {
-    const hc = makeCheck(async () => {
-      throw new Error("should not run");
+    const hc = makeModHealthCheck({
+      checkMod: async () => {
+        throw new Error("should not run");
+      },
     });
     const result = await runPerModCheck(hc, fakeApi, {
       enumerate: () => [],
@@ -151,6 +162,85 @@ describe("runPerModCheck error handling", () => {
     });
     expect(result.status).toBe("passed");
     expect(result.severity).toBe(HealthCheckSeverity.Info);
+  });
+});
+
+/** How wide the runner goes on a large library (GH#23776). */
+describe("runPerModCheck fan-out", () => {
+  const fakeApi = {} as IExtensionApi;
+
+  // Loose enough to survive retuning MOD_WALK_CONCURRENCY, tight enough that an unbounded walk
+  // of the libraries below blows through it.
+  const CONCURRENCY_CEILING = 64;
+
+  // A microtask, not a timer: enough to make a wave's callbacks overlap, which is all the probe
+  // measures, and off the timer queue so CI load cannot change the result.
+  const tick = () => Promise.resolve();
+
+  const entries = (count: number): IInstalledModEntry[] =>
+    Array.from({ length: count }, (_, i) => ({
+      modId: `mod-${i}`,
+      stagingPath: `/staging/mod-${i}`,
+      attributes: {},
+    }));
+
+  // Peak contexts built but not yet released by checkMod. Each holds one mod's full file list,
+  // so this is the shape of the runner's memory footprint.
+  const peakLiveContexts = async (modCount: number): Promise<number> => {
+    const probe = makeConcurrencyProbe();
+
+    const hc = makeModHealthCheck({
+      checkMod: async () => {
+        await tick();
+        probe.leave();
+        return makeHealthCheckResult();
+      },
+    });
+
+    await runPerModCheck(hc, fakeApi, {
+      enumerate: () => entries(modCount),
+      buildContext: async (entry) => {
+        await tick();
+        probe.enter();
+        return makeModCheckContext({ modId: entry.modId });
+      },
+    });
+
+    return probe.peak();
+  };
+
+  test("walks a bounded number of mods at a time", async () => {
+    expect(await peakLiveContexts(400)).toBeLessThanOrEqual(CONCURRENCY_CEILING);
+  });
+
+  test("stops walking once the run is aborted", async () => {
+    const abort = new AbortController();
+    let walked = 0;
+
+    const result = await runPerModCheck(makeModHealthCheck(), fakeApi, {
+      signal: abort.signal,
+      enumerate: () => entries(400),
+      buildContext: async (entry) => {
+        walked += 1;
+        // Abort part-way through the first wave, where the registry's timeout would land.
+        if (walked === MOD_WALK_CONCURRENCY) {
+          abort.abort();
+        }
+        await tick();
+        return makeModCheckContext({ modId: entry.modId });
+      },
+    });
+
+    // The in-flight wave finishes; the rest of the library is left unwalked.
+    expect(walked).toBe(MOD_WALK_CONCURRENCY);
+    // A partial walk must not read as a clean bill of health for the whole library.
+    expect(result.message).toContain(`stopped after ${MOD_WALK_CONCURRENCY} of 400 mods`);
+  });
+
+  test("peak does not grow with the size of the library", async () => {
+    const small = await peakLiveContexts(200);
+    const large = await peakLiveContexts(800);
+    expect(large).toBe(small);
   });
 });
 

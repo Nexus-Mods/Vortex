@@ -1602,8 +1602,8 @@ enum HealthCheckCategory {
 // @public (undocumented)
 type HealthCheckFixFunction = (api: IExtensionApi) => Promise<void>;
 
-// @public (undocumented)
-type HealthCheckFunction = (api: IExtensionApi) => Promise<IHealthCheckResult>;
+// @public
+type HealthCheckFunction = (api: IExtensionApi, signal?: AbortSignal) => Promise<IHealthCheckResult>;
 
 // @public (undocumented)
 enum HealthCheckSeverity {
@@ -2698,6 +2698,7 @@ interface IHealthCheck {
     extensionName?: string;
     // (undocumented)
     fix?: HealthCheckFixFunction;
+    gameId?: string;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -4941,7 +4942,7 @@ paused: boolean;
 type PayloadT<Type> = Type extends ComplexActionCreator<infer X> ? X : never;
 
 // @public (undocumented)
-type PerModCheckFunction = (api: IExtensionApi, mod: IModCheckContext) => Promise<IHealthCheckResult>;
+type PerModCheckFunction = (api: IExtensionApi, mod: IModCheckContext, signal?: AbortSignal) => Promise<IHealthCheckResult>;
 
 // @public
 type PersistingType = "global" | "game" | "profile";

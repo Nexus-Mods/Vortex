@@ -13,7 +13,8 @@ import {
   isModHealthCheck,
 } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
-import { setHealthCheckResult } from "../actions/session";
+import { activeGameId } from "../../../util/selectors";
+import { clearHealthCheckResult, setHealthCheckResult } from "../actions/session";
 import type { HealthCheckId } from "../types";
 import { runPerModCheck } from "./perModRunner";
 
@@ -146,6 +147,17 @@ export class HealthCheckRegistry {
       return undefined;
     }
 
+    // The per-mod runner enumerates mods for whatever game is ACTIVE, so a check that names a
+    // game has to be held to it here.
+    if (!this.appliesToActiveGame(entry, api)) {
+      this.discardResult(entry, checkId);
+      log("debug", "Health check skipped, belongs to another game", {
+        id: checkId,
+        gameId: entry.healthCheck.gameId,
+      });
+      return undefined;
+    }
+
     // Check if result is cached (unless force is true)
     if (!force && entry.cachedUntil && entry.lastResult && new Date() < entry.cachedUntil) {
       log("debug", "Using cached result for health check", { id: checkId });
@@ -160,34 +172,54 @@ export class HealthCheckRegistry {
 
     this.mExecutionQueue.add(checkId);
     const startTime = Date.now();
+    let timedOut = false;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
     try {
       const timeout = entry.healthCheck.timeout || 30000;
       log("debug", "Executing health check", { id: checkId, timeout });
 
+      // Abort stops the body, not just the promise this awaits.
+      const abort = new AbortController();
       const timeoutPromise = new Promise<IHealthCheckResult>((_, reject) => {
-        setTimeout(() => reject(new Error(`Health check timed out after ${timeout}ms`)), timeout);
+        timeoutHandle = setTimeout(() => {
+          timedOut = true;
+          abort.abort();
+          reject(new Error(`Health check timed out after ${timeout}ms`));
+        }, timeout);
       });
 
       const hc = entry.healthCheck;
-      const checkPromise = isModHealthCheck(hc) ? runPerModCheck(hc, api) : hc.check(api);
+      const checkPromise = isModHealthCheck(hc)
+        ? runPerModCheck(hc, api, { signal: abort.signal })
+        : hc.check(api, abort.signal);
+
+      // The slot belongs to the body, not the race: one that cannot observe the abort promptly
+      // (mid-readdir, mid-request) still holds resources, so the next trigger waits for it.
+      void checkPromise
+        .catch(() => undefined)
+        .finally(() => {
+          if (timedOut) {
+            log("debug", "Abandoned health check finished", {
+              id: checkId,
+              afterMs: Date.now() - startTime,
+            });
+          }
+          this.mExecutionQueue.delete(checkId);
+        });
+
       const result = await Promise.race([checkPromise, timeoutPromise]);
 
       result.checkId = checkId;
       result.timestamp = new Date();
       result.executionTime = Date.now() - startTime;
 
-      if (entry.healthCheck.cacheDuration && entry.healthCheck.cacheDuration > 0) {
-        entry.cachedUntil = new Date(Date.now() + entry.healthCheck.cacheDuration);
+      if (!this.recordResult(entry, checkId, result, api)) {
+        return undefined;
       }
 
-      entry.lastResult = result;
-      entry.lastExecuted = new Date();
-      this.mResults.set(checkId, result);
-
-      // Dispatch result to Redux so UI can access it
-      if (this.mApi.store) {
-        this.mApi.store.dispatch(setHealthCheckResult(checkId, result));
+      if (entry.healthCheck.cacheDuration && entry.healthCheck.cacheDuration > 0) {
+        entry.cachedUntil = new Date(Date.now() + entry.healthCheck.cacheDuration);
       }
 
       log("debug", "Health check completed", {
@@ -211,13 +243,8 @@ export class HealthCheckRegistry {
         isLegacyTest: "isLegacyTest" in entry.healthCheck,
       };
 
-      entry.lastResult = errorResult;
-      entry.lastExecuted = new Date();
-      this.mResults.set(checkId, errorResult);
-
-      // Dispatch error result to Redux so UI can access it
-      if (this.mApi.store) {
-        this.mApi.store.dispatch(setHealthCheckResult(checkId, errorResult));
+      if (!this.recordResult(entry, checkId, errorResult, api)) {
+        return undefined;
       }
 
       log("warn", "Health check failed", {
@@ -227,8 +254,54 @@ export class HealthCheckRegistry {
 
       return errorResult;
     } finally {
-      this.mExecutionQueue.delete(checkId);
+      if (timeoutHandle !== undefined) {
+        clearTimeout(timeoutHandle);
+      }
+      // On timeout the body runs on and releases the slot from its settle handler; any other
+      // exit means it is done.
+      if (!timedOut) {
+        this.mExecutionQueue.delete(checkId);
+      }
     }
+  }
+
+  /** Whether this check names a game other than the active one. */
+  private appliesToActiveGame(entry: IHealthCheckEntry, api: IExtensionApi): boolean {
+    const checkGameId = entry.healthCheck.gameId;
+    return checkGameId === undefined || checkGameId === activeGameId(api.getState());
+  }
+
+  /** Forget a stored result, so nothing reports it against the game the user is now on. */
+  private discardResult(entry: IHealthCheckEntry, checkId: HealthCheckId): void {
+    if (entry.lastResult === undefined) {
+      return;
+    }
+    entry.lastResult = undefined;
+    entry.cachedUntil = undefined;
+    this.mResults.delete(checkId);
+    this.mApi.store?.dispatch(clearHealthCheckResult(checkId));
+  }
+
+  /**
+   * Store a result and publish it, unless the game moved on while the check was running. Returns
+   * whether it was kept.
+   */
+  private recordResult(
+    entry: IHealthCheckEntry,
+    checkId: HealthCheckId,
+    result: IHealthCheckResult,
+    api: IExtensionApi,
+  ): boolean {
+    if (!this.appliesToActiveGame(entry, api)) {
+      log("debug", "Health check result dropped, game changed while it ran", { id: checkId });
+      this.discardResult(entry, checkId);
+      return false;
+    }
+    entry.lastResult = result;
+    entry.lastExecuted = new Date();
+    this.mResults.set(checkId, result);
+    this.mApi.store?.dispatch(setHealthCheckResult(checkId, result));
+    return true;
   }
 
   /**
