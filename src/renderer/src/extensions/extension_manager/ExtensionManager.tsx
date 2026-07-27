@@ -126,7 +126,26 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     const { t, extensions, localState } = this.props;
     const { oldExtensions, showBundled } = this.state;
 
-    const extensionsWithState = this.mergeExt(extensions, showBundled);
+    const bundled = (this.context?.api?.getLoadedExtensions?.() ?? [])
+      .filter((ext) => ext.dynamic && ext.info?.bundled)
+      .reduce<{ [extId: string]: IExtensionState }>((prev, ext) => {
+        prev[ext.name] = {
+          enabled: true,
+          version: ext.info?.version ?? "",
+          remove: false,
+          endorsed: "Undecided",
+          name: ext.info?.name ?? ext.name,
+          author: ext.info?.author ?? "Unknown",
+          description: ext.info?.description ?? "",
+          path: ext.path,
+          bundled: true,
+        };
+        return prev;
+      }, {});
+
+    const allExtensions = showBundled ? { ...extensions, ...bundled } : extensions;
+
+    const extensionsWithState = this.mergeExt(allExtensions, showBundled);
 
     // normalize extension config so they differ only if the effective configuration actually
     // differs, leaving out the endorsement state

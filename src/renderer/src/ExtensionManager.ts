@@ -1818,7 +1818,7 @@ class ExtensionManager {
 
     const state: IState = this.mApi.store.getState();
     this.mExtensions
-      .filter((ext) => ext.dynamic)
+      .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
         try {
           let oldVersion = getSafe(state.app, ["extensions", ext.name, "version"], "0.0.0");
