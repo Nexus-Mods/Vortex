@@ -9,6 +9,22 @@ export const appReducer: IReducerSpec = {
     [actions.setStateVersion as any]: (state, payload) => setSafe(state, ["version"], payload),
     [actions.setApplicationVersion as any]: (state, payload) =>
       setSafe(state, ["appVersion"], payload),
+    [actions.addExtension as any]: (state, payload) => {
+      const { extensionId, info } = payload;
+      const existing = state.extensions?.[extensionId] ?? {};
+      return setSafe(state, ["extensions", extensionId], {
+        ...existing,
+        name: info.name,
+        version: info.version,
+        author: info.author,
+        description: info.description,
+        path: info.path,
+        modId: info.modId,
+        fileId: info.fileId,
+        type: info.type,
+        bundled: info.bundled,
+      });
+    },
     [actions.setExtensionEnabled as any]: (state, payload) =>
       setSafe(state, ["extensions", payload.extensionId, "enabled"], payload.enabled),
     [actions.setExtensionVersion as any]: (state, payload) =>

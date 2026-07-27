@@ -5,7 +5,7 @@ import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
 import SevenZip from "node-7z";
 
-import { forgetExtension, removeExtension } from "../../actions";
+import { addExtension, forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
 import { log } from "../../logging";
 import type { ExtensionType, IExtension } from "../../types/extensions";
@@ -73,20 +73,27 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
 
     const state = api.getState();
     const { installed, available } = state.session.extensions;
+    const extState = state.app.extensions ?? {};
 
     const promises = handler.dependencies.map(async (dependencyId) => {
-      if (installed[dependencyId]) return;
+      if (installed[dependencyId] ?? extState[dependencyId]) return;
 
       const toInstall = available.find(
         (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
       );
 
       if (!toInstall) return;
-      const alreadyInstalled = Object.values(installed).some(
-        (entry) =>
-          (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-          entry.name === toInstall.name,
-      );
+      const alreadyInstalled =
+        Object.values(installed).some(
+          (entry) =>
+            (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
+            entry.name === toInstall.name,
+        ) ||
+        Object.values(extState).some(
+          (entry) =>
+            (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
+            entry.name === toInstall.name,
+        );
       if (alreadyInstalled) return;
 
       await api.emitAndAwait<"install-extension">("install-extension", toInstall);
@@ -124,11 +131,12 @@ export function clearStaleRemovalFlags(
 ): void {
   const state: IState = api.store.getState();
   const { installed } = state.session.extensions;
+  const extState = state.app.extensions ?? {};
   // Compare paths, not key strings: info.json `id` can decouple the state key
   // from the folder basename, and the archive-name fallback differs again.
   const normalizedDest = path.normalize(destPath).toLowerCase();
   removedKeys.forEach((key) => {
-    const prevPath = installed[key]?.path;
+    const prevPath = installed[key]?.path ?? extState[key]?.path;
     if (prevPath !== undefined && path.normalize(prevPath).toLowerCase() === normalizedDest) {
       api.store.dispatch(forgetExtension(key));
     }
@@ -138,25 +146,50 @@ export function clearStaleRemovalFlags(
 function removeOldVersion(api: IExtensionApi, info: IExtension): string[] {
   const state = api.getState();
   const { installed } = state.session.extensions;
+  const extState = state.app.extensions ?? {};
 
   // should never be more than one but let's handle multiple to be safe
-  const previousVersions = Object.entries(installed).filter(([_, ext]) => {
-    if (ext.bundled) return false;
-    if (info.id !== undefined && ext.id === info.id) return true;
-    if (info.modId !== undefined && ext.modId === info.modId) return true;
-    return info.name === ext.name;
-  });
+  const previousVersions: string[] = [];
+
+  // Search session.extensions.installed (legacy, will be removed in LAZ-833)
+  for (const [key, ext] of Object.entries(installed)) {
+    if (ext.bundled) continue;
+    if (info.id !== undefined && ext.id === info.id) {
+      previousVersions.push(key);
+      continue;
+    }
+    if (info.modId !== undefined && ext.modId === info.modId) {
+      previousVersions.push(key);
+      continue;
+    }
+    if (info.name === ext.name) {
+      previousVersions.push(key);
+    }
+  }
+
+  // Also search state.app.extensions (persisted source).  Avoid duplicates
+  // when a key already matched via session.extensions.installed above.
+  for (const [key, ext] of Object.entries(extState)) {
+    if (ext.bundled) continue;
+    if (previousVersions.includes(key)) continue;
+    if (info.modId !== undefined && ext.modId === info.modId) {
+      previousVersions.push(key);
+      continue;
+    }
+    if (info.name === ext.name) {
+      previousVersions.push(key);
+    }
+  }
 
   if (previousVersions.length > 0) {
     log("info", "removing previous versions of the extension", {
       previousVersions,
       newPath: info.path,
-      paths: previousVersions.map(([_, ext]) => ext.path),
     });
   }
 
   previousVersions.forEach((key) => api.store.dispatch(removeExtension(key)));
-  return previousVersions.map(([key, _]) => key);
+  return previousVersions;
 }
 
 const requiredThemeFiles = ["variables.scss", "style.scss", "fonts.scss"];
@@ -367,9 +400,7 @@ async function installExtensionImpl(
 
       const manifestInfo = await Promise.resolve(readExtensionInfo(tempPath, false, info));
 
-      // merge the caller-provided info with the stuff parsed from the info.json file because there
-      // is data we may only know at runtime (e.g. the modId)
-      const fullInfo = { ...(manifestInfo.info || {}), ...info };
+      const fullInfo = { ...manifestInfo.info };
       if (fullInfo.type === undefined) {
         fullInfo.type = await validateInstall(tempPath, info);
       }
@@ -391,6 +422,9 @@ async function installExtensionImpl(
       await rename(tempPath, destPath);
 
       clearStaleRemovalFlags(api, removedKeys, destPath);
+
+      api.store.dispatch(addExtension(manifestInfo.id, fullInfo));
+
       emitExtensionInstalled(
         api,
         { ...fullInfo, type: fullInfo.type, id: manifestInfo.id },

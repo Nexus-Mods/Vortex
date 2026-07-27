@@ -80,33 +80,32 @@ function getAllDirectories(searchPath: string): PromiseBB<string[]> {
 function applyExtensionInfo(
   id: string,
   bundled: boolean,
-  values: Partial<IExtension>,
-  fallback: Partial<IExtension>,
+  archiveInfo: Partial<IExtension>,
+  manifestInfo: Partial<IExtension>,
 ): IExtension {
   const res = {
-    name: values.name || fallback.name || id,
-    author: values.author || fallback.author || "Unknown",
-    version: values.version || fallback.version || "0.0.0",
-    description: values.description || fallback.description || "Missing",
+    name: manifestInfo.name || archiveInfo.name || id,
+    author: manifestInfo.author || archiveInfo.author || "Unknown",
+    version: manifestInfo.version || archiveInfo.version || "0.0.0",
+    description: manifestInfo.description || archiveInfo.description || "Missing",
   } satisfies IExtension;
 
   // add optional settings if we have them
-  const add = <T>(key: string, value: T, fallbackValue: T) => {
-    if (value !== undefined) {
-      res[key] = value;
-    } else if (fallbackValue !== undefined) {
-      res[key] = fallbackValue;
+  const add = <T>(key: string, primary: T, secondary: T) => {
+    if (primary !== undefined) {
+      res[key] = primary;
+    } else if (secondary !== undefined) {
+      res[key] = secondary;
     }
   };
 
-  add("type", values.type, fallback.type);
-  add("path", values.path, fallback.path);
+  add("type", manifestInfo.type, archiveInfo.type);
+  add("path", archiveInfo.path, undefined);
   add("bundled", bundled, undefined);
   // modId/fileId are identity data assigned by the Nexus Mods manifest, not
-  // something an extension author controls via their own info.json, so the
-  // trusted, install-time-supplied fallback takes priority over the archive.
-  add("modId", fallback.modId, values.modId);
-  add("fileId", fallback.fileId, values.fileId);
+  // something an extension author controls via their own info.json.
+  add("modId", manifestInfo.modId, archiveInfo.modId);
+  add("fileId", manifestInfo.fileId, archiveInfo.fileId);
 
   return res;
 }
@@ -125,7 +124,7 @@ export function sanitize(input: string): string {
 export function readExtensionInfo(
   extensionPath: string,
   bundled: boolean,
-  fallback: Partial<IExtension> = {},
+  manifestInfo: Partial<IExtension> = {},
 ): PromiseBB<{ id: string; info: IExtension }> {
   const finalPath = extensionPath.replace(/\.installing$/, "");
 
@@ -137,14 +136,14 @@ export function readExtensionInfo(
       const id = data.id || path.basename(finalPath);
       return {
         id,
-        info: applyExtensionInfo(id, bundled, data, fallback),
+        info: applyExtensionInfo(id, bundled, data, manifestInfo),
       };
     })
     .catch(() => {
       const id = path.basename(finalPath);
       return {
         id,
-        info: applyExtensionInfo(id, bundled, {}, fallback),
+        info: applyExtensionInfo(id, bundled, {}, manifestInfo),
       };
     });
 }
