@@ -21,7 +21,12 @@ import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
 
-import { forgetExtension, setExtensionEnabled, setExtensionVersion } from "./actions/app";
+import {
+  addExtension,
+  forgetExtension,
+  setExtensionEnabled,
+  setExtensionVersion,
+} from "./actions/app";
 import type { DialogActions, DialogType, IDialogContent } from "./actions/notifications";
 import {
   addNotification,
@@ -731,6 +736,7 @@ class ExtensionManager {
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
+  private mPendingAdds: Array<{ extId: string; info: IExtension }> = [];
   // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
   private mExtensionPersistors: {
     [hive: string]: { persistor: IPersistor; debounce: number };
@@ -965,6 +971,11 @@ class ExtensionManager {
       store.dispatch(forgetExtension(extId));
     });
     this.mPendingRemoves = [];
+
+    this.mPendingAdds.forEach(({ extId, info }) => {
+      store.dispatch(addExtension(extId, info));
+    });
+    this.mPendingAdds = [];
 
     this.mExtensionState = getSafe(store.getState(), ["app", "extensions"], {});
 
@@ -3011,31 +3022,72 @@ class ExtensionManager {
 
     require("./util/extensionRequire").default(() => this.extensions);
 
-    const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
-    let dynamicallyLoaded = [];
-    return Object.keys(staticExtensions)
-      .map((name: string) => ({
-        name,
-        namespace: name,
-        path: path.resolve(__dirname, "extensions", name),
-        initFunc: () => {
-          const f = staticExtensions[name];
-          return ExtensionManager.getExtensionInitFunc(f());
-        },
-        dynamic: false,
-      }))
-      .concat(
-        ...extensionPaths.map((extSpec) => {
-          const newExtensions = this.loadDynamicExtensions(
-            extSpec,
-            loadedExtensions,
-            dynamicallyLoaded,
-          );
-          dynamicallyLoaded = dynamicallyLoaded.concat(newExtensions);
-          return newExtensions;
-        }),
-      );
+    let dynamicallyLoaded: IRegisteredExtension[] = [];
+
+    const staticExts = Object.keys(staticExtensions).map((name: string) => ({
+      name,
+      namespace: name,
+      path: path.resolve(__dirname, "extensions", name),
+      initFunc: () => {
+        const f = staticExtensions[name];
+        return ExtensionManager.getExtensionInitFunc(f());
+      },
+      dynamic: false,
+    }));
+
+    // --- User extensions: load from persisted state, then reconcile ---
+    const userExts = this.loadUserExtensions(loadedExtensions, dynamicallyLoaded);
+    dynamicallyLoaded = dynamicallyLoaded.concat(userExts);
+
+    // --- Bundled extensions: fresh disk scan every boot (never persisted) ---
+    const bundledExts = this.loadDynamicExtensions(
+      { path: getVortexPath("bundledPlugins"), bundled: true },
+      loadedExtensions,
+      dynamicallyLoaded,
+    );
+
+    return staticExts.concat(userExts).concat(bundledExts);
+  }
+
+  private loadUserExtensions(
+    loadedExtensions: Set<string>,
+    alreadyLoaded: IRegisteredExtension[],
+  ): IRegisteredExtension[] {
+    const userPath = path.join(getVortexPath("userData"), "plugins");
+
+    // 1. Load from persisted state by path (primary source)
+    const result: IRegisteredExtension[] = [];
+    const loadedFromState = new Set<string>();
+    for (const [extId, state] of Object.entries(this.mExtensionState)) {
+      if (state.remove || state.enabled === false) continue;
+      if (state.path === undefined || !fs.existsSync(state.path)) {
+        this.mPendingRemoves.push(extId);
+        continue;
+      }
+      const ext = this.loadDynamicExtension(state.path, alreadyLoaded, false);
+      if (ext !== undefined) {
+        result.push(ext);
+        loadedExtensions.add(ext.name);
+        loadedFromState.add(ext.name);
+      }
+    }
+
+    // 2. Disk scan for extensions not tracked in state (reconciliation)
+    const scanned = this.loadDynamicExtensions(
+      { path: userPath, bundled: false },
+      loadedExtensions,
+      alreadyLoaded,
+    );
+    for (const ext of scanned) {
+      if (!loadedFromState.has(ext.name)) {
+        this.mPendingAdds.push({ extId: ext.name, info: ext.info });
+        result.push(ext);
+        loadedExtensions.add(ext.name);
+      }
+    }
+
+    return result;
   }
 }
 
