@@ -22,6 +22,7 @@ import { EventEmitter } from "events";
 import * as path from "path";
 
 import type { IFileInfo } from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import { batch } from "redux-act";
@@ -55,6 +56,7 @@ import type {
 } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
@@ -91,6 +93,8 @@ import type {
   IInstallManagerHarness,
   IModCheckOpts,
   IModChangeHarness,
+  INxmHarness,
+  INxmHarnessOpts,
   IParkCheckOpts,
   IParkedCheck,
   IRevisionFixture,
@@ -997,5 +1001,114 @@ export function makeLoadOrderEntry(overrides: Partial<ILoadOrderEntry> = {}): IL
     name: id,
     enabled: true,
     ...overrides,
+  };
+}
+
+/**
+ * A fake api + Nexus connection for the nxm protocol handler (makeNXMProtocol /
+ * makeNXMLinkCallback). Distinct from makeApiHarness because the handler reads slices that one
+ * doesn't model - the cached membership, the known-games list it maps nxm domains through, and
+ * the free-user download queue - and because it needs an observable Nexus connection.
+ *
+ * The nexus methods are vi.fn()s that reject by default: a test states the one call it exercises,
+ * and any unexpected request fails loudly instead of resolving to undefined.
+ */
+export function makeNxmHarness(opts: INxmHarnessOpts = {}): INxmHarness {
+  const knownGames = opts.knownGames ?? [makeGameStored()];
+  const dispatched: ITrackedAction[] = [];
+  const errorNotifications: INxmHarness["errorNotifications"] = [];
+
+  const state = {
+    persistent: {
+      nexus: { userInfo: opts.userInfo },
+      downloads: { files: {} },
+    },
+    session: {
+      nexus: { ...nexusSessionReducer.defaults },
+      gameMode: { known: knownGames },
+      extensions: { available: opts.availableExtensions ?? [] },
+      collections: { activeSession: opts.activeSession },
+    },
+    settings: {
+      interface: { foregroundDL: false },
+    },
+  } as unknown as IState;
+
+  const apply = (action: ITrackedAction | null | undefined): void => {
+    if (action == null) {
+      return;
+    }
+    if (action.type === BATCH_TYPE && Array.isArray(action.payload)) {
+      (action.payload as ITrackedAction[]).forEach(apply);
+      return;
+    }
+    dispatched.push(action);
+    const reducer = nexusSessionReducer.reducers[action.type];
+    if (reducer !== undefined) {
+      state.session["nexus"] = reducer(state.session["nexus"], action.payload);
+    }
+  };
+
+  const events = new EventEmitter();
+  events.setMaxListeners(0);
+
+  const rejectUnexpected = (name: string) => () =>
+    Promise.reject(new Error(`unexpected nexus.${name} call`));
+
+  const getDownloadURLs = vi.fn(rejectUnexpected("getDownloadURLs"));
+  const getCollectionRevisionGraph = vi.fn(rejectUnexpected("getCollectionRevisionGraph"));
+  const getCollectionDownloadLink = vi.fn(rejectUnexpected("getCollectionDownloadLink"));
+  const getModFiles = vi.fn(rejectUnexpected("getModFiles"));
+
+  const nexus = {
+    getDownloadURLs,
+    getCollectionRevisionGraph,
+    getCollectionDownloadLink,
+    getModFiles,
+  } as unknown as NexusT;
+
+  const api = {
+    getState: () => state,
+    store: { getState: () => state, dispatch: apply },
+    events,
+    onAsync: (event: string, cb: (...args: unknown[]) => unknown) => {
+      events.on(event, cb);
+    },
+    onStateChange: () => undefined,
+    sendNotification: () => undefined,
+    dismissNotification: () => undefined,
+    showErrorNotification: (
+      title: string,
+      message: unknown,
+      options?: { allowReport?: boolean },
+    ) => {
+      errorNotifications.push({ title, message, allowReport: options?.allowReport });
+    },
+    translate: (key: string) => key,
+    emitAndAwait: () => Promise.resolve([]),
+  } as unknown as IExtensionApi;
+
+  return {
+    api,
+    nexus,
+    dispatched,
+    errorNotifications,
+    emit: (event: string, ...args: unknown[]) => {
+      events.emit(event, ...args);
+    },
+    getState: () => state,
+    setState: (mutate: (draft: IState) => void) => {
+      mutate(state);
+    },
+    setNextDialog: () => undefined,
+    dialogCalls: [],
+    freeUserQueue: () => state.session["nexus"].freeUserDLQueue ?? [],
+    setUserInfo: (userInfo) => {
+      state.persistent["nexus"].userInfo = userInfo;
+    },
+    getDownloadURLs,
+    getCollectionRevisionGraph,
+    getCollectionDownloadLink,
+    getModFiles,
   };
 }
