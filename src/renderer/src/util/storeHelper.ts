@@ -16,12 +16,8 @@ function clone<T>(input: T): T {
  * return an item from state or the fallback if the path doesn't lead
  * to an item or if the item is null/undefined.
  *
- * @export
- * @template T
- * @param {*} state
- * @param {string[]} path
- * @param {T} fallback
- * @returns {T}
+ * @public
+ * @deprecated Use optional chaining (`?.`) and nullish coalescing (`??`) instead.
  */
 export function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T {
   if (!path || path.length === 0) {
@@ -39,6 +35,9 @@ export function getSafe<T>(state: any, path: Array<string | number | undefined>,
 
 /**
  * case insensitive variant of getSafe
+ *
+ * @public
+ * @deprecated Use `Object.keys()` + `find()` for case-insensitive key lookup with optional chaining.
  */
 export function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T {
   let current = state;
@@ -68,6 +67,10 @@ export function getSafeCI<T>(state: any, path: Array<string | number>, fallback:
   return current;
 }
 
+/**
+ * @public
+ * @deprecated Use direct assignment instead.
+ */
 export function mutateSafe<T>(state: T, path: Array<string | number>, value: any) {
   const firstElement = path[0];
   if (path.length === 1) {
@@ -83,12 +86,8 @@ export function mutateSafe<T>(state: T, path: Array<string | number>, value: any
 /**
  * set an item in state, creating all intermediate nodes as necessary
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {*} value
- * @returns {T}
+ * @public
+ * @deprecated Use spread syntax with computed property names and nested spreads for immutable updates.
  */
 export function setSafe<T extends object>(state: T, path: Array<string | number>, value: any): T {
   if (path.length === 0) {
@@ -114,12 +113,8 @@ export function setSafe<T extends object>(state: T, path: Array<string | number>
  * That is: setOrNop does not create the object hierarchy referenced in the path but
  * it does add a new attribute to the object if necessary.
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {*} value
- * @returns {T}
+ * @public
+ * @deprecated Use computed property spread with optional chaining guard (e.g. `state.a?.b ? { ...state, a: { ...state.a, b: val } } : state`).
  */
 export function setOrNop<T>(state: T, path: string[], value: any): T {
   const firstElement: string = path[0];
@@ -143,12 +138,8 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  * sets a value or do nothing if the path or the key (last element of the path) doesn't exist.
  * This means changeOrNop only changes a pre-existing object attribute
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {*} value
- * @returns {T}
+ * @public
+ * @deprecated Use `Object.hasOwn()` guard with spread, or `Object.assign()`.
  */
 export function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T {
   const firstElement: string | number = path[0];
@@ -173,11 +164,8 @@ export function changeOrNop<T>(state: T, path: Array<string | number>, value: an
 /**
  * delete a value or do nothing if the path doesn't exist
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @returns {T}
+ * @public
+ * @deprecated Use destructuring rest (`{ [key]: _, ...rest }`) for objects, `Array.filter()` or `Array.toSpliced()` for arrays.
  */
 export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   const firstElement = path[0];
@@ -203,6 +191,10 @@ export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   return result;
 }
 
+/**
+ * @public
+ * @deprecated Use spread + nullish coalescing (`state.path ?? fallback`) with direct immutable updates.
+ */
 export function setDefaultArray<T>(state: T, path: Array<string | number>, fallback: any[]): T {
   const firstElement = path[0];
   const copy = Array.isArray(state) ? state.slice() : { ...(state as any) };
@@ -229,6 +221,9 @@ export function setDefaultArray<T>(state: T, path: Array<string | number>, fallb
  * @param state immutable object to update
  * @param path path to the item to update
  * @param value the value to add.
+ *
+ * @public
+ * @deprecated Use array spread (`[...arr, value]`) or `Array.toSpliced()`.
  */
 export function pushSafe<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
@@ -241,6 +236,9 @@ export function pushSafe<T>(state: T, path: Array<string | number>, value: any):
  * @param state immutable object to update
  * @param path path to the item to update
  * @param value the value to add.
+ *
+ * @public
+ * @deprecated Use `arr.includes(value) ? state : [...arr, value]`.
  */
 export function addUniqueSafe<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
@@ -255,12 +253,8 @@ export function addUniqueSafe<T>(state: T, path: Array<string | number>, value: 
 /**
  * remove a value from an array by value
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {*} value
- * @returns {T}
+ * @public
+ * @deprecated Use `arr.filter(v => v !== value)` or `arr.toSpliced(arr.indexOf(value), 1)`.
  */
 export function removeValue<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
@@ -276,12 +270,8 @@ export function removeValue<T>(state: T, path: Array<string | number>, value: an
 /**
  * remove all vales for which the predicate applies
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {(element: any) => boolean} predicate
- * @returns {T}
+ * @public
+ * @deprecated Use `arr.filter(ele => !predicate(ele))`.
  */
 export function removeValueIf<T extends object>(
   state: T,
@@ -298,18 +288,18 @@ export function removeValueIf<T extends object>(
 /**
  * shallow merge a value into the store at the specified location
  *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {Object} value
- * @returns {T}
+ * @public
+ * @deprecated Use spread syntax (`{ ...obj, ...values }`).
  */
 export function merge<T extends object>(state: T, path: Array<string | number>, value: any): T {
   const newVal = { ...getSafe(state, path, {}), ...value };
   return setSafe(state, path, newVal);
 }
 
+/**
+ * @public
+ * @deprecated Use spread with nullish coalescing (`{ ...state, ...(inbound ?? {}) }`).
+ */
 export function rehydrate<T extends object>(
   state: T,
   inbound: any,
