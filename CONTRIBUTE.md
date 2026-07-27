@@ -28,15 +28,30 @@ Before you start, make sure you have:
 
 After you have finished the setup steps:
 
-1. `pnpm run build:all`
+1. `pnpm run build`
 2. `pnpm run start`
+
+### Hot reload (`pnpm run dev`)
+
+For iterating on renderer (UI) code, `pnpm run dev` starts Vortex with hot
+module replacement instead of the build/start cycle:
+
+- Component (`.tsx`) edits hot-swap in place via react-refresh — React and
+  Redux state are preserved, no reload.
+- Edits that can't be hot-applied (reducers, utils, extension `index.ts` init
+  code) automatically trigger a clean window reload.
+- Tailwind class changes rebuild `tailwind-v4.css` and swap the stylesheet in
+  place, without a reload.
+- **Not covered:** main-process (`src/main`), preload, and `@vortex/shared`
+  changes still need a restart of `pnpm run dev`; the dynamic extensions in
+  `extensions/` and `extensions/games/` still require an app relaunch.
 
 ## Debugging
 
 ### VS Code
 
 - **F5** debugs both main and renderer processes
-- **Build first** by running `pnpm run build:all` before debugging
+- **Build first** by running `pnpm run build` before debugging
 
 See [docs/DEBUGGING-GUIDE.md] for detailed debugging
 instructions.

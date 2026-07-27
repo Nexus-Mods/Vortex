@@ -36,6 +36,17 @@ ls src/main/out/main/main.js
 2. Press **F5** or select **Debug Electron**
 3. Vortex launches with debuggers attached to both main and renderer processes
 
+### Hot Reload (`pnpm run dev`)
+
+When iterating on renderer/UI code, `pnpm run dev` avoids the rebuild/restart
+cycle entirely: it starts webpack and tailwind in watch mode and launches
+Electron with hot module replacement (see `CONTRIBUTE.md` → "Hot reload").
+DevTools debugging works as usual (`START_DEVTOOLS=true` in `.env`, or pass
+`--inspect=9229` through: `pnpm run dev --inspect=9229`). Console messages
+prefixed `[vortex-hmr]` report applied updates and fallback reloads. Note that
+hot-swapped code can make _line-based_ breakpoints go stale until the next
+full reload — reload the window (Ctrl+R) if breakpoints stop hitting.
+
 ### Set Breakpoints
 
 - **Main Process**: Set breakpoints in `src/main/main.ts`, `src/main/*.ts`
@@ -50,7 +61,7 @@ VS Code debug configurations are defined in `.vscode/launch.json`. The default *
 
 **Important Notes:**
 
-- Always run `pnpm run build:all` before debugging to ensure source maps are current
+- Always run `pnpm run build` before debugging to ensure source maps are current
 - If breakpoints aren't hitting, check that `out/` directory has recent files
 - The renderer attach profile needs a running Electron instance with `--remote-debugging-port=9222` (provided by the main-process profiles or `pnpm run start`)
 
