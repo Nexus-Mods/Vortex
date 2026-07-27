@@ -3,14 +3,12 @@ import { useMemo } from "react";
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import type {
-  BannerContext,
-  HealthCheckTab,
-  IssueType,
-  PremiumFallbackType,
-  PremiumTriggerContext,
-  ResolutionType,
-} from "../utils/shared/tracking";
+import type { BannerPlacement } from "../components/premium_banner/PremiumBanner";
+import type { PremiumTrigger } from "../components/premium_modal/PremiumModal";
+import type { HealthCheckTab, IssueType, ResolutionType } from "../utils/shared/tracking";
+
+/** Which free-user fallback the premium modal offered. */
+type PremiumFallbackType = "single_mod_page" | "batch_mod_pages";
 
 /**
  * Build a Health Check analytics event. Returns the app-wide MixpanelEvent shape so it
@@ -159,25 +157,23 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     // Premium modal
     trackPremiumModalShown: (props: {
-      trigger_context: PremiumTriggerContext;
+      trigger: PremiumTrigger;
       issue_id?: string;
       mod_id?: number;
       mod_count?: number;
     }) => track("health_check_premium_modal_shown", props),
 
-    trackPremiumModalDismissed: (props: {
-      trigger_context: PremiumTriggerContext;
-      issue_id?: string;
-    }) => track("health_check_premium_modal_dismissed", props),
+    trackPremiumModalDismissed: (props: { trigger: PremiumTrigger; issue_id?: string }) =>
+      track("health_check_premium_modal_dismissed", props),
 
     trackPremiumModalUnlockClicked: (props: {
-      trigger_context: PremiumTriggerContext;
+      trigger: PremiumTrigger;
       issue_id?: string;
       mod_count?: number;
     }) => track("health_check_premium_modal_unlock_clicked", props),
 
     trackPremiumModalFallbackClicked: (props: {
-      trigger_context: PremiumTriggerContext;
+      trigger: PremiumTrigger;
       fallback_type: PremiumFallbackType;
       issue_id?: string;
       mod_count?: number;
@@ -185,13 +181,13 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     // Premium banner
     trackPremiumBannerShown: (props: {
-      context: BannerContext;
+      placement: BannerPlacement;
       total_issues: number;
       issue_id?: string;
     }) => track("health_check_premium_banner_shown", props),
 
     trackPremiumBannerClicked: (props: {
-      context: BannerContext;
+      placement: BannerPlacement;
       total_issues: number;
       issue_id?: string;
     }) => track("health_check_premium_banner_clicked", props),

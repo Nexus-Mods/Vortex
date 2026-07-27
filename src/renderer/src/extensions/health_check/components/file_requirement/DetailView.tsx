@@ -142,6 +142,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         <div className="space-y-4">
           <RequirementBody
             api={api}
+            issueId={entry.id}
             ctx={{
               api,
               showPremiumAd,

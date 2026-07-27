@@ -112,6 +112,13 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
       <PremiumModal
         isOpen={showPremiumModal}
+        tracking={{
+          api,
+          trigger: "single_install",
+          issueId: entry.id,
+          modId: mod.modId,
+          modCount: 1,
+        }}
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {
           setShowPremiumModal(false);

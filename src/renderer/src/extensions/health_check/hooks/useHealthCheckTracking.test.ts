@@ -60,9 +60,9 @@ describe("createHealthCheckTracker", () => {
 
   it("strips undefined optional properties", () => {
     const { tracker, events } = harness();
-    tracker.trackPremiumModalShown({ trigger_context: "single_install" });
+    tracker.trackPremiumModalShown({ trigger: "single_install" });
     expect(events[0].eventName).toBe("health_check_premium_modal_shown");
-    expect(events[0].properties).toEqual({ trigger_context: "single_install" });
+    expect(events[0].properties).toEqual({ trigger: "single_install" });
     expect(events[0].properties).not.toHaveProperty("issue_id");
   });
 });

@@ -156,6 +156,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       const warningCount = activeItems.filter(
         (item) => issueTypeForCheck(item.entry.checkId) === "warning",
       ).length;
+
       trackPageViewed({
         active_issue_count: activeItems.length,
         hidden_issue_count: hiddenItems.length,
@@ -380,11 +381,18 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
           activeList
         )}
 
-        <PremiumBanner />
+        <PremiumBanner
+          tracking={{ api, placement: "list", totalIssues: activeCount + hiddenCount }}
+        />
 
         <PremiumModal
           downloadScope="all"
           isOpen={showInstallAllPremium}
+          tracking={{
+            api,
+            trigger: "install_all",
+            modCount: installAllItems.length,
+          }}
           onClose={() => setShowInstallAllPremium(false)}
           onDownload={() => setShowInstallAllPremium(false)}
         />

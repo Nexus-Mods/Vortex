@@ -20,6 +20,7 @@ import {
   isAnyHealthCheckRunning,
   modRequirementsCheckResult,
 } from "../selectors";
+import { selectListedEntries } from "../utils/shared/listedEntries";
 import type { IHealthCheckContent, IHealthCheckEntry } from "./content/types";
 
 interface IHealthCheckDetailPageProps {
@@ -115,7 +116,14 @@ function HealthCheckDetailPage({
       <PageScroll className="space-y-6 p-6">
         <DetailView api={api} entry={shownEntry} onBack={onBack} />
 
-        <PremiumBanner />
+        <PremiumBanner
+          tracking={{
+            api,
+            placement: "detail",
+            issueId: shownEntry.id,
+            totalIssues: selectListedEntries(api.getState()).length,
+          }}
+        />
       </PageScroll>
     </Page>
   );

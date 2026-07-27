@@ -15,15 +15,6 @@ export type ResolutionType = "install" | "enable" | "pick" | "update";
 /** Which listing tab is active. */
 export type HealthCheckTab = "active" | "hidden";
 
-/** Where a premium prompt was surfaced from. */
-export type PremiumTriggerContext = "single_install" | "batch_install" | "install_all";
-
-/** Which free-user fallback the premium modal offered. */
-export type PremiumFallbackType = "single_mod_page" | "batch_mod_pages";
-
-/** Where the premium banner is shown. */
-export type BannerContext = "list" | "detail";
-
 /**
  * issue_type for an entry, keyed off the check it belongs to: the file-level
  * requirements check surfaces higher-confidence warnings, the mod-level check

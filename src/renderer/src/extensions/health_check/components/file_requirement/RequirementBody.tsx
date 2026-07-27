@@ -72,10 +72,12 @@ export const RequirementBody = ({
   report,
   ctx,
   api,
+  issueId,
 }: {
   report: IFileRequirementReport;
   ctx: IFileActionContext;
   api: IExtensionApi;
+  issueId: string;
 }) => {
   const { t } = useTranslation("health_check");
   const [premiumOpen, setPremiumOpen] = useState(false);
@@ -156,6 +158,12 @@ export const RequirementBody = ({
       <PremiumModal
         downloadScope="all"
         isOpen={premiumOpen}
+        tracking={{
+          api,
+          trigger: "batch_install",
+          issueId,
+          modCount: installAllCandidates.length,
+        }}
         onClose={() => setPremiumOpen(false)}
         onDownload={() => setPremiumOpen(false)}
       />
