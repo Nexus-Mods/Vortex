@@ -19,9 +19,9 @@ export type ExtensionInit = (context: IExtensionContext) => boolean;
 export type ExtensionType = "game" | "translation" | "theme";
 
 /**
- * Information about an extension available from the info.json file
+ * Raw shape of an extension's info.json file.
  */
-export interface IExtension {
+export interface ExtensionInfo {
   // id of the extension. We strongly advice against setting this manually
   // in info.json because it mustn't be changed once the extension is released.
   // if this isn't set, Vortex will assign something automatically that at least
@@ -45,10 +45,12 @@ export interface IExtension {
   issueTrackerURL?: string;
 }
 
-export type IExtensionWithState = IExtension &
-  IExtensionState & {
-    loadFailures: IExtensionLoadFailure[];
-  };
+/** @deprecated Use ExtensionInfo instead */
+export type IExtension = ExtensionInfo;
+
+export type IExtensionWithState = IExtensionState & {
+  loadFailures: IExtensionLoadFailure[];
+};
 
 export interface IExtensionDownloadInfo {
   name: string;
