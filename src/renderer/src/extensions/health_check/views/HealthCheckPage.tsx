@@ -6,18 +6,15 @@ import {
   mdiEyeOff,
   mdiRefresh,
 } from "@mdi/js";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setOpenMainPage, setSettingsPage } from "@/actions/session";
-import { DisplayOptions } from "@/extensions/gamemode_management/components/DisplayOptions";
-import { Search } from "@/extensions/gamemode_management/components/Search";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
-import { Pictogram } from "@/ui/components/pictogram/Pictogram";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
@@ -33,6 +30,7 @@ import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
+import { useHealthCheckTracking } from "../hooks/useHealthCheckTracking";
 import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
@@ -42,6 +40,7 @@ import {
   modRequirementsCheckResult,
 } from "../selectors";
 import { type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
+import { type HealthCheckTab, issueTypeForCheck } from "../utils/shared/tracking";
 import { healthCheckContent } from "./content/registry";
 import type { IBulkInstallItem } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
@@ -59,24 +58,27 @@ interface IHealthCheckPageProps {
  * per-result lastFullRun subscription re-render only this label. Renders
  * nothing until the first check run of the session.
  */
-function LastUpdated() {
+const LastUpdated = () => {
   const { t } = useTranslation(["health_check", "common"]);
   const lastRun = useSelector(lastHealthCheckRun);
   const time = useRelativeTime(lastRun, t);
+
   if (time === undefined) {
     return null;
   }
+
   return (
     <Typography appearance="subdued" brand="neutral-translucent" typographyType="body-sm">
       {t("listing::last_updated", { time })}
     </Typography>
   );
-}
+};
 
 /** No-choice install items from every check, de-duplicated across checks by key. */
-function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstallItem[] {
+const collectInstallAllItems = (state: IState, api: IExtensionApi): IBulkInstallItem[] => {
   const seen = new Set<string>();
   const out: IBulkInstallItem[] = [];
+
   for (const content of Object.values(healthCheckContent)) {
     for (const item of content?.collectInstallAll?.(state, api) ?? []) {
       if (!seen.has(item.key)) {
@@ -85,14 +87,24 @@ function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstall
       }
     }
   }
-  return out;
-}
 
-function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) {
+  return out;
+};
+
+const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
+
+  const {
+    trackPageViewed,
+    trackPassedViewed,
+    trackTabSwitched,
+    trackHideAllClicked,
+    trackSettingsOpened,
+    trackOneClickInstallAllClicked,
+  } = useHealthCheckTracking(api);
 
   // Clicking the Health check menu item while already on the page returns to
   // the listing (closes any open detail). setSelected is stable, so registering
@@ -134,6 +146,42 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
   const hiddenItems = useMemo(() => items.filter((item) => item.hidden), [items]);
   const supportsHide = useMemo(() => items.some((item) => item.content.supportsHide), [items]);
 
+  // page_viewed fires each time the page becomes active (it stays mounted across
+  // navigation, so key off the active-prop transition rather than mount). lastHealthCheckRun
+  // is read from state rather than subscribed, to avoid re-rendering the page on every scan.
+  const wasActiveRef = useRef(false);
+
+  useEffect(() => {
+    if (active && !wasActiveRef.current) {
+      const warningCount = activeItems.filter(
+        (item) => issueTypeForCheck(item.entry.checkId) === "warning",
+      ).length;
+      trackPageViewed({
+        active_issue_count: activeItems.length,
+        hidden_issue_count: hiddenItems.length,
+        warning_count: warningCount,
+        suggestion_count: activeItems.length - warningCount,
+        last_scan_timestamp: lastHealthCheckRun(api.getState()),
+      });
+    }
+
+    wasActiveRef.current = !!active;
+  }, [active, activeItems, hiddenItems, trackPageViewed, api]);
+
+  // passed_viewed fires when the success/empty state becomes visible — on navigating to
+  // an already-passed page, or when a scan clears the last active issue while viewing.
+  const passedShownRef = useRef(false);
+
+  useEffect(() => {
+    const passed = !!active && !activeItems.length;
+
+    if (passed && !passedShownRef.current) {
+      trackPassedViewed();
+    }
+
+    passedShownRef.current = passed;
+  }, [active, activeItems, trackPassedViewed]);
+
   if (selected) {
     return (
       <HealthCheckDetailPage
@@ -151,6 +199,7 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
 
   const renderRow = (item: IListedEntry) => {
     const { content, entry } = item;
+
     return (
       <content.ListingRow
         api={api}
@@ -163,7 +212,19 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
     );
   };
 
+  const handleTabChange = (tab: string) => {
+    if (tab !== selectedTab) {
+      trackTabSwitched({
+        tab: tab as HealthCheckTab,
+        issue_count_in_tab: tab === "hidden" ? hiddenCount : activeCount,
+      });
+    }
+
+    setSelectedTab(tab);
+  };
+
   const hideAllActive = () => {
+    trackHideAllClicked({ issue_count_hidden: activeItems.length });
     activeItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 
@@ -175,11 +236,18 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
   // collectInstallAllItems (by key) and again here at execution time via the seen set,
   // so a file shared across multiple source reports is only queued once.
   const installAll = () => {
+    trackOneClickInstallAllClicked({
+      issue_count: activeCount,
+      mod_count: installAllItems.length,
+    });
+
     if (showPremiumAd) {
       setShowInstallAllPremium(true);
       return;
     }
+
     const seen = new Set<string>();
+
     for (const item of installAllItems) {
       if (!seen.has(item.key)) {
         seen.add(item.key);
@@ -236,6 +304,7 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
             size="sm"
             title={t("common:::settings")}
             onClick={() => {
+              trackSettingsOpened();
               dispatch(setOpenMainPage("application_settings", false));
               dispatch(setSettingsPage("Vortex"));
             }}
@@ -249,7 +318,7 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
             tab={selectedTab}
             tabListId="health-check-mods"
             tabType="secondary"
-            onSetSelectedTab={setSelectedTab}
+            onSetSelectedTab={handleTabChange}
           >
             <div className="flex items-center justify-between">
               <TabBar>
@@ -322,6 +391,6 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
       </PageScroll>
     </Page>
   );
-}
+};
 
 export default HealthCheckPage;

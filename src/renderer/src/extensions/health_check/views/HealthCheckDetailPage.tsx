@@ -1,5 +1,5 @@
 import { mdiArrowLeft } from "@mdi/js";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -12,6 +12,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
+import { useHealthCheckTracking } from "../hooks/useHealthCheckTracking";
 import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
@@ -43,6 +44,24 @@ function HealthCheckDetailPage({
 }: IHealthCheckDetailPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const { DetailView } = content;
+
+  // back_clicked fires only on an explicit Back click (not the auto-return below when a
+  // requirement resolves), with the time spent on the detail page.
+  const { trackBackClicked } = useHealthCheckTracking(api);
+  const openedAtRef = useRef(0);
+
+  useEffect(() => {
+    openedAtRef.current = Date.now();
+  }, []);
+
+  const handleBack = () => {
+    trackBackClicked({
+      issue_id: entry.id,
+      time_spent_on_detail_ms: Date.now() - openedAtRef.current,
+    });
+
+    onBack();
+  };
 
   // Re-derive this entry from live state so requirements drop off as the health
   // check re-runs after an install/enable; once it's fully resolved (and no check
@@ -87,7 +106,7 @@ function HealthCheckDetailPage({
           brand="neutral"
           leftIconPath={mdiArrowLeft}
           size="sm"
-          onClick={onBack}
+          onClick={handleBack}
         >
           {t("common:::back")}
         </Button>

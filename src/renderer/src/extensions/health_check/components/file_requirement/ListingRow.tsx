@@ -1,4 +1,4 @@
-import { mdiCallSplit, mdiCheck, mdiSwapHorizontal, mdiTrayArrowDown } from "@mdi/js";
+import { mdiCallSplit, mdiCheck, mdiMonitorArrowDownVariant, mdiSwapHorizontal } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -68,7 +68,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiTrayArrowDown}
+              leftIconPath={mdiMonitorArrowDownVariant}
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={doQuickInstall}

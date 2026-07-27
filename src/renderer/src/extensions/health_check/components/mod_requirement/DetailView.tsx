@@ -5,7 +5,7 @@ import {
   mdiOpenInNew,
   mdiWeb,
 } from "@mdi/js";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -19,9 +19,11 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { opn } from "@/util/api";
 
 import { setModRequirementHidden } from "../../actions/persistent";
+import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import { hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
+import { issueTypeForCheck } from "../../utils/shared/tracking";
 import type { IDetailViewProps } from "../../views/content/types";
 import { Divider } from "../divider/Divider";
 import { EntryActions } from "../entry_actions/EntryActions";
@@ -49,16 +51,90 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     [hiddenRequirementMap, mod.requiredBy.modId, mod.id],
   );
 
+  const {
+    trackDetailViewed,
+    trackOneClickInstallClicked,
+    trackInstallViaModPageClicked,
+    trackViewModPageClicked,
+    trackSuggestionSourceLinkClicked,
+    trackIssueHidden,
+    trackIssueUnhidden,
+  } = useHealthCheckTracking(api);
+  const issueType = issueTypeForCheck(entry.checkId);
+  const modVersion = mod.mainFile?.version ?? "";
+
+  // detail_viewed fires once per detail open; entry-prop changes as the check re-runs
+  // shouldn't re-fire it, so the mount-only effect is intentional.
+  useEffect(() => {
+    trackDetailViewed({
+      issue_id: entry.id,
+      issue_type: issueType,
+      resolution_type: "install",
+      required_mod_count: 1,
+      source_mod_name: mod.requiredBy.modName,
+    });
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+  }, []);
+
+  const handleInstall = () => {
+    trackOneClickInstallClicked({
+      issue_id: entry.id,
+      mod_id: mod.modId,
+      mod_name: mod.modName,
+      mod_version: modVersion,
+      is_adult_content: mod.mainFile?.adultContent ?? false,
+    });
+
+    void installInApp();
+  };
+
+  // Free users are routed to the website to install (a resolution action); premium users
+  // clicking through to the mod page is informational — track them as distinct events.
+  const handleModPage = () => {
+    const modPageProps = {
+      issue_id: entry.id,
+      mod_id: mod.modId,
+      mod_name: mod.modName,
+      mod_version: modVersion,
+    };
+
+    if (showPremiumAd) {
+      trackInstallViaModPageClicked(modPageProps);
+    } else {
+      trackViewModPageClicked(modPageProps);
+    }
+
+    openModPage();
+  };
+
   const openRequiringModPage = useCallback(() => {
+    trackSuggestionSourceLinkClicked({ issue_id: entry.id, mod_id: mod.requiredBy.modId });
+
     if (mod.requiredBy.modUrl) {
       opn(mod.requiredBy.modUrl).catch(() => undefined);
     }
-  }, [mod.requiredBy.modUrl]);
+  }, [trackSuggestionSourceLinkClicked, entry.id, mod.requiredBy.modId, mod.requiredBy.modUrl]);
 
   const handleToggleHide = useCallback(() => {
+    if (isHidden) {
+      trackIssueUnhidden({ issue_id: entry.id, issue_type: issueType });
+    } else {
+      trackIssueHidden({ issue_id: entry.id, issue_type: issueType, resolution_type: "install" });
+    }
+
     api.store?.dispatch(setModRequirementHidden(mod.requiredBy.modId, mod.id, !isHidden));
     onBack();
-  }, [api, mod.requiredBy.modId, mod.id, isHidden, onBack]);
+  }, [
+    api,
+    mod.requiredBy.modId,
+    mod.id,
+    isHidden,
+    onBack,
+    entry.id,
+    issueType,
+    trackIssueHidden,
+    trackIssueUnhidden,
+  ]);
 
   // External installs can't be auto-detected, so confirming just hides the
   // requirement from future checks.
@@ -67,17 +143,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     onBack();
   }, [api, mod.requiredBy.modId, mod.id, onBack]);
 
-  // mainFile is denormalized by the check, so no fetch is needed here. External
-  // requirements aren't hosted on Nexus, so surface the URL and a caution note
-  // in place of the file name and mod summary.
-  const fileData = mod.externalRequirement
-    ? {
-        ...modToFileData(mod, mod.mainFile),
-        modDescription: t("detail::item::external_hosted_note"),
-        fileName: mod.modUrl ?? "",
-        fileVersion: "",
-      }
-    : modToFileData(mod, mod.mainFile);
   const severityStyle = severityStyleMap[entry.severity];
 
   return (
@@ -132,7 +197,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                       brand="neutral"
                       leftIconPath={mdiOpenInNew}
                       size="sm"
-                      onClick={openModPage}
+                      onClick={handleModPage}
                     >
                       {t("detail::item::install_via_mod_page")}
                     </Button>
@@ -144,14 +209,23 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                     leftIconPath={mdiMonitorArrowDownVariant}
                     rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                     size="sm"
-                    onClick={() => void installInApp()}
+                    onClick={handleInstall}
                   >
                     {t("detail::item::install_one_click")}
                   </Button>
                 </>
               )
             }
-            file={fileData}
+            file={
+              mod.externalRequirement
+                ? {
+                    ...modToFileData(mod, mod.mainFile),
+                    modDescription: t("detail::item::external_hosted_note"),
+                    fileName: mod.modUrl ?? "",
+                    fileVersion: "",
+                  }
+                : modToFileData(mod, mod.mainFile)
+            }
             {...(mod.externalRequirement
               ? { fileIconPath: mdiWeb, hideImage: true, onOpenFile: openModPage }
               : {})}

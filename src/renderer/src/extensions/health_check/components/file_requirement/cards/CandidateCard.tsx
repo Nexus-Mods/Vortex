@@ -1,4 +1,4 @@
-import { mdiOpenInNew, mdiTrayArrowDown } from "@mdi/js";
+import { mdiMonitorArrowDownVariant, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -51,7 +51,7 @@ export const CandidateCard = ({
             appearance={ctx.installButtonAppearance ?? "strong"}
             brand="neutral"
             isLoading={loading}
-            leftIconPath={mdiTrayArrowDown}
+            leftIconPath={mdiMonitorArrowDownVariant}
             rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
             size="sm"
             onClick={onClick}
