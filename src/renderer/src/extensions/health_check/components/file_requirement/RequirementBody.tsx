@@ -41,20 +41,16 @@ const groupTitleKey = (category: FileRequirementCategory): string => {
   }
 };
 
-const requirementRows = (
-  requirement: IFileRequirement,
-  ctx: IFileActionContext,
-  api: IExtensionApi,
-) => {
+const requirementRows = (requirement: IFileRequirement, ctx: IFileActionContext) => {
   switch (requirement.kind) {
     case "missing":
       return <DownloadRows ctx={ctx} requirement={requirement} />;
     case "wrong-version-installed":
       return <ReplaceRows ctx={ctx} requirement={requirement} />;
     case "correct-version-uninstalled":
-      return <InstallUninstalledRows api={api} requirement={requirement} />;
+      return <InstallUninstalledRows ctx={ctx} requirement={requirement} />;
     case "wrong-version-enabled":
-      return <ToggleRows api={api} requirement={requirement} />;
+      return <ToggleRows ctx={ctx} requirement={requirement} />;
     case "or":
       return <OrRows ctx={ctx} requirement={requirement} />;
   }
@@ -102,6 +98,7 @@ export const RequirementBody = ({
   };
 
   const installAll = () => {
+    ctx.onInstallAll(installAllCandidates);
     if (ctx.showPremiumAd) {
       setPremiumOpen(true);
       return;
@@ -140,7 +137,7 @@ export const RequirementBody = ({
         <RequirementGroup actions={installAllAction} title={title}>
           {requirements.map((requirement) => (
             <React.Fragment key={requirement.requirementDefId}>
-              {requirementRows(requirement, rowCtx, api)}
+              {requirementRows(requirement, rowCtx)}
             </React.Fragment>
           ))}
         </RequirementGroup>
@@ -150,7 +147,7 @@ export const RequirementBody = ({
             {index > 0 && <AndDivider />}
 
             <RequirementGroup actions={index === 0 ? installAllAction : undefined} title={title}>
-              {requirementRows(requirement, rowCtx, api)}
+              {requirementRows(requirement, rowCtx)}
             </RequirementGroup>
           </React.Fragment>
         ))
