@@ -408,7 +408,7 @@ function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, p
     [x: number]: (state: StateT, payload: PayloadT<ActionT>) => StateT;
 };
 
-// @public
+// @public @deprecated
 function addUniqueSafe<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -542,7 +542,7 @@ function changeFileAttributes(filePath: string, wantedAttributes: number, stat: 
 // @public (undocumented)
 function changeFileOwnership(filePath: string, stat: fs_2.Stats): Promise_2<void>;
 
-// @public
+// @public @deprecated
 function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -879,7 +879,7 @@ const _default: GitHub;
 // @public
 function delay(timeoutMS: number): Bluebird<void>;
 
-// @public
+// @public @deprecated
 function deleteOrNop<T>(state: T, path: Array<string | number>): T;
 
 // @public (undocumented)
@@ -1561,10 +1561,10 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
 // @public (undocumented)
 function getReduxLog(): Promise<ILog[]>;
 
-// @public
+// @public @deprecated
 function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T;
 
-// @public
+// @public @deprecated
 function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
 
 // @public (undocumented)
@@ -4667,7 +4667,7 @@ function makeUnique<T>(input: T[]): T[];
 // @public
 function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 
-// @public
+// @public @deprecated
 function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -4765,7 +4765,7 @@ const moveAsync: (src: string, dest: string, options?: fs_2.MoveOptions) => Prom
 // @public
 function moveRenameAsync(src: string, dest: string): Promise_2<string>;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void;
 
 // @public (undocumented)
@@ -5031,7 +5031,7 @@ export class PureComponentEx<P, S extends object> extends React_2.PureComponent<
     nextState: S;
 }
 
-// @public
+// @public @deprecated
 function pushSafe<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -5117,7 +5117,7 @@ type RegisterSettings = (title: string, element: React_2.ComponentClass<any> | R
 // @public (undocumented)
 type RegisterToDo = (id: string, type: ToDoType, props: (state: any) => any, icon: ((props: any) => JSX.Element) | string, text: ((t: TFunction, props: any) => JSX.Element) | string, action: (props: any) => void, condition: (props: any) => boolean, value: ((t: TFunction, props: any) => JSX.Element) | string, priority: number) => void;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function rehydrate<T extends object>(state: T, inbound: any, path: string[], replace: boolean, defaults: any): T;
 
 // @public (undocumented)
@@ -5167,10 +5167,10 @@ const removeProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 // @public (undocumented)
 function removeSync(dirPath: string): void;
 
-// @public
+// @public @deprecated
 function removeValue<T>(state: T, path: Array<string | number>, value: any): T;
 
-// @public
+// @public @deprecated
 function removeValueIf<T extends object>(state: T, path: Array<string | number>, predicate: (element: any) => boolean): T;
 
 // @public (undocumented)
@@ -5440,7 +5440,7 @@ const setCustomTitlebar: reduxAct.ComplexActionCreator1<any, any, {}>;
 // @public
 function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K];
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function setDefaultArray<T>(state: T, path: Array<string | number>, fallback: any[]): T;
 
 // @public (undocumented)
@@ -5741,7 +5741,7 @@ page: string;
 secondary: boolean;
 }, {}>;
 
-// @public
+// @public @deprecated
 function setOrNop<T>(state: T, path: string[], value: any): T;
 
 // @public
@@ -5784,7 +5784,7 @@ percent: number;
 // @public (undocumented)
 const setRelativeTimes: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 
-// @public
+// @public @deprecated
 function setSafe<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
@@ -6542,6 +6542,21 @@ declare namespace util {
         ISteamEntry,
         CollectionInstallOutcomeProps,
         ModChangeReason,
+        addUniqueSafe,
+        changeOrNop,
+        currentGame_2 as currentGame,
+        deleteOrNop,
+        getSafe,
+        getSafeCI,
+        merge,
+        mutateSafe,
+        pushSafe,
+        rehydrate,
+        removeValue,
+        removeValueIf,
+        setDefaultArray,
+        setOrNop,
+        setSafe,
         Archive,
         ArgumentInvalid,
         batchDispatch,
@@ -6685,22 +6700,7 @@ declare namespace util {
         request,
         upload,
         IRequestOptions,
-        Method,
-        getSafe,
-        getSafeCI,
-        mutateSafe,
-        setSafe,
-        setOrNop,
-        changeOrNop,
-        deleteOrNop,
-        setDefaultArray,
-        pushSafe,
-        addUniqueSafe,
-        removeValue,
-        removeValueIf,
-        merge,
-        rehydrate,
-        currentGame_2 as currentGame
+        Method
     }
 }
 export { util }
