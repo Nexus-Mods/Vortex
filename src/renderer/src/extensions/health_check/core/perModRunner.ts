@@ -13,7 +13,6 @@ import { HealthCheckSeverity } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
 import { activeGameId } from "../../../util/selectors";
 import { installPathForGame } from "../../mod_management/selectors";
-import { chunked } from "../utils/shared/batchCache";
 
 /** Map an installed mod's redux state row to an IModCheckContext. */
 export interface IInstalledModEntry {
@@ -86,9 +85,8 @@ async function walkRelative(root: string): Promise<string[]> {
 }
 
 /**
- * How many mods are walked at a time. Each in-flight mod holds its whole file list in memory for
- * as long as `checkMod` runs. The walk is filesystem-bound, so wider waves buy no measurable
- * speedup.
+ * How many mods are walked at a time. Each in-flight mod holds its whole file list for as long as
+ * `checkMod` runs, and the walk is filesystem-bound, so a wider pool buys no measurable speedup.
  */
 export const MOD_WALK_CONCURRENCY = 16;
 
@@ -100,7 +98,7 @@ const LOGGED_MOD_SAMPLE = 10;
  * fold the per-mod results into a single IHealthCheckResult (worst severity
  * wins; per-mod messages are concatenated into `details`).
  *
- * On `signal`, the walk stops at the next wave boundary and aggregates what it has.
+ * On `signal`, mods not yet started are skipped and the aggregate covers what did run.
  * `enumerate` / `buildContext` are a seam for unit tests; production callers pass neither.
  */
 export interface IPerModCheckOpts {
@@ -144,8 +142,8 @@ export async function runPerModCheck(
   };
 
   const checkOne = async (entry: IInstalledModEntry): Promise<IHealthCheckResult> => {
-    // A throw from buildContext is a fault in this module or the staging folder, not in the
-    // extension's check; the rejected branch below attributes it to this mod.
+    // A buildContext throw is a fault in this module or the staging folder, not in the
+    // extension's check. The catch below attributes it to this mod.
     const ctx = await buildContext(entry);
     try {
       return await hc.checkMod(api, ctx, signal);
@@ -154,31 +152,40 @@ export async function runPerModCheck(
     }
   };
 
-  const perMod: IHealthCheckResult[] = [];
+  // ESM-only against a CommonJS renderer, so a static import fails typecheck (TS1479). webpack
+  // externalises this back to `require()`, which Node serves via require(esm): p-queue must stay
+  // free of top-level await.
+  const { default: PQueue } = await import("p-queue");
+  const queue = new PQueue({ concurrency: MOD_WALK_CONCURRENCY });
+
+  // Indexed by mod, so the aggregate reads in library order however the pool interleaves. A
+  // skipped mod leaves its slot empty.
+  const slots = new Array<IHealthCheckResult | undefined>(mods.length);
   const unreadable: string[] = [];
-  let abandoned = false;
 
-  for (const wave of chunked(mods, MOD_WALK_CONCURRENCY)) {
-    if (signal?.aborted) {
-      abandoned = true;
-      break;
-    }
-    // An unreadable staging folder (scanner lock, mod removed mid-walk) fails that mod alone.
-    const waveResults = await Promise.allSettled(wave.map(checkOne));
-    for (let i = 0; i < waveResults.length; i += 1) {
-      const settled = waveResults[i];
-      if (settled.status === "fulfilled") {
-        perMod.push(settled.value);
-        continue;
-      }
-      const modId = wave[i].modId;
-      unreadable.push(modId);
-      perMod.push(errorFor(modId, "Could not read staging folder for", settled.reason));
-    }
-  }
+  await Promise.all(
+    mods.map((entry, index) =>
+      queue.add(async () => {
+        if (signal?.aborted) {
+          return;
+        }
+        try {
+          slots[index] = await checkOne(entry);
+        } catch (err: unknown) {
+          // An unreadable staging folder (scanner lock, mod removed mid-walk) fails that mod
+          // alone.
+          unreadable.push(entry.modId);
+          slots[index] = errorFor(entry.modId, "Could not read staging folder for", err);
+        }
+      }),
+    ),
+  );
 
-  // One line per run, not per mod: a staging drive that has gone away would flood the log. Each
-  // failure is spelled out in the aggregate's `details`.
+  const perMod = slots.filter((result): result is IHealthCheckResult => result !== undefined);
+  const abandoned = perMod.length < mods.length;
+
+  // One line per run, not per mod: a staging drive that has gone away would flood the log. Every
+  // failure is still in the aggregate's `details`.
   if (unreadable.length > 0) {
     log("error", "per-mod check could not read some mods", {
       id: hc.id,

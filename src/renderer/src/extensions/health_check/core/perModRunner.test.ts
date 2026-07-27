@@ -126,7 +126,7 @@ describe("runPerModCheck error handling", () => {
     expect(result.details).toMatch(/Could not read staging folder for m1.*EACCES/);
   });
 
-  test("one unreadable mod does not discard the rest of the wave", async () => {
+  test("one unreadable mod does not discard the rest of the run", async () => {
     const hc = makeModHealthCheck({
       checkMod: async (_api, mod) => makeHealthCheckResult({ message: `checked ${mod.modId}` }),
     });
@@ -173,7 +173,7 @@ describe("runPerModCheck fan-out", () => {
   // of the libraries below blows through it.
   const CONCURRENCY_CEILING = 64;
 
-  // A microtask, not a timer: enough to make a wave's callbacks overlap, which is all the probe
+  // A microtask, not a timer: enough to make the pool's tasks overlap, which is all the probe
   // measures, and off the timer queue so CI load cannot change the result.
   const tick = () => Promise.resolve();
 
@@ -222,7 +222,7 @@ describe("runPerModCheck fan-out", () => {
       enumerate: () => entries(400),
       buildContext: async (entry) => {
         walked += 1;
-        // Abort part-way through the first wave, where the registry's timeout would land.
+        // Abort once the pool is saturated, where the registry's timeout would land.
         if (walked === MOD_WALK_CONCURRENCY) {
           abort.abort();
         }
@@ -231,10 +231,11 @@ describe("runPerModCheck fan-out", () => {
       },
     });
 
-    // The in-flight wave finishes; the rest of the library is left unwalked.
-    expect(walked).toBe(MOD_WALK_CONCURRENCY);
+    // How many tasks are in flight when the abort lands is p-queue's to decide; the bound is
+    // what matters.
+    expect(walked).toBeLessThanOrEqual(MOD_WALK_CONCURRENCY);
     // A partial walk must not read as a clean bill of health for the whole library.
-    expect(result.message).toContain(`stopped after ${MOD_WALK_CONCURRENCY} of 400 mods`);
+    expect(result.message).toMatch(/stopped after \d+ of 400 mods/);
   });
 
   test("peak does not grow with the size of the library", async () => {

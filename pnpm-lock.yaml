@@ -5005,6 +5005,9 @@ importers:
       numeral:
         specifier: 'catalog:'
         version: 2.0.6
+      p-queue:
+        specifier: 'catalog:'
+        version: 9.3.0
       packery:
         specifier: 'catalog:'
         version: 2.1.2
