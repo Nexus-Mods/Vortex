@@ -120,6 +120,26 @@ class MixpanelAnalytics {
   }
 
   /**
+   * Register (or clear) the active-game super properties so every subsequent event
+   * carries game/profile scope without each event having to pass it. Pass `null` when
+   * no game is active (e.g. the games dashboard) so stale scope can't leak onto
+   * game-agnostic events. `game_id` is the numeric Nexus id; `profile_id` is the active
+   * profile's id.
+   */
+  public setGameContext(context: { gameId: number | null; profileId: string } | null) {
+    if (!this.isUserSet()) return;
+    if (context === null) {
+      mixpanel.unregister("game_id");
+      mixpanel.unregister("profile_id");
+      return;
+    }
+    mixpanel.register({
+      game_id: context.gameId,
+      profile_id: context.profileId,
+    });
+  }
+
+  /**
    * Disable tracking
    */
   public stop() {
