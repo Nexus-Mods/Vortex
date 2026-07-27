@@ -44,13 +44,31 @@ describe("clearStaleRemovalFlags", () => {
   const extensionsPath = path.join("C:", "ProgramData", "vortex", "plugins");
 
   const makeApi = (
-    installed: Record<string, { path: string }>,
+    entries: Record<string, { path: string }>,
   ): { api: IExtensionApi; dispatch: ReturnType<typeof vi.fn> } => {
     const dispatch = vi.fn();
+    const extState = Object.fromEntries(
+      Object.entries(entries).map(([key, val]) => [
+        key,
+        {
+          enabled: true,
+          version: "1.0.0",
+          remove: true,
+          endorsed: "Undecided",
+          name: key,
+          author: "test",
+          description: "test extension",
+          path: val.path,
+        },
+      ]),
+    );
     const api = {
       store: {
         dispatch,
-        getState: () => ({ session: { extensions: { installed } }, app: { extensions: {} } }),
+        getState: () => ({
+          session: { extensions: { available: [] } },
+          app: { extensions: extState },
+        }),
       },
     } as unknown as IExtensionApi;
     return { api, dispatch };

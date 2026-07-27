@@ -313,6 +313,7 @@ export async function downloadAndInstallExtension(
     return true;
   } catch (err) {
     if (err instanceof UserCanceled) return false;
+    log("error", "error installing extension", err);
 
     api.showDialog(
       "error",
