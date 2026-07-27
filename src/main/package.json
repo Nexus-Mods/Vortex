@@ -26,6 +26,21 @@
   },
   "nx": {
     "targets": {
+      "dev": {
+        "cache": false,
+        "continuous": true,
+        "executor": "nx:noop",
+        "dependsOn": [
+          {
+            "projects": "@vortex/stylesheets",
+            "target": "tailwind:watch"
+          },
+          {
+            "projects": "@vortex/renderer",
+            "target": "watch"
+          }
+        ]
+      },
       "start": {
         "continuous": true,
         "cache": false,
@@ -340,6 +355,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "catalog:",
+    "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",
@@ -378,6 +394,7 @@
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
     "openapi-typescript": "catalog:",
+    "react-refresh": "catalog:",
     "redux-freeze": "catalog:",
     "vitest-fetch-mock": "catalog:"
   }

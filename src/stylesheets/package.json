@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "sass": "pnpm exec sass --style compressed --silence-deprecation=import ./loadingScreen.scss ./dist/loadingScreen.css",
-    "tailwind": "pnpm exec tailwindcss -i ./tailwind-v4.css -o ./dist/tailwind-v4.css -m"
+    "tailwind": "pnpm exec tailwindcss -i ./tailwind-v4.css -o ./dist/tailwind-v4.css -m",
+    "tailwind:watch": "pnpm exec tailwindcss -i ./tailwind-v4.css -o ../main/build/assets/css/tailwind-v4.css --watch=always"
   },
   "nx": {
     "targets": {
@@ -28,6 +29,10 @@
         "outputs": [
           "{projectRoot}/dist/tailwind-v4.css"
         ]
+      },
+      "tailwind:watch": {
+        "cache": false,
+        "continuous": true
       }
     }
   },
