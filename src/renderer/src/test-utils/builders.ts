@@ -40,6 +40,8 @@ import type { IDownload, IModInfo } from "../extensions/download_management/type
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
+import type { HealthCheckId } from "../extensions/health_check/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
@@ -65,20 +67,32 @@ import type {
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
+import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
+import {
+  HealthCheckCategory,
+  HealthCheckSeverity,
+  HealthCheckTrigger,
+} from "../types/IHealthCheck";
 import type { IState } from "../types/IState";
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
 import type {
   IApiHarness,
+  IConcurrencyProbe,
   IDownloadAdapterHarness,
   IDownloadAdapterOpts,
   IDriverHarness,
   IDriverHarnessState,
   IFbloHarness,
   IFbloHarnessOpts,
+  IHealthCheckHarness,
+  IHealthCheckHarnessOpts,
   IInstallContextHarness,
   IInstallManagerHarness,
+  IModCheckOpts,
   IModChangeHarness,
+  IParkCheckOpts,
+  IParkedCheck,
   IRevisionFixture,
   IRevisionMemberSpec,
   ITrackedAction,
@@ -306,6 +320,46 @@ export function makeFileListItem(overrides: Partial<IFileListItem> = {}): IFileL
 
 export function makeModInfo(overrides: Partial<IModInfo> = {}): IModInfo {
   return { ...overrides };
+}
+
+export function makeHealthCheckResult(
+  overrides: Partial<IHealthCheckResult> = {},
+): IHealthCheckResult {
+  return {
+    checkId: "test-check",
+    status: "passed",
+    severity: HealthCheckSeverity.Info,
+    message: "ok",
+    executionTime: 0,
+    timestamp: new Date(0),
+    ...overrides,
+  };
+}
+
+// a per-mod health check; `gameId` scopes it to one game, and omitting it runs for every game
+export function makeModHealthCheck(
+  overrides: Partial<IModHealthCheck & { gameId: string }> = {},
+): IModHealthCheck & { gameId?: string } {
+  return {
+    id: "test-check",
+    name: "Test",
+    description: "",
+    category: HealthCheckCategory.Mods,
+    severity: HealthCheckSeverity.Warning,
+    triggers: [HealthCheckTrigger.Manual],
+    checkMod: async () => makeHealthCheckResult(),
+    ...overrides,
+  };
+}
+
+export function makeModCheckContext(overrides: Partial<IModCheckContext> = {}): IModCheckContext {
+  return {
+    modId: "mod-1",
+    files: [],
+    readFile: async () => Buffer.alloc(0),
+    attributes: {},
+    ...overrides,
+  };
 }
 
 /**
@@ -693,6 +747,135 @@ export function makeInstallContextHarness(
   const mixpanelEvents = collectMixpanelEvents(base.api);
   const ctx = new ContextCtor(gameId, base.api, opts.silent ?? false);
   return { ctx, mixpanelEvents, ...base };
+}
+
+/**
+ * Records the high-water mark of concurrent operations. Bracket each holder's window with
+ * enter()/leave(): a bounded fan-out peaks at its cap, an unbounded one at the item count.
+ */
+export function makeConcurrencyProbe(): IConcurrencyProbe {
+  let live = 0;
+  let peak = 0;
+  return {
+    enter: () => {
+      live += 1;
+      peak = Math.max(peak, live);
+    },
+    leave: () => {
+      live -= 1;
+    },
+    peak: () => peak,
+  };
+}
+
+/**
+ * Harness for HealthCheckRegistry scheduling tests. Constructs the REAL registry against the fake
+ * api (makeApiHarness) with an active profile, so activeGameId resolves and the registry routes
+ * per-mod checks the way it does in the app. The ctor is passed in (like makeDriverHarness) to keep
+ * the registry import out of builders.
+ *
+ * `parkCheck` registers a body that works until released, so a test can observe what the registry
+ * does with a run it has given up on. Every parked body must be released, so suites go through the
+ * healthCheckTest fixture rather than constructing this directly.
+ */
+export function makeHealthCheckHarness(
+  RegistryCtor: new (api: IExtensionApi) => HealthCheckRegistry,
+  opts: IHealthCheckHarnessOpts = {},
+): IHealthCheckHarness {
+  const gameId = opts.gameId ?? "skyrimse";
+  const profileId = opts.profileId ?? "profile-1";
+  const base = makeApiHarness({
+    profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
+  });
+  base.setState((draft) => {
+    draft.settings.profiles.activeProfileId = profileId;
+    draft.settings.profiles.lastActiveProfile = { [gameId]: profileId };
+  });
+
+  const registry = new RegistryCtor(base.api);
+  const releases: Array<() => void> = [];
+  // one entry per body invocation, resolved when that body returns
+  const bodies: Array<Promise<void>> = [];
+
+  const parkCheck = ({
+    id,
+    timeout,
+    tickMs = 10,
+    respectAbort = true,
+  }: IParkCheckOpts): IParkedCheck => {
+    let starts = 0;
+    let ticks = 0;
+    let inFlight = 0;
+    let parked = true;
+    releases.push(() => {
+      parked = false;
+    });
+
+    registry.register({
+      id,
+      name: id,
+      description: "",
+      category: HealthCheckCategory.System,
+      severity: HealthCheckSeverity.Info,
+      triggers: [HealthCheckTrigger.Manual],
+      timeout,
+      check: async (_api, signal) => {
+        starts += 1;
+        inFlight += 1;
+        let done!: () => void;
+        bodies.push(
+          new Promise<void>((resolve) => {
+            done = resolve;
+          }),
+        );
+        try {
+          while (parked && !(respectAbort && signal?.aborted === true)) {
+            ticks += 1;
+            await new Promise<void>((resolve) => setTimeout(resolve, tickMs));
+          }
+          return makeHealthCheckResult({ checkId: id, message: "released" });
+        } finally {
+          inFlight -= 1;
+          done();
+        }
+      },
+    });
+
+    return {
+      id,
+      starts: () => starts,
+      ticks: () => ticks,
+      hasSettled: () => starts > 0 && inFlight === 0,
+    };
+  };
+
+  const registerModCheck = ({ id, gameId: checkGameId }: IModCheckOpts): string => {
+    registry.register(
+      makeModHealthCheck({
+        id,
+        gameId: checkGameId,
+        name: id,
+        triggers: [HealthCheckTrigger.ModsChanged, HealthCheckTrigger.Manual],
+        checkMod: async () => makeHealthCheckResult({ checkId: id }),
+      }),
+    );
+    return id;
+  };
+
+  return {
+    ...base,
+    registry,
+    gameId,
+    parkCheck,
+    registerModCheck,
+    // the registry keys off arbitrary extension-supplied ids, not just the built-in union
+    run: (id: string) => registry.runHealthCheck(id as HealthCheckId, base.api, true),
+    resultFor: (id: string) => registry.get(id as HealthCheckId)?.lastResult,
+    releaseParked: async () => {
+      releases.forEach((release) => release());
+      await Promise.all(bodies);
+    },
+  };
 }
 
 /**

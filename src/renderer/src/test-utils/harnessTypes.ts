@@ -11,6 +11,7 @@ import type { ICollectionMod } from "../extensions/collections/types/ICollection
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
@@ -23,6 +24,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { DialogType, IDialogResult } from "../types/IDialog";
 import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IHealthCheckResult } from "../types/IHealthCheck";
 import type { IState } from "../types/IState";
 
 /** A dispatched redux-act action as the harness sees it. */
@@ -130,6 +132,69 @@ export interface IInstallManagerHarness extends IApiHarness {
   // moving toward #private enforcement), so the harness is the single typed seam that exposes it -
   // suites prime/inspect phase state through this rather than casting the manager per test.
   phaseTracker: InstallPhaseTracker;
+}
+
+/** What a health-check registry test arranges. */
+export interface IHealthCheckHarnessOpts {
+  // the game the active profile is on (defaults to skyrimse)
+  gameId?: string;
+  profileId?: string;
+}
+
+/** A check registered by the harness whose body parks until the harness releases it. */
+export interface IParkCheckOpts {
+  id: string;
+  // the registry aborts the run after this many ms
+  timeout: number;
+  // how long the parked body sleeps between work iterations
+  tickMs?: number;
+  // whether the body stops on the registry's abort (default true). False models a check that
+  // cannot bail out promptly, such as one parked mid-readdir: it keeps working after the run
+  // is abandoned.
+  respectAbort?: boolean;
+}
+
+export interface IParkedCheck {
+  id: string;
+  // how many times the registry has entered the body
+  starts: () => number;
+  // how many work iterations the body has completed, which keeps rising for as long as it runs
+  ticks: () => number;
+  // whether every body started so far has returned. Poll with vi.waitFor, never a fixed sleep:
+  // a body leaves its loop on its next tick, at a time no test can pin down under load.
+  hasSettled: () => boolean;
+}
+
+/** A per-mod check registered by the harness, optionally scoped to one game. */
+export interface IModCheckOpts {
+  id: string;
+  gameId?: string;
+}
+
+export interface IHealthCheckHarness extends IApiHarness {
+  // the real registry under test, constructed against the fake api
+  registry: HealthCheckRegistry;
+  // the game the active profile is on, which is what the per-mod runner enumerates mods for
+  gameId: string;
+  // register a check whose body parks until releaseParked, so a run can hit its timeout with the
+  // body still in flight
+  parkCheck: (opts: IParkCheckOpts) => IParkedCheck;
+  // register an IModHealthCheck, which the registry routes through runPerModCheck
+  registerModCheck: (opts: IModCheckOpts) => string;
+  // run one registered check, bypassing the result cache
+  run: (id: string) => Promise<IHealthCheckResult | undefined>;
+  // the result the registry currently holds for a check, as the health-check UI would read it
+  resultFor: (id: string) => IHealthCheckResult | undefined;
+  // unpark every body and resolve once all have returned; the healthCheckTest fixture awaits
+  // this on teardown so no body ticks on into the next test
+  releaseParked: () => Promise<void>;
+}
+
+/** High-water mark of concurrent operations; `enter`/`leave` bracket each holder's window. */
+export interface IConcurrencyProbe {
+  enter: () => void;
+  leave: () => void;
+  peak: () => number;
 }
 
 // One member of a collection revision. `tag` is the member's stable identity: keep the same tag
