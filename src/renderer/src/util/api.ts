@@ -162,7 +162,23 @@ import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
 export * from "./network";
-export * from "./storeHelper";
+export {
+  addUniqueSafe,
+  changeOrNop,
+  currentGame,
+  deleteOrNop,
+  getSafe,
+  getSafeCI,
+  merge,
+  mutateSafe,
+  pushSafe,
+  rehydrate,
+  removeValue,
+  removeValueIf,
+  setDefaultArray,
+  setOrNop,
+  setSafe,
+} from "./storeHelper";
 export {
   Archive,
   ArgumentInvalid,

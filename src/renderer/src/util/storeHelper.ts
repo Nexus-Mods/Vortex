@@ -313,12 +313,12 @@ export function rehydrate<T extends object>(
 }
 
 function waitUntil(predicate: () => boolean, interval: number = 100): PromiseBB<void> {
-  return new PromiseBB<void>((resolve, reject) => {
+  return new PromiseBB<void>((resolve) => {
     setTimeout(() => {
       if (predicate()) {
         resolve();
       } else {
-        return waitUntil(predicate, interval);
+        waitUntil(predicate, interval);
       }
     }, interval);
   });
@@ -331,9 +331,7 @@ function waitUntil(predicate: () => boolean, interval: number = 100): PromiseBB<
  * initialization so there is quite a bit of code where we can't be sure
  * if this is yet available
  *
- * @export
- * @param {*} state
- * @returns {PromiseBB<IGameStored>}
+ * @public
  */
 export function currentGame(store: Redux.Store<any>): PromiseBB<IGameStored> {
   const fallback: IGameStored = {
