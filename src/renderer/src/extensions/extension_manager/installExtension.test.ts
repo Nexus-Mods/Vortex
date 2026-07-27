@@ -50,7 +50,7 @@ describe("clearStaleRemovalFlags", () => {
     const api = {
       store: {
         dispatch,
-        getState: () => ({ session: { extensions: { installed } } }),
+        getState: () => ({ session: { extensions: { installed } }, app: { extensions: {} } }),
       },
     } as unknown as IExtensionApi;
     return { api, dispatch };
