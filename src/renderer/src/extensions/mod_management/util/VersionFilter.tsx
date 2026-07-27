@@ -79,11 +79,12 @@ class VersionFilter implements ITableFilter {
   public raw = true;
   public dataId = "$";
 
-  // number of installed mods per modId, cached so we don't rescan the entire
-  // mod list for every row we're asked to match
+  // number of versions per modId, cached so we don't rescan the entire mod and
+  // download lists for every row we're asked to match
   private mCachedState: any;
   private mCachedMods: { [id: string]: IMod };
-  private mInstallCounts: { [modId: string]: number } = {};
+  private mCachedDownloads: { [archiveId: string]: any };
+  private mVersionCounts: { [modId: string]: number } = {};
 
   public matches(filter: any, value: any, state: any): boolean {
     if (value === undefined) {
@@ -104,7 +105,7 @@ class VersionFilter implements ITableFilter {
 
     if (filter.includes("multi-version") && value.state === "installed") {
       const modId = value.attributes?.modId;
-      if (modId !== undefined && (this.installCounts(state)[modId] ?? 0) > 1) {
+      if (modId !== undefined && (this.versionCounts(state)[modId] ?? 0) > 1) {
         return true;
       }
     }
@@ -128,35 +129,63 @@ class VersionFilter implements ITableFilter {
   }
 
   /**
-   * how many installed mods there are for each modId. Cached against the state object
-   * we last saw so a single filter pass only walks the mod list once, and the counts
-   * themselves are only rebuilt when the mod list actually changed.
+   * how many versions of each modId the user has had installed: the mods installed right
+   * now plus the archives of versions that were installed at some point in the past.
+   * Cached against the state object we last saw so a single filter pass only walks the
+   * lists once, and the counts themselves are only rebuilt when the mods or downloads
+   * they were derived from actually changed.
    */
-  private installCounts(state: any): { [modId: string]: number } {
+  private versionCounts(state: any): { [modId: string]: number } {
     if (state === this.mCachedState) {
-      return this.mInstallCounts;
+      return this.mVersionCounts;
     }
     this.mCachedState = state;
 
     const gameId = activeGameId(state);
     const mods: { [id: string]: IMod } =
       (gameId !== undefined ? state.persistent.mods?.[gameId] : undefined) ?? {};
+    const downloads = state.persistent.downloads?.files ?? {};
 
-    if (mods !== this.mCachedMods) {
+    if (mods !== this.mCachedMods || downloads !== this.mCachedDownloads) {
       this.mCachedMods = mods;
-      this.mInstallCounts = Object.values<IMod>(mods).reduce(
-        (prev: { [modId: string]: number }, mod: IMod) => {
-          const modId = mod.attributes?.modId;
-          if (mod.state === "installed" && modId !== undefined) {
-            prev[modId] = (prev[modId] ?? 0) + 1;
-          }
-          return prev;
-        },
-        {},
-      );
+      this.mCachedDownloads = downloads;
+
+      const counts: { [modId: string]: number } = {};
+      // an archive that is installed right now is already represented by its mod,
+      // counting it again would double up
+      const installedArchives = new Set<string>();
+
+      for (const mod of Object.values<IMod>(mods)) {
+        installedArchives.add(mod.archiveId);
+        const modId = mod.attributes?.modId;
+        if (mod.state === "installed" && modId !== undefined) {
+          counts[modId] = (counts[modId] ?? 0) + 1;
+        }
+      }
+
+      for (const [archiveId, download] of Object.entries<any>(downloads)) {
+        // "installed" is set when an archive is installed and is not cleared on
+        // uninstall, so it marks the versions that were installed in the past
+        if (
+          download.state !== "finished" ||
+          download.installed?.gameId !== gameId ||
+          installedArchives.has(archiveId)
+        ) {
+          continue;
+        }
+        const modId =
+          download.modInfo?.ids?.modId ??
+          download.modInfo?.nexus?.ids?.modId ??
+          download.modInfo?.meta?.details?.modId;
+        if (modId !== undefined) {
+          counts[modId] = (counts[modId] ?? 0) + 1;
+        }
+      }
+
+      this.mVersionCounts = counts;
     }
 
-    return this.mInstallCounts;
+    return this.mVersionCounts;
   }
 }
 
