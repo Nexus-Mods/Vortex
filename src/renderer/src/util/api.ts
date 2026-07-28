@@ -161,7 +161,8 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
-export * from "./network";
+export { request, rawRequest, upload, jsonRequest } from "./network";
+export type { IRequestOptions, Method } from "./network";
 export {
   addUniqueSafe,
   changeOrNop,
