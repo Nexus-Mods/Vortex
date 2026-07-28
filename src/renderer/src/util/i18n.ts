@@ -9,26 +9,19 @@ import { initReactI18next } from "react-i18next";
 import type { IExtension } from "../types/extensions";
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
-import { log } from "./log";
 
 type TFunction = typeof I18next.t;
 
 let debugging = false;
 let currentLanguage = "en";
-const fallbackTFunc: TFunction = (str) => (Array.isArray(str) ? str[0].toString() : str.toString());
+export const fallbackTFunc: TFunction = (str) =>
+  Array.isArray(str) ? str[0].toString() : str.toString();
 
 let actualT: TFunction = fallbackTFunc;
 
-export { fallbackTFunc };
 export type { i18n, TFunction };
 
 let missingKeys = { common: {} };
-
-export interface IInitResult {
-  i18n: i18n;
-  tFunc: TFunction;
-  error?: Error;
-}
 
 type BackendType = "bundled" | "custom" | "extension";
 
@@ -135,16 +128,15 @@ class HighlightPP {
 
 /**
  * initialize the internationalization library
- *
- * @export
- * @param {string} language
- * @returns {I18next.I18n}
  */
-function init(language: string, translationExts: () => IExtension[]): Bluebird<IInitResult> {
+export async function init(
+  language: string,
+  translationExts: () => IExtension[],
+): Promise<{ i18n: i18n; tFunc: TFunction; error?: unknown }> {
   // reset to english if the language isn't valid
   try {
     new Date().toLocaleString(language);
-  } catch (err) {
+  } catch {
     language = "en";
   }
 
@@ -154,10 +146,11 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
   if (process.env.HIGHLIGHT_I18N === "true") {
     i18nObj.use(new HighlightPP());
   }
+
   i18nObj.use(MultiBackend as any).use(initReactI18next);
 
-  return Bluebird.resolve(
-    i18nObj.init({
+  try {
+    const tFunc = await i18nObj.init({
       lng: language,
       fallbackLng: "en",
       fallbackNS: "common",
@@ -188,15 +181,16 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
         // fire the componentDidUnmount lifecycle functions meaning we can't stop delayed
         // operations that will then break since the component is unmounted
         useSuspense: false,
-      } as any,
+      },
 
       saveMissing: debugging,
       saveMissingTo: "current",
 
-      missingKeyHandler: (lng, ns, key, fallbackValue) => {
+      missingKeyHandler: (_, ns, key) => {
         if (missingKeys[ns] === undefined) {
           missingKeys[ns] = {};
         }
+
         missingKeys[ns][key] = key;
       },
 
@@ -209,22 +203,21 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
         user: path.normalize(path.join(getVortexPath("userData"), "locales")),
         translationExts,
       },
-    }),
-  )
-    .tap((tFunc) => {
-      actualT = tFunc;
-    })
-    .then((tFunc) =>
-      Bluebird.resolve({
-        i18n: i18nObj,
-        tFunc,
-      }),
-    )
-    .catch((error) => ({
+    });
+
+    actualT = tFunc;
+    return {
+      i18n: i18nObj,
+      tFunc,
+    };
+  } catch (err) {
+    actualT = fallbackTFunc;
+    return {
       i18n: i18nObj,
       tFunc: fallbackTFunc,
-      error,
-    }));
+      error: err,
+    };
+  }
 }
 
 export function getCurrentLanguage() {
@@ -243,7 +236,7 @@ export function globalT(key: string | string[], options: TOptions) {
 export function debugTranslations(enable?: boolean) {
   debugging = enable !== undefined ? enable : !debugging;
   missingKeys = { common: {} };
-  init(I18next.language, () => []);
+  init(I18next.language, () => []).catch(() => {});
 }
 
 export function getMissingTranslations() {
@@ -326,5 +319,3 @@ export function preT(
     return t(key.key, { ...key.options, ...(options ?? {}) });
   }
 }
-
-export default init;
