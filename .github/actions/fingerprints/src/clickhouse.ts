@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { ClickHouseClient, createClient } from "@clickhouse/client";
 
-import { DbMode, FINGERPRINT_RE, FingerprintRow } from "./types";
+import { type DbMode, FINGERPRINT_RE, type FingerprintRow } from "./types";
 
 const TABLE = "vortex.resolved_fingerprints";
 

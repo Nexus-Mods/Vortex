@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
-import { CollectResult, FingerprintRow, PR_FINGERPRINT_RE, Status } from "./types";
+import { type CollectResult, type FingerprintRow, PR_FINGERPRINT_RE, Status } from "./types";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 
@@ -71,7 +71,7 @@ const collectFingerprintRowsSince = async (
       const fingerprints = [
         ...new Set(
           [...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) =>
-            m[1]
+            (m[1] ?? "")
               .split(/[\s,]+/)
               .filter(Boolean)
               .map((fp) => fp.toLowerCase()),

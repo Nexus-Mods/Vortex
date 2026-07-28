@@ -1,25 +1,26 @@
 {
-  "name": "fingerprints-action",
-  "private": true,
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/fingerprints-action",
   "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
   "description": "GitHub Action: collect fingerprints from PR body / release tag / manual input and write to vortex.resolved_fingerprints in ClickHouse.",
-  "main": "src/index.ts",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "prebuild": "tsc --noEmit",
-    "build": "ncc build src/index.ts -o dist --license LICENSES.txt",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build": "node ./build.mjs",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm tsc",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
-    "@clickhouse/client": "^1.12.0"
+    "@actions/core": "catalog:",
+    "@actions/github": "catalog:",
+    "@clickhouse/client": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "@vercel/ncc": "^0.38.3",
-    "typescript": "^5.4.0",
-    "vitest": "^2.1.0"
+    "@types/node": "catalog:",
+    "rolldown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

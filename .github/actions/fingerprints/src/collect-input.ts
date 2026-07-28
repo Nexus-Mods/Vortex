@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
-import { CollectResult, FINGERPRINT_RE, STATUSES, isStatus } from "./types";
+import { type CollectResult, FINGERPRINT_RE, STATUSES, isStatus } from "./types";
 
 /**
  * Validates manually-supplied `workflow_dispatch` inputs and produces either

@@ -5,7 +5,7 @@ import { applyToClickHouse } from "./clickhouse";
 import { collectFromInput } from "./collect-input";
 import { collectFromPR } from "./collect-pr";
 import { collectFromRelease } from "./collect-release";
-import { CollectResult, MODES, Mode, isMode } from "./types";
+import { type CollectResult, MODES, Mode, isMode } from "./types";
 
 /** Routes a validated `mode` to its collector and returns the result. */
 const dispatch = async (mode: Mode): Promise<CollectResult> => {
@@ -23,7 +23,7 @@ const dispatch = async (mode: Mode): Promise<CollectResult> => {
 
     default: {
       const exhaustive: never = mode;
-      throw new Error(`Unknown mode "${exhaustive}" — must be one of: ${MODES.join(", ")}`);
+      throw new Error(`Unknown mode "${String(exhaustive)}" — must be one of: ${MODES.join(", ")}`);
     }
   }
 };
