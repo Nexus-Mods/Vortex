@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 
+import { resetMembershipFreshness } from "../extensions/nexus_integration/membership";
 import { NxmProtocol } from "../extensions/nexus_integration/nxmProtocol";
 import { makeNxmHarness, makeUserInfo } from "./builders";
 import { test as harnessTest } from "./harnessTest";
@@ -35,6 +36,8 @@ export interface INxmFixtures {
  */
 export const test = harnessTest.extend<INxmFixtures>({
   makeNxm: async ({ task: _task }, use) => {
+    // the membership module remembers when it last read, across tests in the same worker
+    resetMembershipFreshness();
     await use((overrides: Partial<IDriverHarnessState> = {}) => {
       const harness = makeNxmHarness({ userInfo: PREMIUM, ...overrides });
       const onRefreshMembership = vi.fn();

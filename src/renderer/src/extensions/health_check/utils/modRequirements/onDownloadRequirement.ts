@@ -6,28 +6,30 @@ import {
 } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
-import { getGame, toPromise } from "@/util/api";
+import { getGame, ProcessCanceled, toPromise, UserCanceled } from "@/util/api";
 
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import { getModFilesWithCache } from "./modFiles";
 
 /**
- * Download and install missing mod requirements from Nexus
+ * Download and install missing mod requirements from Nexus. Resolves to whether the
+ * requirement was installed; every failure is reported here rather than thrown, so a
+ * click on the 1-click install button can't escape as an unhandled rejection.
  */
 export async function onDownloadRequirement(
   api: IExtensionApi,
   mod: IModRequirementExt,
   file?: IModFileInfo,
   identity?: IssueAnalyticsIdentity,
-): Promise<void> {
+): Promise<boolean> {
   if (!Number.isInteger(mod.modId) || mod.modId <= 0) {
     api.showErrorNotification(
       `Cannot download requirement "${mod.modName}"`,
       "This requirement does not have a valid Nexus Mods ID.",
       { allowReport: false },
     );
-    return;
+    return false;
   }
 
   const getFileIds = async (): Promise<IModFileInfo[]> => {
@@ -53,7 +55,7 @@ export async function onDownloadRequirement(
 
   const fileIds = await getFileIds();
   if (fileIds.length === 0) {
-    return;
+    return false;
   }
 
   const gameId = mod.gameId;
@@ -68,37 +70,47 @@ export async function onDownloadRequirement(
   // so the file lands in the same folder the install handler later looks in.
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), gameId) || gameId;
 
-  await trackedInstall(
-    api,
-    {
-      ...identity,
-      mod_id: modId,
-      mod_name: mod.modName,
-      mod_version: targetFile.version,
-    },
-    async () => {
-      const dlId = await toPromise<string>((cb) =>
-        api.events.emit(
-          "start-download",
-          [nxmUrl],
-          { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
-          undefined,
-          cb,
-          undefined,
-          { allowInstall: false },
-        ),
-      );
+  try {
+    await trackedInstall(
+      api,
+      {
+        ...identity,
+        mod_id: modId,
+        mod_name: mod.modName,
+        mod_version: targetFile.version,
+      },
+      async () => {
+        const dlId = await toPromise<string>((cb) =>
+          api.events.emit(
+            "start-download",
+            [nxmUrl],
+            { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
+            undefined,
+            cb,
+            undefined,
+            { allowInstall: false },
+          ),
+        );
 
-      await toPromise<string>((cb) =>
-        api.events.emit(
-          "start-install-download",
-          dlId,
-          { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
-          cb,
-        ),
-      );
-    },
-  );
+        await toPromise<string>((cb) =>
+          api.events.emit(
+            "start-install-download",
+            dlId,
+            { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
+            cb,
+          ),
+        );
+      },
+    );
+  } catch (err) {
+    // Backing out of the free-user download dialog is a normal way to end this, not a failure.
+    if (!(err instanceof UserCanceled) && !(err instanceof ProcessCanceled)) {
+      api.showErrorNotification(`Failed to install requirement: ${mod.modName}`, err, {
+        allowReport: false,
+      });
+    }
+    return false;
+  }
 
   api.sendNotification({
     type: "success",
@@ -106,4 +118,6 @@ export async function onDownloadRequirement(
     displayMS: 5000,
     id: "health-check:nexus-requirements-download-finished",
   });
+
+  return true;
 }

@@ -49,8 +49,9 @@ export function useModRequirementActions(
       setShowPremiumModal(true);
       return;
     }
-    await onDownloadRequirement(api, mod, undefined, identity);
-    onInstalled?.();
+    if (await onDownloadRequirement(api, mod, undefined, identity)) {
+      onInstalled?.();
+    }
   }, [api, mod, identity, showPremiumAd, onInstalled]);
 
   // Persistence only — EntryActions owns the feedback analytics, so both thumbs record

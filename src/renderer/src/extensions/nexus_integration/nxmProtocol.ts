@@ -24,6 +24,7 @@ import type { IResolvedURL } from "../download_management/types/ProtocolHandlers
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
 import { NEXUS_BASE_URL } from "./constants";
+import { ensureFreshMembership } from "./membership";
 import NXMUrl from "./NXMUrl";
 import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
@@ -132,7 +133,18 @@ export class NxmProtocol {
     // resolved once and threaded through: it costs two scans of the known-games list
     const pageId = nxmPageId(this.#api.getState(), url.gameId);
 
-    if (this.#canDownloadInApp(url) || (await this.#isDirectDownload(url, pageId))) {
+    if (this.#canDownloadInApp(url)) {
+      try {
+        return await this.#apiDownload(input, url, pageId);
+      } catch (err) {
+        if (await this.#confirmMembershipEnded(url, err)) {
+          return this.#websiteDownload(input, url);
+        }
+        throw err;
+      }
+    }
+
+    if (await this.#isDirectDownload(url, pageId)) {
       return this.#apiDownload(input, url, pageId);
     }
 
@@ -275,6 +287,26 @@ export class NxmProtocol {
   #isExtensionAvailable(modId: number): boolean {
     const available = this.#api.getState().session.extensions.available;
     return available.find((iter) => iter.modId === modId) !== undefined;
+  }
+
+  /**
+   * Whether a refused download link confirms the account is no longer premium. The api answers a
+   * keyless link with 403 when it isn't, so the refusal prompts the re-read and the answer decides;
+   * a refusal raised for any other reason keeps the original error.
+   *
+   * The refreshed membership is in state before this returns, because FreeUserDLDialog only shows
+   * itself while the user is non-premium.
+   */
+  async #confirmMembershipEnded(url: NXMUrl, err: unknown): Promise<boolean> {
+    if (!needsAuthorisedLink(url) || !(err instanceof HTTPError) || err.statusCode !== 403) {
+      return false;
+    }
+    await ensureFreshMembership(this.#api, this.#nexus);
+    const ended = !isPremium(this.#api.getState());
+    if (ended) {
+      log("info", "premium membership has ended, downloading as a free user");
+    }
+    return ended;
   }
 
   #queuedFor(inputUrl: string): IQueuedDownload | undefined {

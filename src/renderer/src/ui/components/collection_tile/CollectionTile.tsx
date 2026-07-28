@@ -15,6 +15,7 @@ import React, {
   useState,
 } from "react";
 
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
@@ -33,16 +34,6 @@ const debouncer = new Debouncer(
     return delayed(5000);
   },
   5000,
-  false,
-  true,
-);
-
-const userInfoDebouncer = new Debouncer(
-  (func: () => void) => {
-    func?.();
-    return Promise.resolve();
-  },
-  10000,
   false,
   true,
 );
@@ -99,14 +90,13 @@ export const CollectionTile: ComponentType<ICollectionTileProps> = ({
     setCanBeAdded(!collectionModInstalled && isLoggedIn);
   }, [api, collection.slug, pending, isHovered, isLoggedIn]);
 
-  // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
+  // Hovering a tile is a hint the user is about to install, so make sure the membership the
+  // install path reads is current.
   useEffect(() => {
     if (isHovered && api?.events) {
-      userInfoDebouncer.schedule(undefined, () => {
-        api.events.emit("refresh-user-info");
-      });
+      scheduleMembershipRefresh(api);
     }
-  }, [isHovered]);
+  }, [api, isHovered]);
 
   const addCollection = useCallback(() => {
     if (!pending && canBeAdded && isLoggedIn) {
