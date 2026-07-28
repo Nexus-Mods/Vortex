@@ -40,10 +40,3 @@ export const countIssues = (items: IListedEntry[]): IIssueCounts => {
 
   return { total: items.length, warning, suggestion: items.length - warning };
 };
-
-/**
- * Counts for the issues the user actually sees — hidden entries excluded, so a fully
- * dismissed loadout reports the same "passed" the listing shows.
- */
-export const countActiveIssues = (state: IState): IIssueCounts =>
-  countIssues(selectListedEntries(state).filter((item) => !item.hidden));

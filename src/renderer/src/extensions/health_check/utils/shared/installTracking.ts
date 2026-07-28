@@ -1,7 +1,7 @@
 import { classifyErrorCode } from "@/extensions/analytics/mixpanel/error-code";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { createHealthCheckTracker } from "../../hooks/useHealthCheckTracking";
+import { createHealthCheckTracker } from "../../hooks/healthCheckTracker";
 import type { OptionalIssueIdentity } from "./tracking";
 
 /**

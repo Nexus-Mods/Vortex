@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -40,8 +38,8 @@ const healthCheckEvent = (
  * super properties, so no event repeats them. Consent gating is handled centrally
  * by the analytics extension — callers don't check it.
  *
- * `createHealthCheckTracker` is the pure factory (no React) so it can be unit
- * tested directly; `useHealthCheckTracking` just memoises it per api.
+ * A pure factory (no React): the tracking context memoises one per api, and the
+ * non-React callers (the scan events, the install actions) build their own.
  */
 export const createHealthCheckTracker = (api: IExtensionApi) => {
   const track = (eventName: string, properties: Record<string, unknown> = {}) => {
@@ -220,47 +218,3 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 };
 
 export type HealthCheckTracker = ReturnType<typeof createHealthCheckTracker>;
-
-/**
- * The tracker methods whose event requires an issue identity — i.e. those taking a
- * required `IssueIdentity`. The premium methods take `OptionalIssueIdentity`, whose
- * `issue_id` is `string | undefined`, so they don't match and are excluded.
- */
-type IssueMethod<T> = {
-  [K in keyof T]: T[K] extends (props: infer P) => void
-    ? P extends IssueIdentity
-      ? K
-      : never
-    : never;
-}[keyof T];
-
-/**
- * The tracker as seen from inside an issue: the same methods with `issue_id` and
- * `check_id` already applied, and the cross-check and optional-identity methods dropped
- * so they can't be called from here and silently lose their identity.
- */
-export type IssueTracker = {
-  [K in IssueMethod<HealthCheckTracker>]: HealthCheckTracker[K] extends (props: infer P) => void
-    ? (props: Omit<P, keyof IssueIdentity>) => void
-    : never;
-};
-
-/**
- * Bind an issue identity to every tracker method. Wrapping all of them (rather than just
- * the subset IssueTracker exposes) keeps this a one-liner; the excluded methods aren't
- * reachable through the type.
- */
-export const trackerForIssue = (
-  tracker: HealthCheckTracker,
-  identity: IssueIdentity,
-): IssueTracker =>
-  Object.fromEntries(
-    Object.entries(tracker).map(([name, emit]) => [
-      name,
-      (props: Record<string, unknown> = {}) =>
-        (emit as (p: Record<string, unknown>) => void)({ ...identity, ...props }),
-    ]),
-  ) as IssueTracker;
-
-export const useHealthCheckTracking = (api: IExtensionApi): HealthCheckTracker =>
-  useMemo(() => createHealthCheckTracker(api), [api]);

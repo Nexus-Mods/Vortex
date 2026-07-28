@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type { MixpanelEvent } from "../../analytics/mixpanel/MixpanelEvents";
-import { createHealthCheckTracker } from "./useHealthCheckTracking";
+import { createHealthCheckTracker } from "./healthCheckTracker";
 
 function harness() {
   const emitter = new EventEmitter();

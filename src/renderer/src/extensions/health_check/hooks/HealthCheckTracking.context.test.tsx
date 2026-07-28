@@ -14,6 +14,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type { MixpanelEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import type { IHealthCheckEntry } from "../views/content/types";
+import { createHealthCheckTracker } from "./healthCheckTracker";
 import {
   HealthCheckTrackingProvider,
   IssueProvider,
@@ -22,7 +23,6 @@ import {
   useOptionalIssue,
   useTracker,
 } from "./HealthCheckTracking.context";
-import { createHealthCheckTracker } from "./useHealthCheckTracking";
 
 function harness() {
   const emitter = new EventEmitter();

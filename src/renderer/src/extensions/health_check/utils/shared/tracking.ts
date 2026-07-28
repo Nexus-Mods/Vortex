@@ -3,7 +3,7 @@ import type { FileRequirementCategory } from "../fileRequirements/fileRequiremen
 
 /**
  * Shared analytics vocabulary for the Health Check tracking events (LAZ-551).
- * The concrete events are emitted through the useHealthCheckTracking hook.
+ * The concrete events are emitted through the Health Check tracking context.
  */
 
 /** Confidence band of an issue: file-level requirements are warnings, mod-level are suggestions. */
@@ -63,15 +63,6 @@ export type IssueIdentity = {
  * row or detail page) and page-wide, across both checks.
  */
 export type OptionalIssueIdentity = Partial<IssueIdentity>;
-
-/** The identity for a listing entry, and the issue_type that goes with it. */
-export const issueFor = (entry: {
-  id: string;
-  checkId: HealthCheckId;
-}): { identity: IssueIdentity; issueType: IssueType } => ({
-  identity: { issue_id: entry.id, check_id: checkNameForCheck(entry.checkId) },
-  issueType: issueTypeForCheck(entry.checkId),
-});
 
 /**
  * resolution_type for a file-requirement report category. Mod requirements are

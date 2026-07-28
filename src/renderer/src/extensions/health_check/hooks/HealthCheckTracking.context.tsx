@@ -3,14 +3,9 @@ import React, { createContext, useContext, useMemo, type ReactNode } from "react
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type { IssueIdentity, IssueType } from "../utils/shared/tracking";
-import { issueFor } from "../utils/shared/tracking";
+import { checkNameForCheck, issueTypeForCheck } from "../utils/shared/tracking";
 import type { IHealthCheckEntry } from "../views/content/types";
-import {
-  createHealthCheckTracker,
-  trackerForIssue,
-  type HealthCheckTracker,
-  type IssueTracker,
-} from "./useHealthCheckTracking";
+import { createHealthCheckTracker, type HealthCheckTracker } from "./healthCheckTracker";
 
 /**
  * Ambient Health Check analytics (LAZ-551). Both checks emit the same `health_check_*`
@@ -34,6 +29,30 @@ interface IIssueValue {
   issueType: IssueType;
 }
 
+/**
+ * The tracker methods whose event requires an issue identity — i.e. those taking a
+ * required `IssueIdentity`. The premium methods take `OptionalIssueIdentity`, whose
+ * `issue_id` is `string | undefined`, so they don't match and are excluded.
+ */
+type IssueMethod<T> = {
+  [K in keyof T]: T[K] extends (props: infer P) => void
+    ? P extends IssueIdentity
+      ? K
+      : never
+    : never;
+}[keyof T];
+
+/**
+ * The tracker as seen from inside an issue: the same methods with `issue_id` and
+ * `check_id` already applied, and the cross-check and optional-identity methods dropped
+ * so they can't be called from here and silently lose their identity.
+ */
+export type IssueTracker = {
+  [K in IssueMethod<HealthCheckTracker>]: HealthCheckTracker[K] extends (props: infer P) => void
+    ? (props: Omit<P, keyof IssueIdentity>) => void
+    : never;
+};
+
 const IssueContext = createContext<IIssueValue | undefined>(undefined);
 
 /** Provides the tracker for the whole Health Check page. */
@@ -48,6 +67,12 @@ export const HealthCheckTrackingProvider = ({
 
   return <TrackerContext.Provider value={tracker}>{children}</TrackerContext.Provider>;
 };
+
+/** The analytics view of a listing entry: how events name it, and its confidence band. */
+const issueFor = (entry: IHealthCheckEntry): IIssueValue => ({
+  identity: { issue_id: entry.id, check_id: checkNameForCheck(entry.checkId) },
+  issueType: issueTypeForCheck(entry.checkId),
+});
 
 /** Scopes everything below it to one listing entry. */
 export const IssueProvider = ({
@@ -108,9 +133,20 @@ export const useIssueTracking = (): IssueTracker => {
   const tracker = useTracker();
   const issue = useOptionalIssue();
 
-  // Memoised before the guard, so the hook order is unconditional.
+  // Memoised before the guard, so the hook order is unconditional. Binding every method
+  // (rather than just the subset IssueTracker exposes) keeps this a one-liner; the
+  // excluded ones aren't reachable through the type.
   const issueTracker = useMemo(
-    () => (issue === undefined ? undefined : trackerForIssue(tracker, issue.identity)),
+    () =>
+      issue === undefined
+        ? undefined
+        : (Object.fromEntries(
+            Object.entries(tracker).map(([name, emit]) => [
+              name,
+              (props: Record<string, unknown> = {}) =>
+                (emit as (p: Record<string, unknown>) => void)({ ...issue.identity, ...props }),
+            ]),
+          ) as IssueTracker),
     [tracker, issue],
   );
 

@@ -30,8 +30,8 @@ import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
+import { createHealthCheckTracker } from "../hooks/healthCheckTracker";
 import { HealthCheckTrackingProvider, IssueProvider } from "../hooks/HealthCheckTracking.context";
-import { useHealthCheckTracking } from "../hooks/useHealthCheckTracking";
 import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
@@ -105,7 +105,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     trackHideAllClicked,
     trackSettingsOpened,
     trackOneClickInstallAllClicked,
-  } = useHealthCheckTracking(api);
+  } = useMemo(() => createHealthCheckTracker(api), [api]);
 
   // Clicking the Health check menu item while already on the page returns to
   // the listing (closes any open detail). setSelected is stable, so registering
