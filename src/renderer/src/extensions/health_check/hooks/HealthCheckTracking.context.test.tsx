@@ -103,6 +103,39 @@ describe("HealthCheckTracking context", () => {
     ]);
   });
 
+  it("reports one issue_id either side of a hide, so the funnel still joins", () => {
+    const { api, events } = harness();
+
+    // A file requirement's row key gains a ::hidden suffix once dismissed, but it is the
+    // same issue, so issueId stays put.
+    const dismissed: IHealthCheckEntry = {
+      ...fileEntry,
+      id: `${fileEntry.id}::hidden`,
+      issueId: fileEntry.id,
+    };
+
+    const Consumer = () => {
+      const { trackIssueUnhidden } = useIssueTracking();
+      const { issueType } = useIssue();
+      trackIssueUnhidden({ issue_type: issueType });
+      return null;
+    };
+
+    render(
+      <HealthCheckTrackingProvider api={api}>
+        <IssueProvider entry={fileEntry}>
+          <Consumer />
+        </IssueProvider>
+
+        <IssueProvider entry={dismissed}>
+          <Consumer />
+        </IssueProvider>
+      </HealthCheckTrackingProvider>,
+    );
+
+    expect(events.map((e) => e.properties.issue_id)).toEqual([fileEntry.id, fileEntry.id]);
+  });
+
   it("omits the identity for a premium surface rendered page-wide", () => {
     const { api, events } = harness();
 

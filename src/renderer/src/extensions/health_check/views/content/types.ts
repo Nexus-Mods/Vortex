@@ -11,8 +11,18 @@ import type { HealthCheckId } from "../../types";
  * checks — `data` holds the check-specific payload its own content reads.
  */
 export interface IHealthCheckEntry<TData = unknown> {
-  /** Stable id, unique within the check; used for keys and as the hide/feedback context. */
+  /**
+   * Unique within the check; used for row keys, for resolving the open detail against
+   * live state, and as the hide/feedback context. May encode mutable UI state — a file
+   * requirement's id changes when it is dismissed — so it is not an analytics identity.
+   */
   id: string;
+  /**
+   * The issue's stable analytics identity, reported as `issue_id`. Defaults to `id`;
+   * set it only when `id` can change for what is logically the same issue, or the
+   * events either side of that change won't join.
+   */
+  issueId?: string;
   /** The check this entry belongs to; selects the content via the registry. */
   checkId: HealthCheckId;
   /** Drives the severity icon/colour in the shared shell. */

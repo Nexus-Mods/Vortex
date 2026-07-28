@@ -68,9 +68,16 @@ export const HealthCheckTrackingProvider = ({
   return <TrackerContext.Provider value={tracker}>{children}</TrackerContext.Provider>;
 };
 
-/** The analytics view of a listing entry: how events name it, and its confidence band. */
+/**
+ * The analytics view of a listing entry: how events name it, and its confidence band.
+ * Prefers `issueId` over the row key, so an issue that is hidden and then restored keeps
+ * one identity — otherwise the events either side of that would never join.
+ */
 const issueFor = (entry: IHealthCheckEntry): IIssueValue => ({
-  identity: { issue_id: entry.id, check_id: checkNameForCheck(entry.checkId) },
+  identity: {
+    issue_id: entry.issueId ?? entry.id,
+    check_id: checkNameForCheck(entry.checkId),
+  },
   issueType: issueTypeForCheck(entry.checkId),
 });
 
