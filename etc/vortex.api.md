@@ -375,9 +375,9 @@ manual: boolean;
 }, {}>;
 
 // @public (undocumented)
-const addExtension: reduxAct.ComplexActionCreator2<string, IExtension, {
+const addExtension: reduxAct.ComplexActionCreator2<string, ExtensionInfo, {
     extensionId: string;
-    info: IExtension;
+    info: ExtensionInfo;
 }, {}>;
 
 // @public
@@ -1061,6 +1061,36 @@ function ensureFileAsync(filePath: string): Promise_2<void>;
 
 // @public (undocumented)
 export const ErrorBoundary: any;
+
+// @public
+interface ExtensionInfo {
+    // (undocumented)
+    author: string;
+    // (undocumented)
+    bundled?: boolean;
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    fileId?: number;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    issueTrackerURL?: string;
+    // (undocumented)
+    modId?: number;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    namespace?: string;
+    // (undocumented)
+    path?: string;
+    // Warning: (ae-forgotten-export) The symbol "ExtensionType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    type?: ExtensionType;
+    // (undocumented)
+    version: string;
+}
 
 // @public (undocumented)
 type ExtensionLoadFailureDependency = {
@@ -1798,8 +1828,6 @@ interface IAvailableExtension extends IExtensionDownloadInfo {
     tags: string[];
     // (undocumented)
     timestamp: number;
-    // Warning: (ae-forgotten-export) The symbol "ExtensionType" needs to be exported by the entry point api.d.ts
-    //
     // (undocumented)
     type?: ExtensionType;
     // (undocumented)
@@ -2313,33 +2341,8 @@ interface IExecInfo {
     execPath: string;
 }
 
-// @public
-interface IExtension {
-    // (undocumented)
-    author: string;
-    // (undocumented)
-    bundled?: boolean;
-    // (undocumented)
-    description: string;
-    // (undocumented)
-    fileId?: number;
-    // (undocumented)
-    id?: string;
-    // (undocumented)
-    issueTrackerURL?: string;
-    // (undocumented)
-    modId?: number;
-    // (undocumented)
-    name: string;
-    // (undocumented)
-    namespace?: string;
-    // (undocumented)
-    path?: string;
-    // (undocumented)
-    type?: ExtensionType;
-    // (undocumented)
-    version: string;
-}
+// @public @deprecated (undocumented)
+type IExtension = ExtensionInfo;
 
 // @public
 interface IExtensionApi {
@@ -2495,17 +2498,17 @@ interface IExtensionOptional {
 
 // @public (undocumented)
 interface IExtensionState {
-    author?: string;
+    author: string;
     bundled?: boolean;
-    description?: string;
+    description: string;
     // (undocumented)
     enabled: boolean | "failed";
     // (undocumented)
     endorsed: string;
     fileId?: number;
     modId?: number;
-    name?: string;
-    path?: string;
+    name: string;
+    path: string;
     // (undocumented)
     remove: boolean;
     type?: ExtensionType;
@@ -6266,6 +6269,7 @@ declare namespace types {
         CollectionModStatus,
         IAvailableExtension,
         IExtension,
+        ExtensionInfo,
         LoadOrder,
         LoadOrder as FBLOLoadOrder,
         LockedState as FBLOLockState,

@@ -1393,8 +1393,9 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
       return prev;
     }, {});
     const state: IState = store.getState();
-    Object.keys(state.session.extensions.installed).forEach((extId) => {
-      const modId = state.session.extensions.installed[extId].modId;
+    const extState = state.app.extensions ?? {};
+    Object.keys(extState).forEach((extId) => {
+      const modId = extState[extId].modId;
 
       if (modId !== undefined) {
         const endorsed = getSafe(endorseMap, [SITE_ID, modId], "Undecided");

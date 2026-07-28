@@ -779,9 +779,7 @@ async function init(): Promise<ExtensionManager | null> {
 async function load(extensions: ExtensionManager): Promise<void> {
   const { i18n, tFunc, error } = await getI18n("en", () => {
     const state = store.getState();
-    return Object.values(state.session.extensions.installed).filter(
-      (ext) => ext.type === "translation",
-    );
+    return Object.values(state.app.extensions ?? {}).filter((ext) => ext.type === "translation");
   });
 
   if (error) {
