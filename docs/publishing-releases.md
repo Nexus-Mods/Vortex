@@ -124,24 +124,22 @@ stay on GitHub Releases.
 
 The preparation step is a bundled JS action at
 [`.github/actions/prepare-nexusmods-release/`](../.github/actions/prepare-nexusmods-release/).
-It has its own `package.json` and lockfile, deliberately outside the Vortex pnpm
-workspace, so the workflow needs no toolchain setup or install.
+It is an ordinary package in the Vortex pnpm workspace and uses the shared
+toolchain - rolldown to bundle, `tsconfig.strict.json` for typechecking, the
+shared oxlint and vitest configs - so the workflow itself needs no toolchain
+setup or install step.
 
 GitHub runs the committed `dist/index.js` directly and never builds it, so
 **after editing `src/` you must rebuild and commit the bundle**:
 
 ```bash
-cd .github/actions/prepare-nexusmods-release
-pnpm install --frozen-lockfile
-pnpm run test
-pnpm run build   # rebuilds dist/index.js - commit it
+pnpm nx run-many -t typecheck test lint build \
+  --projects @vortex/prepare-nexusmods-release-action
 ```
 
-The **Bundled Actions** workflow enforces this: it typechecks, tests, rebuilds,
-and fails the PR if the committed `dist/` differs from the rebuild. If a bundle
-later goes stale for reasons outside a PR - a bundler version bump, say - the
-same workflow rebuilds it after a merge and opens a
-`chore: rebuild bundled action dist` PR.
+`pnpm run build` at the repo root rebuilds it too, along with every other
+package. A stale bundle therefore shows up as an uncommitted `dist/index.js`
+after a build.
 
 To dry-run the preparation locally, set the inputs as `INPUT_*` environment
 variables (how `@actions/core` reads them) and run the built bundle. Note the

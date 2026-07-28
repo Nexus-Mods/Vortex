@@ -1,23 +1,24 @@
 {
-  "name": "prepare-nexusmods-release-action",
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/prepare-nexusmods-release-action",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
+  "type": "commonjs",
   "description": "GitHub Action: prepare a stable Vortex GitHub release for upload to Nexus Mods - validate it, download the installer, and build the changelog from CHANGELOG.md.",
-  "main": "src/index.ts",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "prebuild": "tsc --noEmit",
-    "build": "ncc build src/index.ts -o dist --license LICENSES.txt",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build": "node ./build.mjs",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm tsc",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1"
+    "@actions/core": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "@vercel/ncc": "^0.38.3",
-    "typescript": "^5.4.0",
-    "vitest": "^2.1.0"
+    "@types/node": "catalog:",
+    "rolldown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

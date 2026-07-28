@@ -112,12 +112,12 @@ describe("parseChangelog", () => {
     const entries = parseChangelog(
       ["## [1.0.0]", "", "### Fixed", "", "- First line", "  second line", ""].join("\n"),
     );
-    expect(entries[0].sections.get("Fixed")).toEqual(["First line second line"]);
+    expect(entries[0]?.sections.get("Fixed")).toEqual(["First line second line"]);
   });
 
   it("handles CRLF line endings", () => {
     const entries = parseChangelog("## [1.0.0]\r\n\r\n### Fixed\r\n\r\n- A fix\r\n");
-    expect(entries[0].sections.get("Fixed")).toEqual(["A fix"]);
+    expect(entries[0]?.sections.get("Fixed")).toEqual(["A fix"]);
   });
 });
 

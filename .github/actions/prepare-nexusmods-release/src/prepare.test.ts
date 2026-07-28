@@ -10,11 +10,14 @@ import {
   versionFromTag,
   preparePublish,
   type GithubRelease,
+  type PreparePublishOptions,
 } from "./prepare";
 
 // ---------------------------------------------------------------------------
 // Test fixtures
 // ---------------------------------------------------------------------------
+
+type GhRun = PreparePublishOptions["ghRun"];
 
 const makeRelease = (overrides: Partial<GithubRelease> = {}): GithubRelease => ({
   tagName: "v1.2.3",
@@ -66,10 +69,14 @@ const makeChangelog = (dir: string): string => {
 
 describe("assertStableRelease", () => {
   it.each([
-    { name: "draft", release: makeRelease({ isDraft: true }) },
-    { name: "prerelease", release: makeRelease({ isPrerelease: true }) },
-  ])("throws for $name release", ({ release }) => {
-    expect(() => assertStableRelease(release)).toThrow();
+    { name: "draft", release: makeRelease({ isDraft: true }), message: /is a draft/ },
+    {
+      name: "prerelease",
+      release: makeRelease({ isPrerelease: true }),
+      message: /marked as a prerelease/,
+    },
+  ])("throws for $name release", ({ release, message }) => {
+    expect(() => assertStableRelease(release)).toThrow(message);
   });
 
   it("explains that only stable releases reach Nexus Mods", () => {
@@ -136,11 +143,12 @@ describe("versionFromTag", () => {
 
 describe("preparePublish", () => {
   it.each([
-    { name: "dry-run", dryRun: true },
-    { name: "live", dryRun: false },
-  ])("returns correct PublishPlan for $name", async ({ dryRun }) => {
+    // release view only for a dry-run; release view + download for a live run
+    { name: "dry-run", dryRun: true, ghCalls: 1 },
+    { name: "live", dryRun: false, ghCalls: 2 },
+  ])("returns correct PublishPlan for $name", async ({ dryRun, ghCalls }) => {
     const fakeGhRun = vi
-      .fn()
+      .fn<GhRun>()
       .mockImplementation(() =>
         JSON.stringify(makeRelease({ tagName: "v2.0.0", body: "Changelog content" })),
       );
@@ -165,18 +173,27 @@ describe("preparePublish", () => {
     // The Nexus changelog comes from CHANGELOG.md, not the release body
     expect(plan.changelog).toBe("A 2.0.0 fix (#2)");
 
-    if (dryRun) {
-      expect(fakeGhRun).toHaveBeenCalledTimes(1); // release view only
-      expect(fakeGhRun).not.toHaveBeenCalledWith(expect.arrayContaining(["download"]));
-    } else {
-      expect(fakeGhRun).toHaveBeenCalledTimes(2); // release view + download
-    }
+    expect(fakeGhRun).toHaveBeenCalledTimes(ghCalls);
 
     fs.rmSync(downloadDir, { recursive: true });
   });
 
+  it("never downloads the installer on a dry-run", async () => {
+    const fakeGhRun = vi.fn<GhRun>().mockImplementation(() => JSON.stringify(makeRelease()));
+
+    await preparePublish({
+      dryRun: true,
+      tag: "v1.2.3",
+      changelogPath: makeChangelog(os.tmpdir()),
+      ghRun: fakeGhRun,
+      downloadDir: os.tmpdir(),
+    });
+
+    expect(fakeGhRun).not.toHaveBeenCalledWith(expect.arrayContaining(["download"]));
+  });
+
   it("views the requested tag and never lists releases", async () => {
-    const fakeGhRun = vi.fn().mockImplementation(() => JSON.stringify(makeRelease()));
+    const fakeGhRun = vi.fn<GhRun>().mockImplementation(() => JSON.stringify(makeRelease()));
 
     await preparePublish({
       dryRun: true,
@@ -192,7 +209,7 @@ describe("preparePublish", () => {
 
   it("throws when the version has no CHANGELOG.md entry", async () => {
     const fakeGhRun = vi
-      .fn()
+      .fn<GhRun>()
       .mockImplementation(() => JSON.stringify(makeRelease({ tagName: "v9.9.9" })));
 
     await expect(
@@ -208,7 +225,7 @@ describe("preparePublish", () => {
 
   it("throws when ghRun returns draft release JSON", async () => {
     const fakeGhRun = vi
-      .fn()
+      .fn<GhRun>()
       .mockImplementation(() => JSON.stringify(makeRelease({ isDraft: true })));
 
     await expect(
@@ -224,7 +241,7 @@ describe("preparePublish", () => {
 
   it("throws when release JSON has no .exe asset", async () => {
     const fakeGhRun = vi
-      .fn()
+      .fn<GhRun>()
       .mockImplementation(() =>
         JSON.stringify(
           makeRelease({ assets: [{ name: "latest.yml", url: "https://example.com/latest.yml" }] }),

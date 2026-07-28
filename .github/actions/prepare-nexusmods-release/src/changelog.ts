@@ -53,17 +53,17 @@ export function parseChangelog(markdown: string): ChangelogEntry[] {
   let section: string | undefined;
 
   for (const line of markdown.split(/\r?\n/)) {
-    const versionMatch = VERSION_HEADING.exec(line);
-    if (versionMatch) {
-      entry = { version: versionMatch[1], sections: new Map() };
+    const [, headingVersion] = VERSION_HEADING.exec(line) ?? [];
+    if (headingVersion !== undefined) {
+      entry = { version: headingVersion, sections: new Map() };
       section = undefined;
       entries.push(entry);
       continue;
     }
 
-    const sectionMatch = SECTION_HEADING.exec(line);
-    if (sectionMatch) {
-      section = sectionMatch[1];
+    const [, headingSection] = SECTION_HEADING.exec(line) ?? [];
+    if (headingSection !== undefined) {
+      section = headingSection;
       continue;
     }
 
@@ -71,18 +71,19 @@ export function parseChangelog(markdown: string): ChangelogEntry[] {
       continue;
     }
 
-    const bulletMatch = BULLET.exec(line);
-    if (bulletMatch) {
+    const [, bullet] = BULLET.exec(line) ?? [];
+    if (bullet !== undefined) {
       const bullets = entry.sections.get(section) ?? [];
-      bullets.push(bulletMatch[1].trim());
+      bullets.push(bullet.trim());
       entry.sections.set(section, bullets);
       continue;
     }
 
     // Indented continuation of the previous bullet - fold it into that bullet.
     const bullets = entry.sections.get(section);
-    if (bullets !== undefined && bullets.length > 0 && /^\s+\S/.test(line)) {
-      bullets[bullets.length - 1] = `${bullets[bullets.length - 1]} ${line.trim()}`;
+    const last = bullets?.at(-1);
+    if (bullets !== undefined && last !== undefined && /^\s+\S/.test(line)) {
+      bullets[bullets.length - 1] = `${last} ${line.trim()}`;
     }
   }
 
@@ -114,9 +115,9 @@ export function selectEntriesForVersion(
     );
   }
 
-  const selected = [entries[start]];
-  for (const entry of entries.slice(start + 1)) {
-    if (isStableVersion(entry.version)) {
+  const selected: ChangelogEntry[] = [];
+  for (const entry of entries.slice(start)) {
+    if (selected.length > 0 && isStableVersion(entry.version)) {
       break;
     }
     selected.push(entry);

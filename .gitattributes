@@ -21,3 +21,7 @@
 # Text files where line endings should be preserved
 *.patch     -text
 
+# Committed action bundles - GitHub Actions runs these directly, they are never
+# reviewed by hand. Collapse them on GitHub and skip the textual diff.
+.github/actions/*/dist/** linguist-generated=true -diff
+
