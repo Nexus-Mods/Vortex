@@ -1,7 +1,5 @@
 name: Package Vortex
-description: >-
-  Build, optionally sign, and validate the Vortex installer into ./dist.
-  Publishing it - GitHub releases, artifacts, npm, R2 - is the caller's job.
+description: Build, optionally sign, and validate the Vortex installer into ./dist
 
 inputs:
   version:
