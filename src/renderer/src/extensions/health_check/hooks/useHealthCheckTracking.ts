@@ -73,6 +73,19 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     trackPassedViewed: () => track("health_check_passed_viewed"),
 
+    // Scan lifecycle. Emitted by the non-React api layer around every check run,
+    // manual (refresh button) or automatic (game / profile / mods / settings change).
+    trackScanTriggered: (props: { is_manual: boolean; previous_issue_count: number }) =>
+      track("health_check_scan_triggered", props),
+
+    trackScanCompleted: (props: {
+      duration_ms: number;
+      total_issues_found: number;
+      warning_count: number;
+      suggestion_count: number;
+      health_check_passed: boolean;
+    }) => track("health_check_scan_completed", props),
+
     trackTabSwitched: (props: { tab: HealthCheckTab; issue_count_in_tab: number }) =>
       track("health_check_tab_switched", props),
 
@@ -106,6 +119,27 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
         is_adult_content: boolean;
       },
     ) => track("health_check_one_click_install_clicked", props),
+
+    // Install lifecycle, bracketing the actual download + install a health-check action
+    // kicks off (see trackedInstall). The app-wide mods_installation_* events cover the
+    // install itself for every source; these are the health-check funnel's own view of it,
+    // carrying the issue scope and spanning the download too. The scope is optional
+    // because the actions stay callable without analytics context.
+    trackInstallStarted: (
+      props: OptionalIssueScope & { mod_id: number; mod_name: string; mod_version: string },
+    ) => track("health_check_install_started", props),
+
+    trackInstallCompleted: (
+      props: OptionalIssueScope & {
+        mod_id: number;
+        mod_name: string;
+        mod_version: string;
+        duration_ms: number;
+      },
+    ) => track("health_check_install_completed", props),
+
+    trackInstallFailed: (props: OptionalIssueScope & { mod_id: number; error_reason: string }) =>
+      track("health_check_install_failed", props),
 
     trackInstallDownloadedClicked: (props: IssueScope & { mod_id: number; mod_count: number }) =>
       track("health_check_install_downloaded_clicked", props),

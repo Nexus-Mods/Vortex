@@ -34,6 +34,9 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
+  const issueType = issueTypeForCheck(entry.checkId);
+  const checkName = checkNameForCheck(entry.checkId);
+
   const {
     givenFeedback,
     showPremiumAd,
@@ -43,7 +46,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     installInApp,
     handlePositiveFeedback,
     handleFeedbackSuccess,
-  } = useModRequirementActions(api, mod, onBack);
+  } = useModRequirementActions(api, mod, { issueId: entry.id, checkId: checkName }, onBack);
 
   const hiddenRequirementMap = useSelector(hiddenModRequirements);
   const isHidden = useMemo(
@@ -60,8 +63,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     trackIssueHidden,
     trackIssueUnhidden,
   } = useHealthCheckTracking(api);
-  const issueType = issueTypeForCheck(entry.checkId);
-  const checkName = checkNameForCheck(entry.checkId);
   const modVersion = mod.mainFile?.version ?? "";
 
   // detail_viewed fires once per detail open; entry-prop changes as the check re-runs

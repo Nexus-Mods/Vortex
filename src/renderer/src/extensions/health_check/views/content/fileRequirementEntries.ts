@@ -25,6 +25,17 @@ export const isFileEntryHidden = (
   );
 };
 
+/**
+ * Listing-entry id for one source file's requirements of a given category — also the
+ * issue_id the analytics events report, so the bulk-install path can attribute an install
+ * to the same entry the listing shows.
+ */
+export const fileEntryId = (
+  sourceFileUID: string,
+  category: FileRequirementCategory,
+  hidden = false,
+): string => `${sourceFileUID}:${category}${hidden ? "::hidden" : ""}`;
+
 /** Group one source file's (visible or hidden) requirements into per-category report entries. */
 export const pushReportEntries = (
   entries: IHealthCheckEntry[],
@@ -33,9 +44,11 @@ export const pushReportEntries = (
   hidden: boolean,
 ): void => {
   const byCategory = new Map<FileRequirementCategory, IFileRequirement[]>();
+
   for (const requirement of requirements) {
     const category = categoryOf(requirement);
     const bucket = byCategory.get(category);
+
     if (bucket) {
       bucket.push(requirement);
     } else {
@@ -45,7 +58,7 @@ export const pushReportEntries = (
 
   for (const [category, reqs] of byCategory) {
     entries.push({
-      id: `${source.sourceFileUID}:${category}${hidden ? "::hidden" : ""}`,
+      id: fileEntryId(source.sourceFileUID, category, hidden),
       checkId: FILE_REQUIREMENTS_CHECK_ID,
       severity: "warning",
       data: {

@@ -86,6 +86,30 @@ describe("createHealthCheckTracker", () => {
     expect(events[0].properties).not.toHaveProperty("check_id");
   });
 
+  it("emits the scan lifecycle pair", () => {
+    const { tracker, events } = harness();
+    tracker.trackScanTriggered({ is_manual: true, previous_issue_count: 4 });
+    tracker.trackScanCompleted({
+      duration_ms: 1200,
+      total_issues_found: 2,
+      warning_count: 1,
+      suggestion_count: 1,
+      health_check_passed: false,
+    });
+    expect(events.map((e) => e.eventName)).toEqual([
+      "health_check_scan_triggered",
+      "health_check_scan_completed",
+    ]);
+    expect(events[0].properties).toEqual({ is_manual: true, previous_issue_count: 4 });
+  });
+
+  it("omits issue_id from install events when the install isn't tied to one issue", () => {
+    const { tracker, events } = harness();
+    tracker.trackInstallStarted({ mod_id: 42, mod_name: "SkyUI", mod_version: "5.2" });
+    expect(events[0].eventName).toBe("health_check_install_started");
+    expect(events[0].properties).not.toHaveProperty("issue_id");
+  });
+
   it("strips undefined optional properties", () => {
     const { tracker, events } = harness();
     tracker.trackPremiumModalShown({ trigger: "single_install" });

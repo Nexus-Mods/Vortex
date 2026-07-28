@@ -27,7 +27,9 @@ export const InstallUninstalledRows = ({
 }) => {
   const { t } = useTranslation("health_check");
   const file = requirement.uninstalledFile;
-  const { isLoading, onClick } = useInstallButton(() => installDownloadedFile(ctx.api, file));
+  const { isLoading, onClick } = useInstallButton(() =>
+    installDownloadedFile(ctx.api, file, { issueId: ctx.issueId, checkId: ctx.checkId }),
+  );
 
   const handleInstall = () => {
     ctx.onInstallDownloaded(file);

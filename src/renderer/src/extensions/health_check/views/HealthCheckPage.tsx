@@ -39,8 +39,8 @@ import {
   lastHealthCheckRun,
   modRequirementsCheckResult,
 } from "../selectors";
-import { type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
-import { type HealthCheckTab, issueTypeForCheck } from "../utils/shared/tracking";
+import { countIssues, type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
+import type { HealthCheckTab } from "../utils/shared/tracking";
 import { healthCheckContent } from "./content/registry";
 import type { IBulkInstallItem } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
@@ -153,15 +153,13 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
 
   useEffect(() => {
     if (active && !wasActiveRef.current) {
-      const warningCount = activeItems.filter(
-        (item) => issueTypeForCheck(item.entry.checkId) === "warning",
-      ).length;
+      const counts = countIssues(activeItems);
 
       trackPageViewed({
-        active_issue_count: activeItems.length,
+        active_issue_count: counts.total,
         hidden_issue_count: hiddenItems.length,
-        warning_count: warningCount,
-        suggestion_count: activeItems.length - warningCount,
+        warning_count: counts.warning,
+        suggestion_count: counts.suggestion,
         last_scan_timestamp: lastHealthCheckRun(api.getState()),
       });
     }

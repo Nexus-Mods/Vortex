@@ -8,13 +8,14 @@ import { DetailView } from "../../components/mod_requirement/DetailView";
 import { ListingRow } from "../../components/mod_requirement/ListingRow";
 import { allModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
-import { isModHidden } from "./modRequirementEntries";
+import { checkNameForCheck } from "../../utils/shared/tracking";
+import { isModHidden, modEntryId } from "./modRequirementEntries";
 import type { IBulkInstallItem, IHealthCheckContent } from "./types";
 
 export const modRequirementsContent: IHealthCheckContent = {
   selectEntries: (state) =>
     allModRequirements(state).map((mod) => ({
-      id: `${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`,
+      id: modEntryId(mod),
       checkId: MOD_REQUIREMENTS_CHECK_ID,
       severity: "suggestion",
       data: mod,
@@ -36,7 +37,10 @@ export const modRequirementsContent: IHealthCheckContent = {
       .map((mod) => ({
         key: mod.uid || `${mod.gameId}-${mod.modId}`,
         install: () => {
-          void onDownloadRequirement(api, mod);
+          void onDownloadRequirement(api, mod, undefined, {
+            issueId: modEntryId(mod),
+            checkId: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
+          });
         },
       })),
 };

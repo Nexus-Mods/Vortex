@@ -16,7 +16,6 @@ import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 
-import type { CheckName } from "../../utils/shared/tracking";
 import { PremiumModal } from "../premium_modal/PremiumModal";
 import { RequirementGroup } from "./RequirementGroup";
 import { DownloadRows } from "./rows/DownloadRows";
@@ -73,15 +72,12 @@ export const RequirementBody = ({
   report,
   ctx,
   api,
-  issueId,
-  checkId,
 }: {
   report: IFileRequirementReport;
   ctx: IFileActionContext;
   api: IExtensionApi;
-  issueId: string;
-  checkId: CheckName;
 }) => {
+  const { issueId, checkId } = ctx;
   const { t } = useTranslation("health_check");
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
@@ -110,7 +106,9 @@ export const RequirementBody = ({
     }
     setDownloadingAll(true);
     void Promise.all(
-      installAllCandidates.map((candidate) => downloadFileRequirement(api, candidate)),
+      installAllCandidates.map((candidate) =>
+        downloadFileRequirement(api, candidate, { issueId, checkId }),
+      ),
     ).then((results) => {
       // On full success the requirements clear and this view unmounts; only reset
       // when something failed and the buttons are still around.
