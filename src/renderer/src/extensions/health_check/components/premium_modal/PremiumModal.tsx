@@ -12,6 +12,7 @@ import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 import { opn } from "../../../../util/api";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
 import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
+import type { CheckName } from "../../utils/shared/tracking";
 
 /** Which 1-click flow surfaced the premium upsell modal. */
 export type PremiumTrigger = "single_install" | "batch_install" | "install_all";
@@ -29,7 +30,9 @@ export interface IPremiumModalTracking {
   api: IExtensionApi;
   /** Which 1-click flow surfaced the upsell, for the analytics funnel. */
   trigger: PremiumTrigger;
+  /** Both absent for the cross-check install-all upsell raised from the listing. */
   issueId?: string;
+  checkId?: CheckName;
   modId?: number;
   modCount?: number;
 }
@@ -48,7 +51,7 @@ export const PremiumModal = ({
   tracking: IPremiumModalTracking;
 }) => {
   const { t } = useTranslation(["health_check"]);
-  const { api, trigger, issueId, modId, modCount } = tracking;
+  const { api, trigger, issueId, checkId, modId, modCount } = tracking;
 
   const {
     trackPremiumModalShown,
@@ -62,18 +65,19 @@ export const PremiumModal = ({
       trackPremiumModalShown({
         trigger,
         issue_id: issueId,
+        check_id: checkId,
         mod_id: modId,
         mod_count: modCount,
       });
     }
-  }, [isOpen, trigger, issueId, modId, modCount, trackPremiumModalShown]);
+  }, [isOpen, trigger, issueId, checkId, modId, modCount, trackPremiumModalShown]);
 
   return (
     <Modal
       isOpen={isOpen}
       title={t(`premium::modal::title::${downloadScope}`)}
       onClose={() => {
-        trackPremiumModalDismissed({ trigger, issue_id: issueId });
+        trackPremiumModalDismissed({ trigger, issue_id: issueId, check_id: checkId });
         onClose();
       }}
     >
@@ -104,6 +108,7 @@ export const PremiumModal = ({
             trackPremiumModalFallbackClicked({
               trigger,
               issue_id: issueId,
+              check_id: checkId,
               mod_count: modCount,
               fallback_type: downloadScope === "single" ? "single_mod_page" : "batch_mod_pages",
             });
@@ -123,6 +128,7 @@ export const PremiumModal = ({
             trackPremiumModalUnlockClicked({
               trigger,
               issue_id: issueId,
+              check_id: checkId,
               mod_count: modCount,
             });
 

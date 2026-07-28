@@ -21,6 +21,7 @@ import {
   modRequirementsCheckResult,
 } from "../selectors";
 import { selectListedEntries } from "../utils/shared/listedEntries";
+import { checkNameForCheck } from "../utils/shared/tracking";
 import type { IHealthCheckContent, IHealthCheckEntry } from "./content/types";
 
 interface IHealthCheckDetailPageProps {
@@ -58,6 +59,7 @@ function HealthCheckDetailPage({
   const handleBack = () => {
     trackBackClicked({
       issue_id: entry.id,
+      check_id: checkNameForCheck(entry.checkId),
       time_spent_on_detail_ms: Date.now() - openedAtRef.current,
     });
 
@@ -121,6 +123,7 @@ function HealthCheckDetailPage({
             api,
             placement: "detail",
             issueId: shownEntry.id,
+            checkId: checkNameForCheck(shownEntry.checkId),
             totalIssues: selectListedEntries(api.getState()).length,
           }}
         />

@@ -16,6 +16,7 @@ import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 
+import type { CheckName } from "../../utils/shared/tracking";
 import { PremiumModal } from "../premium_modal/PremiumModal";
 import { RequirementGroup } from "./RequirementGroup";
 import { DownloadRows } from "./rows/DownloadRows";
@@ -73,11 +74,13 @@ export const RequirementBody = ({
   ctx,
   api,
   issueId,
+  checkId,
 }: {
   report: IFileRequirementReport;
   ctx: IFileActionContext;
   api: IExtensionApi;
   issueId: string;
+  checkId: CheckName;
 }) => {
   const { t } = useTranslation("health_check");
   const [premiumOpen, setPremiumOpen] = useState(false);
@@ -162,6 +165,7 @@ export const RequirementBody = ({
           api,
           trigger: "batch_install",
           issueId,
+          checkId,
           modCount: installAllCandidates.length,
         }}
         onClose={() => setPremiumOpen(false)}

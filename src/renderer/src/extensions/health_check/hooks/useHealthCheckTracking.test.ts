@@ -50,12 +50,40 @@ describe("createHealthCheckTracker", () => {
     const { tracker, events } = harness();
     tracker.trackOneClickInstallClicked({
       issue_id: "a-b",
+      check_id: "file_requirements",
       mod_id: 42,
       mod_name: "SkyUI",
       mod_version: "5.2",
       is_adult_content: false,
     });
     expect(events[0].eventName).toBe("health_check_one_click_install_clicked");
+  });
+
+  it("carries check_id so the two checks stay separable on shared event names", () => {
+    const { tracker, events } = harness();
+    tracker.trackOneClickInstallClicked({
+      issue_id: "a-b",
+      check_id: "mod_requirements",
+      mod_id: 42,
+      mod_name: "SkyUI",
+      mod_version: "5.2",
+      is_adult_content: false,
+    });
+    tracker.trackBackClicked({
+      issue_id: "a-b",
+      check_id: "file_requirements",
+      time_spent_on_detail_ms: 900,
+    });
+    expect(events.map((e) => e.properties.check_id)).toEqual([
+      "mod_requirements",
+      "file_requirements",
+    ]);
+  });
+
+  it("omits check_id on a cross-check premium surface", () => {
+    const { tracker, events } = harness();
+    tracker.trackPremiumBannerShown({ placement: "list", total_issues: 3 });
+    expect(events[0].properties).not.toHaveProperty("check_id");
   });
 
   it("strips undefined optional properties", () => {

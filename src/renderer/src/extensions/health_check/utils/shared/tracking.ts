@@ -16,6 +16,27 @@ export type ResolutionType = "install" | "enable" | "pick" | "update";
 export type HealthCheckTab = "active" | "hidden";
 
 /**
+ * Which check an issue came from, as a stable analytics name. Deliberately decoupled
+ * from the internal `HealthCheckId` constants so renaming a check id can't silently
+ * break reporting, and it is the discriminator the KPIs split on — `issue_type` only
+ * has two values, so a third check would have to reuse one and collide.
+ */
+export type CheckName = "file_requirements" | "mod_requirements";
+
+/**
+ * Exhaustive by construction: registering a third check widens `HealthCheckId` and
+ * makes this a build error, rather than silently reporting the new check as one of
+ * the existing two.
+ */
+const CHECK_NAMES: Record<HealthCheckId, CheckName> = {
+  "check-file-level-requirements": "file_requirements",
+  "check-nexus-mod-requirements": "mod_requirements",
+};
+
+/** check_id for an entry — the reliable per-check key on every issue-scoped event. */
+export const checkNameForCheck = (checkId: HealthCheckId): CheckName => CHECK_NAMES[checkId];
+
+/**
  * issue_type for an entry, keyed off the check it belongs to: the file-level
  * requirements check surfaces higher-confidence warnings, the mod-level check
  * surfaces lower-confidence suggestions.

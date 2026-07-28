@@ -8,7 +8,7 @@ import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import type { IModRequirementExt } from "../../types";
-import { issueTypeForCheck } from "../../utils/shared/tracking";
+import { checkNameForCheck, issueTypeForCheck } from "../../utils/shared/tracking";
 import type { IListingRowProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { ListingRow as ListingRowShell } from "../listing_row/ListingRow";
@@ -30,12 +30,14 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
   } = useModRequirementActions(api, mod);
 
   const issueType = issueTypeForCheck(entry.checkId);
+  const checkName = checkNameForCheck(entry.checkId);
   const { trackOneClickInstallClicked, trackIssueHidden, trackIssueUnhidden } =
     useHealthCheckTracking(api);
 
   const handleInstall = () => {
     trackOneClickInstallClicked({
       issue_id: entry.id,
+      check_id: checkName,
       mod_id: mod.modId,
       mod_name: mod.modName,
       mod_version: mod.mainFile?.version ?? "",
@@ -47,9 +49,14 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
   const handleToggleHide = () => {
     if (isHidden) {
-      trackIssueUnhidden({ issue_id: entry.id, issue_type: issueType });
+      trackIssueUnhidden({ issue_id: entry.id, check_id: checkName, issue_type: issueType });
     } else {
-      trackIssueHidden({ issue_id: entry.id, issue_type: issueType, resolution_type: "install" });
+      trackIssueHidden({
+        issue_id: entry.id,
+        check_id: checkName,
+        issue_type: issueType,
+        resolution_type: "install",
+      });
     }
 
     onToggleHide();
@@ -116,6 +123,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
           api,
           trigger: "single_install",
           issueId: entry.id,
+          checkId: checkName,
           modId: mod.modId,
           modCount: 1,
         }}
