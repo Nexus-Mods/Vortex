@@ -5,6 +5,8 @@ export * from "./error-serialization";
 export * from "./download-errors";
 export * from "./types/logging";
 
-export * from "./errors/base";
+export { VortexError } from "./errors/base";
+export type { VortexErrorData, VortexErrorKind, VortexErrorKindMap } from "./errors/base.ts";
+export { parseError } from "./errors/parser";
 
 export { isPromiseLike } from "./guard";
