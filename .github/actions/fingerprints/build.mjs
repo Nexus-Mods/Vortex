@@ -16,21 +16,13 @@ const config = defineConfig({
   },
 });
 
-// Rolldown labels each bundled module with its resolved path, which embeds the
-// pnpm store directory name - and pnpm truncates those names at 60 characters on
-// Windows but 120 elsewhere. Dropping the labels keeps the committed bundle
-// identical no matter which platform built it.
-const stripModuleLabels = {
-  name: "strip-module-labels",
-  renderChunk: (code) => code.replace(/^\/\/#(?:region|endregion).*\r?\n/gm, ""),
-};
-
 const bundle = await rolldown(config);
 
 await bundle.write({
   file: "./dist/index.js",
   format: "cjs",
-  minify: false,
+  // Load-bearing: unminified output labels each module with its resolved path, which embeds
+  // the pnpm store dir name that pnpm caps at 60 characters on Windows but 120 elsewhere.
+  minify: true,
   sourcemap: false,
-  plugins: [stripModuleLabels],
 });
