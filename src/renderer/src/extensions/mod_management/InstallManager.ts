@@ -69,6 +69,7 @@ import {
   dismissNotification,
 } from "../../actions/notifications";
 import { log } from "../../logging";
+import type { ICollectionModInstallInfo } from "../../types/collections/ICollectionInstallSession";
 import type { ICheckbox, IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
@@ -76,6 +77,7 @@ import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import calculateFolderSize from "../../util/calculateFolderSize";
 import {
   generateCollectionSessionId,
+  isOutstandingOptionalMember,
   isTerminalMemberStatus,
   modRuleId,
 } from "../../util/collectionInstallSession";
@@ -188,11 +190,13 @@ import metaLookupMatch from "./util/metaLookupMatch";
 import modName, { renderModReference } from "./util/modName";
 import queryGameId from "./util/queryGameId";
 import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
-import { rulePhase } from "./util/rulePhase";
+import { selectRequeueCandidates } from "./util/requeueCandidates";
+import { OPTIONAL_PHASE, rulePhase } from "./util/rulePhase";
 import testModReference, {
   downloadToModRef,
   idOnlyRef,
   isDependencyRule,
+  isRequiredRule,
   modMatchesInstallSpec,
   referenceEqual,
   ruleInstallSpec,
@@ -2877,6 +2881,9 @@ class InstallManager {
           }
           if (!hasQueuedDeployments && !this.hasActiveOrPendingInstallation(sourceModId)) {
             if (phaseState.deployedPhases.has(phaseState.allowedPhase ?? 0)) {
+              // the walk is about to look for somewhere to go - make the trailing optional phase
+              // reachable first if its members need no download
+              this.admitSettledOptionalPhase(sourceModId, api);
               // Phase already deployed, maybe advance
               this.maybeAdvancePhase(sourceModId, api);
             } else {
@@ -3203,7 +3210,7 @@ class InstallManager {
   private reQueueDownloadedMods(
     api: IExtensionApi,
     sourceModId: string,
-    allMods: any[],
+    allMods: ICollectionModInstallInfo[],
     currentPhase: number,
   ): void {
     const phaseState = this.mPhaseTracker.get(sourceModId);
@@ -3213,41 +3220,20 @@ class InstallManager {
 
     const downloads = api.getState().persistent.downloads.files;
 
-    // Expand the filter to include mods that are downloaded OR have downloads available
-    // Also log detailed status information to debug the filtering
-    const allModsWithDetails = allMods.map((mod: any) => ({
-      ...mod,
-      downloadId: mod.rule?.reference
-        ? this.findDownloadForMod(mod.rule.reference, downloads)
-        : null,
-    }));
-
-    // Look for mods that are marked as 'downloaded' and ready to install
-    // Do NOT include 'pending' mods as they are already queued for installation
-    const allDownloadedMods = allModsWithDetails.filter((mod: any) => {
-      const hasDownload = mod.downloadId != null;
-      const modPhase = mod.phase ?? 0;
-      const isDownloaded = mod.status === "downloaded";
-
-      // Allow mods from current phase or earlier phases that haven't been completed
-      // This prevents the deadlock where phase 1 mods can't be processed during phase 2+ cycles
-      const isEligiblePhase = modPhase <= currentPhase;
-
-      // Only requeue mods that are 'downloaded' status - pending mods are already queued
-      return isEligiblePhase && isDownloaded && hasDownload;
-    });
+    // pure selection, see util/requeueCandidates: 'downloaded' members with a resolvable download at
+    // or before the current phase. 'pending' members are already queued.
+    const allDownloadedMods = selectRequeueCandidates(allMods, currentPhase, (reference) =>
+      this.findDownloadForMod(reference, downloads),
+    );
 
     const downloadedPhases = new Set<number>();
     let anyQueued = false;
     let anyMarkedSkipped = false;
 
-    allDownloadedMods.forEach((mod: any) => {
+    allDownloadedMods.forEach((mod) => {
       const modPhase = mod.phase ?? 0;
       downloadedPhases.add(modPhase);
 
-      if (modPhase > currentPhase) {
-        return; // Skip this mod, it will be processed when its phase is active
-      }
       const downloadId = mod.downloadId;
       if (!downloadId) {
         if (mod.type === "recommends") {
@@ -3513,7 +3499,12 @@ class InstallManager {
     }
   }
 
-  // Called when downloads for a phase have been queued/processed
+  /**
+   * Called when downloads for a phase have been queued/processed. NOTE: this also OPENS the gate -
+   * it sets allowedPhase to `phase` when nothing has been allowed yet, bypassing maybeAdvancePhase's
+   * completeness/deployment walk. Callers that could mark a later phase first must establish
+   * ordering themselves (see admitSettledOptionalPhase).
+   */
   private markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi) {
     this.mPhaseTracker.ensure(sourceModId);
     const state = this.mPhaseTracker.get(sourceModId);
@@ -3577,6 +3568,63 @@ class InstallManager {
     }, 0);
 
     return pending === 0;
+  }
+
+  /**
+   * Make the trailing optional phase reachable when its members need no download - an archive on
+   * disk, or a bundled member. Nothing else marks it for them: they fire no download event, and a
+   * round that gathers no dependencies never initialises phase state at all.
+   *
+   * Called from the completion poll, not maybeAdvancePhase, so the walk stays a pure function of
+   * tracker state. Sibling of driveSelectedOptionals, which covers members that DO need a download.
+   *
+   * Safe to scope to OPTIONAL_PHASE: a non-terminal member absent from the round's dependency list
+   * can only be an optional, since filterDependencyRules drops ignored rules and only optionals are
+   * ignored, while an absent required member was classified "existing" (installed and enabled) and
+   * reconstructs as terminal.
+   */
+  private admitSettledOptionalPhase(sourceModId: string, api: IExtensionApi): void {
+    const phaseState = this.mPhaseTracker.get(sourceModId);
+    // already admitted - skip the scan, which would otherwise repeat on every 500ms tick
+    if (phaseState === undefined || phaseState.downloadsFinished.has(OPTIONAL_PHASE)) {
+      return;
+    }
+    const state = api.getState();
+    const session = getCollectionActiveSession(state);
+    if (session === undefined || session.collectionId !== sourceModId) {
+      return;
+    }
+    const downloads = state.persistent.downloads.files;
+    const members = Object.values(session.mods);
+
+    // Admitting the phase can also initialise allowedPhase (see below), which would let optionals
+    // overtake. Refuse while any required member is outstanding.
+    if (members.some((mod) => isRequiredRule(mod) && !isTerminalMemberStatus(mod.status))) {
+      return;
+    }
+    const ready = members.some(
+      (mod) =>
+        isOutstandingOptionalMember(mod) &&
+        // the only non-terminal status whose archive is already recorded, and what a resume writes
+        // for a member found on disk. Tested first to keep findDownloadForMod - a scan of every
+        // download - off members still fetching or not started.
+        mod.status === "downloaded" &&
+        // a bundled member ships inside the collection archive, so it needs no download either
+        (mod.rule?.extra?.localPath != null ||
+          (mod.rule?.reference != null &&
+            this.findDownloadForMod(mod.rule.reference, downloads) != null)),
+    );
+    if (!ready) {
+      return;
+    }
+
+    log("debug", "phase gating: optional phase has nothing left to download, admitting it", {
+      sourceModId,
+    });
+    // The bookkeeping a download event performs. Going through it rather than adding to
+    // downloadsFinished directly is load-bearing: it also initialises allowedPhase, without which
+    // the walk bails at "awaiting first finished phase" forever when the round gathered nothing.
+    this.markPhaseDownloadsFinished(sourceModId, OPTIONAL_PHASE, api);
   }
 
   private maybeAdvancePhase(sourceModId: string, api: IExtensionApi) {
