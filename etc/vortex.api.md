@@ -122,6 +122,7 @@ declare namespace actions {
         setNextProfile,
         setStateVersion,
         setApplicationVersion,
+        addExtension,
         setExtensionEnabled,
         setExtensionVersion,
         setExtensionEndorsed,
@@ -373,6 +374,12 @@ result: IDiscoveredTool;
 manual: boolean;
 }, {}>;
 
+// @public (undocumented)
+const addExtension: reduxAct.ComplexActionCreator2<string, IExtension, {
+    extensionId: string;
+    info: IExtension;
+}, {}>;
+
 // @public
 const addLocalDownload: ComplexActionCreator4<string, string, string, number, {
 id: string;
@@ -401,7 +408,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => Promise_2<void> | Promise<void>;
+function addNotification(notification: INotification): (dispatch: any) => Promise<void> | Promise_2<void>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -801,7 +808,7 @@ export const ContextMenu: React_2.ComponentClass<IContextMenuProps>;
 // @public
 function convertGameIdReverse(knownGames: IGameStored[], input: string): string;
 
-// @public
+// @public @deprecated
 function copyAsync(src: string, dest: string, options?: fs_2.CopyOptions & {
     noSelfCopy?: boolean;
     showDialogCallback?: () => boolean;
@@ -1040,16 +1047,16 @@ const endDialog: ComplexActionCreator1<string, {
 instanceId: string;
 }, {}>;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => PromiseLike<void>): Promise_2<void>;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function ensureDirSync(dirPath: string): void;
 
 // @public (undocumented)
 function ensureDirWritableAsync(dirPath: string, confirm?: () => PromiseLike<void>): Promise_2<void>;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function ensureFileAsync(filePath: string): Promise_2<void>;
 
 // @public (undocumented)
@@ -2488,12 +2495,20 @@ interface IExtensionOptional {
 
 // @public (undocumented)
 interface IExtensionState {
+    author?: string;
+    bundled?: boolean;
+    description?: string;
     // (undocumented)
     enabled: boolean | "failed";
     // (undocumented)
     endorsed: string;
+    fileId?: number;
+    modId?: number;
+    name?: string;
+    path?: string;
     // (undocumented)
     remove: boolean;
+    type?: ExtensionType;
     // (undocumented)
     version: string;
 }
@@ -3759,7 +3774,7 @@ clearCache: () => void;
 // @public
 const isCollectionPhaseComplete: (state: IState, phase: number) => boolean;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function isDirectoryAsync(dirPath: string): Promise_2<boolean>;
 
 // @public
@@ -4578,7 +4593,7 @@ function LazyComponent<T>(load: () => any): (props: any) => JSX.Element;
 // @public (undocumented)
 function lazyRequire<T>(delayed: () => T, exportId?: string): T;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point api.d.ts
@@ -5070,7 +5085,7 @@ const readFileAsync: (...args: any[]) => Promise_2<any>;
 // @public
 function readFileBOM(filePath: string, fallbackEncoding: string): Promise<string>;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function readlinkAsync(linkPath: string): Promise_2<string>;
 
 // @public (undocumented)
@@ -5124,7 +5139,7 @@ function rehydrate<T extends object>(state: T, inbound: any, path: string[], rep
 // @public (undocumented)
 function relativeTime(date: Date, t: TFunction): string;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function removeAsync(remPath: string, options?: IRemoveFileOptions): Promise_2<void>;
 
 // @public (undocumented)
@@ -5174,7 +5189,7 @@ function removeValue<T>(state: T, path: Array<string | number>, value: any): T;
 // @public @deprecated
 function removeValueIf<T extends object>(state: T, path: Array<string | number>, predicate: (element: any) => boolean): T;
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function renameAsync(sourcePath: string, destinationPath: string): Promise_2<void>;
 
 // @public (undocumented)
@@ -5753,8 +5768,8 @@ time: number;
 }, {}>;
 
 // @public (undocumented)
-const setPickerLayout: ComplexActionCreator1<"list" | "small" | "large", {
-layout: "list" | "small" | "large";
+const setPickerLayout: ComplexActionCreator1<"small" | "list" | "large", {
+layout: "small" | "list" | "large";
 }, {}>;
 
 // @public (undocumented)
@@ -6540,9 +6555,24 @@ declare namespace util {
     export {
         getText,
         Normalize,
+        calcDuration,
+        showError,
+        showActivity,
+        showInfo,
+        renderError,
+        showSuccess,
+        prettifyNodeErrorMessage,
+        IPrettifiedError,
+        IErrorRendered,
         ISteamEntry,
         CollectionInstallOutcomeProps,
         ModChangeReason,
+        request,
+        rawRequest,
+        upload,
+        jsonRequest,
+        IRequestOptions,
+        Method,
         addUniqueSafe,
         changeOrNop,
         currentGame_2 as currentGame,
@@ -6686,22 +6716,7 @@ declare namespace util {
         CollectionsDraftedEvent,
         CollectionsDraftUploadedEvent,
         CollectionsDraftUpdateUploadedEvent,
-        TextGroup,
-        calcDuration,
-        showSuccess,
-        showActivity,
-        showInfo,
-        showError,
-        prettifyNodeErrorMessage,
-        renderError,
-        IPrettifiedError,
-        IErrorRendered,
-        rawRequest,
-        jsonRequest,
-        request,
-        upload,
-        IRequestOptions,
-        Method
+        TextGroup
     }
 }
 export { util }
@@ -6807,11 +6822,11 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // lib/extensions/installer_fomod_shared/types/interface.d.ts:76:5 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:172:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:387:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:389:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:422:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:423:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:188:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:403:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:405:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:438:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:439:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
