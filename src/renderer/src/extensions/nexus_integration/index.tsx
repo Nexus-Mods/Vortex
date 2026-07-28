@@ -1483,9 +1483,7 @@ function init(context: IExtensionContext): boolean {
   );
 
   // the connection is built later, in the once() callback, so it's read lazily
-  nxmProtocol = new NxmProtocol(context.api, () => nexus, {
-    onRefreshMembership: () => scheduleMembershipRefresh(context.api),
-  });
+  nxmProtocol = new NxmProtocol(context.api, () => nexus);
 
   // this makes it so the download manager can use nxm urls as download urls
   context.registerDownloadProtocol("nxm", nxmProtocol.resolve);

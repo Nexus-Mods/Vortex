@@ -24,7 +24,7 @@ import type { IResolvedURL } from "../download_management/types/ProtocolHandlers
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
 import { NEXUS_BASE_URL } from "./constants";
-import { refreshMembership } from "./membership";
+import { refreshMembership, scheduleMembershipRefresh } from "./membership";
 import NXMUrl from "./NXMUrl";
 import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
@@ -60,11 +60,6 @@ interface IFoundDownload {
   ids: Record<string, unknown>;
 }
 
-export interface INxmProtocolDeps {
-  /** Re-read the account's membership. The site opens nxm://premium after a membership change. */
-  onRefreshMembership: () => void;
-}
-
 /** The handlers FreeUserDLDialog is wired to. */
 export interface IFreeUserDialogHandlers {
   onUpdated: () => void;
@@ -94,7 +89,6 @@ function needsAuthorisedLink(url: NXMUrl): boolean {
 export class NxmProtocol {
   readonly #api: IExtensionApi;
   readonly #getNexus: () => NexusT;
-  readonly #deps: INxmProtocolDeps;
 
   // every parked download, each carrying whether its user has gone to fetch a link for it
   readonly #freeQueue: IQueuedDownload[] = [];
@@ -106,10 +100,9 @@ export class NxmProtocol {
    * `getNexus` is read on each use: the extension registers its protocol handlers during init,
    * and only builds the Nexus connection later, in its `once` callback.
    */
-  constructor(api: IExtensionApi, getNexus: () => NexusT, deps: INxmProtocolDeps) {
+  constructor(api: IExtensionApi, getNexus: () => NexusT) {
     this.#api = api;
     this.#getNexus = getNexus;
-    this.#deps = deps;
   }
 
   get #nexus(): NexusT {
@@ -185,7 +178,7 @@ export class NxmProtocol {
         return oauthCallback(this.#api, nxmUrl.oauthCode, nxmUrl.oauthState);
       } else if (nxmUrl.type === "premium") {
         log("info", "nxm premium link, re-reading the membership");
-        this.#deps.onRefreshMembership();
+        scheduleMembershipRefresh(this.#api);
         return false;
       } else if (nxmUrl.gameId === SITE_ID && this.#isExtensionAvailable(nxmUrl.modId)) {
         if (install) {
