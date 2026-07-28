@@ -30,19 +30,19 @@ export const isFileEntryHidden = (
  * whether they are showing or dismissed, so it is what the analytics events report as
  * `issue_id` and what the bulk-install path attributes an install to.
  */
-export const fileEntryId = (sourceFileUID: string, category: FileRequirementCategory): string =>
+export const fileIssueId = (sourceFileUID: string, category: FileRequirementCategory): string =>
   `${sourceFileUID}:${category}`;
 
 /**
  * Listing-row key. A partially dismissed file contributes both a showing and a dismissed
  * entry for the same category, so the row key has to tell them apart even though they are
- * one issue — hence the suffix here and not in fileEntryId.
+ * one issue — hence the suffix here and not in fileIssueId.
  */
 const fileRowKey = (
   sourceFileUID: string,
   category: FileRequirementCategory,
   hidden: boolean,
-): string => `${fileEntryId(sourceFileUID, category)}${hidden ? "::hidden" : ""}`;
+): string => `${fileIssueId(sourceFileUID, category)}${hidden ? "::hidden" : ""}`;
 
 /** Group one source file's (visible or hidden) requirements into per-category report entries. */
 export const pushReportEntries = (
@@ -67,7 +67,7 @@ export const pushReportEntries = (
   for (const [category, reqs] of byCategory) {
     entries.push({
       id: fileRowKey(source.sourceFileUID, category, hidden),
-      issueId: fileEntryId(source.sourceFileUID, category),
+      issueId: fileIssueId(source.sourceFileUID, category),
       checkId: FILE_REQUIREMENTS_CHECK_ID,
       severity: "warning",
       data: {

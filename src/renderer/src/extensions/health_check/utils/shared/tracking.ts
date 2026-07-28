@@ -49,9 +49,15 @@ const ISSUE_TYPES: Record<HealthCheckId, IssueType> = {
 export const issueTypeForCheck = (checkId: HealthCheckId): IssueType => ISSUE_TYPES[checkId];
 
 /**
- * The two properties identifying which issue an event belongs to, and which check
- * surfaced it. Carried by every issue-scoped event; the tracking context applies it
- * so call sites never restate it.
+ * Which issue an event belongs to, and which check surfaced it — the join key that ties
+ * a user's events together across the funnel. Carried by every issue-scoped event; the
+ * tracking context applies it, so call sites never restate it.
+ *
+ * Deliberately insensitive to the report's contents: `issue_id` is
+ * `${sourceFileUID}:${category}`, so it stays put as requirements come and go underneath,
+ * and as the issue is hidden and restored. That stability is the point — it is what lets
+ * the funnel join, and what the ::hidden suffix was breaking. `IHealthCheckEntry.id` is
+ * the row key that tracks report state; don't report that.
  */
 export type IssueIdentity = {
   issue_id: string;
