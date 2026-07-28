@@ -3081,7 +3081,7 @@ class ExtensionManager {
     );
     for (const ext of scanned) {
       if (!loadedFromState.has(ext.name)) {
-        this.mPendingAdds.push({ extId: ext.name, info: ext.info });
+        this.mPendingAdds.push({ extId: ext.name, info: { ...ext.info, path: ext.path } });
         result.push(ext);
         loadedExtensions.add(ext.name);
       }

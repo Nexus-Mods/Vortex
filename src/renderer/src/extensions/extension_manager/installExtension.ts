@@ -402,7 +402,7 @@ async function installExtensionImpl(
 
       clearStaleRemovalFlags(api, removedKeys, destPath);
 
-      api.store.dispatch(addExtension(manifestInfo.id, fullInfo));
+      api.store.dispatch(addExtension(manifestInfo.id, { ...fullInfo, path: destPath }));
 
       emitExtensionInstalled(
         api,
