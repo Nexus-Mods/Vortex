@@ -4,6 +4,12 @@ import { openFilePage, openModPage } from "./fileRequirementActions";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
+/** A mod reference the analytics callbacks can attribute an event to. */
+export interface ITrackedModRef {
+  modUID: string;
+  modName: string;
+}
+
 // Helpers shared by the requirement cards: the mod-page / file-page open handlers,
 // the mappers that adapt a requirement's domain objects into the base
 // FileRequirement card's props, and the action-context shape threaded to the cards.
@@ -34,6 +40,21 @@ export interface IFileActionContext {
   installButtonAppearance?: "strong" | "moderate";
   /** True while "install all" is running; puts every card's install button into the loading state. */
   isDownloadingAll?: boolean;
+  // Analytics intent — cards emit what the user did; the owner maps it to Mixpanel events.
+  /** 1-click install of a single required candidate. */
+  onInstall: (candidate: IFileRequirementCandidate) => void;
+  /** Picking one of the "OR" alternatives (1-based position within the options). */
+  onPickOption: (candidate: IFileRequirementCandidate, position: number, total: number) => void;
+  /** The group-level "install all" button. */
+  onInstallAll: (candidates: IFileRequirementCandidate[]) => void;
+  /** Opening a candidate's mod page (owner splits install-via vs view by user tier). */
+  onOpenModPage: (candidate: IFileRequirementCandidate) => void;
+  /** Enabling an installed version, optionally switching off the wrong one. */
+  onEnable: (correctFile: IInstalledFile, enabledFile?: IInstalledFile) => void;
+  /** Navigating to a mod in the local mods list. */
+  onViewInMods: (file: ITrackedModRef) => void;
+  /** Installing an already-downloaded file. */
+  onInstallDownloaded: (file: IDownloadedFile) => void;
 }
 
 /** Mod-page / file-page open handlers for a candidate or installed file. */

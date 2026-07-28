@@ -23,6 +23,11 @@ export const ReplaceRows = ({
 }) => {
   const { t } = useTranslation("health_check");
 
+  const handleViewInMods = () => {
+    ctx.onViewInMods(requirement.installedFile);
+    viewInLoadout(ctx.api, requirement.installedFile);
+  };
+
   return (
     <>
       <div className="space-y-3 border-b border-surface-mid pb-6">
@@ -45,7 +50,7 @@ export const ReplaceRows = ({
               brand="neutral"
               leftIconPath={nxmModOutline}
               size="sm"
-              onClick={() => viewInLoadout(ctx.api, requirement.installedFile)}
+              onClick={handleViewInMods}
             >
               {t("detail::item::view_in_mods")}
             </Button>

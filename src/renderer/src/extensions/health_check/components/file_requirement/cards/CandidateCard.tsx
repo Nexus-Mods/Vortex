@@ -1,4 +1,4 @@
-import { mdiOpenInNew, mdiTrayArrowDown } from "@mdi/js";
+import { mdiMonitorArrowDownVariant, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -20,18 +20,38 @@ export const CandidateCard = ({
   ctx,
   candidate,
   isOr,
+  optionPosition,
+  optionCount,
 }: {
   ctx: IFileActionContext;
   candidate: IFileRequirementCandidate;
   isOr?: boolean;
+  optionPosition?: number;
+  optionCount?: number;
 }) => {
   const { t } = useTranslation(["health_check", "common"]);
+
   const { isLoading, onClick } = useInstallButton(
     () => ctx.requestDownload(candidate),
     ctx.showPremiumAd,
   );
 
   const loading = isLoading || !!ctx.isDownloadingAll;
+
+  const handleInstall = () => {
+    if (isOr) {
+      ctx.onPickOption(candidate, optionPosition ?? 0, optionCount ?? 0);
+    } else {
+      ctx.onInstall(candidate);
+    }
+
+    onClick();
+  };
+
+  const handleModPage = () => {
+    ctx.onOpenModPage(candidate);
+    openModPage(ctx.api, candidate);
+  };
 
   return (
     <FileRequirement
@@ -42,7 +62,7 @@ export const CandidateCard = ({
             brand="neutral"
             leftIconPath={mdiOpenInNew}
             size="sm"
-            onClick={() => openModPage(ctx.api, candidate)}
+            onClick={handleModPage}
           >
             {t("detail::item::install_via_mod_page")}
           </Button>
@@ -51,10 +71,10 @@ export const CandidateCard = ({
             appearance={ctx.installButtonAppearance ?? "strong"}
             brand="neutral"
             isLoading={loading}
-            leftIconPath={mdiTrayArrowDown}
+            leftIconPath={mdiMonitorArrowDownVariant}
             rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
             size="sm"
-            onClick={onClick}
+            onClick={handleInstall}
           >
             {loading ? t("detail::item::downloading") : t("detail::item::install_one_click")}
           </Button>
