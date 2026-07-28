@@ -285,17 +285,18 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         </p>
       </Typography>
 
-      <PremiumModal
-        isOpen={showPremiumModal}
-        modCount={1}
-        modId={mod.modId}
-        trigger="single_install"
-        onClose={() => setShowPremiumModal(false)}
-        onDownload={() => {
-          setShowPremiumModal(false);
-          openModPage();
-        }}
-      />
+      {showPremiumModal && (
+        <PremiumModal
+          modCount={1}
+          modId={mod.modId}
+          trigger="single_install"
+          onClose={() => setShowPremiumModal(false)}
+          onDownload={() => {
+            setShowPremiumModal(false);
+            openModPage();
+          }}
+        />
+      )}
     </>
   );
 };

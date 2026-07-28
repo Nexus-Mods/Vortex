@@ -26,6 +26,7 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import { useRefreshUserInfoOnFocus } from "../../nexus_integration/hooks/useRefreshUserInfoOnFocus";
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
@@ -114,6 +115,10 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   useEffect(() => {
     registerReset?.(() => setSelected(null));
   }, [registerReset]);
+
+  // The upsells here send the user to the website, which pushes no membership change back. One
+  // listener on the page covers the detail view and every upsell on it.
+  useRefreshUserInfoOnFocus(api, active);
 
   // Subscribe only to the slices the listing + install-all derive from, so the
   // frequent unrelated dispatches during a check run (mod-file and mod-attribute
@@ -390,14 +395,15 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
 
           <PremiumBanner placement="list" totalIssues={activeCount + hiddenCount} />
 
-          <PremiumModal
-            downloadScope="all"
-            isOpen={showInstallAllPremium}
-            modCount={installAllItems.length}
-            trigger="install_all"
-            onClose={() => setShowInstallAllPremium(false)}
-            onDownload={() => setShowInstallAllPremium(false)}
-          />
+          {showInstallAllPremium && (
+            <PremiumModal
+              downloadScope="all"
+              modCount={installAllItems.length}
+              trigger="install_all"
+              onClose={() => setShowInstallAllPremium(false)}
+              onDownload={() => setShowInstallAllPremium(false)}
+            />
+          )}
         </PageScroll>
       </Page>
     </HealthCheckTrackingProvider>

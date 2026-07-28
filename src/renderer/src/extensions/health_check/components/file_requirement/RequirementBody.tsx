@@ -155,14 +155,15 @@ export const RequirementBody = ({
         ))
       )}
 
-      <PremiumModal
-        downloadScope="all"
-        isOpen={premiumOpen}
-        modCount={installAllCandidates.length}
-        trigger="batch_install"
-        onClose={() => setPremiumOpen(false)}
-        onDownload={() => setPremiumOpen(false)}
-      />
+      {premiumOpen && (
+        <PremiumModal
+          downloadScope="all"
+          modCount={installAllCandidates.length}
+          trigger="batch_install"
+          onClose={() => setPremiumOpen(false)}
+          onDownload={() => setPremiumOpen(false)}
+        />
+      )}
     </>
   );
 };

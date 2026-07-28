@@ -205,25 +205,26 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         onOpen={onOpen}
       />
 
-      <PremiumModal
-        downloadScope={candidates.length === 1 ? "single" : "all"}
-        isOpen={showPremium}
-        modCount={candidates.length}
-        modId={candidates.length === 1 ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined}
-        trigger={candidates.length === 1 ? "single_install" : "batch_install"}
-        onClose={() => setShowPremium(false)}
-        onDownload={() => {
-          setShowPremium(false);
+      {showPremium && (
+        <PremiumModal
+          downloadScope={candidates.length === 1 ? "single" : "all"}
+          modCount={candidates.length}
+          modId={candidates.length === 1 ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined}
+          trigger={candidates.length === 1 ? "single_install" : "batch_install"}
+          onClose={() => setShowPremium(false)}
+          onDownload={() => {
+            setShowPremium(false);
 
-          // Free-user fallback: a single candidate opens its mod page; otherwise
-          // open the detail so each requirement's mod page is reachable.
-          if (candidates.length === 1) {
-            openModPage(api, candidates[0]);
-          } else {
-            onOpen();
-          }
-        }}
-      />
+            // Free-user fallback: a single candidate opens its mod page; otherwise
+            // open the detail so each requirement's mod page is reachable.
+            if (candidates.length === 1) {
+              openModPage(api, candidates[0]);
+            } else {
+              onOpen();
+            }
+          }}
+        />
+      )}
     </>
   );
 };

@@ -110,17 +110,18 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         onOpen={onOpen}
       />
 
-      <PremiumModal
-        isOpen={showPremiumModal}
-        modCount={1}
-        modId={mod.modId}
-        trigger="single_install"
-        onClose={() => setShowPremiumModal(false)}
-        onDownload={() => {
-          setShowPremiumModal(false);
-          openModPage();
-        }}
-      />
+      {showPremiumModal && (
+        <PremiumModal
+          modCount={1}
+          modId={mod.modId}
+          trigger="single_install"
+          onClose={() => setShowPremiumModal(false)}
+          onDownload={() => {
+            setShowPremiumModal(false);
+            openModPage();
+          }}
+        />
+      )}
     </>
   );
 };
