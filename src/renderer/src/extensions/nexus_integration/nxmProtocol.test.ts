@@ -2,15 +2,15 @@ import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
-import { makeGameStored, makeNxmHarness, makeSession } from "@/test-utils/builders";
-import { test } from "@/test-utils/harnessTest";
-import type { INxmHarness, INxmHarnessOpts } from "@/test-utils/harnessTypes";
+import { makeGameStored, makeSession } from "@/test-utils/builders";
+import type { INxmHarness } from "@/test-utils/harnessTypes";
+import type { INxmFixtures } from "@/test-utils/nxmTest";
+import { COLLECTION_URL, FREE, MOD_URL, PREMIUM, test } from "@/test-utils/nxmTest";
 import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
-import { makeNXMProtocol, onCancelImpl, onDownloadImpl, onRetryImpl, onSkip } from "./nxmProtocol";
 import { getInfoGraphQL } from "./util";
 
 vi.mock("./util", () => ({
@@ -25,12 +25,6 @@ vi.mock("../../util/opn", () => ({ default: vi.fn(() => PromiseBB.resolve()) }))
 
 vi.mock("../../util/collectionSkip", () => ({ markCollectionMemberSkipped: vi.fn() }));
 
-const MOD_URL = "nxm://skyrimspecialedition/mods/100/files/500";
-const COLLECTION_URL = "nxm://skyrimspecialedition/collections/abcdef/revisions/3";
-
-const PREMIUM = { userId: 7, name: "premium-user", isPremium: true };
-const FREE = { userId: 7, name: "free-user", isPremium: false };
-
 const modInfoQuery = vi.mocked(getInfoGraphQL);
 const openPage = vi.mocked(opn);
 const markSkipped = vi.mocked(markCollectionMemberSkipped);
@@ -43,34 +37,19 @@ const apiError = (statusCode: number, message: string) =>
   new NexusError(message, statusCode, "https://api/download_link", message);
 
 describe("nxm protocol resolver", () => {
-  // the handler holds its free-download queue in module scope, so anything a test leaves queued
-  // has to be rejected before the next one runs
-  const openQueues: INxmHarness[] = [];
-
   beforeEach(() => {
     modInfoQuery.mockReset();
   });
 
-  afterEach(() => {
-    openQueues.forEach((harness) =>
-      harness.freeUserQueue().forEach((url) => onCancelImpl(harness.api, url)),
-    );
-    openQueues.length = 0;
-  });
-
-  const arrange = (opts: INxmHarnessOpts = {}) => {
-    const harness = makeNxmHarness({ userInfo: PREMIUM, ...opts });
-    openQueues.push(harness);
-    return { harness, resolve: makeNXMProtocol(harness.api, harness.nexus) };
-  };
-
-  test("rejects a url that isn't an nxm link", async () => {
-    const { resolve } = arrange();
+  test("rejects a url that isn't an nxm link", async ({ makeNxm }) => {
+    const { resolve } = makeNxm();
     await expect(resolve("not-a-url")).rejects.toBeInstanceOf(DataInvalid);
   });
 
-  test("rejects a link generated for a different account, without offering a report", async () => {
-    const { harness, resolve } = arrange();
+  test("rejects a link generated for a different account, without offering a report", async ({
+    makeNxm,
+  }) => {
+    const { harness, resolve } = makeNxm();
 
     await expect(resolve(`${MOD_URL}?user_id=99`)).rejects.toBeInstanceOf(ProcessCanceled);
     expect(harness.errorNotifications).toEqual([
@@ -78,14 +57,14 @@ describe("nxm protocol resolver", () => {
     ]);
   });
 
-  test("rejects an nxm url that isn't a download link", async () => {
-    const { resolve } = arrange();
+  test("rejects an nxm url that isn't a download link", async ({ makeNxm }) => {
+    const { resolve } = makeNxm();
     await expect(resolve("nxm://premium")).rejects.toThrow("Not a download url");
   });
 
   describe("premium account", () => {
-    test("resolves a mod file to its download urls and nexus ids", async () => {
-      const { harness, resolve } = arrange();
+    test("resolves a mod file to its download urls and nexus ids", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
 
       await expect(resolve(MOD_URL)).resolves.toEqual({
@@ -106,8 +85,8 @@ describe("nxm protocol resolver", () => {
       );
     });
 
-    test("forwards the key and expiry of a site-generated link", async () => {
-      const { harness, resolve } = arrange();
+    test("forwards the key and expiry of a site-generated link", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
 
       await resolve(`${MOD_URL}?key=abc&expires=1700000000`);
@@ -121,8 +100,8 @@ describe("nxm protocol resolver", () => {
       );
     });
 
-    test("serves a repeated request for the same file from the cache", async () => {
-      const { harness, resolve } = arrange();
+    test("serves a repeated request for the same file from the cache", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
 
       await resolve(MOD_URL);
@@ -131,8 +110,8 @@ describe("nxm protocol resolver", () => {
       expect(harness.getDownloadURLs).toHaveBeenCalledTimes(1);
     });
 
-    test("resolves a collection revision through its download link", async () => {
-      const { harness, resolve } = arrange();
+    test("resolves a collection revision through its download link", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
       harness.getCollectionRevisionGraph.mockResolvedValue({
         id: 42,
         downloadLink: "https://api/revisions/42/download",
@@ -162,8 +141,8 @@ describe("nxm protocol resolver", () => {
       );
     });
 
-    test("asks for the latest revision when the url says latest", async () => {
-      const { harness, resolve } = arrange();
+    test("asks for the latest revision when the url says latest", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
       harness.getCollectionRevisionGraph.mockRejectedValue(new Error("boom"));
 
       await expect(
@@ -176,8 +155,10 @@ describe("nxm protocol resolver", () => {
       );
     });
 
-    test("annotates a failed collection lookup with the revision it was for", async () => {
-      const { harness, resolve } = arrange();
+    test("annotates a failed collection lookup with the revision it was for", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
       harness.getCollectionRevisionGraph.mockRejectedValue(new Error("boom"));
 
       await expect(resolve(COLLECTION_URL)).rejects.toMatchObject({
@@ -186,8 +167,8 @@ describe("nxm protocol resolver", () => {
       });
     });
 
-    test("still uses the premium path for a site (extension) download", async () => {
-      const { harness, resolve } = arrange({
+    test("still uses the premium path for a site (extension) download", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm({
         userInfo: FREE,
         knownGames: [makeGameStored({ id: SITE_ID, details: undefined })],
       });
@@ -201,8 +182,10 @@ describe("nxm protocol resolver", () => {
   });
 
   describe("api errors", () => {
-    test("turns a nexus api error into an HTTPError carrying the status code", async () => {
-      const { harness, resolve } = arrange();
+    test("turns a nexus api error into an HTTPError carrying the status code", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockRejectedValue(apiError(500, "server exploded"));
 
       const err = await resolve(MOD_URL).catch((caught: unknown) => caught);
@@ -211,15 +194,17 @@ describe("nxm protocol resolver", () => {
       expect((err as HTTPError).statusCode).toBe(500);
     });
 
-    test("reports a 401 as a log-in problem rather than a raw http error", async () => {
-      const { harness, resolve } = arrange();
+    test("reports a 401 as a log-in problem rather than a raw http error", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockRejectedValue(apiError(401, "unauthorized"));
 
       await expect(resolve(MOD_URL)).rejects.toThrow("You are not logged in to Nexus Mods!");
     });
 
-    test("shows a non-reportable notification when the api rate limit is hit", async () => {
-      const { harness, resolve } = arrange();
+    test("shows a non-reportable notification when the api rate limit is hit", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockRejectedValue(new RateLimitError());
 
       await expect(resolve(MOD_URL)).rejects.toBeInstanceOf(RateLimitError);
@@ -239,8 +224,8 @@ describe("nxm protocol resolver", () => {
     const queued = (harness: INxmHarness) =>
       vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(1));
 
-    test("queues the download for the site round trip", async () => {
-      const { harness, resolve } = arrange({ userInfo: FREE });
+    test("queues the download for the site round trip", async ({ makeNxm }) => {
+      const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
       websiteRoundTrip();
 
       const pending = resolve(MOD_URL);
@@ -249,12 +234,12 @@ describe("nxm protocol resolver", () => {
       expect(harness.freeUserQueue()).toEqual([MOD_URL]);
       expect(harness.getDownloadURLs).not.toHaveBeenCalled();
 
-      onCancelImpl(harness.api, MOD_URL);
+      nxm.dialogHandlers.onCancel(MOD_URL);
       await expect(pending).rejects.toBeInstanceOf(UserCanceled);
     });
 
-    test("downloads a direct-download mod in app instead of queueing it", async () => {
-      const { harness, resolve } = arrange({ userInfo: FREE });
+    test("downloads a direct-download mod in app instead of queueing it", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm({ userInfo: FREE });
       modInfoQuery.mockResolvedValue({
         modInfo: { direct_download_enabled: true },
         fileInfo: {},
@@ -267,8 +252,8 @@ describe("nxm protocol resolver", () => {
       expect(harness.freeUserQueue()).toEqual([]);
     });
 
-    test("skips the free-user path entirely for a keyed link", async () => {
-      const { harness, resolve } = arrange({ userInfo: FREE });
+    test("skips the free-user path entirely for a keyed link", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm({ userInfo: FREE });
       harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/keyed.7z"));
 
       await expect(resolve(`${MOD_URL}?key=abc&expires=1700000000`)).resolves.toMatchObject({
@@ -279,74 +264,80 @@ describe("nxm protocol resolver", () => {
       expect(harness.freeUserQueue()).toEqual([]);
     });
 
-    test("queues the download when the mod info lookup fails", async () => {
-      const { harness, resolve } = arrange({ userInfo: FREE });
+    test("queues the download when the mod info lookup fails", async ({ makeNxm }) => {
+      const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
       modInfoQuery.mockRejectedValue(new Error("network down"));
 
       const pending = resolve(MOD_URL);
       await queued(harness);
 
-      onCancelImpl(harness.api, MOD_URL);
+      nxm.dialogHandlers.onCancel(MOD_URL);
       await expect(pending).rejects.toBeInstanceOf(UserCanceled);
     });
 
-    test("propagates a cancellation instead of re-queueing the download", async () => {
-      const { harness, resolve } = arrange({ userInfo: FREE });
+    test("propagates a cancellation instead of re-queueing the download", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm({ userInfo: FREE });
       modInfoQuery.mockRejectedValue(new UserCanceled());
 
       await expect(resolve(MOD_URL)).rejects.toBeInstanceOf(UserCanceled);
       expect(harness.freeUserQueue()).toEqual([]);
     });
 
-    test("takes the free path for a premium account when downloads are forced free", async () => {
+    test("takes the free path for a premium account when downloads are forced free", async ({
+      makeNxm,
+    }) => {
       vi.stubEnv("FORCE_FREE_DOWNLOADS", "yes");
-      const { harness, resolve } = arrange();
+      const { harness, nxm, resolve } = makeNxm();
       websiteRoundTrip();
 
       const pending = resolve(MOD_URL);
       await queued(harness);
 
-      onCancelImpl(harness.api, MOD_URL);
+      nxm.dialogHandlers.onCancel(MOD_URL);
       await expect(pending).rejects.toBeInstanceOf(UserCanceled);
       vi.unstubAllEnvs();
     });
 
     describe("the queued download", () => {
-      const arrangeQueued = async () => {
-        const { harness, resolve } = arrange({ userInfo: FREE });
+      const arrangeQueued = async (makeNxm: INxmFixtures["makeNxm"]) => {
+        const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
         websiteRoundTrip();
         const pending = resolve(MOD_URL);
         await queued(harness);
-        return { harness, resolve, pending };
+        return { harness, nxm, pending };
       };
 
       // what FreeUserDLDialog does when the user upgrades while the dialog is open
-      test("retrying after an upgrade resolves it down the premium path", async () => {
-        const { harness, resolve, pending } = await arrangeQueued();
+      test("retrying after an upgrade resolves it down the premium path", async ({ makeNxm }) => {
+        const { harness, nxm, pending } = await arrangeQueued(makeNxm);
         harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
         harness.setUserInfo(PREMIUM);
 
-        onRetryImpl(resolve, harness.api, MOD_URL);
+        nxm.dialogHandlers.onRetry(MOD_URL);
 
         await expect(pending).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
         expect(harness.freeUserQueue()).toEqual([]);
       });
 
-      test("opens the file's page on the website when the user picks download there", async () => {
-        const { harness, pending } = await arrangeQueued();
+      test("opens the file's page on the website when the user picks download there", async ({
+        makeNxm,
+      }) => {
+        const { harness, nxm, pending } = await arrangeQueued(makeNxm);
 
-        onDownloadImpl(makeNXMProtocol(harness.api, harness.nexus), MOD_URL);
+        nxm.dialogHandlers.onDownload(MOD_URL);
 
         expect(openPage).toHaveBeenCalledWith(
           "https://www.nexusmods.com/skyrimspecialedition/mods/100?tab=files&file_id=500&nmm=1",
         );
 
-        onCancelImpl(harness.api, MOD_URL);
+        nxm.dialogHandlers.onCancel(MOD_URL);
         await expect(pending).rejects.toBeInstanceOf(UserCanceled);
       });
 
-      test("skipping marks the mod skipped in the active collection install", async () => {
-        const { harness, pending } = await arrangeQueued();
+      test("skipping marks the mod skipped in the active collection install", async ({
+        makeNxm,
+      }) => {
+        const { harness, nxm, pending } = await arrangeQueued(makeNxm);
         harness.getModFiles.mockResolvedValue({
           file_updates: [
             {
@@ -358,7 +349,7 @@ describe("nxm protocol resolver", () => {
           ],
         });
 
-        onSkip(harness.api, MOD_URL);
+        nxm.dialogHandlers.onSkip(MOD_URL);
 
         await expect(pending).rejects.toBeInstanceOf(UserCanceled);
         expect(markSkipped).toHaveBeenCalledWith(
@@ -372,17 +363,17 @@ describe("nxm protocol resolver", () => {
         );
       });
 
-      test("skipping still cancels when the update chain can't be queried", async () => {
-        const { harness, pending } = await arrangeQueued();
+      test("skipping still cancels when the update chain can't be queried", async ({ makeNxm }) => {
+        const { harness, nxm, pending } = await arrangeQueued(makeNxm);
         harness.getModFiles.mockRejectedValue(new Error("network down"));
 
-        onSkip(harness.api, MOD_URL);
+        nxm.dialogHandlers.onSkip(MOD_URL);
 
         await expect(pending).rejects.toBeInstanceOf(UserCanceled);
       });
 
-      test("cancelling pauses the collection install that queued it", async () => {
-        const { harness, pending } = await arrangeQueued();
+      test("cancelling pauses the collection install that queued it", async ({ makeNxm }) => {
+        const { harness, nxm, pending } = await arrangeQueued(makeNxm);
         harness.setState((draft) => {
           draft.session["collections"].activeSession = makeSession({
             gameId: "skyrimse",
@@ -392,24 +383,24 @@ describe("nxm protocol resolver", () => {
         const paused = vi.fn();
         harness.api.events.on("pause-collection", paused);
 
-        expect(onCancelImpl(harness.api, MOD_URL)).toBe(true);
+        expect(nxm.dialogHandlers.onCancel(MOD_URL)).toBe(true);
 
         await expect(pending).rejects.toBeInstanceOf(UserCanceled);
         expect(paused).toHaveBeenCalledWith("skyrimse", "coll-1", "free-user-cancel");
       });
     });
 
-    test("cancelling an empty queue just drops the url from the dialog", () => {
-      const { harness } = arrange({ userInfo: FREE });
+    test("cancelling an empty queue just drops the url from the dialog", ({ makeNxm }) => {
+      const { harness, nxm } = makeNxm({ userInfo: FREE });
 
-      expect(onCancelImpl(harness.api, MOD_URL)).toBe(false);
+      expect(nxm.dialogHandlers.onCancel(MOD_URL)).toBe(false);
       expect(harness.dispatched.map((action) => action.type)).toContain("REMOVE_FREEUSER_DLITEM");
     });
 
-    test("retrying a url that isn't queued does nothing", () => {
-      const { harness, resolve } = arrange({ userInfo: FREE });
+    test("retrying a url that isn't queued does nothing", ({ makeNxm }) => {
+      const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
 
-      expect(() => onRetryImpl(resolve, harness.api, MOD_URL)).not.toThrow();
+      expect(() => nxm.dialogHandlers.onRetry(MOD_URL)).not.toThrow();
       expect(harness.getDownloadURLs).not.toHaveBeenCalled();
     });
   });
@@ -421,8 +412,8 @@ describe("nxm protocol resolver", () => {
      * keyless download link, and today that refusal reaches the caller as a raw HTTP error
      * instead of the free-user flow the account is now entitled to.
      */
-    test("surfaces the refused download link as a raw http error", async () => {
-      const { harness, resolve } = arrange({ userInfo: PREMIUM });
+    test("surfaces the refused download link as a raw http error", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm({ userInfo: PREMIUM });
       harness.getDownloadURLs.mockRejectedValue(apiError(403, "forbidden"));
 
       const err = await resolve(MOD_URL).catch((caught: unknown) => caught);

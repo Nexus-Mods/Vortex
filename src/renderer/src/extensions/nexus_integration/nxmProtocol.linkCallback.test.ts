@@ -1,16 +1,18 @@
 import PromiseBB from "bluebird";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { makeDownload, makeGameStored, makeNxmHarness } from "@/test-utils/builders";
-import { test } from "@/test-utils/harnessTest";
-import type { INxmHarness, INxmHarnessOpts } from "@/test-utils/harnessTypes";
+import { makeDownload, makeGameStored } from "@/test-utils/builders";
+import type { INxmHarness } from "@/test-utils/harnessTypes";
+import type { INxmFixtures, INxmSetup } from "@/test-utils/nxmTest";
+import { COLLECTION_URL, FREE, MOD_URL, test } from "@/test-utils/nxmTest";
 import { ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { SITE_ID } from "../gamemode_management/constants";
-import { makeNXMLinkCallback, makeNXMProtocol, onCancelImpl, onDownloadImpl } from "./nxmProtocol";
+import type * as nexusUtil from "./util";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
 
-vi.mock("./util", () => ({
+vi.mock("./util", async (importOriginal) => ({
+  ...(await importOriginal<typeof nexusUtil>()),
   bringToFront: vi.fn(),
   ensureLoggedIn: vi.fn(() => PromiseBB.resolve()),
   getInfoGraphQL: vi.fn(),
@@ -22,12 +24,6 @@ vi.mock("../../util/opn", () => ({ default: vi.fn(() => PromiseBB.resolve()) }))
 
 vi.mock("../../util/collectionSkip", () => ({ markCollectionMemberSkipped: vi.fn() }));
 
-const MOD_URL = "nxm://skyrimspecialedition/mods/100/files/500";
-const COLLECTION_URL = "nxm://skyrimspecialedition/collections/abcdef/revisions/3";
-
-const PREMIUM = { userId: 7, name: "premium-user", isPremium: true };
-const FREE = { userId: 7, name: "free-user", isPremium: false };
-
 const beginDownload = vi.mocked(startDownload);
 const logIn = vi.mocked(ensureLoggedIn);
 const modInfoQuery = vi.mocked(getInfoGraphQL);
@@ -35,27 +31,18 @@ const focusWindow = vi.mocked(bringToFront);
 const finishOAuth = vi.mocked(oauthCallback);
 
 describe("nxm link callback", () => {
-  const openQueues: INxmHarness[] = [];
-
   beforeEach(() => {
     beginDownload.mockReturnValue(PromiseBB.resolve("dl-1") as never);
     logIn.mockReturnValue(PromiseBB.resolve() as never);
     modInfoQuery.mockReset();
   });
 
-  const arrange = (opts: INxmHarnessOpts = {}) => {
-    const harness = makeNxmHarness({ userInfo: PREMIUM, ...opts });
-    openQueues.push(harness);
-    // the callback only dispatches modInfo once the download record exists
-    harness.setState((draft) => {
+  /** The link callback only dispatches modInfo once the download record exists. */
+  const arrangeLink = (setup: INxmSetup) => {
+    setup.harness.setState((draft) => {
       draft.persistent.downloads.files["dl-1"] = makeDownload({ id: "dl-1" });
     });
-    const onPremiumLink = vi.fn();
-    return {
-      harness,
-      onPremiumLink,
-      handleLink: makeNXMLinkCallback(harness.api, harness.nexus, onPremiumLink),
-    };
+    return { ...setup, handleLink: setup.nxm.handleLink };
   };
 
   const dispatchedModInfo = (harness: INxmHarness) =>
@@ -63,8 +50,8 @@ describe("nxm link callback", () => {
       .filter((action) => action.type === "SET_DOWNLOAD_MODINFO")
       .map((action) => action.payload as { key: string; value: unknown });
 
-  test("hands an oauth callback url to the login flow", () => {
-    const { harness, handleLink } = arrange();
+  test("hands an oauth callback url to the login flow", ({ makeNxm }) => {
+    const { harness, handleLink } = arrangeLink(makeNxm());
 
     handleLink("nxm://oauth/callback?code=the-code&state=the-state", false);
 
@@ -72,17 +59,17 @@ describe("nxm link callback", () => {
     expect(beginDownload).not.toHaveBeenCalled();
   });
 
-  test("treats a premium url as a prompt to re-read the membership", () => {
-    const { onPremiumLink, handleLink } = arrange();
+  test("treats a premium url as a prompt to re-read the membership", ({ makeNxm }) => {
+    const { onRefreshMembership, handleLink } = arrangeLink(makeNxm());
 
     expect(handleLink("nxm://premium", false)).toBe(false);
 
-    expect(onPremiumLink).toHaveBeenCalled();
+    expect(onRefreshMembership).toHaveBeenCalled();
     expect(beginDownload).not.toHaveBeenCalled();
   });
 
-  test("reports an unparseable url without offering a report", () => {
-    const { harness, handleLink } = arrange();
+  test("reports an unparseable url without offering a report", ({ makeNxm }) => {
+    const { harness, handleLink } = arrangeLink(makeNxm());
 
     handleLink("nxm://not-a-download", false);
 
@@ -93,14 +80,16 @@ describe("nxm link callback", () => {
   });
 
   describe("extension downloads from the site domain", () => {
-    const arrangeSite = () =>
-      arrange({
-        knownGames: [makeGameStored({ id: SITE_ID, details: undefined })],
-        availableExtensions: [{ modId: 100 }],
-      });
+    const arrangeSite = (makeNxm: INxmFixtures["makeNxm"]) =>
+      arrangeLink(
+        makeNxm({
+          knownGames: [makeGameStored({ id: SITE_ID, details: undefined })],
+          availableExtensions: [{ modId: 100 }],
+        }),
+      );
 
-    test("installs the extension when the link asks to install", () => {
-      const { harness, handleLink } = arrangeSite();
+    test("installs the extension when the link asks to install", ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeSite(makeNxm);
       const emitAndAwait = vi.spyOn(harness.api, "emitAndAwait");
 
       handleLink(`nxm://${SITE_ID}/mods/100/files/500`, true);
@@ -112,8 +101,8 @@ describe("nxm link callback", () => {
       });
     });
 
-    test("opens the extension page when the link is only a view", () => {
-      const { harness, handleLink } = arrangeSite();
+    test("opens the extension page when the link is only a view", ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeSite(makeNxm);
       const shown = vi.fn();
       harness.api.events.on("show-extension-page", shown);
 
@@ -125,8 +114,8 @@ describe("nxm link callback", () => {
   });
 
   describe("mod downloads", () => {
-    test("logs in, starts the download and tags it as a nexus download", async () => {
-      const { harness, handleLink } = arrange();
+    test("logs in, starts the download and tags it as a nexus download", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
 
       handleLink(MOD_URL, false);
 
@@ -138,8 +127,8 @@ describe("nxm link callback", () => {
       ]);
     });
 
-    test("installs the download when the link asks to install", async () => {
-      const { harness, handleLink } = arrange();
+    test("installs the download when the link asks to install", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
       const install = vi.fn((_id: string, cb: (err: Error | null, id: string) => void) =>
         cb(null, "mod-1"),
       );
@@ -151,8 +140,8 @@ describe("nxm link callback", () => {
       expect(install.mock.calls[0][0]).toBe("dl-1");
     });
 
-    test("brings the window forward when foreground downloads are enabled", () => {
-      const { harness, handleLink } = arrange();
+    test("brings the window forward when foreground downloads are enabled", ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
       harness.setState((draft) => {
         draft.settings.interface.foregroundDL = true;
       });
@@ -162,9 +151,9 @@ describe("nxm link callback", () => {
       expect(focusWindow).toHaveBeenCalled();
     });
 
-    test("does nothing further when the download never started", async () => {
-      const { harness, handleLink } = arrange();
-      // doDownload swallows its own failures and resolves to undefined
+    test("does nothing further when the download never started", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
+      // the handler reports download failures itself and resolves to undefined
       beginDownload.mockReturnValue(PromiseBB.resolve(undefined) as never);
 
       handleLink(MOD_URL, false);
@@ -173,8 +162,8 @@ describe("nxm link callback", () => {
       expect(dispatchedModInfo(harness)).toEqual([]);
     });
 
-    test("reports a log-in failure without offering a report", async () => {
-      const { harness, handleLink } = arrange();
+    test("reports a log-in failure without offering a report", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
       logIn.mockReturnValue(PromiseBB.reject(new ProcessCanceled("no key")) as never);
 
       handleLink(MOD_URL, false);
@@ -186,8 +175,8 @@ describe("nxm link callback", () => {
       );
     });
 
-    test("stays quiet when the user cancels the log in", async () => {
-      const { harness, handleLink } = arrange();
+    test("stays quiet when the user cancels the log in", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
       logIn.mockReturnValue(PromiseBB.reject(new UserCanceled()) as never);
 
       handleLink(MOD_URL, false);
@@ -198,8 +187,8 @@ describe("nxm link callback", () => {
   });
 
   describe("collection downloads", () => {
-    test("tags the download with the revision it came from", async () => {
-      const { harness, handleLink } = arrange();
+    test("tags the download with the revision it came from", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
 
       handleLink(COLLECTION_URL, true);
 
@@ -211,8 +200,8 @@ describe("nxm link callback", () => {
       ]);
     });
 
-    test("leaves installing to the collection driver", async () => {
-      const { harness, handleLink } = arrange();
+    test("leaves installing to the collection driver", async ({ makeNxm }) => {
+      const { harness, handleLink } = arrangeLink(makeNxm());
       const install = vi.fn();
       harness.api.events.on("start-install-download", install);
 
@@ -223,18 +212,18 @@ describe("nxm link callback", () => {
     });
   });
 
-  test("routes a site-generated link back to the download that is waiting for it", async () => {
-    const { harness, handleLink } = arrange({ userInfo: FREE });
+  test("routes a site-generated link back to the download that is waiting for it", async ({
+    makeNxm,
+  }) => {
+    const { harness, nxm, handleLink } = arrangeLink(makeNxm({ userInfo: FREE }));
     modInfoQuery.mockResolvedValue({
       modInfo: { direct_download_enabled: false },
       fileInfo: {},
     } as never);
-    const resolve = makeNXMProtocol(harness.api, harness.nexus);
-
-    const pending = resolve(MOD_URL);
+    const pending = nxm.resolve(MOD_URL);
     await vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(1));
     // sending the user to the website registers the link the callback should route back
-    onDownloadImpl(resolve, MOD_URL);
+    nxm.dialogHandlers.onDownload(MOD_URL);
 
     harness.getDownloadURLs.mockResolvedValue([{ URI: "https://cdn/file.7z" }]);
     handleLink(`${MOD_URL}?key=abc&expires=1700000000`, false);
@@ -245,12 +234,15 @@ describe("nxm link callback", () => {
     expect(harness.freeUserQueue()).toEqual([]);
   });
 
-  test("starts a fresh download when no queued download is waiting for the link", async () => {
-    const { harness, handleLink } = arrange();
+  test("starts a fresh download when no queued download is waiting for the link", async ({
+    makeNxm,
+  }) => {
+    const { nxm, handleLink } = arrangeLink(makeNxm());
 
     handleLink(`${MOD_URL}?key=abc&expires=1700000000`, false);
 
     await vi.waitFor(() => expect(beginDownload).toHaveBeenCalled());
-    expect(onCancelImpl(harness.api, MOD_URL)).toBe(false);
+    // nothing was queued, so there is no parked download for the link to have satisfied
+    expect(nxm.dialogHandlers.onCancel(MOD_URL)).toBe(false);
   });
 });

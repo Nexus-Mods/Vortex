@@ -3,7 +3,9 @@ import { inspect } from "util";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IGame } from "../../../types/IGame";
+import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
+import { gameById, knownGames } from "../../../util/selectors";
 import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
 import type { IGameStored, IGameStoredExt } from "../../gamemode_management/types/IGameStored";
@@ -75,6 +77,15 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
       elderscrollsonline: "teso",
     }[input.toLowerCase()] || input.toLowerCase()
   );
+}
+
+/**
+ * the nexus page id (domain) for the game an nxm url names, mapping the link's game id through
+ * the games Vortex knows about
+ */
+export function nxmPageId(state: IState, nxmGameId: string): string {
+  const gameId = convertNXMIdReverse(knownGames(state), nxmGameId);
+  return nexusGameId(gameById(state, gameId), nxmGameId);
 }
 
 /**

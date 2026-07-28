@@ -3,13 +3,11 @@ import type NexusT from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import { DownloadIsHTML } from "@vortex/shared/errors";
-import PromiseBB from "bluebird";
 import type { Action } from "redux";
 
 import { setDownloadModInfo } from "../../actions";
 import { log } from "../../logging";
 import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import {
@@ -19,29 +17,18 @@ import {
   ServiceTemporarilyUnavailable,
   UserCanceled,
 } from "../../util/CustomErrors";
+import { createKeyedCache } from "../../util/keyedCache";
 import opn from "../../util/opn";
-import { gameById, knownGames } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
 import { NEXUS_BASE_URL } from "./constants";
 import NXMUrl from "./NXMUrl";
+import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
-import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
-
-export type ResolveFunc = (input: string) => PromiseBB<IResolvedURL>;
-
-interface IDLQueueItem {
-  input: string;
-  url: NXMUrl;
-  res: (res: IResolvedURL) => void;
-  rej: (err: Error) => void;
-  queryRelevantUpdates: () => Promise<IFileUpdate[]>;
-}
-
-const freeDLQueue: IDLQueueItem[] = [];
+import { findLatestUpdate } from "./util/checkModsVersion";
+import { nxmPageId } from "./util/convertGameId";
 
 const DL_QUERY: IRevisionQuery = {
   id: true,
@@ -51,541 +38,545 @@ const DL_QUERY: IRevisionQuery = {
   },
 };
 
-interface IAwaitedLink {
-  gameId: string;
-  modId: number;
-  fileId: number;
-  resolve: (url: string) => void;
+const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000;
+
+/** A download parked until the user fetches an authorised link from the website. */
+interface IQueuedDownload {
+  input: string;
+  url: NXMUrl;
+  resolve: (res: IResolvedURL) => void;
+  reject: (err: Error) => void;
+  /** The file's update chain, used to describe what a skip is skipping. */
+  queryRelevantUpdates: () => Promise<IFileUpdate[]>;
 }
 
-const awaitedLinks: IAwaitedLink[] = [];
+/** What one download-url lookup found: the cdn urls plus the nexus ids identifying them. */
+interface IFoundDownload {
+  urls: IDownloadURL[];
+  ids: Record<string, unknown>;
+}
 
-function doDownload(api: IExtensionApi, nexus: NexusT, url: string): PromiseBB<string> {
-  return (
-    startDownload(api, nexus, url)
-      .catch(DownloadIsHTML, () => undefined)
-      // DataInvalid is used here to indicate invalid user input or invalid
-      // data from remote, so it's presumably not a bug in Vortex
-      .catch(DataInvalid, () => {
-        api.showErrorNotification("Failed to start download", url, {
-          allowReport: false,
-        });
-        return PromiseBB.resolve(undefined);
-      })
-      .catch(UserCanceled, () => PromiseBB.resolve(undefined))
-      .catch((err) => {
-        api.showErrorNotification("Failed to start download", err);
-        return PromiseBB.resolve(undefined);
-      })
-  );
+export interface INxmProtocolDeps {
+  /** Re-read the account's membership. The site opens nxm://premium after a membership change. */
+  onRefreshMembership: () => void;
+}
+
+/** The handlers FreeUserDLDialog is wired to. */
+export interface IFreeUserDialogHandlers {
+  onUpdated: () => void;
+  onDownload: (inputUrl: string) => void;
+  onSkip: (inputUrl: string) => void;
+  onCancel: (inputUrl: string) => boolean;
+  onRetry: (inputUrl: string) => void;
 }
 
 /**
- * Handle an incoming nxm:// link. `onPremiumLink` runs for the nxm://premium form, which the
- * site opens after a membership change so the client re-reads the user info.
+ * A free user can't ask the api for a download link, so only a keyless link to a mod file on a
+ * real game can ever need the website round trip. Collections, extensions from the site domain,
+ * and links the website already authorised go straight to the api.
  */
-export function makeNXMLinkCallback(api: IExtensionApi, nexus: NexusT, onPremiumLink: () => void) {
-  return (url: string, install: boolean) => {
+function needsAuthorisedLink(url: NXMUrl): boolean {
+  return url.type === "mod" && url.gameId !== SITE_ID && url.key === undefined;
+}
+
+/**
+ * Resolves nxm:// urls to something the downloader can fetch, and owns the queue of downloads
+ * parked while a free user fetches an authorised link from the website.
+ *
+ * One instance owns the whole queue, because a cancel rejects every download in it: the queued
+ * downloads are shown one dialog at a time, so cancelling has to mean "get me out of this
+ * install", not "dismiss this one dialog".
+ */
+export class NxmProtocol {
+  readonly #api: IExtensionApi;
+  readonly #getNexus: () => NexusT;
+  readonly #deps: INxmProtocolDeps;
+
+  readonly #freeQueue: IQueuedDownload[] = [];
+  // queued downloads whose user was sent to the website to generate an authorised link
+  readonly #awaitedLinks: IQueuedDownload[] = [];
+  readonly #urlCache = createKeyedCache<{ urls: string[]; meta: unknown }>(
+    DOWNLOAD_URL_CACHE_DURATION,
+  );
+
+  /**
+   * `getNexus` is read on each use: the extension registers its protocol handlers during init,
+   * and only builds the Nexus connection later, in its `once` callback.
+   */
+  constructor(api: IExtensionApi, getNexus: () => NexusT, deps: INxmProtocolDeps) {
+    this.#api = api;
+    this.#getNexus = getNexus;
+    this.#deps = deps;
+  }
+
+  get #nexus(): NexusT {
+    return this.#getNexus();
+  }
+
+  /** Registered as the download protocol handler for the nxm scheme. */
+  readonly resolve = async (input: string): Promise<IResolvedURL> => {
+    const url = new NXMUrl(input);
+
+    const cached = userInfo(this.#api.getState());
+    if (url.userId !== undefined && url.userId !== cached?.userId) {
+      this.#api.showErrorNotification(
+        "Invalid download links",
+        "The link was not created for this account ({{userName}}). " +
+          "You have to be logged into nexusmods.com with the same account that you use in Vortex.",
+        { allowReport: false, replace: { userName: cached?.name } },
+      );
+      throw new ProcessCanceled("Wrong user id");
+    }
+
+    // resolved once and threaded through: it costs two scans of the known-games list
+    const pageId = nxmPageId(this.#api.getState(), url.gameId);
+
+    if (this.#canDownloadInApp(url) || (await this.#isDirectDownload(url, pageId))) {
+      return this.#apiDownload(input, url, pageId);
+    }
+
+    return this.#websiteDownload(input, url);
+  };
+
+  /**
+   * Whether the author opted this mod into direct downloads, which makes it free for everyone.
+   * Only the website knows, so a lookup we can't complete counts as "no".
+   */
+  async #isDirectDownload(url: NXMUrl, pageId: string): Promise<boolean> {
+    try {
+      const { modInfo } = await getInfoGraphQL(this.#nexus, pageId, url.modId, url.fileId);
+      return modInfo["direct_download_enabled"] === true;
+    } catch (err) {
+      // Cancellation must propagate; otherwise sibling deps whose in-flight mod-info queries get
+      // aborted re-enter the queue, and the dialog re-opens behind the one the user just dismissed.
+      if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
+        throw err;
+      }
+      log("warn", "failed to query mod info for direct download check", {
+        error: getErrorMessageOrDefault(err),
+      });
+      return false;
+    }
+  }
+
+  /** Registered as the OS handler for nxm:// links. */
+  readonly handleLink = (url: string, install: boolean) => {
     let nxmUrl: NXMUrl;
     try {
       nxmUrl = new NXMUrl(url);
 
-      const state = api.getState();
-      const isExtAvailable =
-        state.session.extensions.available.find((iter) => iter.modId === nxmUrl.modId) !==
-        undefined;
+      const state = this.#api.getState();
 
       if (nxmUrl.type === "oauth") {
-        try {
-          return oauthCallback(api, nxmUrl.oauthCode, nxmUrl.oauthState);
-        } catch (err) {
-          // ignore unexpected code
-        }
+        return oauthCallback(this.#api, nxmUrl.oauthCode, nxmUrl.oauthState);
       } else if (nxmUrl.type === "premium") {
-        try {
-          log("info", "makeNXMLinkCallback() premium");
-          onPremiumLink();
-          return false;
-        } catch (err) {
-          // ignore unexpected code
-        }
-      } else if (nxmUrl.gameId === SITE_ID && isExtAvailable) {
+        log("info", "nxm premium link, re-reading the membership");
+        this.#deps.onRefreshMembership();
+        return false;
+      } else if (nxmUrl.gameId === SITE_ID && this.#isExtensionAvailable(nxmUrl.modId)) {
         if (install) {
-          return api.emitAndAwait("install-extension", {
+          return this.#api.emitAndAwait("install-extension", {
             name: "Pending",
             modId: nxmUrl.modId,
             fileId: nxmUrl.fileId,
           });
-        } else {
-          api.events.emit("show-extension-page", nxmUrl.modId);
-          bringToFront();
-          return PromiseBB.resolve();
         }
-      } else {
-        const { foregroundDL } = state.settings.interface;
-        if (foregroundDL) {
-          bringToFront();
-        }
+        this.#api.events.emit("show-extension-page", nxmUrl.modId);
+        bringToFront();
+        return Promise.resolve();
+      } else if (state.settings.interface.foregroundDL) {
+        bringToFront();
       }
     } catch (err) {
-      api.showErrorNotification("Invalid URL", err, { allowReport: false });
+      this.#api.showErrorNotification("Invalid URL", err, { allowReport: false });
       return;
     }
 
-    const awaitedIdx = awaitedLinks.findIndex(
-      (link) =>
-        link.gameId === nxmUrl.gameId &&
-        link.modId === nxmUrl.modId &&
-        link.fileId === nxmUrl.fileId,
-    );
-    if (awaitedIdx !== -1) {
-      const awaited = awaitedLinks.splice(awaitedIdx, 1);
-      awaited[0].resolve(url);
+    if (this.#deliverAwaitedLink(nxmUrl, url)) {
       return;
     }
 
-    ensureLoggedIn(api)
-      .then(() => doDownload(api, nexus, url))
-      .then((dlId) => {
-        if (dlId === undefined || dlId === null) {
-          return PromiseBB.resolve(undefined);
-        }
-
-        const actions: Action[] = [setDownloadModInfo(dlId, "source", "nexus")];
-        if (nxmUrl.collectionId !== undefined) {
-          actions.push(setDownloadModInfo(dlId, "collectionId", nxmUrl.collectionId));
-        }
-        if (nxmUrl.revisionId !== undefined) {
-          actions.push(setDownloadModInfo(dlId, "revisionId", nxmUrl.revisionId));
-        }
-        if (nxmUrl.collectionSlug !== undefined) {
-          actions.push(setDownloadModInfo(dlId, "collectionSlug", nxmUrl.collectionSlug));
-        }
-        if (nxmUrl.revisionNumber !== undefined && nxmUrl.revisionNumber > 0) {
-          actions.push(setDownloadModInfo(dlId, "revisionNumber", nxmUrl.revisionNumber));
-        }
-        batchDispatch(api.store, actions);
-
-        return new PromiseBB((resolve, reject) => {
-          const currentState: IState = api.store.getState();
-          const download = currentState.persistent.downloads.files[dlId];
-          if (download === undefined) {
-            return reject(new ProcessCanceled(`Download not found "${dlId}"`));
-          }
-          // collections always get installed automatically.
-          if (install && nxmUrl.type !== "collection") {
-            api.events.emit("start-install-download", dlId, (err: Error, id: string) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            });
-          } else {
-            resolve();
-          }
-        });
-      })
-      // doDownload handles all download errors so the catches below are
-      //  only for log in errors
-      .catch(UserCanceled, () => null)
-      .catch(ProcessCanceled, (err) => {
-        api.showErrorNotification("Log-in failed", err, {
-          id: "failed-get-nexus-key",
-          allowReport: false,
-        });
-      })
-      .catch(ServiceTemporarilyUnavailable, (err) => {
-        api.showErrorNotification("Service temporarily unavailable", err, {
-          id: "failed-get-nexus-key",
-          allowReport: false,
-        });
-      })
-      .catch((err) => {
-        api.showErrorNotification("Failed to get access key", err, {
-          id: "failed-get-nexus-key",
-        });
-      });
+    void this.#startLinkDownload(nxmUrl, url, install);
   };
-}
 
-export function makeNXMProtocol(api: IExtensionApi, nexus: NexusT): ResolveFunc {
-  // for free users a dialog needs to be displayed sending them to the site for the download.
-  // if we start multiple downloads in parallel, these are shown one by one but if the user cancels
-  // the dialog, we want to cancel all queued downloads, otherwise the client code can't cancel
-  // out of the larger process without the user having to click cancel multiple times.
-  // Thus we have to keep track of all queued downloads.
+  readonly dialogHandlers: IFreeUserDialogHandlers = {
+    onUpdated: bringToFront,
 
-  function freeUserDownload(input: string, url: NXMUrl) {
-    // non-premium user trying to download a file with no id, have to send the user to the
-    // corresponding site to generate a proper link
-    return new PromiseBB<IResolvedURL>((resolve, reject) => {
-      const res = (result: IResolvedURL) => {
-        if (resolve !== undefined) {
-          // just to make sure we remove the correct item, idx should always be 0
-          const idx = freeDLQueue.findIndex((iter) => iter.input === input);
-          api.store.dispatch(removeFreeUserDLItem(input));
-          freeDLQueue.splice(idx, 1);
-          resolve(result);
-          reject = undefined;
-          resolve = undefined;
-        }
-      };
-      const rej = (err) => {
-        if (reject !== undefined) {
-          const idx = freeDLQueue.findIndex((iter) => iter.input === input);
-          api.store.dispatch(removeFreeUserDLItem(input));
-          freeDLQueue.splice(idx, 1);
+    /** Send the user to the file's page to generate an authorised link. */
+    onDownload: (inputUrl: string) => {
+      const queued = this.#queuedFor(inputUrl);
+      if (queued === undefined) {
+        return;
+      }
+      const { url } = queued;
+
+      this.#awaitedLinks.push(queued);
+
+      opn(
+        `${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`,
+      ).catch(() => null);
+    },
+
+    onSkip: (inputUrl: string) => {
+      const queued = this.#queuedFor(inputUrl);
+      if (queued === undefined) {
+        return;
+      }
+      void this.#skipQueued(queued);
+    },
+
+    /** Cancels every queued download, not just this one. Returns whether there was any. */
+    onCancel: (inputUrl: string): boolean => {
+      if (this.#freeQueue.length === 0) {
+        this.#api.store.dispatch(removeFreeUserDLItem(inputUrl));
+        return false;
+      }
+
+      this.#freeQueue.slice().forEach((queued) => queued.reject(new UserCanceled(false)));
+
+      // Rejecting the queued downloads dismisses the dialog but doesn't stop the install pipeline
+      // (their UserCanceled doesn't survive IPC). pause-collection routes through the collections
+      // plugin for the full cleanup: stop queuing, reset the driver, dismiss the notification.
+      const session = getCollectionActiveSession(this.#api.getState());
+      if (session?.collectionId && session.gameId) {
+        this.#api.events.emit(
+          "pause-collection",
+          session.gameId,
+          session.collectionId,
+          "free-user-cancel",
+        );
+      }
+      return true;
+    },
+
+    /** Re-resolve a queued download, e.g. after the user upgraded to premium. */
+    onRetry: (inputUrl: string) => {
+      const queued = this.#queuedFor(inputUrl);
+      if (queued === undefined) {
+        return;
+      }
+      this.resolve(queued.input).then(queued.resolve, queued.reject);
+    },
+  };
+
+  /** Whether this download can go through the api, or has to go via the website. */
+  #canDownloadInApp(url: NXMUrl): boolean {
+    if (!needsAuthorisedLink(url)) {
+      return true;
+    }
+    if (process.env["FORCE_FREE_DOWNLOADS"] === "yes") {
+      return false;
+    }
+    return isPremium(this.#api.getState());
+  }
+
+  /** Whether the site offers an extension with this mod id. */
+  #isExtensionAvailable(modId: number): boolean {
+    const available = this.#api.getState().session.extensions.available;
+    return available.find((iter) => iter.modId === modId) !== undefined;
+  }
+
+  #queuedFor(inputUrl: string): IQueuedDownload | undefined {
+    const queued = this.#freeQueue.find((iter) => iter.input === inputUrl);
+    if (queued === undefined) {
+      log("error", "failed to find queued download", {
+        inputUrl,
+        queued: this.#freeQueue.map((iter) => iter.input),
+      });
+    }
+    return queued;
+  }
+
+  /**
+   * Forget a queued download, including any link the user was sent to the website to fetch for
+   * it - otherwise an abandoned trip to the website leaves an entry that never expires, holding
+   * the settled download alive and re-resolving it if a matching link ever does arrive.
+   */
+  #dequeue(input: string): void {
+    this.#api.store.dispatch(removeFreeUserDLItem(input));
+    // the entry may already be gone
+    const queuedIdx = this.#freeQueue.findIndex((iter) => iter.input === input);
+    if (queuedIdx !== -1) {
+      this.#freeQueue.splice(queuedIdx, 1);
+    }
+    const awaitedIdx = this.#awaitedLinks.findIndex((iter) => iter.input === input);
+    if (awaitedIdx !== -1) {
+      this.#awaitedLinks.splice(awaitedIdx, 1);
+    }
+  }
+
+  /**
+   * Park the download until the user brings back an authorised link from the website (or cancels
+   * or skips it). FreeUserDLDialog renders off the redux queue this dispatches into.
+   */
+  #websiteDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+    // a promise settles once and #dequeue tolerates a repeat, so cancelling after a skip is safe
+    return new Promise<IResolvedURL>((resolve, reject) => {
+      this.#freeQueue.push({
+        input,
+        url,
+        resolve: (res) => {
+          this.#dequeue(input);
+          resolve(res);
+        },
+        reject: (err) => {
+          this.#dequeue(input);
           reject(err);
-          reject = undefined;
-          resolve = undefined;
-        }
-      };
-      const queryRelevantUpdates = () => {
-        return nexus.getModFiles(url.modId, url.gameId).then((files) => {
-          // Build a bidirectional map for O(1) lookups, we're doing this
-          //  in the hope that the mod authors have kept a clear update chain
-          //  which we can use to find relevant fileIds.
-          // It's not cool that we're consuming an API slot for this, but without this
-          //  we can't reliably compare the dependency reference to what we're attempting
-          //  to skip (we only have the NXM url which isn't enough).
-          const forwardMap = new Map<number, IFileUpdate>(); // old_file_id -> update
-          const backwardMap = new Map<number, IFileUpdate>(); // new_file_id -> update
-
-          files.file_updates.forEach((update) => {
-            forwardMap.set(update.old_file_id, update);
-            backwardMap.set(update.new_file_id, update);
-          });
-
-          // Traverse backwards to find the oldest file in the chain
-          let currentId = url.fileId;
-          const backwardChain: IFileUpdate[] = [];
-
-          while (backwardMap.has(currentId)) {
-            const update = backwardMap.get(currentId);
-            backwardChain.unshift(update); // Add to beginning
-            currentId = update.old_file_id;
-          }
-
-          // Now traverse forwards from the oldest file to build complete chain
-          const oldestId = backwardChain.length > 0 ? backwardChain[0].old_file_id : url.fileId;
-          currentId = oldestId;
-          const completeChain: IFileUpdate[] = [];
-
-          while (forwardMap.has(currentId)) {
-            const update = forwardMap.get(currentId);
-            completeChain.push(update);
-            currentId = update.new_file_id;
-          }
-
-          return completeChain;
-        });
-      };
-      freeDLQueue.push({ input, url, res, rej, queryRelevantUpdates });
-      api.store.dispatch(addFreeUserDLItem(input));
+        },
+        queryRelevantUpdates: () => this.#relevantUpdates(url),
+      });
+      this.#api.store.dispatch(addFreeUserDLItem(input));
     });
   }
 
-  // Cache download URLs to avoid repeated API calls for the same file
-  const downloadURLCache: {
-    [key: string]: { urls: string[]; expires: number; meta: any };
-  } = {};
-  const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  /**
+   * The file's full update chain. Skipping has to name every file id the chain covers, because a
+   * dependency may reference an older or newer file than the one being skipped and the nxm url
+   * alone can't tell us which.
+   */
+  async #relevantUpdates(url: NXMUrl): Promise<IFileUpdate[]> {
+    const files = await this.#nexus.getModFiles(url.modId, url.gameId);
 
-  function premiumUserDownload(
-    input: string,
-    url: NXMUrl,
-    directDownloadEnabled: boolean = false,
-  ): PromiseBB<IResolvedURL> {
-    const state = api.getState();
-    const games = knownGames(state);
-    const gameId = convertNXMIdReverse(games, url.gameId);
-    const pageId = nexusGameId(gameById(state, gameId), url.gameId);
-    let revisionInfo: Partial<IRevision>;
+    const previous = new Map<number, IFileUpdate>(); // new_file_id -> update
+    files.file_updates.forEach((update) => previous.set(update.new_file_id, update));
 
-    const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
+    // walk back to the oldest file in the chain, then forward over the whole of it
+    let oldestId = url.fileId;
+    while (previous.has(oldestId)) {
+      oldestId = previous.get(oldestId).old_file_id;
+    }
+    return findLatestUpdate(files.file_updates, [], oldestId);
+  }
 
+  async #skipQueued(queued: IQueuedDownload): Promise<void> {
+    const fileIds = new Set<string>([queued.url.fileId.toString()]);
+    const fileNames = new Set<string>();
+    try {
+      const updates = await queued.queryRelevantUpdates();
+      updates.forEach((update) => {
+        if (update.old_file_id != null) {
+          fileIds.add(update.old_file_id.toString());
+          fileNames.add(update.old_file_name);
+        }
+        if (update.new_file_id != null) {
+          fileIds.add(update.new_file_id.toString());
+          fileNames.add(update.new_file_name);
+        }
+      });
+
+      // the skip dispatches the ignore directly against the active install session
+      markCollectionMemberSkipped(this.#api, {
+        identifiers: {
+          ...queued.url.identifiers,
+          fileNames: Array.from(fileNames),
+          fileIds: Array.from(fileIds),
+        },
+      });
+    } catch (err) {
+      log("warn", "failed to query relevant updates on skip", {
+        error: getErrorMessageOrDefault(err),
+      });
+    }
+    queued.reject(new UserCanceled(true));
+  }
+
+  /** Ask the api for the download urls, serving a recent answer for the same file from cache. */
+  async #apiDownload(input: string, url: NXMUrl, pageId: string): Promise<IResolvedURL> {
     if (!["mod", "collection"].includes(url.type)) {
-      return PromiseBB.reject(new ProcessCanceled("Not a download url"));
+      throw new ProcessCanceled("Not a download url");
     }
 
-    // Create cache key
+    const revisionNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
     const cacheKey =
       url.type === "mod"
         ? `mod_${url.modId}_${url.fileId}_${pageId}`
-        : `collection_${url.collectionSlug}_${revNumber || "latest"}`;
+        : `collection_${url.collectionSlug}_${revisionNumber ?? "latest"}`;
 
-    // Check cache first
-    const cached = downloadURLCache[cacheKey];
-    if (cached && Date.now() < cached.expires) {
-      return PromiseBB.resolve({
-        urls: cached.urls,
-        updatedUrl: input,
-        meta: cached.meta,
-      });
+    const cached = this.#urlCache.get(cacheKey);
+    if (cached !== undefined) {
+      return { urls: cached.urls, updatedUrl: input, meta: cached.meta };
     }
 
-    const downloadKey = directDownloadEnabled ? undefined : url.key;
-    const downloadExpires = directDownloadEnabled ? undefined : url.expires;
-
-    return PromiseBB.resolve()
-      .then(() =>
-        url.type === "mod"
-          ? nexus
-              .getDownloadURLs(url.modId, url.fileId, downloadKey, downloadExpires, pageId)
-              .then((res: IDownloadURL[]) => {
-                const result = {
-                  urls: res.map((u) => u.URI),
-                  updatedUrl: input,
-                  meta: {
-                    source: "nexus",
-                    nexus: {
-                      ids: {
-                        modId: url.modId,
-                        fileId: url.fileId,
-                      },
-                    },
-                  } as any,
-                };
-
-                // Cache the result
-                downloadURLCache[cacheKey] = {
-                  urls: result.urls,
-                  expires: Date.now() + DOWNLOAD_URL_CACHE_DURATION,
-                  meta: result.meta,
-                };
-
-                return result;
-              })
-          : nexus
-              .getCollectionRevisionGraph(DL_QUERY, url.collectionSlug, revNumber)
-              .catch((err) => {
-                err["collectionSlug"] = url.collectionSlug;
-                err["revisionNumber"] = url.revisionNumber;
-                return PromiseBB.reject(err);
-              })
-              .then((revision: Partial<IRevision>) => {
-                revisionInfo = revision;
-                return nexus.getCollectionDownloadLink(revision.downloadLink);
-              })
-              .then((downloadUrls) => {
-                const result = {
-                  urls: downloadUrls.map((iter) => iter.URI),
-                  updatedUrl: input,
-                  meta: {
-                    source: "nexus",
-                    nexus: {
-                      ids: {
-                        collectionId: revisionInfo.collection.id,
-                        revisionId: revisionInfo.id,
-                        collectionSlug: url.collectionSlug,
-                        revisionNumber: url.revisionNumber,
-                      },
-                    },
-                  } as any,
-                };
-
-                // Cache the result
-                downloadURLCache[cacheKey] = {
-                  urls: result.urls,
-                  expires: Date.now() + DOWNLOAD_URL_CACHE_DURATION,
-                  meta: result.meta,
-                };
-
-                return result;
-              }),
-      )
-      .catch(NexusError, (err) => {
-        const newError = new HTTPError(err.statusCode, err.message, err.request);
-        newError.stack = err.stack;
-        return PromiseBB.reject(newError);
-      })
-      .catch(HTTPError, (err) => {
-        // A 401 here means the Nexus client could not authenticate the
-        // request and could not (or did not) refresh its token. Reachable
-        // when persisted state says we have OAuth credentials but the live
-        // Nexus instance does not (e.g. updateToken never ran on startup,
-        // forced-logout migration path), when the refresh token has been
-        // revoked server-side, or on a resume after logout. Surface as a
-        // ProcessCanceled so reportDownloadError shows a friendly,
-        // non-reportable notification instead of letting the raw 401 fall
-        // through to the generic else branch with the Report button.
-        if (err.statusCode === 401) {
-          return PromiseBB.reject(new ProcessCanceled("You are not logged in to Nexus Mods!"));
-        }
-        return PromiseBB.reject(err);
-      })
-      .catch(RateLimitError, (err) => {
-        api.showErrorNotification("Rate limit exceeded", err, {
-          allowReport: false,
-        });
-        return PromiseBB.reject(err);
-      });
-  }
-
-  const resolveFunc = (input: string): PromiseBB<IResolvedURL> => {
-    const state = api.store.getState();
-
-    let url: NXMUrl;
+    let found: IFoundDownload;
     try {
-      url = new NXMUrl(input);
+      found =
+        url.type === "mod"
+          ? await this.#modDownload(url, pageId)
+          : await this.#collectionDownload(url, revisionNumber);
     } catch (err) {
-      return PromiseBB.reject(err);
+      this.#throwDownloadError(err);
     }
 
-    const userInfo: any = getSafe(state, ["persistent", "nexus", "userInfo"], undefined);
-    if (url.userId !== undefined && url.userId !== userInfo?.userId) {
-      const userName: string = getSafe(
-        state,
-        ["persistent", "nexus", "userInfo", "name"],
-        undefined,
+    const resolved: IResolvedURL = {
+      urls: found.urls.map((iter) => iter.URI),
+      updatedUrl: input,
+      meta: { source: "nexus", nexus: { ids: found.ids } } as IResolvedURL["meta"],
+    };
+
+    this.#urlCache.set(cacheKey, { urls: resolved.urls, meta: resolved.meta });
+    return resolved;
+  }
+
+  async #modDownload(url: NXMUrl, pageId: string): Promise<IFoundDownload> {
+    return {
+      urls: await this.#nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId),
+      ids: { modId: url.modId, fileId: url.fileId },
+    };
+  }
+
+  async #collectionDownload(
+    url: NXMUrl,
+    revisionNumber: number | undefined,
+  ): Promise<IFoundDownload> {
+    let revision: Partial<IRevision>;
+    try {
+      revision = await this.#nexus.getCollectionRevisionGraph(
+        DL_QUERY,
+        url.collectionSlug,
+        revisionNumber,
       );
-      api.showErrorNotification(
-        "Invalid download links",
-        "The link was not created for this account ({{userName}}). " +
-          "You have to be logged into nexusmods.com with the same account that you use in Vortex.",
-        { allowReport: false, replace: { userName } },
-      );
-      return PromiseBB.reject(new ProcessCanceled("Wrong user id"));
+    } catch (err) {
+      err["collectionSlug"] = url.collectionSlug;
+      err["revisionNumber"] = url.revisionNumber;
+      throw err;
     }
 
-    if (
-      (!userInfo?.isPremium || process.env["FORCE_FREE_DOWNLOADS"] === "yes") &&
-      url.type === "mod" &&
-      url.gameId !== SITE_ID &&
-      url.key === undefined
-    ) {
-      const games = knownGames(state);
-      const gameId = convertNXMIdReverse(games, url.gameId);
-      const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+    return {
+      urls: await this.#nexus.getCollectionDownloadLink(revision.downloadLink),
+      ids: {
+        collectionId: revision.collection.id,
+        revisionId: revision.id,
+        collectionSlug: url.collectionSlug,
+        revisionNumber: url.revisionNumber,
+      },
+    };
+  }
 
-      return getInfoGraphQL(nexus, pageId, url.modId, url.fileId)
-        .then(({ modInfo, fileInfo }) => {
-          if (modInfo["direct_download_enabled"]) {
-            return premiumUserDownload(input, url, true);
-          } else {
-            return freeUserDownload(input, url);
-          }
-        })
-        .catch((err) => {
-          const message = getErrorMessageOrDefault(err);
-          // Cancellation must propagate; otherwise sibling deps whose in-flight
-          // mod-info queries get aborted re-enter freeUserDownload, repopulate
-          // the queue, and the dialog re-opens behind the one the user just
-          // dismissed.
-          if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
-            return PromiseBB.reject(err);
-          }
-          // If we can't query mod info, fall back to free user flow
-          log("warn", "failed to query mod info for direct download check", {
-            error: message,
-          });
-          return freeUserDownload(input, url);
-        });
-    } else {
-      return premiumUserDownload(input, url);
+  /** Rethrow an api failure as the error the download pipeline knows how to report. */
+  #throwDownloadError(err: unknown): never {
+    if (err instanceof RateLimitError) {
+      this.#api.showErrorNotification("Rate limit exceeded", err, { allowReport: false });
+      throw err;
     }
-  };
 
-  return resolveFunc;
-}
-
-export function onUpdated() {
-  bringToFront();
-}
-
-export function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
-  const queueItem = freeDLQueue.find((iter) => iter.input === inputUrl);
-  if (queueItem === undefined) {
-    log("error", "failed to find queue item", {
-      inputUrl,
-      queue: JSON.stringify(freeDLQueue),
-    });
-    return;
-  }
-  const { url } = queueItem;
-
-  awaitedLinks.push({
-    gameId: url.gameId,
-    modId: url.modId,
-    fileId: url.fileId,
-    resolve: (resUrl: string) => resolveFunc(resUrl).then(queueItem.res).catch(queueItem.rej),
-  });
-
-  opn(
-    `${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`,
-  ).catch(() => null);
-}
-
-export function onSkip(api: IExtensionApi, inputUrl: string) {
-  const queueItem = freeDLQueue.find((iter) => iter.input === inputUrl);
-  if (queueItem !== undefined) {
-    queueItem
-      .queryRelevantUpdates()
-      .then((updates) => {
-        const fileIdSet = new Set<string>();
-        const fileNames = new Set<string>();
-        fileIdSet.add(queueItem.url.fileId.toString());
-        updates.forEach((update) => {
-          if (update.old_file_id != null) {
-            fileIdSet.add(update.old_file_id.toString());
-            fileNames.add(update.old_file_name);
-          }
-          if (update.new_file_id != null) {
-            fileIdSet.add(update.new_file_id.toString());
-            fileNames.add(update.new_file_name);
-          }
-        });
-        const parsed = new NXMUrl(queueItem.input);
-        const itemIdentifiers = {
-          ...parsed.identifiers,
-          fileNames: Array.from(fileNames),
-          fileIds: Array.from(fileIdSet),
-        };
-        // collections is now core, so the skip site dispatches the ignore directly against the
-        // active install session rather than emitting an event for the InstallDriver to handle
-        markCollectionMemberSkipped(api, { identifiers: itemIdentifiers });
-        queueItem.rej(new UserCanceled(true));
-      })
-      .catch((err) => {
-        log("warn", "failed to query relevant updates on skip", {
-          error: getErrorMessageOrDefault(err),
-        });
-        queueItem.rej(new UserCanceled(true));
-      });
-  }
-}
-
-export function onRetryImpl(resolveFunc: ResolveFunc, api: IExtensionApi, inputUrl: string) {
-  const queueItem = freeDLQueue.find((iter) => iter.input === inputUrl);
-  if (queueItem === undefined) {
-    log("error", "failed to find queue item", {
-      inputUrl,
-      queue: JSON.stringify(freeDLQueue),
-    });
-    return;
-  }
-
-  resolveFunc(queueItem.input).then(queueItem.res).catch(queueItem.rej);
-}
-
-export function onCancelImpl(api: IExtensionApi, inputUrl: string): boolean {
-  const copy = freeDLQueue.slice(0);
-  if (copy.length !== 0) {
-    copy.forEach((item) => {
-      item.rej(new UserCanceled(false));
-    });
-    // Rejecting freeDLQueue items dismisses the dialog but doesn't stop the
-    // install pipeline (its UserCanceled doesn't survive IPC). pause-collection
-    // routes through the collections plugin for the full cleanup: stop queuing,
-    // reset the driver, dismiss the install notification.
-    const session = getCollectionActiveSession(api.getState());
-    if (session?.collectionId && session.gameId) {
-      api.events.emit("pause-collection", session.gameId, session.collectionId, "free-user-cancel");
+    let error = err;
+    if (error instanceof NexusError) {
+      const http = new HTTPError(error.statusCode, error.message, error.request);
+      http.stack = error.stack;
+      error = http;
     }
+
+    // A 401 means the Nexus client could not authenticate the request and could not (or did not)
+    // refresh its token. Reachable when persisted state says we have OAuth credentials but the
+    // live Nexus instance does not (e.g. updateToken never ran on startup, forced-logout migration
+    // path), when the refresh token has been revoked server-side, or on a resume after logout.
+    // Surface as a ProcessCanceled so reportDownloadError shows a friendly, non-reportable
+    // notification instead of a raw 401 behind a Report button.
+    if (error instanceof HTTPError && error.statusCode === 401) {
+      throw new ProcessCanceled("You are not logged in to Nexus Mods!");
+    }
+    throw error;
+  }
+
+  /** Hand an incoming link to the queued download that sent the user to fetch it. */
+  #deliverAwaitedLink(nxmUrl: NXMUrl, url: string): boolean {
+    const idx = this.#awaitedLinks.findIndex(
+      (awaited) =>
+        awaited.url.gameId === nxmUrl.gameId &&
+        awaited.url.modId === nxmUrl.modId &&
+        awaited.url.fileId === nxmUrl.fileId,
+    );
+    if (idx === -1) {
+      return false;
+    }
+    const [queued] = this.#awaitedLinks.splice(idx, 1);
+    this.resolve(url).then(queued.resolve, queued.reject);
     return true;
-  } else {
-    api.store.dispatch(removeFreeUserDLItem(inputUrl));
-    return false;
+  }
+
+  async #startLinkDownload(nxmUrl: NXMUrl, url: string, install: boolean): Promise<void> {
+    try {
+      await ensureLoggedIn(this.#api);
+    } catch (err) {
+      this.#reportLinkError(err);
+      return;
+    }
+
+    // #download reports its own failures, resolving to undefined when nothing was started
+    const dlId = await this.#download(url);
+    if (dlId == null) {
+      return;
+    }
+
+    const actions: Action[] = [setDownloadModInfo(dlId, "source", "nexus")];
+    if (nxmUrl.collectionId !== undefined) {
+      actions.push(setDownloadModInfo(dlId, "collectionId", nxmUrl.collectionId));
+    }
+    if (nxmUrl.revisionId !== undefined) {
+      actions.push(setDownloadModInfo(dlId, "revisionId", nxmUrl.revisionId));
+    }
+    if (nxmUrl.collectionSlug !== undefined) {
+      actions.push(setDownloadModInfo(dlId, "collectionSlug", nxmUrl.collectionSlug));
+    }
+    if (nxmUrl.revisionNumber !== undefined && nxmUrl.revisionNumber > 0) {
+      actions.push(setDownloadModInfo(dlId, "revisionNumber", nxmUrl.revisionNumber));
+    }
+    batchDispatch(this.#api.store, actions);
+
+    if (this.#api.getState().persistent.downloads.files[dlId] === undefined) {
+      this.#reportLinkError(new ProcessCanceled(`Download not found "${dlId}"`));
+      return;
+    }
+
+    // collections always get installed automatically
+    if (install && nxmUrl.type !== "collection") {
+      this.#api.events.emit("start-install-download", dlId, (err: Error) => {
+        if (err !== null) {
+          this.#reportLinkError(err);
+        }
+      });
+    }
+  }
+
+  /** Start a download, reporting any failure here. Resolves to undefined when none started. */
+  async #download(url: string): Promise<string | undefined> {
+    try {
+      return await startDownload(this.#api, this.#nexus, url);
+    } catch (err) {
+      if (err instanceof DownloadIsHTML || err instanceof UserCanceled) {
+        return undefined;
+      }
+      // DataInvalid indicates invalid user input or invalid data from remote, so it's
+      // presumably not a bug in Vortex
+      if (err instanceof DataInvalid) {
+        this.#api.showErrorNotification("Failed to start download", url, { allowReport: false });
+        return undefined;
+      }
+      this.#api.showErrorNotification("Failed to start download", err);
+      return undefined;
+    }
+  }
+
+  #reportLinkError(err: unknown): void {
+    if (err instanceof UserCanceled) {
+      return;
+    }
+    if (err instanceof ProcessCanceled) {
+      this.#api.showErrorNotification("Log-in failed", err, {
+        id: "failed-get-nexus-key",
+        allowReport: false,
+      });
+      return;
+    }
+    if (err instanceof ServiceTemporarilyUnavailable) {
+      this.#api.showErrorNotification("Service temporarily unavailable", err, {
+        id: "failed-get-nexus-key",
+        allowReport: false,
+      });
+      return;
+    }
+    this.#api.showErrorNotification("Failed to get access key", err, {
+      id: "failed-get-nexus-key",
+    });
   }
 }

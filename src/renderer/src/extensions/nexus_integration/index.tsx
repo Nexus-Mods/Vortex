@@ -77,15 +77,7 @@ import {
   REVALIDATION_FREQUENCY,
 } from "./constants";
 import * as eh from "./eventHandlers";
-import {
-  makeNXMLinkCallback,
-  makeNXMProtocol,
-  onCancelImpl,
-  onDownloadImpl,
-  onRetryImpl,
-  onSkip,
-  onUpdated,
-} from "./nxmProtocol";
+import { NxmProtocol } from "./nxmProtocol";
 import { buildNXMModUrl } from "./NXMUrl";
 import { accountReducer } from "./reducers/account";
 import { persistentReducer } from "./reducers/persistent";
@@ -123,6 +115,9 @@ import {} from "./views/Settings";
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;
+// built in init() so the protocol handlers can be registered there, and shared with the once()
+// callback that registers the OS-level nxm:// handler - both sides need the same queue
+let nxmProtocol: NxmProtocol;
 
 export class APIDisabled extends Error {
   constructor(instruction: string) {
@@ -949,7 +944,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     const didRegister: boolean = await api.registerProtocol(
       "nxm",
       def !== false,
-      makeNXMLinkCallback(api, nexus, () => userInfoDebouncer.schedule()),
+      nxmProtocol.handleLink,
     );
     if (didRegister) {
       api.sendNotification({
@@ -1295,10 +1290,6 @@ function fixIds(api: IExtensionApi, instanceIds: string[]) {
   ).then(() => null);
 }
 
-function onCheckStatusImpl() {
-  userInfoDebouncer.schedule();
-}
-
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["confidential", "account", "nexus"], accountReducer);
   context.registerReducer(["settings", "nexus"], settingsReducer);
@@ -1498,10 +1489,13 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  const resolveFunc = makeNXMProtocol(context.api, nexus);
+  // the connection is built later, in the once() callback, so it's read lazily
+  nxmProtocol = new NxmProtocol(context.api, () => nexus, {
+    onRefreshMembership: () => userInfoDebouncer.schedule(),
+  });
 
   // this makes it so the download manager can use nxm urls as download urls
-  context.registerDownloadProtocol("nxm", resolveFunc);
+  context.registerDownloadProtocol("nxm", nxmProtocol.resolve);
 
   context.registerSettings(
     "Download",
@@ -1515,23 +1509,11 @@ function init(context: IExtensionContext): boolean {
     onReceiveCode: (code: string, state: string) => oauthCallback(context.api, code, state),
   }));
 
-  const onDownload = (inputUrl: string) => onDownloadImpl(resolveFunc, inputUrl);
-
-  const onCancel = (inputUrl: string) => onCancelImpl(context.api, inputUrl);
-
-  const onCheckStatus = () => onCheckStatusImpl();
-
-  const onRetry = (inputUrl: string) => onRetryImpl(resolveFunc, context.api, inputUrl);
-
   context.registerDialog("free-user-download", FreeUserDLDialog, () => ({
     t: context.api.translate,
     nexus,
-    onUpdated,
-    onDownload,
-    onSkip: (inputUrl: string) => onSkip(context.api, inputUrl),
-    onCancel,
-    onRetry,
-    onCheckStatus,
+    ...nxmProtocol.dialogHandlers,
+    onCheckStatus: () => userInfoDebouncer.schedule(),
   }));
 
   context.registerBanner(
