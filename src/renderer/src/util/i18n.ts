@@ -40,6 +40,7 @@ class MultiBackend implements BackendModule<BackendOptions> {
   #lastReadLanguage: string;
   #services: Services;
 
+  static type = "backend" as const;
   type: "backend" = "backend" as const;
 
   constructor(services: Services, backendOptions: BackendOptions) {
@@ -121,6 +122,8 @@ class MultiBackend implements BackendModule<BackendOptions> {
 
 class HighlightPP implements PostProcessorModule {
   name: string = "HighlightPP";
+
+  static type = "postProcessor" as const;
   type: "postProcessor" = "postProcessor" as const;
 
   process: PostProcessorModule["process"] = (value, key) => {
