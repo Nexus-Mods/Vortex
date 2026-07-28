@@ -56,6 +56,7 @@ import type {
 } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus_integration/reducers/persistent";
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
@@ -94,7 +95,6 @@ import type {
   IModCheckOpts,
   IModChangeHarness,
   INxmHarness,
-  INxmHarnessOpts,
   IParkCheckOpts,
   IParkedCheck,
   IRevisionFixture,
@@ -468,6 +468,9 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
     downloads: {},
     profiles: {},
     session: trackingReducer.defaults,
+    knownGames: [],
+    availableExtensions: [],
+    userInfo: undefined,
     ...overrides,
   };
   // a structurally-partial IState holding only the slices the driver reads; the single cast
@@ -478,12 +481,19 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       downloads: { files: slices.downloads },
       profiles: slices.profiles,
       collections: { collections: {}, revisions: {} },
+      nexus: { ...nexusPersistentReducer.defaults, userInfo: slices.userInfo },
     },
-    session: { collections: slices.session },
+    session: {
+      collections: slices.session,
+      nexus: { ...nexusSessionReducer.defaults },
+      // knownGames() dereferences this, so it has to exist even for suites that register none
+      gameMode: { known: slices.knownGames },
+      extensions: { available: slices.availableExtensions },
+    },
     settings: {
       // download path pattern so downloadPathForGame resolves a concrete per-game folder
       downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
-      interface: { language: "en" },
+      interface: { language: "en", foregroundDL: false },
       gameMode: { discovered: {} },
       // empty skeletons so tests can assign settings.mods.installPath[gameId] /
       // settings.profiles.activeProfileId through the typed draft without a cast (the single
@@ -584,6 +594,14 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     if (modsReducerFn !== undefined) {
       state.persistent.mods = modsReducerFn(state.persistent.mods, action.payload);
     }
+    const nexusSession = nexusSessionReducer.reducers[action.type];
+    if (nexusSession !== undefined) {
+      state.session["nexus"] = nexusSession(state.session["nexus"], action.payload);
+    }
+    const nexusPersistent = nexusPersistentReducer.reducers[action.type];
+    if (nexusPersistent !== undefined) {
+      state.persistent["nexus"] = nexusPersistent(state.persistent["nexus"], action.payload);
+    }
   };
 
   const dispatch = (action: ITrackedAction) => {
@@ -596,6 +614,8 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
 
   let nextDialog: IDialogResult = { action: "Continue", input: {} };
   const dialogCalls: Array<{ type: DialogType; title: string }> = [];
+  const errorNotifications: IApiHarness["errorNotifications"] = [];
+  const notifications: IApiHarness["notifications"] = [];
 
   const api = {
     getState: () => state,
@@ -607,9 +627,17 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
       events.on(event, cb);
     },
     onStateChange: () => undefined,
-    sendNotification: () => undefined,
+    sendNotification: (notification: { type: string; message: string }) => {
+      notifications.push(notification);
+    },
     dismissNotification: () => undefined,
-    showErrorNotification: () => undefined,
+    showErrorNotification: (
+      title: string,
+      message: unknown,
+      options?: { allowReport?: boolean },
+    ) => {
+      errorNotifications.push({ title, message, allowReport: options?.allowReport });
+    },
     showDialog: (
       type: DialogType,
       title: string,
@@ -638,6 +666,8 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
       nextDialog = result;
     },
     dialogCalls,
+    errorNotifications,
+    notifications,
   };
 }
 
@@ -1005,52 +1035,14 @@ export function makeLoadOrderEntry(overrides: Partial<ILoadOrderEntry> = {}): IL
 }
 
 /**
- * A fake api + Nexus connection for the nxm protocol handler (makeNXMProtocol /
- * makeNXMLinkCallback). Distinct from makeApiHarness because the handler reads slices that one
- * doesn't model - the cached membership, the known-games list it maps nxm domains through, and
- * the free-user download queue - and because it needs an observable Nexus connection.
+ * The shared api harness plus an observable Nexus connection, for the nxm protocol handler.
+ * Defaults to one known game so an nxm domain resolves without every suite spelling that out.
  *
  * The nexus methods are vi.fn()s that reject by default: a test states the one call it exercises,
  * and any unexpected request fails loudly instead of resolving to undefined.
  */
-export function makeNxmHarness(opts: INxmHarnessOpts = {}): INxmHarness {
-  const knownGames = opts.knownGames ?? [makeGameStored()];
-  const dispatched: ITrackedAction[] = [];
-  const errorNotifications: INxmHarness["errorNotifications"] = [];
-
-  const state = {
-    persistent: {
-      nexus: { userInfo: opts.userInfo },
-      downloads: { files: {} },
-    },
-    session: {
-      nexus: { ...nexusSessionReducer.defaults },
-      gameMode: { known: knownGames },
-      extensions: { available: opts.availableExtensions ?? [] },
-      collections: { activeSession: opts.activeSession },
-    },
-    settings: {
-      interface: { foregroundDL: false },
-    },
-  } as unknown as IState;
-
-  const apply = (action: ITrackedAction | null | undefined): void => {
-    if (action == null) {
-      return;
-    }
-    if (action.type === BATCH_TYPE && Array.isArray(action.payload)) {
-      (action.payload as ITrackedAction[]).forEach(apply);
-      return;
-    }
-    dispatched.push(action);
-    const reducer = nexusSessionReducer.reducers[action.type];
-    if (reducer !== undefined) {
-      state.session["nexus"] = reducer(state.session["nexus"], action.payload);
-    }
-  };
-
-  const events = new EventEmitter();
-  events.setMaxListeners(0);
+export function makeNxmHarness(opts: Partial<IDriverHarnessState> = {}): INxmHarness {
+  const base = makeApiHarness({ knownGames: [makeGameStored()], ...opts });
 
   const rejectUnexpected = (name: string) => () =>
     Promise.reject(new Error(`unexpected nexus.${name} call`));
@@ -1067,44 +1059,14 @@ export function makeNxmHarness(opts: INxmHarnessOpts = {}): INxmHarness {
     getModFiles,
   } as unknown as NexusT;
 
-  const api = {
-    getState: () => state,
-    store: { getState: () => state, dispatch: apply },
-    events,
-    onAsync: (event: string, cb: (...args: unknown[]) => unknown) => {
-      events.on(event, cb);
-    },
-    onStateChange: () => undefined,
-    sendNotification: () => undefined,
-    dismissNotification: () => undefined,
-    showErrorNotification: (
-      title: string,
-      message: unknown,
-      options?: { allowReport?: boolean },
-    ) => {
-      errorNotifications.push({ title, message, allowReport: options?.allowReport });
-    },
-    translate: (key: string) => key,
-    emitAndAwait: () => Promise.resolve([]),
-  } as unknown as IExtensionApi;
-
   return {
-    api,
+    ...base,
     nexus,
-    dispatched,
-    errorNotifications,
-    emit: (event: string, ...args: unknown[]) => {
-      events.emit(event, ...args);
-    },
-    getState: () => state,
-    setState: (mutate: (draft: IState) => void) => {
-      mutate(state);
-    },
-    setNextDialog: () => undefined,
-    dialogCalls: [],
-    freeUserQueue: () => state.session["nexus"].freeUserDLQueue ?? [],
+    freeUserQueue: () => base.getState().session["nexus"].freeUserDLQueue ?? [],
     setUserInfo: (userInfo) => {
-      state.persistent["nexus"].userInfo = userInfo;
+      base.setState((draft) => {
+        draft.persistent["nexus"].userInfo = userInfo;
+      });
     },
     getDownloadURLs,
     getCollectionRevisionGraph,

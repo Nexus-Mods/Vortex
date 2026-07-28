@@ -36,7 +36,7 @@ export interface ITrackedAction {
   payload?: unknown;
 }
 
-/** The redux slices an InstallDriver test arranges, each a builder-style override. */
+/** The redux slices a harness test arranges, each a builder-style override. */
 export interface IDriverHarnessState {
   // installed mods, keyed by gameId then modId (state.persistent.mods)
   mods: Record<string, Record<string, IMod>>;
@@ -46,6 +46,12 @@ export interface IDriverHarnessState {
   profiles: Record<string, IProfile>;
   // the install-tracking slice (state.session.collections)
   session: ICollectionInstallState;
+  // games Vortex knows about (state.session.gameMode.known); nxm domains are mapped through these
+  knownGames: IGameStored[];
+  // extensions offered on the site domain (state.session.extensions.available)
+  availableExtensions: Array<{ modId: number }>;
+  // the cached membership (state.persistent.nexus.userInfo); undefined models "not fetched yet"
+  userInfo: Partial<IValidateKeyDataV2> | undefined;
 }
 
 export interface IApiHarness {
@@ -62,6 +68,11 @@ export interface IApiHarness {
   setNextDialog: (result: IDialogResult) => void;
   // showDialog calls, recorded in order
   dialogCalls: Array<{ type: DialogType; title: string }>;
+  // showErrorNotification calls, recorded in order. allowReport matters: a false here is what
+  // keeps the Report button off a failure the user caused or can act on themselves
+  errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
+  // sendNotification calls, recorded in order
+  notifications: Array<{ type: string; message: string }>;
 }
 
 export interface IDriverHarness extends IApiHarness {
@@ -114,26 +125,11 @@ export interface IDownloadAdapterHarness extends IApiHarness {
   getStates: Mock;
 }
 
-// What an nxm-protocol test arranges: the membership the client has cached, the games it knows
-// about, and whether a collection install is in flight (the free-user cancel path reads it).
-export interface INxmHarnessOpts {
-  // state.persistent.nexus.userInfo; undefined models "not logged in / not fetched yet"
-  userInfo?: Partial<IValidateKeyDataV2> | undefined;
-  // state.session.gameMode.known - the resolver maps the nxm domain through these
-  knownGames?: IGameStored[];
-  // state.session.collections.activeSession
-  activeSession?: { gameId: string; collectionId: string };
-  // state.session.extensions.available - the site-domain branch of the link callback reads it
-  availableExtensions?: Array<{ modId: number }>;
-}
-
 export interface INxmHarness extends IApiHarness {
-  // the fake Nexus connection makeNXMProtocol / makeNXMLinkCallback talk to
+  // the fake Nexus connection the handler talks to
   nexus: NexusT;
   // the queued free-user download urls, as the FreeUserDLDialog would see them
   freeUserQueue: () => string[];
-  // showErrorNotification calls, recorded in order
-  errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
   // swap the cached membership mid-test, to model a website-side change Vortex hasn't seen
   setUserInfo: (userInfo: Partial<IValidateKeyDataV2> | undefined) => void;
   getDownloadURLs: Mock;
