@@ -17,14 +17,10 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { setFileRequirementHidden } from "../../actions/persistent";
+import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useFileRequirementFeedback } from "../../hooks/useFileRequirementFeedback";
-import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
 import { useReportCopy } from "../../hooks/useReportCopy";
-import {
-  checkNameForCheck,
-  issueTypeForCheck,
-  resolutionTypeForCategory,
-} from "../../utils/shared/tracking";
+import { resolutionTypeForCategory } from "../../utils/shared/tracking";
 import { isFileEntryHidden } from "../../views/content/fileRequirementEntries";
 import type { IDetailViewProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
@@ -36,8 +32,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const count = report.requirements.length;
   const { summary } = useReportCopy(report);
 
-  const issueType = issueTypeForCheck(entry.checkId);
-  const checkName = checkNameForCheck(entry.checkId);
+  const { identity, issueType } = useIssue();
   const resolutionType = resolutionTypeForCategory(report.category);
   const {
     trackDetailViewed,
@@ -52,14 +47,12 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     trackInstallDownloadedClicked,
     trackIssueHidden,
     trackIssueUnhidden,
-  } = useHealthCheckTracking(api);
+  } = useIssueTracking();
 
   // detail_viewed fires once per detail open; entry-prop changes as the check re-runs
   // shouldn't re-fire it, so the mount-only effect is intentional.
   useEffect(() => {
     trackDetailViewed({
-      issue_id: entry.id,
-      check_id: checkName,
       issue_type: issueType,
       resolution_type: resolutionType,
       required_mod_count: report.requirements.length,
@@ -71,11 +64,9 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const isHidden = useSelector((state: IState) => isFileEntryHidden(state, entry));
   const toggleHideEntry = () => {
     if (isHidden) {
-      trackIssueUnhidden({ issue_id: entry.id, check_id: checkName, issue_type: issueType });
+      trackIssueUnhidden({ issue_type: issueType });
     } else {
       trackIssueHidden({
-        issue_id: entry.id,
-        check_id: checkName,
         issue_type: issueType,
         resolution_type: resolutionType,
       });
@@ -152,14 +143,10 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
             ctx={{
               api,
               showPremiumAd,
-              issueId: entry.id,
-              checkId: checkName,
-              requestDownload: (candidate) =>
-                downloadFileRequirement(api, candidate, { issueId: entry.id, checkId: checkName }),
+              identity,
+              requestDownload: (candidate) => downloadFileRequirement(api, candidate, identity),
               onInstall: (candidate) =>
                 trackOneClickInstallClicked({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_id: decodeUID(candidate.modUID)?.id ?? 0,
                   mod_name: candidate.modName,
                   mod_version: candidate.version,
@@ -167,8 +154,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 }),
               onPickOption: (candidate, position, total) =>
                 trackPickOptionSelected({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_id: decodeUID(candidate.modUID)?.id ?? 0,
                   mod_name: candidate.modName,
                   option_position: position,
@@ -176,14 +161,10 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 }),
               onInstallAll: (candidates) =>
                 trackInstallAllInGroupClicked({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_count: candidates.length,
                 }),
               onOpenModPage: (candidate) => {
                 const modPageProps = {
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_id: decodeUID(candidate.modUID)?.id ?? 0,
                   mod_name: candidate.modName,
                   mod_version: candidate.version,
@@ -200,16 +181,12 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
               onEnable: (correctFile, enabledFile) => {
                 if (enabledFile) {
                   trackEnableThisVersionClicked({
-                    issue_id: entry.id,
-                    check_id: checkName,
                     mod_id: decodeUID(correctFile.modUID)?.id ?? 0,
                     required_version: correctFile.version,
                     current_version: enabledFile.version,
                   });
                 } else {
                   trackEnableClicked({
-                    issue_id: entry.id,
-                    check_id: checkName,
                     mod_id: decodeUID(correctFile.modUID)?.id ?? 0,
                     mod_name: correctFile.modName,
                     mod_version: correctFile.version,
@@ -218,15 +195,11 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
               },
               onViewInMods: (file) =>
                 trackViewInModsClicked({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_id: decodeUID(file.modUID)?.id ?? 0,
                   mod_name: file.modName,
                 }),
               onInstallDownloaded: (file) =>
                 trackInstallDownloadedClicked({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_id: decodeUID(file.modUID)?.id ?? 0,
                   mod_count: 1,
                 }),

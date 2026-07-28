@@ -77,7 +77,7 @@ export const RequirementBody = ({
   ctx: IFileActionContext;
   api: IExtensionApi;
 }) => {
-  const { issueId, checkId } = ctx;
+  const { identity } = ctx;
   const { t } = useTranslation("health_check");
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
@@ -106,9 +106,7 @@ export const RequirementBody = ({
     }
     setDownloadingAll(true);
     void Promise.all(
-      installAllCandidates.map((candidate) =>
-        downloadFileRequirement(api, candidate, { issueId, checkId }),
-      ),
+      installAllCandidates.map((candidate) => downloadFileRequirement(api, candidate, identity)),
     ).then((results) => {
       // On full success the requirements clear and this view unmounts; only reset
       // when something failed and the buttons are still around.
@@ -159,13 +157,8 @@ export const RequirementBody = ({
       <PremiumModal
         downloadScope="all"
         isOpen={premiumOpen}
-        tracking={{
-          api,
-          trigger: "batch_install",
-          issueId,
-          checkId,
-          modCount: installAllCandidates.length,
-        }}
+        modCount={installAllCandidates.length}
+        trigger="batch_install"
         onClose={() => setPremiumOpen(false)}
         onDownload={() => setPremiumOpen(false)}
       />

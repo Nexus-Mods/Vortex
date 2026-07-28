@@ -3,7 +3,6 @@ import { Trans } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
@@ -11,37 +10,28 @@ import { opn } from "@/util/api";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
-import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
-import type { CheckName } from "../../utils/shared/tracking";
+import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
 
 /** Where the premium banner is shown. */
 export type BannerPlacement = "list" | "detail";
 
-/** Analytics context for the premium upsell banner. */
-export interface IPremiumBannerTracking {
-  api: IExtensionApi;
+export const PremiumBanner = ({
+  placement,
+  totalIssues,
+}: {
   placement: BannerPlacement;
   totalIssues: number;
-  /** The issue in view, on a detail page. Both absent on the cross-check listing. */
-  issueId?: string;
-  checkId?: CheckName;
-}
-
-export const PremiumBanner = ({ tracking }: { tracking: IPremiumBannerTracking }) => {
-  const { api, placement, totalIssues, issueId, checkId } = tracking;
+}) => {
   const showPremiumAd = useSelector(shouldShowPremiumAd);
-  const { trackPremiumBannerShown, trackPremiumBannerClicked } = useHealthCheckTracking(api);
+  const { trackPremiumBannerShown, trackPremiumBannerClicked } = useTracker();
+  // Present on a detail page, absent on the cross-check listing.
+  const identity = useOptionalIssue()?.identity;
 
   useEffect(() => {
     if (showPremiumAd) {
-      trackPremiumBannerShown({
-        placement,
-        total_issues: totalIssues,
-        issue_id: issueId,
-        check_id: checkId,
-      });
+      trackPremiumBannerShown({ ...identity, placement, total_issues: totalIssues });
     }
-  }, [showPremiumAd, placement, totalIssues, issueId, checkId, trackPremiumBannerShown]);
+  }, [showPremiumAd, placement, totalIssues, identity, trackPremiumBannerShown]);
 
   if (!showPremiumAd) {
     return null;
@@ -59,12 +49,7 @@ export const PremiumBanner = ({ tracking }: { tracking: IPremiumBannerTracking }
                 brand="neutral-translucent"
                 typographyType="inherit"
                 onClick={() => {
-                  trackPremiumBannerClicked({
-                    placement,
-                    total_issues: totalIssues,
-                    issue_id: issueId,
-                    check_id: checkId,
-                  });
+                  trackPremiumBannerClicked({ ...identity, placement, total_issues: totalIssues });
 
                   opn(
                     nexusModsURL(PREMIUM_PATH, {

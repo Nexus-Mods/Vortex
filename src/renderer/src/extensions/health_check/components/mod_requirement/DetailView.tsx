@@ -19,11 +19,10 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { opn } from "@/util/api";
 
 import { setModRequirementHidden } from "../../actions/persistent";
-import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
+import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import { hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
-import { checkNameForCheck, issueTypeForCheck } from "../../utils/shared/tracking";
 import type { IDetailViewProps } from "../../views/content/types";
 import { Divider } from "../divider/Divider";
 import { EntryActions } from "../entry_actions/EntryActions";
@@ -34,8 +33,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
-  const issueType = issueTypeForCheck(entry.checkId);
-  const checkName = checkNameForCheck(entry.checkId);
+  const { identity, issueType } = useIssue();
 
   const {
     givenFeedback,
@@ -46,7 +44,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     installInApp,
     handlePositiveFeedback,
     handleFeedbackSuccess,
-  } = useModRequirementActions(api, mod, { issueId: entry.id, checkId: checkName }, onBack);
+  } = useModRequirementActions(api, mod, identity, onBack);
 
   const hiddenRequirementMap = useSelector(hiddenModRequirements);
   const isHidden = useMemo(
@@ -62,15 +60,13 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     trackSuggestionSourceLinkClicked,
     trackIssueHidden,
     trackIssueUnhidden,
-  } = useHealthCheckTracking(api);
+  } = useIssueTracking();
   const modVersion = mod.mainFile?.version ?? "";
 
   // detail_viewed fires once per detail open; entry-prop changes as the check re-runs
   // shouldn't re-fire it, so the mount-only effect is intentional.
   useEffect(() => {
     trackDetailViewed({
-      issue_id: entry.id,
-      check_id: checkName,
       issue_type: issueType,
       resolution_type: "install",
       required_mod_count: 1,
@@ -81,8 +77,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
   const handleInstall = () => {
     trackOneClickInstallClicked({
-      issue_id: entry.id,
-      check_id: checkName,
       mod_id: mod.modId,
       mod_name: mod.modName,
       mod_version: modVersion,
@@ -96,8 +90,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   // clicking through to the mod page is informational — track them as distinct events.
   const handleModPage = () => {
     const modPageProps = {
-      issue_id: entry.id,
-      check_id: checkName,
       mod_id: mod.modId,
       mod_name: mod.modName,
       mod_version: modVersion,
@@ -114,29 +106,19 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
   const openRequiringModPage = useCallback(() => {
     trackSuggestionSourceLinkClicked({
-      issue_id: entry.id,
-      check_id: checkName,
       mod_id: mod.requiredBy.modId,
     });
 
     if (mod.requiredBy.modUrl) {
       opn(mod.requiredBy.modUrl).catch(() => undefined);
     }
-  }, [
-    trackSuggestionSourceLinkClicked,
-    entry.id,
-    checkName,
-    mod.requiredBy.modId,
-    mod.requiredBy.modUrl,
-  ]);
+  }, [trackSuggestionSourceLinkClicked, entry.id, mod.requiredBy.modId, mod.requiredBy.modUrl]);
 
   const handleToggleHide = useCallback(() => {
     if (isHidden) {
-      trackIssueUnhidden({ issue_id: entry.id, check_id: checkName, issue_type: issueType });
+      trackIssueUnhidden({ issue_type: issueType });
     } else {
       trackIssueHidden({
-        issue_id: entry.id,
-        check_id: checkName,
         issue_type: issueType,
         resolution_type: "install",
       });
@@ -151,7 +133,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     isHidden,
     onBack,
     entry.id,
-    checkName,
     issueType,
     trackIssueHidden,
     trackIssueUnhidden,
@@ -307,14 +288,9 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
       <PremiumModal
         isOpen={showPremiumModal}
-        tracking={{
-          api,
-          trigger: "single_install",
-          issueId: entry.id,
-          checkId: checkName,
-          modId: mod.modId,
-          modCount: 1,
-        }}
+        modCount={1}
+        modId={mod.modId}
+        trigger="single_install"
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {
           setShowPremiumModal(false);

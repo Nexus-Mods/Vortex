@@ -37,12 +37,41 @@ const CHECK_NAMES: Record<HealthCheckId, CheckName> = {
 export const checkNameForCheck = (checkId: HealthCheckId): CheckName => CHECK_NAMES[checkId];
 
 /**
- * issue_type for an entry, keyed off the check it belongs to: the file-level
- * requirements check surfaces higher-confidence warnings, the mod-level check
- * surfaces lower-confidence suggestions.
+ * issue_type for an entry: the file-level requirements check surfaces
+ * higher-confidence warnings, the mod-level check surfaces lower-confidence
+ * suggestions. Exhaustive for the same reason as CHECK_NAMES.
  */
-export const issueTypeForCheck = (checkId: HealthCheckId): IssueType =>
-  checkId === "check-file-level-requirements" ? "warning" : "suggestion";
+const ISSUE_TYPES: Record<HealthCheckId, IssueType> = {
+  "check-file-level-requirements": "warning",
+  "check-nexus-mod-requirements": "suggestion",
+};
+
+export const issueTypeForCheck = (checkId: HealthCheckId): IssueType => ISSUE_TYPES[checkId];
+
+/**
+ * The two properties identifying which issue an event belongs to, and which check
+ * surfaced it. Carried by every issue-scoped event; the tracking context applies it
+ * so call sites never restate it.
+ */
+export type IssueIdentity = {
+  issue_id: string;
+  check_id: CheckName;
+};
+
+/**
+ * Identity for the premium surfaces, which appear both against a single issue (a listing
+ * row or detail page) and page-wide, across both checks.
+ */
+export type OptionalIssueIdentity = Partial<IssueIdentity>;
+
+/** The identity for a listing entry, and the issue_type that goes with it. */
+export const issueFor = (entry: {
+  id: string;
+  checkId: HealthCheckId;
+}): { identity: IssueIdentity; issueType: IssueType } => ({
+  identity: { issue_id: entry.id, check_id: checkNameForCheck(entry.checkId) },
+  issueType: issueTypeForCheck(entry.checkId),
+});
 
 /**
  * resolution_type for a file-requirement report category. Mod requirements are

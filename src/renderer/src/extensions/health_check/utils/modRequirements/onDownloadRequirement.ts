@@ -8,7 +8,8 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
 import { getGame, toPromise } from "@/util/api";
 
-import { type IInstallContext, trackedInstall } from "../shared/installTracking";
+import { trackedInstall } from "../shared/installTracking";
+import type { IssueIdentity } from "../shared/tracking";
 import { getModFilesWithCache } from "./modFiles";
 
 /**
@@ -18,7 +19,7 @@ export async function onDownloadRequirement(
   api: IExtensionApi,
   mod: IModRequirementExt,
   file?: IModFileInfo,
-  context?: IInstallContext,
+  identity?: IssueIdentity,
 ): Promise<void> {
   if (!Number.isInteger(mod.modId) || mod.modId <= 0) {
     api.showErrorNotification(
@@ -70,9 +71,7 @@ export async function onDownloadRequirement(
   await trackedInstall(
     api,
     {
-      issue_id: context?.issueId,
-
-      check_id: context?.checkId,
+      ...identity,
       mod_id: modId,
       mod_name: mod.modName,
       mod_version: targetFile.version,

@@ -38,8 +38,8 @@ export const modRequirementsContent: IHealthCheckContent = {
         key: mod.uid || `${mod.gameId}-${mod.modId}`,
         install: () => {
           void onDownloadRequirement(api, mod, undefined, {
-            issueId: modEntryId(mod),
-            checkId: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
+            issue_id: modEntryId(mod),
+            check_id: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
           });
         },
       })),

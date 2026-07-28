@@ -30,6 +30,7 @@ import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
+import { HealthCheckTrackingProvider, IssueProvider } from "../hooks/HealthCheckTracking.context";
 import { useHealthCheckTracking } from "../hooks/useHealthCheckTracking";
 import {
   fileRequirementsCheckResult,
@@ -200,14 +201,15 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     const { content, entry } = item;
 
     return (
-      <content.ListingRow
-        api={api}
-        entry={entry}
-        isHidden={item.hidden}
-        key={`${entry.checkId}:${entry.id}`}
-        onOpen={() => setSelected(item)}
-        onToggleHide={() => content.toggleHide?.(api, entry)}
-      />
+      <IssueProvider entry={entry} key={`${entry.checkId}:${entry.id}`}>
+        <content.ListingRow
+          api={api}
+          entry={entry}
+          isHidden={item.hidden}
+          onOpen={() => setSelected(item)}
+          onToggleHide={() => content.toggleHide?.(api, entry)}
+        />
+      </IssueProvider>
     );
   };
 
@@ -268,134 +270,135 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       />
     );
 
+  // The page's own events are cross-check aggregates, so it keeps the unscoped tracker
+  // (it can't consume the context it provides). Everything below gets the ambient one;
+  // the premium surfaces here sit outside any IssueProvider, which is what makes
+  // them emit without issue_id / check_id.
   return (
-    <Page active={active} id="health-check-page" scrollable={false}>
-      <PageHeader
-        customTitle={
-          <div className="flex items-center gap-x-1.5">
-            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
-              {t("listing::title")}
-            </Typography>
+    <HealthCheckTrackingProvider api={api}>
+      <Page active={active} id="health-check-page" scrollable={false}>
+        <PageHeader
+          customTitle={
+            <div className="flex items-center gap-x-1.5">
+              <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+                {t("listing::title")}
+              </Typography>
 
-            <BetaBadge />
-          </div>
-        }
-        pictogramName="health-check"
-        subtitle={t("listing::subtitle")}
-      >
-        <div className="flex shrink-0 items-center gap-x-2">
-          <LastUpdated />
-
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            isLoading={isRefreshing}
-            leftIconPath={mdiRefresh}
-            size="sm"
-            title={t("common:::refresh")}
-            onClick={() => onRefresh?.()}
-          />
-
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            leftIconPath={mdiCog}
-            size="sm"
-            title={t("common:::settings")}
-            onClick={() => {
-              trackSettingsOpened();
-              dispatch(setOpenMainPage("application_settings", false));
-              dispatch(setSettingsPage("Vortex"));
-            }}
-          />
-        </div>
-      </PageHeader>
-
-      <PageScroll className="space-y-6 p-6">
-        {supportsHide ? (
-          <TabProvider
-            tab={selectedTab}
-            tabListId="health-check-mods"
-            tabType="secondary"
-            onSetSelectedTab={handleTabChange}
-          >
-            <div className="flex items-center justify-between">
-              <TabBar>
-                <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
-
-                <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
-              </TabBar>
-
-              <div className="flex items-center gap-x-2">
-                <Button
-                  appearance="subdued"
-                  brand="neutral"
-                  disabled={
-                    (selectedTab === "active" && !activeCount) ||
-                    (selectedTab === "hidden" && !hiddenCount)
-                  }
-                  leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
-                  size="sm"
-                  onClick={selectedTab === "active" ? hideAllActive : unhideAll}
-                >
-                  {selectedTab === "active"
-                    ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
-                    : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
-                </Button>
-
-                {selectedTab === "active" && installAllItems.length > 0 && (
-                  <>
-                    <div className="w-px self-stretch bg-stroke-weak" />
-
-                    <Button
-                      brand="neutral"
-                      leftIconPath={mdiMonitorArrowDownVariant}
-                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-                      size="sm"
-                      onClick={installAll}
-                    >
-                      {t("actions::install_all", { count: installAllItems.length })}
-                    </Button>
-                  </>
-                )}
-              </div>
+              <BetaBadge />
             </div>
+          }
+          pictogramName="health-check"
+          subtitle={t("listing::subtitle")}
+        >
+          <div className="flex shrink-0 items-center gap-x-2">
+            <LastUpdated />
 
-            <TabPanel id="active">{activeList}</TabPanel>
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              isLoading={isRefreshing}
+              leftIconPath={mdiRefresh}
+              size="sm"
+              title={t("common:::refresh")}
+              onClick={() => onRefresh?.()}
+            />
 
-            <TabPanel id="hidden">
-              {hiddenCount > 0 ? (
-                <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
-              ) : (
-                <NoResults
-                  className="py-24"
-                  iconPath={mdiEyeOff}
-                  title={t("listing::no_results_hidden::title")}
-                />
-              )}
-            </TabPanel>
-          </TabProvider>
-        ) : (
-          activeList
-        )}
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              leftIconPath={mdiCog}
+              size="sm"
+              title={t("common:::settings")}
+              onClick={() => {
+                trackSettingsOpened();
+                dispatch(setOpenMainPage("application_settings", false));
+                dispatch(setSettingsPage("Vortex"));
+              }}
+            />
+          </div>
+        </PageHeader>
 
-        <PremiumBanner
-          tracking={{ api, placement: "list", totalIssues: activeCount + hiddenCount }}
-        />
+        <PageScroll className="space-y-6 p-6">
+          {supportsHide ? (
+            <TabProvider
+              tab={selectedTab}
+              tabListId="health-check-mods"
+              tabType="secondary"
+              onSetSelectedTab={handleTabChange}
+            >
+              <div className="flex items-center justify-between">
+                <TabBar>
+                  <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
 
-        <PremiumModal
-          downloadScope="all"
-          isOpen={showInstallAllPremium}
-          tracking={{
-            api,
-            trigger: "install_all",
-            modCount: installAllItems.length,
-          }}
-          onClose={() => setShowInstallAllPremium(false)}
-          onDownload={() => setShowInstallAllPremium(false)}
-        />
-      </PageScroll>
-    </Page>
+                  <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
+                </TabBar>
+
+                <div className="flex items-center gap-x-2">
+                  <Button
+                    appearance="subdued"
+                    brand="neutral"
+                    disabled={
+                      (selectedTab === "active" && !activeCount) ||
+                      (selectedTab === "hidden" && !hiddenCount)
+                    }
+                    leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
+                    size="sm"
+                    onClick={selectedTab === "active" ? hideAllActive : unhideAll}
+                  >
+                    {selectedTab === "active"
+                      ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
+                      : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
+                  </Button>
+
+                  {selectedTab === "active" && installAllItems.length > 0 && (
+                    <>
+                      <div className="w-px self-stretch bg-stroke-weak" />
+
+                      <Button
+                        brand="neutral"
+                        leftIconPath={mdiMonitorArrowDownVariant}
+                        rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                        size="sm"
+                        onClick={installAll}
+                      >
+                        {t("actions::install_all", { count: installAllItems.length })}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <TabPanel id="active">{activeList}</TabPanel>
+
+              <TabPanel id="hidden">
+                {hiddenCount > 0 ? (
+                  <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
+                ) : (
+                  <NoResults
+                    className="py-24"
+                    iconPath={mdiEyeOff}
+                    title={t("listing::no_results_hidden::title")}
+                  />
+                )}
+              </TabPanel>
+            </TabProvider>
+          ) : (
+            activeList
+          )}
+
+          <PremiumBanner placement="list" totalIssues={activeCount + hiddenCount} />
+
+          <PremiumModal
+            downloadScope="all"
+            isOpen={showInstallAllPremium}
+            modCount={installAllItems.length}
+            trigger="install_all"
+            onClose={() => setShowInstallAllPremium(false)}
+            onDownload={() => setShowInstallAllPremium(false)}
+          />
+        </PageScroll>
+      </Page>
+    </HealthCheckTrackingProvider>
   );
 };
 
