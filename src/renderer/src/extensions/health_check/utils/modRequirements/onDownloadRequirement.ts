@@ -9,7 +9,7 @@ import type { IGame } from "@/types/IGame";
 import { getGame, toPromise } from "@/util/api";
 
 import { trackedInstall } from "../shared/installTracking";
-import type { IssueIdentity } from "../shared/tracking";
+import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import { getModFilesWithCache } from "./modFiles";
 
 /**
@@ -19,7 +19,7 @@ export async function onDownloadRequirement(
   api: IExtensionApi,
   mod: IModRequirementExt,
   file?: IModFileInfo,
-  identity?: IssueIdentity,
+  identity?: IssueAnalyticsIdentity,
 ): Promise<void> {
   if (!Number.isInteger(mod.modId) || mod.modId <= 0) {
     api.showErrorNotification(

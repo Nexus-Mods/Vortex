@@ -10,7 +10,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn, renderModName, sanitizeCSSId } from "@/util/api";
 
 import { trackedInstall } from "../shared/installTracking";
-import type { IssueIdentity } from "../shared/tracking";
+import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
@@ -45,7 +45,7 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 export async function downloadFileRequirement(
   api: IExtensionApi,
   candidate: IFileRequirementCandidate,
-  identity?: IssueIdentity,
+  identity?: IssueAnalyticsIdentity,
 ): Promise<boolean> {
   if (shouldShowPremiumAd(api.getState())) {
     openFilePage(api, candidate);
@@ -119,7 +119,7 @@ export async function downloadFileRequirement(
 export async function installDownloadedFile(
   api: IExtensionApi,
   file: IDownloadedFile,
-  identity?: IssueIdentity,
+  identity?: IssueAnalyticsIdentity,
 ): Promise<boolean> {
   try {
     await trackedInstall(

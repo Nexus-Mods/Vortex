@@ -10,7 +10,7 @@ import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt } from "../types";
-import type { IssueIdentity } from "../utils/shared/tracking";
+import type { IssueAnalyticsIdentity } from "../utils/shared/tracking";
 
 /**
  * Shared action logic for a single mod requirement, used by both the listing row
@@ -24,7 +24,7 @@ import type { IssueIdentity } from "../utils/shared/tracking";
 export function useModRequirementActions(
   api: IExtensionApi,
   mod: IModRequirementExt,
-  identity: IssueIdentity,
+  identity: IssueAnalyticsIdentity,
   onInstalled?: () => void,
 ) {
   const [showPremiumModal, setShowPremiumModal] = useState(false);

@@ -2,14 +2,14 @@ import { classifyErrorCode } from "@/extensions/analytics/mixpanel/error-code";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { createHealthCheckTracker } from "../../hooks/healthCheckTracker";
-import type { OptionalIssueIdentity } from "./tracking";
+import type { OptionalIssueAnalyticsIdentity } from "./tracking";
 
 /**
  * The mod being installed, as every health_check_install_* event identifies it. The identity
  * comes from the component that started the install (`useIssue()?.identity`) and is
  * optional throughout, so the actions stay usable without analytics context.
  */
-export type IInstallIdentity = OptionalIssueIdentity & {
+export type IInstallIdentity = OptionalIssueAnalyticsIdentity & {
   mod_id: number;
   mod_name: string;
   mod_version: string;

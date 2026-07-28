@@ -59,7 +59,7 @@ export const issueTypeForCheck = (checkId: HealthCheckId): IssueType => ISSUE_TY
  * the funnel join, and what the ::hidden suffix was breaking. `IHealthCheckEntry.id` is
  * the row key that tracks report state; don't report that.
  */
-export type IssueIdentity = {
+export type IssueAnalyticsIdentity = {
   issue_id: string;
   check_id: CheckName;
 };
@@ -68,7 +68,7 @@ export type IssueIdentity = {
  * Identity for the premium surfaces, which appear both against a single issue (a listing
  * row or detail page) and page-wide, across both checks.
  */
-export type OptionalIssueIdentity = Partial<IssueIdentity>;
+export type OptionalIssueAnalyticsIdentity = Partial<IssueAnalyticsIdentity>;
 
 /**
  * resolution_type for a file-requirement report category. Mod requirements are

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, type ReactNode } from "react
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import type { IssueIdentity, IssueType } from "../utils/shared/tracking";
+import type { IssueAnalyticsIdentity, IssueType } from "../utils/shared/tracking";
 import { checkNameForCheck, issueTypeForCheck } from "../utils/shared/tracking";
 import type { IHealthCheckEntry } from "../views/content/types";
 import { createHealthCheckTracker, type HealthCheckTracker } from "./healthCheckTracker";
@@ -25,18 +25,18 @@ const TrackerContext = createContext<HealthCheckTracker | undefined>(undefined);
 
 /** The issue an event belongs to, plus the issue_type that goes with it. */
 interface IIssueValue {
-  identity: IssueIdentity;
+  identity: IssueAnalyticsIdentity;
   issueType: IssueType;
 }
 
 /**
  * The tracker methods whose event requires an issue identity — i.e. those taking a
- * required `IssueIdentity`. The premium methods take `OptionalIssueIdentity`, whose
+ * required `IssueAnalyticsIdentity`. The premium methods take `OptionalIssueAnalyticsIdentity`, whose
  * `issue_id` is `string | undefined`, so they don't match and are excluded.
  */
 type IssueMethod<T> = {
   [K in keyof T]: T[K] extends (props: infer P) => void
-    ? P extends IssueIdentity
+    ? P extends IssueAnalyticsIdentity
       ? K
       : never
     : never;
@@ -49,7 +49,7 @@ type IssueMethod<T> = {
  */
 export type IssueTracker = {
   [K in IssueMethod<HealthCheckTracker>]: HealthCheckTracker[K] extends (props: infer P) => void
-    ? (props: Omit<P, keyof IssueIdentity>) => void
+    ? (props: Omit<P, keyof IssueAnalyticsIdentity>) => void
     : never;
 };
 
