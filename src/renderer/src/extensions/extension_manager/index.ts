@@ -389,18 +389,26 @@ function init(context: IExtensionContext) {
       const state = context.api.getState();
       const game = getGame(gameMode);
       const extState = state.app.extensions ?? {};
-      const gameExtId = Object.keys(extState).find(
-        (key) => game.extensionPath === extState[key].path,
-      );
+
+      // Search both persisted user extensions and loaded bundled extensions.
+      const gameExtId =
+        Object.keys(extState).find((key) => game.extensionPath === extState[key].path) ??
+        context.api.getLoadedExtensions().find((ext) => ext.path === game.extensionPath)?.name;
 
       if (!gameExtId || !state.session.extensions.optional[gameExtId]) {
         return;
       }
 
       const requiredIds: string[] = [];
-      for (const ext of state.session.extensions.optional[gameExtId]) {
-        if (extState[ext.id] === undefined) {
-          requiredIds.push(ext.id);
+      const loadedExts = context.api.getLoadedExtensions();
+      for (const opt of state.session.extensions.optional[gameExtId]) {
+        const installed =
+          extState[opt.id] !== undefined ||
+          loadedExts.some(
+            (le) => le.info?.name === opt.id || le.info?.id === opt.id || le.name === opt.id,
+          );
+        if (!installed) {
+          requiredIds.push(opt.id);
         }
       }
 
