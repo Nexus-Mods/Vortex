@@ -95,7 +95,7 @@ function MenuAction(props: IMenuActionProps) {
     }
   }, [instanceId, action, setOpen]);
 
-  const hideTimer = React.useRef<NodeJS.Timeout>();
+  const hideTimer = React.useRef<ReturnType<typeof setTimeout>>();
 
   const show = React.useCallback(() => {
     if (hideTimer.current) {
@@ -160,7 +160,7 @@ class RootCloseWrapper extends React.Component<{ onClose: () => void }, {}> {
   // still bubbling toward document; registering the close listeners
   // synchronously would make that same event close the menu immediately.
   // Defer registration until the current event has finished dispatching.
-  private mAttachTimer: NodeJS.Timeout;
+  private mAttachTimer: ReturnType<typeof setTimeout>;
 
   public componentDidMount() {
     this.mAttachTimer = setTimeout(() => {
