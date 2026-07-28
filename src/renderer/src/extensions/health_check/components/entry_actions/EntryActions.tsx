@@ -7,6 +7,7 @@ import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { FeedbackModal } from "../feedback_modal/FeedbackModal";
 
 interface IEntryActionsProps {
@@ -29,7 +30,11 @@ export function EntryActions({
   onToggleHide,
 }: IEntryActionsProps) {
   const { t } = useTranslation(["health_check", "common"]);
+  const { issueType, resolutionType } = useIssue();
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const { trackFeedbackHelpful, trackFeedbackNotHelpful, trackFeedbackDismissed } =
+    useIssueTracking();
+
   const appearance = variant === "listing" ? "weak" : "subdued";
 
   const handle = (fn: () => void) => (e: React.MouseEvent) => {
@@ -62,7 +67,10 @@ export function EntryActions({
         leftIconPath={mdiThumbUpOutline}
         size="sm"
         title={t("common:::helpful")}
-        onClick={handle(onHelpful)}
+        onClick={handle(() => {
+          trackFeedbackHelpful({ issue_type: issueType, resolution_type: resolutionType });
+          onHelpful();
+        })}
       />
 
       <Button
@@ -88,8 +96,16 @@ export function EntryActions({
 
       <FeedbackModal
         isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
+        onClose={() => {
+          trackFeedbackDismissed({ issue_type: issueType });
+          setShowFeedbackModal(false);
+        }}
         onSuccess={(reasons) => {
+          trackFeedbackNotHelpful({
+            issue_type: issueType,
+            resolution_type: resolutionType,
+            feedback_reasons: reasons,
+          });
           onNotHelpful(reasons);
           setShowFeedbackModal(false);
         }}

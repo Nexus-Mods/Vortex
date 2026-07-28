@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, type ReactNode } from "react
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import type { IssueAnalyticsIdentity, IssueType } from "../utils/shared/tracking";
+import type { IssueAnalyticsIdentity, IssueType, ResolutionType } from "../utils/shared/tracking";
 import { checkNameForCheck, issueTypeForCheck } from "../utils/shared/tracking";
 import type { IHealthCheckEntry } from "../views/content/types";
 import { createHealthCheckTracker, type HealthCheckTracker } from "./healthCheckTracker";
@@ -23,10 +23,11 @@ import { createHealthCheckTracker, type HealthCheckTracker } from "./healthCheck
 
 const TrackerContext = createContext<HealthCheckTracker | undefined>(undefined);
 
-/** The issue an event belongs to, plus the issue_type that goes with it. */
+/** The issue an event belongs to, plus the vocabulary that describes it. */
 interface IIssueValue {
   identity: IssueAnalyticsIdentity;
   issueType: IssueType;
+  resolutionType: ResolutionType;
 }
 
 /**
@@ -79,6 +80,7 @@ const issueFor = (entry: IHealthCheckEntry): IIssueValue => ({
     check_id: checkNameForCheck(entry.checkId),
   },
   issueType: issueTypeForCheck(entry.checkId),
+  resolutionType: entry.resolutionType,
 });
 
 /** Scopes everything below it to one listing entry. */
@@ -89,12 +91,12 @@ export const IssueProvider = ({
   entry: IHealthCheckEntry;
   children?: ReactNode;
 }) => {
-  // entry is re-derived from live state as checks re-run, so key off its id and check
-  // rather than the object.
+  // entry is re-derived from live state as checks re-run, so key off the fields the
+  // value is built from rather than the object.
   const value = useMemo(
     () => issueFor(entry),
     // eslint-disable-next-line @eslint-react/exhaustive-deps
-    [entry.id, entry.checkId],
+    [entry.id, entry.issueId, entry.checkId, entry.resolutionType],
   );
 
   return <IssueContext.Provider value={value}>{children}</IssueContext.Provider>;
@@ -118,8 +120,8 @@ export const useTracker = (): HealthCheckTracker => {
 export const useOptionalIssue = (): IIssueValue | undefined => useContext(IssueContext);
 
 /**
- * The enclosing issue: its identity to spread onto an event or hand to an install action, and
- * the issue_type for the events that carry one.
+ * The enclosing issue: its identity to spread onto an event or hand to an install action,
+ * plus the issue_type and resolution_type for the events that carry them.
  */
 export const useIssue = (): IIssueValue => {
   const issue = useOptionalIssue();
@@ -143,14 +145,18 @@ export const useIssueTracking = (): IssueTracker => {
   // Memoised before the guard, so the hook order is unconditional. Binding every method
   // (rather than just the subset IssueTracker exposes) keeps this a one-liner; the
   // excluded ones aren't reachable through the type.
-  const issueTracker = useMemo(
+  const issueTracker: IssueTracker | undefined = useMemo(
     () =>
       issue === undefined
         ? undefined
         : (Object.fromEntries(
             Object.entries(tracker).map(([name, emit]) => [
               name,
+              // Object.entries widens emit to the intersection of every tracker method, so
+              // it isn't callable as-is. no-unnecessary-type-assertion misreads this — remove
+              // the cast and tsc fails.
               (props: Record<string, unknown> = {}) =>
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 (emit as (p: Record<string, unknown>) => void)({ ...issue.identity, ...props }),
             ]),
           ) as IssueTracker),

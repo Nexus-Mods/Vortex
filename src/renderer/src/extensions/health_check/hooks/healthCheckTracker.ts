@@ -220,6 +220,21 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
       props: OptionalIssueAnalyticsIdentity & { placement: BannerPlacement; total_issues: number },
     ) => track("health_check_premium_banner_clicked", props),
 
+    trackFeedbackHelpful: (
+      props: IssueAnalyticsIdentity & { issue_type: IssueType; resolution_type: ResolutionType },
+    ) => track("health_check_feedback_helpful", props),
+
+    trackFeedbackNotHelpful: (
+      props: IssueAnalyticsIdentity & {
+        issue_type: IssueType;
+        resolution_type: ResolutionType;
+        feedback_reasons: string[];
+      },
+    ) => track("health_check_feedback_not_helpful", props),
+
+    trackFeedbackDismissed: (props: IssueAnalyticsIdentity & { issue_type: IssueType }) =>
+      track("health_check_feedback_dismissed", props),
+
     // Visibility
     trackIssueHidden: (
       props: IssueAnalyticsIdentity & { issue_type: IssueType; resolution_type?: ResolutionType },

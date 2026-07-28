@@ -6,9 +6,9 @@
  */
 import { EventEmitter } from "events";
 
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -35,6 +35,7 @@ const fileEntry: IHealthCheckEntry = {
   id: "uid-42:download",
   checkId: "check-file-level-requirements",
   severity: "warning",
+  resolutionType: "update",
   data: {},
 };
 
@@ -42,23 +43,51 @@ const modEntry: IHealthCheckEntry = {
   id: "7-uid-9",
   checkId: "check-nexus-mod-requirements",
   severity: "suggestion",
+  resolutionType: "install",
   data: {},
+};
+
+// vitest runs without globals here, so RTL never auto-cleans; without this each
+// render leaks into document.body.
+afterEach(cleanup);
+
+/** Emits back_clicked with only its own properties — the identity should be supplied. */
+const BackClicker = () => {
+  const { trackBackClicked } = useIssueTracking();
+  trackBackClicked({ time_spent_on_detail_ms: 900 });
+  return null;
+};
+
+/** Emits an event carrying issue_type, to show both come from the enclosing issue. */
+const Unhider = () => {
+  const { trackIssueUnhidden } = useIssueTracking();
+  const { issueType } = useIssue();
+  trackIssueUnhidden({ issue_type: issueType });
+  return null;
+};
+
+/** A premium surface: reads an optional identity, so it works with or without an issue. */
+const Banner = () => {
+  const { trackPremiumBannerShown } = useTracker();
+  const identity = useOptionalIssue()?.identity;
+  trackPremiumBannerShown({ ...identity, placement: "list", total_issues: 3 });
+  return null;
+};
+
+/** Requires an issue; used to prove it throws rather than emitting without one. */
+const RequiresIssue = () => {
+  useIssueTracking();
+  return null;
 };
 
 describe("HealthCheckTracking context", () => {
   it("injects the identity, matching the payload the call site used to build by hand", () => {
     const { api, events } = harness();
 
-    const Consumer = () => {
-      const { trackBackClicked } = useIssueTracking();
-      trackBackClicked({ time_spent_on_detail_ms: 900 });
-      return null;
-    };
-
     render(
       <HealthCheckTrackingProvider api={api}>
         <IssueProvider entry={fileEntry}>
-          <Consumer />
+          <BackClicker />
         </IssueProvider>
       </HealthCheckTrackingProvider>,
     );
@@ -78,21 +107,14 @@ describe("HealthCheckTracking context", () => {
   it("scopes each issue to its own check", () => {
     const { api, events } = harness();
 
-    const Consumer = () => {
-      const { trackIssueUnhidden } = useIssueTracking();
-      const { issueType } = useIssue();
-      trackIssueUnhidden({ issue_type: issueType });
-      return null;
-    };
-
     render(
       <HealthCheckTrackingProvider api={api}>
         <IssueProvider entry={fileEntry}>
-          <Consumer />
+          <Unhider />
         </IssueProvider>
 
         <IssueProvider entry={modEntry}>
-          <Consumer />
+          <Unhider />
         </IssueProvider>
       </HealthCheckTrackingProvider>,
     );
@@ -114,37 +136,26 @@ describe("HealthCheckTracking context", () => {
       issueId: fileEntry.id,
     };
 
-    const Consumer = () => {
-      const { trackIssueUnhidden } = useIssueTracking();
-      const { issueType } = useIssue();
-      trackIssueUnhidden({ issue_type: issueType });
-      return null;
-    };
-
     render(
       <HealthCheckTrackingProvider api={api}>
         <IssueProvider entry={fileEntry}>
-          <Consumer />
+          <Unhider />
         </IssueProvider>
 
         <IssueProvider entry={dismissed}>
-          <Consumer />
+          <Unhider />
         </IssueProvider>
       </HealthCheckTrackingProvider>,
     );
 
-    expect(events.map((e) => e.properties.issue_id)).toEqual([fileEntry.id, fileEntry.id]);
+    expect(events.map((e) => e.properties.issue_id as string)).toEqual([
+      fileEntry.id,
+      fileEntry.id,
+    ]);
   });
 
   it("omits the identity for a premium surface rendered page-wide", () => {
     const { api, events } = harness();
-
-    const Banner = () => {
-      const { trackPremiumBannerShown } = useTracker();
-      const identity = useOptionalIssue()?.identity;
-      trackPremiumBannerShown({ ...identity, placement: "list", total_issues: 3 });
-      return null;
-    };
 
     render(
       <HealthCheckTrackingProvider api={api}>
@@ -158,18 +169,13 @@ describe("HealthCheckTracking context", () => {
   it("throws rather than emitting an issue event with no identity", () => {
     const { api } = harness();
 
-    const Consumer = () => {
-      useIssueTracking();
-      return null;
-    };
-
     // React logs the boundary-less error; the assertion is on the throw itself.
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     expect(() =>
       render(
         <HealthCheckTrackingProvider api={api}>
-          <Consumer />
+          <RequiresIssue />
         </HealthCheckTrackingProvider>,
       ),
     ).toThrow("useIssueTracking must be used within an IssueProvider");

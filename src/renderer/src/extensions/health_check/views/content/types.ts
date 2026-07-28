@@ -5,6 +5,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 
 import type { HealthCheckId } from "../../types";
+import type { ResolutionType } from "../../utils/shared/tracking";
 
 /**
  * A single item a health check contributes to the listing. Generic across all
@@ -27,6 +28,12 @@ export interface IHealthCheckEntry<TData = unknown> {
   checkId: HealthCheckId;
   /** Drives the severity icon/colour in the shared shell. */
   severity: Severity;
+  /**
+   * Which resolution flow this issue offers, reported as `resolution_type`. Set by the
+   * content module, which is the only thing that knows — deriving it centrally would
+   * mean reaching into each check's `data`.
+   */
+  resolutionType: ResolutionType;
   /** Check-specific payload (e.g. IFileLevelRequirements, IModRequirementExt). */
   data: TData;
 }

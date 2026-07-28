@@ -33,7 +33,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
-  const { identity, issueType } = useIssue();
+  const { identity, issueType, resolutionType } = useIssue();
 
   const {
     givenFeedback,
@@ -42,8 +42,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     setShowPremiumModal,
     openModPage,
     installInApp,
-    handlePositiveFeedback,
-    handleFeedbackSuccess,
+    markFeedback,
   } = useModRequirementActions(api, mod, identity, onBack);
 
   const hiddenRequirementMap = useSelector(hiddenModRequirements);
@@ -68,7 +67,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   useEffect(() => {
     trackDetailViewed({
       issue_type: issueType,
-      resolution_type: "install",
+      resolution_type: resolutionType,
       required_mod_count: 1,
       source_mod_name: mod.requiredBy.modName,
     });
@@ -112,7 +111,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     if (mod.requiredBy.modUrl) {
       opn(mod.requiredBy.modUrl).catch(() => undefined);
     }
-  }, [trackSuggestionSourceLinkClicked, entry.id, mod.requiredBy.modId, mod.requiredBy.modUrl]);
+  }, [trackSuggestionSourceLinkClicked, mod.requiredBy.modId, mod.requiredBy.modUrl]);
 
   const handleToggleHide = useCallback(() => {
     if (isHidden) {
@@ -120,7 +119,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     } else {
       trackIssueHidden({
         issue_type: issueType,
-        resolution_type: "install",
+        resolution_type: resolutionType,
       });
     }
 
@@ -132,8 +131,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     mod.id,
     isHidden,
     onBack,
-    entry.id,
     issueType,
+    resolutionType,
     trackIssueHidden,
     trackIssueUnhidden,
   ]);
@@ -164,8 +163,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
             isHidden={isHidden}
             severity={entry.severity}
             variant="detail"
-            onHelpful={handlePositiveFeedback}
-            onNotHelpful={handleFeedbackSuccess}
+            onHelpful={markFeedback}
+            onNotHelpful={markFeedback}
             onToggleHide={handleToggleHide}
           />
         </div>

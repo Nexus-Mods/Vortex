@@ -5,7 +5,6 @@ import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequir
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn } from "@/util/api";
 
-import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
@@ -54,30 +53,11 @@ export function useModRequirementActions(
     onInstalled?.();
   }, [api, mod, identity, showPremiumAd, onInstalled]);
 
-  const handlePositiveFeedback = useCallback(() => {
+  // Persistence only — EntryActions owns the feedback analytics, so both thumbs record
+  // the same thing here.
+  const markFeedback = useCallback(() => {
     api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
-    api.events.emit(
-      "analytics-track-mixpanel-event",
-      new HealthCheckFeedbackEvent("positive", mod.gameId, mod.modId, mod.requiredBy.modId),
-    );
   }, [api, mod]);
-
-  const handleFeedbackSuccess = useCallback(
-    (reasons: string[]) => {
-      api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
-      api.events.emit(
-        "analytics-track-mixpanel-event",
-        new HealthCheckFeedbackEvent(
-          "negative",
-          mod.gameId,
-          mod.modId,
-          mod.requiredBy.modId,
-          reasons,
-        ),
-      );
-    },
-    [api, mod],
-  );
 
   return {
     givenFeedback,
@@ -86,7 +66,6 @@ export function useModRequirementActions(
     setShowPremiumModal,
     openModPage,
     installInApp,
-    handlePositiveFeedback,
-    handleFeedbackSuccess,
+    markFeedback,
   };
 }

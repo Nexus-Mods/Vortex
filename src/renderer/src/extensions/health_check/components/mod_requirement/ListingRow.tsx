@@ -17,7 +17,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
-  const { identity, issueType } = useIssue();
+  const { identity, issueType, resolutionType } = useIssue();
 
   const {
     givenFeedback,
@@ -26,8 +26,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     setShowPremiumModal,
     openModPage,
     installInApp,
-    handlePositiveFeedback,
-    handleFeedbackSuccess,
+    markFeedback,
   } = useModRequirementActions(api, mod, identity);
 
   const { trackOneClickInstallClicked, trackIssueHidden, trackIssueUnhidden } = useIssueTracking();
@@ -49,7 +48,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     } else {
       trackIssueHidden({
         issue_type: issueType,
-        resolution_type: "install",
+        resolution_type: resolutionType,
       });
     }
 
@@ -96,8 +95,8 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             givenFeedback={givenFeedback}
             isHidden={isHidden}
             variant="listing"
-            onHelpful={handlePositiveFeedback}
-            onNotHelpful={handleFeedbackSuccess}
+            onHelpful={markFeedback}
+            onNotHelpful={markFeedback}
             onToggleHide={handleToggleHide}
           />
         }

@@ -683,22 +683,3 @@ export class AppExtensionInstalledEvent implements MixpanelEvent {
  * @param required_by_mod_id Nexus mod ID of the mod that requires the dependency
  * @param feedback_reasons Array of reason keys (only for negative feedback)
  */
-export class HealthCheckFeedbackEvent implements MixpanelEvent {
-  readonly eventName = "health_check_feedback";
-  readonly properties: Record<string, any>;
-  constructor(
-    feedback_type: "positive" | "negative",
-    game_id: string,
-    mod_id: number,
-    required_by_mod_id: number,
-    feedback_reasons?: string[],
-  ) {
-    this.properties = {
-      feedback_type,
-      game_id,
-      mod_id,
-      required_by_mod_id,
-      ...(feedback_reasons?.length ? { feedback_reasons } : {}),
-    };
-  }
-}

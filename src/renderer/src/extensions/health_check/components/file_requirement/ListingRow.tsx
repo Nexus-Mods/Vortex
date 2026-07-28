@@ -25,7 +25,6 @@ import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useFileRequirementFeedback } from "../../hooks/useFileRequirementFeedback";
 import { useReportCopy } from "../../hooks/useReportCopy";
-import { resolutionTypeForCategory } from "../../utils/shared/tracking";
 import type { IListingRowProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { ListingRow as ListingRowShell } from "../listing_row/ListingRow";
@@ -50,7 +49,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     trackIssueUnhidden,
   } = useIssueTracking();
 
-  const { identity, issueType } = useIssue();
+  const { identity, issueType, resolutionType } = useIssue();
   const candidates = downloadCandidates(report.requirements);
   const quickInstall = canQuickInstall(report.category) && !!candidates.length;
   const switches = switchTargets(report.requirements);
@@ -63,7 +62,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     } else {
       trackIssueHidden({
         issue_type: issueType,
-        resolution_type: resolutionTypeForCategory(report.category),
+        resolution_type: resolutionType,
       });
     }
 

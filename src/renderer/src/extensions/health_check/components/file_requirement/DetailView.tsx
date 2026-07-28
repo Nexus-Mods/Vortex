@@ -20,7 +20,6 @@ import { setFileRequirementHidden } from "../../actions/persistent";
 import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useFileRequirementFeedback } from "../../hooks/useFileRequirementFeedback";
 import { useReportCopy } from "../../hooks/useReportCopy";
-import { resolutionTypeForCategory } from "../../utils/shared/tracking";
 import { isFileEntryHidden } from "../../views/content/fileRequirementEntries";
 import type { IDetailViewProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
@@ -32,8 +31,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const count = report.requirements.length;
   const { summary } = useReportCopy(report);
 
-  const { identity, issueType } = useIssue();
-  const resolutionType = resolutionTypeForCategory(report.category);
+  const { identity, issueType, resolutionType } = useIssue();
   const {
     trackDetailViewed,
     trackOneClickInstallClicked,
@@ -83,9 +81,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
   const showPremiumAd = useSelector(shouldShowPremiumAd);
 
-  // Feedback is keyed per source file (see useFileRequirementFeedback). NOTE:
-  // file-level feedback is persisted only, it does not emit a Mixpanel event yet
-  // (HealthCheckFeedbackEvent is mod-shaped).
+  // Feedback is keyed per source file (see useFileRequirementFeedback); EntryActions
+  // emits the analytics, this only records that feedback was given.
   const { givenFeedback, markFeedback } = useFileRequirementFeedback(api, report.sourceFileUID);
 
   return (

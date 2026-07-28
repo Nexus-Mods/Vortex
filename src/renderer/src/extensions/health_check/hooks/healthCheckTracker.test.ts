@@ -50,6 +50,23 @@ describe("createHealthCheckTracker", () => {
     expect(events[1].properties).toEqual({ issue_count_unhidden: 10 });
   });
 
+  it("keeps feedback_reasons on not_helpful, and leaves resolution_type off dismissed", () => {
+    const { tracker, events } = harness();
+    const issue = { issue_id: "a-b", check_id: "file_requirements" } as const;
+
+    tracker.trackFeedbackNotHelpful({
+      ...issue,
+      issue_type: "warning",
+      resolution_type: "install",
+      feedback_reasons: ["wrong_mod", "already_installed"],
+    });
+    tracker.trackFeedbackDismissed({ ...issue, issue_type: "warning" });
+
+    expect(events[0].properties.feedback_reasons).toEqual(["wrong_mod", "already_installed"]);
+    expect(events[1].eventName).toBe("health_check_feedback_dismissed");
+    expect(events[1].properties).not.toHaveProperty("resolution_type");
+  });
+
   it("emits a no-property event (passed_viewed) with an empty bag", () => {
     const { tracker, events } = harness();
     tracker.trackPassedViewed();
@@ -85,7 +102,7 @@ describe("createHealthCheckTracker", () => {
       check_id: "file_requirements",
       time_spent_on_detail_ms: 900,
     });
-    expect(events.map((e) => e.properties.check_id)).toEqual([
+    expect(events.map((e) => e.properties.check_id as string)).toEqual([
       "mod_requirements",
       "file_requirements",
     ]);
