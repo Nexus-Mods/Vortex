@@ -2,6 +2,7 @@ import type { IState } from "@/types/IState";
 
 import { healthCheckContent } from "../../views/content/registry";
 import type { IHealthCheckContent, IHealthCheckEntry } from "../../views/content/types";
+import { issueTypeForCheck } from "./tracking";
 
 /** One listing entry paired with the content provider that owns it. */
 export interface IListedEntry {
@@ -23,3 +24,26 @@ export const selectListedEntries = (state: IState): IListedEntry[] => {
   }
   return items;
 };
+
+/** Issue totals split by confidence band, as the page and scan events report them. */
+export interface IIssueCounts {
+  total: number;
+  warning: number;
+  suggestion: number;
+}
+
+/** Split a set of listing entries into warning / suggestion totals. */
+export const countIssues = (items: IListedEntry[]): IIssueCounts => {
+  const warning = items.filter(
+    (item) => issueTypeForCheck(item.entry.checkId) === "warning",
+  ).length;
+
+  return { total: items.length, warning, suggestion: items.length - warning };
+};
+
+/**
+ * Counts for the issues the user actually sees — hidden entries excluded, so a fully
+ * dismissed loadout reports the same "passed" the listing shows.
+ */
+export const countActiveIssues = (state: IState): IIssueCounts =>
+  countIssues(selectListedEntries(state).filter((item) => !item.hidden));

@@ -9,6 +9,7 @@ import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn, renderModName, sanitizeCSSId } from "@/util/api";
 
+import { type IInstallContext, trackedInstall } from "../shared/installTracking";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
@@ -43,6 +44,7 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 export async function downloadFileRequirement(
   api: IExtensionApi,
   candidate: IFileRequirementCandidate,
+  context?: IInstallContext,
 ): Promise<boolean> {
   if (shouldShowPremiumAd(api.getState())) {
     openFilePage(api, candidate);
@@ -66,25 +68,38 @@ export async function downloadFileRequirement(
   const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
 
   try {
-    const dlId = await new Promise<string>((resolve, reject) =>
-      api.events.emit(
-        "start-download",
-        [nxmUrl],
-        { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
-        undefined,
-        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-        undefined,
-        { allowInstall: false },
-      ),
-    );
+    await trackedInstall(
+      api,
+      {
+        issue_id: context?.issueId,
 
-    await new Promise<string>((resolve, reject) =>
-      api.events.emit(
-        "start-install-download",
-        dlId,
-        { allowAutoEnable: true },
-        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-      ),
+        check_id: context?.checkId,
+        mod_id: mod.id,
+        mod_name: candidate.modName,
+        mod_version: candidate.version,
+      },
+      async () => {
+        const dlId = await new Promise<string>((resolve, reject) =>
+          api.events.emit(
+            "start-download",
+            [nxmUrl],
+            { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
+            undefined,
+            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+            undefined,
+            { allowInstall: false },
+          ),
+        );
+
+        await new Promise<string>((resolve, reject) =>
+          api.events.emit(
+            "start-install-download",
+            dlId,
+            { allowAutoEnable: true },
+            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+          ),
+        );
+      },
     );
 
     return true;
@@ -105,21 +120,37 @@ export async function downloadFileRequirement(
 export async function installDownloadedFile(
   api: IExtensionApi,
   file: IDownloadedFile,
+  context?: IInstallContext,
 ): Promise<boolean> {
   try {
-    await new Promise<string>((resolve, reject) =>
-      api.events.emit(
-        "start-install-download",
-        file.downloadId,
-        { allowAutoEnable: true },
-        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-      ),
+    await trackedInstall(
+      api,
+      {
+        issue_id: context?.issueId,
+
+        check_id: context?.checkId,
+        mod_id: decodeUID(file.modUID)?.id ?? 0,
+        mod_name: file.modName,
+        mod_version: file.version,
+      },
+      async () => {
+        await new Promise<string>((resolve, reject) =>
+          api.events.emit(
+            "start-install-download",
+            file.downloadId,
+            { allowAutoEnable: true },
+            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+          ),
+        );
+      },
     );
+
     return true;
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${file.modName}`, err, {
       allowReport: false,
     });
+
     return false;
   }
 }

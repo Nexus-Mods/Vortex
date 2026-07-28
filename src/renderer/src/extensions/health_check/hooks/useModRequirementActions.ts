@@ -10,6 +10,7 @@ import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt } from "../types";
+import type { IInstallContext } from "../utils/shared/installTracking";
 
 /**
  * Shared action logic for a single mod requirement, used by both the listing row
@@ -17,13 +18,18 @@ import type { IModRequirementExt } from "../types";
  * analytics + the negative-reason modal), and opening the mod page. Keeps the two
  * call sites behaviourally identical.
  *
- * `onInstalled` runs after a successful install (e.g. navigate back from detail).
+ * `tracking` is the listing entry the mod belongs to, attributed to the install funnel
+ * events. `onInstalled` runs after a successful install (e.g. navigate back from detail).
  */
 export function useModRequirementActions(
   api: IExtensionApi,
   mod: IModRequirementExt,
+  tracking: IInstallContext,
   onInstalled?: () => void,
 ) {
+  // Destructured so the install callback depends on stable primitives rather than the
+  // caller's per-render `tracking` literal.
+  const { issueId, checkId } = tracking;
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const feedbackMap = useSelector(feedbackGivenMap);
@@ -47,9 +53,9 @@ export function useModRequirementActions(
       setShowPremiumModal(true);
       return;
     }
-    await onDownloadRequirement(api, mod);
+    await onDownloadRequirement(api, mod, undefined, { issueId, checkId });
     onInstalled?.();
-  }, [api, mod, showPremiumAd, onInstalled]);
+  }, [api, mod, issueId, checkId, showPremiumAd, onInstalled]);
 
   const handlePositiveFeedback = useCallback(() => {
     api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));

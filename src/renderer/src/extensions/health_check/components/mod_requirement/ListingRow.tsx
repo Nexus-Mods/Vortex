@@ -18,6 +18,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
+  const issueType = issueTypeForCheck(entry.checkId);
+  const checkName = checkNameForCheck(entry.checkId);
+
   const {
     givenFeedback,
     showPremiumAd,
@@ -27,10 +30,8 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     installInApp,
     handlePositiveFeedback,
     handleFeedbackSuccess,
-  } = useModRequirementActions(api, mod);
+  } = useModRequirementActions(api, mod, { issueId: entry.id, checkId: checkName });
 
-  const issueType = issueTypeForCheck(entry.checkId);
-  const checkName = checkNameForCheck(entry.checkId);
   const { trackOneClickInstallClicked, trackIssueHidden, trackIssueUnhidden } =
     useHealthCheckTracking(api);
 

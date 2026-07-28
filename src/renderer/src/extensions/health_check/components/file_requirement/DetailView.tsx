@@ -149,12 +149,13 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         <div className="space-y-4">
           <RequirementBody
             api={api}
-            checkId={checkName}
-            issueId={entry.id}
             ctx={{
               api,
               showPremiumAd,
-              requestDownload: (candidate) => downloadFileRequirement(api, candidate),
+              issueId: entry.id,
+              checkId: checkName,
+              requestDownload: (candidate) =>
+                downloadFileRequirement(api, candidate, { issueId: entry.id, checkId: checkName }),
               onInstall: (candidate) =>
                 trackOneClickInstallClicked({
                   issue_id: entry.id,

@@ -8,6 +8,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
 import { getGame, toPromise } from "@/util/api";
 
+import { type IInstallContext, trackedInstall } from "../shared/installTracking";
 import { getModFilesWithCache } from "./modFiles";
 
 /**
@@ -17,6 +18,7 @@ export async function onDownloadRequirement(
   api: IExtensionApi,
   mod: IModRequirementExt,
   file?: IModFileInfo,
+  context?: IInstallContext,
 ): Promise<void> {
   if (!Number.isInteger(mod.modId) || mod.modId <= 0) {
     api.showErrorNotification(
@@ -65,25 +67,38 @@ export async function onDownloadRequirement(
   // so the file lands in the same folder the install handler later looks in.
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), gameId) || gameId;
 
-  const dlId = await toPromise<string>((cb) =>
-    api.events.emit(
-      "start-download",
-      [nxmUrl],
-      { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
-      undefined,
-      cb,
-      undefined,
-      { allowInstall: false },
-    ),
-  );
+  await trackedInstall(
+    api,
+    {
+      issue_id: context?.issueId,
 
-  const installedModId = await toPromise<string>((cb) =>
-    api.events.emit(
-      "start-install-download",
-      dlId,
-      { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
-      cb,
-    ),
+      check_id: context?.checkId,
+      mod_id: modId,
+      mod_name: mod.modName,
+      mod_version: targetFile.version,
+    },
+    async () => {
+      const dlId = await toPromise<string>((cb) =>
+        api.events.emit(
+          "start-download",
+          [nxmUrl],
+          { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
+          undefined,
+          cb,
+          undefined,
+          { allowInstall: false },
+        ),
+      );
+
+      await toPromise<string>((cb) =>
+        api.events.emit(
+          "start-install-download",
+          dlId,
+          { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
+          cb,
+        ),
+      );
+    },
   );
 
   api.sendNotification({

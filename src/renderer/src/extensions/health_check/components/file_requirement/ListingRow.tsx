@@ -112,7 +112,10 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
       return;
     }
 
-    candidates.forEach((candidate) => void downloadFileRequirement(api, candidate));
+    candidates.forEach(
+      (candidate) =>
+        void downloadFileRequirement(api, candidate, { issueId: entry.id, checkId: checkName }),
+    );
   };
 
   return (
@@ -188,7 +191,13 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
                     mod_count: toInstall.length,
                   });
 
-                  toInstall.forEach((req) => void installDownloadedFile(api, req.uninstalledFile));
+                  toInstall.forEach(
+                    (req) =>
+                      void installDownloadedFile(api, req.uninstalledFile, {
+                        issueId: entry.id,
+                        checkId: checkName,
+                      }),
+                  );
                 }}
               >
                 {t("listing::install_uninstalled")}
