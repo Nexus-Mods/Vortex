@@ -48,7 +48,7 @@ const healthCheckEvent = (
 
 /**
  * Centralised Health Check analytics (LAZ-551). One typed surface for every
- * event so components emit intent (`trackIssueExpanded(...)`) instead of building
+ * event so components emit intent (`trackDetailViewed(...)`) instead of building
  * Mixpanel events by hand. game_id / profile_id / user_type ride along as global
  * super properties, so no event repeats them. Consent gating is handled centrally
  * by the analytics extension — callers don't check it.
@@ -83,16 +83,6 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     trackOneClickInstallAllClicked: (props: { issue_count: number; mod_count: number }) =>
       track("health_check_one_click_install_all_clicked", props),
-
-    // Issue list
-    trackIssueExpanded: (
-      props: IssueScope & {
-        issue_type: IssueType;
-        resolution_type: ResolutionType;
-        mod_name: string;
-        position_in_list: number;
-      },
-    ) => track("health_check_issue_expanded", props),
 
     // Detail view
     trackDetailViewed: (
@@ -135,9 +125,6 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
         current_version: string;
       },
     ) => track("health_check_enable_this_version_clicked", props),
-
-    trackEnableAllClicked: (props: IssueScope & { mod_count: number }) =>
-      track("health_check_enable_all_clicked", props),
 
     // Pick flow
     trackPickModInstallClicked: (props: IssueScope & { issue_type: IssueType }) =>
