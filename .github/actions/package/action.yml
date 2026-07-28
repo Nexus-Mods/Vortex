@@ -1,35 +1,34 @@
 name: Package Vortex
-description: Build, optionally sign, release, and upload Vortex package artifacts.
+description: >-
+  Build, optionally sign, and validate the Vortex installer into ./dist.
+  Publishing it - GitHub releases, artifacts, npm, R2 - is the caller's job.
 
 inputs:
   version:
-    description: "The version to release (eg: 'v1.0.0'). Ignored when nightly is true."
+    description: >-
+      The version to build (eg: 'v1.0.0'). Leave empty to derive a throwaway
+      version from package.json plus today's date, as nightlies and PR
+      validation builds do.
     required: false
     default: ""
-  nightly:
-    description: "Nightly build? (auto-versioned, signed, no releases, 48h artifacts)"
-    required: false
-    default: "false"
-  create-artifacts:
-    description: "Create artifacts?"
-    required: false
-    default: "true"
   use-codesigning:
     description: "Use codesigning?"
     required: false
     default: "true"
-  release:
-    description: "Create a draft release?"
-    required: false
-    default: "true"
-  staging-release:
-    description: "Create a draft staging release?"
-    required: false
-    default: "true"
-  staging-token:
-    description: "Token used to create releases in Nexus-Mods/Vortex-Staging."
-    required: false
-    default: ""
+
+outputs:
+  raw-version:
+    description: "Packaged version without a leading 'v' (eg: '2.4.0')."
+    value: ${{ steps.setOutputs.outputs.rawVersion }}
+  tag-version:
+    description: "Packaged version with a leading 'v' (eg: 'v2.4.0')."
+    value: ${{ steps.setOutputs.outputs.tagVersion }}
+  unpacked-artifact:
+    description: "Suggested artifact name for ./dist/win-unpacked."
+    value: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
+  installer-artifact:
+    description: "Suggested artifact name for the installer and latest.yml."
+    value: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
 
 runs:
   using: composite
@@ -38,33 +37,23 @@ runs:
       shell: pwsh
       run: |
         Write-Output "version=${{ inputs.version }}"
-        Write-Output "nightly=${{ inputs.nightly }}"
-        Write-Output "create-artifacts=${{ inputs.create-artifacts }}"
         Write-Output "use-codesigning=${{ inputs.use-codesigning }}"
-        Write-Output "release=${{ inputs.release }}"
-        Write-Output "staging-release=${{ inputs.staging-release }}"
-
-    - name: Determine nightly mode
-      id: nightly-flag
-      shell: bash
-      run: |
-        is_nightly="${{ inputs.nightly == 'true' || github.event_name == 'pull_request' }}"
-        echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
 
     - name: Set version
       id: setOutputs
       shell: pwsh
       env:
-        IS_NIGHTLY: ${{ steps.nightly-flag.outputs.is_nightly }}
         INPUT_VERSION: ${{ inputs.version }}
       run: |
-        if ($env:IS_NIGHTLY -eq "true") {
+        $rawVersion = $env:INPUT_VERSION
+        if ([string]::IsNullOrWhiteSpace($rawVersion)) {
+          # No version given - derive a throwaway one so the build is still
+          # installable and its artifacts are distinguishable.
           $pkg = Get-Content package.json | ConvertFrom-Json
           $date = Get-Date -Format "yyyyMMdd"
           $rawVersion = "$($pkg.version)-nightly.$date"
-        } else {
-          $rawVersion = $env:INPUT_VERSION
-          if ($rawVersion.StartsWith('v')) { $rawVersion = $rawVersion.Substring(1) }
+        } elseif ($rawVersion.StartsWith('v')) {
+          $rawVersion = $rawVersion.Substring(1)
         }
         echo "tagVersion=v$rawVersion" >> $env:GITHUB_OUTPUT
         echo "rawVersion=$rawVersion" >> $env:GITHUB_OUTPUT
@@ -195,58 +184,3 @@ runs:
         }
 
         Write-Output "✅ Package validation successful - installer and metadata files created"
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v3.0.0
-      if: ${{ inputs.release == 'true' && steps.nightly-flag.outputs.is_nightly != 'true' }}
-      with:
-        files: |
-          ./dist/vortex-setup-*.*.*.exe
-          ./dist/latest.yml
-          ./dist/alpha.yml
-          ./dist/beta.yml
-        prerelease: true
-        draft: true
-        name: ${{ steps.setOutputs.outputs.rawVersion }}
-        tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
-
-    - name: Create GitHub Release on Vortex-Staging
-      uses: softprops/action-gh-release@v3.0.0
-      if: ${{ inputs.staging-release == 'true' && steps.nightly-flag.outputs.is_nightly != 'true' }}
-      with:
-        files: |
-          ./dist/vortex-setup-*.*.*.exe
-          ./dist/latest.yml
-          ./dist/alpha.yml
-          ./dist/beta.yml
-        prerelease: true
-        draft: true
-        name: ${{ steps.setOutputs.outputs.rawVersion }}
-        tag_name: ${{ steps.setOutputs.outputs.tagVersion }}
-        token: ${{ inputs.staging-token }}
-        repository: "Nexus-Mods/Vortex-Staging"
-
-    - name: Create Unpacked Artifact
-      uses: actions/upload-artifact@v7
-      if: ${{ inputs.create-artifacts == 'true' || steps.nightly-flag.outputs.is_nightly == 'true' }}
-      with:
-        name: ${{ steps.setOutputs.outputs.artifactNameUnpacked }}
-        path: ./dist/win-unpacked
-        if-no-files-found: error
-        retention-days: ${{ steps.nightly-flag.outputs.is_nightly == 'true' && 2 || 90 }}
-
-    - name: Create Installer Artifact
-      uses: actions/upload-artifact@v7
-      if: ${{ inputs.create-artifacts == 'true' || steps.nightly-flag.outputs.is_nightly == 'true' }}
-      with:
-        name: ${{ steps.setOutputs.outputs.artifactNameInstaller }}
-        path: |
-          ./dist/vortex-setup-*.*.*.exe
-          ./dist/latest.yml
-        if-no-files-found: error
-        retention-days: ${{ steps.nightly-flag.outputs.is_nightly == 'true' && 2 || 90 }}
-
-    - name: Publish @nexusmods/vortex-api
-      if: ${{ inputs.release == 'true' && steps.nightly-flag.outputs.is_nightly != 'true' }}
-      shell: pwsh
-      run: pnpm -F "@nexusmods/vortex-api" publish --provenance --access public --no-git-checks

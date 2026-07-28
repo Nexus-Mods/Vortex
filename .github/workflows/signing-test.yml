@@ -15,7 +15,6 @@ jobs:
       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
 
     strategy:
       matrix:
