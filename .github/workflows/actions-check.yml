@@ -1,0 +1,132 @@
+name: Bundled Actions
+
+# The actions under .github/actions/*/ ship a committed dist/index.js that
+# GitHub runs directly - nothing installs or builds them at invocation time.
+#
+# verify make sure that dist/index.js is up to date with the source code and tests pass.
+# rebuild rebuilds all the dist/index.js files and opens a PR if any of them changed.
+
+on:
+  push:
+    branches: [master, release/*]
+    paths:
+      - .github/actions/**
+      - .github/workflows/actions-check.yml
+  pull_request:
+    paths:
+      - .github/actions/**
+      - .github/workflows/actions-check.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      actions: ${{ steps.find.outputs.actions }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Every .github/actions/*/ with a package.json is a bundled action.
+      - name: Find bundled actions
+        id: find
+        run: |
+          actions=$(find .github/actions -mindepth 2 -maxdepth 2 -name package.json -printf '%h\n' \
+            | xargs -r -n1 basename | sort | jq -R . | jq -sc .)
+          echo "actions=$actions" >> "$GITHUB_OUTPUT"
+          echo "Found: $actions"
+
+  verify:
+    needs: discover
+    if: ${{ github.event_name != 'push' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        action: ${{ fromJSON(needs.discover.outputs.actions) }}
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .github/actions/${{ matrix.action }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Rebuild bundle
+        run: pnpm run build
+
+      - name: Verify committed dist is current
+        run: |
+          if ! git diff --exit-code -- dist; then
+            echo "::error::dist/ is stale. Run 'pnpm run build' in .github/actions/${{ matrix.action }} and commit the result."
+            exit 1
+          fi
+
+  rebuild:
+    name: Rebuild Bundles
+    needs: discover
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure Git
+        run: |
+          git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Rebuild every bundle
+        run: |
+          for action in $(echo '${{ needs.discover.outputs.actions }}' | jq -r '.[]'); do
+            echo "::group::$action"
+            (cd ".github/actions/$action" && pnpm install --frozen-lockfile && pnpm run build)
+            echo "::endgroup::"
+          done
+
+      - name: Open a PR if any bundle changed
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BASE: ${{ github.ref_name }}
+        run: bash .github/scripts/rebuild-action-bundles.sh
