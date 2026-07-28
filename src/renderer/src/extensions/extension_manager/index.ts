@@ -206,7 +206,8 @@ async function installDependency(api: IExtensionApi, dependencyId: string): Prom
 
   const success = await downloadAndInstallExtension(api, toDownload);
   if (success) {
-    signalRestartNeeded(api);
+    const gameName = toDownload.name?.startsWith("Game:") ? toDownload.name : undefined;
+    signalRestartNeeded(api, gameName);
   } else {
     api.showErrorNotification(
       "Failed to install extension",
@@ -285,9 +286,10 @@ function checkMissingDependencies(
   });
 }
 
-function signalRestartNeeded(api: IExtensionApi): void {
+function signalRestartNeeded(api: IExtensionApi, gameName?: string): void {
   if (!localState.reloadNecessary) {
     localState.reloadNecessary = true;
+    const relaunchArgs = gameName !== undefined ? ["--game", gameName] : undefined;
     api.sendNotification({
       id: "extension-updates",
       type: "success",
@@ -295,7 +297,7 @@ function signalRestartNeeded(api: IExtensionApi): void {
       actions: [
         {
           title: "Restart now",
-          action: () => relaunch(),
+          action: () => relaunch(relaunchArgs),
         },
       ],
     });
@@ -381,7 +383,10 @@ function init(context: IExtensionContext) {
       await didFetchAvailableExtensions;
       const success = await downloadAndInstallExtension(context.api, ext);
 
-      if (success) signalRestartNeeded(context.api);
+      if (success) {
+        const gameName = ext.name?.startsWith("Game:") ? ext.name : undefined;
+        signalRestartNeeded(context.api, gameName);
+      }
       return success;
     });
 
@@ -485,7 +490,7 @@ function init(context: IExtensionContext) {
 
       if (modId !== undefined && ext !== undefined) {
         const success = await downloadAndInstallExtension(context.api, ext);
-        if (success) signalRestartNeeded(context.api);
+        if (success) signalRestartNeeded(context.api, ext.gameName);
         return success;
       } else {
         context.api.sendNotification({
