@@ -4,7 +4,16 @@
 //  it a more accessible name)
 
 export type { Normalize } from "./getNormalizeFunc.ts";
-export * from "./message";
+export {
+  calcDuration,
+  showError,
+  showActivity,
+  showInfo,
+  renderError,
+  showSuccess,
+  prettifyNodeErrorMessage,
+} from "./message";
+export type { IPrettifiedError, IErrorRendered } from "./message";
 
 import bbcodeToReact, { bbcodeToHTML, preProcess as bbcodePreProcess } from "../controls/bbcode";
 import { installIconSet } from "../controls/Icon";
@@ -161,7 +170,8 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
-export * from "./network";
+export { request, rawRequest, upload, jsonRequest } from "./network";
+export type { IRequestOptions, Method } from "./network";
 export {
   addUniqueSafe,
   changeOrNop,
