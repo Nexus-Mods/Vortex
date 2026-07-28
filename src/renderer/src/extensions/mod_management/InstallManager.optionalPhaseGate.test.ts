@@ -38,7 +38,7 @@ const GAME = "skyrimse";
 const PROFILE = "prof-1";
 const COLLECTION = "col-1";
 
-// the private phase-engine entry points the completion poll drives on every tick / on stall rescue
+// the private InstallManager internals these tests drive directly
 interface IManagerInternals {
   reQueueDownloadedMods: (
     api: unknown,
@@ -54,6 +54,25 @@ interface IManagerInternals {
   driveSelectedOptionals: (api: unknown, sourceModId: string) => void;
   admitSettledOptionalPhase: (sourceModId: string, api: unknown) => void;
   pollAllPhasesComplete: (api: unknown, sourceModId: string) => Promise<void>;
+  withInstructions: (
+    api: unknown,
+    sourceName: string,
+    title: string,
+    id: string,
+    instructions: string,
+    recommendations: boolean,
+    cb: () => PromiseLike<unknown>,
+  ) => Promise<unknown>;
+  mPendingInstalls: Map<string, unknown>;
+  startQueuedInstallation: (
+    api: unknown,
+    dep: unknown,
+    downloadId: string,
+    gameId: string,
+    sourceModId: string,
+    recommended: boolean,
+    phase: number,
+  ) => void;
   mDependencyInstalls: Record<string, () => void>;
   maybeAdvancePhase: (sourceModId: string, api: unknown) => void;
   getTerminalModCount: (api: unknown, sourceModId: string) => number;
@@ -95,6 +114,9 @@ function makeParkedInstall(
     optionalTagged?: boolean;
     // true models a round that gathered no dependencies at all, so phase state was never set up
     uninitialisedPhase?: boolean;
+    // true removes the download record entirely: the member claims "downloaded" but nothing can
+    // resolve an archive for it, so no rescue path can make progress
+    noDownloadRecord?: boolean;
   } = {},
 ) {
   const {
@@ -102,6 +124,7 @@ function makeParkedInstall(
     required: requiredStatus = "installed",
     optionalTagged = true,
     uninitialisedPhase = false,
+    noDownloadRecord = false,
   } = opts;
   const optionalRule = optionalTagged ? taggedOptionalRule : md5OnlyOptionalRule;
   const sessionId = generateCollectionSessionId(COLLECTION, PROFILE);
@@ -124,19 +147,21 @@ function makeParkedInstall(
         }),
       },
     },
-    downloads: {
-      // already on disk, so no download event will fire for it. A non-zero size matters: it is what
-      // sends queueInstallation down the start-now branch rather than leaving the task pending.
-      "dl-opt": makeDownload({
-        id: "dl-opt",
-        state: "finished",
-        game: [GAME],
-        size: 1024,
-        localPath: "opt-a.7z",
-        fileMD5: "md5-opt-a",
-        modInfo: { referenceTag: "opt-a" },
-      }),
-    },
+    downloads: noDownloadRecord
+      ? {}
+      : {
+          // already on disk, so no download event will fire for it. A non-zero size matters: it is what
+          // sends queueInstallation down the start-now branch rather than leaving the task pending.
+          "dl-opt": makeDownload({
+            id: "dl-opt",
+            state: "finished",
+            game: [GAME],
+            size: 1024,
+            localPath: "opt-a.7z",
+            fileMD5: "md5-opt-a",
+            modInfo: { referenceTag: "opt-a" },
+          }),
+        },
     session: makeInstallState({
       activeSession: makeSession({
         sessionId,
@@ -319,6 +344,106 @@ describe("collection install completion with a selected, already-downloaded opti
       expect(
         h.getState().session.collections.activeSession?.mods[modRuleId(taggedOptionalRule)]?.status,
       ).toBe("downloading");
+    },
+  );
+});
+
+describe("stall recovery", () => {
+  // A single optional re-driven from the required pass has no install-recommendations batch
+  // context; the instructions prompt must still show rather than throw - a throw here is swallowed
+  // by the dependency error path into a silent requeue that parks the member on "installing".
+  imTest(
+    "instructions prompt works without a recommendations batch context",
+    async ({ makeInstallManager }) => {
+      const { h } = makeParkedInstall(makeInstallManager);
+      h.setNextDialog({ action: "Install", input: {} });
+      const cb = vi.fn().mockResolvedValue("mod-x");
+
+      const result = await internals(h.manager).withInstructions(
+        h.api,
+        "DELIGHT",
+        "Some optional",
+        "opt-a",
+        "author instructions text",
+        true,
+        cb,
+      );
+
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(result).toBe("mod-x");
+    },
+  );
+
+  // Skipping the instructions prompt must settle the member as skipped: a Skip reject that falls
+  // into the generic requeue parks the member on "installing" with a pending entry nothing drives.
+  imTest(
+    "declining the instructions prompt settles the member skipped",
+    async ({ makeInstallManager }) => {
+      const { h } = makeParkedInstall(makeInstallManager);
+      const mgr = internals(h.manager);
+      mgr.mDependencyInstalls[COLLECTION] = () => undefined;
+      h.setNextDialog({ action: "Skip", input: {} });
+
+      mgr.startQueuedInstallation(
+        h.api,
+        {
+          reference: taggedOptionalRule.reference,
+          extra: { instructions: "author instructions" },
+          phase: OPTIONAL_PHASE,
+        },
+        "dl-opt",
+        GAME,
+        COLLECTION,
+        true,
+        OPTIONAL_PHASE,
+      );
+
+      await vi.waitFor(() => {
+        expect(
+          h.getState().session.collections.activeSession?.mods[modRuleId(taggedOptionalRule)]
+            ?.status,
+        ).toBe("ignored");
+      });
+      // the durable flag is set too, and nothing is left parked
+      const rule = h
+        .getState()
+        .persistent.mods[GAME][COLLECTION].rules?.find((r) => r.reference?.tag === "opt-a");
+      expect(rule?.ignored).toBe(true);
+      expect(mgr.mPendingInstalls.size).toBe(0);
+    },
+  );
+
+  // The stall force-resolve is the end of the line: nothing will ever settle the remaining
+  // members, and their residue (pending installs) poisons the next round's requeue and admission.
+  // Resolving must settle every non-terminal member as failed and tear the engine state down.
+  imTest(
+    "force-resolve settles outstanding members failed and clears pending residue",
+    async ({ makeInstallManager }) => {
+      vi.useFakeTimers();
+      try {
+        const { h } = makeParkedInstall(makeInstallManager, { noDownloadRecord: true });
+        const mgr = internals(h.manager);
+        mgr.mDependencyInstalls[COLLECTION] = () => undefined;
+        // residue of an earlier degraded round
+        mgr.mPendingInstalls.set(`${COLLECTION}:ghost-download`, {});
+
+        const polling = mgr.pollAllPhasesComplete(h.api, COLLECTION);
+        // first timeout + rescue, then second timeout -> force-resolve
+        await vi.advanceTimersByTimeAsync(301_000);
+        await vi.advanceTimersByTimeAsync(301_000);
+        await polling;
+
+        expect(
+          h.getState().session.collections.activeSession?.mods[modRuleId(taggedOptionalRule)]
+            ?.status,
+        ).toBe("failed");
+        expect(mgr.mPendingInstalls.size).toBe(0);
+        // the failures are by watchdog fiat, so the session is marked stalled - the finished
+        // dialog presents this as "installation incomplete" rather than complete-with-failures
+        expect(h.getState().session.collections.activeSession?.stalled).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
     },
   );
 });

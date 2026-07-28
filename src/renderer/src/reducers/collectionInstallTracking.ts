@@ -135,6 +135,13 @@ const collectionInstallReducer = {
 
       return newState;
     },
+
+    [actions.markSessionStalled as any]: (state: types.ICollectionInstallState, payload: any) => {
+      if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+        return state;
+      }
+      return setSafe(state, ["activeSession", "stalled"], payload.stalled);
+    },
   },
 
   defaults: initialState,

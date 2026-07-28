@@ -61,7 +61,11 @@ import { generate as shortid } from "shortid";
  * See AGENTS-COLLECTIONS.md for architectural overview.
  */
 import { removeDownload, setDownloadModInfo, startActivity, stopActivity } from "../../actions";
-import { markModInstalled, updateModStatus } from "../../actions/collectionInstallTracking";
+import {
+  markModInstalled,
+  markSessionStalled,
+  updateModStatus,
+} from "../../actions/collectionInstallTracking";
 import {
   type IConditionResult,
   type IDialogContent,
@@ -2162,6 +2166,10 @@ class InstallManager {
     const installPath = this.mGetInstallPath(gameId);
     log("info", "start installing dependencies", { modId });
 
+    // a fresh round is a fresh attempt: clear the stalled marker so a retry that succeeds
+    // presents as complete (no-op unless modId is the actively-installing collection)
+    api.store.dispatch(markSessionStalled(generateCollectionSessionId(modId, profile.id), false));
+
     const aggregationId = `install-dependencies-${modId}`;
     this.mNotificationAggregator.startAggregation(
       aggregationId,
@@ -2651,22 +2659,34 @@ class InstallManager {
           const nonRetryable =
             unknownError instanceof InsufficientDiskSpace ||
             (unknownError instanceof ProcessCanceled && !installCanceled);
+          // UserCanceled(true) is the "skipped" flavour - the user declined this member at a
+          // prompt (the instructions dialog's Skip), as opposed to cancelling the whole install
+          const userSkipped = unknownError instanceof UserCanceled && unknownError.skipped === true;
           const recovery = planDependencyErrorRecovery({
             installCanceled,
             ruleIgnored,
             isCanceled,
             hasRetriesLeft,
             nonRetryable,
+            userSkipped,
           });
           if (recovery.action === "requeue") {
             // A transient error OR a download cancelled as collateral while the install is still
             // live. Requeue rather than abandoning the member non-terminal - a dangling member
             // both blocks completion and gets re-prompted on the next install pass.
+            log("warn", "dependency install failed, requeued for retry", {
+              installKey,
+              error: err.message,
+              retry: currentRetryCount + 1,
+            });
             this.mPendingInstalls.set(installKey, dep);
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
           } else {
             this.mDependencyRetryCount.delete(installKey);
-            if (recovery.action === "fail") {
+            if (recovery.action === "skip") {
+              // same settle the free-user skip performs: durable ignore + session "ignored"
+              markCollectionMemberSkipped(api, { reference: dep.reference });
+            } else if (recovery.action === "fail") {
               // Retries exhausted: settle the member as failed (terminal) so the collection can
               // still complete and the member is not re-prompted. writeCollectionSession no-ops
               // over an already-terminal status, so this only settles a genuinely stuck member.
@@ -2814,6 +2834,10 @@ class InstallManager {
               activeInstalls: this.mActiveInstalls.size,
               pendingInstalls: this.mPendingInstalls.size,
             });
+            // cleanupPendingInstalls resyncs the session from reality, so it must run before the
+            // settle or it would overwrite it
+            this.cleanupPendingInstalls(sourceModId, true);
+            this.failOutstandingMembers(api, sourceModId);
             return resolve();
           }
         }
@@ -3625,6 +3649,26 @@ class InstallManager {
     // downloadsFinished directly is load-bearing: it also initialises allowedPhase, without which
     // the walk bails at "awaiting first finished phase" forever when the round gathered nothing.
     this.markPhaseDownloadsFinished(sourceModId, OPTIONAL_PHASE, api);
+  }
+
+  /**
+   * Stall force-resolve: no driver will ever settle the remaining members, and leaving them
+   * non-terminal wedges completion forever. Settles every still non-terminal member as failed
+   * (terminal, revertible on retry) so the collection completes visibly ("N mods failed").
+   */
+  private failOutstandingMembers(api: IExtensionApi, sourceModId: string): void {
+    const session = getCollectionActiveSession(api.getState());
+    if (session === undefined || session.collectionId !== sourceModId) {
+      return;
+    }
+    // the members below fail by watchdog fiat, not by their own attempts: mark the session so
+    // the finished dialog presents the install as incomplete rather than complete-with-failures
+    api.store.dispatch(markSessionStalled(session.sessionId, true));
+    Object.values(session.mods).forEach((mod) => {
+      if (!isTerminalMemberStatus(mod.status) && mod.rule?.reference != null) {
+        this.writeCollectionSession(mod.rule.reference, { type: "status", status: "failed" });
+      }
+    });
   }
 
   private maybeAdvancePhase(sourceModId: string, api: IExtensionApi) {
@@ -7243,9 +7287,12 @@ class InstallManager {
     if (recommendations) {
       return Promise.resolve(
         (async () => {
+          // The batch context exists only while installRecommendations drives a whole pass; a
+          // single optional re-driven from the required pass (requeue, driveSelectedOptionals) has
+          // none, so every context access must tolerate undefined.
           const context = getBatchContext("install-recommendations", "");
-          let action = context.get<string>("remember-instructions");
-          const remaining = context.get<number>("num-instructions") - 1;
+          let action = context?.get<string>("remember-instructions");
+          const remaining = (context?.get<number>("num-instructions") ?? 1) - 1;
 
           if (action == null) {
             let checkboxes: ICheckbox[];
@@ -7272,12 +7319,12 @@ class InstallManager {
             );
 
             if (result.input["remember"]) {
-              context.set("remember-instructions", result.action);
+              context?.set("remember-instructions", result.action);
             }
             action = result.action;
           }
 
-          context.set<number>("num-instructions", remaining);
+          context?.set<number>("num-instructions", remaining);
 
           if (action === "Install") {
             return cb();

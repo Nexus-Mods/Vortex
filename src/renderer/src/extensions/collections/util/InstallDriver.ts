@@ -17,6 +17,7 @@ import {
   getCollectionActiveSession,
   getCollectionInstallProgress,
   getFailedRequiredMods,
+  isActiveSessionStalled,
 } from "../../../util/collectionInstallSessionSelectors";
 import {
   reconstructSessionMods,
@@ -1051,11 +1052,13 @@ class InstallDriver {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
     }
 
-    // completed = every required member installed; failed = finished with required
-    // failures (partial). Both reach here via the review step; the count comes from
-    // the session SSOT while the collection is still set (before teardown below).
+    // completed = every required member installed; failed = finished with required failures
+    // (partial) or force-resolved by the stall watchdog. Both reach here via the review step; the
+    // state comes from the session SSOT while the collection is still set (before teardown below).
     const outcome: CollectionInstallOutcome =
-      this.isInstallComplete(true) && getFailedRequiredMods(this.mApi.getState()).length === 0
+      this.isInstallComplete(true) &&
+      getFailedRequiredMods(this.mApi.getState()).length === 0 &&
+      !isActiveSessionStalled(this.mApi.getState())
         ? "completed"
         : "failed";
     this.completeInstallationTracking(outcome);

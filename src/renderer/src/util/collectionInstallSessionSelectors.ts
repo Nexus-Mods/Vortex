@@ -43,6 +43,10 @@ export const getCollectionActiveSession = (
   return collectionsState?.activeSession;
 };
 
+/** Whether the active session was force-resolved by the stall watchdog (see the field doc). */
+export const isActiveSessionStalled = (state: IState): boolean =>
+  getCollectionActiveSession(state)?.stalled === true;
+
 /**
  * Get the session ID of the last completed installation
  * @returns The last active session ID or undefined
