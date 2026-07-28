@@ -1,6 +1,6 @@
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import type { CheckName } from "../shared/tracking";
+import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import { openFilePage, openModPage } from "./fileRequirementActions";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 import type { IFileRequirementCandidate } from "./mapRequirementsReport";
@@ -35,9 +35,8 @@ export interface IFileRequirementData {
 export interface IFileActionContext {
   api: IExtensionApi;
   showPremiumAd: boolean;
-  /** The issue these cards resolve, and the check that surfaced it, for the analytics events. */
-  issueId: string;
-  checkId: CheckName;
+  /** The issue these cards resolve, for the install funnel events. */
+  identity: IssueAnalyticsIdentity;
   /** Download a candidate, opening the premium upsell first for free users. Resolves to whether a download ran. */
   requestDownload: (candidate: IFileRequirementCandidate) => Promise<boolean>;
   /** Appearance for a card's install button; demoted to "moderate" when an "install all" is shown. */

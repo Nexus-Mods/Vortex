@@ -11,8 +11,7 @@ import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
 import { opn } from "../../../../util/api";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
-import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
-import type { CheckName } from "../../utils/shared/tracking";
+import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
 
 /** Which 1-click flow surfaced the premium upsell modal. */
 export type PremiumTrigger = "single_install" | "batch_install" | "install_all";
@@ -25,59 +24,47 @@ const ListItem = ({ children }: { children: ReactNode }) => (
   </li>
 );
 
-/** Analytics context for the premium upsell modal. */
-export interface IPremiumModalTracking {
-  api: IExtensionApi;
-  /** Which 1-click flow surfaced the upsell, for the analytics funnel. */
-  trigger: PremiumTrigger;
-  /** Both absent for the cross-check install-all upsell raised from the listing. */
-  issueId?: string;
-  checkId?: CheckName;
-  modId?: number;
-  modCount?: number;
-}
-
 export const PremiumModal = ({
   isOpen,
   downloadScope = "single",
+  modCount,
+  modId,
+  trigger,
   onClose,
   onDownload,
-  tracking,
 }: {
   isOpen: boolean;
   downloadScope?: "single" | "all";
+  modCount?: number;
+  modId?: number;
+  /** Which 1-click flow surfaced the upsell, for the analytics funnel. */
+  trigger: PremiumTrigger;
   onClose: () => void;
   onDownload: () => void;
-  tracking: IPremiumModalTracking;
 }) => {
   const { t } = useTranslation(["health_check"]);
-  const { api, trigger, issueId, checkId, modId, modCount } = tracking;
 
   const {
     trackPremiumModalShown,
     trackPremiumModalDismissed,
     trackPremiumModalUnlockClicked,
     trackPremiumModalFallbackClicked,
-  } = useHealthCheckTracking(api);
+  } = useTracker();
+  // Absent for the cross-check install-all upsell raised from the listing.
+  const identity = useOptionalIssue()?.identity;
 
   useEffect(() => {
     if (isOpen) {
-      trackPremiumModalShown({
-        trigger,
-        issue_id: issueId,
-        check_id: checkId,
-        mod_id: modId,
-        mod_count: modCount,
-      });
+      trackPremiumModalShown({ ...identity, trigger, mod_id: modId, mod_count: modCount });
     }
-  }, [isOpen, trigger, issueId, checkId, modId, modCount, trackPremiumModalShown]);
+  }, [isOpen, trigger, identity, modId, modCount, trackPremiumModalShown]);
 
   return (
     <Modal
       isOpen={isOpen}
       title={t(`premium::modal::title::${downloadScope}`)}
       onClose={() => {
-        trackPremiumModalDismissed({ trigger, issue_id: issueId, check_id: checkId });
+        trackPremiumModalDismissed({ ...identity, trigger });
         onClose();
       }}
     >
@@ -106,9 +93,8 @@ export const PremiumModal = ({
           size="sm"
           onClick={() => {
             trackPremiumModalFallbackClicked({
+              ...identity,
               trigger,
-              issue_id: issueId,
-              check_id: checkId,
               mod_count: modCount,
               fallback_type: downloadScope === "single" ? "single_mod_page" : "batch_mod_pages",
             });
@@ -126,9 +112,8 @@ export const PremiumModal = ({
           size="sm"
           onClick={() => {
             trackPremiumModalUnlockClicked({
+              ...identity,
               trigger,
-              issue_id: issueId,
-              check_id: checkId,
               mod_count: modCount,
             });
 

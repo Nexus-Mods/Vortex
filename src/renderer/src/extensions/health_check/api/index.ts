@@ -5,15 +5,23 @@
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { HealthCheckTrigger } from "@/types/IHealthCheck";
+import type { IState } from "@/types/IState";
 
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
-import { createHealthCheckTracker } from "../hooks/useHealthCheckTracking";
+import { createHealthCheckTracker } from "../hooks/healthCheckTracker";
 import type { IHealthCheckApi } from "../types";
-import { countActiveIssues } from "../utils/shared/listedEntries";
+import { countIssues, selectListedEntries, type IIssueCounts } from "../utils/shared/listedEntries";
 import { createCustomCheckApi, type ICustomCheckApi } from "./customCheckApi";
 import { createLegacyApi, type ILegacyApi } from "./legacyApi";
 import { createResultsApi, type IResultsApi } from "./resultsApi";
+
+/**
+ * Counts for the issues the user actually sees — hidden entries excluded, so a fully
+ * dismissed loadout reports the same "passed" the listing shows.
+ */
+const countActiveIssues = (state: IState): IIssueCounts =>
+  countIssues(selectListedEntries(state).filter((item) => !item.hidden));
 
 export function createHealthCheckApi(
   registry: HealthCheckRegistry,

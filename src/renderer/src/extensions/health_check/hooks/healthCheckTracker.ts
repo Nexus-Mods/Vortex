@@ -1,33 +1,18 @@
-import { useMemo } from "react";
-
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type { BannerPlacement } from "../components/premium_banner/PremiumBanner";
 import type { PremiumTrigger } from "../components/premium_modal/PremiumModal";
 import type {
-  CheckName,
   HealthCheckTab,
+  IssueAnalyticsIdentity,
   IssueType,
+  OptionalIssueAnalyticsIdentity,
   ResolutionType,
 } from "../utils/shared/tracking";
 
 /** Which free-user fallback the premium modal offered. */
 type PremiumFallbackType = "single_mod_page" | "batch_mod_pages";
-
-/**
- * Carried by every issue-scoped event. Both checks emit the same event names, so
- * `check_id` is what lets reporting split them; `issue_type` stays alongside it as the
- * coarser confidence band the KPIs are written in. Cross-check aggregates (page_viewed,
- * tab_switched, hide_all, install_all, settings_opened) carry neither.
- */
-type IssueScope = {
-  issue_id: string;
-  check_id: CheckName;
-};
-
-/** Scope for the premium surfaces, which appear both against one issue and page-wide. */
-type OptionalIssueScope = Partial<IssueScope>;
 
 /**
  * Build a Health Check analytics event. Returns the app-wide MixpanelEvent shape so it
@@ -53,8 +38,8 @@ const healthCheckEvent = (
  * super properties, so no event repeats them. Consent gating is handled centrally
  * by the analytics extension — callers don't check it.
  *
- * `createHealthCheckTracker` is the pure factory (no React) so it can be unit
- * tested directly; `useHealthCheckTracking` just memoises it per api.
+ * A pure factory (no React): the tracking context memoises one per api, and the
+ * non-React callers (the scan events, the install actions) build their own.
  */
 export const createHealthCheckTracker = (api: IExtensionApi) => {
   const track = (eventName: string, properties: Record<string, unknown> = {}) => {
@@ -92,6 +77,11 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
     trackHideAllClicked: (props: { issue_count_hidden: number }) =>
       track("health_check_hide_all_clicked", props),
 
+    // Not in the original spec. Without it a bulk unhide is invisible, so ten issues
+    // hidden then restored reads the same as ten left hidden, skewing the hide-rate KPI.
+    trackUnhideAllClicked: (props: { issue_count_unhidden: number }) =>
+      track("health_check_unhide_all_clicked", props),
+
     trackSettingsOpened: () => track("health_check_settings_opened"),
 
     trackOneClickInstallAllClicked: (props: { issue_count: number; mod_count: number }) =>
@@ -99,7 +89,7 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     // Detail view
     trackDetailViewed: (
-      props: IssueScope & {
+      props: IssueAnalyticsIdentity & {
         issue_type: IssueType;
         resolution_type: ResolutionType;
         required_mod_count: number;
@@ -107,12 +97,12 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
       },
     ) => track("health_check_detail_viewed", props),
 
-    trackBackClicked: (props: IssueScope & { time_spent_on_detail_ms: number }) =>
+    trackBackClicked: (props: IssueAnalyticsIdentity & { time_spent_on_detail_ms: number }) =>
       track("health_check_back_clicked", props),
 
     // Install flow
     trackOneClickInstallClicked: (
-      props: IssueScope & {
+      props: IssueAnalyticsIdentity & {
         mod_id: number;
         mod_name: string;
         mod_version: string;
@@ -123,14 +113,18 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
     // Install lifecycle, bracketing the actual download + install a health-check action
     // kicks off (see trackedInstall). The app-wide mods_installation_* events cover the
     // install itself for every source; these are the health-check funnel's own view of it,
-    // carrying the issue scope and spanning the download too. The scope is optional
+    // carrying the issue identity and spanning the download too. The identity is optional
     // because the actions stay callable without analytics context.
     trackInstallStarted: (
-      props: OptionalIssueScope & { mod_id: number; mod_name: string; mod_version: string },
+      props: OptionalIssueAnalyticsIdentity & {
+        mod_id: number;
+        mod_name: string;
+        mod_version: string;
+      },
     ) => track("health_check_install_started", props),
 
     trackInstallCompleted: (
-      props: OptionalIssueScope & {
+      props: OptionalIssueAnalyticsIdentity & {
         mod_id: number;
         mod_name: string;
         mod_version: string;
@@ -138,22 +132,24 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
       },
     ) => track("health_check_install_completed", props),
 
-    trackInstallFailed: (props: OptionalIssueScope & { mod_id: number; error_reason: string }) =>
-      track("health_check_install_failed", props),
+    trackInstallFailed: (
+      props: OptionalIssueAnalyticsIdentity & { mod_id: number; error_reason: string },
+    ) => track("health_check_install_failed", props),
 
-    trackInstallDownloadedClicked: (props: IssueScope & { mod_id: number; mod_count: number }) =>
-      track("health_check_install_downloaded_clicked", props),
+    trackInstallDownloadedClicked: (
+      props: IssueAnalyticsIdentity & { mod_id: number; mod_count: number },
+    ) => track("health_check_install_downloaded_clicked", props),
 
-    trackInstallAllInGroupClicked: (props: IssueScope & { mod_count: number }) =>
+    trackInstallAllInGroupClicked: (props: IssueAnalyticsIdentity & { mod_count: number }) =>
       track("health_check_install_all_in_group_clicked", props),
 
     // Enable flow
     trackEnableClicked: (
-      props: IssueScope & { mod_id: number; mod_name: string; mod_version: string },
+      props: IssueAnalyticsIdentity & { mod_id: number; mod_name: string; mod_version: string },
     ) => track("health_check_enable_clicked", props),
 
     trackEnableThisVersionClicked: (
-      props: IssueScope & {
+      props: IssueAnalyticsIdentity & {
         mod_id: number;
         required_version: string;
         current_version: string;
@@ -161,11 +157,11 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
     ) => track("health_check_enable_this_version_clicked", props),
 
     // Pick flow
-    trackPickModInstallClicked: (props: IssueScope & { issue_type: IssueType }) =>
+    trackPickModInstallClicked: (props: IssueAnalyticsIdentity & { issue_type: IssueType }) =>
       track("health_check_pick_mod_install_clicked", props),
 
     trackPickOptionSelected: (
-      props: IssueScope & {
+      props: IssueAnalyticsIdentity & {
         mod_id: number;
         mod_name: string;
         option_position: number;
@@ -175,34 +171,40 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     // Navigation & external
     trackInstallViaModPageClicked: (
-      props: IssueScope & { mod_id: number; mod_name: string; mod_version: string },
+      props: IssueAnalyticsIdentity & { mod_id: number; mod_name: string; mod_version: string },
     ) => track("health_check_install_via_mod_page_clicked", props),
 
     trackViewModPageClicked: (
-      props: IssueScope & { mod_id: number; mod_name: string; mod_version: string },
+      props: IssueAnalyticsIdentity & { mod_id: number; mod_name: string; mod_version: string },
     ) => track("health_check_view_mod_page_clicked", props),
 
-    trackViewInModsClicked: (props: IssueScope & { mod_id: number; mod_name: string }) =>
-      track("health_check_view_in_mods_clicked", props),
+    trackViewInModsClicked: (
+      props: IssueAnalyticsIdentity & { mod_id: number; mod_name: string },
+    ) => track("health_check_view_in_mods_clicked", props),
 
-    trackSuggestionSourceLinkClicked: (props: IssueScope & { mod_id: number }) =>
+    trackSuggestionSourceLinkClicked: (props: IssueAnalyticsIdentity & { mod_id: number }) =>
       track("health_check_suggestion_source_link_clicked", props),
 
     // Premium modal. Scope is optional: the install-all upsell is raised from the
     // listing, across both checks, so it has no single issue or check to name.
     trackPremiumModalShown: (
-      props: OptionalIssueScope & { trigger: PremiumTrigger; mod_id?: number; mod_count?: number },
+      props: OptionalIssueAnalyticsIdentity & {
+        trigger: PremiumTrigger;
+        mod_id?: number;
+        mod_count?: number;
+      },
     ) => track("health_check_premium_modal_shown", props),
 
-    trackPremiumModalDismissed: (props: OptionalIssueScope & { trigger: PremiumTrigger }) =>
-      track("health_check_premium_modal_dismissed", props),
+    trackPremiumModalDismissed: (
+      props: OptionalIssueAnalyticsIdentity & { trigger: PremiumTrigger },
+    ) => track("health_check_premium_modal_dismissed", props),
 
     trackPremiumModalUnlockClicked: (
-      props: OptionalIssueScope & { trigger: PremiumTrigger; mod_count?: number },
+      props: OptionalIssueAnalyticsIdentity & { trigger: PremiumTrigger; mod_count?: number },
     ) => track("health_check_premium_modal_unlock_clicked", props),
 
     trackPremiumModalFallbackClicked: (
-      props: OptionalIssueScope & {
+      props: OptionalIssueAnalyticsIdentity & {
         trigger: PremiumTrigger;
         fallback_type: PremiumFallbackType;
         mod_count?: number;
@@ -211,24 +213,21 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     // Premium banner. Scope is set on a detail page and absent on the listing.
     trackPremiumBannerShown: (
-      props: OptionalIssueScope & { placement: BannerPlacement; total_issues: number },
+      props: OptionalIssueAnalyticsIdentity & { placement: BannerPlacement; total_issues: number },
     ) => track("health_check_premium_banner_shown", props),
 
     trackPremiumBannerClicked: (
-      props: OptionalIssueScope & { placement: BannerPlacement; total_issues: number },
+      props: OptionalIssueAnalyticsIdentity & { placement: BannerPlacement; total_issues: number },
     ) => track("health_check_premium_banner_clicked", props),
 
     // Visibility
     trackIssueHidden: (
-      props: IssueScope & { issue_type: IssueType; resolution_type?: ResolutionType },
+      props: IssueAnalyticsIdentity & { issue_type: IssueType; resolution_type?: ResolutionType },
     ) => track("health_check_issue_hidden", props),
 
-    trackIssueUnhidden: (props: IssueScope & { issue_type: IssueType }) =>
+    trackIssueUnhidden: (props: IssueAnalyticsIdentity & { issue_type: IssueType }) =>
       track("health_check_issue_unhidden", props),
   };
 };
 
 export type HealthCheckTracker = ReturnType<typeof createHealthCheckTracker>;
-
-export const useHealthCheckTracking = (api: IExtensionApi): HealthCheckTracker =>
-  useMemo(() => createHealthCheckTracker(api), [api]);

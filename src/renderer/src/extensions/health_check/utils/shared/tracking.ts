@@ -3,7 +3,7 @@ import type { FileRequirementCategory } from "../fileRequirements/fileRequiremen
 
 /**
  * Shared analytics vocabulary for the Health Check tracking events (LAZ-551).
- * The concrete events are emitted through the useHealthCheckTracking hook.
+ * The concrete events are emitted through the Health Check tracking context.
  */
 
 /** Confidence band of an issue: file-level requirements are warnings, mod-level are suggestions. */
@@ -37,12 +37,38 @@ const CHECK_NAMES: Record<HealthCheckId, CheckName> = {
 export const checkNameForCheck = (checkId: HealthCheckId): CheckName => CHECK_NAMES[checkId];
 
 /**
- * issue_type for an entry, keyed off the check it belongs to: the file-level
- * requirements check surfaces higher-confidence warnings, the mod-level check
- * surfaces lower-confidence suggestions.
+ * issue_type for an entry: the file-level requirements check surfaces
+ * higher-confidence warnings, the mod-level check surfaces lower-confidence
+ * suggestions. Exhaustive for the same reason as CHECK_NAMES.
  */
-export const issueTypeForCheck = (checkId: HealthCheckId): IssueType =>
-  checkId === "check-file-level-requirements" ? "warning" : "suggestion";
+const ISSUE_TYPES: Record<HealthCheckId, IssueType> = {
+  "check-file-level-requirements": "warning",
+  "check-nexus-mod-requirements": "suggestion",
+};
+
+export const issueTypeForCheck = (checkId: HealthCheckId): IssueType => ISSUE_TYPES[checkId];
+
+/**
+ * Which issue an event belongs to, and which check surfaced it — the join key that ties
+ * a user's events together across the funnel. Carried by every issue-scoped event; the
+ * tracking context applies it, so call sites never restate it.
+ *
+ * Deliberately insensitive to the report's contents: `issue_id` is
+ * `${sourceFileUID}:${category}`, so it stays put as requirements come and go underneath,
+ * and as the issue is hidden and restored. That stability is the point — it is what lets
+ * the funnel join, and what the ::hidden suffix was breaking. `IHealthCheckEntry.id` is
+ * the row key that tracks report state; don't report that.
+ */
+export type IssueAnalyticsIdentity = {
+  issue_id: string;
+  check_id: CheckName;
+};
+
+/**
+ * Identity for the premium surfaces, which appear both against a single issue (a listing
+ * row or detail page) and page-wide, across both checks.
+ */
+export type OptionalIssueAnalyticsIdentity = Partial<IssueAnalyticsIdentity>;
 
 /**
  * resolution_type for a file-requirement report category. Mod requirements are

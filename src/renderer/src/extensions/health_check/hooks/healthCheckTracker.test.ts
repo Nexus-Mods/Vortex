@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type { MixpanelEvent } from "../../analytics/mixpanel/MixpanelEvents";
-import { createHealthCheckTracker } from "./useHealthCheckTracking";
+import { createHealthCheckTracker } from "./healthCheckTracker";
 
 function harness() {
   const emitter = new EventEmitter();
@@ -37,6 +37,17 @@ describe("createHealthCheckTracker", () => {
       warning_count: 2,
       suggestion_count: 1,
     });
+  });
+
+  it("emits the bulk hide and unhide pair, so a restore isn't invisible", () => {
+    const { tracker, events } = harness();
+    tracker.trackHideAllClicked({ issue_count_hidden: 10 });
+    tracker.trackUnhideAllClicked({ issue_count_unhidden: 10 });
+    expect(events.map((e) => e.eventName)).toEqual([
+      "health_check_hide_all_clicked",
+      "health_check_unhide_all_clicked",
+    ]);
+    expect(events[1].properties).toEqual({ issue_count_unhidden: 10 });
   });
 
   it("emits a no-property event (passed_viewed) with an empty bag", () => {

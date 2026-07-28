@@ -1,28 +1,19 @@
 import { classifyErrorCode } from "@/extensions/analytics/mixpanel/error-code";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { createHealthCheckTracker } from "../../hooks/useHealthCheckTracking";
-import type { CheckName } from "./tracking";
+import { createHealthCheckTracker } from "../../hooks/healthCheckTracker";
+import type { OptionalIssueAnalyticsIdentity } from "./tracking";
 
 /**
- * The issue an install action resolves, and the check that surfaced it. Threaded from the
- * listing row / detail view that started it down to the action, which is where the funnel
- * events are emitted. Optional throughout: the actions stay usable without analytics context.
+ * The mod being installed, as every health_check_install_* event identifies it. The identity
+ * comes from the component that started the install (`useIssue()?.identity`) and is
+ * optional throughout, so the actions stay usable without analytics context.
  */
-export interface IInstallContext {
-  issueId: string;
-  checkId: CheckName;
-}
-
-/** The mod being installed, as every health_check_install_* event identifies it. */
-export interface IInstallIdentity {
-  /** The issue scope. Absent only where an action isn't tied to one issue. */
-  issue_id?: string;
-  check_id?: CheckName;
+export type IInstallIdentity = OptionalIssueAnalyticsIdentity & {
   mod_id: number;
   mod_name: string;
   mod_version: string;
-}
+};
 
 /**
  * Bracket a health-check-initiated install with the install_started / install_completed /

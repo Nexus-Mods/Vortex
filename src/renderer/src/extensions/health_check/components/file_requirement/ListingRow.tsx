@@ -22,14 +22,10 @@ import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
+import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useFileRequirementFeedback } from "../../hooks/useFileRequirementFeedback";
-import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
 import { useReportCopy } from "../../hooks/useReportCopy";
-import {
-  checkNameForCheck,
-  issueTypeForCheck,
-  resolutionTypeForCategory,
-} from "../../utils/shared/tracking";
+import { resolutionTypeForCategory } from "../../utils/shared/tracking";
 import type { IListingRowProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { ListingRow as ListingRowShell } from "../listing_row/ListingRow";
@@ -52,10 +48,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     trackInstallDownloadedClicked,
     trackIssueHidden,
     trackIssueUnhidden,
-  } = useHealthCheckTracking(api);
+  } = useIssueTracking();
 
-  const issueType = issueTypeForCheck(entry.checkId);
-  const checkName = checkNameForCheck(entry.checkId);
+  const { identity, issueType } = useIssue();
   const candidates = downloadCandidates(report.requirements);
   const quickInstall = canQuickInstall(report.category) && !!candidates.length;
   const switches = switchTargets(report.requirements);
@@ -64,11 +59,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
   const handleToggleHide = () => {
     if (isHidden) {
-      trackIssueUnhidden({ issue_id: entry.id, check_id: checkName, issue_type: issueType });
+      trackIssueUnhidden({ issue_type: issueType });
     } else {
       trackIssueHidden({
-        issue_id: entry.id,
-        check_id: checkName,
         issue_type: issueType,
         resolution_type: resolutionTypeForCategory(report.category),
       });
@@ -92,8 +85,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
       const candidate = candidates[0];
 
       trackOneClickInstallClicked({
-        issue_id: entry.id,
-        check_id: checkName,
         mod_id: decodeUID(candidate.modUID)?.id ?? 0,
         mod_name: candidate.modName,
         mod_version: candidate.version,
@@ -101,8 +92,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
       });
     } else {
       trackInstallAllInGroupClicked({
-        issue_id: entry.id,
-        check_id: checkName,
         mod_count: candidates.length,
       });
     }
@@ -112,10 +101,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
       return;
     }
 
-    candidates.forEach(
-      (candidate) =>
-        void downloadFileRequirement(api, candidate, { issueId: entry.id, checkId: checkName }),
-    );
+    candidates.forEach((candidate) => void downloadFileRequirement(api, candidate, identity));
   };
 
   return (
@@ -144,8 +130,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               onClick={(e) => {
                 e.stopPropagation();
                 trackPickModInstallClicked({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   issue_type: issueType,
                 });
                 onOpen();
@@ -162,8 +146,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               onClick={(e) => {
                 e.stopPropagation();
                 trackEnableThisVersionClicked({
-                  issue_id: entry.id,
-                  check_id: checkName,
                   mod_id: decodeUID(switches[0].correct.modUID)?.id ?? 0,
                   required_version: switches[0].correct.version,
                   current_version: switches[0].wrong.version,
@@ -185,18 +167,12 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
                   e.stopPropagation();
 
                   trackInstallDownloadedClicked({
-                    issue_id: entry.id,
-                    check_id: checkName,
                     mod_id: decodeUID(toInstall[0].uninstalledFile.modUID)?.id ?? 0,
                     mod_count: toInstall.length,
                   });
 
                   toInstall.forEach(
-                    (req) =>
-                      void installDownloadedFile(api, req.uninstalledFile, {
-                        issueId: entry.id,
-                        checkId: checkName,
-                      }),
+                    (req) => void installDownloadedFile(api, req.uninstalledFile, identity),
                   );
                 }}
               >
@@ -225,14 +201,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
       <PremiumModal
         downloadScope={candidates.length === 1 ? "single" : "all"}
         isOpen={showPremium}
-        tracking={{
-          api,
-          trigger: candidates.length === 1 ? "single_install" : "batch_install",
-          issueId: entry.id,
-          checkId: checkName,
-          modId: candidates.length === 1 ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined,
-          modCount: candidates.length,
-        }}
+        modCount={candidates.length}
+        modId={candidates.length === 1 ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined}
+        trigger={candidates.length === 1 ? "single_install" : "batch_install"}
         onClose={() => setShowPremium(false)}
         onDownload={() => {
           setShowPremium(false);

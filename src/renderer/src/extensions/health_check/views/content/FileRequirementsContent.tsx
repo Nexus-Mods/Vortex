@@ -16,7 +16,7 @@ import { DetailView } from "../../components/file_requirement/DetailView";
 import { ListingRow } from "../../components/file_requirement/ListingRow";
 import { fileRequirementsCheckResult, hiddenFileRequirements } from "../../selectors";
 import { checkNameForCheck } from "../../utils/shared/tracking";
-import { fileEntryId, isFileEntryHidden, pushReportEntries } from "./fileRequirementEntries";
+import { fileIssueId, isFileEntryHidden, pushReportEntries } from "./fileRequirementEntries";
 import type { IBulkInstallItem, IHealthCheckContent, IHealthCheckEntry } from "./types";
 
 export const fileRequirementsContent: IHealthCheckContent = {
@@ -72,18 +72,20 @@ export const fileRequirementsContent: IHealthCheckContent = {
         }
         // The listing splits a source file's requirements per category, so the issue an
         // install belongs to is the entry for this requirement's own category.
-        const issueId = fileEntryId(source.sourceFileUID, categoryOf(requirement));
+        const identity = {
+          issue_id: fileIssueId(source.sourceFileUID, categoryOf(requirement)),
+          check_id: checkId,
+        };
         for (const candidate of downloadCandidates([requirement])) {
           items.push({
             key: candidate.fileUID,
-            install: () => void downloadFileRequirement(api, candidate, { issueId, checkId }),
+            install: () => void downloadFileRequirement(api, candidate, identity),
           });
         }
         if (requirement.kind === "correct-version-uninstalled") {
           items.push({
             key: requirement.uninstalledFile.fileUID,
-            install: () =>
-              void installDownloadedFile(api, requirement.uninstalledFile, { issueId, checkId }),
+            install: () => void installDownloadedFile(api, requirement.uninstalledFile, identity),
           });
         }
       }

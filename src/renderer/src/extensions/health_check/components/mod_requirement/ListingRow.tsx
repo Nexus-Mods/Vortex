@@ -5,10 +5,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
-import { useHealthCheckTracking } from "../../hooks/useHealthCheckTracking";
+import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import type { IModRequirementExt } from "../../types";
-import { checkNameForCheck, issueTypeForCheck } from "../../utils/shared/tracking";
 import type { IListingRowProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { ListingRow as ListingRowShell } from "../listing_row/ListingRow";
@@ -18,8 +17,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
-  const issueType = issueTypeForCheck(entry.checkId);
-  const checkName = checkNameForCheck(entry.checkId);
+  const { identity, issueType } = useIssue();
 
   const {
     givenFeedback,
@@ -30,15 +28,12 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     installInApp,
     handlePositiveFeedback,
     handleFeedbackSuccess,
-  } = useModRequirementActions(api, mod, { issueId: entry.id, checkId: checkName });
+  } = useModRequirementActions(api, mod, identity);
 
-  const { trackOneClickInstallClicked, trackIssueHidden, trackIssueUnhidden } =
-    useHealthCheckTracking(api);
+  const { trackOneClickInstallClicked, trackIssueHidden, trackIssueUnhidden } = useIssueTracking();
 
   const handleInstall = () => {
     trackOneClickInstallClicked({
-      issue_id: entry.id,
-      check_id: checkName,
       mod_id: mod.modId,
       mod_name: mod.modName,
       mod_version: mod.mainFile?.version ?? "",
@@ -50,11 +45,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
   const handleToggleHide = () => {
     if (isHidden) {
-      trackIssueUnhidden({ issue_id: entry.id, check_id: checkName, issue_type: issueType });
+      trackIssueUnhidden({ issue_type: issueType });
     } else {
       trackIssueHidden({
-        issue_id: entry.id,
-        check_id: checkName,
         issue_type: issueType,
         resolution_type: "install",
       });
@@ -120,14 +113,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
       <PremiumModal
         isOpen={showPremiumModal}
-        tracking={{
-          api,
-          trigger: "single_install",
-          issueId: entry.id,
-          checkId: checkName,
-          modId: mod.modId,
-          modCount: 1,
-        }}
+        modCount={1}
+        modId={mod.modId}
+        trigger="single_install"
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {
           setShowPremiumModal(false);

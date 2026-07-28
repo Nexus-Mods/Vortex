@@ -6,11 +6,22 @@ import { setModRequirementHidden } from "../../actions/persistent";
 import { MOD_REQUIREMENTS_CHECK_ID } from "../../checks/modRequirementsCheck";
 import { DetailView } from "../../components/mod_requirement/DetailView";
 import { ListingRow } from "../../components/mod_requirement/ListingRow";
-import { allModRequirements } from "../../selectors";
+import { allModRequirements, hiddenModRequirements } from "../../selectors";
 import type { IModRequirementExt } from "../../types";
 import { checkNameForCheck } from "../../utils/shared/tracking";
-import { isModHidden, modEntryId } from "./modRequirementEntries";
 import type { IBulkInstallItem, IHealthCheckContent } from "./types";
+
+/**
+ * Listing-entry id for a mod requirement — also the issue_id the analytics events report,
+ * so the bulk-install path can attribute an install to the same entry the listing shows.
+ */
+const modEntryId = (mod: IModRequirementExt): string =>
+  `${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`;
+
+const isModHidden = (
+  state: Parameters<typeof hiddenModRequirements>[0],
+  mod: IModRequirementExt,
+): boolean => (hiddenModRequirements(state)[mod.requiredBy.modId] || []).includes(mod.id);
 
 export const modRequirementsContent: IHealthCheckContent = {
   selectEntries: (state) =>
@@ -38,8 +49,8 @@ export const modRequirementsContent: IHealthCheckContent = {
         key: mod.uid || `${mod.gameId}-${mod.modId}`,
         install: () => {
           void onDownloadRequirement(api, mod, undefined, {
-            issueId: modEntryId(mod),
-            checkId: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
+            issue_id: modEntryId(mod),
+            check_id: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
           });
         },
       })),
