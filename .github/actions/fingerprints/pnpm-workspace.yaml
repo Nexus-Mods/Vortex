@@ -5,3 +5,6 @@ packages:
   - .
 allowBuilds:
   esbuild: true
+
+# ncc hashes dependency paths into module ids, so this cap cannot vary by platform (pnpm defaults to 60 on Windows, 120 elsewhere).
+virtualStoreDirMaxLength: 60
