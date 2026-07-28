@@ -39,6 +39,17 @@ describe("createHealthCheckTracker", () => {
     });
   });
 
+  it("emits the bulk hide and unhide pair, so a restore isn't invisible", () => {
+    const { tracker, events } = harness();
+    tracker.trackHideAllClicked({ issue_count_hidden: 10 });
+    tracker.trackUnhideAllClicked({ issue_count_unhidden: 10 });
+    expect(events.map((e) => e.eventName)).toEqual([
+      "health_check_hide_all_clicked",
+      "health_check_unhide_all_clicked",
+    ]);
+    expect(events[1].properties).toEqual({ issue_count_unhidden: 10 });
+  });
+
   it("emits a no-property event (passed_viewed) with an empty bag", () => {
     const { tracker, events } = harness();
     tracker.trackPassedViewed();

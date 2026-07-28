@@ -103,6 +103,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     trackPassedViewed,
     trackTabSwitched,
     trackHideAllClicked,
+    trackUnhideAllClicked,
     trackSettingsOpened,
     trackOneClickInstallAllClicked,
   } = useMemo(() => createHealthCheckTracker(api), [api]);
@@ -230,6 +231,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   };
 
   const unhideAll = () => {
+    trackUnhideAllClicked({ issue_count_unhidden: hiddenItems.length });
     hiddenItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 

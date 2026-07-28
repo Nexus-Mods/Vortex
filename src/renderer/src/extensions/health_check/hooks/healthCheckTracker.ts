@@ -77,6 +77,11 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
     trackHideAllClicked: (props: { issue_count_hidden: number }) =>
       track("health_check_hide_all_clicked", props),
 
+    // Not in the original spec. Without it a bulk unhide is invisible, so ten issues
+    // hidden then restored reads the same as ten left hidden, skewing the hide-rate KPI.
+    trackUnhideAllClicked: (props: { issue_count_unhidden: number }) =>
+      track("health_check_unhide_all_clicked", props),
+
     trackSettingsOpened: () => track("health_check_settings_opened"),
 
     trackOneClickInstallAllClicked: (props: { issue_count: number; mod_count: number }) =>
