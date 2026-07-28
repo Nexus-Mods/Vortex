@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import { getErrorCode, unknownToError } from "@vortex/shared";
+import { CycleError } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import React from "react";
 import type * as Redux from "redux";
@@ -130,7 +131,7 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import sortMods, { CycleError } from "./util/sort";
+import sortMods from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
 import DeactivationButton from "./views/DeactivationButton";

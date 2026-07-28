@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { CycleError } from "@vortex/shared/errors";
 import { alg, Graph } from "graphlib";
 import * as _ from "lodash";
 import type { ILookupResult, IRule } from "modmeta-db";
@@ -11,18 +12,6 @@ import { downloadPathForGame } from "../../download_management/selectors";
 import { setModAttribute } from "../actions/mods";
 import type { IMod } from "../types/IMod";
 import { findModByRef } from "./findModByRef";
-
-export class CycleError extends Error {
-  private mCycles: string[][];
-  constructor(cycles: string[][]) {
-    super("Rules contain cycles");
-    this.name = this.constructor.name;
-    this.mCycles = cycles;
-  }
-  public get cycles(): string[][] {
-    return this.mCycles;
-  }
-}
 
 let sortModsCache: {
   id: { gameId: string; mods: IMod[] };
