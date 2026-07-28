@@ -6,7 +6,7 @@ import {
 } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
-import { getGame } from "@/util/api";
+import { getGame, ProcessCanceled, UserCanceled } from "@/util/api";
 
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";
@@ -114,9 +114,12 @@ export async function onDownloadRequirement(
   } catch (err) {
     // trackedInstall re-throws so the caller owns the user-facing handling; this is that
     // caller. The file-list lookup is inside the same try because it can fail the same way.
-    api.showErrorNotification(`Failed to install requirement: ${modLabel}`, err, {
-      allowReport: false,
-    });
+    // Backing out of the free-user download dialog is a normal way to end this, not a failure.
+    if (!(err instanceof UserCanceled) && !(err instanceof ProcessCanceled)) {
+      api.showErrorNotification(`Failed to install requirement: ${modLabel}`, err, {
+        allowReport: false,
+      });
+    }
 
     return false;
   }

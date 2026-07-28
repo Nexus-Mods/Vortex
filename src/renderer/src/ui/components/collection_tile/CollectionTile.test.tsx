@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { CollectionTile, type ICollectionTileProps } from "./CollectionTile";
@@ -19,6 +20,10 @@ vi.mock("@/util/Debouncer", () => ({
 }));
 vi.mock("@/util/util", () => ({ delayed: () => Promise.resolve() }));
 vi.mock("@/util/selectors", () => ({ isCollectionModPresent: () => false }));
+// the tile only asks for a refresh; the scheduler itself is covered by membership.test.ts
+vi.mock("@/extensions/nexus_integration/membership", () => ({
+  scheduleMembershipRefresh: vi.fn(),
+}));
 
 // --- Helpers ---
 
@@ -74,7 +79,7 @@ const renderComponent = ({
     />,
   );
 
-  return { collection, container, emit, onAddCollection, onViewPage };
+  return { api, collection, container, emit, onAddCollection, onViewPage };
 };
 
 // --- Tests ---
@@ -127,16 +132,17 @@ describe("CollectionTile", () => {
   });
 
   describe("hover", () => {
-    it("does not refresh user info while logged out", () => {
-      const { emit } = renderComponent({ isLoggedIn: false });
+    it("does not refresh the membership while logged out", () => {
+      // asserted against this render's own api, so a call from an earlier test can't satisfy it
+      const { api } = renderComponent({ isLoggedIn: false });
       fireEvent.mouseEnter(screen.getByTestId("collection-tile"));
-      expect(emit).not.toHaveBeenCalledWith("refresh-user-info");
+      expect(scheduleMembershipRefresh).not.toHaveBeenCalledWith(api);
     });
 
-    it("refreshes user info while logged in", () => {
-      const { emit } = renderComponent({ isLoggedIn: true });
+    it("refreshes the membership while logged in", () => {
+      const { api } = renderComponent({ isLoggedIn: true });
       fireEvent.mouseEnter(screen.getByTestId("collection-tile"));
-      expect(emit).toHaveBeenCalledWith("refresh-user-info");
+      expect(scheduleMembershipRefresh).toHaveBeenCalledWith(api);
     });
   });
 });

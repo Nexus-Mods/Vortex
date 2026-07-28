@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setDialogVisible } from "@/actions";
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import { useExtensionContext } from "@/ExtensionProvider";
 import {
   clearOAuthCredentials,
@@ -71,7 +72,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const userInfo = useSelector(userInfoSelector);
 
   const handleRefreshUserInfo = useCallback(() => {
-    api.events.emit("refresh-user-info");
+    scheduleMembershipRefresh(api);
   }, [api]);
 
   const handleLogout = useCallback(() => {

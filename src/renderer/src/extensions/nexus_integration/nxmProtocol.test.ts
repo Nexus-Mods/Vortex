@@ -2,7 +2,7 @@ import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
-import { makeGameStored, makeSession } from "@/test-utils/builders";
+import { makeApiUserInfo, makeGameStored, makeSession } from "@/test-utils/builders";
 import type { INxmHarness } from "@/test-utils/harnessTypes";
 import type { INxmFixtures } from "@/test-utils/nxmTest";
 import { COLLECTION_URL, FREE, MOD_URL, PREMIUM, test } from "@/test-utils/nxmTest";
@@ -11,9 +11,13 @@ import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from "@/util/Cu
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
+import type * as nexusUtil from "./util";
 import { getInfoGraphQL } from "./util";
 
-vi.mock("./util", () => ({
+// only the network-touching exports are faked; the membership re-check runs the real
+// transformUserInfoFromApi over what getUserInfo returns
+vi.mock("./util", async (importOriginal) => ({
+  ...(await importOriginal<typeof nexusUtil>()),
   bringToFront: vi.fn(),
   ensureLoggedIn: vi.fn(() => PromiseBB.resolve()),
   getInfoGraphQL: vi.fn(),
@@ -31,6 +35,13 @@ const markSkipped = vi.mocked(markCollectionMemberSkipped);
 
 /** A resolved download link, in the shape the v1 API returns. */
 const downloadLink = (uri: string) => [{ URI: uri, short_name: "cdn", name: "CDN" }];
+
+/** A mod the author has NOT opted into direct downloads, so a free user needs the website. */
+const websiteRoundTrip = () =>
+  modInfoQuery.mockResolvedValue({
+    modInfo: { direct_download_enabled: false },
+    fileInfo: {},
+  } as never);
 
 /** An API refusal, as nexus-api raises it before the handler maps it to an HTTPError. */
 const apiError = (statusCode: number, message: string) =>
@@ -215,12 +226,6 @@ describe("nxm protocol resolver", () => {
   });
 
   describe("free account", () => {
-    const websiteRoundTrip = () =>
-      modInfoQuery.mockResolvedValue({
-        modInfo: { direct_download_enabled: false },
-        fileInfo: {},
-      } as never);
-
     const queued = (harness: INxmHarness) =>
       vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(1));
 
@@ -405,25 +410,76 @@ describe("nxm protocol resolver", () => {
     });
   });
 
+  /**
+   * Cancelling a membership on the website pushes nothing to Vortex, so the cached userInfo can
+   * still say premium and send the download down the api path. The api then refuses the keyless
+   * download link with a 403, which is the cue to re-read the membership - never to assume it.
+   */
   describe("membership that ended on the website (LAZ-836)", () => {
-    /**
-     * Cancelling a membership on the website pushes nothing to Vortex, so the cached userInfo
-     * still says premium and the resolver takes the premium path. The API then refuses the
-     * keyless download link, and today that refusal reaches the caller as a raw HTTP error
-     * instead of the free-user flow the account is now entitled to.
-     */
-    test("surfaces the refused download link as a raw http error", async ({ makeNxm }) => {
-      const { harness, resolve } = makeNxm({ userInfo: PREMIUM });
+    const refusesKeylessLink = (harness: INxmHarness) =>
       harness.getDownloadURLs.mockRejectedValue(apiError(403, "forbidden"));
+
+    test("re-reads the membership and downloads as a free user", async ({ makeNxm }) => {
+      const { harness, nxm, resolve } = makeNxm();
+      refusesKeylessLink(harness);
+      harness.getUserInfo.mockResolvedValue(makeApiUserInfo({ premium: false }));
+      websiteRoundTrip();
+
+      const pending = resolve(MOD_URL);
+      await vi.waitFor(() => expect(harness.freeUserQueue()).toEqual([MOD_URL]));
+
+      // the dialog only renders for a non-premium user, so the refreshed membership has to be in
+      // state by the time the download is queued
+      expect(harness.getState().persistent["nexus"].userInfo).toMatchObject({ isPremium: false });
+
+      nxm.dialogHandlers.onCancel(MOD_URL);
+      await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+    });
+
+    test("keeps the original error when the account is still premium", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      refusesKeylessLink(harness);
+      harness.getUserInfo.mockResolvedValue(makeApiUserInfo({ premium: true }));
+
+      const err = await resolve(MOD_URL).catch((caught: unknown) => caught);
+
+      // the 403 was about something other than the membership
+      expect(err).toBeInstanceOf(HTTPError);
+      expect((err as HTTPError).statusCode).toBe(403);
+      expect(harness.freeUserQueue()).toEqual([]);
+    });
+
+    test("keeps the original error when the membership can't be re-read", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      refusesKeylessLink(harness);
+      harness.getUserInfo.mockRejectedValue(new Error("network down"));
 
       const err = await resolve(MOD_URL).catch((caught: unknown) => caught);
 
       expect(err).toBeInstanceOf(HTTPError);
       expect((err as HTTPError).statusCode).toBe(403);
-      // the download never reaches the free-user dialog the account now qualifies for
       expect(harness.freeUserQueue()).toEqual([]);
-      // and the stale membership stays in place, so the next attempt fails the same way
-      expect(harness.getState().persistent["nexus"].userInfo).toMatchObject({ isPremium: true });
+    });
+
+    test("leaves a refusal of an authorised link alone", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      refusesKeylessLink(harness);
+
+      const err = await resolve(`${MOD_URL}?key=abc&expires=1700000000`).catch(
+        (caught: unknown) => caught,
+      );
+
+      // the website authorised this link, so a refusal says nothing about the membership
+      expect(err).toBeInstanceOf(HTTPError);
+      expect(harness.getUserInfo).not.toHaveBeenCalled();
+    });
+
+    test("leaves any other api refusal alone", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockRejectedValue(apiError(404, "no such file"));
+
+      await expect(resolve(MOD_URL)).rejects.toBeInstanceOf(HTTPError);
+      expect(harness.getUserInfo).not.toHaveBeenCalled();
     });
   });
 });

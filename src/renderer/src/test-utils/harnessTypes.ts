@@ -136,6 +136,7 @@ export interface INxmHarness extends IApiHarness {
   getCollectionRevisionGraph: Mock;
   getCollectionDownloadLink: Mock;
   getModFiles: Mock;
+  getUserInfo: Mock;
 }
 
 export interface IInstallContextHarness extends IApiHarness {
