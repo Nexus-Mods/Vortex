@@ -43,7 +43,7 @@ import { makeModReference } from "../extensions/mod_management/util/modReference
 import { getModSource, getModSources } from "../extensions/mod_management/util/modSource";
 import { removeMods } from "../extensions/mod_management/util/removeMods";
 import { rulePhase } from "../extensions/mod_management/util/rulePhase";
-import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
+import sortMods from "../extensions/mod_management/util/sort";
 import testModReference, {
   findRuleByRef,
   ruleInstallSpec,
@@ -62,7 +62,9 @@ import ConcurrencyLimiter from "./ConcurrencyLimiter";
 import copyRecursive from "./copyRecursive";
 import {
   ArgumentInvalid,
+  CycleError,
   DataInvalid,
+  GameNotFound,
   MissingInterpreter,
   NotFound,
   NotSupportedError,
@@ -116,7 +118,7 @@ import onceCB from "./onceCB";
 import opn from "./opn";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
-import steam, { GameNotFound } from "./Steam";
+import steam from "./Steam";
 export type { ISteamEntry } from "./Steam.ts";
 import SevenZip from "node-7z";
 

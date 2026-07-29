@@ -2,6 +2,11 @@ import { z } from "zod";
 
 import { VortexError } from "./base";
 
+/**
+ * Tries to parse the input as an error.
+ *
+ * @public
+ * */
 export function parseError(cause: unknown, context?: { path?: string; url?: string }): VortexError {
   if (cause instanceof VortexError) return cause;
 

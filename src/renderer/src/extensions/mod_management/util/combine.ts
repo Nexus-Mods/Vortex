@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
+import { CycleError } from "@vortex/shared/errors";
 import { generate as shortid } from "shortid";
 
 import type { IDeploymentMethod, IExtensionApi } from "../../../types/IExtensionContext";
@@ -15,7 +16,7 @@ import allTypesSupported from "./allTypesSupported";
 import { getAllActivators } from "./deploymentMethods";
 import modName from "./modName";
 import { removeMod, removeMods } from "./removeMods";
-import sortMods, { CycleError } from "./sort";
+import sortMods from "./sort";
 
 async function combineMods(api: IExtensionApi, gameId: string, modIds: string[]) {
   const state = api.getState();

@@ -16,3 +16,12 @@ export { ComponentEx, PureComponentEx } from "./controls/ComponentEx";
 export { actions, PromiseBB as Promise, fs, log, selectors, types, util };
 
 export * from "./views/api";
+
+export { VortexError } from "@vortex/shared";
+export type {
+  VortexErrorKind,
+  VortexErrorData,
+  VortexErrorKindMap,
+  FileSystemErrorData,
+  OsErrorData,
+} from "@vortex/shared";

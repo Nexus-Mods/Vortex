@@ -31,6 +31,8 @@
  *   }
  * }
  * ```
+ *
+ * @public
  */
 export interface VortexErrorKindMap {
   /** An argument was invalid. */
@@ -53,7 +55,7 @@ export interface VortexErrorKindMap {
    */
   "not-found": { resourceType?: string };
   /** A specific game could not be found/matched. */
-  "game-not-found": { gameId?: string };
+  "game-not-found": { gameId: string };
   /** Dependency rules produced a circular reference. Each inner array is one cycle's chain of names. */
   "cycle-error": { cycles: string[][] };
 
@@ -101,15 +103,21 @@ export interface VortexErrorKindMap {
   unknown: Record<string, unknown>;
 }
 
-/** Payload shared by mechanical OS-level errors. */
-type OsErrorData = {
+/**
+ * Payload shared by mechanical OS-level errors.
+ * @public
+ * */
+export type OsErrorData = {
   originalCode: string;
   errno: number;
   syscall: string;
 };
 
-/** Payload for filesystem errors. */
-type FileSystemErrorData = OsErrorData & {
+/**
+ * Payload for filesystem errors.
+ * @public
+ * */
+export type FileSystemErrorData = OsErrorData & {
   path: string;
 };
 
@@ -117,6 +125,8 @@ type FileSystemErrorData = OsErrorData & {
  * Union of every kind name currently known, derived from `VortexErrorKindMap`.
  * Grows automatically when any module augments the map via `declare module`,
  * no separate registration step needed.
+ *
+ * @public
  */
 export type VortexErrorKind = keyof VortexErrorKindMap;
 
@@ -125,6 +135,8 @@ export type VortexErrorKind = keyof VortexErrorKindMap;
  * in `VortexErrorKindMap`. This is what `VortexError.data` actually holds:
  * a discriminated union keyed on `kind`, so narrowing on `data.kind` gives
  * you the correctly-typed payload for that specific kind.
+ *
+ * @public
  */
 export type VortexErrorData = {
   [K in VortexErrorKind]: { kind: K } & VortexErrorKindMap[K];
@@ -137,6 +149,8 @@ export type VortexErrorData = {
  *
  * `instanceof VortexError` still works for the narrow set of cases that need
  * it, but internal code should prefer checking `.data.kind`.
+ *
+ * @public
  */
 export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extends Error {
   /** Error data keyed on the error kind. */
