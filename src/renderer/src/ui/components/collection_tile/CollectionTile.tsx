@@ -15,7 +15,10 @@ import React, {
   useState,
 } from "react";
 
-import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
+import {
+  HOVER_REFRESH_FLOOR,
+  scheduleMembershipRefresh,
+} from "@/extensions/nexus_integration/membership";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
@@ -91,10 +94,11 @@ export const CollectionTile: ComponentType<ICollectionTileProps> = ({
   }, [api, collection.slug, pending, isHovered, isLoggedIn]);
 
   // Hovering a tile is a hint the user is about to install, so make sure the membership the
-  // install path reads is current.
+  // install path reads is current. Mouse movement alone fires this, so it stands down while a
+  // recent read already covers it.
   useEffect(() => {
     if (isHovered && api?.events) {
-      scheduleMembershipRefresh(api);
+      scheduleMembershipRefresh(api, HOVER_REFRESH_FLOOR);
     }
   }, [api, isHovered]);
 

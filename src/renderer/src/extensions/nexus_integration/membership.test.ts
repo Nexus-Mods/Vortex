@@ -9,6 +9,7 @@ import { setUserInfo } from "./actions/persistent";
 import { addFreeUserDLItem } from "./actions/session";
 import {
   ensureFreshMembership,
+  HOVER_REFRESH_FLOOR,
   refreshMembership,
   resetMembershipFreshness,
   scheduleMembershipRefresh,
@@ -191,6 +192,42 @@ describe("membership freshness", () => {
       scheduleMembershipRefresh(harness.api);
 
       expect(refresh).not.toHaveBeenCalled();
+    });
+
+    test("drops a trigger that fires on its own while a recent read covers it", ({ makeApi }) => {
+      const harness = makeApi();
+      trackMembershipReads(harness.api);
+      const refresh = vi.fn();
+      harness.api.events.on("refresh-user-info", refresh);
+
+      harness.api.store.dispatch(setUserInfo(transformUserInfoFromApi(makeApiUserInfo())));
+      scheduleMembershipRefresh(harness.api, HOVER_REFRESH_FLOOR);
+
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    test("asks anyway for a trigger the user set off deliberately", ({ makeApi }) => {
+      const harness = makeApi();
+      trackMembershipReads(harness.api);
+      const refresh = vi.fn();
+      harness.api.events.on("refresh-user-info", refresh);
+
+      harness.api.store.dispatch(setUserInfo(transformUserInfoFromApi(makeApiUserInfo())));
+      scheduleMembershipRefresh(harness.api);
+
+      expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    test("lets a trigger that fires on its own through when nothing was read recently", ({
+      makeApi,
+    }) => {
+      const harness = makeApi();
+      const refresh = vi.fn();
+      harness.api.events.on("refresh-user-info", refresh);
+
+      scheduleMembershipRefresh(harness.api, HOVER_REFRESH_FLOOR);
+
+      expect(refresh).toHaveBeenCalledTimes(1);
     });
   });
 });
