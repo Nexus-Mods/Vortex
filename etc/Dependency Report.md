@@ -89,12 +89,12 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | ps-list | 7.2.0 |
 | re-reselect | 4.0.1 |
 | re-resizable | 6.11.2 |
-| react | 17.0.2 |
+| react | 18.3.1 |
 | react-bootstrap | 0.33.1 |
 | react-datepicker | 3.8.0 |
 | react-dnd | 14.0.5 |
 | react-dnd-html5-backend | 14.1.0 |
-| react-dom | 17.0.2 |
+| react-dom | 18.3.1 |
 | react-hot-toast | 2.6.0 |
 | react-i18next | 11.18.6 |
 | react-markdown | 6.0.3 |
