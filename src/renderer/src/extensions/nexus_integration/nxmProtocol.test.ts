@@ -11,6 +11,7 @@ import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from "@/util/Cu
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
+import { refreshMembership } from "./membership";
 import type * as nexusUtil from "./util";
 import { getInfoGraphQL } from "./util";
 
@@ -432,6 +433,29 @@ describe("nxm protocol resolver", () => {
       // state by the time the download is queued
       expect(harness.getState().persistent["nexus"].userInfo).toMatchObject({ isPremium: false });
 
+      nxm.dialogHandlers.onCancel(MOD_URL);
+      await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+    });
+
+    // a 403 is the server contradicting the cached membership, so no read is recent enough to
+    // answer it - and during active use one almost always is, since every api call refreshes it
+    test("asks the api even when the membership was just read", async ({ makeNxm }) => {
+      const { harness, nxm, resolve } = makeNxm();
+      refusesKeylessLink(harness);
+      websiteRoundTrip();
+
+      // something else read the membership a moment ago, and it still said premium then
+      harness.getUserInfo.mockResolvedValue(makeApiUserInfo({ premium: true }));
+      await refreshMembership(harness.api, harness.nexus);
+
+      // the plan lapses, so the next read is the one that would learn about it
+      harness.getUserInfo.mockClear();
+      harness.getUserInfo.mockResolvedValue(makeApiUserInfo({ premium: false }));
+
+      const pending = resolve(MOD_URL);
+
+      await vi.waitFor(() => expect(harness.freeUserQueue()).toEqual([MOD_URL]));
+      expect(harness.getUserInfo).toHaveBeenCalled();
       nxm.dialogHandlers.onCancel(MOD_URL);
       await expect(pending).rejects.toBeInstanceOf(UserCanceled);
     });

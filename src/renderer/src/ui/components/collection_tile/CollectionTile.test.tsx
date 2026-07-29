@@ -20,6 +20,7 @@ vi.mock("@/util/selectors", () => ({ isCollectionModPresent: () => false }));
 // the tile only asks for a refresh; the scheduler itself is covered by membership.test.ts
 vi.mock("@/extensions/nexus_integration/membership", () => ({
   scheduleMembershipRefresh: vi.fn(),
+  HOVER_REFRESH_FLOOR: 5 * 60 * 1000,
 }));
 
 // --- Helpers ---

@@ -53,7 +53,17 @@ export async function onDownloadRequirement(
     return files;
   };
 
-  const fileIds = await getFileIds();
+  // the file lookup reaches the api, and both callers of this run it from a click handler that has
+  // nowhere to put a rejection
+  let fileIds: IModFileInfo[];
+  try {
+    fileIds = await getFileIds();
+  } catch (err) {
+    api.showErrorNotification(`Failed to download requirement "${mod.modName}"`, err, {
+      allowReport: false,
+    });
+    return false;
+  }
   if (fileIds.length === 0) {
     return false;
   }

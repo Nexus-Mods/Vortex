@@ -56,6 +56,8 @@ export function trackMembershipReads(api: IExtensionApi): void {
     }
     last = current;
     lastRead = Date.now();
+    // whatever wrote this had an answer, so the shorter post-failure window no longer applies
+    lastReadFailed = false;
   });
 }
 
