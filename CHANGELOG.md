@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Upgraded React from 17.0.2 to 18.3.1 (legacy rendering mode - no runtime behavior change; extension compatibility preserved)
+- Upgraded @testing-library/react from 12 to 16
+
 ## [2.5.0-beta.1] - 2026-07-29
 
 _First beta of the 2.5 release._
