@@ -24,10 +24,23 @@ import {
 /** Mod UIDs of the downloaded-but-not-installed archives the check surfaces. */
 function surfacedDownloadModUIDs(metadata: IFileRequirementsCheckMetadata): string[] {
   const uids = new Set<string>();
+  const add = (modUID: string): void => {
+    if (modUID) {
+      uids.add(modUID);
+    }
+  };
+
   for (const fileReq of Object.values(metadata.fileRequirements)) {
     for (const req of fileReq.requirements) {
-      if (req.kind === "correct-version-uninstalled" && req.uninstalledFile.modUID) {
-        uids.add(req.uninstalledFile.modUID);
+      if (req.kind === "correct-version-uninstalled") {
+        add(req.uninstalledFile.modUID);
+      } else if (req.kind === "or") {
+        // An OR alternative can be downloaded-but-not-installed too.
+        for (const branch of req.branches) {
+          if (branch.kind === "install") {
+            add(branch.uninstalledFile.modUID);
+          }
+        }
       }
     }
   }

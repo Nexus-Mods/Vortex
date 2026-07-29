@@ -69,7 +69,8 @@ export interface IWrongVersionEnabledRequirement {
 
 /**
  * One alternative (update group) of an OR requirement, already classified to the
- * action it needs if chosen: download a file, or enable an owned-but-disabled one.
+ * action it needs if chosen: download a file, install an already-downloaded one, or
+ * enable an owned-but-disabled one.
  */
 export type IFileRequirementBranch =
   | {
@@ -78,6 +79,15 @@ export type IFileRequirementBranch =
       modFileId: string;
       /** The file to download for this alternative */
       candidate: IFileRequirementCandidate;
+    }
+  | {
+      kind: "install";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The acceptable, downloaded-but-not-installed version to install */
+      uninstalledFile: IDownloadedFile;
+      /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+      enabledFile?: IInstalledFile;
     }
   | {
       kind: "enable";
@@ -90,8 +100,8 @@ export type IFileRequirementBranch =
     };
 
 /**
- * Several alternatives satisfy the requirement; the user picks one. Branches that
- * are owned-but-disabled offer an enable/switch action instead of a download.
+ * Several alternatives satisfy the requirement; the user picks one. Branches whose
+ * version is already owned offer an install or enable/switch action instead of a download.
  */
 export interface IOrFileRequirement {
   kind: "or";
@@ -110,6 +120,8 @@ export interface IUninstalledFileRequirement {
   requirementDefId: string;
   /** The downloaded-but-not-installed file to install */
   uninstalledFile: IDownloadedFile;
+  /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+  enabledFile?: IInstalledFile;
 }
 
 /**
@@ -172,6 +184,15 @@ function toCandidate(candidate: Candidate): IFileRequirementCandidate {
   };
 }
 
+/** The wrong version currently enabled on a branch, when there is one we can display. */
+function enabledWrongFile(
+  branch: DependencyBranch,
+  hydrate: HydrateFile,
+): IInstalledFile | undefined {
+  const hydrated = branch.wrongEnabled.length > 0 ? hydrate(branch.wrongEnabled[0]) : undefined;
+  return hydrated?.kind === "installed" ? hydrated.file : undefined;
+}
+
 /**
  * Classify a resolved dependency into a surfaced requirement, or undefined to drop it.
  * A multi-branch dependency is an OR; a single branch maps to a missing / wrong-version
@@ -191,6 +212,13 @@ function classifyDependency(
   // OR: more than one alternative update group. Classify each branch to the action
   // it needs; drop branches we can't act on. An OR with no actionable branch is dropped.
   if (branches.length > 1) {
+    // A deliberately disabled alternative (nothing wrong enabled to explain it) counts as
+    // satisfied - enabling it would clear the OR - matching the single-branch rule below.
+    // Drop this guard to surface it as an "enable this version" card instead.
+    if (branches.some((b) => b.satisfyingDisabled.length > 0 && b.wrongEnabled.length === 0)) {
+      return undefined;
+    }
+
     const orBranches = branches
       .map((branch) => classifyOrBranch(branch, hydrate))
       .filter((branch): branch is IFileRequirementBranch => branch !== undefined);
@@ -207,21 +235,16 @@ function classifyDependency(
   // Correct version owned but disabled.
   if (branch.satisfyingDisabled.length > 0) {
     // A wrong version is enabled too: offer switching the active version.
-    if (branch.wrongEnabled.length > 0) {
-      const hydratedEnabled = hydrate(branch.wrongEnabled[0]);
+    const enabledFile = enabledWrongFile(branch, hydrate);
+    if (enabledFile) {
       const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
-      if (
-        !hydratedEnabled ||
-        hydratedEnabled.kind !== "installed" ||
-        !hydratedCorrect ||
-        hydratedCorrect.kind !== "installed"
-      ) {
+      if (!hydratedCorrect || hydratedCorrect.kind !== "installed") {
         return undefined;
       }
       return {
         kind: "wrong-version-enabled",
         requirementDefId: definitionId,
-        enabledFile: hydratedEnabled.file,
+        enabledFile,
         correctFile: hydratedCorrect.file,
       };
     }
@@ -240,6 +263,7 @@ function classifyDependency(
       kind: "correct-version-uninstalled",
       requirementDefId: definitionId,
       uninstalledFile: hydrated.file,
+      enabledFile: enabledWrongFile(branch, hydrate),
     } satisfies IUninstalledFileRequirement;
   }
 
@@ -267,28 +291,40 @@ function classifyDependency(
 }
 
 /**
- * Classify one OR alternative into the action it needs if the user picks it:
- * enable an owned-but-disabled version (switching off a wrong one if present), or
- * download the recommended file. Returns undefined when the branch isn't actionable.
+ * Classify one OR alternative into the action it needs if the user picks it: enable an
+ * owned-but-disabled version, install a downloaded one, or download the recommended file.
+ * Returns undefined when the branch isn't actionable. Ordered as in classifyDependency.
  */
 function classifyOrBranch(
   branch: DependencyBranch,
   hydrate: HydrateFile,
 ): IFileRequirementBranch | undefined {
-  // Owned-but-disabled alternative: enabling it satisfies the OR without a download.
+  // Owned-but-disabled alternative: enabling it satisfies the OR without a download. Only
+  // reached with a wrong version enabled - the guard above drops the OR otherwise.
   if (branch.satisfyingDisabled.length > 0) {
     const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
     if (!hydratedCorrect || hydratedCorrect.kind !== "installed") {
       return undefined;
     }
-    const hydratedEnabled =
-      branch.wrongEnabled.length > 0 ? hydrate(branch.wrongEnabled[0]) : undefined;
-    const enabledFile = hydratedEnabled?.kind === "installed" ? hydratedEnabled.file : undefined;
     return {
       kind: "enable",
       modFileId: branch.modFileId,
       correctFile: hydratedCorrect.file,
-      enabledFile,
+      enabledFile: enabledWrongFile(branch, hydrate),
+    };
+  }
+
+  // Downloaded but not installed: installing it satisfies the OR without a download.
+  if (branch.satisfyingUninstalled.length > 0) {
+    const hydrated = hydrate(branch.satisfyingUninstalled[0]);
+    if (!hydrated || hydrated.kind !== "downloaded") {
+      return undefined;
+    }
+    return {
+      kind: "install",
+      modFileId: branch.modFileId,
+      uninstalledFile: hydrated.file,
+      enabledFile: enabledWrongFile(branch, hydrate),
     };
   }
 

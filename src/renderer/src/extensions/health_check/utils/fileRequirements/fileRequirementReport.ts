@@ -100,8 +100,16 @@ export const switchTargets = (
   );
 
 /** The required mod's display name for one OR alternative. */
-const branchModName = (branch: IFileRequirementBranch): string =>
-  branch.kind === "download" ? branch.candidate.modName : branch.correctFile.modName;
+const branchModName = (branch: IFileRequirementBranch): string => {
+  switch (branch.kind) {
+    case "download":
+      return branch.candidate.modName;
+    case "install":
+      return branch.uninstalledFile.modName;
+    case "enable":
+      return branch.correctFile.modName;
+  }
+};
 
 /** The required mod's display name for a requirement (used in the listing summary). */
 export const requirementModName = (requirement: IFileRequirement, orJoin: string): string => {

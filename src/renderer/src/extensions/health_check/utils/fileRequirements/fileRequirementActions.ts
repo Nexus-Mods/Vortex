@@ -112,14 +112,44 @@ export async function downloadFileRequirement(
 }
 
 /**
- * Install a file that has already been downloaded. Uses the download ID directly
- * as the archive ID - no mod-store lookup needed. No premium gate applies since
- * the file is already local.
+ * Make a just-installed mod the enabled version, switching off a wrong enabled version of
+ * the same chain. The requirement only clears once the correct version is enabled, so
+ * don't leave that to the user's auto-enable-on-install setting.
+ */
+function activateInstalledVersion(
+  api: IExtensionApi,
+  modId: string,
+  wrong?: IInstalledFile,
+): Promise<void> {
+  const profile = activeProfile(api.getState());
+  if (!profile) {
+    log("warn", "cannot activate installed version: no active profile", { modId });
+    return Promise.resolve();
+  }
+  // The install may have replaced the wrong version, or reused its mod entry, leaving
+  // nothing to disable.
+  const mods = api.getState().persistent.mods[profile.gameId] ?? {};
+  const wrongIds =
+    wrong !== undefined && wrong.modId !== modId && mods[wrong.modId] !== undefined
+      ? [wrong.modId]
+      : [];
+  return Promise.resolve(
+    setModsEnabled(api, profile.id, wrongIds, false, { reason: "health_check" }).then(() =>
+      setModsEnabled(api, profile.id, [modId], true, { reason: "health_check" }),
+    ),
+  );
+}
+
+/**
+ * Install a file that has already been downloaded, then make it the active version. Uses
+ * the download ID directly as the archive ID - no mod-store lookup needed. No premium gate
+ * applies since the file is already local.
  */
 export async function installDownloadedFile(
   api: IExtensionApi,
   file: IDownloadedFile,
   identity?: IssueAnalyticsIdentity,
+  enabledFile?: IInstalledFile,
 ): Promise<boolean> {
   try {
     await trackedInstall(
@@ -131,7 +161,7 @@ export async function installDownloadedFile(
         mod_version: file.version,
       },
       async () => {
-        await new Promise<string>((resolve, reject) =>
+        const modId = await new Promise<string>((resolve, reject) =>
           api.events.emit(
             "start-install-download",
             file.downloadId,
@@ -139,6 +169,8 @@ export async function installDownloadedFile(
             (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
           ),
         );
+
+        await activateInstalledVersion(api, modId, enabledFile);
       },
     );
 
