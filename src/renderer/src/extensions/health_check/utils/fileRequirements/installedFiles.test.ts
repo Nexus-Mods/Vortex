@@ -199,11 +199,13 @@ describe("makeInstalledFileHydrator", () => {
     return makeInstalledFileHydrator(api, [INSTALLED_REF], map)("file-a");
   }
 
-  test("takes the fetched adult flag over the originating download's", () => {
+  test("takes the fetched adult flag over the originating download's, and its thumbnail", () => {
     const details: IModDetails = { ...DETAILS, modUID: INSTALLED_MOD_UID };
     expect(hydrateInstalled(false, details)).toMatchObject({
       modUID: INSTALLED_MOD_UID,
       adultContent: true,
+      // the fixture mod has no pictureUrl attribute of its own
+      thumbnailUrl: "http://img/details.png",
     });
   });
 

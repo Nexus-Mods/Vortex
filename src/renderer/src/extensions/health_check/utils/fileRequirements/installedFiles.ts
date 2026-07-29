@@ -305,14 +305,17 @@ function resolveModUID(attributes: IInstalledModAttributes, gameId: string): str
 }
 
 /**
- * Build the display shape for one installed file from its Vortex mod.
+ * Build the display shape for one installed file from its Vortex mod. The mod's own
+ * attributes carry the display data, backfilled from the fetched details when they don't
+ * (`modInfo` is the originating download's block, whose archive may since have gone).
  */
 function toInstalledFile(
   mod: IMod,
   fileUID: string,
   modUID: string,
   enabled: boolean,
-  adultContent: boolean,
+  modInfo: INexusModDisplayInfo,
+  details: IModDetails | undefined,
 ): IInstalledFile {
   const attributes: IInstalledModAttributes = mod.attributes ?? {};
   const modName = renderModName(mod);
@@ -325,17 +328,17 @@ function toInstalledFile(
     // used only as a fallback when no display name was stored.
     fileName: attributes.logicalFileName ?? attributes.fileName ?? modName,
     version: attributes.version ?? "",
-    thumbnailUrl: attributes.pictureUrl,
-    adultContent,
+    thumbnailUrl: attributes.pictureUrl ?? details?.thumbnailUrl,
+    // The fetched flag wins: a mod can be flagged adult after it was installed.
+    adultContent: details?.adultContent ?? modInfo.contains_adult_content ?? false,
     enabled,
   };
 }
 
 /**
  * A `fileUID -> IInstalledFile` hydrator over the gathered refs, reading the mod
- * store on demand so only surfaced files are hydrated. The adult-content flag comes
- * from the fetched mod details, falling back to the originating download (linked via
- * `archiveId`), whose archive may be gone or predate the mod being flagged.
+ * store on demand so only surfaced files are hydrated. `modDetailsByUID` backfills the
+ * thumbnail and adult flag the mod's own attributes don't carry.
  */
 export function makeInstalledFileHydrator(
   api: IExtensionApi,
@@ -360,8 +363,6 @@ export function makeInstalledFileHydrator(
     const modUID = resolveModUID(mod.attributes ?? {}, gameId);
     const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
     const modInfo = (download?.modInfo?.nexus?.modInfo ?? {}) as INexusModDisplayInfo;
-    const adultContent =
-      modDetailsByUID.get(modUID)?.adultContent ?? modInfo.contains_adult_content ?? false;
-    return toInstalledFile(mod, fileUID, modUID, ref.enabled, adultContent);
+    return toInstalledFile(mod, fileUID, modUID, ref.enabled, modInfo, modDetailsByUID.get(modUID));
   };
 }

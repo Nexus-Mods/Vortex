@@ -62,9 +62,9 @@ function ownedFiles(requirement: IFileRequirement): IOwnedFile[] {
 }
 
 /**
- * Mod UIDs of the owned files the check surfaces. Their display data (thumbnail,
- * summary, adult flag) comes from the local mod / download record, which can be
- * incomplete or stale, so it is backfilled from the mods endpoint.
+ * Mod UIDs of the owned files the check surfaces. Their thumbnail and adult flag - plus
+ * the summary, for downloads - come from the local mod / download record, which can be
+ * incomplete or stale, so they are backfilled from the mods endpoint.
  */
 function surfacedModUIDs(metadata: IFileRequirementsCheckMetadata): string[] {
   const uids = new Set<string>();
