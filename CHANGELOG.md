@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Fixed
 
-- Reduce endpoint polling rates([#23810]https://github.com/Nexus-Mods/Vortex/pull/23810)
+- Reduce endpoint polling rates ([#23810](https://github.com/Nexus-Mods/Vortex/pull/23810))
 
 ## [2.4.0] - 2026-07-27
 
