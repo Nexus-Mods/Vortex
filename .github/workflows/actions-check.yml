@@ -1,0 +1,122 @@
+name: Bundled Actions
+
+# The actions under .github/actions/*/ ship a committed dist/index.js that
+# GitHub runs directly - nothing installs or builds them at invocation time.
+#
+# verify makes sure that dist/index.js is up to date with the source code and tests pass.
+# rebuild rebuilds all the dist/index.js files and opens a PR if any of them changed.
+#
+# Each action is a package in the Vortex workspace named @vortex/<name>-action, so
+# both jobs install once at the repo root and drive the actions through nx.
+
+on:
+  push:
+    branches: [master, release/*]
+    paths:
+      - .github/actions/**
+      - .github/workflows/actions-check.yml
+      - pnpm-lock.yaml
+  pull_request:
+    paths:
+      - .github/actions/**
+      - .github/workflows/actions-check.yml
+      - pnpm-lock.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Bundling never loads Electron, so skip the native rebuild the app needs.
+  VORTEX_ELECTRON_REBUILD: "skip"
+  ACTION_PROJECTS: "@vortex/*-action"
+
+jobs:
+  verify:
+    if: ${{ github.event_name != 'push' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install volta, Node.js
+        uses: volta-cli/action@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Fix pnpm node-gyp permissions
+        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck, test, lint and rebuild every bundle
+        run: pnpm nx run-many -t typecheck test lint build --projects "$ACTION_PROJECTS"
+
+      - name: Verify committed dist is current
+        run: |
+          if ! git diff --exit-code -- ':(glob).github/actions/*/dist/**'; then
+            echo "::error::A committed bundle is stale. Run 'pnpm nx run-many -t build --projects \"$ACTION_PROJECTS\"' and commit the result."
+            exit 1
+          fi
+
+  rebuild:
+    name: Rebuild Bundles
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure Git
+        run: |
+          git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
+      - name: Install volta, Node.js
+        uses: volta-cli/action@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Fix pnpm node-gyp permissions
+        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Rebuild every bundle
+        run: pnpm nx run-many -t build --projects "$ACTION_PROJECTS"
+
+      - name: Open a PR if any bundle changed
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BASE: ${{ github.ref_name }}
+        run: bash .github/scripts/rebuild-action-bundles.sh
