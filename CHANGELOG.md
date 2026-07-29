@@ -51,6 +51,13 @@ _First beta of the 2.5 release._
 - Reversed/inconsistent arrows in the plugin group editor ([#23739](https://github.com/Nexus-Mods/Vortex/pull/23739))
 - Blurred portrait images reduced to a barely-visible smear in landscape frames ([#23732](https://github.com/Nexus-Mods/Vortex/pull/23732))
 
+## [2.4.1] - 2026-07-29
+
+### Fixed
+
+- Reduce endpoint polling rates ([#23810](https://github.com/Nexus-Mods/Vortex/pull/23810))
+- Collection installs never finishing when optional mods needed no download ([#23798](https://github.com/Nexus-Mods/Vortex/pull/23798))
+
 ## [2.4.0] - 2026-07-27
 
 _Stable 2.4 release. See the beta entries below for the full list of changes since 2.3._
@@ -2145,6 +2152,7 @@ _Yanked due to critical issue found with file overrides_
 - Changelog dashlet was incorrectly displaying markdown
 
 [2.5.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.1
+[2.4.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.1
 [2.4.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0
 [2.4.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0-beta.2
 [2.4.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0-beta.1
