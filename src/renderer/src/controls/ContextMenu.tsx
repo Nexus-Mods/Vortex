@@ -95,7 +95,7 @@ function MenuAction(props: IMenuActionProps) {
     }
   }, [instanceId, action, setOpen]);
 
-  const hideTimer = React.useRef<NodeJS.Timeout>();
+  const hideTimer = React.useRef<ReturnType<typeof setTimeout>>();
 
   const show = React.useCallback(() => {
     if (hideTimer.current) {
@@ -155,12 +155,22 @@ function MenuAction(props: IMenuActionProps) {
 }
 
 class RootCloseWrapper extends React.Component<{ onClose: () => void }, {}> {
+  // React 17 delegates events at the react root instead of document, so this
+  // component mounts while the click/contextmenu that opened the menu is
+  // still bubbling toward document; registering the close listeners
+  // synchronously would make that same event close the menu immediately.
+  // Defer registration until the current event has finished dispatching.
+  private mAttachTimer: ReturnType<typeof setTimeout>;
+
   public componentDidMount() {
-    document.addEventListener("click", this.close);
-    document.addEventListener("contextmenu", this.close);
+    this.mAttachTimer = setTimeout(() => {
+      document.addEventListener("click", this.close);
+      document.addEventListener("contextmenu", this.close);
+    }, 0);
   }
 
   public componentWillUnmount() {
+    clearTimeout(this.mAttachTimer);
     document.removeEventListener("click", this.close);
     document.removeEventListener("contextmenu", this.close);
   }
