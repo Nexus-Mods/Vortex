@@ -118,12 +118,14 @@ export function extend(
     return class __ExtendedComponent extends React.Component<PropsT, S> {
       public static contextType = ExtensionContext;
 
+      declare public context: ExtensionManager;
+
       private mObjects: any[];
 
       public UNSAFE_componentWillReceiveProps(nextProps: any) {
         if (this.props[groupProp] !== nextProps[groupProp]) {
           if (extensions[nextProps[groupProp]] === undefined) {
-            updateExtensions(nextProps, this.context as ExtensionManager);
+            updateExtensions(nextProps, this.context);
           }
         }
         if (this.props.staticElements !== nextProps.staticElements) {
@@ -135,7 +137,7 @@ export function extend(
         const { children, staticElements } = this.props;
 
         if (extensions[this.props[groupProp]] === undefined) {
-          updateExtensions(this.props, this.context as ExtensionManager);
+          updateExtensions(this.props, this.context);
         }
 
         if (this.mObjects === undefined) {

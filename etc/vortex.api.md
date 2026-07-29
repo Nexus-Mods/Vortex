@@ -1199,6 +1199,12 @@ export class FormCheckboxItem extends React_2.Component<IFormItemProps, {}> {
 // @public (undocumented)
 export class FormFeedback extends React_2.Component<IFormFeedbackProps, {}> {
     // (undocumented)
+    context: {
+        $bs_formGroup?: {
+            validationState?: string;
+        };
+    };
+    // (undocumented)
     static contextTypes: React_2.ValidationMap<any>;
     // (undocumented)
     static defaultProps: {
@@ -4734,6 +4740,8 @@ export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props,
     static Body: typeof ModalBody;
     // (undocumented)
     static childContextTypes: React_2.ValidationMap<any>;
+    // (undocumented)
+    context: Partial<IComponentContext>;
     // (undocumented)
     static Footer: typeof ModalFooter;
     // (undocumented)

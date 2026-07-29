@@ -4,6 +4,7 @@ import * as React from "react";
 import type { ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Modal } from "react-bootstrap";
 
+import type { IComponentContext } from "../types/IComponentContext";
 import { MutexWrapper } from "../util/MutexContext";
 
 class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
@@ -16,12 +17,14 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
     menuLayer: PropTypes.object,
   };
 
+  declare public context: Partial<IComponentContext>;
+
   private getContainer = memoizeOne(() => this.getContainerImpl());
 
   private mMenuLayer: Element = null;
 
   public getChildContext(): any {
-    return { ...(this.context as any), menuLayer: this.mMenuLayer };
+    return { ...this.context, menuLayer: this.mMenuLayer };
   }
 
   public render(): JSX.Element {
