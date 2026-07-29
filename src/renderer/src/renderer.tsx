@@ -59,6 +59,9 @@ const REACT_DEPRECATION_WARNINGS = [
   "ReactDOM.render is no longer supported",
   "uses the legacy contextTypes API",
   "uses the legacy childContextTypes API",
+  // emitted by legacy deps (react-bootstrap 0.33, react-i18next 11) on 18
+  "findDOMNode is deprecated",
+  "renderSubtreeIntoContainer() is no longer supported",
 ];
 
 // turn all error logs into a single parameter. The reason is that (at least in production)
