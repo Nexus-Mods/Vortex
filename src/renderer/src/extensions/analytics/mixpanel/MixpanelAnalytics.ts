@@ -8,6 +8,7 @@ import type {
 } from "../../nexus_integration/types/IValidateKeyData";
 import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from "../constants";
 import { analyticsServiceLog } from "../utils/analyticsLog";
+import { validateEventProperties } from "./eventSchemas";
 import type { MixpanelEvent } from "./MixpanelEvents";
 
 class MixpanelAnalytics {
@@ -188,15 +189,29 @@ class MixpanelAnalytics {
       return;
     }
 
+    // Event classes forward caller-supplied properties verbatim and are public API, so the
+    // payload is validated here at the one send boundary. Dropping a malformed event is
+    // deliberate: an unjoinable partial row skews the funnels more than a missing row does.
+    const validation = validateEventProperties(event.eventName, event.properties);
+    if (validation.status === "invalid") {
+      analyticsServiceLog("mixpanel", "warn", "Event not tracked (properties failed validation)", {
+        eventName: event.eventName,
+        issues: validation.error.issues,
+        properties: event.properties,
+      });
+      return;
+    }
+
     // Track event with mixpanel-browser
     // Super properties are automatically included
     // IP address and geolocation are automatically tracked
-    mixpanel.track(event.eventName, event.properties);
+    const properties = validation.status === "valid" ? validation.properties : event.properties;
+    mixpanel.track(event.eventName, properties);
 
     analyticsServiceLog("mixpanel", "debug", "Event tracked", {
       eventName: event.eventName,
       game_id: this.registeredGameId(),
-      properties: event.properties,
+      properties,
     });
   }
 }
