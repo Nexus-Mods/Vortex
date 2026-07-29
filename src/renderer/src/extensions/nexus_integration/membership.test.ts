@@ -5,12 +5,16 @@ import { test } from "@/test-utils/harnessTest";
 import type { IApiHarness } from "@/test-utils/harnessTypes";
 import type { IState } from "@/types/IState";
 
+import { setUserInfo } from "./actions/persistent";
+import { addFreeUserDLItem } from "./actions/session";
 import {
   ensureFreshMembership,
   refreshMembership,
   resetMembershipFreshness,
   scheduleMembershipRefresh,
+  trackMembershipReads,
 } from "./membership";
+import { transformUserInfoFromApi } from "./util";
 
 /** The harness is signed in by default; this flips it to a signed-out account. */
 const setSignedOut = (harness: IApiHarness) =>
@@ -118,6 +122,50 @@ describe("membership freshness", () => {
       await ensureFreshMembership(harness.api, nexus);
 
       expect(getUserInfo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("trackMembershipReads", () => {
+    test("counts a read made outside this module, so the next check serves it", async ({
+      makeApi,
+    }) => {
+      const harness = makeApi();
+      trackMembershipReads(harness.api);
+      const { nexus, getUserInfo } = makeNexus();
+
+      // the login token refresh reads the account and writes it directly
+      harness.api.store.dispatch(setUserInfo(transformUserInfoFromApi(makeApiUserInfo())));
+      await ensureFreshMembership(harness.api, nexus);
+
+      expect(getUserInfo).not.toHaveBeenCalled();
+    });
+
+    test("counts a read that confirms the membership is unchanged", async ({ makeApi }) => {
+      const harness = makeApi();
+      // an earlier read already left the account in state, as it is on a restart
+      harness.api.store.dispatch(setUserInfo(transformUserInfoFromApi(makeApiUserInfo())));
+      trackMembershipReads(harness.api);
+      const { nexus, getUserInfo } = makeNexus();
+
+      // the common case: the account came back exactly as state already had it, so the write is
+      // equal to what it replaces and only its identity says a read happened at all
+      const unchanged = harness.getState().persistent["nexus"].userInfo;
+      harness.api.store.dispatch(setUserInfo({ ...unchanged }));
+      await ensureFreshMembership(harness.api, nexus);
+
+      expect(getUserInfo).not.toHaveBeenCalled();
+    });
+
+    test("leaves an untouched membership to be read", async ({ makeApi }) => {
+      const harness = makeApi();
+      trackMembershipReads(harness.api);
+      const { nexus, getUserInfo } = makeNexus();
+
+      // writes elsewhere in the store say nothing about how fresh the membership is
+      harness.api.store.dispatch(addFreeUserDLItem("nxm://site/mods/1/files/2"));
+      await ensureFreshMembership(harness.api, nexus);
+
+      expect(getUserInfo).toHaveBeenCalledTimes(1);
     });
   });
 

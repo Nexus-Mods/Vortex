@@ -8,7 +8,7 @@ import type Nexus from "@nexusmods/nexus-api";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import Debouncer from "../../util/Debouncer";
 import { REVALIDATION_FREQUENCY } from "./constants";
-import { isLoggedIn } from "./selectors";
+import { isLoggedIn, userInfo } from "./selectors";
 import { getUserInfo } from "./util";
 
 /** Collapses the focus / hover / menu triggers, which all mean "the user might have changed plan". */
@@ -23,9 +23,20 @@ let inFlight: Promise<boolean> | undefined;
 /**
  * Count a write of `userInfo` from outside this module as a read - the api-key revalidation and the
  * login token refresh both write it directly. Registered once, from the extension's init.
+ *
+ * Watches the store rather than going through `api.onStateChange`, which reports a change only
+ * when the new value differs (ReduxWatcher compares deeply). A read that confirms the membership
+ * is unchanged writes an equal value, and that is precisely the read worth remembering: without it
+ * the next refusal pays for a round trip whose answer is already in state.
  */
 export function trackMembershipReads(api: IExtensionApi): void {
-  api.onStateChange(["persistent", "nexus", "userInfo"], () => {
+  let last = userInfo(api.getState());
+  api.store.subscribe(() => {
+    const current = userInfo(api.getState());
+    if (current === last) {
+      return;
+    }
+    last = current;
     lastRead = Date.now();
   });
 }
