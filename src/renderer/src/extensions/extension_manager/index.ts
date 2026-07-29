@@ -14,6 +14,7 @@ import type { IExtensionLoadFailure, IExtensionState, IState } from "../../types
 import { getGame } from "../../util/api";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
+import { resolveDependencyExtension, resolveExtension } from "../../util/extensionQueries";
 import makeReactive from "../../util/makeReactive";
 import { setAvailableExtensions, setExtensionsUpdate } from "./actions";
 import BrowseExtensions from "./BrowseExtensions";
@@ -177,10 +178,11 @@ async function installDependency(api: IExtensionApi, dependencyId: string): Prom
   const availableExtensions = state.session.extensions.available;
   const installedExtensions = state.app.extensions ?? {};
 
-  if (installedExtensions[dependencyId] !== undefined) {
+  const depResolved = resolveDependencyExtension(installedExtensions, dependencyId);
+  if (depResolved !== undefined) {
     // installed, probably failed to load or disabled
-    if (!installedExtensions[dependencyId].enabled) {
-      api.store.dispatch(setExtensionEnabled(dependencyId, true));
+    if (!depResolved.entry.enabled) {
+      api.store.dispatch(setExtensionEnabled(depResolved.key, true));
       return true;
     } else {
       api.showErrorNotification(
@@ -400,8 +402,9 @@ function init(context: IExtensionContext) {
       const extState = state.app.extensions ?? {};
 
       // Search both persisted user extensions and loaded bundled extensions.
+      const gameExtResolved = resolveExtension(extState, { path: game.extensionPath });
       const gameExtId =
-        Object.keys(extState).find((key) => game.extensionPath === extState[key].path) ??
+        gameExtResolved?.key ??
         context.api.getLoadedExtensions().find((ext) => ext.path === game.extensionPath)?.name;
 
       if (!gameExtId || !state.session.extensions.optional[gameExtId]) {
@@ -412,7 +415,7 @@ function init(context: IExtensionContext) {
       const loadedExts = context.api.getLoadedExtensions();
       for (const opt of state.session.extensions.optional[gameExtId]) {
         const installed =
-          extState[opt.id] !== undefined ||
+          resolveDependencyExtension(extState, opt.id) !== undefined ||
           loadedExts.some(
             (le) => le.info?.name === opt.id || le.info?.id === opt.id || le.name === opt.id,
           );

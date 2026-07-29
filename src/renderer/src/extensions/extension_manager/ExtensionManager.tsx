@@ -23,6 +23,7 @@ import type { IExtensionWithState } from "../../types/extensions";
 import type { IExtensionLoadFailure, IExtensionState, IState } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import { relaunch } from "../../util/commandLine";
+import { resolveExtension } from "../../util/extensionQueries";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import MainPage from "../../views/MainPage";
@@ -83,14 +84,15 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     this.staticColumns = getTableAttributes({
       onSetExtensionEnabled: (extName: string, enabled: boolean) => {
         const { extensions, onSetExtensionEnabled } = this.props;
-        const extId = Object.keys(extensions).find((iter) => extensions[iter].name === extName);
+        const extId = resolveExtension(extensions, { name: extName })?.key;
         log("info", "user toggling extension manually", { extId, enabled });
         onSetExtensionEnabled(extId, enabled);
       },
       onToggleExtensionEnabled: (extName: string) => {
         const { extensions, onSetExtensionEnabled } = this.props;
-        const extId = Object.keys(extensions).find((iter) => extensions[iter].name === extName);
-        const enabled = !(extensions[extId]?.enabled ?? true);
+        const resolved = resolveExtension(extensions, { name: extName });
+        const extId = resolved?.key;
+        const enabled = !(resolved?.entry.enabled ?? true);
         log("info", "user toggling extension manually", { extId, enabled });
         onSetExtensionEnabled(extId, enabled);
       },
@@ -98,25 +100,19 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         const { extensions } = this.props;
         const { api } = this.context;
         const modId: number = parseInt(modIdStr, 10);
-        const extId = Object.keys(extensions).find((iter) => extensions[iter].modId === modId);
+        const resolved = resolveExtension(extensions, { modId });
 
-        if (extId === undefined) {
+        if (resolved === undefined) {
           return;
         }
 
         api
-          .emitAndAwait(
-            "endorse-nexus-mod",
-            SITE_ID,
-            modId,
-            extensions[extId].version,
-            endorseState,
-          )
+          .emitAndAwait("endorse-nexus-mod", SITE_ID, modId, resolved.entry.version, endorseState)
           .then((endorsed: EndorsedStatus[]) => {
-            api.store.dispatch(setExtensionEndorsed(extId, endorsed[0]));
+            api.store.dispatch(setExtensionEndorsed(resolved.key, endorsed[0]));
           })
           .catch(() => {
-            api.store.dispatch(setExtensionEndorsed(extId, "Undecided"));
+            api.store.dispatch(setExtensionEndorsed(resolved.key, "Undecided"));
           });
       },
     });

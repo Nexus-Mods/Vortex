@@ -13,6 +13,7 @@ import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionCon
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import { withTrackedActivity } from "../../util/errorHandling";
+import { resolveDependencyExtension, resolveExtension } from "../../util/extensionQueries";
 import getVortexPath from "../../util/getVortexPath";
 import { INVALID_FILENAME_RE } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
@@ -72,11 +73,11 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     initFunc(context);
 
     const state = api.getState();
-    const { installed, available } = state.session.extensions;
+    const { available } = state.session.extensions;
     const extState = state.app.extensions ?? {};
 
     const promises = handler.dependencies.map(async (dependencyId) => {
-      if (installed[dependencyId] ?? extState[dependencyId]) return;
+      if (resolveDependencyExtension(extState, dependencyId) !== undefined) return;
 
       const toInstall = available.find(
         (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
@@ -84,16 +85,9 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
 
       if (!toInstall) return;
       const alreadyInstalled =
-        Object.values(installed).some(
-          (entry) =>
-            (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-            entry.name === toInstall.name,
-        ) ||
-        Object.values(extState).some(
-          (entry) =>
-            (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-            entry.name === toInstall.name,
-        );
+        (toInstall.modId !== undefined &&
+          resolveExtension(extState, { modId: toInstall.modId }) !== undefined) ||
+        resolveDependencyExtension(extState, toInstall.name) !== undefined;
       if (alreadyInstalled) return;
 
       await api.emitAndAwait<"install-extension">("install-extension", toInstall);
