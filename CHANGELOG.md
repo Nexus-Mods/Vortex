@@ -4,6 +4,53 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.1] - 2026-07-29
+
+_First beta of the 2.5 release._
+
+### Added
+
+- Persisted extension metadata ([#23783](https://github.com/Nexus-Mods/Vortex/pull/23783))
+- Health check now handles external (non-Nexus) mod requirements ([#23780](https://github.com/Nexus-Mods/Vortex/pull/23780))
+- Health check severity badge on the left-menu item ([#23749](https://github.com/Nexus-Mods/Vortex/pull/23749))
+- Error parser ([#23696](https://github.com/Nexus-Mods/Vortex/pull/23696))
+
+### Changed
+
+- Cleaned up i18n methods, replacing Bluebird with native Promises ([#23796](https://github.com/Nexus-Mods/Vortex/pull/23796))
+- API compat error subclasses now use `VortexError` ([#23794](https://github.com/Nexus-Mods/Vortex/pull/23794))
+- Marked FS API methods as deprecated ([#23791](https://github.com/Nexus-Mods/Vortex/pull/23791))
+- Extension tracking moved fully to the new installed-state system; `IExtension` renamed to `ExtensionInfo` ([#23787](https://github.com/Nexus-Mods/Vortex/pull/23787))
+- Store helper API cleanup, marking APIs as public or deprecated ([#23782](https://github.com/Nexus-Mods/Vortex/pull/23782))
+- Updated nav icons and renamed the per-game Preferences page to "Game settings" ([#23769](https://github.com/Nexus-Mods/Vortex/pull/23769))
+- Updated the dependencies endpoint to the new `/ranges/` route ([#23767](https://github.com/Nexus-Mods/Vortex/pull/23767))
+- Mod requirement checks now keyed by `mod_uid` ([#23766](https://github.com/Nexus-Mods/Vortex/pull/23766))
+- Removed GitHub as an extension source ([#23761](https://github.com/Nexus-Mods/Vortex/pull/23761))
+- Settings & Preferences: new Page + Tabs layout ([#23759](https://github.com/Nexus-Mods/Vortex/pull/23759))
+- Health check QA polish: menu item resets to the listing, unified file-requirement copy ([#23754](https://github.com/Nexus-Mods/Vortex/pull/23754))
+- Files now hashed on a main-process worker pool, so finalizing a large download no longer blocks the UI ([#23747](https://github.com/Nexus-Mods/Vortex/pull/23747))
+- Replaced `PageRoot` with a composable `Page` component family ([#23746](https://github.com/Nexus-Mods/Vortex/pull/23746))
+- Health check: redesigned and modularized the requirement detail UI ([#23729](https://github.com/Nexus-Mods/Vortex/pull/23729))
+- API events rework with typed event maps; **breaking:** `emitAndAwait` and `withPrePost` now return a native `Promise` instead of Bluebird ([#23728](https://github.com/Nexus-Mods/Vortex/pull/23728))
+- Removed the announcement and mod spotlight dashlets ([#23701](https://github.com/Nexus-Mods/Vortex/pull/23701))
+- Added a flat `PageRoot` layout and rebuilt the Games page on new design-system components ([#23700](https://github.com/Nexus-Mods/Vortex/pull/23700))
+- Improved load order page performance for large mod counts ([#23699](https://github.com/Nexus-Mods/Vortex/pull/23699))
+- Modernized the category modal and improved subcategory management ([#23583](https://github.com/Nexus-Mods/Vortex/pull/23583))
+
+### Fixed
+
+- i18n module `type` regression from the i18n cleanup ([#23803](https://github.com/Nexus-Mods/Vortex/pull/23803))
+- Renderer memory leak crashing installs on large mod libraries ([#23781](https://github.com/Nexus-Mods/Vortex/pull/23781))
+- Health check showing the archive filename instead of the friendly mod name ([#23770](https://github.com/Nexus-Mods/Vortex/pull/23770))
+- Missing thumbnails for downloaded files in the health check ([#23768](https://github.com/Nexus-Mods/Vortex/pull/23768))
+- Stale mod requirements by switching to a session cache rather than persistent storage ([#23762](https://github.com/Nexus-Mods/Vortex/pull/23762))
+- Cyberpunk 2077 community game extension showing as official ([#23760](https://github.com/Nexus-Mods/Vortex/pull/23760))
+- `modsByUid` not returning all results ([#23756](https://github.com/Nexus-Mods/Vortex/pull/23756))
+- `PageHeader` collapse jitter on barely-scrollable pages ([#23755](https://github.com/Nexus-Mods/Vortex/pull/23755))
+- Tabs broken in non-English languages; tab identity is now an explicit id independent of the label ([#23752](https://github.com/Nexus-Mods/Vortex/pull/23752))
+- Reversed/inconsistent arrows in the plugin group editor ([#23739](https://github.com/Nexus-Mods/Vortex/pull/23739))
+- Blurred portrait images reduced to a barely-visible smear in landscape frames ([#23732](https://github.com/Nexus-Mods/Vortex/pull/23732))
+
 ## [2.4.1] - 2026-07-29
 
 ### Fixed
@@ -2104,6 +2151,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.5.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.1
 [2.4.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.1
 [2.4.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0
 [2.4.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0-beta.2
