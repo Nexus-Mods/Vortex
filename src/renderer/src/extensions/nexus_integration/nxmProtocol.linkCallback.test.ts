@@ -234,6 +234,30 @@ describe("nxm link callback", () => {
     expect(harness.freeUserQueue()).toEqual([]);
   });
 
+  // the website opens on every click, so a user who gives up may have asked for a link more than
+  // once; a cancelled download must stop waiting for all of them or the link is swallowed
+  test("stops waiting for a link once its download is cancelled, however often it was asked for", async ({
+    makeNxm,
+  }) => {
+    const { harness, nxm, handleLink } = arrangeLink(makeNxm({ userInfo: FREE }));
+    modInfoQuery.mockResolvedValue({
+      modInfo: { direct_download_enabled: false },
+      fileInfo: {},
+    } as never);
+    const pending = nxm.resolve(MOD_URL);
+    await vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(1));
+
+    nxm.dialogHandlers.onDownload(MOD_URL);
+    nxm.dialogHandlers.onDownload(MOD_URL);
+    nxm.dialogHandlers.onCancel(MOD_URL);
+    await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+
+    // the link now belongs to nothing, so it starts a download of its own
+    handleLink(`${MOD_URL}?key=abc&expires=1700000000`, false);
+
+    await vi.waitFor(() => expect(beginDownload).toHaveBeenCalled());
+  });
+
   test("starts a fresh download when no queued download is waiting for the link", async ({
     makeNxm,
   }) => {
