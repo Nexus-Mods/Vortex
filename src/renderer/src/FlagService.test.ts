@@ -2,7 +2,7 @@ import type { FeatureFlag } from "@vortex/shared/flags";
 import type { FeatureFlagsApi } from "@vortex/shared/preload";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { FlagService } from "./FlagService";
+import { FlagService, METRICS_INTERVAL_MS } from "./FlagService";
 
 // -- window.api mock ---------------------------------------------------------
 
@@ -285,12 +285,12 @@ describe("metrics", () => {
     expect(bucket.toggles["vortex-test-flag"].variants).toBeUndefined();
   });
 
-  it("flushes automatically after 60 seconds", () => {
+  it("flushes automatically after the metrics interval", () => {
     push([{ name: "vortex-test-flag" }]);
     FlagService.instance.getFlag("vortex-test-flag");
 
     expect(mockReportMetrics).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(METRICS_INTERVAL_MS);
     expect(mockReportMetrics).toHaveBeenCalledOnce();
   });
 
@@ -298,11 +298,11 @@ describe("metrics", () => {
     push([{ name: "vortex-test-flag" }]);
     FlagService.instance.getFlag("vortex-test-flag");
 
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(METRICS_INTERVAL_MS);
     expect(mockReportMetrics).toHaveBeenCalledTimes(1);
 
     // No new evaluations — second interval should not flush
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(METRICS_INTERVAL_MS);
     expect(mockReportMetrics).toHaveBeenCalledTimes(1);
   });
 
@@ -314,7 +314,7 @@ describe("metrics", () => {
     expect(mockReportMetrics).toHaveBeenCalledOnce();
 
     // Interval was cleared, so no second call
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(METRICS_INTERVAL_MS);
     expect(mockReportMetrics).toHaveBeenCalledOnce();
   });
 });
