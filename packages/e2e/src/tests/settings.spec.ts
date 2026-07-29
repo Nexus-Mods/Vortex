@@ -26,6 +26,42 @@ test.describe("Settings - Interface Tab", () => {
     });
   });
 
+  test("language picker menu opens fully visible (not clipped by the settings pane)", async ({
+    vortexWindow,
+  }) => {
+    await test.step("Open the language picker", async () => {
+      await vortexWindow.getByRole("button", { name: "English" }).first().click();
+      await expect(vortexWindow.getByRole("listbox")).toBeVisible();
+    });
+
+    await test.step("Verify the open menu is hit-testable at its corners", async () => {
+      const hits = await vortexWindow.getByRole("listbox").evaluate((menu) => {
+        // the e2e tsconfig has no DOM lib; type the in-page APIs structurally
+        interface InPageElement {
+          getBoundingClientRect(): { left: number; top: number; right: number; bottom: number };
+          closest(selector: string): InPageElement | null;
+        }
+        const el = menu as unknown as InPageElement;
+        const doc = (
+          globalThis as unknown as {
+            document: { elementFromPoint(x: number, y: number): InPageElement | null };
+          }
+        ).document;
+        const r = el.getBoundingClientRect();
+        const points: Array<[number, number]> = [
+          [r.left + 4, r.top + 4],
+          [r.right - 4, r.top + 4],
+          [r.left + 4, Math.min(r.bottom - 4, r.top + 150)],
+        ];
+        return points.map(([x, y]) => {
+          const hit = doc.elementFromPoint(x, y);
+          return hit !== null && hit.closest('[role="listbox"]') !== null;
+        });
+      });
+      expect(hits).toEqual([true, true, true]);
+    });
+  });
+
   test("customisation toggles can be switched on and off", async ({ vortexWindow }) => {
     const settings = new SettingsPage(vortexWindow);
     const toggleCount = await settings.checkboxes.count();

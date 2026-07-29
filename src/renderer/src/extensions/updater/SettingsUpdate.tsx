@@ -124,6 +124,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
                   { label: t("Beta"), value: "beta" },
                   { label: t("No automatic updates"), value: "none" },
                 ]}
+                placement="left"
                 value={updateChannel}
                 onChange={this.selectChannel}
               />
