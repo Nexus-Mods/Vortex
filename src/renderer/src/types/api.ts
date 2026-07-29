@@ -35,7 +35,7 @@ export type {
   ICollectionInstallSession,
   CollectionModStatus,
 } from "./collections/ICollectionInstallSession";
-export type { IAvailableExtension, IExtension } from "./extensions";
+export type { IAvailableExtension, IExtension, ExtensionInfo } from "./extensions";
 export type {
   LoadOrder,
   LoadOrder as FBLOLoadOrder,

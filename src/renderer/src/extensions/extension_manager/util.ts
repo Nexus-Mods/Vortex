@@ -99,6 +99,7 @@ function applyExtensionInfo(
     }
   };
 
+  add("id", archiveInfo.id, manifestInfo.id);
   add("type", manifestInfo.type, archiveInfo.type);
   add("path", archiveInfo.path, undefined);
   add("bundled", bundled, undefined);
@@ -313,6 +314,7 @@ export async function downloadAndInstallExtension(
     return true;
   } catch (err) {
     if (err instanceof UserCanceled) return false;
+    log("error", "error installing extension", err);
 
     api.showDialog(
       "error",

@@ -130,13 +130,12 @@ export function clearStaleRemovalFlags(
   destPath: string,
 ): void {
   const state: IState = api.store.getState();
-  const { installed } = state.session.extensions;
   const extState = state.app.extensions ?? {};
   // Compare paths, not key strings: info.json `id` can decouple the state key
   // from the folder basename, and the archive-name fallback differs again.
   const normalizedDest = path.normalize(destPath).toLowerCase();
   removedKeys.forEach((key) => {
-    const prevPath = installed[key]?.path ?? extState[key]?.path;
+    const prevPath = extState[key]?.path;
     if (prevPath !== undefined && path.normalize(prevPath).toLowerCase() === normalizedDest) {
       api.store.dispatch(forgetExtension(key));
     }
@@ -145,33 +144,13 @@ export function clearStaleRemovalFlags(
 
 function removeOldVersion(api: IExtensionApi, info: IExtension): string[] {
   const state = api.getState();
-  const { installed } = state.session.extensions;
   const extState = state.app.extensions ?? {};
 
   // should never be more than one but let's handle multiple to be safe
   const previousVersions: string[] = [];
 
-  // Search session.extensions.installed (legacy, will be removed in LAZ-833)
-  for (const [key, ext] of Object.entries(installed)) {
-    if (ext.bundled) continue;
-    if (info.id !== undefined && ext.id === info.id) {
-      previousVersions.push(key);
-      continue;
-    }
-    if (info.modId !== undefined && ext.modId === info.modId) {
-      previousVersions.push(key);
-      continue;
-    }
-    if (info.name === ext.name) {
-      previousVersions.push(key);
-    }
-  }
-
-  // Also search state.app.extensions (persisted source).  Avoid duplicates
-  // when a key already matched via session.extensions.installed above.
   for (const [key, ext] of Object.entries(extState)) {
     if (ext.bundled) continue;
-    if (previousVersions.includes(key)) continue;
     if (info.modId !== undefined && ext.modId === info.modId) {
       previousVersions.push(key);
       continue;
@@ -423,7 +402,8 @@ async function installExtensionImpl(
 
       clearStaleRemovalFlags(api, removedKeys, destPath);
 
-      api.store.dispatch(addExtension(manifestInfo.id, fullInfo));
+      const extId = fullInfo.id ?? dirName;
+      api.store.dispatch(addExtension(extId, { ...fullInfo, path: destPath }));
 
       emitExtensionInstalled(
         api,
