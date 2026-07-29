@@ -1504,7 +1504,6 @@ function init(context: IExtensionContext): boolean {
     t: context.api.translate,
     nexus,
     ...nxmProtocol.dialogHandlers,
-    onCheckStatus: () => scheduleMembershipRefresh(context.api),
   }));
 
   context.registerBanner(
