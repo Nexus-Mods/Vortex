@@ -426,6 +426,23 @@ describe("nxm protocol resolver", () => {
       expect(harness.dispatched.map((action) => action.type)).toContain("REMOVE_FREEUSER_DLITEM");
     });
 
+    // re-resolving one the api still won't serve just parks it again, so it stays where it is
+    test("leaves a download the api still won't serve parked, rather than parking it twice", async ({
+      makeNxm,
+    }) => {
+      const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
+      websiteRoundTrip();
+      const pending = resolve(MOD_URL);
+      await vi.waitFor(() => expect(harness.freeUserQueue()).toEqual([MOD_URL]));
+
+      nxm.dialogHandlers.onRetry();
+
+      expect(harness.getDownloadURLs).not.toHaveBeenCalled();
+      expect(harness.freeUserQueue()).toEqual([MOD_URL]);
+      nxm.dialogHandlers.onCancel(MOD_URL);
+      await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+    });
+
     test("retrying with nothing queued does nothing", ({ makeNxm }) => {
       const { harness, nxm } = makeNxm({ userInfo: FREE });
 
