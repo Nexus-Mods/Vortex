@@ -16,7 +16,7 @@ interface IActionProps {
   onTrigger: (actionTitle: string) => void;
 }
 
-const Action: FC<IActionProps> = (props) => {
+const Action: FC<React.PropsWithChildren<IActionProps>> = (props) => {
   const { count, icon, title, onTrigger } = props;
 
   const { t } = useTranslation(["common"]);
@@ -75,7 +75,7 @@ const typeToIcon = (type: NotificationType): JSX.Element | null => {
   }
 };
 
-export const Notification: FC<IProps> = (props) => {
+export const Notification: FC<React.PropsWithChildren<IProps>> = (props) => {
   const { collapsed, onDismiss, onExpand, onSuppress, onTriggerAction, params } = props;
   const { actions, id, message, noDismiss, progress, title, type } = params;
 

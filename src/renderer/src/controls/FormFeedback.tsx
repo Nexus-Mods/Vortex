@@ -21,7 +21,7 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
   };
 
   public render(): JSX.Element {
-    const formGroup = this.context.$bs_formGroup;
+    const formGroup = (this.context as any).$bs_formGroup;
     const { className } = this.props;
 
     const classes = ["form-control-feedback", "feedback-awesome"];

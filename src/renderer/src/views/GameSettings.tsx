@@ -20,7 +20,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 interface ISettingsPage {
   title: string;
-  component: React.ComponentType<IBaseProps>;
+  component: React.ComponentType<React.PropsWithChildren<IBaseProps>>;
   props: PropsCallbackTyped<IBaseProps>;
   visible: () => boolean;
   priority: number;
@@ -35,7 +35,7 @@ interface ICombinedSettingsPage {
 const registerSettings = (
   _instanceGroup: undefined,
   title: string,
-  component: React.ComponentType<IBaseProps>,
+  component: React.ComponentType<React.PropsWithChildren<IBaseProps>>,
   props: PropsCallbackTyped<IBaseProps>,
   visible: () => boolean,
   priority?: number,
@@ -43,7 +43,10 @@ const registerSettings = (
   return { title, component, props, visible, priority: priority || 100 };
 };
 
-export const GameSettings: FC<{ active?: boolean; pageId?: string }> = ({ active, pageId }) => {
+export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId?: string }>> = ({
+  active,
+  pageId,
+}) => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 

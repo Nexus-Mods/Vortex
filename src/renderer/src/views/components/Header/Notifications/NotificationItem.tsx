@@ -39,7 +39,7 @@ interface INotificationItemProps {
   onExpand?: (groupId: string) => void;
 }
 
-export const NotificationItem: FC<INotificationItemProps> = ({
+export const NotificationItem: FC<React.PropsWithChildren<INotificationItemProps>> = ({
   notification,
   collapsed,
   onDismiss,

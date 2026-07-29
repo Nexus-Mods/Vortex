@@ -20,7 +20,7 @@ import { StagingIndicator } from "./StagingIndicator";
 import { VersionIndicator } from "./VersionIndicator";
 import { WindowControls } from "./WindowControls";
 
-export const Header: FC = () => {
+export const Header: FC<React.PropsWithChildren<unknown>> = () => {
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
   const { t } = useTranslation();
   const { selection } = useSpineContext();

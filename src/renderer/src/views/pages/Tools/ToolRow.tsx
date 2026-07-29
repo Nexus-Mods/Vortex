@@ -47,7 +47,7 @@ export interface ToolRowProps {
   onMoveDown?: (starter: IStarterInfo) => void;
 }
 
-export const ToolRow: FC<ToolRowProps> = ({
+export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
   starter,
   counter,
   isValid,

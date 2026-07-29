@@ -91,7 +91,9 @@ export function parseGameSpecifics(
   }
 }
 
-export function getInterface(gameId: string): React.ComponentType<IExtendedInterfaceProps> {
+export function getInterface(
+  gameId: string,
+): React.ComponentType<React.PropsWithChildren<IExtendedInterfaceProps>> {
   if (gameSupport[gameId] === undefined) {
     return null;
   } else {

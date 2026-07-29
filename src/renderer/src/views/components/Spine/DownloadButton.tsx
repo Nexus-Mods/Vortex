@@ -70,11 +70,13 @@ function useDownloadProgress(): DownloadProgress {
   });
 }
 
-const ProgressRing: FC<{
-  isActive: boolean;
-  isPaused: boolean;
-  progress: number;
-}> = ({ isActive, isPaused, progress }) => {
+const ProgressRing: FC<
+  React.PropsWithChildren<{
+    isActive: boolean;
+    isPaused: boolean;
+    progress: number;
+  }>
+> = ({ isActive, isPaused, progress }) => {
   const size = 48;
   const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
@@ -115,7 +117,7 @@ const ProgressRing: FC<{
   );
 };
 
-export const DownloadButton: FC = () => {
+export const DownloadButton: FC<React.PropsWithChildren<unknown>> = () => {
   const { selection, selectDownloads } = useSpineContext();
 
   const isActive = selection.type === "downloads";

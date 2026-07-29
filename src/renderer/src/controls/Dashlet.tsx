@@ -5,6 +5,7 @@ import { truthy } from "../util/util";
 export interface IDashletProps {
   className: string;
   title: string;
+  children?: React.ReactNode;
 }
 
 class Dashlet extends React.Component<IDashletProps, {}> {

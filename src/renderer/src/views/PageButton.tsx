@@ -12,7 +12,7 @@ interface IPageButtonProps {
   namespace: string;
 }
 
-export const PageButton: FC<IPageButtonProps> = (props) => {
+export const PageButton: FC<React.PropsWithChildren<IPageButtonProps>> = (props) => {
   const { namespace, page } = props;
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 

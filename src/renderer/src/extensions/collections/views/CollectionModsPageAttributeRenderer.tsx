@@ -77,4 +77,6 @@ function CollectionModsPageAttributeRenderer(props: IProps) {
   ) : null;
 }
 
-export default CollectionModsPageAttributeRenderer as React.ComponentType<IBaseProps>;
+export default CollectionModsPageAttributeRenderer as React.ComponentType<
+  React.PropsWithChildren<IBaseProps>
+>;

@@ -66,7 +66,7 @@ const Stat = ({ children, iconPath }: PropsWithChildren<{ iconPath: string }>) =
   </div>
 );
 
-export const CollectionTile: ComponentType<ICollectionTileProps> = ({
+export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTileProps>> = ({
   api,
   collection,
   isLoggedIn = true,

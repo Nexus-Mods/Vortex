@@ -42,7 +42,7 @@ export interface IBaseProps {
   className?: string;
 }
 
-export const AppLayout: FC<IBaseProps> = () => {
+export const AppLayout: FC<React.PropsWithChildren<IBaseProps>> = () => {
   const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
 
   return (

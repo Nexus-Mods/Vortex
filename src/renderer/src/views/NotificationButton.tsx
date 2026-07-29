@@ -56,7 +56,7 @@ const displayTime = (item: INotification): number | null => {
   return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
 };
 
-export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
+export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> = ({ hide }) => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
   const extensions = useExtensionContext();

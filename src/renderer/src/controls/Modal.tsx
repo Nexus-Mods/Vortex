@@ -21,7 +21,7 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
   private mMenuLayer: Element = null;
 
   public getChildContext(): any {
-    return { ...this.context, menuLayer: this.mMenuLayer };
+    return { ...(this.context as any), menuLayer: this.mMenuLayer };
   }
 
   public render(): JSX.Element {

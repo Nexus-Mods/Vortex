@@ -184,7 +184,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
         </BootstrapButton>
       );
     } else {
-      const tooltip = <Popover id={this.props.id}>{tooltipText}</Popover>;
+      const tooltip = <Popover id={this.props.id}>{tooltipText as React.ReactNode}</Popover>;
       return (
         <OverlayTrigger
           overlay={tooltip}
@@ -195,7 +195,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
           <BootstrapButton {...(relayProps as any)}>
             {["icon", "both"].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null}
             {["text", "both"].indexOf(bType) !== -1 ? (
-              <p className="button-text">{tooltipText}</p>
+              <p className="button-text">{tooltipText as React.ReactNode}</p>
             ) : null}
             {this.props.children}
           </BootstrapButton>

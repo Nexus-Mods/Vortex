@@ -44,7 +44,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
   ),
 );
 
-export const ProfileSection: FC = () => {
+export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const dispatch = useDispatch();
   const extensions = useExtensionContext();
   const api = extensions.getApi();

@@ -72,9 +72,9 @@ export interface IHealthCheckContent {
   /** Map this check's result (from state) into listing entries. */
   selectEntries: (state: IState) => IHealthCheckEntry[];
   /** Renders a listing row for one of this check's entries. */
-  ListingRow: FC<IListingRowProps>;
+  ListingRow: FC<React.PropsWithChildren<IListingRowProps>>;
   /** Renders the detail body (below the shared chrome) for one entry. */
-  DetailView: FC<IDetailViewProps>;
+  DetailView: FC<React.PropsWithChildren<IDetailViewProps>>;
   /** Whether the shell offers hide controls (tabs / hide-all) for this check. */
   supportsHide?: boolean;
   /** Whether the given entry is currently hidden (provider-owned state). */

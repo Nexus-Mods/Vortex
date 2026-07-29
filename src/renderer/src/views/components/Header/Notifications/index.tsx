@@ -16,7 +16,9 @@ import { useNotificationItems } from "./useNotificationItems";
  * react to it directly. The outer component just manages the Popover state.
  * This allows us to reset expand state and trigger auto-open when new notifications arrive.
  */
-const NotificationsContent: React.FC<{ popoverOpen: boolean }> = ({ popoverOpen }) => {
+const NotificationsContent: React.FC<React.PropsWithChildren<{ popoverOpen: boolean }>> = ({
+  popoverOpen,
+}) => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 

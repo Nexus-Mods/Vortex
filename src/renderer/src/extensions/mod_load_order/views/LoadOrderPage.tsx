@@ -33,11 +33,13 @@ interface IBaseState {
   loading: boolean;
   updating: boolean;
   sortType: SortType;
-  itemRenderer: React.ComponentType<{
-    className?: string;
-    item: ILoadOrderDisplayItem;
-    onRef: (ref: any) => any;
-  }>;
+  itemRenderer: React.ComponentType<
+    React.PropsWithChildren<{
+      className?: string;
+      item: ILoadOrderDisplayItem;
+      onRef: (ref: any) => any;
+    }>
+  >;
 }
 
 export interface IBaseProps {
@@ -422,7 +424,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                       apply={this.onApply}
                     />
                   </FlexLayout.Flex>
-                  <FlexLayout.Flex>{infoPanel}</FlexLayout.Flex>
+                  <FlexLayout.Flex>{infoPanel as React.ReactNode}</FlexLayout.Flex>
                 </FlexLayout>
               </DNDContainer>
             </PanelX.Body>

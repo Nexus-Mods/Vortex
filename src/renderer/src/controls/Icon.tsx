@@ -115,7 +115,7 @@ const checkMissingIcon = (set: string, name: string): void => {
   });
 };
 
-export const Icon: FC<IIconProps> = ({
+export const Icon: FC<React.PropsWithChildren<IIconProps>> = ({
   id,
   className,
   style,

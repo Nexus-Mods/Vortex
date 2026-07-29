@@ -21,7 +21,9 @@ vi.mock("../../../controls/ErrorBoundary", () => ({
 }));
 
 vi.mock("react-redux", () => ({
-  connect: () => (component: React.ComponentType<Record<string, unknown>>) => component,
+  connect:
+    () => (component: React.ComponentType<React.PropsWithChildren<Record<string, unknown>>>) =>
+      component,
 }));
 
 vi.mock("react-i18next", () => ({
@@ -47,11 +49,13 @@ vi.mock("recharts", () => ({
 
 import DownloadGraph from "./DownloadGraph";
 
-const Graph = DownloadGraph as unknown as React.ComponentType<{
-  t: (key: string) => string;
-  maxBandwidth: number;
-  speeds: number[];
-}>;
+const Graph = DownloadGraph as unknown as React.ComponentType<
+  React.PropsWithChildren<{
+    t: (key: string) => string;
+    maxBandwidth: number;
+    speeds: number[];
+  }>
+>;
 
 const t = (key: string) => key;
 

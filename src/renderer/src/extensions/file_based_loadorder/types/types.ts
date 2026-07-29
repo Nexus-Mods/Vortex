@@ -108,17 +108,19 @@ export interface ILoadOrderGameInfo {
    *  in the load order page alongside the load order panel.
    *  Default instructions will be provided if custom instructions aren't provided.
    */
-  usageInstructions?: string | React.ComponentType<{}>;
+  usageInstructions?: string | React.ComponentType<React.PropsWithChildren<{}>>;
 
   /**
    * Extension developers are able to provide a custom item renderer for the
    *  load order page. This will get rendered instead of the default one.
    */
-  customItemRenderer?: React.ComponentType<{
-    className?: string;
-    item: IItemRendererProps;
-    forwardedRef?: (ref: any) => void;
-  }>;
+  customItemRenderer?: React.ComponentType<
+    React.PropsWithChildren<{
+      className?: string;
+      item: IItemRendererProps;
+      forwardedRef?: (ref: any) => void;
+    }>
+  >;
 
   /**
    * Set to true if a custom item renderer produces rows of a single, uniform

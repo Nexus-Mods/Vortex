@@ -48,7 +48,7 @@ class ToastErrorBoundary extends Component<{ children: ReactNode }, IToastBounda
   }
 }
 
-export const ToastContainer: FC = memo(() => (
+export const ToastContainer: FC<React.PropsWithChildren<unknown>> = memo(() => (
   <ToastErrorBoundary>
     <Toaster
       position="bottom-center"

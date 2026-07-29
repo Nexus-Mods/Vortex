@@ -13,7 +13,7 @@ import { ToastContainer } from "./ToastContainer";
 import { Toolbar } from "./Toolbar";
 import { UIBlocker } from "./UIBlocker";
 
-export const ClassicLayout: FC = () => {
+export const ClassicLayout: FC<React.PropsWithChildren<unknown>> = () => {
   const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
   const switchingProfile = useSwitchingProfile();
 

@@ -89,8 +89,10 @@ export function extend(
   groupProp?: string,
   addExtInfo?: boolean,
 ): <P extends IExtendedProps>(
-  component: React.ComponentType<P>,
-) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
+  component: React.ComponentType<React.PropsWithChildren<P>>,
+) => React.ComponentType<
+  React.PropsWithChildren<Omit<P, keyof IExtendedProps> & IExtensibleProps>
+> {
   ExtensionManager.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
 
@@ -109,8 +111,8 @@ export function extend(
   };
 
   return <P extends IExtendedProps, S>(
-    ComponentToWrap: React.ComponentType<P>,
-  ): React.ComponentType<Omit<P, keyof IExtendedProps>> => {
+    ComponentToWrap: React.ComponentType<React.PropsWithChildren<P>>,
+  ): React.ComponentType<React.PropsWithChildren<Omit<P, keyof IExtendedProps>>> => {
     type PropsT = Omit<P, keyof IExtendedProps> & IExtensibleProps;
     // eslint-disable-next-line @eslint-react/component-hook-factories
     return class __ExtendedComponent extends React.Component<PropsT, S> {
@@ -121,7 +123,7 @@ export function extend(
       public UNSAFE_componentWillReceiveProps(nextProps: any) {
         if (this.props[groupProp] !== nextProps[groupProp]) {
           if (extensions[nextProps[groupProp]] === undefined) {
-            updateExtensions(nextProps, this.context);
+            updateExtensions(nextProps, this.context as ExtensionManager);
           }
         }
         if (this.props.staticElements !== nextProps.staticElements) {
@@ -133,7 +135,7 @@ export function extend(
         const { children, staticElements } = this.props;
 
         if (extensions[this.props[groupProp]] === undefined) {
-          updateExtensions(this.props, this.context);
+          updateExtensions(this.props, this.context as ExtensionManager);
         }
 
         if (this.mObjects === undefined) {

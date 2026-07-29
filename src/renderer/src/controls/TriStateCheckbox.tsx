@@ -11,6 +11,7 @@ export interface ITriCheckboxProps {
   disabled: boolean;
   onChangeCB?: (evt: React.ChangeEvent<HTMLInputElement>, value: CheckboxState) => void;
   onContextMenu?: (checkboxState: CheckboxState) => void;
+  children?: React.ReactNode;
 }
 
 interface ITriCheckboxState {

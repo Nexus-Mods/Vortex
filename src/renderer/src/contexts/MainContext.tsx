@@ -37,7 +37,7 @@ export interface IMainProviderProps {
   children: ReactNode;
 }
 
-export const MainProvider: FC<IMainProviderProps> = ({ children }) => {
+export const MainProvider: FC<React.PropsWithChildren<IMainProviderProps>> = ({ children }) => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 

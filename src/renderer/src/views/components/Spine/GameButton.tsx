@@ -39,7 +39,7 @@ interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   store?: string;
 }
 
-export const GameButton: FC<GameButtonProps> = ({
+export const GameButton: FC<React.PropsWithChildren<GameButtonProps>> = ({
   cacheKey,
   isActive,
   preferred,

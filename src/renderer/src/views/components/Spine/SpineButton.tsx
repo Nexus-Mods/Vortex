@@ -9,7 +9,12 @@ interface SpineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isActive?: boolean;
 }
 
-export const SpineButton: FC<SpineButtonProps> = ({ className, iconPath, isActive, ...props }) => (
+export const SpineButton: FC<React.PropsWithChildren<SpineButtonProps>> = ({
+  className,
+  iconPath,
+  isActive,
+  ...props
+}) => (
   <button
     className={joinClasses([
       className,

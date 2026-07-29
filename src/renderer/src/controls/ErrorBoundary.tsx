@@ -27,6 +27,7 @@ export interface IBaseProps {
   onHide?: () => void;
   className?: string;
   canDisplayError?: boolean;
+  children?: React.ReactNode;
 }
 
 export interface IErrorBoundaryProps extends IBaseProps, WithTranslation {}
@@ -182,8 +183,8 @@ export default translate(["common"])(ErrorBoundary);
  * so that they get reported properly instead of remaining unhandled.
  */
 export function safeCallbacks<T, S>(
-  ComponentToWrap: React.ComponentType<React.PropsWithChildren<T>>,
-): React.ComponentType<Omit<T, keyof IErrorContext>> {
+  ComponentToWrap: React.ComponentType<React.PropsWithChildren<React.PropsWithChildren<T>>>,
+): React.ComponentType<React.PropsWithChildren<Omit<T, keyof IErrorContext>>> {
   // tslint:disable-next-line:class-name
   // return class __SafeCallbackComponent extends React.Component<T, S> {
   const cache: { [key: string]: { cb: CBFunction; depList: any[] } } = {};

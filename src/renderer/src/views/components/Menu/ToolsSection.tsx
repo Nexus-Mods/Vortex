@@ -21,7 +21,7 @@ interface PlayButtonProps {
   onClick: () => void;
 }
 
-const PlayButton: FC<PlayButtonProps> = ({
+const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
   primaryStarter,
   isPrimaryRunning,
   isCollapsed,
@@ -71,7 +71,7 @@ interface ToolsSectionProps {
   isAnimating: boolean;
 }
 
-export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
+export const ToolsSection: FC<React.PropsWithChildren<ToolsSectionProps>> = ({ isAnimating }) => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
   const { selection } = useSpineContext();

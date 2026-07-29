@@ -6,11 +6,16 @@ import Reducer from "./reducer";
 
 const componentRegistry = new Map<string, React.ComponentType<any>>();
 
-function registerOverlayComponent(id: string, component: React.ComponentType<any>): void {
+function registerOverlayComponent(
+  id: string,
+  component: React.ComponentType<React.PropsWithChildren<any>>,
+): void {
   componentRegistry.set(id, component);
 }
 
-function getOverlayComponent(id: string): React.ComponentType<any> | undefined {
+function getOverlayComponent(
+  id: string,
+): React.ComponentType<React.PropsWithChildren<any>> | undefined {
   return componentRegistry.get(id);
 }
 
@@ -36,7 +41,7 @@ function init(context: IExtensionContext): boolean {
     (
       id: string,
       title: string,
-      content: string | React.ComponentType<any>,
+      content: string | React.ComponentType<React.PropsWithChildren<any>>,
       pos: IPosition = undefined,
       options: IOverlayOptions,
     ) => {

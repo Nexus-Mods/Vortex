@@ -88,7 +88,13 @@ interface IErrorFallbackProps {
   onRetry: () => void;
 }
 
-const ErrorFallback: FC<IErrorFallbackProps> = ({ pageId, classes, error, errorInfo, onRetry }) => {
+const ErrorFallback: FC<React.PropsWithChildren<IErrorFallbackProps>> = ({
+  pageId,
+  classes,
+  error,
+  errorInfo,
+  onRetry,
+}) => {
   const { t } = useTranslation(["common"]);
   const context = useMainContext();
 
@@ -129,7 +135,11 @@ ComponentStack:
   );
 };
 
-export const MainPageContainer: React.FC<IBaseProps> = ({ page, active, secondary }) => {
+export const MainPageContainer: React.FC<React.PropsWithChildren<IBaseProps>> = ({
+  page,
+  active,
+  secondary,
+}) => {
   const { t } = useTranslation(["common"]);
   const [headerRef, setHeaderRef] = useState<HTMLElement | null>(null);
 

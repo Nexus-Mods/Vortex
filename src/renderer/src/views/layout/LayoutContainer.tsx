@@ -15,7 +15,10 @@ export interface ILayoutContainerProps {
  * Provides the main container for the layout, applying necessary classes and refs.
  * For both layouts.
  */
-export const LayoutContainer: FC<ILayoutContainerProps> = ({ children, className }) => {
+export const LayoutContainer: FC<React.PropsWithChildren<ILayoutContainerProps>> = ({
+  children,
+  className,
+}) => {
   const { isFocused, isHidpi } = useWindowContext();
   const { menuLayerOpen, setMenuLayerRef } = useMenuLayerContext();
 

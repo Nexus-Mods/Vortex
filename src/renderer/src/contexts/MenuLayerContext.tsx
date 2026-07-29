@@ -28,7 +28,9 @@ export interface IMenuLayerProviderProps {
   children: ReactNode;
 }
 
-export const MenuLayerProvider: FC<IMenuLayerProviderProps> = ({ children }) => {
+export const MenuLayerProvider: FC<React.PropsWithChildren<IMenuLayerProviderProps>> = ({
+  children,
+}) => {
   const [menuLayerOpen, setMenuLayerOpen] = useState(false);
   const [menuLayerElement, setMenuLayerElement] = useState<HTMLDivElement | null>(null);
   const menuObserverRef = useRef<MutationObserver | undefined>(undefined);

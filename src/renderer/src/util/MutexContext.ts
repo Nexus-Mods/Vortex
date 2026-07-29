@@ -43,7 +43,9 @@ export interface IMutexProviderProps {
   children: React.ReactNode;
 }
 
-export const MutexProvider: React.FC<IMutexProviderProps> = ({ children }) => {
+export const MutexProvider: React.FC<React.PropsWithChildren<IMutexProviderProps>> = ({
+  children,
+}) => {
   const queueRef = React.useRef<MutexContextValue>();
   if (queueRef.current === undefined) {
     queueRef.current = new MutexContextValue();

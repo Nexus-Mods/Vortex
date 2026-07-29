@@ -12,7 +12,7 @@ import { ProfileSwitcher } from "./ProfileSwitcher";
 import { ToastContainer } from "./ToastContainer";
 import { UIBlocker } from "./UIBlocker";
 
-export const ModernLayout: FC = () => {
+export const ModernLayout: FC<React.PropsWithChildren<unknown>> = () => {
   const switchingProfile = useSwitchingProfile();
 
   return (

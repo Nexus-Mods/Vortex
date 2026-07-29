@@ -7,7 +7,7 @@ import FlexLayout from "../../../controls/FlexLayout";
 import type { LoadOrderValidationError } from "../types/types";
 
 interface IProps {
-  info: string | React.ComponentType<{}>;
+  info: string | React.ComponentType<React.PropsWithChildren<{}>>;
   validationError: LoadOrderValidationError;
 }
 
@@ -73,5 +73,5 @@ class InfoPanel extends ComponentEx<IProps, {}> {
 
 export default withTranslation(["common"])(InfoPanel as any) as React.ComponentClass<{
   validationError: LoadOrderValidationError;
-  info: string | React.ComponentType<{}>;
+  info: string | React.ComponentType<React.PropsWithChildren<{}>>;
 }>;

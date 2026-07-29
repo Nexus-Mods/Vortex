@@ -8,7 +8,7 @@ export const ListingLoader = ({
   skeletonCount,
   SkeletonTile,
 }: PropsWithChildren<{
-  SkeletonTile?: ComponentType;
+  SkeletonTile?: ComponentType<React.PropsWithChildren<unknown>>;
   append?: boolean;
   className?: string;
   isLoading?: boolean;

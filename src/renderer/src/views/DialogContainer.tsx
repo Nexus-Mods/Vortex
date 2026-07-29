@@ -12,14 +12,14 @@ export interface IBaseProps {
 
 interface IExtDialog {
   id: string;
-  component: React.ComponentType<IErrorBoundaryProps>;
+  component: React.ComponentType<React.PropsWithChildren<IErrorBoundaryProps>>;
   props: PropsCallbackTyped<IErrorBoundaryProps>;
 }
 
 const registerDialog = (
   _instanceGroup: undefined,
   id: string,
-  component: React.ComponentType<IErrorBoundaryProps>,
+  component: React.ComponentType<React.PropsWithChildren<IErrorBoundaryProps>>,
   props?: PropsCallbackTyped<IErrorBoundaryProps>,
 ): IExtDialog => {
   return { id, component, props };
@@ -31,7 +31,7 @@ interface IRenderDialogProps {
   onHideDialog: () => void;
 }
 
-const RenderDialog: FC<IRenderDialogProps> = ({
+const RenderDialog: FC<React.PropsWithChildren<IRenderDialogProps>> = ({
   dialog,
   visibleDialog,
   onHideDialog,
@@ -52,7 +52,10 @@ const RenderDialog: FC<IRenderDialogProps> = ({
   );
 };
 
-export const DialogContainer: React.FC<IBaseProps> = ({ visibleDialog, onHideDialog }) => {
+export const DialogContainer: React.FC<React.PropsWithChildren<IBaseProps>> = ({
+  visibleDialog,
+  onHideDialog,
+}) => {
   const dialogs = useExtensionObjects<IExtDialog>(registerDialog);
 
   return (

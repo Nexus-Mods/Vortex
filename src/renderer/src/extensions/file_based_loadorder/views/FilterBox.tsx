@@ -9,7 +9,10 @@ interface IProps {
   setFilter(value: string): void;
 }
 
-const FilterBox: React.FC<IProps> = ({ currentFilterValue, setFilter }) => {
+const FilterBox: React.FC<React.PropsWithChildren<IProps>> = ({
+  currentFilterValue,
+  setFilter,
+}) => {
   const [t] = useTranslation("common");
   const applyFilter = React.useCallback((value: string) => setFilter(value), [setFilter]);
   return (

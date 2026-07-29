@@ -5,6 +5,7 @@ import { ComponentEx, connect } from "./ComponentEx";
 
 interface IConnectedProps {
   advancedMode: boolean;
+  children?: React.ReactNode;
 }
 
 type IProps = IConnectedProps;
@@ -51,4 +52,6 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(Advanced) as React.ComponentType<{}>;
+export default connect(mapStateToProps)(Advanced) as React.ComponentType<
+  React.PropsWithChildren<{}>
+>;

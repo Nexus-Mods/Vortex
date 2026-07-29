@@ -13,7 +13,7 @@ interface IProps {
   onMoveItem: (id: string, id2: string) => void;
 }
 
-export const BoxWithHandle: FC<IProps> = (props: IProps) => {
+export const BoxWithHandle: FC<React.PropsWithChildren<IProps>> = (props: IProps) => {
   const [{ opacity, isDragging }, drag, dragPreview] = useDrag({
     type: "TOOL",
     item: { idx: props.index, id: props.item.id },

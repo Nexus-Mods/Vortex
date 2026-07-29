@@ -15,7 +15,7 @@ export interface IMainPage {
   icon: string;
   mdi?: string;
   title: string;
-  component: React.ComponentClass<any> | React.StatelessComponent<any>;
+  component: React.ComponentClass<any> | React.FunctionComponent<React.PropsWithChildren<any>>;
   propsFunc: () => any;
   visible: () => boolean;
   group: "global" | "per-game" | "support" | "hidden" | "dashboard";
@@ -33,5 +33,5 @@ export interface IMainPage {
   activity?: ReduxProp<boolean>;
   namespace?: string;
   onReset?: () => void;
-  menuBadge?: React.ComponentType;
+  menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;
 }

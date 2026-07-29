@@ -22,7 +22,7 @@ import { Icon } from "./TooltipControls";
  * @class ExtensionGate
  * @extends {React.Component<{}, {}>}
  */
-class ExtensionGate extends React.Component<{ id: string }, {}> {
+class ExtensionGate extends React.Component<{ id: string; children?: React.ReactNode }, {}> {
   private mWrappers: { [key: string]: any } = {};
   private mValid: boolean;
 

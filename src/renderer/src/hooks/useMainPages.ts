@@ -14,7 +14,7 @@ const registerMainPage = (
   extInfo: Partial<IRegisteredExtension>,
   icon: string,
   title: string,
-  component: ComponentType,
+  component: ComponentType<React.PropsWithChildren<unknown>>,
   options: IMainPageOptions,
 ): IMainPage => {
   return {

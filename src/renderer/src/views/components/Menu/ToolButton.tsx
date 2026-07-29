@@ -16,7 +16,7 @@ interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isRunning?: boolean;
 }
 
-export const ToolButton: FC<ToolButtonProps> = ({
+export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
   starter,
   isPrimary = false,
   isValid = true,

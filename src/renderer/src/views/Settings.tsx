@@ -26,7 +26,7 @@ const startupSettings = lazyRequire<typeof startupSettingsT>(
 
 interface ISettingsPage {
   title: string;
-  component: React.ComponentType<IBaseProps>;
+  component: React.ComponentType<React.PropsWithChildren<IBaseProps>>;
   props: PropsCallbackTyped<IBaseProps>;
   visible: () => boolean;
   priority: number;
@@ -41,7 +41,7 @@ interface ICombinedSettingsPage {
 const registerSettings = (
   _instanceGroup: undefined,
   title: string,
-  component: React.ComponentType<IBaseProps>,
+  component: React.ComponentType<React.PropsWithChildren<IBaseProps>>,
   props: PropsCallbackTyped<IBaseProps>,
   visible: () => boolean,
   priority?: number,
@@ -49,7 +49,10 @@ const registerSettings = (
   return { title, component, props, visible, priority: priority || 100 };
 };
 
-export const Settings: React.FC<{ active?: boolean; pageId?: string }> = ({ active, pageId }) => {
+export const Settings: React.FC<React.PropsWithChildren<{ active?: boolean; pageId?: string }>> = ({
+  active,
+  pageId,
+}) => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 

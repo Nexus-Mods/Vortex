@@ -16,6 +16,7 @@ export interface IProps {
   onChangeLayout: (items: string[]) => void;
   settings: any;
   items: string[];
+  children?: React.ReactNode;
 }
 
 function setEqual(lhs: Set<any>, rhs: Set<any>) {
