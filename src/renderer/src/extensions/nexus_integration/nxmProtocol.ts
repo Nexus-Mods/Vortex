@@ -262,9 +262,14 @@ export class NxmProtocol {
      * anything left parked here would have no way back.
      */
     onRetry: () => {
-      this.#freeQueue.slice().forEach((queued) => {
-        this.resolve(queued.input).then(queued.resolve, queued.reject);
-      });
+      // only what the api will now serve: re-resolving anything else lands back here and parks a
+      // second entry for a download that is already parked
+      this.#freeQueue
+        .slice()
+        .filter((queued) => this.#canDownloadInApp(queued.url))
+        .forEach((queued) => {
+          this.resolve(queued.input).then(queued.resolve, queued.reject);
+        });
     },
   };
 
