@@ -5,7 +5,8 @@ import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useCallback, useMemo, useRef, useState } from "react";
 import type { WithTranslation } from "react-i18next";
 
-import type { IAvailableExtension, IExtension } from "@/types/extensions";
+import type { IAvailableExtension } from "@/types/extensions";
+import type { IExtensionState } from "@/types/IState";
 import type { IState } from "@/types/IState";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Pagination } from "@/ui/components/pagination/Pagination";
@@ -59,7 +60,7 @@ interface IConnectedProps {
   gameMode: string;
   pickerLayout: "list" | "small" | "large";
   extensions: IAvailableExtension[];
-  extensionsInstalled: { [extId: string]: IExtension };
+  extensionsInstalled: { [extId: string]: IExtensionState };
   sortManaged: string;
   sortUnmanaged: string;
 }
@@ -468,7 +469,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
     extensions: state.session.extensions.available,
-    extensionsInstalled: state.session.extensions.installed,
+    extensionsInstalled: state.app.extensions ?? {},
     sortManaged: state.settings.gameMode.sortManaged ?? "alphabetical",
     sortUnmanaged: state.settings.gameMode.sortUnmanaged ?? "alphabetical",
   };

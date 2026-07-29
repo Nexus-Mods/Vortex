@@ -142,7 +142,7 @@ import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHa
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
-import getI18n, { changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
+import { init as getI18n, changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
 import { showError } from "./util/message";
 import migrate from "./util/migrate";
 import { readStartupSettings } from "./util/startupSettings";
@@ -779,14 +779,10 @@ async function init(): Promise<ExtensionManager | null> {
 }
 
 async function load(extensions: ExtensionManager): Promise<void> {
-  const { i18n, tFunc, error } = await Promise.resolve(
-    getI18n("en", () => {
-      const state = store.getState();
-      return Object.values(state.session.extensions.installed).filter(
-        (ext) => ext.type === "translation",
-      );
-    }),
-  );
+  const { i18n, tFunc, error } = await getI18n("en", () => {
+    const state = store.getState();
+    return Object.values(state.app.extensions ?? {}).filter((ext) => ext.type === "translation");
+  });
 
   if (error) {
     showError(store.dispatch, "failed to initialize localization", error, {

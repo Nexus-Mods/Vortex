@@ -14,13 +14,20 @@ export const OrRows = ({
   requirement: Extract<IFileRequirement, { kind: "or" }>;
 }) => (
   <>
-    {requirement.branches.map((branch) =>
+    {requirement.branches.map((branch, index) =>
       branch.kind === "download" ? (
-        <CandidateCard candidate={branch.candidate} ctx={ctx} isOr={true} key={branch.modFileId} />
+        <CandidateCard
+          candidate={branch.candidate}
+          ctx={ctx}
+          isOr={true}
+          key={branch.modFileId}
+          optionCount={requirement.branches.length}
+          optionPosition={index + 1}
+        />
       ) : (
         <EnableCard
-          api={ctx.api}
           correctFile={branch.correctFile}
+          ctx={ctx}
           enabledFile={branch.enabledFile}
           isOr={true}
           key={branch.modFileId}

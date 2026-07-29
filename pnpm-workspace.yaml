@@ -10,15 +10,20 @@ packages:
   - ./src/stylesheets
   - ./extensions/*
   - ./extensions/games/*
+  - ./.github/actions/fingerprints
+  - ./.github/actions/prepare-nexusmods-release
 
 catalog:
   7z-bin: github:Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
+  "@actions/core": 1.11.1
+  "@actions/github": 6.0.1
   "@babel/core": 7.29.7
   "@babel/polyfill": 7.12.1
   "@babel/preset-env": 7.29.2
   "@babel/preset-react": 7.28.5
   "@babel/preset-typescript": 7.16.7
   "@babel/register": 7.16.8
+  "@clickhouse/client": 1.18.3
   "@cyclonedx/cyclonedx-library": 10.0.0
   "@duckdb/node-api": 1.5.1-r.1
   "@electron/rebuild": 4.1.0

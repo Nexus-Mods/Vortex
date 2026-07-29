@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
+import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";
 import type { IModRequirementExt } from "../../types";
 import type { IListingRowProps } from "../../views/content/types";
@@ -16,6 +17,8 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
   const { t } = useTranslation(["health_check", "common"]);
   const mod = entry.data as IModRequirementExt;
 
+  const { identity, issueType, resolutionType } = useIssue();
+
   const {
     givenFeedback,
     showPremiumAd,
@@ -23,9 +26,34 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     setShowPremiumModal,
     openModPage,
     installInApp,
-    handlePositiveFeedback,
-    handleFeedbackSuccess,
-  } = useModRequirementActions(api, mod);
+    markFeedback,
+  } = useModRequirementActions(api, mod, identity);
+
+  const { trackOneClickInstallClicked, trackIssueHidden, trackIssueUnhidden } = useIssueTracking();
+
+  const handleInstall = () => {
+    trackOneClickInstallClicked({
+      mod_id: mod.modId,
+      mod_name: mod.modName,
+      mod_version: mod.mainFile?.version ?? "",
+      is_adult_content: mod.mainFile?.adultContent ?? false,
+    });
+
+    void installInApp();
+  };
+
+  const handleToggleHide = () => {
+    if (isHidden) {
+      trackIssueUnhidden({ issue_type: issueType });
+    } else {
+      trackIssueHidden({
+        issue_type: issueType,
+        resolution_type: resolutionType,
+      });
+    }
+
+    onToggleHide();
+  };
 
   return (
     <>
@@ -52,7 +80,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                void installInApp();
+                handleInstall();
               }}
             >
               {t("detail::item::install_one_click")}
@@ -67,9 +95,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             givenFeedback={givenFeedback}
             isHidden={isHidden}
             variant="listing"
-            onHelpful={handlePositiveFeedback}
-            onNotHelpful={handleFeedbackSuccess}
-            onToggleHide={onToggleHide}
+            onHelpful={markFeedback}
+            onNotHelpful={markFeedback}
+            onToggleHide={handleToggleHide}
           />
         }
         severity={entry.severity}
@@ -84,6 +112,9 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
       <PremiumModal
         isOpen={showPremiumModal}
+        modCount={1}
+        modId={mod.modId}
+        trigger="single_install"
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {
           setShowPremiumModal(false);

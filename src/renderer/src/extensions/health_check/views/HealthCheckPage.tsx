@@ -6,18 +6,15 @@ import {
   mdiEyeOff,
   mdiRefresh,
 } from "@mdi/js";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setOpenMainPage, setSettingsPage } from "@/actions/session";
-import { DisplayOptions } from "@/extensions/gamemode_management/components/DisplayOptions";
-import { Search } from "@/extensions/gamemode_management/components/Search";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
-import { Pictogram } from "@/ui/components/pictogram/Pictogram";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
@@ -33,6 +30,8 @@ import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
+import { createHealthCheckTracker } from "../hooks/healthCheckTracker";
+import { HealthCheckTrackingProvider, IssueProvider } from "../hooks/HealthCheckTracking.context";
 import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
@@ -41,7 +40,8 @@ import {
   lastHealthCheckRun,
   modRequirementsCheckResult,
 } from "../selectors";
-import { type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
+import { countIssues, type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
+import type { HealthCheckTab } from "../utils/shared/tracking";
 import { healthCheckContent } from "./content/registry";
 import type { IBulkInstallItem } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
@@ -59,24 +59,27 @@ interface IHealthCheckPageProps {
  * per-result lastFullRun subscription re-render only this label. Renders
  * nothing until the first check run of the session.
  */
-function LastUpdated() {
+const LastUpdated = () => {
   const { t } = useTranslation(["health_check", "common"]);
   const lastRun = useSelector(lastHealthCheckRun);
   const time = useRelativeTime(lastRun, t);
+
   if (time === undefined) {
     return null;
   }
+
   return (
     <Typography appearance="subdued" brand="neutral-translucent" typographyType="body-sm">
       {t("listing::last_updated", { time })}
     </Typography>
   );
-}
+};
 
 /** No-choice install items from every check, de-duplicated across checks by key. */
-function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstallItem[] {
+const collectInstallAllItems = (state: IState, api: IExtensionApi): IBulkInstallItem[] => {
   const seen = new Set<string>();
   const out: IBulkInstallItem[] = [];
+
   for (const content of Object.values(healthCheckContent)) {
     for (const item of content?.collectInstallAll?.(state, api) ?? []) {
       if (!seen.has(item.key)) {
@@ -85,14 +88,25 @@ function collectInstallAllItems(state: IState, api: IExtensionApi): IBulkInstall
       }
     }
   }
-  return out;
-}
 
-function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) {
+  return out;
+};
+
+const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
+
+  const {
+    trackPageViewed,
+    trackPassedViewed,
+    trackTabSwitched,
+    trackHideAllClicked,
+    trackUnhideAllClicked,
+    trackSettingsOpened,
+    trackOneClickInstallAllClicked,
+  } = useMemo(() => createHealthCheckTracker(api), [api]);
 
   // Clicking the Health check menu item while already on the page returns to
   // the listing (closes any open detail). setSelected is stable, so registering
@@ -134,6 +148,41 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
   const hiddenItems = useMemo(() => items.filter((item) => item.hidden), [items]);
   const supportsHide = useMemo(() => items.some((item) => item.content.supportsHide), [items]);
 
+  // page_viewed fires each time the page becomes active (it stays mounted across
+  // navigation, so key off the active-prop transition rather than mount). lastHealthCheckRun
+  // is read from state rather than subscribed, to avoid re-rendering the page on every scan.
+  const wasActiveRef = useRef(false);
+
+  useEffect(() => {
+    if (active && !wasActiveRef.current) {
+      const counts = countIssues(activeItems);
+
+      trackPageViewed({
+        active_issue_count: counts.total,
+        hidden_issue_count: hiddenItems.length,
+        warning_count: counts.warning,
+        suggestion_count: counts.suggestion,
+        last_scan_timestamp: lastHealthCheckRun(api.getState()),
+      });
+    }
+
+    wasActiveRef.current = !!active;
+  }, [active, activeItems, hiddenItems, trackPageViewed, api]);
+
+  // passed_viewed fires when the success/empty state becomes visible — on navigating to
+  // an already-passed page, or when a scan clears the last active issue while viewing.
+  const passedShownRef = useRef(false);
+
+  useEffect(() => {
+    const passed = !!active && !activeItems.length;
+
+    if (passed && !passedShownRef.current) {
+      trackPassedViewed();
+    }
+
+    passedShownRef.current = passed;
+  }, [active, activeItems, trackPassedViewed]);
+
   if (selected) {
     return (
       <HealthCheckDetailPage
@@ -151,23 +200,38 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
 
   const renderRow = (item: IListedEntry) => {
     const { content, entry } = item;
+
     return (
-      <content.ListingRow
-        api={api}
-        entry={entry}
-        isHidden={item.hidden}
-        key={`${entry.checkId}:${entry.id}`}
-        onOpen={() => setSelected(item)}
-        onToggleHide={() => content.toggleHide?.(api, entry)}
-      />
+      <IssueProvider entry={entry} key={`${entry.checkId}:${entry.id}`}>
+        <content.ListingRow
+          api={api}
+          entry={entry}
+          isHidden={item.hidden}
+          onOpen={() => setSelected(item)}
+          onToggleHide={() => content.toggleHide?.(api, entry)}
+        />
+      </IssueProvider>
     );
   };
 
+  const handleTabChange = (tab: string) => {
+    if (tab !== selectedTab) {
+      trackTabSwitched({
+        tab: tab as HealthCheckTab,
+        issue_count_in_tab: tab === "hidden" ? hiddenCount : activeCount,
+      });
+    }
+
+    setSelectedTab(tab);
+  };
+
   const hideAllActive = () => {
+    trackHideAllClicked({ issue_count_hidden: activeItems.length });
     activeItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 
   const unhideAll = () => {
+    trackUnhideAllClicked({ issue_count_unhidden: hiddenItems.length });
     hiddenItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 
@@ -175,11 +239,18 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
   // collectInstallAllItems (by key) and again here at execution time via the seen set,
   // so a file shared across multiple source reports is only queued once.
   const installAll = () => {
+    trackOneClickInstallAllClicked({
+      issue_count: activeCount,
+      mod_count: installAllItems.length,
+    });
+
     if (showPremiumAd) {
       setShowInstallAllPremium(true);
       return;
     }
+
     const seen = new Set<string>();
+
     for (const item of installAllItems) {
       if (!seen.has(item.key)) {
         seen.add(item.key);
@@ -201,127 +272,136 @@ function HealthCheckPage({ api, onRefresh, active, registerReset }: IHealthCheck
       />
     );
 
+  // The page's own events are cross-check aggregates, so it keeps the unscoped tracker
+  // (it can't consume the context it provides). Everything below gets the ambient one;
+  // the premium surfaces here sit outside any IssueProvider, which is what makes
+  // them emit without issue_id / check_id.
   return (
-    <Page active={active} id="health-check-page" scrollable={false}>
-      <PageHeader
-        customTitle={
-          <div className="flex items-center gap-x-1.5">
-            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
-              {t("listing::title")}
-            </Typography>
+    <HealthCheckTrackingProvider api={api}>
+      <Page active={active} id="health-check-page" scrollable={false}>
+        <PageHeader
+          customTitle={
+            <div className="flex items-center gap-x-1.5">
+              <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+                {t("listing::title")}
+              </Typography>
 
-            <BetaBadge />
-          </div>
-        }
-        pictogramName="health-check"
-        subtitle={t("listing::subtitle")}
-      >
-        <div className="flex shrink-0 items-center gap-x-2">
-          <LastUpdated />
-
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            isLoading={isRefreshing}
-            leftIconPath={mdiRefresh}
-            size="sm"
-            title={t("common:::refresh")}
-            onClick={() => onRefresh?.()}
-          />
-
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            leftIconPath={mdiCog}
-            size="sm"
-            title={t("common:::settings")}
-            onClick={() => {
-              dispatch(setOpenMainPage("application_settings", false));
-              dispatch(setSettingsPage("Vortex"));
-            }}
-          />
-        </div>
-      </PageHeader>
-
-      <PageScroll className="space-y-6 p-6">
-        {supportsHide ? (
-          <TabProvider
-            tab={selectedTab}
-            tabListId="health-check-mods"
-            tabType="secondary"
-            onSetSelectedTab={setSelectedTab}
-          >
-            <div className="flex items-center justify-between">
-              <TabBar>
-                <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
-
-                <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
-              </TabBar>
-
-              <div className="flex items-center gap-x-2">
-                <Button
-                  appearance="subdued"
-                  brand="neutral"
-                  disabled={
-                    (selectedTab === "active" && !activeCount) ||
-                    (selectedTab === "hidden" && !hiddenCount)
-                  }
-                  leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
-                  size="sm"
-                  onClick={selectedTab === "active" ? hideAllActive : unhideAll}
-                >
-                  {selectedTab === "active"
-                    ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
-                    : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
-                </Button>
-
-                {selectedTab === "active" && installAllItems.length > 0 && (
-                  <>
-                    <div className="w-px self-stretch bg-stroke-weak" />
-
-                    <Button
-                      brand="neutral"
-                      leftIconPath={mdiMonitorArrowDownVariant}
-                      rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-                      size="sm"
-                      onClick={installAll}
-                    >
-                      {t("actions::install_all", { count: installAllItems.length })}
-                    </Button>
-                  </>
-                )}
-              </div>
+              <BetaBadge />
             </div>
+          }
+          pictogramName="health-check"
+          subtitle={t("listing::subtitle")}
+        >
+          <div className="flex shrink-0 items-center gap-x-2">
+            <LastUpdated />
 
-            <TabPanel id="active">{activeList}</TabPanel>
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              isLoading={isRefreshing}
+              leftIconPath={mdiRefresh}
+              size="sm"
+              title={t("common:::refresh")}
+              onClick={() => onRefresh?.()}
+            />
 
-            <TabPanel id="hidden">
-              {hiddenCount > 0 ? (
-                <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
-              ) : (
-                <NoResults
-                  className="py-24"
-                  iconPath={mdiEyeOff}
-                  title={t("listing::no_results_hidden::title")}
-                />
-              )}
-            </TabPanel>
-          </TabProvider>
-        ) : (
-          activeList
-        )}
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              leftIconPath={mdiCog}
+              size="sm"
+              title={t("common:::settings")}
+              onClick={() => {
+                trackSettingsOpened();
+                dispatch(setOpenMainPage("application_settings", false));
+                dispatch(setSettingsPage("Vortex"));
+              }}
+            />
+          </div>
+        </PageHeader>
 
-        <PremiumBanner />
+        <PageScroll className="space-y-6 p-6">
+          {supportsHide ? (
+            <TabProvider
+              tab={selectedTab}
+              tabListId="health-check-mods"
+              tabType="secondary"
+              onSetSelectedTab={handleTabChange}
+            >
+              <div className="flex items-center justify-between">
+                <TabBar>
+                  <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
 
-        <PremiumModal
-          downloadScope="all"
-          isOpen={showInstallAllPremium}
-          onClose={() => setShowInstallAllPremium(false)}
-          onDownload={() => setShowInstallAllPremium(false)}
-        />
-      </PageScroll>
-    </Page>
+                  <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
+                </TabBar>
+
+                <div className="flex items-center gap-x-2">
+                  <Button
+                    appearance="subdued"
+                    brand="neutral"
+                    disabled={
+                      (selectedTab === "active" && !activeCount) ||
+                      (selectedTab === "hidden" && !hiddenCount)
+                    }
+                    leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
+                    size="sm"
+                    onClick={selectedTab === "active" ? hideAllActive : unhideAll}
+                  >
+                    {selectedTab === "active"
+                      ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
+                      : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
+                  </Button>
+
+                  {selectedTab === "active" && installAllItems.length > 0 && (
+                    <>
+                      <div className="w-px self-stretch bg-stroke-weak" />
+
+                      <Button
+                        brand="neutral"
+                        leftIconPath={mdiMonitorArrowDownVariant}
+                        rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                        size="sm"
+                        onClick={installAll}
+                      >
+                        {t("actions::install_all", { count: installAllItems.length })}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <TabPanel id="active">{activeList}</TabPanel>
+
+              <TabPanel id="hidden">
+                {hiddenCount > 0 ? (
+                  <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
+                ) : (
+                  <NoResults
+                    className="py-24"
+                    iconPath={mdiEyeOff}
+                    title={t("listing::no_results_hidden::title")}
+                  />
+                )}
+              </TabPanel>
+            </TabProvider>
+          ) : (
+            activeList
+          )}
+
+          <PremiumBanner placement="list" totalIssues={activeCount + hiddenCount} />
+
+          <PremiumModal
+            downloadScope="all"
+            isOpen={showInstallAllPremium}
+            modCount={installAllItems.length}
+            trigger="install_all"
+            onClose={() => setShowInstallAllPremium(false)}
+            onDownload={() => setShowInstallAllPremium(false)}
+          />
+        </PageScroll>
+      </Page>
+    </HealthCheckTrackingProvider>
   );
-}
+};
 
 export default HealthCheckPage;

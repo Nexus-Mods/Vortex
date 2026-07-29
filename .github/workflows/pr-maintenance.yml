@@ -32,7 +32,7 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
     steps:
-      - uses: actions/stale@v10
+      - uses: actions/stale@v11
         with:
           # ignore issues
           days-before-issue-stale: -1

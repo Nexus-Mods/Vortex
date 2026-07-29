@@ -13,14 +13,6 @@ jobs:
     runs-on: windows-latest
     env:
       NO_PARALLEL: true
-      ES_USERNAME: ${{ secrets.ES_USERNAME }}
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
-      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
-      NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
-      CERT_PATH: Release
-      VORTEX_BUILD_CONFIG: Release # Could just use CERT_PATH but this is more explicit
       DEBUG: electron-builder # gives electron more verbose logs
 
     steps:
@@ -29,10 +21,25 @@ jobs:
           submodules: "recursive"
 
       - name: Package Vortex nightly
+        id: package
         uses: ./.github/actions/package
         with:
-          nightly: "true"
-          create-artifacts: "true"
           use-codesigning: "false"
-          release: "false"
-          staging-release: "false"
+
+      - name: Create Unpacked Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.unpacked-artifact }}
+          path: ./dist/win-unpacked
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Create Installer Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.installer-artifact }}
+          path: |
+            ./dist/vortex-setup-*.*.*.exe
+            ./dist/latest.yml
+          if-no-files-found: error
+          retention-days: 2

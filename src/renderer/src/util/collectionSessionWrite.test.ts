@@ -156,6 +156,23 @@ describe("planDependencyErrorRecovery", () => {
     ).toEqual({ action: "leave" });
   });
 
+  it("settles a member the user declined at a prompt as skipped, not requeued", () => {
+    // the instructions dialog's Skip throws UserCanceled(skipped=true); requeueing would re-ask
+    // the question the user just answered, and leaving it would park the member non-terminal
+    expect(planDependencyErrorRecovery({ ...base, isCanceled: true, userSkipped: true })).toEqual({
+      action: "skip",
+    });
+  });
+
+  it("a whole-install cancel or a durable ignore still wins over userSkipped", () => {
+    expect(
+      planDependencyErrorRecovery({ ...base, installCanceled: true, userSkipped: true }),
+    ).toEqual({ action: "leave" });
+    expect(planDependencyErrorRecovery({ ...base, ruleIgnored: true, userSkipped: true })).toEqual({
+      action: "leave",
+    });
+  });
+
   it("requeues a transient error while retries remain", () => {
     expect(planDependencyErrorRecovery({ ...base })).toEqual({ action: "requeue" });
   });

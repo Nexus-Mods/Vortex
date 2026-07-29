@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
-import { CollectResult, PR_FINGERPRINT_RE, Status } from "./types";
+import { type CollectResult, PR_FINGERPRINT_RE, Status } from "./types";
 
 /**
  * Collects fingerprints referenced by `Fixes fingerprint XXXXXXXX` lines in
@@ -18,7 +18,7 @@ export const collectFromPR = (): CollectResult => {
   const fingerprints = [
     ...new Set(
       [...body.matchAll(PR_FINGERPRINT_RE)].flatMap((m) =>
-        m[1]
+        (m[1] ?? "")
           .split(/[\s,]+/)
           .filter(Boolean)
           .map((fp) => fp.toLowerCase()),
@@ -26,10 +26,13 @@ export const collectFromPR = (): CollectResult => {
     ),
   ];
 
+  // `user` is untyped in the webhook payload, unlike `html_url`.
+  const login: unknown = pr.user?.login;
+
   const rows = fingerprints.map((fingerprint) => ({
     fingerprint,
-    pr_url: pr.html_url as string,
-    updated_by: pr.user.login as string,
+    pr_url: pr.html_url ?? "",
+    updated_by: typeof login === "string" ? login : "",
     release_version: "",
     status: Status.Fixed,
   }));

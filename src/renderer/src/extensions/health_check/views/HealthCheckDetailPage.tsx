@@ -1,5 +1,5 @@
 import { mdiArrowLeft } from "@mdi/js";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -13,12 +13,18 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import {
+  HealthCheckTrackingProvider,
+  IssueProvider,
+  useIssueTracking,
+} from "../hooks/HealthCheckTracking.context";
+import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
   hiddenModRequirements,
   isAnyHealthCheckRunning,
   modRequirementsCheckResult,
 } from "../selectors";
+import { selectListedEntries } from "../utils/shared/listedEntries";
 import type { IHealthCheckContent, IHealthCheckEntry } from "./content/types";
 
 interface IHealthCheckDetailPageProps {
@@ -28,6 +34,36 @@ interface IHealthCheckDetailPageProps {
   onBack: () => void;
   active?: boolean;
 }
+
+/**
+ * Back button. A leaf so it can read the ambient issue identity this page provides, and so
+ * the "opened at" mark is simply its own mount time. back_clicked fires only on an
+ * explicit click, not the auto-return when a requirement resolves.
+ */
+const BackButton = ({ onBack }: { onBack: () => void }) => {
+  const { t } = useTranslation(["health_check", "common"]);
+  const { trackBackClicked } = useIssueTracking();
+  const openedAtRef = useRef(0);
+
+  useEffect(() => {
+    openedAtRef.current = Date.now();
+  }, []);
+
+  return (
+    <Button
+      appearance="subdued"
+      brand="neutral"
+      leftIconPath={mdiArrowLeft}
+      size="sm"
+      onClick={() => {
+        trackBackClicked({ time_spent_on_detail_ms: Date.now() - openedAtRef.current });
+        onBack();
+      }}
+    >
+      {t("common:::back")}
+    </Button>
+  );
+};
 
 /**
  * Shared detail chrome: header (severity title/subtitle, beta), back button and
@@ -67,38 +103,40 @@ function HealthCheckDetailPage({
 
   const shownEntry = liveEntry ?? entry;
 
+  // The detail page is returned early from HealthCheckPage, outside that page's provider,
+  // so it establishes its own. Everything here belongs to one issue, including the
+  // premium banner, so the provider wraps the whole page.
   return (
-    <Page active={active} id="health-check-detail-page" scrollable={false}>
-      <PageHeader
-        customTitle={
-          <div className="flex items-center gap-x-1.5">
-            <Typography appearance="moderate" as="h2" typographyType="heading-xs">
-              {t(`detail::title::${shownEntry.severity}`)}
-            </Typography>
+    <HealthCheckTrackingProvider api={api}>
+      <IssueProvider entry={shownEntry}>
+        <Page active={active} id="health-check-detail-page" scrollable={false}>
+          <PageHeader
+            customTitle={
+              <div className="flex items-center gap-x-1.5">
+                <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+                  {t(`detail::title::${shownEntry.severity}`)}
+                </Typography>
 
-            <BetaBadge />
-          </div>
-        }
-        pictogramName="health-check"
-        subtitle={t(`detail::subtitle::${shownEntry.severity}`)}
-      >
-        <Button
-          appearance="subdued"
-          brand="neutral"
-          leftIconPath={mdiArrowLeft}
-          size="sm"
-          onClick={onBack}
-        >
-          {t("common:::back")}
-        </Button>
-      </PageHeader>
+                <BetaBadge />
+              </div>
+            }
+            pictogramName="health-check"
+            subtitle={t(`detail::subtitle::${shownEntry.severity}`)}
+          >
+            <BackButton onBack={onBack} />
+          </PageHeader>
 
-      <PageScroll className="space-y-6 p-6">
-        <DetailView api={api} entry={shownEntry} onBack={onBack} />
+          <PageScroll className="space-y-6 p-6">
+            <DetailView api={api} entry={shownEntry} onBack={onBack} />
 
-        <PremiumBanner />
-      </PageScroll>
-    </Page>
+            <PremiumBanner
+              placement="detail"
+              totalIssues={selectListedEntries(api.getState()).length}
+            />
+          </PageScroll>
+        </Page>
+      </IssueProvider>
+    </HealthCheckTrackingProvider>
   );
 }
 

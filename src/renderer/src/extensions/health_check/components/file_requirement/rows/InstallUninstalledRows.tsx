@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 import {
   downloadedToFileData,
   fileWebLinks,
+  type IFileActionContext,
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import {
   installDownloadedFile,
   viewDownloadInMods,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { nxmModOutline } from "@/ui/icon-paths";
 
@@ -19,16 +19,27 @@ import { useInstallButton } from "../../../hooks/useInstallButton";
 import { FileRequirement } from "../FileRequirement";
 
 export const InstallUninstalledRows = ({
-  api,
+  ctx,
   requirement,
 }: {
-  api: IExtensionApi;
+  ctx: IFileActionContext;
   requirement: Extract<IFileRequirement, { kind: "correct-version-uninstalled" }>;
 }) => {
   const { t } = useTranslation("health_check");
+  const file = requirement.uninstalledFile;
   const { isLoading, onClick } = useInstallButton(() =>
-    installDownloadedFile(api, requirement.uninstalledFile),
+    installDownloadedFile(ctx.api, file, ctx.identity),
   );
+
+  const handleInstall = () => {
+    ctx.onInstallDownloaded(file);
+    onClick();
+  };
+
+  const handleViewInMods = () => {
+    ctx.onViewInMods(file);
+    viewDownloadInMods(ctx.api, file);
+  };
 
   return (
     <FileRequirement
@@ -39,7 +50,7 @@ export const InstallUninstalledRows = ({
             brand="neutral"
             leftIconPath={nxmModOutline}
             size="sm"
-            onClick={() => viewDownloadInMods(api, requirement.uninstalledFile)}
+            onClick={handleViewInMods}
           >
             {t("detail::item::view_in_mods")}
           </Button>
@@ -50,14 +61,14 @@ export const InstallUninstalledRows = ({
             isLoading={isLoading}
             leftIconPath={mdiCheck}
             size="sm"
-            onClick={onClick}
+            onClick={handleInstall}
           >
             {isLoading ? t("detail::item::installing") : t("detail::item::install_uninstalled")}
           </Button>
         </>
       }
-      file={downloadedToFileData(requirement.uninstalledFile)}
-      {...fileWebLinks(api, requirement.uninstalledFile)}
+      file={downloadedToFileData(file)}
+      {...fileWebLinks(ctx.api, file)}
     />
   );
 };

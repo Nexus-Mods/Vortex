@@ -244,7 +244,7 @@ function mapStateToProps(state: types.IState): IConnectedProps {
   return {
     extensionState: state.app.extensions,
     extensions: state.session.extensions.available,
-    installed: state.session.extensions.installed,
+    installed: state.app.extensions ?? {},
     downloads: state.persistent.downloads.files,
     user: util.getSafe(state, ["persistent", "nexus", "userInfo", "name"], undefined),
   };

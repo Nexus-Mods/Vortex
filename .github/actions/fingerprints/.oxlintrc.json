@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../../oxlint.base.config.json"],
+  "ignorePatterns": ["dist/**"],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "vitest/require-mock-type-parameters": "warn",
+        "typescript/no-unsafe-type-assertion": "warn"
+      }
+    }
+  ]
+}

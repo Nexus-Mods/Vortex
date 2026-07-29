@@ -9,8 +9,6 @@ const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.setAvailableExtensions as any]: (state, payload) =>
       setSafe(state, ["available"], payload),
-    [actions.setInstalledExtensions as any]: (state, payload) =>
-      setSafe(state, ["installed"], payload),
     [actions.setOptionalExtensions as any]: (state, payload) =>
       setSafe(state, ["optional"], payload),
     [actions.setExtensionsUpdate as any]: (state, payload) =>
@@ -18,7 +16,6 @@ const sessionReducer: IReducerSpec = {
   },
   defaults: {
     available: [],
-    installed: {},
     optional: {},
     updateTime: 0,
   },

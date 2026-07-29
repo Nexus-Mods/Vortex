@@ -11,8 +11,8 @@ import Modal from "../../controls/Modal";
 import Spinner from "../../controls/Spinner";
 import { IconButton } from "../../controls/TooltipControls";
 import ZoomableImage from "../../controls/ZoomableImage";
-import type { IAvailableExtension, IExtension, ISelector } from "../../types/extensions";
-import type { IState } from "../../types/IState";
+import type { IAvailableExtension, ISelector } from "../../types/extensions";
+import type { IExtensionState, IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
@@ -48,7 +48,7 @@ function makeSelectorId(ext: IAvailableExtension): string {
 
 interface IConnectedProps {
   availableExtensions: IAvailableExtension[];
-  extensions: { [extId: string]: IExtension };
+  extensions: { [extId: string]: IExtensionState };
   updateTime: number;
   language: string;
 }
@@ -253,7 +253,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           const iter = extensions[key];
           return (
             (ext.modId !== undefined && iter.modId === ext.modId) ||
-            (ext.id !== undefined && (iter.id || key) === ext.id)
+            (ext.id !== undefined && key === ext.id)
           );
         }) !== undefined
     );
@@ -439,7 +439,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     availableExtensions: state.session.extensions.available,
-    extensions: state.session.extensions.installed,
+    extensions: state.app.extensions ?? {},
     updateTime: state.session.extensions.updateTime,
     language: state.settings.interface.language,
   };

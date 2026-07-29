@@ -18,6 +18,7 @@ import type { IState } from "../../../../types/IState";
 import {
   getFailedOptionalMods,
   getFailedRequiredMods,
+  isActiveSessionStalled,
 } from "../../../../util/collectionInstallSessionSelectors";
 import { NAMESPACE } from "../../constants";
 import type InstallDriver from "../../util/InstallDriver";
@@ -131,9 +132,11 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
   // any required member failed the collection isn't fully installed, so the dialog switches to an
   // "incomplete" variant: reworded copy, a "View failed mods" action, and the optional-mods / clone
   // actions suppressed - there's no point offering to add optional mods on top of a broken required
-  // set.
+  // set. A session force-resolved by the stall watchdog is incomplete regardless of which members
+  // it failed: those failures are by fiat, not the outcome of real install attempts.
   const failedRequired = useSelector<IState, ICollectionModInstallInfo[]>(getFailedRequiredMods);
-  const hasFailures = failedRequired.length > 0;
+  const stalled = useSelector<IState, boolean>(isActiveSessionStalled);
+  const hasFailures = failedRequired.length > 0 || stalled;
 
   // Optional members the user SELECTED that then failed. A failed optional annotates the result but
   // does not make the collection "incomplete" (that is driven by failedRequired), so it never

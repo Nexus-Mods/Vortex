@@ -5,11 +5,11 @@ import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequir
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn } from "@/util/api";
 
-import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt } from "../types";
+import type { IssueAnalyticsIdentity } from "../utils/shared/tracking";
 
 /**
  * Shared action logic for a single mod requirement, used by both the listing row
@@ -17,11 +17,13 @@ import type { IModRequirementExt } from "../types";
  * analytics + the negative-reason modal), and opening the mod page. Keeps the two
  * call sites behaviourally identical.
  *
- * `onInstalled` runs after a successful install (e.g. navigate back from detail).
+ * `identity` names the listing entry the mod belongs to, attributed to the install funnel
+ * events. `onInstalled` runs after a successful install (e.g. navigate back from detail).
  */
 export function useModRequirementActions(
   api: IExtensionApi,
   mod: IModRequirementExt,
+  identity: IssueAnalyticsIdentity,
   onInstalled?: () => void,
 ) {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -47,34 +49,15 @@ export function useModRequirementActions(
       setShowPremiumModal(true);
       return;
     }
-    await onDownloadRequirement(api, mod);
+    await onDownloadRequirement(api, mod, undefined, identity);
     onInstalled?.();
-  }, [api, mod, showPremiumAd, onInstalled]);
+  }, [api, mod, identity, showPremiumAd, onInstalled]);
 
-  const handlePositiveFeedback = useCallback(() => {
+  // Persistence only — EntryActions owns the feedback analytics, so both thumbs record
+  // the same thing here.
+  const markFeedback = useCallback(() => {
     api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
-    api.events.emit(
-      "analytics-track-mixpanel-event",
-      new HealthCheckFeedbackEvent("positive", mod.gameId, mod.modId, mod.requiredBy.modId),
-    );
   }, [api, mod]);
-
-  const handleFeedbackSuccess = useCallback(
-    (reasons: string[]) => {
-      api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
-      api.events.emit(
-        "analytics-track-mixpanel-event",
-        new HealthCheckFeedbackEvent(
-          "negative",
-          mod.gameId,
-          mod.modId,
-          mod.requiredBy.modId,
-          reasons,
-        ),
-      );
-    },
-    [api, mod],
-  );
 
   return {
     givenFeedback,
@@ -83,7 +66,6 @@ export function useModRequirementActions(
     setShowPremiumModal,
     openModPage,
     installInApp,
-    handlePositiveFeedback,
-    handleFeedbackSuccess,
+    markFeedback,
   };
 }

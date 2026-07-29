@@ -1,21 +1,12 @@
 name: Package
 
-# Nightly builds (nightly input) override: version is auto-derived,
-# codesigning is always true, releases are always false, artifacts always true with 2-day retention.
-# Scheduled nightly builds run nightly.yml, which uses the same composite action.
-
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "The version to release (eg: 'v1.0.0'). Ignored when nightly is true."
-        required: false
+        description: "The version to release (eg: 'v1.0.0')."
+        required: true
         type: string
-      nightly:
-        description: "Nightly build? (auto-versioned, signed, no releases, 48h artifacts)"
-        required: false
-        type: boolean
-        default: false
       create-artifacts:
         description: "Create artifacts?"
         required: true
@@ -36,18 +27,22 @@ on:
         required: false
         type: boolean
         default: true
-  pull_request:
-    paths:
-      - .github/workflows/package.yml
-      - .github/actions/package/**
-
-permissions:
-  contents: write # needed to create the GitHub release
-  id-token: write # OIDC token for provenance attestation
+      upload-to-r2:
+        description: "Upload the installer to R2?"
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm provenance attestation
+    outputs:
+      raw-version: ${{ steps.package.outputs.raw-version }}
+      tag-version: ${{ steps.package.outputs.tag-version }}
+      installer-artifact: ${{ steps.package.outputs.installer-artifact }}
     env:
       NO_PARALLEL: true
       ES_USERNAME: ${{ secrets.ES_USERNAME }}
@@ -55,9 +50,6 @@ jobs:
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
       NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
-      CERT_PATH: Release
-      VORTEX_BUILD_CONFIG: Release # Could just use CERT_PATH but this is more explicit
       DEBUG: electron-builder # gives electron more verbose logs
 
     steps:
@@ -66,12 +58,105 @@ jobs:
           submodules: "recursive"
 
       - name: Package Vortex
+        id: package
         uses: ./.github/actions/package
         with:
           version: ${{ inputs.version }}
-          nightly: ${{ inputs.nightly }}
-          create-artifacts: ${{ inputs.create-artifacts }}
           use-codesigning: ${{ inputs.use-codesigning }}
-          release: ${{ inputs.release }}
-          staging-release: ${{ inputs.staging-release }}
-          staging-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Create Unpacked Artifact
+        if: ${{ inputs.create-artifacts }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.unpacked-artifact }}
+          path: ./dist/win-unpacked
+          if-no-files-found: error
+          retention-days: 90
+
+      # Consumed by both downstream jobs, so it has to cover their conditions too.
+      - name: Create Installer Artifact
+        if: ${{ inputs.create-artifacts || inputs.release || inputs.staging-release || inputs.upload-to-r2 }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.installer-artifact }}
+          path: |
+            ./dist/vortex-setup-*.*.*.exe
+            ./dist/latest.yml
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish @nexusmods/vortex-api
+        if: ${{ inputs.release }}
+        shell: pwsh
+        run: pnpm -F "@nexusmods/vortex-api" publish --provenance --access public --no-git-checks
+
+  create-github-releases:
+    name: Create Draft Releases
+    needs: build
+    if: ${{ inputs.release || inputs.staging-release }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create the GitHub release
+    steps:
+      - name: Download installer artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build.outputs.installer-artifact }}
+          path: dist
+
+      - name: Create GitHub Release
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v3.0.0
+        with:
+          files: |
+            ./dist/vortex-setup-*.*.*.exe
+            ./dist/latest.yml
+          prerelease: true
+          draft: true
+          name: ${{ needs.build.outputs.raw-version }}
+          tag_name: ${{ needs.build.outputs.tag-version }}
+
+      - name: Create GitHub Release on Vortex-Staging
+        if: ${{ inputs.staging-release }}
+        uses: softprops/action-gh-release@v3.0.0
+        with:
+          files: |
+            ./dist/vortex-setup-*.*.*.exe
+            ./dist/latest.yml
+          prerelease: true
+          draft: true
+          name: ${{ needs.build.outputs.raw-version }}
+          tag_name: ${{ needs.build.outputs.tag-version }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repository: "Nexus-Mods/Vortex-Staging"
+
+  upload-to-r2:
+    name: Upload Installer to R2
+    needs: build
+    if: ${{ inputs.upload-to-r2 }}
+    runs-on: platform-cluster
+    permissions:
+      contents: read
+    steps:
+      - name: Install AWS CLI
+        run: |
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+          rm -rf awscliv2.zip aws
+
+      - name: Download installer artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build.outputs.installer-artifact }}
+          path: installer
+
+      - name: Upload to R2
+        run: |
+          installer=$(ls installer/vortex-setup-*.exe)
+          echo "Uploading $installer"
+          aws s3 cp "$installer" s3://nexusmodsapp/ --endpoint-url "${{ secrets.NEXUSMODS_R2_ENDPOINT }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.NEXUSMODSAPP_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUSMODSAPP_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto

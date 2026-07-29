@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Trans } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -10,9 +10,28 @@ import { opn } from "@/util/api";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
+import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
 
-export const PremiumBanner = () => {
+/** Where the premium banner is shown. */
+export type BannerPlacement = "list" | "detail";
+
+export const PremiumBanner = ({
+  placement,
+  totalIssues,
+}: {
+  placement: BannerPlacement;
+  totalIssues: number;
+}) => {
   const showPremiumAd = useSelector(shouldShowPremiumAd);
+  const { trackPremiumBannerShown, trackPremiumBannerClicked } = useTracker();
+  // Present on a detail page, absent on the cross-check listing.
+  const identity = useOptionalIssue()?.identity;
+
+  useEffect(() => {
+    if (showPremiumAd) {
+      trackPremiumBannerShown({ ...identity, placement, total_issues: totalIssues });
+    }
+  }, [showPremiumAd, placement, totalIssues, identity, trackPremiumBannerShown]);
 
   if (!showPremiumAd) {
     return null;
@@ -30,6 +49,8 @@ export const PremiumBanner = () => {
                 brand="neutral-translucent"
                 typographyType="inherit"
                 onClick={() => {
+                  trackPremiumBannerClicked({ ...identity, placement, total_issues: totalIssues });
+
                   opn(
                     nexusModsURL(PREMIUM_PATH, {
                       section: Section.Users,

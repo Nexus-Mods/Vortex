@@ -1,16 +1,11 @@
 import { createAction } from "redux-act";
 
 import type { IExtensionOptional } from "../../types/api";
-import type { IAvailableExtension, IExtension } from "../../types/extensions";
+import type { IAvailableExtension } from "../../types/extensions";
 
 export const setAvailableExtensions = createAction(
   "SET_AVAILABLE_EXTENSIONS",
   (extensions: IAvailableExtension[]) => extensions,
-);
-
-export const setInstalledExtensions = createAction(
-  "SET_INSTALLED_EXTENSIONS",
-  (extensions: { [extId: string]: IExtension }) => extensions,
 );
 
 export const setExtensionsUpdate = createAction(

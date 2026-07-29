@@ -1,5 +1,6 @@
 import * as reduxAct from "redux-act";
 
+import type { IExtension } from "../types/extensions";
 import type { VortexInstallType } from "../types/VortexInstallType";
 import safeCreateAction from "./safeCreateAction";
 
@@ -10,6 +11,11 @@ export const setStateVersion = safeCreateAction("SET_STATE_VERSION", (version) =
 export const setApplicationVersion = safeCreateAction(
   "SET_APPLICATION_VERSION",
   (version) => version,
+);
+
+export const addExtension = safeCreateAction(
+  "ADD_EXTENSION",
+  (extensionId: string, info: IExtension) => ({ extensionId, info }),
 );
 
 export const setExtensionEnabled = safeCreateAction(

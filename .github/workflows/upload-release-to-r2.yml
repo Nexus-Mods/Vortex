@@ -1,8 +1,6 @@
-name: Upload Release to R2
+name: Manual Upload Release to R2
 
 on:
-  release:
-    types: [released]
   workflow_dispatch:
     inputs:
       tag:
@@ -15,7 +13,6 @@ permissions:
 
 jobs:
   upload:
-    if: ${{ !github.event.release.prerelease || github.event_name == 'workflow_dispatch' }}
     runs-on: platform-cluster
     steps:
       - name: Install tools
@@ -29,7 +26,7 @@ jobs:
           rm -rf awscliv2.zip aws
 
       - name: Download release asset
-        run: gh release download ${{ github.event.release.tag_name || inputs.tag }} --pattern "vortex-setup-*.exe" --repo ${{ github.repository }}
+        run: gh release download ${{ inputs.tag }} --pattern "vortex-setup-*.exe" --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

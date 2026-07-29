@@ -2,13 +2,17 @@ import * as os from "os";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import { getCPUArch } from "../../util/nativeArch";
+import type { IExtensionContext } from "@/types/IExtensionContext";
+import { getCPUArch } from "@/util/nativeArch";
+
+import { activeGameId, activeProfileId } from "../../util/selectors";
+import { nexusGamesProm } from "../nexus_integration/util";
 import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import { AppLaunchedEvent, ModsInstallationCompletedEvent } from "./mixpanel/MixpanelEvents";
+import { AppLaunchedEvent } from "./mixpanel/MixpanelEvents";
+import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
 import SettingsAnalytics from "./views/SettingsAnalytics";
@@ -25,11 +29,12 @@ function init(context: IExtensionContext): boolean {
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ["settings", "analytics", "enabled"];
-    context.api.onStateChange(analyticsSettings, (oldState, newState) => {
+    context.api.onStateChange(analyticsSettings, (_, newState) => {
       if (ignoreNextAnalyticsStateChange) {
         ignoreNextAnalyticsStateChange = false;
         return;
       }
+
       if (newState) {
         startAnalytics();
       } else {
@@ -38,7 +43,7 @@ function init(context: IExtensionContext): boolean {
     });
 
     // Check for user login
-    context.api.onStateChange(["persistent", "nexus", "userInfo"], (previous, current) => {
+    context.api.onStateChange(["persistent", "nexus", "userInfo"], (_, current) => {
       //showConsentDialog();
 
       if (enabled() && current) {
@@ -66,25 +71,58 @@ function init(context: IExtensionContext): boolean {
       AnalyticsMixpanel.trackEvent(event);
     });
 
-    async function startAnalytics() {
+    // Keep the active-game super properties in sync so every event carries game scope.
+    // Fires on game switch (each game has its own active profile) and profile switch;
+    // re-registering the same game is idempotent.
+    context.api.onStateChange(["settings", "profiles", "activeProfileId"], () => {
+      updateGameContext();
+    });
+
+    // Retry once: covers analytics starting before the Nexus games cache has loaded.
+    let retriedGameContext = false;
+
+    const updateGameContext = () => {
+      const state = context.api.getState();
+      const gameId = activeGameId(state);
+      const profileId = activeProfileId(state);
+
+      if (!gameId || !profileId) {
+        // No active game (e.g. games dashboard) — clear so stale scope can't leak.
+        AnalyticsMixpanel.setGameContext(null);
+        return;
+      }
+
+      const numericGameId = numericNexusGameId(gameId);
+      AnalyticsMixpanel.setGameContext({ gameId: numericGameId, profileId });
+
+      if (numericGameId === null && !retriedGameContext) {
+        retriedGameContext = true;
+        void nexusGamesProm().then(() => updateGameContext());
+      }
+    };
+
+    function startAnalytics() {
       if (AnalyticsMixpanel.isUserSet()) {
         return;
       }
 
       try {
         const userInfo = getUserInfo();
+
         if (userInfo === undefined) {
           analyticsLog("warn", "Tried to start analytics but user not logged in");
           return;
         }
-
-        const state = context.api.getState();
 
         // Determine environment for analytics routing
         // Development environment uses dev token, production uses prod token
         const isProduction = process.env.NODE_ENV !== "development";
 
         AnalyticsMixpanel.start(userInfo, isProduction);
+
+        // Register game scope before the first event so app_launched carries the
+        // current game (and clears any stale value persisted from a previous session).
+        updateGameContext();
 
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(
@@ -106,7 +144,7 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    async function stopAnalytics() {
+    function stopAnalytics() {
       AnalyticsMixpanel.stop();
       analyticsLog("info", "Analytics stopped");
     }
@@ -152,7 +190,7 @@ function init(context: IExtensionContext): boolean {
                     },
                   ],
                 )
-                .then((result) => {
+                .then(() => {
                   dismiss();
                   return Promise.resolve();
                 });

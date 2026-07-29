@@ -21,3 +21,6 @@
 # Text files where line endings should be preserved
 *.patch     -text
 
+# Committed action bundles
+.github/actions/*/dist/** linguist-generated
+

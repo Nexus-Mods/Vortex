@@ -7,7 +7,6 @@ import { isErrorOfType } from "@vortex/shared/errors";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import type PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
-import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
 import * as semver from "semver";
@@ -101,13 +100,6 @@ export function didIgnoreError(): boolean {
 export function disableErrorReport() {
   log("info", "user ignored error, disabling reporting");
   errorIgnored = true;
-}
-
-if (ipcRenderer !== undefined) {
-  ipcRenderer.on("did-ignore-error", () => {
-    log("info", "user ignored error, disabling reporting");
-    errorIgnored = true;
-  });
 }
 
 let defaultWindow: BrowserWindow | null = null;
