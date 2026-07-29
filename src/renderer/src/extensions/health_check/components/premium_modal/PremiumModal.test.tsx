@@ -3,14 +3,15 @@ import { EventEmitter } from "events";
 import { act, cleanup, render } from "@testing-library/react";
 import React from "react";
 import { Provider } from "react-redux";
-import { createStore } from "redux";
+import { combineReducers, createStore } from "redux";
+import { createReducer } from "redux-act";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { setUserInfo } from "@/extensions/nexus_integration/actions/persistent";
 import { persistentReducer } from "@/extensions/nexus_integration/reducers/persistent";
 import type { IValidateKeyDataV2 } from "@/extensions/nexus_integration/types/IValidateKeyData";
+import { makeUserInfo } from "@/test-utils/builders";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import type { IState } from "@/types/IState";
 
 import { HealthCheckTrackingProvider } from "../../hooks/HealthCheckTracking.context";
 import { PremiumModal } from "./PremiumModal";
@@ -19,41 +20,34 @@ afterEach(() => {
   cleanup();
 });
 
-const FREE = { isPremium: false, isSupporter: false } as IValidateKeyDataV2;
+const FREE = makeUserInfo({ isPremium: false });
 
-/** Renders the modal over a membership the test can change. */
+/**
+ * Renders the modal over a membership the test can change, through the real reducer and action so a
+ * change to either is caught here. The api harness store can't stand in: it mutates state in place,
+ * and useSelector skips a selector whose state is the same object as last time.
+ *
+ * The modal's selector reads only `persistent.nexus`, so that one slice is all the store needs -
+ * hence the single cast, rather than building a whole IState.
+ */
 function renderModal(userInfo: IValidateKeyDataV2, onClose: () => void) {
-  // the real reducer and action, so a change to either is caught here
-  const nexusReducers = persistentReducer.reducers as Record<
-    string,
-    (state: unknown, payload: unknown) => unknown
-  >;
   const store = createStore(
-    (
-      state: IState = {
-        persistent: { nexus: { ...persistentReducer.defaults, userInfo } },
-      } as unknown as IState,
-      action: { type: string; payload?: unknown },
-    ) => {
-      const reducer = nexusReducers[action.type];
-      return reducer === undefined
-        ? state
-        : ({
-            ...state,
-            persistent: {
-              ...state.persistent,
-              nexus: reducer(state.persistent["nexus"], action.payload),
-            },
-          } as IState);
-    },
+    combineReducers({
+      persistent: combineReducers({
+        nexus: createReducer(persistentReducer.reducers, {
+          ...persistentReducer.defaults,
+          userInfo,
+        }),
+      }),
+    }),
   );
 
-  // the modal reports its own analytics, which need the tracker in context; the events
-  // themselves are the tracking suite's business, not this one's
+  // the modal reports its own analytics, which need the tracker in context; the events themselves
+  // are the tracking suite's business, not this one's
   const api = { events: new EventEmitter() } as unknown as IExtensionApi;
 
   render(
-    <Provider store={store}>
+    <Provider store={store as never}>
       <HealthCheckTrackingProvider api={api}>
         <PremiumModal trigger="single_install" onClose={onClose} onDownload={vi.fn()} />
       </HealthCheckTrackingProvider>
@@ -84,7 +78,7 @@ describe("PremiumModal", () => {
     const onClose = vi.fn();
     const { upgradeTo } = renderModal(FREE, onClose);
 
-    upgradeTo({ isPremium: true, isSupporter: false } as IValidateKeyDataV2);
+    upgradeTo(makeUserInfo({ isPremium: true }));
 
     expect(onClose).toHaveBeenCalled();
   });
@@ -93,7 +87,7 @@ describe("PremiumModal", () => {
     const onClose = vi.fn();
     const { upgradeTo } = renderModal(FREE, onClose);
 
-    upgradeTo({ isPremium: false, isSupporter: true } as IValidateKeyDataV2);
+    upgradeTo(makeUserInfo({ isPremium: false, isSupporter: true }));
 
     expect(onClose).toHaveBeenCalled();
   });

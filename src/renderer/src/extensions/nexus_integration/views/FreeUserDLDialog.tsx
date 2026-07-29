@@ -30,7 +30,8 @@ interface IFreeUserDLDialogProps {
   onSkip: (url: string) => void;
   onCancel: (url: string) => boolean;
   onUpdated: () => void;
-  onRetry: (url: string) => void;
+  /** The membership improved, so every parked download can be re-resolved, not just the shown one. */
+  onRetry: () => void;
 }
 
 const FILE_QUERY: IModFileQuery = {
@@ -166,8 +167,8 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [urls]);
 
   const retry = React.useCallback(() => {
-    onRetry(urls[0]);
-  }, [onRetry, urls]);
+    onRetry();
+  }, [onRetry]);
 
   const cancel = React.useCallback(() => {
     onCancel(urls[0]);

@@ -27,7 +27,7 @@ import type { IDetailViewProps } from "../../views/content/types";
 import { Divider } from "../divider/Divider";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { FileRequirement } from "../file_requirement/FileRequirement";
-import { PremiumModal } from "../premium_modal/PremiumModal";
+import { RequirementPremiumModal } from "./RequirementPremiumModal";
 
 export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const { t } = useTranslation(["health_check", "common"]);
@@ -286,15 +286,10 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       </Typography>
 
       {showPremiumModal && (
-        <PremiumModal
-          modCount={1}
+        <RequirementPremiumModal
           modId={mod.modId}
-          trigger="single_install"
           onClose={() => setShowPremiumModal(false)}
-          onDownload={() => {
-            setShowPremiumModal(false);
-            openModPage();
-          }}
+          onOpenModPage={openModPage}
         />
       )}
     </>

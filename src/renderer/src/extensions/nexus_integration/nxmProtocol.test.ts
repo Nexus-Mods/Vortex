@@ -37,6 +37,9 @@ const markSkipped = vi.mocked(markCollectionMemberSkipped);
 /** A resolved download link, in the shape the v1 API returns. */
 const downloadLink = (uri: string) => [{ URI: uri, short_name: "cdn", name: "CDN" }];
 
+/** A second file, for the cases that need more than one download parked at once. */
+const OTHER_MOD_URL = "nxm://skyrimspecialedition/mods/200/files/600";
+
 /** A mod the author has NOT opted into direct downloads, so a free user needs the website. */
 const websiteRoundTrip = () =>
   modInfoQuery.mockResolvedValue({
@@ -313,13 +316,33 @@ describe("nxm protocol resolver", () => {
         return { harness, nxm, pending };
       };
 
+      // the dialog shows one download at a time and hides itself as soon as the membership
+      // improves, so anything it left parked would have no way back
+      test("retrying after an upgrade resolves every parked download, not just the shown one", async ({
+        makeNxm,
+      }) => {
+        const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
+        websiteRoundTrip();
+        const first = resolve(MOD_URL);
+        const second = resolve(OTHER_MOD_URL);
+        await vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(2));
+
+        harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+        harness.setUserInfo(PREMIUM);
+        nxm.dialogHandlers.onRetry();
+
+        await expect(first).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
+        await expect(second).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
+        expect(harness.freeUserQueue()).toEqual([]);
+      });
+
       // what FreeUserDLDialog does when the user upgrades while the dialog is open
       test("retrying after an upgrade resolves it down the premium path", async ({ makeNxm }) => {
         const { harness, nxm, pending } = await arrangeQueued(makeNxm);
         harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
         harness.setUserInfo(PREMIUM);
 
-        nxm.dialogHandlers.onRetry(MOD_URL);
+        nxm.dialogHandlers.onRetry();
 
         await expect(pending).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
         expect(harness.freeUserQueue()).toEqual([]);
@@ -403,10 +426,10 @@ describe("nxm protocol resolver", () => {
       expect(harness.dispatched.map((action) => action.type)).toContain("REMOVE_FREEUSER_DLITEM");
     });
 
-    test("retrying a url that isn't queued does nothing", ({ makeNxm }) => {
-      const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
+    test("retrying with nothing queued does nothing", ({ makeNxm }) => {
+      const { harness, nxm } = makeNxm({ userInfo: FREE });
 
-      expect(() => nxm.dialogHandlers.onRetry(MOD_URL)).not.toThrow();
+      expect(() => nxm.dialogHandlers.onRetry()).not.toThrow();
       expect(harness.getDownloadURLs).not.toHaveBeenCalled();
     });
   });

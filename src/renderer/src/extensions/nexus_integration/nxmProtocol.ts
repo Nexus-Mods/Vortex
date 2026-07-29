@@ -65,7 +65,7 @@ export interface IFreeUserDialogHandlers {
   onDownload: (inputUrl: string) => void;
   onSkip: (inputUrl: string) => void;
   onCancel: (inputUrl: string) => boolean;
-  onRetry: (inputUrl: string) => void;
+  onRetry: () => void;
 }
 
 /**
@@ -255,13 +255,15 @@ export class NxmProtocol {
       return true;
     },
 
-    /** Re-resolve a queued download, e.g. after the user upgraded to premium. */
-    onRetry: (inputUrl: string) => {
-      const queued = this.#queuedFor(inputUrl);
-      if (queued === undefined) {
-        return;
-      }
-      this.resolve(queued.input).then(queued.resolve, queued.reject);
+    /**
+     * Re-resolve every parked download, after the user upgraded to premium. The upgrade applies to
+     * all of them, and the dialog stops showing itself the moment the membership improves - so
+     * anything left parked here would have no way back.
+     */
+    onRetry: () => {
+      this.#freeQueue.slice().forEach((queued) => {
+        this.resolve(queued.input).then(queued.resolve, queued.reject);
+      });
     },
   };
 
