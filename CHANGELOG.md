@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Fixed
 
 - Reduce endpoint polling rates ([#23810](https://github.com/Nexus-Mods/Vortex/pull/23810))
+- Collection installs never finishing when optional mods needed no download ([#23798](https://github.com/Nexus-Mods/Vortex/pull/23798))
 
 ## [2.4.0] - 2026-07-27
 
