@@ -58,6 +58,7 @@ export function planSessionWrite(
 /** What the dependency-install error handler should do with a member whose attempt threw. */
 export type DependencyErrorRecovery =
   | { action: "leave" } // decided elsewhere (explicit skip) or whole install torn down: do nothing
+  | { action: "skip" } // the user declined this member (e.g. the instructions prompt): settle it skipped
   | { action: "requeue" } // retryable: attempt again
   | { action: "fail"; showError: boolean }; // terminal: settle as failed, report only a real error
 
@@ -68,6 +69,9 @@ export type DependencyErrorRecovery =
  * - an explicitly skipped member (ruleIgnored) or a whole-install cancel (installCanceled) is left
  *   untouched - the skip is terminal and a cancelled install is rebuilt on resume; requeuing a
  *   skipped member would re-prompt the very download a free user just skipped;
+ * - a member the user declined at a prompt (userSkipped, the UserCanceled "skipped" flag) is
+ *   settled as skipped - requeuing it would re-ask the question the user just answered, and
+ *   leaving it would park the member non-terminal;
  * - a non-retryable failure (e.g. the disk is full) is settled as failed immediately - retrying
  *   cannot succeed, so burning the retry budget only leaves the member non-terminal for longer;
  * - otherwise, while retries remain the member is requeued - a transient error or a download
@@ -82,9 +86,13 @@ export function planDependencyErrorRecovery(input: {
   isCanceled: boolean;
   hasRetriesLeft: boolean;
   nonRetryable?: boolean;
+  userSkipped?: boolean;
 }): DependencyErrorRecovery {
   if (input.installCanceled || input.ruleIgnored) {
     return { action: "leave" };
+  }
+  if (input.userSkipped) {
+    return { action: "skip" };
   }
   if (!input.nonRetryable && input.hasRetriesLeft) {
     return { action: "requeue" };

@@ -17,7 +17,7 @@ import type {
   CollectionModStatus,
 } from "../types/collections/ICollectionInstallSession";
 import type { IDownload, IMod, IState } from "../types/IState";
-import { isTerminalMemberStatus } from "./collectionInstallSession";
+import { isOutstandingOptionalMember, isTerminalMemberStatus } from "./collectionInstallSession";
 
 /**
  * Selectors for the installTracking reducer
@@ -42,6 +42,10 @@ export const getCollectionActiveSession = (
   const collectionsState = getCollectionsState(state);
   return collectionsState?.activeSession;
 };
+
+/** Whether the active session was force-resolved by the stall watchdog (see the field doc). */
+export const isActiveSessionStalled = (state: IState): boolean =>
+  getCollectionActiveSession(state)?.stalled === true;
 
 /**
  * Get the session ID of the last completed installation
@@ -319,8 +323,10 @@ export const getCollectionInstallProgress = createSelector(
     const installedActiveOptional = activeOptionals.filter(
       (mod) => mod.status === "installed",
     ).length;
-    const completedActiveOptional = activeOptionals.filter((mod) =>
-      isTerminalMemberStatus(mod.status),
+    // "completed" is exactly "no longer outstanding" - shared with InstallManager's optional-phase
+    // admission via isOutstandingOptionalMember so the two gates cannot drift apart
+    const completedActiveOptional = activeOptionals.filter(
+      (mod) => !isOutstandingOptionalMember(mod),
     ).length;
 
     const effectiveTotal = session.totalRequired + activeOptionals.length;

@@ -318,6 +318,36 @@ describe("installTracking reducer", () => {
     });
   });
 
+  describe("markSessionStalled", () => {
+    it("sets and clears the stalled marker on the active session", () => {
+      const state = makeInstallState({ activeSession: makeSession() });
+
+      const stalled = reduce(state, actions.markSessionStalled, {
+        sessionId: "col1_prof1",
+        stalled: true,
+      });
+      expect(stalled.activeSession.stalled).toBe(true);
+
+      // a retry round clears it, so a retry that succeeds presents as complete
+      const cleared = reduce(stalled, actions.markSessionStalled, {
+        sessionId: "col1_prof1",
+        stalled: false,
+      });
+      expect(cleared.activeSession.stalled).toBe(false);
+    });
+
+    it("is a no-op when sessionId does not match or no session is active", () => {
+      const state = makeInstallState({ activeSession: makeSession() });
+      expect(reduce(state, actions.markSessionStalled, { sessionId: "wrong", stalled: true })).toBe(
+        state,
+      );
+      const empty = makeInstallState();
+      expect(
+        reduce(empty, actions.markSessionStalled, { sessionId: "col1_prof1", stalled: true }),
+      ).toBe(empty);
+    });
+  });
+
   describe("defaults", () => {
     it("provides a valid initial state", () => {
       expect(reducer.defaults).toEqual({

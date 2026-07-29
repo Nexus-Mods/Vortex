@@ -1,8 +1,10 @@
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IMod, IModReference, IModRule } from "../extensions/mod_management/types/IMod";
+import { isOptionalRule } from "../extensions/mod_management/util/testModReference";
 import type {
   CollectionModStatus,
   ICollectionInstallSession,
+  ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
 
 /**
@@ -15,6 +17,26 @@ import type {
  */
 export function isTerminalMemberStatus(status: CollectionModStatus): boolean {
   return status === "installed" || status === "failed" || status === "ignored";
+}
+
+/**
+ * An optional (recommends) member with no decided outcome yet, so it still blocks completion.
+ *
+ * This is the single definition of "an optional that still needs installing" as judged from the
+ * SESSION, shared by the install-progress selector (which needs it to stop counting the member as
+ * complete) and by InstallManager's optional-phase admission (which needs it to decide the trailing
+ * phase still has work). Those two must never disagree: an admission gate that thinks a member is
+ * done while the completion gate does not is what wedges an install.
+ *
+ * Deliberately NOT the same question as `selectedOptionalRules` (mod_management/util/dependencies),
+ * which decides what to DOWNLOAD from the durable `ignored` flag on the live rules plus the mods
+ * table. That one runs before a session entry necessarily reflects the user's latest choice, so it
+ * reads different inputs on purpose and is not merged here.
+ */
+export function isOutstandingOptionalMember(
+  mod: Pick<ICollectionModInstallInfo, "type" | "status">,
+): boolean {
+  return isOptionalRule(mod) && !isTerminalMemberStatus(mod.status);
 }
 
 /**
