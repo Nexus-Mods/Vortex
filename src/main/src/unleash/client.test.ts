@@ -14,12 +14,14 @@ vi.mock("node:fs/promises", () => ({
 
 vi.mock("../logging", () => ({ log: vi.fn() }));
 
+const { TEST_INTERVAL } = vi.hoisted(() => ({ TEST_INTERVAL: 1_000 }));
+
 vi.mock("./constants", () => ({
   APP_NAME: "Vortex",
   BASE_URL: "https://unleash.test",
   API_KEY: "test-key",
   ENVIRONMENT: "development" as const,
-  INTERVAL: 1_000,
+  INTERVAL: TEST_INTERVAL,
 }));
 
 const fetchMocker = createFetchMock(vi);
@@ -204,7 +206,7 @@ describe("UnleashClient", () => {
       const client = new UnleashClient("1.0.0");
       const spy = vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-      client.start(1_000);
+      client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0);
 
       expect(spy).toHaveBeenCalledTimes(1);
@@ -214,9 +216,9 @@ describe("UnleashClient", () => {
       const client = new UnleashClient("1.0.0");
       const spy = vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-      client.start(1_000);
+      client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0);
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
 
       expect(spy).toHaveBeenCalledTimes(2);
     });
@@ -228,11 +230,11 @@ describe("UnleashClient", () => {
         .mockRejectedValueOnce(new Error("network error"))
         .mockResolvedValue([]);
 
-      client.start(1_000);
+      client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0); // first tick fails
 
-      // 1 failure → next tick at 1000 * 2^1 = 2000ms
-      await vi.advanceTimersByTimeAsync(1_999);
+      // 1 failure → next tick at TEST_INTERVAL * 2^1
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 2 - 1);
       expect(spy).toHaveBeenCalledTimes(1);
 
       await vi.advanceTimersByTimeAsync(1);
@@ -246,14 +248,14 @@ describe("UnleashClient", () => {
         .mockRejectedValueOnce(new Error("network error"))
         .mockResolvedValue([]);
 
-      client.start(1_000);
+      client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0); // first tick fails
-      await vi.advanceTimersByTimeAsync(2_000); // wait out 2x backoff, second tick succeeds
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 2); // wait out 2x backoff, second tick succeeds
 
       expect(spy).toHaveBeenCalledTimes(2);
 
-      // Next interval should be back to base 1000ms
-      await vi.advanceTimersByTimeAsync(999);
+      // Next interval should be back to base TEST_INTERVAL
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL - 1);
       expect(spy).toHaveBeenCalledTimes(2);
       await vi.advanceTimersByTimeAsync(1);
       expect(spy).toHaveBeenCalledTimes(3);
@@ -265,16 +267,16 @@ describe("UnleashClient", () => {
         .spyOn(client, "fetchFeatureFlags")
         .mockRejectedValue(new Error("persistent error"));
 
-      client.start(1_000);
-      // Drive through 5 failures: backoffs are 2s, 4s, 8s, 16s (after failure 1-4; failure 5 stops)
+      client.start(TEST_INTERVAL);
+      // Drive through 5 failures: backoffs double each time (after failure 1-4; failure 5 stops)
       await vi.advanceTimersByTimeAsync(0); // failure 1
-      await vi.advanceTimersByTimeAsync(2_000); // failure 2
-      await vi.advanceTimersByTimeAsync(4_000); // failure 3
-      await vi.advanceTimersByTimeAsync(8_000); // failure 4
-      await vi.advanceTimersByTimeAsync(16_000); // failure 5 → stops
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 2); // failure 2
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 4); // failure 3
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 8); // failure 4
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 16); // failure 5 → stops
 
       const callCount = spy.mock.calls.length;
-      await vi.advanceTimersByTimeAsync(100_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 100);
       expect(spy).toHaveBeenCalledTimes(callCount);
     });
 
@@ -282,12 +284,12 @@ describe("UnleashClient", () => {
       const client = new UnleashClient("1.0.0");
       vi.spyOn(client, "fetchFeatureFlags").mockRejectedValue(new Error("persistent error"));
 
-      client.start(1_000);
+      client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0);
-      await vi.advanceTimersByTimeAsync(2_000);
-      await vi.advanceTimersByTimeAsync(4_000);
-      await vi.advanceTimersByTimeAsync(8_000);
-      await vi.advanceTimersByTimeAsync(16_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 2);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 4);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 8);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL * 16);
 
       expect(vi.mocked(log)).toHaveBeenCalledWith(
         "error",
@@ -299,11 +301,11 @@ describe("UnleashClient", () => {
       const client = new UnleashClient("1.0.0");
       const spy = vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-      const stop = client.start(1_000);
+      const stop = client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0);
 
       stop();
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
       expect(spy).toHaveBeenCalledTimes(1);
     });
 
@@ -312,7 +314,7 @@ describe("UnleashClient", () => {
       const client = new UnleashClient("1.0.0");
       vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue(expected);
 
-      client.start(1_000);
+      client.start(TEST_INTERVAL);
       await vi.advanceTimersByTimeAsync(0);
 
       expect(client.flags).toEqual(expected);
@@ -328,8 +330,8 @@ describe("UnleashClient", () => {
 
       client.start(1_000, onUpdate);
       await vi.advanceTimersByTimeAsync(0);
-      await vi.advanceTimersByTimeAsync(1_000);
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
 
       expect(onUpdate).toHaveBeenCalledTimes(1);
     });
@@ -349,7 +351,7 @@ describe("UnleashClient", () => {
 
       client.start(1_000, onUpdate);
       await vi.advanceTimersByTimeAsync(0);
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
 
       expect(onUpdate).toHaveBeenCalledTimes(1);
     });
@@ -365,7 +367,7 @@ describe("UnleashClient", () => {
 
       client.start(1_000, onUpdate);
       await vi.advanceTimersByTimeAsync(0);
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
 
       expect(onUpdate).toHaveBeenCalledTimes(2);
       expect(onUpdate).toHaveBeenLastCalledWith([
@@ -383,7 +385,7 @@ describe("UnleashClient", () => {
 
       client.start(1_000, onUpdate);
       await vi.advanceTimersByTimeAsync(0);
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(TEST_INTERVAL);
 
       expect(onUpdate).toHaveBeenCalledTimes(1);
       expect(client.flags).toEqual(flags);
@@ -465,7 +467,7 @@ describe("UnleashClient", () => {
         const client = new UnleashClient("1.0.0");
         vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-        client.start(1_000);
+        client.start(TEST_INTERVAL);
         await vi.advanceTimersByTimeAsync(0);
 
         expect(fs.readFile).not.toHaveBeenCalled();
@@ -479,7 +481,7 @@ describe("UnleashClient", () => {
         const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
         const fetchSpy = vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-        client.start(1_000);
+        client.start(TEST_INTERVAL);
         await vi.advanceTimersByTimeAsync(0);
 
         expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -491,7 +493,7 @@ describe("UnleashClient", () => {
         const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
         vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-        client.start(1_000);
+        client.start(TEST_INTERVAL);
         await vi.advanceTimersByTimeAsync(0);
         // no assertion needed -- the test passes if nothing throws
       });
@@ -504,7 +506,7 @@ describe("UnleashClient", () => {
         const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH });
         vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-        client.start(1_000);
+        client.start(TEST_INTERVAL);
         await vi.advanceTimersByTimeAsync(0);
 
         expect(vi.mocked(log)).toHaveBeenCalledWith(
@@ -522,7 +524,7 @@ describe("UnleashClient", () => {
         const client = new UnleashClient("1.0.0", { cachePath: CACHE_PATH, cacheTtlMs: 60_000 });
         vi.spyOn(client, "fetchFeatureFlags").mockResolvedValue([]);
 
-        client.start(1_000);
+        client.start(TEST_INTERVAL);
         await vi.advanceTimersByTimeAsync(0);
 
         expect(vi.mocked(log)).toHaveBeenCalledWith("debug", "flag cache is expired, ignoring");

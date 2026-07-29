@@ -2,7 +2,7 @@ import type { FeatureFlag, KnownFlagName } from "@vortex/shared/flags";
 import type { FlagMetricsBucket } from "@vortex/shared/ipc";
 import { dequal } from "dequal";
 
-const METRICS_INTERVAL_MS = 60_000;
+export const METRICS_INTERVAL_MS = 1000 * 60 * 15; // 15 minutes
 
 type EvalEntry = { yes: number; no: number; variants: Record<string, number> };
 type EvalCounts = Record<string, EvalEntry>;
