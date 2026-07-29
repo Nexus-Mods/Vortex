@@ -17,6 +17,13 @@ const REFRESH_DEBOUNCE = 3000;
 /** How long a failed read holds off the next attempt, so an unreachable api isn't hammered. */
 const FAILURE_COOLDOWN = 30 * 1000;
 
+/**
+ * Floor for hovering a collection, which fires on mouse movement alone. The install path confirms
+ * the membership before it refuses anything, so the read a hover asks for is speculative and the
+ * background revalidation cadence is enough for it.
+ */
+export const HOVER_REFRESH_FLOOR = REVALIDATION_FREQUENCY;
+
 let lastRead = 0;
 let inFlight: Promise<boolean> | undefined;
 
@@ -87,8 +94,16 @@ const refreshDebouncer = new Debouncer(
 /**
  * Ask for a re-read without waiting for it, for the triggers that only want the UI to catch up:
  * regaining focus, hovering a collection, the Refresh User Info menu item, an nxm://premium link.
+ *
+ * A trigger that fires on its own passes `notReadWithin` to drop the request while a read that
+ * recent already answers it, because the debounce alone still lets one through every few seconds for
+ * as long as the trigger keeps firing. A trigger the user set off deliberately passes nothing and
+ * always asks.
  */
-export function scheduleMembershipRefresh(api: IExtensionApi): void {
+export function scheduleMembershipRefresh(api: IExtensionApi, notReadWithin = 0): void {
+  if (Date.now() - lastRead < notReadWithin) {
+    return;
+  }
   refreshDebouncer.schedule(undefined, api);
 }
 
