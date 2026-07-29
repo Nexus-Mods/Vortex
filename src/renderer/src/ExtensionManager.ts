@@ -859,12 +859,11 @@ class ExtensionManager {
     }
 
     // Check for extensions marked for removal
-    const extensionsPath = path.join(getVortexPath("userData"), "plugins");
     this.mPendingRemoves = [];
-    Object.keys(this.mExtensionState)
-      .filter((extId) => this.mExtensionState[extId].remove)
-      .forEach((extId) => {
-        const extPath = path.join(extensionsPath, extId);
+    Object.entries(this.mExtensionState)
+      .filter(([_, entry]) => entry.remove)
+      .forEach(([extId, entry]) => {
+        const extPath = entry.path;
         log("info", "removing", extPath);
         try {
           fs.removeSync(extPath);
@@ -886,6 +885,7 @@ class ExtensionManager {
     this.mExtensions = this.prepareExtensions();
 
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
+    const extensionsPath = path.join(getVortexPath("userData"), "plugins");
     if (this.mOutdated.length > 0) {
       const removeOps: Array<{
         type: "set";
