@@ -476,8 +476,8 @@ class Archive {
 // @public (undocumented)
 type ArchiveHandlerCreator = (fileName: string, options: IArchiveOptions) => Promise_2<IArchiveHandler>;
 
-// @public (undocumented)
-class ArgumentInvalid extends Error {
+// @public @deprecated (undocumented)
+class ArgumentInvalid extends VortexError<"argument-invalid"> {
     constructor(argument: string);
 }
 
@@ -842,8 +842,8 @@ function currentGame_2(store: Redux.Store<any>): Promise_2<IGameStored>;
 // @public
 function currentGameDiscovery(state: any): IDiscoveryResult;
 
-// @public (undocumented)
-class CycleError extends Error {
+// @public @deprecated (undocumented)
+class CycleError extends VortexError<"cycle-error"> {
     constructor(cycles: string[][]);
     // (undocumented)
     get cycles(): string[][];
@@ -857,8 +857,8 @@ export class Dashlet extends React_2.Component<IDashletProps, {}> {
     render(): JSX.Element;
 }
 
-// @public (undocumented)
-class DataInvalid extends Error {
+// @public @deprecated (undocumented)
+class DataInvalid extends VortexError<"data-invalid"> {
     constructor(message: string);
 }
 
@@ -1116,6 +1116,11 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 function fileMD5(input: string | Buffer, progress?: (bytesProcessed: number, totalBytes: number) => void): Promise<string>;
 
 // @public
+export type FileSystemErrorData = OsErrorData & {
+    path: string;
+};
+
+// @public
 const finalizingDownload: ComplexActionCreator1<string, {
 id: string;
 }, {}>;
@@ -1331,11 +1336,11 @@ type GameLaunchType = "gamestore" | "commandline";
 // @public (undocumented)
 function gameName(state: any, gameId: string): string;
 
-// @public (undocumented)
-class GameNotFound extends Error {
+// @public @deprecated (undocumented)
+class GameNotFound extends VortexError<"game-not-found"> {
     constructor(search: string);
     // (undocumented)
-    get search(): any;
+    get search(): string;
 }
 
 // @public (undocumented)
@@ -1881,6 +1886,7 @@ interface ICollectionInstallSession {
     };
     profileId: string;
     sessionId: string;
+    stalled?: boolean;
     totalOptional: number;
     totalRequired: number;
 }
@@ -3744,6 +3750,9 @@ interface IRunParameters {
     options: IRunOptions;
 }
 
+// @public
+const isActiveSessionStalled: (state: IState) => boolean;
+
 // @public (undocumented)
 const isAnalyticsEnabled: (state: any) => boolean;
 
@@ -4704,8 +4713,8 @@ type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
 // @public (undocumented)
 type Method = "GET" | "POST" | "PUT";
 
-// @public (undocumented)
-class MissingInterpreter extends Error {
+// @public @deprecated (undocumented)
+class MissingInterpreter extends VortexError<"missing-interpreter"> {
     constructor(message: string, url?: string);
     // (undocumented)
     get url(): string | undefined;
@@ -4861,8 +4870,8 @@ type Normalize = (input: string) => string;
 // @public
 function normalizeStoreQuery(raw: IQueryArgEntry | undefined): IStoreQuery[];
 
-// @public (undocumented)
-class NotFound extends Error {
+// @public @deprecated (undocumented)
+class NotFound extends VortexError<"not-found"> {
     constructor(what: string);
 }
 
@@ -4875,8 +4884,8 @@ const notifications: (state: IState) => INotification[];
 // @public (undocumented)
 type NotificationType = "activity" | "global" | "success" | "info" | "warning" | "error" | "silent";
 
-// @public (undocumented)
-class NotSupportedError extends Error {
+// @public @deprecated (undocumented)
+class NotSupportedError extends VortexError<"not-supported"> {
     constructor();
 }
 
@@ -4907,6 +4916,13 @@ export class OptionsFilter implements ITableFilter {
     // (undocumented)
     raw: boolean;
 }
+
+// @public
+export type OsErrorData = {
+    originalCode: string;
+    errno: number;
+    syscall: string;
+};
 
 // Warning: (ae-forgotten-export) The symbol "IProps_6" needs to be exported by the entry point api.d.ts
 //
@@ -4998,8 +5014,8 @@ function prettifyNodeErrorMessage(err: any, options?: IErrorOptions, fileName?: 
 // @public (undocumented)
 type ProblemSeverity = "warning" | "error" | "fatal";
 
-// @public (undocumented)
-class ProcessCanceled extends Error {
+// @public @deprecated (undocumented)
+class ProcessCanceled extends VortexError<"process-canceled"> {
     constructor(message: string, extraInfo?: unknown);
     // (undocumented)
     get extraInfo(): unknown;
@@ -5310,6 +5326,7 @@ declare namespace selectors {
         isAnalyticsEnabled,
         isTelemetryEnabled,
         getCollectionActiveSession,
+        isActiveSessionStalled,
         getCollectionLastActiveSessionId,
         getCollectionSessionHistory,
         getCollectionSessionById,
@@ -5898,8 +5915,8 @@ mayCancel: boolean;
 // @public
 const setUpdateChannel: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
-// @public (undocumented)
-class SetupError extends Error {
+// @public @deprecated (undocumented)
+class SetupError extends VortexError<"setup-error"> {
     constructor(message: string, component?: string);
     // (undocumented)
     get component(): string | undefined;
@@ -6540,8 +6557,8 @@ function upload(targetUrl: string, dataStream: Readable, dataSize: number): Prom
 // @public (undocumented)
 export const Usage: React_2.ComponentClass<IUsageProps>;
 
-// @public (undocumented)
-class UserCanceled extends Error {
+// @public @deprecated (undocumented)
+class UserCanceled extends VortexError<"user-canceled"> {
     constructor(skipped?: boolean);
     // (undocumented)
     skipped: boolean;
@@ -6749,6 +6766,103 @@ export class VisibilityProxy extends React_2.PureComponent<any, {}> {
     componentWillUnmount(): void;
     // (undocumented)
     render(): JSX.Element;
+}
+
+// @public
+export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extends Error {
+    constructor(message: string, data: { [P in K]: {
+            kind: P;
+        } & VortexErrorKindMap[P] }[K], meta?: {
+        isTransient?: boolean;
+        cause?: unknown;
+    });
+    readonly data: { [P in K]: {
+            kind: P;
+        } & VortexErrorKindMap[P] }[K];
+    readonly isTransient: boolean;
+}
+
+// @public
+export type VortexErrorData = { [K in VortexErrorKind]: {
+        kind: K;
+    } & VortexErrorKindMap[K] }[VortexErrorKind];
+
+// @public
+export type VortexErrorKind = keyof VortexErrorKindMap;
+
+// @public
+export interface VortexErrorKindMap {
+    "argument-invalid": {
+        argument: string;
+    };
+    "cycle-error": {
+        cycles: string[][];
+    };
+    "data-invalid": {
+        field?: string;
+    };
+    "download:is-html": {
+        url: string;
+    };
+    "download:resolver-error": {};
+    // (undocumented)
+    "fs:already-exists": FileSystemErrorData;
+    // (undocumented)
+    "fs:directory-not-empty": FileSystemErrorData;
+    // (undocumented)
+    "fs:no-permissions": FileSystemErrorData;
+    // (undocumented)
+    "fs:no-space": FileSystemErrorData;
+    // (undocumented)
+    "fs:not-a-directory": FileSystemErrorData;
+    // (undocumented)
+    "fs:not-a-file": FileSystemErrorData;
+    // (undocumented)
+    "fs:not-found": FileSystemErrorData;
+    "game-not-found": {
+        gameId: string;
+    };
+    // (undocumented)
+    "http:bad-status": {
+        url: string;
+        statusCode: number;
+    };
+    "http:generic": {
+        url: string;
+    } & Partial<OsErrorData>;
+    // (undocumented)
+    "http:precondition-failed": {
+        url: string;
+    };
+    // (undocumented)
+    "http:protocol-violation": {
+        url: string;
+    };
+    // (undocumented)
+    "http:timeout": {
+        url: string;
+    };
+    "missing-interpreter": {
+        url?: string;
+    };
+    "not-found": {
+        resourceType?: string;
+    };
+    "not-supported": {
+        feature?: string;
+    };
+    "os:generic": OsErrorData;
+    "os:unsupported": {};
+    "process-canceled": {
+        extraInfo?: unknown;
+    };
+    "setup-error": {
+        component?: string;
+    };
+    "user-canceled": {
+        skipped: boolean;
+    };
+    unknown: Record<string, unknown>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "IWalkOptions" needs to be exported by the entry point api.d.ts
