@@ -29,6 +29,7 @@ export const modRequirementsContent: IHealthCheckContent = {
       id: modEntryId(mod),
       checkId: MOD_REQUIREMENTS_CHECK_ID,
       severity: "suggestion",
+      resolutionType: "install",
       data: mod,
     })),
   ListingRow,

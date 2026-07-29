@@ -131,12 +131,31 @@ class MixpanelAnalytics {
     if (context === null) {
       mixpanel.unregister("game_id");
       mixpanel.unregister("profile_id");
+      analyticsServiceLog("mixpanel", "debug", "Game context cleared");
+      return;
+    }
+    if (context.gameId === null) {
+      // Unresolved id (games cache still loading): keep the persisted game_id; the caller retries.
+      mixpanel.register({ profile_id: context.profileId });
+      analyticsServiceLog("mixpanel", "debug", "Game context deferred (games cache not loaded)", {
+        kept_game_id: this.registeredGameId(),
+        profile_id: context.profileId,
+      });
       return;
     }
     mixpanel.register({
       game_id: context.gameId,
       profile_id: context.profileId,
     });
+    analyticsServiceLog("mixpanel", "debug", "Game context registered", {
+      game_id: context.gameId,
+      profile_id: context.profileId,
+    });
+  }
+
+  /** The game_id super property as mixpanel will send it — including a value persisted from a previous session. */
+  private registeredGameId(): number | null {
+    return (mixpanel.get_property("game_id") as number | undefined) ?? null;
   }
 
   /**
@@ -176,6 +195,7 @@ class MixpanelAnalytics {
 
     analyticsServiceLog("mixpanel", "debug", "Event tracked", {
       eventName: event.eventName,
+      game_id: this.registeredGameId(),
       properties: event.properties,
     });
   }

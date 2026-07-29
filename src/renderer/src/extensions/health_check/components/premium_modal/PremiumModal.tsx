@@ -2,7 +2,6 @@ import { mdiCheck, mdiDiamondStone, mdiOpenInNew } from "@mdi/js";
 import React, { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Modal } from "@/ui/components/modal/Modal";

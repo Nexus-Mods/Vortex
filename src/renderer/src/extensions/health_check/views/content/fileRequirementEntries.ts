@@ -10,6 +10,7 @@ import type {
 
 import { FILE_REQUIREMENTS_CHECK_ID } from "../../checks/fileRequirementsCheck";
 import { hiddenFileRequirements } from "../../selectors";
+import { resolutionTypeForCategory } from "../../utils/shared/tracking";
 import type { IHealthCheckEntry } from "./types";
 
 /** Whether a (homogeneous, per-category) report entry's requirements are all hidden. */
@@ -70,6 +71,7 @@ export const pushReportEntries = (
       issueId: fileIssueId(source.sourceFileUID, category),
       checkId: FILE_REQUIREMENTS_CHECK_ID,
       severity: "warning",
+      resolutionType: resolutionTypeForCategory(category),
       data: {
         sourceFileUID: source.sourceFileUID,
         sourceModName: source.sourceModName,
