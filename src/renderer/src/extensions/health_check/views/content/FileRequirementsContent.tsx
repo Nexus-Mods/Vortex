@@ -85,7 +85,13 @@ export const fileRequirementsContent: IHealthCheckContent = {
         if (requirement.kind === "correct-version-uninstalled") {
           items.push({
             key: requirement.uninstalledFile.fileUID,
-            install: () => void installDownloadedFile(api, requirement.uninstalledFile, identity),
+            install: () =>
+              void installDownloadedFile(
+                api,
+                requirement.uninstalledFile,
+                identity,
+                requirement.enabledFile,
+              ),
           });
         }
       }
