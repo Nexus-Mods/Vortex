@@ -113,6 +113,21 @@ describe("membership freshness", () => {
       expect(getUserInfo).toHaveBeenCalledTimes(1);
     });
 
+    // a failed read is still a read that just happened, so a caller asking "not if one landed
+    // within a minute" has to be told no - the cooldown must not be smuggled in as an older
+    // timestamp, which would report the read as minutes old to everyone else
+    test("reports a failed read as having happened just now", async ({ makeApi }) => {
+      const harness = makeApi();
+      const getUserInfo = vi.fn().mockRejectedValue(new Error("network down"));
+      const refresh = vi.fn();
+      harness.api.events.on("refresh-user-info", refresh);
+
+      await ensureFreshMembership(harness.api, { getUserInfo } as never);
+      scheduleMembershipRefresh(harness.api, 60 * 1000);
+
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
     test("stays quiet for a logged-out user, who has no membership to read", async ({
       makeApi,
     }) => {
