@@ -1,0 +1,26 @@
+name: Package CI Filter
+
+on:
+  pull_request:
+    paths:
+      # filter workflow changed
+      - .github/workflows/package-ci-filter.yml
+      # filter logic changed
+      - .github/scripts/package-ci-filter.mjs
+      # filter tests changed
+      - .github/scripts/package-ci-filter.test.mjs
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+
+      - name: Test package CI filter
+        run: node --test .github/scripts/package-ci-filter.test.mjs
