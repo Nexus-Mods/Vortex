@@ -737,7 +737,7 @@ class ExtensionManager {
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
-  private mPendingAdds: Array<{ extId: string; info: IExtension }> = [];
+  private mPendingAdds: Array<{ extId: string; info: Partial<IExtensionState> }> = [];
   // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
   private mExtensionPersistors: {
     [hive: string]: { persistor: IPersistor; debounce: number };
@@ -973,8 +973,8 @@ class ExtensionManager {
     });
     this.mPendingRemoves = [];
 
-    this.mPendingAdds.forEach(({ extId, info }) => {
-      store.dispatch(addExtension(extId, info));
+    this.mPendingAdds.forEach(({ info }) => {
+      store.dispatch(addExtension(shortid(), info));
     });
     this.mPendingAdds = [];
 
@@ -3086,7 +3086,20 @@ class ExtensionManager {
     );
     for (const ext of scanned) {
       if (!loadedFromState.has(ext.name)) {
-        this.mPendingAdds.push({ extId: ext.name, info: { ...ext.info, path: ext.path } });
+        this.mPendingAdds.push({
+          extId: ext.name,
+          info: {
+            name: ext.info?.name,
+            version: ext.info?.version,
+            author: ext.info?.author,
+            description: ext.info?.description,
+            path: ext.path,
+            modId: ext.info?.modId,
+            fileId: ext.info?.fileId,
+            type: ext.info?.type,
+            infoJsonId: ext.info?.id,
+          },
+        });
         result.push(ext);
         loadedExtensions.add(ext.name);
       }

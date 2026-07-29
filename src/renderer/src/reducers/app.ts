@@ -14,19 +14,16 @@ export const appReducer: IReducerSpec<IState["app"]> = {
       payload: ReturnType<typeof actions.addExtension>["payload"],
     ) => {
       const { extensionId, info } = payload;
-      const existing = state.extensions?.[extensionId] ?? {};
-      return setSafe(state, ["extensions", extensionId], {
-        ...existing,
-        name: info.name,
-        version: info.version,
-        author: info.author,
-        description: info.description,
-        path: info.path,
-        modId: info.modId,
-        fileId: info.fileId,
-        type: info.type,
-        bundled: info.bundled,
-      });
+      return {
+        ...state,
+        extensions: {
+          ...state.extensions,
+          [extensionId]: {
+            ...state.extensions?.[extensionId],
+            ...info,
+          },
+        },
+      };
     },
     [actions.setExtensionEnabled.getType()]: (state, payload) =>
       setSafe(state, ["extensions", payload.extensionId, "enabled"], payload.enabled),

@@ -375,9 +375,9 @@ manual: boolean;
 }, {}>;
 
 // @public (undocumented)
-const addExtension: ComplexActionCreator2<string, ExtensionInfo, {
+const addExtension: ComplexActionCreator2<string, Partial<IExtensionState>, {
 extensionId: string;
-info: ExtensionInfo;
+info: Partial<IExtensionState>;
 }, {}>;
 
 // @public
