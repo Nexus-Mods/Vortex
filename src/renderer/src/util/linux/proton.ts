@@ -58,6 +58,13 @@ export async function getConfiguredProtonName(
 }
 
 /**
+ * Find the default Proton version (fallback)
+ */
+export async function getDefaultProtonName(steamPath: string): Promise<string | undefined> {
+  return getConfiguredProtonName(steamPath, "0");
+}
+
+/**
  * Check if a path exists asynchronously
  */
 async function pathExists(filePath: string): Promise<boolean> {
@@ -176,13 +183,19 @@ export async function findLatestProton(steamPath: string): Promise<string | unde
   const commonPath = path.join(steamPath, "steamapps", "common");
   try {
     const entries = await fs.readdirAsync(commonPath);
-    const protonDirs = entries
-      .filter((e) => e.toLowerCase().startsWith("proton"))
-      .sort()
-      .reverse();
+    const protonDirs = entries.filter((e) => e.toLowerCase().startsWith("proton"));
 
-    if (protonDirs.length > 0) {
-      return path.join(commonPath, protonDirs[0]);
+    // Steam defaults to Proton Experimental - replicate this behavior
+    const protonExperimentalDir = protonDirs.find((e) => e.toLowerCase().endsWith("experimental"));
+    if (protonExperimentalDir) {
+      return path.join(commonPath, protonDirs[protonExperimentalDir]);
+    }
+
+    // Otherwise, fall back to the last version lexographically
+    const sortedProtonDirs = protonDirs.sort().reverse();
+
+    if (sortedProtonDirs.length > 0) {
+      return path.join(commonPath, sortedProtonDirs[0]);
     }
   } catch (err: any) {
     log("debug", "Could not scan for Proton versions", { error: err?.message });
@@ -206,14 +219,23 @@ export async function getProtonInfo(
   const compatDataPath = getCompatDataPath(steamAppsPath, appId);
 
   // Try to get configured Proton, fall back to latest
-  const protonName = await getConfiguredProtonName(steamPath, appId);
+  const confProtonName = await getConfiguredProtonName(steamPath, appId);
   let protonPath: string | undefined;
 
-  if (protonName) {
-    protonPath = await resolveProtonPath(steamPath, protonName);
+  if (confProtonName) {
+    protonPath = await resolveProtonPath(steamPath, confProtonName);
   }
 
   if (!protonPath) {
+    // Game does not have Proton version override,
+    // or we couldn't find the override version
+    const defProtonName = await getDefaultProtonName(steamPath);
+    protonPath = await resolveProtonPath(steamPath, defProtonName);
+  }
+
+  if (!protonPath) {
+    // config.vdf does not contain a default Proton version,
+    // or the default version is not installed
     protonPath = await findLatestProton(steamPath);
   }
 
