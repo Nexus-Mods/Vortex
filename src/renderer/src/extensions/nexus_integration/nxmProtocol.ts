@@ -24,7 +24,7 @@ import type { IResolvedURL } from "../download_management/types/ProtocolHandlers
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
 import { NEXUS_BASE_URL } from "./constants";
-import { ensureFreshMembership } from "./membership";
+import { refreshMembership } from "./membership";
 import NXMUrl from "./NXMUrl";
 import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
@@ -295,6 +295,11 @@ export class NxmProtocol {
    * keyless link with 403 when it isn't, so the refusal prompts the re-read and the answer decides;
    * a refusal raised for any other reason keeps the original error.
    *
+   * This asks unconditionally rather than through the freshness gate. A 403 is the server saying the
+   * cached answer is wrong, and no read is recent enough to argue with it - during active use one
+   * almost always is, which would leave this confirming the membership against the very state the
+   * refusal contradicts. Concurrent refusals still share the one request.
+   *
    * The refreshed membership is in state before this returns, because FreeUserDLDialog only shows
    * itself while the user is non-premium.
    */
@@ -302,7 +307,7 @@ export class NxmProtocol {
     if (!needsAuthorisedLink(url) || !(err instanceof HTTPError) || err.statusCode !== 403) {
       return false;
     }
-    await ensureFreshMembership(this.#api, this.#nexus);
+    await refreshMembership(this.#api, this.#nexus);
     const ended = !isPremium(this.#api.getState());
     if (ended) {
       log("info", "premium membership has ended, downloading as a free user");

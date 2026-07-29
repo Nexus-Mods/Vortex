@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 
-import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
+import {
+  HOVER_REFRESH_FLOOR,
+  scheduleMembershipRefresh,
+} from "@/extensions/nexus_integration/membership";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { CollectionTile, type ICollectionTileProps } from "./CollectionTile";
@@ -23,6 +26,7 @@ vi.mock("@/util/selectors", () => ({ isCollectionModPresent: () => false }));
 // the tile only asks for a refresh; the scheduler itself is covered by membership.test.ts
 vi.mock("@/extensions/nexus_integration/membership", () => ({
   scheduleMembershipRefresh: vi.fn(),
+  HOVER_REFRESH_FLOOR: 5 * 60 * 1000,
 }));
 
 // --- Helpers ---
@@ -136,13 +140,13 @@ describe("CollectionTile", () => {
       // asserted against this render's own api, so a call from an earlier test can't satisfy it
       const { api } = renderComponent({ isLoggedIn: false });
       fireEvent.mouseEnter(screen.getByTestId("collection-tile"));
-      expect(scheduleMembershipRefresh).not.toHaveBeenCalledWith(api);
+      expect(scheduleMembershipRefresh).not.toHaveBeenCalledWith(api, HOVER_REFRESH_FLOOR);
     });
 
-    it("refreshes the membership while logged in", () => {
+    it("refreshes the membership while logged in, floored", () => {
       const { api } = renderComponent({ isLoggedIn: true });
       fireEvent.mouseEnter(screen.getByTestId("collection-tile"));
-      expect(scheduleMembershipRefresh).toHaveBeenCalledWith(api);
+      expect(scheduleMembershipRefresh).toHaveBeenCalledWith(api, HOVER_REFRESH_FLOOR);
     });
   });
 });
