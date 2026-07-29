@@ -294,11 +294,15 @@ export class NxmProtocol {
    * the settled download alive and re-resolving it if a matching link ever does arrive.
    */
   #dequeue(input: string): void {
-    this.#api.store.dispatch(removeFreeUserDLItem(input));
     // the entry may already be gone
     const queuedIdx = this.#freeQueue.findIndex((iter) => iter.input === input);
     if (queuedIdx !== -1) {
       this.#freeQueue.splice(queuedIdx, 1);
+    }
+    // the queue is keyed by url, so one row can stand for two downloads of the same file; it goes
+    // when the last of them settles, or the survivor is left parked with nothing to release it
+    if (!this.#freeQueue.some((iter) => iter.input === input)) {
+      this.#api.store.dispatch(removeFreeUserDLItem(input));
     }
   }
 
