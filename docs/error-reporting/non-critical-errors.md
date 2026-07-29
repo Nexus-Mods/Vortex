@@ -51,7 +51,7 @@ setErrorContext("gameId", "skyrimse");
 | Flag           | Set by                                                        | Effect                                                   |
 | -------------- | ------------------------------------------------------------- | -------------------------------------------------------- |
 | `outdated`     | `setOutdated(api)` — watches `persistent.nexus.newestVersion` | Suppresses reporting when Vortex is behind latest        |
-| `errorIgnored` | `disableErrorReport()` or `did-ignore-error` IPC from main    | Suppresses reporting after user ignores a terminal error |
+| `errorIgnored` | `disableErrorReport()`, or "Ignore" on a terminal error       | Suppresses reporting after user ignores a terminal error |
 
 ## `withTrackedActivity`
 
