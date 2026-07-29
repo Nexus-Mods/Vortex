@@ -206,7 +206,10 @@ async function installDependency(api: IExtensionApi, dependencyId: string): Prom
 
   const success = await downloadAndInstallExtension(api, toDownload);
   if (success) {
-    const gameName = toDownload.name?.startsWith("Game:") ? toDownload.name : undefined;
+    const gameName =
+      toDownload.type === "game" || toDownload.name?.startsWith("Game:")
+        ? toDownload.name
+        : undefined;
     signalRestartNeeded(api, gameName);
   } else {
     api.showErrorNotification(
@@ -384,7 +387,8 @@ function init(context: IExtensionContext) {
       const success = await downloadAndInstallExtension(context.api, ext);
 
       if (success) {
-        const gameName = ext.name?.startsWith("Game:") ? ext.name : undefined;
+        const gameName =
+          ext.type === "game" || ext.name?.startsWith("Game:") ? ext.name : undefined;
         signalRestartNeeded(context.api, gameName);
       }
       return success;
