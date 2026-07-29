@@ -1,3 +1,6 @@
+// oxlint-disable-next-line import/no-unassigned-import -- must run before any module below constructs a zod schema
+import "./zodJitless";
+
 export * from "./constants";
 export * from "./Debouncer";
 export * from "./errors";
