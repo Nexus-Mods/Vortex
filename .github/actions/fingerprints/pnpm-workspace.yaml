@@ -3,3 +3,5 @@
 # bundled dist/index.js and is not part of the Vortex workspace.
 packages:
   - .
+allowBuilds:
+  esbuild: true
