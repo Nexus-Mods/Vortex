@@ -1,15 +1,18 @@
-import { app } from "electron";
+import type { IReducerSpec } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
 
 import * as actions from "../actions/app";
-import type { IReducerSpec } from "../types/IExtensionContext";
 import { deleteOrNop, pushSafe, setSafe } from "../util/storeHelper";
 
-export const appReducer: IReducerSpec = {
+export const appReducer: IReducerSpec<IState["app"]> = {
   reducers: {
-    [actions.setStateVersion as any]: (state, payload) => setSafe(state, ["version"], payload),
-    [actions.setApplicationVersion as any]: (state, payload) =>
+    [actions.setStateVersion.getType()]: (state, payload) => setSafe(state, ["version"], payload),
+    [actions.setApplicationVersion.getType()]: (state, payload) =>
       setSafe(state, ["appVersion"], payload),
-    [actions.addExtension as any]: (state, payload) => {
+    [actions.addExtension.getType()]: (
+      state,
+      payload: ReturnType<typeof actions.addExtension>["payload"],
+    ) => {
       const { extensionId, info } = payload;
       const existing = state.extensions?.[extensionId] ?? {};
       return setSafe(state, ["extensions", extensionId], {
@@ -25,20 +28,22 @@ export const appReducer: IReducerSpec = {
         bundled: info.bundled,
       });
     },
-    [actions.setExtensionEnabled as any]: (state, payload) =>
+    [actions.setExtensionEnabled.getType()]: (state, payload) =>
       setSafe(state, ["extensions", payload.extensionId, "enabled"], payload.enabled),
-    [actions.setExtensionVersion as any]: (state, payload) =>
+    [actions.setExtensionVersion.getType()]: (state, payload) =>
       setSafe(state, ["extensions", payload.extensionId, "version"], payload.version),
-    [actions.setExtensionEndorsed as any]: (state, payload) =>
+    [actions.setExtensionEndorsed.getType()]: (state, payload) =>
       setSafe(state, ["extensions", payload.extensionId, "endorsed"], payload.endorsed),
-    [actions.removeExtension as any]: (state, payload) =>
+    [actions.removeExtension.getType()]: (state, payload) =>
       setSafe(state, ["extensions", payload, "remove"], true),
-    [actions.forgetExtension as any]: (state, payload) =>
+    [actions.forgetExtension.getType()]: (state, payload) =>
       deleteOrNop(state, ["extensions", payload]),
-    [actions.setInstanceId as any]: (state, payload) => setSafe(state, ["instanceId"], payload),
-    [actions.setWarnedAdmin as any]: (state, payload) => setSafe(state, ["warnedAdmin"], payload),
-    [actions.setInstallType as any]: (state, payload) => setSafe(state, ["installType"], payload),
-    [actions.completeMigration as any]: (state, payload) =>
+    [actions.setInstanceId.getType()]: (state, payload) => setSafe(state, ["instanceId"], payload),
+    [actions.setWarnedAdmin.getType()]: (state, payload) =>
+      setSafe(state, ["warnedAdmin"], payload),
+    [actions.setInstallType.getType()]: (state, payload) =>
+      setSafe(state, ["installType"], payload),
+    [actions.completeMigration.getType()]: (state, payload) =>
       pushSafe(state, ["migrations"], payload),
   },
   defaults: {
@@ -48,7 +53,7 @@ export const appReducer: IReducerSpec = {
     extensions: {},
     warnedAdmin: 0,
     migrations: [],
-    installType: "official",
+    installType: "regular",
   },
   verifiers: {
     instanceId: {
