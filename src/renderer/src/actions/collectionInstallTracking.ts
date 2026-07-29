@@ -35,6 +35,11 @@ export const finishInstallSession = createAction(
   (sessionId: string, success: boolean) => ({ sessionId, success }),
 );
 
+export const markSessionStalled = createAction(
+  "COLLECTION_MARK_SESSION_STALLED",
+  (sessionId: string, stalled: boolean) => ({ sessionId, stalled }),
+);
+
 export const clearOldSessions = createAction(
   "COLLECTION_CLEAR_OLD_SESSIONS",
   (daysOld: number) => ({ daysOld }),

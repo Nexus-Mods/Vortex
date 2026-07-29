@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { makeDownload, makeMod, makeRule, makeSession, modsByRule } from "../test-utils/builders";
-import { freeUserDownloadPosition, reconstructModStatus } from "./collectionInstallSession";
+import type {
+  CollectionModStatus,
+  ICollectionModInstallInfo,
+} from "../types/collections/ICollectionInstallSession";
+import {
+  freeUserDownloadPosition,
+  isOutstandingOptionalMember,
+  reconstructModStatus,
+} from "./collectionInstallSession";
 
 describe("reconstructModStatus", () => {
   it('rehydrates an ignored rule as the terminal "ignored" status so a skip survives a restart', () => {
@@ -131,5 +139,30 @@ describe("freeUserDownloadPosition", () => {
 
   it("clamps the total to at least 1 so an empty session never divides oddly", () => {
     expect(freeUserDownloadPosition(makeSession())).toEqual({ position: 1, total: 1 });
+  });
+});
+
+describe("isOutstandingOptionalMember", () => {
+  const member = (type: "requires" | "recommends", status: CollectionModStatus) =>
+    ({ type, status }) as Pick<ICollectionModInstallInfo, "type" | "status">;
+
+  it("is true for an optional member that has not settled", () => {
+    // "optional" (offered but not selected) is deliberately non-terminal, so it counts too
+    const statuses = ["pending", "downloading", "downloaded", "installing", "optional"] as const;
+    for (const status of statuses) {
+      expect(isOutstandingOptionalMember(member("recommends", status))).toBe(true);
+    }
+  });
+
+  it("is false once the optional member reaches a terminal status", () => {
+    for (const status of ["installed", "failed", "ignored"] as const) {
+      expect(isOutstandingOptionalMember(member("recommends", status))).toBe(false);
+    }
+  });
+
+  it("is false for required members regardless of status - they are not the optional phase's work", () => {
+    for (const status of ["pending", "downloaded", "installed"] as const) {
+      expect(isOutstandingOptionalMember(member("requires", status))).toBe(false);
+    }
   });
 });
