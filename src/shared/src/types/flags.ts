@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../zodJitless";
 
 // NOTE(erri120): explicit casting with `as z.ZodType<>` required for `--isolatedDeclarations` to work
 export const flagVariantSchemas = {
