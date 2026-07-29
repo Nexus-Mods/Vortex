@@ -171,7 +171,13 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
                   });
 
                   toInstall.forEach(
-                    (req) => void installDownloadedFile(api, req.uninstalledFile, identity),
+                    (req) =>
+                      void installDownloadedFile(
+                        api,
+                        req.uninstalledFile,
+                        identity,
+                        req.enabledFile,
+                      ),
                   );
                 }}
               >

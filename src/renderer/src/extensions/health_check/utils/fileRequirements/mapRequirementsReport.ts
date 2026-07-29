@@ -215,6 +215,8 @@ function classifyDependency(
     // A deliberately disabled alternative (nothing wrong enabled to explain it) counts as
     // satisfied - enabling it would clear the OR - matching the single-branch rule below.
     // Drop this guard to surface it as an "enable this version" card instead.
+    // Deliberately on the resolver's state, not on hydrated display data: whether to
+    // surface the OR at all can't depend on whether a file we never render resolved.
     if (branches.some((b) => b.satisfyingDisabled.length > 0 && b.wrongEnabled.length === 0)) {
       return undefined;
     }
@@ -299,8 +301,9 @@ function classifyOrBranch(
   branch: DependencyBranch,
   hydrate: HydrateFile,
 ): IFileRequirementBranch | undefined {
-  // Owned-but-disabled alternative: enabling it satisfies the OR without a download. Only
-  // reached with a wrong version enabled - the guard above drops the OR otherwise.
+  // Owned-but-disabled alternative: enabling it satisfies the OR without a download. The
+  // guard above means a wrong version is enabled, so this is normally a switch; if that
+  // version's mod has since left the store it won't hydrate, and a plain enable is right.
   if (branch.satisfyingDisabled.length > 0) {
     const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
     if (!hydratedCorrect || hydratedCorrect.kind !== "installed") {

@@ -140,6 +140,11 @@ export async function runFileLevelRequirements(
     });
     return [];
   });
+  if (details.length === 0) {
+    // Nothing to backfill, so a second pass would reproduce what we already have.
+    return initial;
+  }
+
   const modDetailsByUID = new Map(details.map((detail) => [detail.modUID, detail]));
   return mapRequirementsReport(report, buildHydrate(modDetailsByUID), context);
 }

@@ -152,13 +152,16 @@ async function runWith(opts: {
   versions: Record<string, VersionFixture>;
   candidates: V3Candidate[];
   modDetails?: V3ModDetail[];
+  /** Installed files the hydrator can't resolve, e.g. their mod left the store. */
+  unhydratable?: string[];
 }): Promise<IFileRequirementsCheckMetadata | undefined> {
   const downloadedRefs = opts.downloadedRefs ?? [];
+  const unhydratable = new Set(opts.unhydratable ?? []);
   mockGather.mockResolvedValue(opts.refs);
   mockGatherDownloaded.mockResolvedValue(downloadedRefs);
   mockHydrator.mockReturnValue((fileUID: string) => {
     const found = opts.refs.find((r) => r.fileUID === fileUID);
-    return found ? installedFile(fileUID, found.enabled) : undefined;
+    return found && !unhydratable.has(fileUID) ? installedFile(fileUID, found.enabled) : undefined;
   });
   mockDownloadedHydrator.mockReturnValue((fileUID: string) => {
     const found = downloadedRefs.find((r) => r.fileUID === fileUID);
@@ -430,6 +433,49 @@ describe("checkFileRequirements / resolution", () => {
     });
 
     expect(metadata?.fileRequirements).toEqual({});
+  });
+
+  test("still offers an OR enable branch when the wrong enabled version can't be hydrated", async () => {
+    const metadata = await runWith({
+      // Same shape as the enable-branch case, but the wrong version has no display data -
+      // its mod left the store, so it isn't really installed any more. The alternative is
+      // still actionable, as a plain enable rather than a switch.
+      refs: [ref("orh_src"), ref("orh_g2_file", false), ref("orh_g2_wrong")],
+      unhydratable: ["orh_g2_wrong"],
+      versions: {
+        orh_src: { chain: "orh_srcChain", modId: "orh_srcMod" },
+        orh_g1_file: { chain: "orh_g1", modId: "orh_g1Mod" },
+        orh_g2_file: { chain: "orh_g2", modId: "orh_g2Mod" },
+        orh_g2_wrong: { chain: "orh_g2", modId: "orh_g2Mod" },
+      },
+      candidates: [
+        candidate({
+          source_version_id: "orh_src",
+          definition_id: "orh_def",
+          version_id: "orh_g1_file",
+          mod_file_id: "orh_g1",
+          mod_id: "orh_g1Mod",
+        }),
+        candidate({
+          source_version_id: "orh_src",
+          definition_id: "orh_def",
+          version_id: "orh_g2_file",
+          mod_file_id: "orh_g2",
+          mod_id: "orh_g2Mod",
+        }),
+      ],
+    });
+
+    const [req] = metadata?.fileRequirements["orh_src"]?.requirements ?? [];
+    expect(req?.kind).toBe("or");
+    if (req?.kind !== "or") {
+      throw new Error("expected an OR requirement");
+    }
+    expect(req.branches).toHaveLength(2);
+
+    const enableBranch = req.branches.find((b) => b.kind === "enable");
+    expect(enableBranch?.kind === "enable" && enableBranch.correctFile.fileUID).toBe("orh_g2_file");
+    expect(enableBranch?.kind === "enable" && enableBranch.enabledFile).toBeUndefined();
   });
 
   test("reports an OR install branch for an alternative that is downloaded but not installed", async () => {

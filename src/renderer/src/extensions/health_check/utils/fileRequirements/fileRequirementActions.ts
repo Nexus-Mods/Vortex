@@ -39,8 +39,9 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 }
 
 /**
- * Download and install a missing / wrong-version file. Free users can't 1-click install,
- * so open the file page instead (website download); the premium upsell is out of MVP scope.
+ * Download and install a missing / wrong-version file, then make it the active version.
+ * Free users can't 1-click install, so open the file page instead (website download); the
+ * premium upsell is out of MVP scope.
  */
 export async function downloadFileRequirement(
   api: IExtensionApi,
@@ -90,7 +91,7 @@ export async function downloadFileRequirement(
           ),
         );
 
-        await new Promise<string>((resolve, reject) =>
+        const modId = await new Promise<string>((resolve, reject) =>
           api.events.emit(
             "start-install-download",
             dlId,
@@ -98,6 +99,8 @@ export async function downloadFileRequirement(
             (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
           ),
         );
+
+        await activateInstalledVersion(api, modId);
       },
     );
 
