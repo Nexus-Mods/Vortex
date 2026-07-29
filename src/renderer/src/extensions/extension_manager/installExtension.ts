@@ -402,7 +402,8 @@ async function installExtensionImpl(
 
       clearStaleRemovalFlags(api, removedKeys, destPath);
 
-      api.store.dispatch(addExtension(manifestInfo.id, { ...fullInfo, path: destPath }));
+      const extId = fullInfo.id ?? dirName;
+      api.store.dispatch(addExtension(extId, { ...fullInfo, path: destPath }));
 
       emitExtensionInstalled(
         api,
