@@ -676,8 +676,25 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     }
   };
 
+  // store subscribers, for code that watches the store directly rather than via onStateChange
+  const subscribers: Array<() => void> = [];
+  const notifySubscribers = () => {
+    subscribers.slice().forEach((listener) => listener());
+  };
+
+  const subscribe = (listener: () => void) => {
+    subscribers.push(listener);
+    return () => {
+      const idx = subscribers.indexOf(listener);
+      if (idx !== -1) {
+        subscribers.splice(idx, 1);
+      }
+    };
+  };
+
   const dispatch = (action: ITrackedAction) => {
     apply(action);
+    notifySubscribers();
     return action;
   };
 
@@ -691,7 +708,7 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
 
   const api = {
     getState: () => state,
-    store: { getState: () => state, dispatch },
+    store: { getState: () => state, dispatch, subscribe },
     events,
     // a driver registers will-install-mod via onAsync; route it onto the same bus so a
     // plain emit() runs it (the returned promise is ignored, which is fine for assertions)
@@ -733,6 +750,7 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     getState: () => state,
     setState: (mutate: (draft: IState) => void) => {
       mutate(state);
+      notifySubscribers();
     },
     setNextDialog: (result: IDialogResult) => {
       nextDialog = result;
