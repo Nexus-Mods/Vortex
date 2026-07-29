@@ -1,3 +1,6 @@
+// React 18: opt tests into act() environment (required by RTL 13+)
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
 // NOTE(erri120): yes, the library is called "jest-dom" but it works for vitest as well with this import:
 // https://www.npmjs.com/package/@testing-library/jest-dom#with-vitest
 import os from "node:os";
