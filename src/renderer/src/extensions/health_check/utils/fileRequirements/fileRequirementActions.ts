@@ -292,14 +292,43 @@ function loadoutRowModId(api: IExtensionApi, file: IInstalledFile): string {
 }
 
 /**
+ * The mod-list row to reveal for a downloaded archive. The archive gets a row of its own
+ * only while none of its mod's versions are installed - otherwise the mod list collapses it
+ * into the installed version's row, so reveal that one instead.
+ */
+function downloadRowId(api: IExtensionApi, file: IDownloadedFile): string {
+  const state = api.getState();
+  const profile = activeProfile(state);
+  const gameId = profile?.gameId;
+  const nexusModId = decodeUID(file.modUID)?.id;
+  if (!gameId || nexusModId === undefined) {
+    return file.downloadId;
+  }
+  const mods = state.persistent.mods[gameId] ?? {};
+  const versions = Object.keys(mods).filter(
+    (id) =>
+      mods[id].archiveId !== file.downloadId &&
+      Number(mods[id].attributes?.modId) === nexusModId &&
+      mods[id].state === "installed",
+  );
+  if (versions.length === 0) {
+    return file.downloadId;
+  }
+  // The collapsed row is the enabled version, when there is one.
+  const enabled = versions.find((id) => profile?.modState?.[id]?.enabled === true);
+  return enabled ?? versions[0];
+}
+
+/**
  * Navigate to the Mods page and highlight the row for a downloaded-but-not-installed
- * archive, using the download ID as the row key.
+ * archive.
  */
 export function viewDownloadInMods(api: IExtensionApi, file: IDownloadedFile): void {
+  const rowId = downloadRowId(api, file);
   api.events.emit("show-main-page", "Mods");
   setTimeout(() => {
-    api.events.emit("mods-scroll-to", file.downloadId);
-    api.highlightControl(`.${sanitizeCSSId(file.downloadId)}`, 5000);
+    api.events.emit("mods-scroll-to", rowId);
+    api.highlightControl(`.${sanitizeCSSId(rowId)}`, 5000);
   }, 2000);
 }
 
