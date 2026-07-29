@@ -58,6 +58,7 @@ import type { InstallPhaseTracker } from "../extensions/mod_management/util/Inst
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus_integration/reducers/persistent";
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
+import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
@@ -192,6 +193,23 @@ export function makeFileInfo(overrides: Partial<IFileInfo> = {}): IFileInfo {
     mod_version: "1.0.0",
     external_virus_scan_url: "",
     is_primary: true,
+    ...overrides,
+  };
+}
+
+/**
+ * The membership as Vortex stores it, i.e. after the api's role strings have been folded into
+ * flags. Defaults to a plain premium account; override the flags for the free/supporter cases.
+ */
+export function makeUserInfo(overrides: Partial<IValidateKeyDataV2> = {}): IValidateKeyDataV2 {
+  return {
+    userId: 7,
+    name: "test-user",
+    email: "test@example.com",
+    profileUrl: "https://example.com/avatar.png",
+    isPremium: true,
+    isSupporter: false,
+    isLifetime: false,
     ...overrides,
   };
 }

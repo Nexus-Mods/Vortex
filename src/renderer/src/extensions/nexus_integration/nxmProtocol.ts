@@ -49,6 +49,8 @@ interface IQueuedDownload {
   reject: (err: Error) => void;
   /** The file's update chain, used to describe what a skip is skipping. */
   queryRelevantUpdates: () => Promise<IFileUpdate[]>;
+  /** Whether the user has been sent to the website to fetch an authorised link for this one. */
+  awaitingLink: boolean;
 }
 
 /** What one download-url lookup found: the cdn urls plus the nexus ids identifying them. */
@@ -93,9 +95,8 @@ export class NxmProtocol {
   readonly #getNexus: () => NexusT;
   readonly #deps: INxmProtocolDeps;
 
+  // every parked download, each carrying whether its user has gone to fetch a link for it
   readonly #freeQueue: IQueuedDownload[] = [];
-  // queued downloads whose user was sent to the website to generate an authorised link
-  readonly #awaitedLinks: IQueuedDownload[] = [];
   readonly #urlCache = createKeyedCache<{ urls: string[]; meta: unknown }>(
     DOWNLOAD_URL_CACHE_DURATION,
   );
@@ -211,7 +212,7 @@ export class NxmProtocol {
       }
       const { url } = queued;
 
-      this.#awaitedLinks.push(queued);
+      queued.awaitingLink = true;
 
       opn(
         `${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`,
@@ -300,10 +301,6 @@ export class NxmProtocol {
     if (queuedIdx !== -1) {
       this.#freeQueue.splice(queuedIdx, 1);
     }
-    const awaitedIdx = this.#awaitedLinks.findIndex((iter) => iter.input === input);
-    if (awaitedIdx !== -1) {
-      this.#awaitedLinks.splice(awaitedIdx, 1);
-    }
   }
 
   /**
@@ -325,6 +322,7 @@ export class NxmProtocol {
           reject(err);
         },
         queryRelevantUpdates: () => this.#relevantUpdates(url),
+        awaitingLink: false,
       });
       this.#api.store.dispatch(addFreeUserDLItem(input));
     });
@@ -483,16 +481,18 @@ export class NxmProtocol {
 
   /** Hand an incoming link to the queued download that sent the user to fetch it. */
   #deliverAwaitedLink(nxmUrl: NXMUrl, url: string): boolean {
-    const idx = this.#awaitedLinks.findIndex(
+    const queued = this.#freeQueue.find(
       (awaited) =>
+        awaited.awaitingLink &&
         awaited.url.gameId === nxmUrl.gameId &&
         awaited.url.modId === nxmUrl.modId &&
         awaited.url.fileId === nxmUrl.fileId,
     );
-    if (idx === -1) {
+    if (queued === undefined) {
       return false;
     }
-    const [queued] = this.#awaitedLinks.splice(idx, 1);
+    // the link has arrived, so stop treating it as outstanding; resolving dequeues the download
+    queued.awaitingLink = false;
     this.resolve(url).then(queued.resolve, queued.reject);
     return true;
   }

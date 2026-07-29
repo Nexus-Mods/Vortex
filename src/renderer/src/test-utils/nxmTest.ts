@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 
 import { NxmProtocol } from "../extensions/nexus_integration/nxmProtocol";
-import { makeNxmHarness } from "./builders";
+import { makeNxmHarness, makeUserInfo } from "./builders";
 import { test as harnessTest } from "./harnessTest";
 import type { IDriverHarnessState, INxmHarness } from "./harnessTypes";
 
@@ -9,8 +9,8 @@ import type { IDriverHarnessState, INxmHarness } from "./harnessTypes";
 export const MOD_URL = "nxm://skyrimspecialedition/mods/100/files/500";
 export const COLLECTION_URL = "nxm://skyrimspecialedition/collections/abcdef/revisions/3";
 
-export const PREMIUM = { userId: 7, name: "premium-user", isPremium: true };
-export const FREE = { userId: 7, name: "free-user", isPremium: false };
+export const PREMIUM = makeUserInfo({ name: "premium-user" });
+export const FREE = makeUserInfo({ name: "free-user", isPremium: false });
 
 export interface INxmSetup {
   harness: INxmHarness;

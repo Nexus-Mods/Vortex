@@ -5,9 +5,12 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import type { IGame } from "../../../types/IGame";
 import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
-import { gameById, knownGames } from "../../../util/selectors";
 import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
+// the game selectors directly rather than through util/selectors: that barrel re-exports this
+// extension's own selectors, and importing it from here would close an import cycle onto a leaf
+// module that some forty files depend on
+import { gameById, knownGames } from "../../gamemode_management/selectors";
 import type { IGameStored, IGameStoredExt } from "../../gamemode_management/types/IGameStored";
 
 /**
