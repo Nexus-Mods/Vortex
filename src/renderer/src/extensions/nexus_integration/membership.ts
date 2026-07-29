@@ -25,7 +25,18 @@ const FAILURE_COOLDOWN = 30 * 1000;
 export const HOVER_REFRESH_FLOOR = REVALIDATION_FREQUENCY;
 
 let lastRead = 0;
+let lastReadFailed = false;
 let inFlight: Promise<boolean> | undefined;
+
+/**
+ * Whether the last read still stands. A read that failed stands for the shorter cooldown, so an
+ * unreachable api isn't hammered without `lastRead` having to misreport when it last answered.
+ */
+function readIsRecent(
+  within = lastReadFailed ? FAILURE_COOLDOWN : REVALIDATION_FREQUENCY,
+): boolean {
+  return Date.now() - lastRead < within;
+}
 
 /**
  * Count a write of `userInfo` from outside this module as a read - the api-key revalidation and the
@@ -55,9 +66,9 @@ export async function refreshMembership(api: IExtensionApi, nexus: Nexus): Promi
   }
   inFlight = Promise.resolve(getUserInfo(api, nexus))
     .then((updated) => {
-      // a failure counts as an attempt, on the shorter cooldown
-      lastRead =
-        updated === true ? Date.now() : Date.now() - REVALIDATION_FREQUENCY + FAILURE_COOLDOWN;
+      // a failure counts as an attempt, and stands for the shorter cooldown
+      lastRead = Date.now();
+      lastReadFailed = updated !== true;
       return updated === true;
     })
     .finally(() => {
@@ -72,7 +83,7 @@ export async function refreshMembership(api: IExtensionApi, nexus: Nexus): Promi
  * costing them for the rest of the session.
  */
 export async function ensureFreshMembership(api: IExtensionApi, nexus: Nexus): Promise<void> {
-  if (!isLoggedIn(api.getState()) || Date.now() - lastRead < REVALIDATION_FREQUENCY) {
+  if (!isLoggedIn(api.getState()) || readIsRecent()) {
     return;
   }
   await refreshMembership(api, nexus);
@@ -101,7 +112,7 @@ const refreshDebouncer = new Debouncer(
  * always asks.
  */
 export function scheduleMembershipRefresh(api: IExtensionApi, notReadWithin = 0): void {
-  if (Date.now() - lastRead < notReadWithin) {
+  if (readIsRecent(notReadWithin)) {
     return;
   }
   refreshDebouncer.schedule(undefined, api);
@@ -110,5 +121,6 @@ export function scheduleMembershipRefresh(api: IExtensionApi, notReadWithin = 0)
 /** Test seam: forget when the membership was last read, and re-arm the debounce. */
 export function resetMembershipFreshness(): void {
   lastRead = 0;
+  lastReadFailed = false;
   refreshDebouncer.clear();
 }

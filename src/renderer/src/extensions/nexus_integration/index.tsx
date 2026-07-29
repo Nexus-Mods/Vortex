@@ -246,22 +246,23 @@ class Disableable {
       const that = this;
       // tslint:disable-next-line:only-arrow-functions
       return function (...args) {
-        const now = Date.now();
         const state = that.mApi.getState();
-        if (now <= that.mLastValidation + REVALIDATION_FREQUENCY) {
-          return obj[prop](...args);
-        }
-        that.mLastValidation = now;
-
         const key = state.confidential.account?.["nexus"]?.["APIKey"];
         if (key === undefined) {
           // An OAuth session carries the membership in the JWT, but that only changes when the
           // token is refreshed, so a plan bought or cancelled on the website can sit stale for the
-          // rest of the session. Re-read it on the same schedule as an api-key session. The call
-          // being made doesn't need the answer, so don't hold it up for one.
+          // rest of the session. The membership module owns how often to ask and shares one request
+          // between callers, so hand it every call rather than keeping a second clock here. The
+          // call being made doesn't need the answer, so don't hold it up for one.
           void ensureFreshMembership(that.mApi, obj);
           return obj[prop](...args);
         }
+
+        const now = Date.now();
+        if (now <= that.mLastValidation + REVALIDATION_FREQUENCY) {
+          return obj[prop](...args);
+        }
+        that.mLastValidation = now;
 
         // the purpose of this is to renew our user info, in case the user
         // has bought premium since the last validation but technically
