@@ -12,6 +12,7 @@ const mp = vi.hoisted(() => ({
   identify: vi.fn(),
   register: vi.fn(),
   unregister: vi.fn(),
+  get_property: vi.fn(),
   track: vi.fn(),
   reset: vi.fn(),
 }));
@@ -58,7 +59,8 @@ describe("MixpanelAnalytics.setGameContext", () => {
     });
   });
 
-  it("registers a null game_id when the numeric id is unresolved", () => {
+  it("leaves game_id untouched when the numeric id is unresolved", () => {
+    // Registering null would overwrite the (usually correct) game_id persisted from the last session.
     analyticsMixpanel.start(userInfo, false);
     mp.register.mockClear();
 
@@ -67,10 +69,8 @@ describe("MixpanelAnalytics.setGameContext", () => {
       profileId: "abc123",
     });
 
-    expect(mp.register).toHaveBeenCalledWith({
-      game_id: null,
-      profile_id: "abc123",
-    });
+    expect(mp.register).toHaveBeenCalledWith({ profile_id: "abc123" });
+    expect(mp.unregister).not.toHaveBeenCalled();
   });
 
   it("clears game/profile super properties when no game is active", () => {

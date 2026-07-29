@@ -6,6 +6,7 @@ import type { IExtensionContext } from "@/types/IExtensionContext";
 import { getCPUArch } from "@/util/nativeArch";
 
 import { activeGameId, activeProfileId } from "../../util/selectors";
+import { nexusGamesProm } from "../nexus_integration/util";
 import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
@@ -77,6 +78,9 @@ function init(context: IExtensionContext): boolean {
       updateGameContext();
     });
 
+    // Retry once: covers analytics starting before the Nexus games cache has loaded.
+    let retriedGameContext = false;
+
     const updateGameContext = () => {
       const state = context.api.getState();
       const gameId = activeGameId(state);
@@ -88,10 +92,13 @@ function init(context: IExtensionContext): boolean {
         return;
       }
 
-      AnalyticsMixpanel.setGameContext({
-        gameId: numericNexusGameId(gameId),
-        profileId,
-      });
+      const numericGameId = numericNexusGameId(gameId);
+      AnalyticsMixpanel.setGameContext({ gameId: numericGameId, profileId });
+
+      if (numericGameId === null && !retriedGameContext) {
+        retriedGameContext = true;
+        void nexusGamesProm().then(() => updateGameContext());
+      }
     };
 
     function startAnalytics() {
