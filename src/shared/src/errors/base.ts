@@ -117,7 +117,7 @@ export type OsErrorData = {
  * Payload for filesystem errors.
  * @public
  * */
-export type FileSystemErrorData = OsErrorData & {
+export type FileSystemErrorData = Partial<OsErrorData> & {
   path: string;
 };
 
