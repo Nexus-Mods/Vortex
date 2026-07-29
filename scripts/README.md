@@ -53,15 +53,6 @@ Scripts wired into `package.json` can also be called with `pnpm run <name>`.
 
 ---
 
-## Release and Versioning
-
-- `publish-release-to-nexus/` -- prepares and uploads a Vortex release to
-  Nexus Mods (a mod distribution platform). Run from `index.ts`.
-  Run via `pnpm tsx scripts/publish-release-to-nexus/index.ts`.
-  Selects the latest **stable** release, skipping newer drafts and pre-releases.
-
----
-
 ## TypeScript Editor Support
 
 The `.ts` files in this directory are standalone Node scripts run via

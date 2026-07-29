@@ -1,0 +1,24 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/prepare-nexusmods-release-action",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "GitHub Action: prepare a stable Vortex GitHub release for upload to Nexus Mods - validate it, download the installer, and build the changelog from CHANGELOG.md.",
+  "scripts": {
+    "build": "node ./build.mjs",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm tsc",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint"
+  },
+  "dependencies": {
+    "@actions/core": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rolldown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
