@@ -2,9 +2,15 @@ import { describe, expect, test } from "vitest";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import type { IModDetails } from "@/extensions/health_check/types";
+import { makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { makeDownloadedFileHydrator, type IDownloadedFileRef } from "./installedFiles";
+import {
+  makeDownloadedFileHydrator,
+  makeInstalledFileHydrator,
+  type IDownloadedFileRef,
+  type IInstalledFileRef,
+} from "./installedFiles";
 
 const REF: IDownloadedFileRef = { fileUID: "file-1", modUID: "mod-1", downloadId: "dl-1" };
 
@@ -58,7 +64,7 @@ describe("makeDownloadedFileHydrator", () => {
   });
 
   describe("thumbnail / summary / adult flag", () => {
-    test("prefers the download's own nexus.modInfo over mod details", () => {
+    test("prefers the download's own summary and thumbnail over mod details", () => {
       const dl = download({
         nexus: {
           modInfo: {
@@ -84,9 +90,17 @@ describe("makeDownloadedFileHydrator", () => {
       });
     });
 
-    test("keeps contains_adult_content:false over details:true (guards ?? vs ||)", () => {
+    test("takes the fetched adult flag over the download's own (LAZ-849)", () => {
       const dl = download({ nexus: { modInfo: { contains_adult_content: false } } });
-      expect(hydrate(dl, DETAILS)?.adultContent).toBe(false);
+      expect(hydrate(dl, DETAILS)?.adultContent).toBe(true);
+    });
+
+    test("keeps the download's adult flag when no details were fetched (guards ?? vs ||)", () => {
+      const dl = download({ nexus: { modInfo: { contains_adult_content: true } } });
+      expect(hydrate(dl)?.adultContent).toBe(true);
+      expect(
+        hydrate(download({ nexus: { modInfo: { contains_adult_content: false } } }))?.adultContent,
+      ).toBe(false);
     });
 
     test("leaves summary/thumbnail undefined and adult false when neither source supplies them", () => {
@@ -133,5 +147,69 @@ describe("makeDownloadedFileHydrator", () => {
       expect(hydrate(download({ meta: { fileVersion: "3.1" }, nexus: {} }))?.version).toBe("3.1");
       expect(hydrate(download({ nexus: {} }))?.version).toBe("");
     });
+  });
+});
+
+describe("makeInstalledFileHydrator", () => {
+  // Numeric downloadGame so the composite UID resolves without the Nexus games list.
+  const INSTALLED_MOD_UID = makeModUID({ gameId: "1704", modId: "42", fileId: "7" });
+  const INSTALLED_REF: IInstalledFileRef = {
+    fileUID: "file-a",
+    modId: "mod-a",
+    enabled: true,
+    emitRequirements: true,
+  };
+
+  /** Hydrate one installed mod whose archive stores `adultInDownload`, if given. */
+  function hydrateInstalled(adultInDownload?: boolean, details?: IModDetails) {
+    const api = {
+      getState: () => ({
+        settings: { profiles: { activeProfileId: "p1" } },
+        persistent: {
+          profiles: { p1: { id: "p1", gameId: "skyrimse" } },
+          mods: {
+            skyrimse: {
+              "mod-a": {
+                id: "mod-a",
+                state: "installed",
+                archiveId: "dl-a",
+                attributes: {
+                  source: "nexus",
+                  modId: 42,
+                  fileId: 7,
+                  downloadGame: "1704",
+                  logicalFileName: "Mod A",
+                },
+              },
+            },
+          },
+          downloads: {
+            files: {
+              "dl-a": download(
+                adultInDownload === undefined
+                  ? { nexus: { ids: {} } }
+                  : { nexus: { modInfo: { contains_adult_content: adultInDownload } } },
+              ),
+            },
+          },
+        },
+      }),
+    } as unknown as IExtensionApi;
+    const map = details ? new Map([[details.modUID, details]]) : new Map<string, IModDetails>();
+    return makeInstalledFileHydrator(api, [INSTALLED_REF], map)("file-a");
+  }
+
+  test("takes the fetched adult flag over the originating download's", () => {
+    const details: IModDetails = { ...DETAILS, modUID: INSTALLED_MOD_UID };
+    expect(hydrateInstalled(false, details)).toMatchObject({
+      modUID: INSTALLED_MOD_UID,
+      adultContent: true,
+    });
+  });
+
+  test("falls back to the download's adult flag when no details were fetched", () => {
+    expect(hydrateInstalled(true)?.adultContent).toBe(true);
+    expect(hydrateInstalled(false)?.adultContent).toBe(false);
+    expect(hydrateInstalled()?.adultContent).toBe(false);
   });
 });

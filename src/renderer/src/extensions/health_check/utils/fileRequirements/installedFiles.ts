@@ -265,7 +265,9 @@ function toDownloadedFile(
       modName,
     version: download.modInfo?.meta?.fileVersion ?? "",
     thumbnailUrl: modInfo.picture_url ?? details?.thumbnailUrl ?? undefined,
-    adultContent: modInfo.contains_adult_content ?? details?.adultContent ?? false,
+    // The fetched flag wins: a download's stored modInfo can carry a defaulted
+    // `contains_adult_content: false`, and a mod can be flagged after it was downloaded.
+    adultContent: details?.adultContent ?? modInfo.contains_adult_content ?? false,
   };
 }
 
@@ -291,24 +293,29 @@ export function makeDownloadedFileHydrator(
   };
 }
 
+/** Resolve a Nexus mod UID for an installed mod, or "" if not possible. */
+function resolveModUID(attributes: IInstalledModAttributes, gameId: string): string {
+  return (
+    makeModUID({
+      gameId: attributes.downloadGame ?? gameId,
+      modId: String(attributes.modId ?? ""),
+      fileId: String(attributes.fileId ?? ""),
+    }) ?? ""
+  );
+}
+
 /**
  * Build the display shape for one installed file from its Vortex mod.
  */
 function toInstalledFile(
   mod: IMod,
   fileUID: string,
+  modUID: string,
   enabled: boolean,
-  gameId: string,
   adultContent: boolean,
 ): IInstalledFile {
   const attributes: IInstalledModAttributes = mod.attributes ?? {};
   const modName = renderModName(mod);
-  const modUID =
-    makeModUID({
-      gameId: attributes.downloadGame ?? gameId,
-      modId: String(attributes.modId ?? ""),
-      fileId: String(attributes.fileId ?? ""),
-    }) ?? "";
   return {
     modId: mod.id,
     fileUID,
@@ -326,12 +333,14 @@ function toInstalledFile(
 
 /**
  * A `fileUID -> IInstalledFile` hydrator over the gathered refs, reading the mod
- * store on demand so only surfaced files are hydrated. The adult-content flag is
- * read from the originating download (linked via `archiveId`), or defaults to false.
+ * store on demand so only surfaced files are hydrated. The adult-content flag comes
+ * from the fetched mod details, falling back to the originating download (linked via
+ * `archiveId`), whose archive may be gone or predate the mod being flagged.
  */
 export function makeInstalledFileHydrator(
   api: IExtensionApi,
   refs: IInstalledFileRef[],
+  modDetailsByUID: Map<string, IModDetails>,
 ): (fileUID: string) => IInstalledFile | undefined {
   const state = api.getState();
   const gameId = activeProfile(state)?.gameId;
@@ -348,14 +357,11 @@ export function makeInstalledFileHydrator(
     if (!mod) {
       return undefined;
     }
+    const modUID = resolveModUID(mod.attributes ?? {}, gameId);
     const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
     const modInfo = (download?.modInfo?.nexus?.modInfo ?? {}) as INexusModDisplayInfo;
-    return toInstalledFile(
-      mod,
-      fileUID,
-      ref.enabled,
-      gameId,
-      modInfo.contains_adult_content ?? false,
-    );
+    const adultContent =
+      modDetailsByUID.get(modUID)?.adultContent ?? modInfo.contains_adult_content ?? false;
+    return toInstalledFile(mod, fileUID, modUID, ref.enabled, adultContent);
   };
 }
