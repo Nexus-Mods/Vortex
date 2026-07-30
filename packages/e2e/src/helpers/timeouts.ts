@@ -17,6 +17,8 @@ export const GlobalTimeouts = {
 export const Timeouts = {
   /** For assertions or actions that depend on a network round-trip. */
   NETWORK: sec(30) * scalingFactor,
+  /** Bounded wait for a client-rendered modal to appear (or confirm it won't). */
+  MODAL: sec(10) * scalingFactor,
   /** Cold-start and worker fixture setup. */
   LIFECYCLE: min(3) * scalingFactor,
   /** Worker-scoped auth snapshot build: cold Electron start + OAuth flow + flush margin. */
