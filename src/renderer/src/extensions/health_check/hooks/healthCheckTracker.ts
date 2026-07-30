@@ -8,11 +8,22 @@ import type {
   IssueAnalyticsIdentity,
   IssueType,
   OptionalIssueAnalyticsIdentity,
+  RequirementState,
   ResolutionType,
 } from "../utils/shared/tracking";
 
 /** Which free-user fallback the premium modal offered. */
 type PremiumFallbackType = "single_mod_page" | "batch_mod_pages";
+
+/**
+ * What the user was resolving. `option_count` is set only when the requirement offered
+ * alternatives, which is what marks a resolution as an OR pick. Both are optional because
+ * the mod-requirements check shares these events and has no versions, so no state to report.
+ */
+type ResolutionProps = {
+  requirement_state?: RequirementState;
+  option_count?: number;
+};
 
 /**
  * Build a Health Check analytics event. Returns the app-wide MixpanelEvent shape so it
@@ -102,12 +113,13 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     // Install flow
     trackOneClickInstallClicked: (
-      props: IssueAnalyticsIdentity & {
-        mod_id: number;
-        mod_name: string;
-        mod_version: string;
-        is_adult_content: boolean;
-      },
+      props: IssueAnalyticsIdentity &
+        ResolutionProps & {
+          mod_id: number;
+          mod_name: string;
+          mod_version: string;
+          is_adult_content: boolean;
+        },
     ) => track("health_check_one_click_install_clicked", props),
 
     // Install lifecycle, bracketing the actual download + install a health-check action
@@ -137,41 +149,42 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
     ) => track("health_check_install_failed", props),
 
     trackInstallDownloadedClicked: (
-      props: IssueAnalyticsIdentity & { mod_id: number; mod_count: number },
+      props: IssueAnalyticsIdentity & ResolutionProps & { mod_id: number },
     ) => track("health_check_install_downloaded_clicked", props),
 
-    trackInstallAllInGroupClicked: (props: IssueAnalyticsIdentity & { mod_count: number }) =>
-      track("health_check_install_all_in_group_clicked", props),
+    // The listing row's bulk install of files already on disk, so no premium gate - unlike
+    // install_all_in_group, which fetches from Nexus. Its items can mix requirement states.
+    trackInstallAllDownloadedClicked: (props: IssueAnalyticsIdentity & { mod_count: number }) =>
+      track("health_check_install_all_downloaded_clicked", props),
+
+    trackInstallAllInGroupClicked: (
+      props: IssueAnalyticsIdentity & { mod_count: number; requirement_state?: RequirementState },
+    ) => track("health_check_install_all_in_group_clicked", props),
 
     // Enable flow
     trackEnableClicked: (
-      props: IssueAnalyticsIdentity & { mod_id: number; mod_name: string; mod_version: string },
+      props: IssueAnalyticsIdentity &
+        ResolutionProps & { mod_id: number; mod_name: string; mod_version: string },
     ) => track("health_check_enable_clicked", props),
 
     trackEnableThisVersionClicked: (
-      props: IssueAnalyticsIdentity & {
-        mod_id: number;
-        required_version: string;
-        current_version: string;
-      },
+      props: IssueAnalyticsIdentity &
+        ResolutionProps & {
+          mod_id: number;
+          required_version: string;
+          current_version: string;
+        },
     ) => track("health_check_enable_this_version_clicked", props),
 
-    // Pick flow
-    trackPickModInstallClicked: (props: IssueAnalyticsIdentity & { issue_type: IssueType }) =>
-      track("health_check_pick_mod_install_clicked", props),
-
-    trackPickOptionSelected: (
-      props: IssueAnalyticsIdentity & {
-        mod_id: number;
-        mod_name: string;
-        option_position: number;
-        total_options: number;
-      },
-    ) => track("health_check_pick_option_selected", props),
+    // Pick flow. This is navigation to the alternatives; which one the user picks is reported
+    // by that resolution's own event, carrying option_count.
+    trackViewPickOptionsClicked: (props: IssueAnalyticsIdentity) =>
+      track("health_check_view_pick_options_clicked", props),
 
     // Navigation & external
     trackInstallViaModPageClicked: (
-      props: IssueAnalyticsIdentity & { mod_id: number; mod_name: string; mod_version: string },
+      props: IssueAnalyticsIdentity &
+        ResolutionProps & { mod_id: number; mod_name: string; mod_version: string },
     ) => track("health_check_install_via_mod_page_clicked", props),
 
     trackViewModPageClicked: (

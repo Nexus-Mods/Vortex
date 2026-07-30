@@ -90,7 +90,7 @@ describe("makeDownloadedFileHydrator", () => {
       });
     });
 
-    test("takes the fetched adult flag over the download's own (LAZ-849)", () => {
+    test("takes the fetched adult flag over the download's own", () => {
       const dl = download({ nexus: { modInfo: { contains_adult_content: false } } });
       expect(hydrate(dl, DETAILS)?.adultContent).toBe(true);
     });

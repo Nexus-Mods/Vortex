@@ -407,7 +407,7 @@ describe("checkFileRequirements / resolution", () => {
     const metadata = await runWith({
       // ord_g2_file is an acceptable version the user installed and then disabled, with no
       // wrong version enabled to explain it: enabling it would clear the OR, so the whole
-      // requirement stays hidden (LAZ-840).
+      // requirement stays hidden.
       refs: [ref("ord_src"), ref("ord_g2_file", false)],
       versions: {
         ord_src: { chain: "ord_srcChain", modId: "ord_srcMod" },

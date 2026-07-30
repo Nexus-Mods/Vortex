@@ -7,6 +7,7 @@ import {
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import { viewInLoadout } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
+import { requirementStateFor } from "@/extensions/health_check/utils/shared/tracking";
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 import { nxmModOutline } from "@/ui/icon-paths";
@@ -35,7 +36,11 @@ export const ReplaceRows = ({
           {t("detail::item::required_version")}
         </Typography>
 
-        <CandidateCard candidate={requirement.candidate} ctx={ctx} />
+        <CandidateCard
+          candidate={requirement.candidate}
+          ctx={ctx}
+          resolution={{ requirementState: requirementStateFor(requirement) }}
+        />
       </div>
 
       <div className="space-y-3 pt-6">

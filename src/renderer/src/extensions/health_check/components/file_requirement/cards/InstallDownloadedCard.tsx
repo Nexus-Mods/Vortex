@@ -6,6 +6,7 @@ import {
   downloadedToFileData,
   fileWebLinks,
   type IFileActionContext,
+  type IResolutionContext,
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import {
   installDownloadedFile,
@@ -29,12 +30,14 @@ export const InstallDownloadedCard = ({
   ctx,
   file,
   enabledFile,
+  resolution,
   isOr,
 }: {
   ctx: IFileActionContext;
   file: IDownloadedFile;
   /** The wrong version to switch off, if any; absent means a plain install. */
   enabledFile?: IInstalledFile;
+  resolution: IResolutionContext;
   isOr?: boolean;
 }) => {
   const { t } = useTranslation("health_check");
@@ -46,7 +49,7 @@ export const InstallDownloadedCard = ({
   const isSwitch = enabledFile !== undefined;
 
   const handleInstall = () => {
-    ctx.onInstallDownloaded(file);
+    ctx.onInstallDownloaded(file, resolution);
     onClick();
   };
 

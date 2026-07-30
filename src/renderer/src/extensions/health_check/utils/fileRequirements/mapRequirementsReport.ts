@@ -79,6 +79,8 @@ export type IFileRequirementBranch =
       modFileId: string;
       /** The file to download for this alternative */
       candidate: IFileRequirementCandidate;
+      /** A wrong version of the same chain currently enabled, if any (makes it a version change) */
+      enabledFile?: IInstalledFile;
     }
   | {
       kind: "install";
@@ -214,9 +216,8 @@ function classifyDependency(
   if (branches.length > 1) {
     // A deliberately disabled alternative (nothing wrong enabled to explain it) counts as
     // satisfied - enabling it would clear the OR - matching the single-branch rule below.
-    // Drop this guard to surface it as an "enable this version" card instead.
-    // Deliberately on the resolver's state, not on hydrated display data: whether to
-    // surface the OR at all can't depend on whether a file we never render resolved.
+    // Drop this guard to surface it as an "enable this version" card instead. Keyed on the
+    // resolver's state, not hydrated data: it decides whether the issue is shown at all.
     if (branches.some((b) => b.satisfyingDisabled.length > 0 && b.wrongEnabled.length === 0)) {
       return undefined;
     }
@@ -337,6 +338,7 @@ function classifyOrBranch(
       kind: "download",
       modFileId: branch.modFileId,
       candidate: toCandidate(branch.recommended),
+      enabledFile: enabledWrongFile(branch, hydrate),
     };
   }
   return undefined;

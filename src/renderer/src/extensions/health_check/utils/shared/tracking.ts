@@ -1,5 +1,9 @@
 import type { HealthCheckId } from "../../types";
 import type { FileRequirementCategory } from "../fileRequirements/fileRequirementReport";
+import type {
+  IFileRequirement,
+  IFileRequirementBranch,
+} from "../fileRequirements/mapRequirementsReport";
 
 /**
  * Shared analytics vocabulary for the Health Check tracking events (LAZ-551).
@@ -69,6 +73,63 @@ export type IssueAnalyticsIdentity = {
  * row or detail page) and page-wide, across both checks.
  */
 export type OptionalIssueAnalyticsIdentity = Partial<IssueAnalyticsIdentity>;
+
+/**
+ * What state a requirement was in when the user acted on it. `disabled` is never reported
+ * today: that state is suppressed as the user's deliberate choice.
+ */
+export type RequirementState =
+  | "missing"
+  | "wrong_version_enabled"
+  | "downloaded"
+  | "downloaded_wrong_enabled"
+  | "disabled_wrong_enabled"
+  | "disabled";
+
+/** An OR is excluded because it has no single state; use branchRequirementState per option. */
+export const requirementStateFor = (
+  requirement: Exclude<IFileRequirement, { kind: "or" }>,
+): RequirementState => {
+  switch (requirement.kind) {
+    case "missing":
+      return "missing";
+    case "wrong-version-installed":
+      return "wrong_version_enabled";
+    case "correct-version-uninstalled":
+      return requirement.enabledFile ? "downloaded_wrong_enabled" : "downloaded";
+    case "wrong-version-enabled":
+      return "disabled_wrong_enabled";
+  }
+};
+
+/** requirement_state for one of an OR's alternatives. */
+export const branchRequirementState = (branch: IFileRequirementBranch): RequirementState => {
+  switch (branch.kind) {
+    case "download":
+      return branch.enabledFile ? "wrong_version_enabled" : "missing";
+    case "install":
+      return branch.enabledFile ? "downloaded_wrong_enabled" : "downloaded";
+    case "enable":
+      return branch.enabledFile ? "disabled_wrong_enabled" : "disabled";
+  }
+};
+
+/**
+ * The state a group's items share — one category, so normally all of them. Undefined when
+ * they differ, so the property is left off rather than reporting one item's state for all.
+ */
+export const sharedRequirementState = (
+  requirements: IFileRequirement[],
+): RequirementState | undefined => {
+  const first = requirements[0];
+  if (first === undefined || first.kind === "or") {
+    return undefined;
+  }
+  const state = requirementStateFor(first);
+  return requirements.every((req) => req.kind !== "or" && requirementStateFor(req) === state)
+    ? state
+    : undefined;
+};
 
 /**
  * resolution_type for a file-requirement report category. Mod requirements are
