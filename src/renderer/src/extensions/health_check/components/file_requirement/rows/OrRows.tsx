@@ -23,7 +23,13 @@ const branchCard = (
   switch (branch.kind) {
     case "download":
       return (
-        <CandidateCard candidate={branch.candidate} ctx={ctx} isOr={true} resolution={resolution} />
+        <CandidateCard
+          candidate={branch.candidate}
+          ctx={ctx}
+          enabledFile={branch.enabledFile}
+          isOr={true}
+          resolution={resolution}
+        />
       );
     case "install":
       return (

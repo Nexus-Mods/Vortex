@@ -6,7 +6,7 @@ import type { IFileActionContext } from "@/extensions/health_check/utils/fileReq
 import { downloadFileRequirement } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import {
   canQuickInstall,
-  downloadCandidates,
+  downloadTargets,
   type FileRequirementCategory,
   type IFileRequirementReport,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
@@ -86,11 +86,9 @@ export const RequirementBody = ({
   const title = t(groupTitleKey(report.category));
   const { requirements } = report;
 
-  const installAllCandidates = canQuickInstall(report.category)
-    ? downloadCandidates(requirements)
-    : [];
+  const installAllTargets = canQuickInstall(report.category) ? downloadTargets(requirements) : [];
 
-  const hasInstallAll = installAllCandidates.length > 1;
+  const hasInstallAll = installAllTargets.length > 1;
 
   // While "install all" runs, every card's install button also shows loading.
   const rowCtx: IFileActionContext = {
@@ -100,14 +98,19 @@ export const RequirementBody = ({
   };
 
   const installAll = () => {
-    ctx.onInstallAll(installAllCandidates, sharedRequirementState(requirements));
+    ctx.onInstallAll(
+      installAllTargets.map((target) => target.candidate),
+      sharedRequirementState(requirements),
+    );
     if (ctx.showPremiumAd) {
       setPremiumOpen(true);
       return;
     }
     setDownloadingAll(true);
     void Promise.all(
-      installAllCandidates.map((candidate) => downloadFileRequirement(api, candidate, identity)),
+      installAllTargets.map((target) =>
+        downloadFileRequirement(api, target.candidate, identity, target.enabledFile),
+      ),
     ).then((results) => {
       // On full success the requirements clear and this view unmounts; only reset
       // when something failed and the buttons are still around.
@@ -129,7 +132,7 @@ export const RequirementBody = ({
     >
       {downloadingAll
         ? t("detail::item::downloading")
-        : t("actions::install_all", { count: installAllCandidates.length })}
+        : t("actions::install_all", { count: installAllTargets.length })}
     </Button>
   );
 
@@ -158,7 +161,7 @@ export const RequirementBody = ({
       <PremiumModal
         downloadScope="all"
         isOpen={premiumOpen}
-        modCount={installAllCandidates.length}
+        modCount={installAllTargets.length}
         trigger="batch_install"
         onClose={() => setPremiumOpen(false)}
         onDownload={() => setPremiumOpen(false)}

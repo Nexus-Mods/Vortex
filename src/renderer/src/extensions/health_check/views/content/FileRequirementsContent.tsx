@@ -4,7 +4,7 @@ import {
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import {
   categoryOf,
-  downloadCandidates,
+  downloadTargets,
   type IFileRequirementReport,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -76,10 +76,11 @@ export const fileRequirementsContent: IHealthCheckContent = {
           issue_id: fileIssueId(source.sourceFileUID, categoryOf(requirement)),
           check_id: checkId,
         };
-        for (const candidate of downloadCandidates([requirement])) {
+        for (const target of downloadTargets([requirement])) {
           items.push({
-            key: candidate.fileUID,
-            install: () => void downloadFileRequirement(api, candidate, identity),
+            key: target.candidate.fileUID,
+            install: () =>
+              void downloadFileRequirement(api, target.candidate, identity, target.enabledFile),
           });
         }
         if (requirement.kind === "correct-version-uninstalled") {

@@ -39,6 +39,7 @@ export const ReplaceRows = ({
         <CandidateCard
           candidate={requirement.candidate}
           ctx={ctx}
+          enabledFile={requirement.installedFile}
           resolution={{ requirementState: requirementStateFor(requirement) }}
         />
       </div>

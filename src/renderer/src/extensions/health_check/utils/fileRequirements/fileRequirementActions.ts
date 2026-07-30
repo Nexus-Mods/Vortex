@@ -39,7 +39,8 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 }
 
 /**
- * Download and install a missing / wrong-version file, then make it the active version.
+ * Download and install a missing / wrong-version file, then make it the active version,
+ * disabling `enabledFile` when the download replaces a wrong version of the same chain.
  * Free users can't 1-click install, so open the file page instead (website download); the
  * premium upsell is out of MVP scope.
  */
@@ -47,6 +48,7 @@ export async function downloadFileRequirement(
   api: IExtensionApi,
   candidate: IFileRequirementCandidate,
   identity?: IssueAnalyticsIdentity,
+  enabledFile?: IInstalledFile,
 ): Promise<boolean> {
   if (shouldShowPremiumAd(api.getState())) {
     openFilePage(api, candidate);
@@ -100,7 +102,7 @@ export async function downloadFileRequirement(
           ),
         );
 
-        await activateInstalledVersion(api, modId);
+        await activateInstalledVersion(api, modId, enabledFile);
       },
     );
 
