@@ -182,7 +182,10 @@ function resolveModUID(mod: IMod, gameId: string): string | undefined {
  * Check Nexus mod requirements
  * Fetches requirements from Nexus API and checks if they are satisfied
  */
-export async function checkModRequirements(api: IExtensionApi): Promise<IHealthCheckResult> {
+export async function checkModRequirements(
+  api: IExtensionApi,
+  signal?: AbortSignal,
+): Promise<IHealthCheckResult> {
   const startTime = Date.now();
   try {
     const state = api.getState();
@@ -253,6 +256,8 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
       [uid: string]: Partial<IModRequirements> | undefined;
     } = {};
 
+    signal?.throwIfAborted();
+
     try {
       const resolved = await resolveCached(
         [...modsByUid.keys()],
@@ -311,16 +316,19 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
     // One batched mod-details call instead of one per required mod.
     const detailUids = [...requiredTargets.keys()];
     if (detailUids.length > 0) {
+      signal?.throwIfAborted();
       try {
-        await getModDetails(api, detailUids);
+        await getModDetails(api, detailUids, signal);
       } catch (err) {
-        log("warn", "Failed to batch mod details", { error: (err as Error).message });
+        signal?.throwIfAborted();
+        log("warn", "Failed to batch mod details", { error: getErrorMessageOrDefault(err) });
       }
     }
 
     // File-list lookups, fanned out in bounded-concurrency waves.
     const filesByRequiredUid = new Map<string, IModFileInfo[]>();
     for (const wave of chunked([...requiredTargets], FILE_LOOKUP_CONCURRENCY)) {
+      signal?.throwIfAborted();
       const fetched = await Promise.all(
         wave.map(async ([uid, target]) => {
           const files = await getModFilesWithCache(api, target.gameId, target.modId).catch(
@@ -483,6 +491,10 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
       { details, metadata },
     );
   } catch (error) {
+    // The registry reports the timeout itself and discards this run's result.
+    if (signal?.aborted) {
+      throw error;
+    }
     log("error", "Failed to check Nexus mod requirements", unknownToError(error));
     return createResult(
       startTime,
@@ -512,7 +524,7 @@ export const modRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.GameChanged,
     HealthCheckTrigger.SettingsChanged,
   ],
-  check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
+  check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
     if (!isModRequirementsEnabled(api.getState())) {
       return {
         checkId: MOD_REQUIREMENTS_CHECK_ID,
@@ -526,7 +538,7 @@ export const modRequirementsHealthCheck: IHealthCheck = {
 
     api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true));
     try {
-      return await checkModRequirements(api);
+      return await checkModRequirements(api, signal);
     } finally {
       api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, false));
     }

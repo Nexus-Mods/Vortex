@@ -85,6 +85,7 @@ function surfacedModUIDs(metadata: IFileRequirementsCheckMetadata): string[] {
  */
 export async function runFileLevelRequirements(
   api: IExtensionApi,
+  signal?: AbortSignal,
 ): Promise<IFileRequirementsCheckMetadata> {
   const gameId = activeProfile(api.getState())?.gameId ?? "";
 
@@ -106,8 +107,10 @@ export async function runFileLevelRequirements(
   const report = await checkFileLevelRequirements({
     installedFiles,
     uninstalledFileVersionUids: new Set(downloadedRefs.map((ref) => ref.fileUID)),
-    ports: createResolverPorts(api),
+    ports: createResolverPorts(api, signal),
   });
+
+  signal?.throwIfAborted();
 
   const buildHydrate = (modDetailsByUID: Map<string, IModDetails>): HydrateFile => {
     const hydrateInstalled = makeInstalledFileHydrator(api, installedRefs, modDetailsByUID);
@@ -133,7 +136,8 @@ export async function runFileLevelRequirements(
 
   // Backfill display data (thumbnail, summary, adult flag) via the batched, cached
   // mod-details endpoint, then re-map with it. See toDownloadedFile / toInstalledFile.
-  const details = await getModDetails(api, modUIDs).catch((err: unknown): IModDetails[] => {
+  const details = await getModDetails(api, modUIDs, signal).catch((err: unknown): IModDetails[] => {
+    signal?.throwIfAborted();
     log("warn", "failed to fetch mod details for file requirements", {
       count: modUIDs.length,
       error: getErrorMessage(unknownToError(err)),
