@@ -15,8 +15,8 @@ import { sharedRequirementState } from "@/extensions/health_check/utils/shared/t
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
-import { Typography } from "@/ui/components/typography/Typography";
 
+import { Divider } from "../divider/Divider";
 import { PremiumModal } from "../premium_modal/PremiumModal";
 import { RequirementGroup } from "./RequirementGroup";
 import { DownloadRows } from "./rows/DownloadRows";
@@ -56,18 +56,6 @@ const requirementRows = (requirement: IFileRequirement, ctx: IFileActionContext)
       return <OrRows ctx={ctx} requirement={requirement} />;
   }
 };
-
-const AndDivider = () => (
-  <div aria-hidden className="flex h-9.5 items-center gap-x-3">
-    <div className="h-px w-3 bg-surface-mid" />
-
-    <Typography as="div" className="font-semibold">
-      And
-    </Typography>
-
-    <div className="h-px grow bg-surface-mid" />
-  </div>
-);
 
 export const RequirementBody = ({
   report,
@@ -149,7 +137,7 @@ export const RequirementBody = ({
       ) : (
         requirements.map((requirement, index) => (
           <React.Fragment key={requirement.requirementDefId}>
-            {index > 0 && <AndDivider />}
+            {index > 0 && <Divider className="h-9.5" variant="and" />}
 
             <RequirementGroup actions={index === 0 ? installAllAction : undefined} title={title}>
               {requirementRows(requirement, rowCtx)}

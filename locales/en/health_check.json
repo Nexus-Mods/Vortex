@@ -84,7 +84,11 @@
       "enable_required": "Enable required version",
       "view_in_mods": "View in Mods",
       "enable_this_version": "Enable this version",
-      "install_uninstalled": "Install (downloaded)"
+      "install_uninstalled": "Install (downloaded)",
+      "adult": "Adult",
+      "installed": "Installed",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",

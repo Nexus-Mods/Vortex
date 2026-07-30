@@ -5,6 +5,7 @@ import {
   mdiMonitorArrowDownVariant,
 } from "@mdi/js";
 import React, { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -38,6 +39,8 @@ export function FileRequirement({
   onOpenMod,
   onOpenFile,
 }: IFileRequirementProps) {
+  const { t } = useTranslation("health_check");
+
   const modImage = (
     <AdultAwareImage
       alt={file.modName}
@@ -86,7 +89,7 @@ export function FileRequirement({
                   <Bullet />
 
                   <Typography brand="danger" typographyType="body-sm">
-                    Adult
+                    {t("detail::item::adult")}
                   </Typography>
                 </>
               )}
@@ -138,14 +141,14 @@ export function FileRequirement({
         <div className="flex items-center gap-x-2">
           {file.installed && (
             <>
-              <Pill iconPath={mdiMonitorArrowDownVariant}>Installed</Pill>
+              <Pill iconPath={mdiMonitorArrowDownVariant}>{t("detail::item::installed")}</Pill>
 
               {file.enabled ? (
                 <Pill iconPath={mdiCheckCircleOutline} pillType="success">
-                  Enabled
+                  {t("detail::item::enabled")}
                 </Pill>
               ) : (
-                <Pill iconPath={mdiCloseCircleOutline}>Disabled</Pill>
+                <Pill iconPath={mdiCloseCircleOutline}>{t("detail::item::disabled")}</Pill>
               )}
 
               {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}
