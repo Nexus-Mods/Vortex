@@ -35,7 +35,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   const {
     trackDetailViewed,
     trackOneClickInstallClicked,
-    trackPickOptionSelected,
     trackInstallAllInGroupClicked,
     trackInstallViaModPageClicked,
     trackViewModPageClicked,
@@ -142,25 +141,21 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
               showPremiumAd,
               identity,
               requestDownload: (candidate) => downloadFileRequirement(api, candidate, identity),
-              onInstall: (candidate) =>
+              onInstall: (candidate, resolution) =>
                 trackOneClickInstallClicked({
                   mod_id: decodeUID(candidate.modUID)?.id ?? 0,
                   mod_name: candidate.modName,
                   mod_version: candidate.version,
                   is_adult_content: candidate.adultContent,
+                  requirement_state: resolution.requirementState,
+                  option_count: resolution.optionCount,
                 }),
-              onPickOption: (candidate, position, total) =>
-                trackPickOptionSelected({
-                  mod_id: decodeUID(candidate.modUID)?.id ?? 0,
-                  mod_name: candidate.modName,
-                  option_position: position,
-                  total_options: total,
-                }),
-              onInstallAll: (candidates) =>
+              onInstallAll: (candidates, requirementState) =>
                 trackInstallAllInGroupClicked({
                   mod_count: candidates.length,
+                  requirement_state: requirementState,
                 }),
-              onOpenModPage: (candidate) => {
+              onOpenModPage: (candidate, resolution) => {
                 const modPageProps = {
                   mod_id: decodeUID(candidate.modUID)?.id ?? 0,
                   mod_name: candidate.modName,
@@ -168,22 +163,33 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 };
 
                 // Free users install via the website (a resolution action); premium users
-                // browsing to the mod page is informational.
+                // browsing to the mod page is informational, so it carries no resolution.
                 if (showPremiumAd) {
-                  trackInstallViaModPageClicked(modPageProps);
+                  trackInstallViaModPageClicked({
+                    ...modPageProps,
+                    requirement_state: resolution.requirementState,
+                    option_count: resolution.optionCount,
+                  });
                 } else {
                   trackViewModPageClicked(modPageProps);
                 }
               },
-              onEnable: (correctFile, enabledFile) => {
+              onEnable: (correctFile, enabledFile, resolution) => {
+                const resolutionProps = {
+                  requirement_state: resolution.requirementState,
+                  option_count: resolution.optionCount,
+                };
+
                 if (enabledFile) {
                   trackEnableThisVersionClicked({
+                    ...resolutionProps,
                     mod_id: decodeUID(correctFile.modUID)?.id ?? 0,
                     required_version: correctFile.version,
                     current_version: enabledFile.version,
                   });
                 } else {
                   trackEnableClicked({
+                    ...resolutionProps,
                     mod_id: decodeUID(correctFile.modUID)?.id ?? 0,
                     mod_name: correctFile.modName,
                     mod_version: correctFile.version,
@@ -195,10 +201,11 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   mod_id: decodeUID(file.modUID)?.id ?? 0,
                   mod_name: file.modName,
                 }),
-              onInstallDownloaded: (file) =>
+              onInstallDownloaded: (file, resolution) =>
                 trackInstallDownloadedClicked({
                   mod_id: decodeUID(file.modUID)?.id ?? 0,
-                  mod_count: 1,
+                  requirement_state: resolution.requirementState,
+                  option_count: resolution.optionCount,
                 }),
             }}
             report={report}

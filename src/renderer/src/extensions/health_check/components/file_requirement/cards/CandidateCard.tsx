@@ -6,6 +6,7 @@ import {
   candidateToFileData,
   fileWebLinks,
   type IFileActionContext,
+  type IResolutionContext,
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import { openModPage } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
@@ -19,15 +20,13 @@ import { FileRequirement } from "../FileRequirement";
 export const CandidateCard = ({
   ctx,
   candidate,
+  resolution,
   isOr,
-  optionPosition,
-  optionCount,
 }: {
   ctx: IFileActionContext;
   candidate: IFileRequirementCandidate;
+  resolution: IResolutionContext;
   isOr?: boolean;
-  optionPosition?: number;
-  optionCount?: number;
 }) => {
   const { t } = useTranslation(["health_check", "common"]);
 
@@ -39,17 +38,12 @@ export const CandidateCard = ({
   const loading = isLoading || !!ctx.isDownloadingAll;
 
   const handleInstall = () => {
-    if (isOr) {
-      ctx.onPickOption(candidate, optionPosition ?? 0, optionCount ?? 0);
-    } else {
-      ctx.onInstall(candidate);
-    }
-
+    ctx.onInstall(candidate, resolution);
     onClick();
   };
 
   const handleModPage = () => {
-    ctx.onOpenModPage(candidate);
+    ctx.onOpenModPage(candidate, resolution);
     openModPage(ctx.api, candidate);
   };
 
