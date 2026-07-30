@@ -272,10 +272,11 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
         requirementsMap[uid] = requirements;
       }
     } catch (err) {
-      log("warn", "Failed to fetch mod requirements", {
-        error: (err as Error).message,
-      });
-      metadata.errors.push(`Failed to fetch requirements: ${(err as Error).message}`);
+      // Whatever the cache already held is still used below; the run is just incomplete,
+      // which the result status reflects rather than reporting a clean pass.
+      const message = getErrorMessageOrDefault(err);
+      log("warn", "Failed to fetch mod requirements", { error: message });
+      metadata.errors.push(`Failed to fetch requirements: ${message}`);
     }
 
     // Pre-fetch, batched and in parallel, the per-required-mod data the second pass
@@ -446,7 +447,22 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
     );
     const totalIssues = totalMissingMods + totalDlcRequirements;
 
-    if (totalIssues === 0 && metadata.errors.length === 0) {
+    const details = buildDetailsString(modsWithIssues, metadata.errors);
+
+    // An incomplete run cannot claim the loadout is fine: with the fetch failed we don't
+    // know what we didn't see. Whatever was resolved from cache is still reported, so the
+    // metadata rides along and the listing keeps showing it.
+    if (metadata.errors.length > 0) {
+      return createResult(
+        startTime,
+        "error",
+        HealthCheckSeverity.Error,
+        `Nexus mod requirements check incomplete: ${metadata.errors.length} fetch error(s), ${totalIssues} issues found in ${metadata.modsChecked} mods checked`,
+        { details, metadata },
+      );
+    }
+
+    if (totalIssues === 0) {
       return createResult(
         startTime,
         "passed",
@@ -456,7 +472,6 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
       );
     }
 
-    const details = buildDetailsString(modsWithIssues, metadata.errors);
     const severity = totalMissingMods > 0 ? HealthCheckSeverity.Warning : HealthCheckSeverity.Info;
     const status = totalMissingMods > 0 ? "warning" : "passed";
 
