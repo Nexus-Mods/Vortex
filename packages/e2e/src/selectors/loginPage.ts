@@ -35,8 +35,10 @@ export class LoginPage {
     this.authorisationSuccessTitle = page.locator("p.oauth__title", {
       hasText: /Authorisation successful!/i,
     });
+    // Logged in the button is named after the user, so fall back to the avatar image.
     this.profileButton = page
-      .locator("button[title='Profile'], button[title='Log in'], button:has(img[alt])")
+      .getByRole("button", { name: /^(profile|log in)$/i })
+      .or(page.locator("button:has(img[alt])"))
       .first();
     this.loggedInMenuItem = page.getByText(/view profile on web|logout/i).first();
   }

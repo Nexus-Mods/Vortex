@@ -4,6 +4,7 @@ import React from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { Tooltip, type ITooltipPlacement } from "./Tooltip";
+import { TooltipDelayGroup } from "./TooltipDelayGroup";
 
 // --- Helpers ---
 
@@ -166,5 +167,46 @@ describe("Tooltip", () => {
     await userEvent.hover(screen.getByRole("button", { name: "Clipped trigger" }));
     await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
     expect(screen.getByTestId("clipper")).not.toContainElement(screen.getByRole("tooltip"));
+  });
+});
+
+describe("TooltipDelayGroup", () => {
+  const renderGroup = (props: Parameters<typeof TooltipDelayGroup>[0] = {}) =>
+    render(
+      <div data-testid="host">
+        <TooltipDelayGroup {...props}>
+          <button type="button">Deploy</button>
+        </TooltipDelayGroup>
+      </div>,
+    );
+
+  it("renders no element of its own by default", () => {
+    renderGroup();
+    expect(screen.getByTestId("host").children).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Deploy" }).parentElement).toBe(
+      screen.getByTestId("host"),
+    );
+  });
+
+  it("renders the element given by `as`, with its props, around the group", () => {
+    renderGroup({ as: "div", className: "flex gap-x-2" });
+
+    const wrapper = screen.getByRole("button", { name: "Deploy" }).parentElement;
+    expect(wrapper?.tagName).toBe("DIV");
+    expect(wrapper).toHaveClass("flex", "gap-x-2");
+    expect(screen.getByTestId("host")).toContainElement(wrapper);
+  });
+
+  it("still shares its delay with the tooltips inside a wrapper", async () => {
+    render(
+      <TooltipDelayGroup as="div" delay={0}>
+        <Tooltip content="Deploys every enabled mod">
+          <button type="button">Deploy</button>
+        </Tooltip>
+      </TooltipDelayGroup>,
+    );
+
+    await userEvent.hover(screen.getByRole("button", { name: "Deploy" }));
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
   });
 });

@@ -16,6 +16,7 @@ import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider
 import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
 import { Icon } from "../../../ui/components/icon/Icon";
+import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
 import { UserCanceled } from "../../../util/CustomErrors";
 import opn from "../../../util/opn";
 import {
@@ -25,22 +26,26 @@ import {
 
 interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   imageSrc?: string;
+  title: string;
   username?: string;
 }
 
 const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
-  ({ imageSrc, username, ...props }, ref) => (
-    <button
-      className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
-      ref={ref}
-      {...props}
-    >
-      {imageSrc ? (
-        <img alt={username} className="size-6 rounded-full" src={imageSrc} />
-      ) : (
-        <Icon className="size-6 text-neutral-moderate" path={mdiAccountCircle} size="none" />
-      )}
-    </button>
+  ({ imageSrc, title, username, ...props }, ref) => (
+    <Tooltip content={title} placement="bottom">
+      <button
+        aria-label={title}
+        className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
+        ref={ref}
+        {...props}
+      >
+        {imageSrc ? (
+          <img alt={username} className="size-6 rounded-full" src={imageSrc} />
+        ) : (
+          <Icon className="size-6 text-neutral-moderate" path={mdiAccountCircle} size="none" />
+        )}
+      </button>
+    </Tooltip>
   ),
 );
 

@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 
 import { setOpenMainPage } from "../../../actions";
 import { usePagesContext, useWindowContext } from "../../../contexts";
+import { TooltipDelayGroup } from "../../../ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
@@ -53,7 +54,8 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
   }, [menuIsCollapsed]);
 
   return (
-    <div
+    <TooltipDelayGroup
+      as="div"
       className={joinClasses([
         "relative -mt-1 flex shrink-0 flex-col pr-0.5 transition-[width]",
         menuIsCollapsed ? "w-16" : "w-56",
@@ -100,7 +102,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
       <ToolsSection isAnimating={isAnimating} />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
-    </div>
+    </TooltipDelayGroup>
   );
 };
 

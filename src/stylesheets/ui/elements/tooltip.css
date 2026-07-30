@@ -16,8 +16,8 @@
         border-radius: var(--radius-sm);
         color: var(--color-neutral-strong);
         max-width: calc(var(--spacing) * 80);
-        border: solid 1px var(--color-stroke-weak);
         background-color: var(--color-surface-mid);
+        border: solid 1px var(--color-surface-high);
     }
 
     .nxm-tooltip-body {
@@ -37,7 +37,7 @@
         fill: var(--color-surface-mid);
 
         path[clip-path] {
-            stroke: var(--color-stroke-subdued);
+            stroke: var(--color-surface-high);
         }
 
         path:not([clip-path]) {

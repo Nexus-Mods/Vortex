@@ -355,7 +355,7 @@ Rich, collision-aware tooltip built on `@floating-ui/react`. `content` is arbitr
 
 **For new tooltips only.** The existing `controls/TooltipControls` components (`Button`, `IconButton`, `Icon`, `NavItem`) are untouched — don't migrate call sites to this without a deliberate decision to do so.
 
-**Defaults:** `placement="top"`, `delay={{ open: 300, close: 150 }}`, `showArrow`, non-interactive.
+**Defaults:** `placement="top"`, `delay={{ open: 250, close: 50 }}`, `showArrow`, non-interactive.
 
 ```tsx
 import { Tooltip } from "../../ui/components/tooltip/Tooltip";
@@ -410,7 +410,7 @@ That only moves the design cap. The positioner around the bubble is still clampe
 
 #### TooltipDelayGroup
 
-Shares one hover delay across every `Tooltip` inside it. The first tooltip waits out the open delay; while one is showing, moving to a sibling swaps straight over. Wrap rows of icon buttons in this — without it, scanning a toolbar costs a fresh 300ms pause per button.
+Shares one hover delay across every `Tooltip` inside it. The first tooltip waits out the open delay; while one is showing, moving to a sibling swaps straight over. Wrap rows of icon buttons in this — without it, scanning a toolbar costs a fresh 250ms pause per button.
 
 ```tsx
 import { TooltipDelayGroup } from "../../ui/components/tooltip/TooltipDelayGroup";
@@ -423,6 +423,20 @@ import { TooltipDelayGroup } from "../../ui/components/tooltip/TooltipDelayGroup
     ))}
 </TooltipDelayGroup>;
 ```
+
+It renders no DOM of its own. Where the row needs a layout element anyway, pass `as` and that element's props instead of nesting a second node inside:
+
+```tsx
+<TooltipDelayGroup as="div" className="flex items-center gap-x-1">
+    {actions.map((action) => (
+        <Tooltip key={action.label} content={action.label}>
+            <Button aria-label={action.label} leftIconPath={action.iconPath} />
+        </Tooltip>
+    ))}
+</TooltipDelayGroup>
+```
+
+`as` takes any element type and forwards the rest of the props to it. Props are typed as `HTMLAttributes`, so `className`, `style` and the like are covered — element-specific ones (`href`, say) are not, and are dropped with no wrapper to receive them if `as` is omitted.
 
 ### Listbox
 

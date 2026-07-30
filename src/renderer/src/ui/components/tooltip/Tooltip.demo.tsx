@@ -255,20 +255,18 @@ export const TooltipDemo = () => (
         instantly. The second row has no group, so every button waits out its own 300ms.
       </Typography>
 
-      <TooltipDelayGroup>
-        <div className="flex items-center gap-x-1">
-          {toolbarActions.map((action) => (
-            <Tooltip content={action.label} key={action.label}>
-              <Button
-                appearance="weak"
-                aria-label={action.label}
-                brand="neutral"
-                leftIconPath={action.iconPath}
-                size="sm"
-              />
-            </Tooltip>
-          ))}
-        </div>
+      <TooltipDelayGroup as="div" className="flex items-center gap-x-1">
+        {toolbarActions.map((action) => (
+          <Tooltip content={action.label} key={action.label}>
+            <Button
+              appearance="weak"
+              aria-label={action.label}
+              brand="neutral"
+              leftIconPath={action.iconPath}
+              size="sm"
+            />
+          </Tooltip>
+        ))}
       </TooltipDelayGroup>
 
       <div className="flex items-center gap-x-1">

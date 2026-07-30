@@ -47,7 +47,7 @@ const ARROW_WIDTH = 12;
 const ARROW_PADDING = 8;
 /** FloatingArrow doubles and clips this, so 1 renders as a 1px edge. */
 const ARROW_STROKE_WIDTH = 1;
-const TRANSITION_MS = 150;
+const TRANSITION_MS = 30;
 
 export type ITooltipPlacement = Placement;
 
@@ -80,7 +80,7 @@ export const Tooltip = ({
   className,
   content,
   customContent,
-  delay = { close: 150, open: 300 },
+  delay = { close: 50, open: 250 },
   disabled = false,
   interactive = false,
   placement = "top",
@@ -92,8 +92,10 @@ export const Tooltip = ({
   const { context, floatingStyles, refs } = useFloating({
     middleware: [
       offset(showArrow ? TRIGGER_GAP + ARROW_HEIGHT : TRIGGER_GAP),
-      // Swap sides rather than overflow.
-      flip({ fallbackAxisSideDirection: "start", padding: COLLISION_PADDING }),
+      // Swap sides rather than overflow. crossAxis is off so shift handles the
+      // other axis — otherwise a trigger near an edge flips to an unasked-for
+      // side when sliding a pixel would have done.
+      flip({ crossAxis: false, fallbackAxisSideDirection: "start", padding: COLLISION_PADDING }),
       // Slide along the edge; limitShift stops it detaching from the trigger.
       shift({ limiter: limitShift(), padding: COLLISION_PADDING }),
       size({
@@ -134,7 +136,7 @@ export const Tooltip = ({
     duration: groupContext.isInstantPhase
       ? { close: groupContext.currentId === context.floatingId ? TRANSITION_MS : 0, open: 0 }
       : TRANSITION_MS,
-    initial: { opacity: 0, transform: "scale(0.96)" },
+    initial: { opacity: 0, transform: "scale(0.90)" },
   });
 
   const interactions = useInteractions([

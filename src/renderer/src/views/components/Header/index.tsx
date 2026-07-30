@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useWindowContext } from "../../../contexts";
+import { TooltipDelayGroup } from "../../../ui/components/tooltip/TooltipDelayGroup";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { nxmPanelClose, nxmPanelOpen } from "../../../ui/icon-paths";
 import {
@@ -59,6 +60,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
         <IconButton
           appearance="secondary"
           iconPath={menuIsCollapsed ? nxmPanelOpen : nxmPanelClose}
+          placement="right"
           style={{ WebkitAppRegion: "no-drag" }}
           title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
           onClick={handleToggleMenu}
@@ -81,13 +83,13 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
         <VersionIndicator />
         <PremiumIndicator />
 
-        <div className="flex gap-x-2">
+        <TooltipDelayGroup as="div" className="flex gap-x-2">
           <Notifications />
 
           <HelpSection />
 
           <ProfileSection />
-        </div>
+        </TooltipDelayGroup>
 
         <div className="h-6 w-px bg-stroke-weak" />
 
