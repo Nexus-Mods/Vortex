@@ -1306,7 +1306,8 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
     return Bluebird.resolve(nexus.getUserInfo())
       .then((apiUserInfo) => {
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        log("info", "onRefreshUserInfo() nexus.getUserInfo response", apiUserInfo);
+        // don't log the response payload: it contains PII (email, age verification, preferences)
+        log("info", "onRefreshUserInfo() user info updated");
       })
       .catch((err) => {
         log("error", `onRefreshUserInfo() nexus.getUserInfo response ${err.message}`, err);
