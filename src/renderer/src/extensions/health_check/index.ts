@@ -13,6 +13,7 @@ import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
 import {
   fileRequirementsHealthCheck,
+  FILE_REQUIREMENTS_CHECK_ID,
   FILE_REQUIREMENTS_FLAG,
 } from "./checks/fileRequirementsCheck";
 import { modRequirementsHealthCheck } from "./checks/modRequirementsCheck";
@@ -100,14 +101,15 @@ function init(context: IExtensionContext): boolean {
     });
 
     // Re-run the file-level check when the Unleash flag flips. subscribeToFlag
-    // fires once immediately (skipped here) and then only on actual changes.
+    // fires once immediately (skipped here) and then only on actual changes. The flag gates
+    // this check alone, so only it re-runs.
     let initialFlag = true;
     FlagService.instance.subscribeToFlag(FILE_REQUIREMENTS_FLAG, () => {
       if (initialFlag) {
         initialFlag = false;
         return;
       }
-      void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
+      void healthCheckApi?.custom.run(FILE_REQUIREMENTS_CHECK_ID);
     });
   });
 
