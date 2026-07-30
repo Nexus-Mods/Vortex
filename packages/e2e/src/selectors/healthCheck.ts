@@ -17,6 +17,11 @@ export class HealthCheckPage {
   readonly emptyStateTitle: Locator;
   readonly emptyStateMessage: Locator;
   readonly premiumBanner: Locator;
+  readonly activeTab: Locator;
+  readonly hiddenTab: Locator;
+  readonly hideAllButton: Locator;
+  readonly unhideAllButton: Locator;
+  readonly hiddenEmptyState: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -41,6 +46,14 @@ export class HealthCheckPage {
     this.premiumBanner = this.root.getByText(
       "Download requirements in 1-click. No page visits or waiting.",
     );
+    // Active / Hidden tabs (TabButton renders role="tab"; the label carries a
+    // "(N)" count suffix, so match the name loosely and read the count via text).
+    this.activeTab = this.root.getByRole("tab", { name: /Active/ });
+    this.hiddenTab = this.root.getByRole("tab", { name: /Hidden/ });
+    // Bulk hide/unhide controls; the label gains a " (N)" suffix when non-zero.
+    this.hideAllButton = this.root.getByRole("button", { name: /Hide all/ });
+    this.unhideAllButton = this.root.getByRole("button", { name: /Unhide all/ });
+    this.hiddenEmptyState = this.root.getByText("No hidden items");
   }
 }
 
@@ -86,6 +99,30 @@ export class HealthCheckWarnings {
   installOneClick(requiredModName?: string | RegExp): Locator {
     return this.row(requiredModName).getByRole("button", { name: /1-click install/ });
   }
+
+  /**
+   * The per-row EntryActions controls (thumbs + hide eye). In the list they're
+   * `invisible` until the row is hovered/focused, so hover the row first
+   * (`await warnings.row().hover()`) before asserting/clicking these. Names are
+   * exact so "Hide" doesn't also match the header "Hide all" and "Helpful"
+   * doesn't match "Not helpful".
+   */
+  helpfulButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Helpful", exact: true });
+  }
+
+  notHelpfulButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Not helpful", exact: true });
+  }
+
+  /** The hide (eye-off) control; becomes "Unhide" once the row is hidden. */
+  hideButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Hide", exact: true });
+  }
+
+  unhideButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Unhide", exact: true });
+  }
 }
 
 /**
@@ -100,6 +137,12 @@ export class HealthCheckDetail {
   readonly requiresFileLine: Locator;
   readonly installViaModPageButton: Locator;
   readonly installOneClickButton: Locator;
+  readonly installRequiredHeader: Locator;
+  readonly installAllInGroupButton: Locator;
+  readonly feedbackPrompt: Locator;
+  readonly feedbackThanks: Locator;
+  readonly helpfulButton: Locator;
+  readonly notHelpfulButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -121,6 +164,20 @@ export class HealthCheckDetail {
     this.installOneClickButton = this.root
       .getByRole("button", { name: /^1-click install$/ })
       .first();
+    // "Install required" group header for the download report type (RequirementBody).
+    this.installRequiredHeader = this.root.getByText("Install required", { exact: true });
+    // Section-level batch button, rendered only when the group has >1 candidate
+    // ("1-click install all (N)"); free users additionally get a Premium badge.
+    this.installAllInGroupButton = this.root
+      .getByRole("button", { name: /1-click install all/ })
+      .first();
+    // EntryActions (detail variant): a prompt that flips to a thank-you once
+    // feedback is given, plus the thumbs controls (exact names so "Helpful"
+    // doesn't also match "Not helpful").
+    this.feedbackPrompt = this.root.getByText("Was this warning helpful?");
+    this.feedbackThanks = this.root.getByText("Thanks for your feedback");
+    this.helpfulButton = this.root.getByRole("button", { name: "Helpful", exact: true });
+    this.notHelpfulButton = this.root.getByRole("button", { name: "Not helpful", exact: true });
   }
 
   /** The requirement card row for a required mod (e.g. /SMAPI/i). */
@@ -161,5 +218,56 @@ export class HealthCheckSettings {
    */
   private toggle(label: string): Locator {
     return this.page.locator(".toggle-container").filter({ hasText: label }).locator(".toggle");
+  }
+}
+
+/**
+ * The Premium upsell modal (PremiumModal) a free user gets when clicking a
+ * 1-click install action. Copy differs by scope: a single requirement shows the
+ * "…install instantly." variant; several show the "…install all requirements
+ * instantly." variant (see premium::modal in locales/en/health_check.json).
+ * Rendered as a role="dialog" only while open.
+ */
+export class HealthCheckPremiumModal {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly allTitle: Locator;
+  readonly singleTitle: Locator;
+  readonly benefitsTitle: Locator;
+  readonly unlockButton: Locator;
+  readonly fallbackAllButton: Locator;
+  readonly fallbackSingleButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.getByRole("dialog").filter({ hasText: /Skip the website and install/ });
+    this.allTitle = page.getByText("Skip the website and install all requirements instantly.");
+    this.singleTitle = page.getByText("Skip the website and install instantly.");
+    this.benefitsTitle = this.root.getByText("With Premium you get:");
+    this.unlockButton = this.root.getByRole("button", { name: "Unlock 1-click installs" });
+    this.fallbackAllButton = this.root.getByRole("button", { name: "Return and open mod pages" });
+    this.fallbackSingleButton = this.root.getByRole("button", { name: "Go to mod page (free)" });
+  }
+}
+
+/**
+ * The "Not helpful" feedback modal (FeedbackModal), opened from the thumbs-down
+ * control. Rendered as a role="dialog" only while open.
+ */
+export class HealthCheckFeedbackModal {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly title: Locator;
+  readonly incorrectRequirement: Locator;
+  readonly sendButton: Locator;
+  readonly skipButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.getByRole("dialog").filter({ hasText: "Thanks for letting us know" });
+    this.title = page.getByText("Thanks for letting us know");
+    this.incorrectRequirement = this.root.getByText("Incorrect requirement");
+    this.sendButton = this.root.getByRole("button", { name: "Send feedback" });
+    this.skipButton = this.root.getByRole("button", { name: "Skip", exact: true });
   }
 }
