@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import {
   fileWebLinks,
   type IFileActionContext,
+  type IResolutionContext,
   installedToFileData,
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import {
@@ -23,12 +24,14 @@ export const EnableCard = ({
   ctx,
   correctFile,
   enabledFile,
+  resolution,
   isOr,
 }: {
   ctx: IFileActionContext;
   correctFile: IInstalledFile;
   /** The wrong version to switch off, if any; absent means a plain enable. */
   enabledFile?: IInstalledFile;
+  resolution: IResolutionContext;
   isOr?: boolean;
 }) => {
   const { t } = useTranslation("health_check");
@@ -39,7 +42,7 @@ export const EnableCard = ({
   };
 
   const handleEnable = () => {
-    ctx.onEnable(correctFile, enabledFile);
+    ctx.onEnable(correctFile, enabledFile, resolution);
 
     if (enabledFile) {
       switchActiveVersion(ctx.api, enabledFile, correctFile);

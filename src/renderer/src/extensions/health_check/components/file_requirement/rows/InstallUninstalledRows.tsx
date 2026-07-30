@@ -2,6 +2,7 @@ import React from "react";
 
 import type { IFileActionContext } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
+import { requirementStateFor } from "@/extensions/health_check/utils/shared/tracking";
 
 import { InstallDownloadedCard } from "../cards/InstallDownloadedCard";
 
@@ -16,5 +17,6 @@ export const InstallUninstalledRows = ({
     ctx={ctx}
     enabledFile={requirement.enabledFile}
     file={requirement.uninstalledFile}
+    resolution={{ requirementState: requirementStateFor(requirement) }}
   />
 );

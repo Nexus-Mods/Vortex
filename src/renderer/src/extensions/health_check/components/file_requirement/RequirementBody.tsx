@@ -11,6 +11,7 @@ import {
   type IFileRequirementReport,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
+import { sharedRequirementState } from "@/extensions/health_check/utils/shared/tracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
@@ -99,7 +100,7 @@ export const RequirementBody = ({
   };
 
   const installAll = () => {
-    ctx.onInstallAll(installAllCandidates);
+    ctx.onInstallAll(installAllCandidates, sharedRequirementState(requirements));
     if (ctx.showPremiumAd) {
       setPremiumOpen(true);
       return;
