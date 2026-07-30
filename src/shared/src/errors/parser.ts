@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { z } from "../zodJitless";
 import { VortexError } from "./base";
 
 /**
