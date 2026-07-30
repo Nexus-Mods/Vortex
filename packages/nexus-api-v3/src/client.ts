@@ -10,6 +10,12 @@ export interface NexusV3ClientOptions {
   apiKey?: string;
   bearerToken?: string;
   middleware?: Middleware[];
+  /**
+   * Aborts every request made through this client, in flight included. Without one, a
+   * request to an endpoint that accepts the connection and then stops responding never
+   * settles: fetch has no timeout of its own.
+   */
+  signal?: AbortSignal;
 }
 
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
@@ -30,6 +36,7 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
   const client = createClient<paths>({
     baseUrl: options.baseUrl,
     headers,
+    signal: options.signal,
   });
 
   for (const mw of options.middleware ?? []) {
