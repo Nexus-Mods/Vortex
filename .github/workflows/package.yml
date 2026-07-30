@@ -106,7 +106,7 @@ jobs:
 
       - name: Create GitHub Release
         if: ${{ inputs.release }}
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@v3.0.2
         with:
           files: |
             ./dist/vortex-setup-*.*.*.exe
@@ -118,7 +118,7 @@ jobs:
 
       - name: Create GitHub Release on Vortex-Staging
         if: ${{ inputs.staging-release }}
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@v3.0.2
         with:
           files: |
             ./dist/vortex-setup-*.*.*.exe
