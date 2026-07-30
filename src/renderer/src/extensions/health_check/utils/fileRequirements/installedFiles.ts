@@ -5,6 +5,7 @@ import { nexusGamesProm } from "@/extensions/nexus_integration/util";
 import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IProfile } from "@/extensions/profile_management/types/IProfile";
+import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { getSafe } from "@/util/storeHelper";
 
@@ -285,10 +286,14 @@ export function makeDownloadedFileHydrator(
   const refByUID = new Map(refs.map((ref): [string, IDownloadedFileRef] => [ref.fileUID, ref]));
 
   return (fileUID) => {
+    // A ref miss is a normal negative lookup; callers try installed before downloaded.
     const ref = refByUID.get(fileUID);
     if (!ref) return undefined;
     const download = downloads[ref.downloadId];
-    if (!download) return undefined;
+    if (!download) {
+      log("debug", "unable to hydrate downloaded file", { fileUID, downloadId: ref.downloadId });
+      return undefined;
+    }
     return toDownloadedFile(ref, download, modDetailsByUID.get(ref.modUID));
   };
 }
@@ -352,12 +357,14 @@ export function makeInstalledFileHydrator(
   const refByUID = new Map(refs.map((ref): [string, IInstalledFileRef] => [ref.fileUID, ref]));
 
   return (fileUID) => {
+    // A ref miss is a normal negative lookup; callers try installed before downloaded.
     const ref = refByUID.get(fileUID);
     if (!ref) {
       return undefined;
     }
     const mod = mods[ref.modId];
     if (!mod) {
+      log("debug", "unable to hydrate installed file", { fileUID, modId: ref.modId });
       return undefined;
     }
     const modUID = resolveModUID(mod.attributes ?? {}, gameId);

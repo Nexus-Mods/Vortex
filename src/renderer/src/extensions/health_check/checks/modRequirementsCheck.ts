@@ -385,6 +385,15 @@ export async function checkModRequirements(
 
       // Check Nexus mod requirements
       if (requirements.nexusRequirements?.nodes) {
+        const { nodes, totalCount } = requirements.nexusRequirements;
+        if (totalCount > nodes.length) {
+          log("debug", "mod requirements truncated by the query page size", {
+            uid,
+            fetched: nodes.length,
+            totalCount,
+          });
+        }
+
         const requiredBy: IModRequirementExt["requiredBy"] = {
           modId,
           modName: getModName(),
@@ -393,7 +402,7 @@ export async function checkModRequirements(
             : undefined,
         };
 
-        for (const req of requirements.nexusRequirements.nodes) {
+        for (const req of nodes) {
           // External (non-Nexus) requirements are temporarily suppressed because there
           // is no way to invalidate them. They can't be auto-detected, so the only way
           // to clear one is for the user to confirm it's installed — which just hides
