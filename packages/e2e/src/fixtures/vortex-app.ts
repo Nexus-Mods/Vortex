@@ -12,6 +12,7 @@ import {
 } from "@playwright/test";
 
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
+import { authStatePath } from "../helpers/authState";
 import {
   type DiagnosticsTeardown,
   instrumentNexusPage,
@@ -292,9 +293,15 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
+              // Reuse a locally-captured Nexus session (pnpm auth:capture) so the
+              // OAuth flow lands on the consent screen and skips the captcha-gated
+              // credential login. Absent on CI → full OAuth credential flow, unchanged.
+              const capturedState = authStatePath(user);
+              const seededStorageState = fs.existsSync(capturedState) ? capturedState : undefined;
               const loginResult = await loginToNexus(app, window, user, {
                 skipSteps: true,
                 keepBrowser: true,
+                storageStatePath: seededStorageState,
                 nexusDiagnostics: { testInfo, prefix: "snapshot-nexus" },
               });
               if (loginResult !== null) {
