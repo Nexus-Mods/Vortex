@@ -1,14 +1,10 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { PremiumBadge } from "./PremiumBadge";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const getBadge = () => document.querySelector("span");
 

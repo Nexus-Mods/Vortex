@@ -1,14 +1,10 @@
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Table } from "./Table";
 import type { IColumnDef } from "./Table.types";
-
-afterEach(() => {
-  cleanup();
-});
 
 interface IRow {
   id: string;

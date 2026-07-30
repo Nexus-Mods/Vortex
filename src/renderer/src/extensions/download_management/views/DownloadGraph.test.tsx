@@ -1,4 +1,4 @@
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -60,7 +60,6 @@ const Graph = DownloadGraph as unknown as React.ComponentType<
 const t = (key: string) => key;
 
 afterEach(() => {
-  cleanup();
   resizeObserverInstances.length = 0;
   delete (globalThis as any).ResizeObserver;
 });

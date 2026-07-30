@@ -1,14 +1,10 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { FormField } from "./FormField";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 // the FormField root always carries the min-w-0 utility
 const getRoot = () => document.querySelector(".min-w-0");

@@ -6,9 +6,9 @@
  */
 import { EventEmitter } from "events";
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -28,11 +28,6 @@ function fakeUseTranslation() {
 }
 
 vi.mock("react-i18next", () => ({ useTranslation: fakeUseTranslation }));
-
-// RTL only auto-cleans when vitest runs with globals; this project doesn't, so without
-// this every render leaks into document.body and screen queries hit the previous test's
-// component — which silently sends its events to the previous test's emitter.
-afterEach(cleanup);
 
 const entry: IHealthCheckEntry = {
   id: "uid-42:toggle",

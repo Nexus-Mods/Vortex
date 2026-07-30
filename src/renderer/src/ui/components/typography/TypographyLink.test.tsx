@@ -1,15 +1,11 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { TypographyLink } from "./TypographyLink";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const getLink = (name: string | RegExp = /link/i) => screen.getByRole("button", { name });
 

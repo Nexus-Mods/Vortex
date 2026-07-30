@@ -1,14 +1,10 @@
-import { render, cleanup } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import React from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { Pictogram } from "./Pictogram";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const renderComponent = (props: Partial<React.ComponentProps<typeof Pictogram>> = {}) => {
   const name = props.name ?? "tools";

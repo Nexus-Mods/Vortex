@@ -1,16 +1,12 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Toolbar } from "./Toolbar";
 import { ToolbarGroup, type IToolbarAction } from "./ToolbarGroup";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const makeActions = (count: number): IToolbarAction[] =>
   Array.from({ length: count }, (_, i) => ({ label: `Action ${i + 1}`, iconPath: "mdi-test" }));

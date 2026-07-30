@@ -1,7 +1,7 @@
-import { screen, cleanup, render } from "@testing-library/react";
+import { screen, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import CategoryList from "./CategoryList";
 
@@ -84,10 +84,6 @@ const baseHookProps: UseCategoryTreeResult = {
   setIsFetching: vi.fn(),
   setIsFetchError: vi.fn(),
 };
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("CategoryList", () => {
   it("calls setSearchString when searching", async () => {
