@@ -48,6 +48,21 @@ describe("HealthCheckRegistry timeout handling", () => {
     expect(parked.starts()).toBe(1);
   });
 
+  test("tells the user the check gave up", async ({ makeHealthCheck }) => {
+    const harness = makeHealthCheck();
+    const notify = vi.spyOn(harness.api, "sendNotification");
+    const parked = harness.parkCheck({ id: "slow-check", timeout: 50 });
+
+    await harness.run(parked.id);
+
+    // Keyed on the check, so repeated timeouts replace rather than stack.
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "health-check-timeout-slow-check", type: "warning" }),
+    );
+
+    await vi.waitFor(() => expect(parked.hasSettled()).toBe(true), SETTLE);
+  });
+
   test("runs again once the abandoned body has finished", async ({ makeHealthCheck }) => {
     const harness = makeHealthCheck();
     const parked = harness.parkCheck({ id: "slow-check", timeout: 50 });
