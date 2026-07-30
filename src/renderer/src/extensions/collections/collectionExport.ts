@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import type { ICreateCollectionResult, IGraphErrorDetail } from "@nexusmods/nexus-api";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
@@ -307,14 +308,12 @@ export async function doExportToAPI(
         api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, cb),
       );
       collectionId = result.collection.id;
-      collectionSlug = result.collection.slug;
+      collectionSlug = result.collection.slug ?? mod.attributes?.collectionSlug;
       api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionId", collectionId));
-      api.store.dispatch(
-        actions.setModAttribute(gameId, modId, "collectionSlug", result.collection.slug),
-      );
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionSlug", collectionSlug));
       api.store.dispatch(actions.setModAttribute(gameId, modId, "source", "nexus"));
-      const revisionId = result.revision?.id ?? result["revisionId"];
-      revisionNumber = result.revision?.revisionNumber ?? result["revisionNumber"];
+      const revisionId = result.revision?.id;
+      revisionNumber = result.revision?.revisionNumber;
       api.store.dispatch(actions.setModAttribute(gameId, modId, "revisionId", revisionId));
       api.store.dispatch(actions.setModAttribute(gameId, modId, "revisionNumber", revisionNumber));
       api.store.dispatch(
@@ -358,6 +357,32 @@ export async function doExportToAPI(
         type: "error",
         title: "The server rejected this collection",
         message: e.message || "<No reason given>",
+      });
+      throw new ProcessCanceled("collection rejected");
+    } else if (err instanceof V3ApiError) {
+      const message = err.detail || err.message;
+      const validationErrors = err.validationErrors ?? [];
+      api.sendNotification({
+        type: "error",
+        message: "The server rejected this collection",
+        actions: [
+          {
+            title: "More",
+            action: () => {
+              api.showDialog(
+                "error",
+                "The server rejected this collection",
+                {
+                  text:
+                    validationErrors.length === 0
+                      ? message
+                      : validationErrors.map((ve) => `${ve.pointer}: ${ve.detail}`).join("\n"),
+                },
+                [{ label: "Close" }],
+              );
+            },
+          },
+        ],
       });
       throw new ProcessCanceled("collection rejected");
     } else if (e.name === "GraphError") {
