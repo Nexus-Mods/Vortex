@@ -4,12 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.5.0-beta.2] - 2026-07-30
 
-### Changed
+### Fixed
 
-- Upgraded React from 17.0.2 to 18.3.1 (legacy rendering mode - no runtime behavior change; extension compatibility preserved)
-- Upgraded @testing-library/react from 12 to 16
+- Login failing with an EvalError from zod's eval-based JIT under the renderer CSP ([#23836](https://github.com/Nexus-Mods/Vortex/pull/23836))
+- Improved data formatting for opt-in consented analytics ([#23837](https://github.com/Nexus-Mods/Vortex/pull/23837))
 
 ## [2.5.0-beta.1] - 2026-07-29
 
@@ -57,6 +57,12 @@ _First beta of the 2.5 release._
 - Tabs broken in non-English languages; tab identity is now an explicit id independent of the label ([#23752](https://github.com/Nexus-Mods/Vortex/pull/23752))
 - Reversed/inconsistent arrows in the plugin group editor ([#23739](https://github.com/Nexus-Mods/Vortex/pull/23739))
 - Blurred portrait images reduced to a barely-visible smear in landscape frames ([#23732](https://github.com/Nexus-Mods/Vortex/pull/23732))
+
+## [2.4.2] - 2026-07-30
+
+### Fixed
+
+- Improved data formatting for opt-in consented analytics ([#23837](https://github.com/Nexus-Mods/Vortex/pull/23837))
 
 ## [2.4.1] - 2026-07-29
 
@@ -2158,7 +2164,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.5.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.2
 [2.5.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.1
+[2.4.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.2
 [2.4.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.1
 [2.4.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0
 [2.4.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.0-beta.2
