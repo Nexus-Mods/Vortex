@@ -1,9 +1,9 @@
-import type * as React from "react";
+import type { ReactNode } from "react";
 
 export interface IExtensibleProps {
   group?: string;
   staticElements?: any[];
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 export interface IExtendedProps {

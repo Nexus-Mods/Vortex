@@ -63,6 +63,10 @@ defaults when there's no local precedent.
 - `oxfmt` owns import grouping/ordering (external → `@/` alias → relative,
   alphabetical). Don't fight it — run `pnpm run format`.
 - Unused vars/args are errors unless prefixed `_`.
+- **React:** if a file already has `import * as React from "react"`, keep using
+  `React.*` references — don't mix styles within a file. In files without it,
+  import what you need by name (`import { useCallback, type ReactNode } from "react"`)
+  and never add a new `import * as React` / `import type * as React` line.
 
 ## Styling
 
