@@ -18,6 +18,7 @@ import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/g
 import { missingGroupFixes } from "./util/groups";
 import { invalidPluginsFromError } from "./util/invalidPlugins";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
+import toLootPluginName from "./util/toLootPluginName";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
@@ -578,7 +579,7 @@ class LootInterface {
     }
     try {
       await loot.loadPluginsAsync(
-        deployed.filter((id) => !invalid.has(id)).map((name) => toPluginId(name)),
+        deployed.filter((id) => !invalid.has(id)).map((id) => toLootPluginName(id, pluginList)),
         false,
       );
       pluginsLoaded = true;
@@ -908,6 +909,7 @@ class LootInterface {
           expectSuccess: true,
           env: {
             ELECTRON_RUN_AS_NODE: "1",
+            LD_LIBRARY_PATH: path.join(__dirname, ".."),
           },
         })
         .catch((err: Error) => {
