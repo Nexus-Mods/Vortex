@@ -1,30 +1,35 @@
 /**
  * File Requirements Health Check — warning + install flow (LAZ-684).
  *
- * Fixture: SDV mod 1915 declares a file-level requirement on SMAPI (mods/2400).
- * Installed on its own (SMAPI absent) it raises a single-file "download" warning,
- * which drives:
- *   - TC-01  list warning renders (title / count / required-mod name / 1-click action)
- *   - TC-07  expanded detail view (Warning header, requirement card, buttons)
- *   - TC-24  free user: list 1-click opens the single-file Premium upsell
- *   - TC-26  premium user: 1-click install downloads + installs SMAPI, clearing the warning
+ * Fixture: SDV mod 49786 has a single main file declaring two file-level
+ * requirements. Installed on its own (those required files absent) it raises one
+ * file-requirements "download" warning covering both required mods, which drives:
+ *   - TC-01  list warning renders (title / count / 1-click action)
+ *   - TC-07  expanded detail view (Warning header, requirement cards, buttons)
+ *   - TC-24  free user: list 1-click opens the Premium upsell
+ *   - TC-26  premium user: 1-click install downloads + installs the required mods,
+ *            clearing the warning
+ *
+ * The warning is targeted by its title rather than the required mod's name, so
+ * the spec doesn't hard-code the fixture's requirement target. SMAPI is
+ * deliberately avoided here — Vortex special-cases it with a dedicated installer,
+ * which interferes with a clean warning/install flow.
  *
  * These are heavy (real Mod-Manager download + install) and, like every
  * authenticated / managed-game spec, currently need CI to run — locally the OAuth
  * login is captcha-blocked and manageGame can't locate the game row. Kept in their
  * own file so the fast foundation suite (health-check.spec.ts) isn't slowed.
  *
- * Assumption: 1915 declares SMAPI as a FILE-level requirement only, not a
- * page-level "requires" rule. Enabling a mod silently auto-installs its
- * page-level dependencies (mod_management/index.ts "mod-enabled" handler); if
- * 1915 carried a page-level SMAPI rule, SMAPI would auto-install and no warning
- * would surface. If these tests ever fail at the first warnings.row assertion,
- * re-confirm the fixture is file-level only (or pick another source mod).
+ * Assumption: 49786's requirements are file-level only, not page-level "requires"
+ * rules. Enabling a mod silently auto-installs its page-level dependencies
+ * (mod_management/index.ts "mod-enabled" handler); a page-level rule would
+ * auto-install and no warning would surface. If these tests fail at the first
+ * warnings.row() assertion, re-confirm the fixture is file-level only (or pick
+ * another source mod).
  */
 import { SDV_FILE_REQUIREMENT_MOD_URL } from "../constants";
 import { test, expect } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
-import { SMAPI_NAME } from "../helpers/mods";
 import { navigateToHealthCheck } from "../helpers/navigation";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
@@ -43,36 +48,32 @@ test.describe("Health Check - file requirement warning", () => {
       const hc = new HealthCheckPage(vortexWindow);
       const warnings = new HealthCheckWarnings(vortexWindow);
 
-      await test.step("Install the requiring mod with SMAPI absent", async () => {
+      await test.step("Install the requiring mod with its required file absent", async () => {
         await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
       });
 
       await test.step("Open Health Check and refresh", async () => {
         await navigateToHealthCheck(vortexWindow);
         await hc.refreshButton.click();
-        await expect(warnings.row(SMAPI_NAME)).toBeVisible({ timeout: Timeouts.NETWORK });
+        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
       });
 
       await test.step("Warning row offers a 1-click install action", async () => {
-        await expect(warnings.installOneClick(SMAPI_NAME)).toBeVisible();
+        await expect(warnings.installOneClick()).toBeVisible();
       });
 
       await test.step("Open the warning detail view", async () => {
         await warnings
-          .row(SMAPI_NAME)
-          .getByText(/Missing required mod for:/)
+          .row()
+          .getByText(/Missing required mods? for:/)
           .click();
         await expect(new HealthCheckDetail(vortexWindow).warningTitle).toBeVisible();
       });
 
       const detail = new HealthCheckDetail(vortexWindow);
 
-      await test.step("Detail states the single-file requirement", async () => {
+      await test.step("Detail states the file requirement(s)", async () => {
         await expect(detail.requiresFileLine).toBeVisible();
-      });
-
-      await test.step("Detail names the required mod (SMAPI)", async () => {
-        await expect(detail.requirementCard(SMAPI_NAME)).toBeVisible();
       });
 
       await test.step("Detail offers the Install via mod page fallback", async () => {
@@ -84,11 +85,9 @@ test.describe("Health Check - file requirement warning", () => {
         await expect(hc.title).toBeVisible();
       });
 
-      await test.step("List 1-click opens the single-file Premium upsell", async () => {
-        await warnings.installOneClick(SMAPI_NAME).click();
-        await expect(
-          vortexWindow.getByText("Skip the website and install instantly."),
-        ).toBeVisible();
+      await test.step("List 1-click opens the Premium upsell", async () => {
+        await warnings.installOneClick().click();
+        await expect(vortexWindow.getByText(/Skip the website and install/)).toBeVisible();
       });
     });
   });
@@ -105,41 +104,41 @@ test.describe("Health Check - file requirement warning", () => {
       const hc = new HealthCheckPage(vortexWindow);
       const warnings = new HealthCheckWarnings(vortexWindow);
 
-      await test.step("Install the requiring mod with SMAPI absent", async () => {
+      await test.step("Install the requiring mod with its required file absent", async () => {
         await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
       });
 
       await test.step("Open Health Check and refresh", async () => {
         await navigateToHealthCheck(vortexWindow);
         await hc.refreshButton.click();
-        await expect(warnings.row(SMAPI_NAME)).toBeVisible({ timeout: Timeouts.NETWORK });
+        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
       });
 
       await test.step("Open the warning detail view", async () => {
         await warnings
-          .row(SMAPI_NAME)
-          .getByText(/Missing required mod for:/)
+          .row()
+          .getByText(/Missing required mods? for:/)
           .click();
         await expect(new HealthCheckDetail(vortexWindow).warningTitle).toBeVisible();
       });
 
       const detail = new HealthCheckDetail(vortexWindow);
 
-      await test.step("Detail offers a 1-click install", async () => {
-        await expect(detail.installOneClickButton).toBeVisible();
+      await test.step("Detail states the file requirement(s)", async () => {
+        await expect(detail.requiresFileLine).toBeVisible();
       });
 
-      await test.step("1-click install downloads and installs SMAPI, returning to the list", async () => {
-        await detail.installOneClickButton.click();
-        // On success the requirement clears and the detail auto-returns to the
-        // list (HealthCheckDetailPage's live-entry effect). This spans a real
-        // download + install + deploy + a fresh file-requirements re-run, so use
-        // the cold-start budget rather than a single network round-trip.
-        await expect(hc.title).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+      await test.step("Return to the list", async () => {
+        await detail.backButton.click();
+        await expect(hc.title).toBeVisible();
       });
 
-      await test.step("The SMAPI warning is gone", async () => {
-        await expect(warnings.row(SMAPI_NAME)).toHaveCount(0);
+      await test.step("1-click install downloads and installs the required mod(s), clearing the warning", async () => {
+        // For a premium user the list-row 1-click installs every candidate in the
+        // report (both required mods here). Spans real downloads + installs +
+        // deploy + a fresh file-requirements re-run, so use the cold-start budget.
+        await warnings.installOneClick().click();
+        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
   });

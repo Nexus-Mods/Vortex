@@ -60,22 +60,31 @@ export class HealthCheckWarnings {
   }
 
   /**
-   * The list row for a missing-requirement warning, identified by the
-   * "Missing required mod for:" title and the required mod's name (e.g. /SMAPI/i).
-   * The row is a `role="button"` container; filtering by the title text excludes
-   * the header/action buttons that also carry that role.
+   * The list row for a missing-requirement warning, identified by its
+   * "Missing required mod(s) for:" title (singular or plural, depending on how
+   * many requirements the source file has). Pass the required mod's name (e.g.
+   * /SMAPI/i) only to disambiguate when several such warnings are present; omit
+   * it to target the sole warning. The row is a `role="button"` container;
+   * filtering by the title text excludes the header/action buttons that also
+   * carry that role, and the mod-requirement ("Additional mod file may be
+   * required for:") rows, so this matches file-requirement warnings only.
    */
-  row(requiredModName: string | RegExp): Locator {
-    return this.root
+  row(requiredModName?: string | RegExp): Locator {
+    const rows = this.root
       .locator('[role="button"]')
-      .filter({ hasText: /Missing required mod for:/ })
-      .filter({ hasText: requiredModName })
-      .first();
+      .filter({ hasText: /Missing required mods? for:/ });
+    return (
+      requiredModName === undefined ? rows : rows.filter({ hasText: requiredModName })
+    ).first();
   }
 
-  /** The single-file "1-click install" button inside a warning row. */
-  installOneClick(requiredModName: string | RegExp): Locator {
-    return this.row(requiredModName).getByRole("button", { name: "1-click install", exact: true });
+  /**
+   * The "1-click install" button inside a warning row. Label is "1-click install"
+   * for a single requirement and "1-click install (N)" for several, so match on
+   * the prefix rather than an exact string.
+   */
+  installOneClick(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: /1-click install/ });
   }
 }
 
@@ -98,17 +107,20 @@ export class HealthCheckDetail {
     // Severity title heading ("Warning") + a "BETA" badge sit in the header.
     this.warningTitle = this.root.getByRole("heading", { name: "Warning" });
     this.backButton = this.root.getByRole("button", { name: "Back", exact: true });
-    // Detail subtitle for a single missing "download" requirement. Sourced from
-    // the shared::requires_files locale key (via useReportCopy) — matched by a
-    // stable substring so the trailing "additional …:" wording can't re-break it.
+    // Detail subtitle for a missing "download" requirement (shared::requires_files
+    // via useReportCopy). Count-tolerant: "Requires 1 additional mod file …" or
+    // "Requires N additional mod files …".
     this.requiresFileLine = this.root.getByText(
-      /Requires 1 additional mod file to be installed to work correctly/,
+      /Requires \d+ additional mod files? to be installed to work correctly/,
     );
-    this.installViaModPageButton = this.root.getByRole("button", { name: "Install via mod page" });
-    this.installOneClickButton = this.root.getByRole("button", {
-      name: "1-click install",
-      exact: true,
-    });
+    // With several requirements the detail renders one card per required mod, so
+    // these controls can appear multiple times — take the first.
+    this.installViaModPageButton = this.root
+      .getByRole("button", { name: "Install via mod page" })
+      .first();
+    this.installOneClickButton = this.root
+      .getByRole("button", { name: /^1-click install$/ })
+      .first();
   }
 
   /** The requirement card row for a required mod (e.g. /SMAPI/i). */
