@@ -70,6 +70,7 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
                 { label: t("Shared"), value: "on" },
                 { label: t("Per-User"), value: "off" },
               ]}
+              placement="left"
               value={multiUser ? "on" : "off"}
               onChange={this.selectMode}
             />
