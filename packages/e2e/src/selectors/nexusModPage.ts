@@ -7,8 +7,9 @@ export class NexusModPage {
   readonly manualDownloadLink: Locator;
   readonly slowDownloadButton: Locator;
   /**
-   * Mod-manager download trigger. Free users see a "Mod manager download"
-   * link; premium users see a "Vortex" button — match either role.
+   * Mod-manager download trigger. Rendered as a "Mod manager download" control
+   * (a button on the Files tab, a link elsewhere) or, for premium on some pages,
+   * a "Vortex" button — match the name across either role.
    */
   readonly modManagerDownload: Locator;
   /** Confirmation/requirements modal shown by some download flows. */
@@ -21,7 +22,7 @@ export class NexusModPage {
     this.manualDownloadLink = page.getByRole("link", { name: /^manual( download)?$/i }).first();
     this.slowDownloadButton = page.getByRole("button", { name: "Slow download" }).first();
     this.modManagerDownload = page
-      .getByRole("button", { name: /^vortex$/i })
+      .getByRole("button", { name: /mod manager download|^vortex$/i })
       .or(page.getByRole("link", { name: /mod manager download|vortex/i }))
       .first();
     this.downloadModal = page.locator('.popup, .modal, [role="dialog"], #popup-content').first();
