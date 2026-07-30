@@ -2,7 +2,8 @@ import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import { VortexError } from "@vortex/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";
@@ -46,8 +47,8 @@ describe("NodeFileSystemImpl", () => {
     expect(missing.exists).toBe(false);
   });
 
-  it("throws FileSystemError for missing files via readFile", async () => {
-    await expect(fs.readFile(rootQP.join("nope"))).rejects.toBeInstanceOf(FileSystemError);
+  it("throws VortexError for missing files via readFile", async () => {
+    await expect(fs.readFile(rootQP.join("nope"))).rejects.toBeInstanceOf(VortexError);
   });
 
   it("enumerates a directory yielding QualifiedPath entries", async () => {

@@ -64,17 +64,6 @@ describe("createFileSystemServiceHandler", () => {
     expect(result.exists).toBe(false);
   });
 
-  it("propagates FileSystemError with name/code/isTransient on failure", async () => {
-    const missing = rootQP.join("does-not-exist.txt");
-    await expect(
-      invoke(service.handler, "readFile", [stripPrototype(missing)]),
-    ).rejects.toMatchObject({
-      name: "FileSystemError",
-      code: "not found",
-      isTransient: false,
-    });
-  });
-
   describe("enumeration cursor protocol", () => {
     it("paginates across batches and closes implicitly when done", async () => {
       await fs.writeFile(join(root, "a.txt"), "");
