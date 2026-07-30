@@ -1,0 +1,47 @@
+@layer components {
+    .nxm-tooltip-positioner {
+        width: max-content;
+        pointer-events: none;
+        z-index: var(--z-index-tooltip);
+    }
+
+    .nxm-tooltip-positioner-interactive {
+        pointer-events: auto;
+    }
+
+    .nxm-tooltip {
+        position: relative;
+        max-height: inherit;
+        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-sm);
+        color: var(--color-neutral-strong);
+        max-width: calc(var(--spacing) * 80);
+        border: solid 1px var(--color-stroke-weak);
+        background-color: var(--color-surface-mid);
+    }
+
+    .nxm-tooltip-body {
+        overflow-y: auto;
+        max-height: inherit;
+    }
+
+    .nxm-tooltip-content {
+        font-size: var(--text-body-sm);
+        padding-block: calc(var(--spacing) * 1.5);
+        padding-inline: calc(var(--spacing) * 2);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+    }
+
+    .nxm-tooltip-arrow {
+        fill: var(--color-surface-mid);
+
+        path[clip-path] {
+            stroke: var(--color-stroke-subdued);
+        }
+
+        path:not([clip-path]) {
+            stroke: var(--color-surface-mid);
+        }
+    }
+}

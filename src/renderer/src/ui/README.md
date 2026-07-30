@@ -33,6 +33,7 @@ ui/
 │   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
+│   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
 │   └── typography/      - Typography system (heading, title, body)
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
@@ -347,6 +348,81 @@ import { mdiTune } from "@mdi/js";
 ```
 
 > **Positioning note:** the panel is positioned manually (absolute) until `@headlessui/react` reaches v2, which brings dynamic anchor positioning and proper z-index handling.
+
+### Tooltip
+
+Rich, collision-aware tooltip built on `@floating-ui/react`. `content` is arbitrary React — headings, lists, icons — not just a string. Position is resolved against the window continuously: it flips to the opposite side when the preferred one would overflow, slides along an edge when a corner would, and clamps its own width and height to the room that is left. It renders into the `#overlays` host, so tables, dashlets and scroll panes cannot clip it.
+
+**For new tooltips only.** The existing `controls/TooltipControls` components (`Button`, `IconButton`, `Icon`, `NavItem`) are untouched — don't migrate call sites to this without a deliberate decision to do so.
+
+**Defaults:** `placement="top"`, `delay={{ open: 300, close: 150 }}`, `showArrow`, non-interactive.
+
+```tsx
+import { Tooltip } from "../../ui/components/tooltip/Tooltip";
+
+// Plain label
+<Tooltip content="Deploys every enabled mod to the game folder">
+  <Button>Deploy</Button>
+</Tooltip>
+
+// Rich content — customContent gets no padding, so give it its own
+<Tooltip customContent={<ModHealthSummary mod={mod} />} placement="right">
+  <Button appearance="subdued" brand="neutral">Details</Button>
+</Tooltip>
+
+// Interactive — the pointer can travel in and use a link inside
+<Tooltip interactive customContent={<div className="px-4 py-3">…<TypographyLink>Manage it</TypographyLink></div>}>
+  <Button>Why is this hidden?</Button>
+</Tooltip>
+
+// Conditional — e.g. only explain the name when it's actually truncated
+<Tooltip content={mod.name} disabled={!isTruncated}>
+  <span className="truncate">{mod.name}</span>
+</Tooltip>
+```
+
+**Props:** `children` (the trigger), plus exactly one of `content` / `customContent`; `placement` (any Floating UI placement, e.g. `"top"`, `"right-start"`), `delay` (number, or `{ open, close }`), `disabled` (render the trigger with no tooltip), `interactive`, `showArrow`, `className` (applied to the tooltip bubble).
+
+**`content` is styled, `customContent` is not** — the same split as Button's `children`/`customContent`, and an `XOr`, so passing both (or neither) is a type error.
+
+| prop            | type        | styling                                                                     |
+| --------------- | ----------- | --------------------------------------------------------------------------- |
+| `content`       | `string`    | gets `.nxm-tooltip-content` — the tooltip's padding, font size, line height |
+| `customContent` | `ReactNode` | rendered unstyled; **you supply the padding**                               |
+
+Which prop you pass decides the styling, so the call site states its intent rather than the component sniffing the type. An always-present `.nxm-tooltip-body` wrapper carries the scroll clamp in both cases (it can't sit on `.nxm-tooltip` without clipping the arrow).
+
+> Because it's an `XOr`, a dynamically-built props object won't spread in — branch on the two cases instead. Static call sites are unaffected.
+
+Width is CSS, not a prop. `.nxm-tooltip` caps at 320px; pass a utility class to widen a specific tooltip — Tailwind sits in a higher layer than `components`, so it wins:
+
+```tsx
+<Tooltip className="max-w-lg" customContent={<LongChangelog />}>
+    …
+</Tooltip>
+```
+
+That only moves the design cap. The positioner around the bubble is still clamped to the space left in the window, so a wider cap can't push the tooltip off an edge.
+
+> **The trigger must forward a ref to a DOM node.** `Button` does; `Icon`, `Pill` and bare text do not — wrap those in a `<span className="inline-flex">`.
+
+`placement` is a preference, not a guarantee: the collision middleware treats it as the starting point and moves the tooltip if it wouldn't fit. Tooltips also open on keyboard focus and dismiss on Escape, and are non-interactive by default so they can never swallow a click aimed at what's underneath.
+
+#### TooltipDelayGroup
+
+Shares one hover delay across every `Tooltip` inside it. The first tooltip waits out the open delay; while one is showing, moving to a sibling swaps straight over. Wrap rows of icon buttons in this — without it, scanning a toolbar costs a fresh 300ms pause per button.
+
+```tsx
+import { TooltipDelayGroup } from "../../ui/components/tooltip/TooltipDelayGroup";
+
+<TooltipDelayGroup>
+    {actions.map((action) => (
+        <Tooltip key={action.label} content={action.label}>
+            <Button aria-label={action.label} leftIconPath={action.iconPath} />
+        </Tooltip>
+    ))}
+</TooltipDelayGroup>;
+```
 
 ### Listbox
 
