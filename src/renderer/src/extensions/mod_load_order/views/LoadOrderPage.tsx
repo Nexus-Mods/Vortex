@@ -394,7 +394,16 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       refresh: () => this.mForceUpdateDebouncer.schedule(),
     });
 
-    const infoPanel = typeof res === "string" ? <DefaultInfoPanel infoText={res} /> : res;
+    // The declared return type of createInfoPanel is string | ComponentType, but
+    // extensions in the wild return ready-made elements, so handle all three shapes.
+    const infoPanel =
+      typeof res === "string" ? (
+        <DefaultInfoPanel infoText={res} />
+      ) : typeof res === "function" ? (
+        React.createElement(res)
+      ) : (
+        res
+      );
 
     const sorted =
       this.state.sortType === "ascending"
@@ -424,7 +433,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                       apply={this.onApply}
                     />
                   </FlexLayout.Flex>
-                  <FlexLayout.Flex>{infoPanel as React.ReactNode}</FlexLayout.Flex>
+                  <FlexLayout.Flex>{infoPanel}</FlexLayout.Flex>
                 </FlexLayout>
               </DNDContainer>
             </PanelX.Body>
