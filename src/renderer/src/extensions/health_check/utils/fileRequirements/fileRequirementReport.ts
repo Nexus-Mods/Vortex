@@ -21,10 +21,7 @@ export type FileRequirementCategory =
   | "download"
   /** A wrong version is enabled and the correct one isn't owned: download a different version. */
   | "download-replace"
-  /**
-   * Correct version downloaded but not installed: install it. Reserved; not
-   * produced until uninstalled-state support lands (no resolver input yet).
-   */
+  /** Correct version downloaded but not installed: install it. */
   | "install-uninstalled"
   /** Correct version installed but disabled while a wrong one is enabled: switch the active version. */
   | "toggle"
