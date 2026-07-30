@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Fixed
 
 - Login failing with an EvalError from zod's eval-based JIT under the renderer CSP ([#23836](https://github.com/Nexus-Mods/Vortex/pull/23836))
+- Improved data formatting for opt-in consented analytics ([#23837](https://github.com/Nexus-Mods/Vortex/pull/23837))
 
 ## [2.5.0-beta.1] - 2026-07-29
 
