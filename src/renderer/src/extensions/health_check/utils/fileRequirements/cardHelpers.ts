@@ -46,8 +46,14 @@ export interface IFileActionContext {
   showPremiumAd: boolean;
   /** The issue these cards resolve, for the install funnel events. */
   identity: IssueAnalyticsIdentity;
-  /** Download a candidate, opening the premium upsell first for free users. Resolves to whether a download ran. */
-  requestDownload: (candidate: IFileRequirementCandidate) => Promise<boolean>;
+  /**
+   * Download a candidate, opening the premium upsell first for free users. `enabledFile` is
+   * the wrong version it replaces, if any. Resolves to whether a download ran.
+   */
+  requestDownload: (
+    candidate: IFileRequirementCandidate,
+    enabledFile?: IInstalledFile,
+  ) => Promise<boolean>;
   /** Appearance for a card's install button; demoted to "moderate" when an "install all" is shown. */
   installButtonAppearance?: "strong" | "moderate";
   /** True while "install all" is running; puts every card's install button into the loading state. */
