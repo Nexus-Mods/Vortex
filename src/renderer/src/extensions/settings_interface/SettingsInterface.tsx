@@ -184,6 +184,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
                 label: option.label,
                 value: option.id,
               }))}
+              placement="left"
               value={selectedLanguageId}
               onChange={this.selectLanguage}
             />

@@ -145,9 +145,9 @@ export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId
   return (
     <Page active={active} pageId={pageId} scrollable={false}>
       <PageHeader
-        pictogramName="preferences"
+        pictogramName="settings"
         subtitle={t("Settings specific to the game you are managing.")}
-        title={t("Preferences")}
+        title={t("Game settings")}
       />
 
       <PageScroll className="space-y-6 p-6">
