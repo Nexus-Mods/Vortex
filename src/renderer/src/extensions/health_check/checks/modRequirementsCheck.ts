@@ -446,16 +446,13 @@ export async function checkModRequirements(
       }
     }
 
-    // Count totals
-    const modsWithIssues = Object.values(metadata.modRequirements);
-    const totalMissingMods = modsWithIssues.reduce((sum, m) => sum + m.missingMods.length, 0);
-    const totalDlcRequirements = modsWithIssues.reduce(
-      (sum, m) => sum + m.dlcRequirements.length,
-      0,
-    );
-    const totalIssues = totalMissingMods + totalDlcRequirements;
+    const modEntries = Object.values(metadata.modRequirements);
+    const details = buildDetailsString(modEntries, metadata.errors);
 
-    const details = buildDetailsString(modsWithIssues, metadata.errors);
+    // DLC requirements are collected into the metadata and the details, but no UI renders
+    // them yet, so counting them would report issues against a visibly empty page.
+    const modsWithMissing = modEntries.filter((mod) => mod.missingMods.length > 0);
+    const totalMissingMods = modsWithMissing.reduce((sum, mod) => sum + mod.missingMods.length, 0);
 
     // An incomplete run cannot claim the loadout is fine: with the fetch failed we don't
     // know what we didn't see. Whatever was resolved from cache is still reported, so the
@@ -465,12 +462,12 @@ export async function checkModRequirements(
         startTime,
         "error",
         HealthCheckSeverity.Error,
-        `Nexus mod requirements check incomplete: ${metadata.errors.length} fetch error(s), ${totalIssues} issues found in ${metadata.modsChecked} mods checked`,
+        `Nexus mod requirements check incomplete: ${metadata.errors.length} fetch error(s), ${totalMissingMods} issues found in ${metadata.modsChecked} mods checked`,
         { details, metadata },
       );
     }
 
-    if (totalIssues === 0) {
+    if (totalMissingMods === 0) {
       return createResult(
         startTime,
         "passed",
@@ -480,14 +477,11 @@ export async function checkModRequirements(
       );
     }
 
-    const severity = totalMissingMods > 0 ? HealthCheckSeverity.Warning : HealthCheckSeverity.Info;
-    const status = totalMissingMods > 0 ? "warning" : "passed";
-
     return createResult(
       startTime,
-      status,
-      severity,
-      `Found ${totalIssues} requirement issues (${totalMissingMods} mod, ${totalDlcRequirements} DLC) across ${modsWithIssues.length} mods`,
+      "warning",
+      HealthCheckSeverity.Warning,
+      `Found ${totalMissingMods} requirement issues across ${modsWithMissing.length} mods`,
       { details, metadata },
     );
   } catch (error) {
