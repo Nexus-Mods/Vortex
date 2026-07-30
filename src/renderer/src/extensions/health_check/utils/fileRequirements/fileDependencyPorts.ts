@@ -121,9 +121,12 @@ const detailCache: KeyedCache<FileVersionDetail> = createKeyedCache(CACHE_TTL_MS
  * Build the resolver ports for the active session. Candidate and version detail
  * data come from the Nexus v3 batch endpoints (chunked, paged and cached here);
  * mod details go through the shared, v3-backed getModDetails accessor.
+ *
+ * The resolver takes no signal of its own, so an abort reaches it through the client, which
+ * carries the signal into every request and so cancels one already in flight.
  */
-export function createResolverPorts(api: IExtensionApi): ResolverPorts {
-  const client = createVortexNexusV3Client(api);
+export function createResolverPorts(api: IExtensionApi, signal?: AbortSignal): ResolverPorts {
+  const client = createVortexNexusV3Client(api, { signal });
 
   return {
     async fetchCandidates(fileVersionUids) {
@@ -142,7 +145,7 @@ export function createResolverPorts(api: IExtensionApi): ResolverPorts {
     },
 
     async fetchModDetails(modUids) {
-      const details = await getModDetails(api, modUids);
+      const details = await getModDetails(api, modUids, signal);
       return details.map(
         (detail): ModDetail => ({
           modUid: detail.modUID,
