@@ -2,7 +2,7 @@ name: Format
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, integration/*]
   workflow_dispatch:
 
 concurrency:
