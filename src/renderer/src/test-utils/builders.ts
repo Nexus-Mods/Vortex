@@ -21,7 +21,8 @@
 import { EventEmitter } from "events";
 import * as path from "path";
 
-import type { IFileInfo } from "@nexusmods/nexus-api";
+import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import { batch } from "redux-act";
@@ -41,7 +42,12 @@ import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/t
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
-import type { HealthCheckId } from "../extensions/health_check/types";
+import type {
+  HealthCheckId,
+  IModFileInfo,
+  IModRequirementExt,
+} from "../extensions/health_check/types";
+import { ModFileCategory } from "../extensions/health_check/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
@@ -55,6 +61,10 @@ import type {
 } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus_integration/reducers/persistent";
+import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
+import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
+import { MEMBERSHIP_ROLE, transformUserInfoFromApi } from "../extensions/nexus_integration/util";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
@@ -91,6 +101,7 @@ import type {
   IInstallManagerHarness,
   IModCheckOpts,
   IModChangeHarness,
+  INxmHarness,
   IParkCheckOpts,
   IParkedCheck,
   IRevisionFixture,
@@ -190,6 +201,69 @@ export function makeFileInfo(overrides: Partial<IFileInfo> = {}): IFileInfo {
     is_primary: true,
     ...overrides,
   };
+}
+
+/**
+ * A user as the Nexus api returns it, before transformUserInfoFromApi folds the membership roles
+ * into the flags Vortex stores.
+ */
+export function makeApiUserInfo(
+  overrides: { premium?: boolean; supporter?: boolean; lifetime?: boolean } = {},
+): IUserInfo & { preferences: IPreference } {
+  const roles: string[] = [];
+  if (overrides.premium ?? true) {
+    roles.push(MEMBERSHIP_ROLE.premium);
+  }
+  if (overrides.supporter) {
+    roles.push(MEMBERSHIP_ROLE.supporter);
+  }
+  if (overrides.lifetime) {
+    roles.push(MEMBERSHIP_ROLE.lifetime);
+  }
+  return {
+    sub: "7",
+    name: "test-user",
+    email: "test@example.com",
+    avatar: "https://example.com/avatar.png",
+    membership_roles: roles,
+    preferences: {},
+  } as IUserInfo & { preferences: IPreference };
+}
+
+/**
+ * The same user as the state holds it, run through the real transform so the stored shape can
+ * never drift from what the api answer actually folds down to.
+ */
+export function makeUserInfo(overrides: Partial<IValidateKeyDataV2> = {}): IValidateKeyDataV2 {
+  return { ...transformUserInfoFromApi(makeApiUserInfo()), ...overrides };
+}
+
+/** One file of a mod on Nexus, as the health check denormalises it onto a requirement. */
+export function makeModFileInfo(overrides: Partial<IModFileInfo> = {}): IModFileInfo {
+  return {
+    fileId: 500,
+    modId: 100,
+    gameId: "skyrimspecialedition",
+    name: "Required Mod",
+    version: "1.0.0",
+    category: ModFileCategory.Main,
+    ...overrides,
+  } as IModFileInfo;
+}
+
+/** A mod the health check found another mod depends on. */
+export function makeModRequirement(
+  overrides: Partial<IModRequirementExt> = {},
+): IModRequirementExt {
+  return {
+    uid: "requirement-1",
+    modId: 100,
+    gameId: "skyrimspecialedition",
+    modName: "Required Mod",
+    requiredBy: { modId: "requiring-mod", modName: "Requiring Mod" },
+    mainFile: makeModFileInfo(),
+    ...overrides,
+  } as IModRequirementExt;
 }
 
 export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMod {
@@ -464,6 +538,9 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
     downloads: {},
     profiles: {},
     session: trackingReducer.defaults,
+    knownGames: [],
+    availableExtensions: [],
+    userInfo: undefined,
     ...overrides,
   };
   // a structurally-partial IState holding only the slices the driver reads; the single cast
@@ -474,12 +551,21 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       downloads: { files: slices.downloads },
       profiles: slices.profiles,
       collections: { collections: {}, revisions: {} },
+      nexus: { ...nexusPersistentReducer.defaults, userInfo: slices.userInfo },
     },
-    session: { collections: slices.session },
+    // a download path is inherently a signed-in one, and isLoggedIn dereferences account
+    confidential: { account: { nexus: { OAuthCredentials: { token: "test-token" } } } },
+    session: {
+      collections: slices.session,
+      nexus: { ...nexusSessionReducer.defaults },
+      // knownGames() dereferences this, so it has to exist even for suites that register none
+      gameMode: { known: slices.knownGames },
+      extensions: { available: slices.availableExtensions },
+    },
     settings: {
       // download path pattern so downloadPathForGame resolves a concrete per-game folder
       downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
-      interface: { language: "en" },
+      interface: { language: "en", foregroundDL: false },
       gameMode: { discovered: {} },
       // empty skeletons so tests can assign settings.mods.installPath[gameId] /
       // settings.profiles.activeProfileId through the typed draft without a cast (the single
@@ -580,10 +666,35 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     if (modsReducerFn !== undefined) {
       state.persistent.mods = modsReducerFn(state.persistent.mods, action.payload);
     }
+    const nexusSession = nexusSessionReducer.reducers[action.type];
+    if (nexusSession !== undefined) {
+      state.session["nexus"] = nexusSession(state.session["nexus"], action.payload);
+    }
+    const nexusPersistent = nexusPersistentReducer.reducers[action.type];
+    if (nexusPersistent !== undefined) {
+      state.persistent["nexus"] = nexusPersistent(state.persistent["nexus"], action.payload);
+    }
+  };
+
+  // store subscribers, for code that watches the store directly rather than via onStateChange
+  const subscribers: Array<() => void> = [];
+  const notifySubscribers = () => {
+    subscribers.slice().forEach((listener) => listener());
+  };
+
+  const subscribe = (listener: () => void) => {
+    subscribers.push(listener);
+    return () => {
+      const idx = subscribers.indexOf(listener);
+      if (idx !== -1) {
+        subscribers.splice(idx, 1);
+      }
+    };
   };
 
   const dispatch = (action: ITrackedAction) => {
     apply(action);
+    notifySubscribers();
     return action;
   };
 
@@ -592,10 +703,12 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
 
   let nextDialog: IDialogResult = { action: "Continue", input: {} };
   const dialogCalls: Array<{ type: DialogType; title: string }> = [];
+  const errorNotifications: IApiHarness["errorNotifications"] = [];
+  const notifications: IApiHarness["notifications"] = [];
 
   const api = {
     getState: () => state,
-    store: { getState: () => state, dispatch },
+    store: { getState: () => state, dispatch, subscribe },
     events,
     // a driver registers will-install-mod via onAsync; route it onto the same bus so a
     // plain emit() runs it (the returned promise is ignored, which is fine for assertions)
@@ -603,9 +716,17 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
       events.on(event, cb);
     },
     onStateChange: () => undefined,
-    sendNotification: () => undefined,
+    sendNotification: (notification: { type: string; message: string }) => {
+      notifications.push(notification);
+    },
     dismissNotification: () => undefined,
-    showErrorNotification: () => undefined,
+    showErrorNotification: (
+      title: string,
+      message: unknown,
+      options?: { allowReport?: boolean },
+    ) => {
+      errorNotifications.push({ title, message, allowReport: options?.allowReport });
+    },
     showDialog: (
       type: DialogType,
       title: string,
@@ -629,11 +750,14 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     getState: () => state,
     setState: (mutate: (draft: IState) => void) => {
       mutate(state);
+      notifySubscribers();
     },
     setNextDialog: (result: IDialogResult) => {
       nextDialog = result;
     },
     dialogCalls,
+    errorNotifications,
+    notifications,
   };
 }
 
@@ -993,5 +1117,49 @@ export function makeLoadOrderEntry(overrides: Partial<ILoadOrderEntry> = {}): IL
     name: id,
     enabled: true,
     ...overrides,
+  };
+}
+
+/**
+ * The shared api harness plus an observable Nexus connection, for the nxm protocol handler.
+ * Defaults to one known game so an nxm domain resolves without every suite spelling that out.
+ *
+ * The nexus methods are vi.fn()s that reject by default: a test states the one call it exercises,
+ * and any unexpected request fails loudly instead of resolving to undefined.
+ */
+export function makeNxmHarness(opts: Partial<IDriverHarnessState> = {}): INxmHarness {
+  const base = makeApiHarness({ knownGames: [makeGameStored()], ...opts });
+
+  const rejectUnexpected = (name: string) => () =>
+    Promise.reject(new Error(`unexpected nexus.${name} call`));
+
+  const getDownloadURLs = vi.fn(rejectUnexpected("getDownloadURLs"));
+  const getCollectionRevisionGraph = vi.fn(rejectUnexpected("getCollectionRevisionGraph"));
+  const getCollectionDownloadLink = vi.fn(rejectUnexpected("getCollectionDownloadLink"));
+  const getModFiles = vi.fn(rejectUnexpected("getModFiles"));
+  const getUserInfo = vi.fn(rejectUnexpected("getUserInfo"));
+
+  const nexus = {
+    getDownloadURLs,
+    getCollectionRevisionGraph,
+    getCollectionDownloadLink,
+    getModFiles,
+    getUserInfo,
+  } as unknown as NexusT;
+
+  return {
+    ...base,
+    nexus,
+    freeUserQueue: () => base.getState().session["nexus"].freeUserDLQueue ?? [],
+    setUserInfo: (userInfo) => {
+      base.setState((draft) => {
+        draft.persistent["nexus"].userInfo = userInfo;
+      });
+    },
+    getDownloadURLs,
+    getCollectionRevisionGraph,
+    getCollectionDownloadLink,
+    getModFiles,
+    getUserInfo,
   };
 }

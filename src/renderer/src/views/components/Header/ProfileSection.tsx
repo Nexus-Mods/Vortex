@@ -4,6 +4,8 @@ import React, { forwardRef, type ButtonHTMLAttributes, type FC, useCallback } fr
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
+
 import { setDialogVisible } from "../../../actions/session";
 import { useExtensionContext } from "../../../ExtensionProvider";
 import {
@@ -55,7 +57,7 @@ export const ProfileSection: FC = () => {
   const userInfo = useSelector(userInfoSelector);
 
   const handleRefreshUserInfo = useCallback(() => {
-    api.events.emit("refresh-user-info");
+    scheduleMembershipRefresh(api);
   }, [api]);
 
   const handleLogout = useCallback(() => {
