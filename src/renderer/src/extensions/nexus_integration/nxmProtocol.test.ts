@@ -229,6 +229,56 @@ describe("nxm protocol resolver", () => {
     });
   });
 
+  // The cached url is keyed by file, so without this the plan change would be invisible to it and
+  // the next download of that file would reuse a url issued for the plan the user just left.
+  describe("changing membership", () => {
+    test("asks for a new url after an upgrade, rather than reusing the free one", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm({ userInfo: FREE });
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/free.7z"));
+      // a free user's authorised link goes down the api path, so it populates the cache
+      await resolve(`${MOD_URL}?key=abc&expires=1700000000`);
+
+      harness.setUserInfo(PREMIUM);
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/premium.7z"));
+
+      await expect(resolve(MOD_URL)).resolves.toMatchObject({
+        urls: ["https://cdn/premium.7z"],
+      });
+      expect(harness.getDownloadURLs).toHaveBeenCalledTimes(2);
+    });
+
+    test("asks for a new url after a downgrade, rather than reusing the premium one", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/premium.7z"));
+      await resolve(MOD_URL);
+
+      harness.setUserInfo(FREE);
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/free.7z"));
+
+      // the website hands the downgraded user an authorised link for the same file
+      await expect(resolve(`${MOD_URL}?key=abc&expires=1700000000`)).resolves.toMatchObject({
+        urls: ["https://cdn/free.7z"],
+      });
+      expect(harness.getDownloadURLs).toHaveBeenCalledTimes(2);
+    });
+
+    test("keeps the cache while the membership is unchanged", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+
+      await resolve(MOD_URL);
+      // a re-read that confirms the same plan writes userInfo again; that is not a change
+      harness.setUserInfo(PREMIUM);
+      await resolve(MOD_URL);
+
+      expect(harness.getDownloadURLs).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("free account", () => {
     const queued = (harness: INxmHarness) =>
       vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(1));

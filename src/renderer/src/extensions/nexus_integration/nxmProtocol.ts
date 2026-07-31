@@ -102,6 +102,26 @@ export class NxmProtocol {
   constructor(api: IExtensionApi, getNexus: () => NexusT) {
     this.#api = api;
     this.#getNexus = getNexus;
+    this.#dropCachedUrlsOnMembershipChange();
+  }
+
+  /**
+   * The api mints a download url for the membership that asked for it, but the cache is keyed by
+   * file, so an entry outlives the plan it was issued under. Both directions matter: after an
+   * upgrade a cached free url still downloads at free speed, and after a downgrade a cached premium
+   * url serves a download the account is no longer entitled to. Neither is worth keeping, so a plan
+   * change drops the lot.
+   */
+  #dropCachedUrlsOnMembershipChange(): void {
+    let premium = isPremium(this.#api.getState());
+    this.#api.store.subscribe(() => {
+      const current = isPremium(this.#api.getState());
+      if (current === premium) {
+        return;
+      }
+      premium = current;
+      this.#urlCache.clear();
+    });
   }
 
   get #nexus(): NexusT {
