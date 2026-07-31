@@ -3,7 +3,7 @@ import { describe, expect, vi } from "vitest";
 import { makeModFileInfo, makeModRequirement } from "@/test-utils/builders";
 import { test } from "@/test-utils/harnessTest";
 import type { IApiHarness } from "@/test-utils/harnessTypes";
-import { ProcessCanceled, UserCanceled } from "@/util/api";
+import { ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { onDownloadRequirement } from "./onDownloadRequirement";
 

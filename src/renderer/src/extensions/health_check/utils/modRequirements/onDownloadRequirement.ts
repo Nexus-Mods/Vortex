@@ -1,4 +1,5 @@
 import { knownGames } from "@/extensions/gamemode_management/selectors";
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import type { IModFileInfo, IModRequirementExt } from "@/extensions/health_check/types";
 import {
   convertGameIdReverse,
@@ -6,7 +7,7 @@ import {
 } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
-import { getGame, ProcessCanceled, UserCanceled } from "@/util/api";
+import { ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";

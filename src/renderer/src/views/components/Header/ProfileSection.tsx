@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setDialogVisible } from "@/actions";
-import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import { useExtensionContext } from "@/ExtensionProvider";
 import {
   clearOAuthCredentials,
   setUserAPIKey,
 } from "@/extensions/nexus_integration/actions/account";
 import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import { Button } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
