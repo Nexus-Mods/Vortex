@@ -9,7 +9,7 @@ import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
-import { opn } from "../../../../util/api";
+import opn from "../../../../util/opn";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
