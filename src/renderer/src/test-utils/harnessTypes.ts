@@ -3,6 +3,7 @@
  * factory functions) and the *Test.ts fixture modules so both can import the shapes without pulling
  * in each other's runtime code.
  */
+import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
 import type { Mock } from "vitest";
 
@@ -11,11 +12,13 @@ import type { ICollectionMod } from "../extensions/collections/types/ICollection
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
+import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import type {
@@ -33,7 +36,7 @@ export interface ITrackedAction {
   payload?: unknown;
 }
 
-/** The redux slices an InstallDriver test arranges, each a builder-style override. */
+/** The redux slices a harness test arranges, each a builder-style override. */
 export interface IDriverHarnessState {
   // installed mods, keyed by gameId then modId (state.persistent.mods)
   mods: Record<string, Record<string, IMod>>;
@@ -43,6 +46,12 @@ export interface IDriverHarnessState {
   profiles: Record<string, IProfile>;
   // the install-tracking slice (state.session.collections)
   session: ICollectionInstallState;
+  // games Vortex knows about (state.session.gameMode.known); nxm domains are mapped through these
+  knownGames: IGameStored[];
+  // extensions offered on the site domain (state.session.extensions.available)
+  availableExtensions: Array<{ modId: number }>;
+  // the cached membership (state.persistent.nexus.userInfo); undefined models "not fetched yet"
+  userInfo: Partial<IValidateKeyDataV2> | undefined;
 }
 
 export interface IApiHarness {
@@ -59,6 +68,11 @@ export interface IApiHarness {
   setNextDialog: (result: IDialogResult) => void;
   // showDialog calls, recorded in order
   dialogCalls: Array<{ type: DialogType; title: string }>;
+  // showErrorNotification calls, recorded in order. allowReport matters: a false here is what
+  // keeps the Report button off a failure the user caused or can act on themselves
+  errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
+  // sendNotification calls, recorded in order
+  notifications: Array<{ type: string; message: string }>;
 }
 
 export interface IDriverHarness extends IApiHarness {
@@ -109,6 +123,19 @@ export interface IDownloadAdapterHarness extends IApiHarness {
   start: Mock;
   resume: Mock;
   getStates: Mock;
+}
+
+export interface INxmHarness extends IApiHarness {
+  // the fake Nexus connection the handler talks to
+  nexus: NexusT;
+  // the queued free-user download urls, as the FreeUserDLDialog would see them
+  freeUserQueue: () => string[];
+  // swap the cached membership mid-test, to model a website-side change Vortex hasn't seen
+  setUserInfo: (userInfo: Partial<IValidateKeyDataV2> | undefined) => void;
+  getDownloadURLs: Mock;
+  getCollectionRevisionGraph: Mock;
+  getCollectionDownloadLink: Mock;
+  getModFiles: Mock;
 }
 
 export interface IInstallContextHarness extends IApiHarness {
