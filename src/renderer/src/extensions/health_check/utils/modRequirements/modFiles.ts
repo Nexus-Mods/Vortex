@@ -1,11 +1,8 @@
 import type { IModDetails, IModFileInfo } from "@/extensions/health_check/types";
-import {
-  createKeyedCache,
-  type KeyedCache,
-} from "@/extensions/health_check/utils/shared/batchCache";
 import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
 import { makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { createKeyedCache, type KeyedCache } from "@/util/keyedCache";
 
 /**
  * Fetch available MAIN files for a mod from Nexus

@@ -11,7 +11,7 @@ import type { IModRequirementExt } from "../../types";
 import type { IListingRowProps } from "../../views/content/types";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { ListingRow as ListingRowShell } from "../listing_row/ListingRow";
-import { PremiumModal } from "../premium_modal/PremiumModal";
+import { RequirementPremiumModal } from "./RequirementPremiumModal";
 
 export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IListingRowProps) => {
   const { t } = useTranslation(["health_check", "common"]);
@@ -110,17 +110,13 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         onOpen={onOpen}
       />
 
-      <PremiumModal
-        isOpen={showPremiumModal}
-        modCount={1}
-        modId={mod.modId}
-        trigger="single_install"
-        onClose={() => setShowPremiumModal(false)}
-        onDownload={() => {
-          setShowPremiumModal(false);
-          openModPage();
-        }}
-      />
+      {showPremiumModal && (
+        <RequirementPremiumModal
+          modId={mod.modId}
+          onClose={() => setShowPremiumModal(false)}
+          onOpenModPage={openModPage}
+        />
+      )}
     </>
   );
 };

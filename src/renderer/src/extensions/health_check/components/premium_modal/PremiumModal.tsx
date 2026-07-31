@@ -1,6 +1,7 @@
 import { mdiCheck, mdiDiamondStone, mdiOpenInNew } from "@mdi/js";
 import React, { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -8,8 +9,9 @@ import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
-import { opn } from "../../../../util/api";
+import opn from "../../../../util/opn";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
+import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
 
 /** Which 1-click flow surfaced the premium upsell modal. */
@@ -23,8 +25,8 @@ const ListItem = ({ children }: { children: ReactNode }) => (
   </li>
 );
 
+/** Rendered only while the upsell is being shown; mounting is what opens it. */
 export const PremiumModal = ({
-  isOpen,
   downloadScope = "single",
   modCount,
   modId,
@@ -32,7 +34,6 @@ export const PremiumModal = ({
   onClose,
   onDownload,
 }: {
-  isOpen: boolean;
   downloadScope?: "single" | "all";
   modCount?: number;
   modId?: number;
@@ -42,6 +43,15 @@ export const PremiumModal = ({
   onDownload: () => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
+  const showPremiumAd = useSelector(shouldShowPremiumAd);
+
+  // An upsell in front of a button that works reads as if the upgrade didn't take, so once the
+  // page has re-read the membership (see useRefreshUserInfoOnFocus), get out of the way.
+  React.useEffect(() => {
+    if (!showPremiumAd) {
+      onClose();
+    }
+  }, [showPremiumAd, onClose]);
 
   const {
     trackPremiumModalShown,
@@ -52,15 +62,14 @@ export const PremiumModal = ({
   // Absent for the cross-check install-all upsell raised from the listing.
   const identity = useOptionalIssue()?.identity;
 
+  // mounting is what opens the upsell, so this runs exactly when it is shown
   useEffect(() => {
-    if (isOpen) {
-      trackPremiumModalShown({ ...identity, trigger, mod_id: modId, mod_count: modCount });
-    }
-  }, [isOpen, trigger, identity, modId, modCount, trackPremiumModalShown]);
+    trackPremiumModalShown({ ...identity, trigger, mod_id: modId, mod_count: modCount });
+  }, [trigger, identity, modId, modCount, trackPremiumModalShown]);
 
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen
       title={t(`premium::modal::title::${downloadScope}`)}
       onClose={() => {
         trackPremiumModalDismissed({ ...identity, trigger });

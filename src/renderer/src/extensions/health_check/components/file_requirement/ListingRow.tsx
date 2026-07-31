@@ -52,6 +52,8 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
   const { identity, issueType, resolutionType } = useIssue();
   const candidates = downloadCandidates(report.requirements);
+  // one candidate is installed and reported as itself; several are treated as a batch throughout
+  const singleCandidate = candidates.length === 1;
   const quickInstall = canQuickInstall(report.category) && !!candidates.length;
   const switches = switchTargets(report.requirements);
   const toInstall = uninstalledFiles(report.requirements);
@@ -84,7 +86,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
   const doQuickInstall = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (candidates.length === 1) {
+    if (singleCandidate) {
       const candidate = candidates[0];
 
       trackOneClickInstallClicked({
@@ -122,7 +124,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               size="sm"
               onClick={doQuickInstall}
             >
-              {candidates.length === 1
+              {singleCandidate
                 ? t("detail::item::install_one_click")
                 : t("listing::install_one_click", { count: candidates.length })}
             </Button>
@@ -205,25 +207,26 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         onOpen={onOpen}
       />
 
-      <PremiumModal
-        downloadScope={candidates.length === 1 ? "single" : "all"}
-        isOpen={showPremium}
-        modCount={candidates.length}
-        modId={candidates.length === 1 ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined}
-        trigger={candidates.length === 1 ? "single_install" : "batch_install"}
-        onClose={() => setShowPremium(false)}
-        onDownload={() => {
-          setShowPremium(false);
+      {showPremium && (
+        <PremiumModal
+          downloadScope={singleCandidate ? "single" : "all"}
+          modCount={candidates.length}
+          modId={singleCandidate ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined}
+          trigger={singleCandidate ? "single_install" : "batch_install"}
+          onClose={() => setShowPremium(false)}
+          onDownload={() => {
+            setShowPremium(false);
 
-          // Free-user fallback: a single candidate opens its mod page; otherwise
-          // open the detail so each requirement's mod page is reachable.
-          if (candidates.length === 1) {
-            openModPage(api, candidates[0]);
-          } else {
-            onOpen();
-          }
-        }}
-      />
+            // Free-user fallback: a single candidate opens its mod page; otherwise
+            // open the detail so each requirement's mod page is reachable.
+            if (singleCandidate) {
+              openModPage(api, candidates[0]);
+            } else {
+              onOpen();
+            }
+          }}
+        />
+      )}
     </>
   );
 };
