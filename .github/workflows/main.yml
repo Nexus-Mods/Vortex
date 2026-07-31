@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-    branches: [master, release/*]
+    branches: [master, release/*, integration/*]
   pull_request:
-    branches: [master, release/*]
+    branches: [master, release/*, integration/*]
   workflow_dispatch:
 
 concurrency:
