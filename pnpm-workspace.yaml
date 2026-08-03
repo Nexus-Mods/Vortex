@@ -71,7 +71,6 @@ catalog:
   "@types/feedparser": 2.2.8
   "@types/fs-extra": 11.0.4
   "@types/graphlib": 2.1.12
-  "@types/i18next": 12.1.0
   "@types/iconv-lite": 0.0.1
   "@types/js-yaml": 4.0.9
   "@types/json-socket": 0.1.21
@@ -168,7 +167,7 @@ catalog:
   graphlib: 2.1.8
   happy-dom: 20.10.6
   husky: 9.1.7
-  i18next: 19.9.2
+  i18next: 20.6.1
   i18next-fs-backend: 2.6.1
   iconv-lite: 0.5.2
   immutability-helper: 3.1.1

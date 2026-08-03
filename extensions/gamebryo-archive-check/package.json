@@ -9,16 +9,15 @@
   "author": "Pickysaurus",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/bluebird": "catalog:",
-    "@types/i18next": "catalog:",
     "@types/node": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "react-bootstrap": "catalog:",
-    "typescript": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "typescript": "catalog:"
   },
   "nx": {
     "tags": [

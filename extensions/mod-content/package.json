@@ -11,7 +11,7 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "7z-bin": "catalog:",
-    "@types/i18next": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
@@ -24,8 +24,7 @@
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "redux": "catalog:",
-    "turbowalk": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "turbowalk": "catalog:"
   },
   "nx": {
     "tags": [

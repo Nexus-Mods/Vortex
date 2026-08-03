@@ -15,8 +15,8 @@
     "extensionName": "Import Tool: Mod Organizer (MO)"
   },
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/bluebird": "catalog:",
-    "@types/i18next": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
     "@types/react-dom": "catalog:",
@@ -35,7 +35,6 @@
     "redux": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },
   "nx": {

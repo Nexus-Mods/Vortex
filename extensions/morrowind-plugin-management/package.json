@@ -10,7 +10,7 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/i18next": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
     "@types/react-dom": "catalog:",
@@ -25,7 +25,6 @@
     "react-dnd": "catalog:",
     "react-i18next": "catalog:",
     "typescript": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },
   "nx": {

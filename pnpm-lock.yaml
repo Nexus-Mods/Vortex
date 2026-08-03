@@ -377,9 +377,6 @@ catalogs:
     '@types/graphlib':
       specifier: 2.1.12
       version: 2.1.12
-    '@types/i18next':
-      specifier: 12.1.0
-      version: 12.1.0
     '@types/iconv-lite':
       specifier: 0.0.1
       version: 0.0.1
@@ -660,8 +657,8 @@ catalogs:
       specifier: 9.1.7
       version: 9.1.7
     i18next:
-      specifier: 19.9.2
-      version: 19.9.2
+      specifier: 20.6.1
+      version: 20.6.1
     i18next-fs-backend:
       specifier: 2.6.1
       version: 2.6.1
@@ -1223,7 +1220,7 @@ importers:
         version: 4.17.23
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.3(@types/react@18.3.31)(react@18.3.1)(supports-color@10.2.2)
@@ -1295,7 +1292,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
@@ -1307,7 +1304,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1337,13 +1334,13 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1400,7 +1397,7 @@ importers:
         version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1457,7 +1454,7 @@ importers:
         version: link:../../packages/exe-version
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -1469,7 +1466,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -1497,9 +1494,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -1559,7 +1553,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       json-loader:
         specifier: 'catalog:'
         version: 0.5.7
@@ -1574,7 +1568,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1593,9 +1587,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/rimraf':
         specifier: 'catalog:'
         version: 2.0.5
@@ -1620,9 +1611,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -1679,7 +1667,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       iconv-lite:
         specifier: 'catalog:'
         version: 0.5.2
@@ -1691,7 +1679,7 @@ importers:
         version: 0.5.7
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1760,7 +1748,7 @@ importers:
         version: link:../../packages/exe-version
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -1799,7 +1787,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.3(@types/react@18.3.31)(react@18.3.1)(supports-color@10.2.2)
@@ -1867,7 +1855,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -1885,7 +1873,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -1921,7 +1909,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -1939,7 +1927,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1966,7 +1954,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -1978,7 +1966,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
 
   extensions/games/game-7daystodie:
     devDependencies:
@@ -2330,7 +2318,7 @@ importers:
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@18.3.31)(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -2435,7 +2423,7 @@ importers:
         version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -2825,7 +2813,7 @@ importers:
         version: 4.17.23
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.3(@types/react@18.3.31)(react@18.3.1)(supports-color@10.2.2)
@@ -2858,7 +2846,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -2876,7 +2864,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -2918,7 +2906,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -2933,7 +2921,7 @@ importers:
         version: 18.3.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -2949,9 +2937,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -2975,7 +2960,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -2996,7 +2981,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3018,9 +3003,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -3047,7 +3029,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -3113,7 +3095,7 @@ importers:
         version: 3.6.0(cytoscape@3.33.1)
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -3149,7 +3131,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -3206,7 +3188,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -3247,9 +3229,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3267,7 +3246,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
@@ -3276,7 +3255,7 @@ importers:
         version: 18.3.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       semver:
         specifier: 'catalog:'
         version: 7.7.4
@@ -3303,7 +3282,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       semver:
         specifier: 'catalog:'
         version: 7.7.4
@@ -3316,9 +3295,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -3337,9 +3313,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -3372,7 +3345,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
@@ -3406,13 +3379,13 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       react:
         specifier: 'catalog:'
         version: 18.3.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3428,9 +3401,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3460,7 +3430,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -3469,7 +3439,7 @@ importers:
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@18.3.31)(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -3485,9 +3455,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3505,7 +3472,7 @@ importers:
         version: 18.3.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
@@ -3574,7 +3541,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -3595,7 +3562,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3634,7 +3601,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3650,9 +3617,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3670,7 +3634,7 @@ importers:
         version: 3.2.0
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       node-7z:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479
@@ -3679,7 +3643,7 @@ importers:
         version: 18.3.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
 
   extensions/script-extender-error-check:
     devDependencies:
@@ -3689,9 +3653,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -3712,7 +3673,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -3783,9 +3744,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -3800,7 +3758,7 @@ importers:
         version: link:../../packages/exe-version
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
@@ -3818,7 +3776,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
@@ -3840,9 +3798,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -3854,7 +3809,7 @@ importers:
         version: 2.4.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       react-bootstrap:
         specifier: 'catalog:'
         version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
@@ -3905,7 +3860,7 @@ importers:
         version: 0.2.1
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       prop-types:
         specifier: 'catalog:'
         version: 15.8.1
@@ -3923,7 +3878,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -3959,7 +3914,7 @@ importers:
         version: 5.2.1
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -4128,7 +4083,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-redux:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
@@ -4177,7 +4132,7 @@ importers:
         version: 43.0.0(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -4363,7 +4318,7 @@ importers:
         version: 2.1.8
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       i18next-fs-backend:
         specifier: 'catalog:'
         version: 2.6.1
@@ -4471,7 +4426,7 @@ importers:
         version: 2.6.0(react-dom@18.3.1)(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.3(@types/react@18.3.31)(react@18.3.1)(supports-color@10.2.2)
@@ -5028,7 +4983,7 @@ importers:
         version: 20.10.6
       i18next:
         specifier: 'catalog:'
-        version: 19.9.2
+        version: 20.6.1
       i18next-fs-backend:
         specifier: 'catalog:'
         version: 2.6.1
@@ -5124,7 +5079,7 @@ importers:
         version: 2.6.0(react-dom@18.3.1)(react@18.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1)
       react-markdown:
         specifier: 'catalog:'
         version: 6.0.3(@types/react@18.3.31)(react@18.3.1)(supports-color@10.2.2)
@@ -7752,9 +7707,6 @@ packages:
   '@types/http-cache-semantics@4.2.0':
     resolution: {integrity: sha512-L3LgimLHXtGkWikKnsPg0/VFx9OGZaC+eN1u4r+OB1XRqH3meBIAVC2zr1WdMH+RHmnRkqliQAOHNJ/E0j/e0Q==}
 
-  '@types/i18next@12.1.0':
-    resolution: {integrity: sha512-qLyqTkp3ZKHsSoX8CNVYcTyTkxlm0aRCUpaUVetgkSlSpiNCdWryOgaYwgbO04tJIfLgBXPcy0tJ3Nl/RagllA==}
-
   '@types/iconv-lite@0.0.1':
     resolution: {integrity: sha512-SsRBQxGw7/2/NxYJfBdiUx5a7Ms/voaUhOO9u2y9FTeTNBO1PXohzE4i3JfD8q2Te42HLTn5pyZtDf8j1bPKgQ==}
     deprecated: This is a stub types definition for iconv-lite (https://github.com/ashtuchkin/iconv-lite). iconv-lite provides its own type definitions, so you don\'t need @types/iconv-lite installed!
@@ -9905,8 +9857,8 @@ packages:
   i18next-fs-backend@2.6.1:
     resolution: {integrity: sha512-eYWTX7QT7kJ0sZyCPK6x1q+R63zvNKv2D6UdbMf15A8vNb2ZLyw4NNNZxPFwXlIv/U+oUtg8SakW6ZgJZcoqHQ==}
 
-  i18next@19.9.2:
-    resolution: {integrity: sha512-0i6cuo6ER6usEOtKajUUDj92zlG+KArFia0857xxiEHAQcUwh/RtOQocui1LPJwunSYT574Pk64aNva1kwtxZg==}
+  i18next@20.6.1:
+    resolution: {integrity: sha512-yCMYTMEJ9ihCwEQQ3phLo7I/Pwycf8uAx+sRHwwk5U9Aui/IZYgQRyMqXafQOw5QQ7DM1Z+WyEXWIqSuJHhG2A==}
 
   iconv-corefoundation@1.1.7:
     resolution: {integrity: sha512-T10qvkw0zz4wnm560lOEg0PovVqUXuOFhhHAkixw8/sycy7TJt7v/RrkEKEQnAw2viPSJu6iAkErxnzR0g8PpQ==}
@@ -15462,8 +15414,6 @@ snapshots:
 
   '@types/http-cache-semantics@4.2.0': {}
 
-  '@types/i18next@12.1.0': {}
-
   '@types/iconv-lite@0.0.1':
     dependencies:
       '@types/node': 24.12.2
@@ -17986,7 +17936,7 @@ snapshots:
 
   i18next-fs-backend@2.6.1: {}
 
-  i18next@19.9.2:
+  i18next@20.6.1:
     dependencies:
       '@babel/runtime': 7.29.2
 
@@ -19480,11 +19430,11 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-i18next@11.18.6(i18next@19.9.2)(react-dom@18.3.1)(react@18.3.1):
+  react-i18next@11.18.6(i18next@20.6.1)(react-dom@18.3.1)(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.29.2
       html-parse-stringify: 3.0.1
-      i18next: 19.9.2
+      i18next: 20.6.1
       react: 18.3.1
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)

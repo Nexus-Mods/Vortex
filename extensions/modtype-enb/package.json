@@ -14,13 +14,12 @@
     "extensionName": "Mod Type: ENB"
   },
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/bluebird": "catalog:",
-    "@types/i18next": "catalog:",
     "@types/redux": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "redux-thunk": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "redux-thunk": "catalog:"
   },
   "nx": {
     "tags": [
