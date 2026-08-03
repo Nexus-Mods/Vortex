@@ -17,7 +17,7 @@ export interface IPageProps extends HTMLAttributes<HTMLDivElement> {
   // The owning page's id. When set, the root gets `id="page-<pageId>"`, mirroring
   // the id the legacy MainPage applied (some styling/selectors may rely on it).
   pageId?: string;
-  // By default the content is centred and capped at `max-w-7xl`. Set this to let
+  // By default the content is centred and capped at `max-w-8xl`. Set this to let
   // it fill the full width (e.g. grids that want the whole viewport).
   isFullWidth?: boolean;
 }
@@ -32,7 +32,7 @@ export interface IPageProps extends HTMLAttributes<HTMLDivElement> {
  * `PageHeader` (stays fixed) with a `PageScroll` (the part that scrolls).
  *
  * Children render inside a content box that is centred and capped at
- * `max-w-7xl`; the root itself stays full-width so its scrollbar sits at the
+ * `max-w-8xl`; the root itself stays full-width so its scrollbar sits at the
  * viewport edge. `className` styles that content box. Pass `isFullWidth` to
  * drop the cap for full-bleed layouts.
  */

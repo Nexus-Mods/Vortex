@@ -4,7 +4,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 /**
  * The centred, width-capped content box shared by `Page`, `PageHeader` and
- * `PageScroll`. The `max-w-7xl` cap lives here alone, so changing the page
+ * `PageScroll`. The `max-w-8xl` cap lives here alone, so changing the page
  * width is a one-line edit. `isFullWidth` drops the cap for full-bleed content.
  */
 export const PageContent = ({
@@ -16,7 +16,7 @@ export const PageContent = ({
   className?: string;
   isFullWidth?: boolean;
 }) => (
-  <div className={joinClasses(["w-full", className], { "mx-auto max-w-7xl": !isFullWidth })}>
+  <div className={joinClasses(["w-full", className], { "mx-auto max-w-8xl": !isFullWidth })}>
     {children}
   </div>
 );

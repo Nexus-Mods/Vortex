@@ -18,7 +18,7 @@ export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
  * owns the only scrollbar; the `PageHeader` sibling stays fixed. The page ref
  * stays on the top `Page`, which fully contains this region.
  *
- * Like `Page`, it renders its children in a centred `max-w-7xl` content box
+ * Like `Page`, it renders its children in a centred `max-w-8xl` content box
  * (opt out with `isFullWidth`); because the cap sits inside the scroll element,
  * the scrollbar stays at the viewport edge. `className` styles that content box.
  * It reports its scroll position to the `Page` so a `PageHeader` can show its
