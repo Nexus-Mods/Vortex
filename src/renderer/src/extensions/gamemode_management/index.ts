@@ -909,7 +909,7 @@ function init(context: IExtensionContext): boolean {
     2,
     175,
     RecentlyManagedDashlet,
-    undefined,
+    (state: IState) => !state.settings.window.useModernLayout,
     undefined,
     undefined,
   );
