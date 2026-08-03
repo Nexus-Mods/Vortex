@@ -26,3 +26,13 @@ export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
   "https://www.nexusmods.com/stardewvalley/mods/5382",
   "https://www.nexusmods.com/stardewvalley/mods/49098",
 ];
+
+/**
+ * SDV mod that declares a single page-level ("mod") requirement. Installed on its
+ * own (that required mod absent) it drives one blue Health Check *suggestion*
+ * ("Additional mod file may be required for: …") — the mod-to-mod counterpart of
+ * SDV_FILE_REQUIREMENT_MOD_URL's file-level warning. It must keep its legacy mod
+ * requirements enabled (not be set to file-requirements-only) so the suggestion
+ * isn't suppressed for the flag-enrolled E2E users (see LAZ-852).
+ */
+export const SDV_MOD_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/46415";

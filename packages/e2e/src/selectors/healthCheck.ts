@@ -277,3 +277,76 @@ export class HealthCheckFeedbackModal {
     this.skipButton = this.root.getByRole("button", { name: "Skip", exact: true });
   }
 }
+
+/**
+ * Mod-requirement "suggestions" as they appear in the Health Check list. A missing
+ * page-level (mod-to-mod) requirement renders a blue Suggestion row titled
+ * "Additional mod file may be required for: <requiring mod>" (severity "suggestion"
+ * → info/blue; see components/mod_requirement/ListingRow.tsx). Distinct from the
+ * yellow file-requirement warnings ("Missing required mods for: …").
+ */
+export class HealthCheckSuggestions {
+  readonly page: Page;
+  readonly root: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-page");
+  }
+
+  /**
+   * The suggestion row, identified by its "Additional mod file may be required
+   * for:" title. Pass the requiring mod's name to disambiguate when several are
+   * present; omit it to target the sole suggestion.
+   */
+  row(requiringModName?: string | RegExp): Locator {
+    const rows = this.root
+      .locator('[role="button"]')
+      .filter({ hasText: /Additional mod files? may be required for:/ });
+    return (
+      requiringModName === undefined ? rows : rows.filter({ hasText: requiringModName })
+    ).first();
+  }
+
+  /** The "1-click install" button inside a suggestion row (always a single required mod). */
+  installOneClick(requiringModName?: string | RegExp): Locator {
+    return this.row(requiringModName).getByRole("button", { name: /1-click install/ });
+  }
+}
+
+/**
+ * The expanded detail for a mod-requirement suggestion (mod_requirement/DetailView,
+ * inside #health-check-detail-page). The severity heading is "Suggestion" (vs the
+ * file requirement's "Warning"), and it carries the distinctive "identified from the
+ * mod page" disclaimer plus a suggestion-worded feedback prompt.
+ */
+export class HealthCheckSuggestionDetail {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly suggestionTitle: Locator;
+  readonly backButton: Locator;
+  readonly mayRequireLine: Locator;
+  readonly modPageSourceNote: Locator;
+  readonly feedbackPrompt: Locator;
+  readonly installViaModPageButton: Locator;
+  readonly installOneClickButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-detail-page");
+    // Severity heading rendered by HealthCheckDetailPage as detail::title::suggestion.
+    this.suggestionTitle = this.root.getByRole("heading", { name: "Suggestion" });
+    this.backButton = this.root.getByRole("button", { name: "Back", exact: true });
+    this.mayRequireLine = this.root.getByText(
+      "May require this additional mod file to be installed to work correctly",
+    );
+    // The "identified from the mod page rather than the file-level requirement
+    // system" disclaimer that marks this as a page-level suggestion, not a warning.
+    this.modPageSourceNote = this.root.getByText(
+      /identified from the mod page rather than the file-level requirement system/,
+    );
+    this.feedbackPrompt = this.root.getByText("Was this suggestion helpful?");
+    this.installViaModPageButton = this.root.getByRole("button", { name: "Install via mod page" });
+    this.installOneClickButton = this.root.getByRole("button", { name: /^1-click install$/ });
+  }
+}

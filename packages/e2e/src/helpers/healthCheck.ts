@@ -1,8 +1,13 @@
 import { type ElectronApplication, expect, type Page } from "@playwright/test";
 
-import { SDV_FILE_REQUIREMENT_MOD_URL } from "../constants";
+import { SDV_FILE_REQUIREMENT_MOD_URL, SDV_MOD_REQUIREMENT_MOD_URL } from "../constants";
 import { test } from "../fixtures/vortex-app";
-import { HealthCheckDetail, HealthCheckPage, HealthCheckWarnings } from "../selectors/healthCheck";
+import {
+  HealthCheckDetail,
+  HealthCheckPage,
+  HealthCheckSuggestions,
+  HealthCheckWarnings,
+} from "../selectors/healthCheck";
 import { downloadModViaModManager } from "./modDownload";
 import { navigateToHealthCheck } from "./navigation";
 import { dismissAllNotifications } from "./notifications";
@@ -60,4 +65,34 @@ export async function openWarningDetail(
   });
 
   return detail;
+}
+
+/**
+ * Install the mod-requirement fixture mod (46415) with its required mod absent,
+ * open Health Check and refresh — leaving the single page-level requirement
+ * "suggestion" visible on the list. Returns the page + suggestions POMs.
+ *
+ * The suggestion is populated by the mod-requirements check's Nexus round-trip
+ * (slower than the file check), so the wait uses the network budget.
+ */
+export async function openModRequirementSuggestion(
+  nexusPage: Page,
+  vortexApp: ElectronApplication,
+  vortexWindow: Page,
+): Promise<{ hc: HealthCheckPage; suggestions: HealthCheckSuggestions }> {
+  const hc = new HealthCheckPage(vortexWindow);
+  const suggestions = new HealthCheckSuggestions(vortexWindow);
+
+  await test.step("Install a mod that declares a page-level requirement", async () => {
+    await downloadModViaModManager(nexusPage, vortexApp, SDV_MOD_REQUIREMENT_MOD_URL);
+  });
+
+  await test.step("Open Health Check and refresh", async () => {
+    await navigateToHealthCheck(vortexWindow);
+    await hc.refreshButton.click();
+    await expect(suggestions.row()).toBeVisible({ timeout: Timeouts.NETWORK });
+    await dismissAllNotifications(vortexWindow);
+  });
+
+  return { hc, suggestions };
 }
