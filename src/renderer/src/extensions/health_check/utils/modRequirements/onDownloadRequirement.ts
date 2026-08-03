@@ -6,7 +6,7 @@ import {
 } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
-import { getGame, toPromise } from "@/util/api";
+import { getGame } from "@/util/api";
 
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";
@@ -83,24 +83,30 @@ export async function onDownloadRequirement(
         mod_version: targetFile.version,
       },
       async () => {
-        const dlId = await toPromise<string>((cb) =>
-          api.events.emit(
+        const dlId = await new Promise<string>((resolve, reject) =>
+          api.events.emit<"start-download">(
             "start-download",
             [nxmUrl],
             { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
             undefined,
-            cb,
+            (err, id?) =>
+              err !== null || id === undefined
+                ? reject(err ?? new Error("download did not report an id"))
+                : resolve(id),
             undefined,
             { allowInstall: false },
           ),
         );
 
-        await toPromise<string>((cb) =>
-          api.events.emit(
+        await new Promise<string>((resolve, reject) =>
+          api.events.emit<"start-install-download">(
             "start-install-download",
             dlId,
             { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
-            cb,
+            (err, modId) =>
+              err !== null || modId === undefined
+                ? reject(err ?? new Error("install did not report a mod id"))
+                : resolve(modId),
           ),
         );
       },

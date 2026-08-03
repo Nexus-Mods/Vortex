@@ -659,6 +659,11 @@ function flattenInner(obj: any, key: string[], objStack: any[], options: IFlatte
   }, {});
 }
 
+/**
+ * @deprecated Wrap the call in a plain `new Promise` instead. This helper predates the typed
+ * `ApiEvents` registry and erases the callback signature, so the emit's arguments and result
+ * go unchecked.
+ */
 export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
   return new Bluebird((resolve, reject) => {
     const cb = (err: Error, res: ResT) => {
