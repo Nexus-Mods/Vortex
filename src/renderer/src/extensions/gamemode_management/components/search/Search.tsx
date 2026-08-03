@@ -42,8 +42,8 @@ export const Search = ({
         />
 
         <Input
-          className={joinClasses("pl-9", { "pr-9": !!value })}
-          fieldClassName="max-w-60"
+          className="px-9"
+          fieldClassName="w-full max-w-60"
           hideLabel={true}
           label={label ?? placeholder ?? ""}
           placeholder={placeholder}
