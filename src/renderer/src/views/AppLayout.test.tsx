@@ -44,7 +44,6 @@ vi.mock("../contexts", () => ({
 vi.mock("../util/MutexContext", () => ({
   MutexProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
-vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
 vi.mock("react-redux", async () => {
   const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
   return {

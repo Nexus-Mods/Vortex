@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { TFunction } from "i18next";
 import React from "react";
@@ -51,7 +51,7 @@ const renderTree = (root: ICategoriesTreeEntry) => {
     </DndProvider>,
   );
   // expand buttons render in document order: root, child, grandchild
-  const expandButtons = document.querySelectorAll(".nxm-category-expand");
+  const expandButtons = screen.getAllByTestId("category-expand");
   return { expand, expandButtons };
 };
 

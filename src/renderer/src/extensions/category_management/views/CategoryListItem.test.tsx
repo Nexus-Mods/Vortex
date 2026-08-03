@@ -5,8 +5,6 @@ import { describe, it, expect, vi } from "vitest";
 
 import CategoryListItem from "./CategoryListItem";
 
-vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
-
 vi.mock("react-dnd", () => ({
   // eslint-disable-next-line @eslint-react/component-hook-factories
   useDrag: () => [{ isDragging: false }, vi.fn()],
@@ -53,58 +51,47 @@ const renderComponent = (props: Partial<React.ComponentProps<typeof CategoryList
 describe("CategoryListItem", () => {
   it("expand button is hidden on childless categories", () => {
     renderComponent();
-    const expand = document.querySelector(".nxm-category-expand");
-    expect(expand).toBeNull();
+    expect(screen.queryByTestId("category-expand")).not.toBeInTheDocument();
   });
 
   it("expand button is visible on categories with children", () => {
     renderComponent({
       category: { ...mockCategory, children: [{ ...mockCategory, title: "B", categoryId: "2" }] },
     });
-    const expand = document.querySelector(".nxm-category-expand");
-    expect(expand).toBeInTheDocument();
+    expect(screen.getByTestId("category-expand")).toBeInTheDocument();
   });
 
   it("expand button opens children", async () => {
     const { expand } = renderComponent({
       category: { ...mockCategory, children: [{ ...mockCategory, title: "B", categoryId: "2" }] },
     });
-    const expandButton = document.querySelector(".nxm-category-expand");
-    expect(expandButton).toBeInTheDocument();
-    await userEvent.setup().click(expandButton);
+    await userEvent.setup().click(screen.getByTestId("category-expand"));
     expect(expand).toHaveBeenCalled();
   });
 
   it("delete button deletes category", async () => {
     const { remove } = renderComponent();
-    const deleteButton = screen.getByRole("button", { name: "Delete" });
-    expect(deleteButton).toBeInTheDocument();
-    await userEvent.click(deleteButton);
+    await userEvent.click(screen.getByTestId("category-delete"));
     expect(remove).toHaveBeenCalled();
   });
 
   it("renames category", async () => {
     const user = userEvent.setup();
     const { renameCategory } = renderComponent();
-    const renameButton = screen.getByRole("button", { name: "Edit" });
-    expect(renameButton).toBeInTheDocument();
-    await user.click(renameButton);
-    const input = screen.getByDisplayValue("A");
+    await user.click(screen.getByTestId("category-rename"));
+    const input = screen.getByTestId("category-rename-input");
     await user.clear(input);
     await user.type(input, "New category name");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByTestId("category-rename-save"));
     expect(renameCategory).toHaveBeenCalledWith("1", "New category name");
   });
 
   it("creates a subcategory", async () => {
     const user = userEvent.setup();
     const { createSubcategory } = renderComponent();
-    const subCategoryButton = screen.getByRole("button", { name: "New Sub-Category" });
-    expect(subCategoryButton).toBeInTheDocument();
-    await user.click(subCategoryButton);
-    const input = screen.getByDisplayValue("");
-    await user.type(input, "New category name");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByTestId("category-add-subcategory"));
+    await user.type(screen.getByTestId("category-subcategory-input"), "New category name");
+    await user.click(screen.getByTestId("category-subcategory-save"));
     expect(createSubcategory).toHaveBeenCalledWith("New category name", 0, "1");
   });
 });

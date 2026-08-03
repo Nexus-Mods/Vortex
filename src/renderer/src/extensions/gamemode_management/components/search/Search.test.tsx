@@ -4,8 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Search } from "./Search";
 
-vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
-
 afterEach(cleanup);
 
 const renderComponent = (props: Partial<React.ComponentProps<typeof Search>> = {}) => {
@@ -29,7 +27,7 @@ describe("Search", () => {
   it("reports what was typed", () => {
     const { onChange } = renderComponent();
 
-    fireEvent.change(screen.getByPlaceholderText("Search games..."), {
+    fireEvent.change(screen.getByTestId("search-input"), {
       target: { value: "Skyr" },
     });
 
@@ -38,18 +36,18 @@ describe("Search", () => {
 
   it("offers no way to clear an already-empty field", () => {
     renderComponent();
-    expect(screen.queryByRole("button", { name: "Clear search" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("search-clear")).not.toBeInTheDocument();
   });
 
   it("offers to clear once there's something to clear", () => {
     renderComponent({ value: "Skyr" });
-    expect(screen.getByRole("button", { name: "Clear search" })).toBeInTheDocument();
+    expect(screen.getByTestId("search-clear")).toBeInTheDocument();
   });
 
   it("clears the value", () => {
     const { onChange } = renderComponent({ value: "Skyr" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    fireEvent.click(screen.getByTestId("search-clear"));
 
     expect(onChange).toHaveBeenCalledWith("");
   });
@@ -57,15 +55,15 @@ describe("Search", () => {
   it("puts focus back in the input after clearing, ready for a new search", () => {
     renderComponent({ value: "Skyr" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    fireEvent.click(screen.getByTestId("search-clear"));
 
-    expect(screen.getByPlaceholderText("Search games...")).toHaveFocus();
+    expect(screen.getByTestId("search-input")).toHaveFocus();
   });
 
   it("submits on enter without navigating away", () => {
     const { onSubmit } = renderComponent({ value: "Skyr" });
 
-    fireEvent.submit(screen.getByPlaceholderText("Search games...").closest("form")!);
+    fireEvent.submit(screen.getByTestId("search-input").closest("form")!);
 
     expect(onSubmit).toHaveBeenCalled();
   });
@@ -73,7 +71,7 @@ describe("Search", () => {
   it("does not submit when the field is cleared", () => {
     const { onSubmit } = renderComponent({ value: "Skyr" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    fireEvent.click(screen.getByTestId("search-clear"));
 
     expect(onSubmit).not.toHaveBeenCalled();
   });

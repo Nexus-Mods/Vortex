@@ -43,6 +43,7 @@ export const Search = ({
 
         <Input
           className="px-9"
+          data-testid="search-input"
           fieldClassName="w-full max-w-60"
           hideLabel={true}
           label={label ?? placeholder ?? ""}
@@ -55,6 +56,7 @@ export const Search = ({
           <button
             aria-label={t("Clear search")}
             className="absolute top-1/2 right-3 -translate-y-1/2 rounded-xs text-neutral-subdued transition-colors hover:text-neutral-strong"
+            data-testid="search-clear"
             type="button"
             onClick={() => {
               onChange("");

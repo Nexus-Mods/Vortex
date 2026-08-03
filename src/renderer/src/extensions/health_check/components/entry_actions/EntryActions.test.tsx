@@ -20,8 +20,6 @@ import {
 import type { IHealthCheckEntry } from "../../views/content/types";
 import { EntryActions } from "./EntryActions";
 
-vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
-
 const entry: IHealthCheckEntry = {
   id: "uid-42:toggle",
   checkId: "check-file-level-requirements",
@@ -58,7 +56,7 @@ describe("EntryActions feedback analytics", () => {
   it("emits feedback_helpful carrying the ambient issue on thumbs-up", () => {
     const { events } = renderActions();
 
-    fireEvent.click(screen.getByRole("button", { name: "common:::helpful" }));
+    fireEvent.click(screen.getByTestId("health-check-feedback-helpful"));
 
     expect(events).toHaveLength(1);
     expect(events[0].eventName).toBe("health_check_feedback_helpful");
@@ -73,12 +71,10 @@ describe("EntryActions feedback analytics", () => {
   it("emits feedback_not_helpful with the reasons on submit", () => {
     const { events, onNotHelpful } = renderActions();
 
-    fireEvent.click(screen.getByRole("button", { name: "common:::not_helpful" }));
+    fireEvent.click(screen.getByTestId("health-check-feedback-not-helpful"));
     expect(events).toHaveLength(0);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "detail::feedback_modal::buttons::confirm" }),
-    );
+    fireEvent.click(screen.getByTestId("health-check-feedback-confirm"));
 
     expect(events).toHaveLength(1);
     expect(events[0].eventName).toBe("health_check_feedback_not_helpful");
@@ -90,10 +86,8 @@ describe("EntryActions feedback analytics", () => {
   it("emits feedback_dismissed when the reasons modal is abandoned", () => {
     const { events, onNotHelpful } = renderActions();
 
-    fireEvent.click(screen.getByRole("button", { name: "common:::not_helpful" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "detail::feedback_modal::buttons::cancel" }),
-    );
+    fireEvent.click(screen.getByTestId("health-check-feedback-not-helpful"));
+    fireEvent.click(screen.getByTestId("health-check-feedback-cancel"));
 
     expect(events).toHaveLength(1);
     expect(events[0].eventName).toBe("health_check_feedback_dismissed");

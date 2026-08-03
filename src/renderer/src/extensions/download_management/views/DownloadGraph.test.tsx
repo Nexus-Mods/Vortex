@@ -26,8 +26,6 @@ vi.mock("react-redux", () => ({
       component,
 }));
 
-vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
-
 vi.mock("recharts", () => ({
   Area: () => null,
   AreaChart: ({ children, height, width }: any) => (

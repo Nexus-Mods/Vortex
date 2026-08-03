@@ -5,7 +5,6 @@ import { describe, it, expect, vi } from "vitest";
 
 import CategoryDialog from "./CategoryDialog";
 
-vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
 vi.mock("./CategoryList", () => ({
   default: () => <div data-testid="cat-list">stub</div>,
 }));
@@ -16,10 +15,11 @@ describe("CategoryDialog", () => {
     expect(screen.queryByTestId("cat-list")).not.toBeInTheDocument();
   });
 
-  it("renders title and calls onHide when closed", async () => {
+  it("renders the list and calls onHide when closed", async () => {
     const onHide = vi.fn();
     render(<CategoryDialog visible={true} onHide={onHide} />);
-    expect(screen.getByText("Categories")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("cat-list")).toBeInTheDocument();
     // Close button is provided by Modal; query and click like Modal.test
     const close = document.querySelector(".nxm-modal-close");
     await userEvent.click(close);

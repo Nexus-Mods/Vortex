@@ -68,6 +68,7 @@ export function EntryActions({
             appearance={appearance}
             aria-label={t("common:::helpful")}
             brand="neutral"
+            data-testid="health-check-feedback-helpful"
             disabled={givenFeedback}
             leftIconPath={mdiThumbUpOutline}
             size="sm"
@@ -83,6 +84,7 @@ export function EntryActions({
             appearance={appearance}
             aria-label={t("common:::not_helpful")}
             brand="neutral"
+            data-testid="health-check-feedback-not-helpful"
             disabled={givenFeedback}
             leftIconPath={mdiThumbDownOutline}
             size="sm"
@@ -97,6 +99,7 @@ export function EntryActions({
             appearance={appearance}
             aria-label={isHidden ? t("common:::unhide") : t("common:::hide")}
             brand="neutral"
+            data-testid="health-check-entry-hide"
             leftIconPath={isHidden ? mdiEyeOutline : mdiEyeOffOutline}
             size="sm"
             onClick={handle(onToggleHide)}
