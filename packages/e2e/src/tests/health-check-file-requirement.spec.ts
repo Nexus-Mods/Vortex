@@ -5,17 +5,18 @@
  * Fixture: SDV mod 49786 has a single main file declaring two file-level
  * requirements. Installed on its own (those required files absent) it raises one
  * file-requirements "download" warning covering both required mods (category
- * `download` / kind `missing`), which drives:
- *   - TC-01  list warning renders (plural title / count / 1-click action)
- *   - TC-07  expanded detail view (Warning header, "Install required" group,
- *            requirement cards + buttons, section-level install-all)
- *   - TC-20  progressive count: resolving one requirement decrements the summary
- *   - TC-24  free user: list 1-click opens the multi-file Premium upsell
- *   - TC-25  free user: a manual website download resolves the warning
- *   - TC-26  premium user: the list / header / detail 1-click installs resolve it
- *   - TC-05  hide/unhide moves the warning between the Active and Hidden tabs
- *   - TC-29  the warning's feedback controls (thumbs + FeedbackModal)
- *   - TC-35  singular/plural copy (two requirements ⇒ the plural strings)
+ * `download` / kind `missing`). The tests here cover:
+ *   - the list warning (plural title / count / 1-click action)
+ *   - the expanded detail view (Warning header, "Install required" group,
+ *     requirement cards + buttons, section-level install-all)
+ *   - progressive count: resolving one requirement decrements the summary
+ *   - free user: list 1-click opens the multi-file Premium upsell
+ *   - free user: a manual website download, and the "Install via mod page" link,
+ *     resolve the warning
+ *   - premium user: the list / header / detail 1-click installs resolve it
+ *   - hide/unhide moves the warning between the Active and Hidden tabs
+ *   - the warning's feedback controls (thumbs + FeedbackModal)
+ *   - singular/plural copy (two requirements ⇒ the plural strings)
  *
  * The warning is targeted by its title rather than the required mod's name, so
  * the spec doesn't hard-code the fixture's requirement target. SMAPI is
@@ -49,11 +50,11 @@ import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { HealthCheckFeedbackModal, HealthCheckPremiumModal } from "../selectors/healthCheck";
 
-test.describe("Health Check - file requirement warning", () => {
+test.describe("Health Check - file requirement warnings", () => {
   test.describe("free user", () => {
     test.use({ nexusUser: freeUser });
 
-    test("[TC-01/07/24/35] warning renders, detail lists the requirements, 1-click upsells", async ({
+    test("Check the warning and detail render, and 1-click shows the Premium upsell", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -114,7 +115,7 @@ test.describe("Health Check - file requirement warning", () => {
       });
     });
 
-    test("[TC-05] hiding a warning moves it between the Active and Hidden tabs", async ({
+    test("Check that health check items can be moved between the Active and Hidden tabs", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -131,9 +132,6 @@ test.describe("Health Check - file requirement warning", () => {
       });
 
       await test.step("Hide the warning via its row control", async () => {
-        // Clear any (re-)surfaced notification tray that would overlay the row's
-        // right-aligned hide icon, then reveal the icon by hovering the title text
-        // (left-aligned) rather than the row centre, which the action bar overlaps.
         await dismissAllNotifications(vortexWindow);
         await warnings
           .row()
@@ -168,7 +166,7 @@ test.describe("Health Check - file requirement warning", () => {
       });
     });
 
-    test("[TC-29] the warning exposes feedback controls and records feedback", async ({
+    test("Check that the feedback controls are present and operational", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -178,8 +176,6 @@ test.describe("Health Check - file requirement warning", () => {
       const feedback = new HealthCheckFeedbackModal(vortexWindow);
 
       await test.step("Hovering the warning reveals its feedback controls", async () => {
-        // The row's EntryActions are invisible until hover; target the title text
-        // (left-aligned) rather than the row centre, which the action bar overlaps.
         await warnings
           .row()
           .getByText(/Missing required mods? for:/)
@@ -209,7 +205,7 @@ test.describe("Health Check - file requirement warning", () => {
       });
     });
 
-    test("[TC-25] a manual website download resolves the warning for a free user", async ({
+    test("Check that a manual website download resolves the warning for a free user", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -218,8 +214,8 @@ test.describe("Health Check - file requirement warning", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("Manually download each required mod from the website", async () => {
-        // A free user can't 1-click install (that opens the Premium upsell — TC-24);
-        // instead they download the required files from the mod pages. Drive that same
+        // A free user can't 1-click install (that opens the Premium upsell) instead;
+        // they download the required files from the mod pages. Drive that same
         // Mod-Manager website download and forward it to Vortex, which installs it.
         for (const url of SDV_FILE_REQUIREMENT_TARGET_URLS) {
           await downloadModViaModManager(nexusPage, vortexApp, url);
@@ -227,14 +223,12 @@ test.describe("Health Check - file requirement warning", () => {
       });
 
       await test.step("The ingested downloads clear the warning", async () => {
-        // Installing the required files re-runs the file-requirements check; the
-        // download + install + deploy span uses the cold-start budget.
         await hc.refreshButton.click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
 
-    test("[TC-07/25] the detail Install-via-mod-page link opens the required mod and its download resolves the requirement", async ({
+    test("Check the 'Install via mod page' link opens the required mod and its download resolves the requirement", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -282,7 +276,7 @@ test.describe("Health Check - file requirement warning", () => {
   test.describe("premium user", () => {
     test.use({ nexusUser: premiumUser });
 
-    test("[TC-01/26/35] 1-click install resolves the file requirements", async ({
+    test("Check the warning-row 1-click install button resolves all requirements", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -322,7 +316,7 @@ test.describe("Health Check - file requirement warning", () => {
       });
     });
 
-    test("[TC-26] the header 1-click install all resolves the requirements", async ({
+    test("Check the header 1-click install button resolves all requirements on the health check", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -331,16 +325,13 @@ test.describe("Health Check - file requirement warning", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The header 1-click install all installs the requirements, clearing the warning", async () => {
-        // The header button sits top-right where the notification tray overlays;
-        // clear it immediately before clicking. For premium it installs directly
-        // (no upsell), spanning downloads + installs + deploy + a fresh re-run.
         await dismissAllNotifications(vortexWindow);
         await hc.installAllButton.click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
 
-    test("[TC-26] the detail 1-click install all resolves the requirements", async ({
+    test("Check the detail 'install all' button resolves all requirements", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -352,14 +343,12 @@ test.describe("Health Check - file requirement warning", () => {
       await test.step("The detail 1-click install all installs the requirements, clearing the warning", async () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installAllInGroupButton.click();
-        // Back to the list to assert the warning cleared as the required mods
-        // install + deploy (navigating away doesn't cancel the in-flight installs).
         await detail.backButton.click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
 
-    test("[TC-07/20] a detail per-card 1-click install resolves one requirement and decrements the count", async ({
+    test("Check the per-requirement 1-click install resolves one requirement and decrements the count", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
