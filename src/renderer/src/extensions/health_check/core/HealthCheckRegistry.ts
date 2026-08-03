@@ -247,6 +247,12 @@ export class HealthCheckRegistry {
         return undefined;
       }
 
+      // A timeout clears the check's previous result, so without this the page just empties
+      // with no explanation.
+      if (timedOut) {
+        this.notifyTimeout(entry.healthCheck);
+      }
+
       log("warn", "Health check failed", {
         id: checkId,
         error: err.message || "Unknown error",
@@ -263,6 +269,20 @@ export class HealthCheckRegistry {
         this.mExecutionQueue.delete(checkId);
       }
     }
+  }
+
+  /**
+   * Report a check that gave up. Keyed on the check so a repeatedly timing-out check replaces
+   * its own notification instead of stacking one per trigger.
+   */
+  private notifyTimeout(healthCheck: IHealthCheckEntry["healthCheck"]): void {
+    this.mApi.sendNotification?.({
+      id: `health-check-timeout-${healthCheck.id}`,
+      type: "warning",
+      title: "Health check timed out",
+      message: `${healthCheck.name} took too long and was stopped. Refresh to try again.`,
+      displayMS: 10000,
+    });
   }
 
   /** Whether this check names a game other than the active one. */

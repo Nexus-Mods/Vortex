@@ -939,7 +939,10 @@ export function onGetModRequirements(
             ...graphErrorContext(err),
           });
         }
-        return Bluebird.resolve({});
+        // Rethrow: resolving to {} made "this mod has no requirements" and "we could not
+        // ask" indistinguishable, so a rate limit or outage was reported to the user as a
+        // clean bill of health. The caller decides what an incomplete run means.
+        return Bluebird.reject(err);
       });
   };
 }

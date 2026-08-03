@@ -240,3 +240,23 @@ describe("error fallback", () => {
     });
   });
 });
+
+describe("cancellation", () => {
+  // fetch is what honours the signal, so reaching it is the whole contract: an aborted
+  // signal has to reject the call without a request going out.
+  it("passes the client signal to fetch", async () => {
+    mockData({ mods: [] });
+
+    await expect(makeClient({ signal: AbortSignal.abort() }).getModsBatch(["1"])).rejects.toThrow(
+      /abort/i,
+    );
+    expect(fetchMocker.requests()).toHaveLength(0);
+  });
+
+  it("leaves requests alone when no signal is given", async () => {
+    mockData({ mods: [] });
+
+    await expect(makeClient().getModsBatch(["1"])).resolves.toEqual([]);
+    expect(fetchMocker.requests()).toHaveLength(1);
+  });
+});

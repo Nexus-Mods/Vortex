@@ -6,28 +6,33 @@ import {
 } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
-import { getGame, toPromise } from "@/util/api";
+import { getGame } from "@/util/api";
 
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import { getModFilesWithCache } from "./modFiles";
 
 /**
- * Download and install missing mod requirements from Nexus
+ * Download and install missing mod requirements from Nexus. Resolves to whether the
+ * requirement was installed; every failure is reported to the user here rather than
+ * thrown, mirroring downloadFileRequirement, because the call sites are fire-and-forget
+ * click handlers with nowhere to catch.
  */
 export async function onDownloadRequirement(
   api: IExtensionApi,
   mod: IModRequirementExt,
   file?: IModFileInfo,
   identity?: IssueAnalyticsIdentity,
-): Promise<void> {
+): Promise<boolean> {
+  const modLabel = mod.modName || `mod ID ${mod.modId}`;
+
   if (!Number.isInteger(mod.modId) || mod.modId <= 0) {
     api.showErrorNotification(
       `Cannot download requirement "${mod.modName}"`,
       "This requirement does not have a valid Nexus Mods ID.",
       { allowReport: false },
     );
-    return;
+    return false;
   }
 
   const getFileIds = async (): Promise<IModFileInfo[]> => {
@@ -51,54 +56,70 @@ export async function onDownloadRequirement(
     return files;
   };
 
-  const fileIds = await getFileIds();
-  if (fileIds.length === 0) {
-    return;
+  try {
+    const fileIds = await getFileIds();
+    if (fileIds.length === 0) {
+      return false;
+    }
+
+    const gameId = mod.gameId;
+    const modId = mod.modId;
+    const targetFile = fileIds[0];
+
+    const game: IGame = getGame(gameId);
+    const nexusDomainName = nexusGameId(game, gameId);
+    const nxmUrl = `nxm://${nexusDomainName}/mods/${modId}/files/${targetFile.fileId}`;
+    // mod.gameId is the Nexus domain (e.g. "skyrimspecialedition"); the downloader and
+    // download.game records key on the internal id ("skyrimse"). Convert before emitting
+    // so the file lands in the same folder the install handler later looks in.
+    const internalGameId = convertGameIdReverse(knownGames(api.getState()), gameId) || gameId;
+
+    await trackedInstall(
+      api,
+      {
+        ...identity,
+        mod_id: modId,
+        mod_name: mod.modName,
+        mod_version: targetFile.version,
+      },
+      async () => {
+        const dlId = await new Promise<string>((resolve, reject) =>
+          api.events.emit<"start-download">(
+            "start-download",
+            [nxmUrl],
+            { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
+            undefined,
+            (err, id?) =>
+              err !== null || id === undefined
+                ? reject(err ?? new Error("download did not report an id"))
+                : resolve(id),
+            undefined,
+            { allowInstall: false },
+          ),
+        );
+
+        await new Promise<string>((resolve, reject) =>
+          api.events.emit<"start-install-download">(
+            "start-install-download",
+            dlId,
+            { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
+            (err, modId) =>
+              err !== null || modId === undefined
+                ? reject(err ?? new Error("install did not report a mod id"))
+                : resolve(modId),
+          ),
+        );
+      },
+    );
+  } catch (err) {
+    // trackedInstall re-throws so the caller owns the user-facing handling; this is that
+    // caller. The file-list lookup is inside the same try because it can fail the same way.
+    api.showErrorNotification(`Failed to install requirement: ${modLabel}`, err, {
+      allowReport: false,
+    });
+
+    return false;
   }
-
-  const gameId = mod.gameId;
-  const modId = mod.modId;
-  const targetFile = fileIds[0];
-
-  const game: IGame = getGame(gameId);
-  const nexusDomainName = nexusGameId(game, gameId);
-  const nxmUrl = `nxm://${nexusDomainName}/mods/${modId}/files/${targetFile.fileId}`;
-  // mod.gameId is the Nexus domain (e.g. "skyrimspecialedition"); the downloader and
-  // download.game records key on the internal id ("skyrimse"). Convert before emitting
-  // so the file lands in the same folder the install handler later looks in.
-  const internalGameId = convertGameIdReverse(knownGames(api.getState()), gameId) || gameId;
-
-  await trackedInstall(
-    api,
-    {
-      ...identity,
-      mod_id: modId,
-      mod_name: mod.modName,
-      mod_version: targetFile.version,
-    },
-    async () => {
-      const dlId = await toPromise<string>((cb) =>
-        api.events.emit(
-          "start-download",
-          [nxmUrl],
-          { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
-          undefined,
-          cb,
-          undefined,
-          { allowInstall: false },
-        ),
-      );
-
-      await toPromise<string>((cb) =>
-        api.events.emit(
-          "start-install-download",
-          dlId,
-          { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
-          cb,
-        ),
-      );
-    },
-  );
 
   api.sendNotification({
     type: "success",
@@ -106,4 +127,6 @@ export async function onDownloadRequirement(
     displayMS: 5000,
     id: "health-check:nexus-requirements-download-finished",
   });
+
+  return true;
 }

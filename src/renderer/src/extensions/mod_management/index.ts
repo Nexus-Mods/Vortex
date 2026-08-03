@@ -147,6 +147,17 @@ interface IAppContext {
   isProfileChanging: boolean;
 }
 
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "start-install-download": (
+      downloadId: string,
+      // legacy callers pass a bare allowAutoEnable flag, normalized by the handler
+      options?: IInstallOptions | boolean,
+      callback?: (err: Error | null, modId?: string) => void,
+    ) => void;
+  }
+}
+
 const appContext: IAppContext = {
   isProfileChanging: false,
 };

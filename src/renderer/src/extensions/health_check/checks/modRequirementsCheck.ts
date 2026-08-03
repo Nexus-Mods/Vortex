@@ -182,7 +182,10 @@ function resolveModUID(mod: IMod, gameId: string): string | undefined {
  * Check Nexus mod requirements
  * Fetches requirements from Nexus API and checks if they are satisfied
  */
-export async function checkModRequirements(api: IExtensionApi): Promise<IHealthCheckResult> {
+export async function checkModRequirements(
+  api: IExtensionApi,
+  signal?: AbortSignal,
+): Promise<IHealthCheckResult> {
   const startTime = Date.now();
   try {
     const state = api.getState();
@@ -253,6 +256,8 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
       [uid: string]: Partial<IModRequirements> | undefined;
     } = {};
 
+    signal?.throwIfAborted();
+
     try {
       const resolved = await resolveCached(
         [...modsByUid.keys()],
@@ -272,10 +277,11 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
         requirementsMap[uid] = requirements;
       }
     } catch (err) {
-      log("warn", "Failed to fetch mod requirements", {
-        error: (err as Error).message,
-      });
-      metadata.errors.push(`Failed to fetch requirements: ${(err as Error).message}`);
+      // Whatever the cache already held is still used below; the run is just incomplete,
+      // which the result status reflects rather than reporting a clean pass.
+      const message = getErrorMessageOrDefault(err);
+      log("warn", "Failed to fetch mod requirements", { error: message });
+      metadata.errors.push(`Failed to fetch requirements: ${message}`);
     }
 
     // Pre-fetch, batched and in parallel, the per-required-mod data the second pass
@@ -310,16 +316,19 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
     // One batched mod-details call instead of one per required mod.
     const detailUids = [...requiredTargets.keys()];
     if (detailUids.length > 0) {
+      signal?.throwIfAborted();
       try {
-        await getModDetails(api, detailUids);
+        await getModDetails(api, detailUids, signal);
       } catch (err) {
-        log("warn", "Failed to batch mod details", { error: (err as Error).message });
+        signal?.throwIfAborted();
+        log("warn", "Failed to batch mod details", { error: getErrorMessageOrDefault(err) });
       }
     }
 
     // File-list lookups, fanned out in bounded-concurrency waves.
     const filesByRequiredUid = new Map<string, IModFileInfo[]>();
     for (const wave of chunked([...requiredTargets], FILE_LOOKUP_CONCURRENCY)) {
+      signal?.throwIfAborted();
       const fetched = await Promise.all(
         wave.map(async ([uid, target]) => {
           const files = await getModFilesWithCache(api, target.gameId, target.modId).catch(
@@ -446,7 +455,22 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
     );
     const totalIssues = totalMissingMods + totalDlcRequirements;
 
-    if (totalIssues === 0 && metadata.errors.length === 0) {
+    const details = buildDetailsString(modsWithIssues, metadata.errors);
+
+    // An incomplete run cannot claim the loadout is fine: with the fetch failed we don't
+    // know what we didn't see. Whatever was resolved from cache is still reported, so the
+    // metadata rides along and the listing keeps showing it.
+    if (metadata.errors.length > 0) {
+      return createResult(
+        startTime,
+        "error",
+        HealthCheckSeverity.Error,
+        `Nexus mod requirements check incomplete: ${metadata.errors.length} fetch error(s), ${totalIssues} issues found in ${metadata.modsChecked} mods checked`,
+        { details, metadata },
+      );
+    }
+
+    if (totalIssues === 0) {
       return createResult(
         startTime,
         "passed",
@@ -456,7 +480,6 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
       );
     }
 
-    const details = buildDetailsString(modsWithIssues, metadata.errors);
     const severity = totalMissingMods > 0 ? HealthCheckSeverity.Warning : HealthCheckSeverity.Info;
     const status = totalMissingMods > 0 ? "warning" : "passed";
 
@@ -468,6 +491,10 @@ export async function checkModRequirements(api: IExtensionApi): Promise<IHealthC
       { details, metadata },
     );
   } catch (error) {
+    // The registry reports the timeout itself and discards this run's result.
+    if (signal?.aborted) {
+      throw error;
+    }
     log("error", "Failed to check Nexus mod requirements", unknownToError(error));
     return createResult(
       startTime,
@@ -497,7 +524,7 @@ export const modRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.GameChanged,
     HealthCheckTrigger.SettingsChanged,
   ],
-  check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
+  check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
     if (!isModRequirementsEnabled(api.getState())) {
       return {
         checkId: MOD_REQUIREMENTS_CHECK_ID,
@@ -511,7 +538,7 @@ export const modRequirementsHealthCheck: IHealthCheck = {
 
     api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true));
     try {
-      return await checkModRequirements(api);
+      return await checkModRequirements(api, signal);
     } finally {
       api.store?.dispatch(setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, false));
     }

@@ -703,3 +703,45 @@ describe("checkFileRequirements / resolution", () => {
     });
   });
 });
+
+describe("checkFileRequirements / abort", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockActiveProfile.mockReturnValue({ gameId: "skyrimse" } as unknown as IProfile);
+    mockIsLoggedIn.mockReturnValue(true);
+    mockGatherDownloaded.mockResolvedValue([]);
+    mockDownloadedHydrator.mockReturnValue(() => undefined);
+  });
+
+  // Cancelling a request already in flight is the v3 client's job and is covered there. What
+  // matters here is that an aborted run leaves no report for the registry to store.
+  test("throws instead of returning a result when the signal is already aborted", async () => {
+    mockGather.mockResolvedValue([ref("ab_src")]);
+    mockHydrator.mockReturnValue((fileUID: string) => installedFile(fileUID, true));
+    mockCreateClient.mockReturnValue(
+      fakeClient(
+        { ab_src: { chain: "ab_srcChain", modId: "ab_srcMod" } },
+        [],
+      ) as unknown as ReturnType<typeof createVortexNexusV3Client>,
+    );
+
+    await expect(checkFileRequirements(api, AbortSignal.abort())).rejects.toThrow();
+  });
+
+  test("throws when the signal aborts partway through the run", async () => {
+    const controller = new AbortController();
+    mockGather.mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve([ref("ab2_src")]);
+    });
+    mockHydrator.mockReturnValue((fileUID: string) => installedFile(fileUID, true));
+    mockCreateClient.mockReturnValue(
+      fakeClient(
+        { ab2_src: { chain: "ab2_srcChain", modId: "ab2_srcMod" } },
+        [],
+      ) as unknown as ReturnType<typeof createVortexNexusV3Client>,
+    );
+
+    await expect(checkFileRequirements(api, controller.signal)).rejects.toThrow();
+  });
+});

@@ -44,13 +44,17 @@ export function useModRequirementActions(
 
   // 1-click install is a Premium feature; free users get the upgrade prompt
   // (which routes them to the mod page) instead of an in-app download.
+  // onDownloadRequirement reports its own failures and never rejects, so the
+  // fire-and-forget call sites have nothing to catch; a failed install leaves the
+  // detail page open rather than navigating away from the issue.
   const installInApp = useCallback(async () => {
     if (showPremiumAd) {
       setShowPremiumModal(true);
       return;
     }
-    await onDownloadRequirement(api, mod, undefined, identity);
-    onInstalled?.();
+    if (await onDownloadRequirement(api, mod, undefined, identity)) {
+      onInstalled?.();
+    }
   }, [api, mod, identity, showPremiumAd, onInstalled]);
 
   // Persistence only — EntryActions owns the feedback analytics, so both thumbs record
