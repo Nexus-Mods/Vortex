@@ -151,8 +151,8 @@ export const Tooltip = ({
     useRole(context, { role: "tooltip" }),
   ]);
 
-  // React 17 types leave `props` as unknown once isValidElement narrows, so widen
-  // once here. Merging refs keeps any the caller already set on the trigger.
+  // `ref` isn't on ReactElement until React 19, and isValidElement leaves `props` as
+  // any, so pin both once here. Merging refs keeps any the caller set on the trigger.
   const trigger = children as ReactElement<Record<string, unknown>> & { ref?: Ref<unknown> };
   const triggerRef = useMergeRefs([refs.setReference, trigger.ref]);
 
