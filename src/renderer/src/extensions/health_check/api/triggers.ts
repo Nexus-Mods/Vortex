@@ -43,10 +43,10 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.SettingsChanged);
     });
 
-    // Mods changed triggers - debounced because did-install-mod and
-    // did-enable-mods fire in quick succession for the same install, and
-    // setModsEnabled() in InstallManager is not awaited so state may not
-    // be updated when the first event fires.
+    // Mods changed triggers - debounced because these events can fire in quick
+    // succession (e.g. a batch enable/disable, or did-install-mod alongside
+    // setModsEnabled() in InstallManager, which isn't awaited so state may not
+    // be updated when the first event fires).
     const modsChangedDebouncer = new Debouncer(
       () => triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
       500,
@@ -54,6 +54,19 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
 
     api.events.on("did-install-mod", () => {
       log("debug", "Mod installed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    // mod-enabled/mod-disabled are derived from a diff of the active profile's
+    // modState, so they fire for every enable/disable path (single toggle,
+    // bulk selection, profile switch, dependency auto-enable, etc.).
+    api.events.on("mod-enabled", () => {
+      log("debug", "Mod enabled, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    api.events.on("mod-disabled", () => {
+      log("debug", "Mod disabled, scheduling debounced health check");
       modsChangedDebouncer.schedule();
     });
 
