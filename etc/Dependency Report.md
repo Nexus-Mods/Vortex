@@ -60,7 +60,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | glob | 11.1.0 |
 | got | 15.0.5 |
 | graphlib | 2.1.8 |
-| i18next | 19.9.2 |
+| i18next | 20.6.1 |
 | i18next-fs-backend | 2.6.1 |
 | icon-extract | link:../../packages/icon-extract |
 | iconv-lite | 0.5.2 |
