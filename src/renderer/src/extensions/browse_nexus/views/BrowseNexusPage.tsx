@@ -75,7 +75,7 @@ async function adultContentDialog(
 
 function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
-  const t = (input: string, options?) =>
+  const t = (input: string, options?: Record<string, unknown>) =>
     api.translate(input, {
       isNamespaceKey: true,
       ns: ["collection", "common"],
