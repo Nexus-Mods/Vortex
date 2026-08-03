@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
@@ -21,7 +22,7 @@ import {
   fileRequirementsCheckResult,
   hiddenFileRequirements,
   hiddenModRequirements,
-  isAnyHealthCheckRunning,
+  isHealthCheckRunning,
   modRequirementsCheckResult,
 } from "../selectors";
 import { selectListedEntries } from "../utils/shared/listedEntries";
@@ -87,7 +88,9 @@ function HealthCheckDetailPage({
   const modResult = useSelector(modRequirementsCheckResult);
   const hiddenFile = useSelector(hiddenFileRequirements);
   const hiddenMod = useSelector(hiddenModRequirements);
-  const isRunning = useSelector(isAnyHealthCheckRunning);
+  // Only the entry's own check can bring its requirements back, so waiting on the other one
+  // would hold a resolved page open for the rest of that run.
+  const isRunning = useSelector((state: IState) => isHealthCheckRunning(state, entry.checkId));
 
   const liveEntry = useMemo(
     () => content.selectEntries(api.getState()).find((candidate) => candidate.id === entry.id),

@@ -5,8 +5,6 @@ import type {
   IModFileQuery,
 } from "@nexusmods/nexus-api";
 
-import { FlagService } from "@/FlagService";
-
 const revisionInfo: IRevisionQuery = {
   id: true,
   revisionNumber: true,
@@ -233,15 +231,13 @@ export const MOD_FILE_INFO: Partial<IModFileQuery> = {
 };
 
 /**
- * Get the mod requirements query object. The $filter property is only included
- * when the file-level requirements feature flag is enabled, to prevent pulling in
- * mod-to-mod requirements when they are disabled by file-to-file requirements.
+ * Get the mod requirements query object. Mod-to-mod requirements that a file-to-file
+ * requirement has superseded are always skipped, so the mod-level check can never report a
+ * requirement the file-level one owns.
  */
 export function getModRequirementsInfo(): IModRequirementsQuery {
-  const flagEnabled =
-    FlagService.instance?.getFlag("vortex-file-requirements-health-check") !== undefined;
-
-  const baseQuery: IModRequirementsQuery = {
+  return {
+    $filter: { skipDisabledRequirements: true },
     dlcRequirements: {
       gameExpansion: { id: true, name: true },
       notes: true,
@@ -262,12 +258,6 @@ export function getModRequirementsInfo(): IModRequirementsQuery {
       totalCount: true,
     },
   };
-
-  if (flagEnabled) {
-    baseQuery.$filter = { skipDisabledRequirements: true };
-  }
-
-  return baseQuery;
 }
 
 export const MY_COLLECTIONS_SEARCH_QUERY: ICollectionQuery = {
