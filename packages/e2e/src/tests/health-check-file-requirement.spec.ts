@@ -440,5 +440,54 @@ test.describe("Health Check - file requirement warning", () => {
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
+
+    test("[TC-07/20] a detail per-card 1-click install resolves one requirement and decrements the count", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const hc = new HealthCheckPage(vortexWindow);
+      const warnings = new HealthCheckWarnings(vortexWindow);
+      const detail = new HealthCheckDetail(vortexWindow);
+
+      await test.step("Install the requiring mod with its required files absent", async () => {
+        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
+      });
+
+      await test.step("Open Health Check and refresh", async () => {
+        await navigateToHealthCheck(vortexWindow);
+        await hc.refreshButton.click();
+        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
+        await dismissAllNotifications(vortexWindow);
+      });
+
+      await test.step("Open the warning detail view", async () => {
+        await warnings
+          .row()
+          .getByText(/Missing required mods? for:/)
+          .click();
+        await expect(detail.warningTitle).toBeVisible();
+      });
+
+      await test.step("The detail starts with two outstanding requirements", async () => {
+        await expect(
+          detail.root.getByText(
+            "Requires 2 additional mod files to be installed to work correctly",
+          ),
+        ).toBeVisible();
+      });
+
+      await test.step("Installing one requirement (per-card) decrements the count to one", async () => {
+        // The per-card "1-click install" resolves a single requirement; as it
+        // installs, that card drops out and the summary decrements to the singular
+        // copy (Figma: "remove the mod requirement item ... update counts").
+        await dismissAllNotifications(vortexWindow);
+        await detail.installOneClickButton.click();
+        await expect(
+          detail.root.getByText("Requires 1 additional mod file to be installed to work correctly"),
+        ).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+      });
+    });
   });
 });
