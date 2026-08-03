@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import type { Severity } from "@/extensions/health_check/utils/shared/severityStyles";
 import { Button } from "@/ui/components/button/Button";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -60,39 +62,47 @@ export function EntryActions({
         </Typography>
       )}
 
-      <Button
-        appearance={appearance}
-        brand="neutral"
-        disabled={givenFeedback}
-        leftIconPath={mdiThumbUpOutline}
-        size="sm"
-        title={t("common:::helpful")}
-        onClick={handle(() => {
-          trackFeedbackHelpful({ issue_type: issueType, resolution_type: resolutionType });
-          onHelpful();
-        })}
-      />
+      <TooltipDelayGroup>
+        <Tooltip content={t("common:::helpful")} placement="bottom">
+          <Button
+            appearance={appearance}
+            aria-label={t("common:::helpful")}
+            brand="neutral"
+            disabled={givenFeedback}
+            leftIconPath={mdiThumbUpOutline}
+            size="sm"
+            onClick={handle(() => {
+              trackFeedbackHelpful({ issue_type: issueType, resolution_type: resolutionType });
+              onHelpful();
+            })}
+          />
+        </Tooltip>
 
-      <Button
-        appearance={appearance}
-        brand="neutral"
-        disabled={givenFeedback}
-        leftIconPath={mdiThumbDownOutline}
-        size="sm"
-        title={t("common:::not_helpful")}
-        onClick={handle(() => setShowFeedbackModal(true))}
-      />
+        <Tooltip content={t("common:::not_helpful")} placement="bottom">
+          <Button
+            appearance={appearance}
+            aria-label={t("common:::not_helpful")}
+            brand="neutral"
+            disabled={givenFeedback}
+            leftIconPath={mdiThumbDownOutline}
+            size="sm"
+            onClick={handle(() => setShowFeedbackModal(true))}
+          />
+        </Tooltip>
 
-      {variant === "detail" && <div className="w-px self-stretch bg-stroke-weak" />}
+        {variant === "detail" && <div className="w-px self-stretch bg-stroke-weak" />}
 
-      <Button
-        appearance={appearance}
-        brand="neutral"
-        leftIconPath={isHidden ? mdiEyeOutline : mdiEyeOffOutline}
-        size="sm"
-        title={isHidden ? t("common:::unhide") : t("common:::hide")}
-        onClick={handle(onToggleHide)}
-      />
+        <Tooltip content={isHidden ? t("common:::unhide") : t("common:::hide")} placement="bottom">
+          <Button
+            appearance={appearance}
+            aria-label={isHidden ? t("common:::unhide") : t("common:::hide")}
+            brand="neutral"
+            leftIconPath={isHidden ? mdiEyeOutline : mdiEyeOffOutline}
+            size="sm"
+            onClick={handle(onToggleHide)}
+          />
+        </Tooltip>
+      </TooltipDelayGroup>
 
       <FeedbackModal
         isOpen={showFeedbackModal}

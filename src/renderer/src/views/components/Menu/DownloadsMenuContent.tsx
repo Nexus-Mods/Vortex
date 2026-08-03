@@ -3,8 +3,10 @@ import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { useWindowContext } from "../../../contexts";
 import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
 import type { IState } from "../../../types/IState";
+import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
 import { Typography } from "../../../ui/components/typography/Typography";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { discovered as discoveredGamesSelector } from "../../../util/selectors";
@@ -45,47 +47,53 @@ const GameMenuEntry: FC<
     onClick: () => void;
   }>
 > = ({ game, isActive, onClick }) => {
+  const { menuIsCollapsed } = useWindowContext();
   const discoveredGames = useSelector(discoveredGamesSelector);
   const { cacheKey, sources, preferred } = getGameImageUrls(game, discoveredGames[game.id]);
   const { src, exhausted, onError, onLoad } = useGameImage(cacheKey, sources, preferred);
 
   return (
-    <button
-      className={joinClasses([
-        "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-mid hover:text-neutral-moderate",
-        isActive ? "bg-surface-low text-neutral-moderate" : "text-neutral-subdued",
-      ])}
-      title={formatGameDisplayName(game.name)}
-      onClick={onClick}
+    <Tooltip
+      content={formatGameDisplayName(game.name)}
+      disabled={!menuIsCollapsed}
+      placement="right"
     >
-      {exhausted ? (
-        <span
-          className="flex size-4 shrink-0 items-center justify-center rounded-sm text-xs font-bold text-white"
-          style={{
-            backgroundColor: `hsl(${stringToHue(game.name)}, 40%, 35%)`,
-          }}
-        >
-          {game.name.charAt(0).toUpperCase()}
-        </span>
-      ) : (
-        <img
-          alt=""
-          className="size-4 shrink-0 rounded-sm object-cover"
-          src={src}
-          onError={onError}
-          onLoad={onLoad}
-        />
-      )}
-
-      <Typography
-        as="span"
-        brand="none"
-        className="truncate font-semibold"
-        typographyType="body-sm"
+      <button
+        className={joinClasses([
+          "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-mid hover:text-neutral-moderate",
+          isActive ? "bg-surface-low text-neutral-moderate" : "text-neutral-subdued",
+        ])}
+        onClick={onClick}
       >
-        {game.name}
-      </Typography>
-    </button>
+        {exhausted ? (
+          <span
+            className="flex size-4 shrink-0 items-center justify-center rounded-sm text-xs font-bold text-white"
+            style={{
+              backgroundColor: `hsl(${stringToHue(game.name)}, 40%, 35%)`,
+            }}
+          >
+            {game.name.charAt(0).toUpperCase()}
+          </span>
+        ) : (
+          <img
+            alt=""
+            className="size-4 shrink-0 rounded-sm object-cover"
+            src={src}
+            onError={onError}
+            onLoad={onLoad}
+          />
+        )}
+
+        <Typography
+          as="span"
+          brand="none"
+          className="truncate font-semibold"
+          typographyType="body-sm"
+        >
+          {game.name}
+        </Typography>
+      </button>
+    </Tooltip>
   );
 };
 

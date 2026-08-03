@@ -7,10 +7,10 @@ export class Spine {
 
   constructor(page: Page) {
     this.page = page;
-    this.homeButton = page.getByTitle("Home", { exact: true }).first();
+    this.homeButton = page.getByRole("button", { name: "Home", exact: true }).first();
   }
 
   gameButton(gameName: string): Locator {
-    return this.page.getByTitle(gameName, { exact: true }).first();
+    return this.page.getByRole("button", { name: gameName, exact: true }).first();
   }
 }

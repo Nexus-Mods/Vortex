@@ -2,6 +2,7 @@ import React, { type ButtonHTMLAttributes, type ComponentType, type FC } from "r
 
 import { useWindowContext } from "@/contexts";
 import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -22,27 +23,28 @@ export const MenuButton: FC<React.PropsWithChildren<MenuButtonProps>> = ({
   const { menuIsCollapsed } = useWindowContext();
 
   return (
-    <button
-      className={joinClasses([
-        "relative flex h-10 items-center gap-x-3 rounded-lg px-3 text-left transition-colors",
-        "hover:bg-surface-mid hover:text-neutral-moderate focus-visible:z-1",
-        isActive ? "bg-surface-low text-neutral-moderate" : "text-neutral-subdued",
-      ])}
-      {...(menuIsCollapsed ? { title: children } : {})}
-      {...props}
-    >
-      <Icon className="shrink-0" path={iconPath} size="sm" />
-
-      <Typography
-        as="span"
-        brand="none"
-        className="grow truncate font-semibold"
-        typographyType="body-sm"
+    <Tooltip content={children} disabled={!menuIsCollapsed} placement="right">
+      <button
+        className={joinClasses([
+          "relative flex h-10 items-center gap-x-3 rounded-lg px-3 text-left transition-colors",
+          "hover:bg-surface-mid hover:text-neutral-moderate focus-visible:z-1",
+          isActive ? "bg-surface-low text-neutral-moderate" : "text-neutral-subdued",
+        ])}
+        {...props}
       >
-        {children}
-      </Typography>
+        <Icon className="shrink-0" path={iconPath} size="sm" />
 
-      {Badge && <Badge />}
-    </button>
+        <Typography
+          as="span"
+          brand="none"
+          className="grow truncate font-semibold"
+          typographyType="body-sm"
+        >
+          {children}
+        </Typography>
+
+        {Badge && <Badge />}
+      </button>
+    </Tooltip>
   );
 };

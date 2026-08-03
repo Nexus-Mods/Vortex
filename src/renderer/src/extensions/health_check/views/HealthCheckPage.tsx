@@ -20,6 +20,8 @@ import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { useRelativeTime } from "@/util/useRelativeTime";
 import { Page } from "@/views/components/Page/Page";
@@ -295,28 +297,34 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
           <div className="flex shrink-0 items-center gap-x-2">
             <LastUpdated />
 
-            <Button
-              appearance="subdued"
-              brand="neutral"
-              isLoading={isRefreshing}
-              leftIconPath={mdiRefresh}
-              size="sm"
-              title={t("common:::refresh")}
-              onClick={() => onRefresh?.()}
-            />
+            <TooltipDelayGroup>
+              <Tooltip content={t("common:::refresh")} placement="bottom">
+                <Button
+                  appearance="subdued"
+                  aria-label={t("common:::refresh")}
+                  brand="neutral"
+                  isLoading={isRefreshing}
+                  leftIconPath={mdiRefresh}
+                  size="sm"
+                  onClick={() => onRefresh?.()}
+                />
+              </Tooltip>
 
-            <Button
-              appearance="subdued"
-              brand="neutral"
-              leftIconPath={mdiCog}
-              size="sm"
-              title={t("common:::settings")}
-              onClick={() => {
-                trackSettingsOpened();
-                dispatch(setOpenMainPage("application_settings", false));
-                dispatch(setSettingsPage("Vortex"));
-              }}
-            />
+              <Tooltip content={t("common:::settings")} placement="bottom">
+                <Button
+                  appearance="subdued"
+                  aria-label={t("common:::settings")}
+                  brand="neutral"
+                  leftIconPath={mdiCog}
+                  size="sm"
+                  onClick={() => {
+                    trackSettingsOpened();
+                    dispatch(setOpenMainPage("application_settings", false));
+                    dispatch(setSettingsPage("Vortex"));
+                  }}
+                />
+              </Tooltip>
+            </TooltipDelayGroup>
           </div>
         </PageHeader>
 
