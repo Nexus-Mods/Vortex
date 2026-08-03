@@ -10,6 +10,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | ------- | ------- |
 | @duckdb/node-api | 1.5.1-r.1 |
 | @electron/remote | 2.1.3 |
+| @floating-ui/react | 0.27.20 |
 | @headlessui/react | 1.7.19 |
 | @hot-updater/bsdiff | 0.30.6 |
 | @mdi/js | 7.4.47 |
@@ -60,7 +61,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | glob | 11.1.0 |
 | got | 15.0.5 |
 | graphlib | 2.1.8 |
-| i18next | 20.6.1 |
+| i18next | 21.10.0 |
 | i18next-fs-backend | 2.6.1 |
 | icon-extract | link:../../packages/icon-extract |
 | iconv-lite | 0.5.2 |

@@ -1116,7 +1116,7 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 function fileMD5(input: string | Buffer, progress?: (bytesProcessed: number, totalBytes: number) => void): Promise<string>;
 
 // @public
-export type FileSystemErrorData = OsErrorData & {Partial<OsErrorData> & {
+export type FileSystemErrorData = Partial<OsErrorData> & {
     path: string;
 };
 
@@ -6265,7 +6265,7 @@ declare namespace tooltip {
 }
 export { tooltip }
 
-// @public (undocumented)
+// @public @deprecated (undocumented)
 function toPromise<ResT>(func: (cb: any) => void): Bluebird<ResT>;
 
 // @public (undocumented)
