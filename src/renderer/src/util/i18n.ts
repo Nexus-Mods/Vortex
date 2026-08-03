@@ -160,6 +160,9 @@ export async function init(
 
   try {
     const tFunc = await i18nObj.init({
+      // TODO: Remove for i18next version 24
+      compatibilityJSON: "v3",
+
       lng: language,
       fallbackLng: "en",
       fallbackNS: "common",
