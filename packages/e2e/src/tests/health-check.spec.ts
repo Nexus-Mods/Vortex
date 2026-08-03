@@ -1,15 +1,13 @@
 /**
- * File Requirements Health Check — foundation E2E coverage (LAZ-684).
+ * Health Check — general screen behaviour + settings (LAZ-684).
  *
- * These cover the parts of the feature that are deterministic without special
- * requirement test-data: the empty/passed state, header controls, the Settings
- * toggles, and the free-vs-premium chrome. The warning / suggestion / install /
- * version / hide flows (TC-01, TC-05..TC-23, TC-27..TC-36) need an installed mod
- * with unsatisfied file-level requirement metadata and are tracked as follow-up.
+ * Covers the parts of the screen that are deterministic without special
+ * requirement test-data: the empty/passed state, the header and its controls,
+ * refresh, the Settings toggles (and their within-session persistence), and the
+ * free-vs-premium chrome. The requirement warning / detail / install flows live
+ * in the sibling health-check-file-requirement.spec.ts.
  *
- * TC references map to the behaviour spec in the LAZ-684 comment. Assertions use
- * the strings the app actually ships (locales/en/health_check.json), which differ
- * from the Figma copy quoted in the issue — see the note at the bottom of this file.
+ * Assertions use the strings the app actually ships (locales/en/health_check.json).
  */
 import { test, expect } from "../fixtures/vortex-app";
 import { navigateToHealthCheck, navigateToSettings } from "../helpers/navigation";
@@ -19,13 +17,11 @@ import { Header } from "../selectors/header";
 import { HealthCheckPage, HealthCheckSettings } from "../selectors/healthCheck";
 import { SettingsPage } from "../selectors/settings";
 
-test.describe("Health Check", () => {
-  // The page and settings behave identically for both tiers; run the tier-neutral
-  // foundation as the free user and keep the tier-specific chrome in its own block.
+test.describe("Health Check - screen behaviour and settings", () => {
   test.describe("free user", () => {
     test.use({ nexusUser: freeUser });
 
-    test("[TC-03] empty loadout shows the passed state", async ({
+    test("Check the passed state is shown when there are no issues", async ({
       vortexWindow,
       managedGame: _game,
     }) => {
@@ -45,7 +41,7 @@ test.describe("Health Check", () => {
       });
     });
 
-    test("[TC-03] header shows the title, subtitle and controls", async ({
+    test("Check the header shows the title, subtitle, beta badge and controls", async ({
       vortexWindow,
       managedGame: _game,
     }) => {
@@ -73,7 +69,7 @@ test.describe("Health Check", () => {
       });
     });
 
-    test("[TC-04] refresh re-runs the check and shows 'Last updated'", async ({
+    test("Check refresh re-runs the check and shows the last-updated time", async ({
       vortexWindow,
       managedGame: _game,
     }) => {
@@ -90,7 +86,7 @@ test.describe("Health Check", () => {
       });
     });
 
-    test("[TC-04] settings gear opens Settings at the Health Check section", async ({
+    test("Check the settings gear opens Settings at the Health Check section", async ({
       vortexWindow,
       managedGame: _game,
     }) => {
@@ -107,10 +103,7 @@ test.describe("Health Check", () => {
       });
     });
 
-    test("[TC-25] free user sees the premium banner", async ({
-      vortexWindow,
-      managedGame: _game,
-    }) => {
+    test("Check the premium banner is shown", async ({ vortexWindow, managedGame: _game }) => {
       const hc = new HealthCheckPage(vortexWindow);
 
       await test.step("Open the Health Check page", async () => {
@@ -123,7 +116,7 @@ test.describe("Health Check", () => {
       });
     });
 
-    test("[TC-30] settings expose the mod- and file-requirement toggles", async ({
+    test("Check the settings expose the mod- and file-requirement toggles", async ({
       vortexWindow,
     }) => {
       await test.step("Open Settings and switch to the Vortex tab", async () => {
@@ -138,14 +131,12 @@ test.describe("Health Check", () => {
         await expect(settings.modRequirementsToggle).toBeVisible();
       });
 
-      // Visible only when the Unleash flag is present for this user — the E2E
-      // accounts are enrolled, so it must render.
       await test.step("File-requirements toggle is shown", async () => {
         await expect(settings.fileRequirementsToggle).toBeVisible();
       });
     });
 
-    test("[TC-30] file-requirements toggle flips and persists within the session", async ({
+    test("Check the file-requirements toggle flips and persists within the session", async ({
       vortexWindow,
     }) => {
       await test.step("Open Settings and switch to the Vortex tab", async () => {
@@ -182,7 +173,7 @@ test.describe("Health Check", () => {
   test.describe("premium user", () => {
     test.use({ nexusUser: premiumUser });
 
-    test("[TC-26] premium user sees the premium indicator and no banner", async ({
+    test("Check the premium indicator is shown and the banner is hidden", async ({
       vortexWindow,
       managedGame: _game,
     }) => {
@@ -203,18 +194,3 @@ test.describe("Health Check", () => {
     });
   });
 });
-
-/*
- * Copy discrepancies vs the Figma spec in the LAZ-684 comment (TC-35 — reported,
- * tests assert the shipped strings):
- *   - Page title: ships "Health Check" with a separate "Beta" pill (BetaBadge),
- *     not the inline "Health check (BETA)" of the Figma.
- *   - Subtitle: ships "Review your Loadout for any issues and learn how to resolve
- *     them if needed.", not "Find and fix issues in your loadout".
- *   - Settings description: ships "Detect issues with your mod list and suggest
- *     fixes. More checks are coming soon."
- *   - Toggle labels: ship "Missing mod requirements suggestions" / "Missing file
- *     requirements warnings", not the "Show missing mod ..." phrasing in TC-30.
- * Also note: the Active/Hidden tabs render only once at least one hideable item
- * exists, so the empty state has no "Active (0) / Hidden (0)" tabs (TC-03/TC-05).
- */
