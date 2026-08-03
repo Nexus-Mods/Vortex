@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { MessageChannel } from "node:worker_threads";
 
 import type { IMethodMessage } from "@nexusmods/adaptor-api";
-import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createRpcTransport, type IRpcTransport } from "../node-adaptor-host/transport.js";
@@ -86,17 +86,6 @@ describe("filesystem RPC end-to-end", () => {
     if (stat.exists && stat.isFile) {
       expect(stat.size).toBe(3);
     }
-  });
-
-  it("propagates FileSystemError across the transport", async () => {
-    const client = makeClient();
-    const missing = rootQP.join("nope.txt");
-
-    const err = await client.readFile(missing).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(FileSystemError);
-    const fsErr = err as FileSystemError;
-    expect(fsErr.code).toBe("not found");
-    expect(fsErr.isTransient).toBe(false);
   });
 
   it("iterates directory contents across multiple batches", async () => {

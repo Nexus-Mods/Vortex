@@ -15,7 +15,7 @@ export interface FileSystem {
    * @param target - Target path to copy to.
    * @param options - Whether to overwrite the target path if it already exists. Otherwise throws.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   copy(
     source: QualifiedPath,
@@ -31,7 +31,7 @@ export interface FileSystem {
    * @param target - Target path to move to.
    * @param options - Whether to overwrite the target path if it already exists. Otherwise throws.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   move(
     source: QualifiedPath,
@@ -41,35 +41,35 @@ export interface FileSystem {
 
   /** Reads data from a file.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   readFile(path: QualifiedPath): Promise<Uint8Array>;
 
   /**
    * Writes data to a file.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   writeFile(path: QualifiedPath, contents: Uint8Array): Promise<void>;
 
   /**
    * Creates a directory and all parent directories.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   createDirectory(path: QualifiedPath): Promise<void>;
 
   /**
    * Deletes a file or an empty directory.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   delete(path: QualifiedPath): Promise<void>;
 
   /**
    * Deletes a file or a directory recursively.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   deleteRecursive(path: QualifiedPath): Promise<void>;
 
@@ -79,7 +79,7 @@ export interface FileSystem {
    * @param path - Path to query.
    * @param options - Whether to parse sym links explicitly or silently follow them.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   stat(path: QualifiedPath, options?: { parseSymLink: boolean }): Promise<StatResult>;
 
@@ -89,7 +89,7 @@ export interface FileSystem {
    * @param path - Directory to enumerate.
    * @param options - Configures the enumeration.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   enumerateDirectory(
     path: QualifiedPath,
@@ -108,7 +108,7 @@ export interface FileSystem {
    * @param path - Directory to enumerate.
    * @param options - Configures the enumeration.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   enumerateDirectory(
     path: QualifiedPath,
@@ -127,7 +127,7 @@ export interface FileSystem {
    * @param path - Directory to enumerate.
    * @param options - Configures the enumeration.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   enumerateDirectory(
     path: QualifiedPath,
@@ -143,7 +143,7 @@ export interface FileSystem {
   /**
    * Creates a readable stream.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   createStream(
     path: QualifiedPath,
@@ -154,7 +154,7 @@ export interface FileSystem {
   /**
    * Creates a writable stream.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   createStream(
     path: QualifiedPath,
@@ -165,7 +165,7 @@ export interface FileSystem {
   /**
    * Creates a stream.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   createStream(
     path: QualifiedPath,
@@ -176,7 +176,7 @@ export interface FileSystem {
   /**
    * Creates a hardlink or symlink at `to` pointing to `from`.
    *
-   * @throws {@link FileSystemError}
+   * @throws {@link VortexError}
    * */
   createLink(from: QualifiedPath, to: QualifiedPath, type: "hardlink" | "symlink"): Promise<void>;
 }
@@ -300,48 +300,3 @@ export type DirectoryStatus = StatusTime & {
   readonly deviceId: bigint;
   readonly hardlinkCount: number;
 };
-
-/** @public */
-export type FileSystemErrorCode =
-  | "already exists"
-  | "directory not empty"
-  | "no permissions"
-  | "no space"
-  | "not a directory"
-  | "not a file"
-  | "not found"
-  | "generic";
-
-/** @public */
-export class FileSystemError extends Error {
-  readonly code: FileSystemErrorCode;
-
-  /**
-   * Whether the root error cause is transient. Example: too many open files.
-   *
-   * This property can be used for retry logic but it make assumptions about
-   * the retryablility of the operation that caused the error.
-   * */
-  readonly isTransient: boolean;
-
-  /**
-   * Creates a new error.
-   *
-   * Start message with "Failed to" for valid operations with runtime obstacles and "Cannot" for logically invalid operations.
-   * (Failed to/Cannot) (verb) (subject): (reason as noun phrase)
-   *
-   * Example: "Failed to delete '\{path\}': insufficient permissions"
-   * Example: "Cannot delete directory '$\{path\}': directory not empty"
-   * */
-  constructor(
-    code: FileSystemErrorCode,
-    message: string,
-    cause?: unknown,
-    isTransient: boolean = false,
-  ) {
-    super(message, { cause });
-    this.name = "FileSystemError";
-    this.code = code;
-    this.isTransient = isTransient;
-  }
-}

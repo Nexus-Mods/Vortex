@@ -84,21 +84,6 @@ describe("fs-test adaptor (Worker end-to-end)", () => {
     expect(Array.from(onDisk)).toEqual([1, 2, 3, 4]);
   });
 
-  it("surfaces FileSystemError across the Worker boundary with code/isTransient", async () => {
-    const missing = serialize(rootQP.join("nope.txt"));
-    const result = (await harness.call(PROBE_URI, "readMissing", [missing])) as {
-      name: string;
-      code: string;
-      isTransient: boolean;
-    };
-
-    expect(result).toEqual({
-      name: "FileSystemError",
-      code: "not found",
-      isTransient: false,
-    });
-  });
-
   it("iterates enumerateDirectory through the cursor protocol", async () => {
     // batchSize is 2; with 5 files the Worker must make 3+ cursor calls.
     for (const name of ["a.txt", "b.txt", "c.txt", "d.txt", "e.txt"]) {

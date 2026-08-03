@@ -1,11 +1,6 @@
-import type {
-  FileSystemErrorCode,
-  FileSystem,
-  StatResult,
-  Status,
-} from "@nexusmods/adaptor-api/fs";
+import type { FileSystem, StatResult, Status } from "@nexusmods/adaptor-api/fs";
 import type { Pattern } from "@nexusmods/adaptor-api/fs";
-import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 
 /**
  * Send function shape used by the client polyfill. The caller provides a
@@ -174,20 +169,6 @@ function rehydrateQualifiedPath(raw: unknown): QualifiedPath {
 }
 
 function rehydrateError(err: unknown): unknown {
-  if (!(err instanceof Error) || err.name !== "FileSystemError") return err;
-
-  const e = err as Error & {
-    code?: unknown;
-    isTransient?: unknown;
-    cause?: unknown;
-  };
-  const code: FileSystemErrorCode =
-    typeof e.code === "string" ? (e.code as FileSystemErrorCode) : "generic";
-  const isTransient = Boolean(e.isTransient);
-  // If the transport envelope carried a cause, prefer it over wrapping the
-  // envelope-rehydrated Error in itself — the cause is the real underlying
-  // failure (e.g. a Node ENOENT), while `err` is a wire-side duplicate of
-  // the FileSystemError we're about to construct.
-  const cause = e.cause !== undefined ? e.cause : err;
-  return new FileSystemError(code, err.message, cause, isTransient);
+  // TODO: LAZ-749 use VortexError
+  return err;
 }
