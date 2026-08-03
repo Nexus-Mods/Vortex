@@ -48,7 +48,7 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
     // setModsEnabled() in InstallManager is not awaited so state may not
     // be updated when the first event fires.
     const modsChangedDebouncer = new Debouncer(
-      () => void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
+      () => triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
       500,
     );
 
