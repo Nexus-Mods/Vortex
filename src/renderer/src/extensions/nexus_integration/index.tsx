@@ -1471,6 +1471,7 @@ const freeDLQueue: IDLQueueItem[] = [];
 
 const DL_QUERY: IRevisionQuery = {
   id: true,
+  revisionNumber: true,
   downloadLink: true,
   collection: {
     id: true,
@@ -1660,7 +1661,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                         collectionId: revisionInfo.collection.id,
                         revisionId: revisionInfo.id,
                         collectionSlug: url.collectionSlug,
-                        revisionNumber: url.revisionNumber,
+                        revisionNumber: revisionInfo.revisionNumber ?? url.revisionNumber,
                       },
                     },
                   } as any,
