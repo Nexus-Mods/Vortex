@@ -123,11 +123,16 @@ test.describe("Health Check - file requirement warnings", () => {
     }) => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
-      await test.step("Active tab shows one warning", async () => {
-        await expect(hc.activeTab).toContainText("(1)");
+      await test.step("The warning starts on the Active tab", async () => {
+        // Track the file-requirement warning by its own row, not the tab's aggregate
+        // "(N)" count: a page-level mod-requirement "suggestion" can also be active
+        // (see LAZ-852), which would inflate that count. warnings.row() is scoped to
+        // the file-warning title, so it stays correct regardless of what else is listed.
+        await expect(warnings.row()).toBeVisible();
       });
 
       await test.step("Hidden tab starts empty", async () => {
+        // Only the file warning is ever hidden here, so the Hidden count is safe.
         await expect(hc.hiddenTab).toContainText("(0)");
       });
 
@@ -141,8 +146,8 @@ test.describe("Health Check - file requirement warnings", () => {
         await expect(hc.hiddenTab).toContainText("(1)");
       });
 
-      await test.step("The Active tab is now empty", async () => {
-        await expect(hc.activeTab).toContainText("(0)");
+      await test.step("The warning has left the Active tab", async () => {
+        await expect(warnings.row()).toHaveCount(0);
       });
 
       await test.step("The Hidden tab lists the warning", async () => {
@@ -214,9 +219,6 @@ test.describe("Health Check - file requirement warnings", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("Manually download each required mod from the website", async () => {
-        // A free user can't 1-click install (that opens the Premium upsell) instead;
-        // they download the required files from the mod pages. Drive that same
-        // Mod-Manager website download and forward it to Vortex, which installs it.
         for (const url of SDV_FILE_REQUIREMENT_TARGET_URLS) {
           await downloadModViaModManager(nexusPage, vortexApp, url);
         }
@@ -263,8 +265,6 @@ test.describe("Health Check - file requirement warnings", () => {
       });
 
       await test.step("Downloading from that page resolves the requirement (count 2 → 1)", async () => {
-        // Complete the journey the link starts: download the required mod from that
-        // same page and forward it to Vortex; the summary then decrements to singular.
         await downloadModViaModManager(nexusPage, vortexApp, modPageUrl);
         await expect(
           detail.root.getByText("Requires 1 additional mod file to be installed to work correctly"),
@@ -308,9 +308,6 @@ test.describe("Health Check - file requirement warnings", () => {
       });
 
       await test.step("1-click install downloads and installs the required mods, clearing the warning", async () => {
-        // For a premium user the list-row 1-click installs every candidate in the
-        // report (both required mods here). Spans real downloads + installs +
-        // deploy + a fresh file-requirements re-run, so use the cold-start budget.
         await warnings.installOneClick().click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
@@ -366,9 +363,6 @@ test.describe("Health Check - file requirement warnings", () => {
       });
 
       await test.step("Installing one requirement (per-card) decrements the count to one", async () => {
-        // The per-card "1-click install" resolves a single requirement; as it
-        // installs, that card drops out and the summary decrements to the singular
-        // copy (Figma: "remove the mod requirement item ... update counts").
         await dismissAllNotifications(vortexWindow);
         await detail.installOneClickButton.click();
         await expect(
