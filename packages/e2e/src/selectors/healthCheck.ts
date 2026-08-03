@@ -22,6 +22,7 @@ export class HealthCheckPage {
   readonly hideAllButton: Locator;
   readonly unhideAllButton: Locator;
   readonly hiddenEmptyState: Locator;
+  readonly installAllButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -54,6 +55,11 @@ export class HealthCheckPage {
     this.hideAllButton = this.root.getByRole("button", { name: /Hide all/ });
     this.unhideAllButton = this.root.getByRole("button", { name: /Unhide all/ });
     this.hiddenEmptyState = this.root.getByText("No hidden items");
+    // Page-level batch action in the tabs header ("1-click install all (N)");
+    // installs the download candidates across all active warnings. Free users get
+    // a Premium badge on it. Distinct from the detail group's install-all, which
+    // lives under #health-check-detail-page.
+    this.installAllButton = this.root.getByRole("button", { name: /1-click install all/ });
   }
 }
 

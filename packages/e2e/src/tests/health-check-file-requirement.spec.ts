@@ -371,5 +371,74 @@ test.describe("Health Check - file requirement warning", () => {
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
+
+    test("[TC-26] the header 1-click install all resolves the requirements", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const hc = new HealthCheckPage(vortexWindow);
+      const warnings = new HealthCheckWarnings(vortexWindow);
+
+      await test.step("Install the requiring mod with its required files absent", async () => {
+        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
+      });
+
+      await test.step("Open Health Check and refresh", async () => {
+        await navigateToHealthCheck(vortexWindow);
+        await hc.refreshButton.click();
+        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
+        await dismissAllNotifications(vortexWindow);
+      });
+
+      await test.step("The header 1-click install all installs the requirements, clearing the warning", async () => {
+        // The header button sits top-right where the notification tray overlays;
+        // clear it immediately before clicking. For premium it installs directly
+        // (no upsell), spanning downloads + installs + deploy + a fresh re-run.
+        await dismissAllNotifications(vortexWindow);
+        await hc.installAllButton.click();
+        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
+      });
+    });
+
+    test("[TC-26] the detail 1-click install all resolves the requirements", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const hc = new HealthCheckPage(vortexWindow);
+      const warnings = new HealthCheckWarnings(vortexWindow);
+      const detail = new HealthCheckDetail(vortexWindow);
+
+      await test.step("Install the requiring mod with its required files absent", async () => {
+        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
+      });
+
+      await test.step("Open Health Check and refresh", async () => {
+        await navigateToHealthCheck(vortexWindow);
+        await hc.refreshButton.click();
+        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
+        await dismissAllNotifications(vortexWindow);
+      });
+
+      await test.step("Open the warning detail view", async () => {
+        await warnings
+          .row()
+          .getByText(/Missing required mods? for:/)
+          .click();
+        await expect(detail.warningTitle).toBeVisible();
+      });
+
+      await test.step("The detail 1-click install all installs the requirements, clearing the warning", async () => {
+        await dismissAllNotifications(vortexWindow);
+        await detail.installAllInGroupButton.click();
+        // Back to the list to assert the warning cleared as the required mods
+        // install + deploy (navigating away doesn't cancel the in-flight installs).
+        await detail.backButton.click();
+        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
+      });
+    });
   });
 });
