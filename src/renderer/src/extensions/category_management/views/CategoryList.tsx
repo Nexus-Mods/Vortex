@@ -58,7 +58,6 @@ export default function CategoryList() {
           className="h-full grow"
           id="size-sm-search-categories"
           placeholder="Filter categories..."
-          size="sm"
           type="text"
           value={searchString}
           onChange={(e) => setSearchString(e.target.value)}

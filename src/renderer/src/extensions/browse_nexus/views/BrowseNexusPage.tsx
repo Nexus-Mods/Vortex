@@ -278,7 +278,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   hideLabel={true}
                   label={t("collection:browse.searchPlaceholder")}
                   placeholder={t("collection:browse.searchPlaceholder")}
-                  size="sm"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);

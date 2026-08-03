@@ -19,7 +19,7 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
  * Full-bleed header for a non-scrolling `Page`. The bar itself spans the full
  * width (so its background/shadow reach the viewport edges) and stays pinned
  * above the `PageScroll` sibling, while its content is centred and capped at
- * `max-w-7xl` so it lines up with the scrolled content. It gains a shadow once
+ * `max-w-8xl` so it lines up with the scrolled content. It gains a shadow once
  * that sibling is scrolled; pass a render-prop child to react to it too.
  *
  * Pass `title` for the common heading, or `customTitle` when the title needs

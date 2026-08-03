@@ -27,7 +27,7 @@ import { DisplayOptions } from "../components/DisplayOptions";
 import { GamesGrid } from "../components/GamesGrid";
 import { GamesList } from "../components/GamesList";
 import { NoGamesFound } from "../components/NoGamesFound";
-import { Search } from "../components/Search";
+import { Search } from "../components/search/Search";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 

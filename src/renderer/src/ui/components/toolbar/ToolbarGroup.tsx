@@ -15,6 +15,7 @@ export interface IToolbarAction {
   disabled?: boolean;
   brand?: IButtonBrand;
   showLabel?: boolean;
+  testId?: string;
 }
 
 export type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
@@ -50,6 +51,7 @@ export const ToolbarGroup = ({
           appearance="weak"
           aria-label={!action.showLabel ? action.label : undefined}
           brand={action.brand ?? "neutral"}
+          data-testid={action.testId}
           disabled={action.disabled}
           key={action.label}
           leftIconPath={action.iconPath}

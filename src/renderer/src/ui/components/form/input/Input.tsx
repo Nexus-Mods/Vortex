@@ -13,17 +13,10 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IInputProps
   extends IBaseFormFieldProps, Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
-  /**
-   * Restrict default value to string | number as we don't use this component for checkbox
-   */
   defaultValue?: string | number;
   fieldClassName?: string;
   ref?: Ref<HTMLInputElement>;
-  size?: "sm" | "md";
   type?: "text" | "email" | "password" | "url" | "number" | "time" | "date";
-  /**
-   * Restrict value to string | number as we don't use this component for checkbox
-   */
   value?: string | number;
 }
 
@@ -44,7 +37,6 @@ export const Input = ({
   readOnly,
   required,
   showRequiredLabel,
-  size = "md",
   type = "text",
   value,
   ...props
@@ -81,7 +73,6 @@ export const Input = ({
         }
         aria-invalid={!!errorMessage || undefined}
         className={joinClasses(["nxm-input", className], {
-          "nxm-input-sm": size === "sm",
           "nxm-input-error": typeof errorMessage === "string",
           "nxm-input-disabled": readOnly || disabled,
         })}
