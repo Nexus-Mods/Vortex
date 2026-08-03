@@ -167,7 +167,7 @@ catalog:
   graphlib: 2.1.8
   happy-dom: 20.10.6
   husky: 9.1.7
-  i18next: 20.6.1
+  i18next: 21.10.0
   i18next-fs-backend: 2.6.1
   iconv-lite: 0.5.2
   immutability-helper: 3.1.1
