@@ -28,11 +28,13 @@ export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
 ];
 
 /**
- * SDV mod that declares a single page-level ("mod") requirement. Installed on its
- * own (that required mod absent) it drives one blue Health Check *suggestion*
- * ("Additional mod file may be required for: …") — the mod-to-mod counterpart of
- * SDV_FILE_REQUIREMENT_MOD_URL's file-level warning. It must keep its legacy mod
- * requirements enabled (not be set to file-requirements-only) so the suggestion
- * isn't suppressed for the flag-enrolled E2E users (see LAZ-852).
+ * SDV mod that declares a single page-level ("mod") requirement — Generic Mod
+ * Config Menu (5098), which requires SMAPI. Installed on its own (SMAPI absent) it
+ * drives one blue Health Check *suggestion* ("Additional mod file may be required
+ * for: …") — the mod-to-mod counterpart of SDV_FILE_REQUIREMENT_MOD_URL's
+ * file-level warning. It must offer a Mod-Manager download (not manual-only) so the
+ * install helper can drive it, and keep its legacy mod requirements enabled (not be
+ * set to file-requirements-only) so the suggestion isn't suppressed for the
+ * flag-enrolled E2E users (see LAZ-852).
  */
-export const SDV_MOD_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/46415";
+export const SDV_MOD_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/5098";
