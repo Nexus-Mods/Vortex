@@ -49,11 +49,33 @@ process.on("exit", (code: number) => {
   }
 });
 
+// React 18 emits these deprecation warnings via console.error in development
+// builds (production react-dom strips them). They fire during the very first
+// render — before show-window — where a console.error arms the
+// "Vortex failed to start" terminate timer in MainWindow. Demote them to
+// console.warn: still visible in devtools and the log, but not treated as
+// errors. Everything else must keep flowing through console.error unchanged.
+const REACT_DEPRECATION_WARNINGS = [
+  "ReactDOM.render is no longer supported",
+  "uses the legacy contextTypes API",
+  "uses the legacy childContextTypes API",
+  // emitted by legacy deps (react-bootstrap 0.33, react-i18next 11) on 18
+  "findDOMNode is deprecated",
+  "renderSubtreeIntoContainer() is no longer supported",
+];
+
 // turn all error logs into a single parameter. The reason is that (at least in production)
 // these only get reported by the main process and due to a "bug" only one parameter gets
 // relayed.
 const oldErr = console.error;
 console.error = (...args) => {
+  if (
+    typeof args[0] === "string" &&
+    REACT_DEPRECATION_WARNINGS.some((sig) => args[0].includes(sig))
+  ) {
+    console.warn(args.concat(" ") + "\n" + new Error().stack);
+    return;
+  }
   oldErr(args.concat(" ") + "\n" + new Error().stack);
 };
 

@@ -22,7 +22,7 @@ afterEach(() => {
   cleanup();
 });
 
-const Row: React.FC<{ item: { id: string } }> = ({ item }) => (
+const Row: React.FC<React.PropsWithChildren<{ item: { id: string } }>> = ({ item }) => (
   <div data-testid="lo-row">{item.id}</div>
 );
 
@@ -35,7 +35,7 @@ const renderComponent = (itemCount: number, virtualized: boolean) => {
         id="test-lo"
         itemTypeId="test-lo-item"
         items={items}
-        itemRenderer={Row as React.ComponentType<{ item: any }>}
+        itemRenderer={Row as React.ComponentType<React.PropsWithChildren<{ item: any }>>}
         idFunc={(item) => item.id}
         apply={() => undefined}
         virtualized={virtualized}

@@ -17,7 +17,7 @@ import { DialogContainer } from "../DialogContainer";
  * Provides a profile switcher component.
  * For both layouts.
  */
-export const ProfileSwitcher: FC = () => {
+export const ProfileSwitcher: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 

@@ -4,7 +4,7 @@ import { usePagesContext } from "../../contexts";
 import { usePageRendering } from "../../hooks";
 import { DNDContainer } from "../DNDContainer";
 
-export const ModernContentPane: FC = () => {
+export const ModernContentPane: FC<React.PropsWithChildren<unknown>> = () => {
   const { mainPages } = usePagesContext();
 
   const { renderPage } = usePageRendering();

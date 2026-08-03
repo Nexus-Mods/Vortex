@@ -9,10 +9,10 @@ interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: string;
   iconPath: string;
   isActive?: boolean;
-  Badge?: ComponentType;
+  Badge?: ComponentType<React.PropsWithChildren<unknown>>;
 }
 
-export const MenuButton: FC<MenuButtonProps> = ({
+export const MenuButton: FC<React.PropsWithChildren<MenuButtonProps>> = ({
   children,
   iconPath,
   isActive,

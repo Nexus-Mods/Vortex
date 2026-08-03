@@ -154,7 +154,10 @@ function MenuAction(props: IMenuActionProps) {
   );
 }
 
-class RootCloseWrapper extends React.Component<{ onClose: () => void }, {}> {
+class RootCloseWrapper extends React.Component<
+  { onClose: () => void; children?: React.ReactNode },
+  {}
+> {
   // React 17 delegates events at the react root instead of document, so this
   // component mounts while the click/contextmenu that opened the menu is
   // still bubbling toward document; registering the close listeners
@@ -201,6 +204,7 @@ export interface IContextMenuProps {
   actions?: IActionDefinitionEx[];
   className?: string;
   onTrigger?: () => void;
+  children?: React.ReactNode;
 }
 
 type IProps = IContextMenuProps;

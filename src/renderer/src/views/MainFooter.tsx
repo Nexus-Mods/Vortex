@@ -9,14 +9,14 @@ export interface IBaseProps {
 
 interface IFooter {
   id: string;
-  component: React.ComponentType<IBaseProps>;
+  component: React.ComponentType<React.PropsWithChildren<IBaseProps>>;
   props: PropsCallbackTyped<IBaseProps>;
 }
 
 const registerFooter = (
   _instanceGroup: undefined,
   id: string,
-  component: React.ComponentType<IBaseProps>,
+  component: React.ComponentType<React.PropsWithChildren<IBaseProps>>,
   props: PropsCallbackTyped<IBaseProps>,
 ): IFooter => {
   return { id, component, props };
@@ -25,7 +25,7 @@ const registerFooter = (
 /**
  * Footer on the main window. Can be extended
  */
-export const MainFooter: FC<IBaseProps> = ({ slim }) => {
+export const MainFooter: FC<React.PropsWithChildren<IBaseProps>> = ({ slim }) => {
   const footers = useExtensionObjects<IFooter>(registerFooter);
 
   const renderFooter = (footer: IFooter): JSX.Element => {

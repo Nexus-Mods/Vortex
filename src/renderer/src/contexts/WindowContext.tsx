@@ -39,7 +39,7 @@ export interface IWindowProviderProps {
   children: ReactNode;
 }
 
-export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
+export const WindowProvider: FC<React.PropsWithChildren<IWindowProviderProps>> = ({ children }) => {
   const dispatch = useDispatch();
   const tabsMinimized = useSelector((state: IState) => state.settings.window.tabsMinimized);
 

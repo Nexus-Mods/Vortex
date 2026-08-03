@@ -8,7 +8,7 @@ export interface IExtensibleControlProps {
 
 interface IWrapperProps {
   priority: number;
-  wrapper: React.ComponentType<{}>;
+  wrapper: React.ComponentType<React.PropsWithChildren<{}>>;
 }
 
 interface IExtensionProps {
@@ -33,7 +33,7 @@ function registerControlWrapper(
   instanceGroup: string,
   group: string,
   priority: number,
-  wrapper: React.ComponentType<{}>,
+  wrapper: React.ComponentType<React.PropsWithChildren<{}>>,
 ) {
   if (instanceGroup === group) {
     return { priority, wrapper };

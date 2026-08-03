@@ -34,6 +34,7 @@ export interface IBaseProps {
   dialogDefault?: string;
   style?: React.CSSProperties;
   dragOverlay?: JSX.Element;
+  children?: React.ReactNode;
 }
 
 interface IConnectedProps {}

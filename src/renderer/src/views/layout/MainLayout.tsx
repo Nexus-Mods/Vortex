@@ -11,7 +11,7 @@ import { ContentPane, Sidebar } from "./index";
  * Provides main layout with a Sidebar and ContentPane.
  * For Classic layout.
  */
-export const MainLayout: FC = () => {
+export const MainLayout: FC<React.PropsWithChildren<unknown>> = () => {
   const { mainPages, mainPage } = usePagesContext();
 
   const dispatch = useDispatch();

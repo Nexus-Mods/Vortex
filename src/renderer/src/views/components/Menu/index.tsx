@@ -20,7 +20,7 @@ const toolPadding = {
   5: "pb-66",
 };
 
-const MenuContent: FC = () => {
+const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
   const { selection, visiblePages } = useSpineContext();
@@ -104,7 +104,7 @@ const MenuContent: FC = () => {
   );
 };
 
-export const Menu: FC = () => {
+export const Menu: FC<React.PropsWithChildren<unknown>> = () => {
   return (
     <ToolsProvider>
       <MenuContent />

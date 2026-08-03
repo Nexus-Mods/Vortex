@@ -22,7 +22,7 @@ export interface IPageGroupProps {
  * Provides a page group in the sidebar.
  * For Classic layout.
  */
-export const PageGroup: FC<IPageGroupProps> = memo((props) => {
+export const PageGroup: FC<React.PropsWithChildren<IPageGroupProps>> = memo((props) => {
   const { title, groupKey, pages, mainPage, secondaryPage, tabsMinimized, onClickPage } = props;
 
   const { t } = useTranslation();

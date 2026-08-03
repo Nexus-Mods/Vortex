@@ -11,7 +11,7 @@ interface NotificationActionsProps {
   onExpand?: () => void;
 }
 
-export const NotificationActions: FC<NotificationActionsProps> = ({
+export const NotificationActions: FC<React.PropsWithChildren<NotificationActionsProps>> = ({
   actions,
   collapsed,
   onActionClick,

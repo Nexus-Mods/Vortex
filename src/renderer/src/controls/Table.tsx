@@ -63,6 +63,7 @@ export interface IBaseProps {
   showDetails?: boolean;
   hasActions?: boolean;
   onChangeSelection?: (ids: string[]) => void;
+  children?: React.ReactNode;
 }
 
 interface IConnectedProps {
@@ -1971,4 +1972,4 @@ export default translate(["common"])(
     registerTableAttribute,
     "tableId",
   )(connect(mapStateToProps, mapDispatchToProps)(SuperTable)),
-) as React.ComponentType<IBaseProps & IExtensibleProps>;
+) as React.ComponentType<React.PropsWithChildren<IBaseProps & IExtensibleProps>>;

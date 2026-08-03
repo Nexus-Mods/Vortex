@@ -18,6 +18,7 @@ export interface IToolbarIconProps {
   className?: string;
   stroke?: boolean;
   hollow?: boolean;
+  children?: React.ReactNode;
 }
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {

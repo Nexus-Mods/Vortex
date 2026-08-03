@@ -1309,7 +1309,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   callbacks.forEach((cb) => cb(nexus));
 }
 
-function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
+function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChildren<any>> {
   return () => {
     const context = React.useContext<IComponentContext>(MainContext);
     const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";

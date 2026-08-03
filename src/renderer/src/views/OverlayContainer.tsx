@@ -7,20 +7,20 @@ import type { PropsCallback } from "../types/IExtensionContext";
 
 interface IExtOverlay {
   id: string;
-  component: React.ComponentType;
+  component: React.ComponentType<React.PropsWithChildren<unknown>>;
   props?: PropsCallback;
 }
 
 const registerOverlay = (
   _instanceGroup: undefined,
   id: string,
-  component: React.ComponentType,
+  component: React.ComponentType<React.PropsWithChildren<unknown>>,
   props?: PropsCallback,
 ): IExtOverlay => {
   return { id, component, props };
 };
 
-const renderOverlay: FC<IExtOverlay> = (overlay) => {
+const renderOverlay: FC<React.PropsWithChildren<IExtOverlay>> = (overlay) => {
   const props = overlay.props ? overlay.props() : {};
   return (
     <ErrorBoundary className="errorboundary-overlay" key={overlay.id}>
@@ -31,7 +31,7 @@ const renderOverlay: FC<IExtOverlay> = (overlay) => {
   );
 };
 
-export const OverlayContainer: FC = () => {
+export const OverlayContainer: FC<React.PropsWithChildren<unknown>> = () => {
   const overlays = useExtensionObjects<IExtOverlay>(registerOverlay);
 
   return <div>{overlays.map((overlay) => renderOverlay(overlay))}</div>;

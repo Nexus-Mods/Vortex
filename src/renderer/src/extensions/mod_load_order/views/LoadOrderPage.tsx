@@ -33,11 +33,13 @@ interface IBaseState {
   loading: boolean;
   updating: boolean;
   sortType: SortType;
-  itemRenderer: React.ComponentType<{
-    className?: string;
-    item: ILoadOrderDisplayItem;
-    onRef: (ref: any) => any;
-  }>;
+  itemRenderer: React.ComponentType<
+    React.PropsWithChildren<{
+      className?: string;
+      item: ILoadOrderDisplayItem;
+      onRef: (ref: any) => any;
+    }>
+  >;
 }
 
 export interface IBaseProps {
@@ -392,7 +394,16 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       refresh: () => this.mForceUpdateDebouncer.schedule(),
     });
 
-    const infoPanel = typeof res === "string" ? <DefaultInfoPanel infoText={res} /> : res;
+    // The declared return type of createInfoPanel is string | ComponentType, but
+    // extensions in the wild return ready-made elements, so handle all three shapes.
+    const infoPanel =
+      typeof res === "string" ? (
+        <DefaultInfoPanel infoText={res} />
+      ) : typeof res === "function" ? (
+        React.createElement(res)
+      ) : (
+        res
+      );
 
     const sorted =
       this.state.sortType === "ascending"

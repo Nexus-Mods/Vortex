@@ -13,7 +13,7 @@ import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
 import { formatGameDisplayName, getGameImageUrls } from "./utils";
 
-export const Spine: FC = () => {
+export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
   const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
 
   const [canScrollUp, setCanScrollUp] = useState(false);

@@ -31,6 +31,7 @@ export interface IPackeryItemProps {
   onSetWidth?: (id: string, width: number) => void;
   onSetHeight?: (id: string, height: number) => void;
   onUpdateLayout?: () => void;
+  children?: React.ReactNode;
 }
 
 interface IPackeryItemState {

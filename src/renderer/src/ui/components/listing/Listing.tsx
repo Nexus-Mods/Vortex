@@ -25,7 +25,7 @@ export const Listing = ({
   skeletonCount = 4,
   SkeletonTile,
 }: PropsWithChildren<{
-  SkeletonTile?: ComponentType;
+  SkeletonTile?: ComponentType<React.PropsWithChildren<unknown>>;
   additionalContent?: ReactNode;
   appendLoader?: boolean;
   className?: string;

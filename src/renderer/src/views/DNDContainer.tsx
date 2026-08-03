@@ -10,7 +10,7 @@ interface IDNDContainerProps {
  * up to the parent, but I'll have to admit I don't understand 100% how "context" and
  * "manager" work in react-dnd and what changed in its api since we needed this.
  */
-export const DNDContainer: FC<IDNDContainerProps> = (props) => {
+export const DNDContainer: FC<React.PropsWithChildren<IDNDContainerProps>> = (props) => {
   const { children, style } = props;
 
   // Return null if no children provided

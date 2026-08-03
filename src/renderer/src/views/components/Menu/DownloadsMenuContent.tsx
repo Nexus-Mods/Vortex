@@ -38,11 +38,13 @@ function useManagedGameIds(): string[] {
   }, [discoveredGames, allProfiles]);
 }
 
-const GameMenuEntry: FC<{
-  game: IGameStored;
-  isActive: boolean;
-  onClick: () => void;
-}> = ({ game, isActive, onClick }) => {
+const GameMenuEntry: FC<
+  React.PropsWithChildren<{
+    game: IGameStored;
+    isActive: boolean;
+    onClick: () => void;
+  }>
+> = ({ game, isActive, onClick }) => {
   const discoveredGames = useSelector(discoveredGamesSelector);
   const { cacheKey, sources, preferred } = getGameImageUrls(game, discoveredGames[game.id]);
   const { src, exhausted, onError, onLoad } = useGameImage(cacheKey, sources, preferred);
@@ -87,7 +89,7 @@ const GameMenuEntry: FC<{
   );
 };
 
-export const DownloadsMenuContent: FC = () => {
+export const DownloadsMenuContent: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
   const { downloadGameFilter, setDownloadGameFilter } = useSpineContext();
   const managedGameIds = useManagedGameIds();

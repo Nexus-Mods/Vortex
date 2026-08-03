@@ -28,7 +28,7 @@ const builtInActionIcons: Record<string, string> = {
   bug: mdiBugOutline,
 };
 
-export const HelpSection: FC = () => {
+export const HelpSection: FC<React.PropsWithChildren<unknown>> = () => {
   const dispatch = useDispatch();
   const extensions = useExtensionContext();
   const api = extensions.getApi();

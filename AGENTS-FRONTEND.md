@@ -6,9 +6,11 @@ defaults when there's no local precedent.
 
 ## Stack
 
-- **React 16.14** — function components + hooks only. Do NOT use React 18+ APIs
-  (`useId`, `useSyncExternalStore`, `useTransition`, `createRoot`, automatic
-  batching guarantees). ESLint warns on new class components — don't add them.
+- **React 18.3.1 on the legacy `ReactDOM.render` root** (React 17-compatible
+  behavior) — function components + hooks only. Do NOT use `createRoot`,
+  concurrent features, or `StrictMode` yet — the createRoot flip is a separate,
+  later release. Class components, legacy context, and `findDOMNode` remain
+  functional but deprecated; do not introduce NEW usages.
 - **TypeScript** (type-checked ESLint). `import type { ... }` for types
   (`consistent-type-imports` is an error).
 - **Tailwind v4** for styling, **react-redux** for state, **react-i18next** for
@@ -61,6 +63,10 @@ defaults when there's no local precedent.
 - `oxfmt` owns import grouping/ordering (external → `@/` alias → relative,
   alphabetical). Don't fight it — run `pnpm run format`.
 - Unused vars/args are errors unless prefixed `_`.
+- **React:** if a file already has `import * as React from "react"`, keep using
+  `React.*` references — don't mix styles within a file. In files without it,
+  import what you need by name (`import { useCallback, type ReactNode } from "react"`)
+  and never add a new `import * as React` / `import type * as React` line.
 
 ## Styling
 
@@ -117,7 +123,7 @@ defaults when there's no local precedent.
 
 ## Testing
 
-- `vitest` + `@testing-library/react` (v12), colocated with the component.
+- `vitest` + `@testing-library/react` (v16), colocated with the component.
 - Query by role/label/text (what a user sees), not test ids.
 
 ## Comments

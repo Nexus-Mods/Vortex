@@ -20,7 +20,7 @@ export interface IActionDefinition {
   icon?: string;
   title?: string;
   data?: any;
-  component?: React.ComponentType<any>;
+  component?: React.ComponentType<React.PropsWithChildren<any>>;
   props?: () => any;
   action?: (instanceId: string | string[], data?: any) => void;
   subMenus?: IActionDefinition[] | ActionFunc;

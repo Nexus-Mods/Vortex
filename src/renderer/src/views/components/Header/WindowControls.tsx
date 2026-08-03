@@ -10,7 +10,11 @@ interface WindowControlButtonProps extends ButtonHTMLAttributes<HTMLButtonElemen
   iconPath: string;
 }
 
-const WindowControlButton: FC<WindowControlButtonProps> = ({ className, iconPath, ...props }) => (
+const WindowControlButton: FC<React.PropsWithChildren<WindowControlButtonProps>> = ({
+  className,
+  iconPath,
+  ...props
+}) => (
   <button
     className={joinClasses([
       "flex size-11 items-center justify-center text-neutral-subdued -outline-offset-2 transition-colors hover:text-neutral-strong",
@@ -22,7 +26,7 @@ const WindowControlButton: FC<WindowControlButtonProps> = ({ className, iconPath
   </button>
 );
 
-export const WindowControls: FC = () => {
+export const WindowControls: FC<React.PropsWithChildren<unknown>> = () => {
   const isMaximized = useIsMaximized();
 
   return (

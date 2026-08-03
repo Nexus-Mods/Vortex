@@ -29,7 +29,7 @@ import { truthy } from "../util/util";
 
 type IGameIconCache = { [gameId: string]: { icon: string; game: IGameStored } };
 
-export const QuickLauncher: React.FC = () => {
+export const QuickLauncher: React.FC<React.PropsWithChildren<unknown>> = () => {
   const dispatch = useDispatch();
   const extensions = useExtensionContext();
   const api = extensions.getApi();

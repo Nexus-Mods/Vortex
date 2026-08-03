@@ -9,11 +9,13 @@ export interface IDraggableListItemProps {
   index: number;
   item: any;
   isLocked: boolean;
-  itemRenderer: React.ComponentType<{
-    className?: string;
-    item: any;
-    forwardedRef?: any;
-  }>;
+  itemRenderer: React.ComponentType<
+    React.PropsWithChildren<{
+      className?: string;
+      item: any;
+      forwardedRef?: any;
+    }>
+  >;
   containerId: string;
   isSelected: boolean;
   selectedItems: any[];
@@ -31,7 +33,7 @@ export interface IDraggableListItemProps {
   onDragStart: (items: any[]) => void;
 }
 
-const DraggableItem: React.FC<IDraggableListItemProps> = ({
+const DraggableItem: React.FC<React.PropsWithChildren<IDraggableListItemProps>> = ({
   disabled,
   index,
   item,

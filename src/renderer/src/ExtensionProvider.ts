@@ -89,8 +89,10 @@ export function extend(
   groupProp?: string,
   addExtInfo?: boolean,
 ): <P extends IExtendedProps>(
-  component: React.ComponentType<P>,
-) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
+  component: React.ComponentType<React.PropsWithChildren<P>>,
+) => React.ComponentType<
+  React.PropsWithChildren<Omit<P, keyof IExtendedProps> & IExtensibleProps>
+> {
   ExtensionManager.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
 
@@ -109,12 +111,14 @@ export function extend(
   };
 
   return <P extends IExtendedProps, S>(
-    ComponentToWrap: React.ComponentType<P>,
-  ): React.ComponentType<Omit<P, keyof IExtendedProps>> => {
+    ComponentToWrap: React.ComponentType<React.PropsWithChildren<P>>,
+  ): React.ComponentType<React.PropsWithChildren<Omit<P, keyof IExtendedProps>>> => {
     type PropsT = Omit<P, keyof IExtendedProps> & IExtensibleProps;
     // eslint-disable-next-line @eslint-react/component-hook-factories
     return class __ExtendedComponent extends React.Component<PropsT, S> {
       public static contextType = ExtensionContext;
+
+      declare public context: ExtensionManager;
 
       private mObjects: any[];
 

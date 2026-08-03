@@ -14,7 +14,9 @@ import { CollectionTile } from "./CollectionTile";
 export interface ICollectionTileDemoProps {
   api: IExtensionApi;
 }
-export const CollectionTileDemo: ComponentType<ICollectionTileDemoProps> = ({ api }) => {
+export const CollectionTileDemo: ComponentType<
+  React.PropsWithChildren<ICollectionTileDemoProps>
+> = ({ api }) => {
   const handleAddCollection = (title: string) => {
     console.log("Add collection:", title);
   };

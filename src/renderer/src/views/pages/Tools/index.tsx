@@ -45,7 +45,7 @@ const Panel = ({
   </div>
 );
 
-export const ToolsPage: FC<{ active?: boolean }> = ({ active }) => {
+export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ active }) => {
   const { t } = useTranslation();
   const {
     gameMode,

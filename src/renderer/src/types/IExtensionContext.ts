@@ -141,7 +141,7 @@ export type CheckFunction = () => PromiseLike<ITestResult>;
 
 export type RegisterSettings = (
   title: string,
-  element: React.ComponentClass<any> | React.StatelessComponent<any>,
+  element: React.ComponentClass<any> | React.FunctionComponent<React.PropsWithChildren<any>>,
   props?: PropsCallback,
   visible?: () => boolean,
   priority?: number,
@@ -150,7 +150,7 @@ export type RegisterSettings = (
 export type RegisterAction = (
   group: string,
   position: number,
-  iconOrComponent: string | React.ComponentType<any>,
+  iconOrComponent: string | React.ComponentType<React.PropsWithChildren<any>>,
   options: IActionOptions,
   titleOrProps?: string | PropsCallback,
   actionOrCondition?: (instanceIds?: string[]) => void | boolean,
@@ -160,7 +160,7 @@ export type RegisterAction = (
 export type RegisterControlWrapper = (
   group: string,
   priority: number,
-  wrapper: React.ComponentType<any>,
+  wrapper: React.ComponentType<React.PropsWithChildren<any>>,
 ) => void;
 
 export type RegisterFooter = (
@@ -171,7 +171,7 @@ export type RegisterFooter = (
 
 export type RegisterBanner = (
   group: string,
-  component: React.ComponentType<any>,
+  component: React.ComponentType<React.PropsWithChildren<any>>,
   options: IBannerOptions,
 ) => void;
 
@@ -217,13 +217,13 @@ export interface IMainPageOptions {
   onReset?: () => void;
   mdi?: string;
   /** Self-subscribing status badge shown on this page's left-menu item. */
-  menuBadge?: React.ComponentType;
+  menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;
 }
 
 export type RegisterMainPage = (
   icon: string,
   title: string,
-  element: React.ComponentType<any>,
+  element: React.ComponentType<React.PropsWithChildren<any>>,
   options: IMainPageOptions,
 ) => void;
 
@@ -241,7 +241,7 @@ export type RegisterDashlet = (
   width: 1 | 2 | 3,
   height: 1 | 2 | 3 | 4 | 5 | 6,
   position: number,
-  component: React.ComponentClass<any> | React.FunctionComponent<any>,
+  component: React.ComponentClass<any> | React.FunctionComponent<React.PropsWithChildren<any>>,
   isVisible: (state) => boolean,
   props: PropsCallback,
   options: IDashletOptions,
@@ -249,13 +249,13 @@ export type RegisterDashlet = (
 
 export type RegisterDialog = (
   id: string,
-  element: React.ComponentType<any>,
+  element: React.ComponentType<React.PropsWithChildren<any>>,
   props?: PropsCallback,
 ) => void;
 
 export type RegisterOverlay = (
   id: string,
-  element: React.ComponentType<any>,
+  element: React.ComponentType<React.PropsWithChildren<any>>,
   props?: PropsCallback,
 ) => void;
 
@@ -503,7 +503,7 @@ export interface IExtensionApiExtension
   showOverlay?: (
     id: string,
     title: string,
-    content: string | React.ComponentType<any>,
+    content: string | React.ComponentType<React.PropsWithChildren<any>>,
     pos?: IPosition,
     options?: IOverlayOptions,
   ) => void;

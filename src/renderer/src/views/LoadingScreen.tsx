@@ -17,7 +17,7 @@ const readable = (input: string): string => {
     .join(" ");
 };
 
-export const LoadingScreen: React.FC<ILoadingScreenProps> = (props) => {
+export const LoadingScreen: React.FC<React.PropsWithChildren<ILoadingScreenProps>> = (props) => {
   const { extensions } = props;
 
   const [currentlyLoading, setCurrentlyLoading] = React.useState("");

@@ -57,7 +57,11 @@ interface ISpineContext {
 
 const SpineContext = createContext<ISpineContext | undefined>(undefined);
 
-export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
+export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const { api } = useMainContext();
   const { mainPages } = usePagesContext();
   const dispatch = useDispatch();

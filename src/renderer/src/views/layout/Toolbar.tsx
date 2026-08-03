@@ -19,7 +19,7 @@ import { QuickLauncher } from "../QuickLauncher";
 const applicationButtons: IActionDefinition[] = [];
 const globalButtons: IActionDefinition[] = [];
 
-export const Toolbar: FC = () => {
+export const Toolbar: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
   const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
   const version = useSelector((state: IState) => state.app.appVersion);

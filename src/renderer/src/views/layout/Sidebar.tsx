@@ -27,7 +27,7 @@ export interface ISidebarProps {
  * Provides the sidebar component.
  * For Classic layout.
  */
-export const Sidebar: FC<ISidebarProps> = (props) => {
+export const Sidebar: FC<React.PropsWithChildren<ISidebarProps>> = (props) => {
   const { pages, onClickPage, onToggleMenu, onSidebarRef } = props;
 
   const { t } = useTranslation();

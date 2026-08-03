@@ -1099,7 +1099,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
     clone: (gameId: string, collection: ICollection, from: IMod, to: IMod) => Promise<void>,
     title: (t: TFunction) => string,
     condition?: (state: IState, gameId: string) => boolean,
-    editComponent?: React.ComponentType<IExtendedInterfaceProps>,
+    editComponent?: React.ComponentType<React.PropsWithChildren<IExtendedInterfaceProps>>,
   ) => {
     addExtension({
       id,
