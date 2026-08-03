@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -64,7 +64,6 @@ describe("ContextMenu", () => {
   });
 
   afterEach(() => {
-    cleanup();
     menuLayer.remove();
   });
 

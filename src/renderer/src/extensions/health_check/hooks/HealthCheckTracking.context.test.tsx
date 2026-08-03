@@ -6,9 +6,9 @@
  */
 import { EventEmitter } from "events";
 
-import { cleanup, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -46,10 +46,6 @@ const modEntry: IHealthCheckEntry = {
   resolutionType: "install",
   data: {},
 };
-
-// vitest runs without globals here, so RTL never auto-cleans; without this each
-// render leaks into document.body.
-afterEach(cleanup);
 
 /** Emits back_clicked with only its own properties — the identity should be supplied. */
 const BackClicker = () => {

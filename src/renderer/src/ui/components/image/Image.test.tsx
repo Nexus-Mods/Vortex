@@ -1,14 +1,10 @@
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Image } from "./Image";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const renderComponent = (props: Partial<React.ComponentProps<typeof Image>> = {}) => {
   const onError = vi.fn();

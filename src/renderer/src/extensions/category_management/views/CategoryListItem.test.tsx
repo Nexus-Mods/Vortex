@@ -1,7 +1,7 @@
-import { screen, cleanup, render } from "@testing-library/react";
+import { screen, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import CategoryListItem from "./CategoryListItem";
 
@@ -14,10 +14,6 @@ vi.mock("react-dnd", () => ({
   // eslint-disable-next-line @eslint-react/component-hook-factories
   useDrop: () => [{ isOver: false, canDrop: false }, vi.fn()],
 }));
-
-afterEach(() => {
-  cleanup();
-});
 
 const mockCategory = {
   categoryId: "1",

@@ -1,8 +1,8 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { makeLoadOrderEntry } from "../test-utils/builders";
 import DraggableList from "./DraggableList";
@@ -16,10 +16,6 @@ beforeAll(() => {
     public unobserve(): void {}
     public disconnect(): void {}
   };
-});
-
-afterEach(() => {
-  cleanup();
 });
 
 const Row: React.FC<React.PropsWithChildren<{ item: { id: string } }>> = ({ item }) => (

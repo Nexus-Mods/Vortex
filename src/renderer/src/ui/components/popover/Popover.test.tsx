@@ -1,17 +1,13 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { Popover } from "./Popover";
 import { PopoverButton } from "./PopoverButton";
 import { PopoverPanel } from "./PopoverPanel";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const renderComponent = () => {
   render(

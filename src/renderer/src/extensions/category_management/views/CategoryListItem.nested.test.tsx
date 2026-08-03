@@ -1,20 +1,16 @@
-import { cleanup, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { TFunction } from "i18next";
 import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { makeCategory } from "@/test-utils/builders";
 
 import type { ICategoriesTreeEntry } from "../types/ICategoriesTreeEntry";
 import buildCategoryTree from "../util/buildCategoryTree";
 import CategoryListItem from "./CategoryListItem";
-
-afterEach(() => {
-  cleanup();
-});
 
 const t = ((k: string) => k) as TFunction;
 

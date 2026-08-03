@@ -1,7 +1,7 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -19,10 +19,6 @@ vi.mock("@/util/util", () => ({ delayed: () => Promise.resolve() }));
 vi.mock("@/util/selectors", () => ({ isCollectionModPresent: () => false }));
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 // A minimal, fully-typed stand-in for the fields of ICollection the tile reads,
 // so tests can assert against the fixture rather than hardcoded strings.

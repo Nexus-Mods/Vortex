@@ -1,15 +1,11 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Input } from "./Input";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const renderComponent = (props: Partial<React.ComponentProps<typeof Input>> = {}) => {
   const onChange = vi.fn();
