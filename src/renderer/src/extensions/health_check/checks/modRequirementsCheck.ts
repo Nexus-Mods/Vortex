@@ -526,6 +526,7 @@ export const modRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.ProfileChanged,
     HealthCheckTrigger.GameChanged,
     HealthCheckTrigger.SettingsChanged,
+    HealthCheckTrigger.LoginChanged,
   ],
   check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
     if (!isModRequirementsEnabled(api.getState())) {

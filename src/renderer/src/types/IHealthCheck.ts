@@ -23,6 +23,7 @@ export enum HealthCheckTrigger {
   GameChanged = "game-changed",
   ProfileChanged = "profile-changed",
   ModsChanged = "mods-changed",
+  LoginChanged = "login-changed",
   SettingsChanged = "settings-changed",
   PluginsChanged = "plugins-changed",
   LootUpdated = "loot-updated",

@@ -6,6 +6,7 @@ import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckTrigger } from "../../../types/IHealthCheck";
 import { hasCollectionActiveSession } from "../../../util/collectionInstallSessionSelectors";
 import Debouncer from "../../../util/Debouncer";
+import { isLoggedIn } from "../../nexus_integration/selectors";
 import type { IHealthCheckApi } from "../types";
 
 /**
@@ -41,6 +42,19 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
     api.events.on("settings-changed", (path: string[]) => {
       log("debug", "Triggering settings change health checks", { path });
       void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.SettingsChanged);
+    });
+
+    // Login changed trigger - fires only when whether we actually have Nexus
+    // login data flips, not on every credential write.
+    let wasLoggedIn = isLoggedIn(api.getState());
+    api.onStateChange?.(["confidential", "account", "nexus"], () => {
+      const isNowLoggedIn = isLoggedIn(api.getState());
+      if (isNowLoggedIn === wasLoggedIn) {
+        return;
+      }
+      wasLoggedIn = isNowLoggedIn;
+      log("debug", "Login state changed, triggering health checks", { isNowLoggedIn });
+      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.LoginChanged);
     });
 
     // Mods changed triggers - debounced because these events can fire in quick
