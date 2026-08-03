@@ -9,8 +9,10 @@
  *   - TC-01  list warning renders (plural title / count / 1-click action)
  *   - TC-07  expanded detail view (Warning header, "Install required" group,
  *            requirement cards + buttons, section-level install-all)
+ *   - TC-20  progressive count: resolving one requirement decrements the summary
  *   - TC-24  free user: list 1-click opens the multi-file Premium upsell
- *   - TC-26  premium user: 1-click install downloads + installs the required mods
+ *   - TC-25  free user: a manual website download resolves the warning
+ *   - TC-26  premium user: the list / header / detail 1-click installs resolve it
  *   - TC-05  hide/unhide moves the warning between the Active and Hidden tabs
  *   - TC-29  the warning's feedback controls (thumbs + FeedbackModal)
  *   - TC-35  singular/plural copy (two requirements ⇒ the plural strings)
@@ -19,6 +21,10 @@
  * the spec doesn't hard-code the fixture's requirement target. SMAPI is
  * deliberately avoided here — Vortex special-cases it with a dedicated installer,
  * which interferes with a clean warning/install flow.
+ *
+ * The shared "install the fixture mod → open Health Check → surface the warning"
+ * setup lives in helpers/healthCheck.ts (openFileRequirementWarning); each test
+ * starts from there.
  *
  * These are heavy (real Mod-Manager download + install) and, like every
  * authenticated / managed-game spec, currently need CI to run — locally the OAuth
@@ -33,20 +39,14 @@
  * warnings.row() assertion, re-confirm the fixture is file-level only (or pick
  * another source mod).
  */
-import { SDV_FILE_REQUIREMENT_MOD_URL, SDV_FILE_REQUIREMENT_TARGET_URLS } from "../constants";
+import { SDV_FILE_REQUIREMENT_TARGET_URLS } from "../constants";
 import { test, expect } from "../fixtures/vortex-app";
+import { openFileRequirementWarning, openWarningDetail } from "../helpers/healthCheck";
 import { downloadModViaModManager } from "../helpers/modDownload";
-import { navigateToHealthCheck } from "../helpers/navigation";
 import { dismissAllNotifications } from "../helpers/notifications";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
-import {
-  HealthCheckDetail,
-  HealthCheckFeedbackModal,
-  HealthCheckPage,
-  HealthCheckPremiumModal,
-  HealthCheckWarnings,
-} from "../selectors/healthCheck";
+import { HealthCheckFeedbackModal, HealthCheckPremiumModal } from "../selectors/healthCheck";
 
 test.describe("Health Check - file requirement warning", () => {
   test.describe("free user", () => {
@@ -58,22 +58,7 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        // A refresh can spawn notifications, which auto-open a popover that overlays
-        // the top-right and intercepts clicks on the tabs' buttons and a row's
-        // hide/feedback icons. Clear it once the check has settled so it stays shut.
-        await dismissAllNotifications(vortexWindow);
-      });
+      const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The warning uses the plural title (two requirements)", async () => {
         await expect(warnings.row().getByText("Missing required mods for:")).toBeVisible();
@@ -85,15 +70,7 @@ test.describe("Health Check - file requirement warning", () => {
         ).toBeVisible();
       });
 
-      await test.step("Open the warning detail view", async () => {
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .click();
-        await expect(new HealthCheckDetail(vortexWindow).warningTitle).toBeVisible();
-      });
-
-      const detail = new HealthCheckDetail(vortexWindow);
+      const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Detail states the plural file-requirement summary", async () => {
         await expect(
@@ -142,22 +119,7 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        // A refresh can spawn notifications, which auto-open a popover that overlays
-        // the top-right and intercepts clicks on the tabs' buttons and a row's
-        // hide/feedback icons. Clear it once the check has settled so it stays shut.
-        await dismissAllNotifications(vortexWindow);
-      });
+      const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("Active tab shows one warning", async () => {
         await expect(hc.activeTab).toContainText("(1)");
@@ -211,24 +173,8 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-      const detail = new HealthCheckDetail(vortexWindow);
+      const { warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
       const feedback = new HealthCheckFeedbackModal(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        // A refresh can spawn notifications, which auto-open a popover that overlays
-        // the top-right and intercepts clicks on the tabs' buttons and a row's
-        // hide/feedback icons. Clear it once the check has settled so it stays shut.
-        await dismissAllNotifications(vortexWindow);
-      });
 
       await test.step("Hovering the warning reveals its feedback controls", async () => {
         // The row's EntryActions are invisible until hover; target the title text
@@ -240,13 +186,7 @@ test.describe("Health Check - file requirement warning", () => {
         await expect(warnings.notHelpfulButton()).toBeVisible();
       });
 
-      await test.step("Open the warning detail view", async () => {
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .click();
-        await expect(detail.warningTitle).toBeVisible();
-      });
+      const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Detail shows the 'Was this warning helpful?' prompt", async () => {
         await expect(detail.feedbackPrompt).toBeVisible();
@@ -274,19 +214,7 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        await dismissAllNotifications(vortexWindow);
-      });
+      const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("Manually download each required mod from the website", async () => {
         // A free user can't 1-click install (that opens the Premium upsell — TC-24);
@@ -315,36 +243,13 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        // A refresh can spawn notifications, which auto-open a popover that overlays
-        // the top-right and intercepts clicks on the tabs' buttons and a row's
-        // hide/feedback icons. Clear it once the check has settled so it stays shut.
-        await dismissAllNotifications(vortexWindow);
-      });
+      const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The warning uses the plural title (two requirements)", async () => {
         await expect(warnings.row().getByText("Missing required mods for:")).toBeVisible();
       });
 
-      await test.step("Open the warning detail view", async () => {
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .click();
-        await expect(new HealthCheckDetail(vortexWindow).warningTitle).toBeVisible();
-      });
-
-      const detail = new HealthCheckDetail(vortexWindow);
+      const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Detail states the plural file-requirement summary", async () => {
         await expect(
@@ -378,19 +283,7 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        await dismissAllNotifications(vortexWindow);
-      });
+      const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The header 1-click install all installs the requirements, clearing the warning", async () => {
         // The header button sits top-right where the notification tray overlays;
@@ -408,28 +301,8 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-      const detail = new HealthCheckDetail(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        await dismissAllNotifications(vortexWindow);
-      });
-
-      await test.step("Open the warning detail view", async () => {
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .click();
-        await expect(detail.warningTitle).toBeVisible();
-      });
+      const { warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+      const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("The detail 1-click install all installs the requirements, clearing the warning", async () => {
         await dismissAllNotifications(vortexWindow);
@@ -447,28 +320,8 @@ test.describe("Health Check - file requirement warning", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const hc = new HealthCheckPage(vortexWindow);
-      const warnings = new HealthCheckWarnings(vortexWindow);
-      const detail = new HealthCheckDetail(vortexWindow);
-
-      await test.step("Install the requiring mod with its required files absent", async () => {
-        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
-      });
-
-      await test.step("Open Health Check and refresh", async () => {
-        await navigateToHealthCheck(vortexWindow);
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-        await dismissAllNotifications(vortexWindow);
-      });
-
-      await test.step("Open the warning detail view", async () => {
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .click();
-        await expect(detail.warningTitle).toBeVisible();
-      });
+      const { warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+      const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("The detail starts with two outstanding requirements", async () => {
         await expect(
