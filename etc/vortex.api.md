@@ -1116,7 +1116,7 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 function fileMD5(input: string | Buffer, progress?: (bytesProcessed: number, totalBytes: number) => void): Promise<string>;
 
 // @public
-export type FileSystemErrorData = OsErrorData & {
+export type FileSystemErrorData = OsErrorData & {Partial<OsErrorData> & {
     path: string;
 };
 
