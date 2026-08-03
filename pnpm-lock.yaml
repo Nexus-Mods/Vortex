@@ -374,9 +374,6 @@ catalogs:
     '@types/graphlib':
       specifier: 2.1.12
       version: 2.1.12
-    '@types/i18next':
-      specifier: 12.1.0
-      version: 12.1.0
     '@types/iconv-lite':
       specifier: 0.0.1
       version: 0.0.1
@@ -1494,9 +1491,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -1590,9 +1584,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/rimraf':
         specifier: 'catalog:'
         version: 2.0.5
@@ -1617,9 +1608,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -2946,9 +2934,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3015,9 +3000,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -3244,9 +3226,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3313,9 +3292,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -3334,9 +3310,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -3425,9 +3398,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3482,9 +3452,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3647,9 +3614,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -3686,9 +3650,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -3780,9 +3741,6 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
@@ -3837,9 +3795,6 @@ importers:
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
-      '@types/i18next':
-        specifier: 'catalog:'
-        version: 12.1.0
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
@@ -7721,9 +7676,6 @@ packages:
 
   '@types/http-cache-semantics@4.2.0':
     resolution: {integrity: sha512-L3LgimLHXtGkWikKnsPg0/VFx9OGZaC+eN1u4r+OB1XRqH3meBIAVC2zr1WdMH+RHmnRkqliQAOHNJ/E0j/e0Q==}
-
-  '@types/i18next@12.1.0':
-    resolution: {integrity: sha512-qLyqTkp3ZKHsSoX8CNVYcTyTkxlm0aRCUpaUVetgkSlSpiNCdWryOgaYwgbO04tJIfLgBXPcy0tJ3Nl/RagllA==}
 
   '@types/iconv-lite@0.0.1':
     resolution: {integrity: sha512-SsRBQxGw7/2/NxYJfBdiUx5a7Ms/voaUhOO9u2y9FTeTNBO1PXohzE4i3JfD8q2Te42HLTn5pyZtDf8j1bPKgQ==}
@@ -15403,8 +15355,6 @@ snapshots:
       hoist-non-react-statics: 3.3.2
 
   '@types/http-cache-semantics@4.2.0': {}
-
-  '@types/i18next@12.1.0': {}
 
   '@types/iconv-lite@0.0.1':
     dependencies:
