@@ -1,9 +1,9 @@
 import {
-  mdiCheckCircle,
-  mdiCog,
+  mdiCheckCircleOutline,
+  mdiCogOutline,
   mdiMonitorArrowDownVariant,
-  mdiEye,
-  mdiEyeOff,
+  mdiEyeOutline,
+  mdiEyeOffOutline,
   mdiRefresh,
 } from "@mdi/js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -199,6 +199,8 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
 
   const activeCount = activeItems.length;
   const hiddenCount = hiddenItems.length;
+  // Without tabs the active list is all there is, and selectedTab stays on it.
+  const listIsEmpty = selectedTab === "hidden" ? hiddenCount === 0 : activeCount === 0;
 
   const renderRow = (item: IListedEntry) => {
     const { content, entry } = item;
@@ -268,7 +270,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       <NoResults
         appearance="success"
         className="py-24"
-        iconPath={mdiCheckCircle}
+        iconPath={mdiCheckCircleOutline}
         message={t("listing::no_results_active::message")}
         title={t("listing::no_results_active::title")}
       />
@@ -315,7 +317,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                   appearance="subdued"
                   aria-label={t("common:::settings")}
                   brand="neutral"
-                  leftIconPath={mdiCog}
+                  leftIconPath={mdiCogOutline}
                   size="sm"
                   onClick={() => {
                     trackSettingsOpened();
@@ -351,7 +353,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                       (selectedTab === "active" && !activeCount) ||
                       (selectedTab === "hidden" && !hiddenCount)
                     }
-                    leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
+                    leftIconPath={selectedTab === "active" ? mdiEyeOffOutline : mdiEyeOutline}
                     size="sm"
                     onClick={selectedTab === "active" ? hideAllActive : unhideAll}
                   >
@@ -386,7 +388,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                 ) : (
                   <NoResults
                     className="py-24"
-                    iconPath={mdiEyeOff}
+                    iconPath={mdiEyeOffOutline}
                     title={t("listing::no_results_hidden::title")}
                   />
                 )}
@@ -396,7 +398,9 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
             activeList
           )}
 
-          <PremiumBanner placement="list" totalIssues={activeCount + hiddenCount} />
+          {!listIsEmpty && (
+            <PremiumBanner placement="list" totalIssues={activeCount + hiddenCount} />
+          )}
 
           <PremiumModal
             downloadScope="all"
