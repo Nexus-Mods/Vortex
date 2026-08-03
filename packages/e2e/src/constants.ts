@@ -14,3 +14,15 @@ export const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
  * dedicated installer.
  */
 export const SDV_FILE_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/49786";
+
+/**
+ * The two mods whose files SDV_FILE_REQUIREMENT_MOD_URL (49786) requires: Item Bags
+ * (5382) and Pokemon Eggventure - Day Care (49098). Downloading both from the website
+ * is the manual flow a free user follows to satisfy the requirements and clear the
+ * warning (a free user can't 1-click install). Fixture-specific — if 49786's declared
+ * requirements change, update this list.
+ */
+export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
+  "https://www.nexusmods.com/stardewvalley/mods/5382",
+  "https://www.nexusmods.com/stardewvalley/mods/49098",
+];

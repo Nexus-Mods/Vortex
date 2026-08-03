@@ -33,7 +33,7 @@
  * warnings.row() assertion, re-confirm the fixture is file-level only (or pick
  * another source mod).
  */
-import { SDV_FILE_REQUIREMENT_MOD_URL } from "../constants";
+import { SDV_FILE_REQUIREMENT_MOD_URL, SDV_FILE_REQUIREMENT_TARGET_URLS } from "../constants";
 import { test, expect } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { navigateToHealthCheck } from "../helpers/navigation";
@@ -265,6 +265,43 @@ test.describe("Health Check - file requirement warning", () => {
         await feedback.incorrectRequirement.click();
         await feedback.sendButton.click();
         await expect(detail.feedbackThanks).toBeVisible();
+      });
+    });
+
+    test("[TC-25] a manual website download resolves the warning for a free user", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const hc = new HealthCheckPage(vortexWindow);
+      const warnings = new HealthCheckWarnings(vortexWindow);
+
+      await test.step("Install the requiring mod with its required files absent", async () => {
+        await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
+      });
+
+      await test.step("Open Health Check and refresh", async () => {
+        await navigateToHealthCheck(vortexWindow);
+        await hc.refreshButton.click();
+        await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
+        await dismissAllNotifications(vortexWindow);
+      });
+
+      await test.step("Manually download each required mod from the website", async () => {
+        // A free user can't 1-click install (that opens the Premium upsell — TC-24);
+        // instead they download the required files from the mod pages. Drive that same
+        // Mod-Manager website download and forward it to Vortex, which installs it.
+        for (const url of SDV_FILE_REQUIREMENT_TARGET_URLS) {
+          await downloadModViaModManager(nexusPage, vortexApp, url);
+        }
+      });
+
+      await test.step("The ingested downloads clear the warning", async () => {
+        // Installing the required files re-runs the file-requirements check; the
+        // download + install + deploy span uses the cold-start budget.
+        await hc.refreshButton.click();
+        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
   });
