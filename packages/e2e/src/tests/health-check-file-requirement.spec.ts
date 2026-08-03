@@ -41,6 +41,7 @@
  */
 import { SDV_FILE_REQUIREMENT_TARGET_URLS } from "../constants";
 import { test, expect } from "../fixtures/vortex-app";
+import { installExternalOpenSpy, readExternalOpens } from "../helpers/externalOpen";
 import { openFileRequirementWarning, openWarningDetail } from "../helpers/healthCheck";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { dismissAllNotifications } from "../helpers/notifications";
@@ -230,6 +231,50 @@ test.describe("Health Check - file requirement warning", () => {
         // download + install + deploy span uses the cold-start budget.
         await hc.refreshButton.click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
+      });
+    });
+
+    test("[TC-07/25] the detail Install-via-mod-page link opens the required mod and its download resolves the requirement", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const { warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+      const detail = await openWarningDetail(vortexWindow, warnings);
+
+      await test.step("The detail starts with two outstanding requirements", async () => {
+        await expect(
+          detail.root.getByText(
+            "Requires 2 additional mod files to be installed to work correctly",
+          ),
+        ).toBeVisible();
+      });
+
+      let modPageUrl = "";
+
+      await test.step("'Install via mod page' targets the required mod's Nexus page", async () => {
+        // The link opens the OS browser via shell.openExternal, which Playwright
+        // can't follow — spy on the main process to capture (and suppress) the URL.
+        await installExternalOpenSpy(vortexApp);
+        await dismissAllNotifications(vortexWindow);
+        await detail.installViaModPageButton.click();
+        const opened = await readExternalOpens(vortexApp);
+        modPageUrl =
+          opened.find((url) => /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/.test(url)) ??
+          "";
+        expect(modPageUrl, `opened URLs: ${opened.join(", ")}`).toMatch(
+          /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/,
+        );
+      });
+
+      await test.step("Downloading from that page resolves the requirement (count 2 → 1)", async () => {
+        // Complete the journey the link starts: download the required mod from that
+        // same page and forward it to Vortex; the summary then decrements to singular.
+        await downloadModViaModManager(nexusPage, vortexApp, modPageUrl);
+        await expect(
+          detail.root.getByText("Requires 1 additional mod file to be installed to work correctly"),
+        ).toBeVisible({ timeout: Timeouts.LIFECYCLE });
       });
     });
   });
