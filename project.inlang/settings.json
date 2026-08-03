@@ -1,0 +1,19 @@
+{
+  "$schema": "https://inlang.com/schema/project-settings",
+  "baseLocale": "en",
+  "locales": ["en"],
+  "modules": ["https://cdn.jsdelivr.net/npm/@inlang/plugin-i18next@6.2.1/dist/index.js"],
+  "plugin.inlang.i18next": {
+    "pathPattern": {
+      "collection": "./locales/{locale}/collection.json",
+      "common": "./locales/{locale}/common.json",
+      "download_management": "./locales/{locale}/download_management.json",
+      "extension_manager": "./locales/{locale}/extension_manager.json",
+      "gamemode_management": "./locales/{locale}/gamemode_management.json",
+      "health_check": "./locales/{locale}/health_check.json",
+      "mod_management": "./locales/{locale}/mod_management.json",
+      "nexus_integration": "./locales/{locale}/nexus_integration.json",
+      "profile_management": "./locales/{locale}/profile_management.json"
+    }
+  }
+}
