@@ -140,7 +140,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
               api,
               showPremiumAd,
               identity,
-              requestDownload: (candidate) => downloadFileRequirement(api, candidate, identity),
+              requestDownload: (candidate, enabledFile) =>
+                downloadFileRequirement(api, candidate, identity, enabledFile),
               onInstall: (candidate, resolution) =>
                 trackOneClickInstallClicked({
                   mod_id: decodeUID(candidate.modUID)?.id ?? 0,

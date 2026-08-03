@@ -9,6 +9,7 @@ import {
   type IResolutionContext,
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
 import { openModPage } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
+import type { IInstalledFile } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
@@ -20,18 +21,21 @@ import { FileRequirement } from "../FileRequirement";
 export const CandidateCard = ({
   ctx,
   candidate,
+  enabledFile,
   resolution,
   isOr,
 }: {
   ctx: IFileActionContext;
   candidate: IFileRequirementCandidate;
+  /** The wrong version this download replaces, if any; disabled once the download installs. */
+  enabledFile?: IInstalledFile;
   resolution: IResolutionContext;
   isOr?: boolean;
 }) => {
   const { t } = useTranslation(["health_check", "common"]);
 
   const { isLoading, onClick } = useInstallButton(
-    () => ctx.requestDownload(candidate),
+    () => ctx.requestDownload(candidate, enabledFile),
     ctx.showPremiumAd,
   );
 
