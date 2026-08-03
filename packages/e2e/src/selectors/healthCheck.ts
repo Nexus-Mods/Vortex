@@ -19,9 +19,6 @@ export class HealthCheckPage {
   readonly premiumBanner: Locator;
   readonly activeTab: Locator;
   readonly hiddenTab: Locator;
-  readonly hideAllButton: Locator;
-  readonly unhideAllButton: Locator;
-  readonly hiddenEmptyState: Locator;
   readonly installAllButton: Locator;
 
   constructor(page: Page) {
@@ -51,10 +48,6 @@ export class HealthCheckPage {
     // "(N)" count suffix, so match the name loosely and read the count via text).
     this.activeTab = this.root.getByRole("tab", { name: /Active/ });
     this.hiddenTab = this.root.getByRole("tab", { name: /Hidden/ });
-    // Bulk hide/unhide controls; the label gains a " (N)" suffix when non-zero.
-    this.hideAllButton = this.root.getByRole("button", { name: /Hide all/ });
-    this.unhideAllButton = this.root.getByRole("button", { name: /Unhide all/ });
-    this.hiddenEmptyState = this.root.getByText("No hidden items");
     // Page-level batch action in the tabs header ("1-click install all (N)");
     // installs the download candidates across all active warnings. Free users get
     // a Premium badge on it. Distinct from the detail group's install-all, which
@@ -107,16 +100,12 @@ export class HealthCheckWarnings {
   }
 
   /**
-   * The per-row EntryActions controls (thumbs + hide eye). In the list they're
+   * The per-row EntryActions controls (thumbs-down + hide eye). In the list they're
    * `invisible` until the row is hovered/focused, so hover the row first
    * (`await warnings.row().hover()`) before asserting/clicking these. Names are
-   * exact so "Hide" doesn't also match the header "Hide all" and "Helpful"
-   * doesn't match "Not helpful".
+   * exact so "Hide" doesn't also match the header "Hide all" and "Not helpful"
+   * matches only the thumbs-down.
    */
-  helpfulButton(requiredModName?: string | RegExp): Locator {
-    return this.row(requiredModName).getByRole("button", { name: "Helpful", exact: true });
-  }
-
   notHelpfulButton(requiredModName?: string | RegExp): Locator {
     return this.row(requiredModName).getByRole("button", { name: "Not helpful", exact: true });
   }
@@ -147,7 +136,6 @@ export class HealthCheckDetail {
   readonly installAllInGroupButton: Locator;
   readonly feedbackPrompt: Locator;
   readonly feedbackThanks: Locator;
-  readonly helpfulButton: Locator;
   readonly notHelpfulButton: Locator;
 
   constructor(page: Page) {
@@ -178,11 +166,10 @@ export class HealthCheckDetail {
       .getByRole("button", { name: /1-click install all/ })
       .first();
     // EntryActions (detail variant): a prompt that flips to a thank-you once
-    // feedback is given, plus the thumbs controls (exact names so "Helpful"
-    // doesn't also match "Not helpful").
+    // feedback is given, plus the thumbs-down control (exact name so it doesn't
+    // match a "Helpful" button).
     this.feedbackPrompt = this.root.getByText("Was this warning helpful?");
     this.feedbackThanks = this.root.getByText("Thanks for your feedback");
-    this.helpfulButton = this.root.getByRole("button", { name: "Helpful", exact: true });
     this.notHelpfulButton = this.root.getByRole("button", { name: "Not helpful", exact: true });
   }
 
@@ -241,8 +228,6 @@ export class HealthCheckPremiumModal {
   readonly singleTitle: Locator;
   readonly benefitsTitle: Locator;
   readonly unlockButton: Locator;
-  readonly fallbackAllButton: Locator;
-  readonly fallbackSingleButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -251,8 +236,6 @@ export class HealthCheckPremiumModal {
     this.singleTitle = page.getByText("Skip the website and install instantly.");
     this.benefitsTitle = this.root.getByText("With Premium you get:");
     this.unlockButton = this.root.getByRole("button", { name: "Unlock 1-click installs" });
-    this.fallbackAllButton = this.root.getByRole("button", { name: "Return and open mod pages" });
-    this.fallbackSingleButton = this.root.getByRole("button", { name: "Go to mod page (free)" });
   }
 }
 
@@ -266,7 +249,6 @@ export class HealthCheckFeedbackModal {
   readonly title: Locator;
   readonly incorrectRequirement: Locator;
   readonly sendButton: Locator;
-  readonly skipButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -274,7 +256,6 @@ export class HealthCheckFeedbackModal {
     this.title = page.getByText("Thanks for letting us know");
     this.incorrectRequirement = this.root.getByText("Incorrect requirement");
     this.sendButton = this.root.getByRole("button", { name: "Send feedback" });
-    this.skipButton = this.root.getByRole("button", { name: "Skip", exact: true });
   }
 }
 
@@ -324,19 +305,15 @@ export class HealthCheckSuggestionDetail {
   readonly page: Page;
   readonly root: Locator;
   readonly suggestionTitle: Locator;
-  readonly backButton: Locator;
   readonly mayRequireLine: Locator;
   readonly modPageSourceNote: Locator;
   readonly feedbackPrompt: Locator;
-  readonly installViaModPageButton: Locator;
-  readonly installOneClickButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.root = page.locator("#health-check-detail-page");
     // Severity heading rendered by HealthCheckDetailPage as detail::title::suggestion.
     this.suggestionTitle = this.root.getByRole("heading", { name: "Suggestion" });
-    this.backButton = this.root.getByRole("button", { name: "Back", exact: true });
     this.mayRequireLine = this.root.getByText(
       "May require this additional mod file to be installed to work correctly",
     );
@@ -346,7 +323,5 @@ export class HealthCheckSuggestionDetail {
       /identified from the mod page rather than the file-level requirement system/,
     );
     this.feedbackPrompt = this.root.getByText("Was this suggestion helpful?");
-    this.installViaModPageButton = this.root.getByRole("button", { name: "Install via mod page" });
-    this.installOneClickButton = this.root.getByRole("button", { name: /^1-click install$/ });
   }
 }
