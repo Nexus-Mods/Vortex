@@ -59,7 +59,6 @@ export function CategoryAddParent({
             className="grow"
             minLength={1}
             placeholder={t("Add category name...")}
-            size="sm"
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}

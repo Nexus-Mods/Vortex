@@ -26,11 +26,7 @@ vi.mock("react-redux", () => ({
       component,
 }));
 
-vi.mock("react-i18next", () => ({
-  withTranslation: () => (component: unknown) => component,
-  translate: () => (component: unknown) => component,
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
+vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
 
 vi.mock("recharts", () => ({
   Area: () => null,

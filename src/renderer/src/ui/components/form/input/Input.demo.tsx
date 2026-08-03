@@ -77,29 +77,6 @@ export const InputDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h4" typographyType="heading-xs">
-          Sizes
-        </Typography>
-
-        <div className="flex flex-wrap items-end gap-4">
-          <Input
-            id="size-md-input"
-            label="Medium (default)"
-            placeholder="Medium input..."
-            type="text"
-          />
-
-          <Input
-            id="size-sm-input"
-            label="Small"
-            placeholder="Small input..."
-            size="sm"
-            type="text"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h4" typographyType="heading-xs">
           Input States
         </Typography>
 

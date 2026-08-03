@@ -20,14 +20,7 @@ import {
 import type { IHealthCheckEntry } from "../../views/content/types";
 import { EntryActions } from "./EntryActions";
 
-// No i18n instance in the renderer test setup; keys are enough to find the controls.
-// Declared rather than inlined in the factory so it isn't read as a hook factory — and
-// a function declaration is hoisted, which a const wouldn't be when the factory runs.
-function fakeUseTranslation() {
-  return { t: (key: string) => key };
-}
-
-vi.mock("react-i18next", () => ({ useTranslation: fakeUseTranslation }));
+vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
 
 const entry: IHealthCheckEntry = {
   id: "uid-42:toggle",

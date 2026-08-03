@@ -5,8 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 
 import CategoryDialog from "./CategoryDialog";
 
-// eslint-disable-next-line @eslint-react/component-hook-factories
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
+vi.mock("react-i18next", () => vi.importActual("@/test-utils/i18nMock"));
 vi.mock("./CategoryList", () => ({
   default: () => <div data-testid="cat-list">stub</div>,
 }));

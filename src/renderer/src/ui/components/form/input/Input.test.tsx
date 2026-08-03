@@ -56,18 +56,6 @@ describe("Input", () => {
     });
   });
 
-  describe("size", () => {
-    it('applies the sm modifier for size="sm"', () => {
-      renderComponent({ size: "sm" });
-      expect(getInput()).toHaveClass("nxm-input-sm");
-    });
-
-    it("does not apply the sm modifier for the default size", () => {
-      renderComponent();
-      expect(getInput()).not.toHaveClass("nxm-input-sm");
-    });
-  });
-
   describe("disabled / readOnly", () => {
     it("disables the input and applies the disabled class", () => {
       renderComponent({ disabled: true });

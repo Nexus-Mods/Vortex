@@ -196,7 +196,6 @@ export default function CategoryListItem({
                   id={`rename-category-${categoryId}`}
                   minLength={1}
                   placeholder="Rename category"
-                  size="sm"
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -240,7 +239,6 @@ export default function CategoryListItem({
             className="grow"
             minLength={1}
             placeholder="Add subcategory"
-            size="sm"
             type="text"
             value={newSubcategoryName}
             onChange={(e) => setNewSubcategoryName(e.target.value)}
