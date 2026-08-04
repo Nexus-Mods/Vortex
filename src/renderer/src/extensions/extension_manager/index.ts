@@ -19,7 +19,7 @@ import makeReactive from "../../util/makeReactive";
 import { setAvailableExtensions, setExtensionsUpdate } from "./actions";
 import BrowseExtensions from "./BrowseExtensions";
 import type { IBrowseExtensionsProps } from "./BrowseExtensions";
-import ExtensionManager from "./ExtensionManager";
+import { ExtensionManager } from "./ExtensionManager";
 import type { IExtensionManagerProps } from "./ExtensionManager";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
