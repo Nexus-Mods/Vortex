@@ -48,9 +48,6 @@ paths:
     patch:
       tags:
         - collections
-      x-badges:
-        - name: Experimental
-          color: orange
       summary: Edit collection
       description: "Update the core details of a collection such as the name, summary,
         description, and category.
@@ -131,6 +128,44 @@ paths:
                 properties:
                   data:
                     "$ref": "#/components/schemas/TrendingModsResponse"
+        "404":
+          description: Game not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/games/{game_domain}/dlcs":
+    get:
+      tags:
+        - mods
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Get available DLCs for a game
+      description: List of DLCs available for a game.
+      operationId: getGameDlcs
+      security: []
+      parameters:
+        - name: game_domain
+          in: path
+          required: true
+          description: "Game domain name (e.g. `skyrimspecialedition`).
+
+            "
+          schema:
+            type: string
+      responses:
+        "200":
+          description: DLCs available for the game.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/GameDlcsResponse"
         "404":
           description: Game not found.
           content:
@@ -308,6 +343,63 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/mods/{id}/changelogs":
+    post:
+      tags:
+        - mods
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Add changelog entries for a mod version
+      description: |
+        Appends changelog text for a version of a mod.
+
+        This is additive only: repeated calls for the same version append further text rather
+        than replacing what's already there.
+      operationId: addModChangelogEntries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AddModChangelogEntriesRequest"
+      responses:
+        "201":
+          description: The created changelog entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/AddModChangelogEntriesSuccess"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
   "/mods/{id}/toggle-legacy-mod-requirements":
     put:
       tags:
@@ -443,6 +535,55 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}/dependencies":
+    get:
+      tags:
+        - mods
+      summary: Get mod file version dependencies
+      description: |
+        Retrieve the **raw** dependencies for a given mod file version with both the
+        version-range dependencies and the DLC dependencies, returned exactly as
+        authored and stored.
+
+        The version ranges here are **not** resolved into the concrete candidate
+        mod file versions that currently satisfy them. To get resolved candidates
+        grouped by mod file, use the materialized endpoint.
+      operationId: getModFileVersionDependencies
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file version's dependencies.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ModFileVersionDependenciesResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
   "/mod-file-versions/{id}/dependencies/ranges":
     get:
       tags:
@@ -545,15 +686,13 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
-  "/mod-file-versions/{id}/dependencies/materialized":
+  "/mod-file-versions/{id}/dependencies/dlc":
     get:
       tags:
         - mods
-      summary: Get mod file version materialized dependencies
-      description: |
-        Retrieve materialized dependencies for a given mod file version. Resolves the
-        stored dependency ranges into concrete candidate versions grouped by mod file.
-      operationId: getModFileVersionDependencyMaterialized
+      summary: Get mod file version DLC dependencies
+      description: Retrieve the DLC dependencies for a given mod file version.
+      operationId: getModFileVersionDlcDependencies
       x-badges:
         - name: Experimental
           color: orange
@@ -566,11 +705,11 @@ paths:
             type: string
       responses:
         "200":
-          description: The mod file version's materialized dependencies.
+          description: The mod file version's DLC dependencies.
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/ModFileVersionDependencyMaterializedResponse"
+                "$ref": "#/components/schemas/ModFileVersionDlcDependenciesResponse"
         "400":
           description: Bad Request
           content:
@@ -585,6 +724,160 @@ paths:
                 "$ref": "#/components/schemas/ProblemDetails"
         "404":
           description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    put:
+      tags:
+        - mods
+      summary: Update mod file version DLC dependencies
+      description: |
+        Replace all DLC dependency definitions for a given mod file version. Each
+        definition contains an array of DLC ids. DLCs within the same definition
+        represent alternatives (OR). Separate definitions are independent
+        requirements (AND).
+
+        Each DLC id must reference a DLC available for the mod file version's game,
+        as listed by the game DLCs endpoint. Sending an empty array of definitions
+        removes all DLC dependencies from the version.
+      operationId: setModFileVersionDependencyDlc
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version (i.e. the version
+            to set DLC dependencies for).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateModFileVersionDlcDependenciesRequest"
+      responses:
+        "204":
+          description: Successfully updated the mod file version DLC dependencies.
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}/dependencies/ranges/materialized":
+    get:
+      tags:
+        - mods
+      summary: Get a mod file versions materialized version-range dependencies
+      description: |
+        Retrieve materialized dependencies for a given mod file version. Resolves the
+        stored dependency ranges into concrete candidate versions grouped by mod file.
+      operationId: getModFileVersionDependencyRangesMaterialized
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mod file version's materialized version-range dependencies.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ModFileVersionDependencyRangesMaterializedResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/dependencies/materialized/batch":
+    post:
+      tags:
+        - mods
+      summary: Batch get mod file version materialized dependency candidates
+      description: |
+        Resolves the materialized dependency candidates for a set of source mod file versions —
+        the versions a client could install or recommend to satisfy each source version's
+        dependencies.
+
+        Each row is one candidate version for one source version's dependency definition. Rows
+        sharing a `definition_id` are OR-alternatives (any one satisfies that dependency); rows
+        sharing a `mod_file_id` are versions of the same mod file (update group/chain). Only
+        candidates on published, non-moderated mods are included.
+
+        Results are paged with a stable order, so the full candidate set can be fetched across
+        pages. Source version ids with no resolvable candidates contribute no rows.
+
+        `meta.total_count` is only meaningful on a non-empty page; a page past the end returns no
+        candidates and `total_count` 0.
+      operationId: getModFileVersionDependencyCandidatesBatch
+      deprecated: true
+      x-badges:
+        - name: Deprecated
+          color: red
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ModFileVersionDependencyCandidatesBatchRequest"
+      responses:
+        "200":
+          description: A page of materialized dependency candidate rows.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersionDependencyCandidatesBatchResponse"
+                  meta:
+                    "$ref": "#/components/schemas/PaginationMeta"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
           content:
             application/problem+json:
               schema:
@@ -1061,6 +1354,9 @@ paths:
 
         ### Next steps
         * Call `PUT` with your file data to the returned `presigned_url`. Recommended for files up to 100 MiB.
+           * ⚠️ You must send a `Content-Disposition` header of `attachment; filename="<filename>"`, using the `filename`
+             from your request. This value is part of the presigned URL signature, so the upload is rejected if the
+             header is missing or does not match.
         * Once all data is uploaded, [finalise the upload](#tag/uploads/operation/finaliseUpload).
       operationId: createUpload
       requestBody:
@@ -1225,9 +1521,6 @@ paths:
     post:
       tags:
         - collections
-      x-badges:
-        - name: Experimental
-          color: orange
       summary: Create a collection
       description: "Creates a collection and claims an upload using the upload_id
         from a finalised [upload session](#tag/uploads/operation/createUpload).
@@ -1282,11 +1575,8 @@ paths:
     post:
       tags:
         - collections
-      x-badges:
-        - name: Experimental
-          color: orange
       summary: Create a collection revision
-      description: "Creates a collection revision claims an upload using the upload_id
+      description: "Creates a collection revision and claims an upload using the upload_id
         from a finalised [upload session](#tag/uploads/operation/createUpload).
 
         "
@@ -1462,6 +1752,58 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/vortex/extensions":
+    get:
+      tags:
+        - vortex
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Get Vortex extensions, themes, and translations
+      description: |
+        Returns Vortex extensions, themes, and translations, split into three lists.
+
+        Extensions are classified from their code (`info.json`): a `game` extension
+        targets a specific game (and carries a `game_id`), otherwise it is `other`.
+        Themes and translations are not game-specific and carry no `type`.
+
+        When `game_ids` is provided, the `extensions` list is filtered to game
+        extensions for those Nexus Mods game IDs. Themes and translations are always
+        returned in full.
+      operationId: getVortexExtensions
+      security: []
+      parameters:
+        - name: game_ids
+          in: query
+          required: false
+          description: |
+            Comma-separated list of Nexus Mods game IDs to filter game extensions by.
+
+            When omitted, all game extensions are returned. Non-game extensions
+            (themes, translations, other) are unaffected by this filter.
+
+            Example: `1,2,3`
+          schema:
+            type: string
+            example: "1,2,3"
+      responses:
+        "200":
+          description: Vortex extensions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/VortexData"
+        "400":
+          description: Bad Request - invalid parameters
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -1561,13 +1903,16 @@ components:
           description: Name of the collection.
           minLength: 3
           maxLength: 36
+          nullable: false
         summary:
           type: string
           description: Collection summary.
           maxLength: 255
+          nullable: false
         description:
           type: string
           description: Description of the collection.
+          nullable: false
         category_id:
           type: integer
           nullable: true
@@ -1606,6 +1951,34 @@ components:
         mod_page_url:
           type: string
           description: Canonical URL of the mod page on nexusmods.com.
+    GameDlcsResponse:
+      type: object
+      required:
+        - dlcs
+      properties:
+        dlcs:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Dlc"
+    Dlc:
+      type: object
+      description: A DLC available for a game.
+      required:
+        - id
+        - name
+        - thumbnail_url
+      properties:
+        id:
+          type: string
+          description: The DLC identifier, scoped to the game.
+          example: "1"
+        name:
+          type: string
+          description: The DLC display name.
+          example: Dragonborn
+        thumbnail_url:
+          type: string
+          description: Thumbnail image URL.
     GetModDetails:
       allOf:
         - "$ref": "#/components/schemas/Mod"
@@ -1834,6 +2207,34 @@ components:
           description: The name of the mod file.
           maxLength: 255
           pattern: "^[a-zA-Z0-9 _'().-]+$"
+    AddModChangelogEntriesRequest:
+      type: object
+      required:
+        - version
+        - changelog
+      properties:
+        version:
+          type: string
+          description: The version string these entries apply to.
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9.-]+$"
+        changelog:
+          type: string
+          description: The changelog text to add for this version.
+          minLength: 1
+          maxLength: 65535
+    AddModChangelogEntriesSuccess:
+      type: object
+      required:
+        - version
+        - changelog
+      properties:
+        version:
+          type: string
+          description: The version string these entries apply to.
+        changelog:
+          type: string
+          description: The changelog text that was added for this version.
     MoveModFileVersionsRequest:
       type: object
       required:
@@ -1964,6 +2365,31 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/ModFileVersionDependencyRangeInput"
+    UpdateModFileVersionDlcDependenciesRequest:
+      type: object
+      required:
+        - dlc_dependency_definitions
+      properties:
+        dlc_dependency_definitions:
+          type: array
+          description: |
+            The full set of DLC dependency definitions for the version. Replaces any
+            existing definitions. An empty array clears all DLC dependencies.
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDlcDependencyDefinitionInput"
+    ModFileVersionDlcDependencyDefinitionInput:
+      type: object
+      required:
+        - dlc_ids
+      properties:
+        dlc_ids:
+          type: array
+          description: |
+            The DLC ids that satisfy this definition (OR-alternatives). Must be non-empty
+            and contain no duplicates. Each id must reference a DLC available for the
+            version's game.
+          items:
+            type: string
     ModFileVersionDependencyRangeInput:
       type: object
       required:
@@ -2019,13 +2445,73 @@ components:
           nullable: true
           allOf:
             - "$ref": "#/components/schemas/ModFileVersion"
-    ModFileVersionDependencyMaterializedResponse:
+    ModFileVersionDependenciesResponse:
+      type: object
+      required:
+        - dependency_definitions
+        - dlc_dependency_definitions
+      properties:
+        dependency_definitions:
+          type: array
+          description: Raw (non-materialized) mod-file version-range dependency definitions,
+            as authored. These are the stored min/max version bounds, not the resolved
+            candidate versions. Use the materialized endpoint to resolve them.
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDependencyDefinitionWithRanges"
+        dlc_dependency_definitions:
+          type: array
+          description: DLC dependency definitions.
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDlcDependencyDefinition"
+    ModFileVersionDlcDependenciesResponse:
+      type: object
+      required:
+        - dlc_dependency_definitions
+      properties:
+        dlc_dependency_definitions:
+          type: array
+          description: DLC dependency definitions.
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDlcDependencyDefinition"
+    ModFileVersionDlcDependencyDefinition:
+      type: object
+      required:
+        - id
+        - dlc_targets
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the DLC dependency definition.
+        dlc_targets:
+          type: array
+          description: The DLCs that satisfy this definition (OR-alternatives).
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDlcTarget"
+    ModFileVersionDlcTarget:
+      type: object
+      required:
+        - id
+        - dlc_id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the DLC dependency target.
+        dlc_id:
+          type: string
+          description: The DLC identifier.
+        name:
+          type: string
+          description: The DLC name.
+    ModFileVersionDependencyRangesMaterializedResponse:
       type: object
       required:
         - dependencies
       properties:
         dependencies:
           type: array
+          description: Materialized version-range dependencies (each stored range
+            resolved to its candidate versions).
           items:
             "$ref": "#/components/schemas/MaterializedModFileVersionDependency"
     MaterializedModFileVersionDependency:
@@ -2658,6 +3144,8 @@ components:
         name:
           type: string
           description: The name of the collection.
+          minLength: 3
+          maxLength: 36
         description:
           type: string
           nullable: true
@@ -2666,6 +3154,7 @@ components:
           type: string
           nullable: true
           description: A short summary of the collection.
+          maxLength: 255
         domain_name:
           type: string
           description: The domain name of the game.
@@ -2717,8 +3206,8 @@ components:
           description: The identifier of the mod source for this collection manifest.
         file_id:
           type: string
-          description: The identifier of the file associated with the mod in this
-            collection manifest.
+          description: The identifier of the mod file version associated with the
+            mod in this collection manifest.
         md5:
           type: string
           nullable: true
@@ -2769,3 +3258,105 @@ components:
         - exact
         - latest
         - prefer
+    VortexData:
+      type: object
+      required:
+        - extensions
+        - themes
+        - translations
+      properties:
+        extensions:
+          type: array
+          description: |
+            Vortex extensions, classified as `game` or `other`. Filtered by
+            `game_ids` when provided.
+          items:
+            "$ref": "#/components/schemas/VortexExtension"
+        themes:
+          type: array
+          description: All Vortex themes.
+          items:
+            "$ref": "#/components/schemas/VortexAsset"
+        translations:
+          type: array
+          description: All Vortex translations.
+          items:
+            "$ref": "#/components/schemas/VortexAsset"
+    VortexAsset:
+      type: object
+      description: |
+        Common Vortex asset data, forwarded from the mod page. Uniqueness is
+        `mod_id` + `file_id` (one mod per extension, one file per version).
+      required:
+        - name
+        - version
+        - author_name
+        - author_user_id
+        - uploaded_at
+        - mod_id
+        - file_id
+        - image_url
+      properties:
+        name:
+          type: string
+          description: The mod name.
+          example: Example Vortex Extension
+        version:
+          type: string
+          description: The file version string.
+          example: 1.2.0
+        author_name:
+          type: string
+          description: Username of the uploader.
+          example: ExampleAuthor
+        author_user_id:
+          type: string
+          description: Nexus Mods user ID of the uploader.
+          example: "54321"
+        uploaded_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the file was uploaded.
+          example: "2023-11-14T22:13:20Z"
+        mod_id:
+          type: string
+          description: The Nexus Mods mod ID.
+          example: "12345"
+        file_id:
+          type: string
+          description: The Nexus Mods file ID.
+          example: "99999"
+        image_url:
+          type: string
+          nullable: true
+          description: |
+            URL of the image: the mod page image, or the game artwork for
+            game extensions. Null if unavailable.
+          example: https://staticdelivery.nexusmods.com/mods/1/images/12345-0-1700000000.jpg
+    VortexExtension:
+      description: |
+        A Vortex extension, classified from its code (`info.json`). A `game`
+        extension targets a specific game and carries a `game_id`; all others
+        are `other`.
+      allOf:
+        - "$ref": "#/components/schemas/VortexAsset"
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - game
+                - other
+              description: |
+                `game` if code analysis determined the extension targets a specific
+                game (see `game_id`); otherwise `other`.
+              example: game
+            game_id:
+              type: string
+              nullable: true
+              description: |
+                The Nexus Mods game ID, determined by code analysis. Present only
+                when `type` is `game`.
+              example: "1"
