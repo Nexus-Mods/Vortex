@@ -286,6 +286,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       </Typography>
 
       <PremiumModal
+        api={api}
         isOpen={showPremiumModal}
         modCount={1}
         modId={mod.modId}
@@ -295,6 +296,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
           setShowPremiumModal(false);
           openModPage();
         }}
+        onPremiumUnlocked={() => void installInApp()}
       />
     </>
   );
