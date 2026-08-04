@@ -18,19 +18,13 @@
 }
 
 .table-selected {
-    background-color: $table-bg-active;
-
-    // the following is needed so the row color takes precedence over the
-    // column color
-    .table-sort-column {
-        background-color: $table-bg-active;
-    }
+    background-color: var(--color-surface-translucent-low);
 }
 
-.table-hover > .xtbody > .xtr:hover {
-    .table-sort-column {
-        background-color: $table-bg-hover;
-    }
+// Hovering the selected row lifts it a step, so it stays apart from the plain
+// hover tint.
+.table-hover > .xtbody > .xtr.table-selected:hover {
+    background-color: var(--color-surface-translucent-mid);
 }
 
 .table-highlighted {
@@ -45,8 +39,10 @@
     background-color: $brand-info !important;
 }
 
+// Tints the whole sorted column. On the hovered row it layers over the row
+// tint, which is what keeps the column readable there.
 .table-sort-column {
-    background-color: color.adjust($table-bg, $lightness: -5%);
+    background-color: var(--color-surface-translucent-low);
 }
 
 .table-header-pane {
@@ -98,8 +94,6 @@
     }
 
     .xtbody {
-        background-color: $brand-menu;
-
         .xtr {
             > div {
                 padding: 4px 0px;

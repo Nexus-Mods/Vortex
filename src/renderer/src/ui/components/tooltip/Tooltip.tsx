@@ -23,6 +23,7 @@ import {
 import React, {
   cloneElement,
   isValidElement,
+  type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type ReactNode,
   type Ref,
@@ -163,9 +164,20 @@ export const Tooltip = ({
     return children;
   }
 
+  const referenceProps = interactions.getReferenceProps({ ref: triggerRef, ...trigger.props });
+
+  // Close on press, so the tooltip never sits over a menu or popover the same
+  // trigger opens. `move: false` keeps it closed until the pointer re-enters.
+  const handlePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    (
+      referenceProps.onPointerDown as ((event: ReactPointerEvent<HTMLElement>) => void) | undefined
+    )?.(event);
+    setOpen(false);
+  };
+
   return (
     <>
-      {cloneElement(trigger, interactions.getReferenceProps({ ref: triggerRef, ...trigger.props }))}
+      {cloneElement(trigger, { ...referenceProps, onPointerDown: handlePointerDown })}
 
       {isMounted && (
         <FloatingPortal id={OVERLAY_HOST_ID}>

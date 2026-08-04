@@ -1,33 +1,37 @@
 import * as path from "path";
 
+import { mdiPlus, mdiRefresh } from "@mdi/js";
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import * as _ from "lodash";
 import * as React from "react";
-import { Alert, Button, Panel } from "react-bootstrap";
+import { Alert, Button as BSButton } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
+import { setDialogVisible } from "@/actions";
+import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from "@/actions";
+import { ComponentEx, connect, translate } from "@/controls/ComponentEx";
+import type { DropType } from "@/controls/Dropzone";
+import Dropzone from "@/controls/Dropzone";
+import type { ITableRowAction } from "@/controls/Table";
+import Table from "@/controls/Table";
 import { log } from "@/logging";
+import type { IExtensionWithState } from "@/types/extensions";
+import type { IExtensionLoadFailure, IExtensionState, IState } from "@/types/IState";
+import type { ITableAttribute } from "@/types/ITableAttribute";
+import { Button } from "@/ui/components/button/Button";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { relaunch } from "@/util/commandLine";
+import * as selectors from "@/util/selectors";
+import { Page } from "@/views/components/Page/Page";
+import { PageContent } from "@/views/components/Page/PageContent";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
 
-import { setDialogVisible } from "../../actions";
-import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from "../../actions/app";
-import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
-import type { DropType } from "../../controls/Dropzone";
-import Dropzone from "../../controls/Dropzone";
-import FlexLayout from "../../controls/FlexLayout";
-import IconBar from "../../controls/IconBar";
-import type { ITableRowAction } from "../../controls/Table";
-import Table from "../../controls/Table";
-import ToolbarIcon from "../../controls/ToolbarIcon";
-import type { IExtensionWithState } from "../../types/extensions";
-import type { IExtensionLoadFailure, IExtensionState, IState } from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import { relaunch } from "../../util/commandLine";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import MainPage from "../../views/MainPage";
 import type { IDownload } from "../download_management/types/IDownload";
 import { SITE_ID } from "../gamemode_management/constants";
+import { DisplayOptions } from "./components/DisplayOptions";
 import installExtension from "./installExtension";
 import getTableAttributes from "./tableAttributes";
 
@@ -36,6 +40,9 @@ export interface IExtensionManagerProps {
     reloadNecessary: boolean;
   };
   updateExtensions: () => Promise<void>;
+  onRefresh: () => void;
+  active?: boolean;
+  pageId?: string;
 }
 
 interface IConnectedProps {
@@ -123,7 +130,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, extensions, localState } = this.props;
+    const { t, active, extensions, localState, pageId } = this.props;
     const { oldExtensions, showBundled } = this.state;
 
     const bundled = (this.context?.api?.getLoadedExtensions?.() ?? [])
@@ -157,67 +164,72 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       }));
 
     return (
-      <MainPage>
-        <MainPage.Header>
-          <IconBar
-            id="extensions-layout-list"
-            group="extensions-layout-icons"
-            staticElements={[]}
-            className="menubar"
-            t={t}
-          >
-            <ToolbarIcon
-              id="show-bundled-extensions"
-              text={showBundled ? t("Hide Bundled") : t("Show Bundled")}
-              onClick={this.toggleBundled}
-              icon={showBundled ? "hide" : "show"}
-              tooltip={showBundled ? t("Hide Bundled Extensions") : t("Show Bundled Extensions")}
-            />
-          </IconBar>
-        </MainPage.Header>
-        <MainPage.Body>
-          <Panel>
-            <Panel.Body>
-              <FlexLayout type="column">
-                <FlexLayout.Fixed>
-                  {localState.reloadNecessary ||
-                  !_.isEqual(configId(extensions), configId(oldExtensions))
-                    ? this.renderReload()
-                    : null}
-                </FlexLayout.Fixed>
-                <FlexLayout.Flex>
-                  <Table
-                    tableId="extensions"
-                    data={extensionsWithState}
-                    actions={this.actions}
-                    staticElements={this.staticColumns}
-                    multiSelect={false}
-                  />
-                </FlexLayout.Flex>
-                <FlexLayout.Fixed>
-                  <FlexLayout type="row">
-                    <FlexLayout.Flex className="extensions-find-button-container">
-                      <div className="flex-center-both">
-                        <Button id="btn-more-extensions" onClick={this.onBrowse} bsStyle="ghost">
-                          {t("Find more")}
-                        </Button>
-                      </div>
-                    </FlexLayout.Flex>
-                    <FlexLayout.Flex>
-                      <Dropzone
-                        accept={["files"]}
-                        drop={this.dropExtension}
-                        dialogHint={t("Select extension file")}
-                        icon="folder-download"
-                      />
-                    </FlexLayout.Flex>
-                  </FlexLayout>
-                </FlexLayout.Fixed>
-              </FlexLayout>
-            </Panel.Body>
-          </Panel>
-        </MainPage.Body>
-      </MainPage>
+      <Page active={active} pageId={pageId} scrollable={false}>
+        <PageHeader
+          isFullWidth
+          pictogramName="puzzle-piece"
+          subtitle={t("Manage extensions that add features and game support to Vortex.")}
+          title={t("Extensions")}
+        >
+          <div className="flex shrink-0 items-center gap-x-2">
+            <TooltipDelayGroup>
+              <Tooltip content={t("Update extensions")} placement="bottom">
+                <Button
+                  appearance="subdued"
+                  aria-label={t("Update extensions")}
+                  brand="neutral"
+                  leftIconPath={mdiRefresh}
+                  size="sm"
+                  onClick={this.onRefresh}
+                />
+              </Tooltip>
+
+              <Tooltip content={t("Browse extensions")} placement="bottom">
+                <Button
+                  appearance="subdued"
+                  aria-label={t("Browse extensions")}
+                  brand="neutral"
+                  leftIconPath={mdiPlus}
+                  size="sm"
+                  onClick={this.onBrowse}
+                />
+              </Tooltip>
+
+              <DisplayOptions
+                showBundled={showBundled}
+                t={t}
+                onReset={this.resetDisplayOptions}
+                onToggleBundled={this.toggleBundled}
+              />
+            </TooltipDelayGroup>
+          </div>
+        </PageHeader>
+
+        <PageScroll isFullWidth className="flex flex-col gap-y-4 px-6 pt-6">
+          {localState.reloadNecessary || !_.isEqual(configId(extensions), configId(oldExtensions))
+            ? this.renderReload()
+            : null}
+
+          <Table
+            actions={this.actions}
+            data={extensionsWithState}
+            multiSelect={false}
+            staticElements={this.staticColumns}
+            tableId="extensions"
+          />
+        </PageScroll>
+
+        <PageContent isFullWidth className="p-6">
+          <Dropzone
+            accept={["files"]}
+            dialogHint={t("Select extension file")}
+            drop={this.dropExtension}
+            icon="folder-download"
+            // The stand-alone dropzone insets itself by 10px; the page padding does that.
+            style={{ margin: 0, width: "100%" }}
+          />
+        </PageContent>
+      </Page>
     );
   }
 
@@ -225,8 +237,16 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     this.props.onBrowseExtension();
   };
 
+  private onRefresh = () => {
+    this.props.onRefresh();
+  };
+
   private toggleBundled = () => {
     this.nextState.showBundled = !this.state.showBundled;
+  };
+
+  private resetDisplayOptions = () => {
+    this.nextState.showBundled = false;
   };
 
   private dropExtension = (type: DropType, extPaths: string[]): void => {
@@ -292,7 +312,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     return (
       <Alert bsStyle="warning" style={{ display: "flex", alignItems: "center" }}>
         <div style={{ flexGrow: 1 }}>{t("You need to restart Vortex to apply changes.")}</div>
-        <Button onClick={this.restart}>{t("Restart")}</Button>
+
+        <BSButton onClick={this.restart}>{t("Restart")}</BSButton>
       </Alert>
     );
   }
@@ -337,7 +358,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    extensions: state.app.extensions ?? ({} as { [extId: string]: IExtensionState }),
+    extensions: state.app.extensions ?? {},
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
     downloadPath: selectors.downloadPath(state),

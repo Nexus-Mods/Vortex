@@ -13,7 +13,7 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
   children?: ReactNode | ((scrolled: boolean) => ReactNode);
   pictogramName?: IPictogramName;
   subtitle?: string;
-} & XOr<{ title: string }, { customTitle: ReactNode }>;
+} & XOr<{ title: string }, { customTitle: ReactNode | ((scrolled: boolean) => ReactNode) }>;
 
 /**
  * Full-bleed header for a non-scrolling `Page`. The bar itself spans the full
@@ -24,7 +24,8 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
  *
  * Pass `title` for the common heading, or `customTitle` when the title needs
  * more than a string (e.g. a badge alongside it); `subtitle` renders below
- * either.
+ * either. `title` goes subdued once scrolled — `customTitle` takes a
+ * render-prop so it can match.
  */
 export const PageHeader = ({
   children,
@@ -42,7 +43,7 @@ export const PageHeader = ({
     <div
       className={joinClasses([
         "relative z-10 w-full pb-3 transition-[padding]",
-        scrolled ? "pt-3 shadow-md" : "border-b border-stroke-weak pt-6",
+        scrolled ? "py-2.5 shadow-md" : "border-b border-stroke-weak pt-6 pb-3",
         className,
       ])}
       {...rest}
@@ -61,8 +62,13 @@ export const PageHeader = ({
           )}
 
           <div className="grow">
-            {customTitle ?? (
-              <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+            {(typeof customTitle === "function" ? customTitle(scrolled) : customTitle) ?? (
+              <Typography
+                appearance={scrolled ? "subdued" : "moderate"}
+                as="h2"
+                className="transition-colors"
+                typographyType="heading-xs"
+              >
                 {title}
               </Typography>
             )}

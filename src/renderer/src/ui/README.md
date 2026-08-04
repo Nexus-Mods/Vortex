@@ -349,6 +349,23 @@ import { mdiTune } from "@mdi/js";
 
 > **Positioning note:** the panel is positioned manually (absolute) until `@headlessui/react` reaches v2, which brings dynamic anchor positioning and proper z-index handling.
 
+### DisplayOptions
+
+The tune-icon popover a listing puts in its page header, holding the controls for how that listing is shown (layout, what's included, …). It wraps `Popover` with the trigger, its tooltip and a reset link, so a page only supplies the rows. Compose those from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in the reset link: `onReset` puts the defaults back and the panel closes itself.
+
+```tsx
+import { DisplayOptions } from "../../ui/components/display_options/DisplayOptions";
+import { DisplayOptionsItem } from "../../ui/components/display_options/DisplayOptionsItem";
+
+<DisplayOptions onReset={onReset}>
+    <DisplayOptionsItem label={t("Show hidden items")}>
+        <Switch checked={showHidden} onChange={onToggleHidden} />
+    </DisplayOptionsItem>
+</DisplayOptions>;
+```
+
+**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. `DisplayOptionsItem` takes `label` (omit it for a control-only row), `className` and `children`.
+
 ### Tooltip
 
 Rich, collision-aware tooltip built on `@floating-ui/react`. `content` is arbitrary React — headings, lists, icons — not just a string. Position is resolved against the window continuously: it flips to the opposite side when the preferred one would overflow, slides along an edge when a corner would, and clamps its own width and height to the room that is left. It renders into the `#overlays` host, so tables, dashlets and scroll panes cannot clip it.
