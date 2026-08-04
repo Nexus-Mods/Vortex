@@ -85,15 +85,7 @@ export const RequirementBody = ({
     isDownloadingAll: downloadingAll,
   };
 
-  const installAll = () => {
-    ctx.onInstallAll(
-      installAllTargets.map((target) => target.candidate),
-      sharedRequirementState(requirements),
-    );
-    if (ctx.showPremiumAd) {
-      setPremiumOpen(true);
-      return;
-    }
+  const runInstallAll = () => {
     setDownloadingAll(true);
     void Promise.all(
       installAllTargets.map((target) =>
@@ -106,6 +98,18 @@ export const RequirementBody = ({
         setDownloadingAll(false);
       }
     });
+  };
+
+  const installAll = () => {
+    ctx.onInstallAll(
+      installAllTargets.map((target) => target.candidate),
+      sharedRequirementState(requirements),
+    );
+    if (ctx.showPremiumAd) {
+      setPremiumOpen(true);
+      return;
+    }
+    runInstallAll();
   };
 
   const installAllAction = hasInstallAll && (
@@ -147,12 +151,14 @@ export const RequirementBody = ({
       )}
 
       <PremiumModal
+        api={api}
         downloadScope="all"
         isOpen={premiumOpen}
         modCount={installAllTargets.length}
         trigger="batch_install"
         onClose={() => setPremiumOpen(false)}
         onDownload={() => setPremiumOpen(false)}
+        onPremiumUnlocked={runInstallAll}
       />
     </>
   );

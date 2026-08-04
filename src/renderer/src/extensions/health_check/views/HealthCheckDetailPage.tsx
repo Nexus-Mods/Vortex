@@ -133,6 +133,7 @@ function HealthCheckDetailPage({
             <DetailView api={api} entry={shownEntry} onBack={onBack} />
 
             <PremiumBanner
+              api={api}
               placement="detail"
               totalIssues={selectListedEntries(api.getState()).length}
             />

@@ -249,6 +249,17 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   // 1-click install all: premium-gated for free users. Items are de-duplicated first by
   // collectInstallAllItems (by key) and again here at execution time via the seen set,
   // so a file shared across multiple source reports is only queued once.
+  const runInstallAll = () => {
+    const seen = new Set<string>();
+
+    for (const item of installAllItems) {
+      if (!seen.has(item.key)) {
+        seen.add(item.key);
+        item.install();
+      }
+    }
+  };
+
   const installAll = () => {
     trackOneClickInstallAllClicked({
       issue_count: activeCount,
@@ -260,14 +271,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       return;
     }
 
-    const seen = new Set<string>();
-
-    for (const item of installAllItems) {
-      if (!seen.has(item.key)) {
-        seen.add(item.key);
-        item.install();
-      }
-    }
+    runInstallAll();
   };
 
   // Logging in is a prerequisite for the Nexus-backed checks rather than a fix for an
@@ -440,16 +444,18 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
           )}
 
           {!listIsEmpty && (
-            <PremiumBanner placement="list" totalIssues={activeCount + hiddenCount} />
+            <PremiumBanner api={api} placement="list" totalIssues={activeCount + hiddenCount} />
           )}
 
           <PremiumModal
+            api={api}
             downloadScope="all"
             isOpen={showInstallAllPremium}
             modCount={installAllItems.length}
             trigger="install_all"
             onClose={() => setShowInstallAllPremium(false)}
             onDownload={() => setShowInstallAllPremium(false)}
+            onPremiumUnlocked={runInstallAll}
           />
         </PageScroll>
       </Page>
