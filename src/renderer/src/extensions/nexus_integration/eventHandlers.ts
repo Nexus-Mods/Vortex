@@ -1241,15 +1241,13 @@ export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
 
 export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
   return (): Bluebird<void> => {
-    // only called from the global menu item
-
-    //const token = getOAuthTokenFromState(api);
+    if (!isLoggedIn(api.getState())) {
+      log("warn", "onRefreshUserInfo() not logged in");
+      return Bluebird.resolve();
+    }
 
     log("info", "onRefreshUserInfo() started");
 
-    // we have an oauth token in state
-    //if(token !== undefined) {
-    // get userinfo from api
     return Bluebird.resolve(nexus.getUserInfo())
       .then((apiUserInfo) => {
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
@@ -1262,9 +1260,6 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
           allowReport: false,
         });
       });
-    //} else {
-    //  log('warn', 'onRefreshUserInfo() no oauth token');
-    //}
   };
 }
 

@@ -101,12 +101,12 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
 
   // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
   useEffect(() => {
-    if (isHovered && api?.events) {
+    if (isHovered && isLoggedIn && api?.events) {
       userInfoDebouncer.schedule(undefined, () => {
         api.events.emit("refresh-user-info");
       });
     }
-  }, [isHovered]);
+  }, [isHovered, isLoggedIn]);
 
   const addCollection = useCallback(() => {
     if (!pending && canBeAdded && isLoggedIn) {
@@ -123,6 +123,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
   return (
     <div
       className={joinClasses(["w-full rounded-md bg-surface-mid", className])}
+      data-testid="collection-tile"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
