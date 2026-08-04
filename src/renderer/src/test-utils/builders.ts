@@ -874,6 +874,10 @@ export function makeHealthCheckHarness(
     releaseParked: async () => {
       releases.forEach((release) => release());
       await Promise.all(bodies);
+      // Let the fire-and-forget completion handling that follows a settled body run - and, with
+      // it, any rerun that handling schedules after a collision - before cancelling it below.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      registry.cancelPendingReruns();
     },
   };
 }

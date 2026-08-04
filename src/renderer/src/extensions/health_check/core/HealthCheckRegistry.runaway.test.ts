@@ -2,11 +2,20 @@ import { afterEach, describe, expect, vi } from "vitest";
 
 import { makeHealthCheckResult } from "../../../test-utils/builders";
 import { test } from "../../../test-utils/healthCheckTest";
+import {
+  HealthCheckCategory,
+  HealthCheckSeverity,
+  HealthCheckTrigger,
+} from "../../../types/IHealthCheck";
 import * as perModRunner from "./perModRunner";
 
 // Budget for a parked body to notice its abort and return. Sized for a loaded CI box, not the
 // ~10ms it normally takes: a stuck body burns the budget once instead of failing at random.
 const SETTLE = { timeout: 10000, interval: 10 };
+
+// Budget for the coalesced rerun to fire: the registry's own 500ms post-collision debounce plus
+// slack for a loaded CI box.
+const RERUN_SETTLE = { timeout: 3000, interval: 20 };
 
 /** What the registry does with a check whose body outlives the run's timeout (GH#23776). */
 describe("HealthCheckRegistry timeout handling", () => {
@@ -74,6 +83,48 @@ describe("HealthCheckRegistry timeout handling", () => {
     await vi.waitFor(() => expect(parked.hasSettled()).toBe(true), SETTLE);
     await harness.run(parked.id);
     expect(parked.starts()).toBe(2);
+  });
+});
+
+/** What the registry does when a request collides with a run already in flight. */
+describe("HealthCheckRegistry busy-collision handling", () => {
+  test("reruns once after the current run settles, coalescing several collisions", async ({
+    makeHealthCheck,
+  }) => {
+    const harness = makeHealthCheck();
+    let starts = 0;
+    const releaseInvocation: Array<() => void> = [];
+    harness.registry.register({
+      id: "manual-check",
+      name: "manual-check",
+      description: "",
+      category: HealthCheckCategory.System,
+      severity: HealthCheckSeverity.Info,
+      triggers: [HealthCheckTrigger.Manual],
+      timeout: 100000,
+      check: async () => {
+        starts += 1;
+        await new Promise<void>((resolve) => releaseInvocation.push(resolve));
+        return makeHealthCheckResult({ checkId: "manual-check" });
+      },
+    });
+
+    const firstRun = harness.run("manual-check");
+    expect(starts).toBe(1);
+
+    // Three collisions while it's busy must coalesce into exactly one rerun, not three.
+    await harness.run("manual-check");
+    await harness.run("manual-check");
+    await harness.run("manual-check");
+    expect(starts).toBe(1);
+
+    releaseInvocation[0]();
+    await firstRun;
+
+    await vi.waitFor(() => expect(starts).toBe(2), RERUN_SETTLE);
+
+    // Wind down the coalesced run's own body so nothing leaks into a later test.
+    releaseInvocation[1]();
   });
 });
 

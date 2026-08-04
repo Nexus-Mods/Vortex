@@ -142,6 +142,7 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.ProfileChanged,
     HealthCheckTrigger.GameChanged,
     HealthCheckTrigger.SettingsChanged,
+    HealthCheckTrigger.LoginChanged,
   ],
   check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
     // Reading the flag through FlagService reports an evaluation metric to the server.
