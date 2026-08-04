@@ -8,6 +8,14 @@ import { initReactI18next } from "react-i18next";
 
 import type { IExtension } from "../types/extensions";
 import getVortexPath from "./getVortexPath";
+import translationResources from "./i18n.resources";
+
+declare module "i18next" {
+  interface CustomTypeOptions {
+    defaultNS: "common";
+    resources: typeof translationResources;
+  }
+}
 
 /** @public */
 export type { i18n };
@@ -15,10 +23,17 @@ export type { i18n };
 /** @public */
 export type TFunction = typeof I18next.t;
 
-export const fallbackTFunc: TFunction = (str: string | string[]) => {
+type BrandlessTFunction = Omit<TFunction, "$TFunctionBrand">;
+
+function makeBranded(func: BrandlessTFunction): TFunction {
+  func["$TFunctionBrand"] = "common";
+  return func as TFunction;
+}
+
+export const fallbackTFunc: TFunction = makeBranded((str: string | string[]) => {
   if (Array.isArray(str)) return String(str[0]);
   return String(str);
-};
+});
 
 let debugging = false;
 let currentLanguage = "en";
@@ -167,17 +182,7 @@ export async function init(
       fallbackLng: "en",
       fallbackNS: "common",
 
-      ns: [
-        "common",
-        "collection",
-        "mod_management",
-        "download_management",
-        "profile_management",
-        "nexus_integration",
-        "gamemode_management",
-        "extension_manager",
-        "health_check",
-      ],
+      resources: translationResources,
       defaultNS: "common",
 
       nsSeparator: ":::",
@@ -265,7 +270,7 @@ export class TString implements ITString {
   private mKey: string;
   private mOptions: TOptions;
 
-  constructor(key: string, options: TOptions, namespace: string) {
+  constructor(key: string, options: TOptions, namespace: keyof typeof translationResources) {
     this.mKey = key;
     this.mOptions = options ?? {};
     if (this.mOptions.ns === undefined) {
@@ -286,17 +291,15 @@ export class TString implements ITString {
   }
 }
 
-export const laterT: TFunction = (
-  key: string,
-  optionsOrDefault?: TOptions | string,
-  options?: TOptions,
-): ITString => {
-  if (typeof optionsOrDefault === "string") {
-    return new TString(key, options, "common");
-  } else {
-    return new TString(key, optionsOrDefault, "common");
-  }
-};
+export const laterT: TFunction = makeBranded(
+  (key: string, optionsOrDefault?: TOptions | string, options?: TOptions): ITString => {
+    if (typeof optionsOrDefault === "string") {
+      return new TString(key, options, "common");
+    } else {
+      return new TString(key, optionsOrDefault, "common");
+    }
+  },
+);
 
 /**
  * translate an input string. If key is a string or string array, this just

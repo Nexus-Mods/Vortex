@@ -97,7 +97,6 @@ import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHan
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import type { i18n } from "./util/i18n";
-import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
 import { showError } from "./util/message";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";

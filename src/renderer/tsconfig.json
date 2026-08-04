@@ -26,6 +26,7 @@
     "moduleResolution": "node16", // TODO: change to bundler
     "jsx": "react",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"]
     }
