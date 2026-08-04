@@ -1670,6 +1670,8 @@ enum HealthCheckTrigger {
     // (undocumented)
     GameChanged = "game-changed",
     // (undocumented)
+    LoginChanged = "login-changed",
+    // (undocumented)
     LootUpdated = "loot-updated",
     // (undocumented)
     Manual = "manual",

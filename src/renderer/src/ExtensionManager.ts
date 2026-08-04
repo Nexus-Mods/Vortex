@@ -3008,6 +3008,7 @@ class ExtensionManager {
       // first (cf. gameversion_management before gamemode_management).
       collections: () => require("./extensions/collections/index.ts"),
       recovery: () => require("./extensions/recovery/index.ts"),
+      screenshots: () => require("./extensions/screenshots/index.ts"),
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),
       settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
