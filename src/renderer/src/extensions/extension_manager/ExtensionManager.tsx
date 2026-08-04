@@ -273,9 +273,13 @@ export const ExtensionManager = ({
         </div>
       </PageHeader>
 
-      <PageScroll isFullWidth className="flex flex-col gap-y-4 px-6 pt-6">
+      <PageScroll isFullWidth className="flex flex-col gap-y-4">
         {restartNeeded && (
-          <Alert bsStyle="warning" style={{ display: "flex", alignItems: "center" }}>
+          <Alert
+            bsStyle="warning"
+            className="mx-6"
+            style={{ display: "flex", alignItems: "center" }}
+          >
             <div style={{ flexGrow: 1 }}>{t("You need to restart Vortex to apply changes.")}</div>
 
             <BSButton onClick={() => relaunch()}>{t("Restart")}</BSButton>
@@ -283,6 +287,8 @@ export const ExtensionManager = ({
         )}
 
         <Table
+          edgeToEdge
+          stickyHeader
           actions={actions}
           data={extensionsWithState}
           multiSelect={false}
