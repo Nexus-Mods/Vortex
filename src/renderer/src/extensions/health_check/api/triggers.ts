@@ -90,6 +90,41 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       return Promise.resolve();
     });
 
+    // did-remove-mod/did-remove-mods fire once removal (undeploy + delete)
+    // actually completes, from the single handler every removal path funnels
+    // through (ModList, collections, ModHistory undo).
+    api.events.on("did-remove-mod", () => {
+      log("debug", "Mod removed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    api.events.on("did-remove-mods", () => {
+      log("debug", "Mods removed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    // Downloads are deleted/added from many call sites with no single
+    // completion event (deleting an archive alongside a mod, deleting an
+    // archive-only entry, external cleanup, etc.), so watch the state
+    // directly rather than chasing every emit site. A requirement can be
+    // satisfied by a downloaded-but-not-installed archive, so this affects
+    // what the checks report even though it isn't a mod install/enable.
+    api.onStateChange?.(
+      ["persistent", "downloads", "files"],
+      (previous: Record<string, unknown>, current: Record<string, unknown>) => {
+        const previousKeys = Object.keys(previous ?? {});
+        const currentKeys = Object.keys(current ?? {});
+        const changed =
+          previousKeys.length !== currentKeys.length ||
+          previousKeys.some((id) => !(id in (current ?? {})));
+        if (!changed) {
+          return;
+        }
+        log("debug", "Downloads changed, scheduling debounced health check");
+        modsChangedDebouncer.schedule();
+      },
+    );
+
     // Run health checks after collection post-processing finishes,
     // matching the pattern used by gamebryo-plugin-management for LOOT.
     api.events.on("collection-postprocess-complete", () => {
