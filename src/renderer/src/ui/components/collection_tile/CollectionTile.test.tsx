@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
@@ -8,9 +8,11 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { CollectionTile, type ICollectionTileProps } from "./CollectionTile";
 
 // Isolate the tile from heavy app utilities — none are exercised by these tests.
+// schedule() runs its trigger immediately so hover tests can observe the effect synchronously.
 vi.mock("@/util/Debouncer", () => ({
   default: class {
-    schedule() {
+    schedule(_onExpire: unknown, trigger?: () => void) {
+      trigger?.();
       return undefined;
     }
   },
@@ -48,7 +50,11 @@ const makeCollection = (overrides: Partial<TestCollection> = {}): TestCollection
 });
 
 // state present so the canBeAdded/login logic runs
-const makeApi = () => ({ getState: () => ({}) }) as unknown as IExtensionApi;
+const makeApi = () => {
+  const emit = vi.fn();
+  const api = { events: { emit }, getState: () => ({}) } as unknown as IExtensionApi;
+  return { api, emit };
+};
 
 const renderComponent = ({
   collection = makeCollection(),
@@ -56,10 +62,11 @@ const renderComponent = ({
 }: { collection?: TestCollection; isLoggedIn?: boolean } = {}) => {
   const onAddCollection = vi.fn();
   const onViewPage = vi.fn();
+  const { api, emit } = makeApi();
 
-  render(
+  const { container } = render(
     <CollectionTile
-      api={makeApi()}
+      api={api}
       collection={collection as unknown as ICollectionTileProps["collection"]}
       isLoggedIn={isLoggedIn}
       onAddCollection={onAddCollection}
@@ -67,7 +74,7 @@ const renderComponent = ({
     />,
   );
 
-  return { collection, onAddCollection, onViewPage };
+  return { collection, container, emit, onAddCollection, onViewPage };
 };
 
 // --- Tests ---
@@ -116,6 +123,20 @@ describe("CollectionTile", () => {
     it("prompts to log in when logged out", () => {
       renderComponent({ isLoggedIn: false });
       expect(screen.getByRole("button", { name: /log in to add/i })).toBeInTheDocument();
+    });
+  });
+
+  describe("hover", () => {
+    it("does not refresh user info while logged out", () => {
+      const { emit } = renderComponent({ isLoggedIn: false });
+      fireEvent.mouseEnter(screen.getByTestId("collection-tile"));
+      expect(emit).not.toHaveBeenCalledWith("refresh-user-info");
+    });
+
+    it("refreshes user info while logged in", () => {
+      const { emit } = renderComponent({ isLoggedIn: true });
+      fireEvent.mouseEnter(screen.getByTestId("collection-tile"));
+      expect(emit).toHaveBeenCalledWith("refresh-user-info");
     });
   });
 });
