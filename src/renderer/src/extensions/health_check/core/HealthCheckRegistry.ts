@@ -19,11 +19,18 @@ import type { HealthCheckId } from "../types";
 import { runPerModCheck } from "./perModRunner";
 
 export class HealthCheckRegistry {
+  /** How long to wait, once a busy check settles, before running a rerun requested while it was busy. */
+  private static readonly RERUN_DEBOUNCE_MS = 500;
+
   private mHealthChecks: Map<HealthCheckId, IHealthCheckEntry> = new Map();
   private mTriggerMap: Map<HealthCheckTrigger, Set<HealthCheckId>> = new Map();
   private mExecutionQueue: Set<HealthCheckId> = new Set();
   private mApi: IExtensionApi;
   private mResults: Map<HealthCheckId, IHealthCheckResult> = new Map();
+  /** Set when a request collides with a run already in flight; consumed once that run settles. */
+  private mRerunRequested: Set<HealthCheckId> = new Set();
+  /** The pending post-collision rerun timer, so it can be cancelled on disposal/teardown. */
+  private mRerunTimers: Map<HealthCheckId, ReturnType<typeof setTimeout>> = new Map();
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
@@ -164,9 +171,14 @@ export class HealthCheckRegistry {
       return entry.lastResult;
     }
 
-    // Prevent concurrent execution of the same check
+    // Already running: don't start a second one. Let it finish undisturbed, and make sure
+    // exactly one fresh run happens once it settles - no matter how many requests land in the
+    // meantime, they all coalesce into that one rerun.
     if (this.mExecutionQueue.has(checkId)) {
-      log("debug", "Health check already executing, skipping", { id: checkId });
+      log("debug", "Health check already executing, scheduling a rerun once it settles", {
+        id: checkId,
+      });
+      this.mRerunRequested.add(checkId);
       return entry.lastResult;
     }
 
@@ -174,6 +186,16 @@ export class HealthCheckRegistry {
     const startTime = Date.now();
     let timedOut = false;
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    let released = false;
+    // Both the fire-and-forget path (which outlives a timeout) and the normal-completion path
+    // release the slot for the same run, so this must tolerate being called twice.
+    const release = () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      this.finishRun(checkId, api);
+    };
 
     try {
       const timeout = entry.healthCheck.timeout || 30000;
@@ -205,7 +227,7 @@ export class HealthCheckRegistry {
               afterMs: Date.now() - startTime,
             });
           }
-          this.mExecutionQueue.delete(checkId);
+          release();
         });
 
       const result = await Promise.race([checkPromise, timeoutPromise]);
@@ -266,9 +288,40 @@ export class HealthCheckRegistry {
       // On timeout the body runs on and releases the slot from its settle handler; any other
       // exit means it is done.
       if (!timedOut) {
-        this.mExecutionQueue.delete(checkId);
+        release();
       }
     }
+  }
+
+  /**
+   * Frees a run's execution slot once its body has actually settled, and fires a coalesced rerun
+   * if any request collided with it while it ran.
+   */
+  private finishRun(checkId: HealthCheckId, api: IExtensionApi): void {
+    if (!this.mRerunRequested.has(checkId)) {
+      this.mExecutionQueue.delete(checkId);
+      return;
+    }
+
+    this.mRerunRequested.delete(checkId);
+    // mExecutionQueue stays marked busy through this wait, so further collisions coalesce into
+    // this same pending rerun instead of starting their own.
+    const timer = setTimeout(() => {
+      this.mRerunTimers.delete(checkId);
+      this.mExecutionQueue.delete(checkId);
+      void this.runHealthCheck(checkId, api);
+    }, HealthCheckRegistry.RERUN_DEBOUNCE_MS);
+    this.mRerunTimers.set(checkId, timer);
+  }
+
+  /**
+   * Cancels any rerun scheduled after a busy collision, without waiting for it to fire. Intended
+   * for disposal/teardown, so a pending timer doesn't fire into unrelated later work.
+   */
+  public cancelPendingReruns(): void {
+    this.mRerunTimers.forEach((timer) => clearTimeout(timer));
+    this.mRerunTimers.clear();
+    this.mRerunRequested.clear();
   }
 
   /**
