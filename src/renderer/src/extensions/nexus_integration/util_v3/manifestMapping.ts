@@ -34,21 +34,14 @@ function toV3ManifestMod(mod: ICollectionManifest["mods"][number]): V3Collection
   };
 }
 
-function emptyToNull(value: string | undefined | null): string | null {
-  if (value === undefined || value === null || value === "") {
-    return null;
-  }
-  return value;
-}
-
 function toV3Manifest(manifest: ICollectionManifest): V3CollectionManifest {
   return {
     info: {
       author: manifest.info.author,
-      author_url: emptyToNull(manifest.info.authorUrl),
+      author_url: manifest.info.authorUrl || null,
       name: manifest.info.name,
-      description: emptyToNull(manifest.info.description),
-      summary: emptyToNull(manifest.info.summary),
+      description: manifest.info.description || null,
+      summary: manifest.info.summary || null,
       domain_name: manifest.info.domainName,
       game_versions: manifest.info.gameVersions ?? null,
     },
