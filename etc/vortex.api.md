@@ -353,9 +353,9 @@ const activeProfile: (state: IState) => IProfile | undefined;
 const activeProfileId: (state: IState) => string | undefined;
 
 // @public
-const addDialog: ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
+const addDialog: ComplexActionCreator6<string, DialogType, string, IDialogContent, string, string[], {
 id: string;
-type: string;
+type: DialogType;
 title: string;
 content: IDialogContent;
 defaultAction: string;
@@ -937,7 +937,7 @@ const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
 function dismissAllNotifications(): ThunkAction<void, unknown, null, AnyAction>;
 
 // @public
-const dismissDialog: ComplexActionCreator1<unknown, unknown, {}>;
+const dismissDialog: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 function dismissNotification(id: string): ThunkAction<void, unknown, null, AnyAction>;
@@ -3398,6 +3398,8 @@ interface INotificationState {
     // (undocumented)
     dialogs: IDialog[];
     // (undocumented)
+    global_notifications: INotification[];
+    // (undocumented)
     notifications: INotification[];
 }
 
@@ -3805,7 +3807,7 @@ function isDirectoryAsync(dirPath: string): Promise_2<boolean>;
 interface ISession {
     // (undocumented)
     activity: {
-        [id: string]: string;
+        [id: string]: string[];
     };
     // (undocumented)
     commandLine: IParameters;
@@ -5593,8 +5595,10 @@ extensionId: string;
 endorsed: string;
 }, {}>;
 
+// Warning: (ae-forgotten-export) The symbol "IExtensionLoadFailure_2" needs to be exported by the entry point api.d.ts
+//
 // @public (undocumented)
-const setExtensionLoadFailures: ComplexActionCreator1<unknown, unknown, {}>;
+const setExtensionLoadFailures: ComplexActionCreator1<Record<string, IExtensionLoadFailure_2[]>, Record<string, IExtensionLoadFailure_2[]>, {}>;
 
 // @public (undocumented)
 const setExtensionVersion: ComplexActionCreator2<string, string, {
@@ -6099,7 +6103,7 @@ class StarterInfo implements IStarterInfo {
 }
 
 // @public
-const startNotification: ComplexActionCreator1<unknown, unknown, {}>;
+const startNotification: ComplexActionCreator1<INotification, INotification, {}>;
 
 // @public (undocumented)
 const statAsync: (path: string) => Promise_2<fs_2.Stats>;
@@ -6128,7 +6132,7 @@ scope: string;
 const stopAllNotifications: EmptyActionCreator;
 
 // @public
-const stopNotification: ComplexActionCreator1<unknown, unknown, {}>;
+const stopNotification: ComplexActionCreator1<string, string, {}>;
 
 // @public
 const suppressNotification: ComplexActionCreator2<string, boolean, {
@@ -6966,11 +6970,11 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // lib/extensions/installer_fomod_shared/types/interface.d.ts:76:5 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
 // lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
 // lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:188:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:403:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:405:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:438:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// lib/types/IState.d.ts:439:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:189:9 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:404:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:406:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:439:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:440:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
 // lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
