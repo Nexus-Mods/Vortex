@@ -1,24 +1,27 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
+import type { AnyAction } from "redux";
+import { createAction } from "redux-act";
+import type { ThunkAction } from "redux-thunk";
 import { generate as shortid } from "shortid";
+
+import { log } from "@/logging";
 
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
 import type { INotification, NotificationDismiss } from "../types/INotification";
 import local from "../util/local";
-import { log } from "../util/log";
-import safeCreateAction from "./safeCreateAction";
 
 export * from "../types/IDialog";
 
-const identity = (input) => input;
+const identity = <T>(input: T): T => input;
 
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
  */
-export const startNotification = safeCreateAction("ADD_NOTIFICATION", identity);
+export const startNotification = createAction("ADD_NOTIFICATION", identity);
 
-export const updateNotification = safeCreateAction(
+export const updateNotification = createAction(
   "UPDATE_NOTIFICATION",
   (id: string, progress: number, message: string) => ({
     id,
@@ -31,16 +34,16 @@ export const updateNotification = safeCreateAction(
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const stopNotification = safeCreateAction("STOP_NOTIFICATION", identity);
+export const stopNotification = createAction("STOP_NOTIFICATION", identity);
 
-export const stopAllNotifications = safeCreateAction("STOP_ALL_NOTIFICATIONS");
+export const stopAllNotifications = createAction("STOP_ALL_NOTIFICATIONS");
 
 /**
  * show a modal dialog to the user
  *
  * don't call this directly, use showDialog
  */
-export const addDialog = safeCreateAction(
+export const addDialog = createAction(
   "SHOW_MODAL_DIALOG",
   (
     id: string,
@@ -59,9 +62,9 @@ export const addDialog = safeCreateAction(
  * you leak (a tiny amount of) memory and the action callbacks aren't called.
  * Use closeDialog instead
  */
-export const dismissDialog = safeCreateAction("DISMISS_MODAL_DIALOG", identity);
+export const dismissDialog = createAction("DISMISS_MODAL_DIALOG", identity);
 
-const timers = local<{ [id: string]: NodeJS.Timeout }>("notification-timers", {});
+const timers = local<{ [id: string]: ReturnType<typeof setTimeout> }>("notification-timers", {});
 
 type NotificationFunc = (dismiss: NotificationDismiss) => void;
 const notificationActions = local<{ [id: string]: NotificationFunc[] }>("notification-actions", {});
@@ -101,16 +104,16 @@ export function setupNotificationSuppression(cb: (id: string) => boolean) {
 /**
  * show a notification
  *
- * @export
- * @param {INotification} notification
- * @returns
+ * @public
  */
-export function addNotification(notification: INotification) {
-  return (dispatch) => {
+export function addNotification(
+  notification: INotification,
+): ThunkAction<Promise<void>, unknown, null, AnyAction> {
+  return async (dispatch) => {
     const noti = { ...notification };
 
     if (noti.id !== undefined && suppressNotification(noti.id)) {
-      return PromiseBB.resolve();
+      return;
     }
 
     if (noti.id === undefined) {
@@ -135,75 +138,68 @@ export function addNotification(notification: INotification) {
       notificationDismissHandlers[noti.id] = noti.onDismiss;
     }
 
-    const storeNoti: any = JSON.parse(JSON.stringify(noti));
+    const storeNoti = JSON.parse(JSON.stringify(noti));
     storeNoti.process = process.type;
     storeNoti.actions = (storeNoti.actions || []).map((action) => ({
       title: action.title,
       icon: action.icon,
-    })) as any;
+    }));
 
     dispatch(startNotification(storeNoti));
     if (noti.id !== undefined && noti.displayMS !== undefined) {
       const currentId = noti.id;
       const currentDisplayMS = noti.displayMS;
-      return new Promise<void>((resolve) => {
+      await new Promise<void>((resolve) => {
         timers[currentId] = setTimeout(() => resolve(), currentDisplayMS);
-      }).then(() => {
-        dispatch(dismissNotification(currentId));
       });
+
+      dispatch(dismissNotification(currentId));
     }
   };
 }
 
-export function dismissNotification(id: string) {
-  return (dispatch) =>
-    new PromiseBB<void>((resolve, reject) => {
-      const onDismiss = notificationDismissHandlers[id];
-      delete timers[id];
-      delete notificationActions[id];
-      delete notificationDismissHandlers[id];
-      dispatch(stopNotification(id));
-      onDismiss?.();
-      resolve();
-    });
+export function dismissNotification(id: string): ThunkAction<void, unknown, null, AnyAction> {
+  return (dispatch) => {
+    const onDismiss = notificationDismissHandlers[id];
+    delete timers[id];
+    delete notificationActions[id];
+    delete notificationDismissHandlers[id];
+    dispatch(stopNotification(id));
+    onDismiss?.();
+  };
 }
 
-export function dismissAllNotifications() {
-  return (dispatch) =>
-    new PromiseBB<void>((resolve, reject) => {
-      const ids = Array.from(
-        new Set<string>([...Object.keys(timers), ...Object.keys(notificationActions)]),
-      );
-      ids.forEach((id) => {
-        delete timers[id];
-        delete notificationActions[id];
-      });
-      dispatch(stopAllNotifications());
-      resolve();
+export function dismissAllNotifications(): ThunkAction<void, unknown, null, AnyAction> {
+  return (dispatch) => {
+    const ids = Array.from(
+      new Set<string>([...Object.keys(timers), ...Object.keys(notificationActions)]),
+    );
+    ids.forEach((id) => {
+      delete timers[id];
+      delete notificationActions[id];
     });
+    dispatch(stopAllNotifications());
+  };
 }
+
+type DialogCallback = (actionKey: string, input?: unknown) => void;
 
 // singleton holding callbacks for active dialogs. The
 // actual storage is the "global" object so it gets shared between
 // all instances of this module (across extensions).
 class DialogCallbacks {
-  public static instance(): any {
-    if ((global as any).__dialogCallbacks === undefined) {
-      (global as any).__dialogCallbacks = {};
+  public static instance(): Record<string, DialogCallback> {
+    if (global.__dialogCallbacks === undefined) {
+      global.__dialogCallbacks = {};
     }
-    return (global as any).__dialogCallbacks;
+
+    return global.__dialogCallbacks;
   }
 }
 
 /**
  * show a dialog
- *
- * @export
- * @param {DialogType} type
- * @param {string} title
- * @param {IDialogContent} content
- * @param {IDialogActions} actions
- * @returns
+ * @public
  */
 export function showDialog(
   type: DialogType,
@@ -211,12 +207,12 @@ export function showDialog(
   content: IDialogContent,
   actions: DialogActions,
   inId?: string,
-) {
+): ThunkAction<PromiseBB<IDialogResult>, unknown, null, AnyAction> {
   return (dispatch) => {
     // Returns Bluebird for backwards compatibility with external extensions.
     // Callers within mod_management wrap this in Promise.resolve() to get
     // a native Promise. Migrate to native Promise when extensions are updated.
-    return new PromiseBB<IDialogResult>((resolve, reject) => {
+    return new PromiseBB<IDialogResult>((resolve) => {
       const id = inId || shortid();
       const defaultAction = actions.find((iter) => iter.default === true);
       const defaultLabel = defaultAction !== undefined ? defaultAction.label : undefined;
@@ -230,20 +226,11 @@ export function showDialog(
           actions.map((action) => action.label),
         ),
       );
-      DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
+      DialogCallbacks.instance()[id] = (actionKey, input) => {
         const action = actions.find((iter) => iter.label === actionKey);
         if (action?.action) {
           try {
-            const res: any = action.action(input);
-            if (res !== undefined && res.catch !== undefined) {
-              res.catch((err) => {
-                log("error", "rejection from dialog callback", {
-                  title,
-                  action: action.label,
-                  message: getErrorMessageOrDefault(err),
-                });
-              });
-            }
+            action.action();
           } catch (err) {
             log("error", "exception from dialog callback", {
               title,
@@ -254,16 +241,20 @@ export function showDialog(
         }
         resolve({ action: actionKey, input });
       };
-      DialogCallbacks.instance()[`__link-${id}`] = (idx: string) => {
-        content.links?.[idx]?.action(() => {
+      DialogCallbacks.instance()[`__link-${id}`] = (idx) => {
+        content.links?.[Number(idx)]?.action(() => {
           dispatch(dismissDialog(id));
-        }, content.links[idx].id);
+        }, content.links[Number(idx)].id);
       };
     });
   };
 }
 
-export function closeDialog(id: string, actionKey?: string, input?: any) {
+export function closeDialog(
+  id: string,
+  actionKey?: string,
+  input?: unknown,
+): ThunkAction<void, unknown, null, AnyAction> {
   return (dispatch) => {
     dispatch(dismissDialog(id));
     try {
@@ -272,7 +263,7 @@ export function closeDialog(id: string, actionKey?: string, input?: any) {
           DialogCallbacks.instance()[id](actionKey, input);
         }
       }
-    } catch (err) {
+    } catch {
       log("error", "failed to invoke dialog callback", { id, actionKey });
     } finally {
       delete DialogCallbacks.instance()[id];
@@ -280,7 +271,11 @@ export function closeDialog(id: string, actionKey?: string, input?: any) {
   };
 }
 
-export function closeDialogs(ids: string[], actionKey?: string, input?: any) {
+export function closeDialogs(
+  ids: string[],
+  actionKey?: string,
+  input?: unknown,
+): ThunkAction<void, unknown, null, AnyAction> {
   return (dispatch) => {
     for (const id of ids) {
       dispatch(dismissDialog(id));
@@ -290,7 +285,7 @@ export function closeDialogs(ids: string[], actionKey?: string, input?: any) {
             DialogCallbacks.instance()[id](actionKey, input);
           }
         }
-      } catch (err) {
+      } catch {
         log("error", "failed to invoke dialog callback", { id, actionKey });
       } finally {
         delete DialogCallbacks.instance()[id];
@@ -302,6 +297,6 @@ export function closeDialogs(ids: string[], actionKey?: string, input?: any) {
 export function triggerDialogLink(id: string, idx: number) {
   const cbId = `__link-${id}`;
   if (DialogCallbacks.instance()[cbId] !== undefined) {
-    DialogCallbacks.instance()[cbId](idx);
+    DialogCallbacks.instance()[cbId](String(idx));
   }
 }

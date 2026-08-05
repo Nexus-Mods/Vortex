@@ -241,9 +241,11 @@ function MyTabs() {
 
 ### Toolbar
 
-Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When a group has more than `maxVisible` actions (default `7`), the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
 
-**Defaults:** `maxVisible={7}`. Pass `maxVisible={null}` to disable collapsing and always render every action.
+**Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` (or `shrink`) to opt it into collapsing.
+
+**`maxVisible`** (optional) caps the number of slots regardless of available width, for groups that should stay short. Omit it to let width be the only limit. Whichever is more restrictive wins.
 
 ```tsx
 import { Toolbar } from "../../ui/components/toolbar/Toolbar";
@@ -259,8 +261,8 @@ const actions: IToolbarAction[] = [
 <Toolbar>
     <ToolbarGroup actions={actions} />
 
-    {/* Never collapse — show every action regardless of count */}
-    <ToolbarGroup actions={contextualActions} maxVisible={null} />
+    {/* Never use more than 4 slots, however wide the toolbar gets */}
+    <ToolbarGroup actions={contextualActions} maxVisible={4} />
 </Toolbar>;
 ```
 
@@ -348,6 +350,23 @@ import { mdiTune } from "@mdi/js";
 ```
 
 > **Positioning note:** the panel is positioned manually (absolute) until `@headlessui/react` reaches v2, which brings dynamic anchor positioning and proper z-index handling.
+
+### DisplayOptions
+
+The tune-icon popover a listing puts in its page header, holding the controls for how that listing is shown (layout, what's included, …). It wraps `Popover` with the trigger, its tooltip and a reset link, so a page only supplies the rows. Compose those from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in the reset link: `onReset` puts the defaults back and the panel closes itself.
+
+```tsx
+import { DisplayOptions } from "../../ui/components/display_options/DisplayOptions";
+import { DisplayOptionsItem } from "../../ui/components/display_options/DisplayOptionsItem";
+
+<DisplayOptions onReset={onReset}>
+    <DisplayOptionsItem label={t("Show hidden items")}>
+        <Switch checked={showHidden} onChange={onToggleHidden} />
+    </DisplayOptionsItem>
+</DisplayOptions>;
+```
+
+**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. `DisplayOptionsItem` takes `label` (omit it for a control-only row), `className` and `children`.
 
 ### Tooltip
 

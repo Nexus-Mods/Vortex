@@ -18,35 +18,31 @@
 }
 
 .table-selected {
-    background-color: $table-bg-active;
-
-    // the following is needed so the row color takes precedence over the
-    // column color
-    .table-sort-column {
-        background-color: $table-bg-active;
-    }
+    background-color: var(--color-surface-translucent-low);
 }
 
-.table-hover > .xtbody > .xtr:hover {
-    .table-sort-column {
-        background-color: $table-bg-hover;
-    }
+// Hovering the selected row lifts it a step, so it stays apart from the plain
+// hover tint.
+.table-hover > .xtbody > .xtr.table-selected:hover {
+    background-color: var(--color-surface-translucent-mid);
 }
 
 .table-highlighted {
     background-color: $brand-secondary;
-
-    .table-sort-column {
-        background-color: $brand-secondary;
-    }
 }
 
 .table-filter-column {
     background-color: $brand-info !important;
 }
 
-.table-sort-column {
-    background-color: color.adjust($table-bg, $lightness: -5%);
+// The sorted column is called out by its header alone, not by tinting the whole
+// column — so the headers read as one row with the active one picked out.
+.table-container .xthead .table-header-cell {
+    color: var(--color-neutral-subdued);
+
+    &.table-sort-column {
+        color: var(--color-neutral-strong);
+    }
 }
 
 .table-header-pane {
@@ -98,8 +94,6 @@
     }
 
     .xtbody {
-        background-color: $brand-menu;
-
         .xtr {
             > div {
                 padding: 4px 0px;
@@ -108,7 +102,9 @@
     }
 }
 
-.table-container .table-main-pane .xthead {
+// The header in the body only reserves the column widths — the header pane
+// draws the one you see. Unless the table sticks its own header (see below).
+.table-container:not(.sticky-header) .table-main-pane .xthead {
     .table-header-cell.xth {
         padding: 0 !important;
         border: 0 !important;
@@ -117,6 +113,65 @@
             max-height: 0 !important;
             visibility: hidden;
             margin-top: -100%;
+        }
+    }
+}
+
+// Rows run to the page edges — so hover and the sticky header read as full-width
+// bands — and the outer cells carry the page padding the page itself dropped.
+// !important because the cell padding above is set that way too.
+.table-container.edge-to-edge .xtr {
+    > .xth:first-child,
+    > .xtd:first-child {
+        padding-left: 1.5rem !important;
+    }
+
+    > .xth:last-child,
+    > .xtd:last-child {
+        padding-right: 1.5rem !important;
+    }
+}
+
+// A table that scrolls with the page instead of in its own pane: there is no
+// header pane to pin, so the header in the body sticks to the top of the page
+// scroll — the underside of the page header — as the rows pass beneath it.
+.table-container.sticky-header {
+    height: auto;
+    overflow: visible;
+
+    .table-main-pane {
+        overflow: visible;
+    }
+
+    .xthead {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        margin-right: 0;
+        container-type: scroll-state;
+        background-color: var(--color-surface-low);
+
+        .xth {
+            padding-top: 10px !important;
+        }
+    }
+}
+
+@container scroll-state(stuck: top) {
+    // Blink paints no box-shadow on the cells of a border-collapse table, so the
+    // lift is a gradient strip hung under each of them. They tile seamlessly.
+    .table-container.sticky-header .xthead .xth {
+        position: relative;
+
+        &::after {
+            top: 100%;
+            left: 0;
+            right: 0;
+            content: "";
+            height: 10px;
+            position: absolute;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgb(0 0 0 / 50%), transparent);
         }
     }
 }

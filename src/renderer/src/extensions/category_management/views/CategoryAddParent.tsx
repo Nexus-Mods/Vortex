@@ -65,11 +65,9 @@ export function CategoryAddParent({
           />
         </div>
 
-        <div>
-          <Toolbar>
-            <ToolbarGroup actions={actions} maxVisible={2} />
-          </Toolbar>
-        </div>
+        <Toolbar>
+          <ToolbarGroup actions={actions} maxVisible={2} />
+        </Toolbar>
       </div>
     </div>
   );

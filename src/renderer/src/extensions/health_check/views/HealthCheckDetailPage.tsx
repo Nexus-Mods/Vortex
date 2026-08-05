@@ -114,15 +114,20 @@ function HealthCheckDetailPage({
       <IssueProvider entry={shownEntry}>
         <Page active={active} id="health-check-detail-page" scrollable={false}>
           <PageHeader
-            customTitle={
+            customTitle={(scrolled) => (
               <div className="flex items-center gap-x-1.5">
-                <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+                <Typography
+                  appearance={scrolled ? "subdued" : "moderate"}
+                  as="h2"
+                  className="transition-colors"
+                  typographyType="heading-xs"
+                >
                   {t(`detail::title::${shownEntry.severity}`)}
                 </Typography>
 
-                <BetaBadge />
+                <BetaBadge isSubdued={scrolled} />
               </div>
-            }
+            )}
             pictogramName="health-check"
             subtitle={t(`detail::subtitle::${shownEntry.severity}`)}
           >

@@ -13,18 +13,21 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
   children?: ReactNode | ((scrolled: boolean) => ReactNode);
   pictogramName?: IPictogramName;
   subtitle?: string;
-} & XOr<{ title: string }, { customTitle: ReactNode }>;
+} & XOr<{ title: string }, { customTitle: ReactNode | ((scrolled: boolean) => ReactNode) }>;
 
 /**
  * Full-bleed header for a non-scrolling `Page`. The bar itself spans the full
  * width (so its background/shadow reach the viewport edges) and stays pinned
  * above the `PageScroll` sibling, while its content is centred and capped at
- * `max-w-8xl` so it lines up with the scrolled content. It gains a shadow once
- * that sibling is scrolled; pass a render-prop child to react to it too.
+ * `max-w-8xl` so it lines up with the scrolled content. It trades its hairline
+ * for a shadow once that sibling is scrolled — unless `isFullWidth`, where
+ * content reaches the bar itself, so the hairline stays and the shadow is
+ * skipped; pass a render-prop child to react to the scroll too.
  *
  * Pass `title` for the common heading, or `customTitle` when the title needs
  * more than a string (e.g. a badge alongside it); `subtitle` renders below
- * either.
+ * either. `title` goes subdued once scrolled — `customTitle` takes a
+ * render-prop so it can match.
  */
 export const PageHeader = ({
   children,
@@ -40,11 +43,17 @@ export const PageHeader = ({
 
   return (
     <div
-      className={joinClasses([
-        "relative z-10 w-full pb-3 transition-[padding]",
-        scrolled ? "pt-3 shadow-md" : "border-b border-stroke-weak pt-6",
-        className,
-      ])}
+      className={joinClasses(
+        [
+          "relative z-10 w-full pb-3 transition-[padding]",
+          scrolled ? "py-2.5" : "pt-6 pb-3",
+          className,
+        ],
+        {
+          "border-b border-stroke-weak": !scrolled || isFullWidth,
+          "shadow-md": scrolled && !isFullWidth,
+        },
+      )}
       {...rest}
     >
       <PageContent className="flex items-center gap-x-6 px-6" isFullWidth={isFullWidth}>
@@ -61,8 +70,13 @@ export const PageHeader = ({
           )}
 
           <div className="grow">
-            {customTitle ?? (
-              <Typography appearance="moderate" as="h2" typographyType="heading-xs">
+            {(typeof customTitle === "function" ? customTitle(scrolled) : customTitle) ?? (
+              <Typography
+                appearance={scrolled ? "subdued" : "moderate"}
+                as="h2"
+                className="transition-colors"
+                typographyType="heading-xs"
+              >
                 {title}
               </Typography>
             )}

@@ -1,8 +1,10 @@
 .xtable {
+    // bootstrap paints every `table`; tables sit on the page surface instead.
+    background-color: transparent;
+
     > .xthead,
     > .xtbody,
     > .xtfoot {
-        background-color: $table-bg;
         > .xtr {
             > .xth,
             > .xtd {
@@ -70,7 +72,7 @@
 
 .table-hover {
     > .xtbody > .xtr:hover {
-        background-color: $table-bg-hover;
+        background-color: var(--color-surface-translucent-low);
     }
 }
 
