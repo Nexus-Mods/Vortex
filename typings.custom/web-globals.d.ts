@@ -28,3 +28,11 @@ declare class URL {
 interface URLSearchParams {
   get(name: string): string | null;
 }
+
+/**
+ * The structured clone algorithm, as a function. Present in Chromium 98+ and Node 17+.
+ *
+ * Throws `DataCloneError` for values it cannot clone — functions, symbols and
+ * `URL` among them.
+ */
+declare function structuredClone<T>(value: T): T;

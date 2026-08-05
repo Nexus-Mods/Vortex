@@ -10,6 +10,7 @@ import type {
   Serializable,
   SerializedError,
   WireResult,
+  WireUploadProgress,
 } from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
@@ -274,6 +275,17 @@ try {
       // timeout. Cancellation rejects too, but the install manager drops
       // aborted downloads, so it won't be reported as a failure.
       onResolve: (handler) => betterIpcRenderer.callback("download:resolve", handler),
+    },
+
+    uploader: {
+      file: (request) => betterIpcRenderer.invoke("upload:file", request),
+      s3Multipart: (request) => betterIpcRenderer.invoke("upload:s3-multipart", request),
+      onProgress: (handler) => {
+        const listener = (_: Electron.IpcRendererEvent, progress: WireUploadProgress) =>
+          handler(progress);
+        betterIpcRenderer.on("upload:progress", listener);
+        return () => betterIpcRenderer.off("upload:progress", listener);
+      },
     },
 
     bsdiff: {

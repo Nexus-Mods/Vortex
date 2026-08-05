@@ -17,8 +17,8 @@ vi.mock("node:fs/promises", () => {
 
 vi.mock("./uploadV3", () => ({
   pollUploadAvailable: vi.fn().mockResolvedValue(undefined),
-  uploadSinglePart: vi.fn().mockResolvedValue(undefined),
-  uploadMultipart: vi.fn().mockResolvedValue(undefined),
+  uploadFile: vi.fn().mockResolvedValue(undefined),
+  uploadS3Multipart: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("./manifestMapping", () => ({
@@ -39,7 +39,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { createVortexNexusV3Client } from "../nexusV3Client";
 import { isLoggedIn } from "../selectors";
 import { submitCollectionV3 } from "./submitCollectionV3";
-import { uploadMultipart, uploadSinglePart } from "./uploadV3";
+import { uploadFile, uploadS3Multipart } from "./uploadV3";
 
 const mockCreateClient = vi.mocked(createVortexNexusV3Client);
 const mockStat = stat as unknown as ReturnType<typeof vi.fn>;
@@ -132,9 +132,9 @@ describe("submitCollectionV3", () => {
       await submitCollectionV3(makeApi(), makeManifest(), "/tmp/small.zip", undefined);
 
       expect(mockClient.createUpload).toHaveBeenCalledWith(SMALL_FILE_SIZE, "small.zip");
-      expect(vi.mocked(uploadSinglePart)).toHaveBeenCalled();
+      expect(vi.mocked(uploadFile)).toHaveBeenCalled();
       expect(mockClient.createMultipartUpload).not.toHaveBeenCalled();
-      expect(vi.mocked(uploadMultipart)).not.toHaveBeenCalled();
+      expect(vi.mocked(uploadS3Multipart)).not.toHaveBeenCalled();
     });
 
     it("uses multipart upload for large files", async () => {
@@ -143,9 +143,37 @@ describe("submitCollectionV3", () => {
       await submitCollectionV3(makeApi(), makeManifest(), "/tmp/large.zip", undefined);
 
       expect(mockClient.createMultipartUpload).toHaveBeenCalledWith(LARGE_FILE_SIZE, "large.zip");
-      expect(vi.mocked(uploadMultipart)).toHaveBeenCalled();
+      expect(vi.mocked(uploadS3Multipart)).toHaveBeenCalled();
       expect(mockClient.createUpload).not.toHaveBeenCalled();
-      expect(vi.mocked(uploadSinglePart)).not.toHaveBeenCalled();
+      expect(vi.mocked(uploadFile)).not.toHaveBeenCalled();
+    });
+  });
+
+  // The session's presigned URL signs content-disposition and content-type but
+  // returns neither, so the transfer has to send back what the backend derived
+  // from the filename. Omitting it fails as SignatureDoesNotMatch.
+  describe("signed headers", () => {
+    it("sends a content-disposition built from the filename it registered", async () => {
+      await submitCollectionV3(makeApi(), makeManifest(), "/tmp/collection_1.7z", undefined);
+
+      const [, , , options] = vi.mocked(uploadFile).mock.calls[0]!;
+      expect(options).toMatchObject({
+        headers: {
+          contentType: "application/octet-stream",
+          contentDisposition: 'attachment; filename="collection_1.7z"',
+        },
+      });
+    });
+
+    it("sends them on the multipart path too", async () => {
+      mockStat.mockResolvedValue({ size: LARGE_FILE_SIZE });
+
+      await submitCollectionV3(makeApi(), makeManifest(), "/tmp/collection_2.7z", undefined);
+
+      const [, , , options] = vi.mocked(uploadS3Multipart).mock.calls[0]!;
+      expect(options).toMatchObject({
+        headers: { contentDisposition: 'attachment; filename="collection_2.7z"' },
+      });
     });
   });
 

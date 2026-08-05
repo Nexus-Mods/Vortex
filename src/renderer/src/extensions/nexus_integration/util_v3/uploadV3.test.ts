@@ -1,28 +1,12 @@
-import { Readable } from "stream";
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../../../logging", () => ({
   log: vi.fn(),
 }));
 
-// Keep the real HttpUploadError so instanceof checks in uploadV3 still work.
-vi.mock("../../../util/network", async (importOriginal) => ({
-  ...((await importOriginal()) as object),
-  uploadWithHeaders: vi.fn(),
-}));
-
-vi.mock("fs", () => ({
-  default: { createReadStream: vi.fn(() => Readable.from(Buffer.alloc(0))) },
-  createReadStream: vi.fn(() => Readable.from(Buffer.alloc(0))),
-}));
-
 import type { NexusV3Client } from "@vortex/nexus-api-v3";
 
-import { uploadWithHeaders } from "../../../util/network";
-import { uploadMultipart, uploadSinglePart, pollUploadAvailable } from "./uploadV3";
-
-const mockUploadWithHeaders = vi.mocked(uploadWithHeaders);
+import { uploadFile, uploadS3Multipart, pollUploadAvailable } from "./uploadV3";
 
 function makeClient(overrides: Partial<NexusV3Client> = {}): NexusV3Client {
   return {
@@ -98,52 +82,65 @@ describe("pollUploadAvailable", () => {
   });
 });
 
-describe("uploadSinglePart", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+// The transfers themselves run in the main process; these cover the hand-off
+// (see src/main/src/uploading for the retry/network behaviour).
+describe("transfer hand-off to main", () => {
+  type ProgressListener = (progress: {
+    uploadId: number;
+    transferred: number;
+    total: number;
+  }) => void;
+
+  const file = vi.fn<(request: { fileSize: number; uploadId: number }) => Promise<void>>();
+  const s3Multipart = vi.fn();
+  const unsubscribe = vi.fn();
+  let listeners: ProgressListener[];
+
+  const onProgress = vi.fn((handler: ProgressListener) => {
+    listeners.push(handler);
+    return unsubscribe;
   });
 
-  it("calls uploadWithHeaders with correct URL and size", async () => {
-    mockUploadWithHeaders.mockResolvedValue({
-      body: Buffer.alloc(0),
-      headers: {},
-      statusCode: 200,
+  /** Pushes an event the way main would, to every current subscriber. */
+  const emitProgress = (progress: { uploadId: number; transferred: number; total: number }) => {
+    for (const listener of listeners) listener(progress);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listeners = [];
+    file.mockResolvedValue(undefined);
+    s3Multipart.mockResolvedValue(undefined);
+    (window as unknown as { api: unknown }).api = {
+      uploader: { file, s3Multipart, onProgress },
+    };
+  });
+
+  it("forwards a whole-file upload with a correlation id", async () => {
+    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024);
+
+    expect(file).toHaveBeenCalledWith({
+      url: "https://s3.example.com/upload",
+      filePath: "/tmp/file.zip",
+      fileSize: 1024,
+      uploadId: expect.any(Number),
+      headers: undefined,
     });
-
-    await uploadSinglePart("https://s3.example.com/upload", "/tmp/file.zip", 1024);
-
-    expect(mockUploadWithHeaders).toHaveBeenCalledOnce();
-    const [url, , size] = mockUploadWithHeaders.mock.calls[0];
-    expect(url).toBe("https://s3.example.com/upload");
-    expect(size).toBe(1024);
-  });
-});
-
-describe("uploadMultipart", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.restoreAllMocks();
   });
 
-  it("uploads all parts and completes with correct XML", async () => {
-    mockUploadWithHeaders
-      .mockResolvedValueOnce({
-        body: Buffer.alloc(0),
-        headers: { etag: '"etag-part-1"' },
-        statusCode: 200,
-      })
-      .mockResolvedValueOnce({
-        body: Buffer.alloc(0),
-        headers: { etag: '"etag-part-2"' },
-        statusCode: 200,
-      });
+  it("passes the signed headers through to main", async () => {
+    const headers = {
+      contentType: "application/octet-stream",
+      contentDisposition: 'attachment; filename="collection_1.7z"',
+    };
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      text: vi.fn().mockResolvedValue(""),
-    } as unknown as Response);
+    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, { headers });
 
-    await uploadMultipart(
+    expect(file).toHaveBeenCalledWith(expect.objectContaining({ headers }));
+  });
+
+  it("maps the v3 multipart layout onto the wire shape", async () => {
+    await uploadS3Multipart(
       {
         part_size_bytes: 100,
         part_presigned_urls: ["https://s3.example.com/part1", "https://s3.example.com/part2"],
@@ -153,99 +150,72 @@ describe("uploadMultipart", () => {
       180,
     );
 
-    // Verify both parts were uploaded
-    expect(mockUploadWithHeaders).toHaveBeenCalledTimes(2);
-
-    const [url1, , size1] = mockUploadWithHeaders.mock.calls[0];
-    expect(url1).toBe("https://s3.example.com/part1");
-    expect(size1).toBe(100);
-
-    const [url2, , size2] = mockUploadWithHeaders.mock.calls[1];
-    expect(url2).toBe("https://s3.example.com/part2");
-    expect(size2).toBe(80); // last part is smaller
-
-    // Verify completion POST with correct XML
-    expect(fetchSpy).toHaveBeenCalledOnce();
-    const [completeUrl, options] = fetchSpy.mock.calls[0];
-    expect(completeUrl).toBe("https://s3.example.com/complete");
-    expect(options.method).toBe("POST");
-    expect(options.headers).toEqual({ "Content-Type": "application/xml" });
-
-    const xml = options.body as string;
-    expect(xml).toContain("<CompleteMultipartUpload>");
-    expect(xml).toContain("<PartNumber>1</PartNumber>");
-    expect(xml).toContain('<ETag>"etag-part-1"</ETag>');
-    expect(xml).toContain("<PartNumber>2</PartNumber>");
-    expect(xml).toContain('<ETag>"etag-part-2"</ETag>');
-  });
-
-  it("throws if a part upload has no ETag", async () => {
-    mockUploadWithHeaders.mockResolvedValueOnce({
-      body: Buffer.alloc(0),
-      headers: {}, // no etag
-      statusCode: 200,
-    });
-
-    await expect(
-      uploadMultipart(
-        {
-          part_size_bytes: 100,
-          part_presigned_urls: ["https://s3.example.com/part1"],
-          complete_presigned_url: "https://s3.example.com/complete",
-        },
-        "/tmp/file.zip",
-        50,
-      ),
-    ).rejects.toThrow("ETag");
-  });
-
-  it("retries and then throws if multipart completion keeps failing", async () => {
-    mockUploadWithHeaders.mockResolvedValueOnce({
-      body: Buffer.alloc(0),
-      headers: { etag: '"etag-1"' },
-      statusCode: 200,
-    });
-
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: vi.fn().mockResolvedValue("Internal Server Error"),
-    } as unknown as Response);
-
-    vi.useFakeTimers();
-    const promise = uploadMultipart(
-      {
-        part_size_bytes: 100,
-        part_presigned_urls: ["https://s3.example.com/part1"],
-        complete_presigned_url: "https://s3.example.com/complete",
+    expect(s3Multipart).toHaveBeenCalledWith({
+      layout: {
+        partSizeBytes: 100,
+        partPresignedUrls: ["https://s3.example.com/part1", "https://s3.example.com/part2"],
+        completePresignedUrl: "https://s3.example.com/complete",
       },
-      "/tmp/file.zip",
-      50,
-    );
-    // Swallow the eventual rejection so the assertion below owns it.
-    const settled = promise.catch((err: unknown) => err);
-    await vi.runAllTimersAsync();
-    vi.useRealTimers();
-
-    const err = await settled;
-    expect(err).toBeInstanceOf(Error);
-    expect((err as Error).message).toMatch(/Failed to complete multipart upload/);
-    // Completion POST is retried up to RETRY_ATTEMPTS (3) times.
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
+      filePath: "/tmp/bigfile.zip",
+      fileSize: 180,
+      uploadId: expect.any(Number),
+      headers: undefined,
+    });
   });
 
-  it("throws with mismatched part layout", async () => {
+  it("propagates a failure from main", async () => {
+    file.mockRejectedValue(new Error("Server returned 403"));
+
+    await expect(uploadFile("https://s3.example.com/x", "/tmp/f.zip", 1)).rejects.toThrow(/403/);
+  });
+
+  it("forwards progress events for its own upload", async () => {
+    const reported: Array<[number, number]> = [];
+    file.mockImplementation(async ({ fileSize, uploadId }) => {
+      emitProgress({ uploadId, transferred: 512, total: fileSize });
+      emitProgress({ uploadId, transferred: fileSize, total: fileSize });
+    });
+
+    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+      onProgress: (transferred, total) => reported.push([transferred, total]),
+    });
+
+    expect(reported).toEqual([
+      [512, 1024],
+      [1024, 1024],
+    ]);
+  });
+
+  it("ignores progress belonging to another upload", async () => {
+    const reported: Array<[number, number]> = [];
+    file.mockImplementation(async ({ fileSize, uploadId }) => {
+      emitProgress({ uploadId: uploadId + 1000, transferred: 1, total: fileSize });
+      emitProgress({ uploadId, transferred: 2, total: fileSize });
+    });
+
+    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 10, {
+      onProgress: (transferred, total) => reported.push([transferred, total]),
+    });
+
+    expect(reported).toEqual([[2, 10]]);
+  });
+
+  it("drops the subscription once the upload settles, including on failure", async () => {
+    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1, {
+      onProgress: () => {},
+    });
+    expect(unsubscribe).toHaveBeenCalledOnce();
+
+    file.mockRejectedValue(new Error("Server returned 500"));
     await expect(
-      uploadMultipart(
-        {
-          part_size_bytes: 100,
-          // One URL provided, but 250 bytes at 100 bytes/part needs 3 parts.
-          part_presigned_urls: ["https://s3.example.com/part1"],
-          complete_presigned_url: "https://s3.example.com/complete",
-        },
-        "/tmp/file.zip",
-        250,
-      ),
-    ).rejects.toThrow(/Multipart layout mismatch/);
+      uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1, { onProgress: () => {} }),
+    ).rejects.toThrow();
+    expect(unsubscribe).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not subscribe when no progress handler is given", async () => {
+    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1);
+
+    expect(onProgress).not.toHaveBeenCalled();
   });
 });

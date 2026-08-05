@@ -2,6 +2,7 @@ import { stat } from "node:fs/promises";
 import * as path from "path";
 
 import type { ICollectionManifest, ICreateCollectionResult } from "@nexusmods/nexus-api";
+import { uploadHeadersFor } from "@vortex/nexus-api-v3";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -9,13 +10,15 @@ import { MULTIPART_THRESHOLD } from "../constants";
 import { createVortexNexusV3Client } from "../nexusV3Client";
 import { isLoggedIn } from "../selectors";
 import { toV3CollectionPayload } from "./manifestMapping";
-import { pollUploadAvailable, uploadMultipart, uploadSinglePart } from "./uploadV3";
+import type { UploadProgressHandler } from "./uploadV3";
+import { pollUploadAvailable, uploadFile, uploadS3Multipart } from "./uploadV3";
 
 export async function submitCollectionV3(
   api: IExtensionApi,
   collectionInfo: ICollectionManifest,
   assetFilePath: string,
   collectionId: number | undefined,
+  onProgress?: UploadProgressHandler,
 ): Promise<ICreateCollectionResult> {
   if (!isLoggedIn(api.getState())) {
     throw new Error("Not logged in to Nexus Mods");
@@ -34,14 +37,18 @@ export async function submitCollectionV3(
   // Step 1: Create upload session
   let uploadId: string;
 
+  // The session is presigned against these header values; they have to be sent
+  // back verbatim on the transfer.
+  const headers = uploadHeadersFor(filename);
+
   if (fileSize <= MULTIPART_THRESHOLD) {
     const upload = await client.createUpload(fileSize, filename);
     uploadId = upload.id;
-    await uploadSinglePart(upload.presigned_url, assetFilePath, fileSize);
+    await uploadFile(upload.presigned_url, assetFilePath, fileSize, { headers, onProgress });
   } else {
     const multipart = await client.createMultipartUpload(fileSize, filename);
     uploadId = multipart.id;
-    await uploadMultipart(multipart, assetFilePath, fileSize);
+    await uploadS3Multipart(multipart, assetFilePath, fileSize, { headers, onProgress });
   }
 
   // Step 2: Finalise and wait for availability

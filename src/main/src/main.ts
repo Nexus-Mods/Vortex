@@ -60,6 +60,7 @@ import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";
 import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";
+import { init as initUploadIpc } from "./uploading/ipc";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 
@@ -300,6 +301,7 @@ async function main(): Promise<void> {
 
   initIpcHandlers();
   initDownloadIpc(downloadManager);
+  initUploadIpc();
   initAdaptorHost().catch((err: unknown) => {
     log("warn", "Failed to initialize adaptor host", {
       error: err instanceof Error ? err.message : "unknown error",

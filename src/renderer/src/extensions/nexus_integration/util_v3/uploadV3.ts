@@ -1,16 +1,10 @@
-import { createReadStream } from "fs";
-
 import type { components, NexusV3Client } from "@vortex/nexus-api-v3";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import type { WireUploadHeaders } from "@vortex/shared/ipc";
 
 import { log } from "../../../logging";
-import { HttpUploadError, uploadWithHeaders, type IUploadResult } from "../../../util/network";
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 150; // 5 minutes
-
-const RETRY_ATTEMPTS = 3;
-const RETRY_BASE_DELAY_MS = 1000;
 
 type UploadState = components["schemas"]["UploadState"];
 
@@ -29,63 +23,10 @@ function dispositionOf(state: string): "inprogress" | "success" | undefined {
   return STATE_DISPOSITION[state as UploadState];
 }
 
-function statusCodeOf(err: unknown): number | undefined {
-  return err instanceof HttpUploadError ? err.statusCode : undefined;
-}
-
-function isRetryableError(err: unknown): boolean {
-  const sc = statusCodeOf(err);
-  if (sc === undefined) {
-    // No HTTP status — treat as transport error, retry.
-    return true;
-  }
-  // 4xx are client errors and generally not worth retrying. 408 (timeout)
-  // and 429 (rate-limit) are the conventional exceptions.
-  if (sc >= 400 && sc < 500 && sc !== 408 && sc !== 429) {
-    return false;
-  }
-  return true;
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-}
-
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  label: string,
-  attempts: number = RETRY_ATTEMPTS,
-): Promise<T> {
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      if (attempt === attempts || !isRetryableError(err)) {
-        if (!isRetryableError(err)) {
-          log("debug", "upload attempt failed, not retrying", {
-            label,
-            statusCode: statusCodeOf(err),
-            error: getErrorMessageOrDefault(err),
-          });
-        }
-        break;
-      }
-      const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
-      log("warn", "upload attempt failed, retrying", {
-        label,
-        attempt,
-        attempts,
-        delayMs: delay,
-        error: getErrorMessageOrDefault(err),
-      });
-      await sleep(delay);
-    }
-  }
-  throw lastErr;
 }
 
 export async function pollUploadAvailable(client: NexusV3Client, uploadId: string): Promise<void> {
@@ -126,96 +67,97 @@ export async function pollUploadAvailable(client: NexusV3Client, uploadId: strin
   );
 }
 
-export async function uploadSinglePart(
-  presignedUrl: string,
+/** Reports bytes sent out of the total for the file being uploaded. */
+export type UploadProgressHandler = (transferred: number, total: number) => void;
+
+export type UploadOptions = {
+  /**
+   * Headers the presigned URL's signature covers. Build them with
+   * `uploadHeadersFor` from `@vortex/nexus-api-v3`, which knows what the v3
+   * upload session was signed with.
+   */
+  headers?: WireUploadHeaders;
+  onProgress?: UploadProgressHandler;
+};
+
+let nextUploadId = 0;
+
+/**
+ * Runs an upload in main and pumps its progress events into `onProgress` for
+ * the duration of the call. The id keeps this transfer's events apart from any
+ * other upload's, and the subscription is dropped as soon as it settles.
+ */
+async function withProgress(
+  onProgress: UploadProgressHandler | undefined,
+  run: (uploadId: number) => Promise<void>,
+): Promise<void> {
+  const uploadId = nextUploadId++;
+  if (onProgress === undefined) {
+    await run(uploadId);
+    return;
+  }
+
+  const unsubscribe = window.api.uploader.onProgress((progress) => {
+    if (progress.uploadId !== uploadId) return;
+    onProgress(progress.transferred, progress.total);
+  });
+  try {
+    await run(uploadId);
+  } finally {
+    unsubscribe();
+  }
+}
+
+/**
+ * The byte transfers run in the main process (see `src/main/src/uploading`),
+ * which owns the got-based network stack and the shared retry strategy. The
+ * renderer only holds the authenticated v3 session, so it drives the API calls
+ * either side of the transfer.
+ */
+export function uploadFile(
+  url: string,
   filePath: string,
   fileSize: number,
+  options?: UploadOptions,
 ): Promise<void> {
-  await withRetry<IUploadResult>(
-    () => uploadWithHeaders(presignedUrl, createReadStream(filePath), fileSize),
-    "single-part upload",
+  return withProgress(options?.onProgress, (uploadId) =>
+    window.api.uploader.file({
+      url,
+      filePath,
+      fileSize,
+      uploadId,
+      headers: options?.headers,
+    }),
   );
 }
 
-function buildCompleteMultipartXml(etags: Array<{ partNumber: number; etag: string }>): string {
-  const parts = etags
-    .map(
-      ({ partNumber, etag }) =>
-        `  <Part>\n    <PartNumber>${partNumber}</PartNumber>\n    <ETag>${etag}</ETag>\n  </Part>`,
-    )
-    .join("\n");
-  return `<CompleteMultipartUpload>\n${parts}\n</CompleteMultipartUpload>`;
-}
-
-async function uploadPart(
-  url: string,
-  filePath: string,
-  start: number,
-  end: number,
-  partNumber: number,
-  totalParts: number,
-): Promise<{ partNumber: number; etag: string }> {
-  const chunkSize = end - start;
-  const result = await withRetry<IUploadResult>(() => {
-    const stream = createReadStream(filePath, { start, end: end - 1 });
-    return uploadWithHeaders(url, stream, chunkSize);
-  }, `multipart part ${partNumber}/${totalParts}`);
-
-  const etag = result.headers.etag;
-  if (!etag) {
-    throw new Error(`S3 did not return an ETag for part ${partNumber} of multipart upload`);
-  }
-
-  log("debug", "multipart part uploaded", {
-    part: partNumber,
-    total: totalParts,
-    etag,
-  });
-  return { partNumber, etag };
-}
-
-export async function uploadMultipart(
-  multipart: {
+/**
+ * `/uploads/multipart` sessions are defined against the Amazon S3 multipart
+ * specification, so the transfer follows that protocol in main. This only
+ * restates the session layout in the wire shape.
+ */
+export function uploadS3Multipart(
+  layout: {
     part_size_bytes: number;
     part_presigned_urls: ArrayLike<string>;
     complete_presigned_url: string;
   },
   filePath: string,
   fileSize: number,
+  options?: UploadOptions,
 ): Promise<void> {
-  const { part_size_bytes, part_presigned_urls, complete_presigned_url } = multipart;
-  const totalParts = part_presigned_urls.length;
-  const expectedParts = Math.ceil(fileSize / part_size_bytes);
-  if (expectedParts !== totalParts) {
-    throw new Error(
-      `Multipart layout mismatch: server returned ${totalParts} presigned URLs ` +
-        `but ${fileSize} bytes at ${part_size_bytes} bytes/part needs ${expectedParts}`,
-    );
-  }
-  const etags: Array<{ partNumber: number; etag: string }> = [];
-  for (let i = 0; i < totalParts; i++) {
-    const start = i * part_size_bytes;
-    const end = Math.min(start + part_size_bytes, fileSize);
-    etags.push(await uploadPart(part_presigned_urls[i], filePath, start, end, i + 1, totalParts));
-  }
-
-  // Complete the multipart upload by POSTing the ETags XML to S3.
-  const xml = buildCompleteMultipartXml(etags);
-  await withRetry(async () => {
-    const response = await fetch(complete_presigned_url, {
-      method: "POST",
-      headers: { "Content-Type": "application/xml" },
-      body: xml,
-    });
-    if (!response.ok) {
-      // Throw inside withRetry so transient 5xx responses are retried
-      // while isRetryableError skips 4xx responses.
-      const body = await response.text();
-      throw new HttpUploadError(
-        `Failed to complete multipart upload: ${response.status} ${body}`,
-        response.status,
-      );
-    }
-    return response;
-  }, "multipart completion");
+  const wireLayout = {
+    partSizeBytes: layout.part_size_bytes,
+    partPresignedUrls: Array.from(layout.part_presigned_urls),
+    completePresignedUrl: layout.complete_presigned_url,
+  };
+  return withProgress(options?.onProgress, (uploadId) =>
+    window.api.uploader.s3Multipart({
+      layout: wireLayout,
+      filePath,
+      fileSize,
+      uploadId,
+      headers: options?.headers,
+    }),
+  );
 }

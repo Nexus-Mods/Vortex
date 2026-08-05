@@ -22,6 +22,7 @@ import { toPromise } from "../../util/util";
 import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
 import type { ICollection, ICollectionMod, ICollectionSourceInfo } from "./types/ICollection";
 import { makeProgressFunction } from "./util/makeProgressFunction";
+import { makeUploadProgress } from "./util/makeUploadProgress";
 import { modToCollection } from "./util/modToCollection";
 import { hasEditPermissions } from "./util/util";
 
@@ -304,9 +305,26 @@ export async function doExportToAPI(
         log("info", "user doesn't match original author, creating new collection");
         collectionId = undefined;
       }
-      const result: ICreateCollectionResult = await toPromise((cb) =>
-        api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, cb),
-      );
+      // The collection is built at this point; the upload reports against its
+      // own notification, so retire this one rather than leaving it at 100%.
+      progressEnd();
+
+      const { onProgress: onUploadProgress, uploadEnd } = makeUploadProgress(api);
+      let result: ICreateCollectionResult;
+      try {
+        result = await toPromise((cb) =>
+          api.events.emit(
+            "submit-collection",
+            filterInfo(info),
+            filePath,
+            collectionId,
+            cb,
+            onUploadProgress,
+          ),
+        );
+      } finally {
+        uploadEnd();
+      }
       collectionId = result.collection.id;
       collectionSlug = result.collection.slug ?? mod.attributes?.collectionSlug;
       api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionId", collectionId));
