@@ -13,12 +13,12 @@ export default async function sourcesByDiscovery(
   game: IGameStored,
   discovery: IDiscoveryResult,
 ): Promise<Record<string, MediaSource>> {
-  const { name, id: gameId } = game;
+  const { name, id: gameId, details } = game;
   const { store, path: gamePath } = discovery;
   const res: Record<string, MediaSource> = {};
   switch (store) {
     case "steam": {
-      const steamMedia = await getSteamMedia();
+      const steamMedia = await getSteamMedia(gamePath, details.steamAppId);
       Object.assign(res, steamMedia);
       break;
     }
@@ -48,12 +48,18 @@ export default async function sourcesByDiscovery(
   return res;
 }
 
-async function getSteamMedia(): Promise<Record<string, MediaSource>> {
+async function getSteamMedia(
+  gamePath: string,
+  knownId?: string | number,
+): Promise<Record<string, MediaSource>> {
   const res = {};
   // Images live at userdata\{USER ID}\760\remote\{STEAM APP ID}\screenshots
   // Images have a manifest at userdata\{USER ID}\760\remote\screenshots.vdf
   // Videos live at userdata\{USER ID}\gamerecordings\clips\ with a subfolder for each clip, containing a Thumbnail.jpg
   const steamPath = await Steam.getGameStorePath();
+  const steamGame = (await Steam.allGames()).find((g) => g.gamePath === gamePath);
+  if (!steamGame) return res;
+  const steamId = knownId ? String(knownId) : steamGame.appid;
   const userDataFolder = path.resolve(steamPath, "..", "userdata");
   const steamUsers = await fs.readdir(userDataFolder);
   for (const user of steamUsers) {
@@ -62,18 +68,16 @@ async function getSteamMedia(): Promise<Record<string, MediaSource>> {
       await fs.access(screenshotsVDF);
       const raw = await fs.readFile(screenshotsVDF, { encoding: "utf-8" });
       const parsed = parse(raw) as SteamScreenshotsVDF;
-      if (Object.keys(parsed.screenshots).length) {
-        res[`steam-screenshots-${user}`] = {
-          name: "Steam Screenshots",
-          path: screenshotsVDF,
-          active: true,
-        };
-      }
+      res[`steam-screenshots-${user}`] = {
+        name: "Steam Screenshots",
+        path: path.join(userDataFolder, user, "760", "remote", steamId, "screenshots"),
+        active: true,
+      };
       console.log("Parsed VDF", parsed);
     } catch (err) {
       console.log("Failed to acccess VDF", { screenshotsVDF, err });
     }
-    console.log("User folder", screenshotsVDF);
+    console.log("User folder", screenshotsVDF, steamGame);
   }
-  return {};
+  return res;
 }
