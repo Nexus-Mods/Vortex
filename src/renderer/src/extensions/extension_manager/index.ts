@@ -1,3 +1,4 @@
+import { mdiPuzzleOutline } from "@mdi/js";
 import * as semver from "semver";
 
 import { log } from "@/logging";
@@ -18,7 +19,7 @@ import makeReactive from "../../util/makeReactive";
 import { setAvailableExtensions, setExtensionsUpdate } from "./actions";
 import BrowseExtensions from "./BrowseExtensions";
 import type { IBrowseExtensionsProps } from "./BrowseExtensions";
-import ExtensionManager from "./ExtensionManager";
+import { ExtensionManager } from "./ExtensionManager";
 import type { IExtensionManagerProps } from "./ExtensionManager";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
@@ -326,6 +327,7 @@ function init(context: IExtensionContext) {
     priority: 20,
     hotkey: "X",
     group: "global",
+    newLayout: true,
     props: () =>
       ({
         localState,
@@ -333,16 +335,14 @@ function init(context: IExtensionContext) {
           signalRestartNeeded(context.api);
           return Promise.resolve();
         },
+        onRefresh: () => forceUpdateExtensions(),
       }) satisfies Partial<IExtensionManagerProps>,
+    mdi: mdiPuzzleOutline,
   });
 
   const forceUpdateExtensions = () => {
     void updateAvailableExtensions(context.api, true);
   };
-
-  context.registerAction("extensions-layout-icons", 500, "refresh", {}, "Update Extensions", () => {
-    forceUpdateExtensions();
-  });
 
   context.registerDialog(
     "browse-extensions",
