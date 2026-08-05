@@ -6,6 +6,7 @@
 
 import { accessSync } from 'original-fs';
 import type { Action } from 'redux';
+import type { AnyAction } from 'redux';
 import { appendFileSync } from 'original-fs';
 import Bluebird from 'bluebird';
 import type { BrowserWindow } from 'electron';
@@ -91,6 +92,7 @@ import { Stats } from 'fs';
 import { statSync } from 'original-fs';
 import { symlinkSync } from 'original-fs';
 import type { TFunction as TFunction_2 } from 'i18next';
+import type { ThunkAction } from 'redux-thunk';
 import type { ThunkDispatch } from 'redux-thunk';
 import type { TOptions } from 'i18next';
 import { watch } from 'original-fs';
@@ -408,7 +410,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => Promise<void> | Promise_2<void>;
+function addNotification(notification: INotification): ThunkAction<Promise<void>, unknown, null, AnyAction>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -607,10 +609,10 @@ const closeAsync: (fd: number) => Promise_2<void>;
 const closeBrowser: EmptyActionCreator;
 
 // @public (undocumented)
-function closeDialog(id: string, actionKey?: string, input?: any): (dispatch: any) => void;
+function closeDialog(id: string, actionKey?: string, input?: unknown): ThunkAction<void, unknown, null, AnyAction>;
 
 // @public (undocumented)
-function closeDialogs(ids: string[], actionKey?: string, input?: any): (dispatch: any) => void;
+function closeDialogs(ids: string[], actionKey?: string, input?: unknown): ThunkAction<void, unknown, null, AnyAction>;
 
 // @public (undocumented)
 function coerceToSemver(version: string): string;
@@ -932,13 +934,13 @@ const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
 };
 
 // @public (undocumented)
-function dismissAllNotifications(): (dispatch: any) => Promise_2<void>;
+function dismissAllNotifications(): ThunkAction<void, unknown, null, AnyAction>;
 
 // @public
-const dismissDialog: ComplexActionCreator1<any, any, {}>;
+const dismissDialog: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-function dismissNotification(id: string): (dispatch: any) => Promise_2<void>;
+function dismissNotification(id: string): ThunkAction<void, unknown, null, AnyAction>;
 
 // @public
 const displayGroup: ComplexActionCreator2<string, string, {
@@ -1670,6 +1672,8 @@ enum HealthCheckTrigger {
     // (undocumented)
     GameChanged = "game-changed",
     // (undocumented)
+    LoginChanged = "login-changed",
+    // (undocumented)
     LootUpdated = "loot-updated",
     // (undocumented)
     Manual = "manual",
@@ -2107,7 +2111,7 @@ interface IDialog {
 // @public (undocumented)
 interface IDialogAction {
     // (undocumented)
-    action?: (label: string) => void;
+    action?: () => void;
     // (undocumented)
     default?: boolean;
     // (undocumented)
@@ -5963,7 +5967,7 @@ const shouldShowPremiumAd: (state: IState) => boolean;
 function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string): void;
 
 // @public
-function showDialog(type: DialogType, title: string, content: IDialogContent, actions: DialogActions, inId?: string): (dispatch: any) => Promise_2<IDialogResult>;
+function showDialog(type: DialogType, title: string, content: IDialogContent, actions: DialogActions, inId?: string): ThunkAction<Promise_2<IDialogResult>, unknown, null, AnyAction>;
 
 // @public
 function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>, title: string, details?: string | Error | any, options?: IErrorOptions): void;
@@ -6083,7 +6087,7 @@ class StarterInfo implements IStarterInfo {
 }
 
 // @public
-const startNotification: ComplexActionCreator1<any, any, {}>;
+const startNotification: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
 const statAsync: (path: string) => Promise_2<fs_2.Stats>;
@@ -6112,7 +6116,7 @@ scope: string;
 const stopAllNotifications: EmptyActionCreator;
 
 // @public
-const stopNotification: ComplexActionCreator1<any, any, {}>;
+const stopNotification: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
 const suppressNotification: ComplexActionCreator2<string, boolean, {
