@@ -5,7 +5,7 @@ export type DialogType = "success" | "info" | "error" | "question";
 export interface IDialogAction {
   label: string;
   default?: boolean;
-  action?: (label: string) => void;
+  action?: () => void;
 }
 
 export interface IConditionResult {
