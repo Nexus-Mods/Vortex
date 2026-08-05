@@ -231,11 +231,9 @@ export default function CategoryListItem({
           </div>
         </div>
 
-        <div>
-          <Toolbar>
-            <ToolbarGroup actions={actions} maxVisible={4} />
-          </Toolbar>
-        </div>
+        <Toolbar>
+          <ToolbarGroup actions={actions} maxVisible={4} />
+        </Toolbar>
       </div>
 
       {addNew && (

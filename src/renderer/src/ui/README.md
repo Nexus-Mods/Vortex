@@ -241,9 +241,11 @@ function MyTabs() {
 
 ### Toolbar
 
-Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When a group has more than `maxVisible` actions (default `7`), the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
 
-**Defaults:** `maxVisible={7}`. Pass `maxVisible={null}` to disable collapsing and always render every action.
+**Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` (or `shrink`) to opt it into collapsing.
+
+**`maxVisible`** (optional) caps the number of slots regardless of available width, for groups that should stay short. Omit it to let width be the only limit. Whichever is more restrictive wins.
 
 ```tsx
 import { Toolbar } from "../../ui/components/toolbar/Toolbar";
@@ -259,8 +261,8 @@ const actions: IToolbarAction[] = [
 <Toolbar>
     <ToolbarGroup actions={actions} />
 
-    {/* Never collapse — show every action regardless of count */}
-    <ToolbarGroup actions={contextualActions} maxVisible={null} />
+    {/* Never use more than 4 slots, however wide the toolbar gets */}
+    <ToolbarGroup actions={contextualActions} maxVisible={4} />
 </Toolbar>;
 ```
 
