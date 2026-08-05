@@ -1,11 +1,11 @@
-import safeCreateAction from "./safeCreateAction";
+import { createAction } from "redux-act";
 
 /**
  * set (or unset) notifications to not show again
  */
-export const suppressNotification = safeCreateAction(
+export const suppressNotification = createAction(
   "SUPPRESS_NOTIFICATION",
   (id: string, suppress: boolean) => ({ id, suppress }),
 );
 
-export const resetSuppression = safeCreateAction("RESET_SUPPRESSION", () => null);
+export const resetSuppression = createAction("RESET_SUPPRESSION", () => null);

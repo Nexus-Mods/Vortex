@@ -1,9 +1,8 @@
-import * as reduxAct from "redux-act";
+import { createAction } from "redux-act";
 
 import type { SortDirection } from "../types/SortDirection";
-import safeCreateAction from "./safeCreateAction";
 
-export const setAttributeVisible = safeCreateAction(
+export const setAttributeVisible = createAction(
   "SET_ATTRIBUTE_VISIBLE",
   (tableId: string, attributeId: string, visible: boolean) => ({
     tableId,
@@ -12,7 +11,7 @@ export const setAttributeVisible = safeCreateAction(
   }),
 );
 
-export const setAttributeSort = safeCreateAction(
+export const setAttributeSort = createAction(
   "SET_ATTRIBUTE_SORT",
   (tableId: string, attributeId: string, direction: SortDirection) => ({
     tableId,
@@ -21,21 +20,21 @@ export const setAttributeSort = safeCreateAction(
   }),
 );
 
-export const setAttributeFilter = safeCreateAction(
+export const setAttributeFilter = createAction(
   "SET_ATTRIBUTE_FILTER",
-  (tableId: string, attributeId: string, filter: any) => ({
+  (tableId: string, attributeId: string, filter: unknown) => ({
     tableId,
     attributeId,
     filter,
   }),
 );
 
-export const setGroupingAttribute = safeCreateAction(
+export const setGroupingAttribute = createAction(
   "SET_GROUPING_ATTRIBUTE",
   (tableId: string, attributeId: string) => ({ tableId, attributeId }),
 );
 
-export const collapseGroup = safeCreateAction(
+export const collapseGroup = createAction(
   "COLLAPSE_GROUP",
   (tableId: string, groupId: string, collapse: boolean) => ({
     tableId,
@@ -44,7 +43,7 @@ export const collapseGroup = safeCreateAction(
   }),
 );
 
-export const setCollapsedGroups = safeCreateAction(
+export const setCollapsedGroups = createAction(
   "SET_COLLAPSED_GROUPS",
   (tableId: string, groups: string[]) => ({ tableId, groups }),
 );

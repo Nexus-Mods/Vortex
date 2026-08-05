@@ -377,9 +377,9 @@ manual: boolean;
 }, {}>;
 
 // @public (undocumented)
-const addExtension: reduxAct.ComplexActionCreator2<string, ExtensionInfo, {
-    extensionId: string;
-    info: ExtensionInfo;
+const addExtension: ComplexActionCreator2<string, ExtensionInfo, {
+extensionId: string;
+info: ExtensionInfo;
 }, {}>;
 
 // @public
@@ -618,10 +618,10 @@ function closeDialogs(ids: string[], actionKey?: string, input?: unknown): Thunk
 function coerceToSemver(version: string): string;
 
 // @public (undocumented)
-const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
-    tableId: string;
-    groupId: string;
-    collapse: boolean;
+const collapseGroup: ComplexActionCreator3<string, string, boolean, {
+tableId: string;
+groupId: string;
+collapse: boolean;
 }, {}>;
 
 // @public
@@ -755,7 +755,7 @@ class CollectionsInstallationStartedEvent implements MixpanelEvent {
 function compileStopPatterns(patterns: readonly string[]): RegExp[];
 
 // @public (undocumented)
-const completeMigration: reduxAct.ComplexActionCreator1<any, any, {}>;
+const completeMigration: ComplexActionCreator1<string, string, {}>;
 
 // @public
 export class ComponentEx<P, S extends object> extends React_2.Component<P & Partial<WithTranslation>, S> {
@@ -1180,7 +1180,7 @@ export class FlexLayout extends React_2.PureComponent<IProps_3, {}> {
 function forcePerm<T>(t: TFunction, op: () => Promise_2<T>, filePath?: string, maxTries?: number): Promise_2<T>;
 
 // @public (undocumented)
-const forgetExtension: reduxAct.ComplexActionCreator1<any, any, {}>;
+const forgetExtension: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 const forgetMod: reduxAct.ComplexActionCreator2<string, string, {
@@ -5192,7 +5192,7 @@ id: string;
 }, {}>;
 
 // @public (undocumented)
-const removeExtension: reduxAct.ComplexActionCreator1<any, any, {}>;
+const removeExtension: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 const removeMod: reduxAct.ComplexActionCreator2<string, string, {
@@ -5402,30 +5402,30 @@ const setAdvancedMode: reduxAct.ComplexActionCreator1<boolean, {
 }, {}>;
 
 // @public (undocumented)
-const setApplicationVersion: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setApplicationVersion: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 const setAssociatedWithNXMURLs: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setAttributeFilter: reduxAct.ComplexActionCreator3<string, string, any, {
-    tableId: string;
-    attributeId: string;
-    filter: any;
+const setAttributeFilter: ComplexActionCreator3<string, string, unknown, {
+tableId: string;
+attributeId: string;
+filter: unknown;
 }, {}>;
 
 // @public (undocumented)
-const setAttributeSort: reduxAct.ComplexActionCreator3<string, string, SortDirection, {
-    tableId: string;
-    attributeId: string;
-    direction: SortDirection;
+const setAttributeSort: ComplexActionCreator3<string, string, SortDirection, {
+tableId: string;
+attributeId: string;
+direction: SortDirection;
 }, {}>;
 
 // @public (undocumented)
-const setAttributeVisible: reduxAct.ComplexActionCreator3<string, string, boolean, {
-    tableId: string;
-    attributeId: string;
-    visible: boolean;
+const setAttributeVisible: ComplexActionCreator3<string, string, boolean, {
+tableId: string;
+attributeId: string;
+visible: boolean;
 }, {}>;
 
 // @public (undocumented)
@@ -5459,9 +5459,9 @@ categoryIds: string[];
 const setCleanupOnDeploy: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public (undocumented)
-const setCollapsedGroups: reduxAct.ComplexActionCreator2<string, string[], {
-    tableId: string;
-    groups: string[];
+const setCollapsedGroups: ComplexActionCreator2<string, string[], {
+tableId: string;
+groups: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -5485,7 +5485,7 @@ const setConfirmPurge: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 const setCopyOnIFF: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setCustomTitlebar: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setCustomTitlebar: ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public
 function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K];
@@ -5582,24 +5582,24 @@ time: number;
 }, {}>;
 
 // @public (undocumented)
-const setExtensionEnabled: reduxAct.ComplexActionCreator2<string, boolean, {
-    extensionId: string;
-    enabled: boolean;
+const setExtensionEnabled: ComplexActionCreator2<string, boolean, {
+extensionId: string;
+enabled: boolean;
 }, {}>;
 
 // @public (undocumented)
-const setExtensionEndorsed: reduxAct.ComplexActionCreator2<string, string, {
-    extensionId: string;
-    endorsed: string;
+const setExtensionEndorsed: ComplexActionCreator2<string, string, {
+extensionId: string;
+endorsed: string;
 }, {}>;
 
 // @public (undocumented)
 const setExtensionLoadFailures: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setExtensionVersion: reduxAct.ComplexActionCreator2<string, string, {
-    extensionId: string;
-    version: string;
+const setExtensionVersion: ComplexActionCreator2<string, string, {
+extensionId: string;
+version: string;
 }, {}>;
 
 // @public (undocumented)
@@ -5652,9 +5652,9 @@ exePath: string;
 const setGameSearchPaths: ComplexActionCreator1<string[], string[], {}>;
 
 // @public (undocumented)
-const setGroupingAttribute: reduxAct.ComplexActionCreator2<string, string, {
-    tableId: string;
-    attributeId: string;
+const setGroupingAttribute: ComplexActionCreator2<string, string, {
+tableId: string;
+attributeId: string;
 }, {}>;
 
 // @public (undocumented)
@@ -5682,18 +5682,18 @@ const setInstallPathMode: reduxAct.ComplexActionCreator1<InstallPathMode, Instal
 // Warning: (ae-forgotten-export) The symbol "VortexInstallType" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-const setInstallType: reduxAct.ComplexActionCreator1<VortexInstallType, VortexInstallType, {}>;
+const setInstallType: ComplexActionCreator1<VortexInstallType, VortexInstallType, {}>;
 
 // @public (undocumented)
-const setInstanceId: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setInstanceId: ComplexActionCreator1<string, string, {}>;
 
 // @public
 const setLanguage: reduxAct.ComplexActionCreator1<string, string, {}>;
 
 // @public
-const setLoadOrder: ComplexActionCreator2<string, any[], {
+const setLoadOrder: ComplexActionCreator2<string, unknown[], {
 id: string;
-order: any[];
+order: unknown[];
 }, {}>;
 
 // @public (undocumented)
@@ -5706,7 +5706,7 @@ const setMaxBandwidth: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 const setMaxDownloads: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
-const setMaximized: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setMaximized: ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public (undocumented)
 const setModArchiveId: reduxAct.ComplexActionCreator3<string, string, string, {
@@ -5861,13 +5861,13 @@ const setSortUnmanaged: ComplexActionCreator1<string, string, {}>;
 const setStartMinimized: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setStateVersion: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setStateVersion: ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
 const setSuggestInstallPathDirectory: reduxAct.ComplexActionCreator1<string, string, {}>;
 
 // @public (undocumented)
-const setTabsMinimized: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setTabsMinimized: ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public (undocumented)
 function setTFunction(tFunc: TFunction): void;
@@ -5940,7 +5940,7 @@ class SetupError extends VortexError<"setup-error"> {
 function setupNotificationSuppression(cb: (id: string) => boolean): void;
 
 // @public (undocumented)
-const setUseModernLayout: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setUseModernLayout: ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public (undocumented)
 const setUserAPIKey: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
@@ -5949,16 +5949,28 @@ const setUserAPIKey: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 const setUserInfo: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
-const setWarnedAdmin: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setWarnedAdmin: ComplexActionCreator1<number, number, {}>;
 
 // @public
-const setWindowPosition: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setWindowPosition: ComplexActionCreator1<    {
+x: number;
+y: number;
+}, {
+x: number;
+y: number;
+}, {}>;
 
 // @public
-const setWindowSize: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setWindowSize: ComplexActionCreator1<    {
+width: number;
+height: number;
+}, {
+width: number;
+height: number;
+}, {}>;
 
 // @public (undocumented)
-const setZoomFactor: reduxAct.ComplexActionCreator1<any, any, {}>;
+const setZoomFactor: ComplexActionCreator1<number, number, {}>;
 
 // @public
 const shouldShowPremiumAd: (state: IState) => boolean;
