@@ -1,6 +1,8 @@
 import type { IParameters } from "@vortex/shared/cli";
 import { createAction } from "redux-act";
 
+import type { IExtensionLoadFailure } from "@/types/api";
+
 const uiOnlyMeta = () => ({ forward: false, scope: "local" });
 
 /**
@@ -67,7 +69,7 @@ export const setToolStopped = createAction("SET_TOOL_STOPPED", (exePath: string)
 
 export const setExtensionLoadFailures = createAction(
   "SET_EXT_LOAD_FAILURES",
-  (failures) => failures,
+  (failures: Record<string, IExtensionLoadFailure[]>) => failures,
 );
 
 export const setUIBlocker = createAction(

@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { windowReducer } from "./window";
+import { defaultState, windowReducer } from "./window";
 
 describe("setWindowSize", () => {
   it("sets the size", () => {
-    const input = {};
-    const result = windowReducer.reducers.STORE_WINDOW_SIZE(input, {
+    const result = windowReducer.reducers.STORE_WINDOW_SIZE(defaultState, {
       width: 1,
       height: 2,
     });
@@ -15,8 +14,7 @@ describe("setWindowSize", () => {
 
 describe("setWindowPosition", () => {
   it("sets the window position", () => {
-    const input = {};
-    const result = windowReducer.reducers.STORE_WINDOW_POSITION(input, {
+    const result = windowReducer.reducers.STORE_WINDOW_POSITION(defaultState, {
       x: 1,
       y: 2,
     });
@@ -26,16 +24,14 @@ describe("setWindowPosition", () => {
 
 describe("setMaximized", () => {
   it("sets the window maximized", () => {
-    const input = {};
-    const result = windowReducer.reducers.SET_MAXIMIZED(input, true);
+    const result = windowReducer.reducers.SET_MAXIMIZED(defaultState, true);
     expect(result.maximized).toBe(true);
   });
 });
 
 describe("setTabsMinimized", () => {
   it("makes tabs minimized", () => {
-    const input = {};
-    const result = windowReducer.reducers.SET_TABS_MINIMIZED(input, true);
+    const result = windowReducer.reducers.SET_TABS_MINIMIZED(defaultState, true);
     expect(result.tabsMinimized).toBe(true);
   });
 });

@@ -1,11 +1,8 @@
 import * as actions from "../actions/loadOrder";
-import type { IReducerSpec } from "../types/IExtensionContext";
-import { setSafe } from "../util/storeHelper";
+import { actionsToReducerSpec } from "./builder";
 
-export const loReducer: IReducerSpec = {
-  reducers: {
-    [actions.setLoadOrder as any]: (state, payload) => setSafe(state, [payload.id], payload.order),
-  },
-  defaults: {},
-  verifiers: {},
-};
+const defaultState: Record<string, unknown[]> = {};
+
+export const loReducer = actionsToReducerSpec(defaultState, actions, {
+  setLoadOrder: (state, payload) => ({ ...state, [payload.id]: payload.order }),
+});

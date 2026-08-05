@@ -1,30 +1,25 @@
 import * as actions from "../actions/window";
-import type { IReducerSpec } from "../types/IExtensionContext";
-import { setSafe } from "../util/storeHelper";
+import { actionsToReducerSpec } from "./builder";
+
+export const defaultState = {
+  maximized: false,
+  zoomFactor: 1.0,
+  position: { x: 0, y: 0 },
+  size: {},
+  tabsMinimized: false,
+  customTitlebar: true,
+  useModernLayout: true,
+};
 
 /**
  * reducer for changes to the window state
  */
-export const windowReducer: IReducerSpec = {
-  reducers: {
-    [actions.setWindowSize as any]: (state, payload) => setSafe(state, ["size"], payload),
-    [actions.setWindowPosition as any]: (state, payload) => setSafe(state, ["position"], payload),
-    [actions.setMaximized as any]: (state, payload) => setSafe(state, ["maximized"], payload),
-    [actions.setZoomFactor as any]: (state, payload) => setSafe(state, ["zoomFactor"], payload),
-    [actions.setTabsMinimized as any]: (state, payload) =>
-      setSafe(state, ["tabsMinimized"], payload),
-    [actions.setCustomTitlebar as any]: (state, payload) =>
-      setSafe(state, ["customTitlebar"], payload),
-    [actions.setUseModernLayout as any]: (state, payload) =>
-      setSafe(state, ["useModernLayout"], payload),
-  },
-  defaults: {
-    maximized: false,
-    zoomFactor: 1.0,
-    position: { x: 0, y: 0 },
-    size: {},
-    tabsMinimized: false,
-    customTitlebar: true,
-    useModernLayout: true,
-  },
-};
+export const windowReducer = actionsToReducerSpec(defaultState, actions, {
+  setCustomTitlebar: (state, payload) => ({ ...state, customTitlebar: payload }),
+  setMaximized: (state, payload) => ({ ...state, maximized: payload }),
+  setTabsMinimized: (state, payload) => ({ ...state, tabsMinimized: payload }),
+  setUseModernLayout: (state, payload) => ({ ...state, useModernLayout: payload }),
+  setWindowPosition: (state, payload) => ({ ...state, position: payload }),
+  setWindowSize: (state, payload) => ({ ...state, size: payload }),
+  setZoomFactor: (state, payload) => ({ ...state, zoomFactor: payload }),
+});
