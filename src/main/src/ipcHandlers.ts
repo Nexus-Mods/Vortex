@@ -160,15 +160,6 @@ export function init() {
     "app:setProtocolClient",
     (_event: IpcMainInvokeEvent, protocol: string, udPath: string | undefined) => {
       const [execPath, args] = selfCL(udPath);
-      // Under E2E, never take over the OS protocol handler. On a dev machine
-      // with Vortex installed this would hijack the nxm:// hand-off that the
-      // download tests must capture inside the test browser. Clear this
-      // instance's registration instead. In-app nxm handling (via the
-      // "external-url" IPC) is unaffected, so forwarded downloads still install.
-      if (process.env.VORTEX_E2E === "1") {
-        app.removeAsDefaultProtocolClient(protocol, execPath, args);
-        return;
-      }
       app.setAsDefaultProtocolClient(protocol, execPath, args);
     },
   );

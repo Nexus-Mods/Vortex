@@ -23,6 +23,7 @@ import { manageGame, type ManagedGame } from "../helpers/games";
 import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
 import { launchNexusBrowser } from "../helpers/nexusBrowser";
+import { neutralizeOsProtocolRegistration } from "../helpers/protocolClient";
 import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
 import {
@@ -377,6 +378,10 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       timeout: Timeouts.LIFECYCLE,
       inspect: !!process.env.VORTEX_E2E_INSPECT,
     });
+    // Test-side replacement for the removed production VORTEX_E2E gate: stop this
+    // instance from seizing the OS nxm:// handler. Runs before the renderer's
+    // deferred protocol registration (launchVortexApp returns at app-ready).
+    await neutralizeOsProtocolRegistration(app);
     await use(app);
     await closeElectronApp(app);
   },
