@@ -44,9 +44,9 @@ const contextualActions: IToolbarAction[] = [
   { label: "Disable", iconPath: mdiClose },
 ];
 
-// More than `maxVisible` (7) actions: the first six render as buttons and the
-// rest collapse into the trailing kebab dropdown.
-const overflowActions: IToolbarAction[] = [
+// Ten actions, used below to show both limits: a `maxVisible` slot cap, and the
+// width of the toolbar itself.
+const manyActions: IToolbarAction[] = [
   ...generalActions,
   { label: "Combine", iconPath: mdiCallMerge },
   { label: "Highlight", iconPath: mdiEyeOutline },
@@ -79,13 +79,54 @@ export const ToolbarDemo = () => (
       </Typography>
 
       <Typography appearance="subdued">
-        When a group has more than <code>maxVisible</code> (7) actions, the trailing slot becomes a
-        kebab menu and the remaining actions move into its dropdown.
+        Passing <code>maxVisible</code> caps how many slots a group ever uses. Past that, the
+        trailing slot becomes a kebab menu and the remaining actions move into its dropdown.
       </Typography>
     </div>
 
     <Toolbar>
-      <ToolbarGroup actions={overflowActions} />
+      <ToolbarGroup actions={manyActions} maxVisible={7} />
     </Toolbar>
+
+    <div className="rounded-sm bg-surface-mid p-4">
+      <Typography as="h3" typographyType="heading-sm">
+        Responsive
+      </Typography>
+
+      <Typography appearance="subdued">
+        A group also collapses whatever won't fit the width the toolbar has, so the same actions
+        stay reachable as the window narrows. Drag the bottom-right corner of the box below to
+        resize it. This group has no <code>maxVisible</code> cap, leaving width as the only limit.
+      </Typography>
+    </div>
+
+    {/* `resize` needs a non-visible overflow, so the box is padded low enough for
+        an opened overflow menu to sit inside it rather than being clipped. */}
+    <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+      <Toolbar>
+        <ToolbarGroup actions={manyActions} />
+      </Toolbar>
+    </div>
+
+    <div className="rounded-sm bg-surface-mid p-4">
+      <Typography as="h3" typographyType="heading-sm">
+        Competing groups
+      </Typography>
+
+      <Typography appearance="subdued">
+        When several groups share a toolbar, the earlier ones keep their controls and the later ones
+        collapse first, so the leading group stays stable as space runs out. Every group holds onto
+        its own overflow menu, and each reserves room for the ones after it, so the row never
+        overflows. Resize the box below to watch the second group give way before the first.
+      </Typography>
+    </div>
+
+    <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+      <Toolbar>
+        <ToolbarGroup actions={generalActions} />
+
+        <ToolbarGroup actions={contextualActions} />
+      </Toolbar>
+    </div>
   </div>
 );

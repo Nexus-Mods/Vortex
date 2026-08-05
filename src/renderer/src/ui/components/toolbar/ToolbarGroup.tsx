@@ -8,6 +8,8 @@ import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { useToolbarOverflow } from "./useToolbarOverflow.hook";
+
 export interface IToolbarAction {
   label: string;
   iconPath?: string;
@@ -18,34 +20,42 @@ export interface IToolbarAction {
   testId?: string;
 }
 
-export type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   actions: IToolbarAction[];
-  /**
-   * Maximum number of slots to show before collapsing the tail into a kebab
-   * dropdown. When there are more actions than this, the last slot becomes the
-   * kebab and every remaining action moves into it. Pass `null` to disable
-   * collapsing and always render every action.
-   */
-  maxVisible?: number | null;
+  maxVisible?: number;
 };
 
 /**
- * A rounded "pill" cluster of related toolbar controls sharing a single raised
- * surface. Renders up to `max` slots; any overflow collapses into a kebab
- * dropdown occupying the final slot.
+ * Identity of everything about the actions that affects how wide they render:
+ * the count, whether each has an icon, and any label shown as visible text.
+ * Colon-separated and count-prefixed like the row's signature, so two different
+ * action lists can't produce the same string and reuse each other's widths.
  */
-export const ToolbarGroup = ({
-  actions,
-  className,
-  maxVisible = 7,
-  ...props
-}: IToolbarGroupProps) => {
-  const overflows = maxVisible != null && actions.length > maxVisible;
-  const visible = overflows ? actions.slice(0, maxVisible - 1) : actions;
-  const hidden = overflows ? actions.slice(maxVisible - 1) : [];
+const widthSignature = (actions: IToolbarAction[]): string =>
+  [
+    actions.length,
+    ...actions.map(
+      (action) => `${action.iconPath ? "i" : ""}${action.showLabel ? action.label : ""}`,
+    ),
+  ].join(":");
+
+/**
+ * A rounded "pill" cluster of related toolbar controls sharing a single raised
+ * surface. Renders as many actions as fit the width the toolbar has; the rest
+ * collapse into a kebab dropdown occupying the final slot.
+ */
+export const ToolbarGroup = ({ actions, className, maxVisible, ...props }: IToolbarGroupProps) => {
+  const { groupRef, isMeasuring, visibleCount } = useToolbarOverflow({
+    actionCount: actions.length,
+    maxVisible,
+    signature: widthSignature(actions),
+  });
+
+  const visible = actions.slice(0, visibleCount);
+  const hidden = actions.slice(visibleCount);
 
   return (
-    <div className={joinClasses(["nxm-toolbar-group", className])} {...props}>
+    <div className={joinClasses(["nxm-toolbar-group", className])} ref={groupRef} {...props}>
       {visible.map((action) => (
         <Button
           appearance="weak"
@@ -62,7 +72,8 @@ export const ToolbarGroup = ({
         </Button>
       ))}
 
-      {!!hidden.length && (
+      {/* Kept mounted through the measuring pass so its width is measured too. */}
+      {(isMeasuring || !!hidden.length) && (
         <Dropdown>
           <Menu.Button
             appearance="weak"
