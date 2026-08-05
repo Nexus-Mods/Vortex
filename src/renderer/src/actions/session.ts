@@ -1,7 +1,7 @@
 import type { IParameters } from "@vortex/shared/cli";
 import { createAction } from "redux-act";
 
-import type { IExtensionLoadFailure } from "@/types/api";
+import type { IExtensionLoadFailure } from "@/types/IState";
 
 const uiOnlyMeta = () => ({ forward: false, scope: "local" });
 
