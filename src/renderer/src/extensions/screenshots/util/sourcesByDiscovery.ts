@@ -13,12 +13,12 @@ export default async function sourcesByDiscovery(
   game: IGameStored,
   discovery: IDiscoveryResult,
 ): Promise<Record<string, MediaSource>> {
-  const { name, id: gameId, details } = game;
+  const { name, id: gameId } = game;
   const { store, path: gamePath } = discovery;
   const res: Record<string, MediaSource> = {};
   switch (store) {
     case "steam": {
-      const steamMedia = await getSteamMedia(gamePath, details.steamAppId);
+      const steamMedia = await getSteamMedia(gamePath, game.details?.steamAppId);
       Object.assign(res, steamMedia);
       break;
     }
