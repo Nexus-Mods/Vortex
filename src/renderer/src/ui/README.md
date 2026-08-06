@@ -244,7 +244,9 @@ function MyTabs() {
 
 Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
 
-**Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` (or `shrink`) to opt it into collapsing.
+**Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` to opt it into collapsing.
+
+Use `flex-1` specifically, **not** `shrink`. Both let the toolbar narrow, but `shrink` leaves `flex-basis: auto`, so the width still comes from the content: collapsing shrinks the toolbar, the smaller toolbar reports a smaller budget, and the controls never come back out of the kebab when the window widens again. `flex-1` sets a zero basis, so the width comes from the parent and collapsing is reversible. Pair it with `justify-end` where the controls should sit against the trailing edge.
 
 **`maxVisible`** (optional) caps the number of slots regardless of available width, for groups that should stay short. Omit it to let width be the only limit. Whichever is more restrictive wins.
 
@@ -267,9 +269,23 @@ const actions: IToolbarAction[] = [
 </Toolbar>;
 ```
 
-**`IToolbarAction` fields:** `label` (required — the accessible name, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill).
+**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
+
+**`pinned`** keeps an action out of the overflow menu, wherever it sits in the list — the unpinned actions then share whatever width is left, still collapsing from the end. The row keeps the order you gave it, so a pin holds its place rather than jumping to the front as its neighbours collapse.
+
+```tsx
+const actions: IToolbarAction[] = [
+    { label: "Install mod", iconPath: mdiPlusCircleOutline, onClick: install, pinned: true },
+    { label: "Open mods folder", iconPath: mdiFolderOpenOutline, onClick: openFolder },
+    { label: "History", iconPath: mdiHistory, onClick: showHistory },
+];
+```
+
+Use it sparingly. Pinning wins over fitting, so a group with no room for its pinned actions shows them anyway and overflows its pill rather than dropping them — and `maxVisible` won't hold them back either.
+
+**Tooltips come for free.** The controls are icon-only, so each visible one renders as a `ToolbarButton` — a `Button` wrapped in a `Tooltip` showing its `label`. The group shares one hover delay, so sweeping along the row swaps tooltips instead of re-waiting on each. Two cases deliberately get no tooltip: an action in the overflow menu (the menu already shows its label as text) and one with `showLabel` (its text is already on screen). The `label` stays the single source for the accessible name — the tooltip describes the control, it doesn't rename it.
 
 ### Alert
 

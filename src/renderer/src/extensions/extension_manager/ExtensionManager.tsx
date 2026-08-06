@@ -239,11 +239,15 @@ export const ExtensionManager = ({
         subtitle={t("Manage extensions that add features and game support to Vortex.")}
         title={t("Extensions")}
       >
+        {/* Not a `Toolbar`: its delay group only covers the actions it renders, so
+            the display options' own tooltip would sit outside it and re-delay when
+            the pointer reaches the tune icon. One group over all three keeps the
+            sweep instant. */}
         <div className="flex shrink-0 items-center gap-x-2">
           <TooltipDelayGroup>
             <Tooltip content={t("Update extensions")} placement="bottom">
               <Button
-                appearance="subdued"
+                appearance="weak"
                 aria-label={t("Update extensions")}
                 brand="neutral"
                 leftIconPath={mdiRefresh}
@@ -254,7 +258,7 @@ export const ExtensionManager = ({
 
             <Tooltip content={t("Browse extensions")} placement="bottom">
               <Button
-                appearance="subdued"
+                appearance="weak"
                 aria-label={t("Browse extensions")}
                 brand="neutral"
                 leftIconPath={mdiPlus}
