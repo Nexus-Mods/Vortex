@@ -4,7 +4,6 @@ import Select from "react-select";
 
 import type { IState } from "../../../types/IState";
 import type { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
-import { getSafe } from "../../../util/storeHelper";
 import { activeGameId } from "../../profile_management/selectors";
 import type { IMod } from "../types/IMod";
 import updateState, { isIdValid } from "./modUpdateState";
@@ -12,6 +11,7 @@ import updateState, { isIdValid } from "./modUpdateState";
 const PRESET_OPTIONS = [
   { value: "has-update", label: "Update available" },
   { value: "missing-meta", label: "Missing Meta ID" },
+  { value: "multi-version", label: "Multiple versions installed" },
 ];
 
 interface IConnectedProps {
@@ -28,8 +28,8 @@ class VersionFilterComponent extends React.Component<IProps, {}> {
 
     const versions = new Set<string>();
     if (mods !== undefined) {
-      for (const mod of Object.values(mods)) {
-        const version = getSafe(mod, ["attributes", "version"], undefined);
+      for (const mod of Object.values<IMod>(mods)) {
+        const version = mod.attributes?.version;
         if (version !== undefined && version !== "") {
           versions.add(version);
         }
@@ -48,12 +48,12 @@ class VersionFilterComponent extends React.Component<IProps, {}> {
     return (
       <Select
         multi
+        autosize={false}
         className="select-compact"
         options={options}
+        placeholder={t("Filter...")}
         value={filterArr}
         onChange={this.changeFilter}
-        autosize={false}
-        placeholder={t("Filter...")}
       />
     );
   }
@@ -79,7 +79,12 @@ class VersionFilter implements ITableFilter {
   public raw = true;
   public dataId = "$";
 
-  public matches(filter: any, value: any): boolean {
+  // installed versions per Nexus mod id, cached so we don't rescan the mod
+  // list for every row we're asked to match
+  private mCachedMods: Record<string, IMod> | undefined;
+  private mVersionCounts: Record<string, number> = {};
+
+  public matches(filter: any, value: any, state: any): boolean {
     if (value === undefined) {
       return undefined;
     }
@@ -96,12 +101,19 @@ class VersionFilter implements ITableFilter {
       return true;
     }
 
+    if (filter.includes("multi-version") && value.state === "installed") {
+      const modId = value.attributes?.modId;
+      if (modId !== undefined && (this.versionCounts(state)[modId] ?? 0) > 1) {
+        return true;
+      }
+    }
+
     const versionFilters = filter
       .filter((f: string) => f.startsWith("v:"))
       .map((f: string) => f.slice(2));
 
     if (versionFilters.length > 0) {
-      const version: string = getSafe(value, ["attributes", "version"], "") ?? "";
+      const version: string = value.attributes?.version ?? "";
       if (versionFilters.includes(version)) {
         return true;
       }
@@ -112,6 +124,31 @@ class VersionFilter implements ITableFilter {
 
   public isEmpty(filter: any): boolean {
     return !Array.isArray(filter) || filter.length === 0;
+  }
+
+  /**
+   * how many versions of each mod are installed, keyed by Nexus mod id. Rebuilt only
+   * when the mod list it was derived from actually changed, so a single filter pass
+   * walks the list once rather than once per row.
+   */
+  private versionCounts(state: IState): Record<string, number> {
+    const gameId = activeGameId(state);
+    const mods = state.persistent.mods?.[gameId] ?? {};
+
+    if (mods !== this.mCachedMods) {
+      this.mCachedMods = mods;
+
+      const counts: Record<string, number> = {};
+      for (const mod of Object.values<IMod>(mods)) {
+        const modId = mod.attributes?.modId;
+        if (mod.state === "installed" && modId !== undefined) {
+          counts[modId] = (counts[modId] ?? 0) + 1;
+        }
+      }
+      this.mVersionCounts = counts;
+    }
+
+    return this.mVersionCounts;
   }
 }
 
