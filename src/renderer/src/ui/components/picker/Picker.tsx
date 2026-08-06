@@ -5,8 +5,6 @@ import { ListboxButton, type IListboxButtonProps } from "@/ui/components/listbox
 import { ListboxOption, type IListboxOption } from "@/ui/components/listbox/ListboxOption";
 import { ListboxOptions } from "@/ui/components/listbox/ListboxOptions";
 
-// todo placement prop should be removed when you use headless ui v2
-
 interface IPickerProps<T> {
   button?: IListboxButtonProps;
   className?: string;
@@ -30,7 +28,7 @@ export function Picker<T>({
     <Listbox className={className} value={value} onChange={onChange}>
       <ListboxButton {...button}>{selectedOption?.label}</ListboxButton>
 
-      <ListboxOptions className={placement === "left" && "right-auto left-0"}>
+      <ListboxOptions anchor={{ gap: 4, to: placement === "left" ? "bottom start" : "bottom end" }}>
         {options.map(({ ...option }) => (
           <ListboxOption key={option.label} {...option} />
         ))}

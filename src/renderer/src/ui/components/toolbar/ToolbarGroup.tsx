@@ -1,4 +1,4 @@
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import { mdiDotsHorizontal } from "@mdi/js";
 import React, { type HTMLAttributes } from "react";
 
@@ -84,7 +84,7 @@ export const ToolbarGroup = ({ actions, className, maxVisible, ...props }: ITool
       {/* Kept mounted through the measuring pass so its width is measured too. */}
       {(isMeasuring || !!hiddenActions.length) && (
         <Dropdown>
-          <Menu.Button
+          <MenuButton
             appearance="weak"
             aria-label="More actions"
             as={Button}
@@ -93,7 +93,7 @@ export const ToolbarGroup = ({ actions, className, maxVisible, ...props }: ITool
             size="sm"
           />
 
-          <DropdownItems className="right-0 left-auto">
+          <DropdownItems>
             {hiddenActions.map((action) => (
               <DropdownItem
                 disabled={action.disabled || action.isLoading}

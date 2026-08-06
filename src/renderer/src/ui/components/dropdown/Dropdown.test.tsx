@@ -1,4 +1,4 @@
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -16,7 +16,7 @@ const renderComponent = () => {
 
   render(
     <Dropdown>
-      <Menu.Button>Options</Menu.Button>
+      <MenuButton>Options</MenuButton>
 
       <DropdownItems>
         <DropdownItem onClick={onEdit}>Edit</DropdownItem>

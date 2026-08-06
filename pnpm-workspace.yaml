@@ -31,7 +31,7 @@ catalog:
   "@eslint-react/eslint-plugin": 3.0.0
   "@eslint/js": 10.0.1
   "@floating-ui/react": 0.27.20
-  "@headlessui/react": 1.7.19
+  "@headlessui/react": 2.2.10
   "@hot-updater/bsdiff": 0.30.6
   "@iarna/toml": 2.2.5
   "@mdi/js": 7.4.47

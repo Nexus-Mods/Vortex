@@ -1,4 +1,4 @@
-import { Listbox as HeadlessListbox } from "@headlessui/react";
+import { ListboxButton as HeadlessListboxButton } from "@headlessui/react";
 import { mdiArrowExpandHorizontal, mdiCog } from "@mdi/js";
 import React from "react";
 
@@ -68,7 +68,7 @@ export const TableColumnToggle = <T,>({
       value={visibleIds}
       onChange={handleChange}
     >
-      <HeadlessListbox.Button
+      <HeadlessListboxButton
         appearance="weak"
         aria-label="Manage columns"
         as={Button}
@@ -78,7 +78,7 @@ export const TableColumnToggle = <T,>({
         title="Manage columns"
       />
 
-      <ListboxOptions className="right-0 left-auto">
+      <ListboxOptions>
         <DropdownTitle>Columns</DropdownTitle>
 
         {hideableColumns.map((column) => (
@@ -102,7 +102,7 @@ export const TableColumnToggle = <T,>({
                 onResetWidths();
                 // This is a multi-select Listbox, so it stays open on clicks and
                 // v1 exposes no programmatic close. Mimic Escape (handled by
-                // Listbox.Options) to dismiss the menu after resetting.
+                // ListboxOptions) to dismiss the menu after resetting.
                 event.currentTarget.dispatchEvent(
                   new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
                 );
