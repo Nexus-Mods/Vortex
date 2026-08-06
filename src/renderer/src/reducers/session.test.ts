@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { sessionReducer } from "./session";
+import { sessionReducer, defaultState } from "./session";
 
 describe("displayGroup", () => {
   it("sets the display item and creates missing nodes", () => {
-    const input = {};
-    const result = sessionReducer.reducers.DISPLAY_GROUP(input, {
+    const result = sessionReducer.reducers.DISPLAY_GROUP(defaultState, {
       groupId: "someGroupId",
       itemId: "someItemId",
     });

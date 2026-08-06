@@ -31,6 +31,7 @@ export type { IDimensions, IPosition, IWindow };
  */
 export interface INotificationState {
   notifications: INotification[];
+  global_notifications: INotification[];
   dialogs: IDialog[];
 }
 
@@ -105,7 +106,7 @@ export interface ISession {
   visibleDialog: string;
   mainPage: string;
   secondaryPage: string;
-  activity: { [id: string]: string };
+  activity: { [id: string]: string[] };
   progress: {
     [group: string]: { [id: string]: IProgress };
   } & IProgressWithProfile;
