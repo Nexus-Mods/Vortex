@@ -38,7 +38,7 @@ export default async function sourcesByDiscovery(
 
   if (gameId === "starfield") {
     res["starfield-mygames"] = {
-      name: "Starfield My Games Folder",
+      name: "My Games Folder",
       path: path.join(getVortexPath("documents"), "My Games", "Starfield", "Photos"),
       active: true,
       filterFn: (f) => !f.toLowerCase().includes("thumbnail"),
@@ -68,12 +68,13 @@ async function getSteamMedia(
       await fs.access(screenshotsVDF);
       const raw = await fs.readFile(screenshotsVDF, { encoding: "utf-8" });
       const parsed = parse(raw) as SteamScreenshotsVDF;
-      res[`steam-screenshots-${user}`] = {
-        name: "Steam Screenshots",
-        path: path.join(userDataFolder, user, "760", "remote", steamId, "screenshots"),
-        active: true,
-      };
-      console.log("Parsed VDF", parsed);
+      if (Object.keys(parsed?.screenshots?.[steamId]).length) {
+        res[`steam-screenshots-${user}`] = {
+          name: "Steam Screenshots",
+          path: path.join(userDataFolder, user, "760", "remote", steamId, "screenshots"),
+          active: true,
+        };
+      }
     } catch (err) {
       console.log("Failed to acccess VDF", { screenshotsVDF, err });
     }

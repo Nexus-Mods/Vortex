@@ -1,4 +1,4 @@
-import { mdiCog } from "@mdi/js";
+import { mdiCog, mdiRefresh } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -17,6 +17,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import useGameMedia from "../hooks/GameMediaHook";
 import type { MediaItem } from "../util/mediaTypes";
+import MediaListItem from "./MediaListItem";
 import MediaSingleView from "./MediaSingleView";
 
 interface IMediaPageProps {
@@ -30,7 +31,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [tab, setTab] = useState<string>("all");
 
-  const { isLoading, isError, error, allSources, items, discovery, forceCollect } = useGameMedia();
+  const { isLoading, isError, error, allSources, items, forceCollect } = useGameMedia();
 
   if (selected) {
     return (
@@ -55,6 +56,17 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           <Button
             appearance="subdued"
             brand="neutral"
+            leftIconPath={mdiRefresh}
+            size="sm"
+            title={"Refresh"}
+            onClick={() => {
+              void forceCollect();
+            }}
+          />
+
+          <Button
+            appearance="subdued"
+            brand="neutral"
             leftIconPath={mdiCog}
             size="sm"
             title={"Settings"}
@@ -66,11 +78,9 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
         </div>
       </PageHeader>
 
-      <PageScroll className="space-y-6 p-6 whitespace-pre">
+      <PageScroll className="space-y-6 p-6">
         {/* The actual page content */}
         {isError && <div>{error?.message}</div>}
-
-        {isLoading && <>Loading</>}
 
         <TabProvider tab={tab} tabListId="" onSetSelectedTab={setTab}>
           <TabBar>
@@ -92,13 +102,17 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               appendLoader={true}
               className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"
               entityCount={items?.length ?? 0}
+              errorTitle={error?.message}
+              isError={isError}
               isLoading={isLoading}
               skeletonCount={12}
             >
               {items?.map((i) => (
-                <div key={`${i.sourceId}:${i.name}`} title={i.name}>
-                  <img key={i.id} src={i.thumbnailPath ?? i.path} />
-                </div>
+                <MediaListItem
+                  item={i}
+                  key={`${i.sourceId}:${i.name}`}
+                  onClick={() => setSelected(i)}
+                />
               ))}
             </Listing>
           </TabPanel>
@@ -110,24 +124,24 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                   appendLoader={true}
                   className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"
                   entityCount={items?.filter((i) => i.sourceId === k).length ?? 0}
+                  errorTitle={error?.message}
+                  isError={isError}
                   isLoading={isLoading}
                   skeletonCount={12}
                 >
                   {items
                     ?.filter((i) => i.sourceId === k)
                     .map((i) => (
-                      <div key={`${i.sourceId}:${i.name}`} title={i.name}>
-                        <img key={i.id} src={i.thumbnailPath ?? i.path} />
-                      </div>
+                      <MediaListItem
+                        item={i}
+                        key={`${i.sourceId}:${i.name}`}
+                        onClick={() => setSelected(i)}
+                      />
                     ))}
                 </Listing>
               </TabPanel>
             ))}
         </TabProvider>
-
-        <Button onClick={void forceCollect}>Force Collect</Button>
-
-        {JSON.stringify({ discovery, items, allSources }, null, 2)}
       </PageScroll>
     </Page>
   );
