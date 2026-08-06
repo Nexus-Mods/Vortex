@@ -27,6 +27,7 @@ const themeMap = {
 } as const satisfies Record<ITheme, string>;
 
 export type IPictogramName =
+  | "camera"
   | "game"
   | "health-check"
   | "preferences"

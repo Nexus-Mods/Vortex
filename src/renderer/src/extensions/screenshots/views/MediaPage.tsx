@@ -47,6 +47,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   return (
     <Page active={active} id="health-check-page" scrollable={false}>
       <PageHeader
+        pictogramName="camera"
         subtitle={t("Screenshots and videos from your selected game.")}
         title={t("Media")}
       >
@@ -70,37 +71,59 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
         {isError && <div>{error?.message}</div>}
 
         {isLoading && <>Loading</>}
+
         <TabProvider tab={tab} tabListId="" onSetSelectedTab={setTab}>
           <TabBar>
-            <TabButton name="All" panelId="all" count={items?.length ?? 0} />
+            <TabButton count={items?.length ?? 0} name="All" panelId="all" />
+
             {!!allSources &&
               Object.entries(allSources).map(([k, s]) => (
                 <TabButton
+                  count={items?.filter((i) => i.sourceId === k).length ?? 0}
                   key={k}
                   name={s.name}
                   panelId={k}
-                  count={items?.filter((i) => i.sourceId === k).length ?? 0}
                 />
               ))}
           </TabBar>
+
           <TabPanel id="all">
             <Listing
-              // appendLoader={true}
-              className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4"
+              appendLoader={true}
+              className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"
               entityCount={items?.length ?? 0}
               isLoading={isLoading}
               skeletonCount={12}
             >
-              {/* {items?.map((i, idx) => (
-                <div key={idx}>{i}</div>
-              ))} */}
+              {items?.map((i) => (
+                <div key={`${i.sourceId}:${i.name}`} title={i.name}>
+                  <img key={i.id} src={i.thumbnailPath ?? i.path} />
+                </div>
+              ))}
             </Listing>
           </TabPanel>
-        </TabProvider>
 
-        <div className="flex flex-wrap gap-4 overflow-auto">
-          {!isLoading && items?.map((i) => <img className="w-46" key={i.id} src={i.path} />)}
-        </div>
+          {!!allSources &&
+            Object.keys(allSources).map((k) => (
+              <TabPanel id={k} key={`source-tab-${k}`}>
+                <Listing
+                  appendLoader={true}
+                  className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"
+                  entityCount={items?.filter((i) => i.sourceId === k).length ?? 0}
+                  isLoading={isLoading}
+                  skeletonCount={12}
+                >
+                  {items
+                    ?.filter((i) => i.sourceId === k)
+                    .map((i) => (
+                      <div key={`${i.sourceId}:${i.name}`} title={i.name}>
+                        <img key={i.id} src={i.thumbnailPath ?? i.path} />
+                      </div>
+                    ))}
+                </Listing>
+              </TabPanel>
+            ))}
+        </TabProvider>
 
         <Button onClick={void forceCollect}>Force Collect</Button>
 
