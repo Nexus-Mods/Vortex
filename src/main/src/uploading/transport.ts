@@ -110,6 +110,8 @@ export async function putFile(
   const started = Date.now();
   const headers = buildHeaders(size, session.headers);
 
+  let reported = 0;
+
   const response = await withRetry(
     async () => {
       // A fresh stream per attempt: a stream consumed (or destroyed) by a
@@ -127,7 +129,10 @@ export async function putFile(
         if (onProgress) {
           // Re-attached per attempt, so a retry reports from zero again. `.on`
           // returns the request itself, which is awaited just below.
-          void request.on("uploadProgress", ({ transferred }) => onProgress(transferred));
+          void request.on("uploadProgress", ({ transferred }) => {
+            reported = transferred;
+            onProgress(transferred);
+          });
         }
         return await request;
       } catch (err) {
@@ -143,6 +148,11 @@ export async function putFile(
     session.retry,
     session.abortSignal,
   );
+
+  // got reports the last chunk only from the request's end callback, which it
+  // skips when the response arrived first and tore the request down. The success
+  // means every byte landed, so close the gap.
+  if (onProgress && reported < size) onProgress(size);
 
   log("debug", "upload request complete", {
     label,
