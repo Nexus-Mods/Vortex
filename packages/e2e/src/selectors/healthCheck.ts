@@ -109,6 +109,16 @@ export class HealthCheckWarnings {
   }
 
   /**
+   * The "Pick mod install" button on an OR-requirement row — the list action for a
+   * requirement satisfiable by several alternatives (category "or"). Unlike
+   * "1-click install" it opens the detail to choose one (see file_requirement/
+   * ListingRow), so it's how an OR warning is distinguished in the list.
+   */
+  pickModInstall(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Pick mod install", exact: true });
+  }
+
+  /**
    * The per-row EntryActions controls (thumbs-down + hide eye). In the list they're
    * `invisible` until the row is hovered/focused, so hover the row first
    * (`await warnings.row().hover()`) before asserting/clicking these. Names are
@@ -142,6 +152,9 @@ export class HealthCheckDetail {
   readonly installOneClickButton: Locator;
   readonly installRequiredHeader: Locator;
   readonly installAllInGroupButton: Locator;
+  readonly pickOneHeader: Locator;
+  readonly requiresPickLine: Locator;
+  readonly orDivider: Locator;
   readonly feedbackPrompt: Locator;
   readonly feedbackThanks: Locator;
   readonly notHelpfulButton: Locator;
@@ -167,6 +180,15 @@ export class HealthCheckDetail {
     this.installAllInGroupButton = this.root
       .getByRole("button", { name: /1-click install all/ })
       .first();
+    // OR requirement ("pick one of these") detail: the group header, the
+    // "…to be picked…" summary (shared::requires_pick), and the "Or" divider drawn
+    // between the option cards. The divider's container is aria-hidden, but its text
+    // is visually rendered, so getByText / toBeVisible still resolve it.
+    this.pickOneHeader = this.root.getByText("Pick one of these", { exact: true });
+    this.requiresPickLine = this.root.getByText(
+      /Requires \d+ additional mod files? to be picked to work correctly/,
+    );
+    this.orDivider = this.root.getByText("Or", { exact: true });
     // EntryActions (detail variant): a prompt that flips to a thank-you once
     // feedback is given, plus the thumbs-down control (exact name so it doesn't
     // match a "Helpful" button).

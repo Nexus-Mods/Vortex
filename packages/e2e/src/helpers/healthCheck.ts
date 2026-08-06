@@ -1,6 +1,10 @@
 import { type ElectronApplication, expect, type Page } from "@playwright/test";
 
-import { SDV_FILE_REQUIREMENT_MOD_URL, SDV_MOD_REQUIREMENT_MOD_URL } from "../constants";
+import {
+  SDV_FILE_REQUIREMENT_MOD_URL,
+  SDV_MOD_REQUIREMENT_MOD_URL,
+  SDV_OR_FILE_REQUIREMENT_MOD_URL,
+} from "../constants";
 import { test } from "../fixtures/vortex-app";
 import {
   HealthCheckDetail,
@@ -14,23 +18,25 @@ import { dismissAllNotifications } from "./notifications";
 import { Timeouts } from "./timeouts";
 
 /**
- * Install the file-requirement fixture mod (49786) with its required files absent,
- * open Health Check and refresh — leaving the single file-requirements warning
- * visible on the list. Returns the page + warnings POMs for the caller to drive.
+ * Install a file-requirement fixture mod (with its requirements unsatisfied), open
+ * Health Check and refresh — leaving the single file-requirements warning visible
+ * on the list. Returns the page + warnings POMs for the caller to drive.
  *
- * Shared by every file-requirement test so the download → open → refresh flow lives
- * in one place; uses `test.step` internally so each test's trace stays granular.
+ * Shared by the missing- and OR-requirement openers so the download → open →
+ * refresh → dismiss-notifications flow lives in one place; uses `test.step`
+ * internally so each test's trace stays granular.
  */
-export async function openFileRequirementWarning(
+async function installAndSurfaceFileWarning(
   nexusPage: Page,
   vortexApp: ElectronApplication,
   vortexWindow: Page,
+  modUrl: string,
 ): Promise<{ hc: HealthCheckPage; warnings: HealthCheckWarnings }> {
   const hc = new HealthCheckPage(vortexWindow);
   const warnings = new HealthCheckWarnings(vortexWindow);
 
   await test.step("Install the requiring mod with its required files absent", async () => {
-    await downloadModViaModManager(nexusPage, vortexApp, SDV_FILE_REQUIREMENT_MOD_URL);
+    await downloadModViaModManager(nexusPage, vortexApp, modUrl);
   });
 
   await test.step("Open Health Check and refresh", async () => {
@@ -44,6 +50,40 @@ export async function openFileRequirementWarning(
   });
 
   return { hc, warnings };
+}
+
+/**
+ * The 49786 fixture: a mod whose main file declares two missing file requirements,
+ * surfaced as one "download" warning.
+ */
+export function openFileRequirementWarning(
+  nexusPage: Page,
+  vortexApp: ElectronApplication,
+  vortexWindow: Page,
+): Promise<{ hc: HealthCheckPage; warnings: HealthCheckWarnings }> {
+  return installAndSurfaceFileWarning(
+    nexusPage,
+    vortexApp,
+    vortexWindow,
+    SDV_FILE_REQUIREMENT_MOD_URL,
+  );
+}
+
+/**
+ * The 47938 fixture: a mod whose file requirement is satisfiable by more than one
+ * alternative — an OR — surfaced as one "pick one of these" warning.
+ */
+export function openOrFileRequirementWarning(
+  nexusPage: Page,
+  vortexApp: ElectronApplication,
+  vortexWindow: Page,
+): Promise<{ hc: HealthCheckPage; warnings: HealthCheckWarnings }> {
+  return installAndSurfaceFileWarning(
+    nexusPage,
+    vortexApp,
+    vortexWindow,
+    SDV_OR_FILE_REQUIREMENT_MOD_URL,
+  );
 }
 
 /**
