@@ -12,10 +12,6 @@
         align-items: center;
         column-gap: calc(var(--spacing) * 2);
 
-        padding: calc(var(--spacing) * 1);
-        border-radius: var(--radius-lg);
-        background-color: var(--color-surface-mid);
-
         > * {
             flex-shrink: 0;
         }

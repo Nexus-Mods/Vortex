@@ -19,7 +19,7 @@ const identity = <T>(input: T): T => input;
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
  */
-export const startNotification = createAction("ADD_NOTIFICATION", identity);
+export const startNotification = createAction("ADD_NOTIFICATION", identity<INotification>);
 
 export const updateNotification = createAction(
   "UPDATE_NOTIFICATION",
@@ -34,7 +34,7 @@ export const updateNotification = createAction(
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const stopNotification = createAction("STOP_NOTIFICATION", identity);
+export const stopNotification = createAction("STOP_NOTIFICATION", identity<string>);
 
 export const stopAllNotifications = createAction("STOP_ALL_NOTIFICATIONS");
 
@@ -47,7 +47,7 @@ export const addDialog = createAction(
   "SHOW_MODAL_DIALOG",
   (
     id: string,
-    type: string,
+    type: DialogType,
     title: string,
     content: IDialogContent,
     defaultAction: string | undefined,
@@ -62,7 +62,7 @@ export const addDialog = createAction(
  * you leak (a tiny amount of) memory and the action callbacks aren't called.
  * Use closeDialog instead
  */
-export const dismissDialog = createAction("DISMISS_MODAL_DIALOG", identity);
+export const dismissDialog = createAction("DISMISS_MODAL_DIALOG", identity<string>);
 
 const timers = local<{ [id: string]: ReturnType<typeof setTimeout> }>("notification-timers", {});
 

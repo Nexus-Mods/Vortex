@@ -86,7 +86,7 @@ interface IConnectedProps {
   userInfo: any;
   showPremiumAd: boolean;
   votedSuccess: RatingOptions;
-  activity: { [id: string]: string };
+  activity: { [id: string]: string[] };
   language: string;
   overlays: { [id: string]: IOverlay };
   collectionInfo: ICollection;

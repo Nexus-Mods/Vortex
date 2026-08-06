@@ -103,6 +103,155 @@ describe("serializeError / rehydrateSerializedError", () => {
   });
 });
 
+// Everything the serializer copies into `data` is structured-cloned by Electron
+// when it crosses a channel. A live library error (got attaches its Request,
+// Response and options — sockets, streams and hook functions included, some as
+// non-enumerable own properties) would otherwise take the whole envelope down
+// with "An object could not be cloned", losing the real error.
+describe("clone-safety of carried fields", () => {
+  /** Stands in for the native-backed objects a live error holds. */
+  class FakeSocket {
+    readonly fd = 3;
+    write(): void {}
+  }
+
+  /** Shaped like the errors got throws. */
+  const errorWithLiveReferences = () => {
+    const err = Object.assign(new Error("socket hang up"), { code: "ECONNRESET" });
+    Object.defineProperty(err, "request", {
+      enumerable: false,
+      value: { socket: new FakeSocket(), write: () => {} },
+    });
+    Object.defineProperty(err, "options", {
+      enumerable: true,
+      value: { hooks: { beforeError: [() => {}] }, retryCount: 2 },
+    });
+    return err;
+  };
+
+  it("keeps the serialized form cloneable", () => {
+    const serialized = serializeError(errorWithLiveReferences());
+
+    expect(() => structuredClone(serialized)).not.toThrow();
+  });
+
+  it("still carries message, name and code", () => {
+    const out = roundTrip(errorWithLiveReferences());
+
+    expect(out.message).toBe("socket hang up");
+    expect((out as Error & { code?: string }).code).toBe("ECONNRESET");
+  });
+
+  it("carries a nested cause without its live references", () => {
+    const err = new Error("upload failed", { cause: errorWithLiveReferences() });
+
+    const serialized = serializeError(err);
+
+    expect(() => structuredClone(serialized)).not.toThrow();
+    expect(serialized.cause?.code).toBe("ECONNRESET");
+  });
+
+  it("keeps plain data intact", () => {
+    const err = Object.assign(new Error("boom"), {
+      count: 3,
+      flag: true,
+      nested: { deep: { list: [1, "two", null] } },
+      when: new Date(0),
+      tags: new Set(["a"]),
+      lookup: new Map([["k", "v"]]),
+    });
+
+    const out = roundTrip(err) as Error & {
+      count?: number;
+      flag?: boolean;
+      nested?: unknown;
+      when?: unknown;
+      tags?: unknown;
+      lookup?: unknown;
+    };
+
+    expect(out.count).toBe(3);
+    expect(out.flag).toBe(true);
+    expect(out.nested).toEqual({ deep: { list: [1, "two", null] } });
+    expect(out.when).toEqual(new Date(0));
+    expect(out.tags).toEqual(new Set(["a"]));
+    expect(out.lookup).toEqual(new Map([["k", "v"]]));
+  });
+
+  it("stringifies a URL rather than dropping it", () => {
+    const err = Object.assign(new Error("boom"), {
+      payload: { url: new URL("https://cdn.example/file"), statusCode: 503 },
+    });
+
+    const out = roundTrip(err) as Error & { payload?: unknown };
+
+    expect(out.payload).toEqual({ url: "https://cdn.example/file", statusCode: 503 });
+  });
+
+  it("carries a class instance as plain data", () => {
+    // Its methods live on the prototype, so the clone keeps the fields and
+    // sheds the behaviour — which is all the wire could carry anyway.
+    const err = Object.assign(new Error("boom"), {
+      handle: new FakeSocket(),
+      keep: "kept",
+    });
+
+    const out = roundTrip(err) as Error & { keep?: string; handle?: unknown };
+
+    expect(out.keep).toBe("kept");
+    expect(out.handle).toEqual({ fd: 3 });
+  });
+
+  it("drops a whole value containing something uncloneable, not just the bad part", () => {
+    const err = Object.assign(new Error("boom"), {
+      items: [1, () => {}, 3],
+      keep: "kept",
+    });
+
+    const out = roundTrip(err) as Error & { items?: unknown; keep?: string };
+
+    // Dropping only the function would silently reindex the array.
+    expect(out.items).toBeUndefined();
+    expect(out.keep).toBe("kept");
+  });
+
+  it("preserves a cyclic value", () => {
+    const cyclic: Record<string, unknown> = { name: "loop" };
+    cyclic.self = cyclic;
+    const err = Object.assign(new Error("boom"), { cyclic, keep: "kept" });
+
+    const serialized = serializeError(err);
+
+    expect(() => structuredClone(serialized)).not.toThrow();
+    expect(serialized.data?.keep).toBe("kept");
+    const carried: unknown = serialized.data?.cyclic;
+    assert(carried !== null && typeof carried === "object" && "self" in carried);
+    expect(carried).toHaveProperty("name", "loop");
+    // The cycle survives rather than being unrolled or pruned.
+    expect(carried.self).toBe(carried);
+  });
+
+  it("detaches the carried value from the live error", () => {
+    const mutable = { count: 1 };
+    const err = Object.assign(new Error("boom"), { mutable });
+
+    const serialized = serializeError(err);
+    mutable.count = 99;
+
+    expect(serialized.data?.mutable).toEqual({ count: 1 });
+  });
+
+  it("lets a value appearing twice in different branches through", () => {
+    const shared = { id: 1 };
+    const err = Object.assign(new Error("boom"), { left: shared, right: shared });
+
+    const out = roundTrip(err) as Error & { left?: unknown; right?: unknown };
+
+    expect(out.left).toEqual({ id: 1 });
+    expect(out.right).toEqual({ id: 1 });
+  });
+});
+
 describe("by-reference origin tracker", () => {
   it("returns the original object (identity + prototype + stack) on round-trip", () => {
     const tracker = makeTracker();

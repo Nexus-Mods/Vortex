@@ -1,19 +1,19 @@
 import * as actions from "../actions/user";
-import type { IReducerSpec } from "../types/IExtensionContext";
-import { setSafe } from "../util/storeHelper";
+import { actionsToReducerSpec } from "./builder";
 
-export const userReducer: IReducerSpec = {
-  reducers: {
-    [actions.setMultiUser as any]: (state, payload) => setSafe(state, ["multiUser"], payload),
-  },
-  defaults: {
+export const userReducer = actionsToReducerSpec(
+  {
     multiUser: false,
   },
-  verifiers: {
+  actions,
+  {
+    setMultiUser: (state, payload) => ({ ...state, multiUser: payload }),
+  },
+  {
     multiUser: {
       description: () =>
         'Choice of "shared"/"per-user" mode was not stored, defaulting to "per-user" mode.',
       type: "boolean",
     },
   },
-};
+);

@@ -25,6 +25,34 @@ export class DownloadError extends Error {
   }
 }
 
+/**
+ * Unlike {@link DownloadErrorPayload}, `url` rides as a string: an upload error
+ * is thrown in main and crosses to the renderer through the generic error
+ * serializer, which copies the payload verbatim. A `URL` instance is not
+ * structured-cloneable, so it would fail the IPC hop.
+ */
+export type UploadErrorPayload =
+  | { code: "cancellation" }
+  | { code: "network-error"; url: string }
+  | { code: "network-timeout"; url: string }
+  | { code: "network-bad-status"; url: string; statusCode: number }
+  | { code: "protocol-violation"; url: string }
+  | { code: "fs-error"; path: string };
+
+export class UploadError extends Error {
+  readonly payload: UploadErrorPayload;
+
+  constructor(payload: UploadErrorPayload, message: string, cause?: unknown) {
+    super(message, { cause });
+    this.name = "UploadError";
+    this.payload = payload;
+  }
+
+  public get code(): UploadErrorPayload["code"] {
+    return this.payload.code;
+  }
+}
+
 export interface ReportableError {
   message: string;
   title?: string;

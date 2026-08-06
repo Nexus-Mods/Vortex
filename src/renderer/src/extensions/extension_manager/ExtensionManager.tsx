@@ -4,7 +4,6 @@ import { mdiPlus, mdiRefresh } from "@mdi/js";
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import * as _ from "lodash";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Alert, Button as BSButton } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -22,6 +21,7 @@ import Table from "@/controls/Table";
 import { log } from "@/logging";
 import type { IExtensionWithState } from "@/types/extensions";
 import type { IExtensionState, IState } from "@/types/IState";
+import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
@@ -239,11 +239,15 @@ export const ExtensionManager = ({
         subtitle={t("Manage extensions that add features and game support to Vortex.")}
         title={t("Extensions")}
       >
+        {/* Not a `Toolbar`: its delay group only covers the actions it renders, so
+            the display options' own tooltip would sit outside it and re-delay when
+            the pointer reaches the tune icon. One group over all three keeps the
+            sweep instant. */}
         <div className="flex shrink-0 items-center gap-x-2">
           <TooltipDelayGroup>
             <Tooltip content={t("Update extensions")} placement="bottom">
               <Button
-                appearance="subdued"
+                appearance="weak"
                 aria-label={t("Update extensions")}
                 brand="neutral"
                 leftIconPath={mdiRefresh}
@@ -254,7 +258,7 @@ export const ExtensionManager = ({
 
             <Tooltip content={t("Browse extensions")} placement="bottom">
               <Button
-                appearance="subdued"
+                appearance="weak"
                 aria-label={t("Browse extensions")}
                 brand="neutral"
                 leftIconPath={mdiPlus}
@@ -273,19 +277,23 @@ export const ExtensionManager = ({
         </div>
       </PageHeader>
 
-      <PageScroll isFullWidth className="flex flex-col gap-y-4">
-        {restartNeeded && (
+      {restartNeeded && (
+        <PageContent isFullWidth>
           <Alert
-            bsStyle="warning"
-            className="mx-6"
-            style={{ display: "flex", alignItems: "center" }}
+            action={
+              <Button brand="neutral" size="xs" onClick={() => relaunch()}>
+                {t("Restart Vortex")}
+              </Button>
+            }
+            className="shrink-0"
+            severity="warning"
           >
-            <div style={{ flexGrow: 1 }}>{t("You need to restart Vortex to apply changes.")}</div>
-
-            <BSButton onClick={() => relaunch()}>{t("Restart")}</BSButton>
+            {t("You need to restart Vortex to apply changes.")}
           </Alert>
-        )}
+        </PageContent>
+      )}
 
+      <PageScroll isFullWidth className="flex flex-col gap-y-4">
         <Table
           edgeToEdge
           stickyHeader

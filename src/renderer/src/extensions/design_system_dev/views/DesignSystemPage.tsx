@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { AlertDemo } from "@/ui/components/alert/Alert.demo";
 import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
@@ -85,6 +86,8 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
             <TabButton name="Toolbar" panelId="toolbar" />
 
             <TabButton name="Tooltip" panelId="tooltip" />
+
+            <TabButton name="Alert" panelId="alert" />
           </TabBar>
 
           <div className="mt-6">
@@ -244,6 +247,10 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
             <TabPanel id="tooltip">
               <TooltipDemo />
+            </TabPanel>
+
+            <TabPanel id="alert">
+              <AlertDemo />
             </TabPanel>
           </div>
         </TabProvider>

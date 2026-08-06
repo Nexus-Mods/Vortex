@@ -4,13 +4,9 @@ import { useToolbarContext } from "./Toolbar.context";
 
 /** Intrinsic widths of one group's controls, in CSS pixels. */
 export interface IToolbarGroupMetrics {
-  /** Width of each action button, in action order. */
   itemWidths: number[];
-  /** Width of the overflow kebab. */
   kebabWidth: number;
-  /** Gap between two adjacent controls. */
   gap: number;
-  /** Combined left and right padding of the pill surface. */
   padding: number;
 }
 
@@ -20,16 +16,15 @@ interface IToolbarMeasurement {
 }
 
 interface IFitParams {
-  actionCount: number;
   availableWidth: number | null;
   maxVisible?: number;
   metrics: IToolbarGroupMetrics | null;
+  pinned: readonly boolean[];
 }
 
 interface IOverflowParams {
-  actionCount: number;
   maxVisible?: number;
-  /** Changes whenever the actions' rendered widths could have changed. */
+  pinned: readonly boolean[];
   signature: string;
 }
 
@@ -92,26 +87,35 @@ const measureAvailableWidth = (
 };
 
 /**
- * Largest number of action buttons that fits `availableWidth` without exceeding
- * the `maxVisible` slot cap. A result below `actionCount` means the kebab is
- * rendered and takes one of those slots.
+ * Which actions render as buttons, by index. Pinned actions always do, wherever
+ * they sit in the list; the unpinned ones then fill whatever room is left, in
+ * order, so the tail of the row collapses first.
+ *
+ * Returning a set rather than a count is what lets a pin sit anywhere: the
+ * visible actions are no longer necessarily a leading run of the list.
+ *
+ * A row too narrow for the pinned actions alone keeps them regardless — that is
+ * what pinning asks for, so the group overflows rather than dropping them.
  */
-export const fitVisibleCount = ({
-  actionCount,
+export const fitVisibleActions = ({
   availableWidth,
   maxVisible,
   metrics,
-}: IFitParams): number => {
+  pinned,
+}: IFitParams): Set<number> => {
   const slots = maxVisible ?? Number.POSITIVE_INFINITY;
 
-  const fits = (count: number, withKebab: boolean): boolean => {
+  const pinnedIndices = pinned.flatMap((isPinned, index) => (isPinned ? [index] : []));
+  const unpinnedIndices = pinned.flatMap((isPinned, index) => (isPinned ? [] : [index]));
+
+  const fits = (indices: number[], withKebab: boolean): boolean => {
     // `availableWidth` is checked against null rather than falsiness: 0 is a real
     // budget (a group with no room left), and must not be read as "not measured".
     if (!metrics || availableWidth === null) {
       return true;
     }
 
-    const widths = metrics.itemWidths.slice(0, count);
+    const widths = indices.map((index) => metrics.itemWidths[index] ?? 0);
 
     if (withKebab) {
       widths.push(metrics.kebabWidth);
@@ -129,29 +133,38 @@ export const fitVisibleCount = ({
     );
   };
 
-  if (actionCount <= slots && fits(actionCount, false)) {
-    return actionCount;
-  }
+  // Give up unpinned actions from the end until what's left fits.
+  for (let taken = unpinnedIndices.length; taken >= 0; taken--) {
+    const visible = [...pinnedIndices, ...unpinnedIndices.slice(0, taken)];
+    const withKebab = taken < unpinnedIndices.length;
 
-  for (let count = Math.min(actionCount - 1, slots - 1); count > 0; count--) {
-    if (fits(count, true)) {
-      return count;
+    if (visible.length + (withKebab ? 1 : 0) > slots) {
+      continue;
+    }
+
+    if (fits(visible, withKebab)) {
+      return new Set(visible);
     }
   }
 
-  return 0;
+  return new Set(pinnedIndices);
 };
 
 /**
- * Decides how many of a group's actions to render as buttons, collapsing the
- * rest into the overflow menu once they no longer fit the width the toolbar has.
+ * Decides which of a group's actions render as buttons, collapsing the rest into
+ * the overflow menu once they no longer fit the width the toolbar has.
  *
  * Control widths are measured once, in a pass where the group renders everything
  * (`isMeasuring`), and cached against `signature`; resizing then only re-runs the
- * arithmetic in {@link fitVisibleCount}. Both passes happen in layout effects, so
- * the un-collapsed row is never painted.
+ * arithmetic in {@link fitVisibleActions}. Both passes happen in layout effects,
+ * so the un-collapsed row is never painted.
+ *
+ * `pinned` is deliberately absent from `signature`: pinning changes which controls
+ * show, not how wide any of them is, so the cached measurements still hold.
  */
-export const useToolbarOverflow = ({ actionCount, maxVisible, signature }: IOverflowParams) => {
+export const useToolbarOverflow = ({ maxVisible, pinned, signature }: IOverflowParams) => {
+  const actionCount = pinned.length;
+
   const { element: row, signature: rowSignature, width: rowWidth } = useToolbarContext();
 
   const groupRef = useRef<HTMLDivElement>(null);
@@ -181,14 +194,14 @@ export const useToolbarOverflow = ({ actionCount, maxVisible, signature }: IOver
     setAvailableWidth(measureAvailableWidth(groupRef.current, row, rowWidth, minimumFootprint));
   }, [minimumFootprint, row, rowSignature, rowWidth]);
 
-  const visibleCount = isMeasuring
-    ? actionCount
-    : fitVisibleCount({
-        actionCount,
+  const visible = isMeasuring
+    ? new Set(pinned.map((_, index) => index))
+    : fitVisibleActions({
         availableWidth,
         maxVisible,
         metrics: measurement?.metrics ?? null,
+        pinned,
       });
 
-  return { groupRef, isMeasuring, visibleCount };
+  return { groupRef, isMeasuring, visible };
 };

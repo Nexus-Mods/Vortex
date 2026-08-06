@@ -1,3 +1,3 @@
-import safeCreateAction from "./safeCreateAction";
+import { createAction } from "redux-act";
 
-export const setMultiUser = safeCreateAction("SET_MUTLI_USER", (enabled: boolean) => enabled);
+export const setMultiUser = createAction("SET_MUTLI_USER", (enabled: boolean) => enabled);
