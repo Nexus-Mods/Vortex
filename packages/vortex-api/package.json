@@ -41,10 +41,7 @@
       "build": {
         "executor": "nx:noop",
         "dependsOn": [
-          {
-            "target": "api:dts",
-            "projects": "@vortex/renderer"
-          }
+          "api:report"
         ],
         "cache": false,
         "outputs": [
@@ -65,7 +62,10 @@
       },
       "api:report": {
         "dependsOn": [
-          "build"
+          {
+            "target": "api:dts",
+            "projects": "@vortex/renderer"
+          }
         ],
         "cache": true,
         "inputs": [
