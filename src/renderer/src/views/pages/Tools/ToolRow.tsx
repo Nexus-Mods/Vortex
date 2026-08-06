@@ -1,6 +1,6 @@
 import { pathToFileURL } from "url";
 
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import {
   mdiArrowDown,
   mdiArrowUp,
@@ -147,7 +147,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
           )}
 
           <Dropdown>
-            <Menu.Button
+            <MenuButton
               as={Button}
               brand="neutral"
               appearance="weak"

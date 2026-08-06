@@ -1,4 +1,4 @@
-import { Listbox as HeadlessListbox } from "@headlessui/react";
+import { ListboxButton as HeadlessListboxButton } from "@headlessui/react";
 import { mdiUnfoldMoreHorizontal } from "@mdi/js";
 import React from "react";
 
@@ -9,7 +9,7 @@ export type IListboxButtonProps = IButtonProps & {
 };
 
 export const ListboxButton = ({ showChevron = true, ...props }: IListboxButtonProps) => (
-  <HeadlessListbox.Button
+  <HeadlessListboxButton
     appearance="moderate"
     as={Button}
     brand="neutral"

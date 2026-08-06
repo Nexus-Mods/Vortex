@@ -13,8 +13,8 @@ import { joinClasses } from "@/ui/utils/joinClasses";
  * `aria-checked="mixed"` — that is the `semi-on` state. The visible track/thumb
  * are styled spans whose appearance is keyed off `data-state` on the track.
  *
- * PORTING NOTE: once `@headlessui/react` is upgraded to v2 (after the React
- * upgrade), reimplement this on top of HeadlessUI's `<Switch>`. The `nxm-switch`
+ * PORTING NOTE: now that `@headlessui/react` is on v2, this can be reimplemented
+ * on top of HeadlessUI's `<Switch>`. The `nxm-switch`
  * classes live on the track/thumb specifically so they can move straight onto
  * the Switch's elements. HeadlessUI's Switch is binary, so the tri-state must be
  * preserved here in the wrapper — keep driving `data-state` (and the native

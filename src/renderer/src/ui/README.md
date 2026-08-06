@@ -374,7 +374,7 @@ import { Switch } from "../../ui/components/form/switch/Switch";
 
 **Props:** native `<input>` attributes (minus `type`) plus `indeterminate?: boolean`.
 
-> **Porting note:** when `@headlessui/react` reaches v2 (after the React upgrade), reimplement on top of HeadlessUI's `<Switch>`. The `nxm-switch` classes live on the track/thumb so they can move straight across. HeadlessUI's Switch is binary, so the tri-state stays the wrapper's responsibility (`data-state` + `indeterminate`/`aria-checked="mixed"`).
+> **Porting note:** now that `@headlessui/react` is on v2, this can be reimplemented on top of HeadlessUI's `<Switch>`. The `nxm-switch` classes live on the track/thumb so they can move straight across. HeadlessUI's Switch is binary, so the tri-state stays the wrapper's responsibility (`data-state` + `indeterminate`/`aria-checked="mixed"`).
 
 ### Dropdown
 
@@ -406,7 +406,7 @@ import { mdiTune } from "@mdi/js";
 </Popover>;
 ```
 
-> **Positioning note:** the panel is positioned manually (absolute) until `@headlessui/react` reaches v2, which brings dynamic anchor positioning and proper z-index handling.
+> **Positioning note:** the panel is placed by Headless UI's `anchor` prop, which uses Floating UI to flip and shift it into view and portals it out of any clipping ancestor. It defaults to `bottom end` with a 4px gap; pass `anchor` to place it elsewhere.
 
 ### DisplayOptions
 
@@ -670,7 +670,7 @@ import { mdiViewGrid } from "@mdi/js";
 />
 ```
 
-**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — temporary until Headless UI v2), `className`.
+**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — which edge of the trigger the panel aligns to), `className`.
 
 ### Pill
 

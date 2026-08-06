@@ -1,4 +1,4 @@
-import { Popover } from "@headlessui/react";
+import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -71,7 +71,7 @@ const NotificationsContent: React.FC<React.PropsWithChildren<{ popoverOpen: bool
 
   return (
     <>
-      <Popover.Button
+      <PopoverButton
         as={IconButton}
         disabled={visibleCount === 0}
         iconPath={visibleCount > 0 ? mdiBell : mdiBellOutline}
@@ -88,7 +88,10 @@ const NotificationsContent: React.FC<React.PropsWithChildren<{ popoverOpen: bool
       />
 
       {popoverOpen && items.length > 0 && (
-        <Popover.Panel className="absolute right-0 z-popover mt-2.5 max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
+        <PopoverPanel
+          anchor={{ gap: 10, to: "bottom end" }}
+          className="z-popover max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md"
+        >
           {items.map((notification) => (
             <NotificationItem
               collapsed={collapsed[notification.group]}
@@ -100,7 +103,7 @@ const NotificationsContent: React.FC<React.PropsWithChildren<{ popoverOpen: bool
               onTriggerAction={triggerAction}
             />
           ))}
-        </Popover.Panel>
+        </PopoverPanel>
       )}
     </>
   );

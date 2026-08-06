@@ -1,4 +1,4 @@
-import { Menu } from "@headlessui/react";
+import { MenuItem } from "@headlessui/react";
 import React, { type ComponentProps, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -33,8 +33,8 @@ export const DropdownItem = ({
   rightIconPath,
   onClick,
   ...props
-}: ComponentProps<typeof Menu.Item> & IDropdownItemProps & { onClick?: () => void }) => (
-  <Menu.Item {...props}>
+}: ComponentProps<typeof MenuItem> & IDropdownItemProps & { onClick?: () => void }) => (
+  <MenuItem {...props}>
     {({ active, disabled }) => (
       <button
         className={joinClasses(["nxm-dropdown-item", className], {
@@ -54,5 +54,5 @@ export const DropdownItem = ({
         )}
       </button>
     )}
-  </Menu.Item>
+  </MenuItem>
 );

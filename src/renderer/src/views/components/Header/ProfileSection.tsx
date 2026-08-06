@@ -1,4 +1,4 @@
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import { mdiAccountCircle, mdiLogout, mdiMessageReplyText, mdiRefresh } from "@mdi/js";
 import React, { forwardRef, type ButtonHTMLAttributes, type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -94,7 +94,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <Dropdown>
-      <Menu.Button
+      <MenuButton
         as={ActionButton}
         imageSrc={userInfo.profileUrl}
         title={userInfo.name ?? t("Profile")}

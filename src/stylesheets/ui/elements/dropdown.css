@@ -3,20 +3,23 @@
         position: relative;
     }
 
+    /* Placement, and the gap to the trigger, come from the `anchor` prop — which
+       also portals this to the body, so the z-index is what keeps it above the
+       page rather than a stacking context here. */
     .nxm-dropdown-items {
-        right: 0;
         outline: none;
         display: flex;
         overflow-y: auto;
-        position: absolute;
         flex-direction: column;
         box-shadow: var(--shadow-md);
         z-index: var(--z-index-dropdown);
         padding: calc(var(--spacing) * 1);
         max-width: calc(var(--spacing) * 72);
         min-width: calc(var(--spacing) * 52);
-        margin-top: calc(var(--spacing) * 1);
-        max-height: calc(var(--spacing) * 128);
+        /* `anchor` sets an inline `max-height: min(var(--anchor-max-height), …)`
+           from the space available, and an inline style beats this rule — so the
+           cap goes through its variable to survive. */
+        --anchor-max-height: calc(var(--spacing) * 128);
         border-radius: var(--radius-sm);
         border: 1px solid var(--color-stroke-weak);
         background-color: var(--color-surface-mid);
