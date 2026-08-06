@@ -96,15 +96,28 @@ jobs:
           E2E_NEXUS_PREMIUM_USER_PASSWORD: ${{ secrets.E2E_NEXUS_PREMIUM_USER_PASSWORD }}
         run: xvfb-run pnpm e2e
 
+      # The test steps run with continue-on-error so flaky tests never block
+      # PRs, but that also masks hard failures (e.g. the app build aborting
+      # before Playwright starts). A missing report directory is the signature
+      # of such a failure - surface it explicitly instead of letting the
+      # encrypt step below trip over the missing directory.
+      - name: Verify the test run produced a report
+        shell: bash
+        run: |
+          if [ ! -d ./packages/e2e/playwright-report ]; then
+            echo "::error::No Playwright report was produced - the build or test runner failed before executing any tests. Check the 'Run E2E tests' step log for the real error."
+            exit 1
+          fi
+
       - name: Encrypt test report
-        if: always()
+        if: always() && hashFiles('packages/e2e/playwright-report/**') != ''
         shell: bash
         env:
           E2E_ARTIFACT_PASSWORD: ${{ secrets.E2E_ARTIFACT_PASSWORD }}
         run: 7z a -p"$E2E_ARTIFACT_PASSWORD" -mhe=on playwright-report.7z ./packages/e2e/playwright-report/
 
       - name: Upload test report
-        if: always()
+        if: always() && hashFiles('packages/e2e/playwright-report/**') != ''
         uses: actions/upload-artifact@v7
         with:
           name: e2e-report-${{ matrix.os-name }}
@@ -113,14 +126,14 @@ jobs:
           if-no-files-found: error
 
       - name: Encrypt test results
-        if: failure()
+        if: failure() && hashFiles('packages/e2e/test-results/**') != ''
         shell: bash
         env:
           E2E_ARTIFACT_PASSWORD: ${{ secrets.E2E_ARTIFACT_PASSWORD }}
         run: 7z a -p"$E2E_ARTIFACT_PASSWORD" -mhe=on test-results.7z ./packages/e2e/test-results/
 
       - name: Upload test results
-        if: failure()
+        if: failure() && hashFiles('packages/e2e/test-results/**') != ''
         uses: actions/upload-artifact@v7
         with:
           name: e2e-results-${{ matrix.os-name }}
