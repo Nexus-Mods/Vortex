@@ -114,6 +114,57 @@ export type WireDownloadState = DownloadProgress & {
 export type WireDownloadCheckpoint = DownloadCheckpoint<string>;
 
 /**
+ * The part layout an S3 multipart upload session was created with: one
+ * presigned URL per part, plus the URL that closes the session. Mirrors the v3
+ * API's `CreateMultipartUploadSuccess` in camelCase — that endpoint is defined
+ * against the Amazon S3 multipart specification.
+ */
+export type WireS3MultipartLayout = {
+  partSizeBytes: number;
+  partPresignedUrls: string[];
+  completePresignedUrl: string;
+};
+
+/**
+ * Headers a presigned upload URL may cover with its signature. Whatever the
+ * signature includes has to be sent with exactly the value the signer used —
+ * a wrong value and a missing header fail identically, as
+ * `SignatureDoesNotMatch`. The caller supplies them because only it knows what
+ * the storage session was created with.
+ */
+export type WireUploadHeaders = {
+  contentType?: string;
+  contentDisposition?: string;
+};
+
+export type WireUploadRequest = {
+  url: string;
+  filePath: string;
+  fileSize: number;
+  /** Tags the `upload:progress` events emitted while this transfer runs. */
+  uploadId: number;
+  headers?: WireUploadHeaders;
+};
+
+export type WireS3MultipartRequest = {
+  layout: WireS3MultipartLayout;
+  filePath: string;
+  fileSize: number;
+  uploadId: number;
+  headers?: WireUploadHeaders;
+};
+
+/**
+ * Byte progress for an upload that is still running. `transferred` can move
+ * backwards: a retried request restarts its body, and for a multipart upload
+ * only the current part rewinds.
+ */
+export type WireUploadProgress = {
+  transferred: number;
+  total: number;
+};
+
+/**
  * Structured error envelope shared across the IPC boundaries. The serializer is
  * agnostic to the error classes it carries: it serializes `name`, `code`, and
  * any extra own enumerable properties (in `data`), with `cause` chains
@@ -421,6 +472,17 @@ export interface InvokeChannels {
     concurrency?: number | string;
     bytesPerSecond?: number | string;
   }) => Promise<void>;
+
+  // Upload channels
+  "upload:file": (request: WireUploadRequest) => Promise<void>;
+  "upload:s3-multipart": (request: WireS3MultipartRequest) => Promise<void>;
+  /** Byte progress for a running upload, or null once it has settled. */
+  "upload:getProgress": (uploadId: number) => Promise<WireUploadProgress | null>;
+  /**
+   * Stops a running upload; the call that started it rejects with an
+   * `UploadError` carrying `cancellation`.
+   */
+  "upload:cancel": (uploadId: number) => Promise<void>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<

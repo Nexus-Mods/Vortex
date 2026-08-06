@@ -28,6 +28,9 @@ import type {
   WireDownloadCheckpoint,
   WireDownloadState,
   WireResolvedResource,
+  WireS3MultipartRequest,
+  WireUploadProgress,
+  WireUploadRequest,
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -100,6 +103,9 @@ export interface Api {
 
   /** Downloader APIs */
   downloader: DownloaderApi;
+
+  /** Uploader APIs */
+  uploader: UploaderApi;
 
   /** bsdiff binary patching APIs (run on a main-process worker_thread) */
   bsdiff: BsdiffApi;
@@ -508,6 +514,34 @@ export interface DownloaderApi {
    * Returns an unsubscribe function.
    */
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
+}
+
+export interface UploaderApi {
+  /**
+   * PUTs the whole file to a URL that already grants the write. Transient
+   * failures are retried in main with backoff; a rejection is terminal.
+   */
+  file(request: WireUploadRequest): Promise<void>;
+
+  /**
+   * Uploads the file as a sequence of parts and closes the session, following
+   * the Amazon S3 multipart specification (per-part ETags collected into a
+   * `CompleteMultipartUpload` document). `fileSize` must match the layout the
+   * session was created with.
+   */
+  s3Multipart(request: WireS3MultipartRequest): Promise<void>;
+
+  /**
+   * Byte progress for a running upload, or null once it has settled. Poll this
+   * while a transfer is in flight, at whatever cadence the UI needs.
+   */
+  getProgress(uploadId: number): Promise<WireUploadProgress | null>;
+
+  /**
+   * Stops a running upload; the `file`/`s3Multipart` call that started it
+   * rejects with an `UploadError` carrying `cancellation`.
+   */
+  cancel(uploadId: number): Promise<void>;
 }
 
 export interface BsdiffApi {

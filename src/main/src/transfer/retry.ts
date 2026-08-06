@@ -1,6 +1,9 @@
+import { unknownToError } from "@vortex/shared";
 import type { RetryContext, RetryStrategy, RetryVerdict } from "@vortex/shared/download";
-import { DownloadError } from "@vortex/shared/errors";
+import { DownloadError, UploadError } from "@vortex/shared/errors";
 import { HTTPError } from "got";
+
+import { isCancellation } from "./cancellation";
 
 const retryableErrorCodes = new Set([
   // Connection timed out (POSIX.1-2001).
@@ -52,7 +55,7 @@ export function defaultRetryStrategy(
 }
 
 function isRetryableError(err: Error, codes: Set<string>, statusCodes: Set<number>): boolean {
-  if (err instanceof DownloadError) {
+  if (err instanceof DownloadError || err instanceof UploadError) {
     if (
       err.code === "fs-error" ||
       err.code === "protocol-violation" ||
@@ -76,6 +79,32 @@ function isRetryableError(err: Error, codes: Set<string>, statusCodes: Set<numbe
   }
 
   return false;
+}
+
+/**
+ * Retry helper that re-invokes `fn` according to the given strategy.
+ * Cancellations are never retried. Uses abort-aware sleep so backoff
+ * delays are interrupted when the signal fires.
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  strategy?: RetryStrategy,
+  abortSignal?: AbortSignal,
+): Promise<T> {
+  if (!strategy) return await fn();
+
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (isCancellation(err)) throw err;
+      attempt++;
+      const verdict = strategy({ attempt, error: unknownToError(err) });
+      if (!verdict.retry) throw err;
+      await sleep(verdict.delayMs, abortSignal);
+    }
+  }
 }
 
 /**

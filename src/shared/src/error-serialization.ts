@@ -59,6 +59,9 @@ const STANDARD_ERROR_KEYS = new Set<string>(["name", "message", "stack", "cause"
 /** How many levels of `cause` chain to carry across the wire. */
 export const MAX_CAUSE_DEPTH = 3;
 
+/** How deep to walk a `data` value looking for something uncloneable. */
+const MAX_DATA_DEPTH = 5;
+
 export function extractErrorFields(err: Error): Omit<SerializedError, "cause"> {
   const result: Omit<SerializedError, "cause"> = { message: err.message };
   // Type identity is lost on the wire (the receiver mints a plain `Error`), so
@@ -83,12 +86,78 @@ export function extractErrorFields(err: Error): Omit<SerializedError, "cause"> {
   for (const key of Object.getOwnPropertyNames(err)) {
     if (STANDARD_ERROR_KEYS.has(key)) continue;
     const value: unknown = Object.getOwnPropertyDescriptor(err, key)?.value;
-    if (typeof value === "function") continue;
-    extras[key] = value;
+    const safe = toCloneSafe(value);
+    if (!safe.ok) continue;
+    extras[key] = safe.value;
   }
   if (Object.keys(extras).length > 0) result.data = extras;
 
   return result;
+}
+
+/**
+ * Whether a value can ride in `data`, and the form it rides in.
+ *
+ * The decision is delegated to `structuredClone` — the very algorithm Electron
+ * applies on the channel — rather than approximated by inspecting types, so
+ * there is no second opinion to drift out of step with the transport. Library
+ * errors routinely hang live objects off themselves (got attaches its Request
+ * and Response, sockets and hook functions included, some as non-enumerable own
+ * properties), and one of those anywhere in the graph makes the whole envelope
+ * uncloneable. Electron reports that as "An object could not be cloned" from the
+ * channel handler, replacing the real error with a message about the transport.
+ *
+ * Carrying the clone rather than the original also detaches `data` from
+ * whatever the error still holds open.
+ */
+function toCloneSafe(value: unknown): { ok: true; value: unknown } | { ok: false } {
+  try {
+    return { ok: true, value: structuredClone(stringifyUrls(value, MAX_DATA_DEPTH)) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/**
+ * A URL is not cloneable, and error payloads carry them (see
+ * DownloadErrorPayload), so replace them in place instead of letting one sink
+ * the whole payload — the same coercion the download-state codec makes
+ * explicitly, and the Wirify type already models.
+ *
+ * A value containing no URL is returned by reference, untouched, so the common
+ * case costs nothing and keeps its exact structure — cycles included, for
+ * structuredClone to resolve. Only the branches leading to a URL are rebuilt,
+ * which is depth-bounded rather than cycle-tracked: a self-referential value
+ * bottoms out at the limit with its tail left as it was.
+ */
+function stringifyUrls(value: unknown, depth: number): unknown {
+  if (value instanceof URL) return value.toString();
+  if (depth <= 0 || value === null || typeof value !== "object") return value;
+
+  if (Array.isArray(value)) {
+    const items: unknown[] = value;
+    let changed = false;
+    const mapped = items.map((item) => {
+      const next = stringifyUrls(item, depth - 1);
+      changed ||= next !== item;
+      return next;
+    });
+    return changed ? mapped : value;
+  }
+
+  // Only plain objects are rebuilt. Anything else — a Map, Set, Date, or class
+  // instance — is left as it is for structuredClone to accept or reject.
+  const prototype: unknown = Object.getPrototypeOf(value);
+  if (prototype !== null && prototype !== Object.prototype) return value;
+
+  const entries: Array<[string, unknown]> = Object.entries(value);
+  let changed = false;
+  const mapped = entries.map(([key, item]): [string, unknown] => {
+    const next = stringifyUrls(item, depth - 1);
+    changed ||= next !== item;
+    return [key, next];
+  });
+  return changed ? Object.fromEntries(mapped) : value;
 }
 
 export function serializeCause(value: unknown, depth: number): SerializedError | undefined {

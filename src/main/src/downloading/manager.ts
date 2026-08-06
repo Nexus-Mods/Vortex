@@ -16,10 +16,10 @@ import PQueue from "p-queue";
 import type { CookieJar } from "tough-cookie";
 
 import { log } from "../logging";
+import { defaultRetryStrategy } from "../transfer/retry";
 import type { TimeoutOptions } from "./downloader";
 import { download } from "./downloader";
 import { ProgressReporter } from "./progress";
-import { defaultRetryStrategy } from "./retry";
 
 export type DownloadHandle<T = unknown> = {
   /** Globally unique identifier for this download. */
