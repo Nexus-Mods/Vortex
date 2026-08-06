@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, type InputHTMLAttributes } from "react";
+import { Checkbox } from "@headlessui/react";
+import React, { type ComponentProps } from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -8,58 +9,24 @@ import { joinClasses } from "@/ui/utils/joinClasses";
  * Clicking only ever flips between on and off; semi-on is never reached by user
  * interaction.
  *
- * Implementation: a visually-hidden native `<input type="checkbox">` drives the
- * state and accessibility. Setting `indeterminate` makes the browser report
- * `aria-checked="mixed"` — that is the `semi-on` state. The visible track/thumb
- * are styled spans whose appearance is keyed off `data-state` on the track.
+ * Built on Headless UI's `Checkbox` rather than its `Switch`, because ARIA only
+ * allows `aria-checked` to be true/false on `role="switch"` — a switch is binary
+ * by definition, and Headless UI controls that attribute so `mixed` can't be
+ * forced onto it. A tri-state master control is the checkbox pattern, and
+ * `Checkbox` reports `indeterminate` as `aria-checked="mixed"`.
  *
- * PORTING NOTE: now that `@headlessui/react` is on v2, this can be reimplemented
- * on top of HeadlessUI's `<Switch>`. The `nxm-switch`
- * classes live on the track/thumb specifically so they can move straight onto
- * the Switch's elements. HeadlessUI's Switch is binary, so the tri-state must be
- * preserved here in the wrapper — keep driving `data-state` (and the native
- * `indeterminate`/`aria-checked="mixed"`) for the `semi-on` state.
+ * The visible track and thumb are styled off the `data-checked`,
+ * `data-indeterminate`, `data-disabled`, `data-hover`, `data-active` and
+ * `data-focus` attributes Headless UI sets from its own state.
  */
-export type ISwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
+export type ISwitchProps = Omit<ComponentProps<typeof Checkbox>, "className"> & {
+  className?: string;
   /** Renders the "semi-on" state and reports `aria-checked="mixed"`. */
   indeterminate?: boolean;
 };
 
-export const Switch = ({
-  checked,
-  className,
-  disabled,
-  indeterminate,
-  ...inputProps
-}: ISwitchProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // `indeterminate` is a DOM property, not an attribute, so it must be set
-  // imperatively. This also drives the `:indeterminate` pseudo-class and makes
-  // the accessibility tree report `aria-checked="mixed"`.
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.indeterminate = !!indeterminate;
-    }
-  }, [indeterminate]);
-
-  return (
-    <label
-      className={joinClasses(["nxm-switch", className], {
-        "nxm-switch-disabled": disabled,
-      })}
-      data-state={indeterminate ? "semi-on" : checked ? "on" : "off"}
-    >
-      <input
-        checked={checked}
-        className="nxm-switch-input"
-        disabled={disabled}
-        ref={inputRef}
-        type="checkbox"
-        {...inputProps}
-      />
-
-      <span className="nxm-switch-thumb" />
-    </label>
-  );
-};
+export const Switch = ({ className, ...props }: ISwitchProps) => (
+  <Checkbox className={joinClasses(["nxm-switch", className])} {...props}>
+    <span className="nxm-switch-thumb" />
+  </Checkbox>
+);

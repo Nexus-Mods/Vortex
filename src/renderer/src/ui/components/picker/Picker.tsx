@@ -9,7 +9,6 @@ interface IPickerProps<T> {
   button?: IListboxButtonProps;
   className?: string;
   options: IListboxOption<T>[];
-  /** Which edge of the trigger the panel aligns to. Drives the `anchor`. */
   placement?: "left" | "right";
   value: T;
   onChange: (value: T) => void;

@@ -79,7 +79,7 @@ export const PopoverDemo = () => {
                 <Switch
                   aria-label="Show hidden items"
                   checked={showHidden}
-                  onChange={(e) => setShowHidden(e.target.checked)}
+                  onChange={setShowHidden}
                 />
               </div>
 

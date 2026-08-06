@@ -3,9 +3,6 @@
         position: relative;
     }
 
-    /* Placement, and the gap to the trigger, come from the `anchor` prop — which
-       also portals this to the body, so the z-index is what keeps it above the
-       page rather than a stacking context here. */
     .nxm-popover-panel {
         outline: none;
         box-shadow: var(--shadow-md);

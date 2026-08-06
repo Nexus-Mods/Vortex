@@ -79,7 +79,7 @@ const ActionsCell = ({ mod }: { mod: IDemoMod }) => {
         <Switch
           aria-label={`${enabled ? "Disable" : "Enable"} ${mod.name}`}
           checked={enabled}
-          onChange={(event) => setEnabled(event.target.checked)}
+          onChange={setEnabled}
         />
       ) : (
         <Button appearance="moderate" brand="primary" size="xs">
