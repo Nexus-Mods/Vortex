@@ -21,8 +21,9 @@ import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
-import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { UserCanceled } from "@/util/CustomErrors";
 import { useRelativeTime } from "@/util/useRelativeTime";
@@ -154,6 +155,27 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   const activeItems = useMemo(() => items.filter((item) => !item.hidden), [items]);
   const hiddenItems = useMemo(() => items.filter((item) => item.hidden), [items]);
   const supportsHide = useMemo(() => items.some((item) => item.content.supportsHide), [items]);
+
+  const toolbarActions = useMemo<IToolbarAction[]>(
+    () => [
+      {
+        label: t("common:::refresh"),
+        iconPath: mdiRefresh,
+        isLoading: isRefreshing,
+        onClick: () => onRefresh?.(),
+      },
+      {
+        label: t("common:::settings"),
+        iconPath: mdiCogOutline,
+        onClick: () => {
+          trackSettingsOpened();
+          dispatch(setOpenMainPage("application_settings", false));
+          dispatch(setSettingsPage("Vortex"));
+        },
+      },
+    ],
+    [dispatch, isRefreshing, onRefresh, t, trackSettingsOpened],
+  );
 
   // page_viewed fires each time the page becomes active (it stays mounted across
   // navigation, so key off the active-prop transition rather than mount). lastHealthCheckRun
@@ -349,34 +371,9 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
           <div className="flex shrink-0 items-center gap-x-2">
             <LastUpdated />
 
-            <TooltipDelayGroup>
-              <Tooltip content={t("common:::refresh")} placement="bottom">
-                <Button
-                  appearance="subdued"
-                  aria-label={t("common:::refresh")}
-                  brand="neutral"
-                  isLoading={isRefreshing}
-                  leftIconPath={mdiRefresh}
-                  size="sm"
-                  onClick={() => onRefresh?.()}
-                />
-              </Tooltip>
-
-              <Tooltip content={t("common:::settings")} placement="bottom">
-                <Button
-                  appearance="subdued"
-                  aria-label={t("common:::settings")}
-                  brand="neutral"
-                  leftIconPath={mdiCogOutline}
-                  size="sm"
-                  onClick={() => {
-                    trackSettingsOpened();
-                    dispatch(setOpenMainPage("application_settings", false));
-                    dispatch(setSettingsPage("Vortex"));
-                  }}
-                />
-              </Tooltip>
-            </TooltipDelayGroup>
+            <Toolbar>
+              <ToolbarGroup actions={toolbarActions} />
+            </Toolbar>
           </div>
         </PageHeader>
 

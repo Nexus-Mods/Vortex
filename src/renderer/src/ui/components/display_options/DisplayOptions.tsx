@@ -38,7 +38,7 @@ export const DisplayOptions = ({
     <Popover>
       <Tooltip content={triggerLabel} placement="bottom">
         <PopoverButton
-          appearance="subdued"
+          appearance="weak"
           aria-label={triggerLabel}
           brand="neutral"
           leftIconPath={mdiTune}

@@ -43,53 +43,48 @@ export const PageHeader = ({
 
   return (
     <div
-      className={joinClasses(
-        [
-          "relative z-10 w-full pb-3 transition-[padding]",
-          scrolled ? "py-2.5" : "pt-6 pb-3",
-          className,
-        ],
-        {
-          "border-b border-stroke-weak": !scrolled || isFullWidth,
-          "shadow-md": scrolled && !isFullWidth,
-        },
-      )}
+      className={joinClasses(["relative z-10 w-full py-3 pb-3", className], {
+        "border-b border-stroke-weak": !scrolled || isFullWidth,
+        "shadow-md": scrolled && !isFullWidth,
+      })}
       {...rest}
     >
-      <PageContent className="flex items-center gap-x-6 px-6" isFullWidth={isFullWidth}>
-        <div className="flex grow items-center gap-x-2">
-          {!!pictogramName && (
-            <Pictogram
-              className={joinClasses([
-                "transition-[width,height]",
-                scrolled ? "size-7" : "size-14",
-              ])}
-              name={pictogramName}
-              size="none"
-            />
-          )}
+      <PageContent className="flex items-start gap-x-2 px-6" isFullWidth={isFullWidth}>
+        {!!pictogramName && (
+          <Pictogram
+            className={joinClasses(["transition-[width,height]", scrolled ? "size-7" : "size-14"])}
+            name={pictogramName}
+            size="none"
+          />
+        )}
 
-          <div className="grow">
-            {(typeof customTitle === "function" ? customTitle(scrolled) : customTitle) ?? (
-              <Typography
-                appearance={scrolled ? "subdued" : "moderate"}
-                as="h2"
-                className="transition-colors"
-                typographyType="heading-xs"
-              >
-                {title}
-              </Typography>
-            )}
+        <div className="min-w-0 grow">
+          <div className="flex items-center justify-between gap-x-6">
+            <div className="min-w-0">
+              {(typeof customTitle === "function" ? customTitle(scrolled) : customTitle) ?? (
+                <Typography
+                  appearance={scrolled ? "subdued" : "moderate"}
+                  as="h2"
+                  className="transition-colors"
+                  typographyType="heading-xs"
+                >
+                  {title}
+                </Typography>
+              )}
+            </div>
 
-            {!!subtitle && (
-              <Typography appearance="subdued" className={joinClasses({ hidden: scrolled })}>
-                {subtitle}
-              </Typography>
-            )}
+            {typeof children === "function" ? children(scrolled) : children}
           </div>
-        </div>
 
-        {typeof children === "function" ? children(scrolled) : children}
+          {!!subtitle && (
+            <Typography
+              appearance="subdued"
+              className={joinClasses("truncate", { hidden: scrolled })}
+            >
+              {subtitle}
+            </Typography>
+          )}
+        </div>
       </PageContent>
     </div>
   );

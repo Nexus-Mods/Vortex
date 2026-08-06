@@ -54,6 +54,13 @@ const manyActions: IToolbarAction[] = [
   { label: "Untrack", iconPath: mdiPawOutline },
 ];
 
+// The same ten with a pin at each end, to show that a pin holds its place rather
+// than being pulled to the front.
+const pinnedActions: IToolbarAction[] = manyActions.map((action) => ({
+  ...action,
+  pinned: action.label === "Install mod" || action.label === "Untrack",
+}));
+
 export const ToolbarDemo = () => (
   <div className="space-y-8">
     <div className="rounded-sm bg-surface-mid p-4">
@@ -64,6 +71,12 @@ export const ToolbarDemo = () => (
       <Typography appearance="subdued">
         A horizontal toolbar made of one or more rounded groups of related controls. Groups share a
         raised surface; controls are typically icon-only buttons.
+      </Typography>
+
+      <Typography appearance="subdued">
+        Because the controls carry no visible text, each shows its label on hover — hover one below,
+        then move along the row to see the delay shared across the group. Actions in an overflow
+        menu show no tooltip: the menu already lists their labels.
       </Typography>
     </div>
 
@@ -105,6 +118,25 @@ export const ToolbarDemo = () => (
     <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
       <Toolbar>
         <ToolbarGroup actions={manyActions} />
+      </Toolbar>
+    </div>
+
+    <div className="rounded-sm bg-surface-mid p-4">
+      <Typography as="h3" typographyType="heading-sm">
+        Pinned actions
+      </Typography>
+
+      <Typography appearance="subdued">
+        A <code>pinned</code> action stays out of the overflow menu wherever it sits in the list,
+        and the unpinned ones share whatever width is left. Resize the box: "Install mod" and
+        "Untrack" hold their places while everything between them collapses. Narrow it far enough
+        and only the pinned pair is left — pinning wins over fitting, so keep the set small.
+      </Typography>
+    </div>
+
+    <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+      <Toolbar>
+        <ToolbarGroup actions={pinnedActions} />
       </Toolbar>
     </div>
 

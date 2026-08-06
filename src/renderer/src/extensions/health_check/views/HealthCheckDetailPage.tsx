@@ -52,7 +52,7 @@ const BackButton = ({ onBack }: { onBack: () => void }) => {
 
   return (
     <Button
-      appearance="subdued"
+      appearance="weak"
       brand="neutral"
       leftIconPath={mdiArrowLeft}
       size="sm"
