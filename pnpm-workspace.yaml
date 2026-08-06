@@ -237,7 +237,7 @@ catalog:
   resolve: 1.22.11
   rimraf: github:TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
   rolldown: 1.1.4
-  rolldown-plugin-dts: ^0.28.0
+  rolldown-plugin-dts: 0.28.0
   sass: 1.101.0
   semver: 7.7.4
   shortid: 2.2.17
