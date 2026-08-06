@@ -1,25 +1,28 @@
-import update from "immutability-helper";
+import { actionsToReducerSpec } from "@/reducers/builder";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/account";
 
-/**
- * reducer for changes to the authentication
- */
-export const accountReducer: IReducerSpec = {
-  reducers: {
-    [actions.setUserAPIKey as any]: (state, payload) =>
-      update(state, { APIKey: { $set: payload } }),
-    [actions.clearOAuthCredentials as any]: (state, payload) =>
-      setSafe(state, ["OAuthCredentials"], undefined),
-    [actions.setOAuthCredentials as any]: (state, payload) =>
-      update(state, { OAuthCredentials: { $set: { ...payload } } }),
-    [actions.setForcedLogout as any]: (state, value) => setSafe(state, ["ForcedLogout"], value),
-  },
-  defaults: {
-    APIKey: undefined,
-    OAuthCredentials: undefined,
-    ForcedLogout: false,
-  },
+type AccountState = {
+  APIKey: string | undefined;
+  OAuthCredentials: { token: string; refreshToken: string; fingerprint: string } | undefined;
+  ForcedLogout: boolean;
 };
+
+const defaultState: AccountState = {
+  APIKey: undefined,
+  OAuthCredentials: undefined,
+  ForcedLogout: false,
+};
+
+declare module "@/types/IState" {
+  interface IConfidentialAccountState {
+    nexus: AccountState;
+  }
+}
+
+export const accountReducer = actionsToReducerSpec(defaultState, actions, {
+  setUserAPIKey: (state, payload) => ({ ...state, APIKey: payload }),
+  clearOAuthCredentials: (state) => ({ ...state, OAuthCredentials: undefined }),
+  setOAuthCredentials: (state, payload) => ({ ...state, OAuthCredentials: payload }),
+  setForcedLogout: (state, payload) => ({ ...state, ForcedLogout: payload }),
+});

@@ -13,7 +13,7 @@ import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
 import { AppLaunchedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
-import settingsReducer from "./reducers/settings.reducer";
+import { settingsReducer } from "./reducers/settings.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
 import SettingsAnalytics from "./views/SettingsAnalytics";
 
@@ -24,7 +24,7 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
 
   context.once(() => {
-    const enabled = () => context.api.store.getState().settings.analytics.enabled;
+    const enabled = () => context.api.getState().settings.analytics.enabled;
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
 
     // check for update when the user changes the analytics, toggle

@@ -1,16 +1,25 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
+import { actionsToReducerSpec } from "@/reducers/builder";
+
 import { setAssociatedWithNXMURLs } from "../actions/settings";
 
-/**
- * reducer for changes to the authentication
- */
-export const settingsReducer: IReducerSpec = {
-  reducers: {
-    [setAssociatedWithNXMURLs as any]: (state, payload) =>
-      setSafe(state, ["associateNXM"], payload),
-  },
-  defaults: {
-    associateNXM: undefined,
-  },
+type SettingsState = {
+  associateNXM: boolean | undefined;
 };
+
+declare module "@/types/IState" {
+  interface ISettings {
+    nexus: SettingsState;
+  }
+}
+
+const defaultState: SettingsState = {
+  associateNXM: undefined,
+};
+
+export const settingsReducer = actionsToReducerSpec(
+  defaultState,
+  { setAssociatedWithNXMURLs },
+  {
+    setAssociatedWithNXMURLs: (state, payload) => ({ ...state, associateNXM: payload }),
+  },
+);

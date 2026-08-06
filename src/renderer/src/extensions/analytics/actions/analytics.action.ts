@@ -1,8 +1,6 @@
-import * as reduxAct from "redux-act";
-
-import safeCreateAction from "../../../actions/safeCreateAction";
+import { createAction } from "redux-act";
 
 /**
  * changes the 'analytics' toggle, which is either on or off
  */
-export const setAnalytics = safeCreateAction("SET_UPDATE_ANALYTICS", (analytics) => analytics);
+export const setAnalytics = createAction("SET_UPDATE_ANALYTICS", (analytics: boolean) => analytics);

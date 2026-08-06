@@ -1,18 +1,16 @@
 import type { IUpdateEntry } from "@nexusmods/nexus-api";
-import * as reduxAct from "redux-act";
+import { createAction } from "redux-act";
 
-import safeCreateAction from "../../../actions/safeCreateAction";
+export const setLoginId = createAction("SET_LOGIN_ID", (id: string | undefined) => id);
 
-export const setLoginId = safeCreateAction("SET_LOGIN_ID", (id) => id);
+export const setOauthPending = createAction("SET_OAUTH_PENDING", (url: string) => url);
 
-export const setOauthPending = safeCreateAction("SET_OAUTH_PENDING", (url) => url);
-
-export const setLoginError = safeCreateAction("SET_LOGIN_ERROR", (error) => error);
+export const setLoginError = createAction("SET_LOGIN_ERROR", (error: string | undefined) => error);
 
 /**
  * store last time we checked for updates
  */
-export const setLastUpdateCheck = safeCreateAction(
+export const setLastUpdateCheck = createAction(
   "SET_LAST_UPDATE_CHECK",
   (gameId: string, time: number, range: number, updateList: IUpdateEntry[]) => ({
     gameId,
@@ -22,9 +20,6 @@ export const setLastUpdateCheck = safeCreateAction(
   }),
 );
 
-export const addFreeUserDLItem = safeCreateAction("ADD_FREEUSER_DLITEM", (url: string) => url);
+export const addFreeUserDLItem = createAction("ADD_FREEUSER_DLITEM", (url: string) => url);
 
-export const removeFreeUserDLItem = safeCreateAction(
-  "REMOVE_FREEUSER_DLITEM",
-  (url: string) => url,
-);
+export const removeFreeUserDLItem = createAction("REMOVE_FREEUSER_DLITEM", (url: string) => url);

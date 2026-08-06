@@ -387,12 +387,16 @@ export interface ICollectionsPersistentState {
   pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
 }
 
+export interface IConfidentialState {
+  account: IConfidentialAccountState;
+}
+
+export interface IConfidentialAccountState {}
+
 export interface IState {
   app: IApp;
   user: IUser;
-  confidential: {
-    account: {};
-  };
+  confidential: IConfidentialState;
   session: {
     base: ISession;
     collections: ICollectionInstallState;
