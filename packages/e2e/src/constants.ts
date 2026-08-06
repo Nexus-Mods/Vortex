@@ -28,6 +28,17 @@ export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
 ];
 
 /**
+ * Matches an externally-opened URL that points at one of the required mods' pages
+ * (5382 / 49098). Derived from SDV_FILE_REQUIREMENT_TARGET_URLS so the two stay in
+ * sync — used to assert the "Install via mod page" link targets a required mod.
+ */
+export const SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN = new RegExp(
+  `nexusmods\\.com/stardewvalley/mods/(${SDV_FILE_REQUIREMENT_TARGET_URLS.map((url) =>
+    url.split("/").pop(),
+  ).join("|")})$`,
+);
+
+/**
  * SDV mod that declares a single page-level ("mod") requirement — Generic Mod
  * Config Menu (5098), which requires SMAPI. Installed on its own (SMAPI absent) it
  * drives one blue Health Check *suggestion* ("Additional mod file may be required

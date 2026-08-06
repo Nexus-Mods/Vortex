@@ -40,7 +40,10 @@
  * warnings.row() assertion, re-confirm the fixture is file-level only (or pick
  * another source mod).
  */
-import { SDV_FILE_REQUIREMENT_TARGET_URLS } from "../constants";
+import {
+  SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN,
+  SDV_FILE_REQUIREMENT_TARGET_URLS,
+} from "../constants";
 import { test, expect } from "../fixtures/vortex-app";
 import { installExternalOpenSpy, readExternalOpens } from "../helpers/externalOpen";
 import { openFileRequirementWarning, openWarningDetail } from "../helpers/healthCheck";
@@ -63,23 +66,17 @@ test.describe("Health Check - file requirement warnings", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The warning uses the plural title (two requirements)", async () => {
-        await expect(warnings.row().getByText("Missing required mods for:")).toBeVisible();
+        await expect(warnings.title()).toHaveText(/Missing required mods for:/);
       });
 
       await test.step("The list 1-click action is counted (2)", async () => {
-        await expect(
-          warnings.row().getByRole("button", { name: /1-click install \(2\)/ }),
-        ).toBeVisible();
+        await expect(warnings.installOneClick()).toHaveAccessibleName(/1-click install \(2\)/);
       });
 
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Detail states the plural file-requirement summary", async () => {
-        await expect(
-          detail.root.getByText(
-            "Requires 2 additional mod files to be installed to work correctly",
-          ),
-        ).toBeVisible();
+        await expect(detail.requiresFileSummary(2)).toBeVisible();
       });
 
       await test.step("Detail groups the requirements under 'Install required'", async () => {
@@ -138,10 +135,7 @@ test.describe("Health Check - file requirement warnings", () => {
 
       await test.step("Hide the warning via its row control", async () => {
         await dismissAllNotifications(vortexWindow);
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .hover();
+        await warnings.title().hover();
         await warnings.hideButton().click();
         await expect(hc.hiddenTab).toContainText("(1)");
       });
@@ -157,10 +151,7 @@ test.describe("Health Check - file requirement warnings", () => {
 
       await test.step("Unhide the warning via its row control", async () => {
         await dismissAllNotifications(vortexWindow);
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .hover();
+        await warnings.title().hover();
         await warnings.unhideButton().click();
         await expect(hc.hiddenTab).toContainText("(0)");
       });
@@ -181,10 +172,7 @@ test.describe("Health Check - file requirement warnings", () => {
       const feedback = new HealthCheckFeedbackModal(vortexWindow);
 
       await test.step("Hovering the warning reveals its feedback controls", async () => {
-        await warnings
-          .row()
-          .getByText(/Missing required mods? for:/)
-          .hover();
+        await warnings.title().hover();
         await expect(warnings.notHelpfulButton()).toBeVisible();
       });
 
@@ -240,11 +228,7 @@ test.describe("Health Check - file requirement warnings", () => {
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("The detail starts with two outstanding requirements", async () => {
-        await expect(
-          detail.root.getByText(
-            "Requires 2 additional mod files to be installed to work correctly",
-          ),
-        ).toBeVisible();
+        await expect(detail.requiresFileSummary(2)).toBeVisible();
       });
 
       let modPageUrl = "";
@@ -256,19 +240,15 @@ test.describe("Health Check - file requirement warnings", () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installViaModPageButton.click();
         const opened = await readExternalOpens(vortexApp);
-        modPageUrl =
-          opened.find((url) => /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/.test(url)) ??
-          "";
+        modPageUrl = opened.find((url) => SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN.test(url)) ?? "";
         expect(modPageUrl, `opened URLs: ${opened.join(", ")}`).toMatch(
-          /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/,
+          SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN,
         );
       });
 
       await test.step("Downloading from that page resolves the requirement (count 2 → 1)", async () => {
         await downloadModViaModManager(nexusPage, vortexApp, modPageUrl);
-        await expect(
-          detail.root.getByText("Requires 1 additional mod file to be installed to work correctly"),
-        ).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+        await expect(detail.requiresFileSummary(1)).toBeVisible({ timeout: Timeouts.LIFECYCLE });
       });
     });
   });
@@ -285,17 +265,13 @@ test.describe("Health Check - file requirement warnings", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The warning uses the plural title (two requirements)", async () => {
-        await expect(warnings.row().getByText("Missing required mods for:")).toBeVisible();
+        await expect(warnings.title()).toHaveText(/Missing required mods for:/);
       });
 
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Detail states the plural file-requirement summary", async () => {
-        await expect(
-          detail.root.getByText(
-            "Requires 2 additional mod files to be installed to work correctly",
-          ),
-        ).toBeVisible();
+        await expect(detail.requiresFileSummary(2)).toBeVisible();
       });
 
       await test.step("Detail offers a section-level install-all for the two requirements", async () => {
@@ -355,19 +331,13 @@ test.describe("Health Check - file requirement warnings", () => {
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("The detail starts with two outstanding requirements", async () => {
-        await expect(
-          detail.root.getByText(
-            "Requires 2 additional mod files to be installed to work correctly",
-          ),
-        ).toBeVisible();
+        await expect(detail.requiresFileSummary(2)).toBeVisible();
       });
 
       await test.step("Installing one requirement (per-card) decrements the count to one", async () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installOneClickButton.click();
-        await expect(
-          detail.root.getByText("Requires 1 additional mod file to be installed to work correctly"),
-        ).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+        await expect(detail.requiresFileSummary(1)).toBeVisible({ timeout: Timeouts.LIFECYCLE });
       });
     });
   });

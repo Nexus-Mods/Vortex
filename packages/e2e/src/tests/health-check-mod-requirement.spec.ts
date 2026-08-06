@@ -39,14 +39,11 @@ test.describe("Health Check - mod requirement suggestions", () => {
       const detail = new HealthCheckSuggestionDetail(vortexWindow);
 
       await test.step("The suggestion lists the missing mod", async () => {
-        await expect(suggestions.row().getByText(/Missing mod:/)).toBeVisible();
+        await expect(suggestions.missingMod()).toBeVisible();
       });
 
       await test.step("Open the suggestion detail view", async () => {
-        await suggestions
-          .row()
-          .getByText(/Additional mod files? may be required for:/)
-          .click();
+        await suggestions.title().click();
         await expect(detail.suggestionTitle).toBeVisible();
       });
 

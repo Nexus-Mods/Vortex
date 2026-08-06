@@ -91,6 +91,15 @@ export class HealthCheckWarnings {
   }
 
   /**
+   * The warning's title text element ("Missing required mod(s) for: …"). Use for
+   * hover/click targets and title-copy assertions; the regex tolerates the
+   * singular/plural forms. Pass the required mod name only to disambiguate.
+   */
+  title(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByText(/Missing required mods? for:/);
+  }
+
+  /**
    * The "1-click install" button inside a warning row. Label is "1-click install"
    * for a single requirement and "1-click install (N)" for several, so match on
    * the prefix rather than an exact string.
@@ -129,7 +138,6 @@ export class HealthCheckDetail {
   readonly root: Locator;
   readonly warningTitle: Locator;
   readonly backButton: Locator;
-  readonly requiresFileLine: Locator;
   readonly installViaModPageButton: Locator;
   readonly installOneClickButton: Locator;
   readonly installRequiredHeader: Locator;
@@ -144,12 +152,6 @@ export class HealthCheckDetail {
     // Severity title heading ("Warning") + a "BETA" badge sit in the header.
     this.warningTitle = this.root.getByRole("heading", { name: "Warning" });
     this.backButton = this.root.getByRole("button", { name: "Back", exact: true });
-    // Detail subtitle for a missing "download" requirement (shared::requires_files
-    // via useReportCopy). Count-tolerant: "Requires 1 additional mod file …" or
-    // "Requires N additional mod files …".
-    this.requiresFileLine = this.root.getByText(
-      /Requires \d+ additional mod files? to be installed to work correctly/,
-    );
     // With several requirements the detail renders one card per required mod, so
     // these controls can appear multiple times — take the first.
     this.installViaModPageButton = this.root
@@ -171,6 +173,18 @@ export class HealthCheckDetail {
     this.feedbackPrompt = this.root.getByText("Was this warning helpful?");
     this.feedbackThanks = this.root.getByText("Thanks for your feedback");
     this.notHelpfulButton = this.root.getByRole("button", { name: "Not helpful", exact: true });
+  }
+
+  /**
+   * The "download" requirement summary for a given outstanding count
+   * (shared::requires_files via useReportCopy), e.g. requiresFileSummary(2) →
+   * "Requires 2 additional mod files to be installed to work correctly". Encodes
+   * the singular/plural copy so tests assert the count without an inline string.
+   */
+  requiresFileSummary(count: number): Locator {
+    return this.root.getByText(
+      `Requires ${count} additional mod ${count === 1 ? "file" : "files"} to be installed to work correctly`,
+    );
   }
 
   /** The requirement card row for a required mod (e.g. /SMAPI/i). */
@@ -287,6 +301,20 @@ export class HealthCheckSuggestions {
     return (
       requiringModName === undefined ? rows : rows.filter({ hasText: requiringModName })
     ).first();
+  }
+
+  /**
+   * The suggestion's title text element ("Additional mod file(s) may be required
+   * for: …"); use for click/visibility. The regex tolerates the singular/plural
+   * forms. Pass the requiring mod name only to disambiguate.
+   */
+  title(requiringModName?: string | RegExp): Locator {
+    return this.row(requiringModName).getByText(/Additional mod files? may be required for:/);
+  }
+
+  /** The "Missing mod: <name>" line inside a suggestion row. */
+  missingMod(requiringModName?: string | RegExp): Locator {
+    return this.row(requiringModName).getByText(/Missing mod:/);
   }
 
   /** The "1-click install" button inside a suggestion row (always a single required mod). */

@@ -57,10 +57,7 @@ export async function openWarningDetail(
   const detail = new HealthCheckDetail(vortexWindow);
 
   await test.step("Open the warning detail view", async () => {
-    await warnings
-      .row()
-      .getByText(/Missing required mods? for:/)
-      .click();
+    await warnings.title().click();
     await expect(detail.warningTitle).toBeVisible();
   });
 
