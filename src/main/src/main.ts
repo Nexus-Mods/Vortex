@@ -169,6 +169,15 @@ const handleError = (error: Error) => {
 };
 
 async function main(): Promise<void> {
+  if (process.env.VORTEX_E2E === "1") {
+    // Skip single-instance lock in e2e tests — each test worker runs its
+    // own Electron instance with an isolated user data directory.
+  } else if (!app.requestSingleInstanceLock()) {
+    app.disableHardwareAcceleration();
+    app.quit();
+    return;
+  }
+
   // important: The following has to be synchronous!
   const mainArgs = parseCommandline(process.argv, false);
 
@@ -308,17 +317,6 @@ async function main(): Promise<void> {
   initTelemetryIpcHandler();
 
   StylesheetCompiler.init();
-
-  if (process.env.VORTEX_E2E === "1") {
-    // Skip single-instance lock in e2e tests — each test worker runs its
-    // own Electron instance with an isolated user data directory.
-  } else if (!app.requestSingleInstanceLock()) {
-    app.disableHardwareAcceleration();
-    app.commandLine.appendSwitch("--in-process-gpu");
-    app.commandLine.appendSwitch("--disable-software-rasterizer");
-    app.quit();
-    return;
-  }
 
   // async code only allowed from here on out
 
