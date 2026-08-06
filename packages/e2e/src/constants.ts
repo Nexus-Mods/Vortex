@@ -29,14 +29,13 @@ export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
 
 /**
  * Matches an externally-opened URL that points at one of the required mods' pages
- * (5382 / 49098). Derived from SDV_FILE_REQUIREMENT_TARGET_URLS so the two stay in
- * sync — used to assert the "Install via mod page" link targets a required mod.
+ * (5382 / 49098) — used to assert the "Install via mod page" link targets a
+ * required mod. A static literal with the '.' escaped (deriving it from
+ * SDV_FILE_REQUIREMENT_TARGET_URLS trips CodeQL's "incomplete hostname regex");
+ * keep the ids in sync with that list by hand.
  */
-export const SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN = new RegExp(
-  `nexusmods\\.com/stardewvalley/mods/(${SDV_FILE_REQUIREMENT_TARGET_URLS.map((url) =>
-    url.split("/").pop(),
-  ).join("|")})$`,
-);
+export const SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN =
+  /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/;
 
 /**
  * SDV mod that declares a single page-level ("mod") requirement — Generic Mod
