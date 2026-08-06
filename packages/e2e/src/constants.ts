@@ -45,6 +45,21 @@ export const SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN =
   /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/;
 
 /**
+ * SDV mod whose file requirement is satisfiable by more than one alternative file —
+ * an OR ("this file OR that file"). Installed on its own, with none of the
+ * alternatives owned, it raises one file-requirements warning whose detail asks the
+ * user to PICK one option: the list row shows a "Pick mod install" action (not
+ * "1-click install"), and the detail groups the alternatives under "Pick one of
+ * these" with a "…to be picked…" summary and an "Or" divider between the option
+ * cards. Satisfying any one alternative clears the warning. Like
+ * SDV_FILE_REQUIREMENT_MOD_URL the requirement must be file-level (a page-level
+ * "requires" rule auto-installs and surfaces nothing); if the OR pick stops
+ * appearing, re-confirm the fixture still declares an unsatisfied multi-alternative
+ * file requirement.
+ */
+export const SDV_OR_FILE_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/47938";
+
+/**
  * SDV mod that declares a single page-level ("mod") requirement — Generic Mod
  * Config Menu (5098), which requires SMAPI. Installed on its own (SMAPI absent) it
  * drives one blue Health Check *suggestion* ("Additional mod file may be required
