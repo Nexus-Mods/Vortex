@@ -48,12 +48,12 @@ class VersionFilterComponent extends React.Component<IProps, {}> {
     return (
       <Select
         multi
+        autosize={false}
         className="select-compact"
         options={options}
+        placeholder={t("Filter...")}
         value={filterArr}
         onChange={this.changeFilter}
-        autosize={false}
-        placeholder={t("Filter...")}
       />
     );
   }
@@ -79,12 +79,10 @@ class VersionFilter implements ITableFilter {
   public raw = true;
   public dataId = "$";
 
-  // number of versions per modId, cached so we don't rescan the entire mod and
-  // download lists for every row we're asked to match
-  private mCachedState: any;
-  private mCachedMods: { [id: string]: IMod };
-  private mCachedDownloads: { [archiveId: string]: any };
-  private mVersionCounts: { [modId: string]: number } = {};
+  // installed versions per Nexus mod id, cached so we don't rescan the mod
+  // list for every row we're asked to match
+  private mCachedMods: Record<string, IMod> | undefined;
+  private mVersionCounts: Record<string, number> = {};
 
   public matches(filter: any, value: any, state: any): boolean {
     if (value === undefined) {
@@ -129,59 +127,24 @@ class VersionFilter implements ITableFilter {
   }
 
   /**
-   * how many versions of each modId the user has had installed: the mods installed right
-   * now plus the archives of versions that were installed at some point in the past.
-   * Cached against the state object we last saw so a single filter pass only walks the
-   * lists once, and the counts themselves are only rebuilt when the mods or downloads
-   * they were derived from actually changed.
+   * how many versions of each mod are installed, keyed by Nexus mod id. Rebuilt only
+   * when the mod list it was derived from actually changed, so a single filter pass
+   * walks the list once rather than once per row.
    */
-  private versionCounts(state: any): { [modId: string]: number } {
-    if (state === this.mCachedState) {
-      return this.mVersionCounts;
-    }
-    this.mCachedState = state;
-
+  private versionCounts(state: IState): Record<string, number> {
     const gameId = activeGameId(state);
-    const mods: { [id: string]: IMod } =
-      (gameId !== undefined ? state.persistent.mods?.[gameId] : undefined) ?? {};
-    const downloads = state.persistent.downloads?.files ?? {};
+    const mods = state.persistent.mods?.[gameId] ?? {};
 
-    if (mods !== this.mCachedMods || downloads !== this.mCachedDownloads) {
+    if (mods !== this.mCachedMods) {
       this.mCachedMods = mods;
-      this.mCachedDownloads = downloads;
 
-      const counts: { [modId: string]: number } = {};
-      // an archive that is installed right now is already represented by its mod,
-      // counting it again would double up
-      const installedArchives = new Set<string>();
-
+      const counts: Record<string, number> = {};
       for (const mod of Object.values<IMod>(mods)) {
-        installedArchives.add(mod.archiveId);
         const modId = mod.attributes?.modId;
         if (mod.state === "installed" && modId !== undefined) {
           counts[modId] = (counts[modId] ?? 0) + 1;
         }
       }
-
-      for (const [archiveId, download] of Object.entries<any>(downloads)) {
-        // "installed" is set when an archive is installed and is not cleared on
-        // uninstall, so it marks the versions that were installed in the past
-        if (
-          download.state !== "finished" ||
-          download.installed?.gameId !== gameId ||
-          installedArchives.has(archiveId)
-        ) {
-          continue;
-        }
-        const modId =
-          download.modInfo?.ids?.modId ??
-          download.modInfo?.nexus?.ids?.modId ??
-          download.modInfo?.meta?.details?.modId;
-        if (modId !== undefined) {
-          counts[modId] = (counts[modId] ?? 0) + 1;
-        }
-      }
-
       this.mVersionCounts = counts;
     }
 
