@@ -12,6 +12,7 @@ import {
 } from "@playwright/test";
 
 import { cleanupFakeGame } from "../fixtures/game-setup/fake-game";
+import { authStatePath } from "../helpers/authState";
 import {
   type DiagnosticsTeardown,
   instrumentNexusPage,
@@ -22,6 +23,7 @@ import { manageGame, type ManagedGame } from "../helpers/games";
 import { stubRemoteImages } from "../helpers/imageStub";
 import { loginToNexus } from "../helpers/login";
 import { launchNexusBrowser } from "../helpers/nexusBrowser";
+import { neutralizeOsProtocolRegistration } from "../helpers/protocolClient";
 import { Timeouts } from "../helpers/timeouts";
 import type { NexusUser } from "../helpers/users";
 import {
@@ -292,9 +294,15 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
+              // Reuse a locally-captured Nexus session (pnpm auth:capture) so the
+              // OAuth flow lands on the consent screen and skips the captcha-gated
+              // credential login. Absent on CI → full OAuth credential flow, unchanged.
+              const capturedState = authStatePath(user);
+              const seededStorageState = fs.existsSync(capturedState) ? capturedState : undefined;
               const loginResult = await loginToNexus(app, window, user, {
                 skipSteps: true,
                 keepBrowser: true,
+                storageStatePath: seededStorageState,
                 nexusDiagnostics: { testInfo, prefix: "snapshot-nexus" },
               });
               if (loginResult !== null) {
@@ -370,6 +378,10 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
       timeout: Timeouts.LIFECYCLE,
       inspect: !!process.env.VORTEX_E2E_INSPECT,
     });
+    // Test-side replacement for the removed production VORTEX_E2E gate: stop this
+    // instance from seizing the OS nxm:// handler. Runs before the renderer's
+    // deferred protocol registration (launchVortexApp returns at app-ready).
+    await neutralizeOsProtocolRegistration(app);
     await use(app);
     await closeElectronApp(app);
   },
