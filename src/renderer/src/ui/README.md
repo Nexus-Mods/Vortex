@@ -7,6 +7,7 @@ Components adapted from the web team's "next" project for use in Vortex.
 ```
 ui/
 ├── components/
+│   ├── alert/           - Full-width page-level message bar (replaces Bootstrap Alert)
 │   ├── bullet/          - Small rotated-square dot used as an inline marker/separator
 │   ├── button/          - Button system (brand × appearance matrix)
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
@@ -269,6 +270,46 @@ const actions: IToolbarAction[] = [
 **`IToolbarAction` fields:** `label` (required — the accessible name, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill).
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
+
+### Alert
+
+Full-width bar carrying a short message about the page it sits on, optionally with a control that acts on it. This is the replacement for react-bootstrap's `Alert` — prefer it for new work.
+
+Severity colours the **icon only**; the surface stays neutral in every state, so a stack of alerts reads as one band rather than several competing blocks.
+
+```tsx
+import { Alert } from "../../ui/components/alert/Alert";
+import { Button } from "../../ui/components/button/Button";
+
+<Alert
+    action={
+        <Button brand="neutral" size="xs" onClick={relaunch}>
+            {t("Restart Vortex")}
+        </Button>
+    }
+    severity="warning"
+>
+    {t("You need to restart Vortex to apply changes.")}
+</Alert>;
+
+{
+    /* The action is optional */
+}
+<Alert severity="success">{t("Action successful")}</Alert>;
+
+{
+    /* onDismiss adds a close button that hides the bar and calls back */
+}
+<Alert severity="info" onDismiss={() => markSeen(id)}>
+    {t("We suggest you do this")}
+</Alert>;
+```
+
+**Severities:** `info` (default), `success`, `warning`, `danger` — each picks its own icon and tints it with the matching `*-strong` token.
+
+**Dismissal:** pass `onDismiss` to get a close button at the far edge of the bar. The alert hides itself on click and then fires the callback, so callers only need the callback for the side effect (persisting the dismissal, say) — not for the hiding. The button is labelled "Dismiss"; override it with `dismissLabel`.
+
+The bar owns a 24px inline gutter and a bottom divider rather than a border and radius, so it's designed to sit edge-to-edge (no `mx-*` needed) above page content. It renders as `role="status"`; pass `role="alert"` explicitly for something genuinely interrupting. The message may wrap while the action keeps its width.
 
 ### Form Components
 

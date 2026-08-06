@@ -1,0 +1,51 @@
+@layer components {
+    .nxm-alert {
+        display: flex;
+        align-items: center;
+        column-gap: calc(var(--spacing) * 4);
+
+        padding-inline: calc(var(--spacing) * 6);
+        padding-block: calc(var(--spacing) * 2.5);
+
+        background-color: var(--color-surface-low);
+        border-bottom: 1px solid var(--color-stroke-weak);
+
+        & .nxm-alert-message {
+            min-width: 0;
+            display: flex;
+            align-items: flex-start;
+            column-gap: calc(var(--spacing) * 2);
+        }
+
+        & .nxm-alert-text {
+            color: var(--color-neutral-moderate);
+            font-size: var(--text-body-sm);
+            line-height: var(--text-body-sm--line-height);
+            letter-spacing: var(--text-body-sm--letter-spacing);
+        }
+
+        & .nxm-alert-action {
+            flex-shrink: 0;
+        }
+
+        & .nxm-alert-dismiss {
+            margin-inline-start: auto;
+        }
+    }
+
+    .nxm-alert-info .nxm-alert-icon {
+        color: var(--color-info-strong);
+    }
+
+    .nxm-alert-success .nxm-alert-icon {
+        color: var(--color-success-strong);
+    }
+
+    .nxm-alert-warning .nxm-alert-icon {
+        color: var(--color-warning-strong);
+    }
+
+    .nxm-alert-danger .nxm-alert-icon {
+        color: var(--color-danger-strong);
+    }
+}
