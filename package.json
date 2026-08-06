@@ -32,7 +32,7 @@
     "lint": "pnpm nx run-many -t lint",
     "lint:verbose": "pnpm nx run-many -t lint:verbose",
     "test": "pnpm nx run-many -t test test:integration --exclude @vortex/e2e",
-    "api": "pnpm nx run vortex-api:build",
+    "api": "pnpm nx run @nexusmods/vortex-api:api:report",
     "format": "pnpm oxfmt",
     "format:check": "pnpm oxfmt --check",
     "format:staged": "git diff --name-only --cached | xargs --no-run-if-empty pnpm oxfmt",
