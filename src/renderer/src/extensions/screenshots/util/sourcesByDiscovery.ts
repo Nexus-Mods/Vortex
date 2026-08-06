@@ -18,7 +18,7 @@ export default async function sourcesByDiscovery(
   const res: Record<string, MediaSource> = {};
   switch (store) {
     case "steam": {
-      const steamMedia = await getSteamMedia(gamePath, game.details?.steamAppId);
+      const steamMedia = await getSteamMedia(gamePath, String(game.details?.steamAppId));
       Object.assign(res, steamMedia);
       break;
     }
