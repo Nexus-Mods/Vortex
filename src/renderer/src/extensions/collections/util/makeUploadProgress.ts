@@ -6,12 +6,15 @@ const TITLE = "Uploading Collection";
 /**
  * Progress notification for sending a built collection to the API.
  */
-export function makeUploadProgress(api: IExtensionApi) {
+export function makeUploadProgress(api: IExtensionApi, onCancel?: () => void) {
+  const actions = onCancel === undefined ? undefined : [{ title: "Cancel", action: onCancel }];
+
   const notificationId = api.sendNotification({
     type: "activity",
     title: TITLE,
     message: "",
     progress: 0,
+    actions,
   });
 
   let lastPercent = -1;
@@ -29,6 +32,8 @@ export function makeUploadProgress(api: IExtensionApi) {
       title: TITLE,
       progress: percent,
       message: `${bytesToString(transferred)} / ${bytesToString(total)}`,
+      // Re-sent on every update, so the action has to be repeated to survive.
+      actions,
     });
   };
 

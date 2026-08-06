@@ -78,33 +78,89 @@ export type UploadOptions = {
    */
   headers?: WireUploadHeaders;
   onProgress?: UploadProgressHandler;
+  /**
+   * Aborting stops the transfer in main; the returned promise rejects with an
+   * `UploadError` carrying `cancellation`. A signal is used rather than the
+   * upload id because a signal cannot cross the IPC boundary — this maps one
+   * onto the other.
+   */
+  abortSignal?: AbortSignal;
 };
 
 let nextUploadId = 0;
 
+/** How often to ask main how far the transfer has got, in milliseconds. */
+const PROGRESS_POLL_INTERVAL_MS = 200;
+
 /**
- * Runs an upload in main and pumps its progress events into `onProgress` for
- * the duration of the call. The id keeps this transfer's events apart from any
- * other upload's, and the subscription is dropped as soon as it settles.
+ * Runs an upload in main, polling it for progress while it runs.
+ *
+ * Pull rather than push, matching the downloader: main keeps the byte count and
+ * the renderer reads it at a cadence that suits the UI, so the transfer never
+ * pays for reporting and a busy renderer cannot fall behind a queue of events.
+ * The id identifies this transfer among any others in flight.
  */
 async function withProgress(
-  onProgress: UploadProgressHandler | undefined,
+  options: UploadOptions | undefined,
   run: (uploadId: number) => Promise<void>,
 ): Promise<void> {
   const uploadId = nextUploadId++;
+  const { onProgress, abortSignal } = options ?? {};
+
+  // The signal is local to this process; cancelling the transfer means telling
+  // main, which holds the AbortController the request actually listens to.
+  const requestCancel = () => {
+    void window.api.uploader.cancel(uploadId);
+  };
+  if (abortSignal?.aborted === true) requestCancel();
+  abortSignal?.addEventListener("abort", requestCancel);
+
+  const stopWatchingAbort = () => abortSignal?.removeEventListener("abort", requestCancel);
+
   if (onProgress === undefined) {
-    await run(uploadId);
+    try {
+      await run(uploadId);
+    } finally {
+      stopWatchingAbort();
+    }
     return;
   }
 
-  const unsubscribe = window.api.uploader.onProgress((progress) => {
-    if (progress.uploadId !== uploadId) return;
-    onProgress(progress.transferred, progress.total);
-  });
+  let polling = true;
+  let wakeEarly: (() => void) | undefined;
+
+  const pollUntilDone = async () => {
+    while (polling) {
+      // Interruptible, so settling the upload does not have to wait out a full
+      // interval before the loop can exit.
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, PROGRESS_POLL_INTERVAL_MS);
+        wakeEarly = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+      });
+      wakeEarly = undefined;
+      if (!polling) return;
+
+      try {
+        const progress = await window.api.uploader.getProgress(uploadId);
+        // Null once main has dropped the entry, which the run promise follows.
+        if (progress !== null) onProgress(progress.transferred, progress.total);
+      } catch {
+        // A dropped sample is not worth failing the upload over.
+      }
+    }
+  };
+
+  const polled = pollUntilDone();
   try {
     await run(uploadId);
   } finally {
-    unsubscribe();
+    polling = false;
+    wakeEarly?.();
+    stopWatchingAbort();
+    await polled;
   }
 }
 
@@ -120,7 +176,7 @@ export function uploadFile(
   fileSize: number,
   options?: UploadOptions,
 ): Promise<void> {
-  return withProgress(options?.onProgress, (uploadId) =>
+  return withProgress(options, (uploadId) =>
     window.api.uploader.file({
       url,
       filePath,
@@ -151,7 +207,7 @@ export function uploadS3Multipart(
     partPresignedUrls: Array.from(layout.part_presigned_urls),
     completePresignedUrl: layout.complete_presigned_url,
   };
-  return withProgress(options?.onProgress, (uploadId) =>
+  return withProgress(options, (uploadId) =>
     window.api.uploader.s3Multipart({
       layout: wireLayout,
       filePath,

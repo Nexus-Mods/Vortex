@@ -155,13 +155,11 @@ export type WireS3MultipartRequest = {
 };
 
 /**
- * Byte progress for an in-flight upload. `uploadId` is minted by the renderer
- * and passed to the upload call, so a listener can tell concurrent uploads
- * apart. `transferred` can move backwards: a retried request restarts its body,
- * and for a multipart upload only the current part rewinds.
+ * Byte progress for an upload that is still running. `transferred` can move
+ * backwards: a retried request restarts its body, and for a multipart upload
+ * only the current part rewinds.
  */
 export type WireUploadProgress = {
-  uploadId: number;
   transferred: number;
   total: number;
 };
@@ -303,9 +301,6 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Feature flags: main pushes updated flags after each successful poll
   "flags:synchronize": (flags: FeatureFlag[]) => void;
-
-  // Uploads: main pushes byte progress for an in-flight upload (throttled)
-  "upload:progress": (progress: WireUploadProgress) => void;
 }
 
 /** Context data the renderer can push to refine feature flag evaluation */
@@ -481,6 +476,13 @@ export interface InvokeChannels {
   // Upload channels
   "upload:file": (request: WireUploadRequest) => Promise<void>;
   "upload:s3-multipart": (request: WireS3MultipartRequest) => Promise<void>;
+  /** Byte progress for a running upload, or null once it has settled. */
+  "upload:getProgress": (uploadId: number) => Promise<WireUploadProgress | null>;
+  /**
+   * Stops a running upload; the call that started it rejects with an
+   * `UploadError` carrying `cancellation`.
+   */
+  "upload:cancel": (uploadId: number) => Promise<void>;
 
   // Adaptor host — renderer queries adaptor services through these
   "adaptors:list": () => Promise<

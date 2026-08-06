@@ -61,6 +61,7 @@ import StylesheetCompiler from "./stylesheetCompiler";
 import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";
 import { init as initUploadIpc } from "./uploading/ipc";
+import { UploadManager } from "./uploading/manager";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 
@@ -298,10 +299,11 @@ async function main(): Promise<void> {
   process.on("unhandledRejection", handleError);
 
   const downloadManager = new DownloadManager({ concurrency: 1 });
+  const uploadManager = new UploadManager({ userAgent: `Vortex/${app.getVersion()}` });
 
   initIpcHandlers();
   initDownloadIpc(downloadManager);
-  initUploadIpc();
+  initUploadIpc(uploadManager);
   initAdaptorHost().catch((err: unknown) => {
     log("warn", "Failed to initialize adaptor host", {
       error: err instanceof Error ? err.message : "unknown error",

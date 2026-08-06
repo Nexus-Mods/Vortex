@@ -10,7 +10,6 @@ import type {
   Serializable,
   SerializedError,
   WireResult,
-  WireUploadProgress,
 } from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
@@ -280,12 +279,8 @@ try {
     uploader: {
       file: (request) => betterIpcRenderer.invoke("upload:file", request),
       s3Multipart: (request) => betterIpcRenderer.invoke("upload:s3-multipart", request),
-      onProgress: (handler) => {
-        const listener = (_: Electron.IpcRendererEvent, progress: WireUploadProgress) =>
-          handler(progress);
-        betterIpcRenderer.on("upload:progress", listener);
-        return () => betterIpcRenderer.off("upload:progress", listener);
-      },
+      getProgress: (uploadId) => betterIpcRenderer.invoke("upload:getProgress", uploadId),
+      cancel: (uploadId) => betterIpcRenderer.invoke("upload:cancel", uploadId),
     },
 
     bsdiff: {

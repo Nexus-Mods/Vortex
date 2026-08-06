@@ -83,8 +83,8 @@ import {
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
+import type { SubmitCollectionOptions } from "./util_v3/submitCollectionV3";
 import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
-import type { UploadProgressHandler } from "./util_v3/uploadV3";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -1139,10 +1139,11 @@ export function onSubmitCollection(api: IExtensionApi) {
     assetFilePath: string,
     collectionId: number,
     callback: (err: Error, response?: any) => void,
-    // Optional: emitters that don't report upload progress simply omit it.
-    onProgress?: UploadProgressHandler,
+    // Optional: an emitter that neither reports progress nor offers a way to
+    // stop the upload simply omits it.
+    options: SubmitCollectionOptions = {},
   ) => {
-    submitCollectionV3(api, collectionInfo, assetFilePath, collectionId || undefined, onProgress)
+    submitCollectionV3(api, collectionInfo, assetFilePath, collectionId || undefined, options)
       .then((response) => callback(null, response))
       .catch((err) => callback(unknownToError(err)));
   };

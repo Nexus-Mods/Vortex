@@ -13,12 +13,18 @@ import { toV3CollectionPayload } from "./manifestMapping";
 import type { UploadProgressHandler } from "./uploadV3";
 import { pollUploadAvailable, uploadFile, uploadS3Multipart } from "./uploadV3";
 
+export type SubmitCollectionOptions = {
+  onProgress?: UploadProgressHandler;
+  /** Aborting stops the transfer; the upload session is then abandoned. */
+  abortSignal?: AbortSignal;
+};
+
 export async function submitCollectionV3(
   api: IExtensionApi,
   collectionInfo: ICollectionManifest,
   assetFilePath: string,
   collectionId: number | undefined,
-  onProgress?: UploadProgressHandler,
+  options: SubmitCollectionOptions = {},
 ): Promise<ICreateCollectionResult> {
   if (!isLoggedIn(api.getState())) {
     throw new Error("Not logged in to Nexus Mods");
@@ -35,20 +41,35 @@ export async function submitCollectionV3(
   });
 
   // Step 1: Create upload session
+  //
+  // Aborting mid-transfer abandons the session rather than releasing it: the v3
+  // API exposes no way to cancel or delete one (its only upload operations are
+  // create, create-multipart, finalise and get). An abandoned session is never
+  // finalised, so it stays `created` and is never referenced by a collection;
+  // any parts already written rely on the storage's own cleanup.
   let uploadId: string;
 
   // The session is presigned against these header values; they have to be sent
   // back verbatim on the transfer.
   const headers = uploadHeadersFor(filename);
+  const { onProgress, abortSignal } = options;
 
   if (fileSize <= MULTIPART_THRESHOLD) {
     const upload = await client.createUpload(fileSize, filename);
     uploadId = upload.id;
-    await uploadFile(upload.presigned_url, assetFilePath, fileSize, { headers, onProgress });
+    await uploadFile(upload.presigned_url, assetFilePath, fileSize, {
+      headers,
+      onProgress,
+      abortSignal,
+    });
   } else {
     const multipart = await client.createMultipartUpload(fileSize, filename);
     uploadId = multipart.id;
-    await uploadS3Multipart(multipart, assetFilePath, fileSize, { headers, onProgress });
+    await uploadS3Multipart(multipart, assetFilePath, fileSize, {
+      headers,
+      onProgress,
+      abortSignal,
+    });
   }
 
   // Step 2: Finalise and wait for availability

@@ -211,9 +211,14 @@ describe("uploadFile", () => {
       onProgress: (bytes) => transferred.push(bytes),
     });
 
-    // Two attempts, so the sequence is not globally monotonic: it rewinds when
-    // the second attempt starts sending the body again.
-    expect(transferred.filter((bytes) => bytes === contents.length)).toHaveLength(2);
+    expect(server.requests).toHaveLength(2);
+    // The listener is re-attached per attempt, so the second one counts from
+    // zero again: somewhere in the sequence a sample is lower than the one
+    // before it. How far the first attempt got before the 503 is not fixed, so
+    // it is the rewind itself that is asserted, not any particular value.
+    const rewound = transferred.some((bytes, i) => i > 0 && bytes < transferred[i - 1]!);
+    expect(rewound).toBe(true);
+    expect(transferred.at(-1)).toBe(contents.length);
   });
 
   it("propagates cancellation without retrying", async () => {

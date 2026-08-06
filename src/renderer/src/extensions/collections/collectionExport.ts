@@ -309,18 +309,17 @@ export async function doExportToAPI(
       // own notification, so retire this one rather than leaving it at 100%.
       progressEnd();
 
-      const { onProgress: onUploadProgress, uploadEnd } = makeUploadProgress(api);
+      const uploadAbort = new AbortController();
+      const { onProgress: onUploadProgress, uploadEnd } = makeUploadProgress(api, () =>
+        uploadAbort.abort(),
+      );
       let result: ICreateCollectionResult;
       try {
         result = await toPromise((cb) =>
-          api.events.emit(
-            "submit-collection",
-            filterInfo(info),
-            filePath,
-            collectionId,
-            cb,
-            onUploadProgress,
-          ),
+          api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, cb, {
+            onProgress: onUploadProgress,
+            abortSignal: uploadAbort.signal,
+          }),
         );
       } finally {
         uploadEnd();
@@ -355,6 +354,9 @@ export async function doExportToAPI(
     progressEnd();
   } catch (err) {
     progressEnd();
+    if (getErrorCode(err) === "cancellation") {
+      throw new UserCanceled();
+    }
     // These upload errors are matched by name (a string that survives IPC and
     // module-duplication, unlike instanceof). GraphError/ParameterInvalid set
     // their `name` to the class name; ModFileNotFound is a name-only error?

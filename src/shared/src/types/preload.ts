@@ -532,10 +532,16 @@ export interface UploaderApi {
   s3Multipart(request: WireS3MultipartRequest): Promise<void>;
 
   /**
-   * Subscribes to byte progress for every in-flight upload; match on
-   * `uploadId` to pick out one transfer. Returns an unsubscribe function.
+   * Byte progress for a running upload, or null once it has settled. Poll this
+   * while a transfer is in flight, at whatever cadence the UI needs.
    */
-  onProgress(handler: (progress: WireUploadProgress) => void): () => void;
+  getProgress(uploadId: number): Promise<WireUploadProgress | null>;
+
+  /**
+   * Stops a running upload; the `file`/`s3Multipart` call that started it
+   * rejects with an `UploadError` carrying `cancellation`.
+   */
+  cancel(uploadId: number): Promise<void>;
 }
 
 export interface BsdiffApi {

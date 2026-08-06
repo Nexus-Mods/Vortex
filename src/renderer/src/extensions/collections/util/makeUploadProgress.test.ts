@@ -8,6 +8,7 @@ type Notification = {
   title?: string;
   progress?: number;
   message?: string;
+  actions?: Array<{ title: string; action: () => void }>;
 };
 
 function makeApi() {
@@ -82,6 +83,36 @@ describe("makeUploadProgress", () => {
     onProgress(1234, 0);
 
     expect(latest(notifications).progress).toBe(0);
+  });
+
+  it("offers a Cancel action that calls back", () => {
+    const { api, notifications } = makeApi();
+    const onCancel = vi.fn();
+
+    makeUploadProgress(api, onCancel);
+    const [action] = latest(notifications).actions ?? [];
+    action?.action();
+
+    expect(action?.title).toBe("Cancel");
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the Cancel action on later updates", () => {
+    const { api, notifications } = makeApi();
+    const { onProgress } = makeUploadProgress(api, vi.fn());
+
+    onProgress(1 * MB, 8 * MB);
+
+    // The notification is re-sent wholesale, so an omitted action disappears.
+    expect(latest(notifications).actions?.[0]?.title).toBe("Cancel");
+  });
+
+  it("offers no action when the upload cannot be canceled", () => {
+    const { api, notifications } = makeApi();
+
+    makeUploadProgress(api);
+
+    expect(latest(notifications).actions).toBeUndefined();
   });
 
   it("dismisses its notification when the upload settles", () => {

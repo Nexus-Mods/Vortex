@@ -213,9 +213,7 @@ export async function postBody(
 }
 
 /**
- * PUTs the whole file to a single URL. The caller supplies a URL that already
- * grants the write (a signed URL, a token in the path, whatever the storage
- * uses) — nothing here depends on how that was arranged.
+ * PUTs the whole file to a single URL.
  */
 export async function uploadFile(
   url: string,
