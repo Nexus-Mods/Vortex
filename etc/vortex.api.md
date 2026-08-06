@@ -10,6 +10,7 @@ import { Dropdown as Dropdown_2 } from 'react-bootstrap';
 import { DropdownButton as DropdownButton_2 } from 'react-bootstrap';
 import { EndorsedStatus } from '@nexusmods/nexus-api';
 import { FC } from 'react';
+import { HTMLAttributes } from 'react';
 import { i18n } from 'i18next';
 import I18next from 'i18next';
 import { ICollection } from '@nexusmods/nexus-api';
@@ -70,6 +71,11 @@ export class ActionContextMenu extends React$2.Component<ExportType$3> {
 // @public (undocumented)
 export const ActionDropdown: React$2.ComponentClass<ExportType$2>;
 
+// Warning: (ae-forgotten-export) The symbol "IActionDefinition" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
+
 // @public (undocumented)
 export namespace actions {
     export { Condition, ConditionResults, DialogActions, DialogContentItem, DialogType, ICheckbox, IConditionResult, IControlBase, IDialog, IDialogAction, IDialogContent, IDialogResult, IDictionary, IEnableOptions, IInput, ILink, addDialog, addDiscoveredGame, addDiscoveredTool, addExtension, addLocalDownload, addMod, addModRule, addMods, addNotification, cacheModReference, clearDialog, clearDiscoveredGame, clearModRules, clearOAuthCredentials, clearPendingPluginSort, clearUIBlocker, closeBrowser, closeDialog, closeDialogs, collapseGroup, completeMigration, dismissAllNotifications, dismissDialog, dismissNotification, displayGroup, downloadProgress, endDialog, finalizingDownload, finalizingProgress, finishDownload, fireNotificationAction, forgetExtension, forgetMod, initDownload, loadCategories, mergeDownloadModInfo, pauseDownload, removeCategory, removeDownload, removeDownloadSilent, removeExtension, removeMod, removeModRule, removeProfile, renameCategory, resetSuppression, setActivator, setAdvancedMode, setApplicationVersion, setAssociatedWithNXMURLs, setAttributeFilter, setAttributeSort, setAttributeVisible, setAutoDeployment, setAutoEnable, setAutoInstall, setAutoStart, setCategory, setCategoryOrder, setCleanupOnDeploy, setCollapsedGroups, setCollectionConcurrency, setCommandLine, setCompatibleGames, setConfirmPurge, setCopyOnIFF, setCustomTitlebar, setDeploymentNecessary, setDesktopNotifications, setDialogState, setDialogVisible, setDownloadFilePath, setDownloadGameFilter, setDownloadHash, setDownloadHashByFile, setDownloadInstalled, setDownloadInterrupted, setDownloadModInfo, setDownloadPath, setDownloadPausable, setDownloadSpeed, setDownloadSpeeds, setDownloadTime, setExtensionEnabled, setExtensionEndorsed, setExtensionLoadFailures, setExtensionVersion, setFBLoadOrder, setFBLoadOrderEntry, setFeature, setFileOverride, setForcedLogout, setForegroundDL, setGameHidden, setGameParameters, setGamePath, setGameSearchPaths, setGroupingAttribute, setHideTopLevelCategory, setINITweakEnabled, setInstallPath, setInstallPathMode, setInstallType, setInstanceId, setLanguage, setLoadOrder, setLoadOrderEntry, setMaxBandwidth, setMaxDownloads, setMaximized, setModArchiveId, setModAttribute, setModAttributes, setModEnabled, setModInstallationPath, setModState, setModType, setModsEnabled, setNetworkConnected, setNewestVersion, setNextProfile, setOAuthCredentials, setOpenMainPage, setPendingPluginSort, setPickerLayout, setPrimaryTool, setProfile, setProfileActivated, setProfilesVisible, setProgress, setRelativeTimes, setSettingsPage, setShowDLDropzone, setShowDLGraph, setShowModDropzone, setSortManaged, setSortUnmanaged, setStartMinimized, setStateVersion, setSuggestInstallPathDirectory, setTabsMinimized, setToolOrder, setToolPid, setToolPinned, setToolRunning, setToolStopped, setToolValid, setToolVisible, setUIBlocker, setUpdateChannel, setUseModernLayout, setUserAPIKey, setUserInfo, setWarnedAdmin, setWindowPosition, setWindowSize, setZoomFactor, setupNotificationSuppression, showDialog, showURL, showUsageInstruction, startActivity, startDialog, startDownload, startNotification, stopActivity, stopAllNotifications, stopNotification, suppressNotification, triggerDialogLink, updateCategories, updateNotification, willRemoveProfile };
@@ -78,13 +84,93 @@ export namespace actions {
 // @public (undocumented)
 export const Advanced: React$2.ComponentType<React$2.PropsWithChildren<{}>>;
 
+// Warning: (ae-forgotten-export) The symbol "ApiEventName" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "ApiEvents" needs to be exported by the entry point api.d.ts
+//
+// @public
+type ApiEventArgs<TEvent extends ApiEventName> = Readonly<Parameters<ApiEvents[TEvent]>>;
+
+// @public
+type ApiEventMap = { [K in ApiEventName]: Parameters<ApiEvents[K]>; };
+
+// @public
+type ApiEventName = keyof ApiEvents;
+
+// @public
+type ApiEventResult<TEvent extends ApiEventName> = ReturnType<ApiEvents[TEvent]>;
+
+// @public
+interface ApiEvents {
+    // (undocumented)
+    "pause-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+    // (undocumented)
+    "remove-download": (downloadId: string, callback?: (err: Error | null) => void) => void;
+    // (undocumented)
+    "resume-download": (downloadId: string, callback?: (err: Error | null, id?: string) => void, options?: {
+        allowInstall?: boolean | "force";
+    }) => void;
+    // (undocumented)
+    "start-download": (rawUrls: string[], modInfo: {
+        game?: string;
+        name?: string;
+    } & Record<string, unknown>, fileName?: string, callback?: (err: Error | null, id?: string) => void, redownload?: "never" | "ask" | "replace" | "always", options?: {
+        allowInstall?: boolean | "force";
+    }) => string;
+}
+
+// @public
+class Archive {
+    // Warning: (ae-forgotten-export) The symbol "IArchiveHandler" needs to be exported by the entry point api.d.ts
+    constructor(handler: IArchiveHandler);
+    get addFile(): ((filePath: string, sourcePath: string) => default_2<void>) | undefined;
+    get create(): ((sourcePath: string) => default_2<void>) | undefined;
+    get extractAll(): ((outputPath: string) => default_2<void>) | undefined;
+    get extractFile(): ((filePath: string, outputPath: string) => default_2<void>) | undefined;
+    get readDir(): ((archivePath: string) => default_2<string[]>) | undefined;
+    get readFile(): ((filePath: string) => NodeJS.ReadableStream) | undefined;
+    // (undocumented)
+    get write(): (() => default_2<void>) | undefined;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IArchiveOptions" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ArchiveHandlerCreator = (fileName: string, options: IArchiveOptions) => default_2<IArchiveHandler>;
+
+// @public
+type AttributeExtractor = (modInfo: any, modPath: string) => PromiseLike<{
+    [key: string]: any;
+}>;
+
 // Warning: (ae-forgotten-export) The symbol "ExportType$1" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Banner: React$2.ComponentClass<ExportType$1>;
 
 // @public (undocumented)
+type ButtonType$1 = "text" | "icon" | "both" | "menu";
+
+// @public (undocumented)
+type ButtonType = "text" | "icon" | "both" | "menu";
+
+// @public
+type ByteRange = {
+    start: number;
+    end: number;
+};
+
+// @public (undocumented)
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
+
+// Warning: (ae-forgotten-export) The symbol "ITestResult" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type CheckFunction = () => PromiseLike<ITestResult>;
+
+// Warning: (ae-forgotten-export) The symbol "ModState" needs to be exported by the entry point api.d.ts
+//
+// @public
+type CollectionModStatus = keyof Pick<Record<ModState, true>, "downloading" | "downloaded" | "installing" | "installed"> | "pending" | "failed" | "ignored" | "optional";
 
 // @public
 export class ComponentEx<P, S extends object> extends React$2.Component<P & Partial<WithTranslation>, S> {
@@ -100,6 +186,17 @@ export class ComponentEx<P, S extends object> extends React$2.Component<P & Part
     nextState: S;
 }
 
+// Warning: (ae-forgotten-export) The symbol "IDialogContent" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "ConditionResults" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type Condition = (content: IDialogContent) => ConditionResults;
+
+// Warning: (ae-forgotten-export) The symbol "IConditionResult" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ConditionResults = IConditionResult[];
+
 // Warning: (ae-forgotten-export) The symbol "IContextMenuProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -113,10 +210,45 @@ export class Dashlet extends React$2.Component<IDashletProps, {}> {
     render(): JSX.Element;
 }
 
+// Warning: (ae-forgotten-export) The symbol "IFilterProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
+    constructor(props: IFilterProps);
+    // (undocumented)
+    render(): JSX.Element;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IDialogAction" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type DialogActions = IDialogAction[];
+
+// @public (undocumented)
+type DialogContentItem = "htmlFile" | "htmlText" | "text" | "message" | "bbcode" | "md" | "checkboxes" | "choices" | "input" | "links";
+
+// @public (undocumented)
+type DialogType = "success" | "info" | "error" | "question";
+
+// @public (undocumented)
+type DirectoryCleaningMode = "tag" | "all";
+
 // Warning: (ae-forgotten-export) The symbol "IDNDContainerProps" needs to be exported by the entry point api.d.ts
 //
 // @public
 export const DNDContainer: FC<React$1.PropsWithChildren<IDNDContainerProps>>;
+
+// @public (undocumented)
+type DownloadCheckpoint<T = unknown> = {
+    downloadId: string;
+    resource: T;
+    dest: string;
+    completedRanges: ByteRange[];
+    etag: string | undefined;
+};
+
+// @public (undocumented)
+type DownloadState = "init" | "started" | "paused" | "finalizing" | "finished" | "failed" | "redirect";
 
 // Warning: (ae-forgotten-export) The symbol "IDraggableListProps" needs to be exported by the entry point api.d.ts
 //
@@ -145,6 +277,9 @@ export class Dropdown extends React$2.Component<IProps$9, {
 // @public
 export function DropdownButton(props: IProps$8): React$2.JSX.Element;
 
+// @public (undocumented)
+type DropType = "urls" | "files";
+
 // Warning: (ae-forgotten-export) The symbol "IBaseProps$7" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -162,21 +297,106 @@ export class EmptyPlaceholder extends React$2.PureComponent<IEmptyPlaceholderPro
 // @public (undocumented)
 export const ErrorBoundary: any;
 
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$10" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IExtensibleProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ExportType$1 = IBaseProps$10 & IExtensibleProps & React$2.HTMLAttributes<any> & any;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$11" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IActionControlProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ExportType$2 = IBaseProps$11 & IActionControlProps & IExtensibleProps & React$2.HTMLAttributes<any>;
+
+// @public (undocumented)
+type ExportType$3 = IContextMenuProps & IActionControlProps & IExtensibleProps & React$2.HTMLAttributes<any>;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$6" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ExportType = IBaseProps$6 & IActionControlProps & IExtensibleProps & React$2.HTMLAttributes<any>;
+
+// @public
+interface ExtensionInfo {
+    // (undocumented)
+    author: string;
+    // (undocumented)
+    bundled?: boolean;
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    fileId?: number;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    issueTrackerURL?: string;
+    // (undocumented)
+    modId?: number;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    namespace?: string;
+    // (undocumented)
+    path?: string;
+    // Warning: (ae-forgotten-export) The symbol "ExtensionType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    type?: ExtensionType;
+    // (undocumented)
+    version: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IExtensionContext" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type ExtensionInit = (context: IExtensionContext) => boolean;
+
+// @public (undocumented)
+type ExtensionLoadFailureDependency = {
+    id: "dependency";
+    args: {
+        dependencyId: string;
+        version?: string;
+    };
+};
+
+// @public (undocumented)
+type ExtensionLoadFailureException = {
+    id: "exception";
+    args: {
+        message: string;
+    };
+};
+
+// @public (undocumented)
+type ExtensionType = "game" | "translation" | "theme";
+
 // @public
 export type FileSystemErrorData = Partial<OsErrorData> & {
     path: string;
 };
 
+// @public (undocumented)
+const Fixed: (props: React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
+
+// Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+const Flex: (props: IFlexProps & React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
+
 // Warning: (ae-forgotten-export) The symbol "IProps$7" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class FlexLayout extends React$2.PureComponent<IProps$7, {}> {
-    // (undocumented)
-    static Fixed: (props: React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
-    // Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Fixed" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
-    static Flex: (props: IFlexProps & React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
+    static Fixed: typeof Fixed;
+    // Warning: (ae-forgotten-export) The symbol "Flex" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    static Flex: typeof Flex;
     // (undocumented)
     render(): JSX.Element;
 }
@@ -233,6 +453,837 @@ export namespace fs {
     export { FSWatcher, ILinkFileOptions, IRemoveFileOptions, ITmpOptions, Stats, WriteStream, accessSync, appendFileAsync, appendFileSync, changeFileAttributes, changeFileOwnership, chmodAsync, closeAsync, closeSync, constants, copyAsync, createReadStream, createWriteStream, encodingFromBOM, ensureDirAsync, ensureDirSync, ensureDirWritableAsync, ensureFileAsync, forcePerm, fsyncAsync, genFSWrapperAsync, isDirectoryAsync, linkAsync, linkSync, lstatAsync, makeFileWritableAsync, mkdirAsync, mkdirsAsync, moveAsync, moveRenameAsync, openAsync, openSync, readAsync, readFileAsync, readFileBOM, readFileSync, readdirAsync, readdirSync, readlinkAsync, removeAsync, removeSync, renameAsync, rmdirAsync, setTFunction, statAsync, statSilentAsync, statSync, symlinkAsync, symlinkSync, unlinkAsync, utimesAsync, watch, withTmpDir, withTmpDirImpl, withTmpFile, writeAsync, writeFileAsync, writeFileSync, writeSync };
 }
 
+// @public
+type GameInfoQuery = (game: any) => PromiseLike<{
+    [key: string]: IGameDetail;
+}>;
+
+// Warning: (ae-forgotten-export) The symbol "IGame" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IDiscoveryResult" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type GameVersionProviderFunc = (game: IGame, discovery: IDiscoveryResult) => PromiseLike<string>;
+
+// @public (undocumented)
+type GameVersionProviderTest = (game: IGame, discovery: IDiscoveryResult) => PromiseLike<boolean>;
+
+// Warning: (ae-forgotten-export) The symbol "ITableState" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type GetSelection = OutputSelector<any, string[], (res: ITableState) => string[]>;
+
+// @public (undocumented)
+enum HealthCheckCategory {
+    // (undocumented)
+    Game = "game",
+    // (undocumented)
+    Legacy = "legacy",
+    // (undocumented)
+    Mods = "mods",
+    // (undocumented)
+    Performance = "performance",
+    // (undocumented)
+    Requirements = "requirements",
+    // (undocumented)
+    System = "system",
+    // (undocumented)
+    Tools = "tools"
+}
+
+// Warning: (ae-forgotten-export) The symbol "IExtensionApi" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type HealthCheckFixFunction = (api: IExtensionApi) => Promise<void>;
+
+// Warning: (ae-forgotten-export) The symbol "IHealthCheckResult" needs to be exported by the entry point api.d.ts
+//
+// @public
+type HealthCheckFunction = (api: IExtensionApi, signal?: AbortSignal) => Promise<IHealthCheckResult>;
+
+// @public (undocumented)
+enum HealthCheckSeverity {
+    // (undocumented)
+    Critical = "critical",
+    // (undocumented)
+    Error = "error",
+    // (undocumented)
+    Info = "info",
+    // (undocumented)
+    Warning = "warning"
+}
+
+// @public (undocumented)
+enum HealthCheckTrigger {
+    // (undocumented)
+    GameChanged = "game-changed",
+    // (undocumented)
+    LoginChanged = "login-changed",
+    // (undocumented)
+    LootUpdated = "loot-updated",
+    // (undocumented)
+    Manual = "manual",
+    // (undocumented)
+    ModsChanged = "mods-changed",
+    // (undocumented)
+    PluginsChanged = "plugins-changed",
+    // (undocumented)
+    ProfileChanged = "profile-changed",
+    // (undocumented)
+    Scheduled = "scheduled",
+    // (undocumented)
+    SettingsChanged = "settings-changed",
+    // (undocumented)
+    Startup = "startup"
+}
+
+// @public (undocumented)
+interface IActionControlProps {
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    filter?: (action: IActionDefinition) => boolean;
+    // (undocumented)
+    instanceId?: string | string[];
+    // (undocumented)
+    showAll?: boolean;
+}
+
+// @public
+interface IActionDefinition {
+    // (undocumented)
+    action?: (instanceId: string | string[], data?: any) => void;
+    // (undocumented)
+    component?: React$2.ComponentType<React$2.PropsWithChildren<any>>;
+    // (undocumented)
+    condition?: (instanceId: string | string[], data?: any) => boolean | string;
+    // (undocumented)
+    data?: any;
+    // (undocumented)
+    default?: boolean;
+    // (undocumented)
+    group?: string;
+    // (undocumented)
+    icon?: string;
+    // Warning: (ae-forgotten-export) The symbol "IActionOptions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    options?: IActionOptions;
+    // (undocumented)
+    position?: number;
+    // (undocumented)
+    props?: () => any;
+    // Warning: (ae-forgotten-export) The symbol "ActionFunc" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    subMenus?: IActionDefinition[] | ActionFunc;
+    // (undocumented)
+    title?: string;
+}
+
+// @public (undocumented)
+interface IActionDefinitionEx extends IActionDefinition {
+    // (undocumented)
+    show: boolean | string;
+    // (undocumented)
+    subMenus?: IActionDefinitionEx[] | (() => IActionDefinitionEx[]);
+}
+
+// @public (undocumented)
+interface IActionOptions {
+    // (undocumented)
+    hollowIcon?: boolean;
+    // (undocumented)
+    isClassicOnly?: boolean;
+    // (undocumented)
+    isModernOnly?: boolean;
+    // (undocumented)
+    namespace?: string;
+    // (undocumented)
+    noCollapse?: boolean;
+}
+
+// @public (undocumented)
+interface IApiFuncOptions {
+    minArguments?: number;
+}
+
+// @public
+interface IApp {
+    // (undocumented)
+    appVersion: string;
+    // (undocumented)
+    extensions: {
+        [id: string]: IExtensionState;
+    };
+    // Warning: (ae-forgotten-export) The symbol "VortexInstallType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    installType: VortexInstallType;
+    // (undocumented)
+    instanceId: string;
+    // (undocumented)
+    migrations: string[];
+    // (undocumented)
+    version: string;
+    // (undocumented)
+    warnedAdmin: number;
+}
+
+// @public
+interface IArchiveHandler {
+    // (undocumented)
+    addFile?(filePath: string, sourcePath: string): default_2<void>;
+    // (undocumented)
+    create?(sourcePath: string): default_2<void>;
+    // (undocumented)
+    extractAll(outputPath: string): default_2<void>;
+    // (undocumented)
+    extractFile?(filePath: string, outputPath: string): default_2<void>;
+    // (undocumented)
+    readDir(archPath: string): default_2<string[]>;
+    // (undocumented)
+    readFile?(filePath: string): NodeJS.ReadableStream;
+    // (undocumented)
+    write?(): default_2<void>;
+}
+
+// @public
+interface IArchiveOptions {
+    // (undocumented)
+    create?: boolean;
+    // (undocumented)
+    gameId?: string;
+    // (undocumented)
+    verify?: boolean;
+    // (undocumented)
+    version?: string;
+}
+
+// @public (undocumented)
+interface IAttachment {
+    // (undocumented)
+    data: any;
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    type: "file" | "data";
+}
+
+// @public
+interface IAttributeState {
+    // (undocumented)
+    enabled: boolean;
+    // Warning: (ae-forgotten-export) The symbol "SortDirection" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    sortDirection: SortDirection;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IExtensionDownloadInfo" needs to be exported by the entry point api.d.ts
+//
+// @public
+interface IAvailableExtension extends IExtensionDownloadInfo {
+    // (undocumented)
+    author: string;
+    // (undocumented)
+    dependencies?: {
+        [key: string]: any;
+    };
+    // (undocumented)
+    description: {
+        short: string;
+        long: string;
+    };
+    // (undocumented)
+    downloads: number;
+    // (undocumented)
+    endorsements: number;
+    // (undocumented)
+    gameId?: string;
+    // (undocumented)
+    gameName?: string;
+    // (undocumented)
+    hide?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    image: string;
+    // (undocumented)
+    language?: string;
+    // (undocumented)
+    tags: string[];
+    // (undocumented)
+    timestamp: number;
+    // (undocumented)
+    type?: ExtensionType;
+    // (undocumented)
+    uploader: string;
+    // (undocumented)
+    version: string;
+}
+
+// @public (undocumented)
+interface IBannerOptions {
+    // (undocumented)
+    condition?: (props: any) => boolean;
+    // (undocumented)
+    onClick?: () => void;
+    // (undocumented)
+    props?: {
+        [key: string]: (state: any) => any;
+    };
+}
+
+// @public (undocumented)
+interface IBar {
+    // (undocumented)
+    class: string;
+    // (undocumented)
+    max: number;
+    // (undocumented)
+    min: number;
+    // (undocumented)
+    value: number;
+}
+
+// @public (undocumented)
+interface IBaseProps$1 {
+    // (undocumented)
+    actions: ITableRowAction[];
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    columnBlacklist?: string[];
+    // (undocumented)
+    data: {
+        [rowId: string]: any;
+    };
+    // (undocumented)
+    dataId?: number;
+    // (undocumented)
+    defaultSort?: string;
+    // (undocumented)
+    detailsTitle?: string;
+    // (undocumented)
+    edgeToEdge?: boolean;
+    // (undocumented)
+    hasActions?: boolean;
+    // (undocumented)
+    multiSelect?: boolean;
+    // (undocumented)
+    onChangeSelection?: (ids: string[]) => void;
+    // (undocumented)
+    showDetails?: boolean;
+    // (undocumented)
+    showHeader?: boolean;
+    // (undocumented)
+    stickyHeader?: boolean;
+    // (undocumented)
+    tableId: string;
+}
+
+// @public (undocumented)
+interface IBaseProps$10 {
+    // (undocumented)
+    cycleTime?: number;
+    // (undocumented)
+    group: string;
+}
+
+// @public (undocumented)
+interface IBaseProps$11 {
+    // Warning: (ae-forgotten-export) The symbol "ButtonType$1" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    buttonType?: ButtonType$1;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    group?: string;
+    // (undocumented)
+    instanceId?: string | string[];
+    // (undocumented)
+    orientation?: "horizontal" | "vertical";
+    // Warning: (ae-forgotten-export) The symbol "TFunction$1" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    t: TFunction$1;
+}
+
+// @public (undocumented)
+interface IBaseProps$2 {
+    // (undocumented)
+    className?: string;
+    // Warning: (ae-forgotten-export) The symbol "IBar" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    data: IBar[];
+    // (undocumented)
+    gap?: number;
+    // (undocumented)
+    innerGap?: number;
+    // (undocumented)
+    maxWidth?: number;
+    // (undocumented)
+    offset?: number;
+    // (undocumented)
+    restOverlap?: boolean;
+    // (undocumented)
+    spin?: boolean;
+    // (undocumented)
+    style?: React$2.CSSProperties;
+    // (undocumented)
+    totalRadius: number;
+}
+
+// @public (undocumented)
+interface IBaseProps$3 {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    labelLeft?: string;
+    // (undocumented)
+    labelRight?: string;
+    // (undocumented)
+    max?: number;
+    // (undocumented)
+    min?: number;
+    // (undocumented)
+    now: number;
+    // (undocumented)
+    showPercentage?: boolean;
+    // (undocumented)
+    showTimeLeft?: boolean;
+    // (undocumented)
+    style?: React$2.CSSProperties;
+}
+
+// @public (undocumented)
+interface IBaseProps$4 {
+    // (undocumented)
+    getBounds: () => ClientRect;
+    // (undocumented)
+    orientation: "vertical" | "horizontal";
+    // (undocumented)
+    shouldUpdatePosition?: boolean;
+    // (undocumented)
+    triggerRef?: (ref: HTMLElement) => void;
+}
+
+// @public (undocumented)
+interface IBaseProps$5 {
+    // (undocumented)
+    getBounds: () => ClientRect;
+    // (undocumented)
+    orientation: "vertical" | "horizontal";
+    // (undocumented)
+    shouldUpdatePosition?: boolean;
+    // (undocumented)
+    triggerRef?: (ref: HTMLElement) => void;
+}
+
+// @public (undocumented)
+interface IBaseProps$6 {
+    // Warning: (ae-forgotten-export) The symbol "ButtonType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    buttonType?: ButtonType;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    clickAnywhere?: boolean;
+    // (undocumented)
+    collapse?: boolean | "force";
+    // (undocumented)
+    filter?: (action: IActionDefinition) => boolean;
+    // (undocumented)
+    group?: string;
+    // (undocumented)
+    groupByIcon?: boolean;
+    // (undocumented)
+    icon?: string;
+    // (undocumented)
+    instanceId?: string | string[];
+    // (undocumented)
+    orientation?: "horizontal" | "vertical";
+    // (undocumented)
+    pullRight?: boolean;
+    // (undocumented)
+    showAll?: boolean;
+    // (undocumented)
+    t: TFunction$1;
+    // (undocumented)
+    tooltipPlacement?: "top" | "right" | "bottom" | "left";
+}
+
+// @public (undocumented)
+interface IBaseProps$7 {
+    // (undocumented)
+    accept: DropType[];
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    clickable?: boolean;
+    // (undocumented)
+    clickText?: string;
+    // (undocumented)
+    dialogDefault?: string;
+    // (undocumented)
+    dialogHint?: string;
+    // (undocumented)
+    dragOverlay?: JSX.Element;
+    // Warning: (ae-forgotten-export) The symbol "DropType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    drop: (type: DropType, paths: string[]) => void;
+    // (undocumented)
+    dropText?: string;
+    // (undocumented)
+    icon?: string;
+    // (undocumented)
+    style?: React$2.CSSProperties;
+}
+
+// @public (undocumented)
+interface IBaseProps$8 {
+    // (undocumented)
+    container?: Element;
+    // (undocumented)
+    split?: boolean;
+}
+
+// @public (undocumented)
+interface IBaseProps$9 {
+    // (undocumented)
+    container?: Element;
+}
+
+// @public (undocumented)
+interface IBaseProps {
+    // (undocumented)
+    children?: React$1.ReactNode;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    domRef?: (ref: HTMLElement) => void;
+    // (undocumented)
+    id?: string;
+}
+
+// @public
+interface IBBCodeContext {
+    allowLocal?: boolean;
+    callbacks?: {
+        [name: string]: (...args: unknown[]) => void;
+    };
+}
+
+// @public (undocumented)
+interface IBrowserState {
+    // (undocumented)
+    instructions: string;
+    // (undocumented)
+    skippable: boolean;
+    // (undocumented)
+    subscriber: string;
+    // (undocumented)
+    url: string;
+}
+
+// @public (undocumented)
+interface ICategory {
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    order: number;
+    // (undocumented)
+    parentCategory: string;
+}
+
+// @public (undocumented)
+interface ICategoryDictionary {
+    // Warning: (ae-forgotten-export) The symbol "ICategory" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    [id: string]: ICategory;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IControlBase" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface ICheckbox extends IControlBase {
+    // (undocumented)
+    bbcode?: string;
+    // (undocumented)
+    disabled?: boolean;
+    // (undocumented)
+    subText?: string;
+    // (undocumented)
+    text?: string;
+    // (undocumented)
+    value: boolean;
+}
+
+// @public (undocumented)
+type IChoices = {
+    name: string;
+    groups: {
+        name: string;
+        choices: {
+            name: string;
+            idx: number;
+        }[];
+    }[];
+}[] | undefined;
+
+// @public (undocumented)
+type IChoiceType = {
+    type: string;
+    options: IChoices;
+};
+
+// @public (undocumented)
+interface IChunk {
+    // (undocumented)
+    offset: number;
+    // (undocumented)
+    received: number;
+    // (undocumented)
+    size: number;
+    // (undocumented)
+    url: () => default_2<string>;
+}
+
+// @public
+interface ICollectionAttributes {
+    // (undocumented)
+    bugMessage?: string;
+    // (undocumented)
+    collectionId: number;
+    // (undocumented)
+    collectionSlug: string;
+    // (undocumented)
+    customFileName?: string;
+    // (undocumented)
+    downloadGame: string;
+    // (undocumented)
+    installInstructions?: string;
+    // (undocumented)
+    modSize?: number;
+    // (undocumented)
+    pictureUrl?: string;
+    // (undocumented)
+    rating?: {
+        average: number;
+        total: number;
+    };
+    // (undocumented)
+    recommendNewProfile?: boolean;
+    // (undocumented)
+    revisionId: number;
+    // (undocumented)
+    revisionNumber: number;
+    // (undocumented)
+    shortDescription?: string;
+    // (undocumented)
+    updatedTimestamp?: number;
+    // (undocumented)
+    uploadedTimestamp?: number;
+    // (undocumented)
+    uploader?: string;
+    // (undocumented)
+    uploaderAvatar?: string;
+    // (undocumented)
+    uploaderId?: number;
+}
+
+// @public
+interface ICollectionInstallSession {
+    collectionId: string;
+    downloadedCount: number;
+    failedCount: number;
+    gameId: string;
+    ignoredCount: number;
+    installedCount: number;
+    mods: {
+        [ruleId: string]: ICollectionModInstallInfo;
+    };
+    profileId: string;
+    sessionId: string;
+    stalled?: boolean;
+    totalOptional: number;
+    totalRequired: number;
+}
+
+// @public (undocumented)
+interface ICollectionInstallState {
+    // Warning: (ae-forgotten-export) The symbol "ICollectionInstallSession" needs to be exported by the entry point api.d.ts
+    activeSession?: ICollectionInstallSession;
+    lastActiveSessionId?: string;
+    sessionHistory: {
+        [sessionId: string]: ICollectionInstallSession;
+    };
+}
+
+// @public
+interface ICollectionModInstallInfo {
+    modId?: string;
+    phase?: number;
+    // Warning: (ae-forgotten-export) The symbol "IModRule" needs to be exported by the entry point api.d.ts
+    rule: IModRule;
+    // Warning: (ae-forgotten-export) The symbol "CollectionModStatus" needs to be exported by the entry point api.d.ts
+    status: CollectionModStatus;
+    type: "requires" | "recommends";
+}
+
+// @public (undocumented)
+interface ICollectionsGameSupportEntry {
+    // (undocumented)
+    gameId: string;
+    // Warning: (ae-forgotten-export) The symbol "IState" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    generator: (state: IState, gameId: string, stagingPath: string, modIds: string[], mods: {
+        [modId: string]: IMod;
+    }) => Promise<any>;
+    // Warning: (ae-forgotten-export) The symbol "IGameSpecificInterfaceProps" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
+    // (undocumented)
+    parser: (api: IExtensionApi, gameId: string, collection: any) => Promise<void>;
+}
+
+// @public
+interface ICollectionsPersistentState {
+    // (undocumented)
+    collections: Record<string, {
+        timestamp: number;
+        info: ICollection;
+    }>;
+    // (undocumented)
+    pendingVotes: Record<string, {
+        collectionSlug: string;
+        revisionNumber: number;
+        time: number;
+    }>;
+    // (undocumented)
+    revisions: Record<string, {
+        timestamp: number;
+        info: IRevision;
+    }>;
+}
+
+// @public
+interface ICommonModAttributes {
+    // (undocumented)
+    additionalLogicalFileNames?: string[];
+    // (undocumented)
+    allowRating?: boolean;
+    // (undocumented)
+    author?: string;
+    // (undocumented)
+    bugMessage?: string;
+    // (undocumented)
+    category?: string | number;
+    // (undocumented)
+    customFileName?: string;
+    // (undocumented)
+    description?: string;
+    // (undocumented)
+    downloadGame?: string;
+    // (undocumented)
+    endorsed?: string;
+    // (undocumented)
+    endorsement?: string;
+    // (undocumented)
+    fileId?: number;
+    // Warning: (ae-forgotten-export) The symbol "IFileListItem" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    fileList?: IFileListItem[];
+    // (undocumented)
+    fileMD5?: string;
+    // (undocumented)
+    fileName?: string;
+    // (undocumented)
+    fileSize?: number;
+    // (undocumented)
+    fileType?: string;
+    // (undocumented)
+    game?: string[];
+    // (undocumented)
+    homepage?: string;
+    // (undocumented)
+    installedAsDependency?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IChoiceType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    installerChoices?: IChoiceType;
+    // (undocumented)
+    installTime?: string | Date;
+    // (undocumented)
+    is4GBPatcher?: boolean;
+    // (undocumented)
+    isPrimary?: number | boolean;
+    // (undocumented)
+    logicalFileName?: string;
+    // (undocumented)
+    modId?: number;
+    // (undocumented)
+    modName?: string;
+    // (undocumented)
+    modSize?: number;
+    // (undocumented)
+    modVersion?: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    newestFileId?: number;
+    // (undocumented)
+    newestVersion?: string;
+    // Warning: (ae-forgotten-export) The symbol "IModPatches" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    patches?: IModPatches;
+    // (undocumented)
+    pictureUrl?: string;
+    // (undocumented)
+    referenceTag?: string;
+    // (undocumented)
+    scriptExtender?: boolean;
+    // (undocumented)
+    shortDescription?: string;
+    // (undocumented)
+    source?: string;
+    // (undocumented)
+    updatedTimestamp?: number;
+    // (undocumented)
+    uploadedTimestamp?: number;
+    // (undocumented)
+    uploader?: string;
+    // (undocumented)
+    uploaderId?: number;
+    // (undocumented)
+    uploaderUrl?: string;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+interface IComponentContext {
+    // (undocumented)
+    api: IExtensionApi;
+    // Warning: (ae-forgotten-export) The symbol "IModifiers" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    getModifiers: () => IModifiers;
+    // (undocumented)
+    menuLayer: HTMLDivElement;
+}
+
 // Warning: (ae-forgotten-export) The symbol "IIconProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -243,14 +1294,2998 @@ export const Icon: FC<React$1.PropsWithChildren<IIconProps>>;
 // @public (undocumented)
 export const IconBar: React$2.ComponentClass<ExportType>;
 
+// @public (undocumented)
+interface IConditionResult {
+    // (undocumented)
+    actions: string[];
+    // (undocumented)
+    errorText: string;
+    // (undocumented)
+    id: string;
+}
+
+// @public (undocumented)
+interface IContextMenuProps {
+    // Warning: (ae-forgotten-export) The symbol "IActionDefinitionEx" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    actions?: IActionDefinitionEx[];
+    // (undocumented)
+    anchor?: HTMLElement;
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    instanceId: string;
+    // (undocumented)
+    onHide: () => void;
+    // (undocumented)
+    onTrigger?: () => void;
+    // Warning: (ae-forgotten-export) The symbol "IContextPosition" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    position?: IContextPosition;
+    // (undocumented)
+    t?: TFunction$1;
+    // (undocumented)
+    visible: boolean;
+}
+
+// @public (undocumented)
+interface IContextPosition {
+    // (undocumented)
+    x: number;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+interface IControlBase {
+    // (undocumented)
+    id: string;
+}
+
+// @public (undocumented)
+interface ICustomProps {
+    // (undocumented)
+    onHighlight: (highlight: boolean) => void;
+}
+
+// @public (undocumented)
+interface IDashletOptions {
+    // (undocumented)
+    closable?: boolean;
+    // (undocumented)
+    fixed?: boolean;
+}
+
+// @public (undocumented)
+interface IDashletProps {
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    className: string;
+    // (undocumented)
+    title: string;
+}
+
+// @public (undocumented)
+interface IDashletSettings {
+    // (undocumented)
+    enabled: boolean;
+    // (undocumented)
+    height: number;
+    // (undocumented)
+    width: number;
+}
+
+// @public (undocumented)
+interface IDeployedFile {
+    merged?: string[];
+    relPath: string;
+    source: string;
+    target?: string;
+    time: number;
+}
+
+// @public (undocumented)
+interface IDeploymentMethod {
+    activate: (sourcePath: string, sourceName: string, deployPath: string, blackList: Set<string>) => PromiseLike<void>;
+    cancel?: (gameId: string, dataPath: string, installationPath: string) => PromiseLike<void>;
+    readonly compatible?: string[];
+    deactivate: (sourcePath: string, dataPath: string, sourceName: string) => PromiseLike<void>;
+    readonly description: string;
+    detailedDescription: (t: TFunction$1) => string;
+    // Warning: (ae-forgotten-export) The symbol "IFileChange" needs to be exported by the entry point api.d.ts
+    externalChanges: (gameId: string, installPath: string, dataPath: string, activation: IDeployedFile[]) => PromiseLike<IFileChange[]>;
+    finalize: (gameId: string, dataPath: string, installationPath: string, progressCB?: (files: number, total: number) => void) => PromiseLike<IDeployedFile[]>;
+    getDeployedPath: (input: string) => string;
+    readonly id: string;
+    isDeployed: (installPath: string, dataPath: string, file: IDeployedFile) => PromiseLike<boolean>;
+    readonly isFallbackPurgeSafe: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IUnavailableReason" needs to be exported by the entry point api.d.ts
+    isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
+    readonly name: string;
+    readonly noRedundancy?: boolean;
+    onSelected?: (api: IExtensionApi) => PromiseLike<void>;
+    postPurge: () => PromiseLike<void>;
+    // Warning: (ae-forgotten-export) The symbol "IDeployedFile" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Normalize" needs to be exported by the entry point api.d.ts
+    prepare: (dataPath: string, clean: boolean, lastActivation: IDeployedFile[], normalize: Normalize) => PromiseLike<void>;
+    prePurge: (installPath: string) => PromiseLike<void>;
+    readonly priority: number;
+    purge: (installPath: string, dataPath: string, gameId?: string, onProgress?: (num: number, total: number) => void) => PromiseLike<void>;
+    userGate: () => PromiseLike<void>;
+}
+
+// @public (undocumented)
+interface IDeployOptions {
+    // (undocumented)
+    isCollectionPostprocessCall?: boolean;
+    // (undocumented)
+    manual?: boolean;
+    // (undocumented)
+    profileId?: string;
+}
+
+// @public (undocumented)
+interface IDialog {
+    // (undocumented)
+    actions: string[];
+    // (undocumented)
+    content: IDialogContent;
+    // (undocumented)
+    defaultAction: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    title: string;
+    // Warning: (ae-forgotten-export) The symbol "DialogType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    type: DialogType;
+}
+
+// @public (undocumented)
+interface IDialogAction {
+    // (undocumented)
+    action?: () => void;
+    // (undocumented)
+    default?: boolean;
+    // (undocumented)
+    label: string;
+}
+
+// @public (undocumented)
+interface IDialogContent {
+    // (undocumented)
+    bbcode?: string;
+    // Warning: (ae-forgotten-export) The symbol "ICheckbox" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    checkboxes?: ICheckbox[];
+    // (undocumented)
+    choices?: ICheckbox[];
+    // Warning: (ae-forgotten-export) The symbol "Condition" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    condition?: Condition;
+    // (undocumented)
+    htmlFile?: string;
+    htmlText?: string;
+    // Warning: (ae-forgotten-export) The symbol "IInput" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    input?: IInput[];
+    // Warning: (ae-forgotten-export) The symbol "ILink" needs to be exported by the entry point api.d.ts
+    links?: ILink[];
+    // (undocumented)
+    md?: string;
+    message?: string;
+    // (undocumented)
+    options?: {
+        translated?: boolean;
+        wrap?: boolean;
+        hideMessage?: boolean;
+        bbcodeContext?: IBBCodeContext;
+        linksAsButtons?: boolean;
+        order?: DialogContentItem[];
+    };
+    // (undocumented)
+    parameters?: Record<string, string | number> & {
+        count?: number;
+    };
+    text?: string;
+}
+
+// @public (undocumented)
+interface IDialogResult {
+    // (undocumented)
+    action: string;
+    // (undocumented)
+    input: any;
+}
+
+// @public (undocumented)
+interface IDimensions {
+    // (undocumented)
+    height: number;
+    // (undocumented)
+    width: number;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ITool" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface IDiscoveredTool extends ITool {
+    // (undocumented)
+    custom: boolean;
+    // (undocumented)
+    hidden: boolean;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    timestamp?: number;
+    // (undocumented)
+    workingDirectory?: string;
+}
+
+// @public (undocumented)
+interface IDiscoveryPhase {
+    // (undocumented)
+    directory: string;
+    // (undocumented)
+    progress: number;
+}
+
+// @public
+interface IDiscoveryResult {
+    // (undocumented)
+    environment?: {
+        [key: string]: string;
+    };
+    // (undocumented)
+    executable?: string;
+    // (undocumented)
+    extensionPath?: string;
+    // (undocumented)
+    hidden?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    logo?: string;
+    // (undocumented)
+    mergeMods?: boolean;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    parameters?: string[];
+    // (undocumented)
+    path?: string;
+    // (undocumented)
+    pathSetManually?: boolean;
+    // (undocumented)
+    shell?: boolean;
+    // (undocumented)
+    shortName?: string;
+    // (undocumented)
+    store?: string;
+    // (undocumented)
+    tools?: {
+        [id: string]: IDiscoveredTool;
+    };
+}
+
+// @public
+interface IDiscoveryState {
+    // (undocumented)
+    phases: {
+        [id: number]: IDiscoveryPhase;
+    };
+    // (undocumented)
+    running: boolean;
+}
+
+// @public (undocumented)
+interface IDnDConditionResult {
+    // (undocumented)
+    errMessage?: string;
+    // (undocumented)
+    success: boolean;
+}
+
+// @public (undocumented)
+interface IDNDContainerProps {
+    // (undocumented)
+    children?: React$1.ReactNode;
+    // (undocumented)
+    style?: React$1.CSSProperties;
+}
+
+// @public
+interface IDownload {
+    // Warning: (ae-forgotten-export) The symbol "IDownloadFailCause" needs to be exported by the entry point api.d.ts
+    failCause?: IDownloadFailCause;
+    fileMD5?: string;
+    fileTime: number;
+    game: string[];
+    // (undocumented)
+    id: string;
+    installed?: {
+        gameId: string;
+        modId: string;
+    };
+    localPath?: string;
+    // Warning: (ae-forgotten-export) The symbol "IModInfo$2" needs to be exported by the entry point api.d.ts
+    modInfo: IModInfo$2;
+    pausable?: boolean;
+    pauseCount?: number;
+    received: number;
+    size: number;
+    startTime: number;
+    // Warning: (ae-forgotten-export) The symbol "DownloadState" needs to be exported by the entry point api.d.ts
+    state: DownloadState;
+    urls: string[];
+    verified: number;
+}
+
+// @public (undocumented)
+interface IDownloadFailCause {
+    // (undocumented)
+    htmlFile?: string;
+    // (undocumented)
+    message?: string;
+}
+
+// @public (undocumented)
+interface IDownloadHint {
+    // (undocumented)
+    instructions?: string;
+    // (undocumented)
+    mode: "direct" | "browse" | "manual";
+    // (undocumented)
+    url?: string;
+}
+
+// @public (undocumented)
+interface IDownloadRemoveOptions {
+    confirmed?: boolean;
+    // (undocumented)
+    silent?: boolean;
+}
+
+// @public (undocumented)
+interface IDownloadResult {
+    // (undocumented)
+    filePath: string;
+    // (undocumented)
+    hadErrors: boolean;
+    // (undocumented)
+    headers: any;
+    // (undocumented)
+    metaInfo: any;
+    // (undocumented)
+    size: number;
+    // Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    unfinishedChunks: IChunk[];
+}
+
+// @public (undocumented)
+interface IDownloadsAPIExtension {
+    // (undocumented)
+    pauseDownload?: (downloadId: string) => Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "IDownloadRemoveOptions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    removeDownload?: (downloadId: string, options?: IDownloadRemoveOptions) => Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "IStartDownloadOptions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    resumeDownload?: (downloadId: string, options?: IStartDownloadOptions) => Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "RedownloadMode" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IDownloadResult" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    startDownload?: (urls: string[], modInfo: any, fileName: string, redownload?: RedownloadMode, options?: IStartDownloadOptions) => Promise<IDownloadResult>;
+}
+
+// @public (undocumented)
+interface IDraggableListProps {
+    // (undocumented)
+    apply: (ordered: any[]) => void;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    disabled?: boolean;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    idFunc?: (item: any) => string;
+    // (undocumented)
+    isLocked?: (item: any) => boolean;
+    // (undocumented)
+    itemRenderer: React$2.ComponentType<React$2.PropsWithChildren<{
+        item: any;
+    }>>;
+    // (undocumented)
+    items: any[];
+    // (undocumented)
+    itemTypeId: string;
+    // (undocumented)
+    style?: React$2.CSSProperties;
+    // (undocumented)
+    virtualized?: boolean;
+}
+
+// @public (undocumented)
+interface IEditChoice {
+    // (undocumented)
+    bool?: boolean;
+    // (undocumented)
+    icon?: string;
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    text?: string;
+    visible?: boolean;
+}
+
+// @public (undocumented)
+interface IEmptyPlaceholderProps {
+    // (undocumented)
+    fill?: boolean;
+    // (undocumented)
+    icon: string;
+    // (undocumented)
+    subtext?: string | JSX.Element;
+    // (undocumented)
+    text: string;
+}
+
+// @public (undocumented)
+interface IErrorOptions {
+    // Warning: (ae-forgotten-export) The symbol "INotificationAction" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    actions?: INotificationAction[];
+    // (undocumented)
+    allowReport?: boolean;
+    // (undocumented)
+    allowSuppress?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IAttachment" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    attachments?: IAttachment[];
+    // Warning: (ae-forgotten-export) The symbol "IRegisteredExtension" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    extension?: IRegisteredExtension;
+    // (undocumented)
+    extensionName?: string;
+    // Warning: (ae-forgotten-export) The symbol "IAvailableExtension" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    extensionRemote?: IAvailableExtension;
+    // (undocumented)
+    hideDetails?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    isBBCode?: boolean;
+    // (undocumented)
+    isHTML?: boolean;
+    // (undocumented)
+    message?: string;
+    // (undocumented)
+    replace?: {
+        [key: string]: string;
+    };
+    // (undocumented)
+    warning?: boolean;
+}
+
+// @public (undocumented)
+interface IExecInfo {
+    // (undocumented)
+    arguments: string[];
+    // (undocumented)
+    execPath: string;
+}
+
+// @public (undocumented)
+interface IExtensibleProps {
+    // (undocumented)
+    children?: ReactNode;
+    // (undocumented)
+    group?: string;
+    // (undocumented)
+    staticElements?: any[];
+}
+
+// Warning: (ae-forgotten-export) The symbol "ExtensionInfo" needs to be exported by the entry point api.d.ts
+//
+// @public @deprecated (undocumented)
+type IExtension = ExtensionInfo;
+
+// @public
+interface IExtensionApi {
+    addMetaServer: (id: string, server: IServer) => void;
+    awaitUI: () => default_2<void>;
+    clearStylesheet: () => void;
+    closeDialog?: (id: string, actionKey?: string, input?: any) => void;
+    deregisterProtocol: (protocol: string) => void;
+    // (undocumented)
+    dismissAllNotifications?: () => void;
+    dismissNotification?: (id: string) => void;
+    // Warning: (ae-forgotten-export) The symbol "ApiEventArgs" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ApiEventResult" needs to be exported by the entry point api.d.ts
+    emitAndAwait: (<TEvent extends ApiEventName>(eventName: TEvent, ...args: ApiEventArgs<TEvent>) => Promise<ApiEventResult<TEvent> extends void ? void : ApiEventResult<TEvent>[]>) & (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(eventName: string, ...args: TArgs) => Promise<TResult[]>);
+    // Warning: (ae-forgotten-export) The symbol "ApiEventMap" needs to be exported by the entry point api.d.ts
+    events: NodeJS.EventEmitter<ApiEventMap & Record<string, any[]>>;
+    // Warning: (ae-forgotten-export) The symbol "IExtensionApiExtension" needs to be exported by the entry point api.d.ts
+    ext: IExtensionApiExtension;
+    extension?: IRegisteredExtension;
+    genMd5Hash: (data: string | Buffer, progressFunc?: (progress: number, total: number) => void) => default_2<IHashResult>;
+    getI18n: () => i18n;
+    getLoadedExtensions: () => IRegisteredExtension[];
+    getPath: (name: string) => string;
+    getState: <T extends IState = IState>() => T;
+    highlightControl: (selector: string, durationMS: number, text?: string, altStyle?: boolean) => void;
+    isOutdated: () => boolean;
+    laterT: TFunction$1;
+    locale: () => string;
+    // Warning: (ae-forgotten-export) The symbol "ILookupDetails" needs to be exported by the entry point api.d.ts
+    lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => default_2<ILookupResult[]>;
+    // Warning: (ae-forgotten-export) The symbol "IModReference" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ILookupOptions" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IModLookupResult" needs to be exported by the entry point api.d.ts
+    lookupModReference: (ref: IModReference, options?: ILookupOptions) => default_2<IModLookupResult[]>;
+    // (undocumented)
+    NAMESPACE: string;
+    onAsync: (<TEvent extends ApiEventName>(eventName: TEvent, listener: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>) => void) & (<TResult = unknown, TArgs extends readonly unknown[] = unknown[]>(eventName: string, listener: (...args: TArgs) => PromiseLike<TResult>) => void);
+    // Warning: (ae-forgotten-export) The symbol "StateChangeCallback" needs to be exported by the entry point api.d.ts
+    onStateChange?: <T = any>(path: string[], callback: StateChangeCallback<T>) => void;
+    // Warning: (ae-forgotten-export) The symbol "Archive" needs to be exported by the entry point api.d.ts
+    openArchive: (archivePath: string, options?: IArchiveOptions, extension?: string) => default_2<Archive>;
+    // Warning: (ae-forgotten-export) The symbol "IRegisterProtocol" needs to be exported by the entry point api.d.ts
+    registerProtocol: IRegisterProtocol;
+    // Warning: (ae-forgotten-export) The symbol "IRegisterRepositoryLookup" needs to be exported by the entry point api.d.ts
+    registerRepositoryLookup: IRegisterRepositoryLookup;
+    // Warning: (ae-forgotten-export) The symbol "IRunOptions" needs to be exported by the entry point api.d.ts
+    runExecutable: (executable: string, args: string[], options: IRunOptions) => default_2<void>;
+    // Warning: (ae-forgotten-export) The symbol "ISaveOptions" needs to be exported by the entry point api.d.ts
+    saveFile: (options: ISaveOptions) => default_2<string>;
+    saveModMeta: (modInfo: IModInfo) => default_2<void>;
+    selectDir: (options: IOpenOptions) => default_2<string>;
+    selectExecutable: (options: IOpenOptions) => default_2<string>;
+    // Warning: (ae-forgotten-export) The symbol "IOpenOptions" needs to be exported by the entry point api.d.ts
+    selectFile: (options: IOpenOptions) => default_2<string>;
+    // Warning: (ae-forgotten-export) The symbol "INotification" needs to be exported by the entry point api.d.ts
+    sendNotification?: (notification: INotification) => string;
+    setStylesheet: (key: string, filePath: string) => void;
+    // Warning: (ae-forgotten-export) The symbol "DialogActions" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IDialogResult" needs to be exported by the entry point api.d.ts
+    showDialog?: (type: DialogType, title: string, content: IDialogContent, actions: DialogActions, id?: string) => default_2<IDialogResult>;
+    // Warning: (ae-forgotten-export) The symbol "IErrorOptions" needs to be exported by the entry point api.d.ts
+    showErrorNotification?: (message: string, detail: string | Error | any, options?: IErrorOptions) => void;
+    // Warning: (ae-forgotten-export) The symbol "ThunkStore" needs to be exported by the entry point api.d.ts
+    store?: ThunkStore<any>;
+    suppressNotification?: (id: string, suppress?: boolean) => void;
+    translate: TFunction$1;
+    withPrePost: (<TEvent extends ApiEventName>(eventName: string, callback: (...args: ApiEventArgs<TEvent>) => PromiseLike<ApiEventResult<TEvent>>) => (...args: ApiEventArgs<TEvent>) => Promise<ApiEventResult<TEvent>>) & (<TResult, TArgs extends readonly unknown[] = unknown[]>(eventName: string, callback: (...args: TArgs) => PromiseLike<TResult>) => (...args: TArgs) => Promise<TResult>);
+}
+
+// Warning: (ae-forgotten-export) The symbol "INexusAPIExtension" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IModsAPIExtension" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IDownloadsAPIExtension" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, IDownloadsAPIExtension {
+    // (undocumented)
+    [key: string]: (...args: any[]) => any;
+    // Warning: (ae-forgotten-export) The symbol "IHistoryEvent" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    addToHistory?: (stack: string, entry: IHistoryEvent) => void;
+    // (undocumented)
+    awaitProfileSwitch?: () => default_2<string>;
+    // (undocumented)
+    ensureLoggedIn?: () => default_2<void>;
+    // (undocumented)
+    showHistory?: (stack: string) => void;
+    // Warning: (ae-forgotten-export) The symbol "IPosition" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IOverlayOptions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    showOverlay?: (id: string, title: string, content: string | React$2.ComponentType<React$2.PropsWithChildren<any>>, pos?: IPosition, options?: IOverlayOptions) => void;
+}
+
+// @public
+interface IExtensionContext {
+    api: IExtensionApi;
+    once: (callback: () => void | PromiseLike<void>) => void;
+    // @deprecated
+    onceMain: (callback: () => void) => void;
+    optional: any;
+    // Warning: (ae-forgotten-export) The symbol "RegisterAction" needs to be exported by the entry point api.d.ts
+    registerAction: RegisterAction;
+    // Warning: (ae-forgotten-export) The symbol "SanityCheck" needs to be exported by the entry point api.d.ts
+    registerActionCheck: (actionType: string, check: SanityCheck) => void;
+    // Warning: (ae-forgotten-export) The symbol "IApiFuncOptions" needs to be exported by the entry point api.d.ts
+    registerAPI: (name: string, func: (...args: any[]) => any, options: IApiFuncOptions) => void;
+    // Warning: (ae-forgotten-export) The symbol "ArchiveHandlerCreator" needs to be exported by the entry point api.d.ts
+    registerArchiveType: (extension: string, handler: ArchiveHandlerCreator) => void;
+    // Warning: (ae-forgotten-export) The symbol "AttributeExtractor" needs to be exported by the entry point api.d.ts
+    registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterBanner" needs to be exported by the entry point api.d.ts
+    registerBanner: RegisterBanner;
+    // Warning: (ae-forgotten-export) The symbol "RegisterControlWrapper" needs to be exported by the entry point api.d.ts
+    registerControlWrapper: RegisterControlWrapper;
+    // Warning: (ae-forgotten-export) The symbol "RegisterDashlet" needs to be exported by the entry point api.d.ts
+    registerDashlet: RegisterDashlet;
+    // Warning: (ae-forgotten-export) The symbol "IDeploymentMethod" needs to be exported by the entry point api.d.ts
+    registerDeploymentMethod: (method: IDeploymentMethod) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterDialog" needs to be exported by the entry point api.d.ts
+    registerDialog: RegisterDialog;
+    registerDownloadProtocol: (scheme: string, handler: (inputUrl: string) => PromiseLike<{
+        urls: string[];
+        updatedUrl?: string;
+        meta: unknown;
+    }>) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterFooter" needs to be exported by the entry point api.d.ts
+    registerFooter: RegisterFooter;
+    registerGame: (game: IGame) => void;
+    // Warning: (ae-forgotten-export) The symbol "GameInfoQuery" needs to be exported by the entry point api.d.ts
+    registerGameInfoProvider: (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => void;
+    // Warning: (ae-forgotten-export) The symbol "ICollectionsGameSupportEntry" needs to be exported by the entry point api.d.ts
+    registerGameSpecificCollectionsData: (data: ICollectionsGameSupportEntry) => void;
+    // Warning: (ae-forgotten-export) The symbol "IGameStore" needs to be exported by the entry point api.d.ts
+    registerGameStore: (gameStore: IGameStore) => void;
+    registerGameStub: (game: IGame, ext: IExtensionDownloadInfo) => void;
+    // Warning: (ae-forgotten-export) The symbol "GameVersionProviderTest" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "GameVersionProviderFunc" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IGameVersionProviderOptions" needs to be exported by the entry point api.d.ts
+    registerGameVersionProvider?: (id: string, priority: number, supported: GameVersionProviderTest, getVersion: GameVersionProviderFunc, options?: IGameVersionProviderOptions) => void;
+    // Warning: (ae-forgotten-export) The symbol "IHealthCheck" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IModHealthCheck" needs to be exported by the entry point api.d.ts
+    registerHealthCheck: (healthCheck: IHealthCheck | IModHealthCheck) => void;
+    // Warning: (ae-forgotten-export) The symbol "IHistoryStack" needs to be exported by the entry point api.d.ts
+    registerHistoryStack: (id: string, options: IHistoryStack) => void;
+    // Warning: (ae-forgotten-export) The symbol "TestSupported" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "InstallFunc" needs to be exported by the entry point api.d.ts
+    registerInstaller: (id: string, priority: number, testSupported: TestSupported, install: InstallFunc) => void;
+    // Warning: (ae-forgotten-export) The symbol "IRunParameters" needs to be exported by the entry point api.d.ts
+    registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
+    // Warning: (ae-forgotten-export) The symbol "ILoadOrderGameInfo" needs to be exported by the entry point api.d.ts
+    registerLoadOrder: (gameInfo: ILoadOrderGameInfo) => void;
+    // Warning: (ae-forgotten-export) The symbol "IGameLoadOrderEntry" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterMainPage" needs to be exported by the entry point api.d.ts
+    registerMainPage: RegisterMainPage;
+    // Warning: (ae-forgotten-export) The symbol "MergeTest" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "MergeFunc" needs to be exported by the entry point api.d.ts
+    registerMerge: (test: MergeTest, merge: MergeFunc, modType: string) => void;
+    registerMigration: (migrate: (oldVersion: string) => default_2<void>) => void;
+    // Warning: (ae-forgotten-export) The symbol "IModSourceOptions" needs to be exported by the entry point api.d.ts
+    registerModSource: (id: string, name: string, onBrowse?: () => void, options?: IModSourceOptions) => void;
+    // Warning: (ae-forgotten-export) The symbol "IInstruction" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IModTypeOptions" needs to be exported by the entry point api.d.ts
+    registerModType: (id: string, priority: number, isSupported: (gameId: string) => boolean, getPath: (game: IGame) => string, test: (installInstructions: IInstruction[]) => default_2<boolean>, options?: IModTypeOptions) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterOverlay" needs to be exported by the entry point api.d.ts
+    registerOverlay: RegisterOverlay;
+    // Warning: (ae-forgotten-export) The symbol "IPersistor" needs to be exported by the entry point api.d.ts
+    registerPersistor: (hive: string, persistor: IPersistor, debounce?: number) => void;
+    // Warning: (ae-forgotten-export) The symbol "IPreviewFile" needs to be exported by the entry point api.d.ts
+    registerPreview?: (priority: number, handler: (files: IPreviewFile[], allowPick: boolean) => default_2<IPreviewFile>) => void;
+    registerProfileFeature?: (featureId: string, type: string, icon: string, label: string, description: string, supported: () => boolean) => void;
+    registerProfileFile?: (gameId: string, filePath: string | (() => PromiseLike<string[]>)) => void;
+    // Warning: (ae-forgotten-export) The symbol "IReducerSpec" needs to be exported by the entry point api.d.ts
+    registerReducer: (path: string[], spec: IReducerSpec) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterSettings" needs to be exported by the entry point api.d.ts
+    registerSettings: RegisterSettings;
+    // Warning: (ae-forgotten-export) The symbol "PersistingType" needs to be exported by the entry point api.d.ts
+    registerSettingsHive: (type: PersistingType, hive: string) => void;
+    registerStartHook: (priority: number, id: string, hook: (call: IRunParameters) => PromiseLike<IRunParameters>) => void;
+    // Warning: (ae-forgotten-export) The symbol "ITableAttribute" needs to be exported by the entry point api.d.ts
+    registerTableAttribute: (tableId: string, attribute: ITableAttribute) => void;
+    // Warning: (ae-forgotten-export) The symbol "CheckFunction" needs to be exported by the entry point api.d.ts
+    registerTest: (id: string, event: string, check: CheckFunction) => void;
+    // Warning: (ae-forgotten-export) The symbol "RegisterToDo" needs to be exported by the entry point api.d.ts
+    registerToDo: RegisterToDo;
+    // Warning: (ae-forgotten-export) The symbol "ToolParameterCB" needs to be exported by the entry point api.d.ts
+    registerToolVariables: (callback: ToolParameterCB) => void;
+    requireExtension: (extId: string, version?: string, optional?: boolean) => void;
+    requireVersion: (versionRange: string) => void;
+}
+
+// @public (undocumented)
+interface IExtensionDownloadInfo {
+    // (undocumented)
+    fileId?: number;
+    // (undocumented)
+    modId?: number;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    type?: ExtensionType;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ExtensionLoadFailureException" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "ExtensionLoadFailureDependency" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IExtensionLoadFailure = {
+    id: "unsupported-api" | "unsupported-version";
+} | ExtensionLoadFailureException | ExtensionLoadFailureDependency;
+
+// @public (undocumented)
+interface IExtensionOptional {
+    // (undocumented)
+    args: {
+        [key: string]: any;
+    };
+    // (undocumented)
+    extensionPath: string;
+    // (undocumented)
+    id: string;
+}
+
+// @public (undocumented)
+interface IExtensionState {
+    author: string;
+    bundled?: boolean;
+    description: string;
+    // (undocumented)
+    enabled: boolean | "failed";
+    // (undocumented)
+    endorsed: string;
+    fileId?: number;
+    modId?: number;
+    name: string;
+    path: string;
+    // (undocumented)
+    remove: boolean;
+    type?: ExtensionType;
+    // (undocumented)
+    version: string;
+}
+
+// @public (undocumented)
+interface IExtraImageProps<T> extends React$2.ImgHTMLAttributes<T> {
+    // (undocumented)
+    circle?: boolean;
+    // (undocumented)
+    srcs: string[];
+}
+
+// @public
+interface IFileChange {
+    changeType: "refchange" | "valchange" | "deleted" | "srcdeleted";
+    destTime?: Date;
+    filePath: string;
+    source: string;
+    sourceTime?: Date;
+}
+
+// @public (undocumented)
+interface IFileFilter {
+    // (undocumented)
+    extensions: string[];
+    // (undocumented)
+    name: string;
+}
+
+// @public
+interface IFileListItem {
+    // (undocumented)
+    md5?: string;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    xxh64?: string;
+}
+
+// @public (undocumented)
+interface IFilterProps {
+    // (undocumented)
+    attributeId: string;
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    domRef: (ref: HTMLElement) => void;
+    // (undocumented)
+    filter: any;
+    // (undocumented)
+    onSetFilter: (attributeId: string, value: any) => void;
+    // (undocumented)
+    t: TFunction$1;
+}
+
+// @public (undocumented)
+interface IFlexLayoutProps {
+    // (undocumented)
+    fill?: boolean;
+    // (undocumented)
+    type: "column" | "row";
+}
+
+// @public (undocumented)
+interface IFlexProps {
+    // (undocumented)
+    fill?: boolean;
+}
+
+// @public (undocumented)
+interface IFormFeedbackProps {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    pending?: boolean;
+}
+
+// @public (undocumented)
+interface IFormItemProps {
+    // (undocumented)
+    controlId: string;
+    // (undocumented)
+    label: string;
+    // (undocumented)
+    maxLength?: number;
+    // (undocumented)
+    onChangeValue?: (key: string, newValue: any) => void;
+    // (undocumented)
+    placeholder?: string;
+    // (undocumented)
+    readOnly?: boolean;
+    // (undocumented)
+    stateKey: string;
+    // (undocumented)
+    style?: React$2.CSSProperties;
+    // (undocumented)
+    t: TFunction;
+    // (undocumented)
+    validator?: (value: string) => string;
+    // (undocumented)
+    value: any;
+}
+
+// @public (undocumented)
+interface IFormPathProps extends IFormItemProps {
+    // (undocumented)
+    directory: boolean;
+    // (undocumented)
+    extensions?: string[];
+}
+
+// @public
+interface IGame extends ITool {
+    compatible?: {
+        [key: string]: boolean;
+    };
+    contributed?: string;
+    deploymentGate?: () => default_2<void>;
+    details?: {
+        [key: string]: any;
+    };
+    // Warning: (ae-forgotten-export) The symbol "DirectoryCleaningMode" needs to be exported by the entry point api.d.ts
+    directoryCleaning?: DirectoryCleaningMode;
+    extensionPath?: string;
+    final?: boolean;
+    getGameVersion?: (gamePath: string, exePath: string) => PromiseLike<string>;
+    getInstalledVersion?: (discovery: IDiscoveryResult) => default_2<string>;
+    getModPaths?: (gamePath: string) => {
+        [typeId: string]: string;
+    };
+    mergeArchive?: (filePath: string) => boolean;
+    mergeMods?: boolean | ((mod: IMod) => string);
+    // Warning: (ae-forgotten-export) The symbol "IModType" needs to be exported by the entry point api.d.ts
+    modTypes?: IModType[];
+    overrides?: string[];
+    queryArgs?: {
+        [storeId: string]: IQueryArgEntry;
+    };
+    queryModPath: (gamePath: string) => string;
+    requiresCleanup?: boolean;
+    requiresLauncher?: (gamePath: string, store?: string) => default_2<{
+        launcher: string;
+        addInfo?: any;
+    }>;
+    setup?: (discovery: IDiscoveryResult) => default_2<void>;
+    supportedTools?: ITool[];
+    version?: string;
+}
+
+// @public (undocumented)
+interface IGameDetail {
+    // (undocumented)
+    title: string;
+    // (undocumented)
+    type?: string;
+    // (undocumented)
+    value: any;
+}
+
+// @public (undocumented)
+interface IGameInfoEntry {
+    // (undocumented)
+    expires: number;
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    priority: number;
+    // (undocumented)
+    provider: string;
+    // (undocumented)
+    title: string;
+    // (undocumented)
+    type?: string;
+    // (undocumented)
+    value: any;
+}
+
+// @public (undocumented)
+interface IGameLoadOrderEntry {
+    // Warning: (ae-forgotten-export) The symbol "ILoadOrder" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    callback?: (loadOrder: ILoadOrder, updateType?: UpdateType) => void;
+    // Warning: (ae-forgotten-export) The symbol "IInfoPanelProps" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    createInfoPanel: (props: IInfoPanelProps) => string | React.ComponentType<React.PropsWithChildren<unknown>>;
+    // (undocumented)
+    displayCheckboxes?: boolean;
+    // (undocumented)
+    filter?: (mods: IMod[]) => IMod[];
+    // (undocumented)
+    gameArtURL: string;
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    itemRenderer?: React.ComponentType<React.PropsWithChildren<{
+        className?: string;
+        item: ILoadOrderDisplayItem;
+        onRef: (ref: any) => any;
+    }>>;
+    // (undocumented)
+    noCollectionGeneration?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "ILoadOrderDisplayItem" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "SortType" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "UpdateType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    preSort?: (items: ILoadOrderDisplayItem[], sortDir: SortType, updateType?: UpdateType) => Promise$1<ILoadOrderDisplayItem[]>;
+}
+
+// @public (undocumented)
+interface IGameSpecificInterfaceProps {
+    // (undocumented)
+    collection: IMod;
+    // (undocumented)
+    revisionInfo: IRevision;
+    // (undocumented)
+    t: TFunction$1;
+}
+
+// @public
+interface IGameStore {
+    // Warning: (ae-forgotten-export) The symbol "IGameStoreEntry" needs to be exported by the entry point api.d.ts
+    allGames: () => default_2<IGameStoreEntry[]>;
+    findByAppId: (appId: string | string[]) => default_2<IGameStoreEntry>;
+    findByName: (appName: string) => default_2<IGameStoreEntry>;
+    // Warning: (ae-forgotten-export) The symbol "IExecInfo" needs to be exported by the entry point api.d.ts
+    getExecInfo?: (appId: any) => default_2<IExecInfo>;
+    getGameStorePath: () => default_2<string | undefined>;
+    getPosixPath?: (name: string) => default_2<string>;
+    id: string;
+    identifyGame?: (gamePath: string, fallback: (gamePath: string) => PromiseLike<boolean>) => default_2<boolean>;
+    isGameInstalled?: (name: string) => default_2<boolean>;
+    isGameStoreInstalled?: () => default_2<boolean>;
+    launchGame: (appId: any, api?: IExtensionApi) => default_2<void>;
+    launchGameStore?: (api: IExtensionApi, parameters?: string[]) => default_2<void>;
+    name?: string;
+    priority?: number;
+    reloadGames?: () => default_2<void>;
+}
+
+// @public
+interface IGameStored {
+    // (undocumented)
+    contributed?: string;
+    // (undocumented)
+    details?: {
+        [key: string]: any;
+    };
+    // (undocumented)
+    environment?: {
+        [key: string]: string;
+    };
+    // (undocumented)
+    executable: string;
+    // (undocumented)
+    extensionPath?: string;
+    // (undocumented)
+    final?: boolean;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    imageURL?: string;
+    // (undocumented)
+    logo?: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    parameters?: string[];
+    // (undocumented)
+    requiredFiles: string[];
+    // (undocumented)
+    shell?: boolean;
+    // (undocumented)
+    shortName?: string;
+    // Warning: (ae-forgotten-export) The symbol "IToolStored" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    supportedTools?: IToolStored[];
+}
+
+// @public (undocumented)
+interface IGameStoreEntry {
+    // (undocumented)
+    appid: string;
+    // (undocumented)
+    gamePath: string;
+    // (undocumented)
+    gameStoreId: string | undefined;
+    // (undocumented)
+    lastUpdated?: Date;
+    // (undocumented)
+    lastUser?: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    priority?: number;
+}
+
+// @public (undocumented)
+interface IGameVersionProviderOptions {}
+
+// @public (undocumented)
+interface IHealthCheck {
+    // (undocumented)
+    cacheDuration?: number;
+    // Warning: (ae-forgotten-export) The symbol "HealthCheckCategory" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    category: HealthCheckCategory;
+    // Warning: (ae-forgotten-export) The symbol "HealthCheckFunction" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    check: HealthCheckFunction;
+    // (undocumented)
+    dependencies?: string[];
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    extensionName?: string;
+    // Warning: (ae-forgotten-export) The symbol "HealthCheckFixFunction" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    fix?: HealthCheckFixFunction;
+    gameId?: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
+    // Warning: (ae-forgotten-export) The symbol "HealthCheckSeverity" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    severity: HealthCheckSeverity;
+    // (undocumented)
+    timeout?: number;
+    // Warning: (ae-forgotten-export) The symbol "HealthCheckTrigger" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    triggers: HealthCheckTrigger[];
+}
+
+// @public (undocumented)
+interface IHealthCheckPersistentState {
+    feedbackGiven: {
+        [modId: number]: string[];
+    };
+    fileRequirementsEnabled: boolean;
+    hiddenFileRequirements: {
+        [sourceFileUID: string]: string[];
+    };
+    hiddenRequirements: {
+        [modId: number]: string[];
+    };
+    modRequirementsEnabled: boolean;
+}
+
+// @public (undocumented)
+interface IHealthCheckResult<TMetadata = unknown> {
+    // (undocumented)
+    checkId: string;
+    // (undocumented)
+    details?: string;
+    // (undocumented)
+    executionTime: number;
+    // (undocumented)
+    fixAvailable?: boolean;
+    // (undocumented)
+    isLegacyTest?: boolean;
+    // (undocumented)
+    message: string;
+    // (undocumented)
+    metadata?: TMetadata;
+    // (undocumented)
+    severity: HealthCheckSeverity;
+    // (undocumented)
+    status: "passed" | "failed" | "warning" | "error";
+    // (undocumented)
+    timestamp: Date;
+}
+
+// @public (undocumented)
+interface IHealthCheckSessionState {
+    lastFullRun?: number;
+    results: {
+        [checkId: string]: IHealthCheckResult;
+    };
+    runningChecks: string[];
+}
+
+// @public (undocumented)
+interface IHistoryEvent {
+    // (undocumented)
+    data: any;
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    reverted?: boolean;
+    // (undocumented)
+    timestamp?: number;
+    // (undocumented)
+    type: string;
+}
+
+// @public (undocumented)
+interface IHistoryPersistent {
+    // (undocumented)
+    historyStacks: {
+        [key: string]: IHistoryEvent[];
+    };
+}
+
+// @public (undocumented)
+interface IHistoryStack {
+    // Warning: (ae-forgotten-export) The symbol "Revertability" needs to be exported by the entry point api.d.ts
+    canRevert: (event: IHistoryEvent) => Revertability;
+    describe: (event: IHistoryEvent) => string;
+    describeRevert: (event: IHistoryEvent) => string;
+    revert: (event: IHistoryEvent) => Promise<void>;
+    size: number;
+}
+
+// @public (undocumented)
+interface IHistoryState {
+    // (undocumented)
+    stackToShow: string;
+}
+
+// @public (undocumented)
+interface IIconProps {
+    // (undocumented)
+    border?: boolean;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    flip?: "horizontal" | "vertical";
+    // (undocumented)
+    hollow?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    onContextMenu?: MouseEventHandler<SVGSVGElement>;
+    // (undocumented)
+    pulse?: boolean;
+    // (undocumented)
+    rotate?: number;
+    // (undocumented)
+    set?: string;
+    // (undocumented)
+    spin?: boolean;
+    // (undocumented)
+    stroke?: boolean;
+    // (undocumented)
+    style?: CSSProperties;
+    // (undocumented)
+    svgStyle?: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IExtraImageProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IImageProps = React$2.DetailedHTMLProps<IExtraImageProps<HTMLImageElement>, HTMLImageElement>;
+
+// @public (undocumented)
+interface IInfoPanelProps {
+    // (undocumented)
+    refresh: () => void;
+}
+
+// @public (undocumented)
+interface IInput extends IControlBase {
+    // (undocumented)
+    label?: string;
+    // (undocumented)
+    placeholder?: string;
+    // (undocumented)
+    type?: "text" | "password" | "number" | "date" | "time" | "email" | "url" | "multiline";
+    // (undocumented)
+    value?: string;
+}
+
+// @public (undocumented)
+interface IInstallationDetails {
+    // (undocumented)
+    hasCSScripts?: boolean;
+    // (undocumented)
+    hasInstructionsOverrideFile?: boolean;
+    // (undocumented)
+    hasXmlConfigXML?: boolean;
+    // (undocumented)
+    isTrusted?: boolean;
+    // (undocumented)
+    modReference?: IModReference;
+}
+
+// @public (undocumented)
+interface IInstallResult {
+    // (undocumented)
+    instructions: IInstruction[];
+}
+
+// @public (undocumented)
+interface IInstruction {
+    // (undocumented)
+    data?: string | Buffer;
+    // (undocumented)
+    destination?: string;
+    // (undocumented)
+    key?: string;
+    // (undocumented)
+    path?: string;
+    // (undocumented)
+    rule?: IRule;
+    // (undocumented)
+    section?: string;
+    // (undocumented)
+    source?: string;
+    // (undocumented)
+    submoduleType?: string;
+    // Warning: (ae-forgotten-export) The symbol "InstructionType" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    type: InstructionType;
+    // (undocumented)
+    value?: any;
+}
+
+// @public (undocumented)
+interface IInvalidResult {
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    reason: string;
+}
+
+// @public (undocumented)
+interface IItemProps {
+    // (undocumented)
+    name: string;
+}
+
+// @public (undocumented)
+interface IItemRendererProps {
+    // (undocumented)
+    displayCheckboxes: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IInvalidResult" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    invalidEntries?: IInvalidResult[];
+    // (undocumented)
+    lockedEntriesCount?: number;
+    // Warning: (ae-forgotten-export) The symbol "ILoadOrderEntry$1" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    loEntry: ILoadOrderEntry$1;
+    // (undocumented)
+    position?: number;
+    // (undocumented)
+    setRef?: (ref: any) => void;
+}
+
+// @public (undocumented)
+interface ILink {
+    // (undocumented)
+    action?: (dismiss: () => void, id: string) => void;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    label: string;
+}
+
+// @public (undocumented)
+interface ILoadOrder {
+    // Warning: (ae-forgotten-export) The symbol "ILoadOrderEntry" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    [modId: string]: ILoadOrderEntry;
+}
+
+// @public
+interface ILoadOrderDisplayItem {
+    // Warning: (ae-forgotten-export) The symbol "IDnDConditionResult" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    condition?: (lhs: ILoadOrderDisplayItem, rhs: ILoadOrderDisplayItem, predictedResult: ILoadOrderDisplayItem[]) => IDnDConditionResult;
+    // (undocumented)
+    contextMenuActions?: IActionDefinitionEx[];
+    // (undocumented)
+    data?: string;
+    // (undocumented)
+    external?: boolean;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    imgUrl: string;
+    // (undocumented)
+    locked?: boolean;
+    // (undocumented)
+    message?: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    official?: boolean;
+    // (undocumented)
+    prefix?: string;
+}
+
+// @public (undocumented)
+interface ILoadOrderEntry$1<T = any> {
+    // (undocumented)
+    data?: T;
+    // (undocumented)
+    enabled: boolean;
+    // (undocumented)
+    id: string;
+    // Warning: (ae-forgotten-export) The symbol "LockedState" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    locked?: LockedState;
+    // (undocumented)
+    modId?: string;
+    // (undocumented)
+    name: string;
+}
+
+// @public (undocumented)
+interface ILoadOrderEntry<T = any> {
+    // (undocumented)
+    data?: T;
+    // (undocumented)
+    enabled: boolean;
+    // (undocumented)
+    external?: boolean;
+    // (undocumented)
+    locked?: boolean;
+    // (undocumented)
+    pos: number;
+    // (undocumented)
+    prefix?: string;
+}
+
+// @public (undocumented)
+interface ILoadOrderGameInfo {
+    clearStateOnPurge?: boolean;
+    condition?: () => boolean;
+    customItemRenderer?: React.ComponentType<React.PropsWithChildren<{
+        className?: string;
+        item: IItemRendererProps;
+        forwardedRef?: (ref: any) => void;
+    }>>;
+    deserializeLoadOrder: () => Promise<LoadOrder>;
+    // (undocumented)
+    gameId: string;
+    noCollectionGeneration?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "LoadOrder" needs to be exported by the entry point api.d.ts
+    serializeLoadOrder: (loadOrder: LoadOrder, prev: LoadOrder) => Promise<void>;
+    toggleableEntries?: boolean;
+    uniformRowHeight?: boolean;
+    usageInstructions?: string | React.ComponentType<React.PropsWithChildren<{}>>;
+    // Warning: (ae-forgotten-export) The symbol "IValidationResult" needs to be exported by the entry point api.d.ts
+    validate: (prev: LoadOrder, current: LoadOrder) => Promise<IValidationResult>;
+}
+
+// @public
+interface ILookupDetails {
+    // (undocumented)
+    fileMD5?: string;
+    // (undocumented)
+    fileName?: string;
+    // (undocumented)
+    filePath?: string;
+    // (undocumented)
+    fileSize?: number;
+    // (undocumented)
+    gameId?: string;
+}
+
+// @public (undocumented)
+interface ILookupOptions {
+    // (undocumented)
+    requireURL?: boolean;
+}
+
 // Warning: (ae-forgotten-export) The symbol "IImageProps" needs to be exported by the entry point api.d.ts
 //
 // @public
 function Image_2(props: IImageProps): JSX.Element;
 export { Image_2 as Image }
 
-// Warning: (ae-forgotten-export) The symbol "IActionDefinition" needs to be exported by the entry point api.d.ts
+// @public (undocumented)
+interface IMainPageOptions {
+    // (undocumented)
+    activity?: ReduxProp<boolean>;
+    // Warning: (ae-forgotten-export) The symbol "ReduxProp" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    badge?: ReduxProp<any>;
+    // (undocumented)
+    group: "dashboard" | "global" | "per-game" | "support" | "hidden";
+    hotkey?: string;
+    hotkeyRaw?: string;
+    id?: string;
+    // (undocumented)
+    isClassicOnly?: boolean;
+    // (undocumented)
+    isModernOnly?: boolean;
+    // (undocumented)
+    mdi?: string;
+    menuBadge?: React$2.ComponentType<React$2.PropsWithChildren<unknown>>;
+    newLayout?: boolean;
+    // (undocumented)
+    onReset?: () => void;
+    // (undocumented)
+    priority?: number;
+    // Warning: (ae-forgotten-export) The symbol "PropsCallback" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    props?: PropsCallback;
+    // (undocumented)
+    visible?: () => boolean;
+}
+
+// @public
+interface IMembership {
+    // (undocumented)
+    isLifetime: boolean;
+    // (undocumented)
+    isPremium: boolean;
+    // (undocumented)
+    isSupporter: boolean;
+}
+
+// @public (undocumented)
+interface IMergeFilter {
+    // (undocumented)
+    baseFiles: (deployedFiles: IDeployedFile[]) => Array<{
+        in: string;
+        out: string;
+    }>;
+    // (undocumented)
+    filter: (fileName: string) => boolean;
+}
+
+// @public
+interface IMod {
+    // (undocumented)
+    archiveId?: string;
+    // Warning: (ae-forgotten-export) The symbol "IModAttributes" needs to be exported by the entry point api.d.ts
+    attributes?: IModAttributes;
+    // (undocumented)
+    enabledINITweaks?: string[];
+    // (undocumented)
+    fileOverrides?: string[];
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    installationPath: string;
+    // (undocumented)
+    rules?: IModRule[];
+    // (undocumented)
+    state: ModState;
+    type: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ICommonModAttributes" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "ICollectionAttributes" needs to be exported by the entry point api.d.ts
 //
+// @public
+type IModAttributes = Partial<ICommonModAttributes & ICollectionAttributes> & {
+    [key: string]: any;
+};
+
+// @public
+interface IModCheckContext {
+    // (undocumented)
+    attributes: Record<string, unknown>;
+    // (undocumented)
+    files: string[];
+    // (undocumented)
+    modId: string;
+    // (undocumented)
+    readFile: (path: string) => Promise<Buffer>;
+}
+
+// @public
+interface IModHealthCheck extends Omit<IHealthCheck, "check" | "fix"> {
+    // Warning: (ae-forgotten-export) The symbol "PerModCheckFunction" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    checkMod: PerModCheckFunction;
+}
+
+// @public (undocumented)
+interface IModifiers {
+    // (undocumented)
+    alt: boolean;
+    // (undocumented)
+    ctrl: boolean;
+    // (undocumented)
+    shift: boolean;
+}
+
+// @public
+interface IModInfo$2 {
+    // (undocumented)
+    [key: string]: any;
+    // (undocumented)
+    collectionSlug?: string;
+    // (undocumented)
+    game?: string;
+    // Warning: (ae-forgotten-export) The symbol "INexusModMeta" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    meta?: INexusModMeta;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    nexus?: {
+        ids?: {
+            collectionSlug?: string;
+            collectionId?: number;
+            fileId?: number;
+            gameId?: string;
+            modId?: number;
+            revisionId?: number;
+            revisionNumber?: number;
+        };
+        parentCollectionId?: string;
+        parentRevisionId?: string;
+        fileInfo?: IFileInfo;
+        [key: string]: any;
+    };
+    // (undocumented)
+    referenceTag?: string;
+    // (undocumented)
+    revisionNumber?: number;
+    // (undocumented)
+    source?: string;
+}
+
+// @public
+interface IModInstallSpec {
+    // (undocumented)
+    fileList?: IFileListItem[];
+    // (undocumented)
+    installerChoices?: IChoiceType;
+    // (undocumented)
+    patches?: IModPatches;
+}
+
+// @public (undocumented)
+interface IModLookupData {
+    // (undocumented)
+    archived?: boolean;
+    // (undocumented)
+    details?: {
+        homepage?: string;
+        category?: string;
+        description?: string;
+        author?: string;
+        modId?: string;
+        fileId?: string;
+    };
+    // (undocumented)
+    domainName?: string;
+    // (undocumented)
+    fileMD5?: string;
+    // (undocumented)
+    fileName: string;
+    // (undocumented)
+    fileSizeBytes: number;
+    // (undocumented)
+    fileVersion: string;
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    logicalFileName?: string;
+    // (undocumented)
+    rules?: IRule[];
+    // (undocumented)
+    source?: string;
+    // (undocumented)
+    sourceURI: any;
+}
+
+// @public (undocumented)
+interface IModLookupResult {
+    // (undocumented)
+    key: string;
+    // Warning: (ae-forgotten-export) The symbol "IModLookupData" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    value: IModLookupData;
+}
+
+// @public
+interface IModPatches {
+    // (undocumented)
+    [filePath: string]: string;
+}
+
+// @public (undocumented)
+interface IModReference extends IReference {
+    // (undocumented)
+    archiveId?: string;
+    // (undocumented)
+    description?: string;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    idHint?: string;
+    // (undocumented)
+    instructions?: string;
+    // (undocumented)
+    md5Hint?: string;
+    // Warning: (ae-forgotten-export) The symbol "IModRepoId" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    repo?: {
+        repository: string;
+        campaign?: string;
+    } & IModRepoId;
+    // (undocumented)
+    tag?: string;
+}
+
+// @public (undocumented)
+interface IModRepoId {
+    // (undocumented)
+    fileId: string;
+    // (undocumented)
+    gameId?: string;
+    // (undocumented)
+    modId?: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IModInstallSpec" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface IModRule extends IRule, IModInstallSpec {
+    // Warning: (ae-forgotten-export) The symbol "IDownloadHint" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    downloadHint?: IDownloadHint;
+    // Warning: (ae-forgotten-export) The symbol "IModRuleExtra" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    extra?: IModRuleExtra;
+    // (undocumented)
+    ignored?: boolean;
+    // (undocumented)
+    phase?: number;
+    // (undocumented)
+    reference: IModReference;
+}
+
+// @public
+interface IModRuleExtra {
+    // (undocumented)
+    [key: string]: any;
+    // (undocumented)
+    author?: string;
+    // (undocumented)
+    category?: string;
+    // (undocumented)
+    fileOverrides?: string[];
+    // (undocumented)
+    instructions?: string;
+    // (undocumented)
+    localPath?: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    type?: string;
+    // (undocumented)
+    url?: string;
+    // (undocumented)
+    version?: string;
+}
+
+// @public (undocumented)
+interface IModsAPIExtension {
+    // Warning: (ae-forgotten-export) The symbol "IDeployOptions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    awaitModsDeployment?: (profileId?: string, progressCB?: (text: string, percent: number) => void, deployOptions?: IDeployOptions) => Promise<void>;
+    // (undocumented)
+    awaitNextPhaseDeployment?: () => Promise<void>;
+}
+
+// @public (undocumented)
+interface IModSourceOptions {
+    condition?: () => boolean;
+    // (undocumented)
+    icon?: string;
+    // (undocumented)
+    supportsModId?: boolean;
+}
+
+// @public (undocumented)
+interface IModTable {
+    // (undocumented)
+    [gameId: string]: {
+        [modId: string]: IMod;
+    };
+}
+
+// @public (undocumented)
+interface IModType {
+    // (undocumented)
+    getPath: (game: IGame) => string;
+    // (undocumented)
+    isSupported: (gameId: string) => boolean;
+    // (undocumented)
+    options: IModTypeOptions;
+    // (undocumented)
+    priority: number;
+    // (undocumented)
+    test: (installInstructions: IInstruction[]) => default_2<boolean>;
+    // (undocumented)
+    typeId: string;
+}
+
+// @public (undocumented)
+interface IModTypeOptions {
+    // (undocumented)
+    customDependencyManagement?: boolean;
+    // (undocumented)
+    deploymentEssential?: boolean;
+    // (undocumented)
+    mergeMods?: boolean | ((mod: IMod) => string);
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    noConflicts?: boolean;
+}
+
+// @public (undocumented)
+interface IMoreProps {
+    // (undocumented)
+    children?: string;
+    // (undocumented)
+    container?: Element;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    orientation?: "vertical" | "horizontal";
+    // (undocumented)
+    wikiId?: string;
+}
+
+// @public (undocumented)
+interface INexusAPIExtension {
+    // (undocumented)
+    nexusCheckModsVersion?: (gameId: string, mods: {
+        [modId: string]: IMod;
+    }, forceFull: boolean | "silent") => void;
+    // (undocumented)
+    nexusDownload?: (gameId: string, modId: number, fileId: number, fileName?: string, allowInstall?: boolean) => PromiseLike<string>;
+    // (undocumented)
+    nexusDownloadUpdate?: (source: string, gameId: string, modId: string, fileId: string, versionPattern: string, campaign: string, referenceTag?: string) => PromiseLike<{
+        error: Error;
+        dlId?: string;
+    }>;
+    // (undocumented)
+    nexusEndorseDirect?: (gameId: string, nexusId: number, version: string, endorsedStatus: EndorsedStatus) => PromiseLike<EndorsedStatus>;
+    // (undocumented)
+    nexusEndorseMod?: (gameId: string, modId: string, endorsedStatus: EndorsedStatus) => void;
+    // (undocumented)
+    nexusGetCollection?: (slug: string) => PromiseLike<ICollection>;
+    // (undocumented)
+    nexusGetCollectionRevision?: (collectionSlug: string, revisionNumber: number) => PromiseLike<IRevision>;
+    // (undocumented)
+    nexusGetCollections?: (gameId: string) => PromiseLike<Partial<ICollection>[] | undefined>;
+    // (undocumented)
+    nexusGetLatestMods?: (gameId: string) => PromiseLike<any>;
+    // (undocumented)
+    nexusGetModFiles?: (gameId: string, modId: number) => PromiseLike<IFileInfo[]>;
+    // (undocumented)
+    nexusGetModInfo?: (gameId: string, modId: number) => PromiseLike<Partial<IModInfo_2>>;
+    // (undocumented)
+    nexusGetModRequirements?: (uids: string[]) => PromiseLike<{
+        [uid: string]: Partial<IModRequirements>;
+    }>;
+    // (undocumented)
+    nexusGetMyCollections?: (gameId: string, count?: number, offset?: number) => PromiseLike<IRevision[]>;
+    // (undocumented)
+    nexusGetPreferences?: (query: IPreferenceQuery) => PromiseLike<Partial<IPreference>>;
+    // (undocumented)
+    nexusGetTrendingMods?: (gameId: string) => PromiseLike<any>;
+    // Warning: (ae-forgotten-export) The symbol "IValidateKeyDataV2" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    nexusGetUserKeyData?: () => PromiseLike<IValidateKeyDataV2>;
+    // (undocumented)
+    nexusModFileContents?: (query: IModFileContentPageQuery, filter?: IModFileContentSearchFilter, offset?: number, count?: number) => PromiseLike<Partial<IModFileContentPage>>;
+    // (undocumented)
+    nexusModUpdate?: (gameId: string, modId: number, fileId: number, source: string) => void;
+    // (undocumented)
+    nexusOpenCollectionPage?: (gameId: string, collectionSlug: string, revisionNumber: number, source: string) => void;
+    // (undocumented)
+    nexusOpenModPage?: (gameId: string, modId: string, source: string) => void;
+    // (undocumented)
+    nexusRateCollectionRevision?: (revisionId: number, rating: RatingOptions) => PromiseLike<any>;
+    // (undocumented)
+    nexusRequestNexusLogin?: (callback: any) => void;
+    // (undocumented)
+    nexusRequestOwnIssues?: (cb: (err: Error, issues?: IIssue[]) => void) => void;
+    // (undocumented)
+    nexusResolveCollectionUrl?: (apiLink: string) => PromiseLike<IDownloadURL[]>;
+    // (undocumented)
+    nexusRetrieveCategoryList?: (isUpdate: boolean) => void;
+    // (undocumented)
+    nexusSearchCollections?: (options: ICollectionSearchOptions) => PromiseLike<ICollectionSearchResult>;
+    // (undocumented)
+    nexusSubmitCollection?: (collectionInfo: ICollectionManifest, assetFilePath: string, collectionId: number, callback: (err: Error, response?: any) => void) => void;
+    // (undocumented)
+    nexusSubmitFeedback?: (title: string, message: string, hash: string, feedbackFiles: string[], anonymous: boolean, callback: (err: Error, response?: IFeedbackResponse) => void) => void;
+}
+
+// @public
+interface INexusModMeta {
+    // (undocumented)
+    archived?: boolean;
+    // (undocumented)
+    details?: {
+        author?: string;
+        category?: string;
+        description?: string;
+        fileId?: string;
+        homepage?: string;
+        modId?: string;
+    };
+    // (undocumented)
+    domainName?: string;
+    // (undocumented)
+    expires?: number;
+    // (undocumented)
+    fileMD5?: string;
+    // (undocumented)
+    fileName?: string;
+    // (undocumented)
+    fileSizeBytes?: number;
+    // (undocumented)
+    fileVersion?: string;
+    // (undocumented)
+    gameId?: string;
+    // (undocumented)
+    logicalFileName?: string;
+    // (undocumented)
+    source?: string;
+    // (undocumented)
+    sourceURI?: string;
+    // (undocumented)
+    status?: string;
+}
+
+// @public
+interface INotification {
+    actions?: INotificationAction[];
+    allowSuppress?: boolean;
+    createdTime?: number;
+    displayMS?: number;
+    group?: string;
+    icon?: string;
+    id?: string;
+    localize?: {
+        title?: boolean;
+        message?: boolean;
+    };
+    message: string;
+    noDismiss?: boolean;
+    noToast?: boolean;
+    onDismiss?: () => void;
+    process?: string;
+    progress?: number;
+    replace?: {
+        [key: string]: any;
+    };
+    title?: string;
+    // Warning: (ae-forgotten-export) The symbol "NotificationType" needs to be exported by the entry point api.d.ts
+    type: NotificationType;
+    updatedTime?: number;
+}
+
+// @public (undocumented)
+interface INotificationAction {
+    // Warning: (ae-forgotten-export) The symbol "NotificationDismiss" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    action: (dismiss: NotificationDismiss) => void;
+    // (undocumented)
+    icon?: string;
+    // (undocumented)
+    title?: string;
+}
+
+// @public
+interface INotificationState {
+    // Warning: (ae-forgotten-export) The symbol "IDialog" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    dialogs: IDialog[];
+    // (undocumented)
+    global_notifications: INotification[];
+    // (undocumented)
+    notifications: INotification[];
+}
+
+// Warning: (ae-forgotten-export) The symbol "ProgressDelegate" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IInstallationDetails" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IInstallResult" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type InstallFunc = (files: string[], destinationPath: string, gameId: string, progressDelegate: ProgressDelegate, choices?: IChoiceType, unattended?: boolean, archivePath?: string, options?: IInstallationDetails) => PromiseLike<IInstallResult>;
+
+// @public (undocumented)
+type InstallPathMode = "userData" | "suggested";
+
+// @public (undocumented)
+type InstructionType = "copy" | "mkdir" | "submodule" | "generatefile" | "iniedit" | "unsupported" | "attribute" | "setmodtype" | "error" | "rule";
+
+// @public (undocumented)
+interface IOpenOptions {
+    // (undocumented)
+    create?: boolean;
+    // (undocumented)
+    defaultPath?: string;
+    // Warning: (ae-forgotten-export) The symbol "IFileFilter" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    filters?: IFileFilter[];
+    // (undocumented)
+    title?: string;
+}
+
+// @public (undocumented)
+interface IOverlay {
+    // (undocumented)
+    componentId?: string;
+    // (undocumented)
+    content?: string;
+    // (undocumented)
+    options?: IOverlayOptions;
+    // (undocumented)
+    position: IPosition;
+    // (undocumented)
+    title: string;
+}
+
+// @public (undocumented)
+interface IOverlayOptions {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    containerTitle?: string;
+    // (undocumented)
+    disableCollapse?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    props?: any;
+    // (undocumented)
+    showIcon?: boolean;
+}
+
+// @public (undocumented)
+interface IOverlaysState {
+    // (undocumented)
+    overlays: {
+        [key: string]: IOverlay;
+    };
+}
+
+// @public (undocumented)
+interface IParameters {
+    // (undocumented)
+    del?: string[];
+    // (undocumented)
+    disableGPU?: boolean;
+    // (undocumented)
+    download?: string;
+    // (undocumented)
+    game?: string;
+    // (undocumented)
+    get?: string[];
+    // (undocumented)
+    inspector?: boolean;
+    // (undocumented)
+    install?: string;
+    // (undocumented)
+    installArchive?: string;
+    // (undocumented)
+    installExtension?: string;
+    // (undocumented)
+    maxMemory?: string;
+    // (undocumented)
+    merge?: string;
+    // (undocumented)
+    profile?: string;
+    // (undocumented)
+    report?: string;
+    // (undocumented)
+    restore?: string;
+    // (undocumented)
+    run?: string;
+    // Warning: (ae-forgotten-export) The symbol "ISetItem" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    set?: ISetItem[];
+    // (undocumented)
+    shared?: boolean;
+    // (undocumented)
+    startMinimized?: boolean;
+    // (undocumented)
+    storeVersion?: string;
+    // (undocumented)
+    userData?: string;
+}
+
+// @public
+interface IPersistor {
+    // (undocumented)
+    bulkRemoveItem?(keys: ReadonlyArray<PersistorKey>): PromiseLike<void>;
+    // (undocumented)
+    bulkSetItem?(items: ReadonlyArray<{
+        key: PersistorKey;
+        value: string;
+    }>): PromiseLike<void>;
+    // (undocumented)
+    getAllKeys(): PromiseLike<PersistorKey[]>;
+    // (undocumented)
+    getAllKVs?(prefix?: string): PromiseLike<Array<{
+        key: PersistorKey;
+        value: string;
+    }>>;
+    // Warning: (ae-forgotten-export) The symbol "PersistorKey" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    getItem(key: PersistorKey): PromiseLike<string>;
+    // (undocumented)
+    removeItem(key: PersistorKey): PromiseLike<void>;
+    // (undocumented)
+    setItem(key: PersistorKey, value: string): PromiseLike<void>;
+    // (undocumented)
+    setResetCallback(cb: () => PromiseLike<void>): void;
+}
+
+// @public (undocumented)
+interface IPortalMenuProps {
+    // (undocumented)
+    bsRole?: string;
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    onClick: (evt: React$2.MouseEvent<HTMLElement>) => void;
+    // (undocumented)
+    onClose: () => void;
+    // (undocumented)
+    onSelect?: SelectCallback;
+    // (undocumented)
+    open: boolean;
+    // (undocumented)
+    placement?: "top" | "bottom" | "left" | "right";
+    // (undocumented)
+    target: Element | React$2.Component | null;
+    // (undocumented)
+    useMousePosition?: boolean | {
+        x: number;
+        y: number;
+    };
+}
+
+// @public (undocumented)
+interface IPosition {
+    // (undocumented)
+    x: number;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+interface IPreviewFile {
+    filePath: string;
+    label: string;
+}
+
+// @public (undocumented)
+interface IProfile {
+    // (undocumented)
+    features?: {
+        [featureId: string]: any;
+    };
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    lastActivated: number;
+    // (undocumented)
+    modState: {
+        [id: string]: IProfileMod;
+    };
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    pendingRemove?: boolean;
+}
+
+// @public (undocumented)
+interface IProfileMod {
+    // (undocumented)
+    disabledTime?: number;
+    // (undocumented)
+    enabled: boolean;
+    // (undocumented)
+    enabledTime: number;
+}
+
+// @public (undocumented)
+interface IProgress {
+    // (undocumented)
+    percent: number;
+    // (undocumented)
+    text: string;
+}
+
+// @public (undocumented)
+interface IProgressBarState {
+    // (undocumented)
+    startPos: number;
+    // (undocumented)
+    startTime: number;
+}
+
+// @public (undocumented)
+interface IProgressProfile {
+    // Warning: (ae-forgotten-export) The symbol "IProgressProfileDeploying" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    deploying?: IProgressProfileDeploying;
+}
+
+// @public (undocumented)
+interface IProgressProfileDeploying {
+    // (undocumented)
+    percent: number;
+    // (undocumented)
+    text: string;
+}
+
+// @public (undocumented)
+interface IProgressWithProfile {
+    // Warning: (ae-forgotten-export) The symbol "IProgressProfile" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    profile?: IProgressProfile;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IToggleProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$1 = React$2.HTMLAttributes<HTMLDivElement> & IToggleProps;
+
+// @public (undocumented)
+interface IProps$10 {
+    // (undocumented)
+    api: IExtensionApi;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    currentPosition: number;
+    // (undocumented)
+    isLocked?: (item: ILoadOrderEntry$1) => boolean;
+    // (undocumented)
+    item: ILoadOrderEntry$1;
+    // (undocumented)
+    loadOrder: LoadOrder;
+    // (undocumented)
+    lockedEntriesCount: number;
+    // (undocumented)
+    onApplyIndex: (idx: number) => void;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IStepsProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$2 = React$2.HTMLAttributes<any> & IStepsProps;
+
+// Warning: (ae-forgotten-export) The symbol "ISelectUpDownProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$3 = ISelectUpDownProps & ReactSelectProps;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$4" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$4 = IBaseProps$4 & typeof OverlayTrigger_2.prototype.props;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$5" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$5 = IBaseProps$5 & typeof Overlay_2.prototype.props;
+
+// @public (undocumented)
+interface IProps$6 {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    clearable?: boolean;
+    // (undocumented)
+    debounceTimer?: number;
+    // (undocumented)
+    emptyIcon?: string;
+    // (undocumented)
+    groupClass?: string;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    label?: string;
+    // (undocumented)
+    max?: number;
+    // (undocumented)
+    maxLength?: number;
+    // (undocumented)
+    min?: number;
+    // (undocumented)
+    onChange: (newValue: string, id: string) => void;
+    // (undocumented)
+    onFocus?: (focused: boolean) => void;
+    // (undocumented)
+    placeholder?: string;
+    // (undocumented)
+    readOnly?: boolean;
+    // (undocumented)
+    style?: any;
+    // (undocumented)
+    type?: string;
+    // Warning: (ae-forgotten-export) The symbol "ValidationState" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    validate?: ValidationState | ((value: any) => ValidationState);
+    // (undocumented)
+    value: string | number;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IFlexLayoutProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$7 = IFlexLayoutProps & React$2.HTMLAttributes<HTMLDivElement>;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$8" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$8 = IBaseProps$8 & typeof DropdownButton_2.prototype.props;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps$9" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type IProps$9 = IBaseProps$9 & typeof Dropdown_2.prototype.props;
+
+// @public (undocumented)
+interface IProps {
+    // (undocumented)
+    children?: ReactNode;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IStoreQuery" needs to be exported by the entry point api.d.ts
+//
+// @public
+type IQueryArgEntry = string | IStoreQuery | IStoreQuery[];
+
+// @public
+interface IReducerSpec<T = {
+    [key: string]: any;
+}> {
+    // (undocumented)
+    defaults: T;
+    // (undocumented)
+    reducers: {
+        [key: string]: (state: T, payload: any) => T;
+    };
+    // (undocumented)
+    verifiers?: {
+        [key: string]: IStateVerifier;
+    };
+}
+
+// @public (undocumented)
+interface IRegisteredExtension {
+    // (undocumented)
+    dynamic: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IExtension" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    info?: IExtension;
+    // Warning: (ae-forgotten-export) The symbol "ExtensionInit" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    initFunc: () => ExtensionInit;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    namespace: string;
+    // (undocumented)
+    path: string;
+}
+
+// @public (undocumented)
+interface IRegisterProtocol {
+    // (undocumented)
+    (protocol: string, def: boolean, callback: (url: string, install: boolean) => void): Promise<boolean>;
+}
+
+// @public (undocumented)
+interface IRegisterRepositoryLookup {
+    // (undocumented)
+    (repositoryId: string, preferOverMD5: boolean, callback: (id: IModRepoId) => default_2<IModLookupResult[]>): any;
+}
+
+// @public (undocumented)
+interface IRowState {
+    // (undocumented)
+    highlighted: boolean;
+    // (undocumented)
+    selected: boolean;
+}
+
+// @public (undocumented)
+interface IRunningTool {
+    // (undocumented)
+    exclusive: boolean;
+    // (undocumented)
+    pid: number;
+    // (undocumented)
+    started: number;
+}
+
+// @public
+interface IRunOptions {
+    // (undocumented)
+    cwd?: string;
+    // (undocumented)
+    detach?: boolean;
+    // (undocumented)
+    env?: {
+        [key: string]: string;
+    };
+    // (undocumented)
+    expectSuccess?: boolean;
+    // (undocumented)
+    onExit?: (code: number | null) => void;
+    // (undocumented)
+    onSpawned?: (pid?: number) => void;
+    // (undocumented)
+    shell?: boolean;
+    // (undocumented)
+    suggestDeploy?: boolean;
+}
+
+// @public
+interface IRunParameters {
+    // (undocumented)
+    args: string[];
+    // (undocumented)
+    executable: string;
+    // (undocumented)
+    options: IRunOptions;
+}
+
+// @public (undocumented)
+interface ISaveOptions {
+    // (undocumented)
+    buttonLabel?: string;
+    // (undocumented)
+    defaultPath?: string;
+    // (undocumented)
+    filters?: IFileFilter[];
+    // (undocumented)
+    title?: string;
+}
+
+// @public (undocumented)
+interface ISelectOption {
+    // (undocumented)
+    label: string;
+    // (undocumented)
+    value: any;
+}
+
+// @public (undocumented)
+interface ISelectUpDownProps {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    container?: Element;
+}
+
+// @public (undocumented)
+interface ISelectUpDownState {
+    // (undocumented)
+    up: boolean;
+}
+
+// @public
+interface ISession {
+    // (undocumented)
+    activity: {
+        [id: string]: string[];
+    };
+    // Warning: (ae-forgotten-export) The symbol "IParameters" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    commandLine: IParameters;
+    // (undocumented)
+    displayGroups: {
+        [id: string]: string;
+    };
+    // (undocumented)
+    downloadGameFilter: string | null;
+    // (undocumented)
+    extLoadFailures: {
+        [extId: string]: IExtensionLoadFailure[];
+    };
+    // (undocumented)
+    mainPage: string;
+    // (undocumented)
+    networkConnected: boolean;
+    // (undocumented)
+    overlayOpen: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IProgressWithProfile" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    progress: {
+        [group: string]: {
+            [id: string]: IProgress;
+        };
+    } & IProgressWithProfile;
+    // (undocumented)
+    secondaryPage: string;
+    // (undocumented)
+    settingsPage: string;
+    // (undocumented)
+    toolsRunning: {
+        [exeId: string]: IRunningTool;
+    };
+    // (undocumented)
+    uiBlockers: {
+        [id: string]: IUIBlocker;
+    };
+    // (undocumented)
+    visibleDialog: string;
+}
+
+// @public (undocumented)
+interface ISessionGameMode {
+    // (undocumented)
+    addDialogVisible: boolean;
+    // (undocumented)
+    disabled: {
+        [gameId: string]: string;
+    };
+    // Warning: (ae-forgotten-export) The symbol "IGameStored" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    known: IGameStored[];
+}
+
+// @public (undocumented)
+interface ISetItem {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    value: string;
+}
+
+// @public (undocumented)
+interface ISettings {
+    // Warning: (ae-forgotten-export) The symbol "ISettingsAutomation" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    automation: ISettingsAutomation;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsDownloads" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    downloads: ISettingsDownloads;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsGameMode" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    gameMode: ISettingsGameMode;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsInterface" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    interface: ISettingsInterface;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsMods" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    mods: ISettingsMods;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsNotification" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    notifications: ISettingsNotification;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsProfiles" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    profiles: ISettingsProfiles;
+    // Warning: (ae-forgotten-export) The symbol "ITableStates" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    tables: ITableStates;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsUpdate" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    update: ISettingsUpdate;
+    // Warning: (ae-forgotten-export) The symbol "IWindow" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    window: IWindow;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsWorkarounds" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    workarounds: ISettingsWorkarounds;
+}
+
+// @public (undocumented)
+interface ISettingsAutomation {
+    // (undocumented)
+    deploy: boolean;
+    // (undocumented)
+    enable: boolean;
+    // (undocumented)
+    install: boolean;
+    // (undocumented)
+    minimized: boolean;
+    // (undocumented)
+    start: boolean;
+}
+
+// @public (undocumented)
+interface ISettingsDownloads {
+    // (undocumented)
+    collectionsInstallWhileDownloading: boolean;
+    // (undocumented)
+    copyOnIFF: boolean;
+    // (undocumented)
+    maxBandwidth: number;
+    // (undocumented)
+    maxChunks: number;
+    // (undocumented)
+    maxParallelDownloads: number;
+    // (undocumented)
+    minChunkSize: number;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    showDropzone: boolean;
+    // (undocumented)
+    showGraph: boolean;
+}
+
+// @public (undocumented)
+interface ISettingsGameMode {
+    // (undocumented)
+    discovered: {
+        [id: string]: IDiscoveryResult;
+    };
+    // (undocumented)
+    pickerLayout: "list" | "small" | "large";
+    // (undocumented)
+    searchPaths: string[];
+    // (undocumented)
+    sortManaged: string;
+    // (undocumented)
+    sortUnmanaged: string;
+}
+
+// @public (undocumented)
+interface ISettingsInterface {
+    // (undocumented)
+    advanced: boolean;
+    // (undocumented)
+    dashboardLayout: string[];
+    // (undocumented)
+    dashletSettings: {
+        [dashletId: string]: IDashletSettings;
+    };
+    // (undocumented)
+    desktopNotifications: boolean;
+    // (undocumented)
+    foregroundDL: boolean;
+    // (undocumented)
+    hideTopLevelCategory: boolean;
+    // (undocumented)
+    language: string;
+    // (undocumented)
+    primaryTool?: {
+        [gameId: string]: string;
+    };
+    // (undocumented)
+    profilesVisible: boolean;
+    // (undocumented)
+    relativeTimes: boolean;
+    // (undocumented)
+    tools?: {
+        addToolsToTitleBar: boolean;
+        order?: {
+            [gameId: string]: string[];
+        };
+        pinned?: {
+            [gameId: string]: {
+                [toolId: string]: boolean;
+            };
+        };
+    };
+    // (undocumented)
+    usage: {
+        [usageId: string]: boolean;
+    };
+}
+
+// @public (undocumented)
+interface ISettingsMods {
+    // (undocumented)
+    activator: {
+        [gameId: string]: string;
+    };
+    // (undocumented)
+    cleanupOnDeploy: boolean;
+    // (undocumented)
+    confirmPurge: boolean;
+    // (undocumented)
+    installerSandbox: boolean;
+    // (undocumented)
+    installPath: {
+        [gameId: string]: string;
+    };
+    // Warning: (ae-forgotten-export) The symbol "InstallPathMode" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    installPathMode: InstallPathMode;
+    // (undocumented)
+    modlistState: {
+        [id: string]: IAttributeState;
+    };
+    // (undocumented)
+    showDropzone: boolean;
+    // (undocumented)
+    suggestInstallPathDirectory: string;
+}
+
+// @public (undocumented)
+interface ISettingsNotification {
+    // (undocumented)
+    suppress: {
+        [notificationId: string]: boolean;
+    };
+}
+
+// @public (undocumented)
+interface ISettingsProfiles {
+    // (undocumented)
+    activeProfileId: string;
+    // (undocumented)
+    lastActiveProfile: {
+        [gameId: string]: string;
+    };
+    // (undocumented)
+    nextProfileId: string;
+}
+
+// @public (undocumented)
+interface ISettingsUpdate {
+    // Warning: (ae-forgotten-export) The symbol "UpdateChannel" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    channel: UpdateChannel;
+}
+
+// @public (undocumented)
+interface ISettingsWorkarounds {
+    // (undocumented)
+    userSymlinks: boolean;
+}
+
+// @public (undocumented)
+interface ISpinnerProps {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    style?: React$2.CSSProperties;
+}
+
+// @public (undocumented)
+interface IStartDownloadOptions {
+    // (undocumented)
+    allowInstall?: boolean | "force";
+    // (undocumented)
+    allowOpenHTML?: boolean;
+}
+
+// @public (undocumented)
+interface IState {
+    // Warning: (ae-forgotten-export) The symbol "IApp" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    app: IApp;
+    // (undocumented)
+    confidential: {
+        account: {};
+    };
+    // (undocumented)
+    persistent: {
+        profiles: {
+            [profileId: string]: IProfile;
+        };
+        mods: IModTable;
+        downloads: IStateDownloads;
+        collections: ICollectionsPersistentState;
+        categories: {
+            [gameId: string]: ICategoryDictionary;
+        };
+        gameMode: IStateGameMode;
+        deployment: {
+            needToDeploy: {
+                [gameId: string]: boolean;
+            };
+            deploymentCounter: {
+                [gameId: string]: number;
+            };
+        };
+        transactions: IStateTransactions;
+        history: IHistoryPersistent;
+        healthCheck: IHealthCheckPersistentState;
+    };
+    // (undocumented)
+    session: {
+        base: ISession;
+        collections: ICollectionInstallState;
+        gameMode: ISessionGameMode;
+        discovery: IDiscoveryState;
+        notifications: INotificationState;
+        browser: IBrowserState;
+        history: IHistoryState;
+        overlays: IOverlaysState;
+        healthCheck: IHealthCheckSessionState;
+        extensions: {
+            available: IAvailableExtension[];
+            optional: {
+                [extId: string]: IExtensionOptional[];
+            };
+            installed: {
+                [extId: string]: IExtension;
+            };
+            updateTime: number;
+        };
+    };
+    // Warning: (ae-forgotten-export) The symbol "ISettings" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    settings: ISettings;
+    // Warning: (ae-forgotten-export) The symbol "IUser" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    user: IUser;
+}
+
+// @public (undocumented)
+interface IStateDownloads {
+    // (undocumented)
+    checkpoints: {
+        [id: string]: DownloadCheckpoint<string>;
+    };
+    // (undocumented)
+    files: {
+        [id: string]: IDownload;
+    };
+    // (undocumented)
+    speed: number;
+    // (undocumented)
+    speedHistory: number[];
+}
+
+// @public (undocumented)
+interface IStateGameMode {
+    // (undocumented)
+    gameInfo: {
+        [gameId: string]: {
+            [key: string]: IGameInfoEntry;
+        };
+    };
+}
+
+// @public (undocumented)
+interface IStateTransactions {
+    // (undocumented)
+    pendingPluginSort: Record<string, Record<string, number>>;
+    // (undocumented)
+    transfer: {};
+}
+
+// @public (undocumented)
+interface IStateVerifier {
+    // (undocumented)
+    deleteBroken?: boolean | "parent";
+    // (undocumented)
+    description: (input: any) => string;
+    // (undocumented)
+    elements?: {
+        [key: string]: IStateVerifier;
+    };
+    // (undocumented)
+    noEmpty?: boolean;
+    // (undocumented)
+    noNull?: boolean;
+    // (undocumented)
+    noUndefined?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IVerifierRepairContext" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    repair?: (input: any, def: any, context?: IVerifierRepairContext) => any;
+    // (undocumented)
+    required?: boolean;
+    // (undocumented)
+    type?: "map" | "string" | "boolean" | "number" | "object" | "array";
+}
+
+// @public (undocumented)
+interface IStepProps {
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    index?: number;
+    // (undocumented)
+    state?: "done" | "current" | "future";
+    // (undocumented)
+    stepId: string;
+    // (undocumented)
+    title: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IProps$2" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface ISteps extends React$2.ComponentClass<IProps$2> {
+    // Warning: (ae-forgotten-export) The symbol "Step" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    Step: typeof Step;
+}
+
+// @public (undocumented)
+interface IStepsProps {
+    // (undocumented)
+    step: string;
+}
+
+// @public (undocumented)
+interface IStoreQuery {
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    prefer?: number;
+}
+
+// @public (undocumented)
+interface ISupportedResult {
+    // (undocumented)
+    requiredFiles: string[];
+    // (undocumented)
+    supported: boolean;
+}
+
+// @public
+interface ITableAttribute<T = any> {
+    calc?: (object: T, t: TFunction$1) => any | Promise<any>;
+    condition?: () => boolean;
+    cssClass?: (object: T, enabled: boolean) => string;
+    // Warning: (ae-forgotten-export) The symbol "ICustomProps" needs to be exported by the entry point api.d.ts
+    customRenderer?: (object: T | T[], detailCell: boolean, t: TFunction$1, props: ICustomProps) => JSX.Element;
+    description?: string | ITString;
+    edit: {
+        readOnly?: (object: any) => boolean;
+        inline?: boolean;
+        actions?: boolean;
+        min?: number;
+        max?: number;
+        placeholder?: () => string;
+        choices?: (object: T) => IEditChoice[];
+        validate?: (input: string) => ValidationState;
+        onChangeValue?: (objects: T | T[], newValue: any) => void;
+    };
+    externalData?: (onChanged: () => void) => void;
+    // Warning: (ae-forgotten-export) The symbol "ITableFilter" needs to be exported by the entry point api.d.ts
+    filter?: ITableFilter;
+    groupName?: (value: any) => string;
+    help?: string | ITString;
+    icon?: string;
+    id: string;
+    isDefaultFilter?: boolean;
+    isDefaultSort?: boolean | "desc";
+    isDefaultVisible?: boolean;
+    isExtensible?: boolean;
+    isGroupable?: boolean | ((object: T, t: TFunction$1) => string);
+    isSortable?: boolean;
+    isToggleable?: boolean;
+    isVolatile?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "ITString" needs to be exported by the entry point api.d.ts
+    name?: string | ITString;
+    noShrink?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "Placement" needs to be exported by the entry point api.d.ts
+    placement: Placement;
+    position?: number;
+    sortFunc?: (lhs: any, rhs: any, locale: string) => number;
+    sortFuncRaw?: (lhs: T, rhs: T, locale: string) => number;
+    supportsMultiple?: boolean;
+}
+
+// @public (undocumented)
+interface ITableFilter {
+    // (undocumented)
+    component: React$2.ComponentType<React$2.PropsWithChildren<IFilterProps>>;
+    dataId?: string;
+    isEmpty?: (filter: any) => boolean;
+    matches: (filter: any, value: any, state: any) => boolean;
+    raw: string | boolean;
+}
+
 // @public (undocumented)
 export interface ITableRowAction extends IActionDefinition {
     // (undocumented)
@@ -268,10 +4303,377 @@ export interface ITableRowAction extends IActionDefinition {
     subMenus?: ITableRowAction[];
 }
 
+// @public (undocumented)
+interface ITableState {
+    // (undocumented)
+    attributes: {
+        [id: string]: IAttributeState;
+    };
+    // (undocumented)
+    filter?: {
+        [id: string]: any;
+    };
+    // (undocumented)
+    groupBy?: string;
+    // (undocumented)
+    rows: {
+        [id: string]: IRowState;
+    };
+}
+
+// @public (undocumented)
+interface ITableStates {
+    // (undocumented)
+    [id: string]: ITableState;
+}
+
+// @public (undocumented)
+interface ITestResult {
+    // (undocumented)
+    automaticFix?: () => PromiseLike<void>;
+    // (undocumented)
+    description: {
+        short: string;
+        long?: string;
+        replace?: {
+            [key: string]: any;
+        };
+        localize?: boolean;
+        context?: any;
+    };
+    // (undocumented)
+    onRecheck?: () => PromiseLike<void>;
+    // Warning: (ae-forgotten-export) The symbol "ProblemSeverity" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    severity: ProblemSeverity;
+}
+
+// @public (undocumented)
+interface ITestSupportedDetails {
+    // (undocumented)
+    hasCSScripts?: boolean;
+    // (undocumented)
+    hasXmlConfigXML?: boolean;
+}
+
+// @public (undocumented)
+interface ITimerProps {
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    duration: number;
+    // (undocumented)
+    onTrigger?: () => void;
+    // (undocumented)
+    paused?: boolean;
+    // (undocumented)
+    started: number;
+}
+
+// @public (undocumented)
+interface IToggleProps {
+    // (undocumented)
+    checked: boolean;
+    // (undocumented)
+    dataId?: string;
+    // (undocumented)
+    disabled?: boolean;
+    // (undocumented)
+    onToggle: (newValue: boolean, dataId?: string) => void;
+}
+
+// @public
+interface ITool {
+    defaultPrimary?: boolean;
+    detach?: boolean;
+    environment?: {
+        [key: string]: string;
+    };
+    exclusive?: boolean;
+    executable: (discoveredPath?: string) => string;
+    id: string;
+    logo?: string;
+    name: string;
+    onStart?: "hide" | "hide_recover" | "close";
+    parameters?: string[];
+    queryPath?: () => string | default_2<string | IGameStoreEntry>;
+    relative?: boolean;
+    requiredFiles: string[];
+    shell?: boolean;
+    shortName?: string;
+}
+
+// @public (undocumented)
+interface IToolbarIconProps {
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    disabled?: boolean;
+    // (undocumented)
+    hollow?: boolean;
+    // (undocumented)
+    icon?: string;
+    // (undocumented)
+    iconSet?: string;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    instanceId?: string[];
+    // (undocumented)
+    onClick?: (ids: string[]) => void;
+    // (undocumented)
+    placement?: "top" | "right" | "bottom" | "left";
+    // (undocumented)
+    pulse?: boolean;
+    // (undocumented)
+    spin?: boolean;
+    // (undocumented)
+    stroke?: boolean;
+    // (undocumented)
+    text?: string;
+    // (undocumented)
+    tooltip?: string;
+}
+
+// @public (undocumented)
+interface IToolIconProps {
+    // (undocumented)
+    children?: any;
+    // (undocumented)
+    classes?: string[];
+    // (undocumented)
+    imageId?: number;
+    // (undocumented)
+    imageUrl: string;
+    // (undocumented)
+    isPrimary?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "IItemProps" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    item: IItemProps;
+    // (undocumented)
+    onRun?: () => void;
+    // (undocumented)
+    t?: TFunction$1;
+    // (undocumented)
+    valid: boolean;
+}
+
+// @public (undocumented)
+interface IToolStored {
+    // (undocumented)
+    defaultPrimary?: boolean;
+    // (undocumented)
+    detach?: boolean;
+    // (undocumented)
+    environment: {
+        [key: string]: string;
+    };
+    // (undocumented)
+    exclusive?: boolean;
+    // (undocumented)
+    executable: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    logo: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    onStart?: "hide" | "hide_recover" | "close";
+    // (undocumented)
+    parameters: string[];
+    // (undocumented)
+    shell?: boolean;
+    // (undocumented)
+    shortName?: string;
+}
+
+// @public (undocumented)
+interface ITString {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    options?: TOptions;
+    // (undocumented)
+    toString(): string;
+}
+
+// @public (undocumented)
+interface IUIBlocker {
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    icon: string;
+    // (undocumented)
+    mayCancel: boolean;
+}
+
+// @public
+interface IUnavailableReason {
+    description: (t: TFunction$1) => string;
+    fixCallback?: (api: IExtensionApi) => PromiseLike<void>;
+    order?: number;
+    solution?: (t: TFunction$1) => string;
+}
+
+// @public
+interface IUpdateable {
+    // (undocumented)
+    forceUpdate: () => void;
+}
+
+// @public (undocumented)
+interface IUsageProps {
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    className?: string;
+    // (undocumented)
+    infoId: string;
+    // (undocumented)
+    opaque?: boolean;
+    // (undocumented)
+    persistent?: boolean;
+}
+
+// @public
+interface IUser {
+    // (undocumented)
+    multiUser: boolean;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IMembership" needs to be exported by the entry point api.d.ts
+//
+// @public
+interface IValidateKeyData extends Pick<IMembership, "isPremium" | "isSupporter"> {
+    // (undocumented)
+    email: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    profileUrl: string;
+    // (undocumented)
+    userId: number;
+}
+
+// Warning: (ae-forgotten-export) The symbol "IValidateKeyData" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface IValidateKeyDataV2 extends IValidateKeyData, IMembership, Partial<IPreference> {}
+
+// @public (undocumented)
+interface IValidationResult {
+    // (undocumented)
+    invalid: IInvalidResult[];
+}
+
+// @public (undocumented)
+interface IVerifierRepairContext {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    parent?: unknown;
+    // (undocumented)
+    parentKey?: string;
+}
+
+// @public (undocumented)
+interface IWebView extends React$2.DetailedHTMLProps<React$2.WebViewHTMLAttributes<HTMLWebViewElement>, HTMLWebViewElement> {
+    // (undocumented)
+    autosize?: boolean;
+    // (undocumented)
+    blinkfeatures?: string;
+    // (undocumented)
+    disableblinkfeatures?: string;
+    // (undocumented)
+    disablewebsecurity?: boolean;
+    // (undocumented)
+    guestinstance?: string;
+    // (undocumented)
+    httpreferrer?: string;
+    // (undocumented)
+    nodeintegration?: boolean;
+    // (undocumented)
+    partition?: string;
+    // (undocumented)
+    plugins?: boolean;
+    // (undocumented)
+    preload?: string;
+    // (undocumented)
+    src?: string;
+    // (undocumented)
+    style?: any;
+    // (undocumented)
+    useragent?: string;
+    // (undocumented)
+    webpreferences?: string;
+}
+
+// @public (undocumented)
+interface IWebviewProps {
+    // (undocumented)
+    events?: {
+        [evtId: string]: (...args: any[]) => void;
+    };
+    // (undocumented)
+    onFullscreen?: (fullscreen: boolean) => void;
+    // (undocumented)
+    onLoading?: (loading: boolean) => void;
+    // (undocumented)
+    onNewWindow?: (url: string, disposition: string) => void;
+}
+
+// @public (undocumented)
+interface IWindow {
+    // (undocumented)
+    customTitlebar: boolean;
+    // (undocumented)
+    maximized: boolean;
+    // (undocumented)
+    minimizeToTray: boolean;
+    // (undocumented)
+    position?: IPosition;
+    // Warning: (ae-forgotten-export) The symbol "IDimensions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    size: IDimensions;
+    // (undocumented)
+    tabsMinimized: boolean;
+    // (undocumented)
+    useModernLayout: boolean;
+}
+
+// @public (undocumented)
+interface IZoomableImageProps {
+    // (undocumented)
+    children?: React$2.ReactNode;
+    // (undocumented)
+    className: string;
+    // (undocumented)
+    container?: JSX.Element;
+    // (undocumented)
+    overlayClass?: string;
+    // (undocumented)
+    url: string;
+}
+
+// @public (undocumented)
+type Level = "debug" | "info" | "warn" | "error";
+
+// @public (undocumented)
+type LoadOrder = ILoadOrderEntry$1[];
+
 // Warning: (ae-forgotten-export) The symbol "IProps$10" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export function LoadOrderIndexInput(props: IProps$10): React$1.JSX.Element;
+
+// @public (undocumented)
+type LockedState = true | false | "true" | "false" | "always" | "never";
 
 // Warning: (ae-forgotten-export) The symbol "Level" needs to be exported by the entry point api.d.ts
 //
@@ -289,10 +4691,31 @@ export const MainPage: typeof MainPageInner & {
     Header: typeof MainPageHeader;
 };
 
+// @public (undocumented)
+const MainPageBody: React$1.ForwardRefExoticComponent<HTMLAttributes<HTMLDivElement> & React$1.RefAttributes<HTMLDivElement>>;
+
+// Warning: (ae-forgotten-export) The symbol "IProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+const MainPageHeader: FC<React$1.PropsWithChildren<IProps>>;
+
+// Warning: (ae-forgotten-export) The symbol "IBaseProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+const MainPageInner: React$1.ForwardRefExoticComponent<IBaseProps & React$1.RefAttributes<HTMLDivElement>>;
+
 // Warning: (ae-forgotten-export) The symbol "GetSelection" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export function makeGetSelection(tableId: string): GetSelection;
+
+// @public
+type MergeFunc = (filePath: string, mergePath: string) => PromiseLike<void>;
+
+// Warning: (ae-forgotten-export) The symbol "IMergeFilter" needs to be exported by the entry point api.d.ts
+//
+// @public
+type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
 
 // @public (undocumented)
 export class Modal extends React$2.PureComponent<typeof Modal_2.prototype.props, {}> {
@@ -314,19 +4737,39 @@ export class Modal extends React$2.PureComponent<typeof Modal_2.prototype.props,
     static Title: typeof ModalTitle;
 }
 
+// @public (undocumented)
+type ModState = "downloading" | "downloaded" | "installing" | "installed";
+
 // Warning: (ae-forgotten-export) The symbol "IMoreProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const More: React$2.ComponentClass<IMoreProps>;
 
-// Warning: (ae-forgotten-export) The symbol "ITableFilter" needs to be exported by the entry point api.d.ts
+// @public (undocumented)
+type Normalize = (input: string) => string;
+
+// @public (undocumented)
+type NotificationDismiss = () => void;
+
+// @public (undocumented)
+type NotificationType = "activity" | "global" | "success" | "info" | "warning" | "error" | "silent";
+
+// @public (undocumented)
+class NumericFilterComponent extends React$2.Component<IFilterProps, {}> {
+    constructor(props: IFilterProps);
+    // (undocumented)
+    render(): JSX.Element;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ISelectOption" needs to be exported by the entry point api.d.ts
 //
+// @public (undocumented)
+type Options = ISelectOption[];
+
 // @public (undocumented)
 export class OptionsFilter implements ITableFilter {
     // Warning: (ae-forgotten-export) The symbol "Options" needs to be exported by the entry point api.d.ts
     constructor(options: Options | (() => Options), multi: boolean, raw?: boolean);
-    // Warning: (ae-forgotten-export) The symbol "IFilterProps" needs to be exported by the entry point api.d.ts
-    //
     // (undocumented)
     component: React$2.ComponentClass<IFilterProps>;
     // (undocumented)
@@ -370,6 +4813,20 @@ export class OverlayTrigger extends React$2.Component<IProps$4, {
     render(): React$2.JSX.Element;
 }
 
+// Warning: (ae-forgotten-export) The symbol "IModCheckContext" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type PerModCheckFunction = (api: IExtensionApi, mod: IModCheckContext, signal?: AbortSignal) => Promise<IHealthCheckResult>;
+
+// @public
+type PersistingType = "global" | "game" | "profile";
+
+// @public (undocumented)
+type PersistorKey = string[];
+
+// @public (undocumented)
+type Placement = "table" | "detail" | "both" | "inline";
+
 // Warning: (ae-forgotten-export) The symbol "IPortalMenuProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -388,6 +4845,9 @@ export class PortalMenu extends React$2.Component<IPortalMenuProps, {
     render(): React$2.JSX.Element;
 }
 
+// @public (undocumented)
+type ProblemSeverity = "warning" | "error" | "fatal";
+
 // Warning: (ae-forgotten-export) The symbol "IBaseProps$3" needs to be exported by the entry point api.d.ts
 // Warning: (ae-forgotten-export) The symbol "IProgressBarState" needs to be exported by the entry point api.d.ts
 //
@@ -400,7 +4860,15 @@ export class ProgressBar extends React$2.PureComponent<IBaseProps$3, IProgressBa
     UNSAFE_componentWillReceiveProps(newProps: IBaseProps$3): void;
 }
 
+// @public (undocumented)
+type ProgressDelegate = (perc: number) => void;
+
 export { Promise_2 as Promise }
+
+// @public (undocumented)
+type PropsCallback = () => {
+    [key: string]: unknown;
+};
 
 // @public (undocumented)
 export class PureComponentEx<P, S extends object> extends React$2.PureComponent<P & Partial<WithTranslation>, S> {
@@ -420,6 +4888,66 @@ export class PureComponentEx<P, S extends object> extends React$2.PureComponent<
 export const RadialProgress: React$2.ComponentClass<IBaseProps$2>;
 
 // @public (undocumented)
+type RedownloadMode = "always" | "never" | "ask" | "replace";
+
+// @public (undocumented)
+class ReduxProp<T> {
+    constructor(api: IExtensionApi, inputs: string[][], func: (...args: unknown[]) => T);
+    // Warning: (ae-forgotten-export) The symbol "IUpdateable" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    attach(component: IUpdateable): void;
+    // (undocumented)
+    calculate(): T | undefined;
+    // (undocumented)
+    detach(component: IUpdateable): void;
+}
+
+// @public (undocumented)
+type RegisterAction = (group: string, position: number, iconOrComponent: string | React$2.ComponentType<React$2.PropsWithChildren<any>>, options: IActionOptions, titleOrProps?: string | PropsCallback, actionOrCondition?: (instanceIds?: string[]) => void | boolean, condition?: (instanceIds?: string[]) => boolean | string) => void;
+
+// Warning: (ae-forgotten-export) The symbol "IBannerOptions" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type RegisterBanner = (group: string, component: React$2.ComponentType<React$2.PropsWithChildren<any>>, options: IBannerOptions) => void;
+
+// @public (undocumented)
+type RegisterControlWrapper = (group: string, priority: number, wrapper: React$2.ComponentType<React$2.PropsWithChildren<any>>) => void;
+
+// Warning: (ae-forgotten-export) The symbol "IDashletOptions" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type RegisterDashlet = (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5 | 6, position: number, component: React$2.ComponentClass<any> | React$2.FunctionComponent<React$2.PropsWithChildren<any>>, isVisible: (state: any) => boolean, props: PropsCallback, options: IDashletOptions) => void;
+
+// @public (undocumented)
+type RegisterDialog = (id: string, element: React$2.ComponentType<React$2.PropsWithChildren<any>>, props?: PropsCallback) => void;
+
+// @public (undocumented)
+type RegisterFooter = (id: string, element: React$2.ComponentClass<any>, props?: PropsCallback) => void;
+
+// Warning: (ae-forgotten-export) The symbol "IMainPageOptions" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type RegisterMainPage = (icon: string, title: string, element: React$2.ComponentType<React$2.PropsWithChildren<any>>, options: IMainPageOptions) => void;
+
+// @public (undocumented)
+type RegisterOverlay = (id: string, element: React$2.ComponentType<React$2.PropsWithChildren<any>>, props?: PropsCallback) => void;
+
+// @public (undocumented)
+type RegisterSettings = (title: string, element: React$2.ComponentClass<any> | React$2.FunctionComponent<React$2.PropsWithChildren<any>>, props?: PropsCallback, visible?: () => boolean, priority?: number) => void;
+
+// Warning: (ae-forgotten-export) The symbol "ToDoType" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type RegisterToDo = (id: string, type: ToDoType, props: (state: any) => any, icon: ((props: any) => JSX.Element) | string, text: ((t: TFunction$1, props: any) => JSX.Element) | string, action: (props: any) => void, condition: (props: any) => boolean, value: ((t: TFunction$1, props: any) => JSX.Element) | string, priority: number) => void;
+
+// @public
+type Revertability = "yes" | "never" | "invalid";
+
+// @public (undocumented)
+type SanityCheck = (state: any, action: Redux.Action) => string | false;
+
+// @public (undocumented)
 export namespace selectors {
     export { activatorForGame, activeDownloads, activeGameId, activeProfile, activeProfileId, apiKey, currentActivator, currentGame, currentGameDiscovery, discovered, discoveryByGame, downloadPath, downloadPathForGame, downloadsForActiveGame, downloadsForGame, enabledModCountForProfile, gameById, gameName, gameProfiles, getCollectionActiveSession, getCollectionActiveSessionMod, getCollectionActiveSessionMods, getCollectionCompletedMods, getCollectionCurrentPhase, getCollectionInstallProgress, getCollectionLastActiveSessionId, getCollectionLastCompletedSession, getCollectionModByReference, getCollectionModsByPhase, getCollectionModsByStatus, getCollectionModsForPhase, getCollectionModsInProgress, getCollectionOptionalMods, getCollectionPendingMods, getCollectionPhaseProgress, getCollectionRequiredMods, getCollectionSessionById, getCollectionSessionHistory, getCollectionSessionMods, getCollectionStatusBreakdown, getCollectionTotalPhases, getDownloadByIds, getFailedOptionalMods, getFailedRequiredMods, getMod, getModInstallPath, hasCollectionActiveSession, installPath, installPathForGame, isActiveSessionStalled, isAnalyticsEnabled, isCollectionInstalling, isCollectionModPresent, isCollectionPhaseComplete, isLoggedIn, isPremium, isTelemetryEnabled, knownGames, lastActiveProfileForGame, lastActiveProfiles, mainPage, modPathsForGame, modsForActiveGame, modsForGame, needToDeploy, needToDeployForGame, nextProfileId, nexusIdsFromDownloadId, notifications, profileById, profiles, queueClearingDownloads, secondaryPage, shouldShowPremiumAd, userInfo };
 }
@@ -436,10 +4964,27 @@ export class SelectUpDown extends React$2.Component<IProps$3, ISelectUpDownState
     render(): JSX.Element;
 }
 
+// @public (undocumented)
+type SortDirection = "none" | "asc" | "desc";
+
+// @public (undocumented)
+type SortType = "ascending" | "descending";
+
 // Warning: (ae-forgotten-export) The symbol "ISpinnerProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export function Spinner(props: ISpinnerProps): React$2.JSX.Element;
+
+// @public (undocumented)
+type StateChangeCallback<T = any> = (previous: T, current: T) => void;
+
+// Warning: (ae-forgotten-export) The symbol "IStepProps" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+class Step extends React$2.Component<IStepProps, {}> {
+    // (undocumented)
+    render(): JSX.Element;
+}
 
 // Warning: (ae-forgotten-export) The symbol "ISteps" needs to be exported by the entry point api.d.ts
 //
@@ -447,7 +4992,6 @@ export function Spinner(props: ISpinnerProps): React$2.JSX.Element;
 export const Steps: ISteps;
 
 // Warning: (ae-forgotten-export) The symbol "IBaseProps$1" needs to be exported by the entry point api.d.ts
-// Warning: (ae-forgotten-export) The symbol "IExtensibleProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Table: React$2.ComponentType<React$2.PropsWithChildren<IBaseProps$1 & IExtensibleProps>>;
@@ -491,10 +5035,34 @@ export class TableTextFilter implements ITableFilter {
     raw: boolean;
 }
 
+// Warning: (ae-forgotten-export) The symbol "ITestSupportedDetails" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "ISupportedResult" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type TestSupported = (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => PromiseLike<ISupportedResult>;
+
+// @public (undocumented)
+class TextFilterComponent extends React$2.Component<IFilterProps, {}> {
+    // (undocumented)
+    render(): JSX.Element;
+}
+
+// @public (undocumented)
+type TFunction$1 = typeof I18next.t;
+
+// @public (undocumented)
+interface ThunkStore<S> extends Redux.Store<S> {
+    // (undocumented)
+    dispatch: ThunkDispatch<S, null, Redux.Action>;
+}
+
 // Warning: (ae-forgotten-export) The symbol "ITimerProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export function Timer(props: ITimerProps): React$2.JSX.Element;
+
+// @public (undocumented)
+type ToDoType = "settings" | "search" | "workaround" | "more";
 
 // Warning: (ae-forgotten-export) The symbol "IProps$1" needs to be exported by the entry point api.d.ts
 //
@@ -517,6 +5085,11 @@ export class ToolbarIcon extends React$2.PureComponent<IToolbarIconProps, {}> {
 // @public (undocumented)
 export const ToolIcon: (props: IToolIconProps) => React$2.JSX.Element;
 
+// @public
+type ToolParameterCB = (options: IRunParameters) => {
+    [key: string]: string;
+};
+
 // @public (undocumented)
 export namespace tooltip {
     export { Button$1 as Button, ButtonProps, ClickPopover, ClickPopoverProps, IIconButtonExtraProps, IToggleButtonExtraProps, ITooltipIconProps, ITooltipProps, Icon$1 as Icon, IconButton, IconButtonProps, IconProps, NavItem$1 as NavItem, NavItemProps, ToggleButton, ToggleButtonProps };
@@ -530,6 +5103,18 @@ export namespace types {
     export { ActionFunc, ApiEventArgs, ApiEventMap, ApiEventName, ApiEventResult, ApiEvents, ArchiveHandlerCreator, AttributeExtractor, AttributeRenderer, CheckFunction, CollectionModStatus, Condition, ConditionResults, DialogActions, DialogContentItem, DialogType, DirectoryCleaningMode, ExtensionInfo, ExtensionLoadFailureDependency, ExtensionLoadFailureException, LoadOrder as FBLOLoadOrder, LockedState as FBLOLockState, GameEntryNotFound, GameInfoQuery, GameLaunchType, GameStoreNotFound, HealthCheckCategory, HealthCheckFixFunction, HealthCheckFunction, HealthCheckSeverity, HealthCheckTrigger, IActionDefinition, IActionOptions, IApiFuncOptions, IApp, IArchiveHandler, IArchiveOptions, IAttachment, IAttributeState, IAvailableExtension, IBrowserState, ICheckbox, IChoiceType, ICollectionInstallSession, ICollectionInstallState, ICollectionModInstallInfo, ICollectionsPersistentState, IComponentContext, IConditionResult, IControlBase, ICustomExecutionInfo, ICustomProps, IDashletOptions, IDashletSettings, IDeployOptions, IDeployedFile, IDeploymentManifest, IDeploymentMethod, IDialog, IDialogAction, IDialogContent, IDialogResult, IDimensions, IDiscoveredTool, IDiscoveryPhase, IDiscoveryResult, IDiscoveryState, IDownload, IEditChoice, IEnableOptions, IErrorOptions, IExecInfo, IExtension, IExtensionApi, IExtensionApiExtension, IExtensionContext, IExtensionLoadFailure, IExtensionOptional, IExtensionState, ILoadOrderGameInfo as IFBLOGameInfo, IInvalidResult as IFBLOInvalidResult, IItemRendererProps as IFBLOItemRendererProps, ILoadOrderEntry$1 as IFBLOLoadOrderEntry, IValidationResult as IFBLOValidationResult, IFileChange, IFileFilter, IFileListItem, IFilterProps, IGame, IGameDetail, IGameInfoEntry, IGameModeSettings, IGameStore, IGameStoreEntry, IGameStored, IHealthCheck, IHealthCheckEntry, IHealthCheckResult, IHistoryEvent, IHistoryStack, IInput, IInstallResult, IInstallationDetails, IInstallerInstall, IInstallerMatch, IInstallerSpec, IInstruction, ILegacyTestAdapter, ILink, ILoadOrderDisplayItem, ILoadOrderEntry$1 as ILoadOrderEntry, ILoadOrderGameInfo, ILookupDetails, ILookupResult, IMainPageOptions, IMembership, IMergeFilter, IMod, IModCheckContext, IModHealthCheck, IModInfo$1 as IModInfo, IModInstallSpec, IModLookupInfo, IModPatches, IModReference, IModRepoId, IModRule, IModRuleExtra, IModSourceOptions, IModTable, IModType, IModTypeOptions, IModifiers, INotification, INotificationAction, INotificationState, IOpenOptions, IOverlay, IOverlayOptions, IOverlaysState, IPersistor, IPosition, IPreviewFile, IProfile, IProfileMod, IProgress, IProgressProfile, IProgressProfileDeploying, IProgressWithProfile, IQuery, IQueryArgEntry, IReducerSpec, IReference$1 as IReference, IReferenceIdentifiers, IRegisterProtocol, IRegisterRepositoryLookup, IRegisteredExtension, IRemoveModOptions, IRowState, IRunOptions, IRunParameters, IRunningTool, ISaveOptions, ISession, ISessionGameMode, ISettings, ISettingsAutomation, ISettingsDownloads, ISettingsGameMode, ISettingsInterface, ISettingsMods, ISettingsNotification, ISettingsProfiles, ISettingsUpdate, ISettingsWorkarounds, IStarterInfo, IState, IStateDownloads, IStateGameMode, IStatePaths, IStateTransactions, IStateVerifier, IStoreQuery, ISupportedResult, ITableAttribute, ITableFilter, ITableState, ITableStates, ITestResult, ITestSupportedDetails, IToDoButton, ITool, IToolStored, IUIBlocker, IUnavailableReason, IUser, IValidateKeyData, IValidationResult, IVerifierRepairContext, IWindow, InstallFunc, InstallPathMode, InstallerMatchMode, InstallerSpecInstallFunc, InstructionType, LoadOrder, MergeFunc, MergeTest, NotificationDismiss, NotificationType, PayloadT, PerModCheckFunction, PersistingType, PersistorKey, Placement, ProblemSeverity, ProgressDelegate, PropsCallback, PropsCallbackTyped, RegisterAction, RegisterBanner, RegisterControlWrapper, RegisterDashlet, RegisterDialog, RegisterFooter, RegisterMainPage, RegisterOverlay, RegisterSettings, RegisterToDo, Revertability, SortDirection, SortType, StateChangeCallback, TFunction$1 as TFunction, TestSupported, ThunkStore, ToDoType, ToolParameterCB, UPDATE_CHANNELS, UpdateChannel, UpdateType, ValidationState, VerifierDrop, VerifierDropParent, addReducer, isModHealthCheck };
 }
 
+// @public (undocumented)
+const UPDATE_CHANNELS: readonly ["stable", "beta", "next", "none"];
+
+// Warning: (ae-forgotten-export) The symbol "ValuesOf" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "UPDATE_CHANNELS" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
+
+// @public (undocumented)
+type UpdateType = "drag-n-drop" | "props-update" | "refresh";
+
 // Warning: (ae-forgotten-export) The symbol "IUsageProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -539,6 +5124,12 @@ export const Usage: React$2.ComponentClass<IUsageProps>;
 export namespace util {
     export { Archive, ArgumentInvalid, Campaign, CollectionInstallOutcomeProps, CollectionsDownloadCancelledEvent, CollectionsDownloadClickedEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadFailedEvent, CollectionsDraftUpdateUploadedEvent, CollectionsDraftUploadedEvent, CollectionsDraftedEvent, CollectionsInstallationCancelledEvent, CollectionsInstallationCompletedEvent, CollectionsInstallationFailedEvent, CollectionsInstallationStartedEvent, ConcurrencyLimiter, Content, CycleError, DataInvalid, Debouncer, GameNotFound, instance$2 as GameStoreHelper, IErrorRendered, IPrettifiedError, IRequestOptions, ISteamEntry, LazyComponent, Method, MissingInterpreter, ModChangeReason, Normalize, NotFound, NotSupportedError, Overlayable, ProcessCanceled, ReduxProp, Section, SetupError, SevenZip, StarterInfo, TextGroup, UserCanceled, addUniqueSafe, batchDispatch, preProcess as bbcodePreProcess, bbcodeToHTML, renderBBCode as bbcodeToReact, buildCopyInstructions, bytesToString, calcDuration, calculateFolderSize, changeOrNop, checksum, coerceToSemver, compileStopPatterns, convertGameIdReverse, copyFileAtomic, copyRecursive, currentGame$1 as currentGame, deBOM, declareInstallers, deepMerge, delay, deleteOrNop, deriveModInstallName as deriveInstallName, instance$1 as epicGamesLauncher, extractExeIcon, fileMD5, findCommonRootDir, findDownloadByRef, findModByRef, findRuleByRef, generateCollectionSessionId, getActivator, getApplication, getCurrentActivator, getCurrentLanguage, getDriveList, getGame, getGames, getManifest, getModSource, getModSources, getModType, getNormalizeFunc, getReduxLog, getSafe, getSafeCI, getText, getVisibleWindow, getVortexPath, _default$14 as github, installIconSet, isChildPath, isFilenameValid, isFuzzyVersion, isPathValid, jsonRequest, lazyRequire, local, lookupFromDownload, makeInstallerFromSpec, makeModReference, makeNormalizingDict, makeOverlayableDictionary, makeQueue, makeReactive, makeRemoteCall, makeUnique, makeUniqueByKey, merge, modRuleId, mutateSafe, nexusGameId, nexusModsURL, normalizeStoreQuery, objDiff, onceCB, open as opn, pad, prettifyNodeErrorMessage, pushSafe, rawRequest, readExtensibleDir, rehydrate, relativeTime, removeMods, removeValue, removeValueIf, renderError, modName as renderModName, renderModReference, request, resolveCategoryName, resolveCategoryPath, ruleInstallSpec, rulePhase, runElevated, runThreaded, sanitizeCSSId, sanitizeFilename, semverCoerce, setDefaultArray, setOrNop, setSafe, setdefault, showActivity, showError, showInfo, showSuccess, sortMods, instance as steam, terminate, testModReference, testRefByIdentifiers, toBlue, toPromise, unique, upload, userFriendlyTime, walk, withContext as withErrorContext, withTrackedActivity, writeFileAtomic };
 }
+
+// @public (undocumented)
+type ValidationState = "success" | "warning" | "error";
+
+// @public (undocumented)
+type ValuesOf<T extends readonly any[]> = T[number];
 
 // @public
 export class VisibilityProxy extends React$2.PureComponent<any, {}> {
@@ -647,6 +5238,9 @@ export interface VortexErrorKindMap {
     unknown: Record<string, unknown>;
 }
 
+// @public (undocumented)
+type VortexInstallType = "regular" | "managed";
+
 // Warning: (ae-forgotten-export) The symbol "IWebviewProps" needs to be exported by the entry point api.d.ts
 // Warning: (ae-forgotten-export) The symbol "IWebView" needs to be exported by the entry point api.d.ts
 //
@@ -681,8 +5275,53 @@ export class ZoomableImage extends React$2.Component<IZoomableImageProps, {
 
 // Warnings were encountered during analysis:
 //
-// lib/api.d.ts:8798:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8799:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:294:5 - (ae-forgotten-export) The symbol "IItemRendererProps" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:953:3 - (ae-forgotten-export) The symbol "ByteRange" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1140:5 - (ae-forgotten-export) The symbol "IDiscoveredTool" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1459:3 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1679:5 - (ae-forgotten-export) The symbol "IProfileMod" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1727:5 - (ae-forgotten-export) The symbol "ICollectionModInstallInfo" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1884:5 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1886:5 - (ae-forgotten-export) The symbol "DialogContentItem" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2197:7 - (ae-forgotten-export) The symbol "IProgress" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2202:5 - (ae-forgotten-export) The symbol "IExtensionLoadFailure" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2205:5 - (ae-forgotten-export) The symbol "IRunningTool" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2208:5 - (ae-forgotten-export) The symbol "IUIBlocker" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2223:5 - (ae-forgotten-export) The symbol "IRowState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2260:5 - (ae-forgotten-export) The symbol "IExtensionState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2283:5 - (ae-forgotten-export) The symbol "IDownload" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2286:5 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2304:5 - (ae-forgotten-export) The symbol "IDashletSettings" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2369:5 - (ae-forgotten-export) The symbol "IAttributeState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2431:7 - (ae-forgotten-export) The symbol "IGameInfoEntry" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2463:5 - (ae-forgotten-export) The symbol "IOverlay" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2495:5 - (ae-forgotten-export) The symbol "ISession" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2496:5 - (ae-forgotten-export) The symbol "ICollectionInstallState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2497:5 - (ae-forgotten-export) The symbol "ISessionGameMode" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2498:5 - (ae-forgotten-export) The symbol "IDiscoveryState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2499:5 - (ae-forgotten-export) The symbol "INotificationState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2500:5 - (ae-forgotten-export) The symbol "IBrowserState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2501:5 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2502:5 - (ae-forgotten-export) The symbol "IOverlaysState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2503:5 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2507:9 - (ae-forgotten-export) The symbol "IExtensionOptional" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2518:7 - (ae-forgotten-export) The symbol "IProfile" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2520:5 - (ae-forgotten-export) The symbol "IModTable" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2521:5 - (ae-forgotten-export) The symbol "IStateDownloads" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2522:5 - (ae-forgotten-export) The symbol "ICollectionsPersistentState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2524:7 - (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2526:5 - (ae-forgotten-export) The symbol "IStateGameMode" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2535:5 - (ae-forgotten-export) The symbol "IStateTransactions" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2536:5 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2537:5 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2553:5 - (ae-forgotten-export) The symbol "IDiscoveryPhase" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2597:5 - (ae-forgotten-export) The symbol "IQueryArgEntry" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3771:5 - (ae-forgotten-export) The symbol "IEditChoice" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4160:5 - (ae-forgotten-export) The symbol "IMod" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4428:3 - (ae-forgotten-export) The symbol "IGameDetail" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4853:5 - (ae-forgotten-export) The symbol "IStateVerifier" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:8800:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:8801:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
 // (No @packageDocumentation comment for this package)
 
