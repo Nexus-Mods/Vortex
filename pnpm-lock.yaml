@@ -863,6 +863,9 @@ catalogs:
     rolldown:
       specifier: 1.1.4
       version: 1.1.4
+    run-script-os:
+      specifier: ^1.1.6
+      version: 1.1.6
     sass:
       specifier: 1.101.0
       version: 1.101.0
@@ -1806,6 +1809,9 @@ importers:
       reselect:
         specifier: 'catalog:'
         version: 4.1.8
+      run-script-os:
+        specifier: 'catalog:'
+        version: 1.1.6
       shortid:
         specifier: 'catalog:'
         version: 2.2.17
@@ -11770,6 +11776,10 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
+  run-script-os@1.1.6:
+    resolution: {integrity: sha512-ql6P2LzhBTTDfzKts+Qo4H94VUKpxKDFz6QxxwaUZN0mwvi7L3lpOI7BqPCq7lgDh3XLl0dpeXwfcVIitlrYrw==}
+    hasBin: true
+
   rw@1.3.3:
     resolution: {integrity: sha512-PdhdWy89SiZogBLaw42zdeqtRJ//zFd2PgQavcICDUgJT5oW10QCRKbJ6bg4r0/UY2M6BWd5tkxuGFRvCkgfHQ==}
 
@@ -19840,6 +19850,8 @@ snapshots:
       '@rolldown/binding-wasm32-wasi': 1.1.4
       '@rolldown/binding-win32-arm64-msvc': 1.1.4
       '@rolldown/binding-win32-x64-msvc': 1.1.4
+
+  run-script-os@1.1.6: {}
 
   rw@1.3.3: {}
 
