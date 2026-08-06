@@ -286,8 +286,13 @@ function errorHandler(evt: any) {
       // it's almost certainly some callback invoked from a native library
       log("error", "script error");
       return;
-    } else if (error === "ResizeObserver loop limit exceeded") {
+    } else if (error.startsWith("ResizeObserver loop")) {
       // this error was called "benign" by one of the spec authors. I'll take their word for it.
+      // Matched by prefix because chromium has used two wordings: "loop limit exceeded" and,
+      // since chromium 92, "loop completed with undelivered notifications". preventDefault
+      // stops chromium printing it to the console on its own account, which is the only way
+      // it would still reach the log now that we're swallowing it here.
+      evt.preventDefault?.();
       return;
     }
   }
@@ -349,13 +354,20 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (error.stack.includes("packery")) {
+  // `error` isn't necessarily an Error: the fallback chain above ends at `evt.message`, so a
+  // browser-level ErrorEvent that carries no error object (a cross-origin "Script error.", a
+  // ResizeObserver loop warning) arrives here as a plain string with no `stack` at all. Read it
+  // once, as a string, so the sniffing below can't take the handler down with it — an exception
+  // thrown in here is itself uncaught, and reports as a bug in Vortex rather than the original.
+  const stack: string = typeof error.stack === "string" ? error.stack : "";
+
+  if (stack.includes("packery")) {
     // seems to be caused by an event triggered inside packery after cleanup so I don't see
     // a way to catch this cleanly
     return;
   }
 
-  if (error.stack.includes("react-sortable-tree")) {
+  if (stack.includes("react-sortable-tree")) {
     // matches the @nosferatu500/react-sortable-tree fork too (the scoped package
     // path still contains "react-sortable-tree").
     // bug in external library. I know where the bug is but fixing that causes a new problem and
@@ -371,10 +383,10 @@ function errorHandler(evt: any) {
   const dynPaths = ExtensionManager.getExtensionPaths().filter((extPath) => !extPath.bundled);
 
   if (dynPaths.length > 0) {
-    if (error.stack.includes(`at ${dynPaths[0].path}`)) {
+    if (stack.includes(`at ${dynPaths[0].path}`)) {
       const extPath = (dynPaths[0].path + path.sep).replace(/[\\]/g, "\\\\");
       const re = new RegExp(`at ${extPath}(Vortex Extension Update - )?([^/\\\\]*)`);
-      const reMatch = error.stack.match(re);
+      const reMatch = stack.match(re);
       const extName = reMatch?.[2] ?? "unknown";
 
       error["extension"] = extName;
