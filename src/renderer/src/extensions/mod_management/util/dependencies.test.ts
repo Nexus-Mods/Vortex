@@ -10,8 +10,6 @@ import type { IMod } from "../types/IMod";
 import { findDownloadByRef, lookupFromDownload, selectedOptionalRules } from "./dependencies";
 
 vi.mock("../../../util/log", () => ({ log: vi.fn() }));
-// native module pulled in transitively via util/selectors; not exercised by these tests
-vi.mock("winapi-bindings", () => ({ default: {} }));
 
 describe("selectedOptionalRules", () => {
   it("returns only selected (non-ignored) optional members that are not yet installed", () => {

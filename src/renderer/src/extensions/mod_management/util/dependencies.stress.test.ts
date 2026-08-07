@@ -14,8 +14,6 @@ import type { IModReference } from "../types/IMod";
 import { findDownloadByRef, lookupFromDownload } from "./dependencies";
 
 vi.mock("../../../util/log", () => ({ log: vi.fn() }));
-// native module pulled in transitively via util/selectors; not exercised by these tests
-vi.mock("winapi-bindings", () => ({ default: {} }));
 
 const COUNT = 3000;
 const GAME = "cyberpunk2077";
