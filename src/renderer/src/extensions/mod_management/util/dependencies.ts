@@ -187,9 +187,15 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
   const temp = input
     .map((dep) => ({
       dep,
-      collateral: input.filter(
-        (inner) => inner !== dep && lookupFulfills(dep.lookupResults[0], inner.reference),
-      ),
+      // a dep without a lookup result can never fulfill another reference
+      // (lookupFulfills is false for undefined); skipping the scan avoids an
+      // O(n²) pass over collections where most refs have no metadb entry
+      collateral:
+        dep.lookupResults[0] === undefined
+          ? []
+          : input.filter(
+              (inner) => inner !== dep && lookupFulfills(dep.lookupResults[0], inner.reference),
+            ),
     }))
     .sort((lhs, rhs) => {
       if (lhs.collateral.length !== rhs.collateral.length) {
@@ -236,7 +242,31 @@ function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
   return Promise.resolve(temp.filter((iter) => iter !== null).map((iter) => iter.dep));
 }
 
+// memoizes lookupFromDownload per download object. IDownload objects come out of the
+// redux store and are immutable (any change produces a new object), so the derived
+// lookup info can be cached for the object's lifetime. During collection installs
+// every dependency reference is matched against every download (O(refs x downloads)),
+// and without this cache each of those probes re-allocated a fresh lookup object -
+// for a 2800-mod collection against ~3000 archives that is ~8.5 million throw-away
+// allocations, enough GC pressure to OOM the renderer.
+const lookupCache = new WeakMap<IDownload, IModLookupInfo>();
+
+// same lifetime/rationale as lookupCache: the identifier bundle findDownloadByRef
+// feeds into testRefByIdentifiers is derived purely from the (immutable) download.
+interface IDownloadIdentifiers {
+  modId: number;
+  fileId: number;
+  fileIds: string[];
+  fileNames: string[];
+  gameId: string;
+}
+const identifierCache = new WeakMap<IDownload, IDownloadIdentifiers>();
+
 export function lookupFromDownload(download: IDownload): IModLookupInfo {
+  const cached = lookupCache.get(download);
+  if (cached !== undefined) {
+    return cached;
+  }
   // depending on where Vortex got the id (metadb, rest api or graph api and in which version,
   // the modid/fileid may be stored in different places).
   // Newer versions should be more consistent but existing downloads may still be messy
@@ -250,7 +280,7 @@ export function lookupFromDownload(download: IDownload): IModLookupInfo {
     download.modInfo?.nexus?.ids?.fileId ??
     download.modInfo?.ids?.fileId;
 
-  return {
+  const result: IModLookupInfo = {
     fileMD5: download.fileMD5,
     fileName: download.localPath,
     fileSizeBytes: download.size,
@@ -262,6 +292,8 @@ export function lookupFromDownload(download: IDownload): IModLookupInfo {
     modId,
     fileId,
   };
+  lookupCache.set(download, result);
+  return result;
 }
 
 export function findDownloadByRef(
@@ -306,19 +338,23 @@ export function findDownloadByRef(
           return false;
         }
         const lookup = lookupFromDownload(download);
-        const fileIdSet = new Set<string>();
-        const nameSet = new Set<string>();
-        fileIdSet.add(lookup?.fileId?.toString?.());
-        nameSet.add(lookup?.logicalFileName);
-        nameSet.add(lookup?.customFileName);
-        nameSet.add(download.modInfo?.name);
-        const identifiers = {
-          modId: parseInt(lookup?.modId, 10),
-          fileId: parseInt(lookup?.fileId, 10),
-          fileIds: Array.from(fileIdSet).filter(truthy),
-          fileNames: Array.from(nameSet).filter(truthy),
-          gameId: download.game[0],
-        };
+        let identifiers = identifierCache.get(download);
+        if (identifiers === undefined) {
+          const fileIdSet = new Set<string>();
+          const nameSet = new Set<string>();
+          fileIdSet.add(lookup?.fileId?.toString?.());
+          nameSet.add(lookup?.logicalFileName);
+          nameSet.add(lookup?.customFileName);
+          nameSet.add(download.modInfo?.name);
+          identifiers = {
+            modId: parseInt(lookup?.modId, 10),
+            fileId: parseInt(lookup?.fileId, 10),
+            fileIds: Array.from(fileIdSet).filter(truthy),
+            fileNames: Array.from(nameSet).filter(truthy),
+            gameId: download.game[0],
+          };
+          identifierCache.set(download, identifiers);
+        }
         return fuzzy || bundled
           ? testModReference(lookup, reference, undefined, fuzzy)
           : testModReference(lookup, reference, undefined, fuzzy) ||
@@ -413,9 +449,14 @@ async function gatherDependenciesGraph(
       download: downloadId,
       mod,
       reference: rule.reference,
-      lookupResults: lookupResults.map((iter) =>
-        makeLookupResult(iter as ILookupResult, urlFromHint),
-      ),
+      // only the best (first) lookup result is ever consumed downstream
+      // (install queueing, duplicate tagging, error rendering). Retaining the
+      // full result list kept every alternative source record (rules, metadata
+      // blobs) alive per dependency for the whole install - for thousands of
+      // dependencies that is a significant, pointless chunk of renderer heap.
+      lookupResults: lookupResults
+        .slice(0, 1)
+        .map((iter) => makeLookupResult(iter as ILookupResult, urlFromHint)),
       dependencies: dependencies.filter(Boolean),
       redundant: false,
       extra: rule.extra,
@@ -516,33 +557,47 @@ function gatherDependencies(
 
   const limit = new ConcurrencyLimiter(20);
 
-  // for each requirement, look up the reference and recursively their dependencies
-  return (
-    Promise.all(
-      requirements.map((rule: IModRule) =>
-        Promise.resolve(
-          limit.do(() => gatherDependenciesGraph(rule, api, gameMode, recommendations, addToCache)),
-        )
-          .then((node: IDependencyNode) => {
-            onProgress();
-            return Promise.resolve(node);
-          })
-          .catch((err) => {
-            // gatherDependenciesGraph handles exceptions itself so we shouldn't get here
-            // but better to make sure
-            api.showErrorNotification("Failed to gather dependencies", err);
-            return Promise.resolve(null);
-          }),
-      ),
+  // resolution batch size: bounds how many rules have in-flight promise chains
+  // (and their intermediate lookup state) at once. Without batching, a
+  // several-thousand-mod collection materializes one pending chain per rule up
+  // front, which contributes to renderer OOM on very large collections.
+  const GATHER_BATCH_SIZE = 50;
+
+  const gatherOne = (rule: IModRule): Promise<IDependencyNode> =>
+    Promise.resolve(
+      limit.do(() => gatherDependenciesGraph(rule, api, gameMode, recommendations, addToCache)),
     )
-      // tag duplicates
-      .then((nodes: IDependencyNode[]) => tagDuplicates(flatten(nodes)).then(() => nodes))
-      .then((nodes: IDependencyNode[]) =>
-        // this filters out the duplicates including their subtrees,
-        // then converts IDependencyNodes to IDependencies
-        flatten(nodes).map((node) => _.omit(node, ["dependencies", "redundant"])),
-      )
-  );
+      .then((node: IDependencyNode) => {
+        onProgress();
+        return Promise.resolve(node);
+      })
+      .catch((err) => {
+        // gatherDependenciesGraph handles exceptions itself so we shouldn't get here
+        // but better to make sure
+        api.showErrorNotification("Failed to gather dependencies", err);
+        return Promise.resolve(null);
+      });
+
+  // for each requirement, look up the reference and recursively their dependencies,
+  // processed in bounded batches
+  return (async () => {
+    const nodes: IDependencyNode[] = [];
+    for (let offset = 0; offset < requirements.length; offset += GATHER_BATCH_SIZE) {
+      const batch = requirements.slice(offset, offset + GATHER_BATCH_SIZE);
+      const batchNodes = await Promise.all(batch.map(gatherOne));
+      nodes.push(...batchNodes);
+      if (requirements.length > GATHER_BATCH_SIZE) {
+        log("debug", "dependency resolution batch done", {
+          resolved: Math.min(offset + GATHER_BATCH_SIZE, requirements.length),
+          total: requirements.length,
+        });
+      }
+    }
+    // tag duplicates, then filter them out (including their subtrees) and convert
+    // IDependencyNodes to IDependencies
+    await tagDuplicates(flatten(nodes));
+    return flatten(nodes).map((node) => _.omit(node, ["dependencies", "redundant"]));
+  })();
 }
 
 export default gatherDependencies;

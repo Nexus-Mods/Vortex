@@ -3461,10 +3461,19 @@ class InstallManager {
           }
         : undefined;
     const stagingPath = installPathForGame(state, session.gameId);
+    // filter by session status FIRST: this runs on every 500ms poll tick and
+    // selectedOptionalRules performs a findModByRef scan over ALL installed mods per
+    // candidate rule. Doing that for the full rule set of a several-thousand-mod
+    // collection on every tick generated enough allocation churn to OOM the renderer;
+    // the cheap session-status lookup reduces the expensive scan to genuinely
+    // pending optionals (typically none or a handful).
+    const pendingRules = (collectionMod.rules ?? []).filter(
+      (rule) => session.mods[modRuleId(rule)]?.status === "pending",
+    );
     const pending = selectedOptionalRules(
-      collectionMod.rules ?? [],
+      pendingRules,
       state.persistent.mods[session.gameId] ?? {},
-    ).filter((rule) => session.mods[modRuleId(rule)]?.status === "pending");
+    );
 
     for (const rule of pending) {
       const key = modRuleId(rule);
@@ -6697,6 +6706,43 @@ class InstallManager {
     return res;
   }
 
+  // computes the redux actions needed to bring the source mod's rule for `dep` in line with
+  // `reference`, without dispatching. `oldRule` is the rule the actions replace (also returned
+  // when no actions are needed because the rule is already up to date).
+  private updateModRuleActions(
+    api: IExtensionApi,
+    gameId: string,
+    sourceModId: string,
+    dep: IDependency,
+    reference: IModReference,
+    recommended: boolean,
+  ): { rule: IModRule | undefined; oldRule: IModRule | undefined; actions: Redux.Action[] } {
+    const state: IState = api.store.getState();
+    const rules: IModRule[] = getSafe(state.persistent.mods, [gameId, sourceModId, "rules"], []);
+    const oldRule = rules.find((iter) => referenceEqual(iter.reference, dep.reference));
+
+    const type = recommended ? "recommends" : "requires";
+
+    if (oldRule === undefined) {
+      return { rule: undefined, oldRule: undefined, actions: [] };
+    }
+
+    if (oldRule.type === type && referenceEqual(oldRule.reference, reference)) {
+      return { rule: oldRule, oldRule, actions: [] };
+    }
+
+    const updatedRule: IModRule = { ...oldRule, type, reference };
+
+    return {
+      rule: updatedRule,
+      oldRule,
+      actions: [
+        removeModRule(gameId, sourceModId, oldRule),
+        addModRule(gameId, sourceModId, updatedRule),
+      ],
+    };
+  }
+
   private updateModRule(
     api: IExtensionApi,
     gameId: string,
@@ -6705,25 +6751,18 @@ class InstallManager {
     reference: IModReference,
     recommended: boolean,
   ): IModRule | undefined {
-    const state: IState = api.store.getState();
-    const rules: IModRule[] = getSafe(state.persistent.mods, [gameId, sourceModId, "rules"], []);
-    const oldRule = rules.find((iter) => referenceEqual(iter.reference, dep.reference));
-
-    const type = recommended ? "recommends" : "requires";
-
-    if (oldRule === undefined) {
-      return undefined;
+    const { rule, actions } = this.updateModRuleActions(
+      api,
+      gameId,
+      sourceModId,
+      dep,
+      reference,
+      recommended,
+    );
+    if (actions.length > 0) {
+      batchDispatch(api.store, actions);
     }
-
-    if (oldRule.type === type && referenceEqual(oldRule.reference, reference)) {
-      return oldRule;
-    }
-
-    const updatedRule: IModRule = { ...oldRule, type, reference };
-
-    api.store.dispatch(removeModRule(gameId, sourceModId, oldRule));
-    api.store.dispatch(addModRule(gameId, sourceModId, updatedRule));
-    return updatedRule;
+    return rule;
   }
 
   private updateRules(
@@ -6733,11 +6772,34 @@ class InstallManager {
     dependencies: IDependency[],
     recommended: boolean,
   ): Promise<void> {
+    // collect all rule updates and dispatch them as ONE batch. Dispatching per dependency
+    // (2 actions each) made every dispatch clone the source mod's full rules array and push a
+    // separate diff through the persist pipeline - O(n²) state churn that contributed to
+    // renderer OOM on collections with thousands of mods.
+    const actions: Redux.Action[] = [];
+    // the state snapshot doesn't advance while collecting, so guard against emitting a second
+    // update for the same underlying rule (e.g. duplicate references in the dependency list)
+    const consumed = new Set<IModRule>();
     dependencies.forEach((dep) => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
-      this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
+      const result = this.updateModRuleActions(
+        api,
+        gameId,
+        sourceModId,
+        dep,
+        updatedRef,
+        recommended,
+      );
+      if (result.oldRule !== undefined && !consumed.has(result.oldRule)) {
+        consumed.add(result.oldRule);
+        actions.push(...result.actions);
+      }
     });
+    if (actions.length > 0) {
+      log("debug", "batch updating dependency rules", { count: actions.length / 2 });
+      batchDispatch(api.store, actions);
+    }
     return Promise.resolve();
   }
 
