@@ -3,6 +3,7 @@ export interface MediaSource {
   path: string;
   active: boolean;
   filterFn?: (s: string) => boolean;
+  description?: string;
 }
 
 export interface MediaItem {

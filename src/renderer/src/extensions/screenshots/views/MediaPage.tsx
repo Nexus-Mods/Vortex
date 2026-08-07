@@ -1,4 +1,4 @@
-import { mdiCog, mdiRefresh } from "@mdi/js";
+import { mdiCog, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -11,6 +11,7 @@ import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
@@ -31,7 +32,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [tab, setTab] = useState<string>("all");
 
-  const { isLoading, isError, error, allSources, items, forceCollect } = useGameMedia();
+  const { isLoading, isError, error, allSources, items, forceCollect, game } = useGameMedia();
 
   if (selected) {
     return (
@@ -83,7 +84,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
         {isError && <div>{error?.message}</div>}
 
         <TabProvider tab={tab} tabListId="" onSetSelectedTab={setTab}>
-          <TabBar>
+          <TabBar className="mb-2">
             <TabButton count={items?.length ?? 0} name="All" panelId="all" />
 
             {!!allSources &&
@@ -98,6 +99,15 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           </TabBar>
 
           <TabPanel id="all">
+            <Typography
+              appearance="subdued"
+              brand="neutral-translucent"
+              className="mb-2"
+              typographyType="body-sm"
+            >
+              {t("All screenshots and videos for {{game}}.", { game: game.name })}
+            </Typography>
+
             <Listing
               appendLoader={true}
               className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"
@@ -120,6 +130,30 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           {!!allSources &&
             Object.keys(allSources).map((k) => (
               <TabPanel id={k} key={`source-tab-${k}`}>
+                {!!allSources[k]?.description && (
+                  <div className="flex items-center justify-between">
+                    <Typography
+                      appearance="subdued"
+                      brand="neutral-translucent"
+                      className="mb-2"
+                      typographyType="body-sm"
+                    >
+                      {allSources[k]?.description}
+                    </Typography>
+
+                    <Button
+                      appearance="subdued"
+                      brand="neutral"
+                      leftIconPath={mdiOpenInNew}
+                      size="xs"
+                      title="Open Folder"
+                      onClick={() => window.api.shell.openUrl(allSources[k].path)}
+                    >
+                      Open Folder
+                    </Button>
+                  </div>
+                )}
+
                 <Listing
                   appendLoader={true}
                   className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"

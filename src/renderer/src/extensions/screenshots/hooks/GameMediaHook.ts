@@ -108,5 +108,6 @@ export default function useGameMedia() {
     items,
     discovery,
     forceCollect,
+    game,
   };
 }

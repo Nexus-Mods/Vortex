@@ -1,3 +1,4 @@
+import { mdiArrowLeft } from "@mdi/js";
 import React from "react";
 
 import type { IExtensionApi } from "@/types/api";
@@ -24,18 +25,27 @@ export default function MediaSingleView({ api, active, onBack, entry }: IMediaSi
         pictogramName="camera"
         subtitle={t("Screenshots and videos from your selected game.")}
         title={t("Media")}
-      />
+      >
+        <Button
+          appearance="weak"
+          brand="neutral"
+          leftIconPath={mdiArrowLeft}
+          size="sm"
+          type="button"
+          onClick={onBack}
+        >
+          {t("Back")}
+        </Button>
+      </PageHeader>
 
-      <div className="grid grid-cols-[80%_20%] gap-2">
+      <div className="my-4 grid grid-cols-[80%_20%] gap-2 px-2">
         <div>
           {entry.type === "image" && <img className="w-full" src={entry.path} />}
 
           {entry.type === "video" && <video />}
         </div>
 
-        <div className="rounded-sm bg-surface-mid p-2">
-          <Button onClick={onBack}>Go Back</Button>
-        </div>
+        <div className="rounded-sm bg-surface-mid p-2">Info Panel</div>
       </div>
     </Page>
   );

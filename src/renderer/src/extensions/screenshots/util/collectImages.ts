@@ -25,7 +25,7 @@ export default async function collectImages(
         path: path.join(source.path, i),
         type: path.extname(i) === ".mp4" ? "video" : "image",
       }));
-      console.log("Found images", mappedImages);
+      console.log("Found images", mappedImages, source.name);
       res = res.concat(mappedImages);
     } catch (e) {
       if ((e as Error & { code?: string })?.code === "ENOENT") continue;
