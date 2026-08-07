@@ -1,4 +1,4 @@
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
@@ -176,6 +176,25 @@ class MainWindow {
           exitCode: details.exitCode,
           reason: details.reason,
         });
+
+        if (details.reason === "oom") {
+          // leave a marker for the relaunched renderer: an OOM during e.g. a large
+          // collection install would otherwise silently restart into the exact same
+          // crash. The collections extension picks this up on startup and warns the
+          // user instead of letting the install resume into a crash loop.
+          try {
+            writeFileSync(
+              path.join(app.getPath("userData"), "renderer-oom.json"),
+              JSON.stringify({
+                reason: details.reason,
+                exitCode: details.exitCode,
+                timestamp: Date.now(),
+              }),
+            );
+          } catch {
+            // diagnostics must never throw
+          }
+        }
 
         // hard renderer crashes never reach the JS error handlers, so this
         // is the only place they can be reported

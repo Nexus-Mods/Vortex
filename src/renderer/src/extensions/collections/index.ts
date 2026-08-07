@@ -1,3 +1,4 @@
+import { readFileSync, unlinkSync } from "node:fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
@@ -1236,8 +1237,51 @@ async function checkVoteRequest(api: IExtensionApi): Promise<number> {
   return TIME_BEFORE_VOTE - elapsed;
 }
 
+/**
+ * checks for the marker the main process writes when the renderer died with an
+ * out-of-memory crash (see MainWindow render-process-gone handler). If the previous
+ * session OOMed while a collection install was incomplete, resuming right away would
+ * very likely crash the same way again - so instead of silently restarting into a
+ * crash loop, surface a visible error and leave the collection paused until the user
+ * explicitly resumes.
+ */
+function checkRendererOomMarker(api: IExtensionApi) {
+  const markerPath = path.join(getVortexPath("userData"), "renderer-oom.json");
+  let marker: { timestamp?: number } | undefined;
+  try {
+    marker = JSON.parse(readFileSync(markerPath, "utf8"));
+    unlinkSync(markerPath);
+  } catch {
+    // no marker (the usual case) or unreadable - nothing to report
+    return;
+  }
+
+  // ignore stale markers (e.g. crash long ago, unrelated to this session)
+  const MARKER_MAX_AGE_MS = 30 * 60 * 1000;
+  if (typeof marker?.timestamp !== "number" || Date.now() - marker.timestamp > MARKER_MAX_AGE_MS) {
+    return;
+  }
+
+  log("warn", "previous session ended in a renderer OOM crash", {
+    crashedAt: new Date(marker.timestamp).toISOString(),
+  });
+
+  api.sendNotification({
+    id: "renderer-oom-collection-install",
+    type: "error",
+    title: "Vortex ran out of memory",
+    message:
+      "The previous session crashed because Vortex ran out of memory. " +
+      "If this happened while installing a large collection, resuming it " +
+      "immediately may crash again - consider restarting Vortex before resuming, " +
+      "and please report the issue if it persists.",
+  });
+}
+
 function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
   const { store } = api;
+
+  checkRendererOomMarker(api);
 
   const applyCollectionModDefaults = new Debouncer(() => {
     const gameMode = selectors.activeGameId(state());
