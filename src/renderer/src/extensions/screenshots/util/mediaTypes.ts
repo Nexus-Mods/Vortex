@@ -14,6 +14,9 @@ export interface MediaItem {
   sourceId: string;
   type: "image" | "video";
   thumbnailPath?: string;
+  createdAt?: Date;
+  modifiedAt?: Date;
+  size?: number;
 }
 
 export interface SteamScreenshotsVDF {

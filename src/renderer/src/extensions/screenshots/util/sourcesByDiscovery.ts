@@ -22,6 +22,7 @@ export default async function sourcesByDiscovery(
   }
 
   const known = getKnownFolders(gameId, discovery);
+  console.log("Known folders", { known, gameId });
   if (known !== undefined) Object.assign(res, known);
 
   switch (store) {

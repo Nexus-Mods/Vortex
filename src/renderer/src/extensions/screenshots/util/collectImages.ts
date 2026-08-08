@@ -21,17 +21,28 @@ export default async function collectImages(
 
     try {
       await fs.stat(source.path);
-      const files = await fs.readdir(source.path);
-      let images = files.filter((f) => [".jpg", ".png", ".gif", ".bmp"].includes(path.extname(f)));
+      const files = await fs.readdir(source.path, { withFileTypes: true });
+      let images = files.filter(
+        (f) => f.isFile() && [".jpg", ".png", ".gif", ".bmp"].includes(path.extname(f.name)),
+      );
       if (source.filterFn && typeof source.filterFn === "function")
-        images = images.filter(source.filterFn);
-      const mappedImages: MediaItem[] = images.map((i) => ({
-        id: `${sourceId}::${i}`,
-        sourceId,
-        name: i,
-        path: path.join(source.path, i),
-        type: path.extname(i) === ".mp4" ? "video" : "image",
-      }));
+        images = images.filter((i) => source.filterFn(i.name));
+      const mappedImages: MediaItem[] = await Promise.all(
+        images.map(async (i) => {
+          const imagePath = path.join(source.path, i.name);
+          const stats = await fs.stat(imagePath);
+          return {
+            id: `${sourceId}::${i.name}`,
+            sourceId,
+            name: i.name,
+            path: imagePath,
+            type: path.extname(i.name) === ".mp4" ? "video" : "image",
+            size: stats.size,
+            createdAt: stats.birthtime,
+            modifiedAt: stats.mtime,
+          };
+        }),
+      );
       console.log("Found images", mappedImages, source.name);
       res = res.concat(mappedImages);
     } catch (e) {

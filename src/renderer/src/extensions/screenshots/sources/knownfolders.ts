@@ -25,6 +25,14 @@ const knownFolders: Record<string, (discovery?: IDiscoveryResult) => Record<stri
         filterFn: (f) => f.startsWith("ScreenShot") && path.extname(f) === ".png",
       },
     }),
+    stardewvalley: () => ({
+      "game-screenshots": {
+        name: "Game Screenshots",
+        description: "Screenshots taken in-game.",
+        path: path.join(getVortexPath("appData"), "StardewValley", "screenshots"),
+        active: true,
+      },
+    }),
   };
 
 const getKnownFolders = (

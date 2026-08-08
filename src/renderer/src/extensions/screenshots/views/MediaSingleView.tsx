@@ -104,6 +104,18 @@ export default function MediaSingleView({
               {source?.name ?? entry.sourceId}
             </Typography>
 
+            {!!entry.size && (
+              <>
+                <Typography appearance="strong" typographyType="body-sm">
+                  Size:
+                </Typography>
+
+                <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
+                  {entry.size}
+                </Typography>
+              </>
+            )}
+
             <Typography appearance="strong" typographyType="body-sm">
               Path:
             </Typography>
