@@ -1,21 +1,29 @@
 import fs from "fs/promises";
 import path from "path";
 
-import { parse } from "simple-vdf";
-
 import type { IDiscoveryResult, IGameStored } from "@/types/api";
 import getVortexPath from "@/util/getVortexPath";
 
 import Steam from "../../../util/Steam";
-import type { MediaSource, SteamScreenshotsVDF } from "../util/mediaTypes";
+import getKnownFolders from "../sources/knownfolders";
+import { clipsFolderBySteamID, screenshotsFolderBySteamID } from "../sources/steam";
+import type { MediaSource } from "../util/mediaTypes";
 
 export default async function sourcesByDiscovery(
   game: IGameStored,
   discovery: IDiscoveryResult,
 ): Promise<Record<string, MediaSource>> {
-  const { name, id: gameId } = game;
+  const { name, id: gameId, details } = game;
   const { store, path: gamePath } = discovery;
   const res: Record<string, MediaSource> = {};
+
+  if (details.mediaFolders && typeof details.mediaFolders === "object") {
+    Object.assign(res, details.mediaFolders);
+  }
+
+  const known = getKnownFolders(gameId, discovery);
+  if (known !== undefined) Object.assign(res, known);
+
   switch (store) {
     case "steam": {
       const steamMedia = await getSteamMedia(gamePath, String(game.details?.steamAppId));
@@ -26,7 +34,7 @@ export default async function sourcesByDiscovery(
       const capturesFolder = path.join(getVortexPath("home"), "Videos", "Captures");
       res["xbox-default-captures"] = {
         name: "Xbox Captures",
-        description: `Screenshots and videos captured by the Xbox Game Bar.`,
+        description: `Screenshots captured by the Xbox Game Bar.`,
         path: capturesFolder,
         filterFn: (f: string) =>
           f.toLowerCase().includes(name.toLowerCase().replace(":", "_")) ||
@@ -35,15 +43,6 @@ export default async function sourcesByDiscovery(
       };
       break;
     }
-  }
-
-  if (gameId === "starfield") {
-    res["starfield-mygames"] = {
-      name: "My Games Folder",
-      path: path.join(getVortexPath("documents"), "My Games", "Starfield", "Photos"),
-      active: true,
-      filterFn: (f) => !f.toLowerCase().includes("thumbnail"),
-    };
   }
 
   return res;
@@ -63,45 +62,14 @@ async function getSteamMedia(
   for (const user of steamUsers) {
     // Images live at userdata\{USER ID}\760\remote\{STEAM APP ID}\screenshots
     // Images have a manifest at userdata\{USER ID}\760\remote\screenshots.vdf
-    const screenshotsVDF = path.join(userDataFolder, user, "760", "screenshots.vdf");
-    try {
-      await fs.access(screenshotsVDF);
-      const raw = await fs.readFile(screenshotsVDF, { encoding: "utf-8" });
-      const parsed = parse(raw) as SteamScreenshotsVDF;
-      if (Object.keys(parsed?.screenshots?.[steamId]).length) {
-        res[`steam-screenshots-${user}`] = {
-          name: "Steam Screenshots",
-          description: `Screenshots for Steam ID ${user}`,
-          path: path.join(userDataFolder, user, "760", "remote", steamId, "screenshots"),
-          active: true,
-        };
-      }
-    } catch (err) {
-      if (!(err as Error).message.includes("ENOENT"))
-        console.log("Failed to acccess VDF", { screenshotsVDF, err });
-    }
+    const screenshotFolder = await screenshotsFolderBySteamID(userDataFolder, user, steamId);
+    if (Object.keys(screenshotFolder)) Object.assign(res, screenshotFolder);
 
     // Videos live at userdata\{USER ID}\gamerecordings\clips\
     // with a subfolder for each clip, containing a Thumbnail.jpg
     // folder names are clip_{STEAM ID}_{YYYMMDD}_{HHMMSS(UTC Time)}
-    const videosFolder = path.join(userDataFolder, user, "gamerecordings", "clips");
-    try {
-      await fs.access(videosFolder);
-      const dirList = await fs.readdir(videosFolder);
-      const gameClips = dirList.filter((d) => d.toLowerCase().startsWith(`clip_${steamId}`));
-      if (gameClips.length > 0) {
-        res[`steam-videos-${user}`] = {
-          name: "Steam Clips",
-          path: videosFolder,
-          description: `Clips for Steam ID ${user}`,
-          filterFn: (s) => s.toLowerCase().startsWith(`clip_${steamId}`),
-          active: true,
-        };
-      }
-    } catch (err) {
-      if (!(err as Error).message.includes("ENOENT"))
-        console.log("Failed to acccess Steam videos folder", { videosFolder, err });
-    }
+    const videosFolder = await clipsFolderBySteamID(userDataFolder, user, steamId);
+    if (Object.keys(videosFolder)) Object.assign(res, videosFolder);
   }
   return res;
 }

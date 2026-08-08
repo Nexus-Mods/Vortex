@@ -18,7 +18,7 @@ function init(context: IExtensionContext) {
   context.registerReducer(["session", "game_media"], sessionReducer);
 
   context.registerMainPage("highlight-ui", "Media", MediaPage, {
-    priority: 90,
+    priority: 70,
     hotkey: "I",
     group: "per-game",
     newLayout: true,

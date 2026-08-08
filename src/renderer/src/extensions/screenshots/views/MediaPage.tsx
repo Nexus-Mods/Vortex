@@ -39,8 +39,8 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
       <MediaSingleView
         active={active}
         api={api}
-        content={selected}
         entry={selected}
+        source={allSources[selected.sourceId]}
         onBack={() => setSelected(null)}
       />
     );
@@ -130,29 +130,27 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           {!!allSources &&
             Object.keys(allSources).map((k) => (
               <TabPanel id={k} key={`source-tab-${k}`}>
-                {!!allSources[k]?.description && (
-                  <div className="flex items-center justify-between">
-                    <Typography
-                      appearance="subdued"
-                      brand="neutral-translucent"
-                      className="mb-2"
-                      typographyType="body-sm"
-                    >
-                      {allSources[k]?.description}
-                    </Typography>
+                <div className="my-1 flex items-center justify-between">
+                  <Typography
+                    appearance="subdued"
+                    brand="neutral-translucent"
+                    className="mb-2"
+                    typographyType="body-sm"
+                  >
+                    {allSources[k]?.description ?? `Screenshots from ${allSources[k]?.name}`}
+                  </Typography>
 
-                    <Button
-                      appearance="subdued"
-                      brand="neutral"
-                      leftIconPath={mdiOpenInNew}
-                      size="xs"
-                      title="Open Folder"
-                      onClick={() => window.api.shell.openUrl(allSources[k].path)}
-                    >
-                      Open Folder
-                    </Button>
-                  </div>
-                )}
+                  <Button
+                    appearance="subdued"
+                    brand="neutral"
+                    leftIconPath={mdiOpenInNew}
+                    size="xs"
+                    title="Open Folder"
+                    onClick={() => window.api.shell.openUrl(allSources[k].path)}
+                  >
+                    Open Folder
+                  </Button>
+                </div>
 
                 <Listing
                   appendLoader={true}

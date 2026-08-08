@@ -12,10 +12,17 @@ export default async function collectImages(
 
   for (const [sourceId, source] of activeSources) {
     console.log("Collecting images from", sourceId, source);
+    if (source.discoverFn) {
+      const media = await source.discoverFn(source.path);
+      console.log("Collected media", media);
+      res = res.concat(media);
+      continue;
+    }
+
     try {
       await fs.stat(source.path);
       const files = await fs.readdir(source.path);
-      let images = files.filter((f) => [".jpg", ".png", ".gif", ".mp4"].includes(path.extname(f)));
+      let images = files.filter((f) => [".jpg", ".png", ".gif", ".bmp"].includes(path.extname(f)));
       if (source.filterFn && typeof source.filterFn === "function")
         images = images.filter(source.filterFn);
       const mappedImages: MediaItem[] = images.map((i) => ({
