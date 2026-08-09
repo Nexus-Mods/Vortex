@@ -100,7 +100,18 @@ export default function MediaSingleView({
             {entry.type === "image" && <img className="w-full" src={entry.path} />}
 
             {entry.type === "video" && (
-              <video controls className="min-h-130 w-full" src={entry.path} />
+              <video
+                controls
+                className="min-h-130 w-full"
+                src={entry.path}
+                onError={() =>
+                  api.sendNotification({
+                    message: "Video failed to load",
+                    displayMS: 5000,
+                    type: "error",
+                  })
+                }
+              />
             )}
 
             {/* Persistent markers */}
