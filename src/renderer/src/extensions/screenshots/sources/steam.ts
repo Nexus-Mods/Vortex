@@ -3,7 +3,7 @@ import path from "path";
 
 import { parse } from "simple-vdf";
 
-import type { MediaSource, SteamScreenshotsVDF } from "../util/mediaTypes";
+import type { MediaItem, MediaSource, SteamScreenshotsVDF } from "../util/mediaTypes";
 
 export async function screenshotsFolderBySteamID(
   userDataFolder: string,
@@ -18,7 +18,10 @@ export async function screenshotsFolderBySteamID(
     await fs.access(screenshotsVDF);
     const raw = await fs.readFile(screenshotsVDF, { encoding: "utf-8" });
     const parsed = parse(raw) as SteamScreenshotsVDF;
-    if (Object.keys(parsed?.screenshots?.[steamGameId]).length) {
+    if (
+      parsed?.screenshots?.[steamGameId] &&
+      Object.keys(parsed?.screenshots?.[steamGameId]).length
+    ) {
       res[`steam-screenshots-${user}`] = {
         name: "Steam Screenshots",
         description: `Screenshots for Steam ID ${user}`,
@@ -53,20 +56,7 @@ export async function clipsFolderBySteamID(
         name: "Steam Clips",
         path: videosFolder,
         description: `Clips for Steam ID ${user}`,
-        discoverFn: async (mediaPath: string) => {
-          const clips = await fs.readdir(mediaPath);
-          const thisGameClips = clips.filter((s) =>
-            s.toLowerCase().startsWith(`clip_${steamGameId}`),
-          );
-          return thisGameClips.map((c) => ({
-            id: `steam-videos-${user}-${c}`,
-            path: path.join(mediaPath, c),
-            name: c,
-            sourceId: `steam-videos-${user}`,
-            type: "video",
-            thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
-          }));
-        },
+        discoverFn: (mediaPath: string) => discoverSteamClips(mediaPath, steamGameId, user),
         active: true,
       };
     }
@@ -76,4 +66,21 @@ export async function clipsFolderBySteamID(
   }
 
   return res;
+}
+
+async function discoverSteamClips(
+  mediaPath: string,
+  steamGameId: string,
+  userId: string,
+): Promise<MediaItem[]> {
+  const clips = await fs.readdir(mediaPath);
+  const thisGameClips = clips.filter((s) => s.toLowerCase().startsWith(`clip_${steamGameId}`));
+  return thisGameClips.map((c) => ({
+    id: `steam-videos-${userId}-${c}`,
+    path: path.join(mediaPath, c),
+    name: c,
+    sourceId: `steam-videos-${userId}`,
+    type: "video",
+    thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
+  }));
 }

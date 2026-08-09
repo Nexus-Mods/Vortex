@@ -25,3 +25,14 @@ export interface SteamScreenshotsVDF {
     Record<number, { type: number; filename: string; thumbnail: string }>
   >;
 }
+
+export interface ModMediaTag {
+  id: string;
+  name: string;
+  url?: string;
+  thumbnail?: string;
+  comment?: string;
+  x: number;
+  y: number;
+  createdAt: string;
+}

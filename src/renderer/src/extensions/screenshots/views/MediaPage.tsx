@@ -110,7 +110,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
 
             <Listing
               appendLoader={true}
-              className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5"
+              className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4"
               entityCount={items?.length ?? 0}
               errorTitle={error?.message}
               isError={isError}

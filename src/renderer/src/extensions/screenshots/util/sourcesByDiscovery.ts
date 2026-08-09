@@ -22,7 +22,7 @@ export default async function sourcesByDiscovery(
   }
 
   const known = getKnownFolders(gameId, discovery);
-  console.log("Known folders", { known, gameId });
+  // console.log("Known folders", { known, gameId });
   if (known !== undefined) Object.assign(res, known);
 
   switch (store) {
@@ -61,16 +61,10 @@ async function getSteamMedia(
   const userDataFolder = path.resolve(steamPath, "..", "userdata");
   const steamUsers = await fs.readdir(userDataFolder);
   for (const user of steamUsers) {
-    // Images live at userdata\{USER ID}\760\remote\{STEAM APP ID}\screenshots
-    // Images have a manifest at userdata\{USER ID}\760\remote\screenshots.vdf
     const screenshotFolder = await screenshotsFolderBySteamID(userDataFolder, user, steamId);
-    if (Object.keys(screenshotFolder)) Object.assign(res, screenshotFolder);
-
-    // Videos live at userdata\{USER ID}\gamerecordings\clips\
-    // with a subfolder for each clip, containing a Thumbnail.jpg
-    // folder names are clip_{STEAM ID}_{YYYMMDD}_{HHMMSS(UTC Time)}
+    Object.assign(res, screenshotFolder);
     const videosFolder = await clipsFolderBySteamID(userDataFolder, user, steamId);
-    if (Object.keys(videosFolder)) Object.assign(res, videosFolder);
+    Object.assign(res, videosFolder);
   }
   return res;
 }

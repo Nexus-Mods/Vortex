@@ -11,10 +11,10 @@ export default async function collectImages(
   const activeSources = Object.entries(sources).filter(([_, s]) => s.active === true);
 
   for (const [sourceId, source] of activeSources) {
-    console.log("Collecting images from", sourceId, source);
+    // console.log("Collecting images from", sourceId, source);
     if (source.discoverFn) {
       const media = await source.discoverFn(source.path);
-      console.log("Collected media", media);
+      // console.log("Collected media", media);
       res = res.concat(media);
       continue;
     }
@@ -23,7 +23,8 @@ export default async function collectImages(
       await fs.stat(source.path);
       const files = await fs.readdir(source.path, { withFileTypes: true });
       let images = files.filter(
-        (f) => f.isFile() && [".jpg", ".png", ".gif", ".bmp"].includes(path.extname(f.name)),
+        (f) =>
+          f.isFile() && [".jpg", ".png", ".gif", ".bmp", ".mp4"].includes(path.extname(f.name)),
       );
       if (source.filterFn && typeof source.filterFn === "function")
         images = images.filter((i) => source.filterFn(i.name));
@@ -43,7 +44,7 @@ export default async function collectImages(
           };
         }),
       );
-      console.log("Found images", mappedImages, source.name);
+      // console.log("Found images", mappedImages, source.name);
       res = res.concat(mappedImages);
     } catch (e) {
       if ((e as Error & { code?: string })?.code === "ENOENT") continue;
