@@ -64,7 +64,11 @@ export default async function searchMods(
       headers,
       body: JSON.stringify({ query: MODS_QUERY, variables: { filter } }),
     });
-    if (!res.ok) throw new Error("Mod search failed");
+    if (!res.ok) {
+      if (res.status === 401)
+        throw new Error("Nexus Mods token has expired, please log out and back in.");
+      throw new Error(`Mod search failed: ${res.status} ${res.statusText}`);
+    }
     const json: IModsQueryResult = (await res.json()) as IModsQueryResult;
     console.log("Mod search res", json, filter);
     if (json.errors || !json.data) throw new Error("Mod search failed with Graph QL errors");

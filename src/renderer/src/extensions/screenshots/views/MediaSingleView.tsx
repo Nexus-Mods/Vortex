@@ -1,9 +1,17 @@
-import { mdiArrowLeft, mdiCancel, mdiCloudUpload, mdiDelete, mdiOpenInNew, mdiPlus } from "@mdi/js";
-import React from "react";
+import {
+  mdiArrowLeft,
+  mdiCancel,
+  mdiClose,
+  mdiCloudUpload,
+  mdiOpenInNew,
+  mdiTagPlus,
+  mdiTagRemove,
+} from "@mdi/js";
+import React, { useState } from "react";
 
 import type { IExtensionApi } from "@/types/api";
-import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
+import { Modal } from "@/ui/components/modal/Modal";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -45,6 +53,8 @@ export default function MediaSingleView({
     domainName,
   } = useGameMediaModTag(entry.id);
 
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+
   const toolbarActions: IToolbarAction[] = [
     {
       label: "Upload",
@@ -52,9 +62,10 @@ export default function MediaSingleView({
       showLabel: true,
       disabled: false,
       brand: "primary",
+      onClick: () => setUploadModalVisible(true),
     },
     {
-      label: "Open Folder",
+      label: "Open File",
       iconPath: mdiOpenInNew,
       onClick: () => window.api.shell.openFile(entry.path),
     },
@@ -81,31 +92,8 @@ export default function MediaSingleView({
 
       <div className="my-4 grid h-full grid-cols-[80%_20%] gap-2 px-2">
         <div>
-          {isAddingTag && (
-            <div>
-              <Alert
-                action={
-                  <Button
-                    appearance="subdued"
-                    brand="neutral"
-                    leftIconPath={mdiCancel}
-                    size="xs"
-                    onClick={() => setIsAddingTag(false)}
-                  >
-                    Cancel
-                  </Button>
-                }
-                severity="info"
-              >
-                <Typography brand="info" typographyType="body-sm">
-                  {t("Click anywhere on the image to tag a mod.")}
-                </Typography>
-              </Alert>
-            </div>
-          )}
-
           <div
-            className={`relative w-full ${isAddingTag ? "cursor-pointer" : ""}`}
+            className={`relative w-full ${isAddingTag ? "cursor-crosshair" : ""}`}
             ref={containerRef}
             onClick={onImageClick}
           >
@@ -114,8 +102,9 @@ export default function MediaSingleView({
             {entry.type === "video" && <video />}
 
             {/* Persistent markers */}
-            {!isAddingTag &&
-              tags?.map((tag) => <ModTagIndicator key={tag.id} mod={tag} x={tag.x} y={tag.y} />)}
+            {tags?.map((tag) => (
+              <ModTagIndicator key={tag.id} mod={tag} x={tag.x} y={tag.y} />
+            ))}
 
             {/* Floating search at cursor when a pending coord is set */}
             {isAddingTag && pendingCoords && (
@@ -225,18 +214,19 @@ export default function MediaSingleView({
             <Typography className="max-h-48 overflow-auto" typographyType="body-sm">
               {(!tags || tags?.length === 0) && <i>None</i>}
 
-              <ul className="ml-2 list-disc">
+              <ul className="mb-2 list-inside list-disc">
                 {tags?.map((t) => (
-                  <li className="flex justify-between gap-2" key={t.id}>
-                    <a href={t.url} title={t.id}>
+                  <li className="ml-2 flex items-center justify-between gap-2" key={t.id}>
+                    <a className="line-clamp-2" href={t.url} title={t.name}>
                       {t.name}
                     </a>
 
                     <Button
                       appearance="subdued"
-                      brand="primary"
-                      leftIconPath={mdiDelete}
+                      brand="neutral"
+                      leftIconPath={mdiTagRemove}
                       size="xs"
+                      title="Remove"
                       onClick={() => setTags(tags.filter((at) => at.id !== t.id))}
                     />
                   </li>
@@ -246,15 +236,20 @@ export default function MediaSingleView({
               <Button
                 appearance="subdued"
                 brand="neutral"
-                disabled={isAddingTag}
-                leftIconPath={mdiPlus}
+                leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
                 size="xs"
                 onClick={() => {
+                  if (isAddingTag) return setIsAddingTag(false);
                   setPendingCoords(null);
                   setIsAddingTag(true);
+                  api.sendNotification({
+                    type: "info",
+                    message: "Click anywhere on the image to tag a mod.",
+                    displayMS: 5000,
+                  });
                 }}
               >
-                Add mod
+                {isAddingTag ? "Cancel adding" : "Add mod"}
               </Button>
             </Typography>
           </div>
@@ -264,6 +259,42 @@ export default function MediaSingleView({
           </Toolbar>
         </div>
       </div>
+
+      <Modal
+        showCloseButton
+        isOpen={uploadModalVisible}
+        title="Upload to Nexus Mods"
+        onClose={() => setUploadModalVisible(false)}
+      >
+        <Typography appearance="subdued" className="mb-2">
+          It is not currently possible to upload to Nexus Mods in one click, however, Vortex can
+          open both the folder containing this file and the image upload page.
+        </Typography>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button
+            appearance="strong"
+            brand="primary"
+            leftIconPath={mdiOpenInNew}
+            onClick={() => {
+              setUploadModalVisible(false);
+              window.api.shell.openFile(source.path);
+              window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/images/add`);
+            }}
+          >
+            Continue
+          </Button>
+
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            leftIconPath={mdiClose}
+            onClick={() => setUploadModalVisible(false)}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </Page>
   );
 }
