@@ -10,7 +10,11 @@ interface IMediaListItemProps {
 export default function MediaListItem({ item, onClick }: IMediaListItemProps) {
   return (
     <div onClick={onClick}>
-      <img key={item.id} src={item.thumbnailPath ?? item.path} />
+      {item.type === "image" && <img key={item.id} src={item.thumbnailPath ?? item.path} />}
+
+      {item.type === "video" && (
+        <img key={item.id} src={item.thumbnailPath ?? "assets/images/video-placeholder-temp.png"} />
+      )}
     </div>
   );
 }

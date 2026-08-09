@@ -99,7 +99,7 @@ export default function MediaSingleView({
           >
             {entry.type === "image" && <img className="w-full" src={entry.path} />}
 
-            {entry.type === "video" && <video />}
+            {entry.type === "video" && <video autoPlay controls src={entry.path} />}
 
             {/* Persistent markers */}
             {tags?.map((tag) => (
