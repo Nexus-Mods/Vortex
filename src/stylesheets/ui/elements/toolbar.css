@@ -16,4 +16,12 @@
             flex-shrink: 0;
         }
     }
+
+    .nxm-toolbar-overflow {
+        overflow-y: auto;
+        padding: calc(var(--spacing) * 1);
+        min-width: calc(var(--spacing) * 52);
+        max-width: calc(var(--spacing) * 72);
+        --anchor-max-height: calc(var(--spacing) * 128);
+    }
 }

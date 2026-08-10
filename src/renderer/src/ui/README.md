@@ -242,7 +242,7 @@ function MyTabs() {
 
 ### Toolbar
 
-Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into it — the same descriptor renders as a `Button` while visible and as a menu row once collapsed.
 
 **Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` to opt it into collapsing.
 
@@ -269,9 +269,24 @@ const actions: IToolbarAction[] = [
 </Toolbar>;
 ```
 
-**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
+**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, menu label, and button text when `showLabel`), `iconPath`, `onClick`, `panel` (see below), `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
+
+**`panel`** makes an action open a floating surface instead of running a callback; it's the alternative to `onClick`, and the two are mutually exclusive. Pass a function of `{ close }` returning the panel's contents — the group anchors it to whichever control it rendered, so the panel never has to know where it was opened from: under the button while the action is in the row, beside its row once it has collapsed into the overflow. `DisplayOptions` is built on this.
+
+```tsx
+const actions: IToolbarAction[] = [
+    { label: "Refresh", iconPath: mdiRefresh, onClick: refresh },
+    {
+        label: "Display options",
+        iconPath: mdiTune,
+        panel: ({ close }) => <MyPanelRows onDone={close} />,
+    },
+];
+```
+
+The overflow menu is a `Popover` rather than a `Menu` precisely so a panel can open from inside it: a `Menu` closes the moment focus reaches a surface nested within it. It still presents as a menu — menu roles, focus on open, arrow-key navigation, `→` to open a panel from its row, `Escape` to close the innermost surface.
 
 **`pinned`** keeps an action out of the overflow menu, wherever it sits in the list — the unpinned actions then share whatever width is left, still collapsing from the end. The row keeps the order you gave it, so a pin holds its place rather than jumping to the front as its neighbours collapse.
 
@@ -412,20 +427,29 @@ import { mdiTune } from "@mdi/js";
 
 ### DisplayOptions
 
-The tune-icon popover a listing puts in its page header, holding the controls for how that listing is shown (layout, what's included, …). It wraps `Popover` with the trigger, its tooltip and a reset link, so a page only supplies the rows. Compose those from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in the reset link: `onReset` puts the defaults back and the panel closes itself.
+The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in a reset link: `onReset` puts the defaults back and the panel closes itself.
 
 ```tsx
-import { DisplayOptions } from "../../ui/components/display_options/DisplayOptions";
 import { DisplayOptionsItem } from "../../ui/components/display_options/DisplayOptionsItem";
+import { useDisplayOptionsAction } from "../../ui/components/display_options/useDisplayOptionsAction.hook";
 
-<DisplayOptions onReset={onReset}>
-    <DisplayOptionsItem label={t("Show hidden items")}>
-        <Switch checked={showHidden} onChange={onToggleHidden} />
-    </DisplayOptionsItem>
-</DisplayOptions>;
+const displayOptions = useDisplayOptionsAction({
+    children: (
+        <DisplayOptionsItem label={t("Show hidden items")}>
+            <Switch checked={showHidden} onChange={onToggleHidden} />
+        </DisplayOptionsItem>
+    ),
+    onReset,
+});
+
+<Toolbar>
+    <ToolbarGroup actions={[refreshAction, displayOptions]} />
+</Toolbar>;
 ```
 
 **Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. `DisplayOptionsItem` takes `label` (omit it for a control-only row), `className` and `children`.
+
+The toolbar owns the trigger and anchors the panel: under the button while the action is in the row, beside its row once the action has collapsed into the overflow menu. See [Toolbar](#toolbar) for panel actions in general.
 
 ### Tooltip
 

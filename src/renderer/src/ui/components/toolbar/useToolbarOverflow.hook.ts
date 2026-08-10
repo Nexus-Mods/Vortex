@@ -28,6 +28,19 @@ interface IOverflowParams {
   signature: string;
 }
 
+/**
+ * Marks the elements a group measures: one per action, and its overflow button.
+ *
+ * Measuring goes by these rather than by position among the group's children,
+ * because a control is not always the only node it renders — Headless UI's
+ * `Popover` puts a hidden sentinel span beside its element until it has resolved
+ * its root container, so an action that opens a panel briefly occupies two slots.
+ * Indexing past the actions to find the overflow button landed on that span, read
+ * its width as 0, and left the group one control too wide.
+ */
+export const TOOLBAR_CONTROL_ATTRIBUTE = "data-toolbar-control";
+export const TOOLBAR_OVERFLOW_ATTRIBUTE = "data-toolbar-overflow";
+
 const parsePx = (value: string): number => {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -39,13 +52,16 @@ const parsePx = (value: string): number => {
  * `.nxm-toolbar-group > *` being `flex-shrink: 0` so the widths hold even in the
  * frame where the row is too narrow to hold them all.
  */
-const measureGroup = (group: HTMLElement, actionCount: number): IToolbarGroupMetrics => {
-  const widths = Array.from(group.children, (child) => (child as HTMLElement).offsetWidth);
+const measureGroup = (group: HTMLElement): IToolbarGroupMetrics => {
+  const children = Array.from(group.children) as HTMLElement[];
   const style = getComputedStyle(group);
 
   return {
-    itemWidths: widths.slice(0, actionCount),
-    kebabWidth: widths[actionCount] ?? 0,
+    itemWidths: children
+      .filter((child) => child.hasAttribute(TOOLBAR_CONTROL_ATTRIBUTE))
+      .map((child) => child.offsetWidth),
+    kebabWidth:
+      children.find((child) => child.hasAttribute(TOOLBAR_OVERFLOW_ATTRIBUTE))?.offsetWidth ?? 0,
     gap: parsePx(style.columnGap),
     padding: parsePx(style.paddingLeft) + parsePx(style.paddingRight),
   };
@@ -183,8 +199,8 @@ export const useToolbarOverflow = ({ maxVisible, pinned, signature }: IOverflowP
     // renders them all has to hand what it measured to the pass that collapses
     // them. Runs at most once per distinct action list, before paint.
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    setMeasurement({ metrics: measureGroup(groupRef.current, actionCount), signature });
-  }, [actionCount, isMeasuring, signature]);
+    setMeasurement({ metrics: measureGroup(groupRef.current), signature });
+  }, [isMeasuring, signature]);
 
   const minimumFootprint = measurement
     ? measurement.metrics.kebabWidth + measurement.metrics.padding
