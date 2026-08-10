@@ -15,8 +15,11 @@ export class GamesPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.managedSection = page.locator(".panel").filter({ hasText: /Managed \(/ });
-    this.unmanagedSection = page.locator(".panel").filter({ hasText: /Unmanaged \(/ });
+    // Each games section is a CollapsibleSection: a container div whose first
+    // child is a role="button" header named "Managed <count>" / "Unmanaged
+    // <count>". Anchor on the header and take its parent as the section scope.
+    this.managedSection = page.getByRole("button", { name: /^Managed/ }).locator("..");
+    this.unmanagedSection = page.getByRole("button", { name: /^Unmanaged/ }).locator("..");
     this.notDiscoveredDialog = page
       .getByRole("dialog")
       .filter({ hasText: "Game not discovered" })

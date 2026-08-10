@@ -90,6 +90,7 @@ test.describe("Game Management - Manually set game location", () => {
     });
 
     await test.step("Stardew Valley is listed under Unmanaged", async () => {
+      await gamesPage.searchInput.fill("Stardew Valley");
       await expect(
         gamesPage.gameRowInSection(gamesPage.unmanagedSection, "Stardew Valley"),
       ).toBeVisible({ timeout: Timeouts.NETWORK });
@@ -114,6 +115,7 @@ test.describe("Game Management - Manually set game location", () => {
 
     await test.step("Stardew Valley is now listed under Managed", async () => {
       await navbar.gamesLink.click();
+      await gamesPage.searchInput.fill("Stardew Valley");
       await expect(
         gamesPage.gameRowInSection(gamesPage.managedSection, "Stardew Valley"),
       ).toBeVisible({ timeout: Timeouts.NETWORK });
