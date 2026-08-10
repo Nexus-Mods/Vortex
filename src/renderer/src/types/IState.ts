@@ -406,7 +406,6 @@ export interface IState {
     extensions: {
       available: IAvailableExtension[];
       optional: { [extId: string]: IExtensionOptional[] };
-      installed: { [extId: string]: IExtension };
       updateTime: number;
     };
   };

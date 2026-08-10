@@ -72,28 +72,22 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     initFunc(context);
 
     const state = api.getState();
-    const { installed, available } = state.session.extensions;
+    const { available } = state.session.extensions;
     const extState = state.app.extensions ?? {};
 
     const promises = handler.dependencies.map(async (dependencyId) => {
-      if (installed[dependencyId] ?? extState[dependencyId]) return;
+      if (extState[dependencyId]) return;
 
       const toInstall = available.find(
         (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
       );
 
       if (!toInstall) return;
-      const alreadyInstalled =
-        Object.values(installed).some(
-          (entry) =>
-            (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-            entry.name === toInstall.name,
-        ) ||
-        Object.values(extState).some(
-          (entry) =>
-            (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-            entry.name === toInstall.name,
-        );
+      const alreadyInstalled = Object.values(extState).some(
+        (entry) =>
+          (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
+          entry.name === toInstall.name,
+      );
       if (alreadyInstalled) return;
 
       await api.emitAndAwait<"install-extension">("install-extension", toInstall);
@@ -129,7 +123,7 @@ export function clearStaleRemovalFlags(
   removedKeys: string[],
   destPath: string,
 ): void {
-  const state: IState = api.store.getState();
+  const state: IState = api.getState();
   const extState = state.app.extensions ?? {};
   // Compare paths, not key strings: info.json `id` can decouple the state key
   // from the folder basename, and the archive-name fallback differs again.
