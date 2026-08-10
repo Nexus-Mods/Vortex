@@ -24,10 +24,7 @@ export async function installStardewTestMods(
   await downloadModViaModManager(nexusPage, vortexApp, SDV_VINTAGE_INTERFACE_MOD_URL);
 
   await test.step("Open the Mods page", async () => {
-    const navbar = new NavBar(vortexWindow);
-    await navbar.modsLink.click();
-    const modsPage = new ModsPage(vortexWindow);
-    await expect(modsPage.row(SMAPI_NAME)).toBeVisible({ timeout: Timeouts.NETWORK });
+    await expectModListed(vortexWindow, SMAPI_NAME);
   });
 
   await test.step("The target mod is installed and enabled", async () => {
@@ -43,6 +40,13 @@ export async function clickRemoveInRow(
 ): Promise<void> {
   const modsPage = new ModsPage(vortexWindow);
   await modsPage.removeButtonInRow(modName).click();
+}
+
+export async function expectModListed(vortexWindow: Page, modName: string | RegExp): Promise<void> {
+  const navbar = new NavBar(vortexWindow);
+  await navbar.modsLink.click();
+  const modsPage = new ModsPage(vortexWindow);
+  await expect(modsPage.row(modName)).toBeVisible({ timeout: Timeouts.NETWORK });
 }
 
 export async function expectModStatus(

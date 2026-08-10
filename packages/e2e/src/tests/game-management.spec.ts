@@ -8,8 +8,8 @@ import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-s
 import { test, expect } from "../fixtures/vortex-app";
 import { manageGame } from "../helpers/games";
 import { downloadModViaModManager } from "../helpers/modDownload";
-import { SMAPI_NAME } from "../helpers/mods";
-import { navigateToGames } from "../helpers/navigation";
+import { expectModListed, SMAPI_NAME } from "../helpers/mods";
+import { navigateToGames, openGameWorkspace } from "../helpers/navigation";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser } from "../helpers/users";
 import { GamesPage } from "../selectors/games";
@@ -124,17 +124,11 @@ test.describe("Game Management - Manually set game location", () => {
     await downloadModViaModManager(nexusPage, vortexApp, SDV_MOD_URL);
 
     await test.step("Open the Stardew Valley workspace", async () => {
-      await vortexWindow
-        .getByRole("button", { name: "Stardew Valley", exact: true })
-        .first()
-        .click();
-      await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
+      await openGameWorkspace(vortexWindow, "Stardew Valley");
     });
 
     await test.step("SMAPI is installed for the game", async () => {
-      await navbar.modsLink.click();
-      const modsPage = new ModsPage(vortexWindow);
-      await expect(modsPage.row(SMAPI_NAME)).toBeVisible({ timeout: Timeouts.NETWORK });
+      await expectModListed(vortexWindow, SMAPI_NAME);
     });
   });
 });
