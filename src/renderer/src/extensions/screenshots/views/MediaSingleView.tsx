@@ -67,7 +67,7 @@ export default function MediaSingleView({
     {
       label: "Open File",
       iconPath: mdiOpenInNew,
-      onClick: () => window.api.shell.openFile(entry.path),
+      onClick: () => window.api.shell.showItemInFolder(entry.path),
     },
   ];
 
