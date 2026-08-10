@@ -425,19 +425,40 @@ import { mdiTune } from "@mdi/js";
 
 > **Positioning note:** the panel is placed by Headless UI's `anchor` prop, which uses Floating UI to flip and shift it into view and portals it out of any clipping ancestor. It defaults to `bottom end` with a 4px gap; pass `anchor` to place it elsewhere.
 
-### DisplayOptions
-
-The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in a reset link: `onReset` puts the defaults back and the panel closes itself.
+For a panel of settings rather than free-form content, fill it with `PopoverPanelGroup`s. Groups are separated from one another by a rule and the last ends in padding, so a panel never finishes on a divider — state the separator on the groups, not the rows, and a trailing element can't leave a dangling rule. Each group holds `PopoverPanelGroupItem` rows: `label` on the left, control on the right; omit `label` for a control-only row and place it with a `justify-*` class.
 
 ```tsx
-import { DisplayOptionsItem } from "../../ui/components/display_options/DisplayOptionsItem";
+<PopoverPanel>
+    <PopoverPanelGroup>
+        <PopoverPanelGroupItem label={t("Display as")}>
+            <Picker options={layouts} value={layout} onChange={setLayout} />
+        </PopoverPanelGroupItem>
+    </PopoverPanelGroup>
+
+    <PopoverPanelGroup>
+        <PopoverPanelGroupItem className="justify-end">
+            <TypographyLink onClick={onReset}>{t("Reset to default")}</TypographyLink>
+        </PopoverPanelGroupItem>
+    </PopoverPanelGroup>
+</PopoverPanel>
+```
+
+### DisplayOptions
+
+The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `PopoverPanelGroup` and `PopoverPanelGroupItem` (see [Popover](#popover)). Every panel ends in a reset link: `onReset` puts the defaults back and the panel closes itself.
+
+```tsx
+import { PopoverPanelGroup } from "../../ui/components/popover/PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "../../ui/components/popover/PopoverPanelGroupItem";
 import { useDisplayOptionsAction } from "../../ui/components/display_options/useDisplayOptionsAction.hook";
 
 const displayOptions = useDisplayOptionsAction({
     children: (
-        <DisplayOptionsItem label={t("Show hidden items")}>
-            <Switch checked={showHidden} onChange={onToggleHidden} />
-        </DisplayOptionsItem>
+        <PopoverPanelGroup>
+            <PopoverPanelGroupItem label={t("Show hidden items")}>
+                <Switch checked={showHidden} onChange={onToggleHidden} />
+            </PopoverPanelGroupItem>
+        </PopoverPanelGroup>
     ),
     onReset,
 });
@@ -447,7 +468,7 @@ const displayOptions = useDisplayOptionsAction({
 </Toolbar>;
 ```
 
-**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. `DisplayOptionsItem` takes `label` (omit it for a control-only row), `className` and `children`.
+**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. The hook appends the reset link as a final group of its own, so `children` should be the setting groups only.
 
 The toolbar owns the trigger and anchors the panel: under the button while the action is in the row, beside its row once the action has collapsed into the overflow menu. See [Toolbar](#toolbar) for panel actions in general.
 

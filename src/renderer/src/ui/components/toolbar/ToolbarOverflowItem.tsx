@@ -33,13 +33,11 @@ const ToolbarOverflowPanelItem = forwardRef<
   HTMLButtonElement,
   { action: IToolbarAction; disabled: boolean; panel: IToolbarPanel; tabIndex: number }
 >(({ action, disabled, panel, tabIndex }, ref) => (
-  <Popover>
+  <Popover className="flex flex-col">
     {({ open }) => (
       <>
         <PopoverButton
           aria-haspopup="dialog"
-          // Held in the hover state for as long as its panel is: the row is what
-          // the panel belongs to, and the pointer has usually left it by then.
           className={joinClasses("nxm-dropdown-item", { "nxm-dropdown-item-active": open })}
           disabled={disabled}
           ref={ref}
@@ -58,7 +56,7 @@ const ToolbarOverflowPanelItem = forwardRef<
           <ToolbarOverflowItemContent action={action} />
         </PopoverButton>
 
-        <PopoverPanel anchor={{ gap: 8, to: "right start" }}>
+        <PopoverPanel anchor={{ gap: 8, to: "right start" }} className="nxm-popover-panel-dropdown">
           {({ close }) => <>{panel({ close })}</>}
         </PopoverPanel>
       </>

@@ -21,9 +21,10 @@ import {
 } from "@mdi/js";
 import React, { useState } from "react";
 
-import { DisplayOptionsItem } from "@/ui/components/display_options/DisplayOptionsItem";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
 import { Switch } from "@/ui/components/form/switch/Switch";
+import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { Toolbar } from "./Toolbar";
@@ -69,9 +70,11 @@ export const ToolbarDemo = () => {
 
   const displayOptions = useDisplayOptionsAction({
     children: (
-      <DisplayOptionsItem label="Show hidden items">
-        <Switch checked={showHidden} onChange={setShowHidden} />
-      </DisplayOptionsItem>
+      <PopoverPanelGroup>
+        <PopoverPanelGroupItem label="Show hidden items">
+          <Switch checked={showHidden} onChange={setShowHidden} />
+        </PopoverPanelGroupItem>
+      </PopoverPanelGroup>
     ),
     label: "Display options",
     onReset: () => setShowHidden(false),

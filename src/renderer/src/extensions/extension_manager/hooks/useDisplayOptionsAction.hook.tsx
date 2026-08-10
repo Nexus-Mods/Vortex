@@ -1,9 +1,10 @@
 import type { TFunction } from "i18next";
 import React from "react";
 
-import { DisplayOptionsItem } from "@/ui/components/display_options/DisplayOptionsItem";
 import { useDisplayOptionsAction as useDisplayOptionsPanelAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
 import { Switch } from "@/ui/components/form/switch/Switch";
+import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 
 interface IDisplayOptionsProps {
@@ -22,9 +23,11 @@ export const useDisplayOptionsAction = ({
 }: IDisplayOptionsProps): IToolbarAction =>
   useDisplayOptionsPanelAction({
     children: (
-      <DisplayOptionsItem label={t("Show bundled extensions")}>
-        <Switch checked={showBundled} onChange={onToggleBundled} />
-      </DisplayOptionsItem>
+      <PopoverPanelGroup>
+        <PopoverPanelGroupItem label={t("Show bundled extensions")}>
+          <Switch checked={showBundled} onChange={onToggleBundled} />
+        </PopoverPanelGroupItem>
+      </PopoverPanelGroup>
     ),
     onReset,
   });

@@ -1,8 +1,4 @@
 @layer components {
-    .nxm-popover {
-        position: relative;
-    }
-
     .nxm-popover-panel {
         outline: none;
         box-shadow: var(--shadow-md);
@@ -11,5 +7,43 @@
         border-radius: var(--radius-sm);
         border: 1px solid var(--color-stroke-weak);
         background-color: var(--color-surface-mid);
+    }
+
+    .nxm-popover-panel-dropdown {
+        max-width: calc(var(--spacing) * 72) !important;
+    }
+
+    .nxm-popover-panel-group {
+        padding-block: calc(var(--spacing) * 1);
+
+        &:not(:last-child) {
+            border-bottom: solid 1px var(--color-stroke-weak);
+        }
+    }
+
+    .nxm-popover-panel-group-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: calc(var(--spacing) * 8);
+        column-gap: calc(var(--spacing) * 1);
+        padding-inline: calc(var(--spacing) * 4);
+
+        > * {
+            flex-shrink: 0;
+        }
+
+        .nxm-popover-panel-group-item-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+
+            color: var(--color-neutral-subdued);
+            font-size: var(--text-body-sm);
+            line-height: var(--text-body-sm--line-height);
+            letter-spacing: var(--text-body-sm--letter-spacing);
+        }
     }
 }

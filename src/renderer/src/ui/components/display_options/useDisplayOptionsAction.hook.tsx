@@ -2,15 +2,15 @@ import { mdiTune } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
-
-import { DisplayOptionsItem } from "./DisplayOptionsItem";
 
 /**
  * The controls for how a listing is shown, as an action for that page's toolbar:
  * a tune-icon button opening a panel of the rows you pass as `children`. Compose
- * those from `DisplayOptionsItem`.
+ * those from `PopoverPanelGroup` and `PopoverPanelGroupItem`.
  *
  * The toolbar owns the trigger and anchors the panel to whichever control it
  * rendered — the button in the row, or the action's row in the overflow menu —
@@ -42,19 +42,21 @@ export const useDisplayOptionsAction = ({
       <>
         {children}
 
-        <DisplayOptionsItem className="justify-end">
-          <TypographyLink
-            brand="info"
-            typographyType="body-sm"
-            variant="secondary"
-            onClick={() => {
-              onReset();
-              close();
-            }}
-          >
-            {resetLabel ?? t("Reset to default")}
-          </TypographyLink>
-        </DisplayOptionsItem>
+        <PopoverPanelGroup>
+          <PopoverPanelGroupItem className="justify-end">
+            <TypographyLink
+              brand="info"
+              typographyType="body-sm"
+              variant="secondary"
+              onClick={() => {
+                onReset();
+                close();
+              }}
+            >
+              {resetLabel ?? t("Reset to default")}
+            </TypographyLink>
+          </PopoverPanelGroupItem>
+        </PopoverPanelGroup>
       </>
     ),
   };

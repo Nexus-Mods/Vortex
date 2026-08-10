@@ -65,7 +65,12 @@ const ToolbarOverflowMenu = ({
   };
 
   return (
-    <div aria-label={label} className="flex flex-col" role="menu" onKeyDown={handleKeyDown}>
+    <div
+      aria-label={label}
+      className="flex flex-col gap-y-0.5"
+      role="menu"
+      onKeyDown={handleKeyDown}
+    >
       {actions.map((action, index) => (
         <ToolbarOverflowItem
           action={action}

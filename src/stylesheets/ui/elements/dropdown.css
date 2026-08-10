@@ -10,9 +10,10 @@
         flex-direction: column;
         box-shadow: var(--shadow-md);
         z-index: var(--z-index-dropdown);
-        padding: calc(var(--spacing) * 1);
-        max-width: calc(var(--spacing) * 72);
+        row-gap: calc(var(--spacing) * 0.5);
         min-width: calc(var(--spacing) * 52);
+        max-width: calc(var(--spacing) * 72) !important;
+        padding-block: calc(var(--spacing) * 1);
         --anchor-max-height: calc(var(--spacing) * 128);
         border-radius: var(--radius-sm);
         border: 1px solid var(--color-stroke-weak);
@@ -41,14 +42,14 @@
     }
 
     .nxm-dropdown-item {
-        width: 100%;
         display: flex;
+        flex-shrink: 0;
         align-items: center;
-
+        height: calc(var(--spacing) * 8);
         column-gap: calc(var(--spacing) * 3);
-        color: var(--color-neutral-moderate);
+        color: var(--color-neutral-subdued);
         border-radius: var(--radius-sm);
-        padding-block: calc(var(--spacing) * 1.5);
+        margin-inline: calc(var(--spacing) * 1);
         padding-inline: calc(var(--spacing) * 3);
 
         transition-property:
@@ -73,8 +74,12 @@
         }
 
         .nxm-dropdown-item-label {
+            min-width: 0;
             flex-grow: 1;
+            overflow: hidden;
             text-align: left;
+            white-space: nowrap;
+            text-overflow: ellipsis;
             font-size: var(--text-body-sm);
             line-height: var(--text-body-sm--line-height);
             letter-spacing: var(--text-body-sm--letter-spacing);
