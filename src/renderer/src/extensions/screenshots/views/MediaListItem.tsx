@@ -9,7 +9,10 @@ interface IMediaListItemProps {
 
 export default function MediaListItem({ item, onClick }: IMediaListItemProps) {
   return (
-    <div onClick={onClick}>
+    <div
+      className="border-inside flex size-full items-center justify-center rounded-sm border-2 border-transparent hover:border-white/70"
+      onClick={onClick}
+    >
       {item.type === "image" && <img key={item.id} src={item.thumbnailPath ?? item.path} />}
 
       {item.type === "video" && (
