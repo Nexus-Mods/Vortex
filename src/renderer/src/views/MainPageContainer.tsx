@@ -88,7 +88,13 @@ interface IErrorFallbackProps {
   onRetry: () => void;
 }
 
-const ErrorFallback: FC<IErrorFallbackProps> = ({ pageId, classes, error, errorInfo, onRetry }) => {
+const ErrorFallback: FC<React.PropsWithChildren<IErrorFallbackProps>> = ({
+  pageId,
+  classes,
+  error,
+  errorInfo,
+  onRetry,
+}) => {
   const { t } = useTranslation(["common"]);
   const context = useMainContext();
 
@@ -129,7 +135,11 @@ ComponentStack:
   );
 };
 
-export const MainPageContainer: React.FC<IBaseProps> = ({ page, active, secondary }) => {
+export const MainPageContainer: React.FC<React.PropsWithChildren<IBaseProps>> = ({
+  page,
+  active,
+  secondary,
+}) => {
   const { t } = useTranslation(["common"]);
   const [headerRef, setHeaderRef] = useState<HTMLElement | null>(null);
 
@@ -158,19 +168,29 @@ export const MainPageContainer: React.FC<IBaseProps> = ({ page, active, secondar
   let content: JSX.Element;
   try {
     const props = page.propsFunc();
-    content = (
-      <PageHeaderProvider value={headerContextValue}>
-        <div className={classes.join(" ")} id={`page-${page.id}`}>
-          <div className="mainpage-header-container" ref={handleHeaderRef} />
+    if (page.newLayout) {
+      // Redesigned pages render their own Page, so we skip the legacy
+      // `.main-page` / header / body-container chrome to keep the subtree flat.
+      content = (
+        <ExtensionGate id={page.id}>
+          <page.component active={active} pageId={page.id} secondary={secondary} {...props} />
+        </ExtensionGate>
+      );
+    } else {
+      content = (
+        <PageHeaderProvider value={headerContextValue}>
+          <div className={classes.join(" ")} id={`page-${page.id}`}>
+            <div className="mainpage-header-container" ref={handleHeaderRef} />
 
-          <div className="mainpage-body-container">
-            <ExtensionGate id={page.id}>
-              <page.component active={active} secondary={secondary} {...props} />
-            </ExtensionGate>
+            <div className="mainpage-body-container">
+              <ExtensionGate id={page.id}>
+                <page.component active={active} secondary={secondary} {...props} />
+              </ExtensionGate>
+            </div>
           </div>
-        </div>
-      </PageHeaderProvider>
-    );
+        </PageHeaderProvider>
+      );
+    }
   } catch (err) {
     log("warn", "error rendering extension main page", err);
     content = (

@@ -1,76 +1,81 @@
-import update from "immutability-helper";
 import { generate as shortid } from "shortid";
 
-import * as actions from "../actions/notifications";
-import type { IReducerSpec } from "../types/IExtensionContext";
-import type { INotification } from "../types/INotification";
-import { getSafe, pushSafe, removeValueIf, setSafe } from "../util/storeHelper";
+import {
+  addDialog,
+  dismissDialog,
+  startNotification,
+  stopAllNotifications,
+  stopNotification,
+  updateNotification,
+} from "../actions/notifications";
+import type { INotificationState } from "../types/IState";
+import { actionsToReducerSpec } from "./builder";
 
-/**
- * reducer for changes to notifications
- */
-export const notificationsReducer: IReducerSpec = {
-  reducers: {
-    [actions.startNotification as any]: (state, payload) => {
-      if (payload == null || typeof payload !== "object") {
-        return state;
-      }
-      let temp = state;
-      const statePath = payload.type === "global" ? ["global_notifications"] : ["notifications"];
-      if (payload.id === undefined) {
-        payload.id = shortid();
-      } else {
-        const existing = getSafe(state, statePath, Array<INotification>()).find(
-          (noti) => noti.id === payload.id,
-        );
-        if (existing !== undefined) {
-          // don't update creation time if we're updating an existing notification
-          payload.createdTime = existing.createdTime;
-          temp = removeValueIf(state, statePath, (noti) => noti.id === payload.id);
-        } else {
-          temp = state;
-        }
-      }
-      return pushSafe(temp, statePath, payload);
-    },
-    [actions.updateNotification as any]: (state, payload) => {
-      if (payload?.id == null) {
-        return state;
-      }
-      const idx = state.notifications.findIndex((noti) => noti.id === payload.id);
-      if (idx === -1) {
-        return state;
-      }
-
-      return setSafe(
-        setSafe(state, ["notifications", idx, "progress"], payload.progress),
-        ["notifications", idx, "message"],
-        payload.message,
-      );
-    },
-    [actions.stopNotification as any]: (state, payload) => {
-      return removeValueIf(
-        removeValueIf(state, ["notifications"], (noti) => noti.id === payload),
-        ["global_notifications"],
-        (noti) => noti.id === payload,
-      );
-    },
-    [actions.stopAllNotifications as any]: (state) => {
-      return update(state, {
-        notifications: { $set: [] },
-        global_notifications: { $set: [] },
-      });
-    },
-    [actions.addDialog as any]: (state, payload) => {
-      return update(state, { dialogs: { $unshift: [payload] } });
-    },
-    [actions.dismissDialog as any]: (state, payload) => {
-      return removeValueIf(state, ["dialogs"], (dialog) => dialog.id === payload);
-    },
-  },
-  defaults: {
-    notifications: [],
-    global_notifications: [],
-    dialogs: [],
-  },
+const actions = {
+  startNotification,
+  updateNotification,
+  stopNotification,
+  stopAllNotifications,
+  addDialog,
+  dismissDialog,
 };
+
+const defaultState: INotificationState = {
+  notifications: [],
+  global_notifications: [],
+  dialogs: [],
+};
+
+export const notificationsReducer = actionsToReducerSpec(defaultState, actions, {
+  startNotification: (state, payload) => {
+    if (payload == null || typeof payload !== "object") {
+      return state;
+    }
+    const listKey = payload.type === "global" ? "global_notifications" : "notifications";
+    const list = state[listKey];
+
+    if (payload.id === undefined) {
+      payload.id = shortid();
+      return { ...state, [listKey]: [...list, payload] };
+    }
+
+    const existing = list.find((iter) => iter.id === payload.id);
+    if (existing === undefined) {
+      return { ...state, [listKey]: [...list, payload] };
+    }
+
+    // don't update creation time if we're updating an existing notification
+    payload.createdTime = existing.createdTime;
+    return {
+      ...state,
+      [listKey]: [...list.filter((iter) => iter.id !== payload.id), payload],
+    };
+  },
+  updateNotification: (state, payload) => {
+    if (payload?.id == null) {
+      return state;
+    }
+    const idx = state.notifications.findIndex((noti) => noti.id === payload.id);
+    if (idx === -1) {
+      return state;
+    }
+
+    return {
+      ...state,
+      notifications: state.notifications.map((noti, i) =>
+        i === idx ? { ...noti, progress: payload.progress, message: payload.message } : noti,
+      ),
+    };
+  },
+  stopNotification: (state, payload) => ({
+    ...state,
+    notifications: state.notifications.filter((noti) => noti.id !== payload),
+    global_notifications: state.global_notifications.filter((noti) => noti.id !== payload),
+  }),
+  stopAllNotifications: (state) => ({ ...state, notifications: [], global_notifications: [] }),
+  addDialog: (state, payload) => ({ ...state, dialogs: [payload, ...state.dialogs] }),
+  dismissDialog: (state, payload) => ({
+    ...state,
+    dialogs: state.dialogs.filter((dialog) => dialog.id !== payload),
+  }),
+});

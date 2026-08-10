@@ -45,7 +45,6 @@ export const JumpToPage = ({
         max={totalPages}
         min={1}
         pattern="[0-9]*"
-        size="sm"
         type="number"
         value={page}
         onChange={(e) => {

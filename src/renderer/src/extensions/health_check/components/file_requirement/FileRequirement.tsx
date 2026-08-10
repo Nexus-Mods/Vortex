@@ -5,47 +5,42 @@ import {
   mdiMonitorArrowDownVariant,
 } from "@mdi/js";
 import React, { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Icon } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
+import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-/** Display data for one file in a requirement — a download candidate or an installed file. */
-export interface IFileRequirementData {
-  /** Composite file version id, used by the action handlers. */
-  fileUID: string;
-  adultContent: boolean;
-  modName: string;
-  modDescription: string;
-  modImageSrc: string;
-  fileName: string;
-  fileVersion: string;
-  /** Whether this file is installed (false for a download candidate). */
-  installed: boolean;
-  /** Whether this installed file is enabled (ignored when not installed). */
-  enabled: boolean;
-}
+import type { IFileRequirementData } from "../../utils/fileRequirements/cardHelpers";
+import { Divider } from "../divider/Divider";
 
 interface IFileRequirementProps {
   actions?: ReactNode;
   file: IFileRequirementData;
+  fileIconPath?: string;
+  hideImage?: boolean;
   isOr?: boolean;
-  /** Open the mod page (web). When set, the thumbnail and mod name become links. */
+  showMod?: boolean;
   onOpenMod?: () => void;
-  /** Open the file page (web). When set, the file name becomes a link. */
   onOpenFile?: () => void;
 }
 
 export function FileRequirement({
   actions,
   file,
+  fileIconPath = mdiFileOutline,
+  hideImage = false,
   isOr,
+  showMod = true,
   onOpenMod,
   onOpenFile,
 }: IFileRequirementProps) {
+  const { t } = useTranslation("health_check");
+
   const modImage = (
     <AdultAwareImage
       alt={file.modName}
@@ -59,103 +54,113 @@ export function FileRequirement({
   return (
     <div
       className={joinClasses([
-        "group/file relative",
-        isOr
-          ? "border-b-stroke-weak not-last:mb-6 not-last:border-b not-last:pb-6"
-          : "not-last:mb-4",
+        "group/file relative px-6",
+        isOr ? "not-last:mb-8 not-last:pb-8" : "not-last:mb-4",
       ])}
     >
-      <div className="mb-px flex items-center gap-x-4 rounded-t-sm bg-surface-mid p-2">
-        {onOpenMod ? (
-          <button className="shrink-0" type="button" onClick={onOpenMod}>
-            {modImage}
-          </button>
-        ) : (
-          modImage
-        )}
-
-        <div className="max-w-xl space-y-0.5">
-          <div className="flex items-center gap-x-2">
-            {onOpenMod ? (
-              <button className="text-left hover:underline" type="button" onClick={onOpenMod}>
-                <Typography appearance="moderate">{file.modName}</Typography>
+      {showMod && (
+        <div
+          className={joinClasses([
+            "mb-px flex items-center gap-x-4 rounded-t-sm bg-surface-mid",
+            hideImage ? "p-4" : "p-2",
+          ])}
+        >
+          {!hideImage &&
+            (onOpenMod ? (
+              <button className="shrink-0" type="button" onClick={onOpenMod}>
+                {modImage}
               </button>
             ) : (
-              <Typography appearance="moderate">{file.modName}</Typography>
-            )}
+              modImage
+            ))}
 
-            {file.adultContent && (
-              <>
-                <Bullet />
+          <div className="max-w-xl space-y-0.5">
+            <div className="flex items-center gap-x-2">
+              {onOpenMod ? (
+                <TypographyLink appearance="moderate" variant="secondary" onClick={onOpenMod}>
+                  {file.modName}
+                </TypographyLink>
+              ) : (
+                <Typography appearance="moderate">{file.modName}</Typography>
+              )}
 
-                <Typography brand="danger" typographyType="body-sm">
-                  Adult
-                </Typography>
-              </>
-            )}
+              {file.adultContent && (
+                <>
+                  <Bullet />
+
+                  <Typography brand="danger" typographyType="body-sm">
+                    {t("detail::item::adult")}
+                  </Typography>
+                </>
+              )}
+            </div>
+
+            <Typography appearance="subdued" className="line-clamp-2" typographyType="body-sm">
+              {file.modDescription}
+            </Typography>
           </div>
-
-          <Typography appearance="subdued" className="line-clamp-2" typographyType="body-sm">
-            {file.modDescription}
-          </Typography>
         </div>
-      </div>
+      )}
 
-      <div className="flex items-center justify-between gap-x-2 rounded-b-sm bg-surface-mid px-4 py-3">
+      <div
+        className={joinClasses([
+          "flex items-center justify-between gap-x-12 bg-surface-mid px-4 py-3",
+          showMod ? "rounded-b-sm" : "rounded-sm",
+        ])}
+      >
         <Typography
           appearance="subdued"
           as="div"
           className="flex min-w-0 items-center gap-x-1.5"
           typographyType="body-sm"
         >
-          <Icon path={mdiFileOutline} size="sm" />
+          <Icon path={fileIconPath} size="sm" />
 
           {onOpenFile ? (
-            <button
-              className="truncate text-left hover:underline"
-              type="button"
+            <TypographyLink
+              appearance="subdued"
+              className="min-w-0"
+              customContent={<span className="truncate">{file.fileName}</span>}
+              typographyType="inherit"
+              variant="secondary"
               onClick={onOpenFile}
-            >
-              {file.fileName}
-            </button>
+            />
           ) : (
             <div className="truncate">{file.fileName}</div>
           )}
 
-          <div className="shrink-0">{file.fileVersion}</div>
+          {!!file.fileVersion && (
+            <>
+              <Bullet />
+
+              <div className="shrink-0">{file.fileVersion}</div>
+            </>
+          )}
         </Typography>
 
         <div className="flex items-center gap-x-2">
           {file.installed && (
             <>
-              <Pill iconPath={mdiMonitorArrowDownVariant}>Installed</Pill>
+              <Pill iconPath={mdiMonitorArrowDownVariant}>{t("detail::item::installed")}</Pill>
 
               {file.enabled ? (
                 <Pill iconPath={mdiCheckCircleOutline} pillType="success">
-                  Enabled
+                  {t("detail::item::enabled")}
                 </Pill>
               ) : (
-                <Pill iconPath={mdiCloseCircleOutline}>Disabled</Pill>
+                <Pill iconPath={mdiCloseCircleOutline}>{t("detail::item::disabled")}</Pill>
               )}
+
+              {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}
             </>
           )}
-
-          {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}
 
           {actions}
         </div>
       </div>
 
       {isOr && (
-        <Typography
-          appearance="moderate"
-          as="div"
-          brand="neutral-translucent"
-          className="absolute -bottom-2 left-4.5 bg-surface-low px-3 font-semibold group-last/file:hidden"
-          typographyType="body-sm"
-        >
-          or
-        </Typography>
+        <Divider className="absolute inset-x-0 -bottom-2 h-5 group-last/file:hidden" variant="or" />
       )}
     </div>
   );

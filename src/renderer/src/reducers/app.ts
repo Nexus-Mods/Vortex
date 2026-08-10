@@ -1,40 +1,95 @@
-import { app } from "electron";
-
 import * as actions from "../actions/app";
-import type { IReducerSpec } from "../types/IExtensionContext";
-import { deleteOrNop, pushSafe, setSafe } from "../util/storeHelper";
+import type { IApp } from "../types/IState";
+import { actionsToReducerSpec } from "./builder";
 
-export const appReducer: IReducerSpec = {
-  reducers: {
-    [actions.setStateVersion as any]: (state, payload) => setSafe(state, ["version"], payload),
-    [actions.setApplicationVersion as any]: (state, payload) =>
-      setSafe(state, ["appVersion"], payload),
-    [actions.setExtensionEnabled as any]: (state, payload) =>
-      setSafe(state, ["extensions", payload.extensionId, "enabled"], payload.enabled),
-    [actions.setExtensionVersion as any]: (state, payload) =>
-      setSafe(state, ["extensions", payload.extensionId, "version"], payload.version),
-    [actions.setExtensionEndorsed as any]: (state, payload) =>
-      setSafe(state, ["extensions", payload.extensionId, "endorsed"], payload.endorsed),
-    [actions.removeExtension as any]: (state, payload) =>
-      setSafe(state, ["extensions", payload, "remove"], true),
-    [actions.forgetExtension as any]: (state, payload) =>
-      deleteOrNop(state, ["extensions", payload]),
-    [actions.setInstanceId as any]: (state, payload) => setSafe(state, ["instanceId"], payload),
-    [actions.setWarnedAdmin as any]: (state, payload) => setSafe(state, ["warnedAdmin"], payload),
-    [actions.setInstallType as any]: (state, payload) => setSafe(state, ["installType"], payload),
-    [actions.completeMigration as any]: (state, payload) =>
-      pushSafe(state, ["migrations"], payload),
+const defaultState: IApp = {
+  instanceId: undefined,
+  version: "",
+  appVersion: "",
+  extensions: {},
+  warnedAdmin: 0,
+  migrations: [],
+  installType: "regular",
+};
+
+export const appReducer = actionsToReducerSpec(
+  defaultState,
+  actions,
+  {
+    setStateVersion: (state, payload) => ({ ...state, version: payload }),
+    setApplicationVersion: (state, payload) => ({ ...state, appVersion: payload }),
+    addExtension: (state, payload) => {
+      const { extensionId, info } = payload;
+      const existing = state.extensions[extensionId];
+      return {
+        ...state,
+        extensions: {
+          ...state.extensions,
+          [extensionId]: {
+            ...existing,
+            name: info.name,
+            version: info.version,
+            author: info.author,
+            description: info.description,
+            path: info.path,
+            modId: info.modId,
+            fileId: info.fileId,
+            type: info.type,
+            bundled: info.bundled,
+          },
+        },
+      };
+    },
+    setExtensionEnabled: (state, payload) => ({
+      ...state,
+      extensions: {
+        ...state.extensions,
+        [payload.extensionId]: {
+          ...state.extensions[payload.extensionId],
+          enabled: payload.enabled,
+        },
+      },
+    }),
+    setExtensionVersion: (state, payload) => ({
+      ...state,
+      extensions: {
+        ...state.extensions,
+        [payload.extensionId]: {
+          ...state.extensions[payload.extensionId],
+          version: payload.version,
+        },
+      },
+    }),
+    setExtensionEndorsed: (state, payload) => ({
+      ...state,
+      extensions: {
+        ...state.extensions,
+        [payload.extensionId]: {
+          ...state.extensions[payload.extensionId],
+          endorsed: payload.endorsed,
+        },
+      },
+    }),
+    removeExtension: (state, payload) => ({
+      ...state,
+      extensions: {
+        ...state.extensions,
+        [payload]: { ...state.extensions[payload], remove: true },
+      },
+    }),
+    forgetExtension: (state, payload) => {
+      const { [payload]: _, ...extensions } = state.extensions;
+      return { ...state, extensions };
+    },
+    setInstanceId: (state, payload) => ({ ...state, instanceId: payload }),
+    setWarnedAdmin: (state, payload) => ({ ...state, warnedAdmin: payload }),
+    setInstallType: (state, payload) => ({ ...state, installType: payload }),
+    completeMigration: (state, payload) => ({
+      ...state,
+      migrations: [...state.migrations, payload],
+    }),
   },
-  defaults: {
-    instanceId: undefined,
-    version: "",
-    appVersion: "",
-    extensions: {},
-    warnedAdmin: 0,
-    migrations: [],
-    installType: "official",
-  },
-  verifiers: {
+  {
     instanceId: {
       description: () => "No instance id set",
       type: "string",
@@ -52,4 +107,4 @@ export const appReducer: IReducerSpec = {
       noUndefined: true,
     },
   },
-};
+);

@@ -46,7 +46,7 @@ export interface ICollectionProgressProps {
   downloads: { [dlId: string]: IDownload };
   profile: IProfile;
   totalSize: number;
-  activity: { [id: string]: string };
+  activity: { [id: string]: string[] };
   onCancel: () => void;
   onPause: () => void;
   onResume: () => void;

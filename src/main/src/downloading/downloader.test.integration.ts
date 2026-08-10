@@ -10,10 +10,10 @@ import { RateLimiter } from "limiter";
 import { CookieJar } from "tough-cookie";
 import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
+import { defaultRetryStrategy } from "../transfer/retry";
 import { download, type TimeoutOptions } from "./downloader";
 import { ProgressReporter } from "./progress";
 import { urlResolver } from "./resolver";
-import { defaultRetryStrategy } from "./retry";
 import {
   type TestServer,
   type RequestHandler,

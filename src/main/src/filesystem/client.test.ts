@@ -1,5 +1,5 @@
 import type { Status } from "@nexusmods/adaptor-api/fs";
-import { FileSystemError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { describe, expect, it, vi } from "vitest";
 
 import type { FileSystemSendFn } from "./client";
@@ -76,26 +76,6 @@ describe("createFileSystemClient", () => {
   });
 
   describe("error rehydration", () => {
-    it("rehydrates FileSystemError with code and isTransient", async () => {
-      const send: FileSystemSendFn = () => {
-        // Simulate what the transport produces on the receiving end:
-        // a generic Error whose name/code/isTransient have been copied
-        // back onto the prototype by the structured envelope.
-        const err = new Error("Failed to read file '/x': file does not exist");
-        err.name = "FileSystemError";
-        Object.assign(err, { code: "not found", isTransient: false });
-        return Promise.reject(err);
-      };
-      const fs = createFileSystemClient(send);
-
-      await expect(fs.readFile(FILE)).rejects.toMatchObject({
-        name: "FileSystemError",
-        code: "not found",
-        isTransient: false,
-      });
-      await expect(fs.readFile(FILE)).rejects.toBeInstanceOf(FileSystemError);
-    });
-
     it("passes through non-FileSystemError errors unchanged", async () => {
       const sentinel = new Error("unexpected");
       const send: FileSystemSendFn = () => Promise.reject(sentinel);

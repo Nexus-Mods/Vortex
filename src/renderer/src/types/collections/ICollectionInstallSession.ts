@@ -60,6 +60,13 @@ export interface ICollectionInstallSession {
   failedCount: number;
   /** Number of optional mods skipped */
   ignoredCount: number;
+  /**
+   * Set when the stall watchdog force-resolved this session: remaining members were settled as
+   * failed by the watchdog rather than by their own install attempts, so the install did not
+   * genuinely finish. Drives the "installation incomplete" presentation and the failed outcome;
+   * cleared when a new install round starts on the session.
+   */
+  stalled?: boolean;
 }
 
 export interface ICollectionInstallState {

@@ -1,12 +1,16 @@
-import { Menu } from "@headlessui/react";
-import { mdiDotsVertical } from "@mdi/js";
+import { MenuButton } from "@headlessui/react";
+import { mdiDotsHorizontal } from "@mdi/js";
 import React, { type HTMLAttributes } from "react";
 
 import { Button, type IButtonBrand } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
+
+import { ToolbarButton } from "./ToolbarButton";
+import { useToolbarOverflow } from "./useToolbarOverflow.hook";
 
 export interface IToolbarAction {
   label: string;
@@ -15,66 +19,84 @@ export interface IToolbarAction {
   disabled?: boolean;
   brand?: IButtonBrand;
   showLabel?: boolean;
+  testId?: string;
+  isLoading?: boolean;
+  pinned?: boolean;
 }
 
-export type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   actions: IToolbarAction[];
-  /**
-   * Maximum number of slots to show before collapsing the tail into a kebab
-   * dropdown. When there are more actions than this, the last slot becomes the
-   * kebab and every remaining action moves into it. Pass `null` to disable
-   * collapsing and always render every action.
-   */
-  maxVisible?: number | null;
+  maxVisible?: number;
 };
 
 /**
- * A rounded "pill" cluster of related toolbar controls sharing a single raised
- * surface. Renders up to `max` slots; any overflow collapses into a kebab
- * dropdown occupying the final slot.
+ * Identity of everything about the actions that affects how wide they render:
+ * the count, whether each has an icon, and any label shown as visible text.
+ * Colon-separated and count-prefixed like the row's signature, so two different
+ * action lists can't produce the same string and reuse each other's widths.
  */
-export const ToolbarGroup = ({
-  actions,
-  className,
-  maxVisible = 7,
-  ...props
-}: IToolbarGroupProps) => {
-  const overflows = maxVisible != null && actions.length > maxVisible;
-  const visible = overflows ? actions.slice(0, maxVisible - 1) : actions;
-  const hidden = overflows ? actions.slice(maxVisible - 1) : [];
+const widthSignature = (actions: IToolbarAction[]): string =>
+  [
+    actions.length,
+    ...actions.map(
+      (action) => `${action.iconPath ? "i" : ""}${action.showLabel ? action.label : ""}`,
+    ),
+  ].join(":");
+
+/**
+ * A rounded "pill" cluster of related toolbar controls sharing a single raised
+ * surface. Renders as many actions as fit the width the toolbar has; the rest
+ * collapse into a kebab dropdown occupying the final slot. A `pinned` action is
+ * held back from that, whatever its position.
+ */
+export const ToolbarGroup = ({ actions, className, maxVisible, ...props }: IToolbarGroupProps) => {
+  const { groupRef, isMeasuring, visible } = useToolbarOverflow({
+    maxVisible,
+    pinned: actions.map((action) => action.pinned ?? false),
+    signature: widthSignature(actions),
+  });
+
+  const visibleActions = actions.filter((_, index) => visible.has(index));
+  const hiddenActions = actions.filter((_, index) => !visible.has(index));
 
   return (
-    <div className={joinClasses(["nxm-toolbar-group", className])} {...props}>
-      {visible.map((action) => (
-        <Button
+    <TooltipDelayGroup
+      as="div"
+      className={joinClasses(["nxm-toolbar-group", className])}
+      ref={groupRef}
+      {...props}
+    >
+      {visibleActions.map((action) => (
+        <ToolbarButton
           appearance="weak"
-          aria-label={!action.showLabel ? action.label : undefined}
           brand={action.brand ?? "neutral"}
+          data-testid={action.testId}
           disabled={action.disabled}
+          isLoading={action.isLoading}
           key={action.label}
+          label={action.label}
           leftIconPath={action.iconPath}
-          size="sm"
+          showLabel={action.showLabel}
           onClick={action.onClick}
-        >
-          {action.showLabel ? action.label : undefined}
-        </Button>
+        />
       ))}
 
-      {!!hidden.length && (
+      {/* Kept mounted through the measuring pass so its width is measured too. */}
+      {(isMeasuring || !!hiddenActions.length) && (
         <Dropdown>
-          <Menu.Button
+          <MenuButton
             appearance="weak"
             aria-label="More actions"
             as={Button}
             brand="neutral"
-            leftIconPath={mdiDotsVertical}
+            leftIconPath={mdiDotsHorizontal}
             size="sm"
           />
 
-          <DropdownItems className="right-0 left-auto">
-            {hidden.map((action) => (
+          <DropdownItems>
+            {hiddenActions.map((action) => (
               <DropdownItem
-                disabled={action.disabled}
+                disabled={action.disabled || action.isLoading}
                 key={action.label}
                 leftIconPath={action.iconPath}
                 onClick={action.onClick}
@@ -85,6 +107,6 @@ export const ToolbarGroup = ({
           </DropdownItems>
         </Dropdown>
       )}
-    </div>
+    </TooltipDelayGroup>
   );
 };

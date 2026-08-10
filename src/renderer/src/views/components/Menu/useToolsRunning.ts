@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
-import { makeExeId } from "../../../reducers/session";
+import { hasExclusiveToolRunning, isExeRunning } from "../../../reducers/session";
 import type { IState } from "../../../types/IState";
 
 export interface UseToolsRunningResult {
@@ -16,17 +16,12 @@ export interface UseToolsRunningResult {
 export const useToolsRunning = (): UseToolsRunningResult => {
   const toolsRunning = useSelector((state: IState) => state.session.base.toolsRunning);
 
-  const exclusiveRunning = useMemo(() => {
-    return Object.keys(toolsRunning).some((exeId) => toolsRunning[exeId].exclusive);
-  }, [toolsRunning]);
+  const exclusiveRunning = useMemo(() => hasExclusiveToolRunning(toolsRunning), [toolsRunning]);
 
-  const isToolRunning = useMemo(() => {
-    return (toolExePath: string): boolean => {
-      if (!toolExePath) return false;
-      const exeId = makeExeId(toolExePath);
-      return toolsRunning[exeId] !== undefined;
-    };
-  }, [toolsRunning]);
+  const isToolRunning = useMemo(
+    () => (toolExePath: string) => isExeRunning(toolsRunning, toolExePath),
+    [toolsRunning],
+  );
 
   return { exclusiveRunning, isToolRunning };
 };

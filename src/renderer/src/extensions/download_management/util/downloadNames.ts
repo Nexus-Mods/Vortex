@@ -1,3 +1,4 @@
+import { access } from "node:fs/promises";
 import * as path from "path";
 
 import type { IDownload } from "../types/IDownload";
@@ -46,4 +47,21 @@ export function friendlyDownloadName(download: IDownload): string | undefined {
 
   // Fall back to the temp name so sort/filter stay stable before metadata resolves.
   return friendly ?? localPath;
+}
+
+/**
+ * Returns fileName if it is free in dlPath, otherwise a timestamped variant ("name.<ms>.ext"), so an
+ * existing download is never overwritten.
+ */
+export async function freeDownloadName(dlPath: string, fileName: string): Promise<string> {
+  const taken = await access(path.join(dlPath, fileName)).then(
+    () => true,
+    () => false,
+  );
+  if (!taken) {
+    return fileName;
+  }
+  const ext = path.extname(fileName);
+  const base = path.basename(fileName, ext);
+  return `${base}.${Date.now()}${ext}`;
 }

@@ -21,6 +21,7 @@ import type {
   IModFileContentSearchFilter,
   IPreferenceQuery,
   IPreference,
+  RatingOptions,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
@@ -37,7 +38,6 @@ import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErr
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import { calcDuration, showError } from "../../util/message";
-import { upload } from "../../util/network";
 import opn from "../../util/opn";
 import {
   activeGameId,
@@ -65,7 +65,6 @@ import {
   ensureLoggedIn,
   graphErrorContext,
   handleGraphError,
-  nexusGamesProm,
   processErrorMessage,
   resolveGraphError,
   startDownload,
@@ -80,11 +79,12 @@ import {
   FULL_COLLECTION_INFO,
   FULL_REVISION_INFO,
   COLLECTION_SEARCH_QUERY,
-  MOD_REQUIREMENTS_INFO,
+  getModRequirementsInfo,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
-import { makeModUID } from "./util/UIDs";
+import type { SubmitCollectionOptions } from "./util_v3/submitCollectionV3";
+import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -812,8 +812,8 @@ interface IRateRevisionResult {
 export function onRateRevision(
   api: IExtensionApi,
   nexus: Nexus,
-): (revisionId: number, rating: number) => Bluebird<IRateRevisionResult> {
-  return (revisionId: number, rating: any): Bluebird<IRateRevisionResult> => {
+): (revisionId: number, rating: RatingOptions) => Bluebird<IRateRevisionResult> {
+  return (revisionId: number, rating: RatingOptions): Bluebird<IRateRevisionResult> => {
     return Bluebird.resolve(nexus.rateRevision(revisionId, rating)).catch((err) => {
       reportRateError(api, err, revisionId);
       return Bluebird.resolve({ success: false });
@@ -887,115 +887,63 @@ export function onGetModInfo(
 }
 
 /**
- * Fetches mod requirements (dependencies) from the Nexus Mods API.
- * Uses modsByUid to fetch mod data with nested modRequirements field.
- * Supports fetching multiple mods in a single API call for efficiency.
+ * Fetches mod requirements (dependencies) for the given mod UIDs. The result is
+ * keyed by UID, which keeps mods from different games distinct in one batch.
  *
- * @param api - The extension API
  * @param nexus - The Nexus API client
- * @returns A function that accepts gameId and modIds and returns a map of modId to requirements
- *
+ * @returns A function mapping mod UIDs to their requirements
  */
 export function onGetModRequirements(
-  api: IExtensionApi,
   nexus: Nexus,
-): (gameId: string, modIds: number[]) => Bluebird<{ [modId: number]: Partial<IModRequirements> }> {
-  return (gameId: string, modIds: number[]) => {
-    const state = api.getState();
-    const game = gameById(state, gameId);
-    const nexusGameDomain = nexusGameId(game, gameId) || gameId;
-
-    if (modIds.length === 0) {
+): (uids: string[]) => Bluebird<{ [uid: string]: Partial<IModRequirements> }> {
+  return (uids: string[]) => {
+    if (uids.length === 0) {
       return Bluebird.resolve({});
     }
 
     return Bluebird.resolve(
-      (async () => {
-        // makeModUID needs the nexus games list to map domain -> numeric game id.
-        // This should've been done on startup, but there appears to be
-        // a race condition https://github.com/Nexus-Mods/Vortex/issues/22466
-        await nexusGamesProm();
-
-        // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
-        // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
-        const validUids: string[] = [];
-
-        for (const modId of modIds) {
-          const modUid = makeModUID({
-            gameId,
-            modId: modId.toString(),
-            fileId: "0", // Not needed for mod UID but required by interface
-          });
-
-          if (modUid) {
-            validUids.push(modUid);
-          } else {
-            log("warn", "Failed to create mod UID for requirements lookup", {
-              gameId: nexusGameDomain,
-              modId,
-            });
-          }
-        }
-
-        if (validUids.length === 0) {
-          return [];
-        }
-
-        // Query must include modId to map results back to mods
-        return nexus.modsByUid(
-          {
-            modId: true,
-            modRequirements: MOD_REQUIREMENTS_INFO,
-            uid: true,
-            thumbnailUrl: true,
-          },
-          validUids,
-        );
-      })(),
+      nexus.modsByUid(
+        {
+          modRequirements: getModRequirementsInfo(),
+          uid: true,
+        },
+        uids,
+      ),
     )
       .then((mods) => {
-        const result: Record<number, Partial<IModRequirements>> = {};
+        const result: Record<string, Partial<IModRequirements>> = {};
         for (const mod of mods) {
-          if (mod.modId !== undefined) {
-            result[mod.modId] = mod.modRequirements || {
+          if (mod.uid !== undefined) {
+            result[mod.uid] = mod.modRequirements || {
               dlcRequirements: [],
               nexusRequirements: { nodes: [], nodesCount: 0, totalCount: 0 },
               modsRequiringThisMod: { nodes: [], nodesCount: 0, totalCount: 0 },
             };
           }
         }
-
-        const resultKeys = Object.keys(result);
-        log("debug", "onGetModRequirements result", {
-          resultKeys,
-          firstResultValue:
-            resultKeys.length > 0 ? JSON.stringify(result[parseInt(resultKeys[0], 10)]) : null,
+        log("debug", "fetched mod requirements", {
+          requested: uids.length,
+          resolved: Object.keys(result).length,
         });
-
         return result;
       })
       .catch((err) => {
-        const defaultDetails = {
-          gameId: nexusGameDomain,
-          modIds,
-        };
+        const details = { uidCount: uids.length };
         if (err instanceof RateLimitError) {
-          log("warn", "Rate limited when fetching mod requirements", {
-            ...defaultDetails,
-          });
+          log("warn", "Rate limited when fetching mod requirements", details);
         } else if (err instanceof TimeoutError) {
-          log("warn", "Timeout when fetching mod requirements", {
-            ...defaultDetails,
-          });
+          log("warn", "Timeout when fetching mod requirements", details);
         } else {
-          const detail = processErrorMessage(err as NexusError);
           log("warn", "Failed to get mod requirements", {
-            ...defaultDetails,
-            ...detail,
+            ...details,
+            ...processErrorMessage(err as NexusError),
             ...graphErrorContext(err),
           });
         }
-        return Bluebird.resolve({});
+        // Rethrow: resolving to {} made "this mod has no requirements" and "we could not
+        // ask" indistinguishable, so a rate limit or outage was reported to the user as a
+        // clean bill of health. The caller decides what an incomplete run means.
+        return Bluebird.reject(err);
       });
   };
 }
@@ -1185,52 +1133,17 @@ export function onSubmitFeedback(nexus: Nexus) {
   };
 }
 
-function sendCollection(
-  nexus: Nexus,
-  collectionInfo: ICollectionManifest,
-  collectionId: number,
-  uuid: string,
-) {
-  if (collectionId === undefined) {
-    return nexus.createCollection(
-      {
-        adultContent: false,
-        collectionManifest: collectionInfo,
-        collectionSchemaId: 1,
-      },
-      uuid,
-    );
-  } else {
-    return nexus.editCollection(collectionId as any, collectionInfo.info.name).then(() =>
-      nexus.createOrUpdateRevision(
-        {
-          adultContent: false,
-          collectionManifest: collectionInfo,
-          collectionSchemaId: 1,
-        },
-        uuid,
-        collectionId,
-      ),
-    );
-  }
-}
-
-export function onSubmitCollection(nexus: Nexus) {
+export function onSubmitCollection(api: IExtensionApi) {
   return (
     collectionInfo: ICollectionManifest,
     assetFilePath: string,
     collectionId: number,
     callback: (err: Error, response?: any) => void,
+    // Optional: an emitter that neither reports progress nor offers a way to
+    // stop the upload simply omits it.
+    options: SubmitCollectionOptions = {},
   ) => {
-    nexus
-      .getRevisionUploadUrl()
-      .then(({ url, uuid }) => {
-        return fs
-          .statAsync(assetFilePath)
-          .then((stat) => upload(url, fs.createReadStream(assetFilePath), stat.size))
-          .then(() => uuid);
-      })
-      .then((uuid: string) => sendCollection(nexus, collectionInfo, collectionId, uuid))
+    submitCollectionV3(api, collectionInfo, assetFilePath, collectionId || undefined, options)
       .then((response) => callback(null, response))
       .catch((err) => callback(unknownToError(err)));
   };
@@ -1294,19 +1207,18 @@ export function onGetLatestMods(api: IExtensionApi, nexus: Nexus) {
 
 export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
   return (): Bluebird<void> => {
-    // only called from the global menu item
-
-    //const token = getOAuthTokenFromState(api);
+    if (!isLoggedIn(api.getState())) {
+      log("warn", "onRefreshUserInfo() not logged in");
+      return Bluebird.resolve();
+    }
 
     log("info", "onRefreshUserInfo() started");
 
-    // we have an oauth token in state
-    //if(token !== undefined) {
-    // get userinfo from api
     return Bluebird.resolve(nexus.getUserInfo())
       .then((apiUserInfo) => {
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
-        log("info", "onRefreshUserInfo() nexus.getUserInfo response", apiUserInfo);
+        // don't log the response payload: it contains PII (email, age verification, preferences)
+        log("info", "onRefreshUserInfo() user info updated");
       })
       .catch((err) => {
         log("error", `onRefreshUserInfo() nexus.getUserInfo response ${err.message}`, err);
@@ -1314,9 +1226,6 @@ export function onRefreshUserInfo(nexus: Nexus, api: IExtensionApi) {
           allowReport: false,
         });
       });
-    //} else {
-    //  log('warn', 'onRefreshUserInfo() no oauth token');
-    //}
   };
 }
 

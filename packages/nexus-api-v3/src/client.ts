@@ -10,6 +10,12 @@ export interface NexusV3ClientOptions {
   apiKey?: string;
   bearerToken?: string;
   middleware?: Middleware[];
+  /**
+   * Aborts every request made through this client, in flight included. Without one, a
+   * request to an endpoint that accepts the connection and then stops responding never
+   * settles: fetch has no timeout of its own.
+   */
+  signal?: AbortSignal;
 }
 
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
@@ -30,6 +36,7 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
   const client = createClient<paths>({
     baseUrl: options.baseUrl,
     headers,
+    signal: options.signal,
   });
 
   for (const mw of options.middleware ?? []) {
@@ -40,6 +47,11 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
   return {
     ...client,
 
+    /**
+     * Creates a single-part upload session. The returned `presigned_url` is
+     * signed over headers it does not report — see `uploadHeadersFor` for the
+     * values the subsequent PUT has to carry.
+     */
     async createUpload(sizeBytes: number, filename: string) {
       const { data, error, response } = await client.POST("/uploads", {
         body: { size_bytes: sizeBytes, filename },
@@ -48,6 +60,11 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       return data.data;
     },
 
+    /**
+     * Creates a multipart upload session, following the Amazon S3 multipart
+     * specification. Its presigned URLs carry the same unreported signed
+     * headers as `createUpload` — see `uploadHeadersFor`.
+     */
     async createMultipartUpload(sizeBytes: number, filename: string) {
       const { data, error, response } = await client.POST("/uploads/multipart", {
         body: { size_bytes: sizeBytes, filename },
@@ -121,7 +138,7 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       meta: components["schemas"]["PaginationMeta"];
     }> {
       const { data, error, response } = await client.POST(
-        "/mod-file-versions/dependencies/materialized/batch",
+        "/mod-file-versions/dependencies/ranges/materialized/batch",
         { body: { version_ids: [...versionIds], page, page_size: pageSize } },
       );
       if (error) throw toV3Error(error, response);

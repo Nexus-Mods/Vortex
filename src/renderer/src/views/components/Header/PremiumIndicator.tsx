@@ -13,7 +13,7 @@ import { Typography } from "../../../ui/components/typography/Typography";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 
-export const PremiumIndicator: FC = () => {
+export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
 
   const showAd = useSelector(shouldShowPremiumAd);

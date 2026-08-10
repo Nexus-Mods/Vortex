@@ -4,13 +4,14 @@ import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckSessionState } from "./reducers/session";
 import type {
   HealthCheckId,
-  IFileLevelRequirements,
-  IFileRequirementsCheckMetadata,
   IModMissingRequirements,
   IModRequirementsCheckMetadata,
   IModRequirementExt,
-  IModFileInfo,
 } from "./types";
+import type {
+  IFileLevelRequirements,
+  IFileRequirementsCheckMetadata,
+} from "./utils/fileRequirements/mapRequirementsReport";
 
 export type { HealthCheckId } from "./types";
 
@@ -21,8 +22,6 @@ export const healthCheckState = (state: IState): IHealthCheckSessionState =>
   state.session?.healthCheck ?? {
     results: {},
     runningChecks: [],
-    modFiles: {},
-    loadingModFiles: [],
   };
 
 /**
@@ -191,15 +190,3 @@ export const getModHiddenRequirements = (state: IState, modId: number): string[]
  */
 export const feedbackGivenMap = (state: IState): { [modId: number]: string[] } =>
   healthCheckPersistentState(state).feedbackGiven ?? {};
-
-/**
- * Get cached mod files for a specific mod
- */
-export const getModFiles = (state: IState, modId: number): IModFileInfo[] | undefined =>
-  healthCheckState(state).modFiles?.[modId];
-
-/**
- * Check if mod files are currently being loaded
- */
-export const isModFilesLoading = (state: IState, modId: number): boolean =>
-  healthCheckState(state).loadingModFiles?.includes(modId) ?? false;

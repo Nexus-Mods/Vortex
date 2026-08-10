@@ -1,20 +1,7 @@
 @use "sass:color";
-$thumbnail-width: 160px;
 
 #gamepicker-layout {
     text-align: right;
-}
-
-.game-group {
-    display: grid;
-    justify-content: center;
-    grid-template-columns: repeat(auto-fill, $thumbnail-width + $gutter-width);
-
-    > .game-thumbnail {
-        margin: $half-gutter !important;
-        // fill the grid column (overrides the default width below)
-        width: auto;
-    }
 }
 
 .gamepicker-body {
@@ -35,7 +22,8 @@ $thumbnail-width: 160px;
     border: 0;
     // Default width so the aspect-ratio Image box can resolve its height when
     // the tile isn't in the Games-page grid (e.g. dashboard dashlets, which
-    // place it in a plain flex row). The .game-group grid overrides this.
+    // place it in a plain flex row). The .grid-games grid (ui/elements/grid.css)
+    // overrides this via the propped-in `w-full!` class on each tile.
     width: 160px;
 
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.35);

@@ -5,6 +5,8 @@ import type { ThunkDispatch } from "redux-thunk";
 
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Toggle from "../../../controls/Toggle";
+import { TypographyLink } from "../../../ui/components/typography/TypographyLink";
+import opn from "../../../util/opn";
 import { setAnalytics } from "../actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "../constants";
 
@@ -37,13 +39,23 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
             )}
             <br />
             <br />
-            <a href={HELP_ARTICLE} style={{ marginLeft: "0.25rem" }}>
+            <TypographyLink
+              brand="info"
+              onClick={() => {
+                opn(HELP_ARTICLE).catch(() => undefined);
+              }}
+            >
               {t("More about the data we track")}
-            </a>{" "}
+            </TypographyLink>{" "}
             |{" "}
-            <a href={PRIVACY_POLICY} style={{ marginLeft: "0.25rem" }}>
+            <TypographyLink
+              brand="info"
+              onClick={() => {
+                opn(PRIVACY_POLICY).catch(() => undefined);
+              }}
+            >
               {t("Privacy Policy")}
-            </a>
+            </TypographyLink>
           </HelpBlock>
         </FormGroup>
       </form>

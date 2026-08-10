@@ -1,3 +1,4 @@
+import { isClobberedKeySegment } from "@vortex/shared/state";
 import * as _ from "lodash";
 import type { IRule } from "modmeta-db";
 
@@ -17,19 +18,12 @@ import * as actions from "../actions/mods";
 import type { IMod } from "../types/IMod";
 import { referenceEqual } from "../util/testModReference";
 
-// A modId is unusable as a staging-folder name if it was corrupted by an
-// external state clobber - the installationPath self-heal uses this to tell a
-// recoverable key from rubbish. U+FFFD is what a UTF-8 decode
-// of clobbered key bytes yields; anything below U+0020 is a C0 control char.
-// Either means the key can't name a real folder on disk.
+// A modId is unusable as a staging-folder name if it was clobbered by a bad
+// state write: the installationPath self-heal uses this to tell a recoverable
+// key from rubbish. Shares the "clobbered key" predicate with the main-process
+// heal (healInvalidKeys) so both agree on what's recoverable.
 function isUnusableModId(modId: string): boolean {
-  for (let i = 0; i < modId.length; ++i) {
-    const code = modId.charCodeAt(i);
-    if (code === 0xfffd || code < 0x20) {
-      return true;
-    }
-  }
-  return false;
+  return isClobberedKeySegment(modId);
 }
 
 function reduceRule(input: IRule): IRule {

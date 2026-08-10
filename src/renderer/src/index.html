@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <meta
             http-equiv="Content-Security-Policy"
-            content="script-src 'self' 'sha256-MCx+U3fU6hJNKvWqT8cJrZb2MfZlyUfg8oXORz+vn6M='"
+            content="script-src 'self' 'sha256-bFRIEmBXWkB30lOfVGw1yYX8VUoq6PSmi6cNnDehTqU='"
         />
         <title>Vortex</title>
         <link rel="stylesheet" href="assets/css/loadingScreen.css" />
@@ -33,6 +33,10 @@
     </body>
 
     <script>
+        // zod reads config from this global (shared by all copies); mutate the
+        // object zod bound at load, do not replace it. jitless keeps zod off
+        // new Function, which this page's CSP forbids.
+        (globalThis.__zod_globalConfig ??= {}).jitless = true;
         require("./renderer.js");
     </script>
 </html>

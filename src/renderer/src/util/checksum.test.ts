@@ -1,8 +1,3 @@
-import { createHash } from "crypto";
-import * as os from "os";
-import * as path from "path";
-
-import * as fsExtra from "fs-extra";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { checksum, fileMD5 } from "./checksum";
@@ -26,6 +21,7 @@ describe("checksum", () => {
 });
 
 describe("fileMD5", () => {
+  // Buffers are hashed in the renderer (see checksum.ts), so these need no mock.
   it("produces correct MD5 for Buffer inputs", async () => {
     for (const [input, expected] of MD5_VECTORS) {
       const buf = Buffer.from(input, "utf-8");
@@ -41,70 +37,39 @@ describe("fileMD5", () => {
     expect(progress).toHaveBeenCalledWith(buf.length, buf.length);
   });
 
-  describe("file-based hashing", () => {
-    let tmpDir: string;
-    let tmpFile: string;
+  // File paths are delegated to the main-process hash worker over the preload
+  // API; the digest correctness itself is covered by src/main/src/hash/hash.test.ts.
+  // Here we only assert fileMD5 delegates and surfaces the result correctly.
+  describe("file-based hashing (delegates to the hash worker)", () => {
+    const compute = vi.fn();
 
-    beforeEach(async () => {
-      tmpDir = await fsExtra.mkdtemp(path.join(os.tmpdir(), "checksum-test-"));
-      tmpFile = path.join(tmpDir, "test.bin");
+    beforeEach(() => {
+      vi.stubGlobal("window", { api: { hash: { compute } } });
     });
 
-    afterEach(async () => {
-      await fsExtra.remove(tmpDir);
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      compute.mockReset();
     });
 
-    it("produces correct MD5 for a file with known content", async () => {
-      const content = "The quick brown fox jumps over the lazy dog";
-      const expected = createHash("md5").update(content).digest("hex");
-      await fsExtra.writeFile(tmpFile, content);
-
-      const result = await fileMD5(tmpFile);
-      expect(result).toBe(expected);
+    it("passes the algorithm and path to the worker and returns its digest", async () => {
+      compute.mockResolvedValue({ hash: "deadbeef", numBytes: 42 });
+      const result = await fileMD5("/some/archive.bin");
+      expect(compute).toHaveBeenCalledWith("md5", "/some/archive.bin");
+      expect(result).toBe("deadbeef");
     });
 
-    it("produces correct MD5 for an empty file", async () => {
-      await fsExtra.writeFile(tmpFile, "");
-      const result = await fileMD5(tmpFile);
-      expect(result).toBe("d41d8cd98f00b204e9800998ecf8427e");
-    });
-
-    it("produces correct MD5 for binary data", async () => {
-      const buf = Buffer.alloc(256);
-      for (let i = 0; i < 256; i++) buf[i] = i;
-      const expected = createHash("md5").update(buf).digest("hex");
-      await fsExtra.writeFile(tmpFile, buf);
-
-      const result = await fileMD5(tmpFile);
-      expect(result).toBe(expected);
-    });
-
-    it("produces correct MD5 for a large file (1MB)", async () => {
-      const buf = Buffer.alloc(1024 * 1024);
-      for (let i = 0; i < buf.length; i++) buf[i] = i % 256;
-      const expected = createHash("md5").update(buf).digest("hex");
-      await fsExtra.writeFile(tmpFile, buf);
-
-      const result = await fileMD5(tmpFile);
-      expect(result).toBe(expected);
-    });
-
-    it("reports progress for file hashing", async () => {
-      const buf = Buffer.alloc(256 * 1024); // 256KB
-      await fsExtra.writeFile(tmpFile, buf);
+    it("reports completion progress once with the hashed byte count", async () => {
+      compute.mockResolvedValue({ hash: "deadbeef", numBytes: 256 * 1024 });
       const progress = vi.fn();
-
-      await fileMD5(tmpFile, progress);
-
-      expect(progress).toHaveBeenCalled();
-      // Last call should report total bytes equal to file size
-      const lastCall = progress.mock.calls[progress.mock.calls.length - 1];
-      expect(lastCall[0]).toBe(buf.length); // bytesProcessed
-      expect(lastCall[1]).toBe(buf.length); // totalBytes
+      await fileMD5("/some/archive.bin", progress);
+      expect(progress).toHaveBeenCalledTimes(1);
+      expect(progress).toHaveBeenCalledWith(256 * 1024, 256 * 1024);
     });
 
-    it("rejects for non-existent file", async () => {
-      await expect(fileMD5(path.join(tmpDir, "nope.bin"))).rejects.toThrow();
+    it("propagates a worker rejection (e.g. missing file)", async () => {
+      compute.mockRejectedValue(new Error("ENOENT: no such file"));
+      await expect(fileMD5("/nope.bin")).rejects.toThrow("ENOENT");
     });
   });
 });

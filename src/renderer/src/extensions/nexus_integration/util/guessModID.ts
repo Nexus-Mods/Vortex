@@ -246,7 +246,7 @@ export function fillNexusIdByMD5(
               const downloads = api.getState().persistent.downloads.files;
 
               if (info.gameId !== downloads[mod.archiveId].game[0]) {
-                return api.emitAndAwait("set-download-games", mod.archiveId, [
+                return api.emitAndAwait<"set-download-games">("set-download-games", mod.archiveId, [
                   info.gameId,
                   ...downloads[mod.archiveId].game,
                 ]);

@@ -19,15 +19,14 @@
     "extensionName": "Gamebryo BSA Support"
   },
   "devDependencies": {
-    "@types/i18next": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/node": "catalog:",
     "@types/rimraf": "catalog:",
     "bluebird": "catalog:",
     "bsatk": "catalog:",
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
-    "tmp": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "tmp": "catalog:"
   },
   "nx": {
     "tags": [

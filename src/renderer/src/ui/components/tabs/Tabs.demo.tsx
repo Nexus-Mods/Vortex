@@ -36,19 +36,19 @@ export const TabsDemo = () => {
 
         <TabProvider tab={selectedTab1} tabListId="demo-tabs" onSetSelectedTab={setSelectedTab1}>
           <TabBar>
-            <TabButton name="Overview" />
+            <TabButton name="Overview" panelId="overview" />
 
-            <TabButton count={42} name="Files" />
+            <TabButton count={42} name="Files" panelId="files" />
 
-            <TabButton count={156} name="Comments" />
+            <TabButton count={156} name="Comments" panelId="comments" />
 
-            <TabButton name="Settings" />
+            <TabButton name="Settings" panelId="settings" />
 
-            <TabButton disabled={true} name="Disabled" />
+            <TabButton disabled={true} name="Disabled" panelId="disabled" />
           </TabBar>
 
           <div className="mt-6">
-            <TabPanel name="Overview">
+            <TabPanel id="overview">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Overview Tab Content</p>
 
@@ -56,7 +56,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Files">
+            <TabPanel id="files">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Files Tab Content (42 files)</p>
 
@@ -64,7 +64,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Comments">
+            <TabPanel id="comments">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Comments Tab Content (156 comments)</p>
 
@@ -72,7 +72,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Settings">
+            <TabPanel id="settings">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Settings Tab Content</p>
 
@@ -80,7 +80,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Disabled">
+            <TabPanel id="disabled">
               <Typography appearance="subdued" as="div">
                 <p className="font-semibold">Disabled</p>
               </Typography>
@@ -101,19 +101,19 @@ export const TabsDemo = () => {
           onSetSelectedTab={setSelectedTab2}
         >
           <TabBar>
-            <TabButton name="Overview" />
+            <TabButton name="Overview" panelId="overview" />
 
-            <TabButton count={42} name="Files" />
+            <TabButton count={42} name="Files" panelId="files" />
 
-            <TabButton count={156} name="Comments" />
+            <TabButton count={156} name="Comments" panelId="comments" />
 
-            <TabButton name="Settings" />
+            <TabButton name="Settings" panelId="settings" />
 
-            <TabButton disabled={true} name="Disabled" />
+            <TabButton disabled={true} name="Disabled" panelId="disabled" />
           </TabBar>
 
           <div className="mt-6">
-            <TabPanel name="Overview">
+            <TabPanel id="overview">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Overview Tab Content</p>
 
@@ -121,7 +121,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Files">
+            <TabPanel id="files">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Files Tab Content (42 files)</p>
 
@@ -129,7 +129,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Comments">
+            <TabPanel id="comments">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Comments Tab Content (156 comments)</p>
 
@@ -137,7 +137,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Settings">
+            <TabPanel id="settings">
               <Typography appearance="subdued" as="div" className="space-y-4">
                 <p className="font-semibold">Settings Tab Content</p>
 
@@ -145,7 +145,7 @@ export const TabsDemo = () => {
               </Typography>
             </TabPanel>
 
-            <TabPanel name="Disabled">
+            <TabPanel id="disabled">
               <Typography appearance="subdued" as="div">
                 <p className="font-semibold">Disabled</p>
               </Typography>

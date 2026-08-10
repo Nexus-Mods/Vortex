@@ -75,7 +75,7 @@ async function adultContentDialog(
 
 function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
-  const t = (input: string, options?) =>
+  const t = (input: string, options?: Record<string, unknown>) =>
     api.translate(input, {
       isNamespaceKey: true,
       ns: ["collection", "common"],
@@ -254,12 +254,16 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           onSetSelectedTab={setSelectedTab}
         >
           <TabBar className="overflow-clip pl-6">
-            <TabButton count={allCollectionsTotal} name={t("collection:browse.tabs.collections")} />
+            <TabButton
+              count={allCollectionsTotal}
+              name={t("collection:browse.tabs.collections")}
+              panelId="collections"
+            />
 
-            <TabButton name={t("collection:browse.tabs.mods")} />
+            <TabButton name={t("collection:browse.tabs.mods")} panelId="mods" />
           </TabBar>
 
-          <TabPanel name={t("collection:browse.tabs.collections")}>
+          <TabPanel id="collections">
             <div className="space-y-3 p-6">
               <form
                 className="flex items-center gap-x-2"
@@ -274,7 +278,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   hideLabel={true}
                   label={t("collection:browse.searchPlaceholder")}
                   placeholder={t("collection:browse.searchPlaceholder")}
-                  size="sm"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -287,8 +290,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 />
 
                 <Button
-                  brand="neutral"
                   appearance="moderate"
+                  brand="neutral"
                   leftIconPath={mdiMagnify}
                   size="sm"
                   title={t("common:actions.search")}
@@ -299,8 +302,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               <div className="flex justify-between">
                 <div className="flex items-center gap-x-2">
                   <Button
-                    brand="neutral"
                     appearance="moderate"
+                    brand="neutral"
                     leftIconPath={mdiRefresh}
                     size="sm"
                     title={t("collection:browse.refresh")}
@@ -338,8 +341,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 isLoading={loading}
                 noResultsChildren={
                   <Button
-                    brand="neutral"
                     appearance="moderate"
+                    brand="neutral"
                     leftIconPath={mdiOpenInNew}
                     size="sm"
                     onClick={() =>
@@ -382,7 +385,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
             </div>
           </TabPanel>
 
-          <TabPanel name={t("collection:browse.tabs.mods")}>
+          <TabPanel id="mods">
             <NoResults
               className="py-16"
               iconPath={mdiClockOutline}
@@ -390,8 +393,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               title={t("collection:browse.modsComingSoon.title")}
             >
               <Button
-                brand="neutral"
                 appearance="moderate"
+                brand="neutral"
                 leftIconPath={mdiOpenInNew}
                 size="sm"
                 onClick={() =>

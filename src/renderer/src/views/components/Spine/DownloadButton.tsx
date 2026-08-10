@@ -2,11 +2,13 @@ import { mdiDownload } from "@mdi/js";
 import React, { type FC } from "react";
 import { useSelector } from "react-redux";
 
-import type { DownloadState } from "../../../extensions/download_management/types/IDownload";
-import type { IState } from "../../../types/IState";
-import { Icon } from "../../../ui/components/icon/Icon";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { joinClasses } from "../../../ui/utils/joinClasses";
+import type { DownloadState } from "@/extensions/download_management/types/IDownload";
+import type { IState } from "@/types/IState";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import { useSpineContext } from "./SpineContext";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = ["init", "started", "finalizing"];
@@ -70,11 +72,13 @@ function useDownloadProgress(): DownloadProgress {
   });
 }
 
-const ProgressRing: FC<{
-  isActive: boolean;
-  isPaused: boolean;
-  progress: number;
-}> = ({ isActive, isPaused, progress }) => {
+const ProgressRing: FC<
+  React.PropsWithChildren<{
+    isActive: boolean;
+    isPaused: boolean;
+    progress: number;
+  }>
+> = ({ isActive, isPaused, progress }) => {
   const size = 48;
   const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
@@ -115,7 +119,7 @@ const ProgressRing: FC<{
   );
 };
 
-export const DownloadButton: FC = () => {
+export const DownloadButton: FC<React.PropsWithChildren<unknown>> = () => {
   const { selection, selectDownloads } = useSpineContext();
 
   const isActive = selection.type === "downloads";
@@ -126,44 +130,46 @@ export const DownloadButton: FC = () => {
   const isTime = false;
 
   return (
-    <button
-      className={joinClasses(
-        [
-          "group/download relative flex size-12 shrink-0 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
-          "hover:bg-surface-translucent-high",
-          isPaused || isDownloading
-            ? ""
-            : isActive
-              ? "border-2 border-neutral-strong"
-              : "border-2 border-stroke-weak hover:border-neutral-strong",
-        ],
-        { "bg-surface-translucent-low": isActive },
-      )}
-      title="Downloads"
-      onClick={() => selectDownloads()}
-    >
-      {isPaused || isDownloading ? (
-        <>
-          {!isPaused && (
-            <Typography
-              as="span"
-              brand="none"
-              className="leading-none font-semibold"
-              type="body-sm"
-            >
-              {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
-            </Typography>
-          )}
+    <Tooltip content="Downloads" placement="right">
+      <button
+        aria-label="Downloads"
+        className={joinClasses(
+          [
+            "group/download relative flex size-12 shrink-0 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
+            "hover:bg-surface-translucent-high",
+            isPaused || isDownloading
+              ? ""
+              : isActive
+                ? "border-2 border-neutral-strong"
+                : "border-2 border-stroke-weak hover:border-neutral-strong",
+          ],
+          { "bg-surface-translucent-low": isActive },
+        )}
+        onClick={() => selectDownloads()}
+      >
+        {isPaused || isDownloading ? (
+          <>
+            {!isPaused && (
+              <Typography
+                as="span"
+                brand="none"
+                className="leading-none font-semibold"
+                type="body-sm"
+              >
+                {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
+              </Typography>
+            )}
 
-          <span className="text-[0.375rem] leading-none tracking-[1px] uppercase">
-            {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
-          </span>
+            <span className="text-[0.375rem] leading-none tracking-[1px] uppercase">
+              {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
+            </span>
 
-          <ProgressRing isActive={isActive} isPaused={isPaused} progress={progress} />
-        </>
-      ) : (
-        <Icon className="transition-colors" path={mdiDownload} size="lg" />
-      )}
-    </button>
+            <ProgressRing isActive={isActive} isPaused={isPaused} progress={progress} />
+          </>
+        ) : (
+          <Icon className="transition-colors" path={mdiDownload} size="lg" />
+        )}
+      </button>
+    </Tooltip>
   );
 };

@@ -368,3 +368,65 @@ context.registerMainPage("savegame", "Save games", MySavegamePage, {
 - [ ] Replace `yarn`/`npx` commands with `pnpm`/`pnpm exec` in build scripts
 - [ ] Remove runtime packages from `devDependencies` (now provided by `vortex-api` peer dependencies)
 - [ ] Adapt `resolutions` field from `package.json`
+
+---
+
+## Vortex 2.x: React 18
+
+Vortex now runs React **18.3.1** (previously 17.0.2). The renderer still uses React's legacy rendering mode, which behaves identically to React 17 at runtime.
+
+**If your extension is already published: no action needed.** Compiled extensions continue to work unmodified - Vortex supplies React at runtime and the runtime behavior is unchanged.
+
+**When you next rebuild your extension**, your `@nexusmods/vortex-api` peer dependencies will pull in `@types/react` 18, and you may see new TypeScript errors. They are type-level only; here is the complete list with fixes:
+
+### 1. `Property 'children' does not exist on type ...`
+
+`@types/react` 18 removed the implicit `children` prop. Declare it explicitly on any component props that accept children:
+
+```ts
+// before
+interface IMyPanelProps {
+    title: string;
+}
+
+// after
+interface IMyPanelProps {
+    title: string;
+    children?: React.ReactNode;
+}
+```
+
+For function components typed with `React.FC`, you can instead use `React.FC<React.PropsWithChildren<IMyPanelProps>>`.
+
+### 2. `Type '...' is not assignable to type 'ReactNode'`
+
+`ReactNode` is stricter in the 18 types - plain objects and component _instances_ no longer qualify. If you were passing something unusual as a child, render it explicitly or cast at the call site:
+
+```tsx
+// before
+<div>{someObject}</div>
+// after
+<div>{String(someObject)}</div> // or render it properly
+```
+
+### 3. Removed type aliases
+
+| Removed in @types/react 18                     | Replace with                             |
+| ---------------------------------------------- | ---------------------------------------- |
+| `React.StatelessComponent<P>` / `React.SFC<P>` | `React.FC<P>`                            |
+| `React.ReactText`                              | `string \| number`                       |
+| `React.ReactChild`                             | `React.ReactElement \| string \| number` |
+
+> **Note:** Two Vortex API types (`IExtensionContext` registration surfaces and `IMainPage`) that previously referenced `StatelessComponent` now use `React.FC` - this is source-compatible; no change needed unless you aliased those types yourself.
+
+### If `npm install` fails with ERESOLVE
+
+Some of Vortex's pinned dependencies (notably `react-select@1.3.0`) declare a React peer range capped below 18, which strict npm resolution rejects. Install with:
+
+    npm install --legacy-peer-deps
+
+or add the equivalent override for your package manager (pnpm: `peerDependencyRules.allowedVersions`; yarn: `resolutions`). Vortex itself supplies these packages at runtime, so the peer warning has no runtime effect.
+
+### Deprecated-but-working APIs (heads-up only)
+
+`ReactDOM.render`, `ReactDOM.findDOMNode`, and the legacy context API (`contextTypes` / `childContextTypes`) continue to work in Vortex's React 18. React logs deprecation warnings for them in development builds. They will be removed by React in a future major version, so migrating away when convenient is recommended - but nothing breaks today.

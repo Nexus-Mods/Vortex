@@ -22,7 +22,7 @@ import { isLoggedIn } from "../../nexus_integration/selectors";
 import { activeProfile } from "../../profile_management/selectors";
 import { setHealthCheckRunning } from "../actions/session";
 import { isFileRequirementsUserEnabled } from "../selectors";
-import type { IFileRequirementsCheckMetadata } from "../types";
+import type { IFileRequirementsCheckMetadata } from "../utils/fileRequirements/mapRequirementsReport";
 
 export const FILE_REQUIREMENTS_CHECK_ID = "check-file-level-requirements";
 
@@ -57,7 +57,10 @@ function createResult(
 /**
  * Check the file-level requirements of installed mods for the active game
  */
-export async function checkFileRequirements(api: IExtensionApi): Promise<IHealthCheckResult> {
+export async function checkFileRequirements(
+  api: IExtensionApi,
+  signal?: AbortSignal,
+): Promise<IHealthCheckResult> {
   const startTime = Date.now();
   try {
     const state = api.getState();
@@ -78,7 +81,7 @@ export async function checkFileRequirements(api: IExtensionApi): Promise<IHealth
       );
     }
 
-    const metadata = await runFileLevelRequirements(api);
+    const metadata = await runFileLevelRequirements(api, signal);
 
     const sourcesWithRequirements = Object.values(metadata.fileRequirements);
     const totalRequirements = sourcesWithRequirements.reduce(
@@ -107,6 +110,10 @@ export async function checkFileRequirements(api: IExtensionApi): Promise<IHealth
       { metadata },
     );
   } catch (error) {
+    // The registry reports the timeout itself and discards this run's result.
+    if (signal?.aborted) {
+      throw error;
+    }
     log("error", "Failed to check file-level requirements", unknownToError(error));
     return createResult(
       startTime,
@@ -135,8 +142,9 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.ProfileChanged,
     HealthCheckTrigger.GameChanged,
     HealthCheckTrigger.SettingsChanged,
+    HealthCheckTrigger.LoginChanged,
   ],
-  check: async (api: IExtensionApi): Promise<IHealthCheckResult> => {
+  check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
     // Reading the flag through FlagService reports an evaluation metric to the server.
     const flagEnabled = FlagService.instance.getFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
     if (!flagEnabled || !isFileRequirementsUserEnabled(api.getState())) {
@@ -152,7 +160,7 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
 
     api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, true));
     try {
-      return await checkFileRequirements(api);
+      return await checkFileRequirements(api, signal);
     } finally {
       api.store?.dispatch(setHealthCheckRunning(FILE_REQUIREMENTS_CHECK_ID, false));
     }

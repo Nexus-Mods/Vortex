@@ -1,20 +1,13 @@
 import React, { type ReactNode } from "react";
 
-import { getTabId } from "@/ui/utils/getTabId";
-
 import { useTabContext } from "./Tabs.context";
 
-/**
- * Tab Content component acts as a wrapper that shows/hides content
- * depending on whether the tab is selected
- */
-export const TabPanel = ({ children, name }: { children: ReactNode; name: string }) => {
+export const TabPanel = ({ children, id }: { children: ReactNode; id: string }) => {
   const { selectedTab } = useTabContext();
-  const tabId = getTabId(name);
 
-  if (selectedTab === tabId) {
+  if (selectedTab === id) {
     return (
-      <div id={`tabcontent-${tabId}`} role="tabpanel">
+      <div id={`tabcontent-${id}`} role="tabpanel">
         {children}
       </div>
     );

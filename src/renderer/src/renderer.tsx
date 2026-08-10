@@ -49,11 +49,33 @@ process.on("exit", (code: number) => {
   }
 });
 
+// React 18 emits these deprecation warnings via console.error in development
+// builds (production react-dom strips them). They fire during the very first
+// render — before show-window — where a console.error arms the
+// "Vortex failed to start" terminate timer in MainWindow. Demote them to
+// console.warn: still visible in devtools and the log, but not treated as
+// errors. Everything else must keep flowing through console.error unchanged.
+const REACT_DEPRECATION_WARNINGS = [
+  "ReactDOM.render is no longer supported",
+  "uses the legacy contextTypes API",
+  "uses the legacy childContextTypes API",
+  // emitted by legacy deps (react-bootstrap 0.33, react-i18next 11) on 18
+  "findDOMNode is deprecated",
+  "renderSubtreeIntoContainer() is no longer supported",
+];
+
 // turn all error logs into a single parameter. The reason is that (at least in production)
 // these only get reported by the main process and due to a "bug" only one parameter gets
 // relayed.
 const oldErr = console.error;
 console.error = (...args) => {
+  if (
+    typeof args[0] === "string" &&
+    REACT_DEPRECATION_WARNINGS.some((sig) => args[0].includes(sig))
+  ) {
+    console.warn(args.concat(" ") + "\n" + new Error().stack);
+    return;
+  }
   oldErr(args.concat(" ") + "\n" + new Error().stack);
 };
 
@@ -133,7 +155,7 @@ import { computeStateDiff } from "./store/stateDiff";
 import StyleManager from "./StyleManager";
 import { createRendererTelemetryProvider } from "./telemetry/setup";
 import type { IExtensionReducer } from "./types/extensions";
-import type { ThunkStore } from "./types/IExtensionContext";
+import type { ApiEventMap, IExtensionApi, ThunkStore } from "./types/IExtensionContext";
 import { GameEntryNotFound } from "./types/IGameStore";
 import type { IState } from "./types/IState";
 import { relaunch } from "./util/commandLine";
@@ -142,7 +164,7 @@ import { recordErrorSpan, setOutdated, terminate, toError } from "./util/errorHa
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
-import getI18n, { changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
+import { init as getI18n, changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
 import { showError } from "./util/message";
 import migrate from "./util/migrate";
 import { readStartupSettings } from "./util/startupSettings";
@@ -264,8 +286,13 @@ function errorHandler(evt: any) {
       // it's almost certainly some callback invoked from a native library
       log("error", "script error");
       return;
-    } else if (error === "ResizeObserver loop limit exceeded") {
+    } else if (error.startsWith("ResizeObserver loop")) {
       // this error was called "benign" by one of the spec authors. I'll take their word for it.
+      // Matched by prefix because chromium has used two wordings: "loop limit exceeded" and,
+      // since chromium 92, "loop completed with undelivered notifications". preventDefault
+      // stops chromium printing it to the console on its own account, which is the only way
+      // it would still reach the log now that we're swallowing it here.
+      evt.preventDefault?.();
       return;
     }
   }
@@ -327,13 +354,22 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (error.stack.includes("packery")) {
+  // `error` isn't necessarily an Error: the fallback chain above ends at `evt.message`, so a
+  // browser-level ErrorEvent that carries no error object (a cross-origin "Script error.", a
+  // ResizeObserver loop warning) arrives here as a plain string with no `stack` at all. Read it
+  // once, as a string, so the sniffing below can't take the handler down with it — an exception
+  // thrown in here is itself uncaught, and reports as a bug in Vortex rather than the original.
+  const stack: string = typeof error.stack === "string" ? error.stack : "";
+
+  if (stack.includes("packery")) {
     // seems to be caused by an event triggered inside packery after cleanup so I don't see
     // a way to catch this cleanly
     return;
   }
 
-  if (error.stack.includes("react-sortable-tree")) {
+  if (stack.includes("react-sortable-tree")) {
+    // matches the @nosferatu500/react-sortable-tree fork too (the scoped package
+    // path still contains "react-sortable-tree").
     // bug in external library. I know where the bug is but fixing that causes a new problem and
     // i just don't want to pull that thread.
     // To elaborate: there is no logic in react-sortable-tree to stop users
@@ -347,10 +383,10 @@ function errorHandler(evt: any) {
   const dynPaths = ExtensionManager.getExtensionPaths().filter((extPath) => !extPath.bundled);
 
   if (dynPaths.length > 0) {
-    if (error.stack.includes(`at ${dynPaths[0].path}`)) {
+    if (stack.includes(`at ${dynPaths[0].path}`)) {
       const extPath = (dynPaths[0].path + path.sep).replace(/[\\]/g, "\\\\");
       const re = new RegExp(`at ${extPath}(Vortex Extension Update - )?([^/\\\\]*)`);
-      const reMatch = error.stack.match(re);
+      const reMatch = stack.match(re);
       const extName = reMatch?.[2] ?? "unknown";
 
       error["extension"] = extName;
@@ -433,7 +469,9 @@ window.addEventListener("error", errorHandler);
 window.addEventListener("unhandledrejection", errorHandler);
 window.removeEventListener("error", earlyErrHandler);
 window.removeEventListener("unhandledrejection", earlyErrHandler);
-const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
+const eventEmitter: IExtensionApi["events"] = new EventEmitter<
+  ApiEventMap & Record<string, any[]>
+>();
 
 let enhancer = null;
 
@@ -775,14 +813,10 @@ async function init(): Promise<ExtensionManager | null> {
 }
 
 async function load(extensions: ExtensionManager): Promise<void> {
-  const { i18n, tFunc, error } = await Promise.resolve(
-    getI18n("en", () => {
-      const state = store.getState();
-      return Object.values(state.session.extensions.installed).filter(
-        (ext) => ext.type === "translation",
-      );
-    }),
-  );
+  const { i18n, tFunc, error } = await getI18n("en", () => {
+    const state = store.getState();
+    return Object.values(state.app.extensions ?? {}).filter((ext) => ext.type === "translation");
+  });
 
   if (error) {
     showError(store.dispatch, "failed to initialize localization", error, {

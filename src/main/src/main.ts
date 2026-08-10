@@ -19,13 +19,13 @@ if (process.send) {
 }
 
 import child_process from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
 import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
-import { app, dialog } from "electron";
+import { app, crashReporter, dialog } from "electron";
 import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
@@ -47,13 +47,21 @@ import { parseCommandline } from "./cli";
 import { init as initDownloadIpc } from "./downloading/ipc";
 import { DownloadManager } from "./downloading/manager";
 import { terminateAsync } from "./errorHandling";
-import { reportCrash, errorToReportableError, sendReportFile } from "./errorReporting";
+import {
+  reportCrash,
+  errorToReportableError,
+  sendPendingCrashReport,
+  sendPendingNativeCrashReport,
+  sendReportFile,
+} from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
 import StylesheetCompiler from "./stylesheetCompiler";
 import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";
+import { init as initUploadIpc } from "./uploading/ipc";
+import { UploadManager } from "./uploading/manager";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 
@@ -250,6 +258,24 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Start Crashpad as early as possible so even startup crashes produce a
+  // dump; sendPendingNativeCrashReport picks it up on the next start. Must
+  // run before the sweeps below — they read the crashDumps path.
+  const dumpsPath = path.join(app.getPath("userData"), "temp", "dumps");
+  try {
+    mkdirSync(dumpsPath, { recursive: true });
+  } catch {
+    // ignored
+  }
+  app.setPath("crashDumps", dumpsPath);
+  crashReporter.start({ uploadToServer: false });
+
+  // Reports left by previous sessions, sent as early as possible — this
+  // startup may crash before getting any further. Not awaited so
+  // they don't delay startup.
+  void sendPendingCrashReport();
+  void sendPendingNativeCrashReport();
+
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
   process.env.NODE_OPTIONS =
     NODE_OPTIONS + ` --max-http-header-size=${HTTP_HEADER_SIZE}` + " --no-force-async-hooks-checks";
@@ -273,9 +299,11 @@ async function main(): Promise<void> {
   process.on("unhandledRejection", handleError);
 
   const downloadManager = new DownloadManager({ concurrency: 1 });
+  const uploadManager = new UploadManager({ userAgent: `Vortex/${app.getVersion()}` });
 
   initIpcHandlers();
   initDownloadIpc(downloadManager);
+  initUploadIpc(uploadManager);
   initAdaptorHost().catch((err: unknown) => {
     log("warn", "Failed to initialize adaptor host", {
       error: err instanceof Error ? err.message : "unknown error",

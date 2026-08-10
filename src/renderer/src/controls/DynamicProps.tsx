@@ -11,7 +11,8 @@ function ignoreFunction(lhs: any, rhs: any): boolean {
 export interface IBaseProps {
   dynamicProps: () => any;
   staticProps: any;
-  component: React.ComponentClass<any> | React.StatelessComponent<any>;
+  component: React.ComponentClass<any> | React.FunctionComponent<React.PropsWithChildren<any>>;
+  children?: React.ReactNode;
 }
 
 /**

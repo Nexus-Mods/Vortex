@@ -1,13 +1,14 @@
-import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 /**
  * Game management tests.
  * Uses fake game installations to avoid requiring real game installs.
  * Covers test cases: #8.1A, #8.8A
  */
+import { SDV_MOD_URL } from "../constants";
+import { setupFakeGame, cleanupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test, expect } from "../fixtures/vortex-app";
 import { manageGame } from "../helpers/games";
 import { downloadModViaModManager } from "../helpers/modDownload";
-import { SMAPI_MOD_URL, SMAPI_NAME } from "../helpers/mods";
+import { SMAPI_NAME } from "../helpers/mods";
 import { navigateToGames } from "../helpers/navigation";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser } from "../helpers/users";
@@ -118,7 +119,7 @@ test.describe("Game Management - Manually set game location", () => {
       ).toBeVisible({ timeout: Timeouts.NETWORK });
     });
 
-    await downloadModViaModManager(nexusPage, vortexApp, SMAPI_MOD_URL);
+    await downloadModViaModManager(nexusPage, vortexApp, SDV_MOD_URL);
 
     await test.step("Open the Stardew Valley workspace", async () => {
       await vortexWindow

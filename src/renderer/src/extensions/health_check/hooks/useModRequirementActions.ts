@@ -1,0 +1,75 @@
+import { useCallback, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+
+import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import { opn } from "@/util/api";
+
+import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import { setFeedbackGiven } from "../actions/persistent";
+import { feedbackGivenMap } from "../selectors";
+import type { IModRequirementExt } from "../types";
+import type { IssueAnalyticsIdentity } from "../utils/shared/tracking";
+
+/**
+ * Shared action logic for a single mod requirement, used by both the listing row
+ * and the detail view: premium-gated 1-click install, thumbs feedback (with
+ * analytics + the negative-reason modal), and opening the mod page. Keeps the two
+ * call sites behaviourally identical.
+ *
+ * `identity` names the listing entry the mod belongs to, attributed to the install funnel
+ * events. `onInstalled` runs after a successful install (e.g. navigate back from detail).
+ */
+export function useModRequirementActions(
+  api: IExtensionApi,
+  mod: IModRequirementExt,
+  identity: IssueAnalyticsIdentity,
+  onInstalled?: () => void,
+) {
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const feedbackMap = useSelector(feedbackGivenMap);
+  const givenFeedback = useMemo(
+    () => (feedbackMap[mod.requiredBy.modId] ?? []).includes(mod.id),
+    [feedbackMap, mod.requiredBy.modId, mod.id],
+  );
+
+  const showPremiumAd = useSelector(shouldShowPremiumAd);
+
+  const openModPage = useCallback(() => {
+    if (mod.modUrl) {
+      opn(mod.modUrl).catch(() => undefined);
+    }
+  }, [mod.modUrl]);
+
+  // 1-click install is a Premium feature; free users get the upgrade prompt
+  // (which routes them to the mod page) instead of an in-app download.
+  // onDownloadRequirement reports its own failures and never rejects, so the
+  // fire-and-forget call sites have nothing to catch; a failed install leaves the
+  // detail page open rather than navigating away from the issue.
+  const installInApp = useCallback(async () => {
+    if (showPremiumAd) {
+      setShowPremiumModal(true);
+      return;
+    }
+    if (await onDownloadRequirement(api, mod, undefined, identity)) {
+      onInstalled?.();
+    }
+  }, [api, mod, identity, showPremiumAd, onInstalled]);
+
+  // Persistence only — EntryActions owns the feedback analytics, so both thumbs record
+  // the same thing here.
+  const markFeedback = useCallback(() => {
+    api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
+  }, [api, mod]);
+
+  return {
+    givenFeedback,
+    showPremiumAd,
+    showPremiumModal,
+    setShowPremiumModal,
+    openModPage,
+    installInApp,
+    markFeedback,
+  };
+}

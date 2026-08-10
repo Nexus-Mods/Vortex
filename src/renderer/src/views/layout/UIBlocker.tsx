@@ -14,7 +14,7 @@ import type { IState } from "../../types/IState";
  * Used during profile switching, game discovery, or other long-running tasks.
  * For both layouts.
  */
-export const UIBlocker: FC = () => {
+export const UIBlocker: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { api } = useMainContext();

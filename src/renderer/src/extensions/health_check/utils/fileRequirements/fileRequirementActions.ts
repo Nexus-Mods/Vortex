@@ -1,9 +1,4 @@
 import { knownGames } from "@/extensions/gamemode_management/selectors";
-import type {
-  IDownloadedFile,
-  IFileRequirementCandidate,
-  IInstalledFile,
-} from "@/extensions/health_check/types";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
@@ -13,6 +8,11 @@ import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { opn, renderModName, sanitizeCSSId } from "@/util/api";
+
+import { trackedInstall } from "../shared/installTracking";
+import type { IssueAnalyticsIdentity } from "../shared/tracking";
+import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
+import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
 // File-level requirement actions: web links, single-file download, reveal-in-loadout,
 // and enable / switch active version.
@@ -39,80 +39,153 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 }
 
 /**
- * Download and install a missing / wrong-version file. Free users can't 1-click install,
- * so open the file page instead (website download); the premium upsell is out of MVP scope.
+ * Download and install a missing / wrong-version file, then make it the active version,
+ * disabling `enabledFile` when the download replaces a wrong version of the same chain.
+ * Free users can't 1-click install, so open the file page instead (website download); the
+ * premium upsell is out of MVP scope.
  */
 export async function downloadFileRequirement(
   api: IExtensionApi,
   candidate: IFileRequirementCandidate,
-): Promise<void> {
+  identity?: IssueAnalyticsIdentity,
+  enabledFile?: IInstalledFile,
+): Promise<boolean> {
   if (shouldShowPremiumAd(api.getState())) {
     openFilePage(api, candidate);
-    return;
+    return false;
   }
 
   const mod = decodeUID(candidate.modUID);
   const file = decodeUID(candidate.fileUID);
+
   const domain = mod ? nexusDomain(mod.gameId) : undefined;
   if (!mod || !file || !domain) {
     log("warn", "cannot download file requirement: unresolved ids", {
       fileUID: candidate.fileUID,
     });
-    return;
+
+    return false;
   }
 
   // The downloader keys downloads on Vortex's internal game id, not the Nexus domain.
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), domain) || domain;
   const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
+
   try {
-    const dlId = await new Promise<string>((resolve, reject) =>
-      api.events.emit(
-        "start-download",
-        [nxmUrl],
-        { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
-        undefined,
-        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-        undefined,
-        { allowInstall: false },
-      ),
+    await trackedInstall(
+      api,
+      {
+        ...identity,
+        mod_id: mod.id,
+        mod_name: candidate.modName,
+        mod_version: candidate.version,
+      },
+      async () => {
+        const dlId = await new Promise<string>((resolve, reject) =>
+          api.events.emit(
+            "start-download",
+            [nxmUrl],
+            { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
+            undefined,
+            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+            undefined,
+            { allowInstall: false },
+          ),
+        );
+
+        const modId = await new Promise<string>((resolve, reject) =>
+          api.events.emit(
+            "start-install-download",
+            dlId,
+            { allowAutoEnable: true },
+            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+          ),
+        );
+
+        await activateInstalledVersion(api, modId, enabledFile);
+      },
     );
-    await new Promise<string>((resolve, reject) =>
-      api.events.emit(
-        "start-install-download",
-        dlId,
-        { allowAutoEnable: true },
-        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-      ),
-    );
+
+    return true;
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${candidate.modName}`, err, {
       allowReport: false,
     });
+
+    return false;
   }
 }
 
 /**
- * Install a file that has already been downloaded. Uses the download ID directly
- * as the archive ID - no mod-store lookup needed. No premium gate applies since
- * the file is already local.
+ * Make a just-installed mod the enabled version, switching off a wrong enabled version of
+ * the same chain. The requirement only clears once the correct version is enabled, so
+ * don't leave that to the user's auto-enable-on-install setting.
+ */
+function activateInstalledVersion(
+  api: IExtensionApi,
+  modId: string,
+  wrong?: IInstalledFile,
+): Promise<void> {
+  const profile = activeProfile(api.getState());
+  if (!profile) {
+    log("warn", "cannot activate installed version: no active profile", { modId });
+    return Promise.resolve();
+  }
+  // The install may have replaced the wrong version, or reused its mod entry, leaving
+  // nothing to disable.
+  const mods = api.getState().persistent.mods[profile.gameId] ?? {};
+  const wrongIds =
+    wrong !== undefined && wrong.modId !== modId && mods[wrong.modId] !== undefined
+      ? [wrong.modId]
+      : [];
+  return Promise.resolve(
+    setModsEnabled(api, profile.id, wrongIds, false, { reason: "health_check" }).then(() =>
+      setModsEnabled(api, profile.id, [modId], true, { reason: "health_check" }),
+    ),
+  );
+}
+
+/**
+ * Install a file that has already been downloaded, then make it the active version. Uses
+ * the download ID directly as the archive ID - no mod-store lookup needed. No premium gate
+ * applies since the file is already local.
  */
 export async function installDownloadedFile(
   api: IExtensionApi,
   file: IDownloadedFile,
-): Promise<void> {
+  identity?: IssueAnalyticsIdentity,
+  enabledFile?: IInstalledFile,
+): Promise<boolean> {
   try {
-    await new Promise<string>((resolve, reject) =>
-      api.events.emit(
-        "start-install-download",
-        file.downloadId,
-        { allowAutoEnable: true },
-        (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-      ),
+    await trackedInstall(
+      api,
+      {
+        ...identity,
+        mod_id: decodeUID(file.modUID)?.id ?? 0,
+        mod_name: file.modName,
+        mod_version: file.version,
+      },
+      async () => {
+        const modId = await new Promise<string>((resolve, reject) =>
+          api.events.emit(
+            "start-install-download",
+            file.downloadId,
+            { allowAutoEnable: true },
+            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
+          ),
+        );
+
+        await activateInstalledVersion(api, modId, enabledFile);
+      },
     );
+
+    return true;
   } catch (err) {
     api.showErrorNotification(`Failed to install requirement: ${file.modName}`, err, {
       allowReport: false,
     });
+
+    return false;
   }
 }
 
@@ -224,14 +297,43 @@ function loadoutRowModId(api: IExtensionApi, file: IInstalledFile): string {
 }
 
 /**
+ * The mod-list row to reveal for a downloaded archive. The archive gets a row of its own
+ * only while none of its mod's versions are installed - otherwise the mod list collapses it
+ * into the installed version's row, so reveal that one instead.
+ */
+function downloadRowId(api: IExtensionApi, file: IDownloadedFile): string {
+  const state = api.getState();
+  const profile = activeProfile(state);
+  const gameId = profile?.gameId;
+  const nexusModId = decodeUID(file.modUID)?.id;
+  if (!gameId || nexusModId === undefined) {
+    return file.downloadId;
+  }
+  const mods = state.persistent.mods[gameId] ?? {};
+  const versions = Object.keys(mods).filter(
+    (id) =>
+      mods[id].archiveId !== file.downloadId &&
+      Number(mods[id].attributes?.modId) === nexusModId &&
+      mods[id].state === "installed",
+  );
+  if (versions.length === 0) {
+    return file.downloadId;
+  }
+  // The collapsed row is the enabled version, when there is one.
+  const enabled = versions.find((id) => profile?.modState?.[id]?.enabled === true);
+  return enabled ?? versions[0];
+}
+
+/**
  * Navigate to the Mods page and highlight the row for a downloaded-but-not-installed
- * archive, using the download ID as the row key.
+ * archive.
  */
 export function viewDownloadInMods(api: IExtensionApi, file: IDownloadedFile): void {
+  const rowId = downloadRowId(api, file);
   api.events.emit("show-main-page", "Mods");
   setTimeout(() => {
-    api.events.emit("mods-scroll-to", file.downloadId);
-    api.highlightControl(`.${sanitizeCSSId(file.downloadId)}`, 5000);
+    api.events.emit("mods-scroll-to", rowId);
+    api.highlightControl(`.${sanitizeCSSId(rowId)}`, 5000);
   }, 2000);
 }
 

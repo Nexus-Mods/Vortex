@@ -11,8 +11,8 @@ import Modal from "../../controls/Modal";
 import Spinner from "../../controls/Spinner";
 import { IconButton } from "../../controls/TooltipControls";
 import ZoomableImage from "../../controls/ZoomableImage";
-import type { IAvailableExtension, IExtension, ISelector } from "../../types/extensions";
-import type { IState } from "../../types/IState";
+import type { IAvailableExtension, ISelector } from "../../types/extensions";
+import type { IExtensionState, IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
@@ -20,7 +20,6 @@ import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
-const GITHUB_BASE_URL: string = "https://www.github.com";
 
 export interface IBrowseExtensionsProps {
   visible: boolean;
@@ -29,7 +28,7 @@ export interface IBrowseExtensionsProps {
     reloadNecessary: boolean;
     preselectModId: number;
   };
-  updateExtensions: () => void;
+  updateExtensions: () => Promise<void>;
   onRefreshExtensions: () => void;
 }
 
@@ -44,16 +43,12 @@ interface IBrowseExtensionsState {
 }
 
 function makeSelectorId(ext: IAvailableExtension): string {
-  if (ext.modId !== undefined) {
-    return `${ext.modId}`;
-  } else {
-    return `${ext.github}/${ext.githubRawPath}`;
-  }
+  return `${ext.modId}`;
 }
 
 interface IConnectedProps {
   availableExtensions: IAvailableExtension[];
-  extensions: { [extId: string]: IExtension };
+  extensions: { [extId: string]: IExtensionState };
   updateTime: number;
   language: string;
 }
@@ -99,8 +94,6 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     ) {
       this.nextState.selected = {
         modId: nextProps.localState.preselectModId,
-        github: undefined,
-        githubRawPath: undefined,
       };
     }
   }
@@ -260,7 +253,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           const iter = extensions[key];
           return (
             (ext.modId !== undefined && iter.modId === ext.modId) ||
-            (ext.id !== undefined && (iter.id || key) === ext.id)
+            (ext.id !== undefined && key === ext.id)
           );
         }) !== undefined
     );
@@ -287,13 +280,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       ) : incompatible ? (
         <div>{t("Incompatible")}</div>
       ) : (
-        <a
-          className="extension-subscribe"
-          data-modid={ext.modId}
-          data-github={ext.github}
-          data-githubrawpath={ext.githubRawPath}
-          onClick={this.install}
-        >
+        <a className="extension-subscribe" data-modid={ext.modId} onClick={this.install}>
           {t("Install")}
         </a>
       );
@@ -303,8 +290,6 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         className={classes.join(" ")}
         key={makeSelectorId(ext)}
         data-modid={ext.modId}
-        data-github={ext.github}
-        data-githubrawpath={ext.githubRawPath}
         onClick={this.select}
         disabled={installed || incompatible}
       >
@@ -345,13 +330,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const installed = this.isInstalled(ext);
 
     const openInBrowser = (
-      <a
-        className="extension-browse"
-        data-modid={ext.modId}
-        data-github={ext.github}
-        data-githubrawpath={ext.githubRawPath}
-        onClick={this.openPage}
-      >
+      <a className="extension-browse" data-modid={ext.modId} onClick={this.openPage}>
         <Icon name="open-in-browser" />
         {t("Open in Browser")}
       </a>
@@ -365,13 +344,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       ) : !this.isCompatible(ext) ? (
         <div>{t("Incompatible")}</div>
       ) : (
-        <a
-          className="extension-subscribe"
-          data-modid={ext.modId}
-          data-github={ext.github}
-          data-githubrawpath={ext.githubRawPath}
-          onClick={this.install}
-        >
+        <a className="extension-subscribe" data-modid={ext.modId} onClick={this.install}>
           {t("Install")}
         </a>
       );
@@ -425,35 +398,29 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const modIdStr = evt.currentTarget.getAttribute("data-modid");
     const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
-    const github = evt.currentTarget.getAttribute("data-github");
-    const githubRawPath = evt.currentTarget.getAttribute("data-githubrawpath");
 
-    const ext = availableExtensions.find((iter) =>
-      selectorMatch(iter, { modId, github, githubRawPath }),
-    );
+    const ext = availableExtensions.find((iter) => selectorMatch(iter, { modId }));
 
     this.nextState.installing.push(ext.name);
 
-    downloadAndInstallExtension(this.context.api, ext)
-      .then((success: boolean) => {
+    void (async () => {
+      try {
+        const success = await downloadAndInstallExtension(this.context.api, ext);
         if (success) {
-          this.props.updateExtensions();
+          await this.props.updateExtensions();
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         this.context.api.showErrorNotification("Failed to install extension", err);
-      })
-      .finally(() => {
+      } finally {
         this.nextState.installing = this.state.installing.filter((name) => name !== ext.name);
-      });
+      }
+    })();
   };
 
   private select = (evt: React.MouseEvent<any>) => {
     const modIdStr = evt.currentTarget.getAttribute("data-modid");
     const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
-    const github = evt.currentTarget.getAttribute("data-github");
-    const githubRawPath = evt.currentTarget.getAttribute("data-githubrawpath");
-    this.nextState.selected = { modId, github, githubRawPath };
+    this.nextState.selected = { modId };
   };
 
   private openPage = (evt: React.MouseEvent<any>) => {
@@ -461,16 +428,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const modIdStr = evt.currentTarget.getAttribute("data-modid");
     const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
-    const github = evt.currentTarget.getAttribute("data-github");
-    const githubRawPath = evt.currentTarget.getAttribute("data-githubrawpath");
 
-    const ext = availableExtensions.find((iter) =>
-      selectorMatch(iter, { modId, github, githubRawPath }),
-    );
+    const ext = availableExtensions.find((iter) => selectorMatch(iter, { modId }));
     if (ext.modId !== undefined) {
       opn(NEXUS_MODS_URL + ext.modId).catch(() => null);
-    } else if (github !== undefined) {
-      opn(GITHUB_BASE_URL + "/" + github).catch(() => null);
     }
   };
 }
@@ -478,7 +439,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     availableExtensions: state.session.extensions.available,
-    extensions: state.session.extensions.installed,
+    extensions: state.app.extensions ?? {},
     updateTime: state.session.extensions.updateTime,
     language: state.settings.interface.language,
   };

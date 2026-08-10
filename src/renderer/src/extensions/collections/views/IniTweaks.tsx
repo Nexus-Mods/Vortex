@@ -290,6 +290,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
 
 const TweakListConnected = withTranslation([NAMESPACE, "common"])(
   connect(mapStateToProps, mapDispatchToProps)(TweakList) as any,
-) as React.ComponentType<IBaseProps>;
+) as React.ComponentType<React.PropsWithChildren<IBaseProps>>;
 
 export default TweakListConnected;

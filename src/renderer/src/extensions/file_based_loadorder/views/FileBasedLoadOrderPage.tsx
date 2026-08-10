@@ -22,6 +22,7 @@ import * as util from "../../../util/api";
 import * as selectors from "../../../util/selectors";
 import { DNDContainer, MainPage } from "../../../views/api";
 import { setFBForceUpdate } from "../actions/session";
+import { RenderRowsCache } from "../renderRows";
 import { currentLoadOrderForProfile } from "../selectors";
 import {
   type IItemRendererProps,
@@ -29,6 +30,7 @@ import {
   type LoadOrder,
   LoadOrderValidationError,
 } from "../types/types";
+import { isEntryLocked } from "../util";
 import FilterBox from "./FilterBox";
 import InfoPanel from "./InfoPanel";
 import ItemRenderer from "./ItemRenderer";
@@ -84,6 +86,11 @@ type IComponentState = IBaseState;
 
 class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private mStaticButtons: types.IActionDefinition[];
+
+  // Memoizes the per-row props so an unrelated re-render keeps the same row
+  //  object identities, preserving the rows' React.memo and avoiding a layout
+  //  measure in DraggableList.
+  private mRenderRows = new RenderRowsCache();
 
   constructor(props: IProps) {
     super(props);
@@ -239,22 +246,12 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const chosenItemRenderer = gameEntry?.customItemRenderer ?? ItemRenderer;
     const enabled =
       gameEntry !== undefined
-        ? loadOrder.reduce((accum, loEntry) => {
-            const rendOps: IItemRendererProps = {
-              loEntry,
-              displayCheckboxes: gameEntry.toggleableEntries || false,
-              invalidEntries: validationError?.validationResult?.invalid,
-            };
-            // Filter based on the filterText, matching on loEntry.name or other attributes as needed
-            const entryName = loEntry.name ?? loEntry.id;
-            if (!entryName) {
-              return accum; // Skip entries without a name
-            }
-            if (entryName.toLowerCase().includes(this.state.filterText.toLowerCase())) {
-              accum.push(rendOps);
-            }
-            return accum;
-          }, [])
+        ? this.mRenderRows.build(
+            loadOrder,
+            validationError?.validationResult?.invalid,
+            gameEntry.toggleableEntries || false,
+            this.state.filterText,
+          )
         : [];
 
     const infoPanel = () => (
@@ -274,6 +271,9 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           apply={this.onApply}
           idFunc={this.getItemId}
           isLocked={this.isLocked}
+          virtualized={
+            gameEntry?.customItemRenderer === undefined || gameEntry?.uniformRowHeight === true
+          }
         />
       ) : (
         <EmptyPlaceholder
@@ -333,7 +333,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
 
   private isLocked = (item: IItemRendererProps): boolean => {
-    return [true, "true", "always"].includes(item?.loEntry?.locked);
+    return item?.loEntry?.locked !== undefined && isEntryLocked(item.loEntry.locked);
   };
 
   private onApply = (ordered: IItemRendererProps[]) => {

@@ -5,16 +5,165 @@ import type {
   FileRequirementsReport,
 } from "@nexusmods/file-dependency-resolver";
 
-import type {
-  IDownloadedFile,
-  IFileLevelRequirements,
-  IFileRequirement,
-  IFileRequirementBranch,
-  IFileRequirementCandidate,
-  IFileRequirementsCheckMetadata,
-  IInstalledFile,
-  IUninstalledFileRequirement,
-} from "@/extensions/health_check/types";
+import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
+
+/**
+ * A downloadable file the user can fetch to satisfy a requirement
+ */
+export interface IFileRequirementCandidate {
+  /** Composite id for the file version (game-scoped fileId combined with the game id) */
+  fileUID: string;
+  /** Composite id for the mod (game-scoped modId combined with the game id) */
+  modUID: string;
+  /** Display name of the mod */
+  modName: string;
+  /** Mod summary */
+  modSummary?: string;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
+  /** File name */
+  fileName: string;
+  /** File version */
+  version: string;
+  /** Whether the mod is flagged as adult content */
+  adultContent: boolean;
+}
+
+/**
+ * Dependency not installed; download a file to satisfy it
+ */
+export interface IMissingFileRequirement {
+  kind: "missing";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The file to download */
+  candidate: IFileRequirementCandidate;
+}
+
+/**
+ * A wrong version of the chain is enabled and no acceptable version is owned;
+ * download a different (correct) version.
+ */
+export interface IWrongVersionInstalledRequirement {
+  kind: "wrong-version-installed";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The wrong version currently enabled */
+  installedFile: IInstalledFile;
+  /** The correct version to download */
+  candidate: IFileRequirementCandidate;
+}
+
+/**
+ * Correct and wrong versions installed, wrong one enabled; switch the active version
+ */
+export interface IWrongVersionEnabledRequirement {
+  kind: "wrong-version-enabled";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The wrong version currently enabled */
+  enabledFile: IInstalledFile;
+  /** The correct, disabled version to enable */
+  correctFile: IInstalledFile;
+}
+
+/**
+ * One alternative (update group) of an OR requirement, already classified to the
+ * action it needs if chosen: download a file, install an already-downloaded one, or
+ * enable an owned-but-disabled one.
+ */
+export type IFileRequirementBranch =
+  | {
+      kind: "download";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The file to download for this alternative */
+      candidate: IFileRequirementCandidate;
+      /** A wrong version of the same chain currently enabled, if any (makes it a version change) */
+      enabledFile?: IInstalledFile;
+    }
+  | {
+      kind: "install";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The acceptable, downloaded-but-not-installed version to install */
+      uninstalledFile: IDownloadedFile;
+      /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+      enabledFile?: IInstalledFile;
+    }
+  | {
+      kind: "enable";
+      /** Update group this alternative belongs to */
+      modFileId: string;
+      /** The acceptable, installed-but-disabled version to enable */
+      correctFile: IInstalledFile;
+      /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+      enabledFile?: IInstalledFile;
+    };
+
+/**
+ * Several alternatives satisfy the requirement; the user picks one. Branches whose
+ * version is already owned offer an install or enable/switch action instead of a download.
+ */
+export interface IOrFileRequirement {
+  kind: "or";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The OR alternatives, one per update group */
+  branches: IFileRequirementBranch[];
+}
+
+/**
+ * Correct version downloaded but not installed; install it to satisfy the requirement
+ */
+export interface IUninstalledFileRequirement {
+  kind: "correct-version-uninstalled";
+  /** Requirement definition id */
+  requirementDefId: string;
+  /** The downloaded-but-not-installed file to install */
+  uninstalledFile: IDownloadedFile;
+  /** A wrong version of the same chain currently enabled, if any (makes it a switch) */
+  enabledFile?: IInstalledFile;
+}
+
+/**
+ * A single dependency of a source file, discriminated on kind
+ */
+export type IFileRequirement =
+  | IMissingFileRequirement
+  | IWrongVersionInstalledRequirement
+  | IWrongVersionEnabledRequirement
+  | IUninstalledFileRequirement
+  | IOrFileRequirement;
+
+/**
+ * Unsatisfied requirements for one source file, as the resolver maps them. The UI
+ * splits this into homogeneous per-category reports (IFileRequirementReport) for display.
+ */
+export interface IFileLevelRequirements {
+  /** Composite id of the source file version that has the requirements */
+  sourceFileUID: string;
+  /** Source mod name, for the listing and detail headings */
+  sourceModName: string;
+  /** Composite id for the source mod, for building its Nexus links */
+  sourceModUID: string;
+  /** The source file's unsatisfied dependencies (kinds can be mixed) */
+  requirements: IFileRequirement[];
+}
+
+/**
+ * Metadata for the file-level requirements health check result
+ */
+export interface IFileRequirementsCheckMetadata {
+  /** Game ID this check was run for */
+  gameId: string;
+  /** Total number of installed files inspected */
+  modsChecked: number;
+  /** Requirements keyed by source file UID */
+  fileRequirements: { [fileUID: string]: IFileLevelRequirements };
+  /** Any errors encountered during the check */
+  errors: string[];
+}
 
 /** Discriminated union of the two file shapes the hydrator can return. */
 export type HydratedFile =
@@ -37,6 +186,15 @@ function toCandidate(candidate: Candidate): IFileRequirementCandidate {
   };
 }
 
+/** The wrong version currently enabled on a branch, when there is one we can display. */
+function enabledWrongFile(
+  branch: DependencyBranch,
+  hydrate: HydrateFile,
+): IInstalledFile | undefined {
+  const hydrated = branch.wrongEnabled.length > 0 ? hydrate(branch.wrongEnabled[0]) : undefined;
+  return hydrated?.kind === "installed" ? hydrated.file : undefined;
+}
+
 /**
  * Classify a resolved dependency into a surfaced requirement, or undefined to drop it.
  * A multi-branch dependency is an OR; a single branch maps to a missing / wrong-version
@@ -56,6 +214,14 @@ function classifyDependency(
   // OR: more than one alternative update group. Classify each branch to the action
   // it needs; drop branches we can't act on. An OR with no actionable branch is dropped.
   if (branches.length > 1) {
+    // A deliberately disabled alternative (nothing wrong enabled to explain it) counts as
+    // satisfied - enabling it would clear the OR - matching the single-branch rule below.
+    // Drop this guard to surface it as an "enable this version" card instead. Keyed on the
+    // resolver's state, not hydrated data: it decides whether the issue is shown at all.
+    if (branches.some((b) => b.satisfyingDisabled.length > 0 && b.wrongEnabled.length === 0)) {
+      return undefined;
+    }
+
     const orBranches = branches
       .map((branch) => classifyOrBranch(branch, hydrate))
       .filter((branch): branch is IFileRequirementBranch => branch !== undefined);
@@ -72,21 +238,16 @@ function classifyDependency(
   // Correct version owned but disabled.
   if (branch.satisfyingDisabled.length > 0) {
     // A wrong version is enabled too: offer switching the active version.
-    if (branch.wrongEnabled.length > 0) {
-      const hydratedEnabled = hydrate(branch.wrongEnabled[0]);
+    const enabledFile = enabledWrongFile(branch, hydrate);
+    if (enabledFile) {
       const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
-      if (
-        !hydratedEnabled ||
-        hydratedEnabled.kind !== "installed" ||
-        !hydratedCorrect ||
-        hydratedCorrect.kind !== "installed"
-      ) {
+      if (!hydratedCorrect || hydratedCorrect.kind !== "installed") {
         return undefined;
       }
       return {
         kind: "wrong-version-enabled",
         requirementDefId: definitionId,
-        enabledFile: hydratedEnabled.file,
+        enabledFile,
         correctFile: hydratedCorrect.file,
       };
     }
@@ -105,6 +266,7 @@ function classifyDependency(
       kind: "correct-version-uninstalled",
       requirementDefId: definitionId,
       uninstalledFile: hydrated.file,
+      enabledFile: enabledWrongFile(branch, hydrate),
     } satisfies IUninstalledFileRequirement;
   }
 
@@ -132,28 +294,41 @@ function classifyDependency(
 }
 
 /**
- * Classify one OR alternative into the action it needs if the user picks it:
- * enable an owned-but-disabled version (switching off a wrong one if present), or
- * download the recommended file. Returns undefined when the branch isn't actionable.
+ * Classify one OR alternative into the action it needs if the user picks it: enable an
+ * owned-but-disabled version, install a downloaded one, or download the recommended file.
+ * Returns undefined when the branch isn't actionable. Ordered as in classifyDependency.
  */
 function classifyOrBranch(
   branch: DependencyBranch,
   hydrate: HydrateFile,
 ): IFileRequirementBranch | undefined {
-  // Owned-but-disabled alternative: enabling it satisfies the OR without a download.
+  // Owned-but-disabled alternative: enabling it satisfies the OR without a download. The
+  // guard above means a wrong version is enabled, so this is normally a switch; if that
+  // version's mod has since left the store it won't hydrate, and a plain enable is right.
   if (branch.satisfyingDisabled.length > 0) {
     const hydratedCorrect = hydrate(branch.satisfyingDisabled[0]);
     if (!hydratedCorrect || hydratedCorrect.kind !== "installed") {
       return undefined;
     }
-    const hydratedEnabled =
-      branch.wrongEnabled.length > 0 ? hydrate(branch.wrongEnabled[0]) : undefined;
-    const enabledFile = hydratedEnabled?.kind === "installed" ? hydratedEnabled.file : undefined;
     return {
       kind: "enable",
       modFileId: branch.modFileId,
       correctFile: hydratedCorrect.file,
-      enabledFile,
+      enabledFile: enabledWrongFile(branch, hydrate),
+    };
+  }
+
+  // Downloaded but not installed: installing it satisfies the OR without a download.
+  if (branch.satisfyingUninstalled.length > 0) {
+    const hydrated = hydrate(branch.satisfyingUninstalled[0]);
+    if (!hydrated || hydrated.kind !== "downloaded") {
+      return undefined;
+    }
+    return {
+      kind: "install",
+      modFileId: branch.modFileId,
+      uninstalledFile: hydrated.file,
+      enabledFile: enabledWrongFile(branch, hydrate),
     };
   }
 
@@ -163,6 +338,7 @@ function classifyOrBranch(
       kind: "download",
       modFileId: branch.modFileId,
       candidate: toCandidate(branch.recommended),
+      enabledFile: enabledWrongFile(branch, hydrate),
     };
   }
   return undefined;

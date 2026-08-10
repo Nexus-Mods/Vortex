@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 
 import { setOpenMainPage } from "../../../actions";
 import { usePagesContext, useWindowContext } from "../../../contexts";
+import { TooltipDelayGroup } from "../../../ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "../../../ui/utils/joinClasses";
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
@@ -20,7 +21,7 @@ const toolPadding = {
   5: "pb-66",
 };
 
-const MenuContent: FC = () => {
+const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
   const { selection, visiblePages } = useSpineContext();
@@ -53,7 +54,8 @@ const MenuContent: FC = () => {
   }, [menuIsCollapsed]);
 
   return (
-    <div
+    <TooltipDelayGroup
+      as="div"
       className={joinClasses([
         "relative -mt-1 flex shrink-0 flex-col pr-0.5 transition-[width]",
         menuIsCollapsed ? "w-16" : "w-56",
@@ -75,6 +77,7 @@ const MenuContent: FC = () => {
           ) : (
             visiblePages.map((page) => (
               <MenuButton
+                Badge={page.menuBadge}
                 iconPath={page.mdi ?? getIconPath(page.icon)}
                 isActive={mainPage === page.id}
                 key={page.id}
@@ -99,11 +102,11 @@ const MenuContent: FC = () => {
       <ToolsSection isAnimating={isAnimating} />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
-    </div>
+    </TooltipDelayGroup>
   );
 };
 
-export const Menu: FC = () => {
+export const Menu: FC<React.PropsWithChildren<unknown>> = () => {
   return (
     <ToolsProvider>
       <MenuContent />

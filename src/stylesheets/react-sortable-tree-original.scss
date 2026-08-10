@@ -1,30 +1,9 @@
 /**
- * Note: This is the original react-sortable-tree/style.css just saved as a scss
- *   to work around some node-sass/libsass madness where they disabled importing
+ * Note: This is the @nosferatu500/react-sortable-tree@4.4.0 style.css (from
+ *   node_modules/@nosferatu500/react-sortable-tree/style.css) saved as a scss to
+ *   work around some node-sass/libsass madness where they disabled importing
  *   .css directly without providing an alternative.
  **/
-
-/**
- * Extra class applied to VirtualScroll through className prop
- */
-.rst__virtualScrollOverride {
-    overflow: auto !important;
-}
-.rst__virtualScrollOverride * {
-    box-sizing: border-box;
-}
-
-.ReactVirtualized__Grid__innerScrollContainer {
-    overflow: visible !important;
-}
-
-.rst__rtl .ReactVirtualized__Grid__innerScrollContainer {
-    direction: rtl;
-}
-
-.ReactVirtualized__Grid {
-    outline: none;
-}
 
 .rst__rowWrapper {
     padding: 10px 10px 10px 0;
@@ -284,7 +263,7 @@
 .rst__rowTitleWithSubtitle {
     font-size: 85%;
     display: block;
-    height: 10px; // was 0.8rem * 12px
+    height: 0.8rem;
 }
 
 .rst__rowSubtitle {
@@ -406,11 +385,34 @@
     background-color: #e6a8ad;
 }
 
+/**
+ * Extra class applied to VirtualScroll through className prop
+ */
+.rst__virtualScrollOverride {
+    overflow: auto !important;
+}
+.rst__virtualScrollOverride * {
+    box-sizing: border-box;
+}
+
+.ReactVirtualized__Grid__innerScrollContainer {
+    overflow: visible !important;
+}
+
+.rst__rtl .ReactVirtualized__Grid__innerScrollContainer {
+    direction: rtl;
+}
+
+.ReactVirtualized__Grid {
+    outline: none;
+}
+
 .rst__node {
     min-width: 100%;
     white-space: nowrap;
     position: relative;
     text-align: left;
+    height: 62px;
 }
 
 .rst__node.rst__rtl {
@@ -664,103 +666,4 @@
     right: initial;
     border-right: 12px solid #36c2f6;
     border-left: none;
-}
-
-/* Collection default theme */
-
-.ReactVirtualized__Collection {
-}
-
-.ReactVirtualized__Collection__innerScrollContainer {
-}
-
-/* Grid default theme */
-
-.ReactVirtualized__Grid {
-}
-
-.ReactVirtualized__Grid__innerScrollContainer {
-}
-
-/* Table default theme */
-
-.ReactVirtualized__Table {
-}
-
-.ReactVirtualized__Table__Grid {
-}
-
-.ReactVirtualized__Table__headerRow {
-    font-weight: 700;
-    text-transform: uppercase;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: normal;
-    -ms-flex-direction: row;
-    flex-direction: row;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-}
-.ReactVirtualized__Table__row {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: normal;
-    -ms-flex-direction: row;
-    flex-direction: row;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-}
-
-.ReactVirtualized__Table__headerTruncatedText {
-    display: inline-block;
-    max-width: 100%;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-.ReactVirtualized__Table__headerColumn,
-.ReactVirtualized__Table__rowColumn {
-    margin-right: 10px;
-    min-width: 0px;
-}
-.ReactVirtualized__Table__rowColumn {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ReactVirtualized__Table__headerColumn:first-of-type,
-.ReactVirtualized__Table__rowColumn:first-of-type {
-    margin-left: 10px;
-}
-.ReactVirtualized__Table__sortableHeaderColumn {
-    cursor: pointer;
-}
-
-.ReactVirtualized__Table__sortableHeaderIconContainer {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-}
-.ReactVirtualized__Table__sortableHeaderIcon {
-    -webkit-box-flex: 0;
-    -ms-flex: 0 0 24px;
-    flex: 0 0 24px;
-    height: 1em;
-    width: 1em;
-    fill: currentColor;
-}
-
-/* List default theme */
-
-.ReactVirtualized__List {
 }

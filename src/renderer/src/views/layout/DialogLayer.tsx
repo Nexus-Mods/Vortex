@@ -11,7 +11,7 @@ import { OverlayContainer } from "../OverlayContainer";
  * Provides a dialog system layer.
  * For both layouts.
  */
-export const DialogLayer: FC = (): JSX.Element => {
+export const DialogLayer: FC<React.PropsWithChildren<unknown>> = (): JSX.Element => {
   const dispatch = useDispatch();
 
   const visibleDialog = useSelector(

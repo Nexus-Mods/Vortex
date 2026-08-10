@@ -126,6 +126,47 @@ export const ImageDemo = () => (
 
     <div className="space-y-4">
       <Typography as="h3" typographyType="heading-xs">
+        Blurred fills the frame
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        A blurred image always covers its frame, whatever its{" "}
+        <span className="font-semibold">fit</span>. Otherwise a portrait source in a landscape frame
+        would blur down to a barely-visible letterboxed smear.
+      </Typography>
+
+      <div className="flex flex-wrap items-end gap-6">
+        <div className="flex flex-col items-center gap-2">
+          <Image
+            alt="Portrait source in a landscape frame, not blurred"
+            className="w-56"
+            imageType="mod"
+            src="https://picsum.photos/seed/portrait/300/500"
+          />
+
+          <Typography appearance="subdued" typographyType="body-xs">
+            Not blurred (contain, letterboxed)
+          </Typography>
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <Image
+            isBlurred
+            alt="Portrait source in a landscape frame, blurred"
+            className="w-56"
+            imageType="mod"
+            src="https://picsum.photos/seed/portrait/300/500"
+          />
+
+          <Typography appearance="subdued" typographyType="body-xs">
+            Blurred (covers the frame)
+          </Typography>
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <Typography as="h3" typographyType="heading-xs">
         Adult-aware
       </Typography>
 

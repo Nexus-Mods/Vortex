@@ -47,7 +47,7 @@ interface IActionProps {
   isDisabled: boolean;
 }
 
-const Action: React.FC<IActionProps> = (props) => {
+const Action: React.FC<React.PropsWithChildren<IActionProps>> = (props) => {
   const { action, isDefault, isDisabled, onDismiss } = props;
 
   const { t } = useTranslation(["common"]);
@@ -69,7 +69,7 @@ const Action: React.FC<IActionProps> = (props) => {
   );
 };
 
-export const Dialog: React.FC = () => {
+export const Dialog: React.FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 

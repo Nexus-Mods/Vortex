@@ -236,7 +236,13 @@ function bakeSettings(api: types.IExtensionApi, profile: types.IProfile): Promis
   return PromiseBB.resolve(
     util
       .sortMods(profile.gameId, mods, api)
-      .then((sortedMods) => api.emitAndAwait("bake-settings", profile.gameId, sortedMods, profile)),
+      .then((sortedMods) =>
+        PromiseBB.resolve(
+          api
+            .emitAndAwait("bake-settings", profile.gameId, sortedMods, profile)
+            .then(() => undefined),
+        ),
+      ),
   );
 }
 

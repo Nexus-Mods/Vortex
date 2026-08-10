@@ -23,6 +23,7 @@ export interface IZoomableImageProps {
   url: string;
   container?: JSX.Element;
   overlayClass?: string;
+  children?: React.ReactNode;
 }
 
 class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: boolean }> {

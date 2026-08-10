@@ -14,7 +14,7 @@ const registerMainPage = (
   extInfo: Partial<IRegisteredExtension>,
   icon: string,
   title: string,
-  component: ComponentType,
+  component: ComponentType<React.PropsWithChildren<unknown>>,
   options: IMainPageOptions,
 ): IMainPage => {
   return {
@@ -28,8 +28,10 @@ const registerMainPage = (
     group: options.group,
     isClassicOnly: options.isClassicOnly,
     isModernOnly: options.isModernOnly,
+    newLayout: options.newLayout,
     badge: options.badge,
     activity: options.activity,
+    menuBadge: options.menuBadge,
     priority: options.priority !== undefined ? options.priority : 100,
     onReset: options.onReset,
     namespace: extInfo.namespace,

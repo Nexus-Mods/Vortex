@@ -29,21 +29,6 @@ export interface ISteamEntry extends IGameStoreEntry {
   protonPath?: string;
 }
 
-/// obsolete, no longer used. But it's exported through the api
-export class GameNotFound extends Error {
-  private mSearch;
-  constructor(search: string) {
-    super("Not in Steam library");
-    Error.captureStackTrace(this, this.constructor);
-
-    this.name = this.constructor.name;
-    this.mSearch = search;
-  }
-  public get search() {
-    return this.mSearch;
-  }
-}
-
 /**
  * base class to interact with local steam installation
  * @class Steam

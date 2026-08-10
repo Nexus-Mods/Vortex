@@ -3,13 +3,12 @@
  * SMAPI (mods/2400) — picked because it has no further prerequisites, so the
  * install completes cleanly. Premium users skip the slow-download interstitial.
  */
+import { SDV_MOD_URL } from "../constants";
 import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { NavBar } from "../selectors/navbar";
-
-const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
 
 const TIERS = [
   { tier: "free", user: freeUser },

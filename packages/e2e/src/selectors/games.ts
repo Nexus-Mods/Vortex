@@ -6,6 +6,12 @@ export class GamesPage {
   readonly unmanagedSection: Locator;
   readonly notDiscoveredDialog: Locator;
   readonly continueButton: Locator;
+  /**
+   * Filter box for the games picker (placeholder "Search games..."). The
+   * unmanaged list is paginated/windowed, so narrowing it by name is the only
+   * reliable way to bring a specific game's row into the DOM.
+   */
+  readonly searchInput: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -16,6 +22,7 @@ export class GamesPage {
       .filter({ hasText: "Game not discovered" })
       .last();
     this.continueButton = this.notDiscoveredDialog.getByRole("button", { name: "Continue" });
+    this.searchInput = page.getByRole("textbox", { name: /search games/i }).first();
   }
 
   gameRow(gameName: string): Locator {

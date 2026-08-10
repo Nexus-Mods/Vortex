@@ -4,7 +4,7 @@ import { EventEmitter } from "events";
 import * as net from "net";
 import * as path from "path";
 
-import { VCREDIST_URL } from "@vortex/shared";
+import { isPromiseLike, VCREDIST_URL } from "@vortex/shared";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import PromiseBB from "bluebird";
@@ -21,7 +21,12 @@ import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
 
-import { forgetExtension, setExtensionEnabled, setExtensionVersion } from "./actions/app";
+import {
+  addExtension,
+  forgetExtension,
+  setExtensionEnabled,
+  setExtensionVersion,
+} from "./actions/app";
 import type { DialogActions, DialogType, IDialogContent } from "./actions/notifications";
 import {
   addNotification,
@@ -69,6 +74,7 @@ import type {
 import type { ILookupOptions, IModLookupResult } from "./types/IModLookupResult";
 import type { INotification } from "./types/INotification";
 import type {
+  ExtensionLoadFailureException,
   IExtensionLoadFailure,
   IExtensionOptional,
   IExtensionState,
@@ -111,6 +117,8 @@ import { webpackRequireHack } from "./util/webpack-hacks";
 import { isToastSystemDisabled } from "./views/layout/ToastContainer";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
+
+const ENQUEUE_TAG = Symbol("emitAndAwaitEnqueue");
 
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
@@ -693,7 +701,7 @@ class ExtensionManager {
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
   private mTranslator: i18n;
-  private mEventEmitter: NodeJS.EventEmitter;
+  private mEventEmitter: IExtensionApi["events"];
   private mStyleManager: StyleManager;
   private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
@@ -728,6 +736,7 @@ class ExtensionManager {
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
+  private mPendingAdds: Array<{ extId: string; info: IExtension }> = [];
   // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
   private mExtensionPersistors: {
     [hive: string]: { persistor: IPersistor; debounce: number };
@@ -749,7 +758,7 @@ class ExtensionManager {
    */
   constructor(
     extensionState?: { [extId: string]: IExtensionState },
-    eventEmitter?: NodeJS.EventEmitter,
+    eventEmitter?: IExtensionApi["events"],
   ) {
     this.mEventEmitter = eventEmitter;
     if (eventEmitter !== undefined) {
@@ -850,12 +859,11 @@ class ExtensionManager {
     }
 
     // Check for extensions marked for removal
-    const extensionsPath = path.join(getVortexPath("userData"), "plugins");
     this.mPendingRemoves = [];
-    Object.keys(this.mExtensionState)
-      .filter((extId) => this.mExtensionState[extId].remove)
-      .forEach((extId) => {
-        const extPath = path.join(extensionsPath, extId);
+    Object.entries(this.mExtensionState)
+      .filter(([_, entry]) => entry.remove)
+      .forEach(([extId, entry]) => {
+        const extPath = entry.path;
         log("info", "removing", extPath);
         try {
           fs.removeSync(extPath);
@@ -877,6 +885,7 @@ class ExtensionManager {
     this.mExtensions = this.prepareExtensions();
 
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
+    const extensionsPath = path.join(getVortexPath("userData"), "plugins");
     if (this.mOutdated.length > 0) {
       const removeOps: Array<{
         type: "set";
@@ -962,6 +971,11 @@ class ExtensionManager {
       store.dispatch(forgetExtension(extId));
     });
     this.mPendingRemoves = [];
+
+    this.mPendingAdds.forEach(({ extId, info }) => {
+      store.dispatch(addExtension(extId, info));
+    });
+    this.mPendingAdds = [];
 
     this.mExtensionState = getSafe(store.getState(), ["app", "extensions"], {});
 
@@ -1076,12 +1090,17 @@ class ExtensionManager {
   }
 
   private reportExtLoadErrors() {
-    const nodeLoadErr = Object.values(this.mLoadFailures)
-      .flat(1)
-      .find((_) => {
-        const msg = _.args?.message ?? "";
-        return msg.includes("The specified module could not be found.") && msg.includes(".node");
-      });
+    let nodeLoadErr: ExtensionLoadFailureException | undefined = undefined;
+    for (const x of Object.values(this.mLoadFailures).flat(1)) {
+      if (x.id !== "exception") continue;
+      if (
+        x.args.message.includes("The specified module could not be found.") &&
+        x.args.message.includes(".node")
+      ) {
+        nodeLoadErr = x;
+      }
+    }
+
     if (nodeLoadErr !== undefined) {
       this.mApi.store?.dispatch?.(
         showDialog(
@@ -1799,7 +1818,7 @@ class ExtensionManager {
 
     const state: IState = this.mApi.store.getState();
     this.mExtensions
-      .filter((ext) => ext.dynamic)
+      .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
         try {
           let oldVersion = getSafe(state.app, ["extensions", ext.name, "version"], "0.0.0");
@@ -2531,66 +2550,81 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): PromiseBB<any> => {
-    let queue = PromiseBB.resolve();
-    const results: any[] = [];
-    const enqueue = (prom: PromiseBB<any>) => {
-      if (prom !== undefined) {
-        queue = queue.then(() =>
-          prom
-            .then((res) => {
-              if (res !== undefined && res !== null) {
-                results.push(res);
-              }
-            })
-            .catch((err) => {
-              this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
-            }),
-        );
-      }
+  private emitAndAwait = ((eventName: string, ...args: unknown[]): Promise<unknown> => {
+    const pending: Promise<void>[] = [];
+    const results: unknown[] = [];
+
+    const enqueue = (promise?: unknown) => {
+      if (!isPromiseLike(promise)) return;
+
+      pending.push(
+        Promise.resolve(promise)
+          .then((res) => {
+            if (res !== undefined && res !== null) {
+              results.push(res);
+            }
+          })
+          .catch((err) => {
+            this.mApi.showErrorNotification(`Unhandled error in event "${eventName}"`, err);
+          }),
+      );
     };
 
-    this.mEventEmitter.emit(event, ...args, enqueue);
+    enqueue[ENQUEUE_TAG] = true;
 
-    return queue.then(() => results);
-  };
+    this.mEventEmitter.emit(eventName, ...args, enqueue);
+    return Promise.all(pending).then(() => results);
+  }) as IExtensionApi["emitAndAwait"];
 
-  private onAsync = (
+  private onAsync: IExtensionApi["onAsync"] = <
+    TResult = unknown,
+    TArgs extends readonly unknown[] = unknown[],
+  >(
     event: string,
-    listener: (...args) => PromiseLike<any>,
+    listener: (...args: TArgs) => PromiseLike<TResult>,
     extInfo?: { name: string; official: boolean },
   ) => {
     const effectiveListener = wrapExtCBAsync(listener, extInfo);
-    this.mEventEmitter.on(event, (...args: any[]) => {
-      const enqueue = args.pop();
-      if (enqueue === undefined || typeof enqueue !== "function") {
-        // no arguments, this is not an emitAndAwait event!
+
+    this.mEventEmitter.on(event, (...rawArgs: unknown[]) => {
+      const last = rawArgs[rawArgs.length - 1];
+      const isEnqueue = typeof last === "function" && last[ENQUEUE_TAG] === true;
+      const args = (isEnqueue ? rawArgs.slice(0, -1) : rawArgs) as unknown as TArgs;
+
+      const callListener = (): Promise<TResult> => {
+        try {
+          return Promise.resolve(effectiveListener(...args));
+        } catch (err) {
+          return Promise.reject(unknownToError(err));
+        }
+      };
+
+      if (!isEnqueue) {
         this.mApi.showErrorNotification("Invalid event handler", { event });
-        if (enqueue !== undefined) {
-          args.push(enqueue);
-        }
-        // call the listener anyway
-        const prom = effectiveListener(...args);
-        if (prom["catch"] !== undefined) {
-          prom["catch"]((err) => {
-            this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
-          });
-        }
+        callListener().catch((err) => {
+          this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
+        });
       } else {
-        enqueue(effectiveListener(...args));
+        (last as (p: PromiseLike<unknown>) => void)(callListener());
       }
     });
   };
 
-  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => PromiseBB<T>) => {
-    return (...args: any[]) => {
-      return this.emitAndAwait(`will-${eventName}`, ...args)
-        .then(() => cb(...args))
-        .then((res: T) => this.emitAndAwait(`did-${eventName}`, res, ...args).then(() => res));
+  private withPrePost: IExtensionApi["withPrePost"] = <
+    TResult,
+    TArgs extends readonly unknown[] = unknown[],
+  >(
+    eventName: string,
+    cb: (...args: TArgs) => PromiseLike<TResult>,
+  ) => {
+    return async (...args: TArgs) => {
+      await this.emitAndAwait(`will-${eventName}`, ...args);
+      const res = await Promise.resolve(cb(...args));
+      await this.emitAndAwait(`did-${eventName}`, res, ...args);
+      return res;
     };
   };
 
-  // tslint:disable-next-line:member-ordering
   private highlightCSS = (() => {
     let highlightCSS: CSSStyleRule;
     let highlightCSSAlt: CSSStyleRule;
@@ -2932,7 +2966,6 @@ class ExtensionManager {
       about_dialog: () => require("./extensions/about_dialog/index.ts"),
       adaptor_bridge: () => require("./extensions/adaptor_bridge/index.ts"),
       analytics: () => require("./extensions/analytics/index.ts"),
-      announcement_dashlet: () => require("./extensions/announcement_dashlet/index.ts"),
       browse_nexus: () => require("./extensions/browse_nexus/index.ts"),
       browser: () => require("./extensions/browser/index.ts"),
       category_management: () => require("./extensions/category_management/index.ts"),
@@ -2961,7 +2994,6 @@ class ExtensionManager {
       instructions_overlay: () => require("./extensions/instructions_overlay/index.ts"),
       mod_load_order: () => require("./extensions/mod_load_order/index.ts"),
       mod_management: () => require("./extensions/mod_management/index.ts"),
-      mod_spotlights_dashlet: () => require("./extensions/mod_spotlights_dashlet/index.ts"),
       move_activator: () => require("./extensions/move_activator/index.ts"),
       news_dashlet: () => require("./extensions/news_dashlet/index.ts"),
       nexus_integration: () => require("./extensions/nexus_integration/index.tsx"),
@@ -2990,31 +3022,72 @@ class ExtensionManager {
 
     require("./util/extensionRequire").default(() => this.extensions);
 
-    const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
-    let dynamicallyLoaded = [];
-    return Object.keys(staticExtensions)
-      .map((name: string) => ({
-        name,
-        namespace: name,
-        path: path.resolve(__dirname, "extensions", name),
-        initFunc: () => {
-          const f = staticExtensions[name];
-          return ExtensionManager.getExtensionInitFunc(f());
-        },
-        dynamic: false,
-      }))
-      .concat(
-        ...extensionPaths.map((extSpec) => {
-          const newExtensions = this.loadDynamicExtensions(
-            extSpec,
-            loadedExtensions,
-            dynamicallyLoaded,
-          );
-          dynamicallyLoaded = dynamicallyLoaded.concat(newExtensions);
-          return newExtensions;
-        }),
-      );
+    let dynamicallyLoaded: IRegisteredExtension[] = [];
+
+    const staticExts = Object.keys(staticExtensions).map((name: string) => ({
+      name,
+      namespace: name,
+      path: path.resolve(__dirname, "extensions", name),
+      initFunc: () => {
+        const f = staticExtensions[name];
+        return ExtensionManager.getExtensionInitFunc(f());
+      },
+      dynamic: false,
+    }));
+
+    // --- User extensions: load from persisted state, then reconcile ---
+    const userExts = this.loadUserExtensions(loadedExtensions, dynamicallyLoaded);
+    dynamicallyLoaded = dynamicallyLoaded.concat(userExts);
+
+    // --- Bundled extensions: fresh disk scan every boot (never persisted) ---
+    const bundledExts = this.loadDynamicExtensions(
+      { path: getVortexPath("bundledPlugins"), bundled: true },
+      loadedExtensions,
+      dynamicallyLoaded,
+    );
+
+    return staticExts.concat(userExts).concat(bundledExts);
+  }
+
+  private loadUserExtensions(
+    loadedExtensions: Set<string>,
+    alreadyLoaded: IRegisteredExtension[],
+  ): IRegisteredExtension[] {
+    const userPath = path.join(getVortexPath("userData"), "plugins");
+
+    // 1. Load from persisted state by path (primary source)
+    const result: IRegisteredExtension[] = [];
+    const loadedFromState = new Set<string>();
+    for (const [extId, state] of Object.entries(this.mExtensionState)) {
+      if (state.remove || state.enabled === false) continue;
+      if (state.path === undefined || !fs.existsSync(state.path)) {
+        this.mPendingRemoves.push(extId);
+        continue;
+      }
+      const ext = this.loadDynamicExtension(state.path, alreadyLoaded, false);
+      if (ext !== undefined) {
+        result.push(ext);
+        loadedExtensions.add(ext.name);
+        loadedFromState.add(ext.name);
+      }
+    }
+
+    // 2. Disk scan for extensions not tracked in state (reconciliation)
+    const scanned = this.loadDynamicExtensions(
+      { path: userPath, bundled: false },
+      loadedExtensions,
+      alreadyLoaded,
+    );
+    for (const ext of scanned) {
+      if (!loadedFromState.has(ext.name)) {
+        this.mPendingAdds.push({ extId: ext.name, info: { ...ext.info, path: ext.path } });
+        result.push(ext);
+        loadedExtensions.add(ext.name);
+      }
+    }
+
+    return result;
   }
 }
 

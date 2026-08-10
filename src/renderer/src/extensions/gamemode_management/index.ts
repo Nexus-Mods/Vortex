@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { mdiGamepadSquare } from "@mdi/js";
+import { mdiGamepadSquareOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
@@ -26,10 +26,10 @@ import type { IGameStore } from "../../types/IGameStore";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
-import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
+import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
@@ -692,13 +692,14 @@ function init(context: IExtensionContext): boolean {
       priority: 10,
       hotkey: "G",
       group: "global",
+      newLayout: true,
       props: () => ({
         onRefreshGameInfo,
         onBrowseGameLocation,
         nexusGames: nexusGames(),
       }),
       activity,
-      mdi: mdiGamepadSquare,
+      mdi: mdiGamepadSquareOutline,
     },
   );
   context.registerFooter("discovery-progress", ProgressFooter);
@@ -739,10 +740,7 @@ function init(context: IExtensionContext): boolean {
             encoding: "utf8",
           }),
         );
-        game.contributed =
-          gameExtInfo.author === COMPANY_ID || gameExtInfo.author === NEXUSMODS_EXT_ID
-            ? undefined
-            : gameExtInfo.author;
+        game.contributed = isContributed(gameExtInfo.author) ? gameExtInfo.author : undefined;
         game.final = semver.gte(gameExtInfo.version, "1.0.0");
         game.version = gameExtInfo.version;
       } else {
@@ -911,7 +909,7 @@ function init(context: IExtensionContext): boolean {
     2,
     175,
     RecentlyManagedDashlet,
-    undefined,
+    (state: IState) => !state.settings.window.useModernLayout,
     undefined,
     undefined,
   );
@@ -972,20 +970,20 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    context.api.onAsync("discover-game", (gameId: string) => {
+    context.api.onAsync<string[]>("discover-game", (gameId: string) => {
       if (process.env.VORTEX_E2E === "1") {
         log(
           "debug",
           "discover-game suppressed: VORTEX_E2E=1, tests manage game paths explicitly to ensure deterministic behaviour across machines",
           { gameId },
         );
-        return PromiseBB.resolve();
+        return PromiseBB.resolve<string[]>([]);
       }
       const game = getGame(gameId);
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
       } else {
-        return PromiseBB.resolve();
+        return PromiseBB.resolve<string[]>([]);
       }
     });
 

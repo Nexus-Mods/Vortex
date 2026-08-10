@@ -1,150 +1,151 @@
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-import Bluebird from "bluebird";
-import type { TOptions, i18n } from "i18next";
+import type { TOptions, i18n, BackendModule, PostProcessorModule, Services } from "i18next";
 import I18next from "i18next";
 import FSBackend from "i18next-fs-backend";
 import { initReactI18next } from "react-i18next";
 
 import type { IExtension } from "../types/extensions";
-import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
-import { log } from "./log";
 
-type TFunction = typeof I18next.t;
+/** @public */
+export type { i18n };
+
+/** @public */
+export type TFunction = typeof I18next.t;
+
+export const fallbackTFunc: TFunction = (str: string | string[]) => {
+  if (Array.isArray(str)) return String(str[0]);
+  return String(str);
+};
 
 let debugging = false;
 let currentLanguage = "en";
-const fallbackTFunc: TFunction = (str) => (Array.isArray(str) ? str[0].toString() : str.toString());
-
 let actualT: TFunction = fallbackTFunc;
-
-export { fallbackTFunc };
-export type { i18n, TFunction };
-
-let missingKeys = { common: {} };
-
-export interface IInitResult {
-  i18n: i18n;
-  tFunc: TFunction;
-  error?: Error;
-}
+let missingKeys: Record<string, Record<string, string>> = { common: {} };
 
 type BackendType = "bundled" | "custom" | "extension";
 
-class MultiBackend {
-  private static type = "backend";
-  private mOptions: any;
-  private mServices: any;
-  private mCurrentBackend: FSBackend;
-  private mLastReadLanguage: string;
-  private mBackendType: BackendType;
+type BackendOptions = {
+  bundled: string;
+  user: string;
+  translationExts: () => IExtension[];
+};
 
-  constructor(services, options) {
-    this.init(services, options);
+class MultiBackend implements BackendModule<BackendOptions> {
+  #backendOptions: BackendOptions;
+  #backendType: BackendType;
+  #currentBackend: FSBackend;
+  #lastReadLanguage: string;
+  #services: Services;
+
+  static type = "backend" as const;
+  type: "backend" = "backend" as const;
+
+  constructor(services: Services, backendOptions: BackendOptions) {
+    this.init(services, backendOptions, {});
   }
 
-  public init(services, options) {
-    this.mOptions = options;
-    this.mServices = services;
-  }
+  init: BackendModule<BackendOptions>["init"] = (services, backendOptions) => {
+    this.#backendOptions = backendOptions;
+    this.#services = services;
+  };
 
-  public read(language: string, namespace: string, callback): void {
-    const { backendType, extPath } = this.backendType(language);
+  read: BackendModule["read"] = (language, namespace, callback) => {
+    const { backendType, extPath } = this.#getBackendType(language);
     if (
-      backendType !== this.mBackendType ||
-      (backendType === "extension" && language !== this.mLastReadLanguage)
+      backendType !== this.#backendType ||
+      (backendType === "extension" && language !== this.#lastReadLanguage)
     ) {
-      this.mCurrentBackend = this.initBackend(backendType, extPath);
+      this.#currentBackend = this.initBackend(backendType, extPath);
     }
 
-    this.mLastReadLanguage = language;
-    this.mCurrentBackend.read(language, namespace, callback);
-  }
+    this.#lastReadLanguage = language;
+    this.#currentBackend.read(language, namespace, callback);
+  };
 
   private initBackend(type: BackendType, extPath: string) {
     const res = new FSBackend();
 
     let basePath: string;
     if (type === "bundled") {
-      basePath = this.mOptions.bundled;
+      basePath = this.#backendOptions.bundled;
     } else if (type === "custom") {
-      basePath = this.mOptions.user;
+      basePath = this.#backendOptions.user;
     } else {
       basePath = extPath;
     }
 
-    res.init(this.mServices, {
+    res.init(this.#services, {
       loadPath: path.join(basePath, "{{lng}}", "{{ns}}.json"),
       ident: 2,
     });
 
-    this.mBackendType = type;
+    this.#backendType = type;
     return res;
   }
 
-  private backendType(language: string): {
+  #getBackendType(language: string): {
     backendType: BackendType;
     extPath?: string;
   } {
     try {
       // translations from the user directory (custom installs or in-development)
-      fs.statSync(path.join(this.mOptions.user, language));
+      fs.statSync(path.join(this.#backendOptions.user, language));
       return { backendType: "custom" };
-    } catch (err) {
+    } catch {
       // extension-provided
-      const ext = this.mOptions.translationExts().find((iter: IExtension) => {
+      const ext = this.#backendOptions.translationExts().find((iter: IExtension) => {
         try {
           fs.statSync(path.join(iter.path, language));
           return true;
-        } catch (err) {
+        } catch {
           return false;
         }
       });
+
       if (ext !== undefined) {
         return { backendType: "extension", extPath: ext.path };
       }
 
       try {
         // finally, see if we have the language bundled
-        fs.statSync(path.join(this.mOptions.bundled, language));
+        fs.statSync(path.join(this.#backendOptions.bundled, language));
         return { backendType: "bundled" };
-      } catch (err) {
+      } catch {
         return { backendType: "custom" };
       }
     }
   }
 }
 
-class HighlightPP {
-  public name: string;
-  public type: "postProcessor";
+class HighlightPP implements PostProcessorModule {
+  name: string = "HighlightPP";
 
-  constructor() {
-    this.type = "postProcessor";
-    this.name = "HighlightPP";
-  }
+  static type = "postProcessor" as const;
+  type: "postProcessor" = "postProcessor" as const;
 
-  public process(value: string, key, options, translator) {
+  process: PostProcessorModule["process"] = (value, key) => {
     if (value.startsWith("TT:")) {
       console.trace("duplicate translation", key, value);
     }
+
     return "TT:" + value.toUpperCase();
-  }
+  };
 }
 
 /**
  * initialize the internationalization library
- *
- * @export
- * @param {string} language
- * @returns {I18next.I18n}
  */
-function init(language: string, translationExts: () => IExtension[]): Bluebird<IInitResult> {
+export async function init(
+  language: string,
+  translationExts: () => IExtension[],
+): Promise<{ i18n: i18n; tFunc: TFunction; error?: unknown }> {
   // reset to english if the language isn't valid
   try {
     new Date().toLocaleString(language);
-  } catch (err) {
+  } catch {
     language = "en";
   }
 
@@ -154,10 +155,14 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
   if (process.env.HIGHLIGHT_I18N === "true") {
     i18nObj.use(new HighlightPP());
   }
-  i18nObj.use(MultiBackend as any).use(initReactI18next);
 
-  return Bluebird.resolve(
-    i18nObj.init({
+  i18nObj.use(MultiBackend).use(initReactI18next);
+
+  try {
+    const tFunc = await i18nObj.init({
+      // TODO: Remove for i18next version 24
+      compatibilityJSON: "v3",
+
       lng: language,
       fallbackLng: "en",
       fallbackNS: "common",
@@ -188,15 +193,16 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
         // fire the componentDidUnmount lifecycle functions meaning we can't stop delayed
         // operations that will then break since the component is unmounted
         useSuspense: false,
-      } as any,
+      },
 
       saveMissing: debugging,
       saveMissingTo: "current",
 
-      missingKeyHandler: (lng, ns, key, fallbackValue) => {
+      missingKeyHandler: (_, ns, key) => {
         if (missingKeys[ns] === undefined) {
           missingKeys[ns] = {};
         }
+
         missingKeys[ns][key] = key;
       },
 
@@ -208,23 +214,22 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
         bundled: getVortexPath("locales"),
         user: path.normalize(path.join(getVortexPath("userData"), "locales")),
         translationExts,
-      },
-    }),
-  )
-    .tap((tFunc) => {
-      actualT = tFunc;
-    })
-    .then((tFunc) =>
-      Bluebird.resolve({
-        i18n: i18nObj,
-        tFunc,
-      }),
-    )
-    .catch((error) => ({
+      } satisfies BackendOptions,
+    });
+
+    actualT = tFunc;
+    return {
+      i18n: i18nObj,
+      tFunc,
+    };
+  } catch (err) {
+    actualT = fallbackTFunc;
+    return {
       i18n: i18nObj,
       tFunc: fallbackTFunc,
-      error,
-    }));
+      error: err,
+    };
+  }
 }
 
 export function getCurrentLanguage() {
@@ -243,7 +248,7 @@ export function globalT(key: string | string[], options: TOptions) {
 export function debugTranslations(enable?: boolean) {
   debugging = enable !== undefined ? enable : !debugging;
   missingKeys = { common: {} };
-  init(I18next.language, () => []);
+  init(I18next.language, () => []).catch(() => {});
 }
 
 export function getMissingTranslations() {
@@ -326,5 +331,3 @@ export function preT(
     return t(key.key, { ...key.options, ...(options ?? {}) });
   }
 }
-
-export default init;

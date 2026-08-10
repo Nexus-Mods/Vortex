@@ -10,7 +10,7 @@ import { setModRequirementsEnabled, setFileRequirementsEnabled } from "../action
 import { FILE_REQUIREMENTS_FLAG } from "../checks/fileRequirementsCheck";
 import { isModRequirementsEnabled, isFileRequirementsUserEnabled } from "../selectors";
 
-const SettingsHealthCheck: React.FC = () => {
+const SettingsHealthCheck: React.FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation(["health_check"]);
   const dispatch = useDispatch();
   const modRequirementsEnabled = useSelector(isModRequirementsEnabled);

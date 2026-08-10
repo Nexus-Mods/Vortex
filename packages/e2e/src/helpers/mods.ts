@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { expect, type ElectronApplication, type Page } from "@playwright/test";
 
+import { SDV_MOD_URL, SDV_VINTAGE_INTERFACE_MOD_URL } from "../constants";
 import { GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
 import { MOD_STATUS, ModsPage, type ModStatus } from "../selectors/modsPage";
@@ -11,8 +12,6 @@ import { downloadModViaModManager } from "./modDownload";
 import { Timeouts } from "./timeouts";
 
 export const SDV_GAME_ID = "stardewvalley";
-export const SMAPI_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
-export const TARGET_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/4697";
 export const SMAPI_NAME = /SMAPI/i;
 export const TARGET_MOD_NAME = /Vintage Interface/i;
 
@@ -21,8 +20,8 @@ export async function installStardewTestMods(
   vortexApp: ElectronApplication,
   vortexWindow: Page,
 ): Promise<void> {
-  await downloadModViaModManager(nexusPage, vortexApp, SMAPI_MOD_URL);
-  await downloadModViaModManager(nexusPage, vortexApp, TARGET_MOD_URL);
+  await downloadModViaModManager(nexusPage, vortexApp, SDV_MOD_URL);
+  await downloadModViaModManager(nexusPage, vortexApp, SDV_VINTAGE_INTERFACE_MOD_URL);
 
   await test.step("Open the Mods page", async () => {
     const navbar = new NavBar(vortexWindow);

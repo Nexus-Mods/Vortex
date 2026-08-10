@@ -14,6 +14,7 @@ interface IPortalMenuProps {
   useMousePosition?: boolean | { x: number; y: number };
   bsRole?: string;
   placement?: "top" | "bottom" | "left" | "right";
+  children?: React.ReactNode;
 }
 
 function nop() {

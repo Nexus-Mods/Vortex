@@ -7,6 +7,7 @@
  * Deploy it from the Mods list. Runs for both free and premium.
  *
  */
+import { SDV_MOD_URL } from "../constants";
 import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { Timeouts } from "../helpers/timeouts";
@@ -14,8 +15,6 @@ import { freeUser, premiumUser } from "../helpers/users";
 import { ModsPage } from "../selectors/modsPage";
 import { NavBar } from "../selectors/navbar";
 import { AUTOMATION_LABELS, SettingsPage } from "../selectors/settings";
-
-const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
 
 const TIERS = [
   { tier: "free", user: freeUser },

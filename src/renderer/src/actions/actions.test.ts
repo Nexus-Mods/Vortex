@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 
+import type { INotification } from "@/types/INotification";
+
 import * as actions from ".";
 
 describe("addNotification", () => {
@@ -7,7 +9,7 @@ describe("addNotification", () => {
     const minimal = {
       message: "sample",
       type: "info",
-    };
+    } satisfies INotification;
 
     const expected = {
       type: "ADD_NOTIFICATION",
@@ -25,7 +27,7 @@ describe("addNotification", () => {
       displayMS: 42,
       type: "info",
       actions: [{ title: "test", action: () => undefined }],
-    };
+    } satisfies INotification;
 
     expect(actions.startNotification(complete)).toEqual({
       error: false,

@@ -276,11 +276,23 @@ try {
       onResolve: (handler) => betterIpcRenderer.callback("download:resolve", handler),
     },
 
+    uploader: {
+      file: (request) => betterIpcRenderer.invoke("upload:file", request),
+      s3Multipart: (request) => betterIpcRenderer.invoke("upload:s3-multipart", request),
+      getProgress: (uploadId) => betterIpcRenderer.invoke("upload:getProgress", uploadId),
+      cancel: (uploadId) => betterIpcRenderer.invoke("upload:cancel", uploadId),
+    },
+
     bsdiff: {
       diff: (oldPath, newPath, patchPath) =>
         betterIpcRenderer.invoke("bsdiff:create", oldPath, newPath, patchPath),
       patch: (oldPath, outputPath, patchPath) =>
         betterIpcRenderer.invoke("bsdiff:apply", oldPath, patchPath, outputPath),
+    },
+
+    hash: {
+      compute: (algorithm, filePath) =>
+        betterIpcRenderer.invoke("hash:compute", algorithm, filePath),
     },
 
     diag: {

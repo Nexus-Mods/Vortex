@@ -24,6 +24,16 @@ import {
   profilesPath,
 } from "./util";
 
+// Coalesces the per-change auto-exports while the user is actively sorting;
+//  the export reads the load order from state, so the last scheduled run
+//  always writes the latest order. exportTo targets the BG3 profile
+//  regardless of the active game, so a run that lands after the user
+//  switched away still writes the correct order.
+const autoExportDebouncer = new util.Debouncer(
+  (api: types.IExtensionApi) => exportToGame(api, true),
+  1000,
+);
+
 export async function serialize(
   context: types.IExtensionContext,
   loadOrder: types.LoadOrder,
@@ -53,7 +63,7 @@ export async function serialize(
 
   logDebug("serialize autoExportToGame=", autoExportToGame);
 
-  if (autoExportToGame) await exportToGame(context.api);
+  if (autoExportToGame) autoExportDebouncer.schedule(undefined, context.api);
 
   return Promise.resolve();
 }
@@ -109,31 +119,32 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
 
     logDebug("deserialize loadOrder=", loadOrder);
 
-    // filter out any pak files that no longer exist
-    const filteredLoadOrder: types.LoadOrder = loadOrder.filter((entry) =>
-      paks.find((pak) => pak.fileName === entry.id),
-    );
+    // Map of pak file name to its cache entry
+    const paksByFileName = new Map(paks.map((pak): [string, ICacheEntry] => [pak.fileName, pak]));
+
+    // A pak's cache entry can hold a stale mod link (the cache never clears a
+    //  link on a manifest miss), so only treat it as managed when the mod is
+    //  still installed.
+    const managedModId = (pak: ICacheEntry): string | undefined => {
+      const modId = pak?.mod?.id;
+      return modId !== undefined && props.mods[modId] !== undefined ? modId : undefined;
+    };
+
+    // filter out any pak files that no longer exist and re-link entries that
+    //  lost their mod association (e.g. serialized while the deployment
+    //  manifest was unavailable)
+    const filteredLoadOrder: types.LoadOrder = loadOrder
+      .filter((entry) => paksByFileName.has(entry.id))
+      .map((entry) => {
+        const modId = managedModId(paksByFileName.get(entry.id));
+        return entry.modId === undefined && modId !== undefined ? { ...entry, modId } : entry;
+      });
 
     logDebug("deserialize filteredLoadOrder=", filteredLoadOrder);
 
-    // filter out pak files that don't have a corresponding mod (which means Vortex didn't install it/isn't aware of it)
-    //const paksWithMods:BG3Pak[] = paks.filter(pak => pak.mod !== undefined);
-
-    // go through each pak file in the Mods folder...
-    const processedPaks = paks.reduce(
-      (acc, curr) => {
-        acc.valid.push(curr);
-        return acc;
-      },
-      { valid: [], invalid: [] },
-    );
-
-    logDebug("deserialize processedPaks=", processedPaks);
-
     // get any pak files that aren't in the filteredLoadOrder
-    const addedMods: BG3Pak[] = processedPaks.valid.filter(
-      (pak) => filteredLoadOrder.find((entry) => entry.id === pak.fileName) === undefined,
-    );
+    const loEntryIds = new Set(filteredLoadOrder.map((entry) => entry.id));
+    const addedMods: BG3Pak[] = paks.filter((pak) => !loEntryIds.has(pak.fileName));
 
     logDebug("deserialize addedMods=", addedMods);
 
@@ -147,7 +158,7 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
     addedMods.forEach((pak) => {
       filteredLoadOrder.push({
         id: pak.fileName,
-        modId: pak.mod?.id,
+        modId: managedModId(pak),
         enabled: true, // not using load order for enabling/disabling
         name: pak.info?.name || path.basename(pak.fileName, ".pak"),
         data: pak.info,
@@ -455,9 +466,15 @@ export async function processLsxFile(api: types.IExtensionApi, lsxPath: string) 
   }
 }
 
-async function exportTo(api: types.IExtensionApi, filepath: string) {
+async function exportTo(
+  api: types.IExtensionApi,
+  filepath: string,
+  silent: boolean = false,
+): Promise<void> {
   const state = api.getState();
-  const profileId = selectors.activeProfile(state)?.id;
+  // Target the BG3 profile so a debounced export that lands after the user
+  //  switched games still writes the correct load order.
+  const profileId = selectors.lastActiveProfileForGame(state, GAME_ID);
 
   // get load order from state
   const loadOrder: types.LoadOrder = util.getSafe(
@@ -565,15 +582,17 @@ async function exportTo(api: types.IExtensionApi, filepath: string) {
       }
     }
 
-    writeModSettings(api, modSettings, filepath);
+    await writeModSettings(api, modSettings, filepath);
 
-    api.sendNotification({
-      type: "success",
-      id: "bg3-loadorder-exported",
-      title: "Load Order Exported",
-      message: filepath,
-      displayMS: 3000,
-    });
+    if (!silent) {
+      api.sendNotification({
+        type: "success",
+        id: "bg3-loadorder-exported",
+        title: "Load Order Exported",
+        message: filepath,
+        displayMS: 3000,
+      });
+    }
   } catch (err) {
     api.showErrorNotification("Failed to write load order", err, {
       allowReport: false,
@@ -613,13 +632,16 @@ export async function exportToFile(api: types.IExtensionApi): Promise<boolean | 
   exportTo(api, selectedPath);
 }
 
-export async function exportToGame(api: types.IExtensionApi): Promise<boolean | void> {
+export async function exportToGame(
+  api: types.IExtensionApi,
+  silent: boolean = false,
+): Promise<void> {
   const bg3ProfileId = await getActivePlayerProfile(api);
   const settingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
 
   logDebug(`exportToGame ${settingsPath}`);
 
-  exportTo(api, settingsPath);
+  await exportTo(api, settingsPath, silent);
 }
 
 export async function deepRefresh(api: types.IExtensionApi): Promise<boolean | void> {

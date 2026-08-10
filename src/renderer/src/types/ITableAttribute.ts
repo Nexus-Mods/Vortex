@@ -1,3 +1,5 @@
+import type * as React from "react";
+
 import type { ITString, TFunction } from "../util/i18n";
 
 export type AttributeRenderer = "progress";
@@ -24,6 +26,7 @@ export interface IFilterProps {
   t: TFunction;
   onSetFilter: (attributeId: string, value: any) => void;
   domRef: (ref: HTMLElement) => void;
+  children?: React.ReactNode;
 }
 
 export interface ITableFilter {
@@ -55,7 +58,7 @@ export interface ITableFilter {
    * for possible values
    */
   raw: string | boolean;
-  component: React.ComponentType<IFilterProps>;
+  component: React.ComponentType<React.PropsWithChildren<IFilterProps>>;
   /**
    * specifies which property of the object to filter on, meaning that obj[dataId] will be passed
    * to the "matches" function as the value to filter by.

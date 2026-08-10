@@ -1,0 +1,355 @@
+import type { Locator, Page } from "@playwright/test";
+
+/**
+ * Health Check page — the per-game main page registered by the health_check
+ * extension. Reached from the sidebar entry titled "Health check" (lower-case
+ * "c", distinct from the "Health Check" page heading).
+ */
+export class HealthCheckPage {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly title: Locator;
+  readonly betaBadge: Locator;
+  readonly subtitle: Locator;
+  readonly refreshButton: Locator;
+  readonly settingsButton: Locator;
+  readonly lastUpdated: Locator;
+  readonly emptyStateTitle: Locator;
+  readonly emptyStateMessage: Locator;
+  readonly premiumBanner: Locator;
+  readonly activeTab: Locator;
+  readonly hiddenTab: Locator;
+  readonly installAllButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-page");
+    // Page heading (PageHeader renders the title as an <h2>). Capitalised
+    // "Health Check" distinguishes it from both the lower-case "Health check"
+    // sidebar entry and the "Health check passed" empty-state title.
+    this.title = this.root.getByRole("heading", { name: "Health Check" });
+    // "Beta" pill next to the title (BetaBadge → common:::beta).
+    this.betaBadge = this.root.getByText("Beta", { exact: true });
+    this.subtitle = this.root.getByText(
+      "Review your Loadout for any issues and learn how to resolve them if needed.",
+    );
+    // Icon-only header buttons; their accessible name comes from the `title` prop.
+    this.refreshButton = this.root.getByRole("button", { name: "Refresh" });
+    this.settingsButton = this.root.getByRole("button", { name: "Settings" });
+    this.lastUpdated = this.root.getByText(/Last updated:/);
+    this.emptyStateTitle = this.root.getByText("Health check passed");
+    this.emptyStateMessage = this.root.getByText("Ready for gaming");
+    // Free-user upsell banner; the "<premiumLink>Go premium</premiumLink>" is a
+    // separate node, so match on the leading sentence only.
+    this.premiumBanner = this.root.getByText(
+      "Download requirements in 1-click. No page visits or waiting.",
+    );
+    // Active / Hidden tabs (TabButton renders role="tab"; the label carries a
+    // "(N)" count suffix, so match the name loosely and read the count via text).
+    this.activeTab = this.root.getByRole("tab", { name: /Active/ });
+    this.hiddenTab = this.root.getByRole("tab", { name: /Hidden/ });
+    // Page-level batch action in the tabs header ("1-click install all (N)");
+    // installs the download candidates across all active warnings. Free users get
+    // a Premium badge on it. Distinct from the detail group's install-all, which
+    // lives under #health-check-detail-page.
+    this.installAllButton = this.root.getByRole("button", { name: /1-click install all/ });
+  }
+}
+
+/**
+ * File-requirement warnings as they appear in the Health Check *list*. A missing
+ * required mod renders a row titled "Missing required mod for: <source mod>" with
+ * the required mod's name and a "1-click install" action (see
+ * components/file_requirement/ListingRow.tsx + hooks/useReportCopy.ts).
+ */
+export class HealthCheckWarnings {
+  readonly page: Page;
+  readonly root: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-page");
+  }
+
+  /**
+   * The list row for a missing-requirement warning, identified by its
+   * "Missing required mod(s) for:" title (singular or plural, depending on how
+   * many requirements the source file has). Pass the required mod's name (e.g.
+   * /SMAPI/i) only to disambiguate when several such warnings are present; omit
+   * it to target the sole warning. The row is a `role="button"` container;
+   * filtering by the title text excludes the header/action buttons that also
+   * carry that role, and the mod-requirement ("Additional mod file may be
+   * required for:") rows, so this matches file-requirement warnings only.
+   */
+  row(requiredModName?: string | RegExp): Locator {
+    const rows = this.root
+      .locator('[role="button"]')
+      .filter({ hasText: /Missing required mods? for:/ });
+    return (
+      requiredModName === undefined ? rows : rows.filter({ hasText: requiredModName })
+    ).first();
+  }
+
+  /**
+   * The warning's title text element ("Missing required mod(s) for: …"). Use for
+   * hover/click targets and title-copy assertions; the regex tolerates the
+   * singular/plural forms. Pass the required mod name only to disambiguate.
+   */
+  title(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByText(/Missing required mods? for:/);
+  }
+
+  /**
+   * The "1-click install" button inside a warning row. Label is "1-click install"
+   * for a single requirement and "1-click install (N)" for several, so match on
+   * the prefix rather than an exact string.
+   */
+  installOneClick(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: /1-click install/ });
+  }
+
+  /**
+   * The per-row EntryActions controls (thumbs-down + hide eye). In the list they're
+   * `invisible` until the row is hovered/focused, so hover the row first
+   * (`await warnings.row().hover()`) before asserting/clicking these. Names are
+   * exact so "Hide" doesn't also match the header "Hide all" and "Not helpful"
+   * matches only the thumbs-down.
+   */
+  notHelpfulButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Not helpful", exact: true });
+  }
+
+  /** The hide (eye-off) control; becomes "Unhide" once the row is hidden. */
+  hideButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Hide", exact: true });
+  }
+
+  unhideButton(requiredModName?: string | RegExp): Locator {
+    return this.row(requiredModName).getByRole("button", { name: "Unhide", exact: true });
+  }
+}
+
+/**
+ * The expanded Health Check detail page (HealthCheckDetailPage + the file
+ * requirement DetailView). Shown after opening a warning row; replaces the list.
+ */
+export class HealthCheckDetail {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly warningTitle: Locator;
+  readonly backButton: Locator;
+  readonly installViaModPageButton: Locator;
+  readonly installOneClickButton: Locator;
+  readonly installRequiredHeader: Locator;
+  readonly installAllInGroupButton: Locator;
+  readonly feedbackPrompt: Locator;
+  readonly feedbackThanks: Locator;
+  readonly notHelpfulButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-detail-page");
+    // Severity title heading ("Warning") + a "BETA" badge sit in the header.
+    this.warningTitle = this.root.getByRole("heading", { name: "Warning" });
+    this.backButton = this.root.getByRole("button", { name: "Back", exact: true });
+    // With several requirements the detail renders one card per required mod, so
+    // these controls can appear multiple times — take the first.
+    this.installViaModPageButton = this.root
+      .getByRole("button", { name: "Install via mod page" })
+      .first();
+    this.installOneClickButton = this.root
+      .getByRole("button", { name: /^1-click install$/ })
+      .first();
+    // "Install required" group header for the download report type (RequirementBody).
+    this.installRequiredHeader = this.root.getByText("Install required", { exact: true });
+    // Section-level batch button, rendered only when the group has >1 candidate
+    // ("1-click install all (N)"); free users additionally get a Premium badge.
+    this.installAllInGroupButton = this.root
+      .getByRole("button", { name: /1-click install all/ })
+      .first();
+    // EntryActions (detail variant): a prompt that flips to a thank-you once
+    // feedback is given, plus the thumbs-down control (exact name so it doesn't
+    // match a "Helpful" button).
+    this.feedbackPrompt = this.root.getByText("Was this warning helpful?");
+    this.feedbackThanks = this.root.getByText("Thanks for your feedback");
+    this.notHelpfulButton = this.root.getByRole("button", { name: "Not helpful", exact: true });
+  }
+
+  /**
+   * The "download" requirement summary for a given outstanding count
+   * (shared::requires_files via useReportCopy), e.g. requiresFileSummary(2) →
+   * "Requires 2 additional mod files to be installed to work correctly". Encodes
+   * the singular/plural copy so tests assert the count without an inline string.
+   */
+  requiresFileSummary(count: number): Locator {
+    return this.root.getByText(
+      `Requires ${count} additional mod ${count === 1 ? "file" : "files"} to be installed to work correctly`,
+    );
+  }
+
+  /** The requirement card row for a required mod (e.g. /SMAPI/i). */
+  requirementCard(requiredModName: string | RegExp): Locator {
+    return this.root.getByText(requiredModName).first();
+  }
+}
+
+/**
+ * Health Check settings section, rendered on Settings > Vortex tab
+ * (see SettingsHealthCheck.tsx). The file-requirements toggle only renders when
+ * the Unleash flag is present for the current user.
+ */
+export class HealthCheckSettings {
+  readonly page: Page;
+  readonly sectionTitle: Locator;
+  readonly description: Locator;
+  readonly modRequirementsToggle: Locator;
+  readonly fileRequirementsToggle: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.sectionTitle = page.getByText("Health Check (Beta)", { exact: true });
+    this.description = page.getByText(
+      "Detect issues with your mod list and suggest fixes. More checks are coming soon.",
+    );
+    this.modRequirementsToggle = this.toggle("Missing mod requirements suggestions");
+    this.fileRequirementsToggle = this.toggle("Missing file requirements warnings");
+  }
+
+  /**
+   * The clickable `.toggle` element for a labelled Health Check toggle. Mirrors
+   * SettingsPage.automationToggle: the shared Toggle control
+   * (src/renderer/src/controls/Toggle.tsx) exposes no accessible role, name, or
+   * checked state — identity comes from the visible label via `.filter({ hasText })`
+   * and on/off state from the `toggle-on` / `toggle-off` class (assert with
+   * toHaveClass). The app-side fix is to give Toggle `role="switch"` + `aria-checked`.
+   */
+  private toggle(label: string): Locator {
+    return this.page.locator(".toggle-container").filter({ hasText: label }).locator(".toggle");
+  }
+}
+
+/**
+ * The Premium upsell modal (PremiumModal) a free user gets when clicking a
+ * 1-click install action. Copy differs by scope: a single requirement shows the
+ * "…install instantly." variant; several show the "…install all requirements
+ * instantly." variant (see premium::modal in locales/en/health_check.json).
+ * Rendered as a role="dialog" only while open.
+ */
+export class HealthCheckPremiumModal {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly allTitle: Locator;
+  readonly singleTitle: Locator;
+  readonly benefitsTitle: Locator;
+  readonly unlockButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.getByRole("dialog").filter({ hasText: /Skip the website and install/ });
+    this.allTitle = page.getByText("Skip the website and install all requirements instantly.");
+    this.singleTitle = page.getByText("Skip the website and install instantly.");
+    this.benefitsTitle = this.root.getByText("With Premium you get:");
+    this.unlockButton = this.root.getByRole("button", { name: "Unlock 1-click installs" });
+  }
+}
+
+/**
+ * The "Not helpful" feedback modal (FeedbackModal), opened from the thumbs-down
+ * control. Rendered as a role="dialog" only while open.
+ */
+export class HealthCheckFeedbackModal {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly title: Locator;
+  readonly incorrectRequirement: Locator;
+  readonly sendButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.getByRole("dialog").filter({ hasText: "Thanks for letting us know" });
+    this.title = page.getByText("Thanks for letting us know");
+    this.incorrectRequirement = this.root.getByText("Incorrect requirement");
+    this.sendButton = this.root.getByRole("button", { name: "Send feedback" });
+  }
+}
+
+/**
+ * Mod-requirement "suggestions" as they appear in the Health Check list. A missing
+ * page-level (mod-to-mod) requirement renders a blue Suggestion row titled
+ * "Additional mod file may be required for: <requiring mod>" (severity "suggestion"
+ * → info/blue; see components/mod_requirement/ListingRow.tsx). Distinct from the
+ * yellow file-requirement warnings ("Missing required mods for: …").
+ */
+export class HealthCheckSuggestions {
+  readonly page: Page;
+  readonly root: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-page");
+  }
+
+  /**
+   * The suggestion row, identified by its "Additional mod file may be required
+   * for:" title. Pass the requiring mod's name to disambiguate when several are
+   * present; omit it to target the sole suggestion.
+   */
+  row(requiringModName?: string | RegExp): Locator {
+    const rows = this.root
+      .locator('[role="button"]')
+      .filter({ hasText: /Additional mod files? may be required for:/ });
+    return (
+      requiringModName === undefined ? rows : rows.filter({ hasText: requiringModName })
+    ).first();
+  }
+
+  /**
+   * The suggestion's title text element ("Additional mod file(s) may be required
+   * for: …"); use for click/visibility. The regex tolerates the singular/plural
+   * forms. Pass the requiring mod name only to disambiguate.
+   */
+  title(requiringModName?: string | RegExp): Locator {
+    return this.row(requiringModName).getByText(/Additional mod files? may be required for:/);
+  }
+
+  /** The "Missing mod: <name>" line inside a suggestion row. */
+  missingMod(requiringModName?: string | RegExp): Locator {
+    return this.row(requiringModName).getByText(/Missing mod:/);
+  }
+
+  /** The "1-click install" button inside a suggestion row (always a single required mod). */
+  installOneClick(requiringModName?: string | RegExp): Locator {
+    return this.row(requiringModName).getByRole("button", { name: /1-click install/ });
+  }
+}
+
+/**
+ * The expanded detail for a mod-requirement suggestion (mod_requirement/DetailView,
+ * inside #health-check-detail-page). The severity heading is "Suggestion" (vs the
+ * file requirement's "Warning"), and it carries the distinctive "identified from the
+ * mod page" disclaimer plus a suggestion-worded feedback prompt.
+ */
+export class HealthCheckSuggestionDetail {
+  readonly page: Page;
+  readonly root: Locator;
+  readonly suggestionTitle: Locator;
+  readonly mayRequireLine: Locator;
+  readonly modPageSourceNote: Locator;
+  readonly feedbackPrompt: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.root = page.locator("#health-check-detail-page");
+    // Severity heading rendered by HealthCheckDetailPage as detail::title::suggestion.
+    this.suggestionTitle = this.root.getByRole("heading", { name: "Suggestion" });
+    this.mayRequireLine = this.root.getByText(
+      "May require this additional mod file to be installed to work correctly",
+    );
+    // The "identified from the mod page rather than the file-level requirement
+    // system" disclaimer that marks this as a page-level suggestion, not a warning.
+    this.modPageSourceNote = this.root.getByText(
+      /identified from the mod page rather than the file-level requirement system/,
+    );
+    this.feedbackPrompt = this.root.getByText("Was this suggestion helpful?");
+  }
+}

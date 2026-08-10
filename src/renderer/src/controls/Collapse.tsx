@@ -6,6 +6,7 @@ import { PureComponentEx, translate } from "./ComponentEx";
 export interface ICollapseProps extends WithTranslation {
   showText?: string;
   hideText?: string;
+  children?: React.ReactNode;
 }
 
 interface ICollapseState {

@@ -1,14 +1,10 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { Icon } from "./Icon";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const renderComponent = (props: Partial<React.ComponentProps<typeof Icon>> = {}) => {
   const path = "M0 0h24v24H0z";

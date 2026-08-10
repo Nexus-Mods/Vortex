@@ -1,13 +1,13 @@
 @layer components {
     .nxm-input {
         width: 100%;
-        min-height: calc(var(--spacing) * 9);
+        min-height: calc(var(--spacing) * 7);
         border-radius: var(--radius-sm);
         padding-inline: calc(var(--spacing) * 3);
 
-        font-size: var(--text-body-lg);
-        line-height: var(--text-body-lg--line-height);
-        letter-spacing: var(--text-body-lg--letter-spacing);
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
 
         color: var(--color-neutral-strong);
         border: solid 1px var(--color-stroke-subdued);
@@ -28,13 +28,6 @@
         &.nxm-input-disabled {
             opacity: 0.4;
             outline: none;
-        }
-
-        &.nxm-input-sm {
-            font-size: var(--text-body-md);
-            line-height: var(--text-body-md--line-height);
-            letter-spacing: var(--text-body-md--letter-spacing);
-            min-height: calc(var(--spacing) * 7);
         }
 
         &.nxm-input-error {

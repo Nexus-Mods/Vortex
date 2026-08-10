@@ -1,4 +1,4 @@
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import { mdiAccountCircle, mdiLogout, mdiMessageReplyText, mdiRefresh } from "@mdi/js";
 import React, { forwardRef, type ButtonHTMLAttributes, type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider
 import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
 import { Icon } from "../../../ui/components/icon/Icon";
+import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
 import { UserCanceled } from "../../../util/CustomErrors";
 import opn from "../../../util/opn";
 import {
@@ -25,26 +26,30 @@ import {
 
 interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   imageSrc?: string;
+  title: string;
   username?: string;
 }
 
 const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
-  ({ imageSrc, username, ...props }, ref) => (
-    <button
-      className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
-      ref={ref}
-      {...props}
-    >
-      {imageSrc ? (
-        <img alt={username} className="size-6 rounded-full" src={imageSrc} />
-      ) : (
-        <Icon className="size-6 text-neutral-moderate" path={mdiAccountCircle} size="none" />
-      )}
-    </button>
+  ({ imageSrc, title, username, ...props }, ref) => (
+    <Tooltip content={title} placement="bottom">
+      <button
+        aria-label={title}
+        className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
+        ref={ref}
+        {...props}
+      >
+        {imageSrc ? (
+          <img alt={username} className="size-6 rounded-full" src={imageSrc} />
+        ) : (
+          <Icon className="size-6 text-neutral-moderate" path={mdiAccountCircle} size="none" />
+        )}
+      </button>
+    </Tooltip>
   ),
 );
 
-export const ProfileSection: FC = () => {
+export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const dispatch = useDispatch();
   const extensions = useExtensionContext();
   const api = extensions.getApi();
@@ -89,7 +94,7 @@ export const ProfileSection: FC = () => {
 
   return (
     <Dropdown>
-      <Menu.Button
+      <MenuButton
         as={ActionButton}
         imageSrc={userInfo.profileUrl}
         title={userInfo.name ?? t("Profile")}

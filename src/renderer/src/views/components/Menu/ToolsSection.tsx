@@ -4,11 +4,13 @@ import { mdiPlay } from "@mdi/js";
 import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useWindowContext } from "../../../contexts";
-import { Button } from "../../../ui/components/button/Button";
-import { joinClasses } from "../../../ui/utils/joinClasses";
-import type { IStarterInfo } from "../../../util/StarterInfo";
-import StarterInfo from "../../../util/StarterInfo";
+import { useWindowContext } from "@/contexts";
+import { Button } from "@/ui/components/button/Button";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import type { IStarterInfo } from "@/util/StarterInfo";
+import StarterInfo from "@/util/StarterInfo";
+
 import { useSpineContext } from "../Spine/SpineContext";
 import { ToolButton } from "./ToolButton";
 import { useToolsContext } from "./ToolsContext";
@@ -21,7 +23,7 @@ interface PlayButtonProps {
   onClick: () => void;
 }
 
-const PlayButton: FC<PlayButtonProps> = ({
+const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
   primaryStarter,
   isPrimaryRunning,
   isCollapsed,
@@ -43,22 +45,24 @@ const PlayButton: FC<PlayButtonProps> = ({
     return undefined;
   }, [primaryStarter, isCollapsed]);
 
-  const label = !isCollapsed ? (isPrimaryRunning ? t("Running...") : t("Play")) : undefined;
+  const label = isPrimaryRunning ? t("Running...") : t("Play");
 
   return (
     <div className="relative w-full">
-      <Button
-        brand="neutral"
-        appearance="strong"
-        className="w-full transition-all"
-        disabled={disabled}
-        leftIconPath={mdiPlay}
-        onClick={onClick}
-      >
-        {label}
-      </Button>
+      <Tooltip content={label} disabled={!isCollapsed} placement="right">
+        <Button
+          aria-label={isCollapsed ? label : undefined}
+          brand="neutral"
+          className="w-full transition-all"
+          disabled={disabled}
+          leftIconPath={mdiPlay}
+          onClick={onClick}
+        >
+          {!isCollapsed && label}
+        </Button>
+      </Tooltip>
 
-      {launcherIconSrc && (
+      {!!launcherIconSrc && (
         <div className="pointer-events-none absolute inset-0 z-2 flex items-center p-1">
           <img alt="" className="size-7 rounded-xs object-cover" src={launcherIconSrc} />
         </div>
@@ -71,8 +75,7 @@ interface ToolsSectionProps {
   isAnimating: boolean;
 }
 
-export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
-  const { t } = useTranslation();
+export const ToolsSection: FC<React.PropsWithChildren<ToolsSectionProps>> = ({ isAnimating }) => {
   const { menuIsCollapsed } = useWindowContext();
   const { selection } = useSpineContext();
   const {

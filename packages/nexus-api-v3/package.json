@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "codegen": "pnpm exec openapi-typescript https://api.nexusmods.com/openapi.yaml -o src/generated/nexus-api-v3.d.ts --immutable",
+    "codegen": "pnpm exec openapi-typescript ./schema/openapi.yaml -o src/generated/nexus-api-v3.d.ts --immutable",
     "build": "pnpm exec tsdown",
     "test": "pnpm exec vitest run",
     "typecheck": "pnpm exec tsc",
@@ -36,6 +36,16 @@
         "dependsOn": [
           "codegen",
           "^build"
+        ]
+      },
+      "codegen": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "{projectRoot}/schema/openapi.yaml"
+        ],
+        "outputs": [
+          "{projectRoot}/src/generated/nexus-api-v3.d.ts"
         ]
       }
     }

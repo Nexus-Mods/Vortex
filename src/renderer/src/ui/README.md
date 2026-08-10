@@ -7,6 +7,7 @@ Components adapted from the web team's "next" project for use in Vortex.
 ```
 ui/
 ├── components/
+│   ├── alert/           - Full-width page-level message bar (replaces Bootstrap Alert)
 │   ├── bullet/          - Small rotated-square dot used as an inline marker/separator
 │   ├── button/          - Button system (brand × appearance matrix)
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
@@ -26,17 +27,18 @@ ui/
 │   ├── listing_loader/  - Loading skeleton for lists
 │   ├── no_results/      - Empty state component
 │   ├── pagination/      - Pagination controls with jump-to-page
-│   ├── picker/          - Picker component
+│   ├── picker/          - Single-value selector (Headless UI Listbox)
 │   ├── pill/            - Compact rounded label for tags and statuses
+│   ├── popover/         - Floating panel of interactive content (Headless UI Popover)
 │   ├── premium_badge/   - Premium diamond badge
 │   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
+│   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
 │   └── typography/      - Typography system (heading, title, body)
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
 ├── utils/
-│   ├── get_tab_id/      - Converts tab names to valid HTML element IDs
 │   ├── join_classes/     - Joins class names with conditional support
 │   └── types.ts         - Shared types (XOr, ResponsiveScreenSizes)
 └── README.md
@@ -58,7 +60,6 @@ import { Typography } from "../../ui/components/typography/Typography";
 
 ```tsx
 import { joinClasses } from "../../ui/utils/join_classes/joinClasses";
-import { getTabId } from "../../ui/utils/get_tab_id/getTabId";
 import type { XOr, ResponsiveScreenSizes } from "../../ui/utils/types";
 ```
 
@@ -207,11 +208,15 @@ import { TypographyLink } from "../../ui/components/typography/TypographyLink";
 
 Context-based tab system with keyboard navigation.
 
+`TabButton` takes a `name` (the visible, possibly localized label) and a stable
+`panelId`; `TabPanel` takes the matching `id`. Identity is always the id, never
+the label, so tabs keep working when the language changes.
+
 ```tsx
-import { TabButton } from "../../ui/components/tabs/Tab";
 import { TabBar } from "../../ui/components/tabs/TabBar";
+import { TabButton } from "../../ui/components/tabs/TabButton";
 import { TabPanel } from "../../ui/components/tabs/TabPanel";
-import { TabProvider } from "../../ui/components/tabs/tabs.context";
+import { TabProvider } from "../../ui/components/tabs/Tabs.context";
 
 function MyTabs() {
     const [selectedTab, setSelectedTab] = useState("overview");
@@ -219,14 +224,14 @@ function MyTabs() {
     return (
         <TabProvider tab={selectedTab} tabListId="my-tabs" onSetSelectedTab={setSelectedTab}>
             <TabBar>
-                <TabButton name="Overview" />
-                <TabButton name="Files" count={42} />
-                <TabButton name="Settings" disabled />
+                <TabButton name="Overview" panelId="overview" />
+                <TabButton name="Files" panelId="files" count={42} />
+                <TabButton name="Settings" panelId="settings" disabled />
             </TabBar>
 
-            <TabPanel name="Overview">Overview content</TabPanel>
-            <TabPanel name="Files">Files content</TabPanel>
-            <TabPanel name="Settings">Settings content</TabPanel>
+            <TabPanel id="overview">Overview content</TabPanel>
+            <TabPanel id="files">Files content</TabPanel>
+            <TabPanel id="settings">Settings content</TabPanel>
         </TabProvider>
     );
 }
@@ -237,9 +242,13 @@ function MyTabs() {
 
 ### Toolbar
 
-Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When a group has more than `maxVisible` actions (default `7`), the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
 
-**Defaults:** `maxVisible={7}`. Pass `maxVisible={null}` to disable collapsing and always render every action.
+**Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` to opt it into collapsing.
+
+Use `flex-1` specifically, **not** `shrink`. Both let the toolbar narrow, but `shrink` leaves `flex-basis: auto`, so the width still comes from the content: collapsing shrinks the toolbar, the smaller toolbar reports a smaller budget, and the controls never come back out of the kebab when the window widens again. `flex-1` sets a zero basis, so the width comes from the parent and collapsing is reversible. Pair it with `justify-end` where the controls should sit against the trailing edge.
+
+**`maxVisible`** (optional) caps the number of slots regardless of available width, for groups that should stay short. Omit it to let width be the only limit. Whichever is more restrictive wins.
 
 ```tsx
 import { Toolbar } from "../../ui/components/toolbar/Toolbar";
@@ -255,14 +264,68 @@ const actions: IToolbarAction[] = [
 <Toolbar>
     <ToolbarGroup actions={actions} />
 
-    {/* Never collapse — show every action regardless of count */}
-    <ToolbarGroup actions={contextualActions} maxVisible={null} />
+    {/* Never use more than 4 slots, however wide the toolbar gets */}
+    <ToolbarGroup actions={contextualActions} maxVisible={4} />
 </Toolbar>;
 ```
 
-**`IToolbarAction` fields:** `label` (required — the accessible name, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill).
+**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
+
+**`pinned`** keeps an action out of the overflow menu, wherever it sits in the list — the unpinned actions then share whatever width is left, still collapsing from the end. The row keeps the order you gave it, so a pin holds its place rather than jumping to the front as its neighbours collapse.
+
+```tsx
+const actions: IToolbarAction[] = [
+    { label: "Install mod", iconPath: mdiPlusCircleOutline, onClick: install, pinned: true },
+    { label: "Open mods folder", iconPath: mdiFolderOpenOutline, onClick: openFolder },
+    { label: "History", iconPath: mdiHistory, onClick: showHistory },
+];
+```
+
+Use it sparingly. Pinning wins over fitting, so a group with no room for its pinned actions shows them anyway and overflows its pill rather than dropping them — and `maxVisible` won't hold them back either.
+
+**Tooltips come for free.** The controls are icon-only, so each visible one renders as a `ToolbarButton` — a `Button` wrapped in a `Tooltip` showing its `label`. The group shares one hover delay, so sweeping along the row swaps tooltips instead of re-waiting on each. Two cases deliberately get no tooltip: an action in the overflow menu (the menu already shows its label as text) and one with `showLabel` (its text is already on screen). The `label` stays the single source for the accessible name — the tooltip describes the control, it doesn't rename it.
+
+### Alert
+
+Full-width bar carrying a short message about the page it sits on, optionally with a control that acts on it. This is the replacement for react-bootstrap's `Alert` — prefer it for new work.
+
+Severity colours the **icon only**; the surface stays neutral in every state, so a stack of alerts reads as one band rather than several competing blocks.
+
+```tsx
+import { Alert } from "../../ui/components/alert/Alert";
+import { Button } from "../../ui/components/button/Button";
+
+<Alert
+    action={
+        <Button brand="neutral" size="xs" onClick={relaunch}>
+            {t("Restart Vortex")}
+        </Button>
+    }
+    severity="warning"
+>
+    {t("You need to restart Vortex to apply changes.")}
+</Alert>;
+
+{
+    /* The action is optional */
+}
+<Alert severity="success">{t("Action successful")}</Alert>;
+
+{
+    /* onDismiss adds a close button that hides the bar and calls back */
+}
+<Alert severity="info" onDismiss={() => markSeen(id)}>
+    {t("We suggest you do this")}
+</Alert>;
+```
+
+**Severities:** `info` (default), `success`, `warning`, `danger` — each picks its own icon and tints it with the matching `*-strong` token.
+
+**Dismissal:** pass `onDismiss` to get a close button at the far edge of the bar. The alert hides itself on click and then fires the callback, so callers only need the callback for the side effect (persisting the dismissal, say) — not for the hiding. The button is labelled "Dismiss"; override it with `dismissLabel`.
+
+The bar owns a 24px inline gutter and a bottom divider rather than a border and radius, so it's designed to sit edge-to-edge (no `mx-*` needed) above page content. It renders as `role="status"`; pass `role="alert"` explicitly for something genuinely interrupting. The message may wrap while the action keeps its width.
 
 ### Form Components
 
@@ -292,26 +355,28 @@ import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
 
 ### Switch
 
-A tri-state toggle switch (xs) — `off`, `on`, and a programmatic `semi-on` ("mixed") state. Built on a visually-hidden native `<input type="checkbox">`; setting `indeterminate` renders `semi-on` and reports `aria-checked="mixed"`. Clicking only ever flips on/off — `semi-on` is set by the consumer (e.g. a master control whose children are partially on). It's controlled-visual (appearance follows the `checked`/`indeterminate` props, like `Checkbox`).
+A tri-state toggle switch (xs) — `off`, `on`, and a programmatic `semi-on` ("mixed") state. Setting `indeterminate` renders `semi-on` and reports `aria-checked="mixed"`. Clicking only ever flips on/off — `semi-on` is set by the consumer (e.g. a master control whose children are partially on).
+
+Built on Headless UI's **`Checkbox`**, not its `Switch`: ARIA only allows `aria-checked` to be true/false on `role="switch"`, and Headless UI controls that attribute, so `mixed` can't be forced onto a `Switch`. A tri-state master control is the checkbox pattern, which is what `Checkbox` implements.
 
 ```tsx
 import { Switch } from "../../ui/components/form/switch/Switch";
 
-// Controlled on/off
-<Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} aria-label="Enable" />
+// Controlled on/off — onChange receives the new checked value, not an event
+<Switch checked={enabled} onChange={setEnabled} aria-label="Enable" />
 
 // Semi-on (mixed) — e.g. a "select all" with some children on
 <Switch
   checked={allOn}
   indeterminate={someOn && !allOn}
-  onChange={(e) => setAll(e.target.checked)}
+  onChange={setAll}
   aria-label="All settings"
 />
 ```
 
-**Props:** native `<input>` attributes (minus `type`) plus `indeterminate?: boolean`.
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`.
 
-> **Porting note:** when `@headlessui/react` reaches v2 (after the React upgrade), reimplement on top of HeadlessUI's `<Switch>`. The `nxm-switch` classes live on the track/thumb so they can move straight across. HeadlessUI's Switch is binary, so the tri-state stays the wrapper's responsibility (`data-state` + `indeterminate`/`aria-checked="mixed"`).
+The track and thumb style themselves off the attributes Headless UI sets (`data-checked`, `data-indeterminate`, `data-disabled`, `data-hover`, `data-active`, `data-focus`) rather than any state we derive ourselves. It renders a `<span role="checkbox">`, so pass `name` if the value needs to take part in form submission.
 
 ### Dropdown
 
@@ -323,6 +388,133 @@ import { DropdownItem } from "../../ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "../../ui/components/dropdown/DropdownItems";
 import { DropdownDivider } from "../../ui/components/dropdown/DropdownDivider";
 ```
+
+`DropdownButton` renders a `Button` as the `Menu.Button` trigger, so it takes all the same props as `Button`.
+
+### Popover
+
+A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content.
+
+```tsx
+import { Popover } from "../../ui/components/popover/Popover";
+import { PopoverButton } from "../../ui/components/popover/PopoverButton";
+import { PopoverPanel } from "../../ui/components/popover/PopoverPanel";
+import { mdiTune } from "@mdi/js";
+
+<Popover>
+    <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiTune} size="sm" />
+
+    <PopoverPanel>{/* pickers, switches, buttons, … */}</PopoverPanel>
+</Popover>;
+```
+
+> **Positioning note:** the panel is placed by Headless UI's `anchor` prop, which uses Floating UI to flip and shift it into view and portals it out of any clipping ancestor. It defaults to `bottom end` with a 4px gap; pass `anchor` to place it elsewhere.
+
+### DisplayOptions
+
+The tune-icon popover a listing puts in its page header, holding the controls for how that listing is shown (layout, what's included, …). It wraps `Popover` with the trigger, its tooltip and a reset link, so a page only supplies the rows. Compose those from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in the reset link: `onReset` puts the defaults back and the panel closes itself.
+
+```tsx
+import { DisplayOptions } from "../../ui/components/display_options/DisplayOptions";
+import { DisplayOptionsItem } from "../../ui/components/display_options/DisplayOptionsItem";
+
+<DisplayOptions onReset={onReset}>
+    <DisplayOptionsItem label={t("Show hidden items")}>
+        <Switch checked={showHidden} onChange={onToggleHidden} />
+    </DisplayOptionsItem>
+</DisplayOptions>;
+```
+
+**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. `DisplayOptionsItem` takes `label` (omit it for a control-only row), `className` and `children`.
+
+### Tooltip
+
+Rich, collision-aware tooltip built on `@floating-ui/react`. `content` is arbitrary React — headings, lists, icons — not just a string. Position is resolved against the window continuously: it flips to the opposite side when the preferred one would overflow, slides along an edge when a corner would, and clamps its own width and height to the room that is left. It renders into the `#overlays` host, so tables, dashlets and scroll panes cannot clip it.
+
+**For new tooltips only.** The existing `controls/TooltipControls` components (`Button`, `IconButton`, `Icon`, `NavItem`) are untouched — don't migrate call sites to this without a deliberate decision to do so.
+
+**Defaults:** `placement="top"`, `delay={{ open: 250, close: 50 }}`, `showArrow`, non-interactive.
+
+```tsx
+import { Tooltip } from "../../ui/components/tooltip/Tooltip";
+
+// Plain label
+<Tooltip content="Deploys every enabled mod to the game folder">
+  <Button>Deploy</Button>
+</Tooltip>
+
+// Rich content — customContent gets no padding, so give it its own
+<Tooltip customContent={<ModHealthSummary mod={mod} />} placement="right">
+  <Button appearance="subdued" brand="neutral">Details</Button>
+</Tooltip>
+
+// Interactive — the pointer can travel in and use a link inside
+<Tooltip interactive customContent={<div className="px-4 py-3">…<TypographyLink>Manage it</TypographyLink></div>}>
+  <Button>Why is this hidden?</Button>
+</Tooltip>
+
+// Conditional — e.g. only explain the name when it's actually truncated
+<Tooltip content={mod.name} disabled={!isTruncated}>
+  <span className="truncate">{mod.name}</span>
+</Tooltip>
+```
+
+**Props:** `children` (the trigger), plus exactly one of `content` / `customContent`; `placement` (any Floating UI placement, e.g. `"top"`, `"right-start"`), `delay` (number, or `{ open, close }`), `disabled` (render the trigger with no tooltip), `interactive`, `showArrow`, `className` (applied to the tooltip bubble).
+
+**`content` is styled, `customContent` is not** — the same split as Button's `children`/`customContent`, and an `XOr`, so passing both (or neither) is a type error.
+
+| prop            | type        | styling                                                                     |
+| --------------- | ----------- | --------------------------------------------------------------------------- |
+| `content`       | `string`    | gets `.nxm-tooltip-content` — the tooltip's padding, font size, line height |
+| `customContent` | `ReactNode` | rendered unstyled; **you supply the padding**                               |
+
+Which prop you pass decides the styling, so the call site states its intent rather than the component sniffing the type. An always-present `.nxm-tooltip-body` wrapper carries the scroll clamp in both cases (it can't sit on `.nxm-tooltip` without clipping the arrow).
+
+> Because it's an `XOr`, a dynamically-built props object won't spread in — branch on the two cases instead. Static call sites are unaffected.
+
+Width is CSS, not a prop. `.nxm-tooltip` caps at 320px; pass a utility class to widen a specific tooltip — Tailwind sits in a higher layer than `components`, so it wins:
+
+```tsx
+<Tooltip className="max-w-lg" customContent={<LongChangelog />}>
+    …
+</Tooltip>
+```
+
+That only moves the design cap. The positioner around the bubble is still clamped to the space left in the window, so a wider cap can't push the tooltip off an edge.
+
+> **The trigger must forward a ref to a DOM node.** `Button` does; `Icon`, `Pill` and bare text do not — wrap those in a `<span className="inline-flex">`.
+
+`placement` is a preference, not a guarantee: the collision middleware treats it as the starting point and moves the tooltip if it wouldn't fit. Tooltips also open on keyboard focus and dismiss on Escape, and are non-interactive by default so they can never swallow a click aimed at what's underneath.
+
+#### TooltipDelayGroup
+
+Shares one hover delay across every `Tooltip` inside it. The first tooltip waits out the open delay; while one is showing, moving to a sibling swaps straight over. Wrap rows of icon buttons in this — without it, scanning a toolbar costs a fresh 250ms pause per button.
+
+```tsx
+import { TooltipDelayGroup } from "../../ui/components/tooltip/TooltipDelayGroup";
+
+<TooltipDelayGroup>
+    {actions.map((action) => (
+        <Tooltip key={action.label} content={action.label}>
+            <Button aria-label={action.label} leftIconPath={action.iconPath} />
+        </Tooltip>
+    ))}
+</TooltipDelayGroup>;
+```
+
+It renders no DOM of its own. Where the row needs a layout element anyway, pass `as` and that element's props instead of nesting a second node inside:
+
+```tsx
+<TooltipDelayGroup as="div" className="flex items-center gap-x-1">
+    {actions.map((action) => (
+        <Tooltip key={action.label} content={action.label}>
+            <Button aria-label={action.label} leftIconPath={action.iconPath} />
+        </Tooltip>
+    ))}
+</TooltipDelayGroup>
+```
+
+`as` takes any element type and forwards the rest of the props to it. Props are typed as `HTMLAttributes`, so `className`, `style` and the like are covered — element-specific ones (`href`, say) are not, and are dropped with no wrapper to receive them if `as` is omitted.
 
 ### Listbox
 
@@ -451,16 +643,36 @@ import { Pictogram } from "../../ui/components/pictogram/Pictogram";
 
 **Adding a new pictogram:**
 
+The source pictogram library is the **flamework** repo at `apps/next/public/assets/images/pictograms/`.
+
 1. Add the SVG file to `assets/pictograms/` (the filename becomes the pictogram name)
 2. Set the SVG dimensions to `width="200" height="200" viewBox="0 0 200 200"`
 3. Replace the main fill colour with `style="fill: currentColor"` so it responds to the `theme` prop
-4. Add the filename (without `.svg`) to the `PictogramName` type in `Pictogram.tsx`
+4. Add the filename (without `.svg`) to the `IPictogramName` type in `Pictogram.tsx`
+
+> Migrating a whole page to the new `Page` layout (header + pictogram + tabs)? See
+> [`docs/design-system/page-migration.md`](../../../../docs/design-system/page-migration.md).
 
 ### Picker
 
+Single-value selector built on Headless UI `Listbox` — the chosen option shows in the trigger button. Use it when the user picks one value from a list (as opposed to `Dropdown`, which fires actions). `value` is generic, so options can carry strings, numbers, or objects.
+
 ```tsx
 import { Picker } from "../../ui/components/picker/Picker";
+import { mdiViewGrid } from "@mdi/js";
+
+<Picker options={options} value={value} onChange={setValue} />
+
+// Style the trigger via `button` — it forwards all Button props (+ showChevron)
+<Picker
+  button={{ size: "xs", leftIconPath: mdiViewGrid }}
+  options={options}
+  value={value}
+  onChange={setValue}
+/>
 ```
+
+**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — which edge of the trigger the panel aligns to), `className`.
 
 ### Pill
 

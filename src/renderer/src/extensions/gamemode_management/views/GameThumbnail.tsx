@@ -7,18 +7,19 @@ import * as React from "react";
 import { Button, Panel, Popover } from "react-bootstrap";
 import { Provider } from "react-redux";
 
+import { connect, PureComponentEx } from "@/controls/ComponentEx";
+import Icon from "@/controls/Icon";
+import IconBar from "@/controls/IconBar";
+import OverlayTrigger from "@/controls/OverlayTrigger";
+import { IconButton } from "@/controls/TooltipControls";
+import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
+import type { IActionDefinition } from "@/types/api";
+import type { IMod, IProfile, IState } from "@/types/IState";
 import { Image } from "@/ui/components/image/Image";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import { getSafe } from "@/util/storeHelper";
+import { countIf } from "@/util/util";
 
-import { connect, PureComponentEx } from "../../../controls/ComponentEx";
-import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
-import OverlayTrigger from "../../../controls/OverlayTrigger";
-import { IconButton } from "../../../controls/TooltipControls";
-import { gameTileImageURL } from "../../../extensions/nexus_integration/util/gameTileImageURL";
-import type { IActionDefinition } from "../../../types/api";
-import type { IMod, IProfile, IState } from "../../../types/IState";
-import { getSafe } from "../../../util/storeHelper";
-import { countIf } from "../../../util/util";
 import type { IGameStored } from "../types/IGameStored";
 import ActiveModCount from "./ActiveModCount";
 import GameInfoPopover from "./GameInfoPopover";
@@ -38,6 +39,10 @@ export interface IBaseProps {
   // hides the name (exposed as a tooltip on the tile instead) and reduces
   // the mod counter to icon and count
   compact?: boolean;
+  /** Extra classes for the tile root (e.g. grid-specific sizing). */
+  className?: string;
+  /** Extra classes for the inner Image wrapper (e.g. border radius). */
+  imageClassName?: string;
 }
 
 interface IConnectedProps {
@@ -56,7 +61,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, compact, discovered, game, mods, profile, type } = this.props;
+    const { t, active, className, compact, discovered, game, imageClassName, mods, profile, type } =
+      this.props;
 
     if (game === undefined) {
       return null;
@@ -105,13 +111,13 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     return (
       <Panel
         bsStyle={active ? "primary" : "default"}
-        className={classes.join(" ")}
+        className={joinClasses([...classes, className])}
         title={compact ? game.name.replace(/\t/g, " ") : undefined}
       >
         <Panel.Body className="game-thumbnail-body">
           <Image
             alt={game.name}
-            className="w-full"
+            className={joinClasses(["w-full", imageClassName])}
             decoding="async"
             fit="cover"
             imageType="game"

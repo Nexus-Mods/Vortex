@@ -1,13 +1,20 @@
-import * as actions from "../actions/collectionInstallTracking";
+import {
+  finishInstallSession,
+  markModInstalled,
+  markSessionStalled,
+  startInstallSession,
+  updateModStatus,
+} from "../actions/collectionInstallTracking";
 import type * as types from "../types/api";
 import { generateCollectionSessionId } from "../util/collectionInstallSession";
-import { merge, setSafe } from "../util/storeHelper";
+import { actionsToReducerSpec } from "./builder";
 
-// Initial state
-const initialState: types.ICollectionInstallState = {
-  activeSession: undefined,
-  lastActiveSessionId: undefined,
-  sessionHistory: {},
+const actions = {
+  startInstallSession,
+  updateModStatus,
+  markModInstalled,
+  finishInstallSession,
+  markSessionStalled,
 };
 
 // Statuses considered "at least downloaded" for the downloadedCount counter
@@ -54,90 +61,104 @@ function adjustCounters(
   return { downloadedCount, installedCount, failedCount, ignoredCount };
 }
 
-const collectionInstallReducer = {
-  reducers: {
-    [actions.startInstallSession as any]: (state: types.ICollectionInstallState, payload: any) => {
-      const sessionId = generateCollectionSessionId(payload.collectionId, payload.profileId);
-      const mods = payload.mods as { [ruleId: string]: any };
-      // Full iteration is fine here — this runs once per session start
-      const downloadedCount = Object.values(mods).filter((mod) =>
-        DOWNLOADED_STATUSES.has(mod.status),
-      ).length;
-      const installedCount = Object.values(mods).filter((mod) => mod.status === "installed").length;
-      const session: types.ICollectionInstallSession = {
-        ...payload,
-        sessionId,
-        downloadedCount,
-        installedCount,
-        failedCount: 0,
-        ignoredCount: 0,
-      };
+const defaultState: types.ICollectionInstallState = {
+  activeSession: undefined,
+  lastActiveSessionId: undefined,
+  sessionHistory: {},
+};
 
-      return setSafe(state, ["activeSession"], session);
-    },
+const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
+  startInstallSession: (state, payload) => {
+    const sessionId = generateCollectionSessionId(payload.collectionId, payload.profileId);
+    const mods = payload.mods;
+    // Full iteration is fine here — this runs once per session start
+    const downloadedCount = Object.values(mods).filter((mod) =>
+      DOWNLOADED_STATUSES.has(mod.status),
+    ).length;
+    const installedCount = Object.values(mods).filter((mod) => mod.status === "installed").length;
+    const session: types.ICollectionInstallSession = {
+      ...payload,
+      sessionId,
+      downloadedCount,
+      installedCount,
+      failedCount: 0,
+      ignoredCount: 0,
+    };
 
-    [actions.updateModStatus as any]: (state: types.ICollectionInstallState, payload: any) => {
-      if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
-        return state;
-      }
-
-      const oldStatus = state.activeSession.mods?.[payload.ruleId]?.status;
-      const modPath = ["activeSession", "mods", payload.ruleId];
-      let newState = setSafe(state, [...modPath, "status"], payload.status);
-
-      // Incremental counter update — O(1) instead of iterating all mods
-      const counters = adjustCounters(state.activeSession, oldStatus, payload.status);
-      newState = merge(newState, ["activeSession"], counters);
-
-      return newState;
-    },
-
-    [actions.markModInstalled as any]: (state: types.ICollectionInstallState, payload: any) => {
-      if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
-        return state;
-      }
-
-      const oldStatus = state.activeSession.mods?.[payload.ruleId]?.status;
-
-      let newState = setSafe(
-        state,
-        ["activeSession", "mods", payload.ruleId, "modId"],
-        payload.modId,
-      );
-      newState = setSafe(
-        newState,
-        ["activeSession", "mods", payload.ruleId, "status"],
-        "installed",
-      );
-      newState = setSafe(
-        newState,
-        ["activeSession", "mods", payload.ruleId, "endTime"],
-        Date.now(),
-      );
-
-      // Incremental counter update. Merge ALL counters: a retry can revert failed ->
-      // installed (planSessionWrite allows it), and that transition must decrement
-      // failedCount, not just bump installedCount.
-      const counters = adjustCounters(state.activeSession, oldStatus, "installed");
-      newState = merge(newState, ["activeSession"], counters);
-
-      return newState;
-    },
-
-    [actions.finishInstallSession as any]: (state: types.ICollectionInstallState, payload: any) => {
-      if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
-        return state;
-      }
-
-      let newState = setSafe(state, ["sessionHistory", payload.sessionId], state.activeSession);
-      newState = setSafe(newState, ["lastActiveSessionId"], payload.sessionId);
-      newState = setSafe(newState, ["activeSession"], undefined);
-
-      return newState;
-    },
+    return { ...state, activeSession: session };
   },
 
-  defaults: initialState,
-};
+  updateModStatus: (state, payload) => {
+    if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+
+    const { mods, ...activeSession } = state.activeSession;
+    const oldStatus = mods[payload.ruleId]?.status;
+    const counters = adjustCounters(state.activeSession, oldStatus, payload.status);
+
+    return {
+      ...state,
+      activeSession: {
+        ...activeSession,
+        ...counters,
+        mods: {
+          ...mods,
+          [payload.ruleId]: { ...mods[payload.ruleId], status: payload.status },
+        },
+      },
+    };
+  },
+
+  markModInstalled: (state, payload) => {
+    if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+
+    const { mods, ...activeSession } = state.activeSession;
+    const oldStatus = mods[payload.ruleId]?.status;
+
+    // Merge ALL counters: a retry can revert failed -> installed (planSessionWrite allows it), and
+    // that transition must decrement failedCount, not just bump installedCount.
+    const counters = adjustCounters(state.activeSession, oldStatus, "installed");
+
+    return {
+      ...state,
+      activeSession: {
+        ...activeSession,
+        ...counters,
+        mods: {
+          ...mods,
+          [payload.ruleId]: {
+            ...mods[payload.ruleId],
+            modId: payload.modId,
+            status: "installed",
+            endTime: Date.now(),
+          },
+        },
+      },
+    };
+  },
+
+  finishInstallSession: (state, payload) => {
+    if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+
+    return {
+      ...state,
+      sessionHistory: { ...state.sessionHistory, [payload.sessionId]: state.activeSession },
+      lastActiveSessionId: payload.sessionId,
+      activeSession: undefined,
+    };
+  },
+
+  markSessionStalled: (state, payload) => {
+    if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+    return { ...state, activeSession: { ...state.activeSession, stalled: payload.stalled } };
+  },
+});
 
 export default collectionInstallReducer;

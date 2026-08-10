@@ -57,6 +57,19 @@
         height: 100%;
         overflow: auto;
 
+        // uniform row height; the draggable list windows its rows based on
+        //  the measured height of the first row, so rows must not vary
+        &.fblo-uniform-row {
+            height: 42px;
+            overflow: hidden;
+
+            .load-order-name {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
         margin: 0;
         border: 1px solid $border-color;
         border-radius: 4px;

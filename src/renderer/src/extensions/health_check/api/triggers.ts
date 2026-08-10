@@ -6,6 +6,7 @@ import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckTrigger } from "../../../types/IHealthCheck";
 import { hasCollectionActiveSession } from "../../../util/collectionInstallSessionSelectors";
 import Debouncer from "../../../util/Debouncer";
+import { isLoggedIn } from "../../nexus_integration/selectors";
 import type { IHealthCheckApi } from "../types";
 
 /**
@@ -43,12 +44,25 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.SettingsChanged);
     });
 
-    // Mods changed triggers - debounced because did-install-mod and
-    // did-enable-mods fire in quick succession for the same install, and
-    // setModsEnabled() in InstallManager is not awaited so state may not
-    // be updated when the first event fires.
+    // Login changed trigger - fires only when whether we actually have Nexus
+    // login data flips, not on every credential write.
+    let wasLoggedIn = isLoggedIn(api.getState());
+    api.onStateChange?.(["confidential", "account", "nexus"], () => {
+      const isNowLoggedIn = isLoggedIn(api.getState());
+      if (isNowLoggedIn === wasLoggedIn) {
+        return;
+      }
+      wasLoggedIn = isNowLoggedIn;
+      log("debug", "Login state changed, triggering health checks", { isNowLoggedIn });
+      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.LoginChanged);
+    });
+
+    // Mods changed triggers - debounced because these events can fire in quick
+    // succession (e.g. a batch enable/disable, or did-install-mod alongside
+    // setModsEnabled() in InstallManager, which isn't awaited so state may not
+    // be updated when the first event fires).
     const modsChangedDebouncer = new Debouncer(
-      () => void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
+      () => triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
       500,
     );
 
@@ -57,11 +71,59 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       modsChangedDebouncer.schedule();
     });
 
+    // mod-enabled/mod-disabled are derived from a diff of the active profile's
+    // modState, so they fire for every enable/disable path (single toggle,
+    // bulk selection, profile switch, dependency auto-enable, etc.).
+    api.events.on("mod-enabled", () => {
+      log("debug", "Mod enabled, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    api.events.on("mod-disabled", () => {
+      log("debug", "Mod disabled, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
     api.onAsync("did-enable-mods", () => {
       log("debug", "Mods enabled, scheduling debounced health check");
       modsChangedDebouncer.schedule();
       return Promise.resolve();
     });
+
+    // did-remove-mod/did-remove-mods fire once removal (undeploy + delete)
+    // actually completes, from the single handler every removal path funnels
+    // through (ModList, collections, ModHistory undo).
+    api.events.on("did-remove-mod", () => {
+      log("debug", "Mod removed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    api.events.on("did-remove-mods", () => {
+      log("debug", "Mods removed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
+    // Downloads are deleted/added from many call sites with no single
+    // completion event (deleting an archive alongside a mod, deleting an
+    // archive-only entry, external cleanup, etc.), so watch the state
+    // directly rather than chasing every emit site. A requirement can be
+    // satisfied by a downloaded-but-not-installed archive, so this affects
+    // what the checks report even though it isn't a mod install/enable.
+    api.onStateChange?.(
+      ["persistent", "downloads", "files"],
+      (previous: Record<string, unknown>, current: Record<string, unknown>) => {
+        const previousKeys = Object.keys(previous ?? {});
+        const currentKeys = Object.keys(current ?? {});
+        const changed =
+          previousKeys.length !== currentKeys.length ||
+          previousKeys.some((id) => !(id in (current ?? {})));
+        if (!changed) {
+          return;
+        }
+        log("debug", "Downloads changed, scheduling debounced health check");
+        modsChangedDebouncer.schedule();
+      },
+    );
 
     // Run health checks after collection post-processing finishes,
     // matching the pattern used by gamebryo-plugin-management for LOOT.

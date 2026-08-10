@@ -331,7 +331,9 @@ describe("moveDomainFolders_2_1 migration", () => {
     const { downloadsRoot, store, dispatch } = await buildScenario({
       downloads: { dl1: { localPath: "MyMod.7z", game: ["skyrimspecialedition"] } },
       knownGames: [skyrimseGame],
-      migrations: ["moveDomainFolders_2_1"],
+      // healStoragePathNames_2_4 included so the strict no-dispatch assertion
+      // below stays scoped to moveDomainFolders_2_1
+      migrations: ["moveDomainFolders_2_1", "healStoragePathNames_2_4"],
     });
     const fromDir = path.join(downloadsRoot, "skyrimspecialedition");
     await fs.mkdir(fromDir, { recursive: true });
@@ -347,6 +349,9 @@ describe("moveDomainFolders_2_1 migration", () => {
     const { downloadsRoot, store, dispatch } = await buildScenario({
       downloads: { dl1: { localPath: "MyMod.7z", game: ["skyrimspecialedition"] } },
       knownGames: [skyrimseGame],
+      // this test gates on semver only; mark later migrations as applied so
+      // the strict no-dispatch assertion stays scoped to moveDomainFolders_2_1
+      migrations: ["healStoragePathNames_2_4"],
     });
     const fromDir = path.join(downloadsRoot, "skyrimspecialedition");
     await fs.mkdir(fromDir, { recursive: true });
@@ -371,5 +376,57 @@ describe("moveDomainFolders_2_1 migration", () => {
     await migrate(store, "2.1.0-beta.4");
 
     expect((await fs.stat(path.join(toDir, "MyMod.7z"))).isFile()).toBe(true);
+  });
+});
+
+describe("healStoragePathNames_2_4 migration", () => {
+  const STORAGE_PATH = "5c/d3/1f/5cd31ffe-41b5-4520-8ac2-cc796226941e";
+
+  it("fires for users upgrading from the affected 2.4.0-beta.1 to the fix in 2.4.0-beta.2", async () => {
+    const { store, dispatch } = await buildScenario({
+      downloads: {
+        dl1: {
+          localPath: "MyMod.7z",
+          game: ["skyrimse"],
+          modInfo: {
+            name: STORAGE_PATH,
+            nexus: { fileInfo: { name: "Friendly Name" } },
+          },
+        } as Partial<IDownload>,
+      },
+      knownGames: [skyrimseGame],
+    });
+
+    await migrate(store, "2.4.0-beta.1");
+
+    const actions = unwrapDispatched(dispatch);
+    const healed = actions.find(
+      (a) => a?.type === "SET_DOWNLOAD_MODINFO" && a.payload?.value === "Friendly Name",
+    );
+    expect(healed).toBeDefined();
+    const completed = actions.find(
+      (a) => a?.type === "COMPLETE_MIGRATION" && a.payload === "healStoragePathNames_2_4",
+    );
+    expect(completed).toBeDefined();
+  });
+
+  it("does not run when oldVersion is already >= 2.4.0-beta.2", async () => {
+    const { store, dispatch } = await buildScenario({
+      downloads: {
+        dl1: {
+          localPath: "MyMod.7z",
+          game: ["skyrimse"],
+          modInfo: {
+            name: STORAGE_PATH,
+            nexus: { fileInfo: { name: "Friendly Name" } },
+          },
+        } as Partial<IDownload>,
+      },
+      knownGames: [skyrimseGame],
+    });
+
+    await migrate(store, "2.4.0-beta.2");
+
+    expect(dispatch).not.toHaveBeenCalled();
   });
 });

@@ -13,16 +13,24 @@ import {
   isModHealthCheck,
 } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
-import { setHealthCheckResult } from "../actions/session";
+import { activeGameId } from "../../../util/selectors";
+import { clearHealthCheckResult, setHealthCheckResult } from "../actions/session";
 import type { HealthCheckId } from "../types";
 import { runPerModCheck } from "./perModRunner";
 
 export class HealthCheckRegistry {
+  /** How long to wait, once a busy check settles, before running a rerun requested while it was busy. */
+  private static readonly RERUN_DEBOUNCE_MS = 500;
+
   private mHealthChecks: Map<HealthCheckId, IHealthCheckEntry> = new Map();
   private mTriggerMap: Map<HealthCheckTrigger, Set<HealthCheckId>> = new Map();
   private mExecutionQueue: Set<HealthCheckId> = new Set();
   private mApi: IExtensionApi;
   private mResults: Map<HealthCheckId, IHealthCheckResult> = new Map();
+  /** Set when a request collides with a run already in flight; consumed once that run settles. */
+  private mRerunRequested: Set<HealthCheckId> = new Set();
+  /** The pending post-collision rerun timer, so it can be cancelled on disposal/teardown. */
+  private mRerunTimers: Map<HealthCheckId, ReturnType<typeof setTimeout>> = new Map();
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
@@ -146,48 +154,94 @@ export class HealthCheckRegistry {
       return undefined;
     }
 
+    // The per-mod runner enumerates mods for whatever game is ACTIVE, so a check that names a
+    // game has to be held to it here.
+    if (!this.appliesToActiveGame(entry, api)) {
+      this.discardResult(entry, checkId);
+      log("debug", "Health check skipped, belongs to another game", {
+        id: checkId,
+        gameId: entry.healthCheck.gameId,
+      });
+      return undefined;
+    }
+
     // Check if result is cached (unless force is true)
     if (!force && entry.cachedUntil && entry.lastResult && new Date() < entry.cachedUntil) {
       log("debug", "Using cached result for health check", { id: checkId });
       return entry.lastResult;
     }
 
-    // Prevent concurrent execution of the same check
+    // Already running: don't start a second one. Let it finish undisturbed, and make sure
+    // exactly one fresh run happens once it settles - no matter how many requests land in the
+    // meantime, they all coalesce into that one rerun.
     if (this.mExecutionQueue.has(checkId)) {
-      log("debug", "Health check already executing, skipping", { id: checkId });
+      log("debug", "Health check already executing, scheduling a rerun once it settles", {
+        id: checkId,
+      });
+      this.mRerunRequested.add(checkId);
       return entry.lastResult;
     }
 
     this.mExecutionQueue.add(checkId);
     const startTime = Date.now();
+    let timedOut = false;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    let released = false;
+    // Both the fire-and-forget path (which outlives a timeout) and the normal-completion path
+    // release the slot for the same run, so this must tolerate being called twice.
+    const release = () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      this.finishRun(checkId, api);
+    };
 
     try {
       const timeout = entry.healthCheck.timeout || 30000;
       log("debug", "Executing health check", { id: checkId, timeout });
 
+      // Abort stops the body, not just the promise this awaits.
+      const abort = new AbortController();
       const timeoutPromise = new Promise<IHealthCheckResult>((_, reject) => {
-        setTimeout(() => reject(new Error(`Health check timed out after ${timeout}ms`)), timeout);
+        timeoutHandle = setTimeout(() => {
+          timedOut = true;
+          abort.abort();
+          reject(new Error(`Health check timed out after ${timeout}ms`));
+        }, timeout);
       });
 
       const hc = entry.healthCheck;
-      const checkPromise = isModHealthCheck(hc) ? runPerModCheck(hc, api) : hc.check(api);
+      const checkPromise = isModHealthCheck(hc)
+        ? runPerModCheck(hc, api, { signal: abort.signal })
+        : hc.check(api, abort.signal);
+
+      // The slot belongs to the body, not the race: one that cannot observe the abort promptly
+      // (mid-readdir, mid-request) still holds resources, so the next trigger waits for it.
+      void checkPromise
+        .catch(() => undefined)
+        .finally(() => {
+          if (timedOut) {
+            log("debug", "Abandoned health check finished", {
+              id: checkId,
+              afterMs: Date.now() - startTime,
+            });
+          }
+          release();
+        });
+
       const result = await Promise.race([checkPromise, timeoutPromise]);
 
       result.checkId = checkId;
       result.timestamp = new Date();
       result.executionTime = Date.now() - startTime;
 
-      if (entry.healthCheck.cacheDuration && entry.healthCheck.cacheDuration > 0) {
-        entry.cachedUntil = new Date(Date.now() + entry.healthCheck.cacheDuration);
+      if (!this.recordResult(entry, checkId, result, api)) {
+        return undefined;
       }
 
-      entry.lastResult = result;
-      entry.lastExecuted = new Date();
-      this.mResults.set(checkId, result);
-
-      // Dispatch result to Redux so UI can access it
-      if (this.mApi.store) {
-        this.mApi.store.dispatch(setHealthCheckResult(checkId, result));
+      if (entry.healthCheck.cacheDuration && entry.healthCheck.cacheDuration > 0) {
+        entry.cachedUntil = new Date(Date.now() + entry.healthCheck.cacheDuration);
       }
 
       log("debug", "Health check completed", {
@@ -211,13 +265,14 @@ export class HealthCheckRegistry {
         isLegacyTest: "isLegacyTest" in entry.healthCheck,
       };
 
-      entry.lastResult = errorResult;
-      entry.lastExecuted = new Date();
-      this.mResults.set(checkId, errorResult);
+      if (!this.recordResult(entry, checkId, errorResult, api)) {
+        return undefined;
+      }
 
-      // Dispatch error result to Redux so UI can access it
-      if (this.mApi.store) {
-        this.mApi.store.dispatch(setHealthCheckResult(checkId, errorResult));
+      // A timeout clears the check's previous result, so without this the page just empties
+      // with no explanation.
+      if (timedOut) {
+        this.notifyTimeout(entry.healthCheck);
       }
 
       log("warn", "Health check failed", {
@@ -227,8 +282,99 @@ export class HealthCheckRegistry {
 
       return errorResult;
     } finally {
-      this.mExecutionQueue.delete(checkId);
+      if (timeoutHandle !== undefined) {
+        clearTimeout(timeoutHandle);
+      }
+      // On timeout the body runs on and releases the slot from its settle handler; any other
+      // exit means it is done.
+      if (!timedOut) {
+        release();
+      }
     }
+  }
+
+  /**
+   * Frees a run's execution slot once its body has actually settled, and fires a coalesced rerun
+   * if any request collided with it while it ran.
+   */
+  private finishRun(checkId: HealthCheckId, api: IExtensionApi): void {
+    if (!this.mRerunRequested.has(checkId)) {
+      this.mExecutionQueue.delete(checkId);
+      return;
+    }
+
+    this.mRerunRequested.delete(checkId);
+    // mExecutionQueue stays marked busy through this wait, so further collisions coalesce into
+    // this same pending rerun instead of starting their own.
+    const timer = setTimeout(() => {
+      this.mRerunTimers.delete(checkId);
+      this.mExecutionQueue.delete(checkId);
+      void this.runHealthCheck(checkId, api);
+    }, HealthCheckRegistry.RERUN_DEBOUNCE_MS);
+    this.mRerunTimers.set(checkId, timer);
+  }
+
+  /**
+   * Cancels any rerun scheduled after a busy collision, without waiting for it to fire. Intended
+   * for disposal/teardown, so a pending timer doesn't fire into unrelated later work.
+   */
+  public cancelPendingReruns(): void {
+    this.mRerunTimers.forEach((timer) => clearTimeout(timer));
+    this.mRerunTimers.clear();
+    this.mRerunRequested.clear();
+  }
+
+  /**
+   * Report a check that gave up. Keyed on the check so a repeatedly timing-out check replaces
+   * its own notification instead of stacking one per trigger.
+   */
+  private notifyTimeout(healthCheck: IHealthCheckEntry["healthCheck"]): void {
+    this.mApi.sendNotification?.({
+      id: `health-check-timeout-${healthCheck.id}`,
+      type: "warning",
+      title: "Health check timed out",
+      message: `${healthCheck.name} took too long and was stopped. Refresh to try again.`,
+      displayMS: 10000,
+    });
+  }
+
+  /** Whether this check names a game other than the active one. */
+  private appliesToActiveGame(entry: IHealthCheckEntry, api: IExtensionApi): boolean {
+    const checkGameId = entry.healthCheck.gameId;
+    return checkGameId === undefined || checkGameId === activeGameId(api.getState());
+  }
+
+  /** Forget a stored result, so nothing reports it against the game the user is now on. */
+  private discardResult(entry: IHealthCheckEntry, checkId: HealthCheckId): void {
+    if (entry.lastResult === undefined) {
+      return;
+    }
+    entry.lastResult = undefined;
+    entry.cachedUntil = undefined;
+    this.mResults.delete(checkId);
+    this.mApi.store?.dispatch(clearHealthCheckResult(checkId));
+  }
+
+  /**
+   * Store a result and publish it, unless the game moved on while the check was running. Returns
+   * whether it was kept.
+   */
+  private recordResult(
+    entry: IHealthCheckEntry,
+    checkId: HealthCheckId,
+    result: IHealthCheckResult,
+    api: IExtensionApi,
+  ): boolean {
+    if (!this.appliesToActiveGame(entry, api)) {
+      log("debug", "Health check result dropped, game changed while it ran", { id: checkId });
+      this.discardResult(entry, checkId);
+      return false;
+    }
+    entry.lastResult = result;
+    entry.lastExecuted = new Date();
+    this.mResults.set(checkId, result);
+    this.mApi.store?.dispatch(setHealthCheckResult(checkId, result));
+    return true;
   }
 
   /**

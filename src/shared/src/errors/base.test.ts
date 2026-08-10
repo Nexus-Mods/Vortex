@@ -27,6 +27,8 @@ describe("VortexError", () => {
       kind: "fs:not-found",
       path: "/some/path",
       originalCode: "ENOENT",
+      errno: -2,
+      syscall: "open",
     });
 
     assert(err.data.kind === "fs:not-found");

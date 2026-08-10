@@ -67,7 +67,7 @@ const setModsEnabled = (() => {
     modIds: string[],
     enabled: boolean,
     options: IEnableOptions,
-  ) => Bluebird<void>;
+  ) => Promise<void>;
 
   return (
     api: IExtensionApi,
@@ -106,7 +106,7 @@ const setModsEnabled = (() => {
       const willChange = modIdsIn.filter(
         (id) => (profile.modState?.[id]?.enabled ?? false) !== enableIn,
       );
-      return ppFunc(profileIdIn, willChange, enableIn, optionsIn).catch((err) => {
+      return Bluebird.resolve(ppFunc(profileIdIn, willChange, enableIn, optionsIn)).catch((err) => {
         api.showErrorNotification("Failed to enable/disable mod", err);
       });
     }

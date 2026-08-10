@@ -1,6 +1,6 @@
 import { pathToFileURL } from "url";
 
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import {
   mdiArrowDown,
   mdiArrowUp,
@@ -47,7 +47,7 @@ export interface ToolRowProps {
   onMoveDown?: (starter: IStarterInfo) => void;
 }
 
-export const ToolRow: FC<ToolRowProps> = ({
+export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
   starter,
   counter,
   isValid,
@@ -147,7 +147,7 @@ export const ToolRow: FC<ToolRowProps> = ({
           )}
 
           <Dropdown>
-            <Menu.Button
+            <MenuButton
               as={Button}
               brand="neutral"
               appearance="weak"

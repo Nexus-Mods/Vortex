@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const ctx = vi.hoisted(() => ({
-  payload: {} as { pull_request?: unknown },
+const ctx = vi.hoisted<{ payload: { pull_request?: unknown } }>(() => ({
+  payload: {},
 }));
 
 vi.mock("@actions/core", () => ({ info: vi.fn() }));

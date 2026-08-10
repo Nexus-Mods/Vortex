@@ -8,9 +8,16 @@ set -euo pipefail
 #   LABELS      - Space-separated list of PR labels
 #
 # Optional:
+#   HEAD_REF    - Source branch of the PR (e.g. fix/laz-731).
+#   PR_BODY     - Body of the PR.
 #   DRY_RUN     - Set to "true" to skip push and PR creation
 
 DRY_RUN="${DRY_RUN:-false}"
+
+# Slashes in the source branch would create a deep ref path; flatten them so the ID
+# stays inside a single branch segment (e.g. fix/laz-731 -> fix-laz-731).
+SAFE_HEAD_REF="${HEAD_REF:-}"
+SAFE_HEAD_REF="${SAFE_HEAD_REF//\//-}"
 
 TARGETS=()
 for label in $LABELS; do
@@ -27,6 +34,9 @@ fi
 for TARGET in "${TARGETS[@]}"; do
   echo "--- Cherry-picking to $TARGET ---"
   BRANCH="cherry-pick/pr-${PR_NUMBER}-to-${TARGET}"
+  if [ -n "$SAFE_HEAD_REF" ]; then
+    BRANCH="cherry-pick/pr-${PR_NUMBER}-${SAFE_HEAD_REF}-to-${TARGET}"
+  fi
 
   if ! git rev-parse --verify "origin/$TARGET" > /dev/null 2>&1; then
     echo "WARNING: Target branch '$TARGET' does not exist, skipping."
@@ -69,6 +79,15 @@ for TARGET in "${TARGETS[@]}"; do
 
 > [!WARNING]
 > This cherry-pick had merge conflicts that need manual resolution."
+      fi
+
+      # Copy the original PR body verbatim
+      if [ -n "${PR_BODY:-}" ]; then
+        BODY="${BODY}
+
+---
+
+${PR_BODY}"
       fi
 
       gh pr create \

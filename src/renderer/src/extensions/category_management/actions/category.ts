@@ -1,9 +1,8 @@
-import * as reduxAct from "redux-act";
+import { createAction } from "redux-act";
 
-import safeCreateAction from "../../../actions/safeCreateAction";
 import type { ICategory, ICategoryDictionary } from "../types/ICategoryDictionary";
 
-export const loadCategories = safeCreateAction(
+export const loadCategories = createAction(
   "LOAD_CATEGORIES",
   (gameId: string, gameCategories: ICategoryDictionary) => ({
     gameId,
@@ -11,7 +10,7 @@ export const loadCategories = safeCreateAction(
   }),
 );
 
-export const setCategory = safeCreateAction(
+export const setCategory = createAction(
   "SET_CATEGORY",
   (gameId: string, id: string, category: ICategory) => ({
     gameId,
@@ -20,17 +19,17 @@ export const setCategory = safeCreateAction(
   }),
 );
 
-export const removeCategory = safeCreateAction("REMOVE_CATEGORY", (gameId: string, id: string) => ({
+export const removeCategory = createAction("REMOVE_CATEGORY", (gameId: string, id: string) => ({
   gameId,
   id,
 }));
 
-export const setCategoryOrder = safeCreateAction(
+export const setCategoryOrder = createAction(
   "SET_CATEGORY_ORDER",
   (gameId: string, categoryIds: string[]) => ({ gameId, categoryIds }),
 );
 
-export const updateCategories = safeCreateAction(
+export const updateCategories = createAction(
   "UPDATE_CATEGORIES",
   (gameId: string, gameCategories: ICategoryDictionary) => ({
     gameId,
@@ -38,7 +37,7 @@ export const updateCategories = safeCreateAction(
   }),
 );
 
-export const renameCategory = safeCreateAction(
+export const renameCategory = createAction(
   "RENAME_CATEGORY",
   (gameId: string, categoryId: string, name: string) => ({
     gameId,

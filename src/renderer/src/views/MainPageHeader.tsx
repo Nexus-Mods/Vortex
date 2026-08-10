@@ -9,7 +9,7 @@ export interface IProps {
   children?: ReactNode;
 }
 
-export const MainPageHeader: FC<IProps> = ({ children }) => {
+export const MainPageHeader: FC<React.PropsWithChildren<IProps>> = ({ children }) => {
   const mainPage = useSelector(mainPageSelector);
   const { headerPortal, page } = useContext(PageHeaderContext);
 

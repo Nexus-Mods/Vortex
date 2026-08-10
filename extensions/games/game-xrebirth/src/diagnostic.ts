@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import { types, util } from "@nexusmods/vortex-api";
 
-import { XREBIRTH_MOD_TYPES } from "./installers";
+import { XREBIRTH_GAME_ID, XREBIRTH_MOD_TYPES } from "./installers";
 import { XREBIRTH_STOP_PATTERNS } from "./stopPatterns";
 
 const TAGGED_NON_CONTENT_XML = new Set<string>([
@@ -63,6 +63,7 @@ function warning(
  */
 const modHasFilesCheck: types.IModHealthCheck = {
   id: "xrebirth-mod-has-files",
+  gameId: XREBIRTH_GAME_ID,
   name: "X Rebirth — mod has files",
   description: "Verifies that the installer produced at least one file.",
   category: CATEGORY,
@@ -89,6 +90,7 @@ const modHasFilesCheck: types.IModHealthCheck = {
  */
 const contentXmlCustomFileNameCheck: types.IModHealthCheck = {
   id: "xrebirth-content-xml-customFileName",
+  gameId: XREBIRTH_GAME_ID,
   name: "X Rebirth — content.xml carries customFileName",
   description: "Verifies that content.xml mods record their declared name.",
   category: CATEGORY,
@@ -128,6 +130,7 @@ const contentXmlCustomFileNameCheck: types.IModHealthCheck = {
  */
 const modShapeRecognisedCheck: types.IModHealthCheck = {
   id: "xrebirth-mod-shape-recognised",
+  gameId: XREBIRTH_GAME_ID,
   name: "X Rebirth — mod has a recognisable shape",
   description:
     "Verifies the install output is content.xml, matches stopPatterns, or is tagged with a known modType.",

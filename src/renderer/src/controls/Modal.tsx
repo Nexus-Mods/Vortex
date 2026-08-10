@@ -4,6 +4,7 @@ import * as React from "react";
 import type { ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Modal } from "react-bootstrap";
 
+import type { IComponentContext } from "../types/IComponentContext";
 import { MutexWrapper } from "../util/MutexContext";
 
 class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
@@ -15,6 +16,8 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
   public static childContextTypes: React.ValidationMap<any> = {
     menuLayer: PropTypes.object,
   };
+
+  declare public context: Partial<IComponentContext>;
 
   private getContainer = memoizeOne(() => this.getContainerImpl());
 

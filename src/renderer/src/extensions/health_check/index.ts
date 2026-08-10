@@ -4,18 +4,20 @@
  */
 
 import { FlagService } from "@/FlagService";
+import type { IExtensionContext } from "@/types/IExtensionContext";
+import type { IHealthCheck, IModHealthCheck } from "@/types/IHealthCheck";
+import { HealthCheckTrigger } from "@/types/IHealthCheck";
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IHealthCheck, IModHealthCheck } from "../../types/IHealthCheck";
-import { HealthCheckTrigger } from "../../types/IHealthCheck";
 import { activeGameId } from "../../util/selectors";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
 import {
   fileRequirementsHealthCheck,
+  FILE_REQUIREMENTS_CHECK_ID,
   FILE_REQUIREMENTS_FLAG,
 } from "./checks/fileRequirementsCheck";
 import { modRequirementsHealthCheck } from "./checks/modRequirementsCheck";
+import { HealthCheckMenuBadge } from "./components/menu_badge/HealthCheckMenuBadge";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
 import { persistentReducer } from "./reducers/persistent";
@@ -32,6 +34,16 @@ function init(context: IExtensionContext): boolean {
   // Create the registry up front so registerHealthCheck routes directly
   // through it — no buffering, no two-phase setup.
   registry = new HealthCheckRegistry(context.api);
+
+  // Bridge so clicking the "Health check" menu item while already on the page
+  // returns to the listing. HealthCheckPage registers its "back to listing"
+  // handler here; the Menu calls onReset (below) only when the page is already
+  // active. When navigating in from elsewhere the page stays mounted, so its
+  // selected-detail state is preserved and the last-viewed check is restored.
+  let resetHealthCheckPage: (() => void) | undefined;
+  const registerReset = (cb: () => void) => {
+    resetHealthCheckPage = cb;
+  };
 
   context.registerHealthCheck = (hc: IHealthCheck | IModHealthCheck) => {
     registry.register(hc);
@@ -51,11 +63,15 @@ function init(context: IExtensionContext): boolean {
     priority: 60,
     hotkey: "H",
     group: "per-game",
+    newLayout: true,
     visible: () => activeGameId(context.api.getState()) !== undefined,
+    menuBadge: HealthCheckMenuBadge,
     props: () => ({
       api: context.api,
       onRefresh: () => healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.Manual),
+      registerReset,
     }),
+    onReset: () => resetHealthCheckPage?.(),
   });
 
   context.once(() => {
@@ -85,14 +101,15 @@ function init(context: IExtensionContext): boolean {
     });
 
     // Re-run the file-level check when the Unleash flag flips. subscribeToFlag
-    // fires once immediately (skipped here) and then only on actual changes.
+    // fires once immediately (skipped here) and then only on actual changes. The flag gates
+    // this check alone, so only it re-runs.
     let initialFlag = true;
     FlagService.instance.subscribeToFlag(FILE_REQUIREMENTS_FLAG, () => {
       if (initialFlag) {
         initialFlag = false;
         return;
       }
-      void healthCheckApi?.runChecksByTrigger?.(HealthCheckTrigger.SettingsChanged);
+      void healthCheckApi?.custom.run(FILE_REQUIREMENTS_CHECK_ID);
     });
   });
 

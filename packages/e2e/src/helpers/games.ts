@@ -28,10 +28,17 @@ export async function manageGame(
     const navbar = new NavBar(vortexWindow);
     const gamesPage = new GamesPage(vortexWindow);
 
-    await expect(navbar.gamesLink).toBeVisible();
+    // First interaction after a cold app launch — allow the nav to finish
+    // mounting rather than racing the default 5s UI budget.
+    await expect(navbar.gamesLink).toBeVisible({ timeout: Timeouts.NETWORK });
     await navbar.gamesLink.click();
 
     await stubOpenDialog(electronApp, fakeGame.gamePath);
+
+    // The unmanaged games list is paginated/windowed, so the target game's row
+    // isn't in the DOM until the list is filtered down to it. Search by name first.
+    await expect(gamesPage.searchInput).toBeVisible();
+    await gamesPage.searchInput.fill(gameName);
 
     const row = gamesPage.gameRow(gameName);
     await expect(row).toBeVisible({ timeout: Timeouts.NETWORK });

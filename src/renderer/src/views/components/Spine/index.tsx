@@ -2,6 +2,8 @@ import { mdiHome, mdiPlus } from "@mdi/js";
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+
 import {
   discovered as discoveredGamesSelector,
   knownGames as knownGamesSelector,
@@ -13,7 +15,7 @@ import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
 import { formatGameDisplayName, getGameImageUrls } from "./utils";
 
-export const Spine: FC = () => {
+export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
   const { selection, selectHome, selectGame, selectGlobalPage } = useSpineContext();
 
   const [canScrollUp, setCanScrollUp] = useState(false);
@@ -61,7 +63,10 @@ export const Spine: FC = () => {
   }, [scrollRef]);
 
   return (
-    <div className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3">
+    <TooltipDelayGroup
+      as="div"
+      className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3"
+    >
       <SpineButton
         className="border-2"
         iconPath={mdiHome}
@@ -109,6 +114,6 @@ export const Spine: FC = () => {
       </div>
 
       <DownloadButton />
-    </div>
+    </TooltipDelayGroup>
   );
 };

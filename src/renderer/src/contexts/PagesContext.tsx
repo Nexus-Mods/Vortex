@@ -43,7 +43,7 @@ const isPageVisible = (page: IMainPage): boolean => {
   }
 };
 
-export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
+export const PagesProvider: FC<React.PropsWithChildren<IPagesProviderProps>> = ({ children }) => {
   const dispatch = useDispatch();
   const mainPages = useMainPages();
   const mainPage = useSelector(mainPageSelector);

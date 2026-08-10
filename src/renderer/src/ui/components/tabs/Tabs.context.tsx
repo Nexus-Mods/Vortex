@@ -8,8 +8,6 @@ import React, {
   type ReactNode,
 } from "react";
 
-import { getTabId } from "@/ui/utils/getTabId";
-
 /**
  * Arguments for the register tab method
  */
@@ -64,8 +62,7 @@ export const TabProvider = ({
     onSetSelectedTab?.(tabToSet);
   };
 
-  // Tracks the currently selected tab in id format
-  const selectedTab = getTabId(tab);
+  const selectedTab = tab;
 
   // Store references to each tab to manage focus. References are keyed by tab name
   const [tabs, setTabs] = useState<Record<string, Omit<IRegisterTabArgs, "name">>>({});

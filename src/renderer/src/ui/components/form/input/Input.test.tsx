@@ -1,15 +1,11 @@
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Input } from "./Input";
 
 // --- Helpers ---
-
-afterEach(() => {
-  cleanup();
-});
 
 const renderComponent = (props: Partial<React.ComponentProps<typeof Input>> = {}) => {
   const onChange = vi.fn();
@@ -57,18 +53,6 @@ describe("Input", () => {
       expect(input).toHaveAttribute("aria-invalid", "true");
       expect(input).toHaveAttribute("aria-describedby", "name_error");
       expect(screen.getByText("Too short")).toBeInTheDocument();
-    });
-  });
-
-  describe("size", () => {
-    it('applies the sm modifier for size="sm"', () => {
-      renderComponent({ size: "sm" });
-      expect(getInput()).toHaveClass("nxm-input-sm");
-    });
-
-    it("does not apply the sm modifier for the default size", () => {
-      renderComponent();
-      expect(getInput()).not.toHaveClass("nxm-input-sm");
     });
   });
 

@@ -14,12 +14,11 @@
     "extensionName": "Mod Type: dinput"
   },
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/bluebird": "catalog:",
-    "@types/i18next": "catalog:",
     "@types/redux": "catalog:",
     "bluebird": "catalog:",
-    "copyfiles": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "copyfiles": "catalog:"
   },
   "nx": {
     "tags": [

@@ -10,6 +10,7 @@ export interface IActionControlProps {
   instanceId?: string | string[];
   filter?: (action: IActionDefinition) => boolean;
   showAll?: boolean;
+  children?: React.ReactNode;
 }
 
 export interface IExtensionProps {

@@ -7,7 +7,7 @@ import { DNDContainer } from "../DNDContainer";
  * Content pane component.
  * For Classic layout.
  */
-export const ContentPane: FC = ({ children }) => {
+export const ContentPane: FC<React.PropsWithChildren<unknown>> = ({ children }) => {
   return (
     <FlexLayout.Flex fill={true} id="main-window-pane">
       <DNDContainer

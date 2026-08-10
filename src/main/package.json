@@ -26,6 +26,21 @@
   },
   "nx": {
     "targets": {
+      "dev": {
+        "cache": false,
+        "continuous": true,
+        "executor": "nx:noop",
+        "dependsOn": [
+          {
+            "projects": "@vortex/stylesheets",
+            "target": "tailwind:watch"
+          },
+          {
+            "projects": "@vortex/renderer",
+            "target": "watch"
+          }
+        ]
+      },
       "start": {
         "continuous": true,
         "cache": false,
@@ -216,6 +231,7 @@
   "dependencies": {
     "@duckdb/node-api": "catalog:",
     "@electron/remote": "catalog:",
+    "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
     "@hot-updater/bsdiff": "catalog:",
     "@mdi/js": "catalog:",
@@ -225,6 +241,8 @@
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
+    "@nosferatu500/react-sortable-tree": "catalog:",
+    "@nosferatu500/theme-file-explorer": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/context-async-hooks": "catalog:",
     "@opentelemetry/context-zone": "catalog:",
@@ -304,9 +322,7 @@
     "react-markdown": "catalog:",
     "react-overlays": "catalog:",
     "react-redux": "catalog:",
-    "react-resize-detector": "catalog:",
     "react-select": "catalog:",
-    "react-sortable-tree": "catalog:",
     "recharts": "catalog:",
     "redux": "catalog:",
     "redux-act": "catalog:",
@@ -340,6 +356,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "catalog:",
+    "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",
@@ -360,7 +377,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-redux": "catalog:",
-    "@types/react-sortable-tree": "catalog:",
     "@types/relaxed-json": "catalog:",
     "@types/resolve": "catalog:",
     "@types/semver": "catalog:",
@@ -372,13 +388,13 @@
     "@types/write-file-atomic": "catalog:",
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
-    "@vortex/adaptor-cyberpunk2077": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "cross-env": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
     "openapi-typescript": "catalog:",
+    "react-refresh": "catalog:",
     "redux-freeze": "catalog:",
     "vitest-fetch-mock": "catalog:"
   }

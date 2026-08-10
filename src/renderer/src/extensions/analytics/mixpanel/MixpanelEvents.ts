@@ -129,15 +129,22 @@ export class AppGameLaunchedEvent implements MixpanelEvent {
 /** Fields on the app_game_exited event. */
 export interface GameExitedProps {
   game_id: number | null;
+  launch_method: GameLaunchMethod;
+  enabled_mod_count: number;
   launch_session_id: string;
   duration_ms: number;
+  // True when duration_ms reflects the real session: the watched process was seen running and then
+  // stopped. False for a best-effort exit emitted because the game process never appeared (e.g. a
+  // failed or undetected script-extender / mod-loader handoff), so its duration_ms is not trusted.
+  duration_reliable: boolean;
   // Process exit code, when Vortex launched the process itself; null for store launches.
   exit_code: number | null;
 }
 
 /**
  * Sent when a launched game/tool process exits. `duration_ms` is the time since its launch;
- * `launch_session_id` matches the app_game_launched it pairs with.
+ * `launch_method`, `enabled_mod_count` and `launch_session_id` match the app_game_launched it
+ * pairs with (captured at launch, so they reflect state at launch time).
  */
 export class AppGameExitedEvent implements MixpanelEvent {
   readonly eventName = "app_game_exited";
@@ -676,22 +683,3 @@ export class AppExtensionInstalledEvent implements MixpanelEvent {
  * @param required_by_mod_id Nexus mod ID of the mod that requires the dependency
  * @param feedback_reasons Array of reason keys (only for negative feedback)
  */
-export class HealthCheckFeedbackEvent implements MixpanelEvent {
-  readonly eventName = "health_check_feedback";
-  readonly properties: Record<string, any>;
-  constructor(
-    feedback_type: "positive" | "negative",
-    game_id: string,
-    mod_id: number,
-    required_by_mod_id: number,
-    feedback_reasons?: string[],
-  ) {
-    this.properties = {
-      feedback_type,
-      game_id,
-      mod_id,
-      required_by_mod_id,
-      ...(feedback_reasons?.length ? { feedback_reasons } : {}),
-    };
-  }
-}

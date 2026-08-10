@@ -61,8 +61,18 @@ export interface IBaseProps {
   defaultSort?: string;
   showHeader?: boolean;
   showDetails?: boolean;
+  // For a table that scrolls with the page rather than in its own pane: drops the
+  // header copy this table would otherwise pin to the top of that pane, and sticks
+  // the header in the body to the top of the page scroll instead, shadowed while
+  // it is stuck.
+  stickyHeader?: boolean;
+  // Lets rows and their hover run to the page edges, with the outer cells carrying
+  // the page's own horizontal padding so their content still lines up. The page
+  // drops its horizontal padding around the table in exchange.
+  edgeToEdge?: boolean;
   hasActions?: boolean;
   onChangeSelection?: (ids: string[]) => void;
+  children?: React.ReactNode;
 }
 
 interface IConnectedProps {
@@ -322,7 +332,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { showHeader, showDetails, tableId } = this.props;
+    const { edgeToEdge, showHeader, showDetails, stickyHeader, tableId } = this.props;
     const { detailsOpen } = this.state;
 
     const openClass = detailsOpen ? "open" : "closed";
@@ -330,6 +340,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const containerClasses = ["table-container"];
     if (showDetails) {
       containerClasses.push("has-details");
+    }
+    if (stickyHeader) {
+      containerClasses.push("sticky-header");
+    }
+    if (edgeToEdge) {
+      containerClasses.push("edge-to-edge");
     }
 
     return (
@@ -353,7 +369,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           {this.renderFooter()}
         </div>
 
-        {showHeader === false ? null : (
+        {showHeader === false || stickyHeader ? null : (
           <div className="table-header-pane" ref={this.mainHeaderRef}>
             <Table hover={true}>{this.renderHeader(false)}</Table>
           </div>
@@ -1971,4 +1987,4 @@ export default translate(["common"])(
     registerTableAttribute,
     "tableId",
   )(connect(mapStateToProps, mapDispatchToProps)(SuperTable)),
-) as React.ComponentType<IBaseProps & IExtensibleProps>;
+) as React.ComponentType<React.PropsWithChildren<IBaseProps & IExtensibleProps>>;

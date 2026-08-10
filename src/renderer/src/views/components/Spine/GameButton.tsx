@@ -1,8 +1,10 @@
 import { mdiGog, mdiMicrosoftXbox, mdiHelp, mdiSteam, mdiUbisoft } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import { nxmElectronicArts, nxmEpicGames } from "../../../ui/icon-paths";
-import { joinClasses } from "../../../ui/utils/joinClasses";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { nxmElectronicArts, nxmEpicGames } from "@/ui/icon-paths";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import { useGameImage } from "./utils";
 
 // Fallback for stores without specific icons
@@ -37,9 +39,10 @@ interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   preferred?: string;
   sources?: string[];
   store?: string;
+  title: string;
 }
 
-export const GameButton: FC<GameButtonProps> = ({
+export const GameButton: FC<React.PropsWithChildren<GameButtonProps>> = ({
   cacheKey,
   isActive,
   preferred,
@@ -54,47 +57,49 @@ export const GameButton: FC<GameButtonProps> = ({
   const { src, exhausted, onError, onLoad } = useGameImage(cacheKey, sources, preferred);
 
   return (
-    <button
-      className={joinClasses("group relative size-12 shrink-0 overflow-hidden rounded-lg", {
-        "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued":
-          isActive,
-      })}
-      title={title}
-      {...props}
-    >
-      {exhausted ? (
-        <span
-          className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white"
-          style={{
-            backgroundColor: `hsl(${stringToHue(title ?? "")}, 40%, 35%)`,
-          }}
-        >
-          {title?.charAt(0)?.toUpperCase() ?? "?"}
-        </span>
-      ) : (
-        <img
-          alt=""
-          className="absolute inset-0 size-full object-cover"
-          src={src}
-          onError={onError}
-          onLoad={onLoad}
-        />
-      )}
-
-      <span
-        className={joinClasses("absolute inset-0 z-1 rounded-lg transition-colors", {
-          "border border-stroke-weak group-hover:border-2 group-hover:border-neutral-strong group-hover:bg-translucent-200":
-            !isActive,
+    <Tooltip content={title} placement="right">
+      <button
+        aria-label={title}
+        className={joinClasses("group relative size-12 shrink-0 overflow-hidden rounded-lg", {
+          "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued":
+            isActive,
         })}
-      />
+        {...props}
+      >
+        {exhausted ? (
+          <span
+            className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white"
+            style={{
+              backgroundColor: `hsl(${stringToHue(title)}, 40%, 35%)`,
+            }}
+          >
+            {title.charAt(0).toUpperCase() || "?"}
+          </span>
+        ) : (
+          <img
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+            src={src}
+            onError={onError}
+            onLoad={onLoad}
+          />
+        )}
 
-      {/* TODO: Re-enable store icon
-      {storeIcon !== null && (
-        <span className="absolute top-0 left-0 z-2 flex size-4 items-center justify-center rounded-br-md bg-black/70 opacity-0 transition-opacity group-hover:opacity-100">
-          <Icon className="text-white" path={storeIcon} size="xs" />
-        </span>
-      )}
-      */}
-    </button>
+        <span
+          className={joinClasses("absolute inset-0 z-1 rounded-lg transition-colors", {
+            "border border-stroke-weak group-hover:border-2 group-hover:border-neutral-strong group-hover:bg-translucent-200":
+              !isActive,
+          })}
+        />
+
+        {/* TODO: Re-enable store icon
+        {storeIcon !== null && (
+          <span className="absolute top-0 left-0 z-2 flex size-4 items-center justify-center rounded-br-md bg-black/70 opacity-0 transition-opacity group-hover:opacity-100">
+            <Icon className="text-white" path={storeIcon} size="xs" />
+          </span>
+        )}
+        */}
+      </button>
+    </Tooltip>
   );
 };

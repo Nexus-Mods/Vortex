@@ -37,8 +37,8 @@ async function collectionUpdate(
   oldModId: string,
 ) {
   try {
-    const latest: IRevision = (
-      await api.emitAndAwait(
+    const latest = (
+      await api.emitAndAwait<"get-nexus-collection-revision">(
         "get-nexus-collection-revision",
         collectionSlug,
         parseInt(revisionNumber, 10),
@@ -80,8 +80,11 @@ async function collectionUpdate(
         revisionInfo: latest,
       },
     };
-    const downloadURLs: IDownloadURL[] = (
-      await api.emitAndAwait("resolve-collection-url", latest.downloadLink)
+    const downloadURLs = (
+      await api.emitAndAwait<"resolve-collection-url">(
+        "resolve-collection-url",
+        latest.downloadLink,
+      )
     )[0];
     let dlId: string;
     try {

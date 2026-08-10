@@ -120,6 +120,45 @@ class MixpanelAnalytics {
   }
 
   /**
+   * Register (or clear) the active-game super properties so every subsequent event
+   * carries game/profile scope without each event having to pass it. Pass `null` when
+   * no game is active (e.g. the games dashboard) so stale scope can't leak onto
+   * game-agnostic events. `game_id` is the numeric Nexus id; `profile_id` is the active
+   * profile's id.
+   */
+  public setGameContext(context: { gameId: number | null; profileId: string } | null) {
+    if (!this.isUserSet()) return;
+    if (context === null) {
+      mixpanel.unregister("game_id");
+      mixpanel.unregister("profile_id");
+      analyticsServiceLog("mixpanel", "debug", "Game context cleared");
+      return;
+    }
+    if (context.gameId === null) {
+      // Unresolved id (games cache still loading): keep the persisted game_id; the caller retries.
+      mixpanel.register({ profile_id: context.profileId });
+      analyticsServiceLog("mixpanel", "debug", "Game context deferred (games cache not loaded)", {
+        kept_game_id: this.registeredGameId(),
+        profile_id: context.profileId,
+      });
+      return;
+    }
+    mixpanel.register({
+      game_id: context.gameId,
+      profile_id: context.profileId,
+    });
+    analyticsServiceLog("mixpanel", "debug", "Game context registered", {
+      game_id: context.gameId,
+      profile_id: context.profileId,
+    });
+  }
+
+  /** The game_id super property as mixpanel will send it — including a value persisted from a previous session. */
+  private registeredGameId(): number | null {
+    return (mixpanel.get_property("game_id") as number | undefined) ?? null;
+  }
+
+  /**
    * Disable tracking
    */
   public stop() {
@@ -156,6 +195,7 @@ class MixpanelAnalytics {
 
     analyticsServiceLog("mixpanel", "debug", "Event tracked", {
       eventName: event.eventName,
+      game_id: this.registeredGameId(),
       properties: event.properties,
     });
   }

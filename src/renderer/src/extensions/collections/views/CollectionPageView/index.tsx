@@ -43,6 +43,7 @@ import { addModRule, removeModRule } from "../../../mod_management/actions/mods"
 import type { IMod, IModRule } from "../../../mod_management/types/IMod";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
+import { removeMods } from "../../../mod_management/util/removeMods";
 import {
   findRuleByRef,
   isOptionalRule,
@@ -85,7 +86,7 @@ interface IConnectedProps {
   userInfo: any;
   showPremiumAd: boolean;
   votedSuccess: RatingOptions;
-  activity: { [id: string]: string };
+  activity: { [id: string]: string[] };
   language: string;
   overlays: { [id: string]: IOverlay };
   collectionInfo: ICollection;
@@ -956,7 +957,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         [{ label: "Cancel" }, { label: "Remove" }],
       )
       .then((result: IDialogResult) => {
-        const removeMods = result.action === "Remove" && result.input.mod;
+        const doRemoveMods = result.action === "Remove" && result.input.mod;
         const removeArchive = result.action === "Remove" && result.input.archive;
         const removeRule = result.action === "Remove" && result.input.collection;
 
@@ -976,7 +977,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         const rulesToRemove = filteredIds.filter((key) => itemRows[key] !== undefined);
 
         return Bluebird.resolve(
-          removeMods
+          doRemoveMods
             ? removeMods(this.context.api, profile.gameId, wereInstalled)
             : Promise.resolve(),
         )
@@ -1123,4 +1124,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
 export default connect(
   makeMapStateToProps,
   mapDispatchToProps,
-)(CollectionPage) as any as React.ComponentType<ICollectionPageProps>;
+)(CollectionPage) as any as React.ComponentType<React.PropsWithChildren<ICollectionPageProps>>;

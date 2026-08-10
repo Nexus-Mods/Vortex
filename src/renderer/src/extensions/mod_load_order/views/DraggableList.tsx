@@ -24,12 +24,14 @@ interface IItemBaseProps {
   index: number;
   item: ILoadOrderDisplayItem;
   isLocked: boolean;
-  itemRenderer: React.ComponentType<{
-    className?: string;
-    item: ILoadOrderDisplayItem;
-    onRef: (ref: any) => any;
-    onContextMenu?: (evt: any) => any;
-  }>;
+  itemRenderer: React.ComponentType<
+    React.PropsWithChildren<{
+      className?: string;
+      item: ILoadOrderDisplayItem;
+      onRef: (ref: any) => any;
+      onContextMenu?: (evt: any) => any;
+    }>
+  >;
   containerId: string;
   take: (item: ILoadOrderDisplayItem, list: ILoadOrderDisplayItem[]) => any;
   onChangeIndex: (
@@ -164,11 +166,13 @@ interface IBaseProps {
   id: string;
   items: ILoadOrderDisplayItem[];
   loadOrder: ILoadOrder;
-  itemRenderer: React.ComponentType<{
-    className?: string;
-    item: ILoadOrderDisplayItem;
-    onRef: (ref: any) => any;
-  }>;
+  itemRenderer: React.ComponentType<
+    React.PropsWithChildren<{
+      className?: string;
+      item: ILoadOrderDisplayItem;
+      onRef: (ref: any) => any;
+    }>
+  >;
   apply: (ordered: ILoadOrderDisplayItem[]) => void;
 }
 
@@ -365,4 +369,4 @@ export default DropTarget(
   DND_TYPE,
   containerTarget,
   containerCollect,
-)(DraggableList) as React.ComponentType<IBaseProps>;
+)(DraggableList) as React.ComponentType<React.PropsWithChildren<IBaseProps>>;

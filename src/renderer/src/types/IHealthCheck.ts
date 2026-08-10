@@ -23,6 +23,7 @@ export enum HealthCheckTrigger {
   GameChanged = "game-changed",
   ProfileChanged = "profile-changed",
   ModsChanged = "mods-changed",
+  LoginChanged = "login-changed",
   SettingsChanged = "settings-changed",
   PluginsChanged = "plugins-changed",
   LootUpdated = "loot-updated",
@@ -42,7 +43,15 @@ export interface IHealthCheckResult<TMetadata = unknown> {
   isLegacyTest?: boolean;
 }
 
-export type HealthCheckFunction = (api: IExtensionApi) => Promise<IHealthCheckResult>;
+/**
+ * `signal` aborts once `timeout` elapses. A check that loops over mods, files or network calls
+ * must poll it and return early: the registry cannot stop a body that ignores it, and holds the
+ * check's slot until the body returns.
+ */
+export type HealthCheckFunction = (
+  api: IExtensionApi,
+  signal?: AbortSignal,
+) => Promise<IHealthCheckResult>;
 export type HealthCheckFixFunction = (api: IExtensionApi) => Promise<void>;
 
 export interface IHealthCheck {
@@ -52,6 +61,8 @@ export interface IHealthCheck {
   category: HealthCheckCategory;
   severity: HealthCheckSeverity;
   triggers: HealthCheckTrigger[];
+  /** The game this check applies to; skipped while another is active. Omit to run for all. */
+  gameId?: string;
   dependencies?: string[];
   timeout?: number;
   cacheDuration?: number;
@@ -93,6 +104,7 @@ export interface IModCheckContext {
 export type PerModCheckFunction = (
   api: IExtensionApi,
   mod: IModCheckContext,
+  signal?: AbortSignal,
 ) => Promise<IHealthCheckResult>;
 
 /**

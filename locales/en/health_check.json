@@ -2,26 +2,32 @@
   "actions": {
     "install_all": "1-click install all ({{count}})"
   },
+  "divider": {
+    "and": "And",
+    "or": "Or"
+  },
+  "shared": {
+    "requires_files": "Requires {{ count }} additional mod file to be installed to work correctly:",
+    "requires_files_plural": "Requires {{ count }} additional mod files to be installed to work correctly:",
+    "requires_pick": "Requires {{ count }} additional mod file to be picked to work correctly:",
+    "requires_pick_plural": "Requires {{ count }} additional mod files to be picked to work correctly:",
+    "wrong_version_installed": "Requires installing a different version of this existing mod file to work correctly:",
+    "wrong_version_installed_plural": "Requires installing a different version of {{ count }} existing mod files to work correctly:",
+    "wrong_version_enabled": "Requires enabling a different version of this installed mod file to work correctly:",
+    "wrong_version_enabled_plural": "Requires enabling a different version of {{ count }} installed mod files to work correctly:",
+    "correct_version_uninstalled": "Requires installing this previously downloaded mod file to work correctly:",
+    "correct_version_uninstalled_plural": "Requires installing {{ count }} previously downloaded mod files to work correctly:"
+  },
   "listing": {
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "last_updated": "Last updated: {{time}}",
     "item": {
-      "title": "Additional mod may be required for: {{modName}}",
+      "title": "Additional mod file may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}",
-      "requires_mods": "Requires {{ count }} mod",
-      "requires_mods_plural": "Requires {{ count }} mods",
-      "may_require_mods": "May require {{ count }} mod",
-      "may_require_mods_plural": "May require {{ count }} mods",
       "more_count": "+{{ count }} more",
-      "requires_files": "Requires {{ count }} file",
-      "requires_files_plural": "Requires {{ count }} files",
       "missing_for": "Missing required mod for: {{modName}}",
       "missing_for_plural": "Missing required mods for: {{modName}}",
-      "requires_count": "Requires {{ count }} mod:",
-      "requires_count_plural": "Requires {{ count }} mods:",
-      "requires_pick": "Requires {{ count }} mod to be picked:",
-      "requires_pick_plural": "Requires {{ count }} mods to be picked:",
       "or_join": "or"
     },
     "no_results_active": {
@@ -31,6 +37,12 @@
     "no_results_hidden": {
       "title": "No hidden items"
     },
+    "no_results_logged_out": {
+      "title": "Additional checks available",
+      "message": "Health Check found no issues in the checks it could run. Log in to also check for missing Nexus Mods requirements.",
+      "action": "Log in to complete Health Check"
+    },
+    "external_mod_install": "External mod install",
     "install_one_click": "1-click install ({{count}})",
     "install_uninstalled": "Install (downloaded)",
     "pick_mod_install": "Pick mod install",
@@ -55,32 +67,33 @@
       "error": "Was this error helpful?"
     },
     "item": {
-      "title": "Additional mod may be required for: {{modName}}",
-      "description": "Check <modLink>{{modName}} description</modLink> for details.",
-      "check_the_description": "Check the description before installing.",
-      "author_note": "Note: {{note}}",
+      "title": "Possible missing required mod for: {{modName}}",
+      "may_require_file": "May require this additional mod file to be installed to work correctly:",
+      "author_note": "Author note: {{note}}",
+      "mod_page_source_note": "This requirement was identified from the mod page rather than the file-level requirement system, so it may not be required for your specific configuration. <modLink>View the mod page to get full details</modLink>.",
       "open_external_mod_page": "Open external mod page",
+      "external_hosted_note": "This mod is hosted outside Nexus Mods. Check the description before installing.",
       "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
       "confirm_install": "Confirm install",
       "missing_for": "Missing required mod for: <modLink>{{modName}}</modLink>",
       "missing_for_plural": "Missing required mods for: <modLink>{{modName}}</modLink>",
-      "requires_files": "Requires {{ count }} mod file to be installed to work correctly.",
-      "requires_files_plural": "Requires {{ count }} mod files to be installed to work correctly.",
       "install_via_mod_page": "Install via mod page",
       "install_one_click": "1-click install",
+      "downloading": "Downloading...",
+      "installing": "Installing...",
       "pick_one": "Pick one of these",
-      "wrong_version_installed": "A different version of an installed file is required. Only one version can be enabled at a time.",
-      "installed_version": "Currently installed version:",
+      "install_required": "Install required",
+      "different_version_required": "Different version install required",
+      "current_version": "Current version",
       "required_version": "Required version:",
-      "wrong_version_enabled": "The correct version is installed but a different version is enabled. Only one version can be enabled at a time.",
-      "enabled_version": "Currently enabled version:",
-      "correct_version": "Correct version:",
-      "view_in_loadout": "View in loadout",
+      "enable_required": "Enable required version",
       "view_in_mods": "View in Mods",
-      "switch_version": "Switch version",
       "enable_this_version": "Enable this version",
-      "correct_version_downloaded": "The required version is downloaded but not installed.",
-      "install_uninstalled": "Install (downloaded)"
+      "install_uninstalled": "Install (downloaded)",
+      "adult": "Adult",
+      "installed": "Installed",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",

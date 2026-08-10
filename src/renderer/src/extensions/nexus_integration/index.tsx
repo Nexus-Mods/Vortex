@@ -7,9 +7,12 @@ import type {
   IModFile,
   IModFileQuery,
   IModInfo,
+  ICollection,
   IRevision,
   IRevisionQuery,
   IValidateKeyResponse,
+  IRating,
+  RatingOptions,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
@@ -115,6 +118,7 @@ import {
 import { checkModVersion } from "./util/checkModsVersion";
 import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
+import { isStoragePathName } from "./util/healStoragePathNames";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -131,6 +135,26 @@ export class APIDisabled extends Error {
   constructor(instruction: string) {
     super(`Network functionality disabled "${instruction}"`);
     this.name = this.constructor.name;
+  }
+}
+
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "nexus-download": (
+      gameId: string,
+      modId: number,
+      fileId: number,
+      fileName?: string,
+      allowInstall?: boolean,
+    ) => string;
+    "get-my-collections": (gameId: string, count?: number, offset?: number) => Partial<IRevision>[];
+    "get-nexus-collection": (slug: string) => ICollection;
+    "get-nexus-collection-revision": (collectionSlug: string, revisionNumber: number) => IRevision;
+    "resolve-collection-url": (apiLink: string) => IDownloadURL[];
+    "rate-nexus-collection-revision": (
+      revisionId: number,
+      vote: RatingOptions,
+    ) => { success: boolean; averageRating?: IRating };
   }
 }
 
@@ -525,17 +549,6 @@ const ATTRIBUTES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 function processAttributes(state: IState, input: any, quick: boolean): PromiseBB<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
-  const modName = decodeHTML(
-    input.download?.modInfo?.nexus?.modInfo?.name ?? input.download?.modInfo?.name,
-  );
-  const fileName = decodeHTML(
-    input.download?.modInfo?.nexus?.fileInfo?.name ??
-      input.download?.localPath ??
-      input.meta?.fileName,
-  );
-  const fuzzRatio =
-    modName !== undefined && fileName !== undefined ? fuzz.ratio(modName, fileName) : 100;
-
   let fetchPromise: PromiseBB<IRemoteInfo> = PromiseBB.resolve(undefined);
 
   let gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
@@ -636,6 +649,27 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
     const nexusCollectionInfo: IRevision =
       info?.revisionInfo ?? input.download?.modInfo?.nexus?.revisionInfo;
 
+    // collections are identified by their revision info, not a downloaded file. Their
+    // display name is the collection name; the archive on disk is not a meaningful name.
+    const isCollection = nexusCollectionInfo !== undefined;
+    const collectionName = nexusCollectionInfo?.collection?.name;
+
+    // never accept a CDN storage path as a name (LAZ-807); `?? undefined`
+    // normalizes an explicit null, which would otherwise make decodeHTML
+    // return "" and defeat the fuzz-ratio guard below
+    const rawModName =
+      nexusModInfo?.name ?? collectionName ?? input.download?.modInfo?.name ?? undefined;
+    const modName = decodeHTML(isStoragePathName(rawModName) ? undefined : rawModName);
+    // for collections the "file name" is the collection name, never the archive/localPath:
+    // deriving logicalFileName/customFileName from the archive is what surfaced archive
+    // and storage-path names on collection cards
+    const rawFileName = isCollection
+      ? (collectionName ?? input.download?.modInfo?.name)
+      : (nexusFileInfo?.name ?? input.download?.localPath ?? input.meta?.fileName);
+    const fileName = decodeHTML(isStoragePathName(rawFileName) ? undefined : rawFileName);
+    const fuzzRatio =
+      modName !== undefined && fileName !== undefined ? fuzz.ratio(modName, fileName) : 100;
+
     const gameMode = activeGameId(state);
     const category = remapCategory(state, nexusModInfo?.category_id, gameId, gameMode);
 
@@ -646,7 +680,7 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       collectionId:
         input.download?.modInfo?.nexus?.ids?.collectionId ?? nexusCollectionInfo?.collection?.id,
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId ?? nexusCollectionInfo?.id,
-      collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection["slug"],
+      collectionSlug: nexusIds?.collectionSlug ?? nexusCollectionInfo?.collection?.["slug"],
       revisionNumber: nexusIds?.revisionNumber ?? nexusCollectionInfo?.revisionNumber,
       author: nexusModInfo?.author ?? nexusCollectionInfo?.collection?.user?.name,
       uploader: nexusModInfo?.uploaded_by ?? nexusCollectionInfo?.collection?.user?.name,
@@ -673,7 +707,6 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       newestVersion:
         nexusCollectionInfo?.collection?.latestPublishedRevision?.revisionNumber?.toString?.(),
       rating: nexusCollectionInfo?.rating,
-      requirements: nexusModInfo?.requirements,
     };
   });
 }
@@ -1047,7 +1080,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusGetTrendingMods: eh.onGetTrendingMods(api, nexus),
     nexusEndorseMod: eh.onEndorseMod(api, nexus),
     nexusSubmitFeedback: eh.onSubmitFeedback(nexus),
-    nexusSubmitCollection: eh.onSubmitCollection(nexus),
+    nexusSubmitCollection: eh.onSubmitCollection(api),
     nexusModUpdate: eh.onModUpdate(api, nexus),
     nexusOpenCollectionPage: eh.onOpenCollectionPage(api),
     nexusOpenModPage: eh.onOpenModPage(api),
@@ -1058,7 +1091,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
     nexusModFileContents: eh.onModFileContents(api, nexus),
     nexusGetModInfo: eh.onGetModInfo(api, nexus),
-    nexusGetModRequirements: eh.onGetModRequirements(api, nexus),
+    nexusGetModRequirements: eh.onGetModRequirements(nexus),
     nexusGetPreferences: eh.onGetPreferences(api, nexus),
     nexusGetUserKeyData: eh.onGetUserKeyData(api),
   };
@@ -1198,13 +1231,22 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   }
 
   api.onAsync("check-mods-version", eh.onCheckModsVersion(api, nexus));
-  api.onAsync("nexus-download", eh.onNexusDownload(api, nexus));
-  api.onAsync("get-nexus-collection", eh.onGetNexusCollection(api, nexus));
+  api.onAsync<"nexus-download">("nexus-download", eh.onNexusDownload(api, nexus));
+  api.onAsync<"get-nexus-collection">("get-nexus-collection", eh.onGetNexusCollection(api, nexus));
   api.onAsync("get-nexus-collections", eh.onGetNexusCollections(api, nexus));
-  api.onAsync("get-my-collections", eh.onGetMyCollections(api, nexus));
-  api.onAsync("resolve-collection-url", eh.onResolveCollectionUrl(api, nexus));
-  api.onAsync("get-nexus-collection-revision", eh.onGetNexusCollectionRevision(api, nexus));
-  api.onAsync("rate-nexus-collection-revision", eh.onRateRevision(api, nexus));
+  api.onAsync<"get-my-collections">("get-my-collections", eh.onGetMyCollections(api, nexus));
+  api.onAsync<"resolve-collection-url">(
+    "resolve-collection-url",
+    eh.onResolveCollectionUrl(api, nexus),
+  );
+  api.onAsync<"get-nexus-collection-revision">(
+    "get-nexus-collection-revision",
+    eh.onGetNexusCollectionRevision(api, nexus),
+  );
+  api.onAsync<"rate-nexus-collection-revision">(
+    "rate-nexus-collection-revision",
+    eh.onRateRevision(api, nexus),
+  );
   api.onAsync("endorse-nexus-mod", eh.onEndorseDirect(api, nexus));
   api.onAsync("get-latest-mods", eh.onGetLatestMods(api, nexus));
   api.onAsync("get-trending-mods", eh.onGetTrendingMods(api, nexus));
@@ -1212,7 +1254,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.events.on("refresh-user-info", eh.onRefreshUserInfo(nexus, api));
   api.events.on("endorse-mod", eh.onEndorseMod(api, nexus));
   api.events.on("submit-feedback", eh.onSubmitFeedback(nexus));
-  api.events.on("submit-collection", eh.onSubmitCollection(nexus));
+  api.events.on("submit-collection", eh.onSubmitCollection(api));
   api.events.on("mods-update", eh.onModsUpdate(api, nexus));
   api.events.on("mod-update", eh.onModUpdate(api, nexus));
   api.events.on("open-collection-page", eh.onOpenCollectionPage(api));
@@ -1267,7 +1309,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   callbacks.forEach((cb) => cb(nexus));
 }
 
-function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
+function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChildren<any>> {
   return () => {
     const context = React.useContext<IComponentContext>(MainContext);
     const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";
@@ -1429,6 +1471,7 @@ const freeDLQueue: IDLQueueItem[] = [];
 
 const DL_QUERY: IRevisionQuery = {
   id: true,
+  revisionNumber: true,
   downloadLink: true,
   collection: {
     id: true,
@@ -1618,7 +1661,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
                         collectionId: revisionInfo.collection.id,
                         revisionId: revisionInfo.id,
                         collectionSlug: url.collectionSlug,
-                        revisionNumber: url.revisionNumber,
+                        revisionNumber: revisionInfo.revisionNumber ?? url.revisionNumber,
                       },
                     },
                   } as any,

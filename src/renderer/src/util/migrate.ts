@@ -25,6 +25,7 @@ import { knownGames } from "../extensions/gamemode_management/selectors";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import resolvePath, { pathDefaults } from "../extensions/mod_management/util/resolvePath";
 import { convertGameIdReverse } from "../extensions/nexus_integration/util/convertGameId";
+import { healStoragePathNameActions } from "../extensions/nexus_integration/util/healStoragePathNames";
 import { activeGameId } from "../extensions/profile_management/selectors";
 import { log } from "../logging";
 import type { IState } from "../types/IState";
@@ -367,6 +368,17 @@ async function moveDomainFolders_2_1(store: Redux.Store<IState>): Promise<void> 
   });
 }
 
+function healStoragePathNames_2_4(store: Redux.Store<IState>): PromiseBB<void> {
+  const actions = healStoragePathNameActions(store.getState());
+  if (actions.length > 0) {
+    log("info", "migration: healing storage-path polluted names", {
+      count: actions.length,
+    });
+    batchDispatch(store, actions);
+  }
+  return PromiseBB.resolve();
+}
+
 const migrations: IMigration[] = [
   {
     id: "move-downloads-0.16",
@@ -414,6 +426,18 @@ const migrations: IMigration[] = [
       "Move downloads saved under Nexus domain folders (e.g. skyrimspecialedition) " +
       "to the internal-id folder (skyrimse) used by the rest of Vortex.",
     apply: moveDomainFolders_2_1,
+  },
+  {
+    id: "healStoragePathNames_2_4",
+    // Bug shipped in 2.4.0-beta.1 (LAZ-807); fix lands in 2.4.0-beta.2.
+    // Targeting the fix version covers the entire affected cohort.
+    minVersion: "2.4.0-beta.2",
+    maySkip: false,
+    doQuery: false,
+    description:
+      "Repair mod and download names polluted with CDN storage paths " +
+      '("5c/d3/1f/<guid>") by 2.4.0-beta.1.',
+    apply: healStoragePathNames_2_4,
   },
 ];
 

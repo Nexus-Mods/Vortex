@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import type { ICreateCollectionResult, IGraphErrorDetail } from "@nexusmods/nexus-api";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
@@ -21,6 +22,7 @@ import { toPromise } from "../../util/util";
 import { BUNDLED_PATH, PATCHES_PATH } from "./constants";
 import type { ICollection, ICollectionMod, ICollectionSourceInfo } from "./types/ICollection";
 import { makeProgressFunction } from "./util/makeProgressFunction";
+import { makeUploadProgress } from "./util/makeUploadProgress";
 import { modToCollection } from "./util/modToCollection";
 import { hasEditPermissions } from "./util/util";
 
@@ -303,18 +305,32 @@ export async function doExportToAPI(
         log("info", "user doesn't match original author, creating new collection");
         collectionId = undefined;
       }
-      const result: ICreateCollectionResult = await toPromise((cb) =>
-        api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, cb),
+      // The collection is built at this point; the upload reports against its
+      // own notification, so retire this one rather than leaving it at 100%.
+      progressEnd();
+
+      const uploadAbort = new AbortController();
+      const { onProgress: onUploadProgress, uploadEnd } = makeUploadProgress(api, () =>
+        uploadAbort.abort(),
       );
+      let result: ICreateCollectionResult;
+      try {
+        result = await toPromise((cb) =>
+          api.events.emit("submit-collection", filterInfo(info), filePath, collectionId, cb, {
+            onProgress: onUploadProgress,
+            abortSignal: uploadAbort.signal,
+          }),
+        );
+      } finally {
+        uploadEnd();
+      }
       collectionId = result.collection.id;
-      collectionSlug = result.collection.slug;
+      collectionSlug = result.collection.slug ?? mod.attributes?.collectionSlug;
       api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionId", collectionId));
-      api.store.dispatch(
-        actions.setModAttribute(gameId, modId, "collectionSlug", result.collection.slug),
-      );
+      api.store.dispatch(actions.setModAttribute(gameId, modId, "collectionSlug", collectionSlug));
       api.store.dispatch(actions.setModAttribute(gameId, modId, "source", "nexus"));
-      const revisionId = result.revision?.id ?? result["revisionId"];
-      revisionNumber = result.revision?.revisionNumber ?? result["revisionNumber"];
+      const revisionId = result.revision?.id;
+      revisionNumber = result.revision?.revisionNumber;
       api.store.dispatch(actions.setModAttribute(gameId, modId, "revisionId", revisionId));
       api.store.dispatch(actions.setModAttribute(gameId, modId, "revisionNumber", revisionNumber));
       api.store.dispatch(
@@ -338,6 +354,9 @@ export async function doExportToAPI(
     progressEnd();
   } catch (err) {
     progressEnd();
+    if (getErrorCode(err) === "cancellation") {
+      throw new UserCanceled();
+    }
     // These upload errors are matched by name (a string that survives IPC and
     // module-duplication, unlike instanceof). GraphError/ParameterInvalid set
     // their `name` to the class name; ModFileNotFound is a name-only error?
@@ -358,6 +377,32 @@ export async function doExportToAPI(
         type: "error",
         title: "The server rejected this collection",
         message: e.message || "<No reason given>",
+      });
+      throw new ProcessCanceled("collection rejected");
+    } else if (err instanceof V3ApiError) {
+      const message = err.detail || err.message;
+      const validationErrors = err.validationErrors ?? [];
+      api.sendNotification({
+        type: "error",
+        message: "The server rejected this collection",
+        actions: [
+          {
+            title: "More",
+            action: () => {
+              api.showDialog(
+                "error",
+                "The server rejected this collection",
+                {
+                  text:
+                    validationErrors.length === 0
+                      ? message
+                      : validationErrors.map((ve) => `${ve.pointer}: ${ve.detail}`).join("\n"),
+                },
+                [{ label: "Close" }],
+              );
+            },
+          },
+        ],
       });
       throw new ProcessCanceled("collection rejected");
     } else if (e.name === "GraphError") {

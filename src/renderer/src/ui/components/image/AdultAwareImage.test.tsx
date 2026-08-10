@@ -1,7 +1,7 @@
-import { render, cleanup } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import React from "react";
 import { useSelector } from "react-redux";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { AdultAwareImage } from "./AdultAwareImage";
 
@@ -24,10 +24,6 @@ const getImg = () => document.querySelector("img");
 
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-afterEach(() => {
-  cleanup();
 });
 
 // --- Tests ---

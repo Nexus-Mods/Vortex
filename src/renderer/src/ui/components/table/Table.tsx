@@ -71,7 +71,6 @@ const ColumnFilterControl = <T,>({
       id={id}
       label={label}
       placeholder={filter.placeholder ?? "Filter..."}
-      size="sm"
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />

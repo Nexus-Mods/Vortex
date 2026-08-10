@@ -1,6 +1,8 @@
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { IError } from "../types/IError";
+import { COMPANY_ID, NEXUSMODS_EXT_ID } from "./constants";
 import { genHash } from "./genHash";
 import { log } from "./log";
 
@@ -16,7 +18,7 @@ vi.mock("./genHash", () => ({ genHash: vi.fn() }));
 vi.mock("./application", () => ({ getApplication: () => ({ version: "1.2.3" }) }));
 vi.mock("@vortex/shared/telemetry", () => ({ recordErrorOnSpan: vi.fn() }));
 
-import { reportRenderError } from "./errorHandling";
+import { reportRenderError, resolveAllowReport } from "./errorHandling";
 
 const errorInfo = { componentStack: "\n    in Foo\n    in Bar" };
 
@@ -87,5 +89,31 @@ describe("reportRenderError", () => {
       error: error.stack,
       componentStack: undefined,
     });
+  });
+});
+
+describe("resolveAllowReport", () => {
+  const err = (extra: Partial<IError>): IError => ({ message: "boom", ...extra }) as IError;
+
+  it("keeps an explicit caller decision regardless of the extension", () => {
+    expect(resolveAllowReport(err({ extension: "SomeModder" }), true)).toBe(true);
+    expect(resolveAllowReport(err({ extension: COMPANY_ID }), false)).toBe(false);
+  });
+
+  it("suppresses reporting when the error opts out", () => {
+    expect(resolveAllowReport(err({ allowReport: false }))).toBe(false);
+  });
+
+  it("allows reporting for crashes in a first-party extension", () => {
+    expect(resolveAllowReport(err({ extension: COMPANY_ID }))).toBe(true);
+    expect(resolveAllowReport(err({ extension: NEXUSMODS_EXT_ID }))).toBe(true);
+  });
+
+  it("suppresses reporting for crashes in a community extension", () => {
+    expect(resolveAllowReport(err({ extension: "SomeModder" }))).toBe(false);
+  });
+
+  it("leaves the decision undefined when nothing determines it", () => {
+    expect(resolveAllowReport(err({}))).toBeUndefined();
   });
 });

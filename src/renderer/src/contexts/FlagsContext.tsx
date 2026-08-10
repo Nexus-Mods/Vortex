@@ -30,7 +30,7 @@ export interface IFlagsProviderProps {
   children: ReactNode;
 }
 
-export const FlagsProvider: FC<IFlagsProviderProps> = ({ children }) => {
+export const FlagsProvider: FC<React.PropsWithChildren<IFlagsProviderProps>> = ({ children }) => {
   const [flags, setFlags] = useState<ReadonlyMap<KnownFlagName, FeatureFlag>>(
     () => FlagService.instance.flags,
   );

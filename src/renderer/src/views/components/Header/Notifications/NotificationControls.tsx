@@ -12,7 +12,7 @@ interface NotificationControlsProps {
   onSuppress: (e: MouseEvent) => void;
 }
 
-export const NotificationControls: FC<NotificationControlsProps> = ({
+export const NotificationControls: FC<React.PropsWithChildren<NotificationControlsProps>> = ({
   noDismiss,
   allowSuppress,
   collapsed,

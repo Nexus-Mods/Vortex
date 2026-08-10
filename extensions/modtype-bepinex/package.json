@@ -15,7 +15,7 @@
     "extensionName": "Mod Type: BepInEx"
   },
   "devDependencies": {
-    "@types/i18next": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/react": "catalog:",
     "@types/redux": "catalog:",
     "@types/semver": "catalog:",
@@ -26,7 +26,6 @@
     "react": "catalog:",
     "react-i18next": "catalog:",
     "semver": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*",
     "vortex-parse-ini": "catalog:"
   },
   "dependencies": {

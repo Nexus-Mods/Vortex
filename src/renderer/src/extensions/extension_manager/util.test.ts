@@ -1,72 +1,70 @@
 import { describe, expect, it } from "vitest";
 
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IDownload } from "../../types/IState";
-import { ProcessCanceled } from "../../util/CustomErrors";
-import { waitForDownloadRecord } from "./util";
+import type { IAvailableExtension } from "../../types/extensions";
+import { filterInstallableExtensions, selectorMatch } from "./util";
 
-// Regression test for #23454: downloads run in the main process and the
-// renderer redux state is synced asynchronously, so the download record may
-// be absent or still "finalizing" when the download callback resolves. The
-// extension updater then failed with "Download not found" on every launch.
-describe("waitForDownloadRecord", () => {
-  const makeApi = (files: () => Record<string, Partial<IDownload>>): IExtensionApi =>
-    ({
-      store: {
-        getState: () => ({ persistent: { downloads: { files: files() } } }),
-      },
-    }) as unknown as IExtensionApi;
+function makeExtension(overrides: Partial<IAvailableExtension> = {}): IAvailableExtension {
+  return {
+    name: "Some Extension",
+    description: { short: "short", long: "long" },
+    image: "image.png",
+    author: "someone",
+    uploader: "someone",
+    version: "1.0.0",
+    downloads: 0,
+    endorsements: 0,
+    timestamp: 0,
+    tags: [],
+    ...overrides,
+  };
+}
 
-  it("resolves immediately when the download is finished", async () => {
-    const api = makeApi(() => ({
-      dl1: { state: "finished", localPath: "archive.7z" },
-    }));
-
-    const result = await waitForDownloadRecord(api, "dl1", 1000, 10);
-    expect(result.localPath).toBe("archive.7z");
+describe("filterInstallableExtensions", () => {
+  it("keeps extensions with both modId and fileId", () => {
+    const extensions = [makeExtension({ modId: 1, fileId: 2 })];
+    expect(filterInstallableExtensions(extensions)).toEqual(extensions);
   });
 
-  it("polls until the record appears in the store", async () => {
-    let synced = false;
-    const api = makeApi(() =>
-      synced ? { dl1: { state: "finished", localPath: "archive.7z" } } : {},
-    );
-    setTimeout(() => {
-      synced = true;
-    }, 30);
-
-    const result = await waitForDownloadRecord(api, "dl1", 1000, 10);
-    expect(result.localPath).toBe("archive.7z");
+  it("drops extensions missing modId", () => {
+    const extensions = [makeExtension({ fileId: 2 })];
+    expect(filterInstallableExtensions(extensions)).toEqual([]);
   });
 
-  it("polls while the download is still finalizing", async () => {
-    let state: IDownload["state"] = "finalizing";
-    const api = makeApi(() => ({ dl1: { state, localPath: "archive.7z" } }));
-    setTimeout(() => {
-      state = "finished";
-    }, 30);
-
-    const result = await waitForDownloadRecord(api, "dl1", 1000, 10);
-    expect(result.state).toBe("finished");
+  it("drops extensions missing fileId", () => {
+    const extensions = [makeExtension({ modId: 1 })];
+    expect(filterInstallableExtensions(extensions)).toEqual([]);
   });
 
-  it("rejects with ProcessCanceled when the download failed", async () => {
-    const api = makeApi(() => ({ dl1: { state: "failed" } }));
-
-    await expect(waitForDownloadRecord(api, "dl1", 1000, 10)).rejects.toThrow(ProcessCanceled);
+  it("drops legacy GitHub-hosted entries lacking both modId and fileId", () => {
+    const extensions = [makeExtension({})];
+    expect(filterInstallableExtensions(extensions)).toEqual([]);
   });
 
-  it("rejects after the timeout when the record never appears", async () => {
-    const api = makeApi(() => ({}));
+  it("keeps only the qualifying entries out of a mixed list", () => {
+    const nexusExt = makeExtension({ name: "Nexus Extension", modId: 1, fileId: 2 });
+    const githubExt = makeExtension({ name: "GitHub Extension" });
+    const partialExt = makeExtension({ name: "Partial Extension", modId: 3 });
 
-    await expect(waitForDownloadRecord(api, "dl1", 50, 10)).rejects.toThrow("Download not found");
+    expect(filterInstallableExtensions([nexusExt, githubExt, partialExt])).toEqual([nexusExt]);
   });
 
-  it("rejects after the timeout when the record never finishes", async () => {
-    const api = makeApi(() => ({ dl1: { state: "finalizing" } }));
+  it("returns an empty array unchanged", () => {
+    expect(filterInstallableExtensions([])).toEqual([]);
+  });
+});
 
-    await expect(waitForDownloadRecord(api, "dl1", 50, 10)).rejects.toThrow(
-      "Download not finished (state: finalizing)",
-    );
+describe("selectorMatch", () => {
+  const ext = makeExtension({ modId: 42, fileId: 7 });
+
+  it("matches on modId", () => {
+    expect(selectorMatch(ext, { modId: 42 })).toBe(true);
+  });
+
+  it("does not match a different modId", () => {
+    expect(selectorMatch(ext, { modId: 1 })).toBe(false);
+  });
+
+  it("returns false when the selector is undefined", () => {
+    expect(selectorMatch(ext, undefined)).toBe(false);
   });
 });

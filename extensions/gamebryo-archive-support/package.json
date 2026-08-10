@@ -16,14 +16,13 @@
     "extensionName": "Gamebryo Archive Support"
   },
   "devDependencies": {
-    "@types/i18next": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/rimraf": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "lz4js": "^0.2.0",
     "rimraf": "catalog:",
-    "tmp": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "tmp": "catalog:"
   },
   "nx": {
     "tags": [

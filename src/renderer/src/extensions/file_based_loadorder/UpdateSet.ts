@@ -1,7 +1,4 @@
-import * as _ from "lodash";
-
-import type { IExtensionApi, IMod } from "../../types/api";
-import { log } from "../../util/log";
+import type { IExtensionApi } from "../../types/api";
 import { getSafe } from "../../util/storeHelper";
 import { activeGameId, lastActiveProfileForGame } from "../profile_management/selectors";
 import { currentLoadOrderForProfile } from "./selectors";
@@ -12,6 +9,14 @@ export default class UpdateSet {
   private mApi: IExtensionApi;
   private mModEntries: { [modId: number]: ILoadOrderEntryExt[] } = {};
   private mExternalEntries: { [modId: string]: ILoadOrderEntryExt[] } = {};
+  // O(1) lookup indexes into the buckets above; findEntry runs once per load
+  //  order entry on every change.
+  // Map of mod id to its mModEntries bucket
+  private mModsByModId = new Map<string, ILoadOrderEntryExt[]>();
+  // Map of entry id to its mModEntries bucket
+  private mModsByEntryId = new Map<string, ILoadOrderEntryExt[]>();
+  // Map of entry id to its mExternalEntries bucket
+  private mExternalByEntryId = new Map<string, ILoadOrderEntryExt[]>();
   private mInitialized = false;
   private mShouldRestore = false;
   private mIsFBLO: (gameId: string) => boolean;
@@ -52,6 +57,12 @@ export default class UpdateSet {
     } else if (!target[key].some((entry) => entry.id === lo.id)) {
       target[key].push(lo);
     }
+    if (lo.modId) {
+      this.mModsByModId.set(lo.modId, target[key]);
+      this.mModsByEntryId.set(lo.id, target[key]);
+    } else {
+      this.mExternalByEntryId.set(lo.id, target[key]);
+    }
   };
 
   public init = (gameId: string, modEntries?: ILoadOrderEntryExt[]) => {
@@ -90,22 +101,11 @@ export default class UpdateSet {
   private reset = () => {
     this.mModEntries = {};
     this.mExternalEntries = {};
+    this.mModsByModId.clear();
+    this.mModsByEntryId.clear();
+    this.mExternalByEntryId.clear();
     this.mInitialized = false;
     this.mShouldRestore = false;
-  };
-
-  public has = (value: number | string): boolean => {
-    return typeof value === "string"
-      ? this.mExternalEntries[value] !== undefined
-      : this.mModEntries[value] !== undefined;
-  };
-
-  public hasEntry = (entry: ILoadOrderEntry): boolean => {
-    return entry.modId
-      ? Object.values(this.mModEntries).some((l) =>
-          l.some((m) => m.modId === entry.modId || m.id === entry.id),
-        )
-      : Object.values(this.mExternalEntries).some((l) => l.some((m) => m.id === entry.id));
   };
 
   public restore = (loadOrder: ILoadOrderEntry[]): ILoadOrderEntry[] => {
@@ -147,45 +147,17 @@ export default class UpdateSet {
 
   // The modId of the mod we are looking for as stored in Vortex's state.
   public findEntry = (lookUpEntry: ILoadOrderEntry): { entries: ILoadOrderEntryExt[] } | null => {
-    if (!this.hasEntry(lookUpEntry)) {
-      return null;
-    }
-
     if (lookUpEntry.modId === undefined) {
       // This is an external entry, we need to find it in the external entries.
-      const extEntry = Object.entries(this.mExternalEntries).find((entry) => {
-        const [eId, loEntries] = entry;
-        return Array.isArray(loEntries) && loEntries.some((l) => l.id === lookUpEntry.id);
-      });
-      if (extEntry !== undefined) {
-        return { entries: this.mExternalEntries[extEntry[0]] };
-      }
-    } else {
-      const numericId = Object.entries(this.mModEntries).find((entry) => {
-        const [nId, loEntries] = entry;
-        return (
-          Array.isArray(loEntries) &&
-          loEntries.some((l) => l.modId === lookUpEntry.modId || l.id === lookUpEntry.id)
-        );
-      })?.[0];
-      if (numericId === undefined) {
-        return null;
-      }
-      return { entries: this.mModEntries[numericId] };
+      const entries = this.mExternalByEntryId.get(lookUpEntry.id);
+      return entries !== undefined ? { entries } : null;
     }
-  };
-
-  public get = (modId: number | string): ILoadOrderEntryExt[] => {
-    if (typeof modId === "string") {
-      return this.mExternalEntries[modId] || [];
-    } else {
-      return this.mModEntries[modId] || [];
-    }
-  };
-
-  public add = (x: number): this => {
-    log("warn", "Use addEntry", x);
-    return;
+    // Prefer the entry-id index: that bucket is guaranteed to contain this
+    //  exact entry. The modId index is the fallback for when the entry's id
+    //  changed (mod reinstalled under a new Vortex id).
+    const entries =
+      this.mModsByEntryId.get(lookUpEntry.id) ?? this.mModsByModId.get(lookUpEntry.modId);
+    return entries !== undefined ? { entries } : null;
   };
 
   public isInitialized = (): boolean => {

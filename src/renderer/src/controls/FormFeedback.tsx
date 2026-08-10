@@ -16,6 +16,8 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
     $bs_formGroup: PropTypes.object,
   };
 
+  declare public context: { $bs_formGroup?: { validationState?: string } };
+
   public static defaultProps = {
     bsRole: "feedback",
   };

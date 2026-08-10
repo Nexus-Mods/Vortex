@@ -43,14 +43,12 @@ export type {
   FileStatus,
   FileSystem,
   FileSystemBackend,
-  FileSystemErrorCode,
   StatResult,
   Status,
   StatusTime,
   SymLinkData,
   SymLinkStatus,
 } from "./fs/filesystem";
-export { FileSystemError } from "./fs/filesystem";
 
 export type { Pattern } from "./fs/matcher";
 export { matches } from "./fs/matcher";

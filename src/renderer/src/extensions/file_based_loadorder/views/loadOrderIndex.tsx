@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 import type { ILoadOrderEntry } from "../../../types/api";
 import type { IExtensionApi, LoadOrder } from "../../../types/api";
+import { isEntryLocked } from "../util";
 
 interface IProps {
   className?: string;
@@ -10,7 +11,8 @@ interface IProps {
   loadOrder: LoadOrder;
   currentPosition: number;
   lockedEntriesCount: number;
-  isLocked: (item: ILoadOrderEntry) => boolean;
+  // Defaults to isEntryLocked; overridable for renderers with bespoke locking.
+  isLocked?: (item: ILoadOrderEntry) => boolean;
   onApplyIndex: (idx: number) => void;
 }
 
@@ -62,7 +64,8 @@ export function LoadOrderIndexInput(props: IProps) {
     setInputValue(currentPosition.toString());
   }, [currentPosition]);
 
-  return props.isLocked(item) ? (
+  const locked = props.isLocked?.(item) ?? isEntryLocked(item.locked);
+  return locked ? (
     <p className={props.className}>{inputValue}</p>
   ) : (
     <div className={props.className}>

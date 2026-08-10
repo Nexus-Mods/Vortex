@@ -1,4 +1,4 @@
-import { mdiViewDashboard } from "@mdi/js";
+import { mdiViewDashboardOutline } from "@mdi/js";
 
 import type {
   IDashletOptions,
@@ -44,7 +44,7 @@ function init(context: IExtensionContext): boolean {
     hotkey: "1",
     group: "dashboard",
     props: () => ({ dashlets }),
-    mdi: mdiViewDashboard,
+    mdi: mdiViewDashboardOutline,
   });
 
   context.registerSettings("Interface", Settings, () => ({ dashlets }), undefined, 1000);

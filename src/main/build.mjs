@@ -29,21 +29,33 @@ const bootstrapConfig = createConfig(BOOTSTRAP_INPUT, BOOTSTRAP_OUTPUT, "esm", [
 const bootstrapBundle = await rolldown(bootstrapConfig);
 await bootstrapBundle.write(bootstrapConfig.output);
 
-// bsdiff patch worker: bundled as a standalone CJS entry next to main.cjs and
-// spawned as a worker_thread by src/main/src/bsdiff/host.ts. hdiff.wasm is
-// copied alongside so the worker reads it by a path relative to itself.
-const BSDIFF_WORKER_INPUT = path.resolve(import.meta.dirname, "./src/bsdiff/worker.ts");
-const BSDIFF_WORKER_OUTPUT = path.join(mainOutputDirectory, "bsdiff-worker.cjs");
+// Each worker_thread bundles to a standalone CJS entry next to main.cjs, spawned
+// by its host. They share one external policy: bundle relative/local sources,
+// leave node built-ins and dependencies external.
+async function bundleWorker(inputRelPath, outputName) {
+  const config = createConfig(
+    path.resolve(import.meta.dirname, inputRelPath),
+    path.join(mainOutputDirectory, outputName),
+    "cjs",
+    [],
+    (id) => {
+      if (id.startsWith(".")) return false;
+      if (path.isAbsolute(id)) return false;
 
-const bsdiffConfig = createConfig(BSDIFF_WORKER_INPUT, BSDIFF_WORKER_OUTPUT, "cjs", [], (id) => {
-  if (id.startsWith(".")) return false;
-  if (path.isAbsolute(id)) return false;
+      return true;
+    },
+  );
+  const bundle = await rolldown(config);
+  await bundle.write(config.output);
+}
 
-  return true;
-});
+// bsdiff patch worker (src/main/src/bsdiff/host.ts). hdiff.wasm is copied
+// alongside below so the worker reads it by a path relative to itself.
+await bundleWorker("./src/bsdiff/worker.ts", "bsdiff-worker.cjs");
 
-const bsdiffBundle = await rolldown(bsdiffConfig);
-await bsdiffBundle.write(bsdiffConfig.output);
+// hash worker (src/main/src/hash/host.ts). Uses node's crypto, so there is
+// nothing extra to copy alongside it.
+await bundleWorker("./src/hash/worker.ts", "hash-worker.cjs");
 
 const require = createRequire(import.meta.url);
 const wasmPackageDir = path.resolve(require.resolve("@hot-updater/bsdiff"), "..", "..");

@@ -13,6 +13,7 @@ export interface IUsageProps {
   persistent?: boolean;
   className?: string;
   opaque?: boolean;
+  children?: React.ReactNode;
 }
 
 interface IConnectedProps {

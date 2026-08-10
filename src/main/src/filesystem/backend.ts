@@ -19,76 +19,14 @@ import { Readable, Writable } from "node:stream";
 import type {
   DirectoryStatus,
   FileStatus,
-  FileSystemErrorCode,
   StatResult,
   Status,
   StatusTime,
 } from "@nexusmods/adaptor-api/fs";
 import type { Pattern, ResolvedPath } from "@nexusmods/adaptor-api/fs";
 import type { FileSystemBackend as NodeFileSystemBackend } from "@nexusmods/adaptor-api/fs";
-import { FileSystemError, matches } from "@nexusmods/adaptor-api/fs";
-
-interface ParsedNodeError {
-  code: FileSystemErrorCode;
-  isTransient: boolean;
-  originalCode: string;
-}
-
-function parseNodeError(err: unknown): ParsedNodeError {
-  if (!(err instanceof Error)) {
-    return { code: "generic", isTransient: false, originalCode: "" };
-  }
-
-  // https://nodejs.org/api/errors.html
-  // NOTE(erri120): Node.js is inconsistent when it comes to data on Errors.
-  // The error code that we care about is on err.info.code or err.code if err.info doesn't exist
-
-  if (!("code" in err) || typeof err.code !== "string") {
-    return { code: "generic", isTransient: false, originalCode: "" };
-  }
-
-  const originalCode =
-    "info" in err &&
-    typeof err.info === "object" &&
-    err.info !== null &&
-    "code" in err.info &&
-    typeof err.info.code === "string"
-      ? err.info.code
-      : err.code;
-
-  // NOTE(erri120): Node.js uses POSIX error names as codes
-  // https://www.man7.org/linux/man-pages/man3/errno.3.html
-  // https://nodejs.org/api/errors.html#common-system-errors
-  if (originalCode === "EACCES" || originalCode === "EPERM") {
-    // EACCES: Permission denied (POSIX.1-2001).
-    // EPERM: Operation not permitted (POSIX.1-2001).
-    return { code: "no permissions", isTransient: false, originalCode };
-  } else if (originalCode === "ENOENT") {
-    // ENOENT: No such file or directory (POSIX.1-2001).
-    return { code: "not found", isTransient: false, originalCode };
-  } else if (originalCode === "EEXIST") {
-    // EEXIST: File exists (POSIX.1-2001).
-    return { code: "already exists", isTransient: false, originalCode };
-  } else if (originalCode === "ENOSPC") {
-    // ENOSPC: No space left on device (POSIX.1-2001)
-    return { code: "no space", isTransient: false, originalCode };
-  } else if (originalCode === "ENOTDIR") {
-    // ENOTDIR: Not a directory (POSIX.1-2001).
-    return { code: "not a directory", isTransient: false, originalCode };
-  } else if (originalCode === "EISDIR") {
-    // EISDIR: Is a directory (POSIX.1-2001).
-    return { code: "not a file", isTransient: false, originalCode };
-  } else if (originalCode === "ENOTEMPTY") {
-    // ENOTEMPTY: Directory not empty (POSIX.1-2001).
-    return { code: "directory not empty", isTransient: false, originalCode };
-  } else if (originalCode === "EMFILE" || originalCode === "EBUSY") {
-    // EMFILE: Too many open files (POSIX.1-2001).
-    // EBUSY: Device or resource busy (POSIX.1-2001)
-    return { code: "generic", isTransient: true, originalCode };
-  } else {
-    return { code: "generic", isTransient: false, originalCode };
-  }
-}
+import { matches } from "@nexusmods/adaptor-api/fs";
+import { parseError, VortexError } from "@vortex/shared";
 
 /**
  * Node-backed implementation of {@link NodeFileSystemBackend}. Operates on
@@ -111,23 +49,23 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         errorOnExist: true,
       });
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to copy '${source}' to '${target}'`;
-      if (code === "no permissions") {
-        message = `Failed to copy '${source}' to '${target}': insufficient permissions`;
-      } else if (code === "not found") {
-        message = `Failed to copy '${source}': source does not exist`;
-      } else if (code === "no space") {
-        message = `Failed to copy '${source}' to '${target}': no space left`;
-      } else if (code === "already exists") {
-        message = `Cannot copy '${source}' to '${target}': target already exists`;
-      } else if (code === "not a file") {
-        message = `Cannot copy '${source}' to '${target}': source is a directory but target is a file`;
-      } else if (code === "not a directory") {
-        message = `Cannot copy '${source}' to '${target}': source is a file but target is a directory`;
-      }
+      throw parseError(err, { path: source }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to copy '${source}' to '${target}': insufficient permissions`;
+        } else if (data.kind === "fs:not-found") {
+          return `Failed to copy '${source}': source does not exist`;
+        } else if (data.kind === "fs:no-space") {
+          return `Failed to copy '${source}' to '${target}': no space left`;
+        } else if (data.kind === "fs:already-exists") {
+          return `Cannot copy '${source}' to '${target}': target already exists`;
+        } else if (data.kind === "fs:not-a-file") {
+          return `Cannot copy '${source}' to '${target}': source is a directory but target is a file`;
+        } else if (data.kind === "fs:not-a-directory") {
+          return `Cannot copy '${source}' to '${target}': source is a file but target is a directory`;
+        }
 
-      throw new FileSystemError(code, message, err, isTransient);
+        return undefined;
+      });
     }
   }
 
@@ -155,23 +93,22 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         await stat(target);
         targetExists = true;
       } catch (err) {
-        const { code } = parseNodeError(err);
-        targetExists = code !== "not found";
+        targetExists = parseError(err, { path: target }).data.kind !== "fs:not-found";
       }
 
       if (targetExists) {
-        throw new FileSystemError(
-          "already exists",
-          `Cannot move '${source}' to '${target}': target already exists`,
-        );
+        throw new VortexError(`Cannot move '${source}' to '${target}': target already exists`, {
+          kind: "fs:already-exists",
+          path: target,
+        });
       }
     }
 
     try {
       await rename(source, target);
     } catch (err) {
-      const { code, isTransient, originalCode } = parseNodeError(err);
-      if (originalCode === "EXDEV") {
+      const parsed = parseError(err, { path: source });
+      if (parsed.data.kind === "os:generic" && parsed.data.originalCode === "EXDEV") {
         // EXDEV: Invalid cross-device link (POSIX.1-2001).
         // NOTE(erri120): Can't rename between devices, need to do cp + rm here.
 
@@ -180,14 +117,12 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         return;
       }
 
-      let message = `Failed to move '${source}' to '${target}'`;
-      if (code === "no permissions") {
-        message = `Failed to move '${source}' to '${target}': insufficient permissions`;
-      } else if (code === "not found") {
-        message = `Failed to move '${source}': source does not exist`;
+      if (parsed.data.kind === "fs:no-permissions") {
+        parsed.message = `Failed to move '${source}' to '${target}': insufficient permissions`;
+      } else if (parsed.data.kind === "fs:not-found") {
+        parsed.message = `Failed to move '${source}': source does not exist`;
       }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parsed;
     }
   }
 
@@ -195,15 +130,14 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     try {
       await mkdir(path, { recursive: true });
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to create directory at '${path}'`;
-      if (code === "no permissions") {
-        message = `Failed to create directory at '${path}': insufficient permissions`;
-      } else if (code === "not a directory") {
-        message = `Cannot create directory at '${path}': path component is a file`;
-      }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parseError(err, { path }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to create directory at '${path}': insufficient permissions`;
+        } else if (data.kind === "fs:not-a-directory") {
+          return `Cannot create directory at '${path}': path component is a file`;
+        }
+        return undefined;
+      });
     }
   }
 
@@ -211,17 +145,16 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     try {
       await rm(path, { recursive: false });
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to delete '${path}'`;
-      if (code === "no permissions") {
-        message = `Failed to delete '${path}': insufficient permissions`;
-      } else if (code === "not found") {
-        message = `Failed to delete '${path}': path does not exist`;
-      } else if (code === "directory not empty") {
-        message = `Cannot delete directory at '${path}': directory not empty`;
-      }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parseError(err, { path }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to delete '${path}': insufficient permissions`;
+        } else if (data.kind === "fs:not-found") {
+          return `Failed to delete '${path}': path does not exist`;
+        } else if (data.kind === "fs:directory-not-empty") {
+          return `Cannot delete directory at '${path}': directory not empty`;
+        }
+        return undefined;
+      });
     }
   }
 
@@ -229,15 +162,14 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     try {
       await rm(path, { recursive: true });
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to delete '${path}' recursively`;
-      if (code === "no permissions") {
-        message = `Failed to delete '${path}' recursively: insufficient permissions`;
-      } else if (code === "not found") {
-        message = `Failed to delete '${path}' recursively: path does not exist`;
-      }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parseError(err, { path }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to delete '${path}' recursively: insufficient permissions`;
+        } else if (data.kind === "fs:not-found") {
+          return `Failed to delete '${path}' recursively: path does not exist`;
+        }
+        return undefined;
+      });
     }
   }
 
@@ -246,17 +178,16 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       const buffer = await readFile(path);
       return buffer;
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to read file '${path}'`;
-      if (code === "no permissions") {
-        message = `Failed to read file '${path}': insufficient permissions`;
-      } else if (code === "not found") {
-        message = `Failed to read file '${path}': file does not exist`;
-      } else if (code === "not a file") {
-        message = `Cannot read '${path}': not a file`;
-      }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parseError(err, { path }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to read file '${path}': insufficient permissions`;
+        } else if (data.kind === "fs:not-found") {
+          return `Failed to read file '${path}': file does not exist`;
+        } else if (data.kind === "fs:not-a-file") {
+          return `Cannot read '${path}': not a file`;
+        }
+        return undefined;
+      });
     }
   }
 
@@ -266,17 +197,16 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     try {
       await writeFile(path, contents);
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to write to file '${path}'`;
-      if (code === "no permissions") {
-        message = `Failed to write to file '${path}': insufficient permissions`;
-      } else if (code === "no space") {
-        message = `Failed to write to file '${path}': no space left`;
-      } else if (code === "not a file") {
-        message = `Cannot write to '${path}': not a file`;
-      }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parseError(err, { path }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to write to file '${path}': insufficient permissions`;
+        } else if (data.kind === "fs:no-space") {
+          return `Failed to write to file '${path}': no space left`;
+        } else if (data.kind === "fs:not-a-file") {
+          return `Cannot write to '${path}': not a file`;
+        }
+        return undefined;
+      });
     }
   }
 
@@ -324,18 +254,16 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         return Writable.toWeb(node) as WritableStream;
       }
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      let message = `Failed to create stream for '${path}'`;
-
-      if (code === "no permissions") {
-        message = `Failed to create stream for file '${path}': insufficient permissions`;
-      } else if (code === "not found") {
-        message = `Failed to create read stream for file '${path}': file does not exist`;
-      } else if (code === "not a file") {
-        message = `Cannot create stream for '${path}': not a file`;
-      }
-
-      throw new FileSystemError(code, message, err, isTransient);
+      throw parseError(err, { path }, ({ data }) => {
+        if (data.kind === "fs:no-permissions") {
+          return `Failed to create stream for file '${path}': insufficient permissions`;
+        } else if (data.kind === "fs:not-found") {
+          return `Failed to create read stream for file '${path}': file does not exist`;
+        } else if (data.kind === "fs:not-a-file") {
+          return `Cannot create stream for '${path}': not a file`;
+        }
+        return undefined;
+      });
     }
 
     throw new Error(`Cannot create stream for '${path}': unknown mode'${mode}'`);
@@ -372,12 +300,11 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         };
       }
     } catch (err) {
-      const { code, isTransient } = parseNodeError(err);
-      if (code === "not found") {
+      const parsed = parseError(err, { path }, () => `Failed to stat ${path}`);
+      if (parsed.data.kind === "fs:not-found") {
         return { exists: false };
       }
-
-      throw new FileSystemError(code, `Failed to stat ${path}`, err, isTransient);
+      throw parsed;
     }
   }
 
@@ -497,10 +424,9 @@ function parseNodeStats(path: ResolvedPath, stats: BigIntStats): FileStatus | Di
   if (stats.isFile()) {
     const bigSize = stats.size;
     if (bigSize > BigInt(Number.MAX_SAFE_INTEGER)) {
-      throw new FileSystemError(
-        "generic",
-        `Cannot stat '${path}': file size exceeds maximum supported size`,
-      );
+      throw new VortexError(`Cannot stat '${path}': file size exceeds maximum supported size`, {
+        kind: "data-invalid",
+      });
     }
 
     const size = Number(bigSize);

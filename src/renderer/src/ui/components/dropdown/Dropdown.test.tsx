@@ -1,8 +1,8 @@
-import { Menu } from "@headlessui/react";
-import { render, screen, cleanup } from "@testing-library/react";
+import { MenuButton } from "@headlessui/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Dropdown } from "./Dropdown";
 import { DropdownDivider } from "./DropdownDivider";
@@ -11,16 +11,12 @@ import { DropdownItems } from "./DropdownItems";
 
 // --- Helpers ---
 
-afterEach(() => {
-  cleanup();
-});
-
 const renderComponent = () => {
   const onEdit = vi.fn();
 
   render(
     <Dropdown>
-      <Menu.Button>Options</Menu.Button>
+      <MenuButton>Options</MenuButton>
 
       <DropdownItems>
         <DropdownItem onClick={onEdit}>Edit</DropdownItem>

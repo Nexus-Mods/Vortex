@@ -21,7 +21,7 @@ interface ToolsProviderProps {
   children: ReactNode;
 }
 
-export const ToolsProvider: FC<ToolsProviderProps> = ({ children }) => {
+export const ToolsProvider: FC<React.PropsWithChildren<ToolsProviderProps>> = ({ children }) => {
   const { api } = useMainContext();
   const dispatch = useDispatch();
 

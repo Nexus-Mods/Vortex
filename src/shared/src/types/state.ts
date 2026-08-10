@@ -84,3 +84,26 @@ export interface IWindow {
 }
 
 export const currentStatePath = "state.v2";
+
+/**
+ * True if a persisted-key segment was clobbered by a partial write or bit-rot.
+ *
+ * When a key's bytes on disk are not valid UTF-8, a UTF-8 decode yields U+FFFD
+ * (REPLACEMENT CHARACTER); C0 control chars (< U+0020) likewise never appear in
+ * a legitimate hive path or id. Such a key does not round-trip — reading it back
+ * through the VARCHAR key column and re-encoding produces different bytes than
+ * are stored — so it can never be matched by an exact-key delete and must be
+ * scrubbed at the byte level (see the main-process `healInvalidKeys`).
+ *
+ * Shared so the main-process heal and the renderer's mods reducer agree on
+ * exactly what "clobbered" means.
+ */
+export function isClobberedKeySegment(segment: string): boolean {
+  for (let i = 0; i < segment.length; ++i) {
+    const code = segment.charCodeAt(i);
+    if (code === 0xfffd || code < 0x20) {
+      return true;
+    }
+  }
+  return false;
+}

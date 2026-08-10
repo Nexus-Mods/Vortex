@@ -21,12 +21,16 @@ import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
+  HashAlgorithm,
   Serializable,
   UpdateStatus,
   VortexPaths,
   WireDownloadCheckpoint,
   WireDownloadState,
   WireResolvedResource,
+  WireS3MultipartRequest,
+  WireUploadProgress,
+  WireUploadRequest,
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -100,8 +104,14 @@ export interface Api {
   /** Downloader APIs */
   downloader: DownloaderApi;
 
+  /** Uploader APIs */
+  uploader: UploaderApi;
+
   /** bsdiff binary patching APIs (run on a main-process worker_thread) */
   bsdiff: BsdiffApi;
+
+  /** file hashing API (run on a main-process worker_thread) */
+  hash: HashApi;
 
   /** Diagnostic APIs */
   diag: Diag;
@@ -506,12 +516,45 @@ export interface DownloaderApi {
   onResolve(handler: (collationId: number) => Promise<WireResolvedResource>): () => void;
 }
 
+export interface UploaderApi {
+  /**
+   * PUTs the whole file to a URL that already grants the write. Transient
+   * failures are retried in main with backoff; a rejection is terminal.
+   */
+  file(request: WireUploadRequest): Promise<void>;
+
+  /**
+   * Uploads the file as a sequence of parts and closes the session, following
+   * the Amazon S3 multipart specification (per-part ETags collected into a
+   * `CompleteMultipartUpload` document). `fileSize` must match the layout the
+   * session was created with.
+   */
+  s3Multipart(request: WireS3MultipartRequest): Promise<void>;
+
+  /**
+   * Byte progress for a running upload, or null once it has settled. Poll this
+   * while a transfer is in flight, at whatever cadence the UI needs.
+   */
+  getProgress(uploadId: number): Promise<WireUploadProgress | null>;
+
+  /**
+   * Stops a running upload; the `file`/`s3Multipart` call that started it
+   * rejects with an `UploadError` carrying `cancellation`.
+   */
+  cancel(uploadId: number): Promise<void>;
+}
+
 export interface BsdiffApi {
   /** Create a BSDIFF40 patch file from oldPath and newPath. */
   diff(oldPath: string, newPath: string, patchPath: string): Promise<void>;
 
   /** Apply a BSDIFF40 patch file to oldPath, writing the result to outputPath. */
   patch(oldPath: string, outputPath: string, patchPath: string): Promise<void>;
+}
+
+export interface HashApi {
+  /** Compute the hex digest of a file off the renderer thread. */
+  compute(algorithm: HashAlgorithm, filePath: string): Promise<{ hash: string; numBytes: number }>;
 }
 
 /** API for receiving feature flag updates pushed from the main process */

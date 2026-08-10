@@ -78,6 +78,13 @@ export default class PakInfoCache {
         mod,
         isListed,
       });
+    } else if (mod !== undefined && cacheEntry.mod?.id !== mod.id) {
+      // Refresh the mod link without re-reading the pak; the cache persists
+      //  to disk, so entries written while the deployment manifest was
+      //  unavailable carry mod: undefined. An undefined mod deliberately
+      //  does not clear a cached link - transient manifest failures must
+      //  not unlink entries.
+      this.mCache.set(id, { ...cacheEntry, mod });
     }
     return this.mCache.get(id);
   }

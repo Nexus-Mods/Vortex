@@ -1,33 +1,39 @@
 import * as path from "path";
 
+import { mdiPlus, mdiRefresh } from "@mdi/js";
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
-import PromiseBB from "bluebird";
 import * as _ from "lodash";
-import * as React from "react";
-import { Alert, Button, Panel } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 
-import { setDialogVisible } from "../../actions";
-import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from "../../actions/app";
-import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
-import type { DropType } from "../../controls/Dropzone";
-import Dropzone from "../../controls/Dropzone";
-import FlexLayout from "../../controls/FlexLayout";
-import IconBar from "../../controls/IconBar";
-import type { ITableRowAction } from "../../controls/Table";
-import Table from "../../controls/Table";
-import ToolbarIcon from "../../controls/ToolbarIcon";
-import type { IExtension, IExtensionWithState } from "../../types/extensions";
-import type { IExtensionLoadFailure, IExtensionState, IState } from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import { relaunch } from "../../util/commandLine";
-import { log } from "../../util/log";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import MainPage from "../../views/MainPage";
-import type { IDownload } from "../download_management/types/IDownload";
+import {
+  removeExtension,
+  setDialogVisible,
+  setExtensionEnabled,
+  setExtensionEndorsed,
+} from "@/actions";
+import { useMainContext } from "@/contexts";
+import type { DropType } from "@/controls/Dropzone";
+import Dropzone from "@/controls/Dropzone";
+import type { ITableRowAction } from "@/controls/Table";
+import Table from "@/controls/Table";
+import { log } from "@/logging";
+import type { IExtensionWithState } from "@/types/extensions";
+import type { IExtensionState, IState } from "@/types/IState";
+import { Alert } from "@/ui/components/alert/Alert";
+import { Button } from "@/ui/components/button/Button";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { relaunch } from "@/util/commandLine";
+import * as selectors from "@/util/selectors";
+import { Page } from "@/views/components/Page/Page";
+import { PageContent } from "@/views/components/Page/PageContent";
+import { PageHeader } from "@/views/components/Page/PageHeader";
+import { PageScroll } from "@/views/components/Page/PageScroll";
+
 import { SITE_ID } from "../gamemode_management/constants";
+import { DisplayOptions } from "./components/DisplayOptions";
 import installExtension from "./installExtension";
 import getTableAttributes from "./tableAttributes";
 
@@ -35,306 +41,279 @@ export interface IExtensionManagerProps {
   localState: {
     reloadNecessary: boolean;
   };
-  updateExtensions: () => void;
+  updateExtensions: () => Promise<void>;
+  onRefresh: () => void;
+  active?: boolean;
+  pageId?: string;
 }
 
-interface IConnectedProps {
-  extensionConfig: { [extId: string]: IExtensionState };
-  downloads: { [dlId: string]: IDownload };
-  downloadPath: string;
-  loadFailures: { [extId: string]: IExtensionLoadFailure[] };
-  extensions: { [extId: string]: IExtension };
-}
+type IExtensionStates = { [extId: string]: IExtensionState };
 
-interface IActionProps {
-  onSetExtensionEnabled: (extId: string, enabled: boolean) => void;
-  onRemoveExtension: (extId: string) => void;
-  onBrowseExtension: () => void;
-}
+const EMPTY_EXTENSIONS: IExtensionStates = {};
 
-type IProps = IExtensionManagerProps & IConnectedProps & IActionProps;
+// Normalise extension config so two sets differ only if the effective
+// configuration does, leaving out the endorsement state.
+const configId = (conf: IExtensionStates) =>
+  Object.values(conf).map((ext) => ({
+    enabled: ext.enabled ?? true,
+    version: ext.version ?? "",
+    remove: ext.remove ?? false,
+  }));
 
-interface IComponentState {
-  oldExtensionConfig: { [extId: string]: IExtensionState };
-  showBundled: boolean;
-}
+export const ExtensionManager = ({
+  active,
+  localState,
+  pageId,
+  updateExtensions,
+  onRefresh,
+}: IExtensionManagerProps) => {
+  const { t } = useTranslation(["common"]);
+  const { api } = useMainContext();
+  const dispatch = useDispatch();
 
-class ExtensionManager extends ComponentEx<IProps, IComponentState> {
-  private staticColumns: ITableAttribute[];
-  private actions: ITableRowAction[];
+  const extensions = useSelector((state: IState) => state.app.extensions) ?? EMPTY_EXTENSIONS;
+  const loadFailures = useSelector((state: IState) => state.session.base.extLoadFailures);
+  const downloads = useSelector((state: IState) => state.persistent.downloads.files);
+  const downloadPath = useSelector(selectors.downloadPath);
 
-  constructor(props: IProps) {
-    super(props);
+  const [showBundled, setShowBundled] = useState(false);
+  // The config as the page found it; a change from here means Vortex needs a restart.
+  const [oldExtensions] = useState(extensions);
 
-    this.initState({
-      oldExtensionConfig: props.extensionConfig,
-      showBundled: false,
-    });
+  // Held in a ref so the columns and row actions stay stable across renders while
+  // their callbacks still see the current extensions.
+  const extensionsRef = useRef(extensions);
+  extensionsRef.current = extensions;
 
-    this.actions = [
+  const setEnabled = useCallback(
+    (extName: string, enabled: boolean) => {
+      const current = extensionsRef.current;
+      const extId = Object.keys(current).find((iter) => current[iter].name === extName);
+      log("info", "user toggling extension manually", { extId, enabled });
+      dispatch(setExtensionEnabled(extId, enabled));
+    },
+    [dispatch],
+  );
+
+  const staticColumns = useMemo(
+    () =>
+      getTableAttributes({
+        onSetExtensionEnabled: setEnabled,
+        onToggleExtensionEnabled: (extName: string) => {
+          const current = extensionsRef.current;
+          const extId = Object.keys(current).find((iter) => current[iter].name === extName);
+          setEnabled(extName, !(current[extId]?.enabled ?? true));
+        },
+        onEndorseMod: (_gameId: string, modIdStr: string, endorseState: EndorsedStatus) => {
+          const current = extensionsRef.current;
+          const modId = parseInt(modIdStr, 10);
+          const extId = Object.keys(current).find((iter) => current[iter].modId === modId);
+
+          if (extId === undefined) {
+            return;
+          }
+
+          api
+            .emitAndAwait("endorse-nexus-mod", SITE_ID, modId, current[extId].version, endorseState)
+            .then((endorsed: EndorsedStatus[]) => {
+              dispatch(setExtensionEndorsed(extId, endorsed[0]));
+            })
+            .catch(() => {
+              dispatch(setExtensionEndorsed(extId, "Undecided"));
+            });
+        },
+      }),
+    [api, dispatch, setEnabled],
+  );
+
+  const actions = useMemo<ITableRowAction[]>(
+    () => [
       {
         icon: "delete",
         title: "Remove",
-        action: this.removeExtension,
-        condition: (instanceId: string) => !this.props.extensions[instanceId].bundled,
+        action: (extIds: string[]) => {
+          extIds.forEach((extId) => dispatch(removeExtension(extId)));
+        },
+        condition: (instanceId: string) => !extensionsRef.current[instanceId]?.bundled,
         singleRowAction: true,
       },
-    ];
+    ],
+    [dispatch],
+  );
 
-    this.staticColumns = getTableAttributes({
-      onSetExtensionEnabled: (extName: string, enabled: boolean) => {
-        const { extensions, onSetExtensionEnabled } = this.props;
-        const extId = Object.keys(extensions).find((iter) => extensions[iter].name === extName);
-        log("info", "user toggling extension manually", { extId, enabled });
-        onSetExtensionEnabled(extId, enabled);
-      },
-      onToggleExtensionEnabled: (extName: string) => {
-        const { extensionConfig, extensions, onSetExtensionEnabled } = this.props;
-        const extId = Object.keys(extensions).find((iter) => extensions[iter].name === extName);
-        const enabled = !getSafe(extensionConfig, [extId, "enabled"], true);
-        log("info", "user toggling extension manually", { extId, enabled });
-        onSetExtensionEnabled(extId, enabled);
-      },
-      onEndorseMod: (gameId: string, modIdStr: string, endorseState: EndorsedStatus) => {
-        const { extensions } = this.props;
-        const { api } = this.context;
-        const modId: number = parseInt(modIdStr, 10);
-        const extId = Object.keys(extensions).find((iter) => extensions[iter].modId === modId);
+  const bundled = useMemo(
+    () =>
+      (api?.getLoadedExtensions?.() ?? [])
+        .filter((ext) => ext.dynamic && ext.info?.bundled)
+        .reduce<IExtensionStates>((prev, ext) => {
+          prev[ext.name] = {
+            enabled: true,
+            version: ext.info?.version ?? "",
+            remove: false,
+            endorsed: "Undecided",
+            name: ext.info?.name ?? ext.name,
+            author: ext.info?.author ?? "Unknown",
+            description: ext.info?.description ?? "",
+            path: ext.path,
+            bundled: true,
+          };
+          return prev;
+        }, {}),
+    [api],
+  );
 
-        if (extId === undefined) {
-          return;
-        }
+  const extensionsWithState = useMemo(() => {
+    const allExtensions = showBundled ? { ...extensions, ...bundled } : extensions;
 
-        api
-          .emitAndAwait(
-            "endorse-nexus-mod",
-            SITE_ID,
-            modId,
-            extensions[extId].version,
-            endorseState,
-          )
-          .then((endorsed: EndorsedStatus[]) => {
-            api.store.dispatch(setExtensionEndorsed(extId, endorsed[0]));
-          })
-          .catch(() => {
-            api.store.dispatch(setExtensionEndorsed(extId, "Undecided"));
-          });
-      },
-    });
-  }
+    return Object.keys(allExtensions).reduce<{ [id: string]: IExtensionWithState }>((prev, id) => {
+      const state = allExtensions[id];
 
-  public render(): JSX.Element {
-    const { t, extensions, localState, extensionConfig } = this.props;
-    const { oldExtensionConfig, showBundled } = this.state;
-
-    const extensionsWithState = this.mergeExt(extensions, extensionConfig, showBundled);
-
-    // normalize extension config so they differ only if the effective configuration actually
-    // differs, leaving out the endorsement state
-    const configId = (conf: { [id: string]: IExtensionState }) =>
-      Object.values(conf).map((ext) => ({
-        enabled: ext.enabled ?? true,
-        version: ext.version ?? "",
-        remove: ext.remove ?? false,
-      }));
-
-    return (
-      <MainPage>
-        <MainPage.Header>
-          <IconBar
-            id="extensions-layout-list"
-            group="extensions-layout-icons"
-            staticElements={[]}
-            className="menubar"
-            t={t}
-          >
-            <ToolbarIcon
-              id="show-bundled-extensions"
-              text={showBundled ? t("Hide Bundled") : t("Show Bundled")}
-              onClick={this.toggleBundled}
-              icon={showBundled ? "hide" : "show"}
-              tooltip={showBundled ? t("Hide Bundled Extensions") : t("Show Bundled Extensions")}
-            />
-          </IconBar>
-        </MainPage.Header>
-        <MainPage.Body>
-          <Panel>
-            <Panel.Body>
-              <FlexLayout type="column">
-                <FlexLayout.Fixed>
-                  {localState.reloadNecessary ||
-                  !_.isEqual(configId(extensionConfig), configId(oldExtensionConfig))
-                    ? this.renderReload()
-                    : null}
-                </FlexLayout.Fixed>
-                <FlexLayout.Flex>
-                  <Table
-                    tableId="extensions"
-                    data={extensionsWithState}
-                    actions={this.actions}
-                    staticElements={this.staticColumns}
-                    multiSelect={false}
-                  />
-                </FlexLayout.Flex>
-                <FlexLayout.Fixed>
-                  <FlexLayout type="row">
-                    <FlexLayout.Flex className="extensions-find-button-container">
-                      <div className="flex-center-both">
-                        <Button id="btn-more-extensions" onClick={this.onBrowse} bsStyle="ghost">
-                          {t("Find more")}
-                        </Button>
-                      </div>
-                    </FlexLayout.Flex>
-                    <FlexLayout.Flex>
-                      <Dropzone
-                        accept={["files"]}
-                        drop={this.dropExtension}
-                        dialogHint={t("Select extension file")}
-                        icon="folder-download"
-                      />
-                    </FlexLayout.Flex>
-                  </FlexLayout>
-                </FlexLayout.Fixed>
-              </FlexLayout>
-            </Panel.Body>
-          </Panel>
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
-
-  private onBrowse = () => {
-    this.props.onBrowseExtension();
-  };
-
-  private toggleBundled = () => {
-    this.nextState.showBundled = !this.state.showBundled;
-  };
-
-  private dropExtension = (type: DropType, extPaths: string[]): void => {
-    const { downloads } = this.props;
-    let success = false;
-    log("info", "installing extension(s) via drag and drop", { extPaths });
-    const prop: PromiseBB<void[]> =
-      type === "files"
-        ? PromiseBB.map(extPaths, (extPath) =>
-            installExtension(this.context.api, extPath)
-              .then(() => {
-                success = true;
-              })
-              .catch((err) => {
-                this.context.api.showErrorNotification("Failed to install extension", err, {
-                  allowReport: false,
-                });
-              }),
-          )
-        : PromiseBB.map(
-            extPaths,
-            (url) =>
-              new PromiseBB<void>((resolve, reject) => {
-                this.context.api.events.emit(
-                  "start-download",
-                  [url],
-                  undefined,
-                  (error: Error, id: string) => {
-                    const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
-                    installExtension(this.context.api, dlPath)
-                      .then(() => {
-                        success = true;
-                      })
-                      .catch((err) => {
-                        this.context.api.showErrorNotification("Failed to install extension", err, {
-                          allowReport: false,
-                        });
-                      })
-                      .finally(() => {
-                        resolve();
-                      });
-                  },
-                );
-              }),
-          );
-    prop.then(() => {
-      if (success) {
-        this.props.updateExtensions();
-      }
-    });
-  };
-
-  private renderReload(): JSX.Element {
-    const { t } = this.props;
-    return (
-      <Alert bsStyle="warning" style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ flexGrow: 1 }}>{t("You need to restart Vortex to apply changes.")}</div>
-        <Button onClick={this.restart}>{t("Restart")}</Button>
-      </Alert>
-    );
-  }
-
-  private restart = () => {
-    relaunch();
-  };
-
-  private mergeExt(
-    extensions: { [id: string]: IExtension },
-    extensionConfig: { [id: string]: IExtensionState },
-    includeBundled: boolean,
-  ): { [id: string]: IExtensionWithState } {
-    const { loadFailures } = this.props;
-    return Object.keys(extensions).reduce((prev, id) => {
-      if (!includeBundled && extensions[id].bundled) {
+      if ((!showBundled && state.bundled) || state.remove) {
         return prev;
       }
 
-      if (!getSafe(extensionConfig, [id, "remove"], false)) {
-        const enabled =
-          loadFailures[id] === undefined
-            ? getSafe(extensionConfig, [id, "enabled"], true)
-            : "failed";
-        const endorsed: EndorsedStatus = getSafe(extensionConfig, [id, "endorsed"], "Undecided");
-        prev[id] = {
-          ...extensions[id],
-          enabled,
-          endorsed,
-          loadFailures: loadFailures[id] || [],
-        };
-      }
+      prev[id] = {
+        ...state,
+        enabled: loadFailures[id] === undefined ? (state.enabled ?? true) : "failed",
+        loadFailures: loadFailures[id] || [],
+      };
       return prev;
     }, {});
-  }
+  }, [bundled, extensions, loadFailures, showBundled]);
 
-  private removeExtension = (extIds: string[]) => {
-    extIds.forEach((extId) => {
-      const ext = this.props.extensions[extId];
-      this.props.onRemoveExtension(path.basename(ext.path || extId));
-    });
-  };
-}
+  const dropExtension = useCallback(
+    (type: DropType, extPaths: string[]) => {
+      log("info", "installing extension(s) via drag and drop", { extPaths });
 
-const emptyObject = {};
+      const install = (extPath: string) =>
+        installExtension(api, extPath)
+          .then(() => true)
+          .catch((err) => {
+            api.showErrorNotification("Failed to install extension", err, { allowReport: false });
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    // TODO: don't use || {} in mapStateToProps because {} is always a new object and
-    //   thus causes constant re-drawing. but when removing this, make sure no access
-    //   to undefined can happen
-    extensionConfig: state.app.extensions || emptyObject,
-    loadFailures: state.session.base.extLoadFailures,
-    downloads: state.persistent.downloads.files,
-    downloadPath: selectors.downloadPath(state),
-    extensions: state.session.extensions.installed,
-  };
-}
+            return false;
+          });
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
-  return {
-    onSetExtensionEnabled: (extId: string, enabled: boolean) =>
-      dispatch(setExtensionEnabled(extId, enabled)),
-    onRemoveExtension: (extId: string) => dispatch(removeExtension(extId)),
-    onBrowseExtension: () => dispatch(setDialogVisible("browse-extensions")),
-  };
-}
+      const promises =
+        type === "files"
+          ? extPaths.map(install)
+          : extPaths.map(async (url) => {
+              const downloadId = await new Promise<string>((resolve, reject) => {
+                api.events.emit<"start-download">(
+                  "start-download",
+                  [url],
+                  { game: SITE_ID },
+                  undefined,
+                  (err, id) => {
+                    if (err) {
+                      reject(err);
+                      return;
+                    }
 
-export default translate(["common"])(
-  connect(mapStateToProps, mapDispatchToProps)(ExtensionManager),
-);
+                    resolve(id);
+                  },
+                );
+              });
+
+              return await install(path.join(downloadPath, downloads[downloadId].localPath));
+            });
+
+      void (async () => {
+        const results = await Promise.all(promises);
+        if (results.some((success) => success)) {
+          await updateExtensions();
+        }
+      })();
+    },
+    [api, downloadPath, downloads, updateExtensions],
+  );
+
+  const restartNeeded =
+    localState.reloadNecessary || !_.isEqual(configId(extensions), configId(oldExtensions));
+
+  return (
+    <Page active={active} pageId={pageId} scrollable={false}>
+      <PageHeader
+        isFullWidth
+        pictogramName="puzzle-piece"
+        subtitle={t("Manage extensions that add features and game support to Vortex.")}
+        title={t("Extensions")}
+      >
+        {/* Not a `Toolbar`: its delay group only covers the actions it renders, so
+            the display options' own tooltip would sit outside it and re-delay when
+            the pointer reaches the tune icon. One group over all three keeps the
+            sweep instant. */}
+        <div className="flex shrink-0 items-center gap-x-2">
+          <TooltipDelayGroup>
+            <Tooltip content={t("Update extensions")} placement="bottom">
+              <Button
+                appearance="weak"
+                aria-label={t("Update extensions")}
+                brand="neutral"
+                leftIconPath={mdiRefresh}
+                size="sm"
+                onClick={onRefresh}
+              />
+            </Tooltip>
+
+            <Tooltip content={t("Browse extensions")} placement="bottom">
+              <Button
+                appearance="weak"
+                aria-label={t("Browse extensions")}
+                brand="neutral"
+                leftIconPath={mdiPlus}
+                size="sm"
+                onClick={() => dispatch(setDialogVisible("browse-extensions"))}
+              />
+            </Tooltip>
+
+            <DisplayOptions
+              showBundled={showBundled}
+              t={t}
+              onReset={() => setShowBundled(false)}
+              onToggleBundled={() => setShowBundled((prev) => !prev)}
+            />
+          </TooltipDelayGroup>
+        </div>
+      </PageHeader>
+
+      {restartNeeded && (
+        <PageContent isFullWidth>
+          <Alert
+            action={
+              <Button brand="neutral" size="xs" onClick={() => relaunch()}>
+                {t("Restart Vortex")}
+              </Button>
+            }
+            className="shrink-0"
+            severity="warning"
+          >
+            {t("You need to restart Vortex to apply changes.")}
+          </Alert>
+        </PageContent>
+      )}
+
+      <PageScroll isFullWidth className="flex flex-col gap-y-4">
+        <Table
+          edgeToEdge
+          stickyHeader
+          actions={actions}
+          data={extensionsWithState}
+          multiSelect={false}
+          staticElements={staticColumns}
+          tableId="extensions"
+        />
+      </PageScroll>
+
+      <PageContent isFullWidth className="p-6">
+        <Dropzone
+          accept={["files"]}
+          dialogHint={t("Select extension file")}
+          drop={dropExtension}
+          icon="folder-download"
+          style={{ margin: 0, width: "100%" }}
+        />
+      </PageContent>
+    </Page>
+  );
+};

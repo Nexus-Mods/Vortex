@@ -5,6 +5,13 @@ All notable changes to the vortex-api will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
+- `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
+
 ## [v2.0.0]
 
 ### Added

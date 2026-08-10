@@ -1,14 +1,14 @@
 import * as actions from "../actions/notificationSettings";
-import type { IReducerSpec } from "../types/IExtensionContext";
-import { setSafe } from "../util/storeHelper";
+import { actionsToReducerSpec } from "./builder";
 
-export const notificationSettingsReducer: IReducerSpec = {
-  reducers: {
-    [actions.suppressNotification as any]: (state, payload) =>
-      setSafe(state, ["suppress", payload.id], payload.suppress),
-    [actions.resetSuppression as any]: (state) => setSafe(state, ["suppress"], {}),
-  },
-  defaults: {
-    suppress: {},
-  },
+const defaultState = {
+  suppress: {} as Record<string, boolean>,
 };
+
+export const notificationSettingsReducer = actionsToReducerSpec(defaultState, actions, {
+  suppressNotification: (state, payload) => ({
+    ...state,
+    suppress: { ...state.suppress, [payload.id]: payload.suppress },
+  }),
+  resetSuppression: (state) => ({ ...state, suppress: {} }),
+});

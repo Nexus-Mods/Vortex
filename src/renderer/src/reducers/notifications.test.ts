@@ -16,7 +16,7 @@ const reduce = notificationsReducer.reducers as {
 };
 
 describe("startNotification", () => {
-  const input: INotificationState = { notifications: [], dialogs: [] };
+  const input: INotificationState = { notifications: [], dialogs: [], global_notifications: [] };
   it("appends the notification", () => {
     const notification: INotification = {
       id: "42",
@@ -46,6 +46,7 @@ describe("dismissNotification", () => {
   const input: INotificationState = {
     notifications: [notification],
     dialogs: [],
+    global_notifications: [],
   };
   it("removes the notification", () => {
     const result = reduce.STOP_NOTIFICATION(input, "42");
@@ -78,6 +79,7 @@ describe("dismissDialog", () => {
   const input: INotificationState = {
     notifications: [],
     dialogs: [dialogA, dialogB],
+    global_notifications: [],
   };
   it("dismisses the specified dialog", () => {
     const result = reduce.DISMISS_MODAL_DIALOG(input, "42");
@@ -87,7 +89,7 @@ describe("dismissDialog", () => {
 });
 
 describe("showDialog", () => {
-  const input: INotificationState = { notifications: [], dialogs: [] };
+  const input: INotificationState = { notifications: [], dialogs: [], global_notifications: [] };
   it("appends a dialog to be shown", () => {
     const dialog: IDialog = {
       id: "42",

@@ -12,7 +12,7 @@ import type { IHistoryPersistent, IHistoryState } from "../extensions/history_ma
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type { ICollectionInstallState } from "./collections/ICollectionInstallSession";
-import type { IAvailableExtension, IExtension } from "./extensions";
+import type { ExtensionType, IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";
 import type { INotification } from "./INotification";
@@ -31,13 +31,31 @@ export type { IDimensions, IPosition, IWindow };
  */
 export interface INotificationState {
   notifications: INotification[];
+  global_notifications: INotification[];
   dialogs: IDialog[];
 }
 
-export interface IExtensionLoadFailure {
-  id: string;
-  args?: { [key: string]: any };
-}
+export type ExtensionLoadFailureException = {
+  id: "exception";
+  args: {
+    message: string;
+  };
+};
+
+export type ExtensionLoadFailureDependency = {
+  id: "dependency";
+  args: {
+    dependencyId: string;
+    version?: string;
+  };
+};
+
+export type IExtensionLoadFailure =
+  | {
+      id: "unsupported-api" | "unsupported-version";
+    }
+  | ExtensionLoadFailureException
+  | ExtensionLoadFailureDependency;
 
 export interface IExtensionOptional {
   id: string;
@@ -88,7 +106,7 @@ export interface ISession {
   visibleDialog: string;
   mainPage: string;
   secondaryPage: string;
-  activity: { [id: string]: string };
+  activity: { [id: string]: string[] };
   progress: {
     [group: string]: { [id: string]: IProgress };
   } & IProgressWithProfile;
@@ -118,6 +136,22 @@ export interface IExtensionState {
   version: string;
   remove: boolean;
   endorsed: string;
+  /** Display name of the extension. */
+  name: string;
+  /** Extension author display name. */
+  author: string;
+  /** Human-readable description of the extension. */
+  description: string;
+  /** Path to the extension folder on disk. */
+  path: string;
+  /** Nexus Mods mod ID for this extension. Identity key for mapping to available/manifest entries. */
+  modId?: number;
+  /** Nexus Mods file ID for this specific version of the extension. */
+  fileId?: number;
+  /** Extension type. */
+  type?: ExtensionType;
+  /** True for extensions shipped with Vortex (bundled plugins dir). Always false or absent for state entries. */
+  bundled?: boolean;
 }
 
 /**
@@ -372,7 +406,6 @@ export interface IState {
     extensions: {
       available: IAvailableExtension[];
       optional: { [extId: string]: IExtensionOptional[] };
-      installed: { [extId: string]: IExtension };
       updateTime: number;
     };
   };

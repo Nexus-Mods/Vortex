@@ -10,7 +10,7 @@ import type {
   StatResult,
   Status,
 } from "@nexusmods/adaptor-api/fs";
-import { FileSystemError } from "@nexusmods/adaptor-api/fs";
+import { VortexError } from "@vortex/shared";
 
 /**
  * Node-backed implementation of {@link NodeFileSystem}. Composes a
@@ -214,11 +214,12 @@ function toQualifiedEntry(
   const rel = relative(rootResolved, entry);
   if (rel === "") return rootQP;
   if (rel.startsWith("..") || isAbsolute(rel)) {
-    throw new FileSystemError(
-      "generic",
-      `Directory entry '${entry}' is not under root '${rootResolved}'`,
-    );
+    throw new VortexError(`Directory entry '${entry}' is not under root '${rootResolved}'`, {
+      kind: "argument-invalid",
+      argument: entry,
+    });
   }
+
   const components = rel.split(pathSep).filter((c) => c.length > 0);
   if (components.length === 0) return rootQP;
   return rootQP.join(...components);

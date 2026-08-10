@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import { getErrorCode, unknownToError } from "@vortex/shared";
+import { CycleError } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import React from "react";
 import type * as Redux from "redux";
@@ -28,7 +29,7 @@ import type { INotification } from "../../types/INotification";
 import type { IDiscoveryResult, IState } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import type { ITestResult } from "../../types/ITestResult";
-import { nxmMod } from "../../ui/icon-paths";
+import { nxmModOutline } from "../../ui/icon-paths";
 import { opn } from "../../util/api";
 import { ProcessCanceled, TemporaryError, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
@@ -130,7 +131,7 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import sortMods, { CycleError } from "./util/sort";
+import sortMods from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
 import DeactivationButton from "./views/DeactivationButton";
@@ -144,6 +145,17 @@ import Workarounds from "./views/Workarounds";
 
 interface IAppContext {
   isProfileChanging: boolean;
+}
+
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    "start-install-download": (
+      downloadId: string,
+      // legacy callers pass a bare allowAutoEnable flag, normalized by the handler
+      options?: IInstallOptions | boolean,
+      callback?: (err: Error | null, modId?: string) => void,
+    ) => void;
+  }
 }
 
 const appContext: IAppContext = {
@@ -2082,7 +2094,7 @@ function init(context: IExtensionContext): boolean {
         modSources: getModSources(),
         onDropNonArchiveFiles,
       }),
-      mdi: nxmMod,
+      mdi: nxmModOutline,
     },
   );
 

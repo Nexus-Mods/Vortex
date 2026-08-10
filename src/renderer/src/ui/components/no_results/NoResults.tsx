@@ -33,7 +33,7 @@ export const NoResults = ({
   message?: string;
   title: string;
 }>) => (
-  <div className={joinClasses(["mx-auto flex max-w-lg flex-col items-center gap-y-4", className])}>
+  <div className={joinClasses(["mx-auto flex max-w-md flex-col items-center gap-y-4", className])}>
     <div className="flex flex-col items-center gap-y-2">
       {(!!iconPath || isError) && (
         <Icon
@@ -56,8 +56,8 @@ export const NoResults = ({
       ? children
       : isError && (
           <Button
-            brand="neutral"
             appearance="moderate"
+            brand="neutral"
             leftIconPath={mdiOpenInNew}
             size="sm"
             onClick={() =>
