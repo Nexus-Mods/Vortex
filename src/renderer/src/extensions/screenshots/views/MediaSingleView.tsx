@@ -291,7 +291,7 @@ export default function MediaSingleView({
             leftIconPath={mdiOpenInNew}
             onClick={() => {
               setUploadModalVisible(false);
-              window.api.shell.openFile(source.path);
+              window.api.shell.showItemInFolder(entry.path);
               window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/images/add`);
             }}
           >

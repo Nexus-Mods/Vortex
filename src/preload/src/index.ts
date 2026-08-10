@@ -77,6 +77,7 @@ try {
     shell: {
       openUrl: (url) => betterIpcRenderer.send("shell:openUrl", url),
       openFile: (filePath) => betterIpcRenderer.send("shell:openFile", filePath),
+      showItemInFolder: (filePath) => betterIpcRenderer.send("shell:showItemInFolder", filePath),
     },
 
     persist: {
