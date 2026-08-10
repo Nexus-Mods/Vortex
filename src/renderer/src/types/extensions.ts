@@ -22,30 +22,30 @@ export type ExtensionType = "game" | "translation" | "theme";
  * Raw shape of an extension's info.json file.
  */
 export interface ExtensionInfo {
-  // id of the extension. We strongly advice against setting this manually
-  // in info.json because it mustn't be changed once the extension is released.
-  // if this isn't set, Vortex will assign something automatically that at least
-  // doesn't change on a users system after the extension is installed
-  id?: string;
-  // namespace. This is used (for example) to identify the localization for
-  // the extension. Unlike the id there isn't really a problem if this gets
-  // changed after release except you may ruin the day for translators.
-  // if this is unset but the id isn't, uses the id, otherwise something is
-  // derived from the extension name
-  namespace?: string;
+  /** Display name of the extension. */
   name: string;
+  /** Extension author display name. */
   author: string;
+  /** Human-readable description of the extension. */
   description: string;
+  /** File version. */
   version: string;
+
+  /** @deprecated to be replaced. */
   type?: ExtensionType;
-  bundled?: boolean;
-  path?: string;
-  modId?: number;
-  fileId?: number;
-  issueTrackerURL?: string;
+
+  /**
+   * Author provided identifier to be used in requirements tracking. This
+   * provides an extract match that can be used for `requireExtension` calls
+   * to exactly match the extension instead of going through a priority matcher.
+   */
+  id?: string;
+
+  /** Namespace for localization support. */
+  namespace?: string;
 }
 
-/** @deprecated Use ExtensionInfo instead */
+/** @deprecated Use `ExtensionInfo` instead */
 export type IExtension = ExtensionInfo;
 
 export type IExtensionWithState = IExtensionState & {
@@ -59,29 +59,15 @@ export interface IExtensionDownloadInfo {
   type?: ExtensionType;
 }
 
-/**
- * information about an extension available on the central extension list
- */
-export interface IAvailableExtension extends IExtensionDownloadInfo {
-  description: {
-    short: string;
-    long: string;
-  };
-  id?: string;
-  type?: ExtensionType;
-  language?: string;
-  gameName?: string;
-  gameId?: string;
-  image: string;
-  author: string;
-  uploader: string;
+export interface IAvailableExtension {
+  name: string;
   version: string;
-  downloads: number;
-  endorsements: number;
-  timestamp: number;
-  tags: string[];
-  dependencies?: { [key: string]: any };
-  hide?: boolean;
+  authorName: string;
+  authorId: number;
+  uploadedAt: number;
+  modId: number;
+  fileId: number;
+  imageURL: string;
 }
 
 export interface IExtensionManifest {
@@ -99,5 +85,5 @@ export interface IRegisteredExtension {
   path: string;
   dynamic: boolean;
   initFunc: () => ExtensionInit;
-  info?: IExtension;
+  info?: ExtensionInfo;
 }

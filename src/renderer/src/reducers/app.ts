@@ -36,6 +36,8 @@ export const appReducer = actionsToReducerSpec(
             fileId: info.fileId,
             type: info.type,
             bundled: info.bundled,
+            ...state.extensions?.[extensionId],
+            ...info,
           },
         },
       };

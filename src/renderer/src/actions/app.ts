@@ -1,6 +1,6 @@
 import { createAction } from "redux-act";
 
-import type { ExtensionInfo } from "../types/extensions";
+import type { IExtensionState } from "../types/IState";
 import type { VortexInstallType } from "../types/VortexInstallType";
 
 const id = <T>(input: T): T => input;
@@ -11,7 +11,7 @@ export const setApplicationVersion = createAction("SET_APPLICATION_VERSION", id<
 
 export const addExtension = createAction(
   "ADD_EXTENSION",
-  (extensionId: string, info: ExtensionInfo) => ({ extensionId, info }),
+  (extensionId: string, info: Partial<IExtensionState>) => ({ extensionId, info }),
 );
 
 export const setExtensionEnabled = createAction(

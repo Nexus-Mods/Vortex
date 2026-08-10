@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
 import SevenZip from "node-7z";
+import { generate as shortid } from "shortid";
 
 import { addExtension, forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
@@ -396,8 +397,20 @@ async function installExtensionImpl(
 
       clearStaleRemovalFlags(api, removedKeys, destPath);
 
-      const extId = fullInfo.id ?? dirName;
-      api.store.dispatch(addExtension(extId, { ...fullInfo, path: destPath }));
+      const extId = shortid();
+      api.store.dispatch(
+        addExtension(extId, {
+          name: fullInfo.name,
+          version: fullInfo.version,
+          author: fullInfo.author,
+          description: fullInfo.description,
+          path: destPath,
+          modId: fullInfo.modId,
+          fileId: fullInfo.fileId,
+          type: fullInfo.type,
+          infoJsonId: manifestInfo.id,
+        }),
+      );
 
       emitExtensionInstalled(
         api,
