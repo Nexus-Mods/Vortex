@@ -10,7 +10,6 @@ import { Dropdown as Dropdown_2 } from 'react-bootstrap';
 import { DropdownButton as DropdownButton_2 } from 'react-bootstrap';
 import { EndorsedStatus } from '@nexusmods/nexus-api';
 import { FC } from 'react';
-import { HTMLAttributes } from 'react';
 import { i18n } from 'i18next';
 import I18next from 'i18next';
 import { ICollection } from '@nexusmods/nexus-api';
@@ -377,26 +376,16 @@ export type FileSystemErrorData = Partial<OsErrorData> & {
     path: string;
 };
 
-// @public (undocumented)
-const Fixed: (props: React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
-
-// Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point api.d.ts
-//
-// @public (undocumented)
-const Flex: (props: IFlexProps & React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
-
 // Warning: (ae-forgotten-export) The symbol "IProps$7" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class FlexLayout extends React$2.PureComponent<IProps$7, {}> {
-    // Warning: (ae-forgotten-export) The symbol "Fixed" needs to be exported by the entry point api.d.ts
+    // (undocumented)
+    static Fixed: (props: React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
+    // Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
-    static Fixed: typeof Fixed;
-    // Warning: (ae-forgotten-export) The symbol "Flex" needs to be exported by the entry point api.d.ts
-    //
-    // (undocumented)
-    static Flex: typeof Flex;
+    static Flex: (props: IFlexProps & React$2.HTMLAttributes<HTMLDivElement>) => React$2.JSX.Element;
     // (undocumented)
     render(): JSX.Element;
 }
@@ -4692,7 +4681,7 @@ export const MainPage: typeof MainPageInner & {
 };
 
 // @public (undocumented)
-const MainPageBody: React$1.ForwardRefExoticComponent<HTMLAttributes<HTMLDivElement> & React$1.RefAttributes<HTMLDivElement>>;
+const MainPageBody: React$1.ForwardRefExoticComponent<React$1.HTMLAttributes<HTMLDivElement> & React$1.RefAttributes<HTMLDivElement>>;
 
 // Warning: (ae-forgotten-export) The symbol "IProps" needs to be exported by the entry point api.d.ts
 //
@@ -5320,8 +5309,8 @@ export class ZoomableImage extends React$2.Component<IZoomableImageProps, {
 // lib/api.d.ts:4160:5 - (ae-forgotten-export) The symbol "IMod" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:4428:3 - (ae-forgotten-export) The symbol "IGameDetail" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:4853:5 - (ae-forgotten-export) The symbol "IStateVerifier" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8800:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8801:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:8798:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:8799:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
 // (No @packageDocumentation comment for this package)
 
