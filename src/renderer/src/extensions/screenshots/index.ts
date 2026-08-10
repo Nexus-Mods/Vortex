@@ -33,7 +33,9 @@ function init(context: IExtensionContext) {
   context.registerSettings(
     "Media",
     SettingsMedia,
-    undefined,
+    () => ({
+      api: context.api,
+    }),
     () => activeGameId(context.api.getState()) !== undefined,
     200,
   );

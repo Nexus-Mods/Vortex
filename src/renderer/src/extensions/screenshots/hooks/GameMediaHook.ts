@@ -109,5 +109,7 @@ export default function useGameMedia() {
     discovery,
     forceCollect,
     game,
+    customSources,
+    defaultSources,
   };
 }

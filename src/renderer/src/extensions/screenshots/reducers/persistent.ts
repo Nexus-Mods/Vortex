@@ -11,12 +11,21 @@ export interface IGameMediaPersistentState {
   modTags: {
     [gameId: string]: { [imageId: string]: ModMediaTag[] };
   };
+  disabledSources: Record<string, string[]>;
 }
 
 const on = reducerFor<IGameMediaPersistentState>();
 
 export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
   reducers: Object.fromEntries([
+    on(actions.setGameMediaSourceEnabled, (state, payload) => {
+      const { gameId, sourceId, enabled } = payload;
+      let newArray: string[] = state[gameId] ?? [];
+      if (enabled && !newArray.includes(sourceId)) newArray.push(sourceId);
+      if (!enabled && newArray.includes(sourceId))
+        newArray = newArray.filter((s) => s !== sourceId);
+      return { ...state, disabledSources: { [gameId]: newArray } };
+    }),
     on(actions.setGameMediaSources, (state, payload) => {
       const { gameId, sources } = payload;
       return { ...state, sources: { ...state.sources, [gameId]: sources } };
@@ -54,5 +63,6 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
   defaults: {
     sources: {},
     modTags: {},
+    disabledSources: {},
   },
 };

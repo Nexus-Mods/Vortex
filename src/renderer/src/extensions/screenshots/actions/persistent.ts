@@ -18,3 +18,12 @@ export const setGameMediaModTags = createAction(
     tags,
   }),
 );
+
+export const setGameMediaSourceEnabled = createAction(
+  "SET_GAME_MEDIA_SOURCE_ENABLED",
+  (gameId: string, sourceId: string, enabled: boolean) => ({
+    gameId,
+    sourceId,
+    enabled,
+  }),
+);
