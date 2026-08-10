@@ -1,4 +1,4 @@
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import {
   mdiBugOutline,
   mdiFileDocumentOutline,
@@ -63,7 +63,7 @@ export const HelpSection: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <Dropdown>
-      <Menu.Button as={IconButton} iconPath={mdiHelpCircleOutline} title={t("Help")} />
+      <MenuButton as={IconButton} iconPath={mdiHelpCircleOutline} title={t("Help")} />
 
       <DropdownItems>
         {extensionActions.map((action) => (

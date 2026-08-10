@@ -1,4 +1,4 @@
-import { Dialog } from "@headlessui/react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
 
@@ -29,7 +29,7 @@ export const ModalWrapper = ({
     open={isOpen}
     onClose={onClose}
   >
-    <Dialog.Overlay className="nxm-modal-overlay" />
+    <DialogBackdrop className="nxm-modal-overlay" />
 
     {children}
   </Dialog>
@@ -49,16 +49,16 @@ export const ModalPanel = ({
   title,
   onClose,
 }: PropsWithChildren<IModalPanelProps>) => (
-  <Dialog.Panel className={joinClasses(["nxm-modal-panel", className])}>
+  <DialogPanel className={joinClasses(["nxm-modal-panel", className])}>
     {!!title && (
-      <Dialog.Title
+      <DialogTitle
         as="div"
         className={joinClasses(["nxm-modal-title"], {
           "mr-7": showCloseButton,
         })}
       >
         {title}
-      </Dialog.Title>
+      </DialogTitle>
     )}
 
     {showCloseButton && (
@@ -68,7 +68,7 @@ export const ModalPanel = ({
     )}
 
     {children}
-  </Dialog.Panel>
+  </DialogPanel>
 );
 
 export const Modal = ({

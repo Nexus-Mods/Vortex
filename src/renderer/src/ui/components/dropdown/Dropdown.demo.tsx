@@ -3,7 +3,7 @@
  * Demonstrates the Dropdown component variants and features
  */
 
-import { Menu } from "@headlessui/react";
+import { MenuButton } from "@headlessui/react";
 import { mdiContentCopy, mdiDelete, mdiDotsVertical, mdiDownload, mdiPencil } from "@mdi/js";
 import React, { useCallback } from "react";
 
@@ -41,9 +41,9 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button as={Button} brand="neutral" appearance="subdued">
+            <MenuButton as={Button} brand="neutral" appearance="subdued">
               Options
-            </Menu.Button>
+            </MenuButton>
 
             <DropdownItems className="right-auto left-0">
               <DropdownItem onClick={() => handleClick("Option 1")}>Option 1</DropdownItem>
@@ -63,9 +63,9 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button as={Button} brand="neutral" appearance="subdued">
+            <MenuButton as={Button} brand="neutral" appearance="subdued">
               Actions
-            </Menu.Button>
+            </MenuButton>
 
             <DropdownItems className="right-auto left-0">
               <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Edit")}>
@@ -101,7 +101,7 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button
+            <MenuButton
               as={Button}
               brand="neutral"
               appearance="subdued"
@@ -133,9 +133,9 @@ export const DropdownDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Dropdown>
-            <Menu.Button as={Button} brand="neutral" appearance="subdued">
+            <MenuButton as={Button} brand="neutral" appearance="subdued">
               With Disabled
-            </Menu.Button>
+            </MenuButton>
 
             <DropdownItems className="right-auto left-0">
               <DropdownItem onClick={() => handleClick("Available")}>Available action</DropdownItem>

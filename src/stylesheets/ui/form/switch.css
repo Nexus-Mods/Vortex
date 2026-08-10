@@ -17,26 +17,17 @@
         transition-timing-function: var(--default-transition-timing-function);
 
         /* override bootstrap styles */
-        &,
-        .nxm-switch-input {
-            margin: 0;
-        }
+        margin: 0;
 
-        &[data-state="on"],
-        &[data-state="semi-on"] {
+        &[data-checked],
+        &[data-indeterminate] {
             border-color: transparent;
             background-color: var(--color-translucent-strong);
         }
 
-        &:has(.nxm-switch-input:focus-visible) {
+        &[data-focus] {
             outline: 2px solid var(--color-focus-subdued);
             outline-offset: 2px;
-        }
-
-        .nxm-switch-input {
-            opacity: 0;
-            position: absolute;
-            pointer-events: none;
         }
 
         .nxm-switch-thumb {
@@ -77,40 +68,40 @@
             }
         }
 
-        &[data-state="on"] .nxm-switch-thumb,
-        &[data-state="semi-on"] .nxm-switch-thumb {
+        &[data-checked] .nxm-switch-thumb,
+        &[data-indeterminate] .nxm-switch-thumb {
             width: calc(var(--spacing) * 3);
             height: calc(var(--spacing) * 3);
             transform: translate(calc(var(--spacing) * 3.5), -50%);
         }
 
-        &[data-state="on"] .nxm-switch-thumb {
+        &[data-checked] .nxm-switch-thumb {
             background-color: var(--color-surface-mid);
         }
 
-        &[data-state="semi-on"] .nxm-switch-thumb {
+        &[data-indeterminate] .nxm-switch-thumb {
             background-color: transparent;
             border-color: var(--color-surface-mid);
         }
 
-        &:not(.nxm-switch-disabled) {
-            &:hover .nxm-switch-thumb::before {
+        &:not([data-disabled]) {
+            &[data-hover] .nxm-switch-thumb::before {
                 background-color: var(--color-translucent-50);
             }
 
-            &:active .nxm-switch-thumb::before {
+            &[data-active] .nxm-switch-thumb::before {
                 background-color: var(--color-translucent-100);
             }
         }
 
-        .nxm-switch-input:focus-visible ~ .nxm-switch-thumb::before {
+        &[data-focus] .nxm-switch-thumb::before {
             background-color: var(--color-translucent-100);
         }
 
-        &.nxm-switch-disabled {
+        &[data-disabled] {
             cursor: not-allowed;
 
-            &[data-state="off"] {
+            &:not([data-checked]):not([data-indeterminate]) {
                 border-color: var(--color-translucent-50);
 
                 .nxm-switch-thumb {
@@ -118,16 +109,16 @@
                 }
             }
 
-            &[data-state="on"],
-            &[data-state="semi-on"] {
+            &[data-checked],
+            &[data-indeterminate] {
                 background-color: var(--color-translucent-100);
             }
 
-            &[data-state="on"] .nxm-switch-thumb {
+            &[data-checked] .nxm-switch-thumb {
                 background-color: var(--color-surface-low);
             }
 
-            &[data-state="semi-on"] .nxm-switch-thumb {
+            &[data-indeterminate] .nxm-switch-thumb {
                 border-color: var(--color-surface-low);
             }
         }
