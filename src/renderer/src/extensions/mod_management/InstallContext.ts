@@ -78,6 +78,13 @@ class InstallContext implements IInstallContext {
   private mSourceModId?: string;
   private mActionBuffer: any[] | null = null;
 
+  // Successive auto-enabled installs share this toast id, so a batch (many mods installed in
+  // quick succession) collapses into one count-updating toast instead of stacking one per mod.
+  // Shared across every InstallContext instance since a fresh one is constructed per install.
+  private static readonly BATCH_TOAST_ID = "mod-installed-batch";
+  private static readonly BATCH_TOAST_DISPLAY_MS = 4000;
+  private static sBatchToast: { count: number; lastAt: number } = { count: 0, lastAt: 0 };
+
   constructor(
     gameMode: string,
     api: IExtensionApi,
@@ -401,25 +408,26 @@ class InstallContext implements IInstallContext {
           return null;
         }
 
-        return {
-          id: `may-enable-${id}`,
-          type: "success",
-          message: modName,
-          title: `${typeName} installed`,
-          group: "mod-installed",
-          displayMS: isEnabled ? 4000 : undefined,
-          actions: isEnabled
-            ? []
-            : [
-                {
-                  title: "Enable All",
-                  action: (dismiss) => {
-                    this.mEnableMod(this.mAddedId);
-                    dismiss();
-                  },
+        if (!isEnabled) {
+          return {
+            id: `may-enable-${id}`,
+            type: "success",
+            message: modName,
+            title: `${typeName} installed`,
+            group: "mod-installed",
+            actions: [
+              {
+                title: "Enable All",
+                action: (dismiss) => {
+                  this.mEnableMod(this.mAddedId);
+                  dismiss();
                 },
-              ],
-        };
+              },
+            ],
+          };
+        }
+
+        return InstallContext.batchInstalledToast(typeName, modName);
       case "canceled":
         return {
           type: "info",
@@ -440,6 +448,37 @@ class InstallContext implements IInstallContext {
           localize: { message: false },
         };
     }
+  }
+
+  /**
+   * The toast for an auto-enabled install. Upserts the same id as any other install still
+   * within BATCH_TOAST_DISPLAY_MS of the last one, so the batch shows a single toast whose
+   * text steps from the mod's own name to a running count, rather than one toast per mod.
+   */
+  private static batchInstalledToast(typeName: string, modName: string): INotification {
+    const now = Date.now();
+    const state = InstallContext.sBatchToast;
+    state.count = now - state.lastAt <= InstallContext.BATCH_TOAST_DISPLAY_MS ? state.count + 1 : 1;
+    state.lastAt = now;
+
+    return state.count === 1
+      ? {
+          id: InstallContext.BATCH_TOAST_ID,
+          type: "success",
+          message: modName,
+          title: `${typeName} installed`,
+          group: "mod-installed",
+          displayMS: InstallContext.BATCH_TOAST_DISPLAY_MS,
+          actions: [],
+        }
+      : {
+          id: InstallContext.BATCH_TOAST_ID,
+          type: "success",
+          message: `${state.count} mods installed`,
+          group: "mod-installed",
+          displayMS: InstallContext.BATCH_TOAST_DISPLAY_MS,
+          actions: [],
+        };
   }
 }
 
