@@ -65,11 +65,11 @@ describe("clearStaleRemovalFlags", () => {
     const api = {
       store: {
         dispatch,
-        getState: () => ({
-          session: { extensions: { available: [] } },
-          app: { extensions: extState },
-        }),
       },
+      getState: () => ({
+        session: { extensions: { available: [] } },
+        app: { extensions: extState },
+      }),
     } as unknown as IExtensionApi;
     return { api, dispatch };
   };
