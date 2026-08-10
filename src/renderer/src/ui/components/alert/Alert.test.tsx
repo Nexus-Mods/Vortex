@@ -89,7 +89,7 @@ describe("Alert", () => {
 
     it("renders an action after the message", () => {
       render(
-        <Alert action={<Button size="xs">Restart Vortex</Button>}>
+        <Alert action={<Button>Restart Vortex</Button>}>
           You need to restart Vortex to apply changes
         </Alert>,
       );
@@ -99,15 +99,7 @@ describe("Alert", () => {
     it("calls the action's onClick", async () => {
       const onClick = vi.fn();
       render(
-        <Alert
-          action={
-            <Button size="xs" onClick={onClick}>
-              Restart Vortex
-            </Button>
-          }
-        >
-          Restart needed
-        </Alert>,
+        <Alert action={<Button onClick={onClick}>Restart Vortex</Button>}>Restart needed</Alert>,
       );
 
       await userEvent.click(screen.getByRole("button", { name: "Restart Vortex" }));
@@ -154,14 +146,7 @@ describe("Alert", () => {
       const onClick = vi.fn();
       const onDismiss = vi.fn();
       render(
-        <Alert
-          action={
-            <Button size="xs" onClick={onClick}>
-              Restart Vortex
-            </Button>
-          }
-          onDismiss={onDismiss}
-        >
+        <Alert action={<Button onClick={onClick}>Restart Vortex</Button>} onDismiss={onDismiss}>
           Restart needed
         </Alert>,
       );

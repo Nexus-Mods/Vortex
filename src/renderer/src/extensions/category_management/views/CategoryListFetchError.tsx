@@ -36,13 +36,7 @@ const CustomCategoryFetchError = ({ fetch, clear, error, t }: ICustomCategoryFet
         </Typography>
       )}
 
-      <Button
-        appearance="subdued"
-        brand="neutral"
-        leftIconPath={mdiUpdate}
-        size="sm"
-        onClick={fetch}
-      >
+      <Button appearance="subdued" brand="neutral" leftIconPath={mdiUpdate} onClick={fetch}>
         {t("Try again")}
       </Button>
     </div>

@@ -251,7 +251,6 @@ export const ExtensionManager = ({
                 aria-label={t("Update extensions")}
                 brand="neutral"
                 leftIconPath={mdiRefresh}
-                size="sm"
                 onClick={onRefresh}
               />
             </Tooltip>
@@ -262,7 +261,6 @@ export const ExtensionManager = ({
                 aria-label={t("Browse extensions")}
                 brand="neutral"
                 leftIconPath={mdiPlus}
-                size="sm"
                 onClick={() => dispatch(setDialogVisible("browse-extensions"))}
               />
             </Tooltip>
@@ -281,7 +279,7 @@ export const ExtensionManager = ({
         <PageContent isFullWidth>
           <Alert
             action={
-              <Button brand="neutral" size="xs" onClick={() => relaunch()}>
+              <Button brand="neutral" size="sm" onClick={() => relaunch()}>
                 {t("Restart Vortex")}
               </Button>
             }

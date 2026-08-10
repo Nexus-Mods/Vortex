@@ -184,7 +184,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                     appearance="moderate"
                     brand="neutral"
                     leftIconPath={mdiOpenInNew}
-                    size="sm"
                     onClick={openModPage}
                   >
                     {t("detail::item::open_external_mod_page")}
@@ -197,7 +196,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                       appearance="moderate"
                       brand="neutral"
                       leftIconPath={mdiOpenInNew}
-                      size="sm"
                       onClick={handleModPage}
                     >
                       {t("detail::item::install_via_mod_page")}
@@ -250,7 +248,6 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   appearance="moderate"
                   brand="neutral"
                   leftIconPath={mdiCheck}
-                  size="sm"
                   onClick={handleConfirmInstall}
                 >
                   {t("detail::item::confirm_install")}

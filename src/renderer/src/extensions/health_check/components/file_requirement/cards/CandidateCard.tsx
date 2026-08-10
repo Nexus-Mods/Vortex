@@ -59,7 +59,6 @@ export const CandidateCard = ({
             appearance="subdued"
             brand="neutral"
             leftIconPath={mdiOpenInNew}
-            size="sm"
             onClick={handleModPage}
           >
             {t("detail::item::install_via_mod_page")}

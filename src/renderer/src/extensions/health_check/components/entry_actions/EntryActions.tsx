@@ -71,7 +71,6 @@ export function EntryActions({
             data-testid="health-check-feedback-helpful"
             disabled={givenFeedback}
             leftIconPath={mdiThumbUpOutline}
-            size="sm"
             onClick={handle(() => {
               trackFeedbackHelpful({ issue_type: issueType, resolution_type: resolutionType });
               onHelpful();
@@ -87,7 +86,6 @@ export function EntryActions({
             data-testid="health-check-feedback-not-helpful"
             disabled={givenFeedback}
             leftIconPath={mdiThumbDownOutline}
-            size="sm"
             onClick={handle(() => setShowFeedbackModal(true))}
           />
         </Tooltip>
@@ -101,7 +99,6 @@ export function EntryActions({
             brand="neutral"
             data-testid="health-check-entry-hide"
             leftIconPath={isHidden ? mdiEyeOutline : mdiEyeOffOutline}
-            size="sm"
             onClick={handle(onToggleHide)}
           />
         </Tooltip>

@@ -63,7 +63,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onOpen();

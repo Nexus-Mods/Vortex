@@ -293,7 +293,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   appearance="moderate"
                   brand="neutral"
                   leftIconPath={mdiMagnify}
-                  size="sm"
                   title={t("common:actions.search")}
                   type="submit"
                 />
@@ -305,7 +304,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     appearance="moderate"
                     brand="neutral"
                     leftIconPath={mdiRefresh}
-                    size="sm"
                     title={t("collection:browse.refresh")}
                     onClick={handleRefresh}
                   />
@@ -344,7 +342,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     appearance="moderate"
                     brand="neutral"
                     leftIconPath={mdiOpenInNew}
-                    size="sm"
                     onClick={() =>
                       window.api.shell.openUrl(
                         `https://www.nexusmods.com/games/${gameDomainName}/mods`,
@@ -396,7 +393,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 appearance="moderate"
                 brand="neutral"
                 leftIconPath={mdiOpenInNew}
-                size="sm"
                 onClick={() =>
                   window.api.shell.openUrl(`https://www.nexusmods.com/games/${gameDomainName}/mods`)
                 }

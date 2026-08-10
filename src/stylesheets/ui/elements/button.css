@@ -9,14 +9,14 @@
         align-items: center;
         justify-content: center;
 
-        white-space: nowrap;
-        font-size: var(--text-body-lg);
-        letter-spacing: var(--text-body-lg--letter-spacing);
-        line-height: var(--text-body-lg--line-height);
+        min-width: 0;
+        min-height: calc(var(--spacing) * 7);
+        padding-inline: calc(var(--spacing) * 2);
 
-        min-width: calc(var(--spacing) * 24);
-        min-height: calc(var(--spacing) * 9);
-        padding-inline: calc(var(--spacing) * 3);
+        white-space: nowrap;
+        font-size: var(--text-body-sm);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        line-height: var(--text-body-sm--line-height);
 
         transition-property:
             color, background-color, border-color, outline-color, fill, stroke, opacity,
@@ -41,8 +41,8 @@
 
         & .nxm-button-icon {
             flex-shrink: 0;
-            width: calc(var(--spacing) * 5);
-            height: calc(var(--spacing) * 5);
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
 
             &:first-child {
                 margin-left: calc(var(--spacing) * -0.5);
@@ -55,7 +55,7 @@
 
         &.nxm-button-icon-only {
             min-width: 0;
-            width: calc(var(--spacing) * 9);
+            width: calc(var(--spacing) * 7);
         }
 
         &:not(.nxm-button-icon-only) .nxm-button-icon {
@@ -69,12 +69,6 @@
         }
     }
 
-    /*
-     * Appearance structure (brand-independent).
-     * The "strong" appearance is a solid brand fill (background set per brand
-     * below); the others sit on shared translucent surfaces and only differ by
-     * the brand text colour.
-     */
     .nxm-button-strong {
         color: var(--color-neutral-inverted);
     }
@@ -110,16 +104,10 @@
         }
     }
 
-    /* Outlines: only the "subdued" appearance carries a border. */
     .nxm-button-subdued {
         border: 1px solid var(--color-stroke-weak);
     }
 
-    /*
-     * Per-brand colours. Colour brands share one ramp (moderate -> strong on
-     * hover -> subdued on pressed), used as the fill for "strong" and as the
-     * text colour for the other appearances.
-     */
     .nxm-button-primary {
         &.nxm-button-strong {
             background-color: var(--color-primary-moderate);
@@ -223,11 +211,6 @@
     }
 
     .nxm-button-premium {
-        /*
-         * Premium's solid fill carries light text (not the inverted dark default),
-         * so its fill must darken on interaction rather than brighten — otherwise
-         * the light label washes out against the lighter "strong" violet.
-         */
         &.nxm-button-strong {
             color: var(--color-neutral-strong);
             background-color: var(--color-premium-moderate);
@@ -262,11 +245,6 @@
         }
     }
 
-    /*
-     * Neutral is the odd brand out: its solid fill darkens (strong -> weak)
-     * rather than brightening, "moderate" keeps a constant solid text colour,
-     * and "subdued"/"weak" use the translucent neutral text ramp.
-     */
     .nxm-button-neutral {
         &.nxm-button-strong {
             background-color: var(--color-neutral-strong);
@@ -301,52 +279,31 @@
         }
     }
 
-    .nxm-button-xs,
     .nxm-button-sm {
-        min-width: 0;
-        padding-inline: calc(var(--spacing) * 2);
-
-        font-size: var(--text-body-sm);
-        line-height: var(--text-body-sm--line-height);
-        letter-spacing: var(--text-body-sm--letter-spacing);
-
-        & .nxm-button-icon {
-            width: calc(var(--spacing) * 4);
-            height: calc(var(--spacing) * 4);
-
-            &:first-child {
-                margin-left: calc(var(--spacing) * -0.5);
-            }
-
-            &:last-child {
-                margin-right: calc(var(--spacing) * -0.5);
-            }
-        }
-
-        &:not(.nxm-button-icon-only) .nxm-button-icon {
-            &:first-child {
-                margin-right: calc(var(--spacing) * 1.5);
-            }
-
-            &:last-child {
-                margin-left: calc(var(--spacing) * 1.5);
-            }
-        }
-    }
-
-    .nxm-button-sm {
-        min-height: calc(var(--spacing) * 7);
-
-        &.nxm-button-icon-only {
-            width: calc(var(--spacing) * 7);
-        }
-    }
-
-    .nxm-button-xs {
         min-height: calc(var(--spacing) * 6);
 
         &.nxm-button-icon-only {
             width: calc(var(--spacing) * 6);
+        }
+    }
+
+    .nxm-button-lg {
+        min-width: calc(var(--spacing) * 24);
+        min-height: calc(var(--spacing) * 9);
+        padding-inline: calc(var(--spacing) * 3);
+
+        font-size: var(--text-body-lg);
+        line-height: var(--text-body-lg--line-height);
+        letter-spacing: var(--text-body-lg--letter-spacing);
+
+        & .nxm-button-icon {
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
+        }
+
+        &.nxm-button-icon-only {
+            min-width: 0;
+            width: calc(var(--spacing) * 9);
         }
     }
 }
