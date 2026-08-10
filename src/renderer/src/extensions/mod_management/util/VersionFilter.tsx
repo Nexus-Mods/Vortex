@@ -15,7 +15,8 @@ const PRESET_OPTIONS = [
 ];
 
 interface IConnectedProps {
-  mods: { [modId: string]: IMod };
+  // the active game's installed mods, keyed by mod id. Undefined until a game is active
+  mods: Record<string, IMod> | undefined;
 }
 
 type IProps = IFilterProps & IConnectedProps;
@@ -66,9 +67,8 @@ class VersionFilterComponent extends React.Component<IProps, {}> {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const gameId = activeGameId(state);
   return {
-    mods: gameId !== undefined ? state.persistent.mods[gameId] : undefined,
+    mods: state.persistent.mods?.[activeGameId(state)],
   };
 }
 
@@ -84,7 +84,7 @@ class VersionFilter implements ITableFilter {
   private mCachedMods: Record<string, IMod> | undefined;
   private mVersionCounts: Record<string, number> = {};
 
-  public matches(filter: any, value: any, state: any): boolean {
+  public matches(filter: any, value: any, state: IState): boolean {
     if (value === undefined) {
       return undefined;
     }
@@ -101,11 +101,12 @@ class VersionFilter implements ITableFilter {
       return true;
     }
 
-    if (filter.includes("multi-version") && value.state === "installed") {
-      const modId = value.attributes?.modId;
-      if (modId !== undefined && (this.versionCounts(state)[modId] ?? 0) > 1) {
-        return true;
-      }
+    if (
+      filter.includes("multi-version") &&
+      value.state === "installed" &&
+      (this.versionCounts(state)[value.attributes?.modId] ?? 0) > 1
+    ) {
+      return true;
     }
 
     const versionFilters = filter
@@ -132,16 +133,16 @@ class VersionFilter implements ITableFilter {
    * walks the list once rather than once per row.
    */
   private versionCounts(state: IState): Record<string, number> {
-    const gameId = activeGameId(state);
-    const mods = state.persistent.mods?.[gameId] ?? {};
+    const mods = state.persistent.mods?.[activeGameId(state)];
 
     if (mods !== this.mCachedMods) {
       this.mCachedMods = mods;
 
       const counts: Record<string, number> = {};
-      for (const mod of Object.values<IMod>(mods)) {
+      for (const mod of Object.values<IMod>(mods ?? {})) {
         const modId = mod.attributes?.modId;
-        if (mod.state === "installed" && modId !== undefined) {
+        // a nullish or empty modId is "no mod id", not an id every such mod shares
+        if (mod.state === "installed" && modId) {
           counts[modId] = (counts[modId] ?? 0) + 1;
         }
       }
