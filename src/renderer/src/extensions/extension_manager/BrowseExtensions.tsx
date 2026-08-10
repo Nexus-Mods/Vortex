@@ -14,6 +14,7 @@ import ZoomableImage from "../../controls/ZoomableImage";
 import type { IAvailableExtension, ISelector } from "../../types/extensions";
 import type { IExtensionState, IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
+import { resolveDependencyExtension, resolveExtension } from "../../util/extensionQueries";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
@@ -244,18 +245,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const { extensions } = this.props;
 
     return (
-      Object.keys(extensions)
-        // looking at modid for mods hosted on nexus and the id for games in vortex-games.
-        // In the past we used the name for games from the repo but that meant that the games
-        // couldn't be renamed without causing issues for this list, not sure why that was
-        // done in the first place.
-        .find((key) => {
-          const iter = extensions[key];
-          return (
-            (ext.modId !== undefined && iter.modId === ext.modId) ||
-            (ext.id !== undefined && key === ext.id)
-          );
-        }) !== undefined
+      (ext.modId !== undefined &&
+        resolveExtension(extensions, { modId: ext.modId }) !== undefined) ||
+      (ext.id !== undefined && resolveDependencyExtension(extensions, ext.id) !== undefined)
     );
   }
 

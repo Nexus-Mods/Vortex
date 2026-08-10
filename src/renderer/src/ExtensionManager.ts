@@ -94,6 +94,7 @@ import {
 } from "./util/CustomErrors";
 import { runElevated } from "./util/elevated";
 import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
+import { resolveExtension } from "./util/extensionQueries";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import type { i18n } from "./util/i18n";
@@ -1817,11 +1818,15 @@ class ExtensionManager {
     });
 
     const state: IState = this.mApi.store.getState();
+    const appExt = state.app.extensions ?? {};
     this.mExtensions
       .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
         try {
-          let oldVersion = getSafe(state.app, ["extensions", ext.name, "version"], "0.0.0");
+          const resolved = resolveExtension(appExt, { name: ext.name });
+          if (resolved === undefined) return;
+
+          let { version: oldVersion } = resolved.entry;
           if (!semver.valid(oldVersion)) {
             log("error", "invalid version stored for extension", {
               extension: ext.name,
@@ -1831,7 +1836,7 @@ class ExtensionManager {
           }
           if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
-              this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
+              this.mApi.store.dispatch(setExtensionVersion(resolved.key, ext.info.version));
             } else {
               PromiseBB.mapSeries(migrations[ext.name], (mig) => mig(oldVersion))
                 .then(() => {
@@ -1839,7 +1844,7 @@ class ExtensionManager {
                     name: ext.name,
                     info: JSON.stringify(ext.info),
                   });
-                  this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
+                  this.mApi.store.dispatch(setExtensionVersion(resolved.key, ext.info.version));
                 })
                 .catch((err) => {
                   const error = unknownToError(err);

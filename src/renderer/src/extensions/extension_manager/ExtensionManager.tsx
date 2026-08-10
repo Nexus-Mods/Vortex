@@ -20,7 +20,7 @@ import type { ITableRowAction } from "@/controls/Table";
 import Table from "@/controls/Table";
 import { log } from "@/logging";
 import type { IExtensionWithState } from "@/types/extensions";
-import type { IExtensionState, IState } from "@/types/IState";
+import type { IExtensionLoadFailure, IExtensionState, IState } from "@/types/IState";
 import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
