@@ -44,9 +44,11 @@ export const SwitchDemo = () => {
 
         <div className="grid w-max grid-cols-[auto_auto_auto] items-center gap-x-8 gap-y-3">
           <span />
+
           <Typography appearance="subdued" typographyType="body-sm">
             Enabled
           </Typography>
+
           <Typography appearance="subdued" typographyType="body-sm">
             Disabled
           </Typography>
@@ -54,19 +56,25 @@ export const SwitchDemo = () => {
           <Typography appearance="subdued" typographyType="body-sm">
             Off
           </Typography>
+
           <Switch aria-label="Off, enabled" checked={false} onChange={() => undefined} />
+
           <Switch aria-label="Off, disabled" checked={false} disabled={true} />
 
           <Typography appearance="subdued" typographyType="body-sm">
             On
           </Typography>
+
           <Switch aria-label="On, enabled" checked={true} onChange={() => undefined} />
+
           <Switch aria-label="On, disabled" checked={true} disabled={true} />
 
           <Typography appearance="subdued" typographyType="body-sm">
             Semi-on
           </Typography>
+
           <Switch aria-label="Semi-on, enabled" indeterminate={true} onChange={() => undefined} />
+
           <Switch aria-label="Semi-on, disabled" disabled={true} indeterminate={true} />
         </div>
       </div>
@@ -77,7 +85,7 @@ export const SwitchDemo = () => {
         </Typography>
 
         <div className="flex w-max items-center gap-3">
-          <Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+          <Switch checked={enabled} onChange={setEnabled} />
 
           <Typography as="span" typographyType="body-sm">
             {enabled ? "Enabled" : "Disabled"}
@@ -99,7 +107,7 @@ export const SwitchDemo = () => {
           <Switch
             checked={allOn}
             indeterminate={!allOn && !noneOn}
-            onChange={(e) => setChildren(children.map(() => e.target.checked))}
+            onChange={(checked) => setChildren(children.map(() => checked))}
           />
 
           <Typography as="span" typographyType="body-sm">
@@ -110,10 +118,7 @@ export const SwitchDemo = () => {
         <div className="ml-6 space-y-2">
           {CHILD_LABELS.map((label, index) => (
             <div className="flex w-max items-center gap-3" key={label}>
-              <Switch
-                checked={children[index]}
-                onChange={(e) => setChild(index, e.target.checked)}
-              />
+              <Switch checked={children[index]} onChange={(checked) => setChild(index, checked)} />
 
               <Typography as="span" typographyType="body-sm">
                 {label}

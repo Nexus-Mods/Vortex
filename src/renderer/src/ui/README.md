@@ -355,26 +355,28 @@ import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
 
 ### Switch
 
-A tri-state toggle switch (xs) — `off`, `on`, and a programmatic `semi-on` ("mixed") state. Built on a visually-hidden native `<input type="checkbox">`; setting `indeterminate` renders `semi-on` and reports `aria-checked="mixed"`. Clicking only ever flips on/off — `semi-on` is set by the consumer (e.g. a master control whose children are partially on). It's controlled-visual (appearance follows the `checked`/`indeterminate` props, like `Checkbox`).
+A tri-state toggle switch (xs) — `off`, `on`, and a programmatic `semi-on` ("mixed") state. Setting `indeterminate` renders `semi-on` and reports `aria-checked="mixed"`. Clicking only ever flips on/off — `semi-on` is set by the consumer (e.g. a master control whose children are partially on).
+
+Built on Headless UI's **`Checkbox`**, not its `Switch`: ARIA only allows `aria-checked` to be true/false on `role="switch"`, and Headless UI controls that attribute, so `mixed` can't be forced onto a `Switch`. A tri-state master control is the checkbox pattern, which is what `Checkbox` implements.
 
 ```tsx
 import { Switch } from "../../ui/components/form/switch/Switch";
 
-// Controlled on/off
-<Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} aria-label="Enable" />
+// Controlled on/off — onChange receives the new checked value, not an event
+<Switch checked={enabled} onChange={setEnabled} aria-label="Enable" />
 
 // Semi-on (mixed) — e.g. a "select all" with some children on
 <Switch
   checked={allOn}
   indeterminate={someOn && !allOn}
-  onChange={(e) => setAll(e.target.checked)}
+  onChange={setAll}
   aria-label="All settings"
 />
 ```
 
-**Props:** native `<input>` attributes (minus `type`) plus `indeterminate?: boolean`.
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`.
 
-> **Porting note:** when `@headlessui/react` reaches v2 (after the React upgrade), reimplement on top of HeadlessUI's `<Switch>`. The `nxm-switch` classes live on the track/thumb so they can move straight across. HeadlessUI's Switch is binary, so the tri-state stays the wrapper's responsibility (`data-state` + `indeterminate`/`aria-checked="mixed"`).
+The track and thumb style themselves off the attributes Headless UI sets (`data-checked`, `data-indeterminate`, `data-disabled`, `data-hover`, `data-active`, `data-focus`) rather than any state we derive ourselves. It renders a `<span role="checkbox">`, so pass `name` if the value needs to take part in form submission.
 
 ### Dropdown
 
@@ -406,7 +408,7 @@ import { mdiTune } from "@mdi/js";
 </Popover>;
 ```
 
-> **Positioning note:** the panel is positioned manually (absolute) until `@headlessui/react` reaches v2, which brings dynamic anchor positioning and proper z-index handling.
+> **Positioning note:** the panel is placed by Headless UI's `anchor` prop, which uses Floating UI to flip and shift it into view and portals it out of any clipping ancestor. It defaults to `bottom end` with a 4px gap; pass `anchor` to place it elsewhere.
 
 ### DisplayOptions
 
@@ -670,7 +672,7 @@ import { mdiViewGrid } from "@mdi/js";
 />
 ```
 
-**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — temporary until Headless UI v2), `className`.
+**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — which edge of the trigger the panel aligns to), `className`.
 
 ### Pill
 
