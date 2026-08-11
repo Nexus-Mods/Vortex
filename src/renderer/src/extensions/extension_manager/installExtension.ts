@@ -8,7 +8,12 @@ import SevenZip from "node-7z";
 import { addExtension, forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
 import { log } from "../../logging";
-import type { ExtensionType, IExtension } from "../../types/extensions";
+import type {
+  ExtensionType,
+  IExtension,
+  ExtensionInfo,
+  IAvailableExtension,
+} from "../../types/extensions";
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
@@ -21,7 +26,7 @@ import {
   type ExtensionInstallSource,
 } from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
-import { findDependencyInCatalog, isAlreadyInstalled } from "./queries";
+import { findDependencyInCatalog, findPreviousVersions, isAlreadyInstalled } from "./queries";
 import { readExtensionInfo } from "./util";
 
 class ContextProxyHandler implements ProxyHandler<any> {
@@ -129,33 +134,18 @@ export function clearStaleRemovalFlags(
   });
 }
 
-function removeOldVersion(api: IExtensionApi, info: IExtension): string[] {
+function removeOldVersion(api: IExtensionApi, catalogEntry: IAvailableExtension): string[] {
   const state = api.getState();
-  const extState = state.app.extensions ?? {};
-
-  // should never be more than one but let's handle multiple to be safe
-  const previousVersions: string[] = [];
-
-  for (const [key, ext] of Object.entries(extState)) {
-    if (ext.bundled) continue;
-    if (info.modId !== undefined && ext.modId === info.modId) {
-      previousVersions.push(key);
-      continue;
-    }
-    if (info.name === ext.name) {
-      previousVersions.push(key);
-    }
-  }
+  const previousVersions = findPreviousVersions(state.app.extensions ?? {}, catalogEntry);
 
   if (previousVersions.length > 0) {
     log("info", "removing previous versions of the extension", {
       previousVersions,
-      newPath: info.path,
     });
   }
 
-  previousVersions.forEach((key) => api.store.dispatch(removeExtension(key)));
-  return previousVersions;
+  previousVersions.forEach(({ key }) => api.store.dispatch(removeExtension(key)));
+  return previousVersions.map(({ key }) => key);
 }
 
 const requiredThemeFiles = ["variables.scss", "style.scss", "fonts.scss"];
@@ -289,8 +279,7 @@ const activeInstalls: Map<string, Promise<void>> = new Map();
 function installExtension(
   api: IExtensionApi,
   archivePath: string,
-  info?: IExtension,
-  analytics: InstallAnalytics = { source: "manual" },
+  data?: { info?: ExtensionInfo; catalogEntry?: IAvailableExtension; analytics?: InstallAnalytics },
 ): Promise<void> {
   const key = path.basename(archivePath).toLowerCase();
   const active = activeInstalls.get(key);
@@ -299,7 +288,7 @@ function installExtension(
     return active;
   }
 
-  const result = installExtensionImpl(api, archivePath, info, analytics).finally(() => {
+  const result = installExtensionImpl(api, archivePath, data).finally(() => {
     activeInstalls.delete(key);
   });
 
@@ -310,8 +299,7 @@ function installExtension(
 async function installExtensionImpl(
   api: IExtensionApi,
   archivePath: string,
-  info: IExtension | undefined,
-  analytics: InstallAnalytics,
+  data?: { info?: ExtensionInfo; catalogEntry?: IAvailableExtension; analytics?: InstallAnalytics },
 ): Promise<void> {
   const extensionsPath = path.join(getVortexPath("userData"), "plugins");
   let destPath: string;
@@ -324,8 +312,8 @@ async function installExtensionImpl(
     "extension.install",
     {
       "extension.archive": path.basename(archivePath),
-      "extension.name": info?.name,
-      "extension.type": info?.type,
+      "extension.name": data?.catalogEntry?.name ?? data?.info?.name,
+      "extension.type": data?.catalogEntry?.type ?? data?.info?.type,
     },
     async () => {
       try {
@@ -364,11 +352,11 @@ async function installExtensionImpl(
         throw new DataInvalid(`Failed to extract extension archive: ${detail}`);
       }
 
-      const manifestInfo = await Promise.resolve(readExtensionInfo(tempPath, false, info));
+      const manifestInfo = await Promise.resolve(readExtensionInfo(tempPath, false, data?.info));
 
       const fullInfo = { ...manifestInfo.info };
       if (fullInfo.type === undefined) {
-        fullInfo.type = await validateInstall(tempPath, info);
+        fullInfo.type = await validateInstall(tempPath, data?.info);
       }
 
       // update the manifest on disc, in case we had new info from the caller
@@ -381,7 +369,10 @@ async function installExtensionImpl(
       // this install. Cleared after the rename succeeds so the next launch's
       // state-flag-driven removal path in ExtensionManager doesn't wipe the
       // just-installed folder (#19527).
-      const removedKeys = removeOldVersion(api, fullInfo);
+      let removedKeys: string[] = [];
+      if (data?.catalogEntry) {
+        removedKeys = removeOldVersion(api, data?.catalogEntry);
+      }
 
       // we don't actually expect the output directory to exist
       await rm(destPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
@@ -396,10 +387,10 @@ async function installExtensionImpl(
         api,
         { ...fullInfo, type: fullInfo.type, id: manifestInfo.id },
         {
-          source: analytics.source,
+          source: data?.analytics.source,
           isUpdate: removedKeys.length > 0,
-          gameDomain: analytics.gameDomain,
-          gameName: analytics.gameName,
+          gameDomain: data?.analytics.gameDomain,
+          gameName: data?.analytics.gameName,
         },
       );
 

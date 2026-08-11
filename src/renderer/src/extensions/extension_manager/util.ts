@@ -305,10 +305,14 @@ export async function downloadAndInstallExtension(
     const state = api.getState();
     const downloadPath = downloadPathForGame(state, SITE_ID);
 
-    await installExtension(api, path.join(downloadPath, download.localPath), info, {
-      source: "nexusmods",
-      gameDomain: extDetail?.gameId,
-      gameName: extDetail?.gameName,
+    await installExtension(api, path.join(downloadPath, download.localPath), {
+      info,
+      catalogEntry: extDetail,
+      analytics: {
+        source: "nexusmods",
+        gameDomain: extDetail?.gameId,
+        gameName: extDetail?.gameName,
+      },
     });
 
     return true;
