@@ -21,6 +21,7 @@ import {
   type ExtensionInstallSource,
 } from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
+import { findDependencyInCatalog, isAlreadyInstalled } from "./queries";
 import { readExtensionInfo } from "./util";
 
 class ContextProxyHandler implements ProxyHandler<any> {
@@ -78,18 +79,10 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     const promises = handler.dependencies.map(async (dependencyId) => {
       if (extState[dependencyId]) return;
 
-      const toInstall = available.find(
-        (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
-      );
-
+      const toInstall = findDependencyInCatalog(available, dependencyId);
       if (!toInstall) return;
-      const alreadyInstalled = Object.values(extState).some(
-        (entry) =>
-          (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-          entry.name === toInstall.name,
-      );
-      if (alreadyInstalled) return;
 
+      if (isAlreadyInstalled(extState, toInstall)) return;
       await api.emitAndAwait<"install-extension">("install-extension", toInstall);
     });
 
