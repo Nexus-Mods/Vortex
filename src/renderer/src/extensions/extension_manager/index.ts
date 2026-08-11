@@ -52,22 +52,7 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   const { available } = state.session.extensions;
   const installed = state.app.extensions ?? {};
 
-  const updateable: Array<{ installed?: IExtensionState; available: IAvailableExtension }> =
-    findUpdatableExtensions(installed, available);
-  let forceRestart: boolean = false;
-
-  const { commandLine } = state.session.base;
-  if (commandLine.installExtension !== undefined) {
-    const request = parseInstallCmdLine(commandLine.installExtension);
-    const update = findInCatalog(available, { modId: request.modId });
-
-    if (update !== undefined) {
-      forceRestart = true;
-      updateable.push({
-        available: update,
-      });
-    }
-  }
+  const updateable = findUpdatableExtensions(installed, available);
 
   if (updateable.length === 0) return;
 
@@ -79,10 +64,10 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   });
 
   log("info", "extensions will be updated", {
-    updateable: updateable.map(({ installed, available }) => {
-      const prefix = installed ? `${installed.name} v${installed.version} ` : "";
-      return prefix + `${available.name} v${available.version}`;
-    }),
+    updateable: updateable.map(
+      ({ installed, available }) =>
+        `${installed.name} v${installed.version} ${available.name} v${available.version}`,
+    ),
   });
 
   const promises = updateable.map(({ available }) => downloadAndInstallExtension(api, available));
@@ -92,23 +77,19 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   localState.reloadNecessary = true;
 
   if (success.find((iter) => iter === true)) {
-    if (forceRestart) {
-      relaunch();
-    } else {
-      api.sendNotification({
-        id: "extension-updates",
-        type: "success",
-        message: "Extensions updated, please restart to apply them",
-        actions: [
-          {
-            title: "Restart now",
-            action: () => {
-              relaunch();
-            },
+    api.sendNotification({
+      id: "extension-updates",
+      type: "success",
+      message: "Extensions updated, please restart to apply them",
+      actions: [
+        {
+          title: "Restart now",
+          action: () => {
+            relaunch();
           },
-        ],
-      });
-    }
+        },
+      ],
+    });
   }
 }
 
@@ -264,18 +245,6 @@ function signalRestartNeeded(api: IExtensionApi, gameName?: string): void {
         },
       ],
     });
-  }
-}
-
-function parseInstallCmdLine(argument: string): IExtensionDownloadInfo {
-  const modIdMatch = argument.match(/modId:(\d+)/);
-  if (modIdMatch != null) {
-    return {
-      name: "Commandline Request",
-      modId: parseInt(modIdMatch[1], 10),
-    };
-  } else {
-    throw new Error(`invalid command line argument "${argument}"`);
   }
 }
 
