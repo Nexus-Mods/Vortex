@@ -59,7 +59,6 @@ export const EnableCard = ({
             appearance="subdued"
             brand="neutral"
             leftIconPath={nxmModOutline}
-            size="sm"
             onClick={handleViewInMods}
           >
             {t("detail::item::view_in_mods")}
@@ -69,7 +68,6 @@ export const EnableCard = ({
             appearance="strong"
             brand="neutral"
             leftIconPath={mdiSwapHorizontal}
-            size="sm"
             onClick={handleEnable}
           >
             {t("detail::item::enable_this_version")}

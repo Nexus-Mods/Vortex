@@ -73,11 +73,11 @@ export const ButtonDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button size="md">Medium</Button>
+          <Button size="lg">Large</Button>
+
+          <Button>Medium (default)</Button>
 
           <Button size="sm">Small</Button>
-
-          <Button size="xs">Extra Small</Button>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ export const ButtonDemo = () => {
             Next
           </Button>
 
-          <Button brand="success" leftIconPath={mdiCheck} size="sm">
+          <Button brand="success" leftIconPath={mdiCheck}>
             Confirm
           </Button>
 
@@ -154,11 +154,11 @@ export const ButtonDemo = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button aria-label="Settings (md)" leftIconPath={mdiCog} size="md" />
+          <Button aria-label="Settings (lg)" leftIconPath={mdiCog} size="lg" />
+
+          <Button aria-label="Settings (md)" leftIconPath={mdiCog} />
 
           <Button aria-label="Settings (sm)" leftIconPath={mdiCog} size="sm" />
-
-          <Button aria-label="Settings (xs)" leftIconPath={mdiCog} size="xs" />
         </div>
       </div>
     </div>

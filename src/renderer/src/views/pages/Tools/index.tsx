@@ -169,7 +169,6 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                   appearance="moderate"
                   brand="neutral"
                   leftIconPath={mdiPlus}
-                  size="sm"
                   title={t("Add tool")}
                   onClick={addNewTool}
                 />

@@ -23,7 +23,7 @@ export type IToolbarButtonProps = IButtonProps & {
 export const ToolbarButton = forwardRef<HTMLButtonElement, IToolbarButtonProps>(
   ({ label, placement = "bottom", showLabel = false, ...props }, ref) => (
     <Tooltip content={label} disabled={showLabel} placement={placement}>
-      <Button {...props} aria-label={showLabel ? undefined : label} ref={ref} size="sm">
+      <Button {...props} aria-label={showLabel ? undefined : label} ref={ref}>
         {showLabel && label}
       </Button>
     </Tooltip>

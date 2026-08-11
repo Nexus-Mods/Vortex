@@ -320,7 +320,7 @@ const GamePicker = ({
         <CollapsibleSection
           actions={
             <Picker
-              button={{ appearance: "subdued", size: "xs" }}
+              button={{ appearance: "subdued", size: "sm" }}
               options={[
                 { label: t("Name A-Z"), value: "alphabetical" },
                 { label: t("Recently used"), value: "recentlyused" },
@@ -380,7 +380,7 @@ const GamePicker = ({
         <CollapsibleSection
           actions={
             <Picker
-              button={{ appearance: "subdued", size: "xs" }}
+              button={{ appearance: "subdued", size: "sm" }}
               options={[
                 { label: t("Most Popular"), value: "popular" },
                 { label: t("Name A-Z"), value: "alphabetical" },

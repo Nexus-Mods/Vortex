@@ -157,7 +157,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
           {t("You need to restart Vortex to activate this change")}
         </Typography>
 
-        <Button brand="neutral" size="sm" onClick={this.restart}>
+        <Button brand="neutral" onClick={this.restart}>
           {t("Restart now")}
         </Button>
       </div>
@@ -316,7 +316,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
           <ControlLabel>{t("Notifications")}</ControlLabel>
 
           <div className="flex items-center gap-x-2">
-            <Button brand="neutral" size="sm" onClick={this.resetSuppression}>
+            <Button brand="neutral" onClick={this.resetSuppression}>
               {t("Reset suppressed notifications")}
             </Button>
 

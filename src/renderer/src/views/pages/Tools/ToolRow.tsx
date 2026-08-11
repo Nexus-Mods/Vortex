@@ -107,7 +107,6 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
                 appearance="weak"
                 disabled={isFirst}
                 leftIconPath={mdiArrowUp}
-                size="sm"
                 title={isFirst ? t("Already at the top") : t("Move up")}
                 onClick={() => onMoveUp?.(starter)}
               />
@@ -117,7 +116,6 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
                 appearance="weak"
                 disabled={isLast}
                 leftIconPath={mdiArrowDown}
-                size="sm"
                 title={isLast ? t("Already at the bottom") : t("Move down")}
                 onClick={() => onMoveDown?.(starter)}
               />
@@ -134,7 +132,6 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               appearance="weak"
               disabled={!isPinned && pinDisabled}
               leftIconPath={isPinned ? mdiPinOff : mdiPin}
-              size="sm"
               title={
                 !isPinned && pinDisabled
                   ? pinDisabledReason
@@ -188,7 +185,6 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
           appearance="strong"
           disabled={!isValid}
           leftIconPath={mdiPlay}
-          size="sm"
           title={t("Launch tool")}
           onClick={() => onRun(starterInfo)}
         />

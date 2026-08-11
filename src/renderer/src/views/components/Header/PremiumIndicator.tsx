@@ -39,7 +39,7 @@ export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
 
   if (showAd) {
     return (
-      <Button brand="premium" leftIconPath={mdiDiamondStone} size="sm" onClick={handleGoPremium}>
+      <Button brand="premium" leftIconPath={mdiDiamondStone} onClick={handleGoPremium}>
         {t("Go premium")}
       </Button>
     );

@@ -132,7 +132,6 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
               <Button
                 brand="neutral"
                 disabled={checkUpdateButtonDisabled}
-                size="sm"
                 onClick={this.manualUpdateCheck}
               >
                 {t("Check now")}

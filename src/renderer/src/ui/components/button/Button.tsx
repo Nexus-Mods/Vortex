@@ -19,7 +19,7 @@ export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   brand?: IButtonBrand;
   appearance?: IButtonAppearance;
   isLoading?: boolean;
-  size?: "xs" | "sm" | "md";
+  size?: "sm" | "md" | "lg";
   children?: string;
   customContent?: ReactNode;
   disabled?: boolean;
@@ -91,8 +91,9 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
         {
           "nxm-button-disabled": !!disabled || !!ariaDisabled || isLoading,
           "nxm-button-icon-only": !customContent && !children,
-          "nxm-button-xs": size === "xs",
+          // `md` is the base class, so only the sizes either side of it modify it.
           "nxm-button-sm": size === "sm",
+          "nxm-button-lg": size === "lg",
         },
       )}
       disabled={disabled || isLoading}

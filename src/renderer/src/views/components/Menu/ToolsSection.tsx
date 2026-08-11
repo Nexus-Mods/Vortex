@@ -56,6 +56,7 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
           className="w-full transition-all"
           disabled={disabled}
           leftIconPath={mdiPlay}
+          size="lg"
           onClick={onClick}
         >
           {!isCollapsed && label}

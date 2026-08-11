@@ -66,7 +66,6 @@ export const InstallDownloadedCard = ({
             appearance="subdued"
             brand="neutral"
             leftIconPath={nxmModOutline}
-            size="sm"
             onClick={handleViewInMods}
           >
             {t("detail::item::view_in_mods")}
@@ -77,7 +76,6 @@ export const InstallDownloadedCard = ({
             brand="neutral"
             isLoading={isLoading}
             leftIconPath={isSwitch ? mdiSwapHorizontal : mdiCheck}
-            size="sm"
             onClick={handleInstall}
           >
             {isLoading
