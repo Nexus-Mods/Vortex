@@ -90,7 +90,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
         <PremiumIndicator />
 
         <div className="flex items-center gap-x-5">
-          <TooltipDelayGroup as="div" className="flex gap-x-1.5">
+          <TooltipDelayGroup as="div" className="flex gap-x-2">
             <Notifications />
 
             <HelpSection />

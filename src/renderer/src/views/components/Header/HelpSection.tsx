@@ -11,15 +11,16 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import { setDialogVisible } from "../../../actions/session";
-import { useExtensionContext } from "../../../ExtensionProvider";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import { Button } from "../../../ui/components/button/Button";
-import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
-import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider";
-import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
-import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
-import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
+import { setDialogVisible } from "@/actions";
+import { useExtensionContext } from "@/ExtensionProvider";
+import type { IActionDefinition } from "@/types/IActionDefinition";
+import { Button } from "@/ui/components/button/Button";
+import { Dropdown } from "@/ui/components/dropdown/Dropdown";
+import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
+import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+
 import { useGlobalIconActions } from "./useGlobalIconActions";
 
 // Actions from built-in extensions that should render in the main help menu
