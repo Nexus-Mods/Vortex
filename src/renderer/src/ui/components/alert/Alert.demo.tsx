@@ -23,46 +23,17 @@ export const AlertDemo = () => (
     </div>
 
     <div>
-      <Alert
-        action={
-          <Button brand="neutral" size="xs">
-            Find out more
-          </Button>
-        }
-      >
-        We suggest you do this
-      </Alert>
+      <Alert action={<Button brand="neutral">Find out more</Button>}>We suggest you do this</Alert>
 
-      <Alert
-        action={
-          <Button brand="neutral" size="xs">
-            Restart Vortex
-          </Button>
-        }
-        severity="warning"
-      >
+      <Alert action={<Button brand="neutral">Restart Vortex</Button>} severity="warning">
         You need to restart Vortex to apply changes
       </Alert>
 
-      <Alert
-        action={
-          <Button brand="neutral" size="xs">
-            Free up disk space
-          </Button>
-        }
-        severity="danger"
-      >
+      <Alert action={<Button brand="neutral">Free up disk space</Button>} severity="danger">
         Disk space full
       </Alert>
 
-      <Alert
-        action={
-          <Button brand="neutral" size="xs">
-            View page
-          </Button>
-        }
-        severity="success"
-      >
+      <Alert action={<Button brand="neutral">View page</Button>} severity="success">
         Action successful
       </Alert>
     </div>
@@ -96,14 +67,7 @@ export const AlertDemo = () => (
     </div>
 
     <div>
-      <Alert
-        action={
-          <Button brand="neutral" size="xs">
-            Find out more
-          </Button>
-        }
-        onDismiss={() => undefined}
-      >
+      <Alert action={<Button brand="neutral">Find out more</Button>} onDismiss={() => undefined}>
         We suggest you do this
       </Alert>
 
@@ -129,11 +93,7 @@ export const AlertDemo = () => (
 
     <div>
       <Alert
-        action={
-          <Button brand="neutral" size="xs">
-            Restart Vortex
-          </Button>
-        }
+        action={<Button brand="neutral">Restart Vortex</Button>}
         severity="warning"
         onDismiss={() => undefined}
       >

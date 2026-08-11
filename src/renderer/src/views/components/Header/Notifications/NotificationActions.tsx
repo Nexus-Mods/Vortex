@@ -30,7 +30,7 @@ export const NotificationActions: FC<React.PropsWithChildren<NotificationActions
           brand="neutral"
           appearance="moderate"
           key={action.title ?? action.icon}
-          size="xs"
+          size="sm"
           onClick={onActionClick(action.title)}
         >
           {t(action.title, { count: collapsed })}
@@ -38,7 +38,7 @@ export const NotificationActions: FC<React.PropsWithChildren<NotificationActions
       ))}
 
       {collapsed > 1 && onExpand && (
-        <Button brand="neutral" appearance="moderate" size="xs" onClick={onExpand}>
+        <Button brand="neutral" appearance="moderate" size="sm" onClick={onExpand}>
           {t("{{ count }} More", { count: collapsed - 1 })}
         </Button>
       )}

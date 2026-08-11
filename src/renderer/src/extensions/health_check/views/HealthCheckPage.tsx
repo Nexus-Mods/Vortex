@@ -318,7 +318,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       message={t("listing::no_results_logged_out::message")}
       title={t("listing::no_results_logged_out::title")}
     >
-      <Button data-testid="health-check-login" size="sm" onClick={requestLogin}>
+      <Button data-testid="health-check-login" onClick={requestLogin}>
         {t("listing::no_results_logged_out::action")}
       </Button>
     </NoResults>
@@ -401,7 +401,6 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                       (selectedTab === "hidden" && !hiddenCount)
                     }
                     leftIconPath={selectedTab === "active" ? mdiEyeOffOutline : mdiEyeOutline}
-                    size="sm"
                     onClick={selectedTab === "active" ? hideAllActive : unhideAll}
                   >
                     {selectedTab === "active"

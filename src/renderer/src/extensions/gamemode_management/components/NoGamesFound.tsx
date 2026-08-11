@@ -21,7 +21,6 @@ export const NoGamesFound = ({ className, t }: INoGamesFoundProps) => (
       appearance="moderate"
       brand="neutral"
       leftIconPath={mdiOpenInNew}
-      size="sm"
       onClick={() =>
         window.api.shell.openUrl(
           "https://github.com/Nexus-Mods/Vortex/wiki/MODDINGWIKI-Developers-General-Creating-a-game-extension",

@@ -14,11 +14,12 @@ import { useDispatch } from "react-redux";
 import { setDialogVisible } from "../../../actions/session";
 import { useExtensionContext } from "../../../ExtensionProvider";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
+import { Button } from "../../../ui/components/button/Button";
 import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
 import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider";
 import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
-import { IconButton } from "./IconButton";
+import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
 import { useGlobalIconActions } from "./useGlobalIconActions";
 
 // Actions from built-in extensions that should render in the main help menu
@@ -63,43 +64,55 @@ export const HelpSection: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <Dropdown>
-      <MenuButton as={IconButton} iconPath={mdiHelpCircleOutline} title={t("Help")} />
+      {({ open }) => (
+        <>
+          <Tooltip content={t("Help")} disabled={open} placement="bottom">
+            <MenuButton
+              appearance="weak"
+              aria-label={t("Help")}
+              as={Button}
+              brand="neutral"
+              leftIconPath={mdiHelpCircleOutline}
+            />
+          </Tooltip>
 
-      <DropdownItems>
-        {extensionActions.map((action) => (
-          <DropdownItem
-            key={`${action.icon}-${action.title}`}
-            leftIconPath={mdiPuzzle}
-            onClick={handleGlobalIconAction(action)}
-          >
-            {t(action.title, { ns: action.options?.namespace })}
-          </DropdownItem>
-        ))}
+          <DropdownItems>
+            {extensionActions.map((action) => (
+              <DropdownItem
+                key={`${action.icon}-${action.title}`}
+                leftIconPath={mdiPuzzle}
+                onClick={handleGlobalIconAction(action)}
+              >
+                {t(action.title, { ns: action.options?.namespace })}
+              </DropdownItem>
+            ))}
 
-        {extensionActions.length > 0 && <DropdownDivider />}
+            {extensionActions.length > 0 && <DropdownDivider />}
 
-        <DropdownItem leftIconPath={mdiHelpCircleOutline} onClick={handleHelpCentre}>
-          {t("Help centre")}
-        </DropdownItem>
+            <DropdownItem leftIconPath={mdiHelpCircleOutline} onClick={handleHelpCentre}>
+              {t("Help centre")}
+            </DropdownItem>
 
-        <DropdownItem leftIconPath={mdiFileDocumentOutline} onClick={handleDiagnosticFiles}>
-          {t("View logs")}
-        </DropdownItem>
+            <DropdownItem leftIconPath={mdiFileDocumentOutline} onClick={handleDiagnosticFiles}>
+              {t("View logs")}
+            </DropdownItem>
 
-        {builtInActions.map((action) => (
-          <DropdownItem
-            key={`${action.icon}-${action.title}`}
-            leftIconPath={builtInActionIcons[action.icon]}
-            onClick={handleGlobalIconAction(action)}
-          >
-            {t(action.title, { ns: action.options?.namespace })}
-          </DropdownItem>
-        ))}
+            {builtInActions.map((action) => (
+              <DropdownItem
+                key={`${action.icon}-${action.title}`}
+                leftIconPath={builtInActionIcons[action.icon]}
+                onClick={handleGlobalIconAction(action)}
+              >
+                {t(action.title, { ns: action.options?.namespace })}
+              </DropdownItem>
+            ))}
 
-        <DropdownItem leftIconPath={mdiInformationOutline} onClick={handleAbout}>
-          {t("About")}
-        </DropdownItem>
-      </DropdownItems>
+            <DropdownItem leftIconPath={mdiInformationOutline} onClick={handleAbout}>
+              {t("About")}
+            </DropdownItem>
+          </DropdownItems>
+        </>
+      )}
     </Dropdown>
   );
 };

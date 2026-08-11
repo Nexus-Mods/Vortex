@@ -32,7 +32,7 @@ export const NotificationControls: FC<React.PropsWithChildren<NotificationContro
           brand="neutral"
           appearance="weak"
           leftIconPath={mdiEyeOff}
-          size="xs"
+          size="sm"
           title={t("Never show again")}
           onClick={onSuppress}
         />
@@ -43,7 +43,7 @@ export const NotificationControls: FC<React.PropsWithChildren<NotificationContro
           brand="neutral"
           appearance="weak"
           leftIconPath={mdiClose}
-          size="xs"
+          size="sm"
           title={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}
           onClick={onDismiss}
         />

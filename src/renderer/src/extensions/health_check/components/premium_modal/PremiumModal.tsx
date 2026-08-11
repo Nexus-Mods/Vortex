@@ -128,7 +128,6 @@ export const PremiumModal = ({
           brand="neutral"
           className="w-full"
           leftIconPath={downloadScope === "single" && mdiOpenInNew}
-          size="sm"
           onClick={() => {
             trackPremiumModalFallbackClicked({
               ...identity,
@@ -147,7 +146,6 @@ export const PremiumModal = ({
           brand="premium"
           className="w-full"
           leftIconPath={mdiDiamondStone}
-          size="sm"
           onClick={() => {
             trackPremiumModalUnlockClicked({
               ...identity,

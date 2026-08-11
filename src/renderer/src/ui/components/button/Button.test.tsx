@@ -92,20 +92,20 @@ describe("Button", () => {
   });
 
   describe("size", () => {
-    it('applies xs class for size="xs"', () => {
-      render(<Button size="xs">Click</Button>);
-      expect(getButton()).toHaveClass("nxm-button-xs");
-    });
-
     it('applies sm class for size="sm"', () => {
       render(<Button size="sm">Click</Button>);
       expect(getButton()).toHaveClass("nxm-button-sm");
     });
 
-    it('does not apply size class for size="md" (default)', () => {
+    it('applies lg class for size="lg"', () => {
+      render(<Button size="lg">Click</Button>);
+      expect(getButton()).toHaveClass("nxm-button-lg");
+    });
+
+    it('does not apply a size class for size="md" (default)', () => {
       render(<Button>Click</Button>);
-      expect(getButton()).not.toHaveClass("nxm-button-xs");
       expect(getButton()).not.toHaveClass("nxm-button-sm");
+      expect(getButton()).not.toHaveClass("nxm-button-lg");
     });
   });
 

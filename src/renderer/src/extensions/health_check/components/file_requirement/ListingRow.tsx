@@ -137,7 +137,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               appearance="moderate"
               brand="neutral"
               leftIconPath={mdiCallSplit}
-              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 trackViewPickOptionsClicked({});
@@ -151,7 +150,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               appearance="moderate"
               brand="neutral"
               leftIconPath={mdiSwapHorizontal}
-              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 trackEnableThisVersionClicked({
@@ -172,7 +170,6 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
                 appearance="moderate"
                 brand="neutral"
                 leftIconPath={mdiCheck}
-                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
 

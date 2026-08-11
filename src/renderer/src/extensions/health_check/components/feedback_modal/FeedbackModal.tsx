@@ -54,7 +54,6 @@ export const FeedbackModal = ({
           appearance="moderate"
           className="w-full"
           data-testid="health-check-feedback-cancel"
-          size="sm"
           onClick={onClose}
         >
           {t("detail::feedback_modal::buttons::cancel")}
@@ -64,7 +63,6 @@ export const FeedbackModal = ({
           brand="primary"
           className="w-full"
           data-testid="health-check-feedback-confirm"
-          size="sm"
           onClick={() => {
             onSuccess(checkedOptions);
           }}

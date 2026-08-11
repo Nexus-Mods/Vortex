@@ -1,15 +1,48 @@
 import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { useExtensionContext } from "../../../../ExtensionProvider";
+import { useExtensionContext } from "@/ExtensionProvider";
+import { Button, type IButtonProps } from "@/ui/components/button/Button";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
+
 import { notifications as notificationsSelector } from "../../../../util/selectors";
-import { IconButton } from "../IconButton";
 import { NotificationItem } from "./NotificationItem";
 import { useNotificationActions } from "./useNotificationActions";
 import { useNotificationFiltering } from "./useNotificationFiltering";
 import { useNotificationItems } from "./useNotificationItems";
+
+const Trigger = forwardRef<HTMLButtonElement, IButtonProps & { itemCount?: number }>(
+  ({ "aria-label": ariaLabel, "aria-expanded": isOpen, itemCount, ...props }, ref) => (
+    <Tooltip content={ariaLabel} disabled={!!isOpen} placement="bottom">
+      <div className="group/icon-button relative">
+        <Button
+          appearance="weak"
+          aria-expanded={isOpen}
+          aria-label={ariaLabel}
+          brand="neutral"
+          {...props}
+          ref={ref}
+        />
+
+        {!!itemCount && (
+          <Typography
+            appearance="inverted"
+            as="span"
+            className="pointer-events-none absolute -top-1 left-3 z-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border-2 border-neutral-inverted bg-primary-moderate px-1 leading-none font-semibold transition-colors group-hover/icon-button:bg-primary-strong"
+            typographyType="body-xs"
+          >
+            {itemCount > 9 ? "9+" : itemCount}
+          </Typography>
+        )}
+      </div>
+    </Tooltip>
+  ),
+);
+
+Trigger.displayName = "NotificationsTrigger";
 
 /**
  * Inner component that receives popoverOpen as a prop so hooks can
@@ -72,12 +105,12 @@ const NotificationsContent: React.FC<React.PropsWithChildren<{ popoverOpen: bool
   return (
     <>
       <PopoverButton
-        as={IconButton}
+        aria-label="Notifications"
+        as={Trigger}
         disabled={visibleCount === 0}
-        iconPath={visibleCount > 0 ? mdiBell : mdiBellOutline}
         itemCount={visibleCount}
+        leftIconPath={visibleCount > 0 ? mdiBell : mdiBellOutline}
         ref={buttonRef}
-        title="Notifications"
         onClick={() => {
           api.events.emit(
             "analytics-track-click-event",

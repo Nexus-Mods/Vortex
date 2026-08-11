@@ -55,7 +55,6 @@ const BackButton = ({ onBack }: { onBack: () => void }) => {
       appearance="weak"
       brand="neutral"
       leftIconPath={mdiArrowLeft}
-      size="sm"
       onClick={() => {
         trackBackClicked({ time_spent_on_detail_ms: Date.now() - openedAtRef.current });
         onBack();

@@ -47,7 +47,7 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
             {t("You need to restart Vortex to activate this change")}
           </Typography>
 
-          <Button brand="neutral" size="sm" onClick={this.restart}>
+          <Button brand="neutral" onClick={this.restart}>
             {t("Restart now")}
           </Button>
         </div>

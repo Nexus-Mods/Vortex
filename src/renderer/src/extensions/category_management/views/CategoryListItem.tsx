@@ -211,7 +211,6 @@ export default function CategoryListItem({
                   brand="primary"
                   data-testid="category-rename-save"
                   leftIconPath={mdiPlus}
-                  size="sm"
                   onClick={rename}
                 />
 
@@ -221,7 +220,6 @@ export default function CategoryListItem({
                   brand="neutral"
                   data-testid="category-rename-cancel"
                   leftIconPath={mdiCancel}
-                  size="sm"
                   onClick={() => setEditMode()}
                 />
               </div>
@@ -266,7 +264,6 @@ export default function CategoryListItem({
             brand="neutral"
             data-testid="category-subcategory-cancel"
             leftIconPath={mdiCancel}
-            size="sm"
             onClick={() => setEditMode()}
           />
         </div>
