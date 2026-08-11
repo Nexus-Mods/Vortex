@@ -1,0 +1,91 @@
+name: Linear Release
+
+on:
+  release:
+    types: [prereleased, released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to sync (e.g. 'v2.6.0-beta.1'). Channel is inferred: tags with a '-' are pre-releases."
+        required: true
+        type: string
+      dry-run:
+        description: "Dry run? (scan commits and log actions without modifying Linear)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: linear-release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync issues to Linear release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+
+      - name: Resolve release tag and channel
+        id: release
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          PRERELEASE: ${{ github.event_name == 'release' && github.event.release.prerelease || contains(inputs.tag, '-') }}
+        run: |
+          if ! git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            echo "::error::Tag '$TAG' not found"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Determine previous release tag
+        id: prev
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+        run: |
+          # The scan base is the previous tag on the same channel:
+          # pre-releases compare against the previous pre-release, stables
+          # against the previous stable. git log <prev>..<tag> handles tags on
+          # diverged release branches (the reachability difference is exactly
+          # the commits new to this release).
+          if [ "$PRERELEASE" = "true" ]; then
+            pattern='^v[0-9]+\.[0-9]+\.[0-9]+-'
+          else
+            pattern='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          fi
+          prev=$(git tag --list 'v*' | grep -E "$pattern" | grep -vFx "$TAG" \
+            | { cat; echo "$TAG"; } | sort -uV \
+            | awk -v cur="$TAG" '$0 == cur { print p; exit } { p = $0 }')
+          if [ -n "$prev" ]; then
+            echo "Scanning $prev..$TAG"
+          else
+            echo "No previous tag found; the release CLI will use its default scan base"
+          fi
+          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+
+      - name: Sync issues to release
+        uses: linear/linear-release-action@v0
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+          command: sync
+          version: ${{ steps.release.outputs.tag }}
+          base_ref: ${{ steps.prev.outputs.tag }}
+          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+          log_level: verbose
+
+      - name: Mark release as released
+        uses: linear/linear-release-action@v0
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+          command: complete
+          version: ${{ steps.release.outputs.tag }}
+          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+          log_level: verbose
