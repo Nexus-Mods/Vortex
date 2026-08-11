@@ -74,8 +74,10 @@ jobs:
             echo "No previous tag found; the release CLI will use its default scan base"
           fi
           echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "prevtag=$prev" >> "$GITHUB_OUTPUT"
 
       - name: Sync issues to release
+        id: sync
         uses: linear/linear-release-action@v0
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
@@ -86,6 +88,7 @@ jobs:
           log_level: verbose
 
       - name: Mark release as released
+        id: complete
         uses: linear/linear-release-action@v0
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
@@ -93,3 +96,67 @@ jobs:
           version: ${{ steps.release.outputs.tag }}
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           log_level: verbose
+
+      - name: Write run summary
+        if: ${{ always() && steps.prev.outcome == 'success' }}
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          PREV: ${{ steps.prev.outputs.prevtag }}
+          BASE: ${{ steps.prev.outputs.base }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+          SYNC_OUTCOME: ${{ steps.sync.outcome }}
+          COMPLETE_OUTCOME: ${{ steps.complete.outcome }}
+          RELEASE_URL: ${{ steps.sync.outputs.release-url }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          # Human-readable recap on the run's summary page. The issue keys
+          # mirror the CLI's client-side commit scan; Linear resolves PR
+          # links server-side on top of these, so the release page in Linear
+          # is the authoritative list.
+          {
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "## Linear Release — \`$TAG\` (dry run, Linear was not modified)"
+            else
+              echo "## Linear Release — \`$TAG\`"
+            fi
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Previous tag (same channel) | ${PREV:-_none_} |"
+            echo "| Scan base (fork point) | ${BASE:-_CLI default_} |"
+            echo "| Sync issues | $SYNC_OUTCOME |"
+            echo "| Mark released | $COMPLETE_OUTCOME |"
+            if [ -n "$RELEASE_URL" ]; then
+              echo "| Linear release | $RELEASE_URL |"
+            fi
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$BASE" ]; then
+            exit 0
+          fi
+          range="$BASE..refs/tags/$TAG"
+          keys=$(git log "$range" --format='%s' \
+            | grep -ioE '\b[a-z]{2,}-[0-9]+\b' | tr 'a-z' 'A-Z' \
+            | grep -v '^PR-' | sort -uV)
+          {
+            echo "### Issue keys detected in commits ($(printf '%s' "$keys" | grep -c . || true))"
+            echo
+            for key in $keys; do
+              printf '[%s](https://linear.app/nexus-mods/issue/%s) ' "$key" "$key"
+            done
+            echo
+            echo
+            echo "_Candidates from the branch/subject scan: keys that don't exist in Linear are ignored, and Linear attaches further issues linked to the pull requests below._"
+            echo
+            echo "### Pull requests in range"
+            echo
+            git log "$range" --merges --format='%H' | while read -r sha; do
+              subject=$(git show -s --format='%s' "$sha")
+              num=$(printf '%s' "$subject" | sed -nE 's/^Merge pull request #([0-9]+).*/\1/p')
+              if [ -z "$num" ]; then
+                continue
+              fi
+              title=$(git show -s --format='%b' "$sha" | sed -n 1p)
+              echo "- [#$num]($REPO_URL/pull/$num) ${title:-$subject}"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
