@@ -120,6 +120,7 @@ const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
 const ENQUEUE_TAG = Symbol("emitAndAwaitEnqueue");
 
+/** @deprecated */
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
     return installed.modId === remote.modId;
@@ -446,31 +447,32 @@ class ContextProxyHandler implements ProxyHandler<any> {
    * Retrieve the map of optional extensions
    *  Each optional requireExtension call is added against the id of the extension that requires it.
    */
-  public getOptionalExtensions(allExtensions: IRegisteredExtension[]) {
+  public getOptionalExtensions(
+    allExtensions: IRegisteredExtension[],
+  ): Record<string, IExtensionOptional[]> {
     const optionalRequireCalls = this.getCalls("requireExtension").filter(
       (iter) => iter.arguments.length > 2 && iter.arguments[2] === true,
     );
-    const missingOptionals = optionalRequireCalls.reduce((acc, iter) => {
-      const callingExtensionKey = iter.extension;
+
+    return optionalRequireCalls.reduce<Record<string, IExtensionOptional[]>>((acc, iter) => {
+      const callingExtensionName = iter.extension;
+      if (typeof iter.arguments[0] !== "string") return acc;
+
       const requiredKey = iter.arguments[0];
       const ext = this.findExt(requiredKey, allExtensions);
-      if (ext === undefined) {
-        const optional: IExtensionOptional = {
-          id: requiredKey,
-          args: iter.arguments,
-          extensionPath: iter.extensionPath,
-        };
-        acc = {
-          ...acc,
-          [callingExtensionKey]: [].concat(
-            acc[callingExtensionKey] || [],
-            optional,
-          ) as IExtensionOptional[],
-        };
-      }
-      return acc;
+      if (ext !== undefined) return acc;
+
+      const optional: IExtensionOptional = {
+        id: requiredKey,
+        args: iter.arguments,
+        extensionPath: iter.extensionPath,
+      };
+
+      return {
+        ...acc,
+        [callingExtensionName]: [].concat(acc[callingExtensionName] || [], optional),
+      };
     }, {});
-    return missingOptionals;
   }
 
   /**
@@ -719,7 +721,7 @@ class ExtensionManager {
   private mDownloadAdapter: IPCDownloadAdapter;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
-  private mOptionalExtensions: { [extId: string]: IExtensionOptional[] } = {};
+  private mOptionalExtensions: { [extensionName: string]: IExtensionOptional[] } = {};
   private mInterpreters: {
     [ext: string]: (input: IRunParameters) => IRunParameters;
   };

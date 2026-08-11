@@ -186,7 +186,7 @@ export const ExtensionManager = ({
       log("info", "installing extension(s) via drag and drop", { extPaths });
 
       const install = (extPath: string) =>
-        installExtension(api, extPath)
+        installExtension(api, extPath, { analytics: { source: "manual" } })
           .then(() => true)
           .catch((err) => {
             api.showErrorNotification("Failed to install extension", err, { allowReport: false });
