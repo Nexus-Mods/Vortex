@@ -76,6 +76,23 @@ jobs:
           echo "base=$base" >> "$GITHUB_OUTPUT"
           echo "prevtag=$prev" >> "$GITHUB_OUTPUT"
 
+      - name: Fetch GitHub release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          # Fetched via gh rather than the event payload so workflow_dispatch
+          # runs pick up the notes too. An empty file input is ignored by the
+          # release action, so a tag without a GitHub release (or with an
+          # empty body) just skips the notes.
+          notes="$RUNNER_TEMP/release-notes.md"
+          if gh release view "$TAG" --json body --jq .body > "$notes" && [ -s "$notes" ]; then
+            echo "file=$notes" >> "$GITHUB_OUTPUT"
+          else
+            echo "No GitHub release notes found for '$TAG'"
+          fi
+
       - name: Sync issues to release
         id: sync
         uses: linear/linear-release-action@v0
@@ -85,6 +102,7 @@ jobs:
           name: ${{ steps.release.outputs.tag }}
           version: ${{ steps.release.outputs.tag }}
           base_ref: ${{ steps.prev.outputs.base }}
+          release_notes: ${{ steps.notes.outputs.file }}
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           log_level: verbose
 
@@ -107,6 +125,7 @@ jobs:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           SYNC_OUTCOME: ${{ steps.sync.outcome }}
           COMPLETE_OUTCOME: ${{ steps.complete.outcome }}
+          NOTES_FILE: ${{ steps.notes.outputs.file }}
           RELEASE_URL: ${{ steps.sync.outputs.release-url }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
@@ -125,6 +144,7 @@ jobs:
             echo "| --- | --- |"
             echo "| Previous tag (same channel) | ${PREV:-_none_} |"
             echo "| Scan base (fork point) | ${BASE:-_CLI default_} |"
+            echo "| GitHub release notes | $([ -n "$NOTES_FILE" ] && echo attached || echo _none_) |"
             echo "| Sync issues | $SYNC_OUTCOME |"
             echo "| Mark released | $COMPLETE_OUTCOME |"
             if [ -n "$RELEASE_URL" ]; then
