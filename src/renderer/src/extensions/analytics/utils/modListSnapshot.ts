@@ -1,68 +1,56 @@
+import type { internalComponents } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { getApplication } from "../../../util/application";
 import { log } from "../../../util/log";
-import type { IMod } from "../../mod_management/types/IMod";
-import { NEXUS_API_URL } from "../../nexus_integration/constants";
-import { apiKey, userInfo } from "../../nexus_integration/selectors";
-import { getOAuthTokenFromState } from "../../nexus_integration/util";
+import type { IMod, IModRepoId } from "../../mod_management/types/IMod";
+import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
+import { isLoggedIn } from "../../nexus_integration/selectors";
+import { makeFileUID, makeModUID } from "../../nexus_integration/util/UIDs";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 
-/**
- * Reference to a related entity. Nexus REST API guidelines: relations are nested objects
- * (`user: { id }`) not flat `_id` fields, and every id is typed String, never a number.
- */
-export interface EntityRef {
-  id: string;
-}
+// The request-body types are the ones generated from the vendored telemetry OpenAPI fragment, so
+// the snapshot we build is checked against the endpoint's own schema (a backend shape change that
+// regenerates the client breaks this build). `user_id` is not part of the body - the server reads
+// it from the auth token.
+export type ModEntry = internalComponents["schemas"]["ModEntry"];
+export type ModListSnapshot = internalComponents["schemas"]["ModListSnapshot"];
 
-/**
- * One mod in a snapshot. All sources are supported: `source` is the mod's
- * `attributes.source` (nexus / site / generic / ...); `mod` and `file` carry the Nexus ids and
- * are null for mods that did not come from Nexus.
- */
-export interface ModSnapshotEntry {
-  source: string;
-  mod: EntityRef | null;
-  file: EntityRef | null;
-  version: string | null;
-  enabled: boolean;
-}
-
-/**
- * The LAZ-701 mod-list payload for one game. Sent as-is (a single JSON) to the ingest endpoint;
- * the ClickHouse side flattens `mods[]` into one row per mod. Shape follows the Nexus REST API
- * guidelines: related entities nested, all ids String.
- */
-export interface ModListSnapshot {
-  user: EntityRef;
-  instance: EntityRef;
-  game: EntityRef;
-  captured_at: string;
-  vortex_version: string;
-  mods: ModSnapshotEntry[];
-}
-
-/** Ambient values the caller resolves (identity, timestamp, numeric game id). */
+/** Ambient values the caller resolves (install id, timestamp, version, numeric game id). */
 export interface ModListSnapshotMeta {
-  userId: number;
   instanceId: string;
   capturedAt: string;
   vortexVersion: string;
   gameId: number;
 }
 
-// v3 ingest endpoint. Provisional path (renamed once the backend finalises it); the client is
-// already functional against it the moment it exists.
-const MOD_LIST_INGEST_URL = `${NEXUS_API_URL}/v3/telemetry/mod-lists`;
+function hasValue(value: number | null | undefined): value is number {
+  return value !== null && value !== undefined;
+}
 
-/** Nest an id as an entity reference, stringifying it. Null when the id is absent. */
-function entityRef(id: number | string | undefined | null): EntityRef | null {
-  return id === undefined || id === null ? null : { id: String(id) };
+/**
+ * The Nexus mod/file UIDs ((gameId << 32) | id) for an installed mod, computed independently so a
+ * Nexus mod keeps its `mod_id` even when `file_id` is missing. Null for non-Nexus / id-less mods.
+ */
+function nexusUIDs(
+  gameId: number,
+  attributes: { modId?: number; fileId?: number },
+): { mod_id: string | null; file_id: string | null } {
+  const repo: IModRepoId = {
+    gameId: String(gameId),
+    modId: hasValue(attributes.modId) ? String(attributes.modId) : undefined,
+    fileId: hasValue(attributes.fileId) ? String(attributes.fileId) : "",
+  };
+  return {
+    mod_id: hasValue(attributes.modId) ? ((makeModUID(repo) as string | undefined) ?? null) : null,
+    file_id: hasValue(attributes.fileId)
+      ? ((makeFileUID(repo) as string | undefined) ?? null)
+      : null,
+  };
 }
 
 /**
@@ -76,53 +64,23 @@ export function buildModListSnapshot(
 ): ModListSnapshot {
   const entries = Object.values(mods)
     .filter((mod) => mod.state === "installed")
-    .map((mod): ModSnapshotEntry => {
+    .map((mod): ModEntry => {
       const attributes = mod.attributes ?? {};
       return {
         source: attributes.source ?? "unknown",
-        mod: entityRef(attributes.modId),
-        file: entityRef(attributes.fileId),
+        ...nexusUIDs(meta.gameId, attributes),
         version: attributes.version ?? null,
         enabled: modState[mod.id]?.enabled ?? false,
       };
     });
 
   return {
-    user: { id: String(meta.userId) },
-    instance: { id: meta.instanceId },
-    game: { id: String(meta.gameId) },
+    instance_id: meta.instanceId,
+    game_id: String(meta.gameId),
     captured_at: meta.capturedAt,
     vortex_version: meta.vortexVersion,
     mods: entries,
   };
-}
-
-/**
- * POST the snapshot to the v3 ingest endpoint, authenticated the same way as the generated v3
- * client (OAuth bearer token, else api key). Throws on a non-2xx response.
- */
-async function sendModListSnapshot(api: IExtensionApi, snapshot: ModListSnapshot): Promise<void> {
-  const state = api.getState();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "User-Agent": `Vortex/${getApplication().version}`,
-  };
-  const bearerToken = getOAuthTokenFromState(api);
-  const key = apiKey(state);
-  if (bearerToken !== undefined) {
-    headers["Authorization"] = `Bearer ${bearerToken}`;
-  } else if (key !== undefined) {
-    headers["apikey"] = key;
-  }
-
-  const response = await fetch(MOD_LIST_INGEST_URL, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(snapshot),
-  });
-  if (response?.ok !== true) {
-    throw new Error(`mod-list ingest returned HTTP ${response?.status ?? "unknown"}`);
-  }
 }
 
 /**
@@ -140,8 +98,9 @@ export async function emitModListSnapshot(
     return undefined;
   }
 
-  const userId = userInfo(state)?.userId;
-  if (userId === undefined) {
+  // The server derives the user id from the auth token, so we gate on being logged in with
+  // credentials (bearer token or api key) rather than on a cached user id.
+  if (!isLoggedIn(state)) {
     return undefined;
   }
 
@@ -157,10 +116,9 @@ export async function emitModListSnapshot(
 
   const profileId = lastActiveProfileForGame(state, internalGameId);
   const modState = profileById(state, profileId)?.modState ?? {};
-  const mods = state.persistent.mods[internalGameId] ?? {};
+  const mods = state.persistent.mods?.[internalGameId] ?? {};
 
   const snapshot = buildModListSnapshot(mods, modState, {
-    userId,
     instanceId,
     capturedAt: new Date().toISOString(),
     vortexVersion: getApplication().version,
@@ -168,7 +126,7 @@ export async function emitModListSnapshot(
   });
 
   try {
-    await sendModListSnapshot(api, snapshot);
+    await createVortexNexusV3InternalClient(api).submitModLists(snapshot);
   } catch (err) {
     log("warn", "[modList] failed to send snapshot", {
       error: getErrorMessageOrDefault(err),
