@@ -21,7 +21,11 @@ import BrowseExtensions from "./BrowseExtensions";
 import type { IBrowseExtensionsProps } from "./BrowseExtensions";
 import { ExtensionManager } from "./ExtensionManager";
 import type { IExtensionManagerProps } from "./ExtensionManager";
-import { findDependencyInCatalog, findUpdatableExtensions } from "./queries";
+import {
+  findDependencyInCatalog,
+  findUpdatableExtensions,
+  getMissingOptionalExtensions,
+} from "./queries";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
 
@@ -353,78 +357,66 @@ function init(context: IExtensionContext) {
     context.api.events.on("gamemode-activated", (gameMode: string) => {
       const state = context.api.getState();
       const game = getGame(gameMode);
-      const extState = state.app.extensions ?? {};
+      const loadedExtensions = context.api.getLoadedExtensions();
 
-      // Search both persisted user extensions and loaded bundled extensions.
-      const gameExtId =
-        Object.keys(extState).find((key) => game.extensionPath === extState[key].path) ??
-        context.api.getLoadedExtensions().find((ext) => ext.path === game.extensionPath)?.name;
+      const gameExtension = loadedExtensions.find((ext) => ext.path === game.extensionPath);
+      if (!gameExtension) return;
 
-      if (!gameExtId || !state.session.extensions.optional[gameExtId]) {
-        return;
-      }
+      // TODO: use session-based key instead of the freaking name as key
+      const optionalExtensions = state.session.extensions.optional[gameExtension.name];
+      if (!optionalExtensions || optionalExtensions.length === 0) return;
 
-      const requiredIds: string[] = [];
-      const loadedExts = context.api.getLoadedExtensions();
-      for (const opt of state.session.extensions.optional[gameExtId]) {
-        const installed =
-          extState[opt.id] !== undefined ||
-          loadedExts.some(
-            (le) => le.info?.name === opt.id || le.info?.id === opt.id || le.name === opt.id,
-          );
-        if (!installed) {
-          requiredIds.push(opt.id);
-        }
-      }
+      const missingExtensions = getMissingOptionalExtensions(optionalExtensions, loadedExtensions);
+      if (missingExtensions.length === 0) return;
 
-      if (requiredIds.length > 0) {
-        const t = context.api.translate;
-        context.api.sendNotification({
-          id: `missing-optional-extensions-${gameExtId}`,
-          type: "warning",
-          message: "Missing Optional Extension/s",
-          allowSuppress: true,
-          actions: [
-            {
-              title: "More",
-              action: (dismiss) => {
-                context.api.showDialog(
-                  "question",
-                  "Missing Optional Extension/s",
+      const t = context.api.translate;
+      context.api.sendNotification({
+        id: `missing-optional-extensions-${gameExtension.name}`,
+        type: "warning",
+        message: "Missing Optional Extension/s",
+        allowSuppress: true,
+        actions: [
+          {
+            title: "More",
+            action: (dismiss) => {
+              context.api.showDialog(
+                "question",
+                "Missing Optional Extension/s",
+                {
+                  bbcode: t(
+                    'Some optional extensions for "{{game}}" are missing.[br][/br][br][/br]' +
+                      "Do you want to install them now?",
+                    { replace: { game: game.name } },
+                  ),
+                  message: `Missing extensions:\n\n${missingExtensions.map((entry) => `- ${entry.id}\n`).join("")}`,
+                },
+                [
+                  { label: "Cancel", action: () => dismiss() },
                   {
-                    bbcode: t(
-                      'Some optional extensions for "{{game}}" are missing.[br][/br][br][/br]' +
-                        "Do you want to install them now?",
-                      { replace: { game: game.name } },
-                    ),
-                    message: `Missing extensions:\n\n${requiredIds.map((id) => `- ${id}\n`).join("")}`,
-                  },
-                  [
-                    { label: "Cancel", action: () => dismiss() },
-                    {
-                      label: "Install",
-                      action: () => {
-                        dismiss();
-                        const promises = requiredIds.map((id) =>
-                          installDependency(context.api, id),
-                        );
-                        void Promise.all(promises);
-                      },
+                    label: "Install",
+                    action: () => {
+                      dismiss();
+                      const promises = missingExtensions.map((entry) =>
+                        installDependency(context.api, entry.id),
+                      );
+                      void Promise.all(promises);
                     },
-                  ],
-                );
-              },
+                  },
+                ],
+              );
             },
-            {
-              title: "Install Extension/s",
-              action: () => {
-                const promises = requiredIds.map((id) => installDependency(context.api, id));
-                void Promise.all(promises);
-              },
+          },
+          {
+            title: "Install Extension/s",
+            action: () => {
+              const promises = missingExtensions.map((entry) =>
+                installDependency(context.api, entry.id),
+              );
+              void Promise.all(promises);
             },
-          ],
-        });
-      }
+          },
+        ],
+      });
     });
 
     context.api.onAsync<boolean>("install-extension-from-download", async (archiveId: string) => {

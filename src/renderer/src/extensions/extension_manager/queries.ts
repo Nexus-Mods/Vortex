@@ -65,24 +65,12 @@ export function findPreviousVersions(
     .map(([key, extension]) => ({ key, extension }));
 }
 
-/** Get optional dependencies of an extension. */
-export function getOptionalExtensions(
-  optionalExtensions: Record<string, IExtensionOptional[]>,
-  gameExtension: IExtensionState,
-): IExtensionOptional[] {
-  // NOTE(erri120): ExtensionManager creates a map with the extension name as the key...
-  // TODO: use a generated session-based key instead of the extension name
-  return optionalExtensions[gameExtension.name] ?? [];
-}
-
 /** Get missing optional dependencies of an extension. */
 export function getMissingOptionalExtensions(
-  optionalExtensions: Record<string, IExtensionOptional[]>,
-  gameExtension: IExtensionState,
+  optionalExtensions: IExtensionOptional[],
   loadedExtensions: IRegisteredExtension[],
 ): IExtensionOptional[] {
-  const optionals = getOptionalExtensions(optionalExtensions, gameExtension);
-  return optionals.filter(
+  return optionalExtensions.filter(
     (optional) =>
       !loadedExtensions.some(
         (loadedExtension) =>
