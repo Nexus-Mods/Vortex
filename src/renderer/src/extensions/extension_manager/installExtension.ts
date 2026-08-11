@@ -27,6 +27,7 @@ import {
 } from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
 import { findDependencyInCatalog, findPreviousVersions, isAlreadyInstalled } from "./queries";
+import _sessionReducer from "./reducers";
 import { readExtensionInfo } from "./util";
 
 class ContextProxyHandler implements ProxyHandler<any> {
