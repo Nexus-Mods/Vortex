@@ -215,13 +215,13 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
             brand="neutral"
             disabled={true}
             leftIconPath={!isLoggedIn ? undefined : mdiCheck}
-            size="xs"
+            size="sm"
             title={!isLoggedIn ? "Log in to add collections" : undefined}
           >
             {!isLoggedIn ? "Log in to add" : "Added"}
           </Button>
         ) : (
-          <Button size="xs" onClick={addCollection}>
+          <Button size="sm" onClick={addCollection}>
             Add collection
           </Button>
         )}
@@ -230,7 +230,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
           appearance="weak"
           brand="neutral"
           leftIconPath={mdiOpenInNew}
-          size="xs"
+          size="sm"
           onClick={onViewPage}
         >
           View page

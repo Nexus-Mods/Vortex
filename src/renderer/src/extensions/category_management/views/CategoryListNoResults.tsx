@@ -26,23 +26,11 @@ const CustomNoCategoryResults = ({
         {!!searchTerm && t(`No categories matching "{{searchTerm}}"`, { searchTerm })}
       </Typography>
 
-      <Button
-        appearance="subdued"
-        brand="neutral"
-        leftIconPath={mdiFolderPlus}
-        size="sm"
-        onClick={create}
-      >
+      <Button appearance="subdued" brand="neutral" leftIconPath={mdiFolderPlus} onClick={create}>
         {t("Create Category")}
       </Button>
 
-      <Button
-        appearance="subdued"
-        brand="neutral"
-        leftIconPath={mdiUpdate}
-        size="sm"
-        onClick={fetch}
-      >
+      <Button appearance="subdued" brand="neutral" leftIconPath={mdiUpdate} onClick={fetch}>
         {t("Sync with Nexus Mods")}
       </Button>
     </div>

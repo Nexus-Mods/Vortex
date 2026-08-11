@@ -263,7 +263,6 @@ export const TooltipDemo = () => (
               aria-label={action.label}
               brand="neutral"
               leftIconPath={action.iconPath}
-              size="sm"
             />
           </Tooltip>
         ))}
@@ -277,7 +276,6 @@ export const TooltipDemo = () => (
               aria-label={action.label}
               brand="neutral"
               leftIconPath={action.iconPath}
-              size="sm"
             />
           </Tooltip>
         ))}

@@ -79,7 +79,7 @@ export const Alert = ({
           brand="neutral"
           className="nxm-alert-dismiss"
           leftIconPath={mdiClose}
-          size="xs"
+          size="sm"
           onClick={dismiss}
         />
       )}

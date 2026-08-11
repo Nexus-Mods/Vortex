@@ -104,7 +104,7 @@ import { Button } from "../../ui/components/button/Button";
 <Button>Click Me</Button>
 
 // Only override what differs from the default
-<Button size="xs">Small</Button>
+<Button size="sm">Small</Button>
 <Button brand="neutral" appearance="subdued">Outlined</Button>
 <Button brand="neutral" appearance="weak">Quiet</Button>
 <Button brand="success">Saved</Button>
@@ -122,7 +122,7 @@ import { mdiDownload } from "@mdi/js";
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`
 **Appearances:** `strong` (solid fill), `moderate` (subtle surface), `subdued` (outline), `weak` (text only)
-**Sizes:** `xs`, `sm`, `md`
+**Sizes:** `sm` (24px), `md` (28px, default), `lg` (36px)
 
 A button with no `children`/`customContent` but an icon renders icon-only (square). Every brand supports every appearance; `success`/`premium` derive their full ramps to match. `appearance` defaults to `strong` so a bare `<Button>` is a solid primary button.
 

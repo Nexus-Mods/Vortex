@@ -29,7 +29,7 @@ export const DisplayOptions = ({
       <Picker<"list" | "small" | "large">
         button={{
           leftIconPath: pickerLayout === "list" ? mdiViewList : mdiViewGrid,
-          size: "xs",
+          size: "sm",
         }}
         options={[
           { label: t("Grid"), value: "small", iconPath: mdiViewGrid },

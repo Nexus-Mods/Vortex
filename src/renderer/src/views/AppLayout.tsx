@@ -31,7 +31,6 @@ const LayoutSwitcher = () => {
       brand="primary"
       className="fixed right-4 bottom-4 z-toast"
       leftIconPath={useModernLayout ? mdiMonitor : mdiMonitorShimmer}
-      size="sm"
       title={useModernLayout ? "Switch to Classic" : "Switch to Modern"}
       onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
     />

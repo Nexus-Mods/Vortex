@@ -71,7 +71,6 @@ export const ListingDemo = () => {
             brand="neutral"
             appearance="subdued"
             {...(isLoading ? { appearance: "strong" } : {})}
-            size="sm"
             onClick={() => {
               setIsLoading(!isLoading);
               setIsError(false);
@@ -84,7 +83,6 @@ export const ListingDemo = () => {
             brand="neutral"
             appearance="subdued"
             {...(isError ? { appearance: "strong" } : {})}
-            size="sm"
             onClick={() => {
               setIsError(!isError);
               setIsLoading(false);
@@ -97,7 +95,6 @@ export const ListingDemo = () => {
             brand="neutral"
             appearance="subdued"
             {...(isEmpty ? { appearance: "strong" } : {})}
-            size="sm"
             onClick={() => {
               setIsEmpty(!isEmpty);
               setIsError(false);
@@ -187,7 +184,7 @@ export const ListingDemo = () => {
                   No mods installed yet
                 </Typography>
 
-                <Button brand="neutral" appearance="subdued" size="sm">
+                <Button brand="neutral" appearance="subdued">
                   Browse mods
                 </Button>
               </div>

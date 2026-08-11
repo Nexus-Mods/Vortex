@@ -54,9 +54,11 @@ export function computeStateDiff<T>(
         // was stored as a JSON blob at the intermediate path (non-plain
         // objects, e.g. Date or Error instances, take that branch in
         // collectSetOperations and end up as one row at currentPath).
-        // For object subtrees, also emit leaf removes as a fallback for
-        // exact-match persistors (tests, mocks). For primitives the
-        // container-path remove already covers it.
+        // For object subtrees, also emit leaf removes: exact-match persistors
+        // (tests, mocks) need them, and so does persistDiffMiddleware's
+        // per-path coalescing - a later set to the container path supersedes
+        // this remove in the pending queue, leaving the leaf removes to clear
+        // the old rows. For primitives the container-path remove covers it.
         operations.push({ type: "remove", path: currentPath });
         if (isObject(oldState[key])) {
           operations.push(...collectRemoveOperations(currentPath, oldState[key]));
@@ -90,8 +92,7 @@ export function computeStateDiff<T>(
     } else {
       // Value was removed. Always emit a remove at this path (see the
       // object-key removal branch above for why the container-path remove
-      // matters under prefix-delete). For object subtrees, also emit the
-      // leaf removes as a fallback for exact-match persistors.
+      // matters under prefix-delete and why the leaf removes are required).
       operations.push({ type: "remove", path });
       if (isObject(oldState)) {
         operations.push(...collectRemoveOperations(path, oldState));
