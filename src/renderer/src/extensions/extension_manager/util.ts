@@ -356,17 +356,6 @@ async function downloadFromNexus(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
 ): Promise<string[]> {
-  // TODO: remove this check, download info should always carry fileId and modId at this point
-  if (ext.fileId === undefined && ext.modId !== undefined) {
-    const state = api.getState();
-    const available = findInCatalog(state.session.extensions.available, { modId: ext.modId });
-    if (available !== undefined) {
-      ext.fileId = available.fileId;
-    } else {
-      throw new Error("unavailable nexus extension");
-    }
-  }
-
   log("debug", "download from nexus", archiveFileName(ext));
   return await api.emitAndAwait<"nexus-download">(
     "nexus-download",

@@ -42,6 +42,8 @@ function makeAvailableExtension(overrides: Partial<IAvailableExtension> = {}): I
     endorsements: 0,
     timestamp: 0,
     tags: [],
+    modId: 0,
+    fileId: 0,
     ...overrides,
   };
 }

@@ -15,6 +15,8 @@ function makeExtension(overrides: Partial<IAvailableExtension> = {}): IAvailable
     endorsements: 0,
     timestamp: 0,
     tags: [],
+    modId: 0,
+    fileId: 0,
     ...overrides,
   };
 }
@@ -26,24 +28,28 @@ describe("filterInstallableExtensions", () => {
   });
 
   it("drops extensions missing modId", () => {
-    const extensions = [makeExtension({ fileId: 2 })];
+    const extensions = [makeExtension({ modId: undefined, fileId: 2 })];
     expect(filterInstallableExtensions(extensions)).toEqual([]);
   });
 
   it("drops extensions missing fileId", () => {
-    const extensions = [makeExtension({ modId: 1 })];
+    const extensions = [makeExtension({ modId: 1, fileId: undefined })];
     expect(filterInstallableExtensions(extensions)).toEqual([]);
   });
 
   it("drops legacy GitHub-hosted entries lacking both modId and fileId", () => {
-    const extensions = [makeExtension({})];
+    const extensions = [makeExtension({ modId: undefined, fileId: undefined })];
     expect(filterInstallableExtensions(extensions)).toEqual([]);
   });
 
   it("keeps only the qualifying entries out of a mixed list", () => {
     const nexusExt = makeExtension({ name: "Nexus Extension", modId: 1, fileId: 2 });
-    const githubExt = makeExtension({ name: "GitHub Extension" });
-    const partialExt = makeExtension({ name: "Partial Extension", modId: 3 });
+    const githubExt = makeExtension({
+      name: "GitHub Extension",
+      modId: undefined,
+      fileId: undefined,
+    });
+    const partialExt = makeExtension({ name: "Partial Extension", modId: 3, fileId: undefined });
 
     expect(filterInstallableExtensions([nexusExt, githubExt, partialExt])).toEqual([nexusExt]);
   });

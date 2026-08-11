@@ -64,15 +64,18 @@ export type IExtensionWithState = IExtensionState & {
 
 export interface IExtensionDownloadInfo {
   name: string;
-  modId?: number;
-  fileId?: number;
+  modId: number;
+  fileId: number;
   type?: ExtensionType;
 }
 
 /**
  * information about an extension available on the central extension list
  */
-export interface IAvailableExtension extends IExtensionDownloadInfo {
+export interface IAvailableExtension {
+  name: string;
+  modId: number;
+  fileId: number;
   description: {
     short: string;
     long: string;
