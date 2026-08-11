@@ -140,11 +140,17 @@ jobs:
           # "node-7-upgrade" branch). Linear ignores nonexistent keys either
           # way — the split only keeps the summary readable, so if the query
           # fails all candidates are shown linked, unsplit.
-          team_keys=$(curl -sf --max-time 15 https://api.linear.app/graphql \
-            -H "Authorization: $LINEAR_ACCESS_KEY" \
-            -H "Content-Type: application/json" \
-            --data '{"query":"{ teams(first: 250) { nodes { key } } }"}' \
-            | jq -r '[.data.teams.nodes[].key] | join("|")' 2>/dev/null) || team_keys=''
+          fetch_teams() {
+            curl -sf --max-time 15 https://api.linear.app/graphql \
+              -H "Authorization: $1" \
+              -H "Content-Type: application/json" \
+              --data '{"query":"{ teams(first: 250) { nodes { key } } }"}' \
+              | jq -r '[.data.teams.nodes[].key] | join("|")' 2>/dev/null
+          }
+          team_keys=$(fetch_teams "$LINEAR_ACCESS_KEY" || true)
+          if [ -z "$team_keys" ]; then
+            team_keys=$(fetch_teams "Bearer $LINEAR_ACCESS_KEY" || true)
+          fi
           echo "Linear team keys: ${team_keys:-<fetch failed, summary will be unsplit>}"
           range="$BASE..refs/tags/$TAG"
           candidates=$(git log "$range" --format='%s' \
