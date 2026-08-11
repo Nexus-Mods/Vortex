@@ -21,6 +21,7 @@ import BrowseExtensions from "./BrowseExtensions";
 import type { IBrowseExtensionsProps } from "./BrowseExtensions";
 import { ExtensionManager } from "./ExtensionManager";
 import type { IExtensionManagerProps } from "./ExtensionManager";
+import { findDependencyInCatalog, findUpdatableExtensions } from "./queries";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
 
@@ -45,63 +46,19 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   const { available } = state.session.extensions;
   const installed = state.app.extensions ?? {};
 
-  const updateable = Object.values(installed).reduce<
-    { current: IExtensionState; update: IAvailableExtension }[]
-  >((prev, ext) => {
-    const update = available.find((iter) => isExtSame(ext, iter));
-
-    if (update === undefined || update.version === undefined) {
-      // as of Vortex 1.8 we expect to find all extension, including the bundled ones, in the
-      // list of available extensions
-      if (ext.modId !== undefined) {
-        log("warn", "extension not available", { ext: JSON.stringify(ext) });
-      }
-      return prev;
-    }
-
-    const extVer = semver.coerce(ext.version);
-    const updateVer = semver.coerce(update.version);
-
-    if (extVer === null || updateVer === null) {
-      log("warn", "invalid version on extension", {
-        local: ext.version,
-        update: update.version,
-      });
-      return prev;
-    }
-
-    if (semver.gte(extVer, updateVer)) {
-      return prev;
-    }
-
-    prev.push({ current: ext, update });
-
-    return prev;
-  }, []);
-
+  const updateable: Array<{ installed?: IExtensionState; available: IAvailableExtension }> =
+    findUpdatableExtensions(installed, available);
   let forceRestart: boolean = false;
 
   const { commandLine } = state.session.base;
   if (commandLine.installExtension !== undefined) {
     const request = parseInstallCmdLine(commandLine.installExtension);
-    const update = available.find(
-      (ext) => request.modId !== undefined && ext.modId === request.modId,
-    );
+    const update = available.find((ext) => ext.modId === request.modId);
 
     if (update !== undefined) {
       forceRestart = true;
       updateable.push({
-        current: {
-          enabled: true,
-          version: "",
-          remove: false,
-          endorsed: "Undecided",
-          name: update.name,
-          author: update.author,
-          description: update.description.short,
-          path: "",
-        },
-        update,
+        available: update,
       });
     }
   }
@@ -116,14 +73,13 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   });
 
   log("info", "extensions will be updated", {
-    updateable: updateable.map(
-      (ext) =>
-        `${ext.current.name} v${ext.current.version} ` +
-        `-> ${ext.update.name} v${ext.update.version}`,
-    ),
+    updateable: updateable.map(({ installed, available }) => {
+      const prefix = installed ? `${installed.name} v${installed.version} ` : "";
+      return prefix + `${available.name} v${available.version}`;
+    }),
   });
 
-  const promises = updateable.map((update) => downloadAndInstallExtension(api, update.update));
+  const promises = updateable.map(({ available }) => downloadAndInstallExtension(api, available));
   const success = await Promise.all(promises);
 
   api.dismissNotification("extension-updates");
