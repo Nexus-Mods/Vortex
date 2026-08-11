@@ -11,6 +11,9 @@ import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 
 type PickerLayout = "list" | "small" | "large";
 
+/** As the gameMode settings reducer has it, and what `onReset` returns to. */
+export const DEFAULT_PICKER_LAYOUT: PickerLayout = "small";
+
 interface IDisplayOptionsProps {
   t: TFunction;
   pickerLayout: PickerLayout;
@@ -30,6 +33,7 @@ export const useDisplayOptionsAction = ({
   onReset,
 }: IDisplayOptionsProps): IToolbarAction =>
   useDisplayOptionsPanelAction({
+    canReset: pickerLayout !== DEFAULT_PICKER_LAYOUT || showHidden,
     children: (
       <>
         <PopoverPanelGroup>

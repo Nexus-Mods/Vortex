@@ -30,7 +30,10 @@ import { GamesGrid } from "../components/GamesGrid";
 import { GamesList } from "../components/GamesList";
 import { NoGamesFound } from "../components/NoGamesFound";
 import { Search } from "../components/search/Search";
-import { useDisplayOptionsAction } from "../hooks/useDisplayOptionsAction.hook";
+import {
+  DEFAULT_PICKER_LAYOUT,
+  useDisplayOptionsAction,
+} from "../hooks/useDisplayOptionsAction.hook";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 
@@ -287,7 +290,7 @@ const GamePicker = ({
     showHidden,
     t,
     onReset: () => {
-      onSetPickerLayout("small");
+      onSetPickerLayout(DEFAULT_PICKER_LAYOUT);
       onSetSortManaged("alphabetical");
       onSetSortUnmanaged("popular");
       setShowHidden(false);

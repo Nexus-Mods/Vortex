@@ -69,6 +69,9 @@ export const ToolbarDemo = () => {
   const [showHidden, setShowHidden] = useState(false);
 
   const displayOptions = useDisplayOptionsAction({
+    // Hidden items are off by default, so toggling the switch is what there is to
+    // undo — the reset group appears with it.
+    canReset: showHidden,
     children: (
       <PopoverPanelGroup>
         <PopoverPanelGroupItem label="Show hidden items">

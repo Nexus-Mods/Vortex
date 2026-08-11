@@ -16,18 +16,23 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
  * rendered — the button in the row, or the action's row in the overflow menu —
  * so the rows never have to know where they were opened from.
  *
- * Every panel ends in a reset link, so there is always a way back to the
- * defaults; `onReset` restores them and the panel closes itself.
+ * The panel ends in a reset link whenever `canReset` says something has been
+ * changed from its default; `onReset` restores them and the panel closes itself.
+ * Nothing to undo means no link, rather than one that would do nothing — and
+ * because a group states its own separator, the last settings group stops drawing
+ * a rule as soon as the reset group goes away.
  *
  * The trigger and reset labels default to "Display options" and "Reset to
  * default"; pass them only to say something else.
  */
 export const useDisplayOptionsAction = ({
+  canReset,
   children,
   label,
   resetLabel,
   onReset,
 }: {
+  canReset: boolean;
   children: ReactNode;
   label?: string;
   resetLabel?: string;
@@ -42,21 +47,23 @@ export const useDisplayOptionsAction = ({
       <>
         {children}
 
-        <PopoverPanelGroup>
-          <PopoverPanelGroupItem className="justify-end">
-            <TypographyLink
-              brand="info"
-              typographyType="body-sm"
-              variant="secondary"
-              onClick={() => {
-                onReset();
-                close();
-              }}
-            >
-              {resetLabel ?? t("Reset to default")}
-            </TypographyLink>
-          </PopoverPanelGroupItem>
-        </PopoverPanelGroup>
+        {canReset && (
+          <PopoverPanelGroup className="py-3">
+            <PopoverPanelGroupItem className="h-auto justify-end">
+              <TypographyLink
+                brand="info"
+                typographyType="body-sm"
+                variant="secondary"
+                onClick={() => {
+                  onReset();
+                  close();
+                }}
+              >
+                {resetLabel ?? t("Reset to default")}
+              </TypographyLink>
+            </PopoverPanelGroupItem>
+          </PopoverPanelGroup>
+        )}
       </>
     ),
   };

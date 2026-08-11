@@ -484,7 +484,7 @@ Pass `dismiss` as the submenu's `onSelect`, not `close`: choosing a row there en
 
 ### DisplayOptions
 
-The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `PopoverPanelGroup` and `PopoverPanelGroupItem` (see [Popover](#popover)). Every panel ends in a reset link: `onReset` puts the defaults back and the panel closes itself.
+The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `PopoverPanelGroup` and `PopoverPanelGroupItem` (see [Popover](#popover)). The panel ends in a reset link whenever `canReset` says something has been changed from its default: `onReset` puts the defaults back and the panel closes itself.
 
 ```tsx
 import { PopoverPanelGroup } from "../../ui/components/popover/PopoverPanelGroup";
@@ -492,6 +492,7 @@ import { PopoverPanelGroupItem } from "../../ui/components/popover/PopoverPanelG
 import { useDisplayOptionsAction } from "../../ui/components/display_options/useDisplayOptionsAction.hook";
 
 const displayOptions = useDisplayOptionsAction({
+    canReset: showHidden,
     children: (
         <PopoverPanelGroup>
             <PopoverPanelGroupItem label={t("Show hidden items")}>
@@ -507,7 +508,9 @@ const displayOptions = useDisplayOptionsAction({
 </Toolbar>;
 ```
 
-**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. The hook appends the reset link as a final group of its own, so `children` should be the setting groups only.
+**Props:** `canReset`, `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. The hook appends the reset link as a final group of its own, so `children` should be the setting groups only.
+
+`canReset` is the caller's to compute, because only it knows what its defaults are — compare each setting the panel shows against the value `onReset` returns it to, and keep the two in step by naming that value once. Nothing to undo means no link, rather than one that would do nothing; because a group states its own separator, the last settings group stops drawing a rule as soon as the reset group goes away.
 
 The toolbar owns the trigger and anchors the panel: under the button while the action is in the row, beside its row once the action has collapsed into the overflow menu. See [Toolbar](#toolbar) for panel actions in general.
 

@@ -89,8 +89,9 @@ export const PopoverDemo = () => {
 
         <Typography appearance="subdued" typographyType="body-sm">
           A trigger button that opens a panel of settings, composed from PopoverPanelGroup rows. The
-          panel stays open while you change the picker or toggle the switch. Each group states its
-          own separator, so the trailing reset row can&apos;t leave a dangling rule.
+          panel stays open while you change the picker or toggle the switch. Change either and a
+          reset group appears — because each group states its own separator, the rule above it
+          arrives with it and the panel never ends on one.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
@@ -122,21 +123,23 @@ export const PopoverDemo = () => {
                 </PopoverPanelGroupItem>
               </PopoverPanelGroup>
 
-              <PopoverPanelGroup>
-                <PopoverPanelGroupItem className="justify-end">
-                  <Button
-                    appearance="subdued"
-                    brand="primary"
-                    type="button"
-                    onClick={() => {
-                      setLayout("grid");
-                      setShowHidden(false);
-                    }}
-                  >
-                    Reset to default
-                  </Button>
-                </PopoverPanelGroupItem>
-              </PopoverPanelGroup>
+              {(layout !== "grid" || showHidden) && (
+                <PopoverPanelGroup>
+                  <PopoverPanelGroupItem className="justify-end">
+                    <Button
+                      appearance="subdued"
+                      brand="primary"
+                      type="button"
+                      onClick={() => {
+                        setLayout("grid");
+                        setShowHidden(false);
+                      }}
+                    >
+                      Reset to default
+                    </Button>
+                  </PopoverPanelGroupItem>
+                </PopoverPanelGroup>
+              )}
             </PopoverPanel>
           </Popover>
         </div>

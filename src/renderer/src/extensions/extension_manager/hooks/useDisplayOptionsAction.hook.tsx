@@ -22,6 +22,7 @@ export const useDisplayOptionsAction = ({
   onReset,
 }: IDisplayOptionsProps): IToolbarAction =>
   useDisplayOptionsPanelAction({
+    canReset: showBundled,
     children: (
       <PopoverPanelGroup>
         <PopoverPanelGroupItem label={t("Show bundled extensions")}>

@@ -22,7 +22,7 @@
     }
 
     .nxm-popover-panel-group {
-        padding-block: calc(var(--spacing) * 1);
+        padding-block: calc(var(--spacing) * 2);
 
         &:not(:last-child) {
             border-bottom: solid 1px var(--color-stroke-weak);
