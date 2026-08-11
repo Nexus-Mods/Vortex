@@ -145,6 +145,7 @@ jobs:
             -H "Content-Type: application/json" \
             --data '{"query":"{ teams(first: 250) { nodes { key } } }"}' \
             | jq -r '[.data.teams.nodes[].key] | join("|")' 2>/dev/null) || team_keys=''
+          echo "Linear team keys: ${team_keys:-<fetch failed, summary will be unsplit>}"
           range="$BASE..refs/tags/$TAG"
           candidates=$(git log "$range" --format='%s' \
             | grep -ioE '\b[a-z]{2,}-[0-9]+\b' | tr 'a-z' 'A-Z' \
