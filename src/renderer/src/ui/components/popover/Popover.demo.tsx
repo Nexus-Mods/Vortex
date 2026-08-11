@@ -1,9 +1,19 @@
 /**
  * Popover Demo Component
- * Demonstrates the Popover component and a settings-panel use case
+ * Demonstrates the Popover component, a settings-panel use case, and a menu with a
+ * nested submenu
  */
 
-import { mdiTune, mdiViewGrid, mdiViewList } from "@mdi/js";
+import {
+  mdiAccountCircle,
+  mdiHelpCircleOutline,
+  mdiInformationOutline,
+  mdiLogout,
+  mdiRefresh,
+  mdiTune,
+  mdiViewGrid,
+  mdiViewList,
+} from "@mdi/js";
 import React, { useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
@@ -14,12 +24,42 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import { Popover } from "./Popover";
 import { PopoverButton } from "./PopoverButton";
+import { PopoverMenu } from "./PopoverMenu";
+import type { IMenuAction } from "./PopoverMenuItem";
 import { PopoverPanel } from "./PopoverPanel";
 
 const layoutOptions = [
   { label: "Grid", value: "grid", iconPath: mdiViewGrid },
   { label: "List", value: "list", iconPath: mdiViewList },
 ] satisfies IListboxOption<string>[];
+
+const helpActions: IMenuAction[][] = [
+  [
+    { label: "Help centre", iconPath: mdiHelpCircleOutline, onClick: () => {} },
+    { label: "About", iconPath: mdiInformationOutline, onClick: () => {} },
+  ],
+];
+
+/**
+ * The submenu row passes `dismiss` rather than `close` as its menu's `onSelect`:
+ * choosing a help destination ends the interaction, so the account menu it was
+ * opened from goes away with it.
+ */
+const accountActions: IMenuAction[][] = [
+  [{ label: "View profile on web", iconPath: mdiAccountCircle, onClick: () => {} }],
+  [
+    { label: "Refresh user info", iconPath: mdiRefresh, onClick: () => {} },
+    {
+      label: "Help",
+      iconPath: mdiHelpCircleOutline,
+      panelRole: "menu",
+      panel: ({ close, dismiss }) => (
+        <PopoverMenu actions={helpActions} label="Help" onClose={close} onSelect={dismiss} />
+      ),
+    },
+  ],
+  [{ label: "Logout", iconPath: mdiLogout, onClick: () => {} }],
+];
 
 export const PopoverDemo = () => {
   const [layout, setLayout] = useState("grid");
@@ -103,6 +143,31 @@ export const PopoverDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
+          Menu with a nested submenu
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          A PopoverMenu of actions in groups, where one row opens a submenu beside it — the parent
+          stays open behind it, which a Dropdown could not do. Arrow keys rove the whole menu across
+          group rules, → opens the submenu, ← and Escape back out of it. Choosing a row in the
+          submenu puts both away.
+        </Typography>
+
+        <div className="flex flex-wrap gap-4">
+          <Popover>
+            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiAccountCircle} />
+
+            <PopoverPanel className="nxm-popover-panel-dropdown">
+              {({ close }) => (
+                <PopoverMenu actions={accountActions} label="Account" onSelect={close} />
+              )}
+            </PopoverPanel>
+          </Popover>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
           Design Notes
         </Typography>
 
@@ -114,6 +179,11 @@ export const PopoverDemo = () => {
           <li>Closes on an outside click or Escape; positioned manually until Headless UI v2</li>
 
           <li>Use Dropdown instead when the items are one-shot actions rather than controls</li>
+
+          <li>
+            Use PopoverMenu for a menu whose rows open surfaces of their own; a Dropdown&apos;s Menu
+            closes as soon as focus reaches one
+          </li>
         </Typography>
       </div>
     </div>

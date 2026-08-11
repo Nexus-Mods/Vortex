@@ -1,40 +1,29 @@
-import React, { type HTMLAttributes, type ReactNode } from "react";
+import React, { type HTMLAttributes } from "react";
 
 import type { IButtonBrand } from "@/ui/components/button/Button";
+import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/PopoverMenuItem";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import type { XOr } from "@/ui/utils/types";
 
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarOverflow } from "./ToolbarOverflow";
 import { ToolbarPanelButton } from "./ToolbarPanelButton";
 import { TOOLBAR_CONTROL_ATTRIBUTE, useToolbarOverflow } from "./useToolbarOverflow.hook";
 
-interface IToolbarActionBase {
-  label: string;
-  iconPath?: string;
-  disabled?: boolean;
+export type IToolbarPanel = IPopoverPanel;
+
+/**
+ * One toolbar control: a menu action, plus what only a toolbar can say about it —
+ * how it's coloured, whether its label shows as text, and whether the row may
+ * collapse it into the overflow. Activating it either runs `onClick` or opens
+ * `panel`; activation has a single meaning, so the two are mutually exclusive.
+ */
+export type IToolbarAction = IMenuAction & {
   brand?: IButtonBrand;
   showLabel?: boolean;
   testId?: string;
-  isLoading?: boolean;
   pinned?: boolean;
-}
-
-/**
- * The contents of the floating panel an action opens. The group anchors it to
- * whichever control it rendered for that action — a toolbar button, or its row in
- * the overflow menu — so the panel doesn't have to know where it was opened from.
- * `close` dismisses it.
- */
-export type IToolbarPanel = (props: { close: () => void }) => ReactNode;
-
-/**
- * One toolbar control. Activating it either runs `onClick` or opens `panel`;
- * activation has a single meaning, so the two are mutually exclusive.
- */
-export type IToolbarAction = IToolbarActionBase &
-  XOr<{ onClick?: () => void }, { panel?: IToolbarPanel }>;
+};
 
 type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   actions: IToolbarAction[];

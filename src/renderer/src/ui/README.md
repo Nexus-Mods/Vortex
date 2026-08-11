@@ -29,7 +29,7 @@ ui/
 │   ├── pagination/      - Pagination controls with jump-to-page
 │   ├── picker/          - Single-value selector (Headless UI Listbox)
 │   ├── pill/            - Compact rounded label for tags and statuses
-│   ├── popover/         - Floating panel of interactive content (Headless UI Popover)
+│   ├── popover/         - Floating panel of interactive content, or a menu of actions (Headless UI Popover)
 │   ├── premium_badge/   - Premium diamond badge
 │   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
@@ -273,7 +273,7 @@ const actions: IToolbarAction[] = [
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
 
-**`panel`** makes an action open a floating surface instead of running a callback; it's the alternative to `onClick`, and the two are mutually exclusive. Pass a function of `{ close }` returning the panel's contents — the group anchors it to whichever control it rendered, so the panel never has to know where it was opened from: under the button while the action is in the row, beside its row once it has collapsed into the overflow. `DisplayOptions` is built on this.
+**`panel`** makes an action open a floating surface instead of running a callback; it's the alternative to `onClick`, and the two are mutually exclusive. Pass a function of `{ close, dismiss }` returning the panel's contents — the group anchors it to whichever control it rendered, so the panel never has to know where it was opened from: under the button while the action is in the row, beside its row once it has collapsed into the overflow. `DisplayOptions` is built on this.
 
 ```tsx
 const actions: IToolbarAction[] = [
@@ -286,7 +286,9 @@ const actions: IToolbarAction[] = [
 ];
 ```
 
-The overflow menu is a `Popover` rather than a `Menu` precisely so a panel can open from inside it: a `Menu` closes the moment focus reaches a surface nested within it. It still presents as a menu — menu roles, focus on open, arrow-key navigation, `→` to open a panel from its row, `Escape` to close the innermost surface.
+`close` dismisses the panel; `dismiss` also dismisses whatever it was opened from, which only differs once the action has collapsed into the overflow. Reach for it when the panel's control ends the interaction rather than adjusting something — picking a destination should put the menu away too, where toggling a setting should leave it standing.
+
+The overflow menu is a [`PopoverMenu`](#popovermenu) rather than a `Menu` precisely so a panel can open from inside it: a `Menu` closes the moment focus reaches a surface nested within it. It still presents as a menu — menu roles, focus on open, arrow-key navigation, `→` to open a panel from its row, `Escape` to close the innermost surface.
 
 **`pinned`** keeps an action out of the overflow menu, wherever it sits in the list — the unpinned actions then share whatever width is left, still collapsing from the end. The row keeps the order you gave it, so a pin holds its place rather than jumping to the front as its neighbours collapse.
 
@@ -408,7 +410,7 @@ import { DropdownDivider } from "../../ui/components/dropdown/DropdownDivider";
 
 ### Popover
 
-A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content.
+A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content. For a panel holding a menu of actions rather than controls, see [`PopoverMenu`](#popovermenu).
 
 ```tsx
 import { Popover } from "../../ui/components/popover/Popover";
@@ -442,6 +444,43 @@ For a panel of settings rather than free-form content, fill it with `PopoverPane
     </PopoverPanelGroup>
 </PopoverPanel>
 ```
+
+### PopoverMenu
+
+A menu of actions filling a `PopoverPanel`. Use it over [`Dropdown`](#dropdown) when a row has to open a surface of its own — a submenu, or a panel of settings. A `Dropdown` is a Headless UI `Menu`, and a `Menu` closes the moment focus reaches anything nested inside it; a `Popover` registers a child's portal as part of itself, so reaching into it doesn't read as leaving. What `Menu` would have given for free is supplied instead: the menu roles, focus on open, and arrow-key navigation.
+
+Rows are `IMenuAction`s — the same shape as an `IToolbarAction` minus the toolbar's own layout concerns, so an action can be handed to either. Actions arrive as **groups**, separated by a rule; an empty group is dropped rather than drawn, so a conditional group can go in as-is without leaving a rule with nothing under it.
+
+```tsx
+<PopoverPanel className="nxm-popover-panel-dropdown">
+    {({ close }) => (
+        <PopoverMenu
+            actions={[extensionActions, [helpCentre, viewLogs, about]]}
+            label={t("Help")}
+            onSelect={close}
+        />
+    )}
+</PopoverPanel>
+```
+
+**Props:** `actions` and `label` (the menu's accessible name) are required, as is `onSelect` — a row was activated, so put the menu away. `onClose` is only for a menu nested inside another: it closes this one and hands focus back to the row that opened it, the counterpart to `→`.
+
+Give the panel `nxm-popover-panel-dropdown`. The base panel is sized for label-and-control rows and carries no block padding, which a list of rows needs.
+
+**For a submenu**, give the row `panelRole: "menu"` alongside its `panel` — that's what tells the control it's advertising a menu rather than a settings surface, and sizes the panel to match. Nesting is a row's `panel` rendering another `PopoverMenu`; depth beyond two levels isn't exercised anywhere.
+
+```tsx
+const helpAction: IMenuAction = {
+    label: t("Help"),
+    iconPath: mdiHelpCircleOutline,
+    panelRole: "menu",
+    panel: ({ close, dismiss }) => (
+        <PopoverMenu actions={helpRows} label={t("Help")} onClose={close} onSelect={dismiss} />
+    ),
+};
+```
+
+Pass `dismiss` as the submenu's `onSelect`, not `close`: choosing a row there ends the interaction, so the menu it was opened from should go with it. Rows are focused as one flat list across group boundaries, so arrowing runs through the whole menu rather than stopping at a rule.
 
 ### DisplayOptions
 

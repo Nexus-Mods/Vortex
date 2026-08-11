@@ -25,8 +25,8 @@ export const ToolbarPanelButton = ({ panel, ...props }: IToolbarPanelButtonProps
       <>
         <ToolbarButton {...props} as={PopoverButton} tooltipDisabled={open} />
 
-        <PopoverPanel className="nxm-popover-panel-dropdown">
-          {({ close }) => <>{panel({ close })}</>}
+        <PopoverPanel className="nxm-popover-panel-controls">
+          {({ close }) => <>{panel({ close, dismiss: close })}</>}
         </PopoverPanel>
       </>
     )}

@@ -9,8 +9,16 @@
         background-color: var(--color-surface-mid);
     }
 
-    .nxm-popover-panel-dropdown {
+    .nxm-popover-panel-controls {
         max-width: calc(var(--spacing) * 72) !important;
+    }
+
+    .nxm-popover-panel-dropdown {
+        overflow-y: auto;
+        padding-block: calc(var(--spacing) * 1);
+        min-width: calc(var(--spacing) * 52);
+        max-width: calc(var(--spacing) * 72) !important;
+        --anchor-max-height: calc(var(--spacing) * 128);
     }
 
     .nxm-popover-panel-group {
