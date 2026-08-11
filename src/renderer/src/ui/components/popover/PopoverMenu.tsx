@@ -1,4 +1,4 @@
-import React, { Fragment, type KeyboardEvent, useEffect, useRef } from "react";
+import React, { Fragment, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { type IMenuAction, PopoverMenuItem } from "@/ui/components/popover/PopoverMenuItem";
@@ -21,6 +21,17 @@ interface IPopoverMenuProps {
  */
 export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuProps) => {
   const rowsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  /**
+   * Which row the menu considers active. The highlight reads from this rather than
+   * from `:hover` or `:focus-visible`, so the pointer and the arrow keys can't light
+   * up two rows between them.
+   *
+   * Focus feeds it: arrowing moves focus, hovering a row takes focus, and opening the
+   * menu focuses the first row. Nothing clears it, so a row keeps the highlight while
+   * the submenu it opened holds focus.
+   */
+  const [activeRow, setActiveRow] = useState(0);
 
   const focusableRows = () =>
     rowsRef.current.filter((row): row is HTMLButtonElement => !!row && !row.disabled);
@@ -86,11 +97,13 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
           {section.map(({ action, index }) => (
             <PopoverMenuItem
               action={action}
+              isActive={index === activeRow}
               key={index}
               ref={(element) => {
                 rowsRef.current[index] = element;
               }}
               tabIndex={index === 0 ? 0 : -1}
+              onActivate={() => setActiveRow(index)}
               onSelect={onSelect}
             />
           ))}

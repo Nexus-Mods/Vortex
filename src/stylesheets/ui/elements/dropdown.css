@@ -63,8 +63,8 @@
             cursor: not-allowed;
         }
 
-        &:enabled:hover,
-        &.nxm-dropdown-item-active {
+        &.nxm-dropdown-item-active,
+        &.nxm-dropdown-item-hoverable:enabled:hover {
             color: var(--color-neutral-strong);
             background-color: var(--color-surface-translucent-mid);
         }
@@ -94,8 +94,8 @@
         &.nxm-dropdown-item-danger {
             color: var(--color-danger-strong);
 
-            &:enabled:hover,
-            &.nxm-dropdown-item-active {
+            &.nxm-dropdown-item-active,
+            &.nxm-dropdown-item-hoverable:enabled:hover {
                 color: var(--color-danger-strong);
             }
         }

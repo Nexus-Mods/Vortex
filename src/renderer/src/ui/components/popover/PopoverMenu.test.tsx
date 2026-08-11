@@ -111,6 +111,74 @@ describe("PopoverMenu", () => {
       await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
       expect(screen.getByRole("menuitem", { name: "View profile" })).toHaveFocus();
     });
+
+    // Focus is what the row's highlight follows, so hovering has to move it or the
+    // pointer and the arrow keys would light up two different rows.
+    it("hands focus to a hovered row", async () => {
+      await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
+
+      await userEvent.hover(screen.getByRole("menuitem", { name: "Logout" }));
+      expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
+    });
+
+    it("carries on arrowing from the row the pointer left off at", async () => {
+      await openMenu([
+        [plainAction("View profile"), plainAction("Refresh"), plainAction("Logout")],
+      ]);
+
+      await userEvent.hover(screen.getByRole("menuitem", { name: "Refresh" }));
+      await userEvent.keyboard("{ArrowDown}");
+
+      expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
+    });
+  });
+
+  // The highlight is state the menu keeps, not a `:hover` or `:focus-visible` rule,
+  // so exactly one row can ever wear it however the pointer and keyboard are mixed.
+  describe("the active row", () => {
+    const activeRows = () =>
+      screen
+        .getAllByRole("menuitem")
+        .filter((row) => row.classList.contains("nxm-dropdown-item-active"))
+        .map((row) => row.textContent?.trim());
+
+    it("marks the row the menu opened on", async () => {
+      await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
+      expect(activeRows()).toEqual(["View profile"]);
+    });
+
+    it("moves with the arrow keys, and only ever marks one", async () => {
+      await openMenu([
+        [plainAction("View profile"), plainAction("Refresh")],
+        [plainAction("Logout")],
+      ]);
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(activeRows()).toEqual(["Refresh"]);
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(activeRows()).toEqual(["Logout"]);
+    });
+
+    it("follows the pointer to a hovered row", async () => {
+      await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
+
+      await userEvent.hover(screen.getByRole("menuitem", { name: "Logout" }));
+      expect(activeRows()).toEqual(["Logout"]);
+    });
+
+    // The case a `:hover` rule got wrong: the pointer stays put while the keyboard
+    // moves on, and the row under it must give the highlight up.
+    it("leaves a hovered row behind when the keyboard moves on", async () => {
+      await openMenu([
+        [plainAction("View profile"), plainAction("Refresh"), plainAction("Logout")],
+      ]);
+
+      await userEvent.hover(screen.getByRole("menuitem", { name: "Refresh" }));
+      await userEvent.keyboard("{ArrowDown}");
+
+      expect(activeRows()).toEqual(["Logout"]);
+    });
   });
 
   describe("roving focus", () => {
