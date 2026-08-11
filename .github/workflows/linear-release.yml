@@ -51,11 +51,13 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
         run: |
-          # The scan base is the previous tag on the same channel:
+          # The scan base derives from the previous tag on the same channel:
           # pre-releases compare against the previous pre-release, stables
-          # against the previous stable. git log <prev>..<tag> handles tags on
-          # diverged release branches (the reachability difference is exactly
-          # the commits new to this release).
+          # against the previous stable. The CLI requires base_ref to be an
+          # ancestor of HEAD, and the previous tag usually sits on a diverged
+          # release/vX.Y branch, so we pass the merge-base (fork point)
+          # instead — the resulting range is exactly the commits new to this
+          # release.
           if [ "$PRERELEASE" = "true" ]; then
             pattern='^v[0-9]+\.[0-9]+\.[0-9]+-'
           else
@@ -64,12 +66,14 @@ jobs:
           prev=$(git tag --list 'v*' | grep -E "$pattern" | grep -vFx "$TAG" \
             | { cat; echo "$TAG"; } | sort -uV \
             | awk -v cur="$TAG" '$0 == cur { print p; exit } { p = $0 }')
+          base=""
           if [ -n "$prev" ]; then
-            echo "Scanning $prev..$TAG"
+            base=$(git merge-base "refs/tags/$prev" "refs/tags/$TAG")
+            echo "Previous $([ "$PRERELEASE" = "true" ] && echo pre-release || echo release): $prev; scanning $base..$TAG"
           else
             echo "No previous tag found; the release CLI will use its default scan base"
           fi
-          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
 
       - name: Sync issues to release
         uses: linear/linear-release-action@v0
@@ -77,7 +81,7 @@ jobs:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
           version: ${{ steps.release.outputs.tag }}
-          base_ref: ${{ steps.prev.outputs.tag }}
+          base_ref: ${{ steps.prev.outputs.base }}
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           log_level: verbose
 
