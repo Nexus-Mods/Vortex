@@ -1,15 +1,17 @@
 /**
  * Popover Demo Component
- * Demonstrates the Popover component, a settings-panel use case, and a menu with a
- * nested submenu
+ * Demonstrates the Popover component, a settings-panel use case, and menus with
+ * nested submenus — one row, and two adjacent ones to hover between
  */
 
 import {
   mdiAccountCircle,
+  mdiFilterOutline,
   mdiHelpCircleOutline,
   mdiInformationOutline,
   mdiLogout,
   mdiRefresh,
+  mdiSortVariant,
   mdiTune,
   mdiViewGrid,
   mdiViewList,
@@ -61,6 +63,49 @@ const accountActions: IMenuAction[][] = [
     },
   ],
   [{ label: "Logout", iconPath: mdiLogout, onClick: () => {} }],
+];
+
+const sortRows: IMenuAction[][] = [
+  [
+    { label: "Name", onClick: () => {} },
+    { label: "Date added", onClick: () => {} },
+    { label: "Size on disk", onClick: () => {} },
+  ],
+];
+
+const filterRows: IMenuAction[][] = [
+  [
+    { label: "Enabled only", onClick: () => {} },
+    { label: "Disabled only", onClick: () => {} },
+    { label: "Everything", onClick: () => {} },
+  ],
+];
+
+/**
+ * Two rows that each open a submenu, with a plain row under them — the shape the app
+ * doesn't have anywhere yet, kept here so the pointer travelling between adjacent
+ * submenus, and off them onto an ordinary row, stays exercised.
+ */
+const twoSubmenuActions: IMenuAction[][] = [
+  [
+    {
+      label: "Sort by",
+      iconPath: mdiSortVariant,
+      panelRole: "menu",
+      panel: ({ close, dismiss }) => (
+        <PopoverMenu actions={sortRows} label="Sort by" onClose={close} onSelect={dismiss} />
+      ),
+    },
+    {
+      label: "Filter",
+      iconPath: mdiFilterOutline,
+      panelRole: "menu",
+      panel: ({ close, dismiss }) => (
+        <PopoverMenu actions={filterRows} label="Filter" onClose={close} onSelect={dismiss} />
+      ),
+    },
+  ],
+  [{ label: "Refresh", iconPath: mdiRefresh, onClick: () => {} }],
 ];
 
 export const PopoverDemo = () => {
@@ -164,6 +209,31 @@ export const PopoverDemo = () => {
             <PopoverPanel className="nxm-popover-panel-dropdown">
               {({ close }) => (
                 <PopoverMenu actions={accountActions} label="Account" onSelect={close} />
+              )}
+            </PopoverPanel>
+          </Popover>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
+          Two submenus, side by side
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          For testing the pointer travelling between adjacent submenus. Hovering Sort by opens it;
+          moving down to Filter should swap them, since leaving a row closes it just before the next
+          one opens. Carrying on to Refresh should leave neither open, and sweeping straight past
+          both should open nothing at all.
+        </Typography>
+
+        <div className="flex flex-wrap gap-4">
+          <Popover>
+            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiSortVariant} />
+
+            <PopoverPanel className="nxm-popover-panel-dropdown">
+              {({ close }) => (
+                <PopoverMenu actions={twoSubmenuActions} label="View options" onSelect={close} />
               )}
             </PopoverPanel>
           </Popover>

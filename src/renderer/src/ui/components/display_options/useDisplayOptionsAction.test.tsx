@@ -19,8 +19,10 @@ const settingRow = (
 );
 
 /**
- * The action's panel, rendered the way a toolbar control renders it. Nothing
- * opened this in turn, so dismissing the chain is just closing.
+ * The action's panel, rendered the way a toolbar control renders it. The two
+ * callbacks are kept distinct so a test can tell which one the panel reached for:
+ * from a toolbar button they are the same, but from an overflow row `close` puts
+ * away only the panel and leaves the menu behind it standing.
  */
 const renderPanel = ({
   canReset,
@@ -30,13 +32,14 @@ const renderPanel = ({
   onReset?: () => void;
 }) => {
   const close = vi.fn();
+  const dismiss = vi.fn();
   const { result } = renderHook(() =>
     useDisplayOptionsAction({ canReset, children: settingRow, onReset }),
   );
 
-  render(<>{result.current.panel?.({ close, dismiss: close })}</>);
+  render(<>{result.current.panel?.({ close, dismiss })}</>);
 
-  return { action: result.current, close };
+  return { action: result.current, close, dismiss };
 };
 
 // --- Tests ---
@@ -69,13 +72,16 @@ describe("useDisplayOptionsAction", () => {
     expect(document.querySelectorAll(".nxm-popover-panel-group")).toHaveLength(2);
   });
 
-  it("restores the defaults and closes the panel", async () => {
+  // Resetting is an adjustment like any other row here, so the panel stays put and
+  // the rows above it show what changed.
+  it("restores the defaults without dismissing anything", async () => {
     const onReset = vi.fn();
-    const { close } = renderPanel({ canReset: true, onReset });
+    const { close, dismiss } = renderPanel({ canReset: true, onReset });
 
     await userEvent.click(screen.getByText("Reset to default"));
 
     expect(onReset).toHaveBeenCalledOnce();
-    expect(close).toHaveBeenCalledOnce();
+    expect(close).not.toHaveBeenCalled();
+    expect(dismiss).not.toHaveBeenCalled();
   });
 });

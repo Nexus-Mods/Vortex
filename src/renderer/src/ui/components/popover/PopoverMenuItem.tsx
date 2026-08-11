@@ -1,5 +1,6 @@
 import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
-import React, { forwardRef, type KeyboardEvent, type ReactNode } from "react";
+import { mdiChevronRight } from "@mdi/js";
+import React, { forwardRef, type KeyboardEvent, type ReactNode, useEffect, useRef } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 import { Popover } from "@/ui/components/popover/Popover";
@@ -40,13 +41,23 @@ interface IPopoverMenuItemProps {
   onSelect: () => void;
 }
 
-const PopoverMenuItemContent = ({ action }: { action: IMenuAction }) => (
+const HOVER_CLOSE_DELAY = 150;
+
+const PopoverMenuItemContent = ({
+  action,
+  hasPanel = false,
+}: {
+  action: IMenuAction;
+  hasPanel?: boolean;
+}) => (
   <>
     {!!action.iconPath && (
       <Icon className="nxm-dropdown-item-icon" path={action.iconPath} size="none" />
     )}
 
     <span className="nxm-dropdown-item-label">{action.label}</span>
+
+    {hasPanel && <Icon className="nxm-dropdown-item-icon" path={mdiChevronRight} size="none" />}
   </>
 );
 
@@ -54,12 +65,41 @@ const PopoverMenuItemContent = ({ action }: { action: IMenuAction }) => (
  * A row whose panel opens beside it, leaving the menu itself open — the panel is
  * portalled, but Headless UI registers it as part of the enclosing popover, so
  * reaching into it doesn't read as leaving the menu.
+ *
+ * Pointing at the row opens it, as a menu should. Headless UI's popover is driven by
+ * clicks alone, so hovering reaches for the button the same way the keyboard does —
+ * activating it — rather than trying to drive the machine from outside.
  */
 const PopoverMenuPanelItem = forwardRef<
   HTMLButtonElement,
   IPopoverMenuItemProps & { disabled: boolean; panel: IPopoverPanel }
 >(({ action, disabled, panel, tabIndex, onSelect }, ref) => {
   const isSubmenu = action.panelRole === "menu";
+  const hoverToggleRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  const cancelHover = () => {
+    clearTimeout(timerRef.current);
+    timerRef.current = undefined;
+  };
+
+  // A row can be unmounted mid-hover — the menu closing, or its actions changing —
+  // and a timer left running would then toggle a button that has gone.
+  useEffect(() => cancelHover, []);
+
+  const isOpen = () => buttonRef.current?.getAttribute("aria-expanded") === "true";
+
+  const toggleByHover = () => {
+    hoverToggleRef.current = true;
+    buttonRef.current?.click();
+    hoverToggleRef.current = false;
+  };
+
+  const closeAfterHover = () => {
+    cancelHover();
+    timerRef.current = setTimeout(() => isOpen() && toggleByHover(), HOVER_CLOSE_DELAY);
+  };
 
   return (
     <Popover className="flex flex-col">
@@ -69,9 +109,23 @@ const PopoverMenuPanelItem = forwardRef<
             aria-haspopup={action.panelRole ?? "dialog"}
             className={joinClasses("nxm-dropdown-item", { "nxm-dropdown-item-active": open })}
             disabled={disabled}
-            ref={ref}
+            ref={(element: HTMLButtonElement | null) => {
+              buttonRef.current = element;
+
+              if (typeof ref === "function") {
+                ref(element);
+              } else if (ref) {
+                ref.current = element;
+              }
+            }}
             role="menuitem"
             tabIndex={tabIndex}
+            onClick={(event) => {
+              // A real click would close what hover opened; hover's own must still pass.
+              if (isOpen() && !hoverToggleRef.current) {
+                event.preventDefault();
+              }
+            }}
             onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
               if (event.key !== "ArrowRight") {
                 return;
@@ -81,13 +135,23 @@ const PopoverMenuPanelItem = forwardRef<
               event.preventDefault();
               event.currentTarget.click();
             }}
+            onMouseEnter={() => {
+              cancelHover();
+
+              if (!disabled && !isOpen()) {
+                toggleByHover();
+              }
+            }}
+            onMouseLeave={closeAfterHover}
           >
-            <PopoverMenuItemContent action={action} />
+            <PopoverMenuItemContent hasPanel action={action} />
           </HeadlessPopoverButton>
 
           <PopoverPanel
             anchor={{ gap: 8, to: "right start" }}
             className={isSubmenu ? "nxm-popover-panel-dropdown" : "nxm-popover-panel-controls"}
+            onMouseEnter={cancelHover}
+            onMouseLeave={closeAfterHover}
           >
             {({ close }) => {
               // Inner before outer: each close focuses its own trigger before React

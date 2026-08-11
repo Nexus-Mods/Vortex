@@ -482,9 +482,11 @@ const helpAction: IMenuAction = {
 
 Pass `dismiss` as the submenu's `onSelect`, not `close`: choosing a row there ends the interaction, so the menu it was opened from should go with it. Rows are focused as one flat list across group boundaries, so arrowing runs through the whole menu rather than stopping at a rule.
 
+Any row with a `panel` advertises it: a chevron on the right says the row opens a surface rather than running something, and pointing at the row opens it after a short delay — long enough that sweeping past on the way elsewhere doesn't flick panels open. Leaving the row closes it again, unless the pointer arrives in the panel; the panel is portalled, so travelling across the gap between the two fires the row's `mouseleave` and the panel has to call the close off. Clicking a row the pointer has already opened is inert rather than a toggle. `→` still opens from the keyboard, `←` and `Escape` back out.
+
 ### DisplayOptions
 
-The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `PopoverPanelGroup` and `PopoverPanelGroupItem` (see [Popover](#popover)). The panel ends in a reset link whenever `canReset` says something has been changed from its default: `onReset` puts the defaults back and the panel closes itself.
+The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `PopoverPanelGroup` and `PopoverPanelGroupItem` (see [Popover](#popover)). The panel ends in a reset link whenever `canReset` says something has been changed from its default: `onReset` puts the defaults back, and the panel stays open so the rows above visibly move with it.
 
 ```tsx
 import { PopoverPanelGroup } from "../../ui/components/popover/PopoverPanelGroup";
@@ -510,7 +512,7 @@ const displayOptions = useDisplayOptionsAction({
 
 **Props:** `canReset`, `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. The hook appends the reset link as a final group of its own, so `children` should be the setting groups only.
 
-`canReset` is the caller's to compute, because only it knows what its defaults are — compare each setting the panel shows against the value `onReset` returns it to, and keep the two in step by naming that value once. Nothing to undo means no link, rather than one that would do nothing; because a group states its own separator, the last settings group stops drawing a rule as soon as the reset group goes away.
+`canReset` is the caller's to compute, because only it knows what its defaults are — compare each setting the panel shows against the value `onReset` returns it to, and keep the two in step by naming that value once. Nothing to undo means no link, rather than one that would do nothing; because a group states its own separator, the last settings group stops drawing a rule as soon as the reset group goes away. So the link removes itself as it takes effect, while the panel stays open.
 
 The toolbar owns the trigger and anchors the panel: under the button while the action is in the row, beside its row once the action has collapsed into the overflow menu. See [Toolbar](#toolbar) for panel actions in general.
 

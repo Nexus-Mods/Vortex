@@ -17,10 +17,13 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
  * so the rows never have to know where they were opened from.
  *
  * The panel ends in a reset link whenever `canReset` says something has been
- * changed from its default; `onReset` restores them and the panel closes itself.
- * Nothing to undo means no link, rather than one that would do nothing — and
- * because a group states its own separator, the last settings group stops drawing
- * a rule as soon as the reset group goes away.
+ * changed from its default. Resetting leaves the panel open: it is an adjustment
+ * like any other row here, and the rows above show what it did — the picker and
+ * switches visibly move back.
+ *
+ * Nothing left to undo then means no link, so it removes itself on the way out —
+ * and because a group states its own separator, the last settings group stops
+ * drawing a rule as the reset group goes away.
  *
  * The trigger and reset labels default to "Display options" and "Reset to
  * default"; pass them only to say something else.
@@ -43,7 +46,7 @@ export const useDisplayOptionsAction = ({
   return {
     iconPath: mdiTune,
     label: label ?? t("Display options"),
-    panel: ({ close }) => (
+    panel: () => (
       <>
         {children}
 
@@ -54,10 +57,7 @@ export const useDisplayOptionsAction = ({
                 brand="info"
                 typographyType="body-sm"
                 variant="secondary"
-                onClick={() => {
-                  onReset();
-                  close();
-                }}
+                onClick={onReset}
               >
                 {resetLabel ?? t("Reset to default")}
               </TypographyLink>

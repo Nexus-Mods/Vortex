@@ -1,3 +1,4 @@
+import { mdiChevronRight } from "@mdi/js";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -177,9 +178,82 @@ describe("PopoverMenu", () => {
       expect(await openParent()).toHaveAttribute("aria-haspopup", "menu");
     });
 
+    // Without it the row is indistinguishable from one that just runs something.
+    it("points a chevron at the surface the row opens", async () => {
+      const row = await openParent();
+
+      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      // Decorative: the chevron must not become part of the row's name.
+      expect(row).toHaveAccessibleName("Help");
+    });
+
+    it("leaves a row that just runs an action without one", async () => {
+      await openMenu([[plainAction("Logout")]]);
+
+      expect(
+        screen
+          .getByRole("menuitem", { name: "Logout" })
+          .querySelector(`path[d="${mdiChevronRight}"]`),
+      ).not.toBeInTheDocument();
+    });
+
     it("opens the submenu from its row", async () => {
       await userEvent.click(await openParent());
       expect(screen.getByRole("menuitem", { name: "Help centre" })).toBeInTheDocument();
+    });
+
+    describe("on hover", () => {
+      const submenuOpen = () => screen.queryByRole("menuitem", { name: "Help centre" });
+
+      it("opens the submenu as soon as the pointer arrives", async () => {
+        const row = await openParent();
+
+        await userEvent.hover(row);
+        expect(submenuOpen()).toBeInTheDocument();
+      });
+
+      it("does not open a disabled row", async () => {
+        await openMenu([[{ ...submenuAction(helpRows), disabled: true }]]);
+
+        await userEvent.hover(screen.getByRole("menuitem", { name: "Help" }));
+        await expect(waitFor(() => expect(submenuOpen()).toBeInTheDocument())).rejects.toThrow();
+      });
+
+      it("closes it again once the pointer leaves both the row and its panel", async () => {
+        const row = await openParent();
+
+        await userEvent.hover(row);
+        await waitFor(() => expect(submenuOpen()).toBeInTheDocument());
+
+        await userEvent.unhover(row);
+        await waitFor(() => expect(submenuOpen()).not.toBeInTheDocument());
+      });
+
+      // Clicking a row the pointer has already opened must not toggle it shut.
+      it("leaves an already-open submenu alone when its row is clicked", async () => {
+        const row = await openParent();
+
+        await userEvent.hover(row);
+        await waitFor(() => expect(submenuOpen()).toBeInTheDocument());
+
+        await userEvent.click(row);
+        expect(submenuOpen()).toBeInTheDocument();
+      });
+
+      // The panel is portalled, so leaving the row fires even when the pointer is
+      // heading into the panel. Entering it has to call that off.
+      it("stays open when the pointer moves from the row into the panel", async () => {
+        const row = await openParent();
+
+        await userEvent.hover(row);
+        await waitFor(() => expect(submenuOpen()).toBeInTheDocument());
+
+        await userEvent.unhover(row);
+        await userEvent.hover(screen.getByRole("menu", { name: "Help" }));
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        expect(submenuOpen()).toBeInTheDocument();
+      });
     });
 
     // The regression the whole Popover-as-menu arrangement exists for: a Menu
