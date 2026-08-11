@@ -134,10 +134,18 @@ jobs:
           if [ -z "$BASE" ]; then
             exit 0
           fi
+          # Teams whose issues appear in Vortex work; extend when a new team
+          # starts landing commits here. Candidates outside this list are
+          # almost always branch-name artifacts (e.g. NODE-7 from a
+          # "node-7-upgrade" branch) — Linear ignores nonexistent keys either
+          # way, this split only keeps the summary readable.
+          team_keys='LAZ|APP|BLU|QA'
           range="$BASE..refs/tags/$TAG"
-          keys=$(git log "$range" --format='%s' \
+          candidates=$(git log "$range" --format='%s' \
             | grep -ioE '\b[a-z]{2,}-[0-9]+\b' | tr 'a-z' 'A-Z' \
             | grep -v '^PR-' | sort -uV)
+          keys=$(printf '%s\n' "$candidates" | grep -E "^($team_keys)-" || true)
+          other=$(printf '%s\n' "$candidates" | grep -vE "^($team_keys)-" || true)
           {
             echo "### Issue keys detected in commits ($(printf '%s' "$keys" | grep -c . || true))"
             echo
@@ -147,6 +155,10 @@ jobs:
             echo
             echo
             echo "_Candidates from the branch/subject scan: keys that don't exist in Linear are ignored, and Linear attaches further issues linked to the pull requests below._"
+            if [ -n "$other" ]; then
+              echo
+              echo "_Candidate strings outside the known teams ($team_keys), ignored by Linear:_ $(printf '%s' "$other" | tr '\n' ' ')"
+            fi
             echo
             echo "### Pull requests in range"
             echo
