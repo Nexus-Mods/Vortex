@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0-beta.1] - 2026-08-11
+
+_First beta of the 2.6 release._
+
+### Added
+
+- `Alert` component in the design system ([#23895](https://github.com/Nexus-Mods/Vortex/pull/23895))
+- Health check: empty state when logged out, and detection of free users upgrading to premium via the upsell ([#23887](https://github.com/Nexus-Mods/Vortex/pull/23887))
+- Collision-aware `Tooltip` component ([#23854](https://github.com/Nexus-Mods/Vortex/pull/23854))
+
+### Changed
+
+- Header top nav buttons rebuilt on the shared `Button` component ([#23915](https://github.com/Nexus-Mods/Vortex/pull/23915))
+- Shifted the `Button` size scale down a step ([#23914](https://github.com/Nexus-Mods/Vortex/pull/23914))
+- Removed some Health Check toast notifications ([#23911](https://github.com/Nexus-Mods/Vortex/pull/23911))
+- Removed the left-over `session.extensions.installed` state ([#23910](https://github.com/Nexus-Mods/Vortex/pull/23910))
+- Upgraded Headless UI to v2, with `Switch` rebuilt on top of it ([#23898](https://github.com/Nexus-Mods/Vortex/pull/23898))
+- Toolbar tooltips, pinned actions, and header layout ([#23897](https://github.com/Nexus-Mods/Vortex/pull/23897))
+- Reworked action and reducer typings and the API declaration rollup ([#23893](https://github.com/Nexus-Mods/Vortex/pull/23893))
+- Toolbar controls that don't fit now collapse into the overflow menu ([#23892](https://github.com/Nexus-Mods/Vortex/pull/23892))
+- Moved the Extensions page onto the new Page layout ([#23888](https://github.com/Nexus-Mods/Vortex/pull/23888))
+- Updated the OpenAPI schema ([#23886](https://github.com/Nexus-Mods/Vortex/pull/23886))
+- Upgraded i18next from 20 to 21 ([#23877](https://github.com/Nexus-Mods/Vortex/pull/23877))
+- Collection info retrieval now includes the revision number ([#23876](https://github.com/Nexus-Mods/Vortex/pull/23876))
+- Upgraded i18next from 19 to 20 ([#23872](https://github.com/Nexus-Mods/Vortex/pull/23872))
+- Recently Managed dashlet no longer shown in the Modern UI ([#23871](https://github.com/Nexus-Mods/Vortex/pull/23871))
+- Upgraded React to 18.3.1 (legacy render mode) ([#23853](https://github.com/Nexus-Mods/Vortex/pull/23853))
+- Replaced `FileSystemError` with `VortexError` ([#23851](https://github.com/Nexus-Mods/Vortex/pull/23851))
+- Upgraded React to 17.0.2 ([#23775](https://github.com/Nexus-Mods/Vortex/pull/23775))
+- Switched to the new upload API for Collections ([#22245](https://github.com/Nexus-Mods/Vortex/pull/22245))
+
+### Fixed
+
+- Renderer out-of-memory crash when changing the revision of a large collection ([#23912](https://github.com/Nexus-Mods/Vortex/pull/23912))
+- Upload progress not reaching 100% at the end of an upload ([#23900](https://github.com/Nexus-Mods/Vortex/pull/23900))
+- Included forgotten API exports ([#23899](https://github.com/Nexus-Mods/Vortex/pull/23899))
+- Notification action typing issues ([#23891](https://github.com/Nexus-Mods/Vortex/pull/23891))
+- Health check refresh fixes: login, enabled-state, mod and download changes now trigger a refresh, and multiple triggers are debounced ([#23884](https://github.com/Nexus-Mods/Vortex/pull/23884))
+- Session refresh now checks that the user is logged in ([#23883](https://github.com/Nexus-Mods/Vortex/pull/23883))
+- UI fixes: clear button in the Games search bar and simplified input sizing ([#23873](https://github.com/Nexus-Mods/Vortex/pull/23873))
+- Health check fixes and polish ([#23858](https://github.com/Nexus-Mods/Vortex/pull/23858))
+- Health check correctness fixes ([#23856](https://github.com/Nexus-Mods/Vortex/pull/23856))
+- Health check: better handling for errors and timeouts ([#23852](https://github.com/Nexus-Mods/Vortex/pull/23852))
+- `dotnetprobe` binary not copied to the unpacked ASAR on Linux ([#23829](https://github.com/Nexus-Mods/Vortex/pull/23829))
+- Settings pickers anchored left so their menus stay inside the pane ([#23826](https://github.com/Nexus-Mods/Vortex/pull/23826))
+- Game settings page header renamed to match the sidebar ([#23825](https://github.com/Nexus-Mods/Vortex/pull/23825))
+- Health check: implemented missing OR requirement cases ([#23815](https://github.com/Nexus-Mods/Vortex/pull/23815))
+
 ## [2.5.0] - 2026-08-10
 
 _Stable 2.5 release. See the beta entries below for the full list of changes since 2.4._
@@ -2168,6 +2216,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.6.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.6.0-beta.1
+[2.5.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0
 [2.5.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.2
 [2.5.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.1
 [2.4.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.4.2
