@@ -106,7 +106,6 @@ const GamePicker = ({
   const [currentFilterValue, setCurrentFilterValue] = useState("");
   const [unmanagedPage, setUnmanagedPage] = useState(1);
 
-  const [rootEl, setRootEl] = useState<HTMLElement | null>(null);
   const nameLookupRef = useRef<{ [name: string]: string }>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const unmanagedSectionRef = useRef<HTMLDivElement>(null);
@@ -132,8 +131,6 @@ const GamePicker = ({
       ),
     [],
   );
-
-  const getBounds = useCallback(() => rootEl.getBoundingClientRect(), [rootEl]);
 
   const getTabGameNumber = (unfiltered: IGameStored[], filtered: IGameStored[]): string =>
     currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
@@ -280,7 +277,7 @@ const GamePicker = ({
   );
 
   return (
-    <Page active={active} domRef={(el) => setRootEl(el)} pageId={pageId} scrollable={false}>
+    <Page active={active} pageId={pageId} scrollable={false}>
       <PageHeader
         pictogramName="game"
         subtitle={t("Manage games to get started.")}
@@ -352,11 +349,9 @@ const GamePicker = ({
           >
             {pickerLayout === "list" ? (
               <GamesList
-                container={rootEl}
                 discoveredGames={discoveredGames}
                 gameMode={gameMode}
                 games={filteredManaged}
-                getBounds={getBounds}
                 t={t}
                 type="managed"
                 onBrowseGameLocation={onBrowseGameLocation}
@@ -364,11 +359,9 @@ const GamePicker = ({
               />
             ) : (
               <GamesGrid
-                container={rootEl}
                 discoveredGames={discoveredGames}
                 gameMode={gameMode}
                 games={filteredManaged}
-                getBounds={getBounds}
                 t={t}
                 type="managed"
                 onRefreshGameInfo={onRefreshGameInfo}
@@ -411,11 +404,9 @@ const GamePicker = ({
             >
               {pickerLayout === "list" ? (
                 <GamesList
-                  container={rootEl}
                   discoveredGames={discoveredGames}
                   gameMode={gameMode}
                   games={pagedUnmanaged}
-                  getBounds={getBounds}
                   t={t}
                   type="unmanaged"
                   onBrowseGameLocation={onBrowseGameLocation}
@@ -423,11 +414,9 @@ const GamePicker = ({
                 />
               ) : (
                 <GamesGrid
-                  container={rootEl}
                   discoveredGames={discoveredGames}
                   gameMode={gameMode}
                   games={pagedUnmanaged}
-                  getBounds={getBounds}
                   t={t}
                   type="unmanaged"
                   onRefreshGameInfo={onRefreshGameInfo}
