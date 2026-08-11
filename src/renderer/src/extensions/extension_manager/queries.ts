@@ -30,7 +30,7 @@ export function matchesQuery(
   query: { modId: number; fileId?: number },
   entry: IExtensionState | IAvailableExtension,
 ): boolean {
-  if (entry.modId === query.modId) return true;
+  if (entry.modId !== query.modId) return false;
   return query.fileId !== undefined ? entry.fileId === query.fileId : true;
 }
 
