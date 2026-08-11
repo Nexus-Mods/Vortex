@@ -7,7 +7,6 @@ import {
   findDependencyInCatalog,
   findInCatalog,
   findInstalled,
-  findInstalledDependency,
   findPreviousVersions,
   findUpdatableExtensions,
   getMissingOptionalExtensions,
@@ -240,43 +239,6 @@ describe("isAlreadyInstalled", () => {
       "ext-1": makeExtensionState({ modId: 123, fileId: 789 }),
     };
     expect(isAlreadyInstalled(installed, catalogEntry)).toBe(false);
-  });
-});
-
-describe("findInstalledDependency", () => {
-  it("finds a dependency by infoJsonId", () => {
-    const ext = makeExtensionState({ infoJsonId: "test-dependency" });
-    const installed = { "ext-1": ext };
-    const result = findInstalledDependency(installed, "test-dependency");
-    expect(result).toEqual({ key: "ext-1", extension: ext });
-  });
-
-  it("finds a dependency by name", () => {
-    const ext = makeExtensionState({ name: "Test Dependency" });
-    const installed = { "ext-1": ext };
-    const result = findInstalledDependency(installed, "Test Dependency");
-    expect(result).toEqual({ key: "ext-1", extension: ext });
-  });
-
-  it("prefers infoJsonId match over name match", () => {
-    const ext1 = makeExtensionState({ infoJsonId: "test-id", name: "Other Name" });
-    const ext2 = makeExtensionState({ infoJsonId: "other-id", name: "Test Name" });
-    const installed = { "ext-1": ext1, "ext-2": ext2 };
-    const result = findInstalledDependency(installed, "test-id");
-    expect(result).toEqual({ key: "ext-1", extension: ext1 });
-  });
-
-  it("returns undefined when dependency is not found", () => {
-    const installed = {
-      "ext-1": makeExtensionState({ infoJsonId: "other-id" }),
-    };
-    const result = findInstalledDependency(installed, "test-id");
-    expect(result).toBeUndefined();
-  });
-
-  it("returns undefined for empty installed extensions", () => {
-    const result = findInstalledDependency({}, "test-id");
-    expect(result).toBeUndefined();
   });
 });
 

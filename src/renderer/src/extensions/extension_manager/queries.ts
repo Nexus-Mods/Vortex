@@ -57,20 +57,6 @@ export function isAlreadyInstalled(
   );
 }
 
-/** Find a dependency extension by its declared identifier among the already installed extensions. */
-export function findInstalledDependency(
-  installedExtensions: Record<string, IExtensionState>,
-  dependencyId: string,
-): { key: string; extension: IExtensionState } | undefined {
-  const result = Object.entries(installedExtensions).find(
-    ([_, extension]) => extension.infoJsonId === dependencyId || extension.name === dependencyId,
-  );
-
-  if (result === undefined) return undefined;
-  const [key, extension] = result;
-  return { key, extension };
-}
-
 /** Find all currently installed versions of an extension. */
 export function findPreviousVersions(
   installedExtension: Record<string, IExtensionState>,
