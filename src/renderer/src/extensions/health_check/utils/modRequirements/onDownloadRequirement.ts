@@ -121,12 +121,5 @@ export async function onDownloadRequirement(
     return false;
   }
 
-  api.sendNotification({
-    type: "success",
-    message: `Requirement installed and enabled: ${mod.modName}`,
-    displayMS: 5000,
-    id: "health-check:nexus-requirements-download-finished",
-  });
-
   return true;
 }
