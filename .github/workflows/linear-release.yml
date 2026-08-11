@@ -108,6 +108,7 @@ jobs:
           COMPLETE_OUTCOME: ${{ steps.complete.outcome }}
           RELEASE_URL: ${{ steps.sync.outputs.release-url }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          LINEAR_ACCESS_KEY: ${{ secrets.LINEAR_ACCESS_KEY }}
         run: |
           # Human-readable recap on the run's summary page. The issue keys
           # mirror the CLI's client-side commit scan; Linear resolves PR
@@ -134,18 +135,27 @@ jobs:
           if [ -z "$BASE" ]; then
             exit 0
           fi
-          # Teams whose issues appear in Vortex work; extend when a new team
-          # starts landing commits here. Candidates outside this list are
-          # almost always branch-name artifacts (e.g. NODE-7 from a
-          # "node-7-upgrade" branch) — Linear ignores nonexistent keys either
-          # way, this split only keeps the summary readable.
-          team_keys='LAZ|APP|BLU|QA'
+          # Fetch the workspace's team keys so real issue keys can be told
+          # apart from branch-name artifacts (e.g. NODE-7 from a
+          # "node-7-upgrade" branch). Linear ignores nonexistent keys either
+          # way — the split only keeps the summary readable, so if the query
+          # fails all candidates are shown linked, unsplit.
+          team_keys=$(curl -sf --max-time 15 https://api.linear.app/graphql \
+            -H "Authorization: $LINEAR_ACCESS_KEY" \
+            -H "Content-Type: application/json" \
+            --data '{"query":"{ teams(first: 250) { nodes { key } } }"}' \
+            | jq -r '[.data.teams.nodes[].key] | join("|")' 2>/dev/null) || team_keys=''
           range="$BASE..refs/tags/$TAG"
           candidates=$(git log "$range" --format='%s' \
             | grep -ioE '\b[a-z]{2,}-[0-9]+\b' | tr 'a-z' 'A-Z' \
             | grep -v '^PR-' | sort -uV)
-          keys=$(printf '%s\n' "$candidates" | grep -E "^($team_keys)-" || true)
-          other=$(printf '%s\n' "$candidates" | grep -vE "^($team_keys)-" || true)
+          if [ -n "$team_keys" ]; then
+            keys=$(printf '%s\n' "$candidates" | grep -E "^($team_keys)-" || true)
+            other=$(printf '%s\n' "$candidates" | grep -vE "^($team_keys)-" || true)
+          else
+            keys=$candidates
+            other=''
+          fi
           {
             echo "### Issue keys detected in commits ($(printf '%s' "$keys" | grep -c . || true))"
             echo
@@ -157,7 +167,7 @@ jobs:
             echo "_Candidates from the branch/subject scan: keys that don't exist in Linear are ignored, and Linear attaches further issues linked to the pull requests below._"
             if [ -n "$other" ]; then
               echo
-              echo "_Candidate strings outside the known teams ($team_keys), ignored by Linear:_ $(printf '%s' "$other" | tr '\n' ' ')"
+              echo "_Candidate strings matching no Linear team, ignored:_ $(printf '%s' "$other" | tr '\n' ' ')"
             fi
             echo
             echo "### Pull requests in range"
