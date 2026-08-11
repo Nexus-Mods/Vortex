@@ -398,28 +398,25 @@ export interface ICollectionsPersistentState {
   pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
 }
 
+export interface ISessionState {
+  base: ISession;
+  collections: ICollectionInstallState;
+  gameMode: ISessionGameMode;
+  discovery: IDiscoveryState;
+  notifications: INotificationState;
+  browser: IBrowserState;
+  history: IHistoryState;
+  overlays: IOverlaysState;
+  healthCheck: IHealthCheckSessionState;
+}
+
 export interface IState {
   app: IApp;
   user: IUser;
   confidential: {
     account: {};
   };
-  session: {
-    base: ISession;
-    collections: ICollectionInstallState;
-    gameMode: ISessionGameMode;
-    discovery: IDiscoveryState;
-    notifications: INotificationState;
-    browser: IBrowserState;
-    history: IHistoryState;
-    overlays: IOverlaysState;
-    healthCheck: IHealthCheckSessionState;
-    extensions: {
-      available: IAvailableExtension[];
-      optional: { [extId: string]: IExtensionOptional[] };
-      updateTime: number;
-    };
-  };
+  session: ISessionState;
   settings: ISettings;
   persistent: {
     profiles: { [profileId: string]: IProfile };
