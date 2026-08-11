@@ -27,6 +27,8 @@ import { PopoverButton } from "./PopoverButton";
 import { PopoverMenu } from "./PopoverMenu";
 import type { IMenuAction } from "./PopoverMenuItem";
 import { PopoverPanel } from "./PopoverPanel";
+import { PopoverPanelGroup } from "./PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "./PopoverPanelGroupItem";
 
 const layoutOptions = [
   { label: "Grid", value: "grid", iconPath: mdiViewGrid },
@@ -86,56 +88,55 @@ export const PopoverDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          A trigger button that opens a panel of settings. The panel stays open while you change the
-          picker or toggle the switch.
+          A trigger button that opens a panel of settings, composed from PopoverPanelGroup rows. The
+          panel stays open while you change the picker or toggle the switch. Each group states its
+          own separator, so the trailing reset row can&apos;t leave a dangling rule.
         </Typography>
 
         <div className="flex flex-wrap gap-4">
           <Popover>
             <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiTune} />
 
-            <PopoverPanel className="right-auto left-0">
-              <div className="flex min-h-12 items-center justify-between gap-x-6 border-b border-stroke-weak px-4">
-                <Typography appearance="subdued" typographyType="body-sm">
-                  Display as
-                </Typography>
+            <PopoverPanel className="nxm-popover-panel-controls">
+              <PopoverPanelGroup>
+                <PopoverPanelGroupItem label="Display as">
+                  <Picker
+                    button={{
+                      leftIconPath: layout === "list" ? mdiViewList : mdiViewGrid,
+                      size: "sm",
+                    }}
+                    options={layoutOptions}
+                    value={layout}
+                    onChange={setLayout}
+                  />
+                </PopoverPanelGroupItem>
+              </PopoverPanelGroup>
 
-                <Picker
-                  button={{
-                    leftIconPath: layout === "list" ? mdiViewList : mdiViewGrid,
-                    size: "sm",
-                  }}
-                  options={layoutOptions}
-                  value={layout}
-                  onChange={setLayout}
-                />
-              </div>
+              <PopoverPanelGroup>
+                <PopoverPanelGroupItem label="Show hidden items">
+                  <Switch
+                    aria-label="Show hidden items"
+                    checked={showHidden}
+                    onChange={setShowHidden}
+                  />
+                </PopoverPanelGroupItem>
+              </PopoverPanelGroup>
 
-              <div className="flex min-h-12 items-center justify-between gap-x-6 border-b border-stroke-weak px-4">
-                <Typography appearance="subdued" typographyType="body-sm">
-                  Show hidden items
-                </Typography>
-
-                <Switch
-                  aria-label="Show hidden items"
-                  checked={showHidden}
-                  onChange={setShowHidden}
-                />
-              </div>
-
-              <div className="flex min-h-12 items-center justify-end px-4">
-                <Button
-                  appearance="subdued"
-                  brand="primary"
-                  type="button"
-                  onClick={() => {
-                    setLayout("grid");
-                    setShowHidden(false);
-                  }}
-                >
-                  Reset to default
-                </Button>
-              </div>
+              <PopoverPanelGroup>
+                <PopoverPanelGroupItem className="justify-end">
+                  <Button
+                    appearance="subdued"
+                    brand="primary"
+                    type="button"
+                    onClick={() => {
+                      setLayout("grid");
+                      setShowHidden(false);
+                    }}
+                  >
+                    Reset to default
+                  </Button>
+                </PopoverPanelGroupItem>
+              </PopoverPanelGroup>
             </PopoverPanel>
           </Popover>
         </div>
@@ -176,7 +177,15 @@ export const PopoverDemo = () => {
 
           <li>PopoverPanel holds arbitrary interactive content and stays open until dismissed</li>
 
-          <li>Closes on an outside click or Escape; positioned manually until Headless UI v2</li>
+          <li>
+            Closes on an outside click or Escape; Headless UI&apos;s anchor prop portals the panel
+            out of any clipping ancestor and flips it into view
+          </li>
+
+          <li>
+            Fill a panel of settings with PopoverPanelGroup rows, and give it
+            nxm-popover-panel-controls; a panel of menu rows takes nxm-popover-panel-dropdown
+          </li>
 
           <li>Use Dropdown instead when the items are one-shot actions rather than controls</li>
 
