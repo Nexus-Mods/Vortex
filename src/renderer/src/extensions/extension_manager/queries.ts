@@ -3,12 +3,35 @@ import * as semver from "semver";
 import type { IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
 import type { IExtensionOptional, IExtensionState } from "@/types/IState";
 
-/** Find an extension in the available catalog that matches this installed extension. */
+/** Find an extension in the available catalog. */
 export function findInCatalog(
   catalog: IAvailableExtension[],
-  extension: IExtensionState,
+  query: { modId: number; fileId?: number },
 ): IAvailableExtension | undefined {
-  return catalog.find((catalogEntry) => isSameExtension(extension, catalogEntry));
+  return catalog.find((catalogEntry) => matchesQuery(query, catalogEntry));
+}
+
+/** Find an installed extension. */
+export function findInstalled(
+  installedExtensions: Record<string, IExtensionState>,
+  query: { modId: number; fileId?: number },
+): { key: string; extension: IExtensionState } | undefined {
+  const result = Object.entries(installedExtensions).find(([_, extension]) =>
+    matchesQuery(query, extension),
+  );
+  if (result === undefined) return undefined;
+
+  const [key, extension] = result;
+  return { key, extension };
+}
+
+/** Checks whether the given entry matches the query. */
+export function matchesQuery(
+  query: { modId: number; fileId?: number },
+  entry: IExtensionState | IAvailableExtension,
+): boolean {
+  if (entry.modId === query.modId) return true;
+  return query.fileId !== undefined ? entry.fileId === query.fileId : true;
 }
 
 /** Find a dependency extension by its declared identifier in the catalog. */
@@ -26,8 +49,11 @@ export function isAlreadyInstalled(
   installedExtensions: Record<string, IExtensionState>,
   catalogEntry: IAvailableExtension,
 ): boolean {
-  return Object.values(installedExtensions).some((extension) =>
-    isSameExtension(extension, catalogEntry, true),
+  return (
+    findInstalled(installedExtensions, {
+      modId: catalogEntry.modId,
+      fileId: catalogEntry.fileId,
+    }) !== undefined
   );
 }
 
@@ -43,16 +69,6 @@ export function findInstalledDependency(
   if (result === undefined) return undefined;
   const [key, extension] = result;
   return { key, extension };
-}
-
-/** Determine if an installed extension and a catalog entry represent the same extension. */
-export function isSameExtension(
-  installed: IExtensionState,
-  catalogEntry: IAvailableExtension,
-  matchVersion?: boolean,
-): boolean {
-  if (installed.modId !== catalogEntry.modId) return false;
-  return matchVersion ? installed.fileId === catalogEntry.fileId : true;
 }
 
 /** Find all currently installed versions of an extension. */
@@ -88,7 +104,7 @@ export function findUpdatableExtensions(
     [];
 
   for (const [key, installed] of Object.entries(installedExtensions)) {
-    const available = findInCatalog(catalog, installed);
+    const available = findInCatalog(catalog, { modId: installed.modId });
     if (available === undefined) continue;
 
     const installedVersion = semver.coerce(installed.version);

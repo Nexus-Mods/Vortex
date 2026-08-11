@@ -24,6 +24,7 @@ import { setDownloadModInfo } from "../download_management/actions/state";
 import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
 import installExtension from "./installExtension";
+import { findInCatalog } from "./queries";
 
 const caches: {
   __availableExtensions?: PromiseBB<{
@@ -289,7 +290,7 @@ export async function downloadAndInstallExtension(
       fetchAvailableExtensions(false),
     );
 
-    const extDetail = availableExtensions.find((iter) => iter.modId === ext.modId);
+    const extDetail = findInCatalog(availableExtensions, { modId: ext.modId });
 
     const info: IExtension | undefined =
       extDetail !== undefined
@@ -355,13 +356,12 @@ async function downloadFromNexus(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
 ): Promise<string[]> {
+  // TODO: remove this check, download info should always carry fileId and modId at this point
   if (ext.fileId === undefined && ext.modId !== undefined) {
     const state = api.getState();
-    const availableExt = state.session.extensions.available.find(
-      (iter) => iter.modId === ext.modId,
-    );
-    if (availableExt !== undefined) {
-      ext.fileId = availableExt.fileId;
+    const available = findInCatalog(state.session.extensions.available, { modId: ext.modId });
+    if (available !== undefined) {
+      ext.fileId = available.fileId;
     } else {
       throw new Error("unavailable nexus extension");
     }

@@ -120,6 +120,7 @@ const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
 const ENQUEUE_TAG = Symbol("emitAndAwaitEnqueue");
 
+/** @deprecated */
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
     return installed.modId === remote.modId;
