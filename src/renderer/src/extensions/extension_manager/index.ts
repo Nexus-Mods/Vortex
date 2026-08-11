@@ -420,10 +420,12 @@ function init(context: IExtensionContext) {
 
     context.api.onAsync<boolean>("install-extension-from-download", async (archiveId: string) => {
       const state = context.api.getState();
-      const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
-      if (modId === undefined) return false;
+      const ids = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids ?? {};
 
-      const isInstalled = findInstalled(state.app.extensions, { modId }) !== undefined;
+      const { modId, fileId } = ids;
+      if (modId === undefined || fileId === undefined) return false;
+
+      const isInstalled = findInstalled(state.app.extensions, { modId, fileId }) !== undefined;
       if (isInstalled) {
         context.api.sendNotification({
           id: "extension-already-installed",
@@ -435,7 +437,7 @@ function init(context: IExtensionContext) {
       }
 
       const catalogEntry = findInCatalog(state.session.extensions.available, { modId });
-      if (catalogEntry !== undefined) {
+      if (catalogEntry === undefined) {
         context.api.sendNotification({
           id: "not-an-extension",
           type: "warning",
