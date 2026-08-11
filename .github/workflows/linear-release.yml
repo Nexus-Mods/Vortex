@@ -108,7 +108,9 @@ jobs:
           COMPLETE_OUTCOME: ${{ steps.complete.outcome }}
           RELEASE_URL: ${{ steps.sync.outputs.release-url }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
-          LINEAR_ACCESS_KEY: ${{ secrets.LINEAR_ACCESS_KEY }}
+          # Pipeline access keys cannot run GraphQL queries; the optional
+          # LINEAR_API_KEY (a regular API key) enables the team-key split.
+          LINEAR_TEAMS_KEY: ${{ secrets.LINEAR_API_KEY || secrets.LINEAR_ACCESS_KEY }}
         run: |
           # Human-readable recap on the run's summary page. The issue keys
           # mirror the CLI's client-side commit scan; Linear resolves PR
@@ -147,9 +149,9 @@ jobs:
               --data '{"query":"{ teams(first: 250) { nodes { key } } }"}' \
               | jq -r '[.data.teams.nodes[].key] | join("|")' 2>/dev/null
           }
-          team_keys=$(fetch_teams "$LINEAR_ACCESS_KEY" || true)
+          team_keys=$(fetch_teams "$LINEAR_TEAMS_KEY" || true)
           if [ -z "$team_keys" ]; then
-            team_keys=$(fetch_teams "Bearer $LINEAR_ACCESS_KEY" || true)
+            team_keys=$(fetch_teams "Bearer $LINEAR_TEAMS_KEY" || true)
           fi
           echo "Linear team keys: ${team_keys:-<fetch failed, summary will be unsplit>}"
           range="$BASE..refs/tags/$TAG"
