@@ -82,6 +82,7 @@ jobs:
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
+          name: ${{ steps.release.outputs.tag }}
           version: ${{ steps.release.outputs.tag }}
           base_ref: ${{ steps.prev.outputs.base }}
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
