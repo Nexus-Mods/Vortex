@@ -844,12 +844,30 @@ class ExtensionManager {
       const disableExtensions = fs
         .readdirSync(getVortexPath("temp"))
         .filter((name) => name.startsWith("__disable_"));
+
+      const extensionsPath = path.join(getVortexPath("userData"), "plugins");
+
       disableExtensions.forEach((ext) => {
-        const extId = ext.substr(10);
-        log("info", "disabling extension that caused a crash before", {
-          extId,
-        });
-        this.mPendingDisables.push(extId);
+        const extensionName = ext.substring(10);
+        const extensionPath = path.join(extensionsPath, extensionName);
+
+        const existingExtension = Object.entries(this.mExtensionState).find(
+          ([_, entry]) =>
+            path.normalize(entry.path).toLowerCase() ===
+            path.normalize(extensionPath).toLowerCase(),
+        );
+
+        if (existingExtension === undefined) {
+          log("info", "skipping disable file for unknown extension", { extensionName });
+        } else {
+          const [extensionKey] = existingExtension;
+
+          log("info", "disabling extension that caused a crash before", {
+            extensionName,
+          });
+          this.mPendingDisables.push(extensionKey);
+        }
+
         fs.unlinkSync(path.join(getVortexPath("temp"), ext));
       });
     } catch (err) {
@@ -1824,7 +1842,8 @@ class ExtensionManager {
       .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
         const [existingExtensionKey, existingExtension] = Object.entries(state.app.extensions).find(
-          ([_, entry]) => entry.path === ext.path,
+          ([_, entry]) =>
+            path.normalize(entry.path).toLowerCase() === path.normalize(ext.path).toLowerCase(),
         ) ?? [undefined, undefined];
 
         if (existingExtension === undefined) return;
