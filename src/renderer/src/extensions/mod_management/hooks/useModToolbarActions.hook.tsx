@@ -43,9 +43,14 @@ interface IPositionedAction {
 }
 
 /**
- * Where the actions this hook builds itself sit among the registered ones. The order
- * the row reads in comes from these and from the positions passed to `registerAction`
- * elsewhere, so a change here moves the action in the overflow menu too.
+ * Where the actions this hook builds itself sit among the registered ones, which is
+ * fixed: pinning an action puts it back where it belongs rather than at the end.
+ *
+ * The order the bar reads in — Install From File, Open, History, Check for Updates,
+ * Categories, Manage Rules — comes from these and from the positions passed to
+ * `registerAction` elsewhere, so a change here moves the action in the overflow menu
+ * too. Deploy and Purge keep the positions they had as components, being unpinned by
+ * default and so seen in that menu.
  */
 const POSITION = {
   installFromFile: 25,
@@ -68,24 +73,30 @@ const POSITION = {
  * Extensions we don't ship still rely on that, so these two buckets keep folding.
  */
 interface IActionMenu {
+  id: string;
   icon: string;
   group: string;
   label: string;
   position: number;
+  pinned: boolean;
 }
 
 const OPEN_MENU: IActionMenu = {
+  id: "open",
   icon: "open-ext",
   group: "mod-icons-open",
   label: "Open",
   position: POSITION.open,
+  pinned: true,
 };
 
 const IMPORT_MENU: IActionMenu = {
+  id: "import",
   icon: "import",
   group: "mod-icons-import",
   label: "Import",
   position: POSITION.import,
+  pinned: false,
 };
 
 const ACTION_MENUS = [OPEN_MENU, IMPORT_MENU];
@@ -183,6 +194,7 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
     () => ({
       position: POSITION.deploy,
       action: {
+        id: "deploy",
         label: t("Deploy Mods"),
         iconPath: getIconPath("deploy"),
         testId: "deploy-mods",
@@ -307,6 +319,7 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
     () => ({
       position: POSITION.purge,
       action: {
+        id: "purge",
         label: t("Purge Mods"),
         iconPath: getIconPath("purge"),
         testId: "purge-mods",
@@ -386,8 +399,10 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
     () => ({
       position: POSITION.installFromFile,
       action: {
+        id: "install-from-file",
         label: t("Install From File"),
         iconPath: mdiPlusCircleOutline,
+        pinned: true,
         testId: "install-from-archive",
         onClick: install,
       },
@@ -509,14 +524,18 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
       position: POSITION.checkVersions,
       action: updateRunning
         ? {
+            id: "check-versions",
             label: t("Checking for mod updates"),
             iconPath: getIconPath("refresh"),
+            pinned: true,
             disabled: true,
             isLoading: true,
           }
         : {
+            id: "check-versions",
             label: t("Check for Updates"),
             iconPath: getIconPath("refresh"),
+            pinned: true,
             testId: "check-mod-updates-button",
             onClick: check,
           },
@@ -567,8 +586,13 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
       position: definition.position ?? 100,
       icon: definition.icon,
       action: {
+        // The registered title, which is the source string rather than the
+        // translation, so a decision to pin survives a language change. It is also
+        // what IconBar built its DOM ids from.
+        id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
         iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
+        pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",
         onClick: () => definition.action?.(instanceIds),
       },
@@ -614,8 +638,10 @@ const useActionMenu = (
     return {
       position: menu.position,
       action: {
+        id: menu.id,
         label: `${label}...`,
         iconPath: getIconPath(menu.icon),
+        pinned: menu.pinned,
         panelRole: "menu",
         panel: ({ dismiss }) => (
           <PopoverMenu actions={[actions]} label={label} onSelect={dismiss} />

@@ -1585,7 +1585,7 @@ function main(context: types.IExtensionContext) {
     "mod-icons",
     90,
     "rules",
-    { notice: () => unresolvedConflictsNotice(context.api) },
+    { notice: () => unresolvedConflictsNotice(context.api), pinned: true },
     "Manage Rules",
     () => {
       showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
