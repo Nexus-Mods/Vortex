@@ -6,6 +6,13 @@
 export const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
 
 /**
+ * Vintage Interface v2 — a CP content pack that visibly reskins the UI. The
+ * target mod for the uninstall/disable specs: installs cleanly alongside SMAPI
+ * and its deployed files are easy to assert on in the game's Mods folder.
+ */
+export const SDV_VINTAGE_INTERFACE_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/4697";
+
+/**
  * SDV mod with a single main file that declares two file-level requirements.
  * Installed on its own (those required files absent) it drives one file-requirements
  * Health Check warning covering both — the fixture for the LAZ-684 warning/install

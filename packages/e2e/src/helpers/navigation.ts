@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 
 import { NavBar } from "../selectors/navbar";
 import { SettingsPage } from "../selectors/settings";
+import { Timeouts } from "./timeouts";
 
 export async function navigateToSettings(page: Page): Promise<void> {
   const navbar = new NavBar(page);
@@ -30,4 +31,12 @@ export async function navigateToGames(page: Page): Promise<void> {
   } else if (await navbar.homeLink.isVisible().catch(() => false)) {
     await navbar.homeLink.click();
   }
+}
+
+/**
+ * Open a managed game's workspace via its spine button and wait for it to load.
+ */
+export async function openGameWorkspace(page: Page, gameName: string): Promise<void> {
+  await page.getByRole("button", { name: gameName, exact: true }).first().click();
+  await expect(new NavBar(page).modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
 }
