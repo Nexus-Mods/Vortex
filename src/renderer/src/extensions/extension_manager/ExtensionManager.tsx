@@ -23,8 +23,9 @@ import type { IExtensionWithState } from "@/types/extensions";
 import type { IExtensionState, IState } from "@/types/IState";
 import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
-import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { relaunch } from "@/util/commandLine";
 import * as selectors from "@/util/selectors";
 import { Page } from "@/views/components/Page/Page";
@@ -33,7 +34,7 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { SITE_ID } from "../gamemode_management/constants";
-import { DisplayOptions } from "./components/DisplayOptions";
+import { useDisplayOptionsAction } from "./hooks/useDisplayOptionsAction.hook";
 import installExtension from "./installExtension";
 import getTableAttributes from "./tableAttributes";
 
@@ -186,7 +187,7 @@ export const ExtensionManager = ({
       log("info", "installing extension(s) via drag and drop", { extPaths });
 
       const install = (extPath: string) =>
-        installExtension(api, extPath)
+        installExtension(api, extPath, { analytics: { source: "manual" } })
           .then(() => true)
           .catch((err) => {
             api.showErrorNotification("Failed to install extension", err, { allowReport: false });
@@ -231,6 +232,27 @@ export const ExtensionManager = ({
   const restartNeeded =
     localState.reloadNecessary || !_.isEqual(configId(extensions), configId(oldExtensions));
 
+  const displayOptions = useDisplayOptionsAction({
+    showBundled,
+    t,
+    onReset: () => setShowBundled(false),
+    onToggleBundled: () => setShowBundled((prev) => !prev),
+  });
+
+  const toolbarActions: IToolbarAction[] = [
+    {
+      label: t("Update extensions"),
+      iconPath: mdiRefresh,
+      onClick: onRefresh,
+    },
+    {
+      label: t("Browse extensions"),
+      iconPath: mdiPlus,
+      onClick: () => dispatch(setDialogVisible("browse-extensions")),
+    },
+    displayOptions,
+  ];
+
   return (
     <Page active={active} pageId={pageId} scrollable={false}>
       <PageHeader
@@ -239,40 +261,9 @@ export const ExtensionManager = ({
         subtitle={t("Manage extensions that add features and game support to Vortex.")}
         title={t("Extensions")}
       >
-        {/* Not a `Toolbar`: its delay group only covers the actions it renders, so
-            the display options' own tooltip would sit outside it and re-delay when
-            the pointer reaches the tune icon. One group over all three keeps the
-            sweep instant. */}
-        <div className="flex shrink-0 items-center gap-x-2">
-          <TooltipDelayGroup>
-            <Tooltip content={t("Update extensions")} placement="bottom">
-              <Button
-                appearance="weak"
-                aria-label={t("Update extensions")}
-                brand="neutral"
-                leftIconPath={mdiRefresh}
-                onClick={onRefresh}
-              />
-            </Tooltip>
-
-            <Tooltip content={t("Browse extensions")} placement="bottom">
-              <Button
-                appearance="weak"
-                aria-label={t("Browse extensions")}
-                brand="neutral"
-                leftIconPath={mdiPlus}
-                onClick={() => dispatch(setDialogVisible("browse-extensions"))}
-              />
-            </Tooltip>
-
-            <DisplayOptions
-              showBundled={showBundled}
-              t={t}
-              onReset={() => setShowBundled(false)}
-              onToggleBundled={() => setShowBundled((prev) => !prev)}
-            />
-          </TooltipDelayGroup>
-        </div>
+        <Toolbar>
+          <ToolbarGroup actions={toolbarActions} />
+        </Toolbar>
       </PageHeader>
 
       {restartNeeded && (

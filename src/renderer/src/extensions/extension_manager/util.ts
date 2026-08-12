@@ -23,7 +23,9 @@ import { INVALID_FILENAME_RE } from "../../util/util";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
+import { parseExtensionInfo } from "./extensionInfo";
 import installExtension from "./installExtension";
+import { findInCatalog } from "./queries";
 
 const caches: {
   __availableExtensions?: PromiseBB<{
@@ -77,40 +79,6 @@ function getAllDirectories(searchPath: string): PromiseBB<string[]> {
     .catch({ code: "ENOENT" }, () => []);
 }
 
-function applyExtensionInfo(
-  id: string,
-  bundled: boolean,
-  archiveInfo: Partial<IExtension>,
-  manifestInfo: Partial<IExtension>,
-): IExtension {
-  const res = {
-    name: manifestInfo.name || archiveInfo.name || id,
-    author: manifestInfo.author || archiveInfo.author || "Unknown",
-    version: manifestInfo.version || archiveInfo.version || "0.0.0",
-    description: manifestInfo.description || archiveInfo.description || "Missing",
-  } satisfies IExtension;
-
-  // add optional settings if we have them
-  const add = <T>(key: string, primary: T, secondary: T) => {
-    if (primary !== undefined) {
-      res[key] = primary;
-    } else if (secondary !== undefined) {
-      res[key] = secondary;
-    }
-  };
-
-  add("id", archiveInfo.id, manifestInfo.id);
-  add("type", manifestInfo.type, archiveInfo.type);
-  add("path", archiveInfo.path, undefined);
-  add("bundled", bundled, undefined);
-  // modId/fileId are identity data assigned by the Nexus Mods manifest, not
-  // something an extension author controls via their own info.json.
-  add("modId", manifestInfo.modId, archiveInfo.modId);
-  add("fileId", manifestInfo.fileId, archiveInfo.fileId);
-
-  return res;
-}
-
 export function selectorMatch(ext: IAvailableExtension, selector: ISelector): boolean {
   if (selector === undefined) {
     return false;
@@ -125,27 +93,29 @@ export function sanitize(input: string): string {
 export function readExtensionInfo(
   extensionPath: string,
   bundled: boolean,
-  manifestInfo: Partial<IExtension> = {},
 ): PromiseBB<{ id: string; info: IExtension }> {
   const finalPath = extensionPath.replace(/\.installing$/, "");
 
   return fs
     .readFileAsync(path.join(extensionPath, "info.json"), { encoding: "utf-8" })
-    .then((info: string) => {
-      const data = JSON.parse(info) as unknown as Partial<IExtension>;
-      data.path = finalPath;
-      const id = data.id || path.basename(finalPath);
-      return {
-        id,
-        info: applyExtensionInfo(id, bundled, data, manifestInfo),
-      };
+    .then((contents: string) => {
+      const data: unknown = JSON.parse(contents);
+      const info = parseExtensionInfo(data);
+      const id = info.id || path.basename(finalPath);
+      info.bundled = bundled;
+      return { id, info };
     })
     .catch(() => {
       const id = path.basename(finalPath);
-      return {
+      const info: IExtension = {
         id,
-        info: applyExtensionInfo(id, bundled, {}, manifestInfo),
+        bundled,
+        name: "<missing>",
+        author: "<missing>",
+        description: "<missing>",
+        version: "<missing>",
       };
+      return { id, info };
     });
 }
 
@@ -289,26 +259,18 @@ export async function downloadAndInstallExtension(
       fetchAvailableExtensions(false),
     );
 
-    const extDetail = availableExtensions.find((iter) => iter.modId === ext.modId);
-
-    const info: IExtension | undefined =
-      extDetail !== undefined
-        ? {
-            ..._.pick(extDetail, ["id", "name", "author", "version", "type"]),
-            bundled: false,
-            description: extDetail.description.short,
-            modId: ext.modId,
-            fileId: extDetail.fileId,
-          }
-        : undefined;
+    const catalogEntry = findInCatalog(availableExtensions, { modId: ext.modId });
 
     const state = api.getState();
     const downloadPath = downloadPathForGame(state, SITE_ID);
 
-    await installExtension(api, path.join(downloadPath, download.localPath), info, {
-      source: "nexusmods",
-      gameDomain: extDetail?.gameId,
-      gameName: extDetail?.gameName,
+    await installExtension(api, path.join(downloadPath, download.localPath), {
+      catalogEntry,
+      analytics: {
+        source: "nexusmods",
+        gameDomain: catalogEntry?.gameId,
+        gameName: catalogEntry?.gameName,
+      },
     });
 
     return true;
@@ -351,18 +313,6 @@ async function downloadFromNexus(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
 ): Promise<string[]> {
-  if (ext.fileId === undefined && ext.modId !== undefined) {
-    const state = api.getState();
-    const availableExt = state.session.extensions.available.find(
-      (iter) => iter.modId === ext.modId,
-    );
-    if (availableExt !== undefined) {
-      ext.fileId = availableExt.fileId;
-    } else {
-      throw new Error("unavailable nexus extension");
-    }
-  }
-
   log("debug", "download from nexus", archiveFileName(ext));
   return await api.emitAndAwait<"nexus-download">(
     "nexus-download",

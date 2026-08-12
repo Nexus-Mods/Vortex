@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "codegen": "pnpm exec openapi-typescript ./schema/openapi.yaml -o src/generated/nexus-api-v3.d.ts --immutable",
+    "codegen": "pnpm exec openapi-typescript ./schema/openapi.yaml -o src/generated/nexus-api-v3.d.ts --immutable && pnpm exec openapi-typescript ./schema/internal/telemetry.yaml -o src/generated/nexus-api-v3-internal.d.ts --immutable",
     "build": "pnpm exec tsdown",
     "test": "pnpm exec vitest run",
     "typecheck": "pnpm exec tsc",
@@ -42,10 +42,12 @@
         "cache": true,
         "inputs": [
           "default",
-          "{projectRoot}/schema/openapi.yaml"
+          "{projectRoot}/schema/openapi.yaml",
+          "{projectRoot}/schema/internal/telemetry.yaml"
         ],
         "outputs": [
-          "{projectRoot}/src/generated/nexus-api-v3.d.ts"
+          "{projectRoot}/src/generated/nexus-api-v3.d.ts",
+          "{projectRoot}/src/generated/nexus-api-v3-internal.d.ts"
         ]
       }
     }

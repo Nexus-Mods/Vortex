@@ -1,4 +1,4 @@
-import type { ICollection, IRevision } from "@nexusmods/nexus-api";
+import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -133,25 +133,36 @@ export interface ITableState {
 
 export interface IExtensionState {
   enabled: boolean | "failed";
-  version: string;
+
+  /** Set true for extensions pending removal. */
   remove: boolean;
-  endorsed: string;
+
   /** Display name of the extension. */
   name: string;
-  /** Extension author display name. */
-  author: string;
   /** Human-readable description of the extension. */
   description: string;
+  /** Extension author display name. */
+  author: string;
+  /** File version */
+  version: string;
+
   /** Path to the extension folder on disk. */
   path: string;
-  /** Nexus Mods mod ID for this extension. Identity key for mapping to available/manifest entries. */
+
+  /** True for extensions shipped with Vortex. */
+  bundled?: boolean;
+  /** Extension type. */
+  type?: ExtensionType;
+  /** Author provided extension ID from the info.json file. Only relevant for extension dependency check, should never
+   * be used directly otherwise.*/
+  infoJsonId?: string;
+
+  /** Nexus Mods mod ID for this extension. */
   modId?: number;
   /** Nexus Mods file ID for this specific version of the extension. */
   fileId?: number;
-  /** Extension type. */
-  type?: ExtensionType;
-  /** True for extensions shipped with Vortex (bundled plugins dir). Always false or absent for state entries. */
-  bundled?: boolean;
+  /** Nexus Mods endorsed status of the extension mod page. */
+  endorsed: EndorsedStatus;
 }
 
 /**
@@ -387,28 +398,25 @@ export interface ICollectionsPersistentState {
   pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
 }
 
+export interface ISessionState {
+  base: ISession;
+  collections: ICollectionInstallState;
+  gameMode: ISessionGameMode;
+  discovery: IDiscoveryState;
+  notifications: INotificationState;
+  browser: IBrowserState;
+  history: IHistoryState;
+  overlays: IOverlaysState;
+  healthCheck: IHealthCheckSessionState;
+}
+
 export interface IState {
   app: IApp;
   user: IUser;
   confidential: {
     account: {};
   };
-  session: {
-    base: ISession;
-    collections: ICollectionInstallState;
-    gameMode: ISessionGameMode;
-    discovery: IDiscoveryState;
-    notifications: INotificationState;
-    browser: IBrowserState;
-    history: IHistoryState;
-    overlays: IOverlaysState;
-    healthCheck: IHealthCheckSessionState;
-    extensions: {
-      available: IAvailableExtension[];
-      optional: { [extId: string]: IExtensionOptional[] };
-      updateTime: number;
-    };
-  };
+  session: ISessionState;
   settings: ISettings;
   persistent: {
     profiles: { [profileId: string]: IProfile };

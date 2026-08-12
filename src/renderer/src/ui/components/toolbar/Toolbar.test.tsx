@@ -12,12 +12,20 @@ import { fitVisibleActions, type IToolbarGroupMetrics } from "./useToolbarOverfl
 const makeActions = (count: number): IToolbarAction[] =>
   Array.from({ length: count }, (_, i) => ({ label: `Action ${i + 1}`, iconPath: "mdi-test" }));
 
-const getKebab = () => screen.getByRole("button", { name: /more actions/i });
+/**
+ * The kebab is found by test id, not by its name: that name is translated, and
+ * nothing may key off a string that changes with the language.
+ */
+const KEBAB_TEST_ID = "toolbar-overflow";
 
-const countActionButtons = () =>
-  screen
-    .getAllByRole("button")
-    .filter((button) => !/more actions/i.test(button.getAttribute("aria-label") ?? "")).length;
+const getKebab = () => screen.getByTestId(KEBAB_TEST_ID);
+
+const queryKebab = () => screen.queryByTestId(KEBAB_TEST_ID);
+
+const actionButtons = () =>
+  screen.getAllByRole("button").filter((button) => button.dataset.testid !== KEBAB_TEST_ID);
+
+const countActionButtons = () => actionButtons().length;
 
 /**
  * happy-dom lays nothing out, so every control reports a width of 0. These stubs
@@ -52,7 +60,9 @@ const stubLayout = (initialRowWidth: number) => {
   Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
     configurable: true,
     get(this: HTMLElement) {
-      const isControl = this.tagName === "BUTTON" || this.classList.contains("nxm-dropdown");
+      // A popover wrapper is the group's child for both the kebab and any action
+      // that opens a panel; the button it holds is a level down.
+      const isControl = this.tagName === "BUTTON" || this.classList.contains("nxm-popover");
       return isControl ? CONTROL_WIDTH : 0;
     },
   });
@@ -178,7 +188,7 @@ describe("ToolbarGroup", () => {
     it("does not render a kebab when the action count is within maxVisible", () => {
       render(<ToolbarGroup actions={makeActions(7)} maxVisible={7} />);
       expect(screen.getAllByRole("button")).toHaveLength(7);
-      expect(screen.queryByRole("button", { name: /more actions/i })).not.toBeInTheDocument();
+      expect(queryKebab()).not.toBeInTheDocument();
     });
 
     it("collapses the tail into a kebab once maxVisible is exceeded", () => {
@@ -199,13 +209,28 @@ describe("ToolbarGroup", () => {
       expect(screen.getByText("Action 8")).toBeInTheDocument();
     });
 
-    it("calls an overflowed action's onClick from the dropdown", async () => {
+    it("calls an overflowed action's onClick from the menu, then dismisses it", async () => {
       const onClick = vi.fn();
       const actions = [...makeActions(7), { label: "Overflowed", iconPath: "mdi-test", onClick }];
       render(<ToolbarGroup actions={actions} maxVisible={7} />);
       await userEvent.click(getKebab());
       await userEvent.click(screen.getByText("Overflowed"));
       expect(onClick).toHaveBeenCalledOnce();
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
+
+    it("moves the roving focus with the arrow keys", async () => {
+      render(<ToolbarGroup actions={makeActions(9)} maxVisible={7} />);
+      await userEvent.click(getKebab());
+
+      // Opening the menu puts focus on its first row.
+      expect(screen.getByRole("menuitem", { name: "Action 7" })).toHaveFocus();
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("menuitem", { name: "Action 8" })).toHaveFocus();
+
+      await userEvent.keyboard("{ArrowUp}{ArrowUp}");
+      expect(screen.getByRole("menuitem", { name: "Action 9" })).toHaveFocus();
     });
 
     it("respects a custom maxVisible", () => {
@@ -220,7 +245,126 @@ describe("ToolbarGroup", () => {
     it("never collapses when maxVisible is omitted", () => {
       render(<ToolbarGroup actions={makeActions(10)} />);
       expect(screen.getAllByRole("button")).toHaveLength(10);
-      expect(screen.queryByRole("button", { name: /more actions/i })).not.toBeInTheDocument();
+      expect(queryKebab()).not.toBeInTheDocument();
+    });
+  });
+
+  describe("panel actions", () => {
+    const panelAction: IToolbarAction = {
+      label: "Display options",
+      iconPath: "mdi-test",
+      panel: ({ close }) => (
+        <>
+          <span>Panel content</span>
+
+          <button type="button">Toggle something</button>
+
+          <button type="button" onClick={close}>
+            Reset to default
+          </button>
+        </>
+      ),
+    };
+
+    /** The action collapsed into the overflow, with the menu already open. */
+    const openOverflow = async () => {
+      render(<ToolbarGroup actions={[...makeActions(7), panelAction]} maxVisible={7} />);
+      await userEvent.click(getKebab());
+
+      return screen.getByRole("menuitem", { name: "Display options" });
+    };
+
+    // Headless UI's Popover renders a hidden sentinel span beside its own element
+    // until it has resolved its root container, so a panel action briefly occupies
+    // two slots in the row. Measuring must not be thrown off by that.
+    it("measures a group holding a panel action against the same budget", () => {
+      stubLayout(100);
+      render(
+        <Toolbar>
+          <ToolbarGroup actions={[...makeActions(4), panelAction]} />
+        </Toolbar>,
+      );
+
+      // 100px holds three 28px controls: two actions plus the kebab.
+      expect(countActionButtons()).toBe(2);
+      expect(getKebab()).toBeInTheDocument();
+    });
+
+    it("renders a panel action as an ordinary toolbar button", () => {
+      render(<ToolbarGroup actions={[panelAction]} />);
+      expect(screen.getByRole("button", { name: "Display options" })).toBeInTheDocument();
+      expect(screen.queryByText("Panel content")).not.toBeInTheDocument();
+    });
+
+    it("opens the panel from the toolbar button", async () => {
+      render(<ToolbarGroup actions={[panelAction]} />);
+      await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+      expect(screen.getByText("Panel content")).toBeInTheDocument();
+    });
+
+    // Headless UI returns focus to the trigger after the click that opened the
+    // panel, which the tooltip would otherwise read as a cue to reappear — over
+    // the panel.
+    it("holds the trigger's tooltip back while the panel is open", async () => {
+      render(<ToolbarGroup actions={[panelAction]} />);
+      const trigger = screen.getByRole("button", { name: "Display options" });
+
+      await userEvent.click(trigger);
+      await userEvent.hover(trigger);
+
+      await expect(screen.findByRole("tooltip", {}, { timeout: 400 })).rejects.toThrow();
+    });
+
+    it("lets the panel's own content close it", async () => {
+      render(<ToolbarGroup actions={[panelAction]} />);
+      await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+      await userEvent.click(screen.getByRole("button", { name: "Reset to default" }));
+      await waitFor(() => expect(screen.queryByText("Panel content")).not.toBeInTheDocument());
+    });
+
+    it("opens the panel from the overflow menu, alongside the row", async () => {
+      const row = await openOverflow();
+
+      expect(row).toHaveAttribute("aria-haspopup", "dialog");
+
+      await userEvent.click(row);
+      expect(screen.getByText("Panel content")).toBeInTheDocument();
+    });
+
+    // The regression this whole arrangement exists for: a Menu closes as soon as
+    // focus reaches a surface nested inside it, taking the panel with it.
+    it("keeps the overflow menu open behind the panel", async () => {
+      await userEvent.click(await openOverflow());
+
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByRole("menuitem", { name: "Action 7" })).toBeInTheDocument();
+    });
+
+    it("holds the row in the hover state while its panel is open", async () => {
+      const row = await openOverflow();
+
+      expect(row).not.toHaveClass("nxm-dropdown-item-active");
+
+      await userEvent.click(row);
+      expect(row).toHaveClass("nxm-dropdown-item-active");
+    });
+
+    it("keeps both open while the panel's controls are used", async () => {
+      await userEvent.click(await openOverflow());
+      await userEvent.click(screen.getByRole("button", { name: "Toggle something" }));
+
+      expect(screen.getByText("Panel content")).toBeInTheDocument();
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    it("opens the panel from the overflow row with ArrowRight", async () => {
+      const row = await openOverflow();
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(row).toHaveFocus();
+
+      await userEvent.keyboard("{ArrowRight}");
+      expect(screen.getByText("Panel content")).toBeInTheDocument();
     });
   });
 
@@ -312,7 +456,7 @@ describe("ToolbarGroup", () => {
     it("keeps every action when the row has room for them all", () => {
       renderRow(200);
       expect(countActionButtons()).toBe(5);
-      expect(screen.queryByRole("button", { name: /more actions/i })).not.toBeInTheDocument();
+      expect(queryKebab()).not.toBeInTheDocument();
     });
 
     it("collapses the actions that don't fit, leaving room for the kebab", () => {
@@ -343,7 +487,7 @@ describe("ToolbarGroup", () => {
 
       resizeRowTo(200);
       expect(countActionButtons()).toBe(5);
-      expect(screen.queryByRole("button", { name: /more actions/i })).not.toBeInTheDocument();
+      expect(queryKebab()).not.toBeInTheDocument();
     });
 
     it("shows only the kebab when not even one action fits", () => {
@@ -408,10 +552,7 @@ describe("ToolbarGroup", () => {
       // kebab. Rendering the pins first would give "Action 4, Action 5, Action 1".
       renderPinned(120, ["Action 4", "Action 5"]);
 
-      const names = screen
-        .getAllByRole("button")
-        .map((button) => button.getAttribute("aria-label"))
-        .filter((name) => name !== "More actions");
+      const names = actionButtons().map((button) => button.getAttribute("aria-label"));
 
       expect(names).toEqual(["Action 1", "Action 4", "Action 5"]);
     });

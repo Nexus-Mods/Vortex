@@ -95,7 +95,7 @@ export const TableColumnToggle = <T,>({
             <span className="nxm-dropdown-divider" />
 
             <button
-              className="nxm-dropdown-item"
+              className="nxm-dropdown-item nxm-dropdown-item-hoverable"
               disabled={!canResetWidths}
               type="button"
               onClick={(event) => {

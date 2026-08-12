@@ -15,10 +15,9 @@ import {
   knownGames as knownGamesSelector,
 } from "../../../util/selectors";
 import { useSpineContext } from "../Spine/SpineContext";
-import { HelpSection } from "./HelpSection";
-import { Notifications } from "./Notifications";
-import { PremiumIndicator } from "./PremiumIndicator";
-import { ProfileSection } from "./ProfileSection";
+import { Notifications } from "./notifications/Notifications";
+import { PremiumIndicator } from "./premium/PremiumIndicator";
+import { ProfileSection } from "./profile/ProfileSection";
 import { StagingIndicator } from "./StagingIndicator";
 import { VersionIndicator } from "./VersionIndicator";
 import { WindowControls } from "./WindowControls";
@@ -90,10 +89,8 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
         <PremiumIndicator />
 
         <div className="flex items-center gap-x-5">
-          <TooltipDelayGroup as="div" className="flex gap-x-1.5">
+          <TooltipDelayGroup as="div" className="flex gap-x-2">
             <Notifications />
-
-            <HelpSection />
 
             <ProfileSection />
           </TooltipDelayGroup>

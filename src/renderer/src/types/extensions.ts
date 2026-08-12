@@ -22,30 +22,40 @@ export type ExtensionType = "game" | "translation" | "theme";
  * Raw shape of an extension's info.json file.
  */
 export interface ExtensionInfo {
-  // id of the extension. We strongly advice against setting this manually
-  // in info.json because it mustn't be changed once the extension is released.
-  // if this isn't set, Vortex will assign something automatically that at least
-  // doesn't change on a users system after the extension is installed
-  id?: string;
-  // namespace. This is used (for example) to identify the localization for
-  // the extension. Unlike the id there isn't really a problem if this gets
-  // changed after release except you may ruin the day for translators.
-  // if this is unset but the id isn't, uses the id, otherwise something is
-  // derived from the extension name
-  namespace?: string;
+  /** Display name of the extension. */
   name: string;
+  /** Extension author display name. */
   author: string;
+  /** Description of the extension. */
   description: string;
+  /** File version. */
   version: string;
+
+  /**
+   * Author provided identifier to be used in requirements tracking. This
+   * provides an exact match that can be used for `requireExtension` calls
+   * to exactly match the extension instead of going through a priority matcher.
+   * */
+  id?: string;
+
+  /** Namespace for localization support. */
+  namespace?: string;
+
+  /** @deprecated not read from info.json anymore */
   type?: ExtensionType;
+  /** @deprecated not read from info.json anymore */
   bundled?: boolean;
+  /** @deprecated not read from info.json anymore */
   path?: string;
+  /** @deprecated not read from info.json anymore */
   modId?: number;
+  /** @deprecated not read from info.json anymore */
   fileId?: number;
+  /** @deprecated not read from info.json anymore */
   issueTrackerURL?: string;
 }
 
-/** @deprecated Use ExtensionInfo instead */
+/** @deprecated Use `ExtensionInfo` instead */
 export type IExtension = ExtensionInfo;
 
 export type IExtensionWithState = IExtensionState & {
@@ -54,15 +64,17 @@ export type IExtensionWithState = IExtensionState & {
 
 export interface IExtensionDownloadInfo {
   name: string;
-  modId?: number;
-  fileId?: number;
-  type?: ExtensionType;
+  modId: number;
+  fileId: number;
 }
 
 /**
  * information about an extension available on the central extension list
  */
-export interface IAvailableExtension extends IExtensionDownloadInfo {
+export interface IAvailableExtension {
+  name: string;
+  modId: number;
+  fileId: number;
   description: {
     short: string;
     long: string;
@@ -99,5 +111,5 @@ export interface IRegisteredExtension {
   path: string;
   dynamic: boolean;
   initFunc: () => ExtensionInit;
-  info?: IExtension;
+  info?: ExtensionInfo;
 }

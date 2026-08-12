@@ -243,7 +243,7 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
 function mapStateToProps(state: types.IState): IConnectedProps {
   return {
     extensionState: state.app.extensions,
-    extensions: state.session.extensions.available,
+    extensions: (state.session as any).extensions.available,
     installed: state.app.extensions ?? {},
     downloads: state.persistent.downloads.files,
     user: util.getSafe(state, ["persistent", "nexus", "userInfo", "name"], undefined),

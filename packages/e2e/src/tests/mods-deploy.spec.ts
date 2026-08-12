@@ -10,6 +10,7 @@
 import { SDV_MOD_URL } from "../constants";
 import { test, expect, type NexusUser } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
+import { openGameWorkspace } from "../helpers/navigation";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
 import { ModsPage } from "../selectors/modsPage";
@@ -64,10 +65,7 @@ test.describe("Mods - Deploy from mods list", () => {
         });
 
         await test.step("Open the SDV game page", async () => {
-          await vortexWindow
-            .getByRole("button", { name: "Stardew Valley", exact: true })
-            .first()
-            .click();
+          await openGameWorkspace(vortexWindow, "Stardew Valley");
         });
 
         await test.step("Open mod page", async () => {

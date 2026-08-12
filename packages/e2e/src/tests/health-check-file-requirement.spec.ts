@@ -1,52 +1,14 @@
-/**
- * File Requirements Health Check — warning, detail, feedback + list-management
- * flows (LAZ-684).
- *
- * Fixture: SDV mod 49786 has a single main file declaring two file-level
- * requirements. Installed on its own (those required files absent) it raises one
- * file-requirements "download" warning covering both required mods (category
- * `download` / kind `missing`). The tests here cover:
- *   - the list warning (plural title / count / 1-click action)
- *   - the expanded detail view (Warning header, "Install required" group,
- *     requirement cards + buttons, section-level install-all)
- *   - progressive count: resolving one requirement decrements the summary
- *   - free user: list 1-click opens the multi-file Premium upsell
- *   - free user: a manual website download, and the "Install via mod page" link,
- *     resolve the warning
- *   - premium user: the list / header / detail 1-click installs resolve it
- *   - hide/unhide moves the warning between the Active and Hidden tabs
- *   - the warning's feedback controls (thumbs + FeedbackModal)
- *   - singular/plural copy (two requirements ⇒ the plural strings)
- *
- * The warning is targeted by its title rather than the required mod's name, so
- * the spec doesn't hard-code the fixture's requirement target. SMAPI is
- * deliberately avoided here — Vortex special-cases it with a dedicated installer,
- * which interferes with a clean warning/install flow.
- *
- * The shared "install the fixture mod → open Health Check → surface the warning"
- * setup lives in helpers/healthCheck.ts (openFileRequirementWarning); each test
- * starts from there.
- *
- * These are heavy (real Mod-Manager download + install) and, like every
- * authenticated / managed-game spec, currently need CI to run — locally the OAuth
- * login is captcha-blocked (mitigated by a captured auth snapshot; see
- * helpers/authState.ts). Kept in their own file so the fast foundation suite
- * (health-check.spec.ts) isn't slowed.
- *
- * Assumption: 49786's requirements are file-level only, not page-level "requires"
- * rules. Enabling a mod silently auto-installs its page-level dependencies
- * (mod_management/index.ts "mod-enabled" handler); a page-level rule would
- * auto-install and no warning would surface. If these tests fail at the first
- * warnings.row() assertion, re-confirm the fixture is file-level only (or pick
- * another source mod).
- */
 import {
   SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN,
   SDV_FILE_REQUIREMENT_TARGET_URLS,
 } from "../constants";
 import { test, expect } from "../fixtures/vortex-app";
 import { installExternalOpenSpy, readExternalOpens } from "../helpers/externalOpen";
-import { openFileRequirementWarning, openWarningDetail } from "../helpers/healthCheck";
+import {
+  openFileRequirementWarning,
+  openOrFileRequirementWarning,
+  openWarningDetail,
+} from "../helpers/healthCheck";
 import { downloadModViaModManager } from "../helpers/modDownload";
 import { dismissAllNotifications } from "../helpers/notifications";
 import { Timeouts } from "../helpers/timeouts";
@@ -121,21 +83,20 @@ test.describe("Health Check - file requirement warnings", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The warning starts on the Active tab", async () => {
-        // Track the file-requirement warning by its own row, not the tab's aggregate
-        // "(N)" count: a page-level mod-requirement "suggestion" can also be active
-        // (see LAZ-852), which would inflate that count. warnings.row() is scoped to
-        // the file-warning title, so it stays correct regardless of what else is listed.
         await expect(warnings.row()).toBeVisible();
       });
 
       await test.step("Hidden tab starts empty", async () => {
-        // Only the file warning is ever hidden here, so the Hidden count is safe.
         await expect(hc.hiddenTab).toContainText("(0)");
       });
 
-      await test.step("Hide the warning via its row control", async () => {
+      await test.step("Reveal the warning's row actions on hover", async () => {
         await dismissAllNotifications(vortexWindow);
         await warnings.title().hover();
+        await expect(warnings.hideButton()).toBeVisible();
+      });
+
+      await test.step("Hide the warning via its row control", async () => {
         await warnings.hideButton().click();
         await expect(hc.hiddenTab).toContainText("(1)");
       });
@@ -149,9 +110,13 @@ test.describe("Health Check - file requirement warnings", () => {
         await expect(warnings.row()).toBeVisible();
       });
 
-      await test.step("Unhide the warning via its row control", async () => {
+      await test.step("Reveal the hidden warning's row actions on hover", async () => {
         await dismissAllNotifications(vortexWindow);
         await warnings.title().hover();
+        await expect(warnings.unhideButton()).toBeVisible();
+      });
+
+      await test.step("Unhide the warning via its row control", async () => {
         await warnings.unhideButton().click();
         await expect(hc.hiddenTab).toContainText("(0)");
       });
@@ -191,8 +156,12 @@ test.describe("Health Check - file requirement warnings", () => {
         await expect(feedback.sendButton).toBeVisible();
       });
 
-      await test.step("Sending feedback records it", async () => {
+      await test.step("Select a feedback reason", async () => {
         await feedback.incorrectRequirement.click();
+        await expect(feedback.sendButton).toBeEnabled();
+      });
+
+      await test.step("Sending the feedback records it", async () => {
         await feedback.sendButton.click();
         await expect(detail.feedbackThanks).toBeVisible();
       });
@@ -206,16 +175,15 @@ test.describe("Health Check - file requirement warnings", () => {
     }) => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
-      await test.step("Manually download each required mod from the website", async () => {
-        for (const url of SDV_FILE_REQUIREMENT_TARGET_URLS) {
-          await downloadModViaModManager(nexusPage, vortexApp, url);
-        }
-      });
+      for (const [index, url] of SDV_FILE_REQUIREMENT_TARGET_URLS.entries()) {
+        const isLast = index === SDV_FILE_REQUIREMENT_TARGET_URLS.length - 1;
 
-      await test.step("The ingested downloads clear the warning", async () => {
-        await hc.refreshButton.click();
-        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
-      });
+        await test.step(`Manually download required mod ${index + 1} and refresh`, async () => {
+          await downloadModViaModManager(nexusPage, vortexApp, url);
+          await hc.refreshButton.click();
+          await expect(warnings.row()).toHaveCount(isLast ? 0 : 1, { timeout: Timeouts.LIFECYCLE });
+        });
+      }
     });
 
     test("Check the 'Install via mod page' link opens the required mod and its download resolves the requirement", async ({
@@ -233,10 +201,12 @@ test.describe("Health Check - file requirement warnings", () => {
 
       let modPageUrl = "";
 
-      await test.step("'Install via mod page' targets the required mod's Nexus page", async () => {
-        // The link opens the OS browser via shell.openExternal, which Playwright
-        // can't follow — spy on the main process to capture (and suppress) the URL.
+      await test.step("Arm the external-open spy", async () => {
         await installExternalOpenSpy(vortexApp);
+        expect(await readExternalOpens(vortexApp)).toEqual([]);
+      });
+
+      await test.step("'Install via mod page' targets the required mod's Nexus page", async () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installViaModPageButton.click();
         const opened = await readExternalOpens(vortexApp);
@@ -249,6 +219,37 @@ test.describe("Health Check - file requirement warnings", () => {
       await test.step("Downloading from that page resolves the requirement (count 2 → 1)", async () => {
         await downloadModViaModManager(nexusPage, vortexApp, modPageUrl);
         await expect(detail.requiresFileSummary(1)).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+      });
+    });
+
+    test("Check an OR file requirement surfaces as a warning that asks the user to pick one of several options", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const { warnings } = await openOrFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+
+      await test.step("The OR requirement surfaces as a file-requirements warning", async () => {
+        await expect(warnings.title()).toBeVisible();
+      });
+
+      await test.step("The list row offers 'Pick mod install' rather than a direct 1-click install", async () => {
+        await expect(warnings.pickModInstall()).toBeVisible();
+      });
+
+      const detail = await openWarningDetail(vortexWindow, warnings);
+
+      await test.step("Detail states the requirement must be picked (not just installed)", async () => {
+        await expect(detail.requiresPickLine).toBeVisible();
+      });
+
+      await test.step("Detail groups the alternatives under 'Pick one of these'", async () => {
+        await expect(detail.pickOneHeader).toBeVisible();
+      });
+
+      await test.step("Detail separates the alternatives with an 'Or' divider (a choice of options)", async () => {
+        await expect(detail.orDivider).toBeVisible();
       });
     });
   });
@@ -313,11 +314,15 @@ test.describe("Health Check - file requirement warnings", () => {
       const { warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
       const detail = await openWarningDetail(vortexWindow, warnings);
 
-      await test.step("The detail 1-click install all installs the requirements, clearing the warning", async () => {
+      await test.step("Trigger the detail's 1-click install all", async () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installAllInGroupButton.click();
+        await expect(detail.installAllInGroupButton).toBeHidden({ timeout: Timeouts.LIFECYCLE });
+      });
+
+      await test.step("Returning to the list shows the warning cleared", async () => {
         await detail.backButton.click();
-        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
+        await expect(warnings.row()).toHaveCount(0);
       });
     });
 
@@ -338,6 +343,31 @@ test.describe("Health Check - file requirement warnings", () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installOneClickButton.click();
         await expect(detail.requiresFileSummary(1)).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+      });
+    });
+
+    test("Check picking one alternative of an OR requirement resolves it", async ({
+      vortexApp,
+      vortexWindow,
+      managedGame: _game,
+      nexusPage,
+    }) => {
+      const { warnings } = await openOrFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+      const detail = await openWarningDetail(vortexWindow, warnings);
+
+      await test.step("The detail offers a choice of alternatives to pick", async () => {
+        await expect(detail.pickOneHeader).toBeVisible();
+      });
+
+      await test.step("Pick one alternative to install", async () => {
+        await dismissAllNotifications(vortexWindow);
+        await detail.installOneClickButton.click();
+        await expect(detail.pickOneHeader).toBeHidden({ timeout: Timeouts.LIFECYCLE });
+      });
+
+      await test.step("Returning to the list shows the OR resolved", async () => {
+        await detail.backButton.click();
+        await expect(warnings.row()).toHaveCount(0);
       });
     });
   });

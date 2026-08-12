@@ -2,7 +2,7 @@ import React, { type FC } from "react";
 
 import { useSwitchingProfile } from "../../hooks";
 import { ModernContentPane } from "../components/ContentPane";
-import { Header } from "../components/Header";
+import { Header } from "../components/Header/Header";
 import { Menu } from "../components/Menu";
 import { Spine } from "../components/Spine";
 import { SpineProvider } from "../components/Spine/SpineContext";

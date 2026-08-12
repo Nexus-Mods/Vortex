@@ -4,15 +4,18 @@ import { pathToFileURL } from "url";
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
-import { ListGroupItem, Media, Popover } from "react-bootstrap";
+import { ListGroupItem, Media } from "react-bootstrap";
 import { Provider } from "react-redux";
 
+import Icon from "@/controls/Icon";
 import { Image } from "@/ui/components/image/Image";
+import { Popover } from "@/ui/components/popover/Popover";
+import { PopoverButton } from "@/ui/components/popover/PopoverButton";
+import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
-import OverlayTrigger from "../../../controls/OverlayTrigger";
-import { IconButton } from "../../../controls/TooltipControls";
 import { gameTileImageURL } from "../../../extensions/nexus_integration/util/gameTileImageURL";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
@@ -28,8 +31,6 @@ export interface IProps {
   mods?: { [modId: string]: IMod };
   active: boolean;
   type: string;
-  getBounds: () => ClientRect;
-  container: HTMLElement;
   onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
   onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
 }
@@ -40,11 +41,8 @@ export interface IProps {
  * @class GameThumbnail
  */
 class GameRow extends ComponentEx<IProps, {}> {
-  private mRef = null;
-
   public render(): JSX.Element {
-    const { t, active, container, discovery, game, getBounds, onRefreshGameInfo, type } =
-      this.props;
+    const { t, active, discovery, game, onRefreshGameInfo, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -72,32 +70,6 @@ class GameRow extends ComponentEx<IProps, {}> {
     if (discovery === undefined) {
       classes.push("game-list-undiscovered");
     }
-
-    const gameInfoPopover = (
-      <Popover className="popover-game-info" id={`popover-info-${game.id}`}>
-        <Provider store={this.context.api.store}>
-          <IconBar
-            buttonType="text"
-            className="buttons"
-            collapse={false}
-            filter={this.lowPriorityButtons}
-            group={`game-${type}-buttons`}
-            id={`game-thumbnail-${game.id}`}
-            instanceId={game.id}
-            orientation="vertical"
-            staticElements={[]}
-            t={t}
-          />
-
-          <GameInfoPopover
-            game={game}
-            t={t}
-            onChange={this.redraw}
-            onRefreshGameInfo={onRefreshGameInfo}
-          />
-        </Provider>
-      </Popover>
-    );
 
     let imgurl = null;
     if (logoPath != null) {
@@ -139,23 +111,44 @@ class GameRow extends ComponentEx<IProps, {}> {
           </Media.Body>
 
           <Media.Right>
-            <OverlayTrigger
-              container={container}
-              getBounds={getBounds}
-              orientation="horizontal"
-              overlay={gameInfoPopover}
-              rootClose={true}
-              shouldUpdatePosition={true}
-              trigger="click"
-              triggerRef={this.setRef}
-            >
-              <IconButton
-                className="btn-embed"
-                icon="game-menu"
-                id={`btn-info-${game.id}`}
-                tooltip={t("Show Details")}
-              />
-            </OverlayTrigger>
+            {/* `contents` so the wrapper the popover needs doesn't split the row. */}
+            <Popover className="contents">
+              {({ open }) => (
+                <>
+                  <Tooltip content={t("Show Details")} disabled={open} placement="bottom">
+                    <PopoverButton
+                      appearance="weak"
+                      aria-label={t("Show Details")}
+                      brand="neutral"
+                      className="btn-embed"
+                      id={`btn-info-${game.id}`}
+                      leftIcon={<Icon name="game-menu" />}
+                    />
+                  </Tooltip>
+
+                  <PopoverPanel anchor={{ gap: 8, to: "bottom end" }} className="popover-game-info">
+                    <div className="popover-content">
+                      <Provider store={this.context.api.store}>
+                        <IconBar
+                          buttonType="text"
+                          className="buttons"
+                          collapse={false}
+                          filter={this.lowPriorityButtons}
+                          group={`game-${type}-buttons`}
+                          id={`game-thumbnail-${game.id}`}
+                          instanceId={game.id}
+                          orientation="vertical"
+                          staticElements={[]}
+                          t={t}
+                        />
+
+                        <GameInfoPopover game={game} t={t} onRefreshGameInfo={onRefreshGameInfo} />
+                      </Provider>
+                    </div>
+                  </PopoverPanel>
+                </>
+              )}
+            </Popover>
 
             <IconBar
               buttonType="icon"
@@ -174,21 +167,6 @@ class GameRow extends ComponentEx<IProps, {}> {
       </ListGroupItem>
     );
   }
-
-  private setRef = (ref) => {
-    this.mRef = ref;
-  };
-
-  private redraw = () => {
-    if (this.mRef !== null) {
-      this.mRef.hide();
-      setTimeout(() => {
-        if (this.mRef !== null) {
-          this.mRef.show();
-        }
-      }, 100);
-    }
-  };
 
   private openLocation = () => {
     const { discovery } = this.props;
