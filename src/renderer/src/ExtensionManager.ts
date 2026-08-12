@@ -54,6 +54,7 @@ import type {
   IExtension,
   IExtensionReducer,
   IRegisteredExtension,
+  ExtensionInfo,
 } from "./types/extensions";
 import type {
   ArchiveHandlerCreator,
@@ -2796,18 +2797,24 @@ class ExtensionManager {
     extensionPath: string,
     alreadyLoaded: IRegisteredExtension[],
     bundled: boolean,
-  ): IRegisteredExtension {
+  ): IRegisteredExtension | undefined {
     const indexPath = this.mExtensionFormats
       .map((format) => path.join(extensionPath, format))
       .find((iter) => fs.existsSync(iter));
     if (indexPath !== undefined) {
-      const info = parseExtensionInfo(
-        JSON.parse(
-          fs.readFileSync(path.join(extensionPath, "info.json"), {
-            encoding: "utf8",
-          }),
-        ),
-      );
+      let info: ExtensionInfo;
+      try {
+        info = parseExtensionInfo(
+          JSON.parse(
+            fs.readFileSync(path.join(extensionPath, "info.json"), {
+              encoding: "utf8",
+            }),
+          ),
+        );
+      } catch (err) {
+        log("error", "failed to parse info.json file from an extension", { err, extensionPath });
+        return undefined;
+      }
 
       const pathName = path.basename(extensionPath);
       const name = info.id || pathName;
