@@ -326,18 +326,22 @@ async function installExtensionImpl(
         const contents = await readFile(infoJsonPath, { encoding: "utf8" });
         extensionInfo = parseExtensionInfo(JSON.parse(contents));
       } else {
-        try {
-          await validateTheme(tempPath);
+        const isTheme = await validateTheme(tempPath)
+          .then(() => true)
+          .catch(() => false);
+        if (isTheme) {
           guessedType = "theme";
-        } catch {
-          // ignored
-        }
-
-        try {
-          await validateTranslation(tempPath);
-          guessedType = "translation";
-        } catch {
-          // ignored
+        } else {
+          const isTranslation = await validateTranslation(tempPath)
+            .then(() => true)
+            .catch(() => false);
+          if (isTranslation) {
+            guessedType = "translation";
+          } else {
+            throw new DataInvalid(
+              "Doesn't seem to contain a correctly packaged extension, theme or translation",
+            );
+          }
         }
       }
 
