@@ -1542,36 +1542,6 @@ function once(api: types.IExtensionApi) {
   );
 }
 
-interface IManageRuleButtonProps {
-  notifications: types.INotification[];
-  onClick: () => void;
-}
-
-class ManageRuleButtonImpl extends PureComponentEx<IManageRuleButtonProps & WithT, {}> {
-  public render() {
-    const { t, onClick, notifications } = this.props;
-    const hasConflicts = notifications.find((iter) => iter.id === CONFLICT_NOTIFICATION_ID);
-    return (
-      <ToolbarIcon
-        id="manage-mod-rules-button"
-        icon="connection"
-        text={t("Manage Rules")}
-        className={hasConflicts ? "toolbar-flash-button" : undefined}
-        onClick={onClick}
-      />
-    );
-  }
-}
-function mapStateToProps(state: types.IState) {
-  return {
-    notifications: state.session.notifications.notifications,
-  };
-}
-
-const ManageRuleButton = withTranslation(["common"])(
-  connect(mapStateToProps)(ManageRuleButtonImpl) as any,
-);
-
 const pathTool: IPathTools = {
   isAbsolute: path.isAbsolute,
   relative: path.relative,
@@ -1586,12 +1556,11 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["session", "dependencies"], connectionReducer);
   context.registerTableAttribute("mods", makeLoadOrderAttribute(context.api));
   context.registerTableAttribute("mods", makeDependenciesAttribute(context.api));
-  context.registerAction("mod-icons", 90, ManageRuleButton, {}, () => {
-    const state: types.IState = context.api.store.getState();
-    return {
-      notifications: state.session.notifications.notifications,
-      onClick: () => showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true),
-    };
+  // a plain action rather than a component, so the mods page toolbar can render it.
+  // The emphasis the button used to get while conflicts are unresolved is part of the
+  // toolbar redesign (LAZ-534) rather than something an action can express.
+  context.registerAction("mod-icons", 90, "connection", {}, "Manage Rules", () => {
+    showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
   });
   context.registerDialog("mod-dependencies-connector", Connector);
   context.registerDialog("mod-dependencies-editor", Editor);

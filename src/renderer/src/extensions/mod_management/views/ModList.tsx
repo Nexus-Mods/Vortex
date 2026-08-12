@@ -15,16 +15,13 @@ import DropdownButton from "../../../controls/DropdownButton";
 import type { DropType } from "../../../controls/Dropzone";
 import Dropzone from "../../../controls/Dropzone";
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import FlexLayout from "../../../controls/FlexLayout";
 import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
 import type { ITableRowAction } from "../../../controls/Table";
 import SuperTable from "../../../controls/Table";
 import OptionsFilter from "../../../controls/table/OptionsFilter";
 import TextFilter from "../../../controls/table/TextFilter";
 import { IconButton } from "../../../controls/TooltipControls";
 import ZoomableImage from "../../../controls/ZoomableImage";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type {
   DialogActions,
   DialogType,
@@ -33,6 +30,8 @@ import type {
 } from "../../../types/IDialog";
 import type { IState } from "../../../types/IState";
 import type { ITableAttribute } from "../../../types/ITableAttribute";
+import { Toolbar } from "../../../ui/components/toolbar/Toolbar";
+import { ToolbarGroup } from "../../../ui/components/toolbar/ToolbarGroup";
 import { knownArchiveExt } from "../../../util/archives";
 import { withBatchContext } from "../../../util/BatchContext";
 import calculateFolderSize from "../../../util/calculateFolderSize";
@@ -47,12 +46,16 @@ import {
   toPromise,
   truthy,
 } from "../../../util/util";
-import MainPage from "../../../views/MainPage";
+import { Page } from "../../../views/components/Page/Page";
+import { PageContent } from "../../../views/components/Page/PageContent";
+import { PageHeader } from "../../../views/components/Page/PageHeader";
+import { PageScroll } from "../../../views/components/Page/PageScroll";
 import getDownloadGames from "../../download_management/util/getDownloadGames";
 import { setModEnabled, setModsEnabled } from "../../profile_management/actions/profiles";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
+import { useModToolbarActions } from "../hooks/useModToolbarActions.hook";
 import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
 import getText from "../texts";
 import type { IInstallOptions } from "../types/IInstallOptions";
@@ -71,7 +74,6 @@ import VersionFilter from "../util/VersionFilter";
 import Author from "./Author";
 import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
-import InstallArchiveButton from "./InstallArchiveButton";
 import VersionChangelogButton from "./VersionChangelogButton";
 import VersionIconButton from "./VersionIconButton";
 
@@ -123,7 +125,25 @@ interface IBaseProps {
   globalOverlay: JSX.Element;
   modSources: IModSource[];
   onDropNonArchiveFiles: (filePaths: string[]) => void;
+  // passed by MainPageContainer to pages registered with `newLayout`
+  active?: boolean;
+  pageId?: string;
 }
+
+/**
+ * The page's toolbar. A function component because the actions come from a hook —
+ * see {@link useModToolbarActions} for how the page's own actions and the ones
+ * extensions register into `mod-icons` are combined.
+ */
+const ModsToolbar = ({ t }: { t: TFunction }) => {
+  const actions = useModToolbarActions(t);
+
+  return (
+    <Toolbar>
+      <ToolbarGroup actions={actions} />
+    </Toolbar>
+  );
+};
 
 interface IConnectedProps extends IModProps {
   gameMode: string;
@@ -185,7 +205,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     downloads: {},
   };
   private mIsMounted: boolean = false;
-  private staticButtons: IActionDefinition[];
   private mRef: Element;
 
   constructor(props: IProps) {
@@ -281,19 +300,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.staticButtons = [
-      {
-        component: InstallArchiveButton,
-        position: 25,
-        props: () => ({}),
-      },
-      {
-        component: CheckModVersionsButton,
-        position: 50,
-        props: () => ({ groupedMods: this.state.groupedMods }),
-      },
-    ];
-
     this.mAttributes = [
       this.modPictureAttribute,
       this.modEnabledAttribute,
@@ -381,60 +387,61 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       );
     } else {
       content = (
-        <Panel>
-          <Panel.Body>
-            <SuperTable
-              actions={this.modActions}
-              data={this.state.primaryMods}
-              detailsTitle={t("Mod Attributes")}
-              staticElements={this.mAttributes}
-              tableId="mods"
-            >
-              <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
-            </SuperTable>
-          </Panel.Body>
-        </Panel>
+        <SuperTable
+          edgeToEdge
+          stickyHeader
+          actions={this.modActions}
+          data={this.state.primaryMods}
+          detailsTitle={t("Mod Attributes")}
+          staticElements={this.mAttributes}
+          tableId="mods"
+        >
+          <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
+        </SuperTable>
       );
     }
 
     return (
-      <MainPage domRef={this.setBoundsRef}>
-        <MainPage.Header>
-          <IconBar
-            className="menubar"
-            group="mod-icons"
-            staticElements={this.staticButtons}
-            t={t}
-          />
-        </MainPage.Header>
+      <Page active={this.props.active} pageId={this.props.pageId} scrollable={false}>
+        <PageHeader
+          isFullWidth
+          pictogramName="mod"
+          subtitle={t("Manage the mods installed for this game.")}
+          title={t("Mods")}
+        >
+          <ModsToolbar t={t} />
+        </PageHeader>
 
-        <MainPage.Body>
-          <FlexLayout type="column">
-            <FlexLayout.Flex className="mod-list-container">{content}</FlexLayout.Flex>
+        <PageScroll isFullWidth className="flex flex-col gap-y-4">
+          <div className="mod-list-container" ref={this.setBoundsRef}>
+            {content}
+          </div>
+        </PageScroll>
 
-            <FlexLayout.Fixed className="mod-drop-container">
-              <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
-                <Panel.Collapse>
-                  <Panel.Body>
-                    <Dropzone
-                      accept={["files"]}
-                      clickable={false}
-                      drop={this.dropMod}
-                      icon="folder-download"
-                    />
-                  </Panel.Body>
-                </Panel.Collapse>
-
-                <CollapseIcon
-                  position="topright"
-                  visible={showDropzone}
-                  onClick={this.toggleDropzone}
+        {/* `relative` because the collapse toggle inside is absolutely positioned and
+            needs this container as its containing block, which the legacy page chrome
+            used to provide */}
+        <PageContent isFullWidth className="mod-drop-container relative">
+          <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
+            <Panel.Collapse>
+              <Panel.Body>
+                <Dropzone
+                  accept={["files"]}
+                  clickable={false}
+                  drop={this.dropMod}
+                  icon="folder-download"
                 />
-              </Panel>
-            </FlexLayout.Fixed>
-          </FlexLayout>
-        </MainPage.Body>
-      </MainPage>
+              </Panel.Body>
+            </Panel.Collapse>
+
+            <CollapseIcon
+              position="topright"
+              visible={showDropzone}
+              onClick={this.toggleDropzone}
+            />
+          </Panel>
+        </PageContent>
+      </Page>
     );
   }
 
