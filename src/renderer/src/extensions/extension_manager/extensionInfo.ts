@@ -1,10 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-
 import { z } from "zod";
 
-import type { ExtensionInfo, IAvailableExtension } from "@/types/extensions";
-import type { IExtensionState } from "@/types/IState";
+import type { ExtensionInfo } from "@/types/extensions";
 
 const schema = z.looseObject({
   name: z.string(),
@@ -14,11 +10,6 @@ const schema = z.looseObject({
   id: z.string().optional(),
   namespace: z.string().optional(),
 });
-
-export function readExtensionInfo(extensionPath: string): Promise<string> {
-  const infoJsonPath = join(extensionPath, "info.json");
-  return readFile(infoJsonPath, { encoding: "utf8" });
-}
 
 export function parseExtensionInfo(data: unknown): ExtensionInfo {
   const parsed = schema.parse(data);
@@ -30,32 +21,6 @@ export function parseExtensionInfo(data: unknown): ExtensionInfo {
     description: parsed.description ?? "<missing>",
     id: parsed.id,
     namespace: parsed.namespace,
-  };
-
-  return result;
-}
-
-export function infoToState(
-  info: ExtensionInfo,
-  extensionPath: string,
-  catalogEntry?: IAvailableExtension,
-): IExtensionState {
-  const result: IExtensionState = {
-    name: catalogEntry?.name ?? info.name,
-    author: catalogEntry?.author ?? info.author,
-    description: catalogEntry?.description?.short ?? info.description,
-    version: catalogEntry?.version ?? info.version,
-
-    endorsed: "Undecided",
-    remove: false,
-    enabled: true,
-    path: extensionPath,
-
-    infoJsonId: info.id,
-
-    modId: catalogEntry?.modId,
-    fileId: catalogEntry?.fileId,
-    type: catalogEntry?.type,
   };
 
   return result;

@@ -66,7 +66,6 @@ export interface IExtensionDownloadInfo {
   name: string;
   modId: number;
   fileId: number;
-  type?: ExtensionType;
 }
 
 /**

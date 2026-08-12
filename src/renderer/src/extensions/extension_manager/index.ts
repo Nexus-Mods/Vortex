@@ -314,11 +314,7 @@ function init(context: IExtensionContext) {
       await didFetchAvailableExtensions;
       const success = await downloadAndInstallExtension(context.api, ext);
 
-      if (success) {
-        const gameName =
-          ext.type === "game" || ext.name?.startsWith("Game:") ? ext.name : undefined;
-        signalRestartNeeded(context.api, gameName);
-      }
+      if (success) signalRestartNeeded(context.api);
       return success;
     });
 

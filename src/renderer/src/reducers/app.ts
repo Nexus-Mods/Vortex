@@ -1,3 +1,5 @@
+import shortid from "shortid";
+
 import * as actions from "../actions/app";
 import type { IApp } from "../types/IState";
 import { actionsToReducerSpec } from "./builder";
@@ -19,24 +21,14 @@ export const appReducer = actionsToReducerSpec(
     setStateVersion: (state, payload) => ({ ...state, version: payload }),
     setApplicationVersion: (state, payload) => ({ ...state, appVersion: payload }),
     addExtension: (state, payload) => {
-      const { extensionId, info } = payload;
-      const existing = state.extensions[extensionId];
+      const { extension } = payload;
+      const id = shortid();
+
       return {
         ...state,
         extensions: {
           ...state.extensions,
-          [extensionId]: {
-            ...existing,
-            name: info.name,
-            version: info.version,
-            author: info.author,
-            description: info.description,
-            path: info.path,
-            modId: info.modId,
-            fileId: info.fileId,
-            type: info.type,
-            bundled: info.bundled,
-          },
+          [id]: extension,
         },
       };
     },

@@ -38,6 +38,7 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
+import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 import { log } from "./logging";
@@ -738,7 +739,7 @@ class ExtensionManager {
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
-  private mPendingAdds: Array<{ extId: string; info: IExtension }> = [];
+  private mPendingAdds: IExtensionState[] = [];
   // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
   private mExtensionPersistors: {
     [hive: string]: { persistor: IPersistor; debounce: number };
@@ -974,8 +975,8 @@ class ExtensionManager {
     });
     this.mPendingRemoves = [];
 
-    this.mPendingAdds.forEach(({ extId, info }) => {
-      store.dispatch(addExtension(extId, info));
+    this.mPendingAdds.forEach((state) => {
+      store.dispatch(addExtension(state));
     });
     this.mPendingAdds = [];
 
@@ -2777,30 +2778,13 @@ class ExtensionManager {
       .map((format) => path.join(extensionPath, format))
       .find((iter) => fs.existsSync(iter));
     if (indexPath !== undefined) {
-      let info: IExtension = {
-        name: "",
-        author: "",
-        description: "",
-        version: "",
-      };
-      try {
-        info = JSON.parse(
+      const info = parseExtensionInfo(
+        JSON.parse(
           fs.readFileSync(path.join(extensionPath, "info.json"), {
             encoding: "utf8",
           }),
-        );
-      } catch (err) {
-        const errorCode = getErrorCode(err);
-        const errMessage =
-          errorCode === "ENOENT"
-            ? "extension has no info.json file"
-            : "failed to parse info.json file";
-
-        log("warn", errMessage, {
-          extensionPath,
-          error: getErrorMessageOrDefault(err),
-        });
-      }
+        ),
+      );
 
       const pathName = path.basename(extensionPath);
       const name = info.id || pathName;
@@ -3083,7 +3067,19 @@ class ExtensionManager {
     );
     for (const ext of scanned) {
       if (!loadedFromState.has(ext.name)) {
-        this.mPendingAdds.push({ extId: ext.name, info: { ...ext.info, path: ext.path } });
+        const state: IExtensionState = {
+          name: ext.name,
+          author: ext.info?.author ?? "<unknown>",
+          description: ext.info?.description ?? "<missing>",
+          version: ext.info?.version ?? "0.0.1",
+          infoJsonId: ext.info?.id,
+          path: ext.path,
+          enabled: true,
+          endorsed: "Undecided",
+          remove: false,
+        };
+
+        this.mPendingAdds.push(state);
         result.push(ext);
         loadedExtensions.add(ext.name);
       }

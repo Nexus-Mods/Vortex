@@ -17,6 +17,7 @@ import { getApplication } from "../../util/application";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
+import { findInCatalog } from "./queries";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
@@ -399,8 +400,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const modIdStr = evt.currentTarget.getAttribute("data-modid");
     const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
 
-    const ext = availableExtensions.find((iter) => selectorMatch(iter, { modId }));
-
+    const ext = findInCatalog(availableExtensions, { modId });
     this.nextState.installing.push(ext.name);
 
     void (async () => {
@@ -429,7 +429,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const modIdStr = evt.currentTarget.getAttribute("data-modid");
     const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
 
-    const ext = availableExtensions.find((iter) => selectorMatch(iter, { modId }));
+    const ext = findInCatalog(availableExtensions, { modId });
     if (ext.modId !== undefined) {
       opn(NEXUS_MODS_URL + ext.modId).catch(() => null);
     }
