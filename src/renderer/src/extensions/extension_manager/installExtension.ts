@@ -339,7 +339,7 @@ async function installExtensionImpl(
         }
       }
 
-      const dirName = sanitize(tempPath);
+      const dirName = sanitize(extensionInfo?.id ?? path.basename(archivePath));
       destPath = path.join(extensionsPath, dirName);
 
       // Keys whose previous-version state entries were marked for removal during
