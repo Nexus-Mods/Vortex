@@ -1819,12 +1819,21 @@ class ExtensionManager {
       setdefault(migrations, call.extension, []).push(call.arguments[0]);
     });
 
-    const state: IState = this.mApi.store.getState();
+    const state = this.mApi.getState();
     this.mExtensions
       .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
+        const [existingExtensionKey, existingExtension] = Object.entries(state.app.extensions).find(
+          ([_, entry]) => entry.path === ext.path,
+        ) ?? [undefined, undefined];
+
+        if (existingExtension === undefined) return;
+
+        const newVersion = ext.info?.version;
+        if (newVersion === undefined) return;
+
         try {
-          let oldVersion = getSafe(state.app, ["extensions", ext.name, "version"], "0.0.0");
+          let oldVersion = existingExtension.version;
           if (!semver.valid(oldVersion)) {
             log("error", "invalid version stored for extension", {
               extension: ext.name,
@@ -1832,9 +1841,10 @@ class ExtensionManager {
             });
             oldVersion = "0.0.0";
           }
+
           if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
-              this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
+              this.mApi.store.dispatch(setExtensionVersion(existingExtensionKey, newVersion));
             } else {
               PromiseBB.mapSeries(migrations[ext.name], (mig) => mig(oldVersion))
                 .then(() => {
@@ -1842,7 +1852,7 @@ class ExtensionManager {
                     name: ext.name,
                     info: JSON.stringify(ext.info),
                   });
-                  this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
+                  this.mApi.store.dispatch(setExtensionVersion(existingExtensionKey, newVersion));
                 })
                 .catch((err) => {
                   const error = unknownToError(err);
