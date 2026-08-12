@@ -39,6 +39,7 @@ import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
 import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo";
+import { findInstalled } from "./extensions/extension_manager/queries";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 import { log } from "./logging";
@@ -850,22 +851,17 @@ class ExtensionManager {
       disableExtensions.forEach((ext) => {
         const extensionName = ext.substring(10);
         const extensionPath = path.join(extensionsPath, extensionName);
-
-        const existingExtension = Object.entries(this.mExtensionState).find(
-          ([_, entry]) =>
-            path.normalize(entry.path).toLowerCase() ===
-            path.normalize(extensionPath).toLowerCase(),
-        );
+        const existingExtension = findInstalled(this.mExtensionState, { path: extensionsPath });
 
         if (existingExtension === undefined) {
           log("info", "skipping disable file for unknown extension", { extensionName });
         } else {
-          const [extensionKey] = existingExtension;
+          const { key } = existingExtension;
 
           log("info", "disabling extension that caused a crash before", {
             extensionName,
           });
-          this.mPendingDisables.push(extensionKey);
+          this.mPendingDisables.push(key);
         }
 
         fs.unlinkSync(path.join(getVortexPath("temp"), ext));
@@ -1841,12 +1837,10 @@ class ExtensionManager {
     this.mExtensions
       .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
-        const [existingExtensionKey, existingExtension] = Object.entries(state.app.extensions).find(
-          ([_, entry]) =>
-            path.normalize(entry.path).toLowerCase() === path.normalize(ext.path).toLowerCase(),
-        ) ?? [undefined, undefined];
+        const existing = findInstalled(state.app.extensions, { path: ext.path });
+        if (existing === undefined) return;
 
-        if (existingExtension === undefined) return;
+        const { key: existingExtensionKey, extension: existingExtension } = existing;
 
         const newVersion = ext.info?.version;
         if (newVersion === undefined) return;
