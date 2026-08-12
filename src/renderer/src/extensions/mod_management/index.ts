@@ -2298,7 +2298,7 @@ function init(context: IExtensionContext): boolean {
   const history = new ModHistory(context.api);
 
   context.registerHistoryStack("mods", history);
-  context.registerAction("mod-icons", 40, "history", {}, "History", () => {
+  context.registerAction("mod-icons", 40, "history", { pinned: true }, "History", () => {
     context.api.ext.showHistory?.("mods");
   });
 

@@ -4,10 +4,12 @@ import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/Popover
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { useToolbarContext } from "./Toolbar.context";
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarOverflow } from "./ToolbarOverflow";
 import { ToolbarPanelButton } from "./ToolbarPanelButton";
 import { TOOLBAR_CONTROL_ATTRIBUTE, useToolbarOverflow } from "./useToolbarOverflow.hook";
+import { type IToolbarPinning, useToolbarPinning } from "./useToolbarPinning.hook";
 
 export type IToolbarPanel = IPopoverPanel;
 
@@ -21,6 +23,15 @@ export type IToolbarPanel = IPopoverPanel;
 export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
   testId?: string;
+  /**
+   * What a decision to pin this action is stored against, so it must not change with
+   * the language or the release. Only needed on a toolbar that offers pinning.
+   */
+  id?: string;
+  /**
+   * Whether it sits on the bar until the user says otherwise. Ignored by a toolbar
+   * that doesn't offer pinning, which shows every action it was given.
+   */
   pinned?: boolean;
 };
 
@@ -77,22 +88,34 @@ const ToolbarControl = ({ action }: { action: IToolbarAction }) =>
     />
   );
 
-/**
- * A rounded "pill" cluster of related toolbar controls sharing a single raised
- * surface. Renders as many actions as fit the width the toolbar has; the rest
- * collapse into an overflow menu occupying the final slot. A `pinned` action is
- * held back from that, whatever its position.
- */
-export const ToolbarGroup = ({ actions, className, maxVisible, ...props }: IToolbarGroupProps) => {
+type IGroupBodyProps = IToolbarGroupProps & {
+  /** The actions belonging on the bar: every one, or the pinned ones. */
+  barActions: IToolbarAction[];
+  /** Whether the menu is there whatever fits, holding the full list. */
+  pinningEnabled: boolean;
+  /** How the menu's rows read and change what the user decided. */
+  pinning?: IToolbarPinning;
+};
+
+const ToolbarGroupBody = ({
+  actions,
+  barActions,
+  className,
+  maxVisible,
+  pinning,
+  pinningEnabled,
+  ...props
+}: IGroupBodyProps) => {
   const { groupRef, isMeasuring, visible } = useToolbarOverflow({
+    actionCount: barActions.length,
+    alwaysReserveOverflow: pinningEnabled,
     maxVisible,
-    pinned: actions.map((action) => action.pinned ?? false),
-    signature: widthSignature(actions),
+    signature: widthSignature(barActions),
   });
 
-  const visibleActions = actions.filter((_, index) => visible.has(index));
-  const hiddenActions = actions.filter((_, index) => !visible.has(index));
-
+  const visibleActions = barActions.filter((_, index) => visible.has(index));
+  const hiddenActions = barActions.filter((_, index) => !visible.has(index));
+  const menuActions = pinningEnabled ? actions : hiddenActions;
   return (
     <TooltipDelayGroup
       as="div"
@@ -105,7 +128,45 @@ export const ToolbarGroup = ({ actions, className, maxVisible, ...props }: ITool
       ))}
 
       {/* Kept mounted through the measuring pass so its width is measured too. */}
-      {(isMeasuring || !!hiddenActions.length) && <ToolbarOverflow actions={hiddenActions} />}
+      {(isMeasuring || pinningEnabled || !!hiddenActions.length) && (
+        <ToolbarOverflow actions={menuActions} pinning={pinning} />
+      )}
     </TooltipDelayGroup>
+  );
+};
+
+/**
+ * The pinning path, in a component of its own so that only a toolbar offering
+ * pinning reaches for the store — where the user's decisions are kept.
+ */
+const PinnableToolbarGroup = (props: IToolbarGroupProps) => {
+  const pinning = useToolbarPinning(props.actions);
+
+  return (
+    <ToolbarGroupBody
+      {...props}
+      pinningEnabled
+      barActions={pinning.pinnedActions}
+      pinning={pinning}
+    />
+  );
+};
+
+/**
+ * A rounded "pill" cluster of related toolbar controls sharing a single raised
+ * surface. Renders as many actions as fit the width the toolbar has; the rest
+ * collapse into an overflow menu occupying the final slot.
+ *
+ * Where the toolbar offers pinning, the bar holds the pinned actions rather than
+ * every action, and the menu becomes the full list — so it is always there, and an
+ * unpinned action is still one click away, as is a pinned one that didn't fit.
+ */
+export const ToolbarGroup = (props: IToolbarGroupProps) => {
+  const { pinningId } = useToolbarContext();
+
+  return pinningId === null ? (
+    <ToolbarGroupBody {...props} barActions={props.actions} pinningEnabled={false} />
+  ) : (
+    <PinnableToolbarGroup {...props} />
   );
 };

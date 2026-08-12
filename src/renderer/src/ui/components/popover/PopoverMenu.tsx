@@ -56,7 +56,10 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
 
     const focusable = focusableRows();
     const focused = event.currentTarget.ownerDocument.activeElement;
-    const current = focusable.indexOf(focused as HTMLButtonElement);
+    // The row focus is on, or the row holding whatever is — a row can contain a
+    // control of its own, such as a pin, and arrowing from there has to carry on
+    // from that row rather than from nowhere.
+    const current = focusable.findIndex((row) => row === focused || row.contains(focused));
 
     const destinations: Record<string, number | undefined> = {
       ArrowDown: current + 1,
