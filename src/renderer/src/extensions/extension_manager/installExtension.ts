@@ -27,7 +27,12 @@ import {
 } from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
 import { parseExtensionInfo } from "./extensionInfo";
-import { findDependencyInCatalog, findPreviousVersions, isAlreadyInstalled } from "./queries";
+import {
+  findDependencyInCatalog,
+  findPreviousVersions,
+  isAlreadyInstalled,
+  findInstalledDependency,
+} from "./queries";
 import _sessionReducer from "./reducers";
 
 class ContextProxyHandler implements ProxyHandler<any> {
@@ -79,16 +84,13 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     initFunc(context);
 
     const state = api.getState();
-    const { available } = state.session.extensions;
-    const extState = state.app.extensions ?? {};
-
     const promises = handler.dependencies.map(async (dependencyId) => {
-      if (extState[dependencyId]) return;
+      if (findInstalledDependency(state.app.extensions, dependencyId) !== undefined) return;
 
-      const toInstall = findDependencyInCatalog(available, dependencyId);
+      const toInstall = findDependencyInCatalog(state.session.extensions.available, dependencyId);
       if (!toInstall) return;
 
-      if (isAlreadyInstalled(extState, toInstall)) return;
+      if (isAlreadyInstalled(state.app.extensions, toInstall)) return;
       await api.emitAndAwait<"install-extension">("install-extension", toInstall);
     });
 

@@ -34,6 +34,20 @@ export function matchesQuery(
   return query.fileId !== undefined ? entry.fileId === query.fileId : true;
 }
 
+/** Find a dependency extension by its declared identifier among the installed extensions. */
+export function findInstalledDependency(
+  installedExtensions: Record<string, IExtensionState>,
+  dependencyId: string,
+): { key: string; extension: IExtensionState } | undefined {
+  const result = Object.entries(installedExtensions).find(
+    ([_, entry]) => entry.infoJsonId === dependencyId || entry.name === dependencyId,
+  );
+  if (result === undefined) return undefined;
+
+  const [key, extension] = result;
+  return { key, extension };
+}
+
 /** Find a dependency extension by its declared identifier in the catalog. */
 export function findDependencyInCatalog(
   catalog: IAvailableExtension[],

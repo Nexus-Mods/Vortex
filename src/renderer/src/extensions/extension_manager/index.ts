@@ -25,6 +25,7 @@ import {
   findDependencyInCatalog,
   findInCatalog,
   findInstalled,
+  findInstalledDependency,
   findUpdatableExtensions,
   getMissingOptionalExtensions,
 } from "./queries";
@@ -119,12 +120,13 @@ async function updateAvailableExtensions(
 async function installDependency(api: IExtensionApi, dependencyId: string): Promise<boolean> {
   const state = api.getState();
   const availableExtensions = state.session.extensions.available;
-  const installedExtensions = state.app.extensions ?? {};
 
-  if (installedExtensions[dependencyId] !== undefined) {
+  const installedDependency = findInstalledDependency(state.app.extensions, dependencyId);
+
+  if (installedDependency !== undefined) {
     // installed, probably failed to load or disabled
-    if (!installedExtensions[dependencyId].enabled) {
-      api.store.dispatch(setExtensionEnabled(dependencyId, true));
+    if (!installedDependency.extension.enabled) {
+      api.store.dispatch(setExtensionEnabled(installedDependency.key, true));
       return true;
     } else {
       api.showErrorNotification(
