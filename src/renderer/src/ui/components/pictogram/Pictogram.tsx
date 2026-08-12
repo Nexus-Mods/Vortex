@@ -29,6 +29,7 @@ const themeMap = {
 export type IPictogramName =
   | "game"
   | "health-check"
+  | "mod"
   | "preferences"
   | "puzzle-piece"
   | "settings"
