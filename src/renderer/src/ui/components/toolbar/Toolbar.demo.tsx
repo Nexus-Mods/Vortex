@@ -19,8 +19,12 @@ import {
   mdiPlusCircleOutline,
   mdiRefresh,
 } from "@mdi/js";
-import React from "react";
+import React, { useState } from "react";
 
+import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
+import { Switch } from "@/ui/components/form/switch/Switch";
+import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { Toolbar } from "./Toolbar";
@@ -61,104 +65,144 @@ const pinnedActions: IToolbarAction[] = manyActions.map((action) => ({
   pinned: action.label === "Install mod" || action.label === "Untrack",
 }));
 
-export const ToolbarDemo = () => (
-  <div className="space-y-8">
-    <div className="rounded-sm bg-surface-mid p-4">
-      <Typography as="h2" typographyType="heading-sm">
-        Toolbar
-      </Typography>
+export const ToolbarDemo = () => {
+  const [showHidden, setShowHidden] = useState(false);
 
-      <Typography appearance="subdued">
-        A horizontal toolbar made of one or more rounded groups of related controls. Groups share a
-        raised surface; controls are typically icon-only buttons.
-      </Typography>
+  const displayOptions = useDisplayOptionsAction({
+    // Hidden items are off by default, so toggling the switch is what there is to
+    // undo — the reset group appears with it.
+    canReset: showHidden,
+    children: (
+      <PopoverPanelGroup>
+        <PopoverPanelGroupItem label="Show hidden items">
+          <Switch checked={showHidden} onChange={setShowHidden} />
+        </PopoverPanelGroupItem>
+      </PopoverPanelGroup>
+    ),
+    label: "Display options",
+    onReset: () => setShowHidden(false),
+  });
 
-      <Typography appearance="subdued">
-        Because the controls carry no visible text, each shows its label on hover — hover one below,
-        then move along the row to see the delay shared across the group. Actions in an overflow
-        menu show no tooltip: the menu already lists their labels.
-      </Typography>
-    </div>
+  const panelActions: IToolbarAction[] = [...generalActions, displayOptions];
 
-    <Toolbar>
-      <ToolbarGroup actions={generalActions} />
+  return (
+    <div className="space-y-8">
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h2" typographyType="heading-sm">
+          Toolbar
+        </Typography>
 
-      <ToolbarGroup actions={contextualActions} />
-    </Toolbar>
+        <Typography appearance="subdued">
+          A horizontal toolbar made of one or more rounded groups of related controls. Groups share
+          a raised surface; controls are typically icon-only buttons.
+        </Typography>
 
-    <div className="rounded-sm bg-surface-mid p-4">
-      <Typography as="h3" typographyType="heading-sm">
-        Overflow
-      </Typography>
+        <Typography appearance="subdued">
+          Because the controls carry no visible text, each shows its label on hover — hover one
+          below, then move along the row to see the delay shared across the group. Actions in an
+          overflow menu show no tooltip: the menu already lists their labels.
+        </Typography>
+      </div>
 
-      <Typography appearance="subdued">
-        Passing <code>maxVisible</code> caps how many slots a group ever uses. Past that, the
-        trailing slot becomes a kebab menu and the remaining actions move into its dropdown.
-      </Typography>
-    </div>
-
-    <Toolbar>
-      <ToolbarGroup actions={manyActions} maxVisible={7} />
-    </Toolbar>
-
-    <div className="rounded-sm bg-surface-mid p-4">
-      <Typography as="h3" typographyType="heading-sm">
-        Responsive
-      </Typography>
-
-      <Typography appearance="subdued">
-        A group also collapses whatever won't fit the width the toolbar has, so the same actions
-        stay reachable as the window narrows. Drag the bottom-right corner of the box below to
-        resize it. This group has no <code>maxVisible</code> cap, leaving width as the only limit.
-      </Typography>
-    </div>
-
-    {/* `resize` needs a non-visible overflow, so the box is padded low enough for
-        an opened overflow menu to sit inside it rather than being clipped. */}
-    <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
-      <Toolbar>
-        <ToolbarGroup actions={manyActions} />
-      </Toolbar>
-    </div>
-
-    <div className="rounded-sm bg-surface-mid p-4">
-      <Typography as="h3" typographyType="heading-sm">
-        Pinned actions
-      </Typography>
-
-      <Typography appearance="subdued">
-        A <code>pinned</code> action stays out of the overflow menu wherever it sits in the list,
-        and the unpinned ones share whatever width is left. Resize the box: "Install mod" and
-        "Untrack" hold their places while everything between them collapses. Narrow it far enough
-        and only the pinned pair is left — pinning wins over fitting, so keep the set small.
-      </Typography>
-    </div>
-
-    <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
-      <Toolbar>
-        <ToolbarGroup actions={pinnedActions} />
-      </Toolbar>
-    </div>
-
-    <div className="rounded-sm bg-surface-mid p-4">
-      <Typography as="h3" typographyType="heading-sm">
-        Competing groups
-      </Typography>
-
-      <Typography appearance="subdued">
-        When several groups share a toolbar, the earlier ones keep their controls and the later ones
-        collapse first, so the leading group stays stable as space runs out. Every group holds onto
-        its own overflow menu, and each reserves room for the ones after it, so the row never
-        overflows. Resize the box below to watch the second group give way before the first.
-      </Typography>
-    </div>
-
-    <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
       <Toolbar>
         <ToolbarGroup actions={generalActions} />
 
         <ToolbarGroup actions={contextualActions} />
       </Toolbar>
+
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h3" typographyType="heading-sm">
+          Overflow
+        </Typography>
+
+        <Typography appearance="subdued">
+          Passing <code>maxVisible</code> caps how many slots a group ever uses. Past that, the
+          trailing slot becomes a kebab menu and the remaining actions move into its dropdown.
+        </Typography>
+      </div>
+
+      <Toolbar>
+        <ToolbarGroup actions={manyActions} maxVisible={7} />
+      </Toolbar>
+
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h3" typographyType="heading-sm">
+          Responsive
+        </Typography>
+
+        <Typography appearance="subdued">
+          A group also collapses whatever won't fit the width the toolbar has, so the same actions
+          stay reachable as the window narrows. Drag the bottom-right corner of the box below to
+          resize it. This group has no <code>maxVisible</code> cap, leaving width as the only limit.
+        </Typography>
+      </div>
+
+      {/* `resize` needs a non-visible overflow, so the box is padded low enough for
+        an opened overflow menu to sit inside it rather than being clipped. */}
+      <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+        <Toolbar>
+          <ToolbarGroup actions={manyActions} />
+        </Toolbar>
+      </div>
+
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h3" typographyType="heading-sm">
+          Pinned actions
+        </Typography>
+
+        <Typography appearance="subdued">
+          A <code>pinned</code> action stays out of the overflow menu wherever it sits in the list,
+          and the unpinned ones share whatever width is left. Resize the box: "Install mod" and
+          "Untrack" hold their places while everything between them collapses. Narrow it far enough
+          and only the pinned pair is left — pinning wins over fitting, so keep the set small.
+        </Typography>
+      </div>
+
+      <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+        <Toolbar>
+          <ToolbarGroup actions={pinnedActions} />
+        </Toolbar>
+      </div>
+
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h3" typographyType="heading-sm">
+          Competing groups
+        </Typography>
+
+        <Typography appearance="subdued">
+          When several groups share a toolbar, the earlier ones keep their controls and the later
+          ones collapse first, so the leading group stays stable as space runs out. Every group
+          holds onto its own overflow menu, and each reserves room for the ones after it, so the row
+          never overflows. Resize the box below to watch the second group give way before the first.
+        </Typography>
+      </div>
+
+      <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+        <Toolbar>
+          <ToolbarGroup actions={generalActions} />
+
+          <ToolbarGroup actions={contextualActions} />
+        </Toolbar>
+      </div>
+
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h3" typographyType="heading-sm">
+          Panel actions
+        </Typography>
+
+        <Typography appearance="subdued">
+          An action with a <code>panel</code> opens a floating surface instead of running a
+          callback, and the group anchors it to whichever control it rendered. Resize the box: as a
+          button the panel drops below it, and once "Display options" collapses into the overflow
+          the same panel opens beside its row, with the menu staying put behind it.
+        </Typography>
+      </div>
+
+      <div className="w-104 resize-x overflow-auto rounded-sm border border-stroke-weak px-2 pt-2 pb-40">
+        <Toolbar>
+          <ToolbarGroup actions={panelActions} />
+        </Toolbar>
+      </div>
     </div>
-  </div>
-);
+  );
+};

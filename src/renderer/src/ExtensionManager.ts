@@ -38,6 +38,8 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
+import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo";
+import { findInstalled } from "./extensions/extension_manager/queries";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 import { log } from "./logging";
@@ -52,6 +54,7 @@ import type {
   IExtension,
   IExtensionReducer,
   IRegisteredExtension,
+  ExtensionInfo,
 } from "./types/extensions";
 import type {
   ArchiveHandlerCreator,
@@ -120,6 +123,7 @@ const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
 const ENQUEUE_TAG = Symbol("emitAndAwaitEnqueue");
 
+/** @deprecated */
 export function isExtSame(installed: IExtension, remote: IAvailableExtension): boolean {
   if (installed.modId !== undefined) {
     return installed.modId === remote.modId;
@@ -446,31 +450,32 @@ class ContextProxyHandler implements ProxyHandler<any> {
    * Retrieve the map of optional extensions
    *  Each optional requireExtension call is added against the id of the extension that requires it.
    */
-  public getOptionalExtensions(allExtensions: IRegisteredExtension[]) {
+  public getOptionalExtensions(
+    allExtensions: IRegisteredExtension[],
+  ): Record<string, IExtensionOptional[]> {
     const optionalRequireCalls = this.getCalls("requireExtension").filter(
       (iter) => iter.arguments.length > 2 && iter.arguments[2] === true,
     );
-    const missingOptionals = optionalRequireCalls.reduce((acc, iter) => {
-      const callingExtensionKey = iter.extension;
+
+    return optionalRequireCalls.reduce<Record<string, IExtensionOptional[]>>((acc, iter) => {
+      const callingExtensionName = iter.extension;
+      if (typeof iter.arguments[0] !== "string") return acc;
+
       const requiredKey = iter.arguments[0];
       const ext = this.findExt(requiredKey, allExtensions);
-      if (ext === undefined) {
-        const optional: IExtensionOptional = {
-          id: requiredKey,
-          args: iter.arguments,
-          extensionPath: iter.extensionPath,
-        };
-        acc = {
-          ...acc,
-          [callingExtensionKey]: [].concat(
-            acc[callingExtensionKey] || [],
-            optional,
-          ) as IExtensionOptional[],
-        };
-      }
-      return acc;
+      if (ext !== undefined) return acc;
+
+      const optional: IExtensionOptional = {
+        id: requiredKey,
+        args: iter.arguments,
+        extensionPath: iter.extensionPath,
+      };
+
+      return {
+        ...acc,
+        [callingExtensionName]: [].concat(acc[callingExtensionName] || [], optional),
+      };
     }, {});
-    return missingOptionals;
   }
 
   /**
@@ -719,7 +724,7 @@ class ExtensionManager {
   private mDownloadAdapter: IPCDownloadAdapter;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
-  private mOptionalExtensions: { [extId: string]: IExtensionOptional[] } = {};
+  private mOptionalExtensions: { [extensionName: string]: IExtensionOptional[] } = {};
   private mInterpreters: {
     [ext: string]: (input: IRunParameters) => IRunParameters;
   };
@@ -736,7 +741,7 @@ class ExtensionManager {
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
-  private mPendingAdds: Array<{ extId: string; info: IExtension }> = [];
+  private mPendingAdds: IExtensionState[] = [];
   // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
   private mExtensionPersistors: {
     [hive: string]: { persistor: IPersistor; debounce: number };
@@ -841,12 +846,25 @@ class ExtensionManager {
       const disableExtensions = fs
         .readdirSync(getVortexPath("temp"))
         .filter((name) => name.startsWith("__disable_"));
+
+      const extensionsPath = path.join(getVortexPath("userData"), "plugins");
+
       disableExtensions.forEach((ext) => {
-        const extId = ext.substr(10);
-        log("info", "disabling extension that caused a crash before", {
-          extId,
-        });
-        this.mPendingDisables.push(extId);
+        const extensionName = ext.substring(10);
+        const extensionPath = path.join(extensionsPath, extensionName);
+        const existingExtension = findInstalled(this.mExtensionState, { path: extensionsPath });
+
+        if (existingExtension === undefined) {
+          log("info", "skipping disable file for unknown extension", { extensionName });
+        } else {
+          const { key } = existingExtension;
+
+          log("info", "disabling extension that caused a crash before", {
+            extensionName,
+          });
+          this.mPendingDisables.push(key);
+        }
+
         fs.unlinkSync(path.join(getVortexPath("temp"), ext));
       });
     } catch (err) {
@@ -972,8 +990,8 @@ class ExtensionManager {
     });
     this.mPendingRemoves = [];
 
-    this.mPendingAdds.forEach(({ extId, info }) => {
-      store.dispatch(addExtension(extId, info));
+    this.mPendingAdds.forEach((state) => {
+      store.dispatch(addExtension(state));
     });
     this.mPendingAdds = [];
 
@@ -1816,12 +1834,20 @@ class ExtensionManager {
       setdefault(migrations, call.extension, []).push(call.arguments[0]);
     });
 
-    const state: IState = this.mApi.store.getState();
+    const state = this.mApi.getState();
     this.mExtensions
       .filter((ext) => ext.dynamic && !ext.info?.bundled)
       .forEach((ext) => {
+        const existing = findInstalled(state.app.extensions, { path: ext.path });
+        if (existing === undefined) return;
+
+        const { key: existingExtensionKey, extension: existingExtension } = existing;
+
+        const newVersion = ext.info?.version;
+        if (newVersion === undefined) return;
+
         try {
-          let oldVersion = getSafe(state.app, ["extensions", ext.name, "version"], "0.0.0");
+          let oldVersion = existingExtension.version;
           if (!semver.valid(oldVersion)) {
             log("error", "invalid version stored for extension", {
               extension: ext.name,
@@ -1829,9 +1855,10 @@ class ExtensionManager {
             });
             oldVersion = "0.0.0";
           }
+
           if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
-              this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
+              this.mApi.store.dispatch(setExtensionVersion(existingExtensionKey, newVersion));
             } else {
               PromiseBB.mapSeries(migrations[ext.name], (mig) => mig(oldVersion))
                 .then(() => {
@@ -1839,7 +1866,7 @@ class ExtensionManager {
                     name: ext.name,
                     info: JSON.stringify(ext.info),
                   });
-                  this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
+                  this.mApi.store.dispatch(setExtensionVersion(existingExtensionKey, newVersion));
                 })
                 .catch((err) => {
                   const error = unknownToError(err);
@@ -2770,34 +2797,23 @@ class ExtensionManager {
     extensionPath: string,
     alreadyLoaded: IRegisteredExtension[],
     bundled: boolean,
-  ): IRegisteredExtension {
+  ): IRegisteredExtension | undefined {
     const indexPath = this.mExtensionFormats
       .map((format) => path.join(extensionPath, format))
       .find((iter) => fs.existsSync(iter));
     if (indexPath !== undefined) {
-      let info: IExtension = {
-        name: "",
-        author: "",
-        description: "",
-        version: "",
-      };
+      let info: ExtensionInfo;
       try {
-        info = JSON.parse(
-          fs.readFileSync(path.join(extensionPath, "info.json"), {
-            encoding: "utf8",
-          }),
+        info = parseExtensionInfo(
+          JSON.parse(
+            fs.readFileSync(path.join(extensionPath, "info.json"), {
+              encoding: "utf8",
+            }),
+          ),
         );
       } catch (err) {
-        const errorCode = getErrorCode(err);
-        const errMessage =
-          errorCode === "ENOENT"
-            ? "extension has no info.json file"
-            : "failed to parse info.json file";
-
-        log("warn", errMessage, {
-          extensionPath,
-          error: getErrorMessageOrDefault(err),
-        });
+        log("error", "failed to parse info.json file from an extension", { err, extensionPath });
+        return undefined;
       }
 
       const pathName = path.basename(extensionPath);
@@ -2888,68 +2904,70 @@ class ExtensionManager {
         }
         return true;
       })
-      .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
-        if (!getSafe(this.mExtensionState, [name, "enabled"], true)) {
-          log("debug", "extension disabled", { name });
+      .reduce((prev: Record<string, IRegisteredExtension>, directoryName: string) => {
+        const extensionPath = path.join(extension.path, directoryName);
+        const installedExtension = findInstalled(this.mExtensionState, { path: extensionPath });
+
+        if (installedExtension && !installedExtension.extension.enabled) {
+          log("debug", "extension disabled", { name: directoryName });
           return prev;
         }
+
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
           // extension with the same name in the bundle we could otherwise end up loading the
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           const before = Date.now();
-          const ext = this.loadDynamicExtension(
-            path.join(extension.path, name),
+          const loadedExtension = this.loadDynamicExtension(
+            extensionPath,
             alreadyLoaded,
             extension.bundled,
           );
-          if (ext !== undefined) {
-            if (this.mExtensionState?.[ext.name]?.enabled === false) {
-              log("debug", "extension disabled", { name: ext.name });
-              return prev;
-            }
-            loadedExtensions.add(ext.name);
-            const loadTime = Date.now() - before;
-            log("debug", "loaded extension", {
-              name,
-              loadTime,
-              location: extension.path,
-            });
-            if (prev[ext.name] !== undefined) {
-              // loadDynamicExtension already handles the case where the same extension was found
-              // in a different directory, but if the same directory contains multiple copies
-              // of the same extension, we have to deal with that slightly differently
-              log("warn", "multiple copies of the same extension installed", {
-                first: ext.path,
-                second: prev[ext.name].path,
-              });
 
-              if (
-                ext.info === undefined ||
-                semver.gt(prev[ext.name].info?.version, ext.info?.version)
-              ) {
-                // the copy we loaded previously is newer so mark this one for removal and not
-                // load it
-                this.mOutdated.push(path.basename(ext.path));
-              } else {
-                // this copy is actually the newer one so replace the one previously found and
-                // mark that for deletion
-                this.mOutdated.push(path.basename(prev[ext.name].path));
-                prev[ext.name] = ext;
-              }
+          if (loadedExtension === undefined) return prev;
+          loadedExtensions.add(loadedExtension.name);
+
+          const loadTime = Date.now() - before;
+          log("debug", "loaded extension", {
+            name: directoryName,
+            loadTime,
+            location: extension.path,
+          });
+
+          if (prev[loadedExtension.name] !== undefined) {
+            // loadDynamicExtension already handles the case where the same extension was found
+            // in a different directory, but if the same directory contains multiple copies
+            // of the same extension, we have to deal with that slightly differently
+            log("warn", "multiple copies of the same extension installed", {
+              first: loadedExtension.path,
+              second: prev[loadedExtension.name].path,
+            });
+
+            if (
+              loadedExtension.info === undefined ||
+              semver.gt(prev[loadedExtension.name].info?.version, loadedExtension.info?.version)
+            ) {
+              // the copy we loaded previously is newer so mark this one for removal and not
+              // load it
+              this.mOutdated.push(path.basename(loadedExtension.path));
             } else {
-              prev[ext.name] = ext;
+              // this copy is actually the newer one so replace the one previously found and
+              // mark that for deletion
+              this.mOutdated.push(path.basename(prev[loadedExtension.name].path));
+              prev[loadedExtension.name] = loadedExtension;
             }
+          } else {
+            prev[loadedExtension.name] = loadedExtension;
           }
         } catch (unknownError) {
           const err = unknownToError(unknownError);
           log("warn", "failed to load dynamic extension", {
-            name,
+            name: directoryName,
             error: err.message,
             stack: err.stack,
           });
-          this.mLoadFailures[name] = [{ id: "exception", args: { message: err.message } }];
+          this.mLoadFailures[directoryName] = [{ id: "exception", args: { message: err.message } }];
         }
         return prev;
       }, {});
@@ -3081,7 +3099,19 @@ class ExtensionManager {
     );
     for (const ext of scanned) {
       if (!loadedFromState.has(ext.name)) {
-        this.mPendingAdds.push({ extId: ext.name, info: { ...ext.info, path: ext.path } });
+        const state: IExtensionState = {
+          name: ext.name,
+          author: ext.info?.author ?? "<unknown>",
+          description: ext.info?.description ?? "<missing>",
+          version: ext.info?.version ?? "0.0.1",
+          infoJsonId: ext.info?.id,
+          path: ext.path,
+          enabled: true,
+          endorsed: "Undecided",
+          remove: false,
+        };
+
+        this.mPendingAdds.push(state);
         result.push(ext);
         loadedExtensions.add(ext.name);
       }

@@ -1,0 +1,157 @@
+# openapi/specs/telemetry/telemetry_openapi.yaml (path + components)
+# openapi/specs/shared/components.yaml (ProblemDetails, referenced by the error responses)
+
+openapi: 3.0.3
+info:
+  title: Telemetry — Vortex mod-list ingestion (internal)
+  version: 1.0.0
+
+paths:
+  /telemetry/mod-lists:
+    post:
+      tags:
+        - telemetry
+      summary: Submit a Vortex mod-list snapshot
+      description: |
+        Ingests a single mod-list snapshot from a Vortex client for one game.
+        The snapshot is accepted asynchronously: the request is validated, a domain event is
+        published, and the endpoint returns `202` immediately. A background subscriber batches
+        and writes the data to ClickHouse.
+      operationId: submitModLists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModListSnapshot"
+      responses:
+        "202":
+          description: The snapshot was accepted for processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ModListSnapshotAck"
+        "413":
+          description: Payload Too Large - the snapshot exceeds the mod-count cap.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable - the request body failed schema validation.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "503":
+          description: Service Unavailable - the snapshot could not be enqueued for processing.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+
+components:
+  schemas:
+    ModListSnapshot:
+      type: object
+      description: A single Vortex mod-list snapshot for one game.
+      required:
+        - instance_id
+        - game_id
+        - captured_at
+        - vortex_version
+        - mods
+      properties:
+        instance_id:
+          type: string
+          description: Anonymous Vortex install identifier. Retained to disambiguate installs and detect re-installs.
+          example: 9f2c1a7b-4e6d-8f03-1a2b-3c4d5e6f7a8b
+        game_id:
+          type: string
+          description: The game UID the snapshot is for.
+        captured_at:
+          type: string
+          format: date-time
+          description: When the snapshot was taken on the client.
+        vortex_version:
+          type: string
+          description: The Vortex client version that produced the snapshot.
+          example: 2.4.0
+        mods:
+          type: array
+          description: The mods in the loadout. Can run to a few thousand entries (see the 413 cap).
+          items:
+            $ref: "#/components/schemas/ModEntry"
+
+    ModEntry:
+      type: object
+      description: One mod in a loadout. `source` is the discriminator and is always present; `mod_id`/`file_id` are null for non-Nexus mods.
+      required:
+        - source
+        - enabled
+      properties:
+        source:
+          type: string
+          description: Where the mod came from, e.g. `nexus`, `unknown`, `curse`, `local`, `manual`. Free-form.
+          example: nexus
+        mod_id:
+          type: string
+          nullable: true
+          description: The Nexus mod UID, or null for non-Nexus mods.
+        file_id:
+          type: string
+          nullable: true
+          description: The Nexus file UID, or null for non-Nexus mods.
+        version:
+          type: string
+          nullable: true
+          description: The installed mod version, if known.
+          example: 3.0.1
+        enabled:
+          type: boolean
+          description: Whether the mod is enabled in the loadout.
+
+    ModListSnapshotAck:
+      type: object
+      description: Acknowledgement that a snapshot was accepted.
+      required:
+        - accepted
+      properties:
+        accepted:
+          type: integer
+          description: The number of mod entries accepted for processing.
+          example: 342
+
+    ProblemDetails:
+      type: object
+      description: An RFC 9457 Problem Details object.
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the problem type.
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+        status:
+          type: integer
+          description: The HTTP status code.
+          example: 404
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence of the problem.

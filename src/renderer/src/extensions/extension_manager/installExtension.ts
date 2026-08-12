@@ -1,4 +1,4 @@
-import { stat, rename, rm, writeFile, readdir } from "node:fs/promises";
+import { stat, rename, rm, writeFile, readdir, readFile } from "node:fs/promises";
 import * as path from "node:path";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
@@ -8,9 +8,14 @@ import SevenZip from "node-7z";
 import { addExtension, forgetExtension, removeExtension } from "../../actions";
 import ExtensionManager from "../../ExtensionManager";
 import { log } from "../../logging";
-import type { ExtensionType, IExtension } from "../../types/extensions";
+import type {
+  ExtensionType,
+  IExtension,
+  ExtensionInfo,
+  IAvailableExtension,
+} from "../../types/extensions";
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+import type { IExtensionState, IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import { withTrackedActivity } from "../../util/errorHandling";
 import getVortexPath from "../../util/getVortexPath";
@@ -21,7 +26,14 @@ import {
   type ExtensionInstallSource,
 } from "../analytics/mixpanel/extensionInstallAnalytics";
 import { countryExists, languageExists } from "../settings_interface/languagemap";
-import { readExtensionInfo } from "./util";
+import { parseExtensionInfo } from "./extensionInfo";
+import {
+  findDependencyInCatalog,
+  findPreviousVersions,
+  isAlreadyInstalled,
+  findInstalledDependency,
+} from "./queries";
+import _sessionReducer from "./reducers";
 
 class ContextProxyHandler implements ProxyHandler<any> {
   private mDependencies: string[] = [];
@@ -72,24 +84,13 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     initFunc(context);
 
     const state = api.getState();
-    const { available } = state.session.extensions;
-    const extState = state.app.extensions ?? {};
-
     const promises = handler.dependencies.map(async (dependencyId) => {
-      if (extState[dependencyId]) return;
+      if (findInstalledDependency(state.app.extensions, dependencyId) !== undefined) return;
 
-      const toInstall = available.find(
-        (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
-      );
-
+      const toInstall = findDependencyInCatalog(state.session.extensions.available, dependencyId);
       if (!toInstall) return;
-      const alreadyInstalled = Object.values(extState).some(
-        (entry) =>
-          (toInstall.modId !== undefined && entry.modId === toInstall.modId) ||
-          entry.name === toInstall.name,
-      );
-      if (alreadyInstalled) return;
 
+      if (isAlreadyInstalled(state.app.extensions, toInstall)) return;
       await api.emitAndAwait<"install-extension">("install-extension", toInstall);
     });
 
@@ -136,33 +137,18 @@ export function clearStaleRemovalFlags(
   });
 }
 
-function removeOldVersion(api: IExtensionApi, info: IExtension): string[] {
+function removeOldVersion(api: IExtensionApi, catalogEntry: IAvailableExtension): string[] {
   const state = api.getState();
-  const extState = state.app.extensions ?? {};
-
-  // should never be more than one but let's handle multiple to be safe
-  const previousVersions: string[] = [];
-
-  for (const [key, ext] of Object.entries(extState)) {
-    if (ext.bundled) continue;
-    if (info.modId !== undefined && ext.modId === info.modId) {
-      previousVersions.push(key);
-      continue;
-    }
-    if (info.name === ext.name) {
-      previousVersions.push(key);
-    }
-  }
+  const previousVersions = findPreviousVersions(state.app.extensions ?? {}, catalogEntry);
 
   if (previousVersions.length > 0) {
     log("info", "removing previous versions of the extension", {
       previousVersions,
-      newPath: info.path,
     });
   }
 
-  previousVersions.forEach((key) => api.store.dispatch(removeExtension(key)));
-  return previousVersions;
+  previousVersions.forEach(({ key }) => api.store.dispatch(removeExtension(key)));
+  return previousVersions.map(({ key }) => key);
 }
 
 const requiredThemeFiles = ["variables.scss", "style.scss", "fonts.scss"];
@@ -238,49 +224,6 @@ export async function validateExtension(extPath: string): Promise<void> {
   await Promise.all([stat(path.join(extPath, "index.js")), stat(path.join(extPath, "info.json"))]);
 }
 
-export async function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
-  if (info?.type === "theme") {
-    await validateTheme(extPath);
-    return "theme";
-  }
-
-  if (info?.type === "translation") {
-    await validateTranslation(extPath);
-    return "translation";
-  }
-
-  if (info !== undefined) {
-    await validateExtension(extPath);
-    return info?.type;
-  }
-
-  // if we don't know the type we can only check if _any_ extension type applies
-  try {
-    await validateExtension(extPath);
-    return undefined;
-  } catch {
-    // ignored
-  }
-
-  try {
-    await validateTheme(extPath);
-    return "theme";
-  } catch {
-    // ignored
-  }
-
-  try {
-    await validateTranslation(extPath);
-    return "translation";
-  } catch {
-    // ignored
-  }
-
-  throw new DataInvalid(
-    "Doesn't seem to contain a correctly packaged extension, theme or translation",
-  );
-}
-
 interface InstallAnalytics {
   source: ExtensionInstallSource;
   gameDomain?: string;
@@ -296,8 +239,7 @@ const activeInstalls: Map<string, Promise<void>> = new Map();
 function installExtension(
   api: IExtensionApi,
   archivePath: string,
-  info?: IExtension,
-  analytics: InstallAnalytics = { source: "manual" },
+  data?: { catalogEntry?: IAvailableExtension; analytics?: InstallAnalytics },
 ): Promise<void> {
   const key = path.basename(archivePath).toLowerCase();
   const active = activeInstalls.get(key);
@@ -306,7 +248,7 @@ function installExtension(
     return active;
   }
 
-  const result = installExtensionImpl(api, archivePath, info, analytics).finally(() => {
+  const result = installExtensionImpl(api, archivePath, data).finally(() => {
     activeInstalls.delete(key);
   });
 
@@ -317,8 +259,7 @@ function installExtension(
 async function installExtensionImpl(
   api: IExtensionApi,
   archivePath: string,
-  info: IExtension | undefined,
-  analytics: InstallAnalytics,
+  data?: { catalogEntry?: IAvailableExtension; analytics?: InstallAnalytics },
 ): Promise<void> {
   const extensionsPath = path.join(getVortexPath("userData"), "plugins");
   let destPath: string;
@@ -331,8 +272,8 @@ async function installExtensionImpl(
     "extension.install",
     {
       "extension.archive": path.basename(archivePath),
-      "extension.name": info?.name,
-      "extension.type": info?.type,
+      "extension.name": data?.catalogEntry?.name,
+      "extension.type": data?.catalogEntry?.type,
     },
     async () => {
       try {
@@ -371,24 +312,47 @@ async function installExtensionImpl(
         throw new DataInvalid(`Failed to extract extension archive: ${detail}`);
       }
 
-      const manifestInfo = await Promise.resolve(readExtensionInfo(tempPath, false, info));
+      const infoJsonPath = path.join(tempPath, "info.json");
+      const isJavaScriptExtension = await validateExtension(tempPath)
+        .then(() => true)
+        .catch(() => false);
 
-      const fullInfo = { ...manifestInfo.info };
-      if (fullInfo.type === undefined) {
-        fullInfo.type = await validateInstall(tempPath, info);
+      let extensionInfo: ExtensionInfo | undefined = undefined;
+      let guessedType: ExtensionType | undefined = undefined;
+
+      // NOTE(erri120): themes and translations don't have an info.json file
+      // only JavaScript extensions have one.
+      if (isJavaScriptExtension) {
+        const contents = await readFile(infoJsonPath, { encoding: "utf8" });
+        extensionInfo = parseExtensionInfo(JSON.parse(contents));
+      } else {
+        const isTheme = await validateTheme(tempPath)
+          .then(() => true)
+          .catch(() => false);
+        if (isTheme) {
+          guessedType = "theme";
+        } else {
+          const isTranslation = await validateTranslation(tempPath)
+            .then(() => true)
+            .catch(() => false);
+          if (isTranslation) {
+            guessedType = "translation";
+          } else {
+            throw new DataInvalid(
+              "Doesn't seem to contain a correctly packaged extension, theme or translation",
+            );
+          }
+        }
       }
 
-      // update the manifest on disc, in case we had new info from the caller
-      await writeFile(path.join(tempPath, "info.json"), JSON.stringify(fullInfo, undefined, 2));
-
-      const dirName = sanitize(manifestInfo.id);
+      const dirName = sanitize(extensionInfo?.id ?? path.basename(archivePath));
       destPath = path.join(extensionsPath, dirName);
 
       // Keys whose previous-version state entries were marked for removal during
       // this install. Cleared after the rename succeeds so the next launch's
       // state-flag-driven removal path in ExtensionManager doesn't wipe the
       // just-installed folder (#19527).
-      const removedKeys = removeOldVersion(api, fullInfo);
+      const removedKeys = data?.catalogEntry ? removeOldVersion(api, data?.catalogEntry) : [];
 
       // we don't actually expect the output directory to exist
       await rm(destPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
@@ -396,25 +360,43 @@ async function installExtensionImpl(
 
       clearStaleRemovalFlags(api, removedKeys, destPath);
 
-      const extId = fullInfo.id ?? dirName;
-      api.store.dispatch(addExtension(extId, { ...fullInfo, path: destPath }));
+      const state: IExtensionState = {
+        name: data?.catalogEntry?.name ?? extensionInfo?.name ?? path.basename(destPath),
+        author: data?.catalogEntry?.author ?? extensionInfo?.author ?? "<unknown>",
+        description:
+          data?.catalogEntry?.description?.short ?? extensionInfo?.description ?? "<missing>",
+        version: data?.catalogEntry?.version ?? extensionInfo?.version ?? "0.0.1",
+
+        endorsed: "Undecided",
+        remove: false,
+        enabled: true,
+        path: destPath,
+
+        infoJsonId: extensionInfo?.id,
+
+        modId: data?.catalogEntry?.modId,
+        fileId: data?.catalogEntry?.fileId,
+        type: data?.catalogEntry?.type ?? guessedType,
+      };
+
+      api.store.dispatch(addExtension(state));
 
       emitExtensionInstalled(
         api,
-        { ...fullInfo, type: fullInfo.type, id: manifestInfo.id },
+        { ...state },
         {
-          source: analytics.source,
+          source: data?.analytics.source,
           isUpdate: removedKeys.length > 0,
-          gameDomain: analytics.gameDomain,
-          gameName: analytics.gameName,
+          gameDomain: data?.analytics?.gameDomain,
+          gameName: data?.analytics?.gameName,
         },
       );
 
-      if (fullInfo.type === "theme" || fullInfo.type === "translation") return;
+      if (state.type === "theme" || state.type === "translation") return;
 
       // don't install dependencies for extensions that are already loaded because
       // doing so could cause an exception
-      if (api.getLoadedExtensions().find((ext) => ext.name === manifestInfo.id) === undefined) {
+      if (api.getLoadedExtensions().find((ext) => ext.path === destPath) === undefined) {
         await installExtensionDependencies(api, destPath);
       }
     },

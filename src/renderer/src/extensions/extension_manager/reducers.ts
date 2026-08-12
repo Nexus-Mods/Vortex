@@ -1,24 +1,34 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-import { setSafe } from "../../util/storeHelper";
+import { actionsToReducerSpec } from "@/reducers/builder";
+import type { IAvailableExtension } from "@/types/extensions";
+import type { IExtensionOptional } from "@/types/IState";
+
 import * as actions from "./actions";
 
-/**
- * reducer for changes to ephemeral session state
- */
-const sessionReducer: IReducerSpec = {
-  reducers: {
-    [actions.setAvailableExtensions as any]: (state, payload) =>
-      setSafe(state, ["available"], payload),
-    [actions.setOptionalExtensions as any]: (state, payload) =>
-      setSafe(state, ["optional"], payload),
-    [actions.setExtensionsUpdate as any]: (state, payload) =>
-      setSafe(state, ["updateTime"], payload),
-  },
-  defaults: {
-    available: [],
-    optional: {},
-    updateTime: 0,
-  },
+type DefaultState = {
+  /** All remotely available extensions that can be downloaded. */
+  available: IAvailableExtension[];
+  /** Update time of the extension manifest. */
+  updateTime: number;
+  /** Map containing all recorded optional dependencies of an extension, key is the extension name. */
+  optional: Record<string, IExtensionOptional[]>;
 };
+
+declare module "@/types/IState" {
+  interface ISessionState {
+    extensions: DefaultState;
+  }
+}
+
+const defaultState: DefaultState = {
+  available: [],
+  optional: {},
+  updateTime: 0,
+};
+
+const sessionReducer = actionsToReducerSpec(defaultState, actions, {
+  setAvailableExtensions: (state, payload) => ({ ...state, available: payload }),
+  setOptionalExtensions: (state, payload) => ({ ...state, optional: payload }),
+  setExtensionsUpdate: (state, payload) => ({ ...state, updateTime: payload }),
+});
 
 export default sessionReducer;

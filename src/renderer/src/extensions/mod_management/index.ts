@@ -56,6 +56,7 @@ import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from "../../util/u
 import { waitForCondition } from "../../util/waitForCondition";
 import { emitModsDeployed } from "../analytics/mixpanel/deployAnalytics";
 import { emitModStateChanged } from "../analytics/mixpanel/modChangeAnalytics";
+import { emitModListSnapshot } from "../analytics/utils/modListSnapshot";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
@@ -885,6 +886,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               manual,
               isCollectionPostprocess: deployOptions?.isCollectionPostprocessCall ?? false,
             });
+            void emitModListSnapshot(api, gameId);
           } catch (unknownErr) {
             const err = unknownToError(unknownErr);
             if (err instanceof UserCanceled) {
