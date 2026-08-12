@@ -1,6 +1,7 @@
+import { mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import _ from "lodash";
-import { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setConfirmPurge, setModAttribute, setSettingsPage } from "@/actions";
@@ -10,6 +11,7 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import { log } from "@/logging";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
+import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { fileMD5 } from "@/util/checksum";
 import { TemporaryError, UserCanceled } from "@/util/CustomErrors";
@@ -40,16 +42,23 @@ interface IPositionedAction {
 }
 
 /**
- * The positions the four actions that used to render as components claimed through
- * `registerAction` / `staticElements`, kept so converting them to plain actions
- * doesn't reshuffle the row.
+ * Where the actions this hook builds itself sit among the registered ones. The order
+ * the row reads in comes from these and from the positions passed to `registerAction`
+ * elsewhere, so a change here moves the action in the overflow menu too.
  */
 const POSITION = {
   installFromFile: 25,
+  open: 30,
   checkVersions: 50,
   deploy: 105,
   purge: 110,
 };
+
+/**
+ * Where the actions behind the "Open" button register, rather than into `mod-icons`
+ * itself: the five of them take one slot on the bar between them.
+ */
+const OPEN_ACTION_GROUP = "mod-icons-open";
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
@@ -341,14 +350,14 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
           });
       });
     });
-  }, [api, copyOnIFF]);
+  }, [api, copyOnIFF, t]);
 
   return useMemo(
     () => ({
       position: POSITION.installFromFile,
       action: {
         label: t("Install From File"),
-        iconPath: getIconPath("select-install"),
+        iconPath: mdiPlusCircleOutline,
         testId: "install-from-archive",
         onClick: install,
       },
@@ -361,7 +370,6 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
 const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
   const { api } = useMainContext();
   const gameMode = useSelector(selectors.activeGameId);
-  const profile = useSelector(selectors.activeProfile);
   // both live in slices extensions register at runtime, so they aren't on IState
   const updateRunning = useSelector((state: IState) =>
     getSafe<boolean>(state, ["session", "mods", "updatingMods", gameMode], false),
@@ -489,17 +497,12 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
 };
 
 /**
- * Adapts the actions extensions registered into `mod-icons` for the toolbar, the
- * way IconBar rendered them: hidden when `condition` returns false, disabled when
- * it returns a string, ordered by `position`.
+ * Adapts the actions extensions registered into a group for the toolbar, the way
+ * IconBar rendered them: hidden when `condition` returns false, disabled when it
+ * returns a string, ordered by `position`.
  */
-const useRegisteredActions = (): IPositionedAction[] => {
-  const objects = useExtensionObjects<IActionDefinition>(
-    registerAction,
-    undefined,
-    "mod-icons",
-    true,
-  );
+const useRegisteredActions = (group: string): IPositionedAction[] => {
+  const objects = useExtensionObjects<IActionDefinition>(registerAction, undefined, group, true);
 
   return objects.reduce<IPositionedAction[]>((prev, definition) => {
     if (definition.component !== undefined) {
@@ -530,7 +533,9 @@ const useRegisteredActions = (): IPositionedAction[] => {
       position: definition.position ?? 100,
       action: {
         label: definition.title,
-        iconPath: getIconPath(definition.icon),
+        // an icon name we have no mdi path for is an extension's own, so say as much
+        // rather than showing the generic shape the map falls back to
+        iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
         // a string condition explains why the action can't be used; the toolbar
         // has nowhere to put that yet, so it only greys the action out
         disabled: typeof condition === "string",
@@ -543,23 +548,59 @@ const useRegisteredActions = (): IPositionedAction[] => {
 };
 
 /**
- * Everything the mods page puts in its toolbar: its own actions plus whatever
- * extensions registered into `mod-icons`, in the order IconBar showed them.
- * Anything that doesn't fit the available width is collapsed into the overflow
- * menu by {@link ToolbarGroup}, so this is a flat list.
+ * One "Open" button standing in for every place the page can open, which is a menu
+ * rather than a click. Absent when nothing registered into the group — no game
+ * offers none of them today, but an action with an empty menu would be a dead end.
+ */
+const useOpenAction = (t: TFunction): IPositionedAction | undefined => {
+  const openActions = useRegisteredActions(OPEN_ACTION_GROUP);
+
+  return useMemo(() => {
+    if (openActions.length === 0) {
+      return undefined;
+    }
+
+    const label = t("Open");
+    const actions = [...openActions]
+      .sort((lhs, rhs) => lhs.position - rhs.position)
+      .map((entry) => entry.action);
+
+    return {
+      position: POSITION.open,
+      action: {
+        label,
+        iconPath: getIconPath("open-ext"),
+        panelRole: "menu",
+        // picking somewhere to open ends the interaction, so the menu goes away
+        // with the panel rather than leaving the button showing a list
+        panel: ({ dismiss }) => (
+          <PopoverMenu actions={[actions]} label={label} onSelect={dismiss} />
+        ),
+      },
+    };
+  }, [openActions, t]);
+};
+
+/**
+ * Everything the mods page puts in its toolbar: its own actions, the "Open" menu, and
+ * whatever extensions registered into `mod-icons`, in the order IconBar showed them.
+ * Which of them sit on the bar is the user's to change — see `useToolbarPinning` —
+ * and anything that doesn't fit is collapsed into the overflow menu by
+ * {@link ToolbarGroup}, so this is a flat list.
  */
 export const useModToolbarActions = (t: TFunction): IToolbarAction[] => {
   const installFromFile = useInstallFromFileAction(t);
   const checkVersions = useCheckVersionsAction(t);
   const deploy = useDeployAction(t);
   const purge = usePurgeAction(t);
-  const registered = useRegisteredActions();
+  const open = useOpenAction(t);
+  const registered = useRegisteredActions("mod-icons");
 
   return useMemo(
     () =>
-      [installFromFile, checkVersions, deploy, purge, ...registered]
+      [installFromFile, checkVersions, deploy, purge, ...(open ? [open] : []), ...registered]
         .sort((lhs, rhs) => lhs.position - rhs.position)
         .map((entry) => entry.action),
-    [checkVersions, deploy, installFromFile, purge, registered],
+    [checkVersions, deploy, installFromFile, open, purge, registered],
   );
 };
