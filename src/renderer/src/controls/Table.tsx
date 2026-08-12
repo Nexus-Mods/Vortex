@@ -342,7 +342,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       containerClasses.push("has-details");
     }
     if (stickyHeader) {
-      containerClasses.push("sticky-header");
+      // grow past the last row, so the details pane doesn't open one row tall
+      containerClasses.push("sticky-header", "flex-auto");
     }
     if (edgeToEdge) {
       containerClasses.push("edge-to-edge");

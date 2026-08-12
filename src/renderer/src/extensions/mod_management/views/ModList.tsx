@@ -30,8 +30,6 @@ import type {
 } from "../../../types/IDialog";
 import type { IState } from "../../../types/IState";
 import type { ITableAttribute } from "../../../types/ITableAttribute";
-import { Toolbar } from "../../../ui/components/toolbar/Toolbar";
-import { ToolbarGroup } from "../../../ui/components/toolbar/ToolbarGroup";
 import { knownArchiveExt } from "../../../util/archives";
 import { withBatchContext } from "../../../util/BatchContext";
 import calculateFolderSize from "../../../util/calculateFolderSize";
@@ -55,7 +53,7 @@ import { setModEnabled, setModsEnabled } from "../../profile_management/actions/
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
-import { useModToolbarActions } from "../hooks/useModToolbarActions.hook";
+import { ModsToolbar } from "../components/ModsToolbar";
 import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
 import getText from "../texts";
 import type { IInstallOptions } from "../types/IInstallOptions";
@@ -129,21 +127,6 @@ interface IBaseProps {
   active?: boolean;
   pageId?: string;
 }
-
-/**
- * The page's toolbar. A function component because the actions come from a hook —
- * see {@link useModToolbarActions} for how the page's own actions and the ones
- * extensions register into `mod-icons` are combined.
- */
-const ModsToolbar = ({ t }: { t: TFunction }) => {
-  const actions = useModToolbarActions(t);
-
-  return (
-    <Toolbar>
-      <ToolbarGroup actions={actions} />
-    </Toolbar>
-  );
-};
 
 interface IConnectedProps extends IModProps {
   gameMode: string;
@@ -412,15 +395,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           <ModsToolbar t={t} />
         </PageHeader>
 
-        <PageScroll isFullWidth className="flex flex-col gap-y-4">
-          <div className="mod-list-container" ref={this.setBoundsRef}>
+        <PageScroll isFullWidth className="flex min-h-full flex-col gap-y-4">
+          <div className="mod-list-container flex flex-1 flex-col" ref={this.setBoundsRef}>
             {content}
           </div>
         </PageScroll>
 
-        {/* `relative` because the collapse toggle inside is absolutely positioned and
-            needs this container as its containing block, which the legacy page chrome
-            used to provide */}
         <PageContent isFullWidth className="mod-drop-container relative">
           <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
             <Panel.Collapse>
