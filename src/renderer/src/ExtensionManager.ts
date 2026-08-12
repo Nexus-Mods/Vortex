@@ -2897,68 +2897,70 @@ class ExtensionManager {
         }
         return true;
       })
-      .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
-        if (!getSafe(this.mExtensionState, [name, "enabled"], true)) {
-          log("debug", "extension disabled", { name });
+      .reduce((prev: Record<string, IRegisteredExtension>, directoryName: string) => {
+        const extensionPath = path.join(extension.path, directoryName);
+        const installedExtension = findInstalled(this.mExtensionState, { path: extensionPath });
+
+        if (installedExtension && !installedExtension.extension.enabled) {
+          log("debug", "extension disabled", { name: directoryName });
           return prev;
         }
+
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
           // extension with the same name in the bundle we could otherwise end up loading the
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           const before = Date.now();
-          const ext = this.loadDynamicExtension(
-            path.join(extension.path, name),
+          const loadedExtension = this.loadDynamicExtension(
+            extensionPath,
             alreadyLoaded,
             extension.bundled,
           );
-          if (ext !== undefined) {
-            if (this.mExtensionState?.[ext.name]?.enabled === false) {
-              log("debug", "extension disabled", { name: ext.name });
-              return prev;
-            }
-            loadedExtensions.add(ext.name);
-            const loadTime = Date.now() - before;
-            log("debug", "loaded extension", {
-              name,
-              loadTime,
-              location: extension.path,
-            });
-            if (prev[ext.name] !== undefined) {
-              // loadDynamicExtension already handles the case where the same extension was found
-              // in a different directory, but if the same directory contains multiple copies
-              // of the same extension, we have to deal with that slightly differently
-              log("warn", "multiple copies of the same extension installed", {
-                first: ext.path,
-                second: prev[ext.name].path,
-              });
 
-              if (
-                ext.info === undefined ||
-                semver.gt(prev[ext.name].info?.version, ext.info?.version)
-              ) {
-                // the copy we loaded previously is newer so mark this one for removal and not
-                // load it
-                this.mOutdated.push(path.basename(ext.path));
-              } else {
-                // this copy is actually the newer one so replace the one previously found and
-                // mark that for deletion
-                this.mOutdated.push(path.basename(prev[ext.name].path));
-                prev[ext.name] = ext;
-              }
+          if (loadedExtension === undefined) return prev;
+          loadedExtensions.add(loadedExtension.name);
+
+          const loadTime = Date.now() - before;
+          log("debug", "loaded extension", {
+            name: directoryName,
+            loadTime,
+            location: extension.path,
+          });
+
+          if (prev[loadedExtension.name] !== undefined) {
+            // loadDynamicExtension already handles the case where the same extension was found
+            // in a different directory, but if the same directory contains multiple copies
+            // of the same extension, we have to deal with that slightly differently
+            log("warn", "multiple copies of the same extension installed", {
+              first: loadedExtension.path,
+              second: prev[loadedExtension.name].path,
+            });
+
+            if (
+              loadedExtension.info === undefined ||
+              semver.gt(prev[loadedExtension.name].info?.version, loadedExtension.info?.version)
+            ) {
+              // the copy we loaded previously is newer so mark this one for removal and not
+              // load it
+              this.mOutdated.push(path.basename(loadedExtension.path));
             } else {
-              prev[ext.name] = ext;
+              // this copy is actually the newer one so replace the one previously found and
+              // mark that for deletion
+              this.mOutdated.push(path.basename(prev[loadedExtension.name].path));
+              prev[loadedExtension.name] = loadedExtension;
             }
+          } else {
+            prev[loadedExtension.name] = loadedExtension;
           }
         } catch (unknownError) {
           const err = unknownToError(unknownError);
           log("warn", "failed to load dynamic extension", {
-            name,
+            name: directoryName,
             error: err.message,
             stack: err.stack,
           });
-          this.mLoadFailures[name] = [{ id: "exception", args: { message: err.message } }];
+          this.mLoadFailures[directoryName] = [{ id: "exception", args: { message: err.message } }];
         }
         return prev;
       }, {});
