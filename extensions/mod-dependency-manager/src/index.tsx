@@ -1559,7 +1559,7 @@ function main(context: types.IExtensionContext) {
   // a plain action rather than a component, so the mods page toolbar can render it.
   // The emphasis the button used to get while conflicts are unresolved is part of the
   // toolbar redesign (LAZ-534) rather than something an action can express.
-  context.registerAction("mod-icons", 90, "connection", {}, "Manage Rules", () => {
+  context.registerAction("mod-icons", 90, "rules", {}, "Manage Rules", () => {
     showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
   });
   context.registerDialog("mod-dependencies-connector", Connector);

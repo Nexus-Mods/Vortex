@@ -65,7 +65,11 @@ const controlProps = (action: IToolbarAction) => ({
  */
 const ToolbarControl = ({ action }: { action: IToolbarAction }) =>
   action.panel ? (
-    <ToolbarPanelButton {...controlProps(action)} panel={action.panel} />
+    <ToolbarPanelButton
+      {...controlProps(action)}
+      panel={action.panel}
+      panelRole={action.panelRole}
+    />
   ) : (
     <ToolbarButton
       {...controlProps(action)}
