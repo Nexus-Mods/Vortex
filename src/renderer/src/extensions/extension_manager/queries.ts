@@ -1,12 +1,17 @@
+import * as path from "node:path";
+
 import * as semver from "semver";
 
 import type { IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
 import type { IExtensionOptional, IExtensionState } from "@/types/IState";
 
+type CatalogQuery = { modId: number; fileId?: number };
+type InstalledQuery = { modId: number; fileId?: number } | { path: string };
+
 /** Find an extension in the available catalog. */
 export function findInCatalog(
   catalog: IAvailableExtension[],
-  query: { modId: number; fileId?: number },
+  query: CatalogQuery,
 ): IAvailableExtension | undefined {
   return catalog.find((catalogEntry) => matchesQuery(query, catalogEntry));
 }
@@ -14,11 +19,16 @@ export function findInCatalog(
 /** Find an installed extension. */
 export function findInstalled(
   installedExtensions: Record<string, IExtensionState>,
-  query: { modId: number; fileId?: number },
+  query: InstalledQuery,
 ): { key: string; extension: IExtensionState } | undefined {
-  const result = Object.entries(installedExtensions).find(([_, extension]) =>
-    matchesQuery(query, extension),
-  );
+  const result = Object.entries(installedExtensions).find(([_, extension]) => {
+    if ("path" in query)
+      return (
+        path.normalize(extension.path).toLowerCase() === path.normalize(query.path).toLowerCase()
+      );
+    return matchesQuery(query, extension);
+  });
+
   if (result === undefined) return undefined;
 
   const [key, extension] = result;
@@ -32,6 +42,20 @@ export function matchesQuery(
 ): boolean {
   if (entry.modId !== query.modId) return false;
   return query.fileId !== undefined ? entry.fileId === query.fileId : true;
+}
+
+/** Find a dependency extension by its declared identifier among the installed extensions. */
+export function findInstalledDependency(
+  installedExtensions: Record<string, IExtensionState>,
+  dependencyId: string,
+): { key: string; extension: IExtensionState } | undefined {
+  const result = Object.entries(installedExtensions).find(
+    ([_, entry]) => entry.infoJsonId === dependencyId || entry.name === dependencyId,
+  );
+  if (result === undefined) return undefined;
+
+  const [key, extension] = result;
+  return { key, extension };
 }
 
 /** Find a dependency extension by its declared identifier in the catalog. */

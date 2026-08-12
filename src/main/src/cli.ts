@@ -16,7 +16,6 @@ const ARG_COUNTS: Record<string, number> = {
   "--download": 1,
   "--install": 1,
   "--install-archive": 1,
-  "--install-extension": 1,
   "--start-minimized": 1,
   "--game": 1,
   "--profile": 1,
@@ -119,7 +118,6 @@ const SKIP_ARGS: Record<string, number> = {
   "--profile": 1,
   "--install": 1,
   "--install-archive": 1,
-  "--install-extension": 1,
   "--restore": 1,
   "--merge": 1,
 };
@@ -216,11 +214,6 @@ export function parseCommandline(argv: string[], electronIsShitHack: boolean): I
     .option(
       "--install-archive <path>",
       "Start installing the specified archive. Use absolute path.",
-    )
-    .option(
-      "--install-extension <id>",
-      "Start downloading & installing the specified " +
-        'vortex extension. id can be "modId:<number>".',
     )
     .option(
       "-g, --get <path>",

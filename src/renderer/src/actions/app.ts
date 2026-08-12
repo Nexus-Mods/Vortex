@@ -1,7 +1,8 @@
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import { createAction } from "redux-act";
 
-import type { IExtension } from "../types/extensions";
+import type { IExtensionState } from "@/types/IState";
+
 import type { VortexInstallType } from "../types/VortexInstallType";
 
 const id = <T>(input: T): T => input;
@@ -10,10 +11,9 @@ export const setStateVersion = createAction("SET_STATE_VERSION", id<string>);
 
 export const setApplicationVersion = createAction("SET_APPLICATION_VERSION", id<string>);
 
-export const addExtension = createAction(
-  "ADD_EXTENSION",
-  (extensionId: string, info: IExtension) => ({ extensionId, info }),
-);
+export const addExtension = createAction("ADD_EXTENSION", (extension: IExtensionState) => ({
+  extension,
+}));
 
 export const setExtensionEnabled = createAction(
   "SET_EXTENSION_ENABLED",
