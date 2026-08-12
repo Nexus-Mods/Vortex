@@ -1,8 +1,3 @@
-/**
- * Shared constants for E2E specs — keep hard-coded URLs here (rather than as
- * per-spec consts) so they're maintained in one place.
- */
-
 export const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
 
 /**
@@ -12,61 +7,12 @@ export const SDV_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/2400";
  */
 export const SDV_VINTAGE_INTERFACE_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/4697";
 
-/**
- * SDV mod with a single main file that declares two file-level requirements.
- * Installed on its own (those required files absent) it drives one file-requirements
- * Health Check warning covering both — the fixture for the LAZ-684 warning/install
- * flow. Chosen to have a single main file so the download uses the main mod page
- * (the proven Mod-Manager flow), and not SMAPI, which Vortex special-cases with a
- * dedicated installer.
- */
 export const SDV_FILE_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/49786";
-
-/**
- * The two mods whose files SDV_FILE_REQUIREMENT_MOD_URL (49786) requires: Item Bags
- * (5382) and Pokemon Eggventure - Day Care (49098). Downloading both from the website
- * is the manual flow a free user follows to satisfy the requirements and clear the
- * warning (a free user can't 1-click install). Fixture-specific — if 49786's declared
- * requirements change, update this list.
- */
 export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
   "https://www.nexusmods.com/stardewvalley/mods/5382",
   "https://www.nexusmods.com/stardewvalley/mods/49098",
 ];
-
-/**
- * Matches an externally-opened URL that points at one of the required mods' pages
- * (5382 / 49098) — used to assert the "Install via mod page" link targets a
- * required mod. A static literal with the '.' escaped (deriving it from
- * SDV_FILE_REQUIREMENT_TARGET_URLS trips CodeQL's "incomplete hostname regex");
- * keep the ids in sync with that list by hand.
- */
 export const SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN =
   /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/;
-
-/**
- * SDV mod whose file requirement is satisfiable by more than one alternative file —
- * an OR ("this file OR that file"). Installed on its own, with none of the
- * alternatives owned, it raises one file-requirements warning whose detail asks the
- * user to PICK one option: the list row shows a "Pick mod install" action (not
- * "1-click install"), and the detail groups the alternatives under "Pick one of
- * these" with a "…to be picked…" summary and an "Or" divider between the option
- * cards. Satisfying any one alternative clears the warning. Like
- * SDV_FILE_REQUIREMENT_MOD_URL the requirement must be file-level (a page-level
- * "requires" rule auto-installs and surfaces nothing); if the OR pick stops
- * appearing, re-confirm the fixture still declares an unsatisfied multi-alternative
- * file requirement.
- */
 export const SDV_OR_FILE_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/47938";
-
-/**
- * SDV mod that declares a single page-level ("mod") requirement — Generic Mod
- * Config Menu (5098), which requires SMAPI. Installed on its own (SMAPI absent) it
- * drives one blue Health Check *suggestion* ("Additional mod file may be required
- * for: …") — the mod-to-mod counterpart of SDV_FILE_REQUIREMENT_MOD_URL's
- * file-level warning. It must offer a Mod-Manager download (not manual-only) so the
- * install helper can drive it, and keep its legacy mod requirements enabled (not be
- * set to file-requirements-only) so the suggestion isn't suppressed for the
- * flag-enrolled E2E users (see LAZ-852).
- */
 export const SDV_MOD_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/5098";

@@ -17,15 +17,6 @@ import { navigateToHealthCheck } from "./navigation";
 import { dismissAllNotifications } from "./notifications";
 import { Timeouts } from "./timeouts";
 
-/**
- * Install a file-requirement fixture mod (with its requirements unsatisfied), open
- * Health Check and refresh — leaving the single file-requirements warning visible
- * on the list. Returns the page + warnings POMs for the caller to drive.
- *
- * Shared by the missing- and OR-requirement openers so the download → open →
- * refresh → dismiss-notifications flow lives in one place; uses `test.step`
- * internally so each test's trace stays granular.
- */
 async function installAndSurfaceFileWarning(
   nexusPage: Page,
   vortexApp: ElectronApplication,
@@ -43,19 +34,12 @@ async function installAndSurfaceFileWarning(
     await navigateToHealthCheck(vortexWindow);
     await hc.refreshButton.click();
     await expect(warnings.row()).toBeVisible({ timeout: Timeouts.NETWORK });
-    // Persistent notifications auto-open a tray that overlays the top-right and
-    // intercepts clicks on the tabs' buttons and a row's hide/feedback icons;
-    // clear it once the check has settled so it stays shut.
     await dismissAllNotifications(vortexWindow);
   });
 
   return { hc, warnings };
 }
 
-/**
- * The 49786 fixture: a mod whose main file declares two missing file requirements,
- * surfaced as one "download" warning.
- */
 export function openFileRequirementWarning(
   nexusPage: Page,
   vortexApp: ElectronApplication,
@@ -69,10 +53,6 @@ export function openFileRequirementWarning(
   );
 }
 
-/**
- * The 47938 fixture: a mod whose file requirement is satisfiable by more than one
- * alternative — an OR — surfaced as one "pick one of these" warning.
- */
 export function openOrFileRequirementWarning(
   nexusPage: Page,
   vortexApp: ElectronApplication,
@@ -86,10 +66,6 @@ export function openOrFileRequirementWarning(
   );
 }
 
-/**
- * Open the sole warning's detail view from the list and confirm it rendered.
- * Returns the detail POM.
- */
 export async function openWarningDetail(
   vortexWindow: Page,
   warnings: HealthCheckWarnings,
@@ -104,14 +80,6 @@ export async function openWarningDetail(
   return detail;
 }
 
-/**
- * Install the mod-requirement fixture mod (46415) with its required mod absent,
- * open Health Check and refresh — leaving the single page-level requirement
- * "suggestion" visible on the list. Returns the page + suggestions POMs.
- *
- * The suggestion is populated by the mod-requirements check's Nexus round-trip
- * (slower than the file check), so the wait uses the network budget.
- */
 export async function openModRequirementSuggestion(
   nexusPage: Page,
   vortexApp: ElectronApplication,

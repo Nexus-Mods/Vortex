@@ -1,47 +1,3 @@
-/**
- * File Requirements Health Check — warning, detail, feedback + list-management
- * flows (LAZ-684).
- *
- * Fixture: SDV mod 49786 has a single main file declaring two file-level
- * requirements. Installed on its own (those required files absent) it raises one
- * file-requirements "download" warning covering both required mods (category
- * `download` / kind `missing`). The tests here cover:
- *   - the list warning (plural title / count / 1-click action)
- *   - the expanded detail view (Warning header, "Install required" group,
- *     requirement cards + buttons, section-level install-all)
- *   - progressive count: resolving one requirement decrements the summary
- *   - free user: list 1-click opens the multi-file Premium upsell
- *   - free user: a manual website download, and the "Install via mod page" link,
- *     resolve the warning
- *   - premium user: the list / header / detail 1-click installs resolve it
- *   - hide/unhide moves the warning between the Active and Hidden tabs
- *   - the warning's feedback controls (thumbs + FeedbackModal)
- *   - singular/plural copy (two requirements ⇒ the plural strings)
- *   - an OR requirement (SDV 47938, alternatives): the "pick one of these" warning,
- *     and (premium) picking one alternative satisfies the OR and clears it
- *
- * The warning is targeted by its title rather than the required mod's name, so
- * the spec doesn't hard-code the fixture's requirement target. SMAPI is
- * deliberately avoided here — Vortex special-cases it with a dedicated installer,
- * which interferes with a clean warning/install flow.
- *
- * The shared "install the fixture mod → open Health Check → surface the warning"
- * setup lives in helpers/healthCheck.ts (openFileRequirementWarning); each test
- * starts from there.
- *
- * These are heavy (real Mod-Manager download + install) and, like every
- * authenticated / managed-game spec, currently need CI to run — locally the OAuth
- * login is captcha-blocked (mitigated by a captured auth snapshot; see
- * helpers/authState.ts). Kept in their own file so the fast foundation suite
- * (health-check.spec.ts) isn't slowed.
- *
- * Assumption: 49786's requirements are file-level only, not page-level "requires"
- * rules. Enabling a mod silently auto-installs its page-level dependencies
- * (mod_management/index.ts "mod-enabled" handler); a page-level rule would
- * auto-install and no warning would surface. If these tests fail at the first
- * warnings.row() assertion, re-confirm the fixture is file-level only (or pick
- * another source mod).
- */
 import {
   SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN,
   SDV_FILE_REQUIREMENT_TARGET_URLS,
@@ -127,15 +83,10 @@ test.describe("Health Check - file requirement warnings", () => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
       await test.step("The warning starts on the Active tab", async () => {
-        // Track the file-requirement warning by its own row, not the tab's aggregate
-        // "(N)" count: a page-level mod-requirement "suggestion" can also be active
-        // (see LAZ-852), which would inflate that count. warnings.row() is scoped to
-        // the file-warning title, so it stays correct regardless of what else is listed.
         await expect(warnings.row()).toBeVisible();
       });
 
       await test.step("Hidden tab starts empty", async () => {
-        // Only the file warning is ever hidden here, so the Hidden count is safe.
         await expect(hc.hiddenTab).toContainText("(0)");
       });
 
@@ -230,8 +181,6 @@ test.describe("Health Check - file requirement warnings", () => {
         await test.step(`Manually download required mod ${index + 1} and refresh`, async () => {
           await downloadModViaModManager(nexusPage, vortexApp, url);
           await hc.refreshButton.click();
-          // The warning covers every requirement, so it only clears once the last
-          // one is satisfied; earlier downloads leave it on the list.
           await expect(warnings.row()).toHaveCount(isLast ? 0 : 1, { timeout: Timeouts.LIFECYCLE });
         });
       }
@@ -253,8 +202,6 @@ test.describe("Health Check - file requirement warnings", () => {
       let modPageUrl = "";
 
       await test.step("Arm the external-open spy", async () => {
-        // The link opens the OS browser via shell.openExternal, which Playwright
-        // can't follow — spy on the main process to capture (and suppress) the URL.
         await installExternalOpenSpy(vortexApp);
         expect(await readExternalOpens(vortexApp)).toEqual([]);
       });
@@ -370,7 +317,6 @@ test.describe("Health Check - file requirement warnings", () => {
       await test.step("Trigger the detail's 1-click install all", async () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installAllInGroupButton.click();
-        // The requirement group unmounts once every candidate installs.
         await expect(detail.installAllInGroupButton).toBeHidden({ timeout: Timeouts.LIFECYCLE });
       });
 
@@ -416,7 +362,6 @@ test.describe("Health Check - file requirement warnings", () => {
       await test.step("Pick one alternative to install", async () => {
         await dismissAllNotifications(vortexWindow);
         await detail.installOneClickButton.click();
-        // Satisfying any one alternative resolves the OR, so its group unmounts.
         await expect(detail.pickOneHeader).toBeHidden({ timeout: Timeouts.LIFECYCLE });
       });
 
