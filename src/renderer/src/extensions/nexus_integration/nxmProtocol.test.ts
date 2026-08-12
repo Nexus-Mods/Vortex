@@ -6,12 +6,14 @@ import { makeApiUserInfo, makeGameStored, makeSession } from "@/test-utils/build
 import type { INxmHarness } from "@/test-utils/harnessTypes";
 import type { INxmFixtures } from "@/test-utils/nxmTest";
 import { COLLECTION_URL, FREE, MOD_URL, PREMIUM, test } from "@/test-utils/nxmTest";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
 import { refreshMembership } from "./membership";
+import { NxmProtocol } from "./nxmProtocol";
 import type * as nexusUtil from "./util";
 import { getInfoGraphQL } from "./util";
 
@@ -54,6 +56,20 @@ const apiError = (statusCode: number, message: string) =>
 describe("nxm protocol resolver", () => {
   beforeEach(() => {
     modInfoQuery.mockReset();
+  });
+
+  test("can be constructed without touching the api, as extension init requires", () => {
+    // The extension api is a proxy that refuses every access during init, and this handler is
+    // constructed there. A constructor that read the store took the renderer down with
+    // "extension uses api in init function" before the UI ever mounted, so the store
+    // subscription belongs in start(), which the extension calls from its once() callback.
+    const duringInit = new Proxy({} as IExtensionApi, {
+      get(_target, prop) {
+        throw new Error(`extension uses api in init function: ${String(prop)}`);
+      },
+    });
+
+    expect(() => new NxmProtocol(duringInit, () => undefined as never)).not.toThrow();
   });
 
   test("rejects a url that isn't an nxm link", async ({ makeNxm }) => {

@@ -103,8 +103,18 @@ export class NxmProtocol {
   constructor(api: IExtensionApi, getNexus: () => NexusT) {
     this.#api = api;
     this.#getNexus = getNexus;
-    this.#dropCachedUrlsOnMembershipChange();
   }
+
+  /**
+   * Second-stage setup, called from the extension's `once` callback.
+   *
+   * Reading the api is refused during `init` - the extension api is a proxy that throws
+   * "extension uses api in init function" - so anything that touches the store waits until here.
+   * The constructor only records its arguments for the same reason.
+   */
+  readonly start = (): void => {
+    this.#dropCachedUrlsOnMembershipChange();
+  };
 
   /**
    * The api mints a download url for the membership that asked for it, but the cache is keyed by

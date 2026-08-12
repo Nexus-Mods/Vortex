@@ -1094,6 +1094,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync("get-trending-mods", eh.onGetTrendingMods(api, nexus));
   api.onAsync("send-metric", eh.sendMetric(api, nexus));
   trackMembershipReads(api);
+  nxmProtocol.start();
   api.events.on("refresh-user-info", eh.onRefreshUserInfo(nexus, api));
   api.events.on("endorse-mod", eh.onEndorseMod(api, nexus));
   api.events.on("submit-feedback", eh.onSubmitFeedback(nexus));

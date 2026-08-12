@@ -39,6 +39,8 @@ export const test = harnessTest.extend<INxmFixtures>({
     await use((overrides: Partial<IDriverHarnessState> = {}) => {
       const harness = makeNxmHarness({ userInfo: PREMIUM, ...overrides });
       const nxm = new NxmProtocol(harness.api, () => harness.nexus);
+      // construct then start, the same two steps the extension takes across init and once
+      nxm.start();
       return { harness, nxm, resolve: nxm.resolve };
     });
   },
