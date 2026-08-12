@@ -275,7 +275,7 @@ export const ExtensionManager = ({
         subtitle={t("Manage extensions that add features and game support to Vortex.")}
         title={t("Extensions")}
       >
-        <Toolbar>
+        <Toolbar className="flex-1 justify-end">
           <ToolbarGroup actions={toolbarActions} />
         </Toolbar>
       </PageHeader>
@@ -296,7 +296,7 @@ export const ExtensionManager = ({
         </PageContent>
       )}
 
-      <PageScroll isFullWidth className="flex flex-col gap-y-4">
+      <PageScroll isFullWidth className="flex min-h-full flex-col gap-y-4">
         <Table
           edgeToEdge
           stickyHeader
