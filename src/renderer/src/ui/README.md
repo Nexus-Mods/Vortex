@@ -29,7 +29,7 @@ ui/
 │   ├── pagination/      - Pagination controls with jump-to-page
 │   ├── picker/          - Single-value selector (Headless UI Listbox)
 │   ├── pill/            - Compact rounded label for tags and statuses
-│   ├── popover/         - Floating panel of interactive content (Headless UI Popover)
+│   ├── popover/         - Floating panel of interactive content, or a menu of actions (Headless UI Popover)
 │   ├── premium_badge/   - Premium diamond badge
 │   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
 │   ├── tabs/            - Tabbed interface with context-based state
@@ -242,7 +242,7 @@ function MyTabs() {
 
 ### Toolbar
 
-Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into its dropdown — the same descriptor renders as a `Button` while visible and a `DropdownItem` once collapsed.
+Horizontal toolbar made of one or more rounded `ToolbarGroup` "pills". A group is **data-driven**: pass it an array of `IToolbarAction` descriptors and it renders each as an icon `Button`. When the actions don't all fit, the trailing slot becomes a kebab (`⋮`) menu and the overflow actions move into it — the same descriptor renders as a `Button` while visible and as a menu row once collapsed.
 
 **Responsive by default.** The `Toolbar` measures the width available to it and each group renders as many actions as fit, so the rest stay reachable in the kebab as the window narrows. This needs a width that doesn't come from the toolbar's own content, which a block-level or stretched parent gives it for free. As a flex item the toolbar is `flex-shrink: 0` and keeps every control instead, because a toolbar sized by its content can't tell how much room it has — add `flex-1` to opt it into collapsing.
 
@@ -269,9 +269,26 @@ const actions: IToolbarAction[] = [
 </Toolbar>;
 ```
 
-**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, dropdown label, and button text when `showLabel`), `iconPath`, `onClick`, `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
+**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, menu label, and button text when `showLabel`), `iconPath`, `onClick`, `panel` (see below), `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
+
+**`panel`** makes an action open a floating surface instead of running a callback; it's the alternative to `onClick`, and the two are mutually exclusive. Pass a function of `{ close, dismiss }` returning the panel's contents — the group anchors it to whichever control it rendered, so the panel never has to know where it was opened from: under the button while the action is in the row, beside its row once it has collapsed into the overflow. `DisplayOptions` is built on this.
+
+```tsx
+const actions: IToolbarAction[] = [
+    { label: "Refresh", iconPath: mdiRefresh, onClick: refresh },
+    {
+        label: "Display options",
+        iconPath: mdiTune,
+        panel: ({ close }) => <MyPanelRows onDone={close} />,
+    },
+];
+```
+
+`close` dismisses the panel; `dismiss` also dismisses whatever it was opened from, which only differs once the action has collapsed into the overflow. Reach for it when the panel's control ends the interaction rather than adjusting something — picking a destination should put the menu away too, where toggling a setting should leave it standing.
+
+The overflow menu is a [`PopoverMenu`](#popovermenu) rather than a `Menu` precisely so a panel can open from inside it: a `Menu` closes the moment focus reaches a surface nested within it. It still presents as a menu — menu roles, focus on open, arrow-key navigation, `→` to open a panel from its row, `Escape` to close the innermost surface.
 
 **`pinned`** keeps an action out of the overflow menu, wherever it sits in the list — the unpinned actions then share whatever width is left, still collapsing from the end. The row keeps the order you gave it, so a pin holds its place rather than jumping to the front as its neighbours collapse.
 
@@ -393,7 +410,7 @@ import { DropdownDivider } from "../../ui/components/dropdown/DropdownDivider";
 
 ### Popover
 
-A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content.
+A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content. For a panel holding a menu of actions rather than controls, see [`PopoverMenu`](#popovermenu).
 
 ```tsx
 import { Popover } from "../../ui/components/popover/Popover";
@@ -410,22 +427,94 @@ import { mdiTune } from "@mdi/js";
 
 > **Positioning note:** the panel is placed by Headless UI's `anchor` prop, which uses Floating UI to flip and shift it into view and portals it out of any clipping ancestor. It defaults to `bottom end` with a 4px gap; pass `anchor` to place it elsewhere.
 
-### DisplayOptions
-
-The tune-icon popover a listing puts in its page header, holding the controls for how that listing is shown (layout, what's included, …). It wraps `Popover` with the trigger, its tooltip and a reset link, so a page only supplies the rows. Compose those from `DisplayOptionsItem` — label on the left, control on the right, separated by rules. Every panel ends in the reset link: `onReset` puts the defaults back and the panel closes itself.
+For a panel of settings rather than free-form content, fill it with `PopoverPanelGroup`s. Groups are separated from one another by a rule and the last ends in padding, so a panel never finishes on a divider — state the separator on the groups, not the rows, and a trailing element can't leave a dangling rule. Each group holds `PopoverPanelGroupItem` rows: `label` on the left, control on the right; omit `label` for a control-only row and place it with a `justify-*` class.
 
 ```tsx
-import { DisplayOptions } from "../../ui/components/display_options/DisplayOptions";
-import { DisplayOptionsItem } from "../../ui/components/display_options/DisplayOptionsItem";
+<PopoverPanel>
+    <PopoverPanelGroup>
+        <PopoverPanelGroupItem label={t("Display as")}>
+            <Picker options={layouts} value={layout} onChange={setLayout} />
+        </PopoverPanelGroupItem>
+    </PopoverPanelGroup>
 
-<DisplayOptions onReset={onReset}>
-    <DisplayOptionsItem label={t("Show hidden items")}>
-        <Switch checked={showHidden} onChange={onToggleHidden} />
-    </DisplayOptionsItem>
-</DisplayOptions>;
+    <PopoverPanelGroup>
+        <PopoverPanelGroupItem className="justify-end">
+            <TypographyLink onClick={onReset}>{t("Reset to default")}</TypographyLink>
+        </PopoverPanelGroupItem>
+    </PopoverPanelGroup>
+</PopoverPanel>
 ```
 
-**Props:** `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. `DisplayOptionsItem` takes `label` (omit it for a control-only row), `className` and `children`.
+### PopoverMenu
+
+A menu of actions filling a `PopoverPanel`. Use it over [`Dropdown`](#dropdown) when a row has to open a surface of its own — a submenu, or a panel of settings. A `Dropdown` is a Headless UI `Menu`, and a `Menu` closes the moment focus reaches anything nested inside it; a `Popover` registers a child's portal as part of itself, so reaching into it doesn't read as leaving. What `Menu` would have given for free is supplied instead: the menu roles, focus on open, and arrow-key navigation.
+
+Rows are `IMenuAction`s — the same shape as an `IToolbarAction` minus the toolbar's own layout concerns, so an action can be handed to either. Actions arrive as **groups**, separated by a rule; an empty group is dropped rather than drawn, so a conditional group can go in as-is without leaving a rule with nothing under it.
+
+```tsx
+<PopoverPanel className="nxm-popover-panel-dropdown">
+    {({ close }) => (
+        <PopoverMenu
+            actions={[extensionActions, [helpCentre, viewLogs, about]]}
+            label={t("Help")}
+            onSelect={close}
+        />
+    )}
+</PopoverPanel>
+```
+
+**Props:** `actions` and `label` (the menu's accessible name) are required, as is `onSelect` — a row was activated, so put the menu away. `onClose` is only for a menu nested inside another: it closes this one and hands focus back to the row that opened it, the counterpart to `→`.
+
+Give the panel `nxm-popover-panel-dropdown`. The base panel is sized for label-and-control rows and carries no block padding, which a list of rows needs.
+
+**For a submenu**, give the row `panelRole: "menu"` alongside its `panel` — that's what tells the control it's advertising a menu rather than a settings surface, and sizes the panel to match. Nesting is a row's `panel` rendering another `PopoverMenu`; depth beyond two levels isn't exercised anywhere.
+
+```tsx
+const helpAction: IMenuAction = {
+    label: t("Help"),
+    iconPath: mdiHelpCircleOutline,
+    panelRole: "menu",
+    panel: ({ close, dismiss }) => (
+        <PopoverMenu actions={helpRows} label={t("Help")} onClose={close} onSelect={dismiss} />
+    ),
+};
+```
+
+Pass `dismiss` as the submenu's `onSelect`, not `close`: choosing a row there ends the interaction, so the menu it was opened from should go with it. Rows are focused as one flat list across group boundaries, so arrowing runs through the whole menu rather than stopping at a rule.
+
+Any row with a `panel` advertises it: a chevron on the right says the row opens a surface rather than running something, and pointing at the row opens it after a short delay — long enough that sweeping past on the way elsewhere doesn't flick panels open. Leaving the row closes it again, unless the pointer arrives in the panel; the panel is portalled, so travelling across the gap between the two fires the row's `mouseleave` and the panel has to call the close off. Clicking a row the pointer has already opened is inert rather than a toggle. `→` still opens from the keyboard, `←` and `Escape` back out.
+
+### DisplayOptions
+
+The controls for how a listing is shown (layout, what's included, …), as a tune-icon action for that page's `Toolbar`. `useDisplayOptionsAction` returns an `IToolbarAction`, so the display options ride the toolbar's overflow with every other action instead of sitting beside it — there is no standalone version. Compose the rows from `PopoverPanelGroup` and `PopoverPanelGroupItem` (see [Popover](#popover)). The panel ends in a reset link whenever `canReset` says something has been changed from its default: `onReset` puts the defaults back, and the panel stays open so the rows above visibly move with it.
+
+```tsx
+import { PopoverPanelGroup } from "../../ui/components/popover/PopoverPanelGroup";
+import { PopoverPanelGroupItem } from "../../ui/components/popover/PopoverPanelGroupItem";
+import { useDisplayOptionsAction } from "../../ui/components/display_options/useDisplayOptionsAction.hook";
+
+const displayOptions = useDisplayOptionsAction({
+    canReset: showHidden,
+    children: (
+        <PopoverPanelGroup>
+            <PopoverPanelGroupItem label={t("Show hidden items")}>
+                <Switch checked={showHidden} onChange={onToggleHidden} />
+            </PopoverPanelGroupItem>
+        </PopoverPanelGroup>
+    ),
+    onReset,
+});
+
+<Toolbar>
+    <ToolbarGroup actions={[refreshAction, displayOptions]} />
+</Toolbar>;
+```
+
+**Props:** `canReset`, `onReset` and `children` are required. `label` (names the trigger — used as both its tooltip and `aria-label`) and `resetLabel` default to translated "Display options" and "Reset to default"; pass them only to say something else. The hook appends the reset link as a final group of its own, so `children` should be the setting groups only.
+
+`canReset` is the caller's to compute, because only it knows what its defaults are — compare each setting the panel shows against the value `onReset` returns it to, and keep the two in step by naming that value once. Nothing to undo means no link, rather than one that would do nothing; because a group states its own separator, the last settings group stops drawing a rule as soon as the reset group goes away. So the link removes itself as it takes effect, while the panel stays open.
+
+The toolbar owns the trigger and anchors the panel: under the button while the action is in the row, beside its row once the action has collapsed into the overflow menu. See [Toolbar](#toolbar) for panel actions in general.
 
 ### Tooltip
 

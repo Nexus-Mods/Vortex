@@ -9,16 +9,21 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { Campaign, Content, nexusModsURL, Section } from "@/util/util";
 
 import {
+  isLoggedIn as isLoggedInSelector,
   isPremium as isPremiumSelector,
   shouldShowPremiumAd,
-} from "../../../extensions/nexus_integration/selectors";
-import opn from "../../../util/opn";
+} from "../../../../extensions/nexus_integration/selectors";
+import opn from "../../../../util/opn";
+import { useNexusLogin } from "./useNexusLogin.hook";
 
 export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
   const { t } = useTranslation();
 
+  const loggedIn = useSelector(isLoggedInSelector);
   const showAd = useSelector(shouldShowPremiumAd);
   const premium = useSelector(isPremiumSelector);
+
+  const handleLogin = useNexusLogin();
 
   const handleGoPremium = useCallback(() => {
     opn(
@@ -29,6 +34,14 @@ export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
       }),
     ).catch(() => undefined);
   }, []);
+
+  if (!loggedIn) {
+    return (
+      <Button brand="primary" onClick={handleLogin}>
+        {t("Log in")}
+      </Button>
+    );
+  }
 
   if (premium) {
     return (
