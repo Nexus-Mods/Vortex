@@ -11,7 +11,9 @@ import { scheduleMembershipRefresh } from "../membership";
  * moment the user comes back. Every return asks: the purchase the user just made is the whole point
  * of listening, and no elapsed-time guess can tell that return from any other. The debounce and the
  * logged-out guard belong to the shared scheduler, so this shares one window with every other
- * trigger.
+ * trigger - several surfaces armed at once (the free-user download dialog, the health check's
+ * premium banner and its upsell modal) therefore cost one request between them, which matters
+ * because Nexus rate limits and this fires on every focus.
  */
 export function useRefreshUserInfoOnFocus(api: IExtensionApi, enabled: boolean): void {
   useEffect(() => {

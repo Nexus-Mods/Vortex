@@ -1,16 +1,12 @@
-import { cleanup, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { beforeEach, describe, expect, vi } from "vitest";
 
 import { test } from "@/test-utils/harnessTest";
 import type { IApiHarness } from "@/test-utils/harnessTypes";
 
 import { resetMembershipFreshness } from "../membership";
 import { useRefreshUserInfoOnFocus } from "./useRefreshUserInfoOnFocus";
-
-afterEach(() => {
-  cleanup();
-});
 
 // @testing-library/react v12 has no renderHook, so the hook is driven through a probe component
 const Probe = ({ harness, enabled }: { harness: IApiHarness; enabled: boolean }) => {
@@ -58,5 +54,26 @@ describe("useRefreshUserInfoOnFocus", () => {
     focusWindow();
 
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  test("starts and stops with `enabled` without remounting", ({ makeApi }) => {
+    // The upsell surfaces arm this by flipping a prop while mounted, so the transition matters
+    // in both directions, not just the initial value.
+    const harness = makeApi();
+    const refresh = vi.fn();
+    harness.api.events.on("refresh-user-info", refresh);
+    const { rerender } = render(<Probe enabled={false} harness={harness} />);
+
+    focusWindow();
+    expect(refresh).not.toHaveBeenCalled();
+
+    rerender(<Probe enabled={true} harness={harness} />);
+    focusWindow();
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    rerender(<Probe enabled={false} harness={harness} />);
+    resetMembershipFreshness();
+    focusWindow();
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 });
