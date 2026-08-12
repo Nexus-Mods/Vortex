@@ -6,6 +6,7 @@ import PromiseBB from "bluebird";
 
 import { setToolRunning, setToolStopped } from "../actions";
 import { ApplicationData } from "../applicationData";
+import { emitModListSnapshot } from "../extensions/analytics/utils/modListSnapshot";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
@@ -161,6 +162,9 @@ class StarterInfo implements IStarterInfo {
     const onSpawned = () => {
       api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
       emitGameLaunched(api, info);
+      if (info.isGame) {
+        void emitModListSnapshot(api, info.gameId);
+      }
 
       // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
       // for now. We'll come up with a better solution/design in the future.
