@@ -946,11 +946,19 @@ class ExtensionManager {
         // exist yet and the renderer is about to relaunch. Main drains its
         // persist queue during shutdown, so this diff is on disk before the
         // process restarts.
-        removeOps.push({
-          type: "set",
-          path: ["extensions", ext, "remove"],
-          value: true,
-        });
+        //
+        // Resolve the real state key (shortid) for this user-installed path.
+        // Writing under the folder basename would create a new state entry
+        // containing only `{remove: true}` (since the original entry is
+        // keyed by shortid from addExtension), corrupting state on disk.
+        const existing = findInstalled(this.mExtensionState, { path: extPath });
+        if (existing !== undefined) {
+          removeOps.push({
+            type: "set",
+            path: ["extensions", existing.key, "remove"],
+            value: true,
+          });
+        }
       });
       try {
         window.api?.persist?.sendDiff?.("app", removeOps);
