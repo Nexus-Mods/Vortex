@@ -852,7 +852,7 @@ class ExtensionManager {
       disableExtensions.forEach((ext) => {
         const extensionName = ext.substring(10);
         const extensionPath = path.join(extensionsPath, extensionName);
-        const existingExtension = findInstalled(this.mExtensionState, { path: extensionsPath });
+        const existingExtension = findInstalled(this.mExtensionState, { path: extensionPath });
 
         if (existingExtension === undefined) {
           log("info", "skipping disable file for unknown extension", { extensionName });
