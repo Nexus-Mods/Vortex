@@ -882,6 +882,16 @@ class ExtensionManager {
       .filter(([_, entry]) => entry.remove)
       .forEach(([extId, entry]) => {
         const extPath = entry.path;
+        if (extPath === undefined) {
+          // Corrupted/legacy entry with no path (only `remove: true` was set,
+          // typically by the now-fixed outdated-extension path writing under
+          // the folder basename). Nothing to delete on disk — just queue
+          // forgetExtension so the entry stops tripping this branch on every
+          // boot and the state self-heals.
+          log("info", "removing orphaned remove-flagged extension entry", { extId });
+          this.mPendingRemoves.push(extId);
+          return;
+        }
         log("info", "removing", extPath);
         try {
           fs.removeSync(extPath);
