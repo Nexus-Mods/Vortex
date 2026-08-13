@@ -8,7 +8,10 @@ import { ToolbarButton, type IToolbarButtonProps } from "./ToolbarButton";
 import type { IToolbarPanel } from "./ToolbarGroup";
 import { TOOLBAR_CONTROL_ATTRIBUTE } from "./useToolbarOverflow.hook";
 
-export type IToolbarPanelButtonProps = IToolbarButtonProps & { panel: IToolbarPanel };
+export type IToolbarPanelButtonProps = IToolbarButtonProps & {
+  panel: IToolbarPanel;
+  panelRole?: "dialog" | "menu";
+};
 
 /**
  * A toolbar control that opens a floating panel instead of running an action.
@@ -17,18 +20,34 @@ export type IToolbarPanelButtonProps = IToolbarButtonProps & { panel: IToolbarPa
  * row can't tell the two kinds of action apart: same size, same tooltip, same
  * accessible name. Headless UI anchors and portals the panel, so it escapes the
  * toolbar's clipping ancestors and flips itself when there's no room below.
+ *
+ * `panelRole` says which kind of panel it is, as it does on a menu row: rows of
+ * settings by default, or a menu, which is styled as a dropdown and left to focus
+ * its own first row.
  */
-export const ToolbarPanelButton = ({ panel, ...props }: IToolbarPanelButtonProps) => (
-  // The wrapper is what the group lays out, so it is what the group measures.
-  <Popover {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}>
-    {({ open }) => (
-      <>
-        <ToolbarButton {...props} as={PopoverButton} tooltipDisabled={open} />
+export const ToolbarPanelButton = ({ panel, panelRole, ...props }: IToolbarPanelButtonProps) => {
+  const isMenu = panelRole === "menu";
 
-        <PopoverPanel focus className="nxm-popover-panel-controls">
-          {({ close }) => <>{panel({ close, dismiss: close })}</>}
-        </PopoverPanel>
-      </>
-    )}
-  </Popover>
-);
+  return (
+    // The wrapper is what the group lays out, so it is what the group measures.
+    <Popover {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}>
+      {({ open }) => (
+        <>
+          <ToolbarButton
+            {...props}
+            aria-haspopup={panelRole ?? "dialog"}
+            as={PopoverButton}
+            tooltipDisabled={open}
+          />
+
+          <PopoverPanel
+            className={isMenu ? "nxm-popover-panel-dropdown" : "nxm-popover-panel-controls"}
+            focus={!isMenu}
+          >
+            {({ close }) => <>{panel({ close, dismiss: close })}</>}
+          </PopoverPanel>
+        </>
+      )}
+    </Popover>
+  );
+};

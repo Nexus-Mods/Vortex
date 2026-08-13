@@ -139,8 +139,45 @@
     height: auto;
     overflow: visible;
 
+    // Sticking only carries as far as the containing block, so the container spans
+    // the columns the table overflows into rather than stopping at the page width.
+    // `min-content` is the width the table takes anyway once it can't shrink further,
+    // so the columns lay out as they did.
+    width: min-content;
+    min-width: 100%;
+
     .table-main-pane {
         overflow: visible;
+    }
+
+    // What the details pane is positioned against: it sticks to the top right of the
+    // page scroll and stands as tall as it, which is what keeps the pane on the part
+    // of the table you can see. It takes no width of its own — the pane hangs off its
+    // left edge — so the table lays out as if neither were there.
+    .table-details-layer {
+        position: sticky;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 100cqh;
+        // over the stuck header
+        z-index: 3;
+    }
+
+    // The height the pane takes counts the horizontal scrollbar, so the icon in the
+    // collapse button at its foot would sit behind one. The padding lifts the icon
+    // clear while the button still runs to the bottom edge, scrollbar there or not.
+    // 1px of it is the padding the button carries anyway.
+    .btn-menu-minimize {
+        padding-bottom: calc(1px + #{$scrollbar-width});
+    }
+
+    // Hanging off a layer with no width of its own, the pane has no room to shrink to
+    // fit, so it takes the width the form asks for — capped at half the page scroll
+    // rather than half a table that may be wider than it.
+    .table-details-pane.open {
+        width: max-content;
+        max-width: 50cqw;
     }
 
     .xthead {
@@ -351,6 +388,16 @@
             background-color: transparent;
             color: inherit;
         }
+    }
+}
+
+// A footer the page has given a place of its own, rather than one filling the bottom
+// of the table. It lays out in the flow there, so it drops the absolute positioning
+// and rounds off as a panel of the page rather than an edge of the table.
+.table-footer-detached {
+    .table-footer {
+        position: static;
+        border-radius: $border-radius-base;
     }
 }
 

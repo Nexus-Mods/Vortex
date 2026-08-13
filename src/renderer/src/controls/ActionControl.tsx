@@ -161,6 +161,10 @@ function registerAction(
   }
 }
 
+// exported so a page can collect a group's actions through `useExtensionObjects`
+// instead of an IconBar, e.g. to feed them to the new toolbar
+export { registerAction };
+
 export default extend(
   registerAction,
   "group",

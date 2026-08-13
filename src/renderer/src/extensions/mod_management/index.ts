@@ -134,8 +134,6 @@ import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
 import sortMods from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
-import ActivationButton from "./views/ActivationButton";
-import DeactivationButton from "./views/DeactivationButton";
 import type { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
 import {} from "./views/ExternalChangeDialog";
 import {} from "./views/FixDeploymentDialog";
@@ -2090,6 +2088,7 @@ function init(context: IExtensionContext): boolean {
       priority: 1,
       hotkey: "M",
       group: "per-game",
+      newLayout: true,
       visible: () => activeGameId(context.api.store.getState()) !== undefined,
       activity: modsActivity,
       props: () => ({
@@ -2100,15 +2099,9 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  context.registerAction("mod-icons", 105, ActivationButton, {}, () => ({
-    key: "activate-button",
-    getActivators: getAllActivators,
-  }));
-
-  context.registerAction("mod-icons", 110, DeactivationButton, {}, () => ({
-    key: "deactivate-button",
-    getActivators: getAllActivators,
-  }));
+  // Deploy and Purge are contributed by the mods page itself now, as plain toolbar
+  // actions — see useModToolbarActions. The toolbar renders actions rather than
+  // arbitrary components, so they can't be registered here any more.
 
   context.registerAction(
     "mods-action-icons",
@@ -2290,7 +2283,7 @@ function init(context: IExtensionContext): boolean {
   const history = new ModHistory(context.api);
 
   context.registerHistoryStack("mods", history);
-  context.registerAction("mod-icons", 200, "history", {}, "History", () => {
+  context.registerAction("mod-icons", 40, "history", {}, "History", () => {
     context.api.ext.showHistory?.("mods");
   });
 

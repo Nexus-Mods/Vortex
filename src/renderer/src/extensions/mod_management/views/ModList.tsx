@@ -1,12 +1,21 @@
 import path from "path";
 
+import { mdiChevronDown, mdiOpenInNew } from "@mdi/js";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
-import { Button, ButtonGroup, MenuItem, Panel } from "react-bootstrap";
+import { Button as BSButton, ButtonGroup, MenuItem, Panel } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import * as semver from "semver";
+
+import { Button } from "@/ui/components/button/Button";
+import { Dropdown } from "@/ui/components/dropdown/Dropdown";
+import { DropdownButton as UiDropdownButton } from "@/ui/components/dropdown/DropdownButton";
+import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
+import { NoResults } from "@/ui/components/no_results/NoResults";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import { showDialog } from "../../../actions/notifications";
 import CollapseIcon from "../../../controls/CollapseIcon";
@@ -14,17 +23,13 @@ import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import DropdownButton from "../../../controls/DropdownButton";
 import type { DropType } from "../../../controls/Dropzone";
 import Dropzone from "../../../controls/Dropzone";
-import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
-import FlexLayout from "../../../controls/FlexLayout";
 import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
 import type { ITableRowAction } from "../../../controls/Table";
 import SuperTable from "../../../controls/Table";
 import OptionsFilter from "../../../controls/table/OptionsFilter";
 import TextFilter from "../../../controls/table/TextFilter";
 import { IconButton } from "../../../controls/TooltipControls";
 import ZoomableImage from "../../../controls/ZoomableImage";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type {
   DialogActions,
   DialogType,
@@ -47,12 +52,17 @@ import {
   toPromise,
   truthy,
 } from "../../../util/util";
-import MainPage from "../../../views/MainPage";
+import { Page } from "../../../views/components/Page/Page";
+import { PageContent } from "../../../views/components/Page/PageContent";
+import { PageHeader } from "../../../views/components/Page/PageHeader";
+import { PageScroll } from "../../../views/components/Page/PageScroll";
 import getDownloadGames from "../../download_management/util/getDownloadGames";
+import { getGame } from "../../gamemode_management/util/getGame";
 import { setModEnabled, setModsEnabled } from "../../profile_management/actions/profiles";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
+import { ModsToolbar } from "../components/ModsToolbar";
 import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
 import getText from "../texts";
 import type { IInstallOptions } from "../types/IInstallOptions";
@@ -71,7 +81,6 @@ import VersionFilter from "../util/VersionFilter";
 import Author from "./Author";
 import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
-import InstallArchiveButton from "./InstallArchiveButton";
 import VersionChangelogButton from "./VersionChangelogButton";
 import VersionIconButton from "./VersionIconButton";
 
@@ -123,6 +132,9 @@ interface IBaseProps {
   globalOverlay: JSX.Element;
   modSources: IModSource[];
   onDropNonArchiveFiles: (filePaths: string[]) => void;
+  // passed by MainPageContainer to pages registered with `newLayout`
+  active?: boolean;
+  pageId?: string;
 }
 
 interface IConnectedProps extends IModProps {
@@ -157,6 +169,7 @@ interface IComponentState {
   modsWithState: { [id: string]: IModWithState };
   groupedMods: { [id: string]: IModWithState[] };
   primaryMods: { [id: string]: IModWithState };
+  tableFooter: HTMLElement | null;
 }
 
 const nop = () => null;
@@ -185,7 +198,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     downloads: {},
   };
   private mIsMounted: boolean = false;
-  private staticButtons: IActionDefinition[];
   private mRef: Element;
 
   constructor(props: IProps) {
@@ -281,19 +293,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.staticButtons = [
-      {
-        component: InstallArchiveButton,
-        position: 25,
-        props: () => ({}),
-      },
-      {
-        component: CheckModVersionsButton,
-        position: 50,
-        props: () => ({ groupedMods: this.state.groupedMods }),
-      },
-    ];
-
     this.mAttributes = [
       this.modPictureAttribute,
       this.modEnabledAttribute,
@@ -319,6 +318,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       modsWithState: {},
       groupedMods: {},
       primaryMods: {},
+      tableFooter: null,
     });
   }
 
@@ -331,6 +331,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (ref !== null) {
       this.mRef = ref;
       this.forceUpdate();
+    }
+  };
+
+  public setTableFooterRef = (ref: HTMLDivElement | null) => {
+    if (ref !== this.state.tableFooter) {
+      this.nextState.tableFooter = ref;
     }
   };
 
@@ -365,83 +371,81 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     let content: JSX.Element;
 
     if (Object.keys(this.state.primaryMods).length === 0) {
-      // for some reason I can't use the <Panel> control, it ends up
-      // having no body
       content = (
-        <div className="panel">
-          <div className="panel-body">
-            <EmptyPlaceholder
-              fill={true}
-              icon="folder-download"
-              subtext={this.renderMoreModsLink(modSources)}
-              text={t("You don't have any installed mods")}
-            />
-          </div>
-        </div>
+        <NoResults
+          className="my-auto"
+          iconPath={nxmModOutline}
+          message={t("But don't worry, I know a place...")}
+          title={t("You don't have any installed mods")}
+        >
+          {this.renderGetMods(modSources)}
+        </NoResults>
       );
     } else {
       content = (
-        <Panel>
-          <Panel.Body>
-            <SuperTable
-              actions={this.modActions}
-              data={this.state.primaryMods}
-              detailsTitle={t("Mod Attributes")}
-              staticElements={this.mAttributes}
-              tableId="mods"
-            >
-              <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
-            </SuperTable>
-          </Panel.Body>
-        </Panel>
+        <SuperTable
+          edgeToEdge
+          stickyHeader
+          actions={this.modActions}
+          data={this.state.primaryMods}
+          detailsTitle={t("Mod Attributes")}
+          footerContainer={this.state.tableFooter}
+          staticElements={this.mAttributes}
+          tableId="mods"
+        >
+          <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
+        </SuperTable>
       );
     }
 
     return (
-      <MainPage domRef={this.setBoundsRef}>
-        <MainPage.Header>
-          <IconBar
-            className="menubar"
-            group="mod-icons"
-            staticElements={this.staticButtons}
-            t={t}
-          />
-        </MainPage.Header>
+      <Page active={this.props.active} pageId={this.props.pageId} scrollable={false}>
+        <PageHeader
+          isFullWidth
+          pictogramName="mod"
+          subtitle={t("Manage the mods installed for this game.")}
+          title={t("Mods")}
+        >
+          <ModsToolbar t={t} />
+        </PageHeader>
 
-        <MainPage.Body>
-          <FlexLayout type="column">
-            <FlexLayout.Flex className="mod-list-container">{content}</FlexLayout.Flex>
+        <PageScroll isFullWidth className="flex min-h-full flex-col gap-y-4">
+          <div className="mod-list-container flex flex-1 flex-col" ref={this.setBoundsRef}>
+            {content}
+          </div>
+        </PageScroll>
 
-            <FlexLayout.Fixed className="mod-drop-container">
-              <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
-                <Panel.Collapse>
-                  <Panel.Body>
-                    <Dropzone
-                      accept={["files"]}
-                      clickable={false}
-                      drop={this.dropMod}
-                      icon="folder-download"
-                    />
-                  </Panel.Body>
-                </Panel.Collapse>
+        <PageContent isFullWidth>
+          <div ref={this.setTableFooterRef} />
 
-                <CollapseIcon
-                  position="topright"
-                  visible={showDropzone}
-                  onClick={this.toggleDropzone}
-                />
-              </Panel>
-            </FlexLayout.Fixed>
-          </FlexLayout>
-        </MainPage.Body>
-      </MainPage>
+          <div className="mod-drop-container relative">
+            <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
+              <Panel.Collapse>
+                <Panel.Body>
+                  <Dropzone
+                    accept={["files"]}
+                    clickable={false}
+                    drop={this.dropMod}
+                    icon="folder-download"
+                  />
+                </Panel.Body>
+              </Panel.Collapse>
+
+              <CollapseIcon
+                position="topright"
+                visible={showDropzone}
+                onClick={this.toggleDropzone}
+              />
+            </Panel>
+          </div>
+        </PageContent>
+      </Page>
     );
   }
 
-  private renderMoreMods(sources: IModSource[]): JSX.Element {
-    const { t } = this.props;
-
-    const filtered = sources.filter((source) => {
+  /** The sources that offer somewhere to go and are willing to be shown right now. */
+  private browsableSources(sources: IModSource[]): IModSource[] {
+    return sources.filter((source) => {
       if (source.onBrowse === undefined) {
         return false;
       }
@@ -450,6 +454,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       }
       return source.options.condition();
     });
+  }
+
+  private renderMoreMods(sources: IModSource[]): JSX.Element {
+    const { t } = this.props;
+
+    const filtered = this.browsableSources(sources);
 
     const onGetMoreMods = () => {
       this.context.api.events.emit("analytics-track-click-event", "Mods", "Get more mods");
@@ -460,11 +470,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     if (filtered.length === 1) {
       return (
-        <Button id="btn-more-mods" onClick={onGetMoreMods}>
+        <BSButton id="btn-more-mods" onClick={onGetMoreMods}>
           {this.sourceIcon(filtered[0])}
 
           {t("Get more mods")}
-        </Button>
+        </BSButton>
       );
     }
 
@@ -480,29 +490,47 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderMoreModsLink(sources: IModSource[]): JSX.Element {
-    const { t } = this.props;
+  /**
+   * The empty state's way out: the one place that sells mods for this game, or a menu
+   * of them where more than one offers to. Named for the game, since a page that has
+   * nothing to show is a poor place to be vague about what it would be showing.
+   */
+  private renderGetMods(sources: IModSource[]): JSX.Element {
+    const { gameMode, t } = this.props;
 
-    const filtered = sources.filter((source) => {
-      if (source.onBrowse === undefined) {
-        return false;
-      }
-      if (source.options?.condition === undefined) {
-        return true;
-      }
-      return source.options.condition();
-    });
+    const filtered = this.browsableSources(sources);
 
-    const text = t("But don't worry, I know a place...");
+    if (filtered.length === 0) {
+      return null;
+    }
+
+    const game = getGame(gameMode);
+    const gameName = game?.shortName ?? game?.name;
+    const label =
+      gameName === undefined
+        ? t("Get more mods")
+        : t("Get {{game}} mods", { replace: { game: gameName } });
 
     if (filtered.length === 1) {
-      return <a onClick={this.getMoreMods}>{text}</a>;
+      return (
+        <Button leftIconPath={mdiOpenInNew} onClick={this.getMoreMods}>
+          {label}
+        </Button>
+      );
     }
 
     return (
-      <DropdownButton bsStyle="link" container={this.mRef} id="btn-more-mods" title={text}>
-        {filtered.map(this.renderModSource)}
-      </DropdownButton>
+      <Dropdown>
+        <UiDropdownButton rightIconPath={mdiChevronDown}>{label}</UiDropdownButton>
+
+        <DropdownItems>
+          {filtered.map((source) => (
+            <DropdownItem key={source.id} onClick={source.onBrowse}>
+              {source.name}
+            </DropdownItem>
+          ))}
+        </DropdownItems>
+      </Dropdown>
     );
   }
 

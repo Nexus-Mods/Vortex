@@ -5,14 +5,20 @@ import Promise from "bluebird";
 
 import { appDataPath, initGameSupport, settingsPath } from "./gameSupport";
 
+/**
+ * These sit behind the mods toolbar's "Open" button rather than in the toolbar's own
+ * group, so that they take one slot on the bar between them.
+ */
+const OPEN_GROUP = "mod-icons-open";
+
 function init(context: types.IExtensionContext) {
   initGameSupport(context.api);
-  context.registerAction("mod-icons", 300, "open-ext", {}, "Open Mod Staging Folder", () => {
+  context.registerAction(OPEN_GROUP, 300, "open-ext", {}, "Open Mod Staging Folder", () => {
     const store = context.api.store;
     util.opn(selectors.installPath(store.getState())).catch((err) => undefined);
   });
 
-  context.registerAction("mod-icons", 300, "open-ext", {}, "Open Game Folder", () => {
+  context.registerAction(OPEN_GROUP, 300, "open-ext", {}, "Open Game Folder", () => {
     const state = context.api.store.getState();
     const gameId: string = selectors.activeGameId(state);
     getGameInstallPath(state, gameId)
@@ -30,7 +36,7 @@ function init(context: types.IExtensionContext) {
     util.opn(dlPath).catch(() => undefined);
   });
 
-  context.registerAction("mod-icons", 300, "open-ext", {}, "Open Game Mods Folder", () => {
+  context.registerAction(OPEN_GROUP, 300, "open-ext", {}, "Open Game Mods Folder", () => {
     const state = context.api.store.getState();
     const gameRef: types.IGame = util.getGame(selectors.activeGameId(state));
     getGameInstallPath(state, gameRef.id)
@@ -59,7 +65,7 @@ function init(context: types.IExtensionContext) {
   });
 
   context.registerAction(
-    "mod-icons",
+    OPEN_GROUP,
     300,
     "open-ext",
     {},
@@ -82,7 +88,7 @@ function init(context: types.IExtensionContext) {
   );
 
   context.registerAction(
-    "mod-icons",
+    OPEN_GROUP,
     300,
     "open-ext",
     {},
