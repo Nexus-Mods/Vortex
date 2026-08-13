@@ -38,6 +38,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      # @tools/dotnetprobe:build shells out to `dotnet publish` and fails the
+      # whole nx build graph if the SDK isn't present.
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+
       - name: Install volta, Node.js and Yarn
         uses: volta-cli/action@v5
 
