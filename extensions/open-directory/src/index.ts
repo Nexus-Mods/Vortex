@@ -7,7 +7,7 @@ import { appDataPath, initGameSupport, settingsPath } from "./gameSupport";
 
 /**
  * These sit behind the mods toolbar's "Open" button rather than in the toolbar's own
- * group, so the five of them take one slot on the bar between them.
+ * group, so that they take one slot on the bar between them.
  */
 const OPEN_GROUP = "mod-icons-open";
 
