@@ -11,7 +11,7 @@ import { Pictogram, type IPictogramName } from "./Pictogram";
 
 const sizes = ["4xs", "3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl"] as const;
 
-const themes = ["primary", "premium", "creator", "info", "none"] as const;
+const brands = ["primary", "premium", "none"] as const;
 
 export const PictogramDemo = () => (
   <div className="space-y-8">
@@ -46,16 +46,16 @@ export const PictogramDemo = () => (
 
     <div className="space-y-4">
       <Typography as="h3" typographyType="heading-xs">
-        Themes
+        Brands
       </Typography>
 
       <div className="flex flex-wrap items-end gap-6">
-        {themes.map((theme) => (
-          <div className="flex flex-col items-center gap-2" key={theme}>
-            <Pictogram name="health-check" size="lg" theme={theme} />
+        {brands.map((brand) => (
+          <div className="flex flex-col items-center gap-2" key={brand}>
+            <Pictogram brand={brand} name="health-check" size="lg" />
 
             <Typography appearance="subdued" typographyType="body-sm">
-              {theme}
+              {brand}
             </Typography>
           </div>
         ))}

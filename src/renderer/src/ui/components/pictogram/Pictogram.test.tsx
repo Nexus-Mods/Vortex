@@ -51,25 +51,23 @@ describe("Pictogram", () => {
     });
   });
 
-  describe("theme", () => {
+  describe("brand", () => {
     it.each([
-      ["creator", "text-creator-moderate"],
-      ["info", "text-info-moderate"],
       ["premium", "text-premium-moderate"],
       ["primary", "text-primary-moderate"],
-    ] as const)("applies %s -> %s", (theme, cls) => {
-      renderComponent({ theme });
+    ] as const)("applies %s -> %s", (brand, cls) => {
+      renderComponent({ brand });
       expect(getSvg()).toHaveClass(cls);
     });
 
-    it("defaults to the primary theme colour", () => {
+    it("defaults to the primary brand colour", () => {
       renderComponent();
       expect(getSvg()).toHaveClass("text-primary-moderate");
     });
 
-    it('applies no theme colour class for theme="none"', () => {
-      renderComponent({ theme: "none" });
-      expect(getSvg()?.getAttribute("class")).not.toMatch(/text-(creator|info|premium|primary)-/);
+    it('applies no brand colour class for brand="none"', () => {
+      renderComponent({ brand: "none" });
+      expect(getSvg()?.getAttribute("class")).not.toMatch(/text-(premium|primary)-/);
     });
   });
 
