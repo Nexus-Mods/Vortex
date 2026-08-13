@@ -4,7 +4,16 @@
  */
 
 import { MenuButton } from "@headlessui/react";
-import { mdiContentCopy, mdiDelete, mdiDotsVertical, mdiDownload, mdiPencil } from "@mdi/js";
+import {
+  mdiCheckCircleOutline,
+  mdiContentCopy,
+  mdiDelete,
+  mdiDotsVertical,
+  mdiDownload,
+  mdiPencil,
+  mdiRocketLaunchOutline,
+  mdiStarOutline,
+} from "@mdi/js";
 import React, { useCallback } from "react";
 
 import { Button } from "@/ui/components/button/Button";
@@ -82,7 +91,80 @@ export const DropdownDemo = () => {
 
               <DropdownDivider />
 
-              <DropdownItem leftIconPath={mdiDelete} onClick={() => handleClick("Delete")}>
+              <DropdownItem
+                brand="danger"
+                leftIconPath={mdiDelete}
+                onClick={() => handleClick("Delete")}
+              >
+                Delete
+              </DropdownItem>
+            </DropdownItems>
+          </Dropdown>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
+          Branded rows
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          A row takes the same brands a Button does. Only the icon is tinted — the labels stay one
+          even column of text to read down. neutral is the default, so it tints nothing. danger is
+          the exception, colouring the whole row: a destructive action should be the one thing in a
+          menu that is hard to pick by accident.
+        </Typography>
+
+        <div className="flex flex-wrap gap-4">
+          <Dropdown>
+            <MenuButton as={Button} brand="neutral" appearance="subdued">
+              Brands
+            </MenuButton>
+
+            <DropdownItems className="right-auto left-0">
+              <DropdownItem
+                brand="primary"
+                leftIconPath={mdiRocketLaunchOutline}
+                onClick={() => handleClick("Deploy")}
+              >
+                Deploy
+              </DropdownItem>
+
+              <DropdownItem
+                brand="info"
+                leftIconPath={mdiDownload}
+                onClick={() => handleClick("Check for updates")}
+              >
+                Check for updates
+              </DropdownItem>
+
+              <DropdownItem
+                brand="success"
+                leftIconPath={mdiCheckCircleOutline}
+                onClick={() => handleClick("Verify")}
+              >
+                Verify
+              </DropdownItem>
+
+              <DropdownItem
+                brand="premium"
+                leftIconPath={mdiStarOutline}
+                onClick={() => handleClick("Go premium")}
+              >
+                Go premium
+              </DropdownItem>
+
+              <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Rename")}>
+                Rename
+              </DropdownItem>
+
+              <DropdownDivider />
+
+              <DropdownItem
+                brand="danger"
+                leftIconPath={mdiDelete}
+                onClick={() => handleClick("Delete")}
+              >
                 Delete
               </DropdownItem>
             </DropdownItems>

@@ -2,6 +2,8 @@ import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
 import { mdiChevronRight } from "@mdi/js";
 import React, { forwardRef, type KeyboardEvent, type ReactNode, useEffect, useRef } from "react";
 
+import type { IButtonBrand } from "@/ui/components/button/Button";
+import { dropdownItemBrandClass } from "@/ui/components/dropdown/dropdownItemBrand";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
@@ -26,6 +28,7 @@ interface IMenuActionBase {
   disabled?: boolean;
   isLoading?: boolean;
   panelRole?: "dialog" | "menu";
+  brand?: IButtonBrand;
 }
 
 /**
@@ -37,9 +40,9 @@ export type IMenuAction = IMenuActionBase &
 
 interface IPopoverMenuItemProps {
   action: IMenuAction;
-  isActive: boolean;
+  hasFocus: boolean;
   tabIndex: number;
-  onActivate: () => void;
+  onTakeFocus: () => void;
   onSelect: () => void;
 }
 
@@ -47,7 +50,7 @@ const HOVER_CLOSE_DELAY = 150;
 
 /**
  * Hovering a row makes it the one the keyboard is on, so the pointer and the arrow
- * keys can't end up pointing at different rows — the menu shows a single active row
+ * keys can't end up pointing at different rows — the menu shows a single focused row
  * either way, and arrowing on from a hovered row carries on from there.
  */
 const takeFocus = (row: HTMLButtonElement) => row.focus({ preventScroll: true });
@@ -82,7 +85,7 @@ const PopoverMenuItemContent = ({
 const PopoverMenuPanelItem = forwardRef<
   HTMLButtonElement,
   IPopoverMenuItemProps & { disabled: boolean; panel: IPopoverPanel }
->(({ action, disabled, isActive, panel, tabIndex, onActivate, onSelect }, ref) => {
+>(({ action, disabled, hasFocus, panel, tabIndex, onTakeFocus, onSelect }, ref) => {
   const isSubmenu = action.panelRole === "menu";
   const hoverToggleRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -116,8 +119,8 @@ const PopoverMenuPanelItem = forwardRef<
         <>
           <HeadlessPopoverButton
             aria-haspopup={action.panelRole ?? "dialog"}
-            className={joinClasses("nxm-dropdown-item", {
-              "nxm-dropdown-item-active": isActive || open,
+            className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
+              "nxm-dropdown-item-focus": hasFocus || open,
             })}
             disabled={disabled}
             ref={(element: HTMLButtonElement | null) => {
@@ -137,7 +140,7 @@ const PopoverMenuPanelItem = forwardRef<
                 event.preventDefault();
               }
             }}
-            onFocus={onActivate}
+            onFocus={onTakeFocus}
             onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
               if (event.key !== "ArrowRight") {
                 return;
@@ -199,7 +202,7 @@ PopoverMenuPanelItem.displayName = "PopoverMenuPanelItem";
  * one with a panel opens it alongside instead.
  */
 export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemProps>(
-  ({ action, isActive, tabIndex, onActivate, onSelect }, ref) => {
+  ({ action, hasFocus, tabIndex, onTakeFocus, onSelect }, ref) => {
     const disabled = !!action.disabled || !!action.isLoading;
 
     if (action.panel) {
@@ -207,11 +210,11 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
         <PopoverMenuPanelItem
           action={action}
           disabled={disabled}
-          isActive={isActive}
+          hasFocus={hasFocus}
           panel={action.panel}
           ref={ref}
           tabIndex={tabIndex}
-          onActivate={onActivate}
+          onTakeFocus={onTakeFocus}
           onSelect={onSelect}
         />
       );
@@ -219,7 +222,9 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
 
     return (
       <button
-        className={joinClasses("nxm-dropdown-item", { "nxm-dropdown-item-active": isActive })}
+        className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
+          "nxm-dropdown-item-focus": hasFocus,
+        })}
         disabled={disabled}
         ref={ref}
         role="menuitem"
@@ -229,7 +234,7 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
           action.onClick?.();
           onSelect();
         }}
-        onFocus={onActivate}
+        onFocus={onTakeFocus}
         onMouseEnter={(event) => takeFocus(event.currentTarget)}
       >
         <PopoverMenuItemContent action={action} />

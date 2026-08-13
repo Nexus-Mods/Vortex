@@ -12,7 +12,7 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
-export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "premium";
+export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "danger" | "premium";
 export type IButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
 
 export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

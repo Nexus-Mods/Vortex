@@ -63,6 +63,7 @@ describe("Button", () => {
       ["info", "nxm-button-info"],
       ["neutral", "nxm-button-neutral"],
       ["success", "nxm-button-success"],
+      ["danger", "nxm-button-danger"],
       ["premium", "nxm-button-premium"],
     ] as const)('applies correct class for brand="%s"', (brand, cls) => {
       render(<Button brand={brand}>Click</Button>);

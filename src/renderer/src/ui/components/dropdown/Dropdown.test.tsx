@@ -25,7 +25,9 @@ const renderComponent = () => {
 
         <DropdownDivider />
 
-        <DropdownItem onClick={() => undefined}>Delete</DropdownItem>
+        <DropdownItem brand="danger" onClick={() => undefined}>
+          Delete
+        </DropdownItem>
       </DropdownItems>
     </Dropdown>,
   );
@@ -75,5 +77,23 @@ describe("Dropdown", () => {
     const { trigger } = renderComponent();
     await userEvent.click(trigger);
     expect(screen.getByRole("menuitem", { name: "Disabled" })).toBeDisabled();
+  });
+
+  it("brands an item that asks for it", async () => {
+    const { trigger } = renderComponent();
+    await userEvent.click(trigger);
+
+    expect(screen.getByRole("menuitem", { name: "Delete" })).toHaveClass(
+      "nxm-dropdown-item-danger",
+    );
+  });
+
+  it("leaves an item alone when it asks for no brand", async () => {
+    const { trigger } = renderComponent();
+    await userEvent.click(trigger);
+
+    expect(screen.getByRole("menuitem", { name: "Edit" }).className).not.toMatch(
+      /nxm-dropdown-item-(primary|info|neutral|success|danger|premium)/,
+    );
   });
 });
