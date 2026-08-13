@@ -2,7 +2,7 @@ import { mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 
 import { setConfirmPurge, setModAttribute, setSettingsPage } from "@/actions";
 import { useMainContext } from "@/contexts";
@@ -528,12 +528,19 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
 /**
  * Adapts the actions extensions registered into a group for the toolbar, the way
  * IconBar rendered them: hidden when `condition` returns false, disabled when it
- * returns a string, ordered by `position`.
+ * returns a string, ordered by `position`, plus whatever each has to say for itself
+ * in brackets after its title — see {@link IActionOptions.notice}.
  */
 const useRegisteredActions = (group: string): IPositionedAction[] => {
   const objects = useExtensionObjects<IActionDefinition>(registerAction, undefined, group, true);
 
-  return objects.reduce<IPositionedAction[]>((prev, definition) => {
+  // Read through the store, so a notice can follow state rather than be fixed at registration.
+  const notices = useSelector(
+    () => objects.map((definition) => definition.options?.notice?.()),
+    shallowEqual,
+  );
+
+  return objects.reduce<IPositionedAction[]>((prev, definition, index) => {
     if (definition.component !== undefined) {
       log("warn", "toolbar action registered as a component is not shown", {
         position: definition.position,
@@ -554,11 +561,13 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
       return prev;
     }
 
+    const notice = notices[index];
+
     prev.push({
       position: definition.position ?? 100,
       icon: definition.icon,
       action: {
-        label: definition.title,
+        label: !notice ? definition.title : `${definition.title} (${notice})`,
         iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
         disabled: typeof condition === "string",
         onClick: () => definition.action?.(instanceIds),
@@ -605,7 +614,7 @@ const useActionMenu = (
     return {
       position: menu.position,
       action: {
-        label,
+        label: `${label}...`,
         iconPath: getIconPath(menu.icon),
         panelRole: "menu",
         panel: ({ dismiss }) => (
