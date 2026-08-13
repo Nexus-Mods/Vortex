@@ -852,7 +852,7 @@ class ExtensionManager {
       disableExtensions.forEach((ext) => {
         const extensionName = ext.substring(10);
         const extensionPath = path.join(extensionsPath, extensionName);
-        const existingExtension = findInstalled(this.mExtensionState, { path: extensionsPath });
+        const existingExtension = findInstalled(this.mExtensionState, { path: extensionPath });
 
         if (existingExtension === undefined) {
           log("info", "skipping disable file for unknown extension", { extensionName });
@@ -882,6 +882,16 @@ class ExtensionManager {
       .filter(([_, entry]) => entry.remove)
       .forEach(([extId, entry]) => {
         const extPath = entry.path;
+        if (extPath === undefined) {
+          // Corrupted/legacy entry with no path (only `remove: true` was set,
+          // typically by the now-fixed outdated-extension path writing under
+          // the folder basename). Nothing to delete on disk — just queue
+          // forgetExtension so the entry stops tripping this branch on every
+          // boot and the state self-heals.
+          log("info", "removing orphaned remove-flagged extension entry", { extId });
+          this.mPendingRemoves.push(extId);
+          return;
+        }
         log("info", "removing", extPath);
         try {
           fs.removeSync(extPath);
@@ -936,11 +946,19 @@ class ExtensionManager {
         // exist yet and the renderer is about to relaunch. Main drains its
         // persist queue during shutdown, so this diff is on disk before the
         // process restarts.
-        removeOps.push({
-          type: "set",
-          path: ["extensions", ext, "remove"],
-          value: true,
-        });
+        //
+        // Resolve the real state key (shortid) for this user-installed path.
+        // Writing under the folder basename would create a new state entry
+        // containing only `{remove: true}` (since the original entry is
+        // keyed by shortid from addExtension), corrupting state on disk.
+        const existing = findInstalled(this.mExtensionState, { path: extPath });
+        if (existing !== undefined) {
+          removeOps.push({
+            type: "set",
+            path: ["extensions", existing.key, "remove"],
+            value: true,
+          });
+        }
       });
       try {
         window.api?.persist?.sendDiff?.("app", removeOps);
