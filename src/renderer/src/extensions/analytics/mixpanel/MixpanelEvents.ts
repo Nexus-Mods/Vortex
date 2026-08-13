@@ -650,11 +650,10 @@ export class ModsDeployedEvent implements MixpanelEvent {
  * `is_update` marks an install that replaced a previous version.
  */
 export interface AppExtensionInstalledProps {
-  extension_id?: string;
   extension_name: string;
-  author: string;
   version: string;
   mod_id?: number;
+  file_id?: number;
   extension_type: "game" | "other";
   game_domain?: string;
   game_name?: string;

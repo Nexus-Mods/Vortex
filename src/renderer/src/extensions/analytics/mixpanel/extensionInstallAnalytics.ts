@@ -1,5 +1,6 @@
-import type { IExtension } from "../../../types/extensions";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IExtensionState } from "@/types/IState";
+
 import { AppExtensionInstalledEvent } from "./MixpanelEvents";
 
 /** Where an extension install originated. */
@@ -13,7 +14,7 @@ export type ExtensionInstallSource = "nexusmods" | "manual";
  */
 export function emitExtensionInstalled(
   api: IExtensionApi,
-  ext: Pick<IExtension, "id" | "name" | "author" | "version" | "type" | "modId">,
+  state: IExtensionState,
   extra: {
     source: ExtensionInstallSource;
     isUpdate: boolean;
@@ -24,16 +25,16 @@ export function emitExtensionInstalled(
   api.events.emit(
     "analytics-track-mixpanel-event",
     new AppExtensionInstalledEvent({
-      extension_id: ext.id,
-      extension_name: ext.name,
-      author: ext.author,
-      version: ext.version,
-      mod_id: ext.modId,
-      extension_type: ext.type === "game" ? "game" : "other",
-      game_domain: extra.gameDomain,
-      game_name: extra.gameName,
+      extension_name: state.name,
+      version: state.version,
+      extension_type: state.type === "game" ? "game" : "other",
       source: extra.source,
       is_update: extra.isUpdate,
+
+      mod_id: state.modId,
+      file_id: state.fileId,
+      game_domain: extra.gameDomain,
+      game_name: extra.gameName,
     }),
   );
 }
