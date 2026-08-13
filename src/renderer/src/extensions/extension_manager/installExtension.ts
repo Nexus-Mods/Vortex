@@ -381,16 +381,12 @@ async function installExtensionImpl(
 
       api.store.dispatch(addExtension(state));
 
-      emitExtensionInstalled(
-        api,
-        { ...state },
-        {
-          source: data?.analytics.source,
-          isUpdate: removedKeys.length > 0,
-          gameDomain: data?.analytics?.gameDomain,
-          gameName: data?.analytics?.gameName,
-        },
-      );
+      emitExtensionInstalled(api, state, {
+        source: data?.analytics?.source,
+        isUpdate: removedKeys.length > 0,
+        gameDomain: data?.analytics?.gameDomain,
+        gameName: data?.analytics?.gameName,
+      });
 
       if (state.type === "theme" || state.type === "translation") return;
 
