@@ -39,6 +39,7 @@ import type { IModWithState } from "../views/CheckModVersionsButton";
 interface IPositionedAction {
   position: number;
   action: IToolbarAction;
+  icon?: string;
 }
 
 /**
@@ -52,13 +53,45 @@ const POSITION = {
   checkVersions: 50,
   deploy: 105,
   purge: 110,
+  import: 120,
 };
 
 /**
- * Where the actions behind the "Open" button register, rather than into `mod-icons`
- * itself: the five of them take one slot on the bar between them.
+ * A set of related actions the row shows as one button, so that they take a single slot
+ * on the bar between them.
+ *
+ * Actions land in one either by registering into `group`, which is how to ask for it,
+ * or by registering into `mod-icons` under `icon`. The second is what IconBar used to
+ * do to every icon shared by more than one action, labelling the result with whatever
+ * leading words their titles had in common — which is how the "Open ..." and
+ * "Import From ..." actions came to sit behind one button each without anyone asking.
+ * Extensions we don't ship still rely on that, so these two buckets keep folding.
  */
-const OPEN_ACTION_GROUP = "mod-icons-open";
+interface IActionMenu {
+  icon: string;
+  group: string;
+  label: string;
+  position: number;
+}
+
+const OPEN_MENU: IActionMenu = {
+  icon: "open-ext",
+  group: "mod-icons-open",
+  label: "Open",
+  position: POSITION.open,
+};
+
+const IMPORT_MENU: IActionMenu = {
+  icon: "import",
+  group: "mod-icons-import",
+  label: "Import",
+  position: POSITION.import,
+};
+
+const ACTION_MENUS = [OPEN_MENU, IMPORT_MENU];
+
+/** Stands in for a menu nothing landed in, so the memos below keep a stable input. */
+const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
@@ -152,9 +185,7 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
       action: {
         label: t("Deploy Mods"),
         iconPath: getIconPath("deploy"),
-        // the id the old ActivationButton carried, which E2E selects on
         testId: "deploy-mods",
-        // pending changes are the whole point of the button, so say so with colour
         brand: needToDeploy ? "primary" : "neutral",
         onClick: activator !== undefined ? deploy : noMethod,
       },
@@ -249,7 +280,6 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
 
         const errCode = getErrorCode(err);
         if (errCode == null && (err as { errno?: number }).errno !== undefined) {
-          // unresolved windows error code
           api.showErrorNotification(
             "Failed to purge mods",
             { error: err, ErrorCode: (err as { errno?: number }).errno },
@@ -370,7 +400,6 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
 const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
   const { api } = useMainContext();
   const gameMode = useSelector(selectors.activeGameId);
-  // both live in slices extensions register at runtime, so they aren't on IState
   const updateRunning = useSelector((state: IState) =>
     getSafe<boolean>(state, ["session", "mods", "updatingMods", gameMode], false),
   );
@@ -506,16 +535,12 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
 
   return objects.reduce<IPositionedAction[]>((prev, definition) => {
     if (definition.component !== undefined) {
-      // the toolbar renders actions, not arbitrary components — anything still
-      // registering one has to be converted before it can appear here
       log("warn", "toolbar action registered as a component is not shown", {
         position: definition.position,
       });
       return prev;
     }
 
-    // a toolbar action acts on the page, not on a row, so it gets no instance ids —
-    // the same `undefined` IconBar passes when it has no `instanceId` of its own
     const instanceIds = undefined as unknown as string[];
 
     let condition: boolean | string;
@@ -531,13 +556,10 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
 
     prev.push({
       position: definition.position ?? 100,
+      icon: definition.icon,
       action: {
         label: definition.title,
-        // an icon name we have no mdi path for is an extension's own, so say as much
-        // rather than showing the generic shape the map falls back to
         iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
-        // a string condition explains why the action can't be used; the toolbar
-        // has nowhere to put that yet, so it only greys the action out
         disabled: typeof condition === "string",
         onClick: () => definition.action?.(instanceIds),
       },
@@ -548,59 +570,81 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
 };
 
 /**
- * One "Open" button standing in for every place the page can open, which is a menu
- * rather than a click. Absent when nothing registered into the group — no game
- * offers none of them today, but an action with an empty menu would be a dead end.
+ * The single button an {@link IActionMenu} shows as, which opens a menu rather than
+ * doing anything itself.
+ *
+ * A menu nothing landed in is absent rather than a button opening an empty list, and
+ * one holding a single action is that action rather than a menu of one — which is what
+ * IconBar did with a bucket it found only one action in, and what keeps a game that
+ * supports only one importer from showing an "Import" button to reach it.
+ *
+ * `adopted` are the actions from `mod-icons` that belong here by their icon rather than
+ * by the group they registered into.
  */
-const useOpenAction = (t: TFunction): IPositionedAction | undefined => {
-  const openActions = useRegisteredActions(OPEN_ACTION_GROUP);
+const useActionMenu = (
+  t: TFunction,
+  menu: IActionMenu,
+  adopted: IPositionedAction[],
+): IPositionedAction | undefined => {
+  const registered = useRegisteredActions(menu.group);
 
   return useMemo(() => {
-    if (openActions.length === 0) {
+    const entries = [...registered, ...adopted].sort((lhs, rhs) => lhs.position - rhs.position);
+
+    if (entries.length === 0) {
       return undefined;
     }
 
-    const label = t("Open");
-    const actions = [...openActions]
-      .sort((lhs, rhs) => lhs.position - rhs.position)
-      .map((entry) => entry.action);
+    if (entries.length === 1) {
+      return { position: menu.position, action: entries[0].action };
+    }
+
+    const label = t(menu.label);
+    const actions = entries.map((entry) => entry.action);
 
     return {
-      position: POSITION.open,
+      position: menu.position,
       action: {
         label,
-        iconPath: getIconPath("open-ext"),
+        iconPath: getIconPath(menu.icon),
         panelRole: "menu",
-        // picking somewhere to open ends the interaction, so the menu goes away
-        // with the panel rather than leaving the button showing a list
         panel: ({ dismiss }) => (
           <PopoverMenu actions={[actions]} label={label} onSelect={dismiss} />
         ),
       },
     };
-  }, [openActions, t]);
+  }, [adopted, menu, registered, t]);
 };
 
 /**
- * Everything the mods page puts in its toolbar: its own actions, the "Open" menu, and
- * whatever extensions registered into `mod-icons`, in the order IconBar showed them.
- * Which of them sit on the bar is the user's to change — see `useToolbarPinning` —
- * and anything that doesn't fit is collapsed into the overflow menu by
- * {@link ToolbarGroup}, so this is a flat list.
+ * Everything the mods page puts in its toolbar: its own actions, the menus of
+ * {@link ACTION_MENUS}, and whatever extensions registered into `mod-icons`, in the
+ * order IconBar showed them. Which of them sit on the bar is the user's to change —
+ * see `useToolbarPinning` — and anything that doesn't fit is collapsed into the
+ * overflow menu by {@link ToolbarGroup}, so this is a flat list.
  */
 export const useModToolbarActions = (t: TFunction): IToolbarAction[] => {
   const installFromFile = useInstallFromFileAction(t);
   const checkVersions = useCheckVersionsAction(t);
   const deploy = useDeployAction(t);
   const purge = usePurgeAction(t);
-  const open = useOpenAction(t);
   const registered = useRegisteredActions("mod-icons");
+
+  const byIcon = useMemo(() => _.groupBy(registered, (entry) => entry.icon), [registered]);
+  const ownRow = useMemo(
+    () => registered.filter((entry) => !ACTION_MENUS.some((menu) => menu.icon === entry.icon)),
+    [registered],
+  );
+
+  const open = useActionMenu(t, OPEN_MENU, byIcon[OPEN_MENU.icon] ?? NO_ACTIONS);
+  const importFrom = useActionMenu(t, IMPORT_MENU, byIcon[IMPORT_MENU.icon] ?? NO_ACTIONS);
 
   return useMemo(
     () =>
-      [installFromFile, checkVersions, deploy, purge, ...(open ? [open] : []), ...registered]
+      [installFromFile, checkVersions, deploy, purge, open, importFrom, ...ownRow]
+        .filter((entry): entry is IPositionedAction => entry !== undefined)
         .sort((lhs, rhs) => lhs.position - rhs.position)
         .map((entry) => entry.action),
-    [checkVersions, deploy, installFromFile, open, purge, registered],
+    [checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
   );
 };
