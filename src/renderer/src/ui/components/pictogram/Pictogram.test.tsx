@@ -53,7 +53,7 @@ describe("Pictogram", () => {
 
   describe("brand", () => {
     it.each([
-      ["premium", "text-premium-moderate"],
+      ["premium", "text-premium-strong"],
       ["primary", "text-primary-moderate"],
     ] as const)("applies %s -> %s", (brand, cls) => {
       renderComponent({ brand });

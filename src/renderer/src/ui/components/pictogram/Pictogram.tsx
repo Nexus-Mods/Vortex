@@ -21,14 +21,16 @@ export type IPictogramBrand = "none" | "premium" | "primary";
 
 const brandMap = {
   none: "",
-  premium: "text-premium-moderate",
+  premium: "text-premium-strong",
   primary: "text-primary-moderate",
 } as const satisfies Record<IPictogramBrand, string>;
 
 export type IPictogramName =
   | "game"
   | "health-check"
+  | "no-mod"
   | "preferences"
+  | "premium"
   | "puzzle-piece"
   | "settings"
   | "tools";
