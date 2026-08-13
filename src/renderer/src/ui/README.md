@@ -120,7 +120,7 @@ import { mdiDownload } from "@mdi/js";
 <Button isLoading>Processing...</Button>
 ```
 
-**Brands:** `primary`, `info`, `neutral`, `success`, `premium`
+**Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`
 **Appearances:** `strong` (solid fill), `moderate` (subtle surface), `subdued` (outline), `weak` (text only)
 **Sizes:** `sm` (24px), `md` (28px, default), `lg` (36px)
 
@@ -408,6 +408,8 @@ import { DropdownDivider } from "../../ui/components/dropdown/DropdownDivider";
 
 `DropdownButton` renders a `Button` as the `Menu.Button` trigger, so it takes all the same props as `Button`.
 
+A `DropdownItem` takes the same [`brand`](#button) a `Button` does, tinting its icon and leaving the labels an even column of text to read down — except `danger`, which colours the whole row, a destructive action being the one thing in a menu that should be hard to pick by accident. [`PopoverMenu`](#popovermenu) rows brand the same way, from the same helper.
+
 ### Popover
 
 A floating panel of arbitrary interactive content built on Headless UI `Popover`. Unlike `Dropdown` (a menu of actions that closes on selection), a Popover holds controls — pickers, switches, buttons — and stays open until an outside click or Escape. `PopoverButton` renders a `Button` as the trigger (so it takes every Button prop); `PopoverPanel` holds the content. For a panel holding a menu of actions rather than controls, see [`PopoverMenu`](#popovermenu).
@@ -450,6 +452,8 @@ For a panel of settings rather than free-form content, fill it with `PopoverPane
 A menu of actions filling a `PopoverPanel`. Use it over [`Dropdown`](#dropdown) when a row has to open a surface of its own — a submenu, or a panel of settings. A `Dropdown` is a Headless UI `Menu`, and a `Menu` closes the moment focus reaches anything nested inside it; a `Popover` registers a child's portal as part of itself, so reaching into it doesn't read as leaving. What `Menu` would have given for free is supplied instead: the menu roles, focus on open, and arrow-key navigation.
 
 Rows are `IMenuAction`s — the same shape as an `IToolbarAction` minus the toolbar's own layout concerns, so an action can be handed to either. Actions arrive as **groups**, separated by a rule; an empty group is dropped rather than drawn, so a conditional group can go in as-is without leaving a rule with nothing under it.
+
+A row takes the same [`brand`](#button) a `Button` does, so an action reads the same on a toolbar as it does in the overflow menu it collapsed into. A row tints only its icon, leaving the labels an even column of text to read down — except `danger`, which colours the whole row.
 
 ```tsx
 <PopoverPanel className="nxm-popover-panel-dropdown">

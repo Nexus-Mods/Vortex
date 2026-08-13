@@ -13,17 +13,17 @@ export type IListboxOption<T = unknown> = ComponentProps<typeof HeadlessListboxO
 
 export const ListboxOption = ({ className, icon, iconPath, label, ...props }: IListboxOption) => (
   <HeadlessListboxOption as={Fragment} {...props}>
-    {({ active, selected }) => (
+    {({ focus, selected }) => (
       <div
         className={joinClasses(["nxm-dropdown-item", className], {
-          "nxm-dropdown-item-active": active,
+          "nxm-dropdown-item-focus": focus,
         })}
       >
-        {icon && (
+        {!!icon && (
           <span className="nxm-dropdown-item-icon flex items-center justify-center">{icon}</span>
         )}
 
-        {iconPath && <Icon className="nxm-dropdown-item-icon" path={iconPath} size="none" />}
+        {!!iconPath && <Icon className="nxm-dropdown-item-icon" path={iconPath} size="none" />}
 
         <span className="nxm-dropdown-item-label">{label}</span>
 

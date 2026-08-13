@@ -10,7 +10,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import { Button, type IButtonAppearance, type IButtonBrand } from "./Button";
 
-const BRANDS: IButtonBrand[] = ["primary", "info", "neutral", "success", "premium"];
+const BRANDS: IButtonBrand[] = ["primary", "info", "neutral", "success", "danger", "premium"];
 const APPEARANCES: IButtonAppearance[] = ["strong", "moderate", "subdued", "weak"];
 
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
