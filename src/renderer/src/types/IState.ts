@@ -193,6 +193,15 @@ export interface ITableStates {
   [id: string]: ITableState;
 }
 
+/** What the user pinned to, or took off, one toolbar — keyed by action id. */
+export interface IToolbarState {
+  pinned: { [actionId: string]: boolean };
+}
+
+export interface IToolbarStates {
+  [toolbarId: string]: IToolbarState;
+}
+
 export interface IStateDownloads {
   speed: number;
   speedHistory: number[];
@@ -307,6 +316,7 @@ export interface ISettings {
   mods: ISettingsMods;
   notifications: ISettingsNotification;
   tables: ITableStates;
+  toolbars: IToolbarStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;
 }

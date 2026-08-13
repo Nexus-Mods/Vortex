@@ -6,6 +6,13 @@ export interface IActionOptions {
   hollowIcon?: boolean;
   isClassicOnly?: boolean;
   isModernOnly?: boolean;
+  /** What the action has to say beyond its title, read on render and bracketed after it. */
+  notice?: () => string | undefined;
+  /**
+   * Whether the action sits on the toolbar until the user says otherwise, where that
+   * toolbar lets them choose. Ignored by one that doesn't.
+   */
+  pinned?: boolean;
 }
 
 export type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];

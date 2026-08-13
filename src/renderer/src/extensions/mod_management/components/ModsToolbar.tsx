@@ -15,7 +15,7 @@ export const ModsToolbar = ({ t }: { t: TFunction }) => {
 
   return (
     // without `flex-1` the toolbar keeps every action and runs over the page title
-    <Toolbar className="flex-1 justify-end">
+    <Toolbar className="flex-1 justify-end" pinningId="mods">
       <ToolbarGroup actions={actions} />
     </Toolbar>
   );

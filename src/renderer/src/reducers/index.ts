@@ -29,6 +29,7 @@ import { notificationsReducer } from "./notifications";
 import { notificationSettingsReducer } from "./notificationSettings";
 import { sessionReducer } from "./session";
 import { tableReducer } from "./tables";
+import { toolbarReducer } from "./toolbars";
 import { userReducer } from "./user";
 import { windowReducer } from "./window";
 
@@ -258,6 +259,7 @@ export function buildReducerTree(extensionReducers: IExtensionReducer[]): Reduce
     settings: {
       window: windowReducer,
       tables: tableReducer,
+      toolbars: toolbarReducer,
       notifications: notificationSettingsReducer,
     },
   };

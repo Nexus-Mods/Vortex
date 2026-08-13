@@ -261,6 +261,31 @@ describe("PopoverMenu", () => {
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
     });
+
+    // A row can hold a control of its own, and arrowing from there has to carry on
+    // from that row. Read as "no row at all", ArrowDown went to the first row and
+    // ArrowUp to the last, wherever you were.
+    it("carries on from the row a focused control belongs to", async () => {
+      const pinnable = (label: string): IMenuAction => ({
+        ...plainAction(label),
+        pin: { pinned: false, label: `Pin ${label}`, onToggle: () => {} },
+      });
+
+      await openMenu([[pinnable("View profile"), pinnable("Refresh"), pinnable("Logout")]]);
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
+
+      screen.getByRole("button", { name: "Pin Refresh" }).focus();
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
+
+      screen.getByRole("button", { name: "Pin Logout" }).focus();
+
+      await userEvent.keyboard("{ArrowUp}");
+      expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
+    });
   });
 
   describe("nested menus", () => {
@@ -283,18 +308,19 @@ describe("PopoverMenu", () => {
       const row = await openParent();
 
       expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).not.toBeInTheDocument();
       // Decorative: the chevron must not become part of the row's name.
       expect(row).toHaveAccessibleName("Help");
     });
 
-    it("leaves a row that just runs an action without one", async () => {
+    // A row that opens nothing keeps the space a chevron would take, so the pins of
+    // every row line up, and withholds the mark itself.
+    it("hides the chevron on a row that just runs an action", async () => {
       await openMenu([[plainAction("Logout")]]);
+      const row = screen.getByRole("menuitem", { name: "Logout" });
 
-      expect(
-        screen
-          .getByRole("menuitem", { name: "Logout" })
-          .querySelector(`path[d="${mdiChevronRight}"]`),
-      ).not.toBeInTheDocument();
+      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).toBeInTheDocument();
     });
 
     it("opens the submenu from its row", async () => {
