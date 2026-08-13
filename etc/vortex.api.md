@@ -600,6 +600,7 @@ interface IActionOptions {
     namespace?: string;
     // (undocumented)
     noCollapse?: boolean;
+    notice?: () => string | undefined;
 }
 
 // @public (undocumented)

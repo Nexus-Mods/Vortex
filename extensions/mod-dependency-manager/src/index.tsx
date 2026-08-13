@@ -30,7 +30,7 @@ import {
   setConflictInfo,
   setEditCycle,
   setFileOverrideDialog,
-  setHasUnsolvedConflicts,
+  setUnsolvedConflictsCount,
   setModTypeConflictsSetting,
 } from "./actions";
 import { sessionReducer as connectionReducer, settingsReducer } from "./reducers";
@@ -480,7 +480,7 @@ async function updateConflictInfo(
 
   if (Object.keys(unsolved).length === 0) {
     store.dispatch(actions.dismissNotification(CONFLICT_NOTIFICATION_ID));
-    store.dispatch(setHasUnsolvedConflicts(false));
+    store.dispatch(setUnsolvedConflictsCount(0));
   } else {
     const message: string[] = [
       t(
@@ -531,7 +531,11 @@ async function updateConflictInfo(
       );
     };
 
-    store.dispatch(setHasUnsolvedConflicts(true));
+    store.dispatch(
+      setUnsolvedConflictsCount(
+        Object.values(unsolved).reduce((count, conflicts) => count + conflicts.length, 0),
+      ),
+    );
     store.dispatch(
       actions.addNotification({
         type: "warning",
@@ -1542,6 +1546,26 @@ function once(api: types.IExtensionApi) {
   );
 }
 
+/** What Manage Rules says while conflicts are unresolved: how many, or just that there are. */
+function unresolvedConflictsNotice(api: types.IExtensionApi): string | undefined {
+  const state = api.getState();
+  const count = util.getSafe<number>(
+    state,
+    ["session", "dependencies", "unsolvedConflictsCount"],
+    undefined,
+  );
+
+  if (count > 0) {
+    return count === 1
+      ? api.translate("1 unresolved conflict")
+      : api.translate("{{count}} unresolved conflicts", { replace: { count } });
+  }
+
+  return util.getSafe(state, ["session", "dependencies", "hasUnsolvedConflicts"], false)
+    ? api.translate("Unresolved conflicts")
+    : undefined;
+}
+
 const pathTool: IPathTools = {
   isAbsolute: path.isAbsolute,
   relative: path.relative,
@@ -1556,12 +1580,17 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["session", "dependencies"], connectionReducer);
   context.registerTableAttribute("mods", makeLoadOrderAttribute(context.api));
   context.registerTableAttribute("mods", makeDependenciesAttribute(context.api));
-  // a plain action rather than a component, so the mods page toolbar can render it.
-  // The emphasis the button used to get while conflicts are unresolved is part of the
-  // toolbar redesign (LAZ-534) rather than something an action can express.
-  context.registerAction("mod-icons", 90, "rules", {}, "Manage Rules", () => {
-    showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
-  });
+  // a plain action for the new toolbar; the flash for unresolved conflicts is now a tooltip count.
+  context.registerAction(
+    "mod-icons",
+    90,
+    "rules",
+    { notice: () => unresolvedConflictsNotice(context.api) },
+    "Manage Rules",
+    () => {
+      showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
+    },
+  );
   context.registerDialog("mod-dependencies-connector", Connector);
   context.registerDialog("mod-dependencies-editor", Editor);
   context.registerDialog("mod-conflict-editor", ConflictEditor, () => ({

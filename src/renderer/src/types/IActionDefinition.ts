@@ -6,6 +6,8 @@ export interface IActionOptions {
   hollowIcon?: boolean;
   isClassicOnly?: boolean;
   isModernOnly?: boolean;
+  /** What the action has to say beyond its title, read on render and bracketed after it. */
+  notice?: () => string | undefined;
 }
 
 export type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
