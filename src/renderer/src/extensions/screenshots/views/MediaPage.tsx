@@ -5,7 +5,6 @@ import { useDispatch } from "react-redux";
 
 import { setOpenMainPage, setSettingsPage } from "@/actions";
 import { type IExtensionApi } from "@/types/api";
-import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
 import { Listing } from "@/ui/components/listing/Listing";
 import { TabBar } from "@/ui/components/tabs/TabBar";
@@ -20,6 +19,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaItem } from "../util/mediaTypes";
 import MediaListItem from "./MediaListItem";
+import MediaListItemSkeleton from "./MediaListItemSkeleton";
 import MediaPageNoResults from "./MediaPageNoResults";
 import MediaSingleView from "./MediaSingleView";
 
@@ -67,6 +67,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           <Button
             appearance="subdued"
             brand="neutral"
+            disabled={isLoading}
             leftIconPath={mdiRefresh}
             size="sm"
             title={"Refresh"}
@@ -86,12 +87,6 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
 
       <PageScroll className="space-y-2 p-6">
         {/* The actual page content */}
-        {disabledSources?.length > 0 && (
-          <Alert className="px-0 py-2" severity="info" onDismiss={() => {}}>
-            {t("Some media sources are disabled in your settings.")}
-          </Alert>
-        )}
-
         <TabProvider tab={tab} tabListId="" onSetSelectedTab={setTab}>
           <TabBar className="mb-2">
             <TabButton count={items?.length ?? 0} name="All" panelId="all" />
@@ -136,6 +131,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               isError={isError}
               isLoading={isLoading}
               skeletonCount={12}
+              SkeletonTile={() => <MediaListItemSkeleton />}
             >
               {items?.map((i) => (
                 <MediaListItem

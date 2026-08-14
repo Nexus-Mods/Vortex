@@ -70,12 +70,13 @@ async function generateVideoPreview(mp4Path: string, id: string) {
   const safeId = id.replace(/[<>:"/\\|?*]+/g, "_");
   const ok = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
   if (!ok) return undefined;
-  console.log("Getting preview", safeId, ok);
   const baseDir = path.join(getVortexPath("temp"), "videopreviews");
-  const exists = await fs.stat(baseDir).catch(() => undefined);
-  if (!exists) await fs.mkdir(baseDir);
+  await fs.mkdir(baseDir, { recursive: true });
   const outPath = path.join(baseDir, safeId + ".jpg");
-  const alreadyGenerated = await fs.stat(outPath).catch(() => undefined);
+  const alreadyGenerated = await fs
+    .access(outPath)
+    .then(() => true)
+    .catch(() => false);
   if (alreadyGenerated) return outPath;
   return new Promise<string>((resolve, reject) => {
     const proc = spawn("ffmpeg", [

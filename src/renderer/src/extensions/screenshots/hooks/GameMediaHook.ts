@@ -88,14 +88,20 @@ export default function useGameMedia() {
     setIsLoading(true);
     setIsError(false);
     void loadMedia();
-  }, [allSources, setItems, disabledSources]);
+  }, [allSources, setItems, disabledSources, discovery, gameId]);
 
   const forceCollect = async () => {
     try {
+      setIsError(false);
+      setIsLoading(true);
+      setItems([]);
       const res = await collectImages(allSources, disabledSources);
       setItems(res);
-    } catch {
-      // Do nothing
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error(`Unknwon error`));
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
