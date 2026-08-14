@@ -43,7 +43,7 @@ jobs:
       # set because the default /usr/share/dotnet isn't writable on our
       # self-hosted runners (they don't run as root).
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         env:
           DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
         with:
