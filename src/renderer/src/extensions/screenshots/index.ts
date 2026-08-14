@@ -37,7 +37,7 @@ function init(context: IExtensionContext) {
       api: context.api,
     }),
     () => activeGameId(context.api.getState()) !== undefined,
-    200,
+    80,
   );
 
   return true;

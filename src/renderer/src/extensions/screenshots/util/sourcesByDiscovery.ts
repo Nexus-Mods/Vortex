@@ -40,7 +40,6 @@ export default async function sourcesByDiscovery(
         filterFn: (f: string) =>
           f.toLowerCase().includes(name.toLowerCase().replace(":", "_")) ||
           f.toLowerCase().startsWith("screenshot"),
-        active: true,
       };
       break;
     }

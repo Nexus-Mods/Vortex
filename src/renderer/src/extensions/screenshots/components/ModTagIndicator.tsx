@@ -5,12 +5,12 @@ import { Button } from "@/ui/components/button/Button";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 
-import type { ModMediaTag } from "../util/mediaTypes";
+import type { GameMediaModTag } from "../util/mediaTypes";
 
 interface IModTagsIndicatorProps {
   x: number;
   y: number;
-  mod?: ModMediaTag;
+  mod?: GameMediaModTag;
 }
 
 export default function ModTagIndicator({ x, y, mod }: IModTagsIndicatorProps) {

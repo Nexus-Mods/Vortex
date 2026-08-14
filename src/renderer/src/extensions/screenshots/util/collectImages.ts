@@ -5,10 +5,11 @@ import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
 
 export default async function collectImages(
   sources: Record<string, GameMediaSource>,
+  disabledSources: string[],
 ): Promise<GameMediaItem[]> {
   let res: GameMediaItem[] = [];
 
-  const activeSources = Object.entries(sources).filter(([_, s]) => s.active === true);
+  const activeSources = Object.entries(sources).filter(([id, _]) => !disabledSources.includes(id));
 
   for (const [sourceId, source] of activeSources) {
     // console.log("Collecting images from", sourceId, source);
@@ -52,5 +53,5 @@ export default async function collectImages(
     }
   }
 
-  return res;
+  return res.sort((a, b) => b.createdAt?.getTime() - a.createdAt?.getTime());
 }

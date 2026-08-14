@@ -20,15 +20,24 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
   reducers: Object.fromEntries([
     on(actions.setGameMediaSourceEnabled, (state, payload) => {
       const { gameId, sourceId, enabled } = payload;
-      let newArray: string[] = state[gameId] ?? [];
-      if (enabled && !newArray.includes(sourceId)) newArray.push(sourceId);
+      let newArray: string[] = state.disabledSources[gameId] ?? [];
+      if (enabled && !newArray.includes(sourceId)) newArray = [sourceId, ...newArray];
       if (!enabled && newArray.includes(sourceId))
         newArray = newArray.filter((s) => s !== sourceId);
       return { ...state, disabledSources: { [gameId]: newArray } };
     }),
-    on(actions.setGameMediaSources, (state, payload) => {
-      const { gameId, sources } = payload;
-      return { ...state, sources: { ...state.sources, [gameId]: sources } };
+    on(actions.addGameMediaSource, (state, payload) => {
+      const { gameId, sourceId, source } = payload;
+      return {
+        ...state,
+        sources: { ...state.sources, [gameId]: { ...state.sources[gameId], [sourceId]: source } },
+      };
+    }),
+    on(actions.deleteGameMediaSource, (state, payload) => {
+      const { gameId, sourceId } = payload;
+      const newSources = { ...state.sources[gameId] };
+      delete newSources[sourceId];
+      return { ...state, sources: { ...state.sources, [gameId]: newSources } };
     }),
     on(actions.setGameMediaModTags, (state, payload) => {
       const { gameId, mediaId, tags } = payload;

@@ -6,7 +6,7 @@ import type { IState } from "@/types/api";
 import { activeGameId, gameById, currentGameDiscovery } from "../../../util/selectors";
 import * as sessionActions from "../actions/session";
 import collectImages from "../util/collectImages";
-import type { MediaItem, MediaSource } from "../util/mediaTypes";
+import type { GameMediaItem, GameMediaSource } from "../util/mediaTypes";
 import sourcesByDiscovery from "../util/sourcesByDiscovery";
 import type { IStateWithGameMedia } from "../util/types";
 
@@ -21,7 +21,7 @@ export default function useGameMedia() {
 
   const discovery = useSelector(currentGameDiscovery);
 
-  const [defaultSources, setDefaultSources] = useState<Record<string, MediaSource>>({});
+  const [defaultSources, setDefaultSources] = useState<Record<string, GameMediaSource>>({});
 
   useEffect(() => {
     let active = true;
@@ -49,11 +49,15 @@ export default function useGameMedia() {
     };
   }, [gameId, discovery, game]);
 
-  const customSources: Record<string, MediaSource> | undefined = useSelector(
+  const customSources: Record<string, GameMediaSource> | undefined = useSelector(
     (state: IStateWithGameMedia) => state.persistent.game_media.sources?.[gameId],
   );
 
-  const allSources: Record<string, MediaSource> = useMemo(
+  const disabledSources: string[] = useSelector(
+    (state: IStateWithGameMedia) => state.persistent.game_media.disabledSources?.[gameId],
+  );
+
+  const allSources: Record<string, GameMediaSource> = useMemo(
     () => ({ ...defaultSources, ...(customSources ?? {}) }),
     [defaultSources, customSources],
   );
@@ -61,7 +65,7 @@ export default function useGameMedia() {
   const items = useSelector((state: IStateWithGameMedia) => state.session.game_media.items);
 
   const setItems = useCallback(
-    (i: MediaItem[]) => {
+    (i: GameMediaItem[]) => {
       store.dispatch(sessionActions.setFoundGameMedia(i));
     },
     [store],
@@ -72,7 +76,7 @@ export default function useGameMedia() {
     const loadMedia = async () => {
       // console.log("Loading media");
       try {
-        const foundItems = await collectImages(allSources);
+        const foundItems = await collectImages(allSources, disabledSources);
         setItems(foundItems);
       } catch (e) {
         setError(e instanceof Error ? e : new Error(`Unknwon error`));
@@ -84,11 +88,11 @@ export default function useGameMedia() {
     setIsLoading(true);
     setIsError(false);
     void loadMedia();
-  }, [allSources, setItems]);
+  }, [allSources, setItems, disabledSources]);
 
   const forceCollect = async () => {
     try {
-      const res = await collectImages(allSources);
+      const res = await collectImages(allSources, disabledSources);
       setItems(res);
     } catch {
       // Do nothing
@@ -106,5 +110,6 @@ export default function useGameMedia() {
     game,
     customSources,
     defaultSources,
+    disabledSources,
   };
 }

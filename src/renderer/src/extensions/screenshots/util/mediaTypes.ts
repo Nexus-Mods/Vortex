@@ -1,7 +1,7 @@
 export interface GameMediaSource {
   name: string;
   path: string;
-  active: boolean;
+  custom?: boolean;
   filterFn?: (s: string) => boolean;
   discoverFn?: (mediaPath: string) => Promise<GameMediaItem[]>;
   description?: string;

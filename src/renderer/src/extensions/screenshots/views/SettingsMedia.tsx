@@ -1,20 +1,20 @@
-import { mdiPlus } from "@mdi/js";
+import { mdiDelete, mdiFolderEdit, mdiPencil, mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IExtensionApi } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
-import { Input } from "@/ui/components/form/input/Input";
 import { Switch } from "@/ui/components/form/switch/Switch";
-import { Modal } from "@/ui/components/modal/Modal";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { activeGameId } from "@/util/selectors";
 
-import { setGameMediaSourceEnabled } from "../actions/persistent";
+import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaSource } from "../util/mediaTypes";
 import type { IStateWithGameMedia } from "../util/types";
+import SettingsMediaAddSourceModal from "./SettingsMediaAddSourceModal";
 
 interface ISettingsMediaProps {
   api: IExtensionApi;
@@ -25,9 +25,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 }: ISettingsMediaProps) => {
   const { t } = useTranslation(["media_page"]);
   const [showAddModal, setShowAddModal] = useState(false);
-
-  const [sourceName, setSourceName] = useState("");
-  const [sourcePath, setSourcePath] = useState("");
+  const [editSource, setEditSource] = useState<{ id: string; source: GameMediaSource } | null>();
 
   const dispatch = useDispatch();
   const gameId = useSelector(activeGameId);
@@ -42,13 +40,25 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
     [dispatch, gameId, disabledSources],
   );
 
+  const onDeleteSource = useCallback(
+    (sourceId: string) => {
+      dispatch(deleteGameMediaSource(gameId, sourceId));
+    },
+    [dispatch, gameId],
+  );
+
+  const onEditSource = (id: string, source: GameMediaSource) => {
+    setEditSource({ id, source });
+    setShowAddModal(true);
+  };
+
   const { defaultSources, customSources } = useGameMedia();
 
   const toggleItem = ([id, source]: [string, GameMediaSource]) => (
     <div className="flex w-max items-center gap-3" key={id}>
       <Switch checked={!disabledSources.includes(id)} onChange={() => onToggleSource(id)} />
 
-      <div>
+      <div className="min-w-sm grow">
         <Typography as="span" typographyType="body-sm">
           {source.name}
         </Typography>
@@ -57,16 +67,21 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
           {source.description ?? t("Media from {{source}}", { source: source.name })}
         </Typography>
       </div>
+
+      {source.custom && (
+        <ToolbarGroup
+          actions={[
+            { label: "Edit", iconPath: mdiPencil, onClick: () => onEditSource(id, source) },
+            { label: "Delete", iconPath: mdiDelete, onClick: () => onDeleteSource(id) },
+          ]}
+        />
+      )}
     </div>
   );
 
-  const selectDirectory = async () => {
-    try {
-      const directory = await api.selectDir({});
-      setSourcePath(directory);
-    } catch (_) {
-      //none
-    }
+  const closeModal = () => {
+    setShowAddModal(false);
+    setEditSource(null);
   };
 
   return (
@@ -104,33 +119,13 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         {t("Add custom source")}
       </Button>
 
-      <Modal
-        isOpen={showAddModal}
-        size="sm"
-        title="Add Custom Media Source"
-        onClose={() => setShowAddModal(false)}
-      >
-        <form>
-          <Input
-            required
-            label="Source Name"
-            placeholder="e.g. My Screenshots"
-            type="text"
-            value={sourceName}
-            onChange={(e) => setSourceName(e.target.value)}
-          />
-
-          <Input
-            label="Description"
-            placeholder="e.g. Images saved to my screenshots folder"
-            type="text"
-          />
-
-          {sourcePath}
-
-          <Button onClick={() => void selectDirectory()} />
-        </form>
-      </Modal>
+      <SettingsMediaAddSourceModal
+        api={api}
+        existingSource={editSource}
+        gameId={gameId}
+        visible={showAddModal}
+        onClose={closeModal}
+      />
     </form>
   );
 };

@@ -16,6 +16,8 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
+import relativeTime from "@/util/relativeTime";
+import { bytesToString } from "@/util/util";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 
@@ -164,7 +166,7 @@ export default function MediaSingleView({
             Details
           </Typography>
 
-          <div className="grid grid-cols-[20%_80%] gap-2">
+          <div className="grid grid-cols-[20%_80%] gap-4">
             <Typography appearance="strong" typographyType="body-sm">
               Name:
             </Typography>
@@ -196,7 +198,24 @@ export default function MediaSingleView({
                 </Typography>
 
                 <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
-                  {entry.size}
+                  {bytesToString(entry.size)}
+                </Typography>
+              </>
+            )}
+
+            {!!entry.createdAt && (
+              <>
+                <Typography appearance="strong" typographyType="body-sm">
+                  Created:
+                </Typography>
+
+                <Typography
+                  appearance="subdued"
+                  brand="neutral"
+                  title={entry.createdAt.toString()}
+                  typographyType="body-sm"
+                >
+                  {relativeTime(entry.createdAt, t)}
                 </Typography>
               </>
             )}

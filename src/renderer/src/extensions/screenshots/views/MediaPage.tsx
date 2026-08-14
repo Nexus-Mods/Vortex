@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 
 import { setOpenMainPage, setSettingsPage } from "@/actions";
 import { type IExtensionApi } from "@/types/api";
+import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
 import { Listing } from "@/ui/components/listing/Listing";
 import { TabBar } from "@/ui/components/tabs/TabBar";
@@ -32,7 +33,8 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   const [selected, setSelected] = useState<GameMediaItem | null>(null);
   const [tab, setTab] = useState<string>("all");
 
-  const { isLoading, isError, error, allSources, items, forceCollect, game } = useGameMedia();
+  const { isLoading, isError, error, allSources, items, forceCollect, game, disabledSources } =
+    useGameMedia();
 
   if (selected) {
     return (
@@ -79,23 +81,35 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
         </div>
       </PageHeader>
 
-      <PageScroll className="space-y-6 p-6">
+      <PageScroll className="space-y-2 p-6">
         {/* The actual page content */}
-        {isError && <div>{error?.message}</div>}
+        {isError && (
+          <Alert className="px-0 py-2" severity="warning">
+            {error?.message}
+          </Alert>
+        )}
+
+        {disabledSources.length > 0 && (
+          <Alert className="px-0 py-2" severity="info" onDismiss={() => {}}>
+            {t("Some media sources are disabled in your settings.")}
+          </Alert>
+        )}
 
         <TabProvider tab={tab} tabListId="" onSetSelectedTab={setTab}>
           <TabBar className="mb-2">
             <TabButton count={items?.length ?? 0} name="All" panelId="all" />
 
             {!!allSources &&
-              Object.entries(allSources).map(([k, s]) => (
-                <TabButton
-                  count={items?.filter((i) => i.sourceId === k).length ?? 0}
-                  key={k}
-                  name={s.name}
-                  panelId={k}
-                />
-              ))}
+              Object.entries(allSources)
+                .filter(([k]) => !disabledSources?.includes(k))
+                .map(([k, s]) => (
+                  <TabButton
+                    count={items?.filter((i) => i.sourceId === k).length ?? 0}
+                    key={k}
+                    name={s.name}
+                    panelId={k}
+                  />
+                ))}
           </TabBar>
 
           <TabPanel id="all">
@@ -105,12 +119,14 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               className="mb-2"
               typographyType="body-sm"
             >
-              {t("All screenshots and videos for {{game}}.", { game: game.name })}
+              {t("All screenshots and videos for {{game}}.", {
+                game: game.name,
+              })}
             </Typography>
 
             <Listing
               appendLoader={true}
-              className="grid grid-cols-[repeat(auto-fit,minmax(240px,0.25fr))] gap-4"
+              className="grid grid-cols-[repeat(auto-fit,minmax(240px,0.2fr))] gap-4"
               entityCount={items?.length ?? 0}
               errorTitle={error?.message}
               isError={isError}
@@ -121,6 +137,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                 <MediaListItem
                   item={i}
                   key={`${i.sourceId}:${i.name}`}
+                  t={t}
                   onClick={() => setSelected(i)}
                 />
               ))}
@@ -128,51 +145,54 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           </TabPanel>
 
           {!!allSources &&
-            Object.keys(allSources).map((k) => (
-              <TabPanel id={k} key={`source-tab-${k}`}>
-                <div className="my-1 flex items-center justify-between">
-                  <Typography
-                    appearance="subdued"
-                    brand="neutral-translucent"
-                    className="mb-2"
-                    typographyType="body-sm"
-                  >
-                    {allSources[k]?.description ?? `Screenshots from ${allSources[k]?.name}`}
-                  </Typography>
+            Object.keys(allSources)
+              .filter((k) => !disabledSources?.includes(k))
+              .map((k) => (
+                <TabPanel id={k} key={`source-tab-${k}`}>
+                  <div className="my-1 flex items-center justify-between">
+                    <Typography
+                      appearance="subdued"
+                      brand="neutral-translucent"
+                      className="mb-2"
+                      typographyType="body-sm"
+                    >
+                      {allSources[k]?.description ?? `Screenshots from ${allSources[k]?.name}`}
+                    </Typography>
 
-                  <Button
-                    appearance="subdued"
-                    brand="neutral"
-                    leftIconPath={mdiOpenInNew}
-                    size="sm"
-                    title="Open Folder"
-                    onClick={() => window.api.shell.openUrl(allSources[k].path)}
-                  >
-                    Open Folder
-                  </Button>
-                </div>
+                    <Button
+                      appearance="subdued"
+                      brand="neutral"
+                      leftIconPath={mdiOpenInNew}
+                      size="sm"
+                      title="Open Folder"
+                      onClick={() => window.api.shell.openUrl(allSources[k].path)}
+                    >
+                      Open Folder
+                    </Button>
+                  </div>
 
-                <Listing
-                  appendLoader={true}
-                  className="grid grid-cols-[repeat(auto-fit,minmax(240px,0.2fr))] gap-4"
-                  entityCount={items?.filter((i) => i.sourceId === k).length ?? 0}
-                  errorTitle={error?.message}
-                  isError={isError}
-                  isLoading={isLoading}
-                  skeletonCount={12}
-                >
-                  {items
-                    ?.filter((i) => i.sourceId === k)
-                    .map((i) => (
-                      <MediaListItem
-                        item={i}
-                        key={`${i.sourceId}:${i.name}`}
-                        onClick={() => setSelected(i)}
-                      />
-                    ))}
-                </Listing>
-              </TabPanel>
-            ))}
+                  <Listing
+                    appendLoader={true}
+                    className="grid grid-cols-[repeat(auto-fit,minmax(240px,0.2fr))] gap-4"
+                    entityCount={items?.filter((i) => i.sourceId === k).length ?? 0}
+                    errorTitle={error?.message}
+                    isError={isError}
+                    isLoading={isLoading}
+                    skeletonCount={12}
+                  >
+                    {items
+                      ?.filter((i) => i.sourceId === k)
+                      .map((i) => (
+                        <MediaListItem
+                          item={i}
+                          key={`${i.sourceId}:${i.name}`}
+                          t={t}
+                          onClick={() => setSelected(i)}
+                        />
+                      ))}
+                  </Listing>
+                </TabPanel>
+              ))}
         </TabProvider>
       </PageScroll>
     </Page>
