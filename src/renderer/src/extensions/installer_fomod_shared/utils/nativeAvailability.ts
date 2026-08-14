@@ -68,12 +68,16 @@ function showUnavailableDialog(api: IExtensionApi): void {
  * is a single log line.
  */
 export function notifyNativeInstallerUnavailable(api: IExtensionApi): void {
-  if (notified) {
+  // Only latch once the warning has actually gone out: the first caller may be
+  // holding an api without a notification surface (the native tester runs
+  // before the ipc one), and latching on that call would swallow the warning
+  // for the rest of the session.
+  if (notified || api.sendNotification === undefined) {
     return;
   }
   notified = true;
 
-  api.sendNotification?.({
+  api.sendNotification({
     id: NOTIFICATION_ID,
     type: "warning",
     title: "FOMOD installer unavailable",

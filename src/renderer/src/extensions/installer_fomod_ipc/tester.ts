@@ -59,16 +59,21 @@ export const testSupported = async (
   mode: TesterMode = "scripted",
 ): Promise<ISupportedResult> => {
   const nativeAvailable = await isNativeInstallerAvailable();
-  if (!nativeAvailable) {
-    // Raised from here rather than only from the native tester: once this
-    // extension starts claiming basic installs it wins the priority-100 tie
-    // (it registers first), so the native tester never runs to raise it.
-    notifyNativeInstallerUnavailable(api);
-  }
-
   const allowedTypes = allowedTypesFor(gameId, details, mode, nativeAvailable);
   if (allowedTypes.length === 0) {
     return unsupported();
+  }
+
+  if (!nativeAvailable) {
+    // Raised from here as well as from the native tester: the native scripted
+    // tester short-circuits on `hasXmlConfigXML === false` before it ever tries
+    // to load the addon, and once this extension claims basic installs it wins
+    // the priority-100 tie (it registers first), so for a plain archive neither
+    // native registration gets far enough to raise the warning.
+    //
+    // Deliberately after the early return, so we only warn once we are actually
+    // standing in for the missing addon on this archive.
+    notifyNativeInstallerUnavailable(api);
   }
 
   return probeSupport(api, files, gameId, allowedTypes);

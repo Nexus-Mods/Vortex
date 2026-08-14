@@ -40,6 +40,17 @@ describe("notifyNativeInstallerUnavailable", () => {
     expect(api.sendNotification).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the warning pending when the caller has no notification surface", async () => {
+    const { notifyNativeInstallerUnavailable } = await import("./nativeAvailability.js");
+    const withoutSurface = {} as IExtensionApi;
+    const api = makeApi();
+
+    notifyNativeInstallerUnavailable(withoutSurface);
+    notifyNativeInstallerUnavailable(api);
+
+    expect(api.sendNotification).toHaveBeenCalledTimes(1);
+  });
+
   it("explains the cause through the notification action", async () => {
     const { notifyNativeInstallerUnavailable } = await import("./nativeAvailability.js");
     const api = makeApi();
