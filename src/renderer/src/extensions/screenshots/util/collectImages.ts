@@ -1,15 +1,20 @@
 import fs from "fs/promises";
+import { spawn, spawnSync } from "node:child_process";
 import path from "path";
+
+import getVortexPath from "@/util/getVortexPath";
 
 import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
 
 export default async function collectImages(
   sources: Record<string, GameMediaSource>,
-  disabledSources: string[],
+  disabledSources: string[] | undefined,
 ): Promise<GameMediaItem[]> {
   let res: GameMediaItem[] = [];
 
-  const activeSources = Object.entries(sources).filter(([id, _]) => !disabledSources.includes(id));
+  const activeSources = Object.entries(sources).filter(
+    ([id, _]) => !disabledSources || !disabledSources.includes(id),
+  );
 
   for (const [sourceId, source] of activeSources) {
     // console.log("Collecting images from", sourceId, source);
@@ -33,15 +38,20 @@ export default async function collectImages(
         images.map(async (i) => {
           const imagePath = path.join(source.path, i.name);
           const stats = await fs.stat(imagePath);
+          let thumbnailPath: string | undefined = undefined;
+          if (path.extname(i.name) === ".mp4") {
+            thumbnailPath = await generateVideoPreview(imagePath, `${sourceId}::${i.name}`);
+          }
           return {
             id: `${sourceId}::${i.name}`,
             sourceId,
             name: i.name,
             path: imagePath,
-            type: path.extname(i.name) === ".mp4" ? "video" : "image",
+            type: [".mp4", ".mpd"].includes(path.extname(i.name)) ? "video" : "image",
             size: stats.size,
             createdAt: stats.birthtime,
             modifiedAt: stats.mtime,
+            thumbnailPath,
           };
         }),
       );
@@ -54,4 +64,45 @@ export default async function collectImages(
   }
 
   return res.sort((a, b) => b.createdAt?.getTime() - a.createdAt?.getTime());
+}
+
+async function generateVideoPreview(mp4Path: string, id: string) {
+  const safeId = id.replace(/[<>:"/\\|?*]+/g, "_");
+  const ok = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
+  if (!ok) return undefined;
+  console.log("Getting preview", safeId, ok);
+  const baseDir = path.join(getVortexPath("temp"), "videopreviews");
+  const exists = await fs.stat(baseDir).catch(() => undefined);
+  if (!exists) await fs.mkdir(baseDir);
+  const outPath = path.join(baseDir, safeId + ".jpg");
+  const alreadyGenerated = await fs.stat(outPath).catch(() => undefined);
+  if (alreadyGenerated) return outPath;
+  return new Promise<string>((resolve, reject) => {
+    const proc = spawn("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-ss",
+      "00:00:01",
+      "-i",
+      mp4Path,
+      "-frames:v",
+      "1",
+      "-q:v",
+      "2",
+      "-vf",
+      "scale=480:-1",
+      "-f",
+      "image2",
+      outPath,
+    ]);
+
+    proc.on("exit", (code) => {
+      if (code === 0) return resolve(outPath);
+      window.api.log("warn", `ffmpeg failed: ${code} ${mp4Path}`);
+      resolve(undefined);
+    });
+    proc.on("error", reject);
+  });
 }

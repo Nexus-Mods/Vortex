@@ -24,7 +24,7 @@ export async function screenshotsFolderBySteamID(
     ) {
       res[`steam-screenshots-${user}`] = {
         name: "Steam Screenshots",
-        description: `Screenshots for Steam ID ${user}`,
+        description: `Screenshots for Steam User ID ${user}`,
         path: path.join(userDataFolder, user, "760", "remote", steamGameId, "screenshots"),
       };
     }
@@ -54,7 +54,7 @@ export async function clipsFolderBySteamID(
       res[`steam-videos-${user}`] = {
         name: "Steam Clips",
         path: videosFolder,
-        description: `Clips for Steam ID ${user}`,
+        description: `Clips for Steam ID User ${user}`,
         discoverFn: (mediaPath: string) => discoverSteamClips(mediaPath, steamGameId, user),
       };
     }
@@ -73,12 +73,34 @@ async function discoverSteamClips(
 ): Promise<GameMediaItem[]> {
   const clips = await fs.readdir(mediaPath);
   const thisGameClips = clips.filter((s) => s.toLowerCase().startsWith(`clip_${steamGameId}`));
-  return thisGameClips.map((c) => ({
-    id: `steam-videos-${userId}-${c}`,
-    path: path.join(mediaPath, c),
-    name: c,
-    sourceId: `steam-videos-${userId}`,
-    type: "video",
-    thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
-  }));
+  return Promise.all(
+    thisGameClips.map(async (c) => {
+      const clipPath = path.join(mediaPath, c);
+      const stats = await fs.stat(clipPath);
+      const videoPaths = await fs.readdir(path.join(clipPath, "video"));
+      const sessionMPD = videoPaths[0]
+        ? path.join(clipPath, "video", videoPaths[0], "session.mpd")
+        : undefined;
+      return {
+        id: `steam-videos-${userId}-${c}`,
+        path: sessionMPD ?? clipPath,
+        name: c,
+        sourceId: `steam-videos-${userId}`,
+        type: "video",
+        thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
+        createdAt: stats.birthtime,
+        modifiedAt: stats.mtime,
+      };
+    }),
+  );
+  // return thisGameClips.map((c) => ({
+  //   id: `steam-videos-${userId}-${c}`,
+  //   path: path.join(mediaPath, c),
+  //   name: c,
+  //   sourceId: `steam-videos-${userId}`,
+  //   type: "video",
+  //   thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
+  //   createdAt: stats.birthtime,
+  //   modifiedAt: stats.mtime,
+  // }));
 }

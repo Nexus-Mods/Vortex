@@ -27,6 +27,7 @@ export default function SettingsMediaAddSourceModal({
   api,
   existingSource,
 }: ISettingsMediaAddSourceModalProps) {
+  const t = api.translate;
   const [sourceName, setSourceName] = useState(existingSource?.source?.name ?? "");
   const [sourceDescription, setSourceDescription] = useState(
     existingSource?.source?.description ?? "",
@@ -65,7 +66,7 @@ export default function SettingsMediaAddSourceModal({
       custom: true,
     };
 
-    const newSourceId = existingSource.id ?? randomUUID();
+    const newSourceId = existingSource?.id ?? randomUUID();
 
     dispatch(addGameMediaSource(gameId, newSourceId, newSource));
     onClose();
@@ -77,15 +78,15 @@ export default function SettingsMediaAddSourceModal({
         <Input
           required
           label="Source Name"
-          placeholder="e.g. My Screenshots"
+          placeholder={t("e.g. My Screenshots")}
           type="text"
           value={sourceName}
           onChange={(e) => setSourceName(e.target.value)}
         />
 
         <Input
-          label="Description"
-          placeholder="e.g. Images saved to my screenshots folder"
+          label={t("Description")}
+          placeholder={t("e.g. Images saved to my screenshots folder")}
           type="text"
           value={sourceDescription}
           onChange={(e) => setSourceDescription(e.target.value)}
@@ -95,7 +96,7 @@ export default function SettingsMediaAddSourceModal({
           <Input
             required
             fieldClassName="grow"
-            label="Folder Path"
+            label={t("Folder Path")}
             type="text"
             value={sourcePath}
             onClick={() => void selectDirectory()}
@@ -112,7 +113,7 @@ export default function SettingsMediaAddSourceModal({
 
         <div>
           <Button disabled={!sourceName.length || !sourcePath} onClick={saveMediaSource}>
-            Save
+            {t("Save")}
           </Button>
         </div>
       </form>

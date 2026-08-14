@@ -20,6 +20,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaItem } from "../util/mediaTypes";
 import MediaListItem from "./MediaListItem";
+import MediaPageNoResults from "./MediaPageNoResults";
 import MediaSingleView from "./MediaSingleView";
 
 interface IMediaPageProps {
@@ -35,6 +36,13 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
 
   const { isLoading, isError, error, allSources, items, forceCollect, game, disabledSources } =
     useGameMedia();
+
+  const refreshAll = () => void forceCollect();
+
+  const openSettings = () => {
+    dispatch(setOpenMainPage("game_settings", false));
+    dispatch(setSettingsPage("Media"));
+  };
 
   if (selected) {
     return (
@@ -62,9 +70,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             leftIconPath={mdiRefresh}
             size="sm"
             title={"Refresh"}
-            onClick={() => {
-              void forceCollect();
-            }}
+            onClick={refreshAll}
           />
 
           <Button
@@ -73,23 +79,14 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             leftIconPath={mdiCog}
             size="sm"
             title={"Settings"}
-            onClick={() => {
-              dispatch(setOpenMainPage("game_settings", false));
-              dispatch(setSettingsPage("Media"));
-            }}
+            onClick={openSettings}
           />
         </div>
       </PageHeader>
 
       <PageScroll className="space-y-2 p-6">
         {/* The actual page content */}
-        {isError && (
-          <Alert className="px-0 py-2" severity="warning">
-            {error?.message}
-          </Alert>
-        )}
-
-        {disabledSources.length > 0 && (
+        {disabledSources?.length > 0 && (
           <Alert className="px-0 py-2" severity="info" onDismiss={() => {}}>
             {t("Some media sources are disabled in your settings.")}
           </Alert>
@@ -127,6 +124,13 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             <Listing
               appendLoader={true}
               className="grid grid-cols-[repeat(auto-fit,minmax(240px,0.2fr))] gap-4"
+              customNoResults={
+                <MediaPageNoResults
+                  disabledSources={disabledSources}
+                  openSettings={openSettings}
+                  refresh={refreshAll}
+                />
+              }
               entityCount={items?.length ?? 0}
               errorTitle={error?.message}
               isError={isError}
@@ -174,6 +178,9 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                   <Listing
                     appendLoader={true}
                     className="grid grid-cols-[repeat(auto-fit,minmax(240px,0.2fr))] gap-4"
+                    customNoResults={
+                      <MediaPageNoResults openSettings={openSettings} refresh={refreshAll} />
+                    }
                     entityCount={items?.filter((i) => i.sourceId === k).length ?? 0}
                     errorTitle={error?.message}
                     isError={isError}

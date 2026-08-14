@@ -7,7 +7,7 @@ import {
   mdiTagPlus,
   mdiTagRemove,
 } from "@mdi/js";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
 import type { IExtensionApi } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
@@ -55,7 +55,22 @@ export default function MediaSingleView({
     domainName,
   } = useGameMediaModTag(entry.id);
 
+  const playerRef = useRef<HTMLVideoElement | null>(null);
+
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
+
+  // This would be a potential solution to being unable to play videos from Steam.
+  // Steam videos are broken into m4s files with a mpd manifest. A library player is needed to stream videos this way.
+  // useEffect(() => {
+  //   if (playerRef.current && entry.path.endsWith(".mpd")) {
+  //     const createDashPlayer = async () => {
+  //       const dashjs = await import("dashjs");
+  //       const player = dashjs.MediaPlayer().create();
+  //       player.initialize(playerRef.current, entry.path, true);
+  //     };
+  //     void createDashPlayer();
+  //   }
+  // }, [entry.path]);
 
   const toolbarActions: IToolbarAction[] = [
     {
@@ -105,6 +120,7 @@ export default function MediaSingleView({
               <video
                 controls
                 className="min-h-130 w-full"
+                ref={playerRef}
                 src={entry.path}
                 onError={() =>
                   api.sendNotification({

@@ -1,4 +1,4 @@
-import { mdiDelete, mdiFolderEdit, mdiPencil, mdiPlus } from "@mdi/js";
+import { mdiDelete, mdiPencil, mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,8 +8,8 @@ import { Button } from "@/ui/components/button/Button";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
-import { activeGameId } from "@/util/selectors";
 
+import { activeGameId } from "../../../util/selectors";
 import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaSource } from "../util/mediaTypes";
@@ -71,8 +71,8 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
       {source.custom && (
         <ToolbarGroup
           actions={[
-            { label: "Edit", iconPath: mdiPencil, onClick: () => onEditSource(id, source) },
-            { label: "Delete", iconPath: mdiDelete, onClick: () => onDeleteSource(id) },
+            { label: "Edit Source", iconPath: mdiPencil, onClick: () => onEditSource(id, source) },
+            { label: "Delete Source", iconPath: mdiDelete, onClick: () => onDeleteSource(id) },
           ]}
         />
       )}
@@ -85,8 +85,12 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
   };
 
   return (
-    <form>
-      <div className="mb-4 flex flex-col gap-2">
+    <form className="flex flex-col gap-4">
+      <Typography appearance="moderate" typographyType="body-md">
+        {t("Manage the folders scanned when viewing the Media section.")}
+      </Typography>
+
+      <div className="flex flex-col gap-2">
         <Typography appearance="moderate" typographyType="body-lg">
           {t("Default Sources")}
         </Typography>
@@ -94,7 +98,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         {Object.entries(defaultSources).map(toggleItem)}
       </div>
 
-      <div className="mb-2 flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <Typography appearance="moderate" typographyType="body-lg">
           {t("Custom Sources")}
         </Typography>
