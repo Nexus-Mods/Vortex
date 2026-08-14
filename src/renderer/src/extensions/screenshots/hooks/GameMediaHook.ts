@@ -5,15 +5,10 @@ import type { IState } from "@/types/api";
 
 import { activeGameId, gameById, currentGameDiscovery } from "../../../util/selectors";
 import * as sessionActions from "../actions/session";
-import type { IGameMediaPersistentState } from "../reducers/persistent";
-import type { IGameMediaSessionState } from "../reducers/session";
 import collectImages from "../util/collectImages";
 import type { MediaItem, MediaSource } from "../util/mediaTypes";
 import sourcesByDiscovery from "../util/sourcesByDiscovery";
-
-type IStateWithGameMedia = IState & {
-  persistent: { game_media: IGameMediaPersistentState };
-} & { session: { game_media: IGameMediaSessionState } };
+import type { IStateWithGameMedia } from "../util/types";
 
 export default function useGameMedia() {
   const [isLoading, setIsLoading] = useState<boolean>(false);

@@ -1,12 +1,12 @@
 import fs from "fs/promises";
 import path from "path";
 
-import type { MediaItem, MediaSource } from "./mediaTypes";
+import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
 
 export default async function collectImages(
-  sources: Record<string, MediaSource>,
-): Promise<MediaItem[]> {
-  let res: MediaItem[] = [];
+  sources: Record<string, GameMediaSource>,
+): Promise<GameMediaItem[]> {
+  let res: GameMediaItem[] = [];
 
   const activeSources = Object.entries(sources).filter(([_, s]) => s.active === true);
 
@@ -28,7 +28,7 @@ export default async function collectImages(
       );
       if (source.filterFn && typeof source.filterFn === "function")
         images = images.filter((i) => source.filterFn(i.name));
-      const mappedImages: MediaItem[] = await Promise.all(
+      const mappedImages: GameMediaItem[] = await Promise.all(
         images.map(async (i) => {
           const imagePath = path.join(source.path, i.name);
           const stats = await fs.stat(imagePath);

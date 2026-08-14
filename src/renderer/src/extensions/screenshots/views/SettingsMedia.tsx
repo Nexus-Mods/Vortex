@@ -1,10 +1,9 @@
 import { mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
-// import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IExtensionApi, IState } from "@/types/api";
+import type { IExtensionApi } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
 import { Input } from "@/ui/components/form/input/Input";
 import { Switch } from "@/ui/components/form/switch/Switch";
@@ -14,17 +13,12 @@ import { activeGameId } from "@/util/selectors";
 
 import { setGameMediaSourceEnabled } from "../actions/persistent";
 import useGameMedia from "../hooks/GameMediaHook";
-import type { IGameMediaPersistentState } from "../reducers/persistent";
-import type { IGameMediaSessionState } from "../reducers/session";
-import type { MediaSource } from "../util/mediaTypes";
+import type { GameMediaSource } from "../util/mediaTypes";
+import type { IStateWithGameMedia } from "../util/types";
 
 interface ISettingsMediaProps {
   api: IExtensionApi;
 }
-
-type IStateWithGameMedia = IState & {
-  persistent: { game_media: IGameMediaPersistentState };
-} & { session: { game_media: IGameMediaSessionState } };
 
 const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
   api,
@@ -50,7 +44,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
   const { defaultSources, customSources } = useGameMedia();
 
-  const toggleItem = ([id, source]: [string, MediaSource]) => (
+  const toggleItem = ([id, source]: [string, GameMediaSource]) => (
     <div className="flex w-max items-center gap-3" key={id}>
       <Switch checked={!disabledSources.includes(id)} onChange={() => onToggleSource(id)} />
 

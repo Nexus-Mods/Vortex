@@ -7,15 +7,15 @@ import getVortexPath from "@/util/getVortexPath";
 import Steam from "../../../util/Steam";
 import getKnownFolders from "../sources/knownfolders";
 import { clipsFolderBySteamID, screenshotsFolderBySteamID } from "../sources/steam";
-import type { MediaSource } from "../util/mediaTypes";
+import type { GameMediaSource } from "../util/mediaTypes";
 
 export default async function sourcesByDiscovery(
   game: IGameStored,
   discovery: IDiscoveryResult,
-): Promise<Record<string, MediaSource>> {
+): Promise<Record<string, GameMediaSource>> {
   const { name, id: gameId, details } = game;
   const { store, path: gamePath } = discovery;
-  const res: Record<string, MediaSource> = {};
+  const res: Record<string, GameMediaSource> = {};
 
   if (details.mediaFolders && typeof details.mediaFolders === "object") {
     Object.assign(res, details.mediaFolders);

@@ -22,13 +22,13 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import FloatingSearchBar from "../components/FloatingSearchBar";
 import ModTagIndicator from "../components/ModTagIndicator";
 import useGameMediaModTag from "../hooks/GameMediaModTagHook";
-import type { MediaItem, MediaSource } from "../util/mediaTypes";
+import type { GameMediaItem, GameMediaSource } from "../util/mediaTypes";
 
 interface IMediaSingleViewProps {
   active?: boolean;
   api: IExtensionApi;
-  source: MediaSource;
-  entry: MediaItem;
+  source: GameMediaSource;
+  entry: GameMediaItem;
   onBack: () => void;
 }
 
@@ -238,7 +238,7 @@ export default function MediaSingleView({
                       appearance="subdued"
                       brand="neutral"
                       leftIconPath={mdiTagRemove}
-                      size="xs"
+                      size="sm"
                       title="Remove"
                       onClick={() => setTags(tags.filter((at) => at.id !== t.id))}
                     />
@@ -250,7 +250,7 @@ export default function MediaSingleView({
                 appearance="subdued"
                 brand="neutral"
                 leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
-                size="xs"
+                size="sm"
                 onClick={() => {
                   if (isAddingTag) return setIsAddingTag(false);
                   setPendingCoords(null);

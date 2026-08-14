@@ -1,13 +1,13 @@
-export interface MediaSource {
+export interface GameMediaSource {
   name: string;
   path: string;
   active: boolean;
   filterFn?: (s: string) => boolean;
-  discoverFn?: (mediaPath: string) => Promise<MediaItem[]>;
+  discoverFn?: (mediaPath: string) => Promise<GameMediaItem[]>;
   description?: string;
 }
 
-export interface MediaItem {
+export interface GameMediaItem {
   id: string;
   name: string;
   path: string;
@@ -26,7 +26,7 @@ export interface SteamScreenshotsVDF {
   >;
 }
 
-export interface ModMediaTag {
+export interface GameMediaModTag {
   id: string;
   name: string;
   url?: string;

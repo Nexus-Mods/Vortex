@@ -1,9 +1,9 @@
 import React from "react";
 
-import type { MediaItem } from "../util/mediaTypes";
+import type { GameMediaItem } from "../util/mediaTypes";
 
 interface IMediaListItemProps {
-  item: MediaItem;
+  item: GameMediaItem;
   onClick: () => void;
 }
 

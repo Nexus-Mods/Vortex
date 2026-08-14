@@ -2,14 +2,14 @@ import { reducerFor } from "@/extensions/health_check/reducers/reducerFor";
 import type { IReducerSpec } from "@/types/api";
 
 import * as actions from "../actions/persistent";
-import type { MediaSource, ModMediaTag } from "../util/mediaTypes";
+import type { GameMediaSource, GameMediaModTag } from "../util/mediaTypes";
 
 export interface IGameMediaPersistentState {
   sources: {
-    [gameId: string]: Record<string, MediaSource> | undefined;
+    [gameId: string]: Record<string, GameMediaSource> | undefined;
   };
   modTags: {
-    [gameId: string]: { [imageId: string]: ModMediaTag[] };
+    [gameId: string]: { [imageId: string]: GameMediaModTag[] };
   };
   disabledSources: Record<string, string[]>;
 }

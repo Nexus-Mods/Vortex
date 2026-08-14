@@ -17,7 +17,7 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import useGameMedia from "../hooks/GameMediaHook";
-import type { MediaItem } from "../util/mediaTypes";
+import type { GameMediaItem } from "../util/mediaTypes";
 import MediaListItem from "./MediaListItem";
 import MediaSingleView from "./MediaSingleView";
 
@@ -29,7 +29,7 @@ interface IMediaPageProps {
 export default function MediaPage({ active, api }: IMediaPageProps) {
   const { t } = useTranslation(["media_page", "common"]);
   const dispatch = useDispatch();
-  const [selected, setSelected] = useState<MediaItem | null>(null);
+  const [selected, setSelected] = useState<GameMediaItem | null>(null);
   const [tab, setTab] = useState<string>("all");
 
   const { isLoading, isError, error, allSources, items, forceCollect, game } = useGameMedia();
@@ -144,7 +144,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                     appearance="subdued"
                     brand="neutral"
                     leftIconPath={mdiOpenInNew}
-                    size="xs"
+                    size="sm"
                     title="Open Folder"
                     onClick={() => window.api.shell.openUrl(allSources[k].path)}
                   >

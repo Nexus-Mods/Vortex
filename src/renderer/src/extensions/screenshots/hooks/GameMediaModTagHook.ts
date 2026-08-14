@@ -6,13 +6,8 @@ import { getGame, nexusGameId } from "@/util/api";
 
 import { activeGameId } from "../../../util/selectors";
 import * as actions from "../actions/persistent";
-import type { IGameMediaPersistentState } from "../reducers/persistent";
-import type { IGameMediaSessionState } from "../reducers/session";
-import type { ModMediaTag } from "../util/mediaTypes";
-
-type IStateWithGameMedia = IState & {
-  persistent: { game_media: IGameMediaPersistentState };
-} & { session: { game_media: IGameMediaSessionState } };
+import type { GameMediaModTag } from "../util/mediaTypes";
+import type { IStateWithGameMedia } from "../util/types";
 
 export default function useGameMediaModTag(mediaItemId: string) {
   const [isAddingTag, setIsAddingTag] = useState<boolean>(false);
@@ -35,7 +30,7 @@ export default function useGameMediaModTag(mediaItemId: string) {
   );
 
   const setTags = useCallback(
-    (tags: ModMediaTag[]) => {
+    (tags: GameMediaModTag[]) => {
       store.dispatch(actions.setGameMediaModTags(gameId, mediaItemId, tags));
     },
     [store, gameId, mediaItemId],
