@@ -20,6 +20,30 @@ const main = (context: IExtensionContext): boolean => {
     osSupportsAppContainer,
   }));
 
+  const installOutOfProcess = toBluebird(
+    async (
+      files: string[],
+      destinationPath: string,
+      gameId: string,
+      _progressDelegate: unknown,
+      choices?: unknown,
+      unattended?: boolean,
+      archivePath?: string,
+      details?: IInstallationDetails,
+    ) => {
+      return await install(
+        context.api,
+        files,
+        destinationPath,
+        gameId,
+        choices,
+        unattended,
+        archivePath,
+        details,
+      );
+    },
+  );
+
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 20,
@@ -30,32 +54,30 @@ const main = (context: IExtensionContext): boolean => {
         _archivePath?: string,
         details?: ITestSupportedDetails,
       ) => {
-        return await testSupported(context.api, files, gameId, details);
+        return await testSupported(context.api, files, gameId, details, "scripted");
       },
     ),
-    /*install:*/ toBluebird(
+    /*install:*/ installOutOfProcess,
+  );
+
+  // Stand-in for the native installer's own basic handler, and registered at
+  // its priority so that the installers between the two (dinput at 50,
+  // script-extender at 50, ...) keep winning over a generic basic install.
+  // Inert while the native addon loads - see the ipc tester.
+  context.registerInstaller(
+    /*id:*/ `fomod`,
+    /*priority:*/ 100,
+    /*testSupported:*/ toBluebird(
       async (
         files: string[],
-        destinationPath: string,
         gameId: string,
-        _progressDelegate: unknown,
-        choices?: unknown,
-        unattended?: boolean,
-        archivePath?: string,
-        details?: IInstallationDetails,
+        _archivePath?: string,
+        details?: ITestSupportedDetails,
       ) => {
-        return await install(
-          context.api,
-          files,
-          destinationPath,
-          gameId,
-          choices,
-          unattended,
-          archivePath,
-          details,
-        );
+        return await testSupported(context.api, files, gameId, details, "basic");
       },
     ),
+    /*install:*/ installOutOfProcess,
   );
 
   return true;

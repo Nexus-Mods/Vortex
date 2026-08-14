@@ -35,10 +35,12 @@ export const install = async (
   const invokeInstall = async (validate: boolean) => {
     // When override instructions file is present, use only the universal stop patterns and null pluginPath
     // to prevent any automatic path manipulation (both FindPathPrefix and pluginPath stripping)
-    const stopPatterns = details.hasInstructionsOverrideFile
+    // `details` is null when simulating an install during a collection session
+    // (see InstallManager.simulateInstall), so this has to stay optional.
+    const stopPatterns = details?.hasInstructionsOverrideFile
       ? uniPatterns
       : getStopPatterns(gameId, getGame(gameId));
-    const pluginPath = details.hasInstructionsOverrideFile ? null : getPluginPath(gameId);
+    const pluginPath = details?.hasInstructionsOverrideFile ? null : getPluginPath(gameId);
 
     // Skip Redux dialog-state dispatches when we have a preset and are running
     // unattended (collection install). The C# fomod still calls uiUpdateState
