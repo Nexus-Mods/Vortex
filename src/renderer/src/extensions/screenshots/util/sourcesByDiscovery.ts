@@ -1,12 +1,10 @@
-import fs from "fs/promises";
 import path from "path";
 
 import type { IDiscoveryResult, IGameStored } from "@/types/api";
 import getVortexPath from "@/util/getVortexPath";
 
-import Steam from "../../../util/Steam";
 import getKnownFolders from "../sources/knownfolders";
-import { clipsFolderBySteamID, screenshotsFolderBySteamID } from "../sources/steam";
+import { getSteamMedia } from "../sources/steam";
 import type { GameMediaSource } from "../util/mediaTypes";
 
 export default async function sourcesByDiscovery(
@@ -45,25 +43,5 @@ export default async function sourcesByDiscovery(
     }
   }
 
-  return res;
-}
-
-async function getSteamMedia(
-  gamePath: string,
-  knownId?: string | number,
-): Promise<Record<string, MediaSource>> {
-  const res: Record<string, MediaSource> = {};
-  const steamPath = await Steam.getGameStorePath();
-  const steamGame = (await Steam.allGames()).find((g) => g.gamePath === gamePath);
-  if (!steamGame) return res;
-  const steamId = knownId ? String(knownId) : steamGame.appid;
-  const userDataFolder = path.resolve(steamPath, "..", "userdata");
-  const steamUsers = await fs.readdir(userDataFolder);
-  for (const user of steamUsers) {
-    const screenshotFolder = await screenshotsFolderBySteamID(userDataFolder, user, steamId);
-    Object.assign(res, screenshotFolder);
-    const videosFolder = await clipsFolderBySteamID(userDataFolder, user, steamId);
-    Object.assign(res, videosFolder);
-  }
   return res;
 }

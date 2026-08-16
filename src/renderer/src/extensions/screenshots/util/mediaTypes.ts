@@ -26,6 +26,21 @@ export interface SteamScreenshotsVDF {
   >;
 }
 
+export interface SteamLoginUsersVDF {
+  users: Record<
+    string,
+    {
+      AccountName: string;
+      PersonaName: string;
+      RememberPassword: "1" | "0";
+      WantsOfflineMode: "1" | "0";
+      SkipOfflineModeWarning: "1" | "0";
+      AutoLogin: "1" | "0";
+      Timestamp: string;
+    }
+  >;
+}
+
 export interface GameMediaModTag {
   id: string;
   name: string;

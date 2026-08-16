@@ -87,7 +87,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
 
       <PageScroll className="space-y-2 p-6">
         {/* The actual page content */}
-        <TabProvider tab={tab} tabListId="" onSetSelectedTab={setTab}>
+        <TabProvider tab={tab} tabListId="game-media-tabs" onSetSelectedTab={setTab}>
           <TabBar className="mb-2">
             <TabButton count={items?.length ?? 0} name="All" panelId="all" />
 

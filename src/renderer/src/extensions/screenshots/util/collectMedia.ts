@@ -6,7 +6,7 @@ import getVortexPath from "@/util/getVortexPath";
 
 import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
 
-export default async function collectImages(
+export default async function collectMedia(
   sources: Record<string, GameMediaSource>,
   disabledSources: string[] | undefined,
 ): Promise<GameMediaItem[]> {

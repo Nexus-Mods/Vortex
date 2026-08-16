@@ -5,7 +5,7 @@ import type { IState } from "@/types/api";
 
 import { activeGameId, gameById, currentGameDiscovery } from "../../../util/selectors";
 import * as sessionActions from "../actions/session";
-import collectImages from "../util/collectImages";
+import collectMedia from "../util/collectMedia";
 import type { GameMediaItem, GameMediaSource } from "../util/mediaTypes";
 import sourcesByDiscovery from "../util/sourcesByDiscovery";
 import type { IStateWithGameMedia } from "../util/types";
@@ -76,7 +76,7 @@ export default function useGameMedia() {
     const loadMedia = async () => {
       // console.log("Loading media");
       try {
-        const foundItems = await collectImages(allSources, disabledSources);
+        const foundItems = await collectMedia(allSources, disabledSources);
         setItems(foundItems);
       } catch (e) {
         setError(e instanceof Error ? e : new Error(`Unknwon error`));
@@ -95,7 +95,7 @@ export default function useGameMedia() {
       setIsError(false);
       setIsLoading(true);
       setItems([]);
-      const res = await collectImages(allSources, disabledSources);
+      const res = await collectMedia(allSources, disabledSources);
       setItems(res);
     } catch (e) {
       setError(e instanceof Error ? e : new Error(`Unknwon error`));

@@ -3,17 +3,80 @@ import path from "path";
 
 import { parse } from "simple-vdf";
 
-import type { GameMediaItem, GameMediaSource, SteamScreenshotsVDF } from "../util/mediaTypes";
+import Steam from "../../../util/Steam";
+import type {
+  GameMediaItem,
+  GameMediaSource,
+  SteamLoginUsersVDF,
+  SteamScreenshotsVDF,
+} from "../util/mediaTypes";
+
+// The global offset between SteamID and Account ID.
+const STEAM64_OFFSET = 76561197960265728n;
+
+export async function getSteamMedia(
+  gamePath: string,
+  knownId?: string | number,
+): Promise<Record<string, MediaSource>> {
+  const res: Record<string, MediaSource> = {};
+  const steamPathExe = await Steam.getGameStorePath();
+  const steamPath = path.resolve(steamPathExe, "..");
+  const steamGame = (await Steam.allGames()).find((g) => g.gamePath === gamePath);
+  if (!steamGame) return res;
+  const steamId = knownId ? String(knownId) : steamGame.appid;
+  const userDataFolder = path.join(steamPath, "userdata");
+  const loggedInSteamUsers = await getLoggedInSteamUsers(steamPath);
+  const steamUsers = await fs.readdir(userDataFolder);
+  for (const userId of steamUsers) {
+    const screenshotFolder = await screenshotsFolderBySteamID(
+      userDataFolder,
+      steamId,
+      userId,
+      loggedInSteamUsers[userId],
+    );
+    Object.assign(res, screenshotFolder);
+    const videosFolder = await clipsFolderBySteamID(
+      userDataFolder,
+      steamId,
+      userId,
+      loggedInSteamUsers[userId],
+    );
+    Object.assign(res, videosFolder);
+  }
+  return res;
+}
+
+async function getLoggedInSteamUsers(steamPath: string): Promise<Record<string, string>> {
+  const steamLoginUsersVDF = path.join(steamPath, "config", "loginusers.vdf");
+  const canAccess = await fs
+    .access(steamLoginUsersVDF)
+    .then(() => true)
+    .catch(() => false);
+  if (!canAccess) return {};
+  try {
+    const raw = await fs.readFile(steamLoginUsersVDF, { encoding: "utf-8" });
+    const loginUsers = parse(raw) as SteamLoginUsersVDF;
+    return Object.keys(loginUsers.users).reduce((accum, cur) => {
+      const accountId = steam64ToAccountId(cur);
+      accum[accountId] = loginUsers.users[cur].PersonaName;
+      return accum;
+    }, {});
+  } catch {
+    window.api.log("warn", "Could not read steam loginusers.vdf");
+    return {};
+  }
+}
 
 export async function screenshotsFolderBySteamID(
   userDataFolder: string,
-  user: string,
   steamGameId: string,
+  userId: string,
+  userName?: string,
 ): Promise<Record<string, GameMediaSource>> {
   // Images live at userdata\{USER ID}\760\remote\{STEAM APP ID}\screenshots
   // Images have a manifest at userdata\{USER ID}\760\remote\screenshots.vdf
   const res: Record<string, GameMediaSource> = {};
-  const screenshotsVDF = path.join(userDataFolder, user, "760", "screenshots.vdf");
+  const screenshotsVDF = path.join(userDataFolder, userId, "760", "screenshots.vdf");
   try {
     await fs.access(screenshotsVDF);
     const raw = await fs.readFile(screenshotsVDF, { encoding: "utf-8" });
@@ -22,10 +85,10 @@ export async function screenshotsFolderBySteamID(
       parsed?.screenshots?.[steamGameId] &&
       Object.keys(parsed?.screenshots?.[steamGameId]).length
     ) {
-      res[`steam-screenshots-${user}`] = {
+      res[`steam-screenshots-${userId}`] = {
         name: "Steam Screenshots",
-        description: `Screenshots for Steam User ID ${user}`,
-        path: path.join(userDataFolder, user, "760", "remote", steamGameId, "screenshots"),
+        description: `Screenshots for Steam user ${userName ?? userId}`,
+        path: path.join(userDataFolder, userId, "760", "remote", steamGameId, "screenshots"),
       };
     }
   } catch (err) {
@@ -37,25 +100,26 @@ export async function screenshotsFolderBySteamID(
 
 export async function clipsFolderBySteamID(
   userDataFolder: string,
-  user: string,
   steamGameId: string,
+  userId: string,
+  userName?: string,
 ): Promise<Record<string, GameMediaSource>> {
   const res: Record<string, GameMediaSource> = {};
   // Videos live at userdata\{USER ID}\gamerecordings\clips\
   // with a subfolder for each clip, containing a Thumbnail.jpg
   // folder names are clip_{STEAM ID}_{YYYMMDD}_{HHMMSS(UTC Time)}
   // Videos aren't stored in a format we can easily play, so we should probably open steam://nav/games/details/{Steam GAME ID} for the user
-  const videosFolder = path.join(userDataFolder, user, "gamerecordings", "clips");
+  const videosFolder = path.join(userDataFolder, userId, "gamerecordings", "clips");
   try {
     await fs.access(videosFolder);
     const dirList = await fs.readdir(videosFolder);
     const gameClips = dirList.filter((d) => d.toLowerCase().startsWith(`clip_${steamGameId}`));
     if (gameClips.length > 0) {
-      res[`steam-videos-${user}`] = {
+      res[`steam-videos-${userId}`] = {
         name: "Steam Clips",
         path: videosFolder,
-        description: `Clips for Steam ID User ${user}`,
-        discoverFn: (mediaPath: string) => discoverSteamClips(mediaPath, steamGameId, user),
+        description: `Clips for Steam user ${userName ?? userId}`,
+        discoverFn: (mediaPath: string) => discoverSteamClips(mediaPath, steamGameId, userId),
       };
     }
   } catch (err) {
@@ -103,4 +167,12 @@ async function discoverSteamClips(
   //   createdAt: stats.birthtime,
   //   modifiedAt: stats.mtime,
   // }));
+}
+
+export function accountIdToSteam64(accountId: number | string): string {
+  return (BigInt(accountId) + STEAM64_OFFSET).toString();
+}
+
+export function steam64ToAccountId(steam64Id: string): string {
+  return (BigInt(steam64Id) - STEAM64_OFFSET).toString();
 }
