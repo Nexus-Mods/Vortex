@@ -1,6 +1,7 @@
 import type { Stats } from "fs";
 import fs from "fs/promises";
 import * as childProcess from "node:child_process";
+import EventEmitter from "node:events";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -54,13 +55,13 @@ describe("collectMedia", () => {
         path: "B",
       },
     };
-    const disabledSources: string[] = ["B"];
+    const disabledSources: string[] = ["sourceB"];
 
     const result = await collectMedia(sources, disabledSources);
     expect(mockedFs.readdir).toHaveBeenCalledWith("A", { withFileTypes: true });
 
     const resultSources = new Set(result.map((r) => r.sourceId));
-    expect(resultSources).not.toContain(disabledSources[0]);
+    expect(resultSources).not.toContain("sourceB");
     expect(result.length).toEqual(1);
   });
 
@@ -190,29 +191,28 @@ describe("collectMedia", () => {
       mtime: new Date("2024-01-02"),
     } as Stats);
     mockedFs.readdir.mockResolvedValue([
-      { name: "someFile-thumbnail.png", isFile: () => true },
-      { name: "anotherfile.jpg", isFile: () => true },
-      { name: "yetanotherfile-thumbnail.png", isFile: () => true },
+      { name: "someFile.png", isFile: () => true },
       { name: "video.mp4", isFile: () => true },
     ] as any);
-    mockedFs.access.mockResolvedValue();
     mockedFs.access.mockImplementation(async () => {
       throw new Error("ENOENT");
     });
+    mockedFs.mkdir.mockResolvedValue("");
 
     vi.mocked(childProcess.spawn).mockImplementation(() => {
-      return {
-        on: (event: string, handler: (code?: number) => void) => {
-          if (event === "exit") handler(0);
-          return undefined;
-        },
-      } as any;
+      const proc = new EventEmitter();
+
+      queueMicrotask(() => {
+        proc.emit("exit", 0);
+      });
+
+      return proc as any;
     });
 
     // Pretend with FFMPEG installed
     vi.mocked(childProcess.spawnSync).mockImplementation(() => ({ status: 0 }) as any);
 
-    await collectMedia(
+    const result = await collectMedia(
       {
         src: {
           name: "Test",
@@ -228,5 +228,6 @@ describe("collectMedia", () => {
       expect.arrayContaining(["-i", "/tmp/media/video.mp4"]),
       expect.anything(),
     );
+    expect(result).toEqual([]);
   });
 });
