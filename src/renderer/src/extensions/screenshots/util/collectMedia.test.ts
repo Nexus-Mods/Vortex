@@ -39,7 +39,10 @@ describe("collectMedia", () => {
 
   it("only scans sources not specified in disabled sources", async () => {
     mockedFs.stat.mockResolvedValue({} as Stats);
-    mockedFs.readdir.mockResolvedValue(["someFile.png"] as any);
+    mockedFs.readdir.mockResolvedValue([
+      { name: "someFile.png", isFile: () => true },
+      { name: "folder", isFile: () => false },
+    ] as any);
 
     const sources: Record<string, GameMediaSource> = {
       sourceA: {
@@ -54,14 +57,19 @@ describe("collectMedia", () => {
     const disabledSources: string[] = ["B"];
 
     const result = await collectMedia(sources, disabledSources);
+    expect(mockedFs.readdir).toHaveBeenCalledWith("A", { withFileTypes: true });
 
     const resultSources = new Set(result.map((r) => r.sourceId));
     expect(resultSources).not.toContain(disabledSources[0]);
+    expect(result.length).toEqual(1);
   });
 
   it("handles missing directories gracefully", async () => {
     mockedFs.stat.mockRejectedValue({ code: "ENOENT" });
-    mockedFs.readdir.mockResolvedValue(["someFile.png"] as any);
+    mockedFs.readdir.mockResolvedValue([
+      { name: "someFile.png", isFile: () => true },
+      { name: "folder", isFile: () => false },
+    ] as any);
 
     const sources: Record<string, GameMediaSource> = {
       sourceA: {
@@ -115,7 +123,7 @@ describe("collectMedia", () => {
       sourceA: {
         name: "A",
         path: "A",
-        // filterFn: (s) => !s.includes("thumbnail"),
+        filterFn: (s) => !s.includes("thumbnail"),
       },
     };
 
@@ -204,7 +212,7 @@ describe("collectMedia", () => {
     // Pretend with FFMPEG installed
     vi.mocked(childProcess.spawnSync).mockImplementation(() => ({ status: 0 }) as any);
 
-    const result = await collectMedia(
+    await collectMedia(
       {
         src: {
           name: "Test",
