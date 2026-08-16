@@ -489,10 +489,9 @@ async function main(): Promise<void> {
         ext.name,
       );
 
-      if (fs.existsSync(unpackedDuckDBExtensionPath)) {
-        console.log(`  skip  ${ext.name} [${platform}] — already exists`);
-        continue;
-      }
+      // The locked artifact can change without the DuckDB version changing, so an existing
+      // unpacked file is not proof that it matches the current lockfile. Always replace it
+      // when this target runs; Nx caching avoids repeated work when lock inputs are unchanged.
 
       console.log(`  download  ${ext.name} [${platform}]`);
       console.log(`    from: ${url}`);

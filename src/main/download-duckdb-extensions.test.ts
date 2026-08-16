@@ -1,3 +1,5 @@
+import * as path from "node:path";
+
 import { describe, it, expect } from "vitest";
 
 import {
@@ -163,7 +165,12 @@ describe("getLocalExtensionArtifactPath", () => {
         "level_pivot",
       ),
     ).toBe(
-      "/run/build/vortex/flatpak-duckdb-extensions/v1.5.1/linux_amd64/level_pivot.duckdb_extension.gz",
+      path.join(
+        "/run/build/vortex/flatpak-duckdb-extensions",
+        "v1.5.1",
+        "linux_amd64",
+        "level_pivot.duckdb_extension.gz",
+      ),
     );
   });
 });
@@ -172,7 +179,9 @@ describe("getUnpackedExtensionPath", () => {
   it("matches DuckDB's extension_directory layout", () => {
     expect(
       getUnpackedExtensionPath("/app/duckdb-extensions", "v1.5.1", "linux_amd64", "level_pivot"),
-    ).toBe("/app/duckdb-extensions/v1.5.1/linux_amd64/level_pivot.duckdb_extension");
+    ).toBe(
+      path.join("/app/duckdb-extensions", "v1.5.1", "linux_amd64", "level_pivot.duckdb_extension"),
+    );
   });
 });
 
