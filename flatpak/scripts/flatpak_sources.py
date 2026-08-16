@@ -251,6 +251,23 @@ def generate_sources(
             DEFAULT_PNPM_STORE_VERSION,
         ]
         run_command(cmd, cwd=root)
+        normalize_generated_source_paths(output)
+
+
+def normalize_generated_source_paths(output: Path) -> None:
+    sources = json.loads(output.read_text(encoding="utf-8"))
+
+    for source in sources:
+        for key in ("dest", "path"):
+            value = source.get(key)
+            if isinstance(value, str):
+                source[key] = value.replace("\\", "/")
+
+        commands = source.get("commands")
+        if isinstance(commands, list):
+            source["commands"] = [command.replace("\\", "/") for command in commands]
+
+    write_text_file(output, f"{json.dumps(sources, indent=4)}\n")
 
 
 def sync_generated_sources(
