@@ -38,6 +38,17 @@ jobs:
         with:
           python-version: "3.11"
 
+      # @tools/dotnetprobe:build shells out to `dotnet publish` and fails the
+      # whole nx build graph if the SDK isn't present. DOTNET_INSTALL_DIR is
+      # set because the default /usr/share/dotnet isn't writable on our
+      # self-hosted runners (they don't run as root).
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
+        with:
+          dotnet-version: "9.0.x"
+
       - name: Install volta, Node.js and Yarn
         uses: volta-cli/action@v5
 
