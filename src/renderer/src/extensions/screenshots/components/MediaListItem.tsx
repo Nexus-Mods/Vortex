@@ -1,5 +1,7 @@
+import { mdiPlayCircleOutline } from "@mdi/js";
 import React from "react";
 
+import { Icon } from "@/ui/components/icon/Icon";
 import type { TFunction } from "@/util/i18n";
 import relativeTime from "@/util/relativeTime";
 
@@ -30,6 +32,10 @@ export default function MediaListItem({ item, onClick, t }: IMediaListItemProps)
             <span className="line-clamp-1 shrink rounded-sm bg-surface-high/70 p-0.5">
               {relativeTime(item.createdAt, t)}
             </span>
+          )}
+
+          {item.type === "video" && (
+            <Icon className="m-auto" path={mdiPlayCircleOutline} size="2xl" />
           )}
 
           <span className="line-clamp-1 rounded-sm bg-surface-high p-0.5">{item.name}</span>

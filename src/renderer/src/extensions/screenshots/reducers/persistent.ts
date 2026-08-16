@@ -21,9 +21,10 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
     on(actions.setGameMediaSourceEnabled, (state, payload) => {
       const { gameId, sourceId, enabled } = payload;
       let newArray: string[] = state.disabledSources[gameId] ?? [];
-      if (enabled && !newArray.includes(sourceId)) newArray = [sourceId, ...newArray];
-      if (!enabled && newArray.includes(sourceId))
-        newArray = newArray.filter((s) => s !== sourceId);
+      // To enable a source, remove it from the array
+      if (enabled && newArray.includes(sourceId)) newArray = newArray.filter((s) => s !== sourceId);
+      // To disable a source, add it to the array
+      if (!enabled && !newArray.includes(sourceId)) newArray = [sourceId, ...newArray];
       return { ...state, disabledSources: { [gameId]: newArray } };
     }),
     on(actions.addGameMediaSource, (state, payload) => {

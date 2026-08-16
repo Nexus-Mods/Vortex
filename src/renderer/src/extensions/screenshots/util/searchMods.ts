@@ -24,7 +24,7 @@ query mods(
   mods(
     filter: $filter,
     sort: $sort,
-    count: 5
+    count: 10
   ) {
     nodes {
       uid
@@ -53,16 +53,20 @@ export default async function searchMods(
 
   const filter = {
     op: "AND",
-    nameStemmed: { value: query, op: "WILDCARD" },
+    name: { value: query, op: "WILDCARD" },
     gameDomainName: { value: gameDomain, op: "EQUALS" },
     status: { value: "published", op: "EQUALS" },
+  };
+
+  const sort = {
+    endorsements: { direction: "DESC" },
   };
 
   try {
     const res = await fetch("https://api.nexusmods.com/v2/graphql", {
       method: "POST",
       headers,
-      body: JSON.stringify({ query: MODS_QUERY, variables: { filter } }),
+      body: JSON.stringify({ query: MODS_QUERY, variables: { filter, sort } }),
     });
     if (!res.ok) {
       if (res.status === 401)

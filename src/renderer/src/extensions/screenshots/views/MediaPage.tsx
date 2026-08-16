@@ -16,10 +16,10 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import MediaListItem from "../components/MediaListItem";
+import MediaListItemSkeleton from "../components/MediaListItemSkeleton";
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaItem } from "../util/mediaTypes";
-import MediaListItem from "./MediaListItem";
-import MediaListItemSkeleton from "./MediaListItemSkeleton";
 import MediaPageNoResults from "./MediaPageNoResults";
 import MediaSingleView from "./MediaSingleView";
 
@@ -156,7 +156,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                       className="mb-2"
                       typographyType="body-sm"
                     >
-                      {allSources[k]?.description ?? `Screenshots from ${allSources[k]?.name}`}
+                      {allSources[k]?.description ?? `Media from ${allSources[k]?.name}`}
                     </Typography>
 
                     <Button

@@ -62,14 +62,14 @@ export default function SettingsMediaAddSourceModal({
     const newSource: GameMediaSource = {
       name: sourceName,
       path: sourcePath,
-      description: sourceDescription,
+      description: sourceDescription.length ? sourceDescription : undefined,
       custom: true,
     };
 
     const newSourceId = existingSource?.id ?? randomUUID();
 
     dispatch(addGameMediaSource(gameId, newSourceId, newSource));
-    onClose();
+    onCloseWithReset();
   };
 
   return (

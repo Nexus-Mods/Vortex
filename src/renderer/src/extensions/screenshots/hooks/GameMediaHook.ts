@@ -74,7 +74,6 @@ export default function useGameMedia() {
   useEffect(() => {
     if (!gameId || !discovery) return;
     const loadMedia = async () => {
-      // console.log("Loading media");
       try {
         const foundItems = await collectMedia(allSources, disabledSources);
         setItems(foundItems);
