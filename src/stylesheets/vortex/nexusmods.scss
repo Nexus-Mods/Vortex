@@ -291,12 +291,6 @@ $typography: (
             background: var(--Surface-Translucent-Low, rgba(255, 255, 255, 0.05));
             backdrop-filter: blur(6px);
 
-            img.free-pictogram {
-                width: 48px;
-                height: 48px;
-                margin-bottom: 12px;
-            }
-
             .membership-type {
                 @include typography("body-md-normal");
                 color: var(--Neutral-Subdued);
@@ -341,12 +335,6 @@ $typography: (
                     background-size: contain;
                     flex-shrink: 0;
                 }
-            }
-
-            img.premium-pictogram {
-                width: 48px;
-                height: 48px;
-                margin-bottom: 12px;
             }
 
             .membership-type {
@@ -449,11 +437,6 @@ $typography: (
             color: var(--Neutral-Translucent-Strong, rgba(255, 255, 255, 0.95));
         }
     }
-
-    .premium-pictogram {
-        width: 64px;
-        height: 64px;
-    }
 }
 
 #nexus-download-banner {
@@ -490,16 +473,6 @@ $typography: (
     gap: 4px;
 
     container-type: inline-size; // enable size queries on width/height
-
-    .premium-pictogram {
-        width: 80px;
-        height: 80px;
-
-        // hide when dashles is too narrow
-        @container (max-width: 363px) {
-            display: none;
-        }
-    }
 
     .dashlet-premium-title {
         @include typography("heading-sm-semibold");

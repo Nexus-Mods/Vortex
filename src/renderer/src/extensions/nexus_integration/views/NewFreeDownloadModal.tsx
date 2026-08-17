@@ -5,10 +5,9 @@ import { Button, Panel } from "react-bootstrap";
 import FlexLayout from "../../../controls/FlexLayout";
 import Image from "../../../controls/Image";
 import { IconButton } from "../../../controls/TooltipControls";
+import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
 
 const electricBoltIconPath = "assets/icons/electric-bolt.svg";
-const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";
-const freePictogramPath = "assets/pictograms/free-pictogram.svg";
 
 export interface INewFreeDownloadModal {
   t: TFunction;
@@ -58,7 +57,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
           <FlexLayout type="row" id="bottom-row">
             <FlexLayout.Flex>
               <FlexLayout type="column" id="free-container">
-                <Image className="free-pictogram" srcs={[freePictogramPath]} />
+                <Pictogram brand="none" className="mb-3" name="no-mod" size="xs" />
                 <div className="membership-type">Free</div>
                 <div className="title">Download one by one</div>
                 <hr />
@@ -75,7 +74,7 @@ function NewFreeDownloadModal(props: INewFreeDownloadModal) {
 
             <FlexLayout.Flex>
               <FlexLayout type="column" id="premium-container">
-                <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
+                <Pictogram brand="premium" className="mb-3" name="premium" size="xs" />
                 <div className="membership-type">Premium</div>
                 <div className="title">Get all your mods fast</div>
                 <hr />
