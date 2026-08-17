@@ -29,7 +29,7 @@ import { getSafe } from "../../../util/storeHelper";
 import type { IMod } from "../../mod_management/types/IMod";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { nexusGamesProm, numericGameIdToDomainName } from "../../nexus_integration/util";
-import { makeModUID } from "../../nexus_integration/util/UIDs";
+import { makeModUID, VORTEX_MOD_UID } from "../../nexus_integration/util/UIDs";
 import { activeProfile } from "../../profile_management/selectors";
 import { setHealthCheckRunning } from "../actions/session";
 import { isModRequirementsEnabled } from "../selectors";
@@ -133,9 +133,10 @@ function getEnabledMods(api: IExtensionApi, gameId: string): IMod[] {
 
 /**
  * Resolve a non-external requirement to its target mod id, Nexus domain, and UID,
- * or null when it has no usable Nexus mod id.
+ * or null when it has no usable Nexus mod id, or when it targets the Vortex mod page
+ * itself (always considered satisfied, with no version to check).
  */
-function resolveRequirementTarget(
+export function resolveRequirementTarget(
   req: { modId: string; gameId?: string | null },
   fallbackGameId: string,
 ): {
@@ -152,11 +153,18 @@ function resolveRequirementTarget(
   const domainName =
     requiredGameId != null ? numericGameIdToDomainName(requiredGameId) : fallbackGameId;
   const gameIdForStorage = domainName ?? fallbackGameId;
+  const uid = makeModUID({ modId: req.modId, fileId: "0", gameId: gameIdForStorage });
+
+  // Filter out requirements that target Vortex itself, treat as always satisfied.
+  if (uid === VORTEX_MOD_UID) {
+    return null;
+  }
+
   return {
     requiredModId,
     domainName,
     gameIdForStorage,
-    uid: makeModUID({ modId: req.modId, fileId: "0", gameId: gameIdForStorage }),
+    uid,
   };
 }
 

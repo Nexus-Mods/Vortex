@@ -15,6 +15,9 @@ vi.mock("../../nexus_integration/nexusV3Client", () => ({
 }));
 vi.mock("../../nexus_integration/selectors", () => ({ isLoggedIn: vi.fn() }));
 vi.mock("../../profile_management/selectors", () => ({ activeProfile: vi.fn() }));
+// mapRequirementsReport compares against this to drop Vortex-targeting dependencies;
+// the real module pulls in a heavy selector chain this test has no use for.
+vi.mock("../../nexus_integration/util/UIDs", () => ({ VORTEX_MOD_UID: "vortex-mod-uid" }));
 vi.mock("../../../logging", () => ({ log: vi.fn() }));
 
 import {
