@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Only resolveRequirementTarget's dependencies matter here: the domain lookup and the
 // canonical UID builder. Both are faked deterministically so the test never depends on
 // the real Nexus games list being loaded.
-vi.mock("../../nexus_integration/util", () => ({
+vi.mock("@/extensions/nexus_integration/util", () => ({
   nexusGamesProm: vi.fn(() => Promise.resolve([])),
   numericGameIdToDomainName: vi.fn(),
 }));
-vi.mock("../../nexus_integration/util/UIDs", () => ({
+vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({
   VORTEX_MOD_UID: "9856949944321",
   makeModUID: vi.fn((repoInfo: { gameId: string; modId: string }) =>
     // "site" + modId "1" is the one case the check cares about; everything else just
@@ -16,7 +16,8 @@ vi.mock("../../nexus_integration/util/UIDs", () => ({
   ),
 }));
 
-import { numericGameIdToDomainName } from "../../nexus_integration/util";
+import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
+
 import { resolveRequirementTarget } from "./modRequirementsCheck";
 
 const mockDomainName = vi.mocked(numericGameIdToDomainName);

@@ -9,21 +9,24 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { setModRequirementHidden } from "@/extensions/health_check/actions/persistent";
+import {
+  useIssue,
+  useIssueTracking,
+} from "@/extensions/health_check/hooks/HealthCheckTracking.context";
+import { useModRequirementActions } from "@/extensions/health_check/hooks/useModRequirementActions";
+import { hiddenModRequirements } from "@/extensions/health_check/selectors";
+import type { IModRequirementExt } from "@/extensions/health_check/types";
 import { modToFileData } from "@/extensions/health_check/utils/modRequirements/modRequirementData";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
+import type { IDetailViewProps } from "@/extensions/health_check/views/content/types";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
-import { opn } from "@/util/api";
+import opn from "@/util/opn";
 
-import { setModRequirementHidden } from "../../actions/persistent";
-import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
-import { useModRequirementActions } from "../../hooks/useModRequirementActions";
-import { hiddenModRequirements } from "../../selectors";
-import type { IModRequirementExt } from "../../types";
-import type { IDetailViewProps } from "../../views/content/types";
 import { Divider } from "../divider/Divider";
 import { EntryActions } from "../entry_actions/EntryActions";
 import { FileRequirement } from "../file_requirement/FileRequirement";
