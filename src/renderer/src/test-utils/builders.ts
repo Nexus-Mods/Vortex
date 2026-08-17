@@ -73,7 +73,7 @@ import {
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../types/IHealthCheck";
-import type { IState } from "../types/IState";
+import type { IExtensionState, IState } from "../types/IState";
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
 import type {
@@ -986,6 +986,28 @@ export function makeDownloadAdapterHarness(
     resume,
     getStates,
   };
+}
+
+/** A complete installed-extension entry, as `addExtension` writes it. */
+export function makeExtensionState(overrides: Partial<IExtensionState> = {}): IExtensionState {
+  return {
+    enabled: true,
+    remove: false,
+    name: "Test Extension",
+    description: "A test extension",
+    author: "Test Author",
+    version: "1.0.0",
+    path: "/path/to/extension",
+    endorsed: "Undecided",
+    ...overrides,
+  };
+}
+
+/** An entry holding only the fields a write touched - no path, no name. */
+export function makeLegacyExtensionState(
+  overrides: Partial<IExtensionState> = {},
+): IExtensionState {
+  return { enabled: false, ...overrides } as IExtensionState;
 }
 
 let loEntrySeq = 0;

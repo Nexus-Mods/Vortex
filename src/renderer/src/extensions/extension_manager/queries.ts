@@ -21,12 +21,14 @@ export function findInstalled(
   installedExtensions: Record<string, IExtensionState>,
   query: InstalledQuery,
 ): { key: string; extension: IExtensionState } | undefined {
+  const queryPath = "path" in query ? path.normalize(query.path).toLowerCase() : undefined;
+
   const result = Object.entries(installedExtensions).find(([_, extension]) => {
-    if ("path" in query)
+    if (queryPath !== undefined)
       return (
-        path.normalize(extension.path).toLowerCase() === path.normalize(query.path).toLowerCase()
+        extension.path !== undefined && path.normalize(extension.path).toLowerCase() === queryPath
       );
-    return matchesQuery(query, extension);
+    return matchesQuery(query as CatalogQuery, extension);
   });
 
   if (result === undefined) return undefined;
@@ -42,6 +44,29 @@ export function matchesQuery(
 ): boolean {
   if (entry.modId !== query.modId) return false;
   return query.fileId !== undefined ? entry.fileId === query.fileId : true;
+}
+
+/**
+ * Build the entry for a scanned extension. `recorded` is an entry for the same
+ * extension that this one replaces - the path-less shape releases up to v2.4.x
+ * persist - and what it records wins over the extension's own values.
+ */
+export function extensionStateFromScan(
+  ext: IRegisteredExtension,
+  recorded?: IExtensionState,
+): IExtensionState {
+  return {
+    name: ext.name,
+    author: ext.info?.author ?? "<unknown>",
+    description: ext.info?.description ?? "<missing>",
+    version: recorded?.version ?? ext.info?.version ?? "0.0.1",
+    infoJsonId: ext.info?.id,
+    path: ext.path,
+    bundled: ext.info?.bundled,
+    enabled: recorded?.enabled ?? true,
+    endorsed: recorded?.endorsed ?? "Undecided",
+    remove: recorded?.remove ?? false,
+  };
 }
 
 /** Find a dependency extension by its declared identifier among the installed extensions. */

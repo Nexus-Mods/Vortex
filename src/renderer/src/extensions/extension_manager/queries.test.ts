@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { ExtensionInfo, IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
-import type { IExtensionOptional, IExtensionState } from "@/types/IState";
+import type { IExtensionOptional } from "@/types/IState";
 
+import { makeExtensionState, makeLegacyExtensionState } from "../../test-utils/builders";
 import {
+  extensionStateFromScan,
   findDependencyInCatalog,
   findInCatalog,
   findInstalled,
@@ -13,21 +15,6 @@ import {
   isAlreadyInstalled,
   matchesQuery,
 } from "./queries";
-
-/** Helper to create a test extension state */
-function makeExtensionState(overrides: Partial<IExtensionState> = {}): IExtensionState {
-  return {
-    enabled: true,
-    remove: false,
-    name: "Test Extension",
-    description: "A test extension",
-    author: "Test Author",
-    version: "1.0.0",
-    path: "/path/to/extension",
-    endorsed: "Undecided",
-    ...overrides,
-  };
-}
 
 /** Helper to create a test available extension */
 function makeAvailableExtension(overrides: Partial<IAvailableExtension> = {}): IAvailableExtension {
@@ -139,6 +126,98 @@ describe("findInstalled", () => {
   it("returns undefined for empty installed extensions", () => {
     const result = findInstalled({}, { modId: 123 });
     expect(result).toBeUndefined();
+  });
+});
+
+describe("findInstalled by path", () => {
+  it("finds an installed extension by exact path", () => {
+    const ext = makeExtensionState({ path: "/plugins/real-ext" });
+    const installed = { abc123: ext };
+    const result = findInstalled(installed, { path: "/plugins/real-ext" });
+    expect(result).toEqual({ key: "abc123", extension: ext });
+  });
+
+  it("matches paths case-insensitively", () => {
+    const ext = makeExtensionState({ path: "/Plugins/Real-Ext" });
+    const installed = { abc123: ext };
+    const result = findInstalled(installed, { path: "/plugins/real-ext" });
+    expect(result).toEqual({ key: "abc123", extension: ext });
+  });
+
+  it("does not match entries installed under a queried parent directory", () => {
+    const ext = makeExtensionState({ path: "/plugins/real-ext" });
+    const installed = { abc123: ext };
+    const result = findInstalled(installed, { path: "/plugins" });
+    expect(result).toBeUndefined();
+  });
+
+  it("skips entries without a path", () => {
+    // the path-less entry precedes the match, so the query steps over it
+    const target = makeExtensionState({ path: "/plugins/real-ext" });
+    const installed = { "legacy-ext": makeLegacyExtensionState(), abc123: target };
+    expect(findInstalled(installed, { path: "/plugins/real-ext" })).toEqual({
+      key: "abc123",
+      extension: target,
+    });
+  });
+
+  it("returns undefined when only entries without a path exist", () => {
+    const installed = { "legacy-ext": makeLegacyExtensionState() };
+    expect(findInstalled(installed, { path: "/plugins/real-ext" })).toBeUndefined();
+  });
+});
+
+describe("extensionStateFromScan", () => {
+  const scanned = makeRegisteredExtension({
+    name: "fnv-sanity-checks",
+    path: "/plugins/fnv-sanity-checks",
+    info: makeExtensionInfo({ id: "fnv-sanity-checks", author: "Senjay", version: "1.2.0" }),
+  });
+
+  it("builds a complete entry for a newly scanned extension", () => {
+    expect(extensionStateFromScan(scanned)).toEqual({
+      name: "fnv-sanity-checks",
+      author: "Senjay",
+      description: "Test description",
+      version: "1.2.0",
+      infoJsonId: "fnv-sanity-checks",
+      path: "/plugins/fnv-sanity-checks",
+      bundled: undefined,
+      enabled: true,
+      endorsed: "Undecided",
+      remove: false,
+    });
+  });
+
+  it("keeps the state a superseded entry recorded", () => {
+    const recorded = makeLegacyExtensionState({ version: "1.1.6", endorsed: "Endorsed" });
+    expect(extensionStateFromScan(scanned, recorded)).toMatchObject({
+      enabled: false,
+      version: "1.1.6",
+      endorsed: "Endorsed",
+      path: "/plugins/fnv-sanity-checks",
+    });
+  });
+
+  it("falls back to the extension's own values for what it recorded nothing of", () => {
+    expect(extensionStateFromScan(scanned, makeLegacyExtensionState())).toMatchObject({
+      version: "1.2.0",
+      endorsed: "Undecided",
+    });
+  });
+
+  it("keeps a pending removal, so the next startup retries the delete", () => {
+    const recorded = makeLegacyExtensionState({ remove: true });
+    expect(extensionStateFromScan(scanned, recorded).remove).toBe(true);
+  });
+
+  it("marks a bundled extension bundled", () => {
+    const bundled = makeRegisteredExtension({
+      name: "fnis-integration",
+      path: "/vortex/bundledPlugins/fnis-integration",
+      info: makeExtensionInfo({ bundled: true }),
+    });
+    expect(extensionStateFromScan(bundled).bundled).toBe(true);
   });
 });
 
