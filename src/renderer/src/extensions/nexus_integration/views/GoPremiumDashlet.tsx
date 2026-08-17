@@ -6,6 +6,7 @@ import { ComponentEx, translate } from "../../../controls/ComponentEx";
 import Dashlet from "../../../controls/Dashlet";
 import FlexLayout from "../../../controls/FlexLayout";
 import Image from "../../../controls/Image";
+import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
 import opn from "../../../util/opn";
 import { Campaign, nexusModsURL, Section, Content } from "../../../util/util";
 import { PREMIUM_PATH } from "../constants";
@@ -14,11 +15,9 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
 
-    const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";
-
     return (
       <Dashlet title="" className="dashlet-go-premium">
-        <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
+        <Pictogram brand="premium" className="@max-[363px]:hidden" name="premium" />
         <div className="dashlet-premium-title">
           Get fast downloads with <span className="text-highlight">premium</span>
         </div>

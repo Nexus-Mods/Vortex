@@ -16,40 +16,41 @@ const sizeMap = {
   none: "",
 } as const satisfies Record<string, string>;
 
-type ITheme = "creator" | "info" | "none" | "premium" | "primary";
+/** Colour family, `none` leaves the pictogram uncoloured. */
+export type IPictogramBrand = "none" | "premium" | "primary";
 
-const themeMap = {
-  creator: "text-creator-moderate",
-  info: "text-info-moderate",
+const brandMap = {
   none: "",
-  premium: "text-premium-moderate",
+  premium: "text-premium-strong",
   primary: "text-primary-moderate",
-} as const satisfies Record<ITheme, string>;
+} as const satisfies Record<IPictogramBrand, string>;
 
 export type IPictogramName =
   | "camera"
   | "game"
   | "health-check"
+  | "no-mod"
   | "preferences"
+  | "premium"
   | "puzzle-piece"
   | "settings"
   | "tools";
 
 export const Pictogram = ({
+  brand = "primary",
   className,
   name,
   size = "md",
-  theme = "primary",
   ...props
 }: HTMLAttributes<SVGElement> & {
+  brand?: IPictogramBrand;
   className?: string;
   name: IPictogramName;
   size?: keyof typeof sizeMap;
-  theme?: ITheme;
 }) => (
   <svg
     {...props}
-    className={joinClasses(["shrink-0", className, sizeMap[size], themeMap[theme]])}
+    className={joinClasses(["shrink-0", className, sizeMap[size], brandMap[brand]])}
     viewBox="0 0 200 200"
     xmlns="http://www.w3.org/2000/svg"
   >

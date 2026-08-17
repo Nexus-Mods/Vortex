@@ -717,18 +717,18 @@ import { Modal, ModalWrapper, ModalPanel } from "../../ui/components/modal/Modal
 
 Decorative SVG pictograms loaded from `assets/pictograms/`. Used for illustrative purposes in empty states, onboarding, etc.
 
-**Defaults:** `size="md"`, `theme="primary"`
+**Defaults:** `size="md"`, `brand="primary"`
 
 ```tsx
 import { Pictogram } from "../../ui/components/pictogram/Pictogram";
 
 <Pictogram name="health-check" />
-<Pictogram name="health-check" size="lg" theme="premium" />
+<Pictogram brand="premium" name="health-check" size="lg" />
 ```
 
 **Sizes:** `4xs` (16px), `3xs` (24px), `2xs` (36px), `xs` (48px), `sm` (56px), `md` (80px), `lg` (96px), `xl` (112px), `2xl` (160px)
 
-**Themes:** `primary`, `premium`, `creator`, `info`, `none`
+**Brands:** `primary`, `premium`, `none`
 
 **Adding a new pictogram:**
 
@@ -736,7 +736,7 @@ The source pictogram library is the **flamework** repo at `apps/next/public/asse
 
 1. Add the SVG file to `assets/pictograms/` (the filename becomes the pictogram name)
 2. Set the SVG dimensions to `width="200" height="200" viewBox="0 0 200 200"`
-3. Replace the main fill colour with `style="fill: currentColor"` so it responds to the `theme` prop
+3. Replace the main fill colour with `style="fill: currentColor"` so it responds to the `brand` prop
 4. Add the filename (without `.svg`) to the `IPictogramName` type in `Pictogram.tsx`
 
 > Migrating a whole page to the new `Page` layout (header + pictogram + tabs)? See

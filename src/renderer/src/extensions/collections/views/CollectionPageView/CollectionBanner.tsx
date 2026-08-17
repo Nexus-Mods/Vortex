@@ -6,6 +6,7 @@ import { ComponentEx } from "../../../../controls/ComponentEx";
 import FlexLayout from "../../../../controls/FlexLayout";
 import Icon from "../../../../controls/Icon";
 import Image from "../../../../controls/Image";
+import { Pictogram } from "../../../../ui/components/pictogram/Pictogram";
 import opn from "../../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../../util/util";
 import { PREMIUM_PATH } from "../../constants";
@@ -20,7 +21,6 @@ class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {
     const { t } = this.props;
 
     const electricBoltIconPath = "assets/icons/electric-bolt.svg";
-    const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";
 
     return (
       <div id="collection-premium-banner">
@@ -28,7 +28,7 @@ class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {
           <FlexLayout.Fixed>
             <FlexLayout id="collection-premium-banner-header" type="row">
               <FlexLayout.Fixed>
-                <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
+                <Pictogram brand="premium" name="premium" size="2xs" />
               </FlexLayout.Fixed>
 
               <FlexLayout.Flex>
