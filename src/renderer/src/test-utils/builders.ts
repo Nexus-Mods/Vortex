@@ -30,6 +30,7 @@ import { vi } from "vitest";
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import type { ICategory } from "../extensions/category_management/types/ICategoryDictionary";
 import { MOD_TYPE } from "../extensions/collections/constants";
+import type { ICollectionItemRow } from "../extensions/collections/installSession/itemRows";
 import type {
   ICollectionMod,
   ICollectionModRule,
@@ -255,6 +256,24 @@ export function makeModInstallInfo(
     rule: makeRule(),
     status: "pending",
     type: "requires",
+    ...overrides,
+  };
+}
+
+/**
+ * A collection page table row: an installed mod (or a stub for one that isn't installed yet)
+ * plus the rule that pulled it in and its collection status. `state` is dropped because a row
+ * reports its lifecycle through `status`, not through the IMod contract.
+ */
+export function makeCollectionItemRow(
+  overrides: Partial<ICollectionItemRow> = {},
+): ICollectionItemRow {
+  const { state, ...mod } = makeMod();
+  return {
+    ...mod,
+    ...makeProfileMod(),
+    collectionRule: makeRule(),
+    status: "pending",
     ...overrides,
   };
 }
