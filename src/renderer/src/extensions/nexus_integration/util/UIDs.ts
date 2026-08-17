@@ -103,6 +103,13 @@ export function makeModAndFileUIDs(
   };
 }
 
+/**
+ * Nexus's own "Vortex" listing (nexusmods.com/site/mods/1). A requirement or dependency
+ * resolving to it just means "requires Vortex," not an installable mod, so should be
+ * treated as always satisfied.
+ */
+export const VORTEX_MOD_UID = "9856949944321";
+
 /** Decode a composite UID ((gameId << 32) | id) into its numeric game id and low id. */
 export function decodeUID(uid: string): { gameId: number; id: number } | undefined {
   try {
