@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
+  addExtension,
   removeExtension,
   setDialogVisible,
   setExtensionEnabled,
@@ -36,6 +37,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 import { SITE_ID } from "../gamemode_management/constants";
 import { useDisplayOptionsAction } from "./hooks/useDisplayOptionsAction.hook";
 import installExtension from "./installExtension";
+import { extensionStateFromScan, findInstalled } from "./queries";
 import getTableAttributes from "./tableAttributes";
 
 export interface IExtensionManagerProps {
@@ -48,7 +50,8 @@ export interface IExtensionManagerProps {
   pageId?: string;
 }
 
-type IExtensionStates = { [extId: string]: IExtensionState };
+/** Keyed by extension id. */
+type IExtensionStates = Record<string, IExtensionState>;
 
 const EMPTY_EXTENSIONS: IExtensionStates = {};
 
@@ -81,17 +84,32 @@ export const ExtensionManager = ({
   // The config as the page found it; a change from here means Vortex needs a restart.
   const [oldExtensions] = useState(extensions);
 
-  // Held in a ref so the columns and row actions stay stable across renders while
-  // their callbacks still see the current extensions.
-  const extensionsRef = useRef(extensions);
-  extensionsRef.current = extensions;
+  // refs, so the columns and row actions below stay stable across renders.
+  // Every rendered row, bundled ones included, so every row has an id here
+  const extensionsRef = useRef<Record<string, IExtensionWithState>>({});
+  // the persisted entries alone, to tell the two apart
+  const persistedRef = useRef(extensions);
+  persistedRef.current = extensions;
 
   const setEnabled = useCallback(
     (extName: string, enabled: boolean) => {
       const current = extensionsRef.current;
       const extId = Object.keys(current).find((iter) => current[iter].name === extName);
+      if (extId === undefined) {
+        log("warn", "toggling unknown extension", { extName, enabled });
+        return;
+      }
+
       log("info", "user toggling extension manually", { extId, enabled });
-      dispatch(setExtensionEnabled(extId, enabled));
+
+      if (persistedRef.current[extId] !== undefined) {
+        dispatch(setExtensionEnabled(extId, enabled));
+        return;
+      }
+
+      // a bundled extension has no entry until its enabled state needs recording
+      const { loadFailures: _loadFailures, ...entry } = current[extId];
+      dispatch(addExtension({ ...entry, enabled }));
     },
     [dispatch],
   );
@@ -146,27 +164,20 @@ export const ExtensionManager = ({
     () =>
       (api?.getLoadedExtensions?.() ?? [])
         .filter((ext) => ext.dynamic && ext.info?.bundled)
+        // one with an entry of its own is already a row
+        .filter((ext) => findInstalled(extensions, { path: ext.path }) === undefined)
         .reduce<IExtensionStates>((prev, ext) => {
-          prev[ext.name] = {
-            enabled: true,
-            version: ext.info?.version ?? "",
-            remove: false,
-            endorsed: "Undecided",
-            name: ext.info?.name ?? ext.name,
-            author: ext.info?.author ?? "Unknown",
-            description: ext.info?.description ?? "",
-            path: ext.path,
-            bundled: true,
-          };
+          // built like a persisted entry, since toggling the row persists it
+          prev[ext.name] = { ...extensionStateFromScan(ext), name: ext.info?.name ?? ext.name };
           return prev;
         }, {}),
-    [api],
+    [api, extensions],
   );
 
   const extensionsWithState = useMemo(() => {
     const allExtensions = showBundled ? { ...extensions, ...bundled } : extensions;
 
-    return Object.keys(allExtensions).reduce<{ [id: string]: IExtensionWithState }>((prev, id) => {
+    return Object.keys(allExtensions).reduce<Record<string, IExtensionWithState>>((prev, id) => {
       const state = allExtensions[id];
 
       if ((!showBundled && state.bundled) || state.remove) {
@@ -181,6 +192,8 @@ export const ExtensionManager = ({
       return prev;
     }, {});
   }, [bundled, extensions, loadFailures, showBundled]);
+
+  extensionsRef.current = extensionsWithState;
 
   const dropExtension = useCallback(
     (type: DropType, extPaths: string[]) => {

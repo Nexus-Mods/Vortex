@@ -6,6 +6,7 @@ import * as path from "path";
 
 import { isPromiseLike, VCREDIST_URL } from "@vortex/shared";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import type { DiffOperation } from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import PromiseBB from "bluebird";
 import type { OpenDialogOptions, SaveDialogOptions } from "electron";
@@ -39,7 +40,7 @@ import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
 import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo";
-import { findInstalled } from "./extensions/extension_manager/queries";
+import { extensionStateFromScan, findInstalled } from "./extensions/extension_manager/queries";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 import { log } from "./logging";
@@ -847,12 +848,16 @@ class ExtensionManager {
         .readdirSync(getVortexPath("temp"))
         .filter((name) => name.startsWith("__disable_"));
 
-      const extensionsPath = path.join(getVortexPath("userData"), "plugins");
-
       disableExtensions.forEach((ext) => {
         const extensionName = ext.substring(10);
-        const extensionPath = path.join(extensionsPath, extensionName);
-        const existingExtension = findInstalled(this.mExtensionState, { path: extensionPath });
+        // the marker carries only a folder name, which can be in either location
+        let existingExtension: ReturnType<typeof findInstalled>;
+        for (const { path: extensionsPath } of ExtensionManager.getExtensionPaths()) {
+          existingExtension = findInstalled(this.mExtensionState, {
+            path: path.join(extensionsPath, extensionName),
+          });
+          if (existingExtension !== undefined) break;
+        }
 
         if (existingExtension === undefined) {
           log("info", "skipping disable file for unknown extension", { extensionName });
@@ -915,11 +920,7 @@ class ExtensionManager {
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
     const extensionsPath = path.join(getVortexPath("userData"), "plugins");
     if (this.mOutdated.length > 0) {
-      const removeOps: Array<{
-        type: "set";
-        path: string[];
-        value: unknown;
-      }> = [];
+      const removeOps: DiffOperation[] = [];
       this.mOutdated.forEach((ext) => {
         log("info", "extension older than bundled version, will be removed", {
           name: ext,
@@ -960,17 +961,21 @@ class ExtensionManager {
           });
         }
       });
-      try {
-        window.api?.persist?.sendDiff?.("app", removeOps);
-      } catch (err) {
-        log("warn", "failed to persist outdated-extension remove flags", {
-          error: getErrorMessageOrDefault(err),
-        });
-      }
+      this.persistAppDiff(removeOps, "failed to persist outdated-extension remove flags");
       return;
     }
 
     this.initExtensions();
+  }
+
+  /** Write app-hive operations directly, for repairs whose dispatch does not reach disk. */
+  private persistAppDiff(operations: DiffOperation[], failureMessage: string) {
+    if (operations.length === 0) return;
+    try {
+      window.api?.persist?.sendDiff?.("app", operations);
+    } catch (err) {
+      log("warn", failureMessage, { error: getErrorMessageOrDefault(err) });
+    }
   }
 
   public get hasOutdatedExtensions() {
@@ -2944,6 +2949,24 @@ class ExtensionManager {
           );
 
           if (loadedExtension === undefined) return prev;
+
+          // an entry keyed by extension name carries no path to match this
+          // folder by; replace it, keeping the state it records
+          const recorded = this.mExtensionState[loadedExtension.name];
+          if (recorded !== undefined && recorded.path === undefined) {
+            // unless a complete entry or an earlier scan already covers the folder
+            const claimed =
+              installedExtension !== undefined ||
+              this.mPendingAdds.some((add) => add.name === loadedExtension.name);
+            if (!claimed) {
+              this.mPendingAdds.push(extensionStateFromScan(loadedExtension, recorded));
+            }
+            if (recorded.enabled === false || recorded.remove) {
+              log("debug", "extension disabled", { name: loadedExtension.name });
+              return prev;
+            }
+          }
+
           loadedExtensions.add(loadedExtension.name);
 
           const loadTime = Date.now() - before;
@@ -3083,6 +3106,16 @@ class ExtensionManager {
       dynamicallyLoaded,
     );
 
+    // forgetExtension reaches the store but not disk; main drains its persist
+    // queue during shutdown
+    this.persistAppDiff(
+      this.mPendingRemoves.map((extensionId) => ({
+        type: "remove" as const,
+        path: ["extensions", extensionId],
+      })),
+      "failed to persist removal of extension entries",
+    );
+
     return staticExts.concat(userExts).concat(bundledExts);
   }
 
@@ -3096,11 +3129,22 @@ class ExtensionManager {
     const result: IRegisteredExtension[] = [];
     const loadedFromState = new Set<string>();
     for (const [extId, state] of Object.entries(this.mExtensionState)) {
-      if (state.remove || state.enabled === false) continue;
-      if (state.path === undefined || !fs.existsSync(state.path)) {
+      if (state.remove) continue;
+      // no lookup matches a path-less entry; a scan replaces it, or it goes
+      if (state.path === undefined) {
         this.mPendingRemoves.push(extId);
         continue;
       }
+      // ahead of the skips below, so a gone folder is cleaned up either way
+      if (!fs.existsSync(state.path)) {
+        this.mPendingRemoves.push(extId);
+        continue;
+      }
+      if (state.enabled === false) continue;
+      // a bundled extension loads from the bundled scan; its entry only records
+      // whether it is enabled
+      if (state.bundled) continue;
+
       const ext = this.loadDynamicExtension(state.path, alreadyLoaded, false);
       if (ext !== undefined) {
         result.push(ext);
@@ -3115,24 +3159,17 @@ class ExtensionManager {
       loadedExtensions,
       alreadyLoaded,
     );
-    for (const ext of scanned) {
-      if (!loadedFromState.has(ext.name)) {
-        const state: IExtensionState = {
-          name: ext.name,
-          author: ext.info?.author ?? "<unknown>",
-          description: ext.info?.description ?? "<missing>",
-          version: ext.info?.version ?? "0.0.1",
-          infoJsonId: ext.info?.id,
-          path: ext.path,
-          enabled: true,
-          endorsed: "Undecided",
-          remove: false,
-        };
 
-        this.mPendingAdds.push(state);
-        result.push(ext);
-        loadedExtensions.add(ext.name);
+    for (const ext of scanned) {
+      if (loadedFromState.has(ext.name)) continue;
+
+      // a replaced entry already has its own queued; this one is new
+      if (this.mExtensionState[ext.name] === undefined) {
+        this.mPendingAdds.push(extensionStateFromScan(ext));
       }
+
+      result.push(ext);
+      loadedExtensions.add(ext.name);
     }
 
     return result;
