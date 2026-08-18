@@ -1,4 +1,5 @@
 import { knownGames } from "@/extensions/gamemode_management/selectors";
+import renderModName from "@/extensions/mod_management/util/modName";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
@@ -7,7 +8,8 @@ import { setModsEnabled } from "@/extensions/profile_management/actions/profiles
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { opn, renderModName, sanitizeCSSId } from "@/util/api";
+import opn from "@/util/opn";
+import { sanitizeCSSId } from "@/util/util";
 
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";

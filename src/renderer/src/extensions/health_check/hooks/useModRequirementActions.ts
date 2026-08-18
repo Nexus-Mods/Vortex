@@ -2,10 +2,10 @@ import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
+import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { opn } from "@/util/api";
+import opn from "@/util/opn";
 
-import { shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt } from "../types";

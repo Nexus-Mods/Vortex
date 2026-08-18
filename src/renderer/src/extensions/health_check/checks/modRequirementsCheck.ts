@@ -6,6 +6,7 @@
 import type { IModRequirements } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
 import {
   chunked,
@@ -14,23 +15,24 @@ import {
   type KeyedCache,
 } from "@/extensions/health_check/utils/shared/batchCache";
 import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
-
-import { log } from "../../../logging";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IMod } from "@/extensions/mod_management/types/IMod";
+import renderModName from "@/extensions/mod_management/util/modName";
+import { isLoggedIn } from "@/extensions/nexus_integration/selectors";
+import { nexusGamesProm, numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
+import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
+import { makeModUID, VORTEX_MOD_UID } from "@/extensions/nexus_integration/util/UIDs";
+import { activeProfile } from "@/extensions/profile_management/selectors";
+import { log } from "@/logging";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import {
   HealthCheckCategory,
   HealthCheckSeverity,
   HealthCheckTrigger,
   type IHealthCheck,
   type IHealthCheckResult,
-} from "../../../types/IHealthCheck";
-import { getGame, nexusGameId, renderModName } from "../../../util/api";
-import { getSafe } from "../../../util/storeHelper";
-import type { IMod } from "../../mod_management/types/IMod";
-import { isLoggedIn } from "../../nexus_integration/selectors";
-import { nexusGamesProm, numericGameIdToDomainName } from "../../nexus_integration/util";
-import { makeModUID } from "../../nexus_integration/util/UIDs";
-import { activeProfile } from "../../profile_management/selectors";
+} from "@/types/IHealthCheck";
+import { getSafe } from "@/util/storeHelper";
+
 import { setHealthCheckRunning } from "../actions/session";
 import { isModRequirementsEnabled } from "../selectors";
 import type {
@@ -133,9 +135,10 @@ function getEnabledMods(api: IExtensionApi, gameId: string): IMod[] {
 
 /**
  * Resolve a non-external requirement to its target mod id, Nexus domain, and UID,
- * or null when it has no usable Nexus mod id.
+ * or null when it has no usable Nexus mod id, or when it targets the Vortex mod page
+ * itself (always considered satisfied, with no version to check).
  */
-function resolveRequirementTarget(
+export function resolveRequirementTarget(
   req: { modId: string; gameId?: string | null },
   fallbackGameId: string,
 ): {
@@ -152,11 +155,18 @@ function resolveRequirementTarget(
   const domainName =
     requiredGameId != null ? numericGameIdToDomainName(requiredGameId) : fallbackGameId;
   const gameIdForStorage = domainName ?? fallbackGameId;
+  const uid = makeModUID({ modId: req.modId, fileId: "0", gameId: gameIdForStorage });
+
+  // Filter out requirements that target Vortex itself, treat as always satisfied.
+  if (uid === VORTEX_MOD_UID) {
+    return null;
+  }
+
   return {
     requiredModId,
     domainName,
     gameIdForStorage,
-    uid: makeModUID({ modId: req.modId, fileId: "0", gameId: gameIdForStorage }),
+    uid,
   };
 }
 
