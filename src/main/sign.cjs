@@ -13,6 +13,24 @@ const CODE_SIGN_TOOL_DIR = path.join(PROJECT_ROOT, "CodeSignTool");
 // Make sure these are lowercase
 const ignoreFileList = ["arctool.exe", "vc_redist.x64.exe", "windowsdesktop-runtime-win-x64.exe"];
 
+// Only PE binaries can carry an Authenticode signature. The packaged tree also
+// carries linux/darwin/android prebuilds of some native modules (leveldown,
+// xxhash-addon), which are ELF/Mach-O and would fail the signing call.
+function isPortableExecutable(filePath) {
+    let fd;
+    try {
+        fd = fs.openSync(filePath, "r");
+        const magic = Buffer.alloc(2);
+        return fs.readSync(fd, magic, 0, 2, 0) === 2 && magic.toString("latin1") === "MZ";
+    } catch (err) {
+        return false;
+    } finally {
+        if (fd !== undefined) {
+            fs.closeSync(fd);
+        }
+    }
+}
+
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
@@ -26,6 +44,11 @@ async function sign(configuration) {
 
     if (ignoreFileList.includes(path.basename(configuration.path.toLowerCase()))) {
         console.log(`Ignoring ${configuration.path} as the file is in the ignore list`);
+        return;
+    }
+
+    if (!isPortableExecutable(configuration.path)) {
+        console.log(`Ignoring ${configuration.path} as it is not a PE binary`);
         return;
     }
 
