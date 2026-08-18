@@ -29,7 +29,9 @@ export const fs = {
   readFileAsync: (filePath: string, options?: { encoding?: BufferEncoding }) =>
     PromiseBB.resolve(nodeFs.promises.readFile(filePath, options)),
   statAsync: (filePath: string) => PromiseBB.resolve(nodeFs.promises.stat(filePath)),
-  watch: nodeFs.watch,
+  // inert: a real OS watcher takes the worker process down on Windows CI, and nothing here
+  // drives the persistor through fs events - the tests trigger its reads directly
+  watch: () => ({ on: () => undefined, close: () => undefined }) as unknown as nodeFs.FSWatcher,
   writeFileAsync: (filePath: string, data: string | Buffer, options?: { encoding?: string }) =>
     PromiseBB.resolve(
       nodeFs.promises.writeFile(filePath, data, options as { encoding?: BufferEncoding }),
