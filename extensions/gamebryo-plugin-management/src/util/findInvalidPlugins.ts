@@ -2,6 +2,7 @@ import pLimit from "p-limit";
 
 import { ESPFile } from "../esp/ESPFile";
 import { IPlugins } from "../types/IPlugins";
+import toPluginId from "./toPluginId";
 
 // header reads are cheap, but a large profile can hold hundreds of plugins, so bound how many files
 // are open at once.
@@ -29,7 +30,7 @@ export async function findInvalidPlugins(
   await Promise.all(
     pluginIds.map((id: string) =>
       limit(async () => {
-        const filePath = pluginList[id]?.filePath;
+        const filePath = pluginList[toPluginId(id)]?.filePath;
         if (filePath === undefined) {
           return;
         }
