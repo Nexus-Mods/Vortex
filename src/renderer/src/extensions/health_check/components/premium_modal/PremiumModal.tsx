@@ -7,8 +7,8 @@ import {
   useOptionalIssue,
   useTracker,
 } from "@/extensions/health_check/hooks/HealthCheckTracking.context";
-import { usePremiumStatusRefresh } from "@/extensions/health_check/hooks/usePremiumStatusRefresh";
 import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
+import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
@@ -75,7 +75,7 @@ export const PremiumModal = ({
   // The purchase happens on the website, so watch for it while the upsell is up. This is
   // also why "Unlock premium" doesn't close the modal: staying open is what keeps the
   // check armed until the new membership can be seen.
-  usePremiumStatusRefresh(api, isOpen);
+  useRefreshUserInfoOnFocus(api, isOpen);
 
   // Premium specifically, not `!shouldShowPremiumAd`: supporters can't download through
   // the client either, and an absent userInfo would read as a purchase that never happened.

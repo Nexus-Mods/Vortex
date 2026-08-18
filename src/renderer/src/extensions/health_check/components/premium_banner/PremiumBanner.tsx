@@ -6,8 +6,8 @@ import {
   useOptionalIssue,
   useTracker,
 } from "@/extensions/health_check/hooks/HealthCheckTracking.context";
-import { usePremiumStatusRefresh } from "@/extensions/health_check/hooks/usePremiumStatusRefresh";
 import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
+import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
@@ -36,7 +36,7 @@ export const PremiumBanner = ({
   // premium to somebody who now has it.
   const [sentToPremiumPage, setSentToPremiumPage] = useState(false);
 
-  usePremiumStatusRefresh(api, sentToPremiumPage);
+  useRefreshUserInfoOnFocus(api, sentToPremiumPage);
 
   useEffect(() => {
     if (showPremiumAd) {

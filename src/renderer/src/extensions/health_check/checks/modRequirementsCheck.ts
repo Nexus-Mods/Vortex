@@ -1,19 +1,13 @@
+import type { IModRequirements } from "@nexusmods/nexus-api";
 /**
  * Mod Requirements Health Check
  * Validates that all Nexus mod requirements are satisfied
  */
-
-import type { IModRequirements } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
-import {
-  chunked,
-  createKeyedCache,
-  resolveCached,
-  type KeyedCache,
-} from "@/extensions/health_check/utils/shared/batchCache";
+import { chunked, resolveCached } from "@/extensions/health_check/utils/shared/batchCache";
 import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import renderModName from "@/extensions/mod_management/util/modName";
@@ -31,6 +25,7 @@ import {
   type IHealthCheck,
   type IHealthCheckResult,
 } from "@/types/IHealthCheck";
+import { createKeyedCache, type KeyedCache } from "@/util/keyedCache";
 import { getSafe } from "@/util/storeHelper";
 
 import { setHealthCheckRunning } from "../actions/session";

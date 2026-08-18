@@ -3,8 +3,9 @@ import type { components } from "@vortex/nexus-api-v3";
 import type { IModDetails } from "@/extensions/health_check/types";
 import { createVortexNexusV3Client } from "@/extensions/nexus_integration/nexusV3Client";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { createKeyedCache, type KeyedCache } from "@/util/keyedCache";
 
-import { chunked, createKeyedCache, resolveCached, type KeyedCache } from "./batchCache";
+import { chunked, resolveCached } from "./batchCache";
 
 type V3Client = ReturnType<typeof createVortexNexusV3Client>;
 type V3ModDetail = components["schemas"]["ModDetail"];
