@@ -60,11 +60,13 @@ describe("nxm link callback", () => {
   });
 
   test("treats a premium url as a prompt to re-read the membership", ({ makeNxm }) => {
-    const { onRefreshMembership, handleLink } = arrangeLink(makeNxm());
+    const { harness, handleLink } = arrangeLink(makeNxm());
+    const refresh = vi.fn();
+    harness.api.events.on("refresh-user-info", refresh);
 
     expect(handleLink("nxm://premium", false)).toBe(false);
 
-    expect(onRefreshMembership).toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalled();
     expect(beginDownload).not.toHaveBeenCalled();
   });
 

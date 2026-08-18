@@ -11,8 +11,8 @@ import { opn } from "@/util/api";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
+import { useRefreshUserInfoOnFocus } from "../../../nexus_integration/hooks/useRefreshUserInfoOnFocus";
 import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
-import { usePremiumStatusRefresh } from "../../hooks/usePremiumStatusRefresh";
 
 /** Where the premium banner is shown. */
 export type BannerPlacement = "list" | "detail";
@@ -34,7 +34,7 @@ export const PremiumBanner = ({
   // premium to somebody who now has it.
   const [sentToPremiumPage, setSentToPremiumPage] = useState(false);
 
-  usePremiumStatusRefresh(api, sentToPremiumPage);
+  useRefreshUserInfoOnFocus(api, sentToPremiumPage);
 
   useEffect(() => {
     if (showPremiumAd) {

@@ -18,8 +18,6 @@ export interface INxmSetup {
   nxm: NxmProtocol;
   /** `nxm.resolve`, the download protocol handler under test. */
   resolve: NxmProtocol["resolve"];
-  /** The membership re-read the site asks for with an nxm://premium link. */
-  onRefreshMembership: ReturnType<typeof vi.fn>;
 }
 
 export interface INxmFixtures {
@@ -40,9 +38,10 @@ export const test = harnessTest.extend<INxmFixtures>({
     resetMembershipFreshness();
     await use((overrides: Partial<IDriverHarnessState> = {}) => {
       const harness = makeNxmHarness({ userInfo: PREMIUM, ...overrides });
-      const onRefreshMembership = vi.fn();
-      const nxm = new NxmProtocol(harness.api, () => harness.nexus, { onRefreshMembership });
-      return { harness, nxm, resolve: nxm.resolve, onRefreshMembership };
+      const nxm = new NxmProtocol(harness.api, () => harness.nexus);
+      // construct then start, the same two steps the extension takes across init and once
+      nxm.start();
+      return { harness, nxm, resolve: nxm.resolve };
     });
   },
 });

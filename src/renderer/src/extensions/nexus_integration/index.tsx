@@ -1094,6 +1094,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync("get-trending-mods", eh.onGetTrendingMods(api, nexus));
   api.onAsync("send-metric", eh.sendMetric(api, nexus));
   trackMembershipReads(api);
+  nxmProtocol.start();
   api.events.on("refresh-user-info", eh.onRefreshUserInfo(nexus, api));
   api.events.on("endorse-mod", eh.onEndorseMod(api, nexus));
   api.events.on("submit-feedback", eh.onSubmitFeedback(nexus));
@@ -1483,9 +1484,7 @@ function init(context: IExtensionContext): boolean {
   );
 
   // the connection is built later, in the once() callback, so it's read lazily
-  nxmProtocol = new NxmProtocol(context.api, () => nexus, {
-    onRefreshMembership: () => scheduleMembershipRefresh(context.api),
-  });
+  nxmProtocol = new NxmProtocol(context.api, () => nexus);
 
   // this makes it so the download manager can use nxm urls as download urls
   context.registerDownloadProtocol("nxm", nxmProtocol.resolve);
@@ -1506,7 +1505,6 @@ function init(context: IExtensionContext): boolean {
     t: context.api.translate,
     nexus,
     ...nxmProtocol.dialogHandlers,
-    onCheckStatus: () => scheduleMembershipRefresh(context.api),
   }));
 
   context.registerBanner(

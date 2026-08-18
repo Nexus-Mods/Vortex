@@ -6,12 +6,14 @@ import { makeApiUserInfo, makeGameStored, makeSession } from "@/test-utils/build
 import type { INxmHarness } from "@/test-utils/harnessTypes";
 import type { INxmFixtures } from "@/test-utils/nxmTest";
 import { COLLECTION_URL, FREE, MOD_URL, PREMIUM, test } from "@/test-utils/nxmTest";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
 import { refreshMembership } from "./membership";
+import { NxmProtocol } from "./nxmProtocol";
 import type * as nexusUtil from "./util";
 import { getInfoGraphQL } from "./util";
 
@@ -37,6 +39,9 @@ const markSkipped = vi.mocked(markCollectionMemberSkipped);
 /** A resolved download link, in the shape the v1 API returns. */
 const downloadLink = (uri: string) => [{ URI: uri, short_name: "cdn", name: "CDN" }];
 
+/** A second file, for the cases that need more than one download parked at once. */
+const OTHER_MOD_URL = "nxm://skyrimspecialedition/mods/200/files/600";
+
 /** A mod the author has NOT opted into direct downloads, so a free user needs the website. */
 const websiteRoundTrip = () =>
   modInfoQuery.mockResolvedValue({
@@ -51,6 +56,20 @@ const apiError = (statusCode: number, message: string) =>
 describe("nxm protocol resolver", () => {
   beforeEach(() => {
     modInfoQuery.mockReset();
+  });
+
+  test("can be constructed without touching the api, as extension init requires", () => {
+    // The extension api is a proxy that refuses every access during init, and this handler is
+    // constructed there. A constructor that read the store took the renderer down with
+    // "extension uses api in init function" before the UI ever mounted, so the store
+    // subscription belongs in start(), which the extension calls from its once() callback.
+    const duringInit = new Proxy({} as IExtensionApi, {
+      get(_target, prop) {
+        throw new Error(`extension uses api in init function: ${String(prop)}`);
+      },
+    });
+
+    expect(() => new NxmProtocol(duringInit, () => undefined as never)).not.toThrow();
   });
 
   test("rejects a url that isn't an nxm link", async ({ makeNxm }) => {
@@ -226,6 +245,56 @@ describe("nxm protocol resolver", () => {
     });
   });
 
+  // The cached url is keyed by file, so without this the plan change would be invisible to it and
+  // the next download of that file would reuse a url issued for the plan the user just left.
+  describe("changing membership", () => {
+    test("asks for a new url after an upgrade, rather than reusing the free one", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm({ userInfo: FREE });
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/free.7z"));
+      // a free user's authorised link goes down the api path, so it populates the cache
+      await resolve(`${MOD_URL}?key=abc&expires=1700000000`);
+
+      harness.setUserInfo(PREMIUM);
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/premium.7z"));
+
+      await expect(resolve(MOD_URL)).resolves.toMatchObject({
+        urls: ["https://cdn/premium.7z"],
+      });
+      expect(harness.getDownloadURLs).toHaveBeenCalledTimes(2);
+    });
+
+    test("asks for a new url after a downgrade, rather than reusing the premium one", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/premium.7z"));
+      await resolve(MOD_URL);
+
+      harness.setUserInfo(FREE);
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/free.7z"));
+
+      // the website hands the downgraded user an authorised link for the same file
+      await expect(resolve(`${MOD_URL}?key=abc&expires=1700000000`)).resolves.toMatchObject({
+        urls: ["https://cdn/free.7z"],
+      });
+      expect(harness.getDownloadURLs).toHaveBeenCalledTimes(2);
+    });
+
+    test("keeps the cache while the membership is unchanged", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+
+      await resolve(MOD_URL);
+      // a re-read that confirms the same plan writes userInfo again; that is not a change
+      harness.setUserInfo(PREMIUM);
+      await resolve(MOD_URL);
+
+      expect(harness.getDownloadURLs).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("free account", () => {
     const queued = (harness: INxmHarness) =>
       vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(1));
@@ -313,13 +382,33 @@ describe("nxm protocol resolver", () => {
         return { harness, nxm, pending };
       };
 
+      // the dialog shows one download at a time and hides itself as soon as the membership
+      // improves, so anything it left parked would have no way back
+      test("retrying after an upgrade resolves every parked download, not just the shown one", async ({
+        makeNxm,
+      }) => {
+        const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
+        websiteRoundTrip();
+        const first = resolve(MOD_URL);
+        const second = resolve(OTHER_MOD_URL);
+        await vi.waitFor(() => expect(harness.freeUserQueue()).toHaveLength(2));
+
+        harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+        harness.setUserInfo(PREMIUM);
+        nxm.dialogHandlers.onRetry();
+
+        await expect(first).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
+        await expect(second).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
+        expect(harness.freeUserQueue()).toEqual([]);
+      });
+
       // what FreeUserDLDialog does when the user upgrades while the dialog is open
       test("retrying after an upgrade resolves it down the premium path", async ({ makeNxm }) => {
         const { harness, nxm, pending } = await arrangeQueued(makeNxm);
         harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
         harness.setUserInfo(PREMIUM);
 
-        nxm.dialogHandlers.onRetry(MOD_URL);
+        nxm.dialogHandlers.onRetry();
 
         await expect(pending).resolves.toMatchObject({ urls: ["https://cdn/file.7z"] });
         expect(harness.freeUserQueue()).toEqual([]);
@@ -403,10 +492,27 @@ describe("nxm protocol resolver", () => {
       expect(harness.dispatched.map((action) => action.type)).toContain("REMOVE_FREEUSER_DLITEM");
     });
 
-    test("retrying a url that isn't queued does nothing", ({ makeNxm }) => {
+    // re-resolving one the api still won't serve just parks it again, so it stays where it is
+    test("leaves a download the api still won't serve parked, rather than parking it twice", async ({
+      makeNxm,
+    }) => {
       const { harness, nxm, resolve } = makeNxm({ userInfo: FREE });
+      websiteRoundTrip();
+      const pending = resolve(MOD_URL);
+      await vi.waitFor(() => expect(harness.freeUserQueue()).toEqual([MOD_URL]));
 
-      expect(() => nxm.dialogHandlers.onRetry(MOD_URL)).not.toThrow();
+      nxm.dialogHandlers.onRetry();
+
+      expect(harness.getDownloadURLs).not.toHaveBeenCalled();
+      expect(harness.freeUserQueue()).toEqual([MOD_URL]);
+      nxm.dialogHandlers.onCancel(MOD_URL);
+      await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+    });
+
+    test("retrying with nothing queued does nothing", ({ makeNxm }) => {
+      const { harness, nxm } = makeNxm({ userInfo: FREE });
+
+      expect(() => nxm.dialogHandlers.onRetry()).not.toThrow();
       expect(harness.getDownloadURLs).not.toHaveBeenCalled();
     });
   });
