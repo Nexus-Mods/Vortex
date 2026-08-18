@@ -44,6 +44,26 @@ download` (InstallManager). The SSOT status writes (`{type:"status", status:
 the install lifecycle logs above and, if needed, the `persist:diff {hive:"session"}`
 arrivals (§C markers).
 
+## Fully-installed verdict (always answer this)
+
+Every collection report must explicitly state whether the collection is **fully
+installed** - not just whether the run ended. Compute it from the envelope numbers:
+`starting install of collection {totalMods, missing}` gives the member total and how
+many still needed installing at start, so `totalMods - missing` were already installed
+before this run. Count the members logging `Installation completed successfully` in
+the scoped window; then `installed = (totalMods - missing) + completed-this-run`.
+
+- **Fully installed** - reached `postprocess collection` AND `installed == totalMods`
+  with no failed/stuck members.
+- **Completed, not fully installed** - reached postprocess with a shortfall: name it
+  (X failed, Y skipped-or-unaccounted). `totalMods` includes optional (recommends)
+  members, which default to skipped, and skips (user skips, optional defaults) write
+  only session state - **no log line on success** - so a member with no install thread
+  and no failure is "skipped or unaccounted", not an error by itself. The only skip
+  log is the failure path: `could not find collection rule for skipped download`.
+- **Not completed** - never reached `postprocess collection`: stuck / interrupted /
+  parked (classify per invariant 9), with the same counts.
+
 ## Invariants to assert (and the bug signature if broken)
 
 | #   | invariant (what a healthy install holds)                                                          | broken signature in the log                                                                                                                                                                                                                                                                                               | source                                                 |
@@ -128,17 +148,21 @@ member is a strong hint that invariant 1 or 2 is about to break.
    retry count (number of `start mod install` for that `modId`).
 3. Walk the invariant table; for each break, cite the member, the matching line(s), and
    timestamps. Treat absence-of-terminal as **stuck** (invariant 1/6), not success.
-4. Report the envelope outcome (reached `postprocess collection`?) and any pause/resume
+4. Compute the fully-installed verdict (section above): envelope reached postprocess?
+   `installed = (totalMods - missing) + completed-this-run` vs `totalMods`, with the
+   shortfall classified (failed / stuck / skipped-or-unaccounted).
+5. Report the envelope outcome (reached `postprocess collection`?) and any pause/resume
    or logout transitions and whether they paired. If it did **not** reach postprocess,
    run invariant 9: find the session boundary that ended it, classify it (clean /
    killed-during-exit / hard-crash / in-progress), check later sessions for resume +
    lost-progress, and apply the dev/prod severity framing.
-5. List interleaved `[ERRO]`/`[WARN]` whose payload references a member in its window.
+6. List interleaved `[ERRO]`/`[WARN]` whose payload references a member in its window.
 
 ## Output shape
 
-- One-line verdict: collection completed / completed-with-failed-members / **stuck**,
-  with member counts (installed / failed / stuck of total).
+- One-line verdict answering **"is the collection fully installed?"**: fully installed /
+  completed-not-fully-installed / not completed (**stuck** / interrupted / parked), with
+  member counts (installed / failed / skipped-or-unaccounted / stuck of `totalMods`).
 - Per-member table: `modId` · phase reached · outcome · duration · retries.
 - Invariant results: each of 1-9 as pass / **FAIL** (with the offending lines), or n/a
   if the path wasn't exercised this session.
