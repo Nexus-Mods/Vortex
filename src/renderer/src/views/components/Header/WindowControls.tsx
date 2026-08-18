@@ -53,7 +53,7 @@ export const WindowControls: FC<React.PropsWithChildren<unknown>> = () => {
       />
 
       <WindowControlButton
-        className="hover:bg-danger-subdued"
+        className="w-9 hover:bg-danger-subdued"
         iconPath={mdiWindowClose}
         title="Close"
         onClick={close}

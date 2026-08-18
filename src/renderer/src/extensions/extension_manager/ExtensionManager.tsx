@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
+  addExtension,
   removeExtension,
   setDialogVisible,
   setExtensionEnabled,
@@ -23,8 +24,9 @@ import type { IExtensionWithState } from "@/types/extensions";
 import type { IExtensionState, IState } from "@/types/IState";
 import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
-import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { relaunch } from "@/util/commandLine";
 import * as selectors from "@/util/selectors";
 import { Page } from "@/views/components/Page/Page";
@@ -33,8 +35,9 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { SITE_ID } from "../gamemode_management/constants";
-import { DisplayOptions } from "./components/DisplayOptions";
+import { useDisplayOptionsAction } from "./hooks/useDisplayOptionsAction.hook";
 import installExtension from "./installExtension";
+import { extensionStateFromScan, findInstalled } from "./queries";
 import getTableAttributes from "./tableAttributes";
 
 export interface IExtensionManagerProps {
@@ -47,7 +50,8 @@ export interface IExtensionManagerProps {
   pageId?: string;
 }
 
-type IExtensionStates = { [extId: string]: IExtensionState };
+/** Keyed by extension id. */
+type IExtensionStates = Record<string, IExtensionState>;
 
 const EMPTY_EXTENSIONS: IExtensionStates = {};
 
@@ -80,17 +84,32 @@ export const ExtensionManager = ({
   // The config as the page found it; a change from here means Vortex needs a restart.
   const [oldExtensions] = useState(extensions);
 
-  // Held in a ref so the columns and row actions stay stable across renders while
-  // their callbacks still see the current extensions.
-  const extensionsRef = useRef(extensions);
-  extensionsRef.current = extensions;
+  // refs, so the columns and row actions below stay stable across renders.
+  // Every rendered row, bundled ones included, so every row has an id here
+  const extensionsRef = useRef<Record<string, IExtensionWithState>>({});
+  // the persisted entries alone, to tell the two apart
+  const persistedRef = useRef(extensions);
+  persistedRef.current = extensions;
 
   const setEnabled = useCallback(
     (extName: string, enabled: boolean) => {
       const current = extensionsRef.current;
       const extId = Object.keys(current).find((iter) => current[iter].name === extName);
+      if (extId === undefined) {
+        log("warn", "toggling unknown extension", { extName, enabled });
+        return;
+      }
+
       log("info", "user toggling extension manually", { extId, enabled });
-      dispatch(setExtensionEnabled(extId, enabled));
+
+      if (persistedRef.current[extId] !== undefined) {
+        dispatch(setExtensionEnabled(extId, enabled));
+        return;
+      }
+
+      // a bundled extension has no entry until its enabled state needs recording
+      const { loadFailures: _loadFailures, ...entry } = current[extId];
+      dispatch(addExtension({ ...entry, enabled }));
     },
     [dispatch],
   );
@@ -145,27 +164,20 @@ export const ExtensionManager = ({
     () =>
       (api?.getLoadedExtensions?.() ?? [])
         .filter((ext) => ext.dynamic && ext.info?.bundled)
+        // one with an entry of its own is already a row
+        .filter((ext) => findInstalled(extensions, { path: ext.path }) === undefined)
         .reduce<IExtensionStates>((prev, ext) => {
-          prev[ext.name] = {
-            enabled: true,
-            version: ext.info?.version ?? "",
-            remove: false,
-            endorsed: "Undecided",
-            name: ext.info?.name ?? ext.name,
-            author: ext.info?.author ?? "Unknown",
-            description: ext.info?.description ?? "",
-            path: ext.path,
-            bundled: true,
-          };
+          // built like a persisted entry, since toggling the row persists it
+          prev[ext.name] = { ...extensionStateFromScan(ext), name: ext.info?.name ?? ext.name };
           return prev;
         }, {}),
-    [api],
+    [api, extensions],
   );
 
   const extensionsWithState = useMemo(() => {
     const allExtensions = showBundled ? { ...extensions, ...bundled } : extensions;
 
-    return Object.keys(allExtensions).reduce<{ [id: string]: IExtensionWithState }>((prev, id) => {
+    return Object.keys(allExtensions).reduce<Record<string, IExtensionWithState>>((prev, id) => {
       const state = allExtensions[id];
 
       if ((!showBundled && state.bundled) || state.remove) {
@@ -181,12 +193,14 @@ export const ExtensionManager = ({
     }, {});
   }, [bundled, extensions, loadFailures, showBundled]);
 
+  extensionsRef.current = extensionsWithState;
+
   const dropExtension = useCallback(
     (type: DropType, extPaths: string[]) => {
       log("info", "installing extension(s) via drag and drop", { extPaths });
 
       const install = (extPath: string) =>
-        installExtension(api, extPath)
+        installExtension(api, extPath, { analytics: { source: "manual" } })
           .then(() => true)
           .catch((err) => {
             api.showErrorNotification("Failed to install extension", err, { allowReport: false });
@@ -231,6 +245,27 @@ export const ExtensionManager = ({
   const restartNeeded =
     localState.reloadNecessary || !_.isEqual(configId(extensions), configId(oldExtensions));
 
+  const displayOptions = useDisplayOptionsAction({
+    showBundled,
+    t,
+    onReset: () => setShowBundled(false),
+    onToggleBundled: () => setShowBundled((prev) => !prev),
+  });
+
+  const toolbarActions: IToolbarAction[] = [
+    {
+      label: t("Update extensions"),
+      iconPath: mdiRefresh,
+      onClick: onRefresh,
+    },
+    {
+      label: t("Browse extensions"),
+      iconPath: mdiPlus,
+      onClick: () => dispatch(setDialogVisible("browse-extensions")),
+    },
+    displayOptions,
+  ];
+
   return (
     <Page active={active} pageId={pageId} scrollable={false}>
       <PageHeader
@@ -239,40 +274,9 @@ export const ExtensionManager = ({
         subtitle={t("Manage extensions that add features and game support to Vortex.")}
         title={t("Extensions")}
       >
-        {/* Not a `Toolbar`: its delay group only covers the actions it renders, so
-            the display options' own tooltip would sit outside it and re-delay when
-            the pointer reaches the tune icon. One group over all three keeps the
-            sweep instant. */}
-        <div className="flex shrink-0 items-center gap-x-2">
-          <TooltipDelayGroup>
-            <Tooltip content={t("Update extensions")} placement="bottom">
-              <Button
-                appearance="weak"
-                aria-label={t("Update extensions")}
-                brand="neutral"
-                leftIconPath={mdiRefresh}
-                onClick={onRefresh}
-              />
-            </Tooltip>
-
-            <Tooltip content={t("Browse extensions")} placement="bottom">
-              <Button
-                appearance="weak"
-                aria-label={t("Browse extensions")}
-                brand="neutral"
-                leftIconPath={mdiPlus}
-                onClick={() => dispatch(setDialogVisible("browse-extensions"))}
-              />
-            </Tooltip>
-
-            <DisplayOptions
-              showBundled={showBundled}
-              t={t}
-              onReset={() => setShowBundled(false)}
-              onToggleBundled={() => setShowBundled((prev) => !prev)}
-            />
-          </TooltipDelayGroup>
-        </div>
+        <Toolbar>
+          <ToolbarGroup actions={toolbarActions} />
+        </Toolbar>
       </PageHeader>
 
       {restartNeeded && (

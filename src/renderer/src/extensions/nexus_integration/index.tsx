@@ -34,6 +34,7 @@ import type { IComponentContext } from "../../types/IComponentContext";
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IModLookupResult } from "../../types/IModLookupResult";
 import type { IState } from "../../types/IState";
+import { Pictogram } from "../../ui/components/pictogram/Pictogram";
 import { getApplication } from "../../util/application";
 import { ProcessCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
@@ -1156,8 +1157,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChildren<any>> {
   return () => {
     const context = React.useContext<IComponentContext>(MainContext);
-    const premiumPictogramPath = "assets/pictograms/premium-pictogram.svg";
-
     const trackAndGoToPremium = (e) => {
       context.api.events.emit("analytics-track-click-event", "Go Premium", "Header");
       goBuyPremium(e);
@@ -1182,7 +1181,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChi
             </FlexLayout.Flex>
 
             <FlexLayout.Fixed>
-              <Image className="premium-pictogram" srcs={[premiumPictogramPath]} />
+              <Pictogram brand="premium" className="size-16" name="premium" size="none" />
             </FlexLayout.Fixed>
           </FlexLayout>
 

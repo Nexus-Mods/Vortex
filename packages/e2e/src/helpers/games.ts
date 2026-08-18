@@ -4,6 +4,7 @@ import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
 import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
+import { stubOpenDialog } from "./dialogs";
 import { Timeouts } from "./timeouts";
 
 // VORTEX_E2E=1 disables automatic discovery, so all games go through the
@@ -32,9 +33,7 @@ export async function manageGame(
     await expect(navbar.gamesLink).toBeVisible({ timeout: Timeouts.NETWORK });
     await navbar.gamesLink.click();
 
-    await electronApp.evaluate(({ dialog }, gamePath) => {
-      dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [gamePath] });
-    }, fakeGame.gamePath);
+    await stubOpenDialog(electronApp, fakeGame.gamePath);
 
     // The unmanaged games list is paginated/windowed, so the target game's row
     // isn't in the DOM until the list is filtered down to it. Search by name first.
@@ -50,9 +49,12 @@ export async function manageGame(
     await expect(manageButton).toBeVisible();
     await manageButton.click();
 
-    const continueButton = vortexWindow.getByRole("button", { name: "Continue" });
-    await expect(continueButton).toBeVisible();
-    await continueButton.click();
+    await expect(gamesPage.notDiscoveredDialog).toBeVisible();
+    await expect(gamesPage.notDiscoveredDialog).toContainText(
+      "hasn't been automatically discovered",
+    );
+    await gamesPage.continueButton.click();
+    await expect(gamesPage.notDiscoveredDialog).toBeHidden();
 
     await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
   });

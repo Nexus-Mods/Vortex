@@ -14,7 +14,11 @@ export interface IBaseProps {
   t: TFunction;
   game: IGameStored;
   onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
-  onChange: () => void;
+  /**
+   * Only for a host that has to reposition itself when the info arrives. The
+   * design-system popover follows its own content, so it doesn't pass one.
+   */
+  onChange?: () => void;
 }
 
 interface IConnectedProps {
@@ -63,7 +67,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     }
 
     if (this.props.gameInfo !== nextProps.gameInfo) {
-      nextProps.onChange();
+      nextProps.onChange?.();
     }
   }
 

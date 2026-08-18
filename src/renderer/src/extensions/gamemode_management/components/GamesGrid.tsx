@@ -14,8 +14,6 @@ interface IGamesGridProps {
   type: string;
   gameMode: string;
   discoveredGames: { [id: string]: IDiscoveryResult };
-  container: HTMLElement | null;
-  getBounds: () => ClientRect;
   onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
 }
 
@@ -25,8 +23,6 @@ export const GamesGrid = ({
   type,
   gameMode,
   discoveredGames,
-  container,
-  getBounds,
   onRefreshGameInfo,
 }: IGamesGridProps) => {
   const isDiscovered = (gameId: string) =>
@@ -38,10 +34,8 @@ export const GamesGrid = ({
         <GameThumbnail
           active={game.id === gameMode}
           className="w-full!"
-          container={container}
           discovered={isDiscovered(game.id)}
           game={game}
-          getBounds={getBounds}
           imageClassName="rounded-md"
           key={game.id + "_" + (game.contributed ?? "official")}
           t={t}

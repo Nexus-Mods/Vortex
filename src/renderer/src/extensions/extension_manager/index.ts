@@ -21,6 +21,14 @@ import BrowseExtensions from "./BrowseExtensions";
 import type { IBrowseExtensionsProps } from "./BrowseExtensions";
 import { ExtensionManager } from "./ExtensionManager";
 import type { IExtensionManagerProps } from "./ExtensionManager";
+import {
+  findDependencyInCatalog,
+  findInCatalog,
+  findInstalled,
+  findInstalledDependency,
+  findUpdatableExtensions,
+  getMissingOptionalExtensions,
+} from "./queries";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
 
@@ -45,66 +53,7 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   const { available } = state.session.extensions;
   const installed = state.app.extensions ?? {};
 
-  const updateable = Object.values(installed).reduce<
-    { current: IExtensionState; update: IAvailableExtension }[]
-  >((prev, ext) => {
-    const update = available.find((iter) => isExtSame(ext, iter));
-
-    if (update === undefined || update.version === undefined) {
-      // as of Vortex 1.8 we expect to find all extension, including the bundled ones, in the
-      // list of available extensions
-      if (ext.modId !== undefined) {
-        log("warn", "extension not available", { ext: JSON.stringify(ext) });
-      }
-      return prev;
-    }
-
-    const extVer = semver.coerce(ext.version);
-    const updateVer = semver.coerce(update.version);
-
-    if (extVer === null || updateVer === null) {
-      log("warn", "invalid version on extension", {
-        local: ext.version,
-        update: update.version,
-      });
-      return prev;
-    }
-
-    if (semver.gte(extVer, updateVer)) {
-      return prev;
-    }
-
-    prev.push({ current: ext, update });
-
-    return prev;
-  }, []);
-
-  let forceRestart: boolean = false;
-
-  const { commandLine } = state.session.base;
-  if (commandLine.installExtension !== undefined) {
-    const request = parseInstallCmdLine(commandLine.installExtension);
-    const update = available.find(
-      (ext) => request.modId !== undefined && ext.modId === request.modId,
-    );
-
-    if (update !== undefined) {
-      forceRestart = true;
-      updateable.push({
-        current: {
-          enabled: true,
-          version: "",
-          remove: false,
-          endorsed: "Undecided",
-          name: update.name,
-          author: update.author,
-          description: update.description.short,
-          path: "",
-        },
-        update,
-      });
-    }
-  }
+  const updateable = findUpdatableExtensions(installed, available);
 
   if (updateable.length === 0) return;
 
@@ -117,36 +66,31 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
 
   log("info", "extensions will be updated", {
     updateable: updateable.map(
-      (ext) =>
-        `${ext.current.name} v${ext.current.version} ` +
-        `-> ${ext.update.name} v${ext.update.version}`,
+      ({ installed, available }) =>
+        `${installed.name} v${installed.version} ${available.name} v${available.version}`,
     ),
   });
 
-  const promises = updateable.map((update) => downloadAndInstallExtension(api, update.update));
+  const promises = updateable.map(({ available }) => downloadAndInstallExtension(api, available));
   const success = await Promise.all(promises);
 
   api.dismissNotification("extension-updates");
   localState.reloadNecessary = true;
 
   if (success.find((iter) => iter === true)) {
-    if (forceRestart) {
-      relaunch();
-    } else {
-      api.sendNotification({
-        id: "extension-updates",
-        type: "success",
-        message: "Extensions updated, please restart to apply them",
-        actions: [
-          {
-            title: "Restart now",
-            action: () => {
-              relaunch();
-            },
+    api.sendNotification({
+      id: "extension-updates",
+      type: "success",
+      message: "Extensions updated, please restart to apply them",
+      actions: [
+        {
+          title: "Restart now",
+          action: () => {
+            relaunch();
           },
-        ],
-      });
-    }
+        },
+      ],
+    });
   }
 }
 
@@ -176,12 +120,13 @@ async function updateAvailableExtensions(
 async function installDependency(api: IExtensionApi, dependencyId: string): Promise<boolean> {
   const state = api.getState();
   const availableExtensions = state.session.extensions.available;
-  const installedExtensions = state.app.extensions ?? {};
 
-  if (installedExtensions[dependencyId] !== undefined) {
+  const installedDependency = findInstalledDependency(state.app.extensions, dependencyId);
+
+  if (installedDependency !== undefined) {
     // installed, probably failed to load or disabled
-    if (!installedExtensions[dependencyId].enabled) {
-      api.store.dispatch(setExtensionEnabled(dependencyId, true));
+    if (!installedDependency.extension.enabled) {
+      api.store.dispatch(setExtensionEnabled(installedDependency.key, true));
       return true;
     } else {
       api.showErrorNotification(
@@ -199,10 +144,7 @@ async function installDependency(api: IExtensionApi, dependencyId: string): Prom
     }
   }
 
-  const toDownload = availableExtensions.find(
-    (iter) => !iter.type && (iter.name === dependencyId || iter.id === dependencyId),
-  );
-
+  const toDownload = findDependencyInCatalog(availableExtensions, dependencyId);
   if (toDownload === undefined) return false;
 
   const success = await downloadAndInstallExtension(api, toDownload);
@@ -308,18 +250,6 @@ function signalRestartNeeded(api: IExtensionApi, gameName?: string): void {
   }
 }
 
-function parseInstallCmdLine(argument: string): IExtensionDownloadInfo {
-  const modIdMatch = argument.match(/modId:(\d+)/);
-  if (modIdMatch != null) {
-    return {
-      name: "Commandline Request",
-      modId: parseInt(modIdMatch[1], 10),
-    };
-  } else {
-    throw new Error(`invalid command line argument "${argument}"`);
-  }
-}
-
 function init(context: IExtensionContext) {
   context.registerReducer(["session", "extensions"], sessionReducer);
 
@@ -386,102 +316,83 @@ function init(context: IExtensionContext) {
       await didFetchAvailableExtensions;
       const success = await downloadAndInstallExtension(context.api, ext);
 
-      if (success) {
-        const gameName =
-          ext.type === "game" || ext.name?.startsWith("Game:") ? ext.name : undefined;
-        signalRestartNeeded(context.api, gameName);
-      }
+      if (success) signalRestartNeeded(context.api);
       return success;
     });
 
     context.api.events.on("gamemode-activated", (gameMode: string) => {
       const state = context.api.getState();
       const game = getGame(gameMode);
-      const extState = state.app.extensions ?? {};
+      const loadedExtensions = context.api.getLoadedExtensions();
 
-      // Search both persisted user extensions and loaded bundled extensions.
-      const gameExtId =
-        Object.keys(extState).find((key) => game.extensionPath === extState[key].path) ??
-        context.api.getLoadedExtensions().find((ext) => ext.path === game.extensionPath)?.name;
+      const gameExtension = loadedExtensions.find((ext) => ext.path === game.extensionPath);
+      if (!gameExtension) return;
 
-      if (!gameExtId || !state.session.extensions.optional[gameExtId]) {
-        return;
-      }
+      // TODO: use session-based key instead of the freaking name as key
+      const optionalExtensions = state.session.extensions.optional[gameExtension.name];
+      if (!optionalExtensions || optionalExtensions.length === 0) return;
 
-      const requiredIds: string[] = [];
-      const loadedExts = context.api.getLoadedExtensions();
-      for (const opt of state.session.extensions.optional[gameExtId]) {
-        const installed =
-          extState[opt.id] !== undefined ||
-          loadedExts.some(
-            (le) => le.info?.name === opt.id || le.info?.id === opt.id || le.name === opt.id,
-          );
-        if (!installed) {
-          requiredIds.push(opt.id);
-        }
-      }
+      const missingExtensions = getMissingOptionalExtensions(optionalExtensions, loadedExtensions);
+      if (missingExtensions.length === 0) return;
 
-      if (requiredIds.length > 0) {
-        const t = context.api.translate;
-        context.api.sendNotification({
-          id: `missing-optional-extensions-${gameExtId}`,
-          type: "warning",
-          message: "Missing Optional Extension/s",
-          allowSuppress: true,
-          actions: [
-            {
-              title: "More",
-              action: (dismiss) => {
-                context.api.showDialog(
-                  "question",
-                  "Missing Optional Extension/s",
+      const t = context.api.translate;
+      context.api.sendNotification({
+        id: `missing-optional-extensions-${gameExtension.name}`,
+        type: "warning",
+        message: "Missing Optional Extension/s",
+        allowSuppress: true,
+        actions: [
+          {
+            title: "More",
+            action: (dismiss) => {
+              context.api.showDialog(
+                "question",
+                "Missing Optional Extension/s",
+                {
+                  bbcode: t(
+                    'Some optional extensions for "{{game}}" are missing.[br][/br][br][/br]' +
+                      "Do you want to install them now?",
+                    { replace: { game: game.name } },
+                  ),
+                  message: `Missing extensions:\n\n${missingExtensions.map((entry) => `- ${entry.id}\n`).join("")}`,
+                },
+                [
+                  { label: "Cancel", action: () => dismiss() },
                   {
-                    bbcode: t(
-                      'Some optional extensions for "{{game}}" are missing.[br][/br][br][/br]' +
-                        "Do you want to install them now?",
-                      { replace: { game: game.name } },
-                    ),
-                    message: `Missing extensions:\n\n${requiredIds.map((id) => `- ${id}\n`).join("")}`,
-                  },
-                  [
-                    { label: "Cancel", action: () => dismiss() },
-                    {
-                      label: "Install",
-                      action: () => {
-                        dismiss();
-                        const promises = requiredIds.map((id) =>
-                          installDependency(context.api, id),
-                        );
-                        void Promise.all(promises);
-                      },
+                    label: "Install",
+                    action: () => {
+                      dismiss();
+                      const promises = missingExtensions.map((entry) =>
+                        installDependency(context.api, entry.id),
+                      );
+                      void Promise.all(promises);
                     },
-                  ],
-                );
-              },
+                  },
+                ],
+              );
             },
-            {
-              title: "Install Extension/s",
-              action: () => {
-                const promises = requiredIds.map((id) => installDependency(context.api, id));
-                void Promise.all(promises);
-              },
+          },
+          {
+            title: "Install Extension/s",
+            action: () => {
+              const promises = missingExtensions.map((entry) =>
+                installDependency(context.api, entry.id),
+              );
+              void Promise.all(promises);
             },
-          ],
-        });
-      }
+          },
+        ],
+      });
     });
 
     context.api.onAsync<boolean>("install-extension-from-download", async (archiveId: string) => {
       const state = context.api.getState();
-      const modId = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids?.modId;
-      const ext = state.session.extensions.available.find((iter) => iter.modId === modId);
-      const extState = state.app.extensions ?? {};
-      const isInstalled =
-        Object.values(extState).find(
-          (inst) =>
-            inst.modId !== undefined && inst.modId === ext?.modId && inst.version === ext?.version,
-        ) !== undefined;
+      const ids = state.persistent.downloads.files[archiveId]?.modInfo?.nexus?.ids ?? {};
 
+      const { modId, fileId } = ids;
+      if (modId === undefined || fileId === undefined) return false;
+
+      const isInstalled = findInstalled(state.app.extensions, { modId, fileId }) !== undefined;
       if (isInstalled) {
         context.api.sendNotification({
           id: "extension-already-installed",
@@ -492,11 +403,8 @@ function init(context: IExtensionContext) {
         return false;
       }
 
-      if (modId !== undefined && ext !== undefined) {
-        const success = await downloadAndInstallExtension(context.api, ext);
-        if (success) signalRestartNeeded(context.api, ext.gameName);
-        return success;
-      } else {
+      const catalogEntry = findInCatalog(state.session.extensions.available, { modId });
+      if (catalogEntry === undefined) {
         context.api.sendNotification({
           id: "not-an-extension",
           type: "warning",
@@ -506,6 +414,10 @@ function init(context: IExtensionContext) {
 
         return false;
       }
+
+      const success = await downloadAndInstallExtension(context.api, catalogEntry);
+      if (success) signalRestartNeeded(context.api, catalogEntry.gameName);
+      return success;
     });
 
     context.api.events.on("show-extension-page", (modId: number) => {
@@ -518,7 +430,7 @@ function init(context: IExtensionContext) {
     });
 
     {
-      const state: IState = context.api.store.getState();
+      const state: IState = context.api.getState();
       checkMissingDependencies(context.api, state.session.base.extLoadFailures);
     }
   });

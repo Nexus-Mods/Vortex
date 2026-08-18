@@ -3,18 +3,20 @@ import React, { type ReactNode, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import {
+  useOptionalIssue,
+  useTracker,
+} from "@/extensions/health_check/hooks/HealthCheckTracking.context";
+import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
+import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
+import { isPremium } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
+import opn from "@/util/opn";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
-
-import opn from "../../../../util/opn";
-import { PREMIUM_PATH } from "../../../nexus_integration/constants";
-import { useRefreshUserInfoOnFocus } from "../../../nexus_integration/hooks/useRefreshUserInfoOnFocus";
-import { isPremium } from "../../../nexus_integration/selectors";
-import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
 
 /** Which 1-click flow surfaced the premium upsell modal. */
 export type PremiumTrigger = "single_install" | "batch_install" | "install_all";

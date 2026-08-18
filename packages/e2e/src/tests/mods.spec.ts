@@ -4,11 +4,10 @@
  * install completes cleanly. Premium users skip the slow-download interstitial.
  */
 import { SDV_MOD_URL } from "../constants";
-import { test, expect, type NexusUser } from "../fixtures/vortex-app";
+import { test, type NexusUser } from "../fixtures/vortex-app";
 import { downloadModViaModManager } from "../helpers/modDownload";
-import { Timeouts } from "../helpers/timeouts";
+import { expectModListed, SMAPI_NAME } from "../helpers/mods";
 import { freeUser, premiumUser } from "../helpers/users";
-import { NavBar } from "../selectors/navbar";
 
 const TIERS = [
   { tier: "free", user: freeUser },
@@ -31,11 +30,7 @@ test.describe("Mods - Downloads", () => {
         });
 
         await test.step("Verify SMAPI is installed in Vortex", async () => {
-          const navbar = new NavBar(vortexWindow);
-          await navbar.modsLink.click();
-
-          const modRow = vortexWindow.getByText(/SMAPI/i).first();
-          await expect(modRow).toBeVisible({ timeout: Timeouts.NETWORK });
+          await expectModListed(vortexWindow, SMAPI_NAME);
         });
       });
     });

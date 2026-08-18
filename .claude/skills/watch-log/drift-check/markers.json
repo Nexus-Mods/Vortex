@@ -52,6 +52,7 @@
     "Collection install stalled after rescue attempt, resolving",
     "Critical error in dependency installation",
     "Error during scheduled phase deployment",
-    "Download not found when trying to resume"
+    "Download not found when trying to resume",
+    "could not find collection rule for skipped download"
   ]
 }

@@ -4,7 +4,7 @@ import { type Page } from "@playwright/test";
  * Dismiss all on-screen notifications.
  *
  * Vortex's Header renders notifications in a HeadlessUI Popover anchored to the
- * nav bell (see views/components/Header/Notifications). The tray AUTO-OPENS
+ * nav bell (see views/components/Header/notifications). The tray AUTO-OPENS
  * whenever a new notification arrives, and its panel is `absolute right-0` — so
  * it hangs down over the top-right of the content and intercepts pointer events
  * on right-aligned controls (the Health Check tabs' action buttons and a warning

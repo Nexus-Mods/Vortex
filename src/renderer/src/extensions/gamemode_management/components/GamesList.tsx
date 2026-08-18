@@ -13,8 +13,6 @@ interface IGamesListProps {
   type: string;
   gameMode: string;
   discoveredGames: { [id: string]: IDiscoveryResult };
-  container: HTMLElement | null;
-  getBounds: () => ClientRect;
   onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
   onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
 }
@@ -25,8 +23,6 @@ export const GamesList = ({
   type,
   gameMode,
   discoveredGames,
-  container,
-  getBounds,
   onRefreshGameInfo,
   onBrowseGameLocation,
 }: IGamesListProps) => (
@@ -34,10 +30,8 @@ export const GamesList = ({
     {games.map((game) => (
       <GameRow
         active={game.id === gameMode}
-        container={container}
         discovery={discoveredGames[game.id]}
         game={game}
-        getBounds={getBounds}
         key={game.id}
         t={t}
         type={type}

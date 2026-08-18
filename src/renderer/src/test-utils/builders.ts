@@ -31,6 +31,7 @@ import { vi } from "vitest";
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import type { ICategory } from "../extensions/category_management/types/ICategoryDictionary";
 import { MOD_TYPE } from "../extensions/collections/constants";
+import type { ICollectionItemRow } from "../extensions/collections/installSession/itemRows";
 import type {
   ICollectionMod,
   ICollectionModRule,
@@ -83,7 +84,7 @@ import {
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../types/IHealthCheck";
-import type { IState } from "../types/IState";
+import type { IExtensionState, IState } from "../types/IState";
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
 import type {
@@ -329,6 +330,24 @@ export function makeModInstallInfo(
     rule: makeRule(),
     status: "pending",
     type: "requires",
+    ...overrides,
+  };
+}
+
+/**
+ * A collection page table row: an installed mod (or a stub for one that isn't installed yet)
+ * plus the rule that pulled it in and its collection status. `state` is dropped because a row
+ * reports its lifecycle through `status`, not through the IMod contract.
+ */
+export function makeCollectionItemRow(
+  overrides: Partial<ICollectionItemRow> = {},
+): ICollectionItemRow {
+  const { state, ...mod } = makeMod();
+  return {
+    ...mod,
+    ...makeProfileMod(),
+    collectionRule: makeRule(),
+    status: "pending",
     ...overrides,
   };
 }
@@ -1110,6 +1129,28 @@ export function makeDownloadAdapterHarness(
     resume,
     getStates,
   };
+}
+
+/** A complete installed-extension entry, as `addExtension` writes it. */
+export function makeExtensionState(overrides: Partial<IExtensionState> = {}): IExtensionState {
+  return {
+    enabled: true,
+    remove: false,
+    name: "Test Extension",
+    description: "A test extension",
+    author: "Test Author",
+    version: "1.0.0",
+    path: "/path/to/extension",
+    endorsed: "Undecided",
+    ...overrides,
+  };
+}
+
+/** An entry holding only the fields a write touched - no path, no name. */
+export function makeLegacyExtensionState(
+  overrides: Partial<IExtensionState> = {},
+): IExtensionState {
+  return { enabled: false, ...overrides } as IExtensionState;
 }
 
 let loEntrySeq = 0;

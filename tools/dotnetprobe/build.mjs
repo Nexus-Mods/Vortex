@@ -21,5 +21,8 @@ try {
     stdio: "inherit",
   });
 } catch (err) {
+  // Fail loudly: a silently-missing dotnetprobe binary makes the Vortex
+  // renderer crash at runtime, which surfaces as random e2e test failures.
   console.error("Error building dotnetprobe:", err.message);
+  process.exit(1);
 }
