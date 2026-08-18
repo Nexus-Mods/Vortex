@@ -1779,7 +1779,7 @@ function errorFromNexusError(err: NexusError): string {
 
 // Membership is encoded in the user payload / JWT as a set of role strings.
 // Keep those literals in one place so the checks below can't drift.
-const MEMBERSHIP_ROLE = {
+export const MEMBERSHIP_ROLE = {
   premium: "premium",
   supporter: "supporter",
   lifetime: "lifetimepremium",
@@ -1870,7 +1870,8 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   return oauthCred !== undefined ? oauthCred.token : undefined;
 }
 
-function getUserInfo(
+/** Re-read the account from the api into state. Resolves to whether it was updated. */
+export function getUserInfo(
   api: IExtensionApi,
   nexus: Nexus,
   /*userInfo: IValidateKeyResponse*/

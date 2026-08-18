@@ -11,6 +11,7 @@ import {
   setUserAPIKey,
 } from "@/extensions/nexus_integration/actions/account";
 import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import { Button } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
@@ -71,7 +72,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const userInfo = useSelector(userInfoSelector);
 
   const handleRefreshUserInfo = useCallback(() => {
-    api.events.emit("refresh-user-info");
+    scheduleMembershipRefresh(api);
   }, [api]);
 
   const handleLogout = useCallback(() => {

@@ -77,6 +77,11 @@ import {
   REVALIDATION_FREQUENCY,
 } from "./constants";
 import * as eh from "./eventHandlers";
+import {
+  ensureFreshMembership,
+  scheduleMembershipRefresh,
+  trackMembershipReads,
+} from "./membership";
 import { NxmProtocol } from "./nxmProtocol";
 import { buildNXMModUrl } from "./NXMUrl";
 import { accountReducer } from "./reducers/account";
@@ -114,7 +119,6 @@ import LoginIcon from "./views/LoginIcon";
 import {} from "./views/Settings";
 
 let nexus: NexusT;
-let userInfoDebouncer: Debouncer;
 // built in init() so the protocol handlers can be registered there, and shared with the once()
 // callback that registers the OS-level nxm:// handler - both sides need the same queue
 let nxmProtocol: NxmProtocol;
@@ -242,35 +246,39 @@ class Disableable {
       const that = this;
       // tslint:disable-next-line:only-arrow-functions
       return function (...args) {
-        const now = Date.now();
         const state = that.mApi.getState();
-        // we don't do this if logged in via OAuth because we primarily care about the
-        // premium status and that is also included in the JWT token which gets refreshed
-        // automatically
         const key = state.confidential.account?.["nexus"]?.["APIKey"];
-        if (key !== undefined && now > that.mLastValidation + REVALIDATION_FREQUENCY) {
-          that.mLastValidation = now;
-          // the purpose of this is to renew our user info, in case the user
-          // has bought premium since the last validation but technically
-          // it's possible we never logged in successfully in the first place
-          // because the internet was offline at startup.
-          // In that case we can use this opportunity to try to log in now
-          const prom: PromiseBB<IValidateKeyResponse> =
-            key === undefined
-              ? PromiseBB.resolve(undefined as IValidateKeyResponse)
-              : PromiseBB.resolve(
-                  truthy(obj.getValidationResult()) ? obj.revalidate() : obj.setKey(key),
-                );
-
-          return prom.then((userInfo) => {
-            if (truthy(userInfo)) {
-              that.mApi.events.emit("did-login", null);
-            }
-            return obj[prop](...args);
-          });
-        } else {
+        if (key === undefined) {
+          // An OAuth session carries the membership in the JWT, but that only changes when the
+          // token is refreshed, so a plan bought or cancelled on the website can sit stale for the
+          // rest of the session. The membership module owns how often to ask and shares one request
+          // between callers, so hand it every call rather than keeping a second clock here. The
+          // call being made doesn't need the answer, so don't hold it up for one.
+          void ensureFreshMembership(that.mApi, obj);
           return obj[prop](...args);
         }
+
+        const now = Date.now();
+        if (now <= that.mLastValidation + REVALIDATION_FREQUENCY) {
+          return obj[prop](...args);
+        }
+        that.mLastValidation = now;
+
+        // the purpose of this is to renew our user info, in case the user
+        // has bought premium since the last validation but technically
+        // it's possible we never logged in successfully in the first place
+        // because the internet was offline at startup.
+        // In that case we can use this opportunity to try to log in now
+        const prom: PromiseBB<IValidateKeyResponse> = PromiseBB.resolve(
+          truthy(obj.getValidationResult()) ? obj.revalidate() : obj.setKey(key),
+        );
+
+        return prom.then((userInfo) => {
+          if (truthy(userInfo)) {
+            that.mApi.events.emit("did-login", null);
+          }
+          return obj[prop](...args);
+        });
       };
     } else {
       return obj[prop];
@@ -1085,6 +1093,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   api.onAsync("get-latest-mods", eh.onGetLatestMods(api, nexus));
   api.onAsync("get-trending-mods", eh.onGetTrendingMods(api, nexus));
   api.onAsync("send-metric", eh.sendMetric(api, nexus));
+  trackMembershipReads(api);
   api.events.on("refresh-user-info", eh.onRefreshUserInfo(nexus, api));
   api.events.on("endorse-mod", eh.onEndorseMod(api, nexus));
   api.events.on("submit-feedback", eh.onSubmitFeedback(nexus));
@@ -1418,22 +1427,6 @@ function init(context: IExtensionContext): boolean {
     context.api.store.dispatch(clearOAuthCredentials(null));
   });*/
 
-  userInfoDebouncer = new Debouncer(
-    () => {
-      if (!sel.isLoggedIn(context.api.getState())) {
-        log("warn", "Not logged in");
-        return PromiseBB.resolve();
-      }
-
-      context.api.events.emit("refresh-user-info");
-
-      return PromiseBB.resolve();
-    },
-    3000,
-    true,
-    false,
-  );
-
   context.registerAction(
     "global-icons",
     100,
@@ -1442,7 +1435,7 @@ function init(context: IExtensionContext): boolean {
     "Refresh User Info",
     () => {
       log("info", "Refresh User Info global menu item clicked");
-      userInfoDebouncer.schedule();
+      scheduleMembershipRefresh(context.api);
     },
   );
 
@@ -1491,7 +1484,7 @@ function init(context: IExtensionContext): boolean {
 
   // the connection is built later, in the once() callback, so it's read lazily
   nxmProtocol = new NxmProtocol(context.api, () => nexus, {
-    onRefreshMembership: () => userInfoDebouncer.schedule(),
+    onRefreshMembership: () => scheduleMembershipRefresh(context.api),
   });
 
   // this makes it so the download manager can use nxm urls as download urls
@@ -1513,7 +1506,7 @@ function init(context: IExtensionContext): boolean {
     t: context.api.translate,
     nexus,
     ...nxmProtocol.dialogHandlers,
-    onCheckStatus: () => userInfoDebouncer.schedule(),
+    onCheckStatus: () => scheduleMembershipRefresh(context.api),
   }));
 
   context.registerBanner(
