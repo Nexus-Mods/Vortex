@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const childProcess = require("child_process");
+const crypto = require("crypto");
 require("dotenv").config();
 
 const TEMP_DIR = path.join(__dirname, "temp");
@@ -32,19 +33,33 @@ async function sign(configuration) {
         console.log(`Signing ${configuration.path}`);
 
         const { base, dir } = path.parse(configuration.path);
-        const tempFile = path.join(TEMP_DIR, base);
 
         // CodeSignTool can't sign in place without verifying the overwrite with a
         // y/m interaction so we are creating a new file in a temp directory and
         // then replacing the original file with the signed file.
 
-        const setDir = `cd "${CODE_SIGN_TOOL_DIR}"`;
-        const signFile = `CodeSignTool sign -input_file_path="${configuration.path}" -output_dir_path="${TEMP_DIR}" -credential_id="${ES_CREDENTIAL_ID}" -username="${ES_USERNAME}" -password="${ES_PASSWORD}" -totp_secret="${ES_TOTP_SECRET}"`;
-        const moveFile = `move "${tempFile}" "${dir}"`;
+        // The output directory is derived from the full source path rather than
+        // shared, because basenames are not unique across the packaged tree
+        // (e.g. several copies of AccessControl.dll and watcher.node). A shared
+        // directory would let concurrent signings overwrite each other's output.
+        const outDir = path.join(
+            TEMP_DIR,
+            crypto.createHash("sha1").update(configuration.path).digest("hex").slice(0, 12),
+        );
+        fs.mkdirSync(outDir, { recursive: true });
+        const tempFile = path.join(outDir, base);
 
-        childProcess.execSync(`${setDir} && ${signFile} && ${moveFile}`, {
-            stdio: "inherit",
-        });
+        try {
+            const setDir = `cd "${CODE_SIGN_TOOL_DIR}"`;
+            const signFile = `CodeSignTool sign -input_file_path="${configuration.path}" -output_dir_path="${outDir}" -credential_id="${ES_CREDENTIAL_ID}" -username="${ES_USERNAME}" -password="${ES_PASSWORD}" -totp_secret="${ES_TOTP_SECRET}"`;
+            const moveFile = `move /Y "${tempFile}" "${dir}"`;
+
+            childProcess.execSync(`${setDir} && ${signFile} && ${moveFile}`, {
+                stdio: "inherit",
+            });
+        } finally {
+            fs.rmSync(outDir, { recursive: true, force: true });
+        }
     } else {
         console.warn(`sign.js - Can't sign file ${configuration.path}, missing value for:
         ${ES_USERNAME ? "" : "ES_USERNAME"}
