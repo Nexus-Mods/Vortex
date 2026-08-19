@@ -1,6 +1,7 @@
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import type { IModDetails } from "@/extensions/health_check/types";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
+import { isDependencyRule } from "@/extensions/mod_management/util/testModReference";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
 import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
@@ -96,7 +97,8 @@ export interface IInstalledFileRef {
 
 /**
  * Reference tags of mods pulled in by a collection installed on the active
- * profile; files carrying one satisfy requirements but don't emit their own.
+ * profile (both required and optional/recommended entries); files carrying
+ * one satisfy requirements but don't emit their own.
  * Edit `countsForProfile` to change which collections count.
  */
 function collectionManagedTags(mods: { [modId: string]: IMod }, profile: IProfile): Set<string> {
@@ -108,7 +110,7 @@ function collectionManagedTags(mods: { [modId: string]: IMod }, profile: IProfil
       continue;
     }
     for (const rule of mod.rules ?? []) {
-      if (rule.type === "requires" && rule.reference?.tag != null) {
+      if (isDependencyRule(rule) && rule.reference?.tag != null) {
         tags.add(rule.reference.tag);
       }
     }

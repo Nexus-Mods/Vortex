@@ -1,11 +1,17 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+
+vi.mock("@/extensions/nexus_integration/util", () => ({
+  nexusGamesProm: vi.fn(() => Promise.resolve([])),
+}));
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import type { IModDetails } from "@/extensions/health_check/types";
+import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import {
+  gatherInstalledFiles,
   makeDownloadedFileHydrator,
   makeInstalledFileHydrator,
   type IDownloadedFileRef,
@@ -213,5 +219,71 @@ describe("makeInstalledFileHydrator", () => {
     expect(hydrateInstalled(true)?.adultContent).toBe(true);
     expect(hydrateInstalled(false)?.adultContent).toBe(false);
     expect(hydrateInstalled()?.adultContent).toBe(false);
+  });
+});
+
+describe("gatherInstalledFiles", () => {
+  /** A minimal installed, non-collection Nexus mod with the given fileId/referenceTag. */
+  function nexusMod(fileId: number, referenceTag?: string): IMod {
+    return {
+      id: `mod-${fileId}`,
+      state: "installed",
+      attributes: { source: "nexus", fileId, downloadGame: "1704", referenceTag },
+    } as unknown as IMod;
+  }
+
+  /** A collection mod carrying the given dependency rules (each with a reference tag). */
+  function collectionMod(id: string, rules: Array<{ type: string; tag: string }>): IMod {
+    return {
+      id,
+      type: "collection",
+      state: "installed",
+      rules: rules.map((r) => ({ type: r.type, reference: { tag: r.tag } })),
+    } as unknown as IMod;
+  }
+
+  function apiWithMods(mods: { [modId: string]: IMod }): IExtensionApi {
+    const modState = Object.fromEntries(Object.keys(mods).map((id) => [id, { enabled: true }]));
+    return {
+      getState: () => ({
+        settings: { profiles: { activeProfileId: "p1" } },
+        persistent: {
+          profiles: { p1: { id: "p1", gameId: "skyrimse", modState } },
+          mods: { skyrimse: mods },
+        },
+      }),
+    } as unknown as IExtensionApi;
+  }
+
+  test("exempts files pulled in as required collection dependencies", async () => {
+    const api = apiWithMods({
+      collection: collectionMod("collection", [{ type: "requires", tag: "tag-req" }]),
+      "mod-1": nexusMod(1, "tag-req"),
+    });
+    const refs = await gatherInstalledFiles(api);
+    expect(refs.find((r) => r.modId === "mod-1")?.emitRequirements).toBe(false);
+  });
+
+  test("exempts files pulled in as optional/recommended collection dependencies", () => {
+    // Regression: collectionManagedTags used to only look at "requires" rules, so
+    // optional ("recommends") collection members were treated as manually installed
+    // and could trip the file-requirements health check.
+    return gatherInstalledFiles(
+      apiWithMods({
+        collection: collectionMod("collection", [{ type: "recommends", tag: "tag-rec" }]),
+        "mod-2": nexusMod(2, "tag-rec"),
+      }),
+    ).then((refs) => {
+      expect(refs.find((r) => r.modId === "mod-2")?.emitRequirements).toBe(false);
+    });
+  });
+
+  test("does not exempt a manually installed mod with no matching collection tag", async () => {
+    const api = apiWithMods({
+      collection: collectionMod("collection", [{ type: "requires", tag: "tag-req" }]),
+      "mod-3": nexusMod(3, undefined),
+    });
+    const refs = await gatherInstalledFiles(api);
+    expect(refs.find((r) => r.modId === "mod-3")?.emitRequirements).toBe(true);
   });
 });
