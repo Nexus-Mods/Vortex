@@ -742,12 +742,17 @@ class InstallManager {
       lookupResults: [], // Will be populated if needed
       download: downloadId,
       phase: rulePhase(matchingRule),
+      sessionRuleId: modRuleId(matchingRule),
     };
 
     // record that this collection mod's download is available, coupled to the install
     // queueing below so we never mark "downloaded" for a download we then don't install
     // (no-op outside an active collection session)
-    this.writeCollectionSession(dependency.reference, { type: "status", status: "downloaded" });
+    this.writeCollectionSession(
+      dependency.reference,
+      { type: "status", status: "downloaded" },
+      dependency.sessionRuleId,
+    );
 
     // Ensure the phase is marked as having downloads finished
     // This is needed when downloads complete after initial dependency processing
@@ -2514,10 +2519,11 @@ class InstallManager {
           if (existingMod == null) {
             // about to actually install (not reusing an existing mod): mark installing so
             // the collection session reflects the live install phase
-            this.writeCollectionSession(currentDep.reference, {
-              type: "status",
-              status: "installing",
-            });
+            this.writeCollectionSession(
+              currentDep.reference,
+              { type: "status", status: "installing" },
+              currentDep.sessionRuleId,
+            );
           }
           const modId =
             existingMod != null
@@ -2551,7 +2557,11 @@ class InstallManager {
             // record the successful install on the collection session (no-op outside an
             // active collection session). This is the sole writer of the "installed"
             // status, covering both a freshly installed mod and a reused existing one.
-            this.writeCollectionSession(currentDep.reference, { type: "installed", modId });
+            this.writeCollectionSession(
+              currentDep.reference,
+              { type: "installed", modId },
+              currentDep.sessionRuleId,
+            );
 
             // Apply any extra attributes
             this.applyExtraFromRule(api, gameId, modId, {
@@ -2690,7 +2700,11 @@ class InstallManager {
               // Retries exhausted: settle the member as failed (terminal) so the collection can
               // still complete and the member is not re-prompted. writeCollectionSession no-ops
               // over an already-terminal status, so this only settles a genuinely stuck member.
-              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
+              this.writeCollectionSession(
+                dep.reference,
+                { type: "status", status: "failed" },
+                dep.sessionRuleId,
+              );
               if (recovery.showError) {
                 this.showDependencyError(
                   api,
@@ -3481,7 +3495,7 @@ class InstallManager {
       this.mOptionalDownloadsInFlight.add(key);
       // mark downloading up front so a subsequent poll tick doesn't re-select it before the async
       // gather resolves; the in-flight set is the hard guard, this keeps the session status honest.
-      this.writeCollectionSession(rule.reference, { type: "status", status: "downloading" });
+      this.writeCollectionSession(rule.reference, { type: "status", status: "downloading" }, key);
       gatherDependencies([rule], api, true, undefined, this.addToPhaseStateCache(api))
         .then((deps: IDependency[]): Promise<string | undefined> => {
           const dep = deps[0];
@@ -3524,7 +3538,7 @@ class InstallManager {
           // leave a canceled/torn-down install alone; otherwise settle failed so the member becomes
           // terminal and stops blocking completion.
           if (!(err instanceof UserCanceled) && this.mDependencyInstalls[sourceModId]) {
-            this.writeCollectionSession(rule.reference, { type: "status", status: "failed" });
+            this.writeCollectionSession(rule.reference, { type: "status", status: "failed" }, key);
           }
         });
     }
@@ -3671,9 +3685,13 @@ class InstallManager {
     // the members below fail by watchdog fiat, not by their own attempts: mark the session so
     // the finished dialog presents the install as incomplete rather than complete-with-failures
     api.store.dispatch(markSessionStalled(session.sessionId, true));
-    Object.values(session.mods).forEach((mod) => {
+    Object.entries(session.mods).forEach(([ruleId, mod]) => {
       if (!isTerminalMemberStatus(mod.status) && mod.rule?.reference != null) {
-        this.writeCollectionSession(mod.rule.reference, { type: "status", status: "failed" });
+        this.writeCollectionSession(
+          mod.rule.reference,
+          { type: "status", status: "failed" },
+          ruleId,
+        );
       }
     });
   }
@@ -5905,12 +5923,16 @@ class InstallManager {
               return undefined;
             }
             // A terminal download/install failure settles the member as failed on the collection
-            // session. Keyed on the dependency's own reference, so it does not depend on matching the
-            // (possibly md5-less, tag-drifted) failed download back to a rule - which is how a failed
-            // download would otherwise be left stuck on "downloading". No-ops outside an active
-            // collection session and over an already-terminal status.
+            // session. Addressed by the dependency's own session key, so it does not depend on
+            // matching the failed download back to a rule - which is how a failed download would
+            // otherwise be left stuck on "downloading". No-ops outside an active collection session
+            // and over an already-terminal status.
             const settleMemberFailed = () =>
-              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
+              this.writeCollectionSession(
+                dep.reference,
+                { type: "status", status: "failed" },
+                dep.sessionRuleId,
+              );
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
               if (
@@ -6194,7 +6216,11 @@ class InstallManager {
       // mark the dependency as downloading on the collection session (no-op outside an
       // active collection session). Bundled mods are imported, not queued here, so they
       // are naturally excluded - matching the old driver's bundled skip.
-      this.writeCollectionSession(dep.reference, { type: "status", status: "downloading" });
+      this.writeCollectionSession(
+        dep.reference,
+        { type: "status", status: "downloading" },
+        dep.sessionRuleId,
+      );
       if (dep.reference.tag !== undefined) {
         queuedDownloads.push(dep.reference);
       }
@@ -7649,15 +7675,19 @@ class InstallManager {
   /**
    * Record a dependency install outcome on the active collection session. This is the
    * direct, in-process write path: the orchestrator already knows which dependency it is
-   * processing, so it matches the rule by reference and dispatches the resulting tracking
-   * action. Additive to the existing api.events.emit calls - it does not replace them.
+   * processing, so it addresses the member and dispatches the resulting tracking action.
+   * Additive to the existing api.events.emit calls - it does not replace them.
    * A no-op when there is no active session, no rule matches, or the write is redundant.
+   *
+   * Pass the dependency's `sessionRuleId` wherever it is in scope: the member is then addressed
+   * by the key it is tracked under rather than by an identity the engine may have retagged.
    */
   private writeCollectionSession(
     reference: IModReference,
     outcome: CollectionInstallOutcome,
+    ruleId?: string,
   ): void {
-    const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome);
+    const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome, ruleId);
     if (plan === null) {
       return;
     }
