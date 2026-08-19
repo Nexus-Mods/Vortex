@@ -767,9 +767,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private updatePlugins(pluginsIn: IPlugins, gameMode: string) {
     const updateId = (this.mUpdateId = shortid());
 
-    if (pluginsIn === undefined && gameMode !== this.mCachedGameMode) {
+    if (Object.keys(pluginsIn ?? {}).length === 0 && gameMode !== this.mCachedGameMode) {
       // plugin list is empty after switching game, this just means we're still
-      // in the process of loading the plugin list
+      // in the process of loading the plugin list.
       this.nextState.pluginsParsed = {};
       this.nextState.pluginsLoot = {};
       this.nextState.pluginsCombined = {};
