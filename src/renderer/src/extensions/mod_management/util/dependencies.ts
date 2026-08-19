@@ -261,7 +261,7 @@ export function lookupFromDownload(download: IDownload): IModLookupInfo {
     game: download.game,
     source: download.modInfo?.source,
     referenceTag: download.modInfo?.referenceTag,
-    referenceTags: downloadReferenceTags(download),
+    referenceTags: download.modInfo?.referenceTags,
     modId,
     fileId,
   };

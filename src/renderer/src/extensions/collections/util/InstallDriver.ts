@@ -40,7 +40,6 @@ import testModReference, {
   isDependencyRule,
   isOptionalRule,
   isRequiredRule,
-  modReferenceTags,
   ruleInstallSpec,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
@@ -203,9 +202,17 @@ class InstallDriver {
       // is what keeps attribution from being O(members) per event (the 2000-4000 mod freeze).
       // a member mod carries a tag per collection that pulled it in, so any of them can name the
       // rule this install belongs to
-      const taggedDependent = modReferenceTags(mod)
-        .map((tag) => this.mDependentByTag.get(tag))
-        .find((dependent) => dependent !== undefined);
+      const attrs = mod?.attributes;
+      let taggedDependent =
+        attrs?.referenceTag !== undefined
+          ? this.mDependentByTag.get(attrs.referenceTag)
+          : undefined;
+      for (const tag of attrs?.referenceTags ?? []) {
+        if (taggedDependent !== undefined) {
+          break;
+        }
+        taggedDependent = this.mDependentByTag.get(tag);
+      }
 
       // fallback for a mod with no (matching) referenceTag: match by reference / identifiers. The
       // identifiers are independent of the rule, so build them once rather than per member.
