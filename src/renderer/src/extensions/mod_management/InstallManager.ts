@@ -84,6 +84,7 @@ import {
   isOutstandingOptionalMember,
   isTerminalMemberStatus,
   modRuleId,
+  referenceId,
 } from "../../util/collectionInstallSession";
 import {
   getCollectionActiveSession,
@@ -96,6 +97,7 @@ import {
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import {
+  matchSessionRuleEntry,
   planDependencyErrorRecovery,
   sessionWriteForDependency,
 } from "../../util/collectionSessionWrite";
@@ -7699,6 +7701,7 @@ class InstallManager {
   ): void {
     const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome, ruleId);
     if (plan === null) {
+      this.warnUnmatchedSessionWrite(reference, outcome, ruleId);
       return;
     }
     const action =
@@ -7706,6 +7709,33 @@ class InstallManager {
         ? markModInstalled(plan.sessionId, plan.ruleId, plan.write.modId)
         : updateModStatus(plan.sessionId, plan.ruleId, plan.write.status);
     this.mApi.store.dispatch(action);
+  }
+
+  /**
+   * Report a lifecycle outcome that named no session member, since the member then keeps whatever
+   * status it had and the completion poll goes on selecting it. Writes outside an install, and
+   * writes the planner declined for a member it did match, are expected and stay quiet.
+   */
+  private warnUnmatchedSessionWrite(
+    reference: IModReference,
+    outcome: CollectionInstallOutcome,
+    ruleId?: string,
+  ): void {
+    const session = getCollectionActiveSession(this.mApi.getState());
+    if (session === undefined) {
+      return;
+    }
+    if (ruleId !== undefined && session.mods[ruleId] !== undefined) {
+      return;
+    }
+    if (matchSessionRuleEntry(session, reference) !== undefined) {
+      return;
+    }
+    log("warn", "collection session write matched no member", {
+      ruleId,
+      referenceId: referenceId(reference),
+      outcome: outcome.type,
+    });
   }
 
   /**
