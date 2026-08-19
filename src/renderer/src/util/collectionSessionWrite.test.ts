@@ -127,6 +127,40 @@ describe("sessionWriteForDependency", () => {
     ).toBeNull();
   });
 
+  // a dependency carries its member's session key (sessionRuleId), captured while its rule was in
+  // hand, so a write still addresses the member after the engine retags the reference
+  it("resolves the member named by rule id even when the reference identity differs", () => {
+    const state = stateWith([{ ruleId: "r1", status: "downloaded" }]);
+    expect(
+      sessionWriteForDependency(
+        state,
+        refForTag("retagged"),
+        { type: "installed", modId: "mod-1" },
+        "r1",
+      ),
+    ).toEqual({
+      sessionId: "col1_prof1",
+      ruleId: "r1",
+      write: { kind: "markInstalled", modId: "mod-1" },
+    });
+  });
+
+  it("falls back to reference matching when the rule id is not tracked", () => {
+    const state = stateWith([{ ruleId: "r1", status: "pending" }]);
+    expect(
+      sessionWriteForDependency(
+        state,
+        refForTag("r1"),
+        { type: "status", status: "installing" },
+        "stale-key",
+      ),
+    ).toEqual({
+      sessionId: "col1_prof1",
+      ruleId: "r1",
+      write: { kind: "updateStatus", status: "installing" },
+    });
+  });
+
   it("returns null when the write would override a user-ignored mod", () => {
     const state = stateWith([{ ruleId: "r1", status: "ignored" }]);
     expect(

@@ -134,7 +134,13 @@ describe("a collection member satisfied by another collection's download", () =>
 
     internals(h.manager).startQueuedInstallation(
       h.api,
-      { reference: adoptedReference, phase: 0, extra: {} },
+      // as gathered: the member's session key alongside the reference the engine retagged
+      {
+        reference: adoptedReference,
+        sessionRuleId: modRuleId(memberRule),
+        phase: 0,
+        extra: {},
+      },
       SHARED_DOWNLOAD,
       GAME,
       COLLECTION,

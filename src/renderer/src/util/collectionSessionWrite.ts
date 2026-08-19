@@ -5,7 +5,11 @@
  * is deliberately NOT re-exported through the public api barrels.
  */
 import type { IModReference } from "../extensions/mod_management/types/IMod";
-import type { CollectionModStatus } from "../types/collections/ICollectionInstallSession";
+import type {
+  CollectionModStatus,
+  ICollectionInstallSession,
+  ICollectionModInstallInfo,
+} from "../types/collections/ICollectionInstallSession";
 import type { IState } from "../types/IState";
 import { referenceId } from "./collectionInstallSession";
 import { getCollectionActiveSession } from "./collectionInstallSessionSelectors";
@@ -109,42 +113,57 @@ export interface IResolvedSessionWrite {
 }
 
 /**
- * Resolve how an install lifecycle outcome should be written to the active session,
- * given the reference of the dependency the outcome is about. The orchestrator
- * (InstallManager) always has the dependency in hand, so the rule is matched by
- * reference identity (referenceId, the same identity the session-mods key uses) rather
- * than by lookup. Combines the active-session lookup, rule matching and planSessionWrite
- * into one step so a writer can record progress with a single call. The returned ruleId
- * is the session-mods key.
+ * The session member a reference identifies, as a [ruleId, info] pair, matched on referenceId -
+ * the same identity the session-mods key is built from. Undefined when the reference carries no
+ * identifying field (matching it would alias onto another id-less rule) or no member matches.
+ */
+export function matchSessionRuleEntry(
+  session: ICollectionInstallSession,
+  reference: IModReference,
+): readonly [string, ICollectionModInstallInfo] | undefined {
+  const target = referenceId(reference);
+  if (target === undefined) {
+    return undefined;
+  }
+  return Object.entries(session.mods).find(
+    ([, info]) => referenceId(info.rule.reference) === target,
+  );
+}
+
+/**
+ * Resolve how an install lifecycle outcome should be written to the active session. Combines the
+ * active-session lookup, member matching and planSessionWrite into one step so a writer can record
+ * progress with a single call. The returned ruleId is the session-mods key.
  *
- * Returns null when there is no active session, no rule matches the reference, or the
- * write would be a no-op (e.g. a downgrade from a protected state).
+ * `ruleId` is the member's session key, captured when its rule was in hand (IDependency's
+ * sessionRuleId). Given one, the member is addressed directly, which is what keeps a write landing
+ * when the dependency's reference identity no longer matches the key the member is tracked under.
+ * Without one the member is matched by reference identity.
+ *
+ * Returns null when there is no active session, no member matches, or the write would be a no-op
+ * (e.g. a downgrade from a protected state).
  */
 export function sessionWriteForDependency(
   state: IState,
   reference: IModReference,
   outcome: CollectionInstallOutcome,
+  ruleId?: string,
 ): IResolvedSessionWrite | null {
   const session = getCollectionActiveSession(state);
   if (session === undefined) {
     return null;
   }
-  const target = referenceId(reference);
-  if (target === undefined) {
-    // a reference with no identifying field can't be matched to a specific rule; bail
-    // rather than aliasing onto another id-less rule (undefined === undefined)
-    return null;
-  }
-  const entry = Object.entries(session.mods).find(
-    ([, info]) => referenceId(info.rule.reference) === target,
-  );
+  const entry =
+    ruleId !== undefined && session.mods[ruleId] !== undefined
+      ? ([ruleId, session.mods[ruleId]] as const)
+      : matchSessionRuleEntry(session, reference);
   if (entry === undefined) {
     return null;
   }
-  const [ruleId, info] = entry;
+  const [matchedRuleId, info] = entry;
   const write = planSessionWrite(info.status, outcome);
   if (write.kind === "none") {
     return null;
   }
-  return { sessionId: session.sessionId, ruleId, write };
+  return { sessionId: session.sessionId, ruleId: matchedRuleId, write };
 }
