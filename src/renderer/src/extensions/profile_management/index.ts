@@ -567,7 +567,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
       extension = stubDownloadInfo;
     } else {
       extension = state.session.extensions.available.find(
-        (ext) => ext?.gameId === gameId || ext.name === gameId,
+        (ext) => ext?.gameDomain === gameId || ext.name === gameId,
       );
     }
     if (extension === undefined) {
@@ -602,7 +602,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
                 .then(() => api.emitAndAwait("install-extension", extension))
                 .then((results: boolean[]) => {
                   if (results.includes(true)) {
-                    relaunch(["--game", gameId]);
+                    relaunch(["--game", extension.name]);
                   }
                 })
                 .finally(() => {

@@ -6,7 +6,7 @@ import Bluebird from "bluebird";
 import * as ops from "./operations";
 import settingsReducer from "./reducers";
 import SettingsTheme from "./SettingsTheme";
-import { getAvailableFonts, themesPath } from "./util";
+import { getAvailableFonts, listThemeDirs } from "./util";
 
 function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
   if (!initial) {
@@ -20,28 +20,26 @@ function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
     return;
   }
 
-  return util
-    .readExtensibleDir("theme", path.join(__dirname, "themes"), themesPath())
-    .then((themes) => {
-      const selected = themes.find((iter) => path.basename(iter) === theme);
-      if (selected === undefined) {
-        return Promise.resolve();
-      }
+  return listThemeDirs().then((themes) => {
+    const selected = themes.find((iter) => path.basename(iter) === theme);
+    if (selected === undefined) {
+      return Promise.resolve();
+    }
 
-      return fs
-        .statAsync(path.join(selected, "variables.scss"))
-        .then(() => api.setStylesheet("variables", path.join(selected, "variables")))
-        .catch(() => api.setStylesheet("variables", undefined))
-        .then(() => fs.statAsync(path.join(selected, "details.scss")))
-        .then(() => api.setStylesheet("details", path.join(selected, "details")))
-        .catch(() => api.setStylesheet("details", undefined))
-        .then(() => fs.statAsync(path.join(selected, "fonts.scss")))
-        .then(() => api.setStylesheet("fonts", path.join(selected, "fonts")))
-        .catch(() => api.setStylesheet("fonts", undefined))
-        .then(() => fs.statAsync(path.join(selected, "style.scss")))
-        .then(() => api.setStylesheet("style", path.join(selected, "style")))
-        .catch(() => api.setStylesheet("style", undefined));
-    });
+    return fs
+      .statAsync(path.join(selected, "variables.scss"))
+      .then(() => api.setStylesheet("variables", path.join(selected, "variables")))
+      .catch(() => api.setStylesheet("variables", undefined))
+      .then(() => fs.statAsync(path.join(selected, "details.scss")))
+      .then(() => api.setStylesheet("details", path.join(selected, "details")))
+      .catch(() => api.setStylesheet("details", undefined))
+      .then(() => fs.statAsync(path.join(selected, "fonts.scss")))
+      .then(() => api.setStylesheet("fonts", path.join(selected, "fonts")))
+      .catch(() => api.setStylesheet("fonts", undefined))
+      .then(() => fs.statAsync(path.join(selected, "style.scss")))
+      .then(() => api.setStylesheet("style", path.join(selected, "style")))
+      .catch(() => api.setStylesheet("style", undefined));
+  });
 }
 
 function editStyle(api: types.IExtensionApi, themeName: string): Bluebird<void> {

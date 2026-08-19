@@ -951,6 +951,32 @@ export function onGetModRequirements(
   };
 }
 
+/**
+ * Fetches endorsement counts for the given mod UIDs in one batched query.
+ * The result is keyed by UID; mods the query cannot resolve are omitted.
+ */
+export function onGetModEndorsementCounts(
+  nexus: Nexus,
+): (uids: string[]) => Bluebird<Record<string, number>> {
+  return (uids: string[]) => {
+    if (uids.length === 0) {
+      return Bluebird.resolve({});
+    }
+
+    return Bluebird.resolve(nexus.modsByUid({ uid: true, endorsements: true }, uids)).then(
+      (mods) => {
+        const result: Record<string, number> = {};
+        for (const mod of mods) {
+          if (mod.uid !== undefined && mod.endorsements !== undefined) {
+            result[mod.uid] = mod.endorsements;
+          }
+        }
+        return result;
+      },
+    );
+  };
+}
+
 export function onGetUserKeyData(
   api: IExtensionApi,
 ): (...args: any[]) => Promise<IValidateKeyDataV2> {
