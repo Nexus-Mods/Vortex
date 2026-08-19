@@ -63,9 +63,13 @@ export function setupAutoUpdater(installType: string): void {
   let cancellationToken: CancellationToken | undefined = undefined;
   const currentVersion = app.getVersion();
   let updateChannel = "stable";
-  // The release the last successful check resolved to; its download base URL
-  // is what the generic feed points at.
+  // The release the last successful check resolved to — used only to prefer
+  // the resolver's collected release notes over the (empty) generic-feed ones.
+  // Downloads never trust it: updater:download re-resolves every time.
   let lastResolved: ResolvedRelease | null = null;
+  // Overlapping checks are possible (set-channel + manual check-now); only
+  // the newest one may write checking/availability/cancellation state.
+  let checkGeneration = 0;
 
   // Launching the freshly downloaded installer can fail transiently with EBUSY
   // (and similar lock errors) while antivirus still has the ~360 MB file open.
@@ -211,12 +215,43 @@ export function setupAutoUpdater(installType: string): void {
   });
 
   // Point electron-updater at the resolved release and let it re-check;
-  // resolves once the library has accepted the feed.
-  function applyResolvedFeed(resolved: ResolvedRelease): Promise<void> {
+  // resolves once the library has accepted the feed. Every download goes
+  // through this first, so check-before-download holds structurally.
+  function applyResolvedFeed(resolved: ResolvedRelease, generation: number): Promise<void> {
     lastResolved = resolved;
     autoUpdater.setFeedURL({ provider: "generic", url: resolved.downloadBaseUrl });
     return autoUpdater.checkForUpdates().then((check) => {
-      cancellationToken = check?.cancellationToken;
+      if (generation === checkGeneration) {
+        cancellationToken = check?.cancellationToken;
+      }
+    });
+  }
+
+  // Resolve the channel's target release and, when it's an upgrade, hand the
+  // feed to electron-updater. Resolves to the release or null (no upgrade).
+  function resolveAndApply(channel: string, generation: number): Promise<ResolvedRelease | null> {
+    return resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
+      // Note: switchToStable stays false until the explicit channel-switch
+      // downgrade flow ships with its UI; a lower "latest" is ignored here
+      // rather than offered (offering it is the old field bug).
+      const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
+        switchToStable: false,
+      });
+      if (resolved == null || verdict !== "upgrade") {
+        const current = semver.valid(currentVersion);
+        if (resolved != null && current != null && semver.lt(resolved.version, current)) {
+          log("info", "Latest release is older than the running version, ignoring", {
+            resolved: resolved.version,
+            currentVersion,
+            channel,
+          });
+        } else {
+          log("info", "No update available", { channel, resolved: resolved?.version });
+        }
+        lastResolved = null;
+        return null;
+      }
+      return applyResolvedFeed(resolved, generation).then(() => resolved);
     });
   }
 
@@ -228,54 +263,43 @@ export function setupAutoUpdater(installType: string): void {
     }
 
     updateChannel = channel;
+    const generation = ++checkGeneration;
     updateStatus.checking = true;
     log("info", "Checking for updates", { channel, manual, currentVersion });
 
-    resolveUpdate(toResolveChannel(channel), currentVersion)
+    resolveAndApply(channel, generation)
       .then((resolved) => {
-        // Note: switchToStable stays false until the explicit channel-switch
-        // downgrade flow ships with its UI; a lower "latest" is ignored here
-        // rather than offered (offering it is the old field bug).
-        const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
-          switchToStable: false,
-        });
-        if (resolved == null || verdict !== "upgrade") {
-          if (resolved != null && semver.lt(resolved.version, currentVersion)) {
-            log("info", "Latest release is older than the running version, ignoring", {
-              resolved: resolved.version,
-              currentVersion,
-              channel,
-            });
-          } else {
-            log("info", "No update available", { channel, resolved: resolved?.version });
-          }
+        if (generation !== checkGeneration) {
+          return; // superseded by a newer check; let that one own the status
+        }
+        updateStatus.checking = false;
+        if (resolved == null) {
           updateStatus.available = false;
+          updateStatus.version = undefined;
+          updateStatus.releaseNotes = undefined;
           updateStatus.error = undefined;
-          updateStatus.checking = false;
           return;
         }
+        log("info", "Update check completed", { version: resolved.version });
 
-        return applyResolvedFeed(resolved).then(() => {
-          log("info", "Update check completed", { version: resolved.version });
-          updateStatus.checking = false;
-
-          // Auto-download patch updates for regular installs; minor/major
-          // updates require user-initiated download via renderer.
-          if (shouldAutoDownload(currentVersion, resolved.version, installType)) {
-            log("info", "Patch update detected, auto-downloading", {
-              from: currentVersion,
-              to: resolved.version,
+        // Auto-download patch updates for regular installs; minor/major
+        // updates require user-initiated download via renderer.
+        if (shouldAutoDownload(currentVersion, resolved.version, installType)) {
+          log("info", "Patch update detected, auto-downloading", {
+            from: currentVersion,
+            to: resolved.version,
+          });
+          autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
+            log("warn", "Auto-download failed", {
+              error: getErrorMessageOrDefault(err),
             });
-            autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
-              log("warn", "Auto-download failed", {
-                error: getErrorMessageOrDefault(err),
-              });
-            });
-          }
-        });
+          });
+        }
       })
       .catch((err) => {
-        updateStatus.checking = false;
+        if (generation === checkGeneration) {
+          updateStatus.checking = false;
+        }
         if (err instanceof RateLimitError) {
           log("warn", "Update check rate-limited", { resetAt: err.resetAt.toISOString() });
         } else {
@@ -322,23 +346,18 @@ export function setupAutoUpdater(installType: string): void {
 
     installAfterDownloadFlag = installAfterDownload;
 
-    // A prior check normally resolved the feed already; if not (e.g. the
-    // renderer requests a download right after startup), resolve it now.
-    const feedReady =
-      lastResolved != null
-        ? Promise.resolve()
-        : resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
-            const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
-              switchToStable: false,
-            });
-            if (resolved == null || verdict !== "upgrade") {
-              throw new Error("no newer release available to download");
-            }
-            return applyResolvedFeed(resolved);
-          });
-
-    feedReady
-      .then(() => autoUpdater.downloadUpdate())
+    // Always re-resolve for the channel the renderer asked about: a cached
+    // resolution could belong to a different channel, and re-applying the
+    // feed guarantees the library-side check-before-download. The resolver's
+    // ETag cache makes the repeat lookup cheap.
+    const generation = ++checkGeneration;
+    resolveAndApply(channel, generation)
+      .then((resolved) => {
+        if (resolved == null) {
+          throw new Error("no newer release available to download");
+        }
+        return autoUpdater.downloadUpdate();
+      })
       .catch((unknownErr) => {
         const err = unknownToError(unknownErr);
         log("error", "Download failed", { error: err.message });

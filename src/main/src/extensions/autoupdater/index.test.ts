@@ -98,6 +98,9 @@ describe("checkForUpdates", () => {
   // running version (published later in time) must never become an update.
   it("ignores a resolved release older than the running version", async () => {
     await setup();
+    // drive available to true first so the assertion pins an actual reset
+    updaterEvent("update-available")?.({ version: "2.9.9", releaseNotes: null });
+    expect(getStatus().available).toBe(true);
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.4.2", version: "2.4.2" }));
 
     ipcHandler("updater:check-for-updates")(undefined, "beta", false);
@@ -107,12 +110,14 @@ describe("checkForUpdates", () => {
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
     const status = getStatus();
     expect(status.available).toBe(false);
+    expect(status.version).toBeUndefined();
     expect(status.checking).toBe(false);
   });
 
   // Regression pin #23132: equal version must not trigger a spurious download.
   it("reports no update when the resolved version equals the current one", async () => {
     await setup();
+    updaterEvent("update-available")?.({ version: "2.9.9", releaseNotes: null });
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.0", version: "2.6.0" }));
 
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
@@ -157,8 +162,10 @@ describe("checkForUpdates", () => {
     expect(resolveUpdateMock).not.toHaveBeenCalled();
   });
 
-  it("logs and clears checking when resolution fails", async () => {
+  it("clears checking but leaves availability untouched when resolution fails", async () => {
     await setup();
+    // a previously known update survives an offline/failed check
+    updaterEvent("update-available")?.({ version: "2.9.9", releaseNotes: null });
     resolveUpdateMock.mockRejectedValue(new Error("network down"));
 
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
@@ -166,7 +173,7 @@ describe("checkForUpdates", () => {
 
     const status = getStatus();
     expect(status.checking).toBe(false);
-    expect(status.available).toBe(false);
+    expect(status.available).toBe(true);
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
   });
 });
@@ -187,18 +194,27 @@ describe("updater:download", () => {
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
   });
 
-  it("reuses the previously resolved feed", async () => {
+  // Regression pin: a download must resolve for the channel it was asked
+  // about — a cached resolution from another channel must never be reused.
+  it("re-resolves for the requested channel on every download", async () => {
     await setup();
-    resolveUpdateMock.mockResolvedValue(resolved());
-    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    resolveUpdateMock.mockResolvedValue(
+      resolved({ tag: "v2.8.0-beta.1", version: "2.8.0-beta.1" }),
+    );
+    ipcHandler("updater:check-for-updates")(undefined, "beta", false);
     await flush();
     resolveUpdateMock.mockClear();
     autoUpdaterMock.setFeedURL.mockClear();
+    resolveUpdateMock.mockResolvedValue(resolved());
 
     ipcHandler("updater:download")(undefined, "stable", false);
     await flush();
 
-    expect(resolveUpdateMock).not.toHaveBeenCalled();
+    expect(resolveUpdateMock).toHaveBeenCalledWith("stable", "2.6.0");
+    expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
+      provider: "generic",
+      url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
+    });
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
   });
 
