@@ -134,6 +134,61 @@ export interface IInstallManagerHarness extends IApiHarness {
   phaseTracker: InstallPhaseTracker;
 }
 
+/**
+ * The private InstallManager members phase-engine suites drive directly. Reached through
+ * `managerInternals` (builders.ts), the single typed seam for them, so no suite casts the manager
+ * itself. `api` is `unknown` here because the harness api is structurally narrower than the real
+ * IExtensionApi.
+ */
+export interface IManagerInternals {
+  reQueueDownloadedMods: (
+    api: unknown,
+    sourceModId: string,
+    allMods: unknown[],
+    currentPhase: number,
+  ) => void;
+  checkCollectionPhaseStatus: (
+    api: unknown,
+    sourceModId: string,
+    phase: number,
+  ) => { phaseComplete: boolean; needsRequeue: boolean; allMods: unknown[] };
+  driveSelectedOptionals: (api: unknown, sourceModId: string) => void;
+  admitSettledOptionalPhase: (sourceModId: string, api: unknown) => void;
+  pollAllPhasesComplete: (api: unknown, sourceModId: string) => Promise<void>;
+  doInstallDependencies: (
+    api: unknown,
+    gameId: string,
+    sourceModId: string,
+    dependencies: unknown[],
+    recommended: boolean,
+    silent: boolean,
+  ) => Promise<unknown[]>;
+  withInstructions: (
+    api: unknown,
+    sourceName: string,
+    title: string,
+    id: string,
+    instructions: string,
+    recommendations: boolean,
+    cb: () => PromiseLike<unknown>,
+  ) => Promise<unknown>;
+  startQueuedInstallation: (
+    api: unknown,
+    dep: unknown,
+    downloadId: string,
+    gameId: string,
+    sourceModId: string,
+    recommended: boolean,
+    phase: number,
+  ) => void;
+  maybeAdvancePhase: (sourceModId: string, api: unknown) => void;
+  getTerminalModCount: (api: unknown, sourceModId: string) => number;
+  // queued dependency installs, keyed by `${sourceModId}:${downloadId}`
+  mPendingInstalls: Map<string, unknown>;
+  // the per-collection cancel callback the completion poll checks, keyed by collection mod id
+  mDependencyInstalls: Record<string, () => void>;
+}
+
 /** What a health-check registry test arranges. */
 export interface IHealthCheckHarnessOpts {
   // the game the active profile is on (defaults to skyrimse)

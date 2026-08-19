@@ -288,6 +288,43 @@ describe("installTracking reducer", () => {
 
       expect(result).toBe(state);
     });
+
+    it("leaves the session untouched when the rule is not tracked", () => {
+      const session = makeSession({
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "requires" }]),
+      });
+      const state = makeInstallState({ activeSession: session });
+
+      const result = reduce(state, actions.markModInstalled, {
+        sessionId: "col1_prof1",
+        ruleId: "requires_ghost",
+        modId: "m1",
+      });
+
+      expect(result.activeSession.mods).not.toHaveProperty("requires_ghost");
+      expect(result.activeSession.installedCount).toBe(0);
+    });
+  });
+
+  // A rule id the session does not track identifies no member, so writing it would invent an entry
+  // with no rule and count it towards the totals the completion check and progress bars read.
+  describe("writes for an untracked rule", () => {
+    it("leaves the session untouched on a status update", () => {
+      const session = makeSession({
+        mods: modsByRule([{ ruleId: "rule1", status: "pending", type: "requires" }]),
+      });
+      const state = makeInstallState({ activeSession: session });
+
+      const result = reduce(state, actions.updateModStatus, {
+        sessionId: "col1_prof1",
+        ruleId: "requires_ghost",
+        status: "ignored",
+      });
+
+      expect(result.activeSession.mods).not.toHaveProperty("requires_ghost");
+      expect(result.activeSession.ignoredCount).toBe(0);
+      expect(result.activeSession.downloadedCount).toBe(0);
+    });
   });
 
   describe("finishInstallSession", () => {

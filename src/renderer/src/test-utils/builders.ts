@@ -89,6 +89,7 @@ import type {
   IHealthCheckHarnessOpts,
   IInstallContextHarness,
   IInstallManagerHarness,
+  IManagerInternals,
   IModCheckOpts,
   IModChangeHarness,
   IParkCheckOpts,
@@ -721,6 +722,15 @@ export function makeInstallManagerHarness(
   // instead of casting the manager per test
   const phaseTracker = (manager as unknown as { mPhaseTracker: InstallPhaseTracker }).mPhaseTracker;
   return { manager, phaseTracker, ...base };
+}
+
+/**
+ * Typed handle on the private InstallManager members phase-engine suites drive (the phase walk, the
+ * requeue pass, the completion poll). The single cast site for them, so suites state which member
+ * they drive rather than each casting the manager.
+ */
+export function managerInternals(manager: InstallManager): IManagerInternals {
+  return manager as unknown as IManagerInternals;
 }
 
 /**

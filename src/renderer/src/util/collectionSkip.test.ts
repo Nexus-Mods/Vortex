@@ -27,9 +27,11 @@ const GAME_ID = "skyrimse";
 const COLLECTION_ID = "col-1";
 const SESSION_ID = "sess-1";
 
-// the harness slices for an active session whose collection tracks the single given member rule
-function ruleOverrides(rule: IModRule): Partial<IDriverHarnessState> {
-  const collection = makeMod({ id: COLLECTION_ID, rules: [rule] });
+// the harness slices for an active session whose collection tracks the single given member rule.
+// `liveRule` models the collection carrying a different snapshot of that member than the session
+// was keyed with, which is what retagging a rule mid-install leaves behind.
+function ruleOverrides(rule: IModRule, liveRule: IModRule = rule): Partial<IDriverHarnessState> {
+  const collection = makeMod({ id: COLLECTION_ID, rules: [liveRule] });
   const session = makeSession({
     sessionId: SESSION_ID,
     collectionId: COLLECTION_ID,
@@ -72,6 +74,27 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(matched).toBe(true);
     expect(statusOf(h, rule)).toBe("ignored");
     expect(durableIgnored(h)).toBe(true);
+  });
+
+  // the session is keyed by the member's rule as it was when the install started, so a skip
+  // arriving with the retagged reference has to settle that same entry
+  test("ignores the member whose live rule was retagged", ({ makeApi }) => {
+    const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
+    const liveRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "adopted-tag" }),
+    });
+    const h = makeApi(ruleOverrides(rule, liveRule));
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "adopted-tag" }),
+    });
+
+    expect(matched).toBe(true);
+    expect(statusOf(h, rule)).toBe("ignored");
+    expect(h.getState().session.collections.activeSession?.mods).not.toHaveProperty(
+      modRuleId(liveRule),
+    );
   });
 
   test("does nothing for a reference that is not a member", ({ makeApi }) => {
