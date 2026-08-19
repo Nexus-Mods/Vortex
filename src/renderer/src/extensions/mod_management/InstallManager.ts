@@ -6628,8 +6628,18 @@ class InstallManager {
         .sort((a, b) => a - b);
       const lowestPhase = phaseNumbers[0];
 
-      // Check collection session to determine actual current phase
-      const activeCollectionSession = getCollectionSessionById(api.getState(), sourceModId);
+      // Check collection session to determine actual current phase. Session ids are
+      // collectionId_profileId, resolved the same way the completion poll resolves them.
+      const phaseBatchContext = getBatchContext(
+        ["install-dependencies", "install-recommendations"],
+        "",
+      );
+      const phaseProfileId =
+        phaseBatchContext?.get<string>("profileId") ?? activeProfile(api.getState())?.id;
+      const activeCollectionSession = getCollectionSessionById(
+        api.getState(),
+        generateCollectionSessionId(sourceModId, phaseProfileId),
+      );
 
       if (activeCollectionSession) {
         // Determine the highest completed phase from the collection session
