@@ -58,6 +58,8 @@ export function repoForChannel(): string {
   return process.env.IS_PREVIEW_BUILD === "true" ? "Vortex-Staging" : "Vortex";
 }
 
+// Build metadata compares equal under semver (2.5.0+build == 2.5.0); ties in
+// pickRelease keep the first-seen release. Vortex doesn't tag with metadata.
 function versionFromTag(tag: string): string | null {
   return semver.valid(tag.replace(/^v/, ""));
 }
@@ -161,6 +163,7 @@ export function shouldAutoDownload(
 interface CacheEntry {
   etag: string;
   body: string;
+  linkHeader: string | null;
 }
 
 const etagCache = new Map<string, CacheEntry>();
@@ -192,16 +195,21 @@ async function fetchPage(url: string): Promise<{ body: string; linkHeader: strin
   const response = await fetch(url, { headers });
 
   if (response.status === 304 && cached != null) {
-    return { body: cached.body, linkHeader: response.headers.get("link") };
+    return { body: cached.body, linkHeader: response.headers.get("link") ?? cached.linkHeader };
   }
 
   if (
     (response.status === 403 || response.status === 429) &&
     response.headers.get("x-ratelimit-remaining") === "0"
   ) {
-    const resetHeader = response.headers.get("x-ratelimit-reset");
+    // A proxy or mock feed can send a garbage reset header; NaN or 0 would
+    // produce an Invalid Date (whose toISOString throws) or a 1970 reset that
+    // never short-circuits. Fall back to a minute in either case.
+    const parsed = Number(response.headers.get("x-ratelimit-reset"));
     const resetAt =
-      resetHeader != null ? new Date(Number(resetHeader) * 1000) : new Date(Date.now() + 60_000);
+      Number.isFinite(parsed) && parsed > 0
+        ? new Date(parsed * 1000)
+        : new Date(Date.now() + 60_000);
     rateLimitedUntil = resetAt;
     throw new RateLimitError(resetAt);
   }
@@ -213,10 +221,11 @@ async function fetchPage(url: string): Promise<{ body: string; linkHeader: strin
 
   const body = await response.text();
   const etag = response.headers.get("etag");
+  const linkHeader = response.headers.get("link");
   if (etag != null) {
-    etagCache.set(url, { etag, body });
+    etagCache.set(url, { etag, body, linkHeader });
   }
-  return { body, linkHeader: response.headers.get("link") };
+  return { body, linkHeader };
 }
 
 function nextPageUrl(linkHeader: string | null): string | null {
