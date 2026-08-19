@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import type { IModReference } from "../extensions/mod_management/types/IMod";
 import {
   makeInstallState,
   makeModInstallInfo,
@@ -17,6 +18,7 @@ import type {
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
 import {
+  matchSessionRuleEntry,
   planDependencyErrorRecovery,
   planSessionWrite,
   sessionWriteForDependency,
@@ -166,6 +168,34 @@ describe("sessionWriteForDependency", () => {
     expect(
       sessionWriteForDependency(state, refForTag("r1"), { type: "installed", modId: "mod-1" }),
     ).toBeNull();
+  });
+});
+
+describe("matchSessionRuleEntry", () => {
+  const sessionWith = (refs: Record<string, IModReference>) =>
+    makeSession({
+      mods: Object.fromEntries(
+        Object.entries(refs).map(([ruleId, reference]) => [
+          ruleId,
+          makeModInstallInfo({ rule: makeRule({ reference }) }),
+        ]),
+      ),
+    });
+
+  it("names the member a reference identifies", () => {
+    const session = sessionWith({ r1: { tag: "r1" }, r2: { tag: "r2" } });
+    expect(matchSessionRuleEntry(session, makeReference({ tag: "r2" }))?.[0]).toBe("r2");
+  });
+
+  it("names no member for a reference no member carries", () => {
+    const session = sessionWith({ r1: { tag: "r1" } });
+    expect(matchSessionRuleEntry(session, makeReference({ tag: "other" }))).toBeUndefined();
+  });
+
+  // an id-less reference would otherwise alias onto any other id-less member
+  it("names no member for a reference with no identifying field", () => {
+    const session = sessionWith({ r1: {} });
+    expect(matchSessionRuleEntry(session, {})).toBeUndefined();
   });
 });
 
