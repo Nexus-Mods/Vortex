@@ -1,16 +1,15 @@
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import type { IModDetails } from "@/extensions/health_check/types";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
-import { isDependencyRule } from "@/extensions/mod_management/util/testModReference";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
 import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
-import type { IProfile } from "@/extensions/profile_management/types/IProfile";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { getSafe } from "@/util/storeHelper";
 
 import renderModName from "../../../mod_management/util/modName";
+import { collectionManagedTags, isCollectionManaged } from "../shared/collectionManaged";
 
 /**
  * A file the user already has installed (a Vortex mod)
@@ -96,29 +95,6 @@ export interface IInstalledFileRef {
 }
 
 /**
- * Reference tags of mods pulled in by a collection installed on the active
- * profile (both required and optional/recommended entries); files carrying
- * one satisfy requirements but don't emit their own.
- * Edit `countsForProfile` to change which collections count.
- */
-function collectionManagedTags(mods: { [modId: string]: IMod }, profile: IProfile): Set<string> {
-  const countsForProfile = (collection: IMod): boolean => profile.modState?.[collection.id] != null;
-
-  const tags = new Set<string>();
-  for (const mod of Object.values(mods)) {
-    if (mod.type !== "collection" || !countsForProfile(mod)) {
-      continue;
-    }
-    for (const rule of mod.rules ?? []) {
-      if (isDependencyRule(rule) && rule.reference?.tag != null) {
-        tags.add(rule.reference.tag);
-      }
-    }
-  }
-  return tags;
-}
-
-/**
  * Resolve a Nexus file UID for a mod, or return undefined if not possible.
  * Shared by both gather functions below.
  */
@@ -170,9 +146,7 @@ export async function gatherInstalledFiles(api: IExtensionApi): Promise<IInstall
       fileUID,
       modId: mod.id,
       enabled: getSafe(profile.modState, [mod.id, "enabled"], false),
-      emitRequirements: !(
-        attributes.referenceTag != null && collectionTags.has(attributes.referenceTag)
-      ),
+      emitRequirements: !isCollectionManaged(mod, collectionTags),
     });
   }
 
