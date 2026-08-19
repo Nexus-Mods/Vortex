@@ -265,9 +265,6 @@ describe("gatherInstalledFiles", () => {
   });
 
   test("exempts files pulled in as optional/recommended collection dependencies", () => {
-    // Regression: collectionManagedTags used to only look at "requires" rules, so
-    // optional ("recommends") collection members were treated as manually installed
-    // and could trip the file-requirements health check.
     return gatherInstalledFiles(
       apiWithMods({
         collection: collectionMod("collection", [{ type: "recommends", tag: "tag-rec" }]),
