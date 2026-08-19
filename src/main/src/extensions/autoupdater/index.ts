@@ -12,8 +12,8 @@ import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
 
-import { betterIpcMain } from "../ipc";
-import { log } from "../logging";
+import { betterIpcMain } from "../../ipc";
+import { log } from "../../logging";
 
 /**
  * Show warning dialog before update installs on quit.
