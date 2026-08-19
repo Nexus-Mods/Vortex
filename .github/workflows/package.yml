@@ -111,7 +111,7 @@ jobs:
           files: |
             ./dist/vortex-setup-*.*.*.exe
             ./dist/latest.yml
-          prerelease: true
+          prerelease: ${{ contains(needs.build.outputs.raw-version, '-') }}
           draft: true
           name: ${{ needs.build.outputs.raw-version }}
           tag_name: ${{ needs.build.outputs.tag-version }}
@@ -123,7 +123,7 @@ jobs:
           files: |
             ./dist/vortex-setup-*.*.*.exe
             ./dist/latest.yml
-          prerelease: true
+          prerelease: ${{ contains(needs.build.outputs.raw-version, '-') }}
           draft: true
           name: ${{ needs.build.outputs.raw-version }}
           tag_name: ${{ needs.build.outputs.tag-version }}
