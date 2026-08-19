@@ -54,7 +54,7 @@ export function downloadReferenceTags(download: IDownload | undefined): string[]
   return Array.from(tags);
 }
 
-/** Whether a download satisfies this collection-rule tag. */
+/** Whether a download satisfies this collection-rule tag. Runs inside per-download scans. */
 export function downloadHasReferenceTag(
   download: IDownload | undefined,
   tag: string | undefined,
@@ -62,7 +62,8 @@ export function downloadHasReferenceTag(
   if (tag === undefined) {
     return false;
   }
-  return downloadReferenceTags(download).includes(tag);
+  const modInfo = download?.modInfo;
+  return modInfo?.referenceTag === tag || modInfo?.referenceTags?.includes(tag) === true;
 }
 
 /** Every collection-rule tag an installed mod satisfies, as its attributes record them. */
