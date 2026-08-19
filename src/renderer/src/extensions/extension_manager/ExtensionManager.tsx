@@ -35,6 +35,7 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { SITE_ID } from "../gamemode_management/constants";
+import { setShowBundledExtensions } from "./actions";
 import { useDisplayOptionsAction } from "./hooks/useDisplayOptionsAction.hook";
 import installExtension from "./installExtension";
 import { extensionStateFromScan, findInstalled } from "./queries";
@@ -80,7 +81,7 @@ export const ExtensionManager = ({
   const downloads = useSelector((state: IState) => state.persistent.downloads.files);
   const downloadPath = useSelector(selectors.downloadPath);
 
-  const [showBundled, setShowBundled] = useState(false);
+  const showBundled = useSelector((state: IState) => state.session.extensions.showBundled);
   // The config as the page found it; a change from here means Vortex needs a restart.
   const [oldExtensions] = useState(extensions);
 
@@ -248,8 +249,8 @@ export const ExtensionManager = ({
   const displayOptions = useDisplayOptionsAction({
     showBundled,
     t,
-    onReset: () => setShowBundled(false),
-    onToggleBundled: () => setShowBundled((prev) => !prev),
+    onReset: () => dispatch(setShowBundledExtensions(false)),
+    onToggleBundled: () => dispatch(setShowBundledExtensions(!showBundled)),
   });
 
   const toolbarActions: IToolbarAction[] = [
