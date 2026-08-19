@@ -177,6 +177,21 @@ describe("nxm link callback", () => {
       );
     });
 
+    test("reports a missing download record as a download failure, not a log-in failure", async ({
+      makeNxm,
+    }) => {
+      // no arrangeLink: startDownload resolves to an id that has no record in state
+      const { harness, nxm } = makeNxm();
+
+      nxm.handleLink(MOD_URL, false);
+
+      await vi.waitFor(() =>
+        expect(harness.errorNotifications).toEqual([
+          expect.objectContaining({ title: "Failed to start download", allowReport: false }),
+        ]),
+      );
+    });
+
     test("stays quiet when the user cancels the log in", async ({ makeNxm }) => {
       const { harness, handleLink } = arrangeLink(makeNxm());
       logIn.mockReturnValue(PromiseBB.reject(new UserCanceled()) as never);
