@@ -3298,6 +3298,13 @@ class InstallManager {
           const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
           this.mPendingInstalls.delete(installKey);
           this.mActiveInstalls.delete(installKey);
+          // the mod exists with the wanted install spec, so settle the member: keyed on the
+          // session's own rule, which is the identity the member is tracked under. Without this
+          // the member stays non-terminal and every poll tick selects it again.
+          this.writeCollectionSession(mod.rule.reference, {
+            type: "installed",
+            modId: existingMod.id,
+          });
           api.events.emit(
             "did-install-mod",
             gameId,
