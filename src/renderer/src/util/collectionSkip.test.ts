@@ -77,17 +77,20 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
   });
 
   // the session is keyed by the member's rule as it was when the install started, so a skip
-  // arriving with the retagged reference has to settle that same entry
+  // arriving with the retagged reference (same file, new tag) has to settle that same entry
   test("ignores the member whose live rule was retagged", ({ makeApi }) => {
-    const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
+    const rule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "mod-a", fileMD5: "abc123" }),
+    });
     const liveRule = makeRule({
       type: "requires",
-      reference: makeReference({ tag: "adopted-tag" }),
+      reference: makeReference({ tag: "adopted-tag", fileMD5: "abc123" }),
     });
     const h = makeApi(ruleOverrides(rule, liveRule));
 
     const matched = markCollectionMemberSkipped(h.api, {
-      reference: makeReference({ tag: "adopted-tag" }),
+      reference: makeReference({ tag: "adopted-tag", fileMD5: "abc123" }),
     });
 
     expect(matched).toBe(true);
@@ -95,6 +98,8 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(h.getState().session.collections.activeSession?.mods).not.toHaveProperty(
       modRuleId(liveRule),
     );
+    // the durable flag still lands on the collection's current rule
+    expect(durableIgnored(h)).toBe(true);
   });
 
   test("does nothing for a reference that is not a member", ({ makeApi }) => {
