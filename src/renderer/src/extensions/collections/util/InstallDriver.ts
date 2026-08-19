@@ -35,10 +35,12 @@ import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
+import { appendModReferenceTagActions } from "../../mod_management/util/modReferenceTags";
 import testModReference, {
   isDependencyRule,
   isOptionalRule,
   isRequiredRule,
+  modReferenceTags,
   ruleInstallSpec,
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
@@ -199,10 +201,11 @@ class InstallDriver {
       // installed collection member is stamped with its rule's referenceTag, and testModReference
       // treats an identical tag as authoritative, so a tag hit is a definitive O(1) match - this
       // is what keeps attribution from being O(members) per event (the 2000-4000 mod freeze).
-      const taggedDependent =
-        mod?.attributes?.referenceTag !== undefined
-          ? this.mDependentByTag.get(mod.attributes.referenceTag)
-          : undefined;
+      // a member mod carries a tag per collection that pulled it in, so any of them can name the
+      // rule this install belongs to
+      const taggedDependent = modReferenceTags(mod)
+        .map((tag) => this.mDependentByTag.get(tag))
+        .find((dependent) => dependent !== undefined);
 
       // fallback for a mod with no (matching) referenceTag: match by reference / identifiers. The
       // identifiers are independent of the rule, so build them once rather than per member.
@@ -255,6 +258,9 @@ class InstallDriver {
           setModAttribute(gameId, modId, "installerChoices", installSpec.installerChoices),
           setModAttribute(gameId, modId, "patches", installSpec.patches),
           setModAttribute(gameId, modId, "fileList", installSpec.fileList),
+          // record this collection's tag for the member, keeping any tag another collection
+          // stamped, so each collection recognises the mod as one of its own
+          ...appendModReferenceTagActions(gameId, modId, mod, dependent.reference.tag),
         ]);
 
         if (dependent.type === "requires") {
@@ -937,6 +943,23 @@ class InstallDriver {
 
     // the session's per-rule mod info, keyed by rule id, reconstructed from reality
     const sessionModInfo = reconstructSessionMods({ rules: required, mods, downloads });
+
+    // Members already present at start (installed by the user, or left by another collection) are
+    // never queued and emit no install event, so this is where they get this collection's tag.
+    // Deliberately not marked installedAsDependency: the user may have installed them themselves.
+    batchDispatch(
+      this.mApi.store,
+      Object.values(sessionModInfo).flatMap((info) =>
+        info.status === "installed" && info.modId !== undefined
+          ? appendModReferenceTagActions(
+              this.mGameId,
+              info.modId,
+              mods[info.modId],
+              info.rule.reference.tag,
+            )
+          : [],
+      ),
+    );
 
     // Dispatch start session action (omitting computed properties)
     this.mApi.store.dispatch(
