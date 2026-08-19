@@ -42,6 +42,7 @@ import { stateReducer } from "./reducers/state";
 import { transactionsReducer } from "./reducers/transactions";
 import type { DownloadState, IDownload } from "./types/IDownload";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
+import { isTempDownloadName } from "./util/downloadNames";
 import extendAPI from "./util/extendApi";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
@@ -240,7 +241,10 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
       (!downloads[dlId].localPath || downloads[dlId].received === 0 || downloads[dlId].size === 0),
   );
   const invalid = Object.keys(downloads).filter(
-    (dlId) => downloads[dlId].localPath && !path.extname(downloads[dlId].localPath),
+    (dlId) =>
+      ["finished", "failed"].includes(downloads[dlId].state) &&
+      downloads[dlId].localPath &&
+      !path.extname(downloads[dlId].localPath),
   );
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
@@ -283,7 +287,7 @@ function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
     .then((files: string[]) => {
       return PromiseBB.all(
         files.map((fileName) => {
-          if (!knownArchiveExt(fileName)) {
+          if (!knownArchiveExt(fileName) && !isTempDownloadName(fileName)) {
             return fs.removeAsync(path.join(downloadPath, fileName)).catch(() => null);
           }
         }),
@@ -335,7 +339,11 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       );
 
       const knownDLs = Object.keys(downloads)
-        .filter((dlId) => getDownloadGames(downloads[dlId])[0] === gameId)
+        .filter(
+          (dlId) =>
+            getDownloadGames(downloads[dlId])[0] === gameId &&
+            !isTempDownloadName(downloads[dlId].localPath),
+        )
         .map((dlId) => normalize(downloads[dlId].localPath || ""));
 
       return refreshDownloads(

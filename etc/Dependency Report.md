@@ -19,7 +19,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
 | @nexusmods/fomod-installer-ipc | 0.13.3 |
 | @nexusmods/fomod-installer-native | 0.13.3 |
-| @nexusmods/nexus-api | 1.7.2 |
+| @nexusmods/nexus-api | 1.7.3 |
 | @nosferatu500/react-sortable-tree | 4.4.0 |
 | @nosferatu500/theme-file-explorer | 3.0.21 |
 | @opentelemetry/api | 1.9.1 |

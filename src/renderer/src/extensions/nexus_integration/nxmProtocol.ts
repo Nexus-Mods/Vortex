@@ -572,7 +572,14 @@ export class NxmProtocol {
     try {
       await ensureLoggedIn(this.#api);
     } catch (err) {
-      this.#reportLinkError(err);
+      if (err instanceof ProcessCanceled) {
+        this.#api.showErrorNotification("Log-in failed", err, {
+          id: "failed-get-nexus-key",
+          allowReport: false,
+        });
+      } else {
+        this.#reportLinkError(err);
+      }
       return;
     }
 
@@ -636,7 +643,7 @@ export class NxmProtocol {
       return;
     }
     if (err instanceof ProcessCanceled) {
-      this.#api.showErrorNotification("Log-in failed", err, {
+      this.#api.showErrorNotification("Failed to start download", err, {
         id: "failed-get-nexus-key",
         allowReport: false,
       });
