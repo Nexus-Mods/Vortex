@@ -13,7 +13,6 @@ import { createSelector } from "reselect";
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from "./actions/loadOrder";
 import {
   clearNewPluginCounter,
-  incrementNewPluginCounter,
   setPluginFilePath,
   setPluginList,
   updatePluginWarnings,
@@ -27,7 +26,7 @@ import { pluginsReducer } from "./reducers/plugins";
 import { settingsReducer } from "./reducers/settings";
 import userlistReducer from "./reducers/userlist";
 import userlistEditReducer from "./reducers/userlistEdit";
-import { GHOST_EXT, NAMESPACE } from "./statics";
+import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
 import { ILoadOrder } from "./types/ILoadOrder";
 import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
@@ -54,6 +53,7 @@ import {
 import { missingGroupFixes } from "./util/groups";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
 import { markdownToBBCode } from "./util/mdtobb";
+import { handleModEnabled } from "./util/onModEnabled";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import toPluginId from "./util/toPluginId";
@@ -715,6 +715,20 @@ function initPersistor(context: IExtensionContextExt) {
     pluginPersistor = new PluginPersistor(
       onError,
       () => context.api.store.getState().settings.plugins.autoSort,
+    );
+    pluginPersistor.setExternalChangeCallback(() =>
+      context.api
+        .showDialog(
+          "question",
+          "Plugin list changed outside Vortex",
+          {
+            text:
+              "Another tool or the game changed the plugin list files. " +
+              "Keep those changes or revert to the load order Vortex manages?",
+          },
+          [{ label: "Revert" }, { label: "Keep" }],
+        )
+        .then((result) => (result.action === "Keep" ? "keep" : "revert")),
     );
   }
   if (userlistPersistor === undefined) {
@@ -1629,61 +1643,6 @@ function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResu
     });
 }
 
-function notifyMultiplePlugins(
-  api: types.IExtensionApi,
-  mod: types.IMod,
-  profile: types.IProfile,
-  plugins: string[],
-) {
-  const t = api.translate;
-  const { store } = api;
-  const modName = util.renderModName(mod, { version: false });
-  api.sendNotification({
-    id: `multiple-plugins-${mod.id}`,
-    type: "info",
-    message: t('The mod "{{ modName }}" contains multiple plugins', {
-      replace: { modName },
-      ns: NAMESPACE,
-    }),
-    replace: {
-      modName,
-      modId: mod.id,
-      tag: mod.attributes?.referenceTag,
-    },
-    actions: [
-      {
-        title: "Show",
-        action: (dismiss) => {
-          const stateNow: types.IState = store.getState();
-          const gameModeNow = selectors.activeGameId(stateNow);
-          if (gameModeNow === profile.gameId) {
-            api.events.emit("show-main-page", "gamebryo-plugins");
-            store.dispatch(actions.setAttributeVisible("gamebryo-plugins", "modName", true));
-            store.dispatch(actions.setAttributeFilter("gamebryo-plugins", "modName", modName));
-          } else {
-            api.sendNotification({
-              type: "info",
-              message: t('Please activate "{{ gameId }}" to enable plugins manually', {
-                replace: { gameId: profile.gameId },
-                ns: NAMESPACE,
-              }),
-            });
-          }
-
-          dismiss();
-        },
-      },
-      {
-        title: "Enable all",
-        action: (dismiss) => {
-          plugins.forEach((plugin) => api.store.dispatch(setPluginEnabled(plugin, true)));
-          dismiss();
-        },
-      },
-    ],
-  });
-}
-
 // Backstop for how long onDidDeploy waits for a plugin-details refresh before giving up. This runs
 // inside the awaited 'did-deploy' event, so it must never wait forever (see usage). 30s clears the
 // legitimate worst case (full-load-order LOOT operations on large modlists run ~20s+; sortPlugins
@@ -1922,7 +1881,18 @@ function init(context: IExtensionContextExt) {
             if (!profileId) {
               return;
             }
-            onDidDeploy(context.api, profileId);
+            // persist the loadOrder hive before the plugin list refresh: the postprocess
+            // enable batch may still be inside the debounced diff pipeline
+            const state = context.api.getState<IStateWithGamebryo>();
+            const flushed: Promise<void> =
+              pluginPersistor !== undefined
+                ? pluginPersistor.syncFromState(gameId, state.loadOrder ?? {}).catch((err) => {
+                    log("error", "failed to sync plugin state after collection install", {
+                      error: err.message,
+                    });
+                  })
+                : Promise.resolve();
+            flushed.then(() => onDidDeploy(context.api, profileId));
           },
         );
 
@@ -2147,70 +2117,7 @@ function init(context: IExtensionContextExt) {
         });
 
         context.api.events.on("mod-enabled", (profileId: string, modId: string) => {
-          /* when enabling a mod we automatically enable its plugin, if there is (exactly) one.
-           * if there are more the user gets a notification if he wants to enable all. */
-          const state: types.IState = context.api.store.getState();
-          const currentProfile = selectors.activeProfile(state);
-          if (currentProfile === undefined) {
-            return;
-          }
-
-          if (profileId === currentProfile.id && gameSupported(currentProfile.gameId)) {
-            const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
-            if (mod === undefined) {
-              log("error", "newly activated mod not found", {
-                profileId,
-                modId,
-              });
-              return;
-            }
-
-            fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
-              .catch((err) => {
-                if (err.code === "ENOENT") {
-                  context.api.showErrorNotification(
-                    "A mod could no longer be found on disk. Please don't delete mods manually " +
-                      "but uninstall them through Vortex.",
-                    err,
-                    { allowReport: false },
-                  );
-                  context.api.store.dispatch(actions.removeMod(currentProfile.gameId, modId));
-                  return Promise.reject(new util.ProcessCanceled("mod was deleted"));
-                } else {
-                  return Promise.reject(err);
-                }
-              })
-              .then((files) => {
-                const plugins = files
-                  .filter(
-                    (fileName) =>
-                      pluginExtensions(currentProfile.gameId).indexOf(
-                        path.extname(fileName).toLowerCase(),
-                      ) !== -1,
-                  )
-                  .map((fileName) => path.basename(fileName, GHOST_EXT));
-                if (plugins.length === 1) {
-                  const batched = [
-                    setPluginEnabled(plugins[0], true),
-                    incrementNewPluginCounter(1),
-                  ];
-                  util.batchDispatch(context.api.store, batched);
-                } else if (plugins.length > 1) {
-                  if (mod.attributes?.enableallplugins === true) {
-                    const batched: any = plugins.map((plugin) => setPluginEnabled(plugin, true));
-                    batched.push(incrementNewPluginCounter(batched.length));
-                    util.batchDispatch(context.api.store, batched);
-                  } else {
-                    notifyMultiplePlugins(context.api, mod, currentProfile, plugins);
-                  }
-                }
-              })
-              .catch(util.ProcessCanceled, () => undefined)
-              .catch(util.UserCanceled, () => undefined)
-              .catch((err) => {
-                context.api.showErrorNotification("Failed to read mod", err);
-              });
-          }
+          handleModEnabled(context.api, profileId, modId);
         });
 
         history.init();
