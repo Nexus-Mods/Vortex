@@ -18,7 +18,7 @@ import type { IDownload } from "../types/IDownload";
  */
 export function appendReferenceTagActions(
   downloadId: string,
-  download: IDownload,
+  download: IDownload | undefined,
   tag: string,
 ): Action[] {
   const tags = downloadReferenceTags(download);
@@ -28,7 +28,7 @@ export function appendReferenceTagActions(
   const actions: Action[] = [
     setDownloadModInfo(downloadId, "referenceTags", [...tags, tag]),
   ] as Action[];
-  if (download.modInfo?.referenceTag === undefined) {
+  if (download?.modInfo?.referenceTag === undefined) {
     actions.push(setDownloadModInfo(downloadId, "referenceTag", tag) as Action);
   }
   return actions;

@@ -249,17 +249,10 @@ function hasIdentifyingMarker(
     (ref.fileExpression !== undefined && (mod.fileName ?? mod.name) !== undefined) ||
     (ref.logicalFileName !== undefined && mod.logicalFileName !== undefined) ||
     (ref.repo !== undefined && mod.source !== undefined) ||
-    (allowTag && ref.tag !== undefined && lookupReferenceTags(mod).length > 0)
+    (allowTag &&
+      ref.tag !== undefined &&
+      (mod.referenceTag !== undefined || (mod.referenceTags?.length ?? 0) > 0))
   );
-}
-
-/** The tags a lookup carries: the single field unioned with the array, deduped. */
-function lookupReferenceTags(mod: IModLookupInfo): string[] {
-  const tags = new Set<string>(Array.isArray(mod.referenceTags) ? mod.referenceTags : []);
-  if (typeof mod.referenceTag === "string") {
-    tags.add(mod.referenceTag);
-  }
-  return Array.from(tags);
 }
 
 let onRefResolved: (
@@ -305,7 +298,7 @@ function testRef(
 
   if (ref.tag != null) {
     // an archive shared between collections carries a tag per rule, so any of them is a hit
-    if (lookupReferenceTags(mod).includes(ref.tag)) {
+    if (mod.referenceTag === ref.tag || mod.referenceTags?.includes(ref.tag) === true) {
       return true;
     } else {
       // tags differ. if the mod has no stricter attribute we have to refuse here, otherwise
