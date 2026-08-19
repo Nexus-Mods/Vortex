@@ -12,6 +12,7 @@ import { activeGameId } from "../../util/selectors";
 import type { IStarterInfo } from "../../util/StarterInfo";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
+import { gameById, gameName } from "../gamemode_management/selectors";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { incrementDeploymentCounter } from "../mod_management/reducers/deployment";
 import { setPrimaryTool } from "./actions";
@@ -20,31 +21,6 @@ import Tools from "./Tools";
 
 function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
   const state = api.store.getState();
-  const notifyInvalid = () => {
-    api.sendNotification({
-      id: "invalid-primary-tool",
-      type: "warning",
-      message: "Invalid primary tool",
-      actions: [
-        {
-          title: "More",
-          action: (dismiss) =>
-            api.showDialog(
-              "info",
-              "Invalid primary tool",
-              {
-                text: api.translate(
-                  "The primary tool for {{game}} is no longer available." +
-                    " Quick launch has reverted to the game's executable.",
-                  { replace: { game: gameMode } },
-                ),
-              },
-              [{ label: "Close", action: () => dismiss() }],
-            ),
-        },
-      ],
-    });
-  };
 
   const gameMode = activeGameId(state);
   if (gameMode === undefined) {
@@ -63,6 +39,44 @@ function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
       ["settings", "gameMode", "discovered", gameMode, "tools", primaryToolId],
       undefined,
     );
+
+    // name the missing tool if we can (e.g. "Skyrim Script Extender 64"), the
+    // discovered entry may be gone entirely so fall back to the game's tool list
+    const toolName: string =
+      primaryTool?.name ??
+      gameById(state, gameMode)?.supportedTools?.find((tool) => tool.id === primaryToolId)?.name;
+
+    const notifyInvalid = () => {
+      const game = gameName(state, gameMode) ?? gameMode;
+      const message = toolName !== undefined ? "{{toolName}} is missing" : "Invalid primary tool";
+      const text =
+        toolName !== undefined
+          ? "{{toolName}}, the primary tool for {{game}}, could not be found. It may have" +
+            " been moved or uninstalled. Quick launch has reverted to the game's executable."
+          : "The primary tool for {{game}} is no longer available." +
+            " Quick launch has reverted to the game's executable.";
+      api.sendNotification({
+        id: "invalid-primary-tool",
+        type: "warning",
+        message,
+        replace: toolName !== undefined ? { toolName } : undefined,
+        actions: [
+          {
+            title: "More",
+            action: (dismiss) =>
+              api.showDialog(
+                "info",
+                api.translate(message, { replace: { toolName } }),
+                {
+                  text: api.translate(text, { replace: { toolName, game } }),
+                },
+                [{ label: "Close", action: () => dismiss() }],
+              ),
+          },
+        ],
+      });
+    };
+
     if (primaryTool === undefined || !truthy(primaryTool.path)) {
       notifyInvalid();
       api.store.dispatch(setPrimaryTool(gameMode, undefined));
