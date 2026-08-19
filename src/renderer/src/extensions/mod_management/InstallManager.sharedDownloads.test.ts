@@ -173,6 +173,56 @@ describe("a collection member satisfied by another collection's download", () =>
   });
 });
 
+describe("resolving a member's already-present download", () => {
+  // The archive satisfies this collection's rule too, so it records this rule's tag alongside the
+  // one it already carries. The rule itself is left alone: the session is keyed from it.
+  imTest("records this collection's tag on the download", async ({ makeInstallManager }) => {
+    const { h } = makeSharedArchiveInstall(makeInstallManager);
+
+    const installing = internals(h.manager).doInstallDependencies(
+      h.api,
+      GAME,
+      COLLECTION,
+      [
+        {
+          reference: memberRule.reference,
+          sessionRuleId: modRuleId(memberRule),
+          download: SHARED_DOWNLOAD,
+          phase: 0,
+          lookupResults: [],
+          extra: {},
+        },
+      ],
+      false,
+      true,
+    );
+
+    try {
+      await vi.waitFor(() => {
+        const tags =
+          h.getState().persistent.downloads.files[SHARED_DOWNLOAD].modInfo?.referenceTags;
+        expect(tags).toContain(memberRule.reference.tag);
+      });
+      // the first collection's tag is kept, so its rules still resolve this archive
+      const modInfo = h.getState().persistent.downloads.files[SHARED_DOWNLOAD].modInfo;
+      expect(modInfo?.referenceTags).toContain(FOREIGN_TAG);
+      expect(modInfo?.referenceTag).toBe(FOREIGN_TAG);
+      // the collection's own rules are untouched
+      const ruleActions = h.dispatched.filter(
+        (action) => action.type.includes("MOD_RULE") || action.type.includes("ModRule"),
+      );
+      expect(ruleActions).toEqual([]);
+      expect(h.getState().persistent.mods[GAME][COLLECTION].rules?.[0]?.reference.tag).toBe(
+        memberRule.reference.tag,
+      );
+    } finally {
+      internals(h.manager).mDependencyInstalls[COLLECTION]?.();
+      delete internals(h.manager).mDependencyInstalls[COLLECTION];
+      await installing.catch(() => undefined);
+    }
+  });
+});
+
 describe("a resumed dependency install", () => {
   // Phase state is rebuilt per round, so the round has to read how far the collection already got
   // from the active session; starting at the lowest gathered phase would redo settled phases.
