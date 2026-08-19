@@ -10,7 +10,10 @@ import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import { renderModReference } from "../../mod_management/util/modName";
-import { isDependencyRule } from "../../mod_management/util/testModReference";
+import {
+  downloadReferenceTags,
+  isDependencyRule,
+} from "../../mod_management/util/testModReference";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 
 /**
@@ -111,11 +114,12 @@ function persistentRow(
     };
   }
 
-  // downloads are stamped with the rule's referenceTag at download time (and reconciled on a
-  // mismatch), so the tag is authoritative; only a tagless rule needs the scan.
+  // downloads carry a tag per rule they satisfy, so the tag index resolves the archive for every
+  // collection referencing it. An archive fetched before this collection referenced it carries no
+  // tag of ours, so fall back to the identity scan rather than reporting the member as pending.
   const dlId =
     tag !== undefined
-      ? indexes.downloadIdByTag.get(tag)
+      ? (indexes.downloadIdByTag.get(tag) ?? findDownloadByRef(rule.reference, downloads))
       : findDownloadByRef(rule.reference, downloads);
   const download = dlId !== undefined ? downloads[dlId] : undefined;
   const data = download !== undefined ? rowFromDownload(dlId, download, rule) : stubRow(rule);
@@ -194,9 +198,10 @@ export function buildCollectionItemRows(
     }
   }
   for (const [dlId, download] of Object.entries(downloads)) {
-    const tag = download.modInfo?.referenceTag;
-    if (typeof tag === "string" && !indexes.downloadIdByTag.has(tag)) {
-      indexes.downloadIdByTag.set(tag, dlId);
+    for (const tag of downloadReferenceTags(download)) {
+      if (!indexes.downloadIdByTag.has(tag)) {
+        indexes.downloadIdByTag.set(tag, dlId);
+      }
     }
   }
 

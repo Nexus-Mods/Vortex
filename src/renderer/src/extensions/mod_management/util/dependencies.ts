@@ -20,6 +20,7 @@ import { findModByRef } from "./findModByRef";
 import { isFuzzyVersion } from "./isFuzzyVersion";
 import { rulePhase } from "./rulePhase";
 import testModReference, {
+  downloadReferenceTags,
   isOptionalRule,
   ruleInstallSpec,
   testRefByIdentifiers,
@@ -260,6 +261,7 @@ export function lookupFromDownload(download: IDownload): IModLookupInfo {
     game: download.game,
     source: download.modInfo?.source,
     referenceTag: download.modInfo?.referenceTag,
+    referenceTags: downloadReferenceTags(download),
     modId,
     fileId,
   };
