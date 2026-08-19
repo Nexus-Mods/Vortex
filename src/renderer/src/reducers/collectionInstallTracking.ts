@@ -5,6 +5,7 @@ import {
   startInstallSession,
   updateModStatus,
 } from "../actions/collectionInstallTracking";
+import { log } from "../logging";
 import type * as types from "../types/api";
 import { generateCollectionSessionId } from "../util/collectionInstallSession";
 import { actionsToReducerSpec } from "./builder";
@@ -61,6 +62,22 @@ function adjustCounters(
   return { downloadedCount, installedCount, failedCount, ignoredCount };
 }
 
+/**
+ * Whether the session tracks this rule id. A write for an id it does not track identifies no
+ * member, so applying it would invent an entry with no rule and count it towards the totals the
+ * completion check and the progress bars read.
+ */
+function isTrackedRule(session: types.ICollectionInstallSession, ruleId: string): boolean {
+  if (session.mods[ruleId] !== undefined) {
+    return true;
+  }
+  log("warn", "collection session write for an untracked rule", {
+    sessionId: session.sessionId,
+    ruleId,
+  });
+  return false;
+}
+
 const defaultState: types.ICollectionInstallState = {
   activeSession: undefined,
   lastActiveSessionId: undefined,
@@ -92,6 +109,9 @@ const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
     if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
       return state;
     }
+    if (!isTrackedRule(state.activeSession, payload.ruleId)) {
+      return state;
+    }
 
     const { mods, ...activeSession } = state.activeSession;
     const oldStatus = mods[payload.ruleId]?.status;
@@ -112,6 +132,9 @@ const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
 
   markModInstalled: (state, payload) => {
     if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+    if (!isTrackedRule(state.activeSession, payload.ruleId)) {
       return state;
     }
 
