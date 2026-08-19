@@ -77,6 +77,7 @@ class PluginPersistor implements types.IPersistor {
           this.mPluginFormat = undefined;
           this.mNativePlugins = undefined;
           this.mLoaded = false;
+          this.mExternalChoicePending = false;
           let prom = Promise.resolve();
           if (this.mResetCallback) {
             prom = this.reset();
@@ -534,58 +535,56 @@ class PluginPersistor implements types.IPersistor {
     }
     return phaseOne
       .then((data: Buffer) => {
-        if (data.length === 0 && !retry) {
-          // not even a header? I don't trust this
-          // TODO: This is just a workaround
-          return this.deserialize(true, adoptForeign);
+        if (data.length === 0) {
+          // not even a header? I don't trust this. Read once more in case we caught a write
+          // mid-flight, then leave the current state alone: a truncated file is not a
+          // statement that every plugin is gone, and adopting it would discard the lot
+          return retry ? Promise.resolve() : this.deserialize(true, adoptForeign);
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
         this.initFromKeyList(newPlugins, keys, true, offset);
-      })
-      .then(() => {
-        // if we control the load order or in the case of skyrim (all reasonably current versions)
-        // the load order is stored in loadorder.txt with plugins.txt overriding for
-        // enabled plugins. In that case we have the correct load order at this point.
-        // If we aren't controlling the load order for Oblivion, Fallout 3 and Fallout NV
-        // these files are likely outdated and we have to use the file time instead.
-        if (
-          this.mPluginFormat !== "original" ||
-          this.mControlOrder() ||
-          this.mGameId === "skyrim"
-        ) {
-          return Promise.resolve();
-        }
 
-        return fs
-          .readdirAsync(this.mDataPath)
-          .filter((fileName: string) => newPlugins[toPluginId(fileName)] !== undefined)
-          .then((fileNames: string[]) =>
-            Promise.map(fileNames, (fileName) =>
-              fs
-                .statAsync(path.join(this.mDataPath, fileName))
-                .then((stat) => ({ fileName, fileTime: stat.mtimeMs })),
-            ),
-          )
-          .then((fileEntries) => fileEntries.sort((lhs, rhs) => lhs.fileTime - rhs.fileTime))
-          .then((sortedEntries) => {
-            sortedEntries.forEach((entry, idx) => {
-              newPlugins[toPluginId(entry.fileName)].loadOrder = idx;
-            });
+        return Promise.resolve()
+          .then(() => {
+            if (
+              this.mPluginFormat !== "original" ||
+              this.mControlOrder() ||
+              this.mGameId === "skyrim"
+            ) {
+              return Promise.resolve();
+            }
+
+            return fs
+              .readdirAsync(this.mDataPath)
+              .filter((fileName: string) => newPlugins[toPluginId(fileName)] !== undefined)
+              .then((fileNames: string[]) =>
+                Promise.map(fileNames, (fileName) =>
+                  fs
+                    .statAsync(path.join(this.mDataPath, fileName))
+                    .then((stat) => ({ fileName, fileTime: stat.mtimeMs })),
+                ),
+              )
+              .then((fileEntries) => fileEntries.sort((lhs, rhs) => lhs.fileTime - rhs.fileTime))
+              .then((sortedEntries) => {
+                sortedEntries.forEach((entry, idx) => {
+                  newPlugins[toPluginId(entry.fileName)].loadOrder = idx;
+                });
+              });
+          })
+          .then(() => {
+            if (
+              foreign.detected &&
+              !adoptForeign &&
+              this.mLoaded &&
+              this.mOnExternalChange !== undefined
+            ) {
+              // a foreign rewrite while Vortex holds state for this game: the user decides
+              this.promptExternalChange();
+              return Promise.resolve();
+            }
+            this.adoptParsed(newPlugins);
+            return Promise.resolve();
           });
-      })
-      .then(() => {
-        if (
-          foreign.detected &&
-          !adoptForeign &&
-          this.mLoaded &&
-          this.mOnExternalChange !== undefined
-        ) {
-          // a foreign rewrite while Vortex holds state for this game: the user decides
-          this.promptExternalChange();
-          return Promise.resolve();
-        }
-        this.adoptParsed(newPlugins);
-        return Promise.resolve();
       })
       .catch(util.UserCanceled, (err) => {
         this.mLoaded = true;

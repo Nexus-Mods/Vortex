@@ -175,6 +175,52 @@ describe("PluginPersistor", () => {
       await fresh.disable();
       nodeFs.rmSync(freshDir, { recursive: true, force: true });
     });
+
+    it("keeps its state when plugins.txt is momentarily empty", async () => {
+      // anti-virus or a crashed write can truncate the file; Vortex's own state is the
+      // authority, an empty file is not a statement that every plugin is gone
+      nodeFs.writeFileSync(pluginsFile(), "", { encoding: "latin1" });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+
+      expect(JSON.parse(await persistor.getItem(["old.esp"])).enabled).toBe(true);
+    });
+
+    it("does not offer the keep/revert choice for an empty plugins.txt", async () => {
+      const onExternalChange = vi.fn(() => Promise.resolve("keep" as const));
+      persistor.setExternalChangeCallback(onExternalChange);
+
+      nodeFs.writeFileSync(pluginsFile(), "", { encoding: "latin1" });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+
+      // there is nothing to adopt, so there is no choice to make
+      expect(onExternalChange).not.toHaveBeenCalled();
+    });
+
+    it("clears a pending choice when the persistor is disabled", async () => {
+      // the prompt can outlive the game it was raised for; left pending it blocks the
+      // next game's initial read and the hive is never populated
+      const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+      persistor.setExternalChangeCallback(onExternalChange);
+      nodeFs.writeFileSync(pluginsFile(), "*New.esp\r\n", { encoding: "latin1" });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+      // the choice really is outstanding, otherwise this proves nothing
+      expect(onExternalChange).toHaveBeenCalledTimes(1);
+
+      await persistor.disable();
+
+      nodeFs.writeFileSync(pluginsFile(), `${VORTEX_HEADER}\r\n*Old.esp\r\n`, {
+        encoding: "latin1",
+      });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+
+      // getAllKeys reads mKnownPlugins, which disable() leaves alone, so probe the state
+      // deserialize is meant to have rebuilt
+      expect(JSON.parse(await persistor.getItem(["old.esp"])).enabled).toBe(true);
+    });
   });
 
   it("syncFromState makes the hive queryable from the persistor and reaches the file", async () => {
