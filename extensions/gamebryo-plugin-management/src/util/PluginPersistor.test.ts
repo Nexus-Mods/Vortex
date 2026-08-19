@@ -58,8 +58,12 @@ describe("PluginPersistor", () => {
     persistor.setResetCallback(hydrateSpy);
     await persistor.loadFiles("skyrimse");
     persistor.setKnownPlugins({ "old.esp": "Old.esp" });
-    // outlast the scheduled serialize so it cannot overwrite files the tests write
-    await settle(300);
+    // wait for the scheduled serialize to land.
+    await vi.waitFor(() =>
+      expect(
+        nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1"),
+      ).not.toContain("Parked.esp"),
+    );
     await hydrate();
   });
 
