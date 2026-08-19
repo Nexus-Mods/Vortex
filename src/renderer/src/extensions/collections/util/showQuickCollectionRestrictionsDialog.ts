@@ -28,7 +28,7 @@ export async function showQuickCollectionRestrictionsDialog(api: IExtensionApi) 
           "Quick Collections do NOT include:[br][/br]" +
           "[list]" +
           "[*] Mods from sources other than Nexus Mods." +
-          "[*] Alterations you have made mods after installing them." +
+          "[*] Alterations you have made to mods after installing them." +
           "[*] Outputs of automated tools generated on your PC (FNIS, Script Merger, etc)." +
           "[*] Mods that you have created on your PC and added to Vortex." +
           "[/list]",
