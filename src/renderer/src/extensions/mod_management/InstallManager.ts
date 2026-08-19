@@ -2531,6 +2531,7 @@ class InstallManager {
               currentDep.reference,
               { type: "status", status: "installing" },
               currentDep.sessionRuleId,
+              sourceModId,
             );
           }
           const modId =
@@ -2569,6 +2570,7 @@ class InstallManager {
               currentDep.reference,
               { type: "installed", modId },
               currentDep.sessionRuleId,
+              sourceModId,
             );
 
             // Apply any extra attributes
@@ -2712,6 +2714,7 @@ class InstallManager {
                 dep.reference,
                 { type: "status", status: "failed" },
                 dep.sessionRuleId,
+                sourceModId,
               );
               if (recovery.showError) {
                 this.showDependencyError(
@@ -5952,6 +5955,7 @@ class InstallManager {
                 dep.reference,
                 { type: "status", status: "failed" },
                 dep.sessionRuleId,
+                sourceModId,
               );
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
@@ -6240,6 +6244,7 @@ class InstallManager {
         dep.reference,
         { type: "status", status: "downloading" },
         dep.sessionRuleId,
+        sourceModId,
       );
       if (dep.reference.tag !== undefined) {
         queuedDownloads.push(dep.reference);
@@ -7707,15 +7712,18 @@ class InstallManager {
    *
    * Pass the dependency's `sessionRuleId` wherever it is in scope: the member is then addressed
    * by the key it is tracked under rather than by an identity the engine may have retagged.
+   * `sourceModId` scopes the unmatched-write warning: the dependency pipeline also runs for mods
+   * other than the session's collection, whose writes are expected no-ops.
    */
   private writeCollectionSession(
     reference: IModReference,
     outcome: CollectionInstallOutcome,
     ruleId?: string,
+    sourceModId?: string,
   ): void {
     const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome, ruleId);
     if (plan === null) {
-      this.warnUnmatchedSessionWrite(reference, outcome, ruleId);
+      this.warnUnmatchedSessionWrite(reference, outcome, ruleId, sourceModId);
       return;
     }
     const action =
@@ -7734,9 +7742,13 @@ class InstallManager {
     reference: IModReference,
     outcome: CollectionInstallOutcome,
     ruleId?: string,
+    sourceModId?: string,
   ): void {
     const session = getCollectionActiveSession(this.mApi.getState());
     if (session === undefined) {
+      return;
+    }
+    if (sourceModId !== undefined && sourceModId !== session.collectionId) {
       return;
     }
     if (ruleId !== undefined && session.mods[ruleId] !== undefined) {
