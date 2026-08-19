@@ -191,6 +191,22 @@ describe("resolveUpdate fetching", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("falls back to a one-minute reset when the rate-limit reset header is garbage", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse("rate limited", {
+        status: 403,
+        headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "not-a-number" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(resolveUpdate("stable", "2.4.0")).rejects.toBeInstanceOf(RateLimitError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // the fallback reset is in the future, so the short-circuit still engages
+    await expect(resolveUpdate("stable", "2.4.0")).rejects.toBeInstanceOf(RateLimitError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("follows Link pagination and stops at the page cap", async () => {
     const pageOf = (tag: string) => [release({ tag_name: tag, assets: [{ name: "latest.yml" }] })];
     const linkTo = (page: number) =>
