@@ -150,6 +150,7 @@ import { resolveCategoryId } from "../category_management/util/retrieveCategoryP
 import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
+import { appendReferenceTagActions } from "../download_management/util/referenceTags";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import type { IModType } from "../gamemode_management/types/IModType";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -199,6 +200,8 @@ import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
 import { selectRequeueCandidates } from "./util/requeueCandidates";
 import { OPTIONAL_PHASE, rulePhase } from "./util/rulePhase";
 import testModReference, {
+  downloadHasReferenceTag,
+  downloadReferenceTags,
   downloadToModRef,
   idOnlyRef,
   isDependencyRule,
@@ -294,7 +297,7 @@ function findDownloadByReferenceTag(
   return (
     Object.keys(downloads).find(
       (id) =>
-        downloads[id].modInfo?.referenceTag === reference.tag ||
+        downloadHasReferenceTag(downloads[id], reference.tag) ||
         (reference.md5Hint && downloads[id].fileMD5 === reference.md5Hint),
     ) || null
   );
@@ -724,9 +727,9 @@ class InstallManager {
     if (hasPhaseState) {
       const phaseState = this.mPhaseTracker.get(collectionId);
       if (phaseState) {
-        // Add this download to the cache
-        if (download.modInfo?.referenceTag) {
-          phaseState.downloadLookupCache.byTag.set(download.modInfo.referenceTag, downloadId);
+        // Add this download to the cache under every rule tag it satisfies
+        for (const tag of downloadReferenceTags(download)) {
+          phaseState.downloadLookupCache.byTag.set(tag, downloadId);
         }
         if (download.fileMD5) {
           phaseState.downloadLookupCache.byMd5.set(download.fileMD5, downloadId);
@@ -1253,6 +1256,9 @@ class InstallManager {
     const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
     const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const currentProfile = profileById(state, profileId) ?? activeProfile(state);
+    // the installing dependency's reference, so attribute extractors can take the tag from the
+    // rule being installed rather than from whichever collection stamped the archive first
+    const installingReference = modReference;
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mInstallLimit
@@ -1260,7 +1266,7 @@ class InstallManager {
         return new Promise<string>((resolve, reject) => {
           const installationZip = new Zip();
 
-          const fullInfo = { ...info };
+          const fullInfo = { ...info, modReference: installingReference };
           let rules: IRule[] = [];
           let overrides: string[] = [];
           let destinationPath: string;
@@ -5560,8 +5566,15 @@ class InstallManager {
               if (successResult === undefined) {
                 return Promise.reject(results[0].error);
               } else {
-                api.store.dispatch(
-                  setDownloadModInfo(results[0].dlId, "referenceTag", referenceTag),
+                // the resolved download may be one another collection already fetched, so the tag
+                // is added to its set rather than replacing what it carries
+                batchDispatch(
+                  api.store,
+                  appendReferenceTagActions(
+                    results[0].dlId,
+                    api.getState().persistent.downloads.files[results[0].dlId],
+                    referenceTag,
+                  ),
                 );
                 if (parentCollection !== undefined) {
                   // See downloadURL: kept off nexus.ids.collectionId to avoid the
@@ -5705,8 +5718,13 @@ class InstallManager {
               [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
               (dlIds: string[]) => {
                 if (dlIds.length > 0) {
-                  api.store.dispatch(
-                    setDownloadModInfo(dlIds[0], "referenceTag", dep.reference.tag),
+                  batchDispatch(
+                    api.store,
+                    appendReferenceTagActions(
+                      dlIds[0],
+                      api.getState().persistent.downloads.files[dlIds[0]],
+                      dep.reference.tag,
+                    ),
                   );
                   resolve(dlIds[0]);
                 } else {
@@ -6279,7 +6297,7 @@ class InstallManager {
                 const downloadId = Object.keys(currentDownloads).find(
                   (dlId) =>
                     currentDownloads[dlId].localPath === alreadyDlErr?.fileName ||
-                    currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag,
+                    downloadHasReferenceTag(currentDownloads[dlId], dep.reference?.tag),
                 );
 
                 if (downloadId) {
@@ -6306,8 +6324,8 @@ class InstallManager {
                 // and if so, try to resume it through the concurrent queue
                 setTimeout(() => {
                   const currentDownloads = api.getState().persistent.downloads.files;
-                  const downloadId = Object.keys(currentDownloads).find(
-                    (dlId) => currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag,
+                  const downloadId = Object.keys(currentDownloads).find((dlId) =>
+                    downloadHasReferenceTag(currentDownloads[dlId], dep.reference?.tag),
                   );
 
                   if (downloadId && currentDownloads[downloadId].state === "paused") {
@@ -6338,8 +6356,8 @@ class InstallManager {
               // Try to resolve the download by referenceTag if possible
               const tag = dep.reference?.tag;
               if (truthy(tag)) {
-                const foundId = Object.keys(currentDownloads).find(
-                  (dlId) => currentDownloads[dlId]?.modInfo?.referenceTag === tag,
+                const foundId = Object.keys(currentDownloads).find((dlId) =>
+                  downloadHasReferenceTag(currentDownloads[dlId], tag),
                 );
                 if (foundId) {
                   log("info", "Resolved missing download id from referenceTag", {
@@ -6522,23 +6540,19 @@ class InstallManager {
 
           if (
             dep.reference.tag !== undefined &&
-            downloads[downloadId].modInfo?.referenceTag !== undefined &&
-            downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag
+            !downloadHasReferenceTag(downloads[downloadId], dep.reference.tag)
           ) {
-            // we can't change the tag on the download because that might break
-            // dependencies on the other mod
-            // instead we update the rule in the collection. This has to happen immediately,
-            // otherwise the installation might have weird issues around the mod
-            // being installed having a different tag than the rule
-            const reference: IModReference = {
-              ...dep.reference,
-              tag: downloads[downloadId].modInfo.referenceTag,
-            };
-            dep.reference =
-              this.updateModRule(api, gameId, sourceModId, dep, reference, recommended)
-                ?.reference ?? reference;
-
-            dep.mod = findModByRef(dep.reference, api.getState().persistent.mods[gameId]);
+            // the archive satisfies this rule too, so record this rule's tag on it alongside any
+            // tag it already carries. The rule and dep.reference are left alone: the install
+            // session is keyed from them, and other collections still resolve the archive by
+            // their own tag.
+            batchDispatch(
+              api.store,
+              appendReferenceTagActions(downloadId, downloads[downloadId], dep.reference.tag),
+            );
+            this.mPhaseTracker
+              .get(sourceModId)
+              ?.downloadLookupCache?.byTag?.set(dep.reference.tag, downloadId);
           } else {
             log("info", "downloaded as dependency", {
               dependency: dep.reference.logicalFileName,
@@ -6995,8 +7009,8 @@ class InstallManager {
       if (cache === undefined) {
         return;
       }
-      if (download.modInfo?.referenceTag !== undefined) {
-        cache.byTag.set(download.modInfo.referenceTag, download.id);
+      for (const tag of downloadReferenceTags(download)) {
+        cache.byTag.set(tag, download.id);
       }
       if (download.fileMD5 !== undefined) {
         cache.byMd5.set(download.fileMD5, download.id);

@@ -161,7 +161,9 @@ describe("buildCollectionItemRows", () => {
 
   it("resolves a tagged rule's download by identity when no tag matches", () => {
     // the archive was fetched for another collection and never stamped with this rule's tag
-    const rule = requiresRule({ reference: { tag: "ours", fileMD5: "hash-xyz" } });
+    const rule = requiresRule({
+      reference: { tag: "ours", fileMD5: "hash-xyz", gameId: "skyrimse" },
+    });
     const rows = buildCollectionItemRows({
       rules: [rule],
       mods: {},

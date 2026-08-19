@@ -35,6 +35,7 @@ import type {
   ICollectionModRule,
 } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
+import { stateReducer as downloadStateReducer } from "../extensions/download_management/reducers/state";
 import { downloadPathForGame } from "../extensions/download_management/selectors";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
@@ -458,6 +459,12 @@ const modsReducers = modsReducer.reducers as Record<
   string,
   (state: ModsSlice, payload: unknown) => ModsSlice
 >;
+// the real download reducer, applied to state.persistent.downloads, so writes onto a download's
+// modInfo (the collection-rule tags the install path records) are observable by read-back
+const downloadReducers = downloadStateReducer.reducers as Record<
+  string,
+  (state: IState["persistent"]["downloads"], payload: unknown) => IState["persistent"]["downloads"]
+>;
 
 function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   const slices: IDriverHarnessState = {
@@ -580,6 +587,10 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     const modsReducerFn = modsReducers[action.type];
     if (modsReducerFn !== undefined) {
       state.persistent.mods = modsReducerFn(state.persistent.mods, action.payload);
+    }
+    const downloadReducerFn = downloadReducers[action.type];
+    if (downloadReducerFn !== undefined) {
+      state.persistent.downloads = downloadReducerFn(state.persistent.downloads, action.payload);
     }
   };
 

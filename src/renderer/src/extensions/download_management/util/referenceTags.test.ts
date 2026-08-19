@@ -6,17 +6,22 @@
 import { describe, expect, it } from "vitest";
 
 import { makeDownload } from "../../../test-utils/builders";
+import type { IDownload } from "../../download_management/types/IDownload";
 import { downloadReferenceTags } from "../../mod_management/util/testModReference";
+import { stateReducer } from "../reducers/state";
 import { appendReferenceTagActions } from "./referenceTags";
 
-const applied = (download: ReturnType<typeof makeDownload>, tag: string) => {
+// run the produced actions through the real download reducer, so what is asserted is the modInfo a
+// download ends up with rather than the shape of the actions
+const applied = (download: IDownload, tag: string) => {
   const actions = appendReferenceTagActions("dl-1", download, tag);
-  // the reducer writes each action's value at modInfo.<key>
-  const modInfo = { ...download.modInfo };
+  // keyed by download id, as the download slice is
+  let files: Record<string, IDownload> = { "dl-1": download };
   for (const action of actions) {
-    modInfo[action.payload.key] = action.payload.value;
+    const reduce = stateReducer.reducers[action.type];
+    files = reduce({ files }, (action as unknown as { payload: unknown }).payload).files;
   }
-  return { actions, modInfo };
+  return { actions, modInfo: files["dl-1"].modInfo };
 };
 
 describe("appendReferenceTagActions", () => {
