@@ -102,6 +102,28 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(durableIgnored(h)).toBe(true);
   });
 
+  // a session can track a member the collection's current rules no longer carry (the rules were
+  // replaced mid-install); the skip settles the session entry without re-adding the old rule
+  test("settles a member whose rule left the collection without re-adding it", ({ makeApi }) => {
+    const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
+    const unrelatedRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "mod-other" }),
+    });
+    const h = makeApi(ruleOverrides(rule, unrelatedRule));
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "mod-a" }),
+    });
+
+    expect(matched).toBe(true);
+    expect(statusOf(h, rule)).toBe("ignored");
+    // the collection's current rules are untouched
+    const rules = h.getState().persistent.mods[GAME_ID][COLLECTION_ID].rules;
+    expect(rules).toHaveLength(1);
+    expect(rules?.[0]?.reference.tag).toBe("mod-other");
+  });
+
   test("does nothing for a reference that is not a member", ({ makeApi }) => {
     const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
     const h = makeApi(ruleOverrides(rule));

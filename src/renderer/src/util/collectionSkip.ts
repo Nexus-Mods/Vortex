@@ -125,15 +125,17 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   const sessionEntry = Object.entries(session.mods).find(([, info]) =>
     info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
   );
-  const durableRule = rule ?? sessionEntry?.[1].rule;
-  if (durableRule === undefined) {
+  const memberRuleId = sessionEntry?.[0] ?? (rule !== undefined ? modRuleId(rule) : undefined);
+  if (memberRuleId === undefined) {
     log("error", "could not find collection rule for skipped download", { skip });
     return false;
   }
 
   batchDispatch(api.store, [
-    updateModStatus(sessionId, sessionEntry?.[0] ?? modRuleId(durableRule), "ignored"),
-    addModRule(gameId, collectionId, { ...durableRule, ignored: true }),
+    updateModStatus(sessionId, memberRuleId, "ignored"),
+    // the durable flag goes on the collection's CURRENT rule only - re-adding a session
+    // snapshot would resurrect a rule the collection no longer carries
+    ...(rule !== undefined ? [addModRule(gameId, collectionId, { ...rule, ignored: true })] : []),
   ]);
   return true;
 }
