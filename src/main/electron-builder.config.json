@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/electron-userland/electron-builder/raw/refs/tags/v24.13.3/packages/app-builder-lib/scheme.json",
+  "$schema": "https://github.com/electron-userland/electron-builder/raw/refs/tags/v26.15.3/packages/app-builder-lib/scheme.json",
   "appId": "com.nexusmods.vortex",
   "includeSubNodeModules": false,
   "directories": {
@@ -18,11 +18,13 @@
         "private": false
       }
     ],
-    "publisherName": ["Black Tree Gaming Limited", "Black Tree Gaming Ltd"],
     "signExts": [".dll"],
-    "signingHashAlgorithms": ["sha256"],
-    "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
-    "timeStampServer": "http://timestamp.comodoca.com"
+    "signtoolOptions": {
+      "publisherName": ["Black Tree Gaming Limited", "Black Tree Gaming Ltd"],
+      "signingHashAlgorithms": ["sha256"],
+      "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
+      "timeStampServer": "http://timestamp.comodoca.com"
+    }
   },
   "nsis": {
     "perMachine": true,
