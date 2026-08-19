@@ -141,6 +141,30 @@ describe("PluginPersistor", () => {
       expect(JSON.parse(await persistor.getItem(["new.esp"])).enabled).toBeUndefined();
     });
 
+    it("keep still adopts the foreign content when Vortex writes while the dialog is open", async () => {
+      let choose: (choice: "keep" | "revert") => void;
+      persistor.setExternalChangeCallback(
+        () => new Promise<"keep" | "revert">((resolve) => (choose = resolve)),
+      );
+
+      nodeFs.writeFileSync(pluginsFile(), "*New.esp\r\n", { encoding: "latin1" });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+
+      // the prompt runs detached from the serialize queue, so Vortex's own writes carry on
+      // while the choice is outstanding: a known-plugins refresh schedules one 200ms out
+      persistor.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+      await settle(300);
+      // that write must not land on the contested file, or there is nothing left to keep
+      expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toContain("New.esp");
+
+      choose!("keep");
+
+      await vi.waitFor(async () => {
+        expect(JSON.parse(await persistor.getItem(["new.esp"])).enabled).toBe(true);
+      });
+    });
+
     it("writes Vortex's own state back over the file when the user chooses revert", async () => {
       persistor.setExternalChangeCallback(() => Promise.resolve("revert"));
 

@@ -320,6 +320,10 @@ class PluginPersistor implements types.IPersistor {
       // this happens during initialization, when the persistor is initially created
       return Promise.resolve();
     }
+    if (this.mExternalChoicePending) {
+      // don't serialize while the user is deciding whether to keep or revert a foreign rewrite
+      return Promise.resolve();
+    }
     if (!this.mSerializeScheduled) {
       this.mSerializeScheduled = true;
       // ensure we don't try to concurrently write the files
