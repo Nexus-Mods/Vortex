@@ -294,7 +294,12 @@ If you downgrade, Vortex will download ${status.version} and update on restart.`
           context.api.sendNotification({
             id: "vortex-update-available",
             type: "info",
-            message: `Downgrading to Vortex ${status.version}`,
+            // the percent lives in the text: the theme's progress overlay is
+            // too subtle to read, and the collapsed tray shows only the text
+            message:
+              shown.progress != null
+                ? `Downgrading to Vortex ${status.version} (${shown.progress}%)`
+                : `Downgrading to Vortex ${status.version}`,
             progress: shown.progress,
           });
         }
@@ -349,20 +354,21 @@ If you downgrade, Vortex will download ${status.version} and update on restart.`
           message: status.downloaded
             ? `Vortex ${status.version} is ready to install`
             : shown.progress != null
-              ? `Downloading Vortex ${status.version}`
+              ? `Downloading Vortex ${status.version} (${shown.progress}%)`
               : `Vortex ${status.version} is available to download`,
           progress: shown.progress,
-          actions: [
-            {
-              title: "What's New",
-              action: () => {
-                void showUpdateDialog(status.version!, status.releaseNotes);
-              },
-            },
-            // no Download button while the download is running
-            ...(shown.progress != null
-              ? []
+          // no buttons at all while the download is running — there is
+          // nothing sensible to click until it settles
+          actions:
+            shown.progress != null
+              ? undefined
               : [
+                  {
+                    title: "What's New",
+                    action: () => {
+                      void showUpdateDialog(status.version!, status.releaseNotes);
+                    },
+                  },
                   {
                     // Not downloaded yet (minor/major updates wait for the
                     // user): the button downloads, and the pushed "downloaded"
@@ -382,8 +388,7 @@ If you downgrade, Vortex will download ${status.version} and update on restart.`
                       }
                     },
                   },
-                ]),
-          ],
+                ],
         });
       }
     };
