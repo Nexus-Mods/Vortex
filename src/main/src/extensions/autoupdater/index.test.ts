@@ -15,11 +15,13 @@ const { autoUpdaterMock, appMock, ipcMock, resolveUpdateMock, writePersistedValu
         allowDowngrade: true,
         autoDownload: true,
         autoInstallOnAppQuit: true,
+        forceDevUpdateConfig: false,
       },
       appMock: {
         getVersion: vi.fn(() => "2.6.0"),
         on: vi.fn(),
         removeListener: vi.fn(),
+        isPackaged: true,
       },
       ipcMock: { handle: vi.fn(), on: vi.fn(), send: vi.fn() },
       resolveUpdateMock: vi.fn(),
@@ -96,10 +98,13 @@ beforeEach(() => {
   // start from the real post-init state so assertions on the flag observe
   // the handlers, not setupAutoUpdater's initialization
   autoUpdaterMock.allowDowngrade = false;
+  autoUpdaterMock.forceDevUpdateConfig = false;
+  appMock.isPackaged = true;
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 describe("checkForUpdates", () => {
@@ -342,6 +347,37 @@ describe("downgrade offers", () => {
 
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalledTimes(1);
     expect(writePersistedValueMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("dev updater", () => {
+  it("forces the dev update config only for unpackaged builds that opt in", async () => {
+    appMock.isPackaged = false;
+    vi.stubEnv("VORTEX_DEV_UPDATER", "1");
+    await setup();
+    expect(autoUpdaterMock.forceDevUpdateConfig).toBe(true);
+  });
+
+  it("stays off without the opt-in or in packaged builds", async () => {
+    appMock.isPackaged = false;
+    await setup();
+    expect(autoUpdaterMock.forceDevUpdateConfig).toBe(false);
+
+    vi.resetModules();
+    appMock.isPackaged = true;
+    vi.stubEnv("VORTEX_DEV_UPDATER", "1");
+    await setup();
+    expect(autoUpdaterMock.forceDevUpdateConfig).toBe(false);
+  });
+
+  it("never installs from an unpackaged build", async () => {
+    appMock.isPackaged = false;
+    vi.stubEnv("VORTEX_DEV_UPDATER", "1");
+    await setup();
+
+    ipcHandler("updater:restart-and-install")(undefined);
+
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
   });
 });
 
