@@ -326,6 +326,7 @@ export interface ISessionGameMode {
   known: IGameStored[];
   addDialogVisible: boolean;
   disabled: { [gameId: string]: string };
+  showHidden: boolean;
 }
 
 export interface IGameInfoEntry {
