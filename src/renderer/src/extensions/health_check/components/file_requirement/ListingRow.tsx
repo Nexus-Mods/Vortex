@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import {
   downloadFileRequirement,
   installDownloadedFile,
-  openModPage,
+  openFilePage,
   switchActiveVersions,
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import {
@@ -219,10 +219,10 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         onDownload={() => {
           setShowPremium(false);
 
-          // Free-user fallback: a single candidate opens its mod page; otherwise
-          // open the detail so each requirement's mod page is reachable.
+          // Free-user fallback: a single candidate opens its file page directly;
+          // otherwise open the detail so each requirement's mod page is reachable.
           if (candidates.length === 1) {
-            openModPage(api, candidates[0]);
+            openFilePage(api, candidates[0]);
           } else {
             onOpen();
           }

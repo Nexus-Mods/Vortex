@@ -136,7 +136,7 @@
       "buttons": {
         "primary": "Unlock 1-click installs",
         "secondary": {
-          "single": "Go to mod page (free)",
+          "single": "Install via mod page (free)",
           "all": "Return and open mod pages"
         }
       }

@@ -1,5 +1,5 @@
 import { mdiMonitorArrowDownVariant, mdiOpenInNew } from "@mdi/js";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -8,13 +8,18 @@ import {
   type IFileActionContext,
   type IResolutionContext,
 } from "@/extensions/health_check/utils/fileRequirements/cardHelpers";
-import { openModPage } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
+import {
+  openFilePage,
+  openModPage,
+} from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IInstalledFile } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
+import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
 import { useInstallButton } from "../../../hooks/useInstallButton";
+import { PremiumModal } from "../../premium_modal/PremiumModal";
 import { FileRequirement } from "../FileRequirement";
 
 /** A download/enable card for one candidate (used by download + OR cards). */
@@ -33,16 +38,22 @@ export const CandidateCard = ({
   isOr?: boolean;
 }) => {
   const { t } = useTranslation(["health_check", "common"]);
+  const [showPremium, setShowPremium] = useState(false);
 
-  const { isLoading, onClick } = useInstallButton(
-    () => ctx.requestDownload(candidate, enabledFile),
-    ctx.showPremiumAd,
+  const { isLoading, onClick } = useInstallButton(() =>
+    ctx.requestDownload(candidate, enabledFile),
   );
 
   const loading = isLoading || !!ctx.isDownloadingAll;
 
   const handleInstall = () => {
     ctx.onInstall(candidate, resolution);
+
+    if (ctx.showPremiumAd) {
+      setShowPremium(true);
+      return;
+    }
+
     onClick();
   };
 
@@ -52,34 +63,50 @@ export const CandidateCard = ({
   };
 
   return (
-    <FileRequirement
-      actions={
-        <>
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            leftIconPath={mdiOpenInNew}
-            onClick={handleModPage}
-          >
-            {t("detail::item::install_via_mod_page")}
-          </Button>
+    <>
+      <FileRequirement
+        actions={
+          <>
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              leftIconPath={mdiOpenInNew}
+              onClick={handleModPage}
+            >
+              {t("detail::item::install_via_mod_page")}
+            </Button>
 
-          <Button
-            appearance={ctx.installButtonAppearance ?? "strong"}
-            brand="neutral"
-            isLoading={loading}
-            leftIconPath={mdiMonitorArrowDownVariant}
-            rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
-            size="sm"
-            onClick={handleInstall}
-          >
-            {loading ? t("detail::item::downloading") : t("detail::item::install_one_click")}
-          </Button>
-        </>
-      }
-      file={candidateToFileData(candidate)}
-      isOr={isOr}
-      {...fileWebLinks(ctx.api, candidate)}
-    />
+            <Button
+              appearance={ctx.installButtonAppearance ?? "strong"}
+              brand="neutral"
+              isLoading={loading}
+              leftIconPath={mdiMonitorArrowDownVariant}
+              rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
+              size="sm"
+              onClick={handleInstall}
+            >
+              {loading ? t("detail::item::downloading") : t("detail::item::install_one_click")}
+            </Button>
+          </>
+        }
+        file={candidateToFileData(candidate)}
+        isOr={isOr}
+        {...fileWebLinks(ctx.api, candidate)}
+      />
+
+      <PremiumModal
+        api={ctx.api}
+        isOpen={showPremium}
+        modCount={1}
+        modId={decodeUID(candidate.modUID)?.id ?? 0}
+        trigger="single_install"
+        onClose={() => setShowPremium(false)}
+        onDownload={() => {
+          setShowPremium(false);
+          openFilePage(ctx.api, candidate);
+        }}
+        onPremiumUnlocked={onClick}
+      />
+    </>
   );
 };
