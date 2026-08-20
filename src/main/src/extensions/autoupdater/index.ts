@@ -13,7 +13,7 @@
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { UpdateStatus } from "@vortex/shared/ipc";
-import { app, dialog } from "electron";
+import { app, BrowserWindow, dialog } from "electron";
 import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
@@ -121,11 +121,11 @@ export function setupAutoUpdater(installType: string): void {
         attempts: installAttempts,
       });
       updateStatus.error = err.message;
+      broadcastStatus();
     }
   }
 
-  // Register invoke handler for status queries
-  betterIpcMain.handle("updater:get-status", (): UpdateStatus => {
+  function statusSnapshot(): UpdateStatus {
     return {
       available: updateStatus.available,
       downloaded: updateStatus.downloaded,
@@ -136,7 +136,19 @@ export function setupAutoUpdater(installType: string): void {
       downgrade: updateStatus.downgrade,
       checking: updateStatus.checking,
     };
-  });
+  }
+
+  // Push the current status to every window; the renderer reacts to these
+  // instead of polling (getStatus remains for the initial sync).
+  function broadcastStatus(): void {
+    const snapshot = statusSnapshot();
+    for (const win of BrowserWindow.getAllWindows()) {
+      betterIpcMain.send(win.webContents, "updater:status-changed", snapshot);
+    }
+  }
+
+  // Register invoke handler for status queries
+  betterIpcMain.handle("updater:get-status", (): UpdateStatus => statusSnapshot());
 
   log("info", "setupAutoUpdater", { installType, currentVersion });
 
@@ -156,6 +168,7 @@ export function setupAutoUpdater(installType: string): void {
     if (installPending) {
       handleInstallFailure(unknownToError(err));
     }
+    broadcastStatus();
   });
 
   // Update not available
@@ -163,6 +176,7 @@ export function setupAutoUpdater(installType: string): void {
     log("info", "No update available", { channel: updateChannel });
     updateStatus.available = false;
     updateStatus.error = undefined;
+    broadcastStatus();
   });
 
   // Update available
@@ -182,12 +196,20 @@ export function setupAutoUpdater(installType: string): void {
         .map((note) => (typeof note === "string" ? note : note.note))
         .join("\n\n");
     }
+    broadcastStatus();
   });
 
-  // Download progress
+  // Download progress. Progress events fire many times per second on a
+  // ~360 MB installer; broadcast only whole-percent changes.
+  let lastBroadcastPercent = -1;
   autoUpdater.on("download-progress", (progress: { percent: number }) => {
     log("debug", "Download progress", { percent: progress.percent });
     updateStatus.downloadProgress = progress.percent;
+    const wholePercent = Math.floor(progress.percent);
+    if (wholePercent !== lastBroadcastPercent) {
+      lastBroadcastPercent = wholePercent;
+      broadcastStatus();
+    }
   });
 
   // Track whether to auto-install after download
@@ -198,6 +220,7 @@ export function setupAutoUpdater(installType: string): void {
     log("info", "Update downloaded", { version: updateInfo.version });
     updateStatus.downloaded = true;
     updateStatus.downloadProgress = 100;
+    broadcastStatus();
 
     // Set up auto-install on quit (unless dev mode)
     if (process.env.NODE_ENV !== "development") {
@@ -265,6 +288,7 @@ export function setupAutoUpdater(installType: string): void {
     updateChannel = channel;
     const generation = ++checkGeneration;
     updateStatus.checking = true;
+    broadcastStatus();
     log("info", "Checking for updates", { channel, manual, currentVersion });
 
     resolveAndApply(channel, generation)
@@ -278,8 +302,10 @@ export function setupAutoUpdater(installType: string): void {
           updateStatus.version = undefined;
           updateStatus.releaseNotes = undefined;
           updateStatus.error = undefined;
+          broadcastStatus();
           return;
         }
+        broadcastStatus();
         log("info", "Update check completed", { version: resolved.version });
 
         // Auto-download patch updates for regular installs; minor/major
@@ -299,6 +325,7 @@ export function setupAutoUpdater(installType: string): void {
       .catch((err) => {
         if (generation === checkGeneration) {
           updateStatus.checking = false;
+          broadcastStatus();
         }
         if (err instanceof RateLimitError) {
           log("warn", "Update check rate-limited", { resetAt: err.resetAt.toISOString() });
@@ -349,10 +376,18 @@ export function setupAutoUpdater(installType: string): void {
     // Always re-resolve for the channel the renderer asked about: a cached
     // resolution could belong to a different channel, and re-applying the
     // feed guarantees the library-side check-before-download. The resolver's
-    // ETag cache makes the repeat lookup cheap.
+    // ETag cache makes the repeat lookup cheap. The download owns the
+    // checking lifecycle for the generation it claims, so a check it
+    // superseded can't strand checking:true.
     const generation = ++checkGeneration;
+    updateStatus.checking = true;
+    broadcastStatus();
     resolveAndApply(channel, generation)
       .then((resolved) => {
+        if (generation === checkGeneration) {
+          updateStatus.checking = false;
+          broadcastStatus();
+        }
         if (resolved == null) {
           throw new Error("no newer release available to download");
         }
@@ -363,6 +398,10 @@ export function setupAutoUpdater(installType: string): void {
         log("error", "Download failed", { error: err.message });
         updateStatus.error = err.message;
         installAfterDownloadFlag = false;
+        if (generation === checkGeneration) {
+          updateStatus.checking = false;
+        }
+        broadcastStatus();
       });
   });
 
