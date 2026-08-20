@@ -66,14 +66,32 @@ export interface UpdateStatus {
   /** Error message if update check failed */
   error?: string;
   /**
-   * The offered version is lower than the running one. Only ever set after
-   * an explicit switch to the stable channel, never for background checks.
+   * The offered version is lower than the running one. Only ever set for
+   * checks on the stable channel (a prerelease build whose user chose
+   * stable), never presented as a regular update.
    */
   downgrade?: boolean;
+  /**
+   * A user-confirmed downgrade is downloading/installing. Distinct from
+   * `downgrade` (the offer): once confirmed the flow runs to completion and
+   * must not be presented as a regular update download.
+   */
+  downgrading?: boolean;
   /** An update check is in flight */
   checking?: boolean;
   /** Whether the most recent check was user-initiated (Check now / channel switch) */
   manual?: boolean;
+  /**
+   * The available update is a patch-level update that auto-downloads and
+   * installs on restart; the renderer presents these more quietly than
+   * updates that need a user decision.
+   */
+  patch?: boolean;
+  /**
+   * Set on the first launch after an update: the version that was running
+   * before. Drives the one-time "Vortex was updated" notice.
+   */
+  justUpdatedFrom?: string;
 }
 
 /** Vortex application paths */
@@ -256,9 +274,13 @@ export interface RendererChannels extends RendererCallbackChannels {
   // Updater: Download the available update (installAfterDownload triggers auto-restart when done)
   "updater:download": (channel: string, installAfterDownload: boolean) => void;
 
-  // Updater: Download the downgrade offered after an explicit switch to stable.
+  // Updater: Download the downgrade offered on the stable channel.
   // Ignored unless a downgrade offer is outstanding.
   "updater:download-downgrade": (installAfterDownload: boolean) => void;
+
+  // Updater: Decline the outstanding downgrade offer. Clears the offer until
+  // the next check (manual, periodic, or next launch) raises it again.
+  "updater:decline-downgrade": () => void;
 
   // Updater: Restart and install update
   "updater:restart-and-install": () => void;
@@ -359,6 +381,9 @@ export interface InvokeChannels {
 
   // Updater: Query current update status from main process
   "updater:get-status": () => Promise<UpdateStatus>;
+  // Updater: Release notes covering the update the app just went through
+  // (null when the launch did not follow an update or notes are unavailable)
+  "updater:get-update-changelog": () => Promise<string | null>;
   // Dialog channels
   "dialog:showOpen": (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>;
   "dialog:showSave": (options: SaveDialogOptions) => Promise<SaveDialogReturnValue>;

@@ -457,6 +457,12 @@ export interface UpdaterApi {
   getStatus(): Promise<UpdateStatus>;
 
   /**
+   * Release notes covering the update the app just went through. Null when
+   * this launch did not follow an update or the notes are unavailable.
+   */
+  getUpdateChangelog(): Promise<string | null>;
+
+  /**
    * Set the update channel and trigger an update check.
    */
   setChannel(channel: string, manual: boolean): void;
@@ -478,10 +484,16 @@ export interface UpdaterApi {
   restartAndInstall(): void;
 
   /**
-   * Download the downgrade offered after an explicit switch to stable.
+   * Download the downgrade offered on the stable channel.
    * Ignored by main unless a downgrade offer is outstanding.
    */
   downloadDowngrade(installAfterDownload?: boolean): void;
+
+  /**
+   * Decline the outstanding downgrade offer. Clears it until the next check
+   * (manual, periodic, or next launch) raises it again.
+   */
+  declineDowngrade(): void;
 
   /**
    * Subscribe to update-status changes pushed from the main process.

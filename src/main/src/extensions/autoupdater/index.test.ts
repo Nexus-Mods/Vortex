@@ -3,31 +3,38 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResolvedRelease } from "./releaseResolver";
 
-const { autoUpdaterMock, appMock, ipcMock, resolveUpdateMock, writePersistedValueMock } =
-  vi.hoisted(() => {
-    return {
-      autoUpdaterMock: {
-        on: vi.fn(),
-        setFeedURL: vi.fn(),
-        checkForUpdates: vi.fn(),
-        downloadUpdate: vi.fn(),
-        quitAndInstall: vi.fn(),
-        allowDowngrade: true,
-        autoDownload: true,
-        autoInstallOnAppQuit: true,
-        forceDevUpdateConfig: false,
-      },
-      appMock: {
-        getVersion: vi.fn(() => "2.6.0"),
-        on: vi.fn(),
-        removeListener: vi.fn(),
-        isPackaged: true,
-      },
-      ipcMock: { handle: vi.fn(), on: vi.fn(), send: vi.fn() },
-      resolveUpdateMock: vi.fn(),
-      writePersistedValueMock: vi.fn(),
-    };
-  });
+const {
+  autoUpdaterMock,
+  appMock,
+  ipcMock,
+  resolveUpdateMock,
+  writePersistedValueMock,
+  readPersistedValueMock,
+} = vi.hoisted(() => {
+  return {
+    autoUpdaterMock: {
+      on: vi.fn(),
+      setFeedURL: vi.fn(),
+      checkForUpdates: vi.fn(),
+      downloadUpdate: vi.fn(),
+      quitAndInstall: vi.fn(),
+      allowDowngrade: true,
+      autoDownload: true,
+      autoInstallOnAppQuit: true,
+      forceDevUpdateConfig: false,
+    },
+    appMock: {
+      getVersion: vi.fn(() => "2.6.0"),
+      on: vi.fn(),
+      removeListener: vi.fn(),
+      isPackaged: true,
+    },
+    ipcMock: { handle: vi.fn(), on: vi.fn(), send: vi.fn() },
+    resolveUpdateMock: vi.fn(),
+    writePersistedValueMock: vi.fn(),
+    readPersistedValueMock: vi.fn(),
+  };
+});
 
 // @vortex/shared's error module has a duplicate-load guard that trips under
 // vi.resetModules; only these two helpers are used at runtime (the UpdateStatus
@@ -44,7 +51,10 @@ vi.mock("electron", () => ({
 vi.mock("electron-updater", () => ({ autoUpdater: autoUpdaterMock }));
 vi.mock("../../ipc", () => ({ betterIpcMain: ipcMock }));
 vi.mock("../../logging", () => ({ log: vi.fn() }));
-vi.mock("../../store/mainPersistence", () => ({ writePersistedValue: writePersistedValueMock }));
+vi.mock("../../store/mainPersistence", () => ({
+  writePersistedValue: writePersistedValueMock,
+  readPersistedValue: readPersistedValueMock,
+}));
 vi.mock("./releaseResolver", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   resolveUpdate: resolveUpdateMock,
@@ -95,6 +105,7 @@ beforeEach(() => {
   autoUpdaterMock.checkForUpdates.mockResolvedValue({ cancellationToken: { cancel: vi.fn() } });
   autoUpdaterMock.downloadUpdate.mockResolvedValue([]);
   writePersistedValueMock.mockResolvedValue(undefined);
+  readPersistedValueMock.mockResolvedValue(null);
   // start from the real post-init state so assertions on the flag observe
   // the handlers, not setupAutoUpdater's initialization
   autoUpdaterMock.allowDowngrade = false;
@@ -158,8 +169,9 @@ describe("checkForUpdates", () => {
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
     });
     expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalled();
-    // minor upgrade: no auto-download
+    // minor upgrade: no auto-download, and not labeled a patch
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+    expect(getStatus().patch).toBe(false);
   });
 
   // Regression pin #22609: patch updates auto-download.
@@ -171,6 +183,8 @@ describe("checkForUpdates", () => {
     await flush();
 
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
+    // labeled for the renderer's quieter patch notification
+    expect(getStatus().patch).toBe(true);
   });
 
   it("never resolves when the channel is none", async () => {
@@ -310,7 +324,7 @@ describe("release notes", () => {
 });
 
 describe("downgrade offers", () => {
-  it("offers a downgrade only for a manual switch to stable on a prerelease build", async () => {
+  it("offers a downgrade for a switch to stable on a prerelease build", async () => {
     appMock.getVersion.mockReturnValue("2.6.0-beta.1");
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
@@ -327,18 +341,56 @@ describe("downgrade offers", () => {
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
   });
 
-  it("never offers a downgrade on a background channel sync", async () => {
+  // A declined offer must come back on the next check — launch sync and the
+  // periodic re-check included — so background stable-channel checks offer too.
+  it("re-offers the downgrade on background stable-channel checks", async () => {
     appMock.getVersion.mockReturnValue("2.6.0-beta.1");
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
 
-    // the 5s fallback sends manual=false
+    // the 5s launch fallback sends manual=false
     ipcHandler("updater:set-channel")(undefined, "stable", false);
     await flush();
 
     const status = getStatus();
-    expect(status.downgrade).toBeUndefined();
+    expect(status.downgrade).toBe(true);
+    expect(status.available).toBe(true);
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+  });
+
+  it("declining clears the offer until the next check", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+
+    ipcHandler("updater:decline-downgrade")(undefined);
+
+    const status = getStatus();
     expect(status.available).toBe(false);
+    expect(status.downgrade).toBeUndefined();
+    expect(status.version).toBeUndefined();
+
+    // the declined offer is consumed: a late confirm must not download
+    ipcHandler("updater:download-downgrade")(undefined, true);
+    await flush();
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+
+    // ...but the next stable-channel check raises it again
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+    expect(getStatus().downgrade).toBe(true);
+  });
+
+  it("ignores a decline when no offer is outstanding", async () => {
+    await setup();
+
+    ipcHandler("updater:decline-downgrade")(undefined);
+
+    expect(getStatus().available).toBe(false);
+    // no spurious status broadcast for a stray decline
+    expect(ipcMock.send).not.toHaveBeenCalled();
   });
 
   it("ignores download-downgrade when no offer is outstanding", async () => {
@@ -378,8 +430,16 @@ describe("downgrade offers", () => {
     expect(autoUpdaterMock.allowDowngrade).toBe(false);
     // one-shot marker for the startup downgrade warning
     expect(writePersistedValueMock).toHaveBeenCalledWith("app", ["expectedDowngradeTo"], "2.5.0");
-    // past confirmation the status is an ordinary in-flight download
+    // past confirmation the offer flag drops, but the flow stays labeled as a
+    // downgrade so the renderer never presents it as a regular update
     expect(getStatus().downgrade).toBeUndefined();
+    expect(getStatus().downgrading).toBe(true);
+
+    // the label survives the download completing (the renderer's "restarting
+    // to install" message depends on downloaded + downgrading together)
+    updaterEvent("update-downloaded")?.({ version: "2.5.0" });
+    expect(getStatus().downgrading).toBe(true);
+    expect(getStatus().downloaded).toBe(true);
   });
 
   it("consumes the offer on confirmation so a double-confirm is a no-op", async () => {
@@ -460,5 +520,61 @@ describe("install retry", () => {
 
     expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledTimes(1);
     expect(getStatus().error).toContain("catastrophic");
+  });
+});
+
+// The persisted appVersion still holds the previous run's version at startup;
+// an increase means this launch is the first after an update.
+describe("post-update notice", () => {
+  it("sets justUpdatedFrom when the app version increased since the last run", async () => {
+    readPersistedValueMock.mockResolvedValue("2.5.9");
+    await setup();
+    await flush();
+
+    expect(readPersistedValueMock).toHaveBeenCalledWith("app", ["appVersion"]);
+    expect(getStatus().justUpdatedFrom).toBe("2.5.9");
+  });
+
+  it("stays unset for a same-version launch or after a downgrade", async () => {
+    readPersistedValueMock.mockResolvedValue("2.6.0");
+    await setup();
+    await flush();
+    expect(getStatus().justUpdatedFrom).toBeUndefined();
+
+    vi.resetModules();
+    readPersistedValueMock.mockResolvedValue("2.7.0");
+    await setup();
+    await flush();
+    expect(getStatus().justUpdatedFrom).toBeUndefined();
+  });
+
+  it("serves the changelog for the versions the update covered", async () => {
+    readPersistedValueMock.mockResolvedValue("2.5.9");
+    await setup();
+    await flush();
+    resolveUpdateMock.mockResolvedValue(
+      resolved({ tag: "v2.6.0", version: "2.6.0", notesHtml: "<p>2.6.0 changes</p>" }),
+    );
+
+    const call = ipcMock.handle.mock.calls.find(
+      ([name]) => name === "updater:get-update-changelog",
+    );
+    expect(call).toBeDefined();
+    await expect((call![1] as () => Promise<string | null>)()).resolves.toBe(
+      "<p>2.6.0 changes</p>",
+    );
+    // resolved from the pre-update version so the notes span the whole update
+    expect(resolveUpdateMock).toHaveBeenCalledWith("stable", "2.5.9");
+  });
+
+  it("returns no changelog when the launch did not follow an update", async () => {
+    await setup();
+    await flush();
+
+    const call = ipcMock.handle.mock.calls.find(
+      ([name]) => name === "updater:get-update-changelog",
+    );
+    await expect((call![1] as () => Promise<string | null>)()).resolves.toBeNull();
+    expect(resolveUpdateMock).not.toHaveBeenCalled();
   });
 });

@@ -20,7 +20,7 @@ import * as semver from "semver";
 
 import { betterIpcMain } from "../../ipc";
 import { log } from "../../logging";
-import { writePersistedValue } from "../../store/mainPersistence";
+import { readPersistedValue, writePersistedValue } from "../../store/mainPersistence";
 import type { ResolveChannel, ResolvedRelease } from "./releaseResolver";
 import {
   classifyUpdate,
@@ -146,8 +146,11 @@ export function setupAutoUpdater(installType: string): void {
       downloadProgress: updateStatus.downloadProgress,
       error: updateStatus.error,
       downgrade: updateStatus.downgrade,
+      downgrading: updateStatus.downgrading,
       checking: updateStatus.checking,
       manual: updateStatus.manual,
+      patch: updateStatus.patch,
+      justUpdatedFrom: updateStatus.justUpdatedFrom,
     };
   }
 
@@ -162,6 +165,50 @@ export function setupAutoUpdater(installType: string): void {
 
   // Register invoke handler for status queries
   betterIpcMain.handle("updater:get-status", (): UpdateStatus => statusSnapshot());
+
+  // Release notes for the update the app just went through — the renderer's
+  // post-update "View changes". The resolver collects body_html of releases
+  // above the given version, so resolving from the pre-update version yields
+  // exactly the versions this update covered.
+  betterIpcMain.handle("updater:get-update-changelog", async (): Promise<string | null> => {
+    const previous = updateStatus.justUpdatedFrom;
+    if (previous == null) {
+      return null;
+    }
+    try {
+      const resolvedRelease = await resolveUpdate(toResolveChannel(updateChannel), previous);
+      return resolvedRelease?.notesHtml ?? null;
+    } catch (err) {
+      log("warn", "Failed to fetch post-update changelog", {
+        error: getErrorMessageOrDefault(err),
+      });
+      return null;
+    }
+  });
+
+  // Surface "Vortex was updated" on the first launch after an update: the
+  // renderer store persists appVersion each run, so at startup it still holds
+  // the previous run's version. Not in dev, where the version is a moving
+  // placeholder.
+  if (process.env.NODE_ENV !== "development") {
+    void readPersistedValue<string>("app", ["appVersion"])
+      .then((previous) => {
+        if (
+          previous != null &&
+          semver.valid(previous) != null &&
+          semver.valid(currentVersion) != null &&
+          semver.gt(currentVersion, previous)
+        ) {
+          updateStatus.justUpdatedFrom = previous;
+          broadcastStatus();
+        }
+      })
+      .catch((err: unknown) => {
+        log("debug", "Could not read previous app version", {
+          error: getErrorMessageOrDefault(err),
+        });
+      });
+  }
 
   log("info", "setupAutoUpdater", { installType, currentVersion });
 
@@ -319,7 +366,7 @@ export function setupAutoUpdater(installType: string): void {
   // Resolve the channel's target release. Upgrades get handed to
   // electron-updater as the feed; downgrade offers are returned for the
   // caller to surface (only ever produced when allowDowngradeOffer is set,
-  // i.e. after an explicit switch to stable). A lower "latest" is otherwise
+  // i.e. for checks on the stable channel). A lower "latest" is otherwise
   // ignored — offering it unasked is the old field bug.
   function resolveAndApply(
     channel: string,
@@ -328,7 +375,7 @@ export function setupAutoUpdater(installType: string): void {
   ): Promise<ResolveOutcome> {
     return resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
       const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
-        switchToStable: allowDowngradeOffer,
+        stableChannel: allowDowngradeOffer,
       });
       if (resolved == null || verdict === "none") {
         const current = semver.valid(currentVersion);
@@ -352,6 +399,10 @@ export function setupAutoUpdater(installType: string): void {
         lastResolved = null;
         return { verdict, release: resolved };
       }
+      // Classify before the feed apply: the library's update-available fires
+      // during it, and the renderer needs the patch flag in that broadcast
+      // (patch updates auto-download and get their own quieter notification).
+      updateStatus.patch = shouldAutoDownload(currentVersion, resolved.version, installType);
       return applyResolvedFeed(resolved, generation).then(() => ({
         verdict: "upgrade" as const,
         release: resolved,
@@ -359,22 +410,23 @@ export function setupAutoUpdater(installType: string): void {
     });
   }
 
-  // Check for updates. allowDowngradeOffer is only set for a manual switch
-  // to the stable channel — the one flow where a lower version may be offered.
-  const checkForUpdates = (
-    channel: string,
-    manual: boolean = false,
-    allowDowngradeOffer: boolean = false,
-  ) => {
+  // Check for updates. Downgrade offers are only ever raised on the stable
+  // channel (a prerelease build whose user chose stable): every check there —
+  // channel switch, manual, periodic, launch — re-raises a declined offer,
+  // and a decline holds until the next one.
+  const checkForUpdates = (channel: string, manual: boolean = false) => {
     if (!channel || channel === "none") {
       log("debug", "Updates disabled");
       return;
     }
+    const allowDowngradeOffer = channel === "stable";
 
     updateChannel = channel;
     const generation = ++checkGeneration;
     pendingDowngrade = null;
     updateStatus.downgrade = undefined;
+    updateStatus.downgrading = undefined;
+    updateStatus.patch = undefined;
     updateStatus.checking = true;
     updateStatus.manual = manual;
     broadcastStatus();
@@ -412,7 +464,7 @@ export function setupAutoUpdater(installType: string): void {
 
         // Auto-download patch updates for regular installs; minor/major
         // updates require user-initiated download via renderer.
-        if (shouldAutoDownload(currentVersion, resolved.version, installType)) {
+        if (updateStatus.patch === true) {
           log("info", "Patch update detected, auto-downloading", {
             from: currentVersion,
             to: resolved.version,
@@ -447,9 +499,7 @@ export function setupAutoUpdater(installType: string): void {
     lastResolved = null;
 
     if (channel !== "none" && process.env.IGNORE_UPDATES !== "yes") {
-      // A user-initiated switch to stable is the one flow allowed to offer a
-      // downgrade (e.g. leaving the beta channel from a beta build).
-      checkForUpdates(channel, manual, manual === true && channel === "stable");
+      checkForUpdates(channel, manual);
     }
   });
 
@@ -536,9 +586,13 @@ export function setupAutoUpdater(installType: string): void {
     const generation = ++checkGeneration;
     updateStatus.checking = true;
     updateStatus.manual = false; // a download is not a check
-    // Past confirmation this is an ordinary in-flight download; keeping the
-    // downgrade flag would re-trigger the offer UI on every progress push.
+    // Past confirmation the offer flag drops (keeping it would re-trigger the
+    // offer UI on every progress push), but the flow stays labeled as a
+    // downgrade via `downgrading` — presenting it as a regular update
+    // download would misdescribe what is about to be installed.
     updateStatus.downgrade = undefined;
+    updateStatus.downgrading = true;
+    updateStatus.patch = undefined; // a downgrade is never a patch update
     lastBroadcastPercent = -1;
     broadcastStatus();
 
@@ -568,12 +622,29 @@ export function setupAutoUpdater(installType: string): void {
         const err = unknownToError(unknownErr);
         log("error", "Downgrade download failed", { error: err.message });
         updateStatus.error = err.message;
+        updateStatus.downgrading = undefined;
         installAfterDownloadFlag = false;
         if (generation === checkGeneration) {
           updateStatus.checking = false;
         }
         broadcastStatus();
       });
+  });
+
+  // The user declined the outstanding downgrade offer: forget it. The next
+  // check (manual, periodic, or next launch) will raise it again if the
+  // situation still holds.
+  betterIpcMain.on("updater:decline-downgrade", () => {
+    if (pendingDowngrade == null) {
+      log("debug", "Downgrade decline with no offer outstanding");
+      return;
+    }
+    log("info", "Downgrade offer declined", { version: pendingDowngrade.version });
+    pendingDowngrade = null;
+    updateStatus.available = false;
+    updateStatus.downgrade = undefined;
+    updateStatus.version = undefined;
+    broadcastStatus();
   });
 
   betterIpcMain.on("updater:restart-and-install", () => {

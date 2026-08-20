@@ -57,7 +57,7 @@ describe("pickRelease", () => {
   it("picks max semver per channel from date-interleaved releases", () => {
     expect(pickRelease(fixture, "stable")?.tag_name).toBe("v2.5.0");
     expect(pickRelease(fixture, "beta")?.tag_name).toBe("v2.6.0-beta.1");
-    expect(classifyUpdate("2.5.0-beta.2", "2.5.0", { switchToStable: false })).toBe("upgrade");
+    expect(classifyUpdate("2.5.0-beta.2", "2.5.0", { stableChannel: false })).toBe("upgrade");
   });
 
   it("prefers a newer stable over an older beta on the beta channel", () => {
@@ -101,19 +101,19 @@ describe("pickRelease", () => {
   it("returns null for empty or all-draft lists", () => {
     expect(pickRelease([], "stable")).toBeNull();
     expect(pickRelease([release({ tag_name: "v1.0.0", draft: true })], "beta")).toBeNull();
-    expect(classifyUpdate("2.5.0", null, { switchToStable: false })).toBe("none");
+    expect(classifyUpdate("2.5.0", null, { stableChannel: false })).toBe("none");
   });
 });
 
 describe("classifyUpdate", () => {
   it("classifies equal, newer, and older versions", () => {
-    expect(classifyUpdate("2.5.0", "2.5.0", { switchToStable: false })).toBe("none");
-    expect(classifyUpdate("2.5.0", "2.6.0", { switchToStable: false })).toBe("upgrade");
-    expect(classifyUpdate("2.6.0-beta.1", "2.5.0", { switchToStable: false })).toBe("none");
-    expect(classifyUpdate("2.6.0-beta.1", "2.5.0", { switchToStable: true })).toBe(
+    expect(classifyUpdate("2.5.0", "2.5.0", { stableChannel: false })).toBe("none");
+    expect(classifyUpdate("2.5.0", "2.6.0", { stableChannel: false })).toBe("upgrade");
+    expect(classifyUpdate("2.6.0-beta.1", "2.5.0", { stableChannel: false })).toBe("none");
+    expect(classifyUpdate("2.6.0-beta.1", "2.5.0", { stableChannel: true })).toBe(
       "downgrade-offer",
     );
-    expect(classifyUpdate("garbage", "2.5.0", { switchToStable: true })).toBe("none");
+    expect(classifyUpdate("garbage", "2.5.0", { stableChannel: true })).toBe("none");
   });
 });
 
