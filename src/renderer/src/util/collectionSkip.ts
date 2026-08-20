@@ -120,8 +120,8 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   // The previous mDependentMods.find had the same ambiguity, so this is not a new regression -
   // but disambiguation (which member did the user actually skip?) needs investigation.
   const rule = rules.find((iter) => matchesSkip(skip, iter.reference));
-  // The session is keyed by each member's rule as it was when the install started, so the entry is
-  // matched on its own snapshot rather than derived from the (possibly retagged) live rule.
+  // The session is keyed by each member's rule as it was when the install started, so the entry
+  // is matched on its own snapshot rather than on the live rule.
   const sessionEntry = Object.entries(session.mods).find(([, info]) =>
     info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
   );

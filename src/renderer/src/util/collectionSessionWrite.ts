@@ -131,14 +131,13 @@ export function matchSessionRuleEntry(
 }
 
 /**
- * Resolve how an install lifecycle outcome should be written to the active session. Combines the
- * active-session lookup, member matching and planSessionWrite into one step so a writer can record
- * progress with a single call. The returned ruleId is the session-mods key.
+ * Resolve how an install lifecycle outcome should be written to the active session. The returned
+ * ruleId is the session-mods key.
  *
  * `ruleId` is the member's session key, captured when its rule was in hand (IDependency's
- * sessionRuleId). Given one, the member is addressed directly, which is what keeps a write landing
- * when the dependency's reference identity no longer matches the key the member is tracked under.
- * Without one the member is matched by reference identity.
+ * sessionRuleId); given one the member is addressed directly, so the write lands even when the
+ * dependency's reference identity does not match that key. Without one the member is matched by
+ * reference identity.
  *
  * Returns null when there is no active session, no member matches, or the write would be a no-op
  * (e.g. a downgrade from a protected state).

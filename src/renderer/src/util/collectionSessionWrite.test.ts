@@ -130,7 +130,7 @@ describe("sessionWriteForDependency", () => {
   });
 
   // a dependency carries its member's session key (sessionRuleId), captured while its rule was in
-  // hand, so a write still addresses the member after the engine retags the reference
+  // hand, so a write still addresses the member when its reference identity drifts
   it("resolves the member named by rule id even when the reference identity differs", () => {
     const state = stateWith([{ ruleId: "r1", status: "downloaded" }]);
     expect(

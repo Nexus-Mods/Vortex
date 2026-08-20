@@ -63,9 +63,8 @@ function adjustCounters(
 }
 
 /**
- * Whether the session tracks this rule id. A write for an id it does not track identifies no
- * member, so applying it would invent an entry with no rule and count it towards the totals the
- * completion check and the progress bars read.
+ * Whether the session tracks this rule id. Applying a write for an id it does not track would
+ * invent a rule-less entry and count it towards the totals completion and progress read.
  */
 function isTrackedRule(session: types.ICollectionInstallSession, ruleId: string): boolean {
   if (session.mods[ruleId] !== undefined) {
