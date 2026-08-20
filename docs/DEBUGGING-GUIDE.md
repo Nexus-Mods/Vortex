@@ -427,8 +427,8 @@ Sometimes issues only occur in production builds. Here's how to debug them.
 ### Build Production (Unsigned)
 
 ```bash
-# Creates installer without code signing (faster)
-pnpm run package:local
+# Creates an unsigned installer (run from the repo root)
+pnpm package:nosign
 ```
 
 This downloads required redistributables and creates an unsigned installer in `dist/` directory.

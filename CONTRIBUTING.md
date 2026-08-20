@@ -114,7 +114,12 @@ instructions.
 
 ## Packaging
 
-- [Windows packaging]
+To build a Windows installer locally (unsigned, for testing production
+behavior), run `pnpm package:nosign` from the repo root — the output lands in
+`dist/`. Signed installers are produced by CI only.
+
+- [Windows packaging] — commands, the version placeholder, what the pipeline
+  does, and the traps
 - [Flatpak packaging]
 
 ## FAQ
