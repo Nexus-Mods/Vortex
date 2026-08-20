@@ -74,7 +74,9 @@ function init(context: IExtensionContext): boolean {
                 {
                   text: `Switching to the Stable channel would install Vortex ${status.version}, which is older than the version you are running (${currentVersion}).
 
-Downgrading can damage your application state. Alternatively, stay on your current version and you will be offered the next stable release once it is newer than ${currentVersion}.`,
+Downgrading can damage your application state. Alternatively, stay on your current version and you will be offered the next stable release once it is newer than ${currentVersion}.
+
+If you downgrade, Vortex will restart and install ${status.version} as soon as the download completes.`,
                 },
                 [
                   { label: "Stay on current version" },
@@ -116,15 +118,21 @@ Downgrading can damage your application state. Alternatively, stay on your curre
               },
             },
             {
-              title: status.downloaded ? "Restart" : "Install",
+              // Not downloaded yet (minor/major updates wait for the user):
+              // the button downloads, and the pushed "downloaded" status then
+              // flips this same notification to Restart & Install. Patch
+              // updates arrive already downloaded, so they start there.
+              title: status.downloaded ? "Restart & Install" : "Download",
               action: (dismiss) => {
                 if (status.downloaded) {
                   window.api.updater.restartAndInstall();
+                  dismiss();
                 } else {
                   const channel = context.api.store.getState().settings.update.channel;
-                  window.api.updater.downloadUpdate(channel, true);
+                  window.api.updater.downloadUpdate(channel, false);
+                  // keep the notification: it live-updates to show the
+                  // Restart & Install action once the download completes
                 }
-                dismiss();
               },
             },
           ],
