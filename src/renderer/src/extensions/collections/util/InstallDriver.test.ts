@@ -786,4 +786,34 @@ describe("InstallDriver collection membership tags", () => {
     // the user may have installed it themselves, so it is not marked as pulled in by a collection
     expect(attributes?.installedAsDependency).toBeUndefined();
   });
+
+  // Two members can resolve to the same installed mod (same file, pinned twice), so the tags are
+  // recorded per mod rather than per member - one write per member would only keep the last tag.
+  test("records both rules' tags when two members resolve to the same installed mod", async ({
+    makeDriver,
+  }) => {
+    const firstRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "ours-first", fileMD5: "shared-hash" }),
+    });
+    const secondRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "ours-second", fileMD5: "shared-hash" }),
+    });
+    const fixture = buildCollectionFixture("col-twice", [firstRule, secondRule]);
+    const h = makeDriver({
+      mods: {
+        [GAME_ID]: { [fixture.collection.id]: fixture.collection, [sharedMod.id]: sharedMod },
+      },
+      downloads: { [fixture.download.id]: fixture.download },
+      profiles: { [profile.id]: profile },
+    });
+
+    await h.driver.start(profile, fixture.collection);
+
+    const tags = h.getState().persistent.mods[GAME_ID][sharedMod.id].attributes?.referenceTags;
+    expect(tags).toContain("ours-first");
+    expect(tags).toContain("ours-second");
+    expect(tags).toContain("theirs");
+  });
 });

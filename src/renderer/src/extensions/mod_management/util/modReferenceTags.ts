@@ -12,27 +12,33 @@ import type { IMod } from "../types/IMod";
 import { modReferenceTags } from "./testModReference";
 
 /**
- * Actions recording `tag` on the mod's tag set. Sets the legacy single field only when the mod
- * carries no tag yet. Empty when the tag is already recorded or the rule has none.
+ * Actions recording `tags` on the mod's tag set. Sets the legacy single field only when the mod
+ * carries no tag yet. Empty when every tag is already recorded.
+ *
+ * All tags for one mod must go through a single call: the actions carry the whole array, so two
+ * calls built from the same mod would each write only their own addition.
  */
-export function appendModReferenceTagActions(
+export function appendModReferenceTagsActions(
   gameId: string,
   modId: string,
   mod: IMod | undefined,
-  tag: string | undefined,
+  tags: readonly (string | undefined)[],
 ): Action[] {
-  if (tag === undefined) {
-    return [];
+  const recorded = modReferenceTags(mod);
+  const added: string[] = [];
+  for (const tag of tags) {
+    if (tag !== undefined && !recorded.includes(tag) && !added.includes(tag)) {
+      added.push(tag);
+    }
   }
-  const tags = modReferenceTags(mod);
-  if (tags.includes(tag)) {
+  if (added.length === 0) {
     return [];
   }
   const actions: Action[] = [
-    setModAttribute(gameId, modId, "referenceTags", [...tags, tag]) as Action,
+    setModAttribute(gameId, modId, "referenceTags", [...recorded, ...added]) as Action,
   ];
   if (mod?.attributes?.referenceTag === undefined) {
-    actions.push(setModAttribute(gameId, modId, "referenceTag", tag) as Action);
+    actions.push(setModAttribute(gameId, modId, "referenceTag", added[0]) as Action);
   }
   return actions;
 }
