@@ -479,7 +479,19 @@ export function setupAutoUpdater(installType: string): void {
           return; // superseded by a newer check; let that one own the state
         }
         if (outcome.verdict === "none") {
-          setState({ type: "idle" });
+          // A staged downgrade the user already confirmed survives checks
+          // that (correctly) ignore the lower version — settling to idle
+          // would orphan the downloaded installer and silently disarm its
+          // install-on-quit.
+          if (
+            before.type === "staged" &&
+            before.kind === "downgrade" &&
+            downloadedVersion === before.version
+          ) {
+            setState(before);
+          } else {
+            setState({ type: "idle" });
+          }
           return;
         }
         if (outcome.verdict === "downgrade-offer") {
@@ -506,13 +518,14 @@ export function setupAutoUpdater(installType: string): void {
         }
 
         // Patch updates auto-download for regular installs; minor/major
-        // updates wait for a user decision.
+        // updates wait for a user decision. A patch found by a MANUAL check
+        // downloads visibly — the user's press set it in motion.
         if (kindFor(resolved.version) === "patch") {
           log("info", "Patch update detected, auto-downloading", {
             from: currentVersion,
             to: resolved.version,
           });
-          setState({ type: "downloading", version: resolved.version, kind: "patch" });
+          setState({ type: "downloading", version: resolved.version, kind: "patch", manual });
           autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
             // state transition owned by the "error" event handler
             log("warn", "Auto-download failed", { error: getErrorMessageOrDefault(err) });
@@ -630,7 +643,7 @@ export function setupAutoUpdater(installType: string): void {
     // ETag cache makes the repeat lookup cheap.
     const generation = ++checkGeneration;
     if (requestedVersion != null) {
-      setState({ type: "downloading", version: requestedVersion, kind: "update" });
+      setState({ type: "downloading", version: requestedVersion, kind: "update", manual: true });
     } else {
       setState({ type: "checking", manual: true });
     }
@@ -650,7 +663,12 @@ export function setupAutoUpdater(installType: string): void {
         // superseded downgrade flow may still be mid-feed-apply with it raised
         autoUpdater.allowDowngrade = false;
         if (current.type !== "downloading" || current.version !== outcome.release.version) {
-          setState({ type: "downloading", version: outcome.release.version, kind: "update" });
+          setState({
+            type: "downloading",
+            version: outcome.release.version,
+            kind: "update",
+            manual: true,
+          });
         }
         return autoUpdater.downloadUpdate();
       })
@@ -689,7 +707,7 @@ export function setupAutoUpdater(installType: string): void {
     installAfterDownloadFlag = installAfterDownload;
     const generation = ++checkGeneration;
     // press feedback: the confirm is visible immediately
-    setState({ type: "downloading", version: target.version, kind: "downgrade" });
+    setState({ type: "downloading", version: target.version, kind: "downgrade", manual: true });
 
     // One-shot marker so the next launch's "Downgrade detected" warning is
     // suppressed for the version the user knowingly chose. Written before

@@ -617,6 +617,29 @@ describe("downgrade offers", () => {
     expect(getState()).toMatchObject({ type: "staged", version: "2.5.0", kind: "downgrade" });
   });
 
+  // Field-tested: a manual check while a confirmed downgrade was staged
+  // settled to idle, orphaning the downloaded installer and disarming its
+  // install-on-quit. A confirmed downgrade survives checks that (correctly)
+  // ignore the lower version.
+  it("keeps a staged downgrade staged across checks", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+    ipcHandler("updater:download-downgrade")(undefined, false);
+    await flush();
+    updaterEvent("update-downloaded")?.({ version: "2.5.0" });
+    expect(getState()).toMatchObject({ type: "staged", kind: "downgrade" });
+
+    // a manual re-check ignores the lower version — but must not forget the
+    // staged downgrade the user already confirmed
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+
+    expect(getState()).toMatchObject({ type: "staged", version: "2.5.0", kind: "downgrade" });
+  });
+
   it("consumes the offer on confirmation so a double-confirm is a no-op", async () => {
     appMock.getVersion.mockReturnValue("2.6.0-beta.1");
     await setup();
