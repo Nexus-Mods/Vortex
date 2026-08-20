@@ -166,6 +166,16 @@ export function setupAutoUpdater(installType: string): void {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
 
+  // Route the library's own log lines (differential-download fallbacks,
+  // signature verification, cache decisions) into vortex.log — by default
+  // they only reach the console and are invisible in the field.
+  autoUpdater.logger = {
+    info: (message: unknown) => log("info", "electron-updater", { message }),
+    warn: (message: unknown) => log("warn", "electron-updater", { message }),
+    error: (message: unknown) => log("warn", "electron-updater error", { message }),
+    debug: (message: string) => log("debug", "electron-updater", { message }),
+  };
+
   // Run-from-source builds skip the library's check ("application is not
   // packed"). Opting in via VORTEX_DEV_UPDATER=1 makes it read
   // dev-app-update.yml (in src/main) instead, so check/notify/download can be
