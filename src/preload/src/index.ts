@@ -124,6 +124,12 @@ try {
       downloadUpdate: (channel: string, installAfterDownload: boolean = false) =>
         betterIpcRenderer.send("updater:download", channel, installAfterDownload),
       restartAndInstall: () => betterIpcRenderer.send("updater:restart-and-install"),
+      onStatusChanged: (callback) => {
+        const listener = (_: Electron.IpcRendererEvent, status: Parameters<typeof callback>[0]) =>
+          callback(status);
+        ipcRenderer.on("updater:status-changed", listener);
+        return () => ipcRenderer.removeListener("updater:status-changed", listener);
+      },
     },
 
     dialog: {

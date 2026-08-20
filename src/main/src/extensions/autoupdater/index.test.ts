@@ -20,7 +20,7 @@ const { autoUpdaterMock, appMock, ipcMock, resolveUpdateMock } = vi.hoisted(() =
       on: vi.fn(),
       removeListener: vi.fn(),
     },
-    ipcMock: { handle: vi.fn(), on: vi.fn() },
+    ipcMock: { handle: vi.fn(), on: vi.fn(), send: vi.fn() },
     resolveUpdateMock: vi.fn(),
   };
 });
@@ -35,6 +35,7 @@ vi.mock("@vortex/shared", () => ({
 vi.mock("electron", () => ({
   app: appMock,
   dialog: { showMessageBoxSync: vi.fn() },
+  BrowserWindow: { getAllWindows: () => [{ webContents: {} }] },
 }));
 vi.mock("electron-updater", () => ({ autoUpdater: autoUpdaterMock }));
 vi.mock("../../ipc", () => ({ betterIpcMain: ipcMock }));
