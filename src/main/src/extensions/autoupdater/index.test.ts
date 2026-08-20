@@ -194,6 +194,60 @@ describe("checkForUpdates", () => {
     expect(resolveUpdateMock).not.toHaveBeenCalled();
   });
 
+  // Review finding: disabling updates left the previous offer advertised.
+  it("withdraws the current offer when the channel is set to none", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved());
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    updaterEvent("update-available")?.({ version: "2.7.0", releaseNotes: null });
+    expect(getStatus().available).toBe(true);
+    ipcMock.send.mockClear();
+
+    ipcHandler("updater:set-channel")(undefined, "none", true);
+
+    const status = getStatus();
+    expect(status.available).toBe(false);
+    expect(status.version).toBeUndefined();
+    expect(status.downgrade).toBeUndefined();
+    // the withdrawal is broadcast so the renderer can dismiss
+    expect(ipcMock.send).toHaveBeenCalled();
+  });
+
+  // Review finding: a failed download left stale progress, stranding the
+  // renderer on "Downloading…" with the retry button hidden.
+  it("clears download progress when a download fails", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved());
+    autoUpdaterMock.downloadUpdate.mockRejectedValue(new Error("net::ERR_CONNECTION_REFUSED"));
+
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+    updaterEvent("download-progress")?.({ percent: 40 });
+
+    // the library error event also clears it
+    updaterEvent("error")?.(new Error("net::ERR_CONNECTION_REFUSED"));
+
+    const status = getStatus();
+    expect(status.downloadProgress).toBeUndefined();
+    expect(status.error).toContain("ERR_CONNECTION_REFUSED");
+  });
+
+  // Review finding: cancelling a download (channel switch) surfaced as a red
+  // error notification for a deliberate user action.
+  it("does not surface a cancelled download as an error", async () => {
+    await setup();
+    updaterEvent("download-progress")?.({ percent: 40 });
+
+    const cancellation = new Error("cancelled");
+    cancellation.name = "CancellationError";
+    updaterEvent("error")?.(cancellation);
+
+    const status = getStatus();
+    expect(status.error).toBeUndefined();
+    expect(status.downloadProgress).toBeUndefined();
+  });
+
   it("clears checking but leaves availability untouched when resolution fails", async () => {
     await setup();
     // a previously known update survives an offline/failed check
@@ -206,10 +260,21 @@ describe("checkForUpdates", () => {
     const status = getStatus();
     expect(status.checking).toBe(false);
     expect(status.available).toBe(true);
-    // the failure is surfaced, not swallowed — a failed manual check must
-    // not read as "up to date"
-    expect(status.error).toContain("network down");
+    // offline is normal: a BACKGROUND check failure stays out of the status
+    // (it would otherwise raise a red notification every launch and 4h tick)
+    expect(status.error).toBeUndefined();
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a failed MANUAL check via the error field", async () => {
+    await setup();
+    resolveUpdateMock.mockRejectedValue(new Error("network down"));
+
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+
+    // a failed manual check must not read as "up to date"
+    expect(getStatus().error).toContain("network down");
   });
 });
 

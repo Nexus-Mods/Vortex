@@ -249,6 +249,18 @@ export function setupAutoUpdater(installType: string): void {
   // Error handler
   autoUpdater.on("error", (err) => {
     const message = getErrorMessageOrDefault(err);
+    // A dead download's progress must not linger: the renderer hides the
+    // Download (retry) button and keeps saying "Downloading…" while progress
+    // is set, so a failure would otherwise strand a frozen notification.
+    updateStatus.downloadProgress = undefined;
+    // A cancelled download (channel switch mid-download) is the user's own
+    // doing, not a failure to report.
+    const cancelled = err instanceof Error && err.name === "CancellationError";
+    if (cancelled) {
+      log("info", "Update download cancelled");
+      broadcastStatus();
+      return;
+    }
     log("error", "Auto-updater error", { error: message });
     updateStatus.error = message;
     // A failed installer launch surfaces here; retry if it's a transient lock.
@@ -488,13 +500,16 @@ export function setupAutoUpdater(installType: string): void {
       .catch((err) => {
         if (generation === checkGeneration) {
           updateStatus.checking = false;
-          // surface the failure: without this a failed manual check reads as
-          // "up to date", and a background failure is invisible everywhere
-          // but the log
-          updateStatus.error =
-            err instanceof RateLimitError
-              ? "update check rate-limited by GitHub, try again later"
-              : getErrorMessageOrDefault(err);
+          // Surface MANUAL check failures: without this they read as "up to
+          // date". Background failures stay log-only — offline is normal for
+          // a gaming machine, not a red notification every launch and every
+          // periodic re-check.
+          if (manual) {
+            updateStatus.error =
+              err instanceof RateLimitError
+                ? "update check rate-limited by GitHub, try again later"
+                : getErrorMessageOrDefault(err);
+          }
           broadcastStatus();
         }
         if (err instanceof RateLimitError) {
@@ -514,7 +529,23 @@ export function setupAutoUpdater(installType: string): void {
     }
     lastResolved = null;
 
-    if (channel !== "none" && process.env.IGNORE_UPDATES !== "yes") {
+    if (channel === "none") {
+      // Updates disabled: withdraw whatever was on offer, or a standing
+      // notification keeps live buttons for an update the user opted out of.
+      pendingDowngrade = null;
+      updateStatus.available = false;
+      updateStatus.version = undefined;
+      updateStatus.releaseNotes = undefined;
+      updateStatus.downloadProgress = undefined;
+      updateStatus.downgrade = undefined;
+      updateStatus.downgrading = undefined;
+      updateStatus.patch = undefined;
+      updateStatus.error = undefined;
+      broadcastStatus();
+      return;
+    }
+
+    if (process.env.IGNORE_UPDATES !== "yes") {
       // A user-initiated switch to stable is the one flow allowed to offer a
       // downgrade (e.g. leaving the beta channel from a beta build).
       checkForUpdates(channel, manual, manual === true && channel === "stable");
@@ -590,6 +621,9 @@ export function setupAutoUpdater(installType: string): void {
         const err = unknownToError(unknownErr);
         log("error", "Download failed", { error: err.message });
         updateStatus.error = err.message;
+        // stale progress would strand the renderer on "Downloading…" with the
+        // retry button hidden
+        updateStatus.downloadProgress = undefined;
         installAfterDownloadFlag = false;
         if (generation === checkGeneration) {
           updateStatus.checking = false;
@@ -656,6 +690,7 @@ export function setupAutoUpdater(installType: string): void {
         log("error", "Downgrade download failed", { error: err.message });
         updateStatus.error = err.message;
         updateStatus.downgrading = undefined;
+        updateStatus.downloadProgress = undefined;
         // Without the offer (consumed above) the failed target must not be
         // left advertised: the renderer would present the older version as a
         // regular available update whose Download can only ever fail.

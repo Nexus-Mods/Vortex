@@ -439,10 +439,34 @@ describe("updater status handling", () => {
     // progress ticks update in place: no dismiss (which would re-toast)
     expect(dismissNotification).not.toHaveBeenCalled();
     const last = sendNotification.mock.calls.at(-1)![0];
-    expect(last.message).toBe("Downloading Vortex 2.7.0");
+    // the percent lives in the text: the theme's bar overlay is too subtle
+    expect(last.message).toBe("Downloading Vortex 2.7.0 (42%)");
     expect(last.progress).toBe(42);
-    // no Download button mid-download
-    expect(last.actions!.map((action) => action.title)).toEqual(["What's New"]);
+    // no buttons at all while downloading
+    expect(last.actions).toBeUndefined();
+  });
+
+  // Field-tested: killing the feed mid-download left "Downloading…" frozen
+  // with no retry. A failed download (error set, progress cleared by main)
+  // must recover to a retryable notification alongside the error one.
+  it("recovers a failed download to a retryable notification", async () => {
+    const { sendNotification, notifications, pushStatus } = await setup();
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    pushStatus({ available: true, downloaded: false, version: "2.7.0", downloadProgress: 40 });
+
+    pushStatus({
+      available: true,
+      downloaded: false,
+      version: "2.7.0",
+      error: "net::ERR_CONNECTION_REFUSED",
+    });
+
+    expect(notifications.some((entry) => entry.id === "vortex-update-error")).toBe(true);
+    const last = sendNotification.mock.calls.at(-1)![0];
+    expect(last.id).toBe("vortex-update-available");
+    expect(last.message).toBe("Vortex 2.7.0 is available to download");
+    expect(last.actions!.map((action) => action.title)).toEqual(["What's New", "Download"]);
   });
 
   it("dismisses the 'was updated' notice when an update notification appears", async () => {
