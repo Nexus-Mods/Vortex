@@ -142,6 +142,7 @@ export function setupAutoUpdater(installType: string): void {
       error: updateStatus.error,
       downgrade: updateStatus.downgrade,
       checking: updateStatus.checking,
+      manual: updateStatus.manual,
     };
   }
 
@@ -370,6 +371,7 @@ export function setupAutoUpdater(installType: string): void {
     pendingDowngrade = null;
     updateStatus.downgrade = undefined;
     updateStatus.checking = true;
+    updateStatus.manual = manual;
     broadcastStatus();
     log("info", "Checking for updates", { channel, manual, currentVersion });
 
@@ -486,6 +488,7 @@ export function setupAutoUpdater(installType: string): void {
     // superseded can't strand checking:true.
     const generation = ++checkGeneration;
     updateStatus.checking = true;
+    updateStatus.manual = false; // a download is not a check
     lastBroadcastPercent = -1;
     broadcastStatus();
     resolveAndApply(channel, generation)
@@ -527,6 +530,7 @@ export function setupAutoUpdater(installType: string): void {
     installAfterDownloadFlag = installAfterDownload;
     const generation = ++checkGeneration;
     updateStatus.checking = true;
+    updateStatus.manual = false; // a download is not a check
     // Past confirmation this is an ordinary in-flight download; keeping the
     // downgrade flag would re-trigger the offer UI on every progress push.
     updateStatus.downgrade = undefined;

@@ -72,6 +72,8 @@ export interface UpdateStatus {
   downgrade?: boolean;
   /** An update check is in flight */
   checking?: boolean;
+  /** Whether the most recent check was user-initiated (Check now / channel switch) */
+  manual?: boolean;
 }
 
 /** Vortex application paths */
