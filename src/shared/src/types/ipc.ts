@@ -382,8 +382,10 @@ export interface InvokeChannels {
   // Updater: Query current update status from main process
   "updater:get-status": () => Promise<UpdateStatus>;
   // Updater: Release notes covering the update the app just went through
-  // (null when the launch did not follow an update or notes are unavailable)
-  "updater:get-update-changelog": () => Promise<string | null>;
+  // (null when the launch did not follow an update or notes are unavailable).
+  // The renderer passes its persisted channel — the handler can be invoked
+  // before the first check has established one in main.
+  "updater:get-update-changelog": (channel: string) => Promise<string | null>;
   // Dialog channels
   "dialog:showOpen": (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>;
   "dialog:showSave": (options: SaveDialogOptions) => Promise<SaveDialogReturnValue>;

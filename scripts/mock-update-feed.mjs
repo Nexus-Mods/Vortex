@@ -120,8 +120,10 @@ const server = createServer((req, res) => {
     // real files win over generated dummies (needed for blockmap testing:
     // blockmaps must match the actual installer bytes); a per-tag
     // subdirectory wins over the flat dir, so tag-specific files that share
-    // a name across releases (latest.yml) can coexist
-    if (assetsDir != null && /^[\w.-]+$/.test(asset) && /^[\w.-]+$/.test(tag)) {
+    // a name across releases (latest.yml) can coexist. Reject ".."-bearing
+    // segments outright — the character class alone would admit them.
+    const safeSegment = (segment) => /^[\w.-]+$/.test(segment) && !segment.includes("..");
+    if (assetsDir != null && safeSegment(asset) && safeSegment(tag)) {
       try {
         let content;
         let source;
@@ -136,7 +138,16 @@ const server = createServer((req, res) => {
         const range = /^bytes=(\d+)-(\d+)?$/.exec(req.headers.range ?? "");
         if (range != null) {
           const start = Number(range[1]);
-          const end = range[2] != null ? Number(range[2]) : content.length - 1;
+          const end = Math.min(
+            range[2] != null ? Number(range[2]) : content.length - 1,
+            content.length - 1,
+          );
+          if (start >= content.length || start > end) {
+            console.log(`${label} -> 416 (unsatisfiable range ${req.headers.range})`);
+            res.writeHead(416, { "content-range": `bytes */${content.length}` });
+            res.end();
+            return;
+          }
           const slice = content.subarray(start, end + 1);
           console.log(
             `${label} -> 206 bytes ${start}-${end} (${fmtSize(slice.length)}) [${source}]`,
@@ -191,7 +202,9 @@ const server = createServer((req, res) => {
   res.end("not found");
 });
 
-server.listen(port, () => {
+// loopback only: without an explicit host Node binds 0.0.0.0, exposing the
+// assets directory to the local network
+server.listen(port, "127.0.0.1", () => {
   console.log(`mock update feed on http://localhost:${port}`);
   console.log(`  fixture: ${fixturePath} (${releases.length} releases)`);
   console.log(`  installer: ${installerPath ?? "generated dummy bytes"}`);

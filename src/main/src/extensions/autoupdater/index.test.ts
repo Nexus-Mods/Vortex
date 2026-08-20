@@ -252,6 +252,47 @@ describe("updater:download", () => {
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
   });
 
+  // Review finding: the download path used to inherit the patch label from
+  // resolveAndApply, flipping a user-initiated download into the silent
+  // patch presentation mid-flight.
+  it("never labels a user-initiated download as a patch", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
+    expect(getStatus().patch).toBeUndefined();
+  });
+
+  // Review finding: a download that lost the generation race could still call
+  // downloadUpdate — potentially while a confirmed downgrade's temporarily
+  // raised allowDowngrade was in effect.
+  it("does not download when superseded by a newer check", async () => {
+    await setup();
+    let resolveFirst: (value: unknown) => void = () => undefined;
+    resolveUpdateMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFirst = resolve;
+      }),
+    );
+
+    ipcHandler("updater:download")(undefined, "stable", false);
+
+    // a newer manual check supersedes the download's generation (2.7.0 is a
+    // minor upgrade, so the check itself won't auto-download)
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+
+    resolveFirst(resolved({ tag: "v2.7.0" }));
+    await flush();
+
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+  });
+
   it("skips re-download and installs directly when already downloaded", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved());
@@ -447,6 +488,28 @@ describe("downgrade offers", () => {
     updaterEvent("update-downloaded")?.({ version: "2.5.0" });
     expect(getStatus().downgrading).toBe(true);
     expect(getStatus().downloaded).toBe(true);
+  });
+
+  // Review finding: a failed downgrade download left available:true with the
+  // older version — the renderer then presented the downgrade as a regular
+  // available update whose Download button could only ever fail.
+  it("resets availability when the downgrade download fails", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+
+    autoUpdaterMock.downloadUpdate.mockRejectedValue(new Error("sha512 mismatch"));
+    ipcHandler("updater:download-downgrade")(undefined, false);
+    await flush();
+
+    const status = getStatus();
+    expect(status.available).toBe(false);
+    expect(status.version).toBeUndefined();
+    expect(status.downgrading).toBeUndefined();
+    expect(status.error).toContain("sha512");
+    expect(autoUpdaterMock.allowDowngrade).toBe(false);
   });
 
   it("consumes the offer on confirmation so a double-confirm is a no-op", async () => {

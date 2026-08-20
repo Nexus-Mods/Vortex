@@ -138,20 +138,9 @@ export function setupAutoUpdater(installType: string): void {
   }
 
   function statusSnapshot(): UpdateStatus {
-    return {
-      available: updateStatus.available,
-      downloaded: updateStatus.downloaded,
-      version: updateStatus.version,
-      releaseNotes: updateStatus.releaseNotes,
-      downloadProgress: updateStatus.downloadProgress,
-      error: updateStatus.error,
-      downgrade: updateStatus.downgrade,
-      downgrading: updateStatus.downgrading,
-      checking: updateStatus.checking,
-      manual: updateStatus.manual,
-      patch: updateStatus.patch,
-      justUpdatedFrom: updateStatus.justUpdatedFrom,
-    };
+    // updateStatus holds only serializable scalars; a spread can't silently
+    // drop a newly added field the way a hand-maintained list can
+    return { ...updateStatus };
   }
 
   // Push the current status to every window; the renderer reacts to these
@@ -169,22 +158,38 @@ export function setupAutoUpdater(installType: string): void {
   // Release notes for the update the app just went through — the renderer's
   // post-update "View changes". The resolver collects body_html of releases
   // above the given version, so resolving from the pre-update version yields
-  // exactly the versions this update covered.
-  betterIpcMain.handle("updater:get-update-changelog", async (): Promise<string | null> => {
-    const previous = updateStatus.justUpdatedFrom;
-    if (previous == null) {
-      return null;
-    }
-    try {
-      const resolvedRelease = await resolveUpdate(toResolveChannel(updateChannel), previous);
-      return resolvedRelease?.notesHtml ?? null;
-    } catch (err) {
-      log("warn", "Failed to fetch post-update changelog", {
-        error: getErrorMessageOrDefault(err),
-      });
-      return null;
-    }
-  });
+  // exactly the versions this update covered. The renderer supplies its
+  // persisted channel: this handler is clickable before the first check has
+  // set updateChannel, which would otherwise default beta users to stable
+  // notes. Cached so repeat clicks don't share rate-limit fate with real
+  // update checks.
+  let changelogCache: { channel: string; notes: string | null } | null = null;
+  betterIpcMain.handle(
+    "updater:get-update-changelog",
+    async (_event, channel: string): Promise<string | null> => {
+      const previous = updateStatus.justUpdatedFrom;
+      if (previous == null) {
+        return null;
+      }
+      const resolveChannel = toResolveChannel(channel);
+      if (changelogCache != null && changelogCache.channel === resolveChannel) {
+        return changelogCache.notes;
+      }
+      try {
+        const resolvedRelease = await resolveUpdate(resolveChannel, previous);
+        const notes = resolvedRelease?.notesHtml ?? null;
+        if (notes != null) {
+          changelogCache = { channel: resolveChannel, notes };
+        }
+        return notes;
+      } catch (err) {
+        log("warn", "Failed to fetch post-update changelog", {
+          error: getErrorMessageOrDefault(err),
+        });
+        return null;
+      }
+    },
+  );
 
   // Surface "Vortex was updated" on the first launch after an update: the
   // renderer store persists appVersion each run, so at startup it still holds
@@ -399,10 +404,6 @@ export function setupAutoUpdater(installType: string): void {
         lastResolved = null;
         return { verdict, release: resolved };
       }
-      // Classify before the feed apply: the library's update-available fires
-      // during it, and the renderer needs the patch flag in that broadcast
-      // (patch updates auto-download and get their own quieter notification).
-      updateStatus.patch = shouldAutoDownload(currentVersion, resolved.version, installType);
       return applyResolvedFeed(resolved, generation).then(() => ({
         verdict: "upgrade" as const,
         release: resolved,
@@ -462,6 +463,11 @@ export function setupAutoUpdater(installType: string): void {
           return;
         }
         const resolved = outcome.release;
+        // Classify for the renderer: patch updates auto-download and get
+        // quieter notifications. Only the winning generation writes the flag
+        // (this block already returned above when superseded), so a slow
+        // stale check can't relabel a different offer.
+        updateStatus.patch = shouldAutoDownload(currentVersion, resolved.version, installType);
         broadcastStatus();
         log("info", "Update check completed", { version: resolved.version });
 
@@ -549,6 +555,7 @@ export function setupAutoUpdater(installType: string): void {
     const generation = ++checkGeneration;
     updateStatus.checking = true;
     updateStatus.manual = false; // a download is not a check
+    updateStatus.patch = undefined; // user-initiated, never the patch auto-flow
     lastBroadcastPercent = -1;
     broadcastStatus();
     resolveAndApply(channel, generation)
@@ -560,6 +567,16 @@ export function setupAutoUpdater(installType: string): void {
         if (outcome.verdict !== "upgrade") {
           throw new Error("no newer release available to download");
         }
+        if (generation !== checkGeneration) {
+          // superseded by a newer check/download: that flow owns the updater
+          // now, and downloading here could ride a downgrade's temporarily
+          // raised allowDowngrade
+          log("info", "Download superseded by a newer check, not downloading");
+          return;
+        }
+        // a user download never legitimately needs the downgrade override; a
+        // superseded downgrade flow may still be mid-feed-apply with it raised
+        autoUpdater.allowDowngrade = false;
         return autoUpdater.downloadUpdate();
       })
       .catch((unknownErr) => {
@@ -616,10 +633,14 @@ export function setupAutoUpdater(installType: string): void {
       })
       .then(() => {
         autoUpdater.allowDowngrade = false;
-        if (generation === checkGeneration) {
-          updateStatus.checking = false;
-          broadcastStatus();
+        if (generation !== checkGeneration) {
+          // a newer check superseded the confirmed downgrade mid-apply;
+          // downloading now would fight that flow over the shared updater
+          log("info", "Downgrade download superseded by a newer check, not downloading");
+          return;
         }
+        updateStatus.checking = false;
+        broadcastStatus();
         return autoUpdater.downloadUpdate();
       })
       .catch((unknownErr) => {
@@ -628,6 +649,11 @@ export function setupAutoUpdater(installType: string): void {
         log("error", "Downgrade download failed", { error: err.message });
         updateStatus.error = err.message;
         updateStatus.downgrading = undefined;
+        // Without the offer (consumed above) the failed target must not be
+        // left advertised: the renderer would present the older version as a
+        // regular available update whose Download can only ever fail.
+        updateStatus.available = false;
+        updateStatus.version = undefined;
         installAfterDownloadFlag = false;
         if (generation === checkGeneration) {
           updateStatus.checking = false;
