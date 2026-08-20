@@ -59,7 +59,14 @@ export const CandidateCard = ({
 
   const handleModPage = () => {
     ctx.onOpenModPage(candidate, resolution);
-    openModPage(ctx.api, candidate);
+
+    // Free users would still need to find and download the file themselves from the mod
+    // page, so send them straight to it; premium users are just browsing.
+    if (ctx.showPremiumAd) {
+      openFilePage(ctx.api, candidate);
+    } else {
+      openModPage(ctx.api, candidate);
+    }
   };
 
   return (
@@ -73,7 +80,9 @@ export const CandidateCard = ({
               leftIconPath={mdiOpenInNew}
               onClick={handleModPage}
             >
-              {t("detail::item::install_via_mod_page")}
+              {ctx.showPremiumAd
+                ? t("detail::item::install_via_mod_page")
+                : t("detail::item::view_mod_page")}
             </Button>
 
             <Button
