@@ -79,8 +79,13 @@ export type UpdaterState =
    * entered on a purposeful switch to stable, awaiting confirm/decline
    */
   | { type: "downgrade-offered"; version: string }
-  /** a download is running; percent is absent until the first progress event */
-  | { type: "downloading"; version: string; kind: UpdateKind; percent?: number }
+  /**
+   * a download is running; percent is absent until the first progress event.
+   * manual marks a download the user's own action set in motion (Download,
+   * a confirmed downgrade, a manual check that found a patch) — those render
+   * visibly; only background-initiated patch downloads stay silent.
+   */
+  | { type: "downloading"; version: string; kind: UpdateKind; manual: boolean; percent?: number }
   /** downloaded and verified; installs on quit, or immediately via Restart Now */
   | { type: "staged"; version: string; kind: UpdateKind; releaseNotes?: string }
   /**

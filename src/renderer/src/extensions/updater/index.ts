@@ -288,17 +288,10 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
           dismiss(NOTIF_OFFER);
           dismiss(NOTIF_ERROR);
           dismiss(NOTIF_UPDATED);
-          // patches download silently — but a manual check that found one
-          // still owes the user an answer
-          if (state.kind === "patch") {
-            if (manualCheckSettled) {
-              context.api.sendNotification({
-                id: NOTIF_TOAST,
-                type: "info",
-                message: `Vortex ${state.version} is downloading and will update on restart`,
-                displayMS: 5000,
-              });
-            }
+          // only BACKGROUND patch downloads are silent; anything the user's
+          // own press set in motion (Download, a confirmed downgrade, a
+          // manual check that found a patch) downloads visibly
+          if (state.kind === "patch" && !state.manual) {
             return;
           }
           // the percent lives in the text: the theme's progress overlay is

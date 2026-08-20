@@ -242,15 +242,20 @@ describe("manual check feedback (a pressed button always answers)", () => {
     expect(sent(sendNotification, "vortex-update-available")).toHaveLength(2);
   });
 
-  it("answers a manual check that lands on an in-flight patch download", async () => {
+  // Field report: a manual check that found a patch gave only a transient
+  // toast while the download ran on invisibly — anything the user's press
+  // set in motion downloads visibly, like the downgrade route.
+  it("shows a manual check's patch download as a visible download", async () => {
     const { sendNotification, pushState } = await setup();
 
     pushState({ type: "checking", manual: true });
-    pushState({ type: "downloading", version: "2.6.1", kind: "patch" });
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch", manual: true });
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch", manual: true, percent: 30 });
 
-    const toasts = sent(sendNotification, "vortex-up-to-date");
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0]!.message).toContain("2.6.1 is downloading");
+    const updates = sent(sendNotification, "vortex-update-available");
+    const last = updates.at(-1)!;
+    expect(last.message).toBe("Downloading Vortex 2.6.1 (30%)");
+    expect(last.actions).toBeUndefined();
   });
 
   it("does not claim 'up to date' when a manual check failed", async () => {
@@ -271,8 +276,8 @@ describe("downloads", () => {
     pushState({ type: "available", version: "2.7.0" });
     dismissNotification.mockClear();
 
-    pushState({ type: "downloading", version: "2.7.0", kind: "update", percent: 41 });
-    pushState({ type: "downloading", version: "2.7.0", kind: "update", percent: 42 });
+    pushState({ type: "downloading", version: "2.7.0", kind: "update", manual: true, percent: 41 });
+    pushState({ type: "downloading", version: "2.7.0", kind: "update", manual: true, percent: 42 });
 
     // progress ticks update in place: no dismiss (which would re-toast)
     expect(dismissNotification).not.toHaveBeenCalledWith("vortex-update-available");
@@ -288,8 +293,8 @@ describe("downloads", () => {
     const { sendNotification, updater, pushState } = await setup();
 
     // auto-downloading: nothing to decide, no notification churn
-    pushState({ type: "downloading", version: "2.6.1", kind: "patch" });
-    pushState({ type: "downloading", version: "2.6.1", kind: "patch", percent: 50 });
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch", manual: false });
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch", manual: false, percent: 50 });
     expect(sendNotification).not.toHaveBeenCalled();
 
     pushState({ type: "staged", version: "2.6.1", kind: "patch" });
@@ -309,7 +314,7 @@ describe("downloads", () => {
     const { sendNotification, notifications, pushState } = await setup();
 
     pushState({ type: "available", version: "2.7.0" });
-    pushState({ type: "downloading", version: "2.7.0", kind: "update", percent: 40 });
+    pushState({ type: "downloading", version: "2.7.0", kind: "update", manual: true, percent: 40 });
     pushState({
       type: "error",
       message: "net::ERR_CONNECTION_REFUSED",
@@ -382,7 +387,13 @@ describe("downgrades", () => {
   it("presents a confirmed downgrade as a downgrade, then as ready on restart", async () => {
     const { sendNotification, pushState } = await setup();
 
-    pushState({ type: "downloading", version: "2.5.0", kind: "downgrade", percent: 12 });
+    pushState({
+      type: "downloading",
+      version: "2.5.0",
+      kind: "downgrade",
+      manual: true,
+      percent: 12,
+    });
 
     let updates = sent(sendNotification, "vortex-update-available");
     expect(updates[0]!.message).toBe("Downgrading to Vortex 2.5.0 (12%)");
