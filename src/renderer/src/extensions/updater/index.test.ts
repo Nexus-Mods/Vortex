@@ -131,6 +131,19 @@ describe("updater status handling", () => {
     expect(sendNotification.mock.calls[0]![0].message).toContain("2.8.0");
   });
 
+  it("re-creates the notification on transitions but not on identical pushes", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    // identical push (e.g. re-broadcast) must not churn the notification
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+
+    // a transition (download finished) re-creates it so the toast re-shows
+    pushStatus({ available: true, downloaded: true, version: "2.7.0" });
+    expect(sendNotification).toHaveBeenCalledTimes(2);
+  });
+
   it("re-checks periodically so long sessions hear about updates", async () => {
     const { updater } = await setup();
     updater.checkForUpdates.mockClear();

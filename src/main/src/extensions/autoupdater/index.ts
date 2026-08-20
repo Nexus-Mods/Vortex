@@ -165,6 +165,9 @@ export function setupAutoUpdater(installType: string): void {
   autoUpdater.allowDowngrade = false;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+  // Vortex ships full NSIS installers only; refuse web-installer files (which
+  // can lack signature verification).
+  autoUpdater.disableWebInstaller = true;
 
   // Route the library's own log lines (differential-download fallbacks,
   // signature verification, cache decisions) into vortex.log — by default
