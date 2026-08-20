@@ -16,8 +16,9 @@ import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 import { MainContext } from "../../../views/MainWindow";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
+import { useRefreshUserInfoOnFocus } from "../hooks/useRefreshUserInfoOnFocus";
 import NXMUrl from "../NXMUrl";
-import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
+import { isPremium } from "../selectors";
 import { nexusGamesProm } from "../util";
 import { makeFileUID } from "../util/UIDs";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
@@ -29,8 +30,8 @@ interface IFreeUserDLDialogProps {
   onSkip: (url: string) => void;
   onCancel: (url: string) => boolean;
   onUpdated: () => void;
-  onRetry: (url: string) => void;
-  onCheckStatus: () => void;
+  /** The membership improved, so every parked download can be re-resolved, not just the shown one. */
+  onRetry: () => void;
 }
 
 const FILE_QUERY: IModFileQuery = {
@@ -91,15 +92,13 @@ function nop() {
 }
 
 function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
-  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry, onCheckStatus } = props;
+  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry } = props;
 
   const urls: string[] = useSelector<IState, string[]>(
     (state) => state.session["nexus"].freeUserDLQueue,
   );
 
-  const userInfo = useSelector<IState, IValidateKeyDataV2>(
-    (state) => state.persistent["nexus"].userInfo,
-  );
+  const premium = useSelector(isPremium);
 
   const collectionInstallSession = useSelector<IState, ICollectionInstallSession | undefined>(
     (state) => state.session?.["collections"]?.activeSession,
@@ -111,22 +110,10 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const [positionText, setPositionText] = React.useState<string>("1/1");
   const lastFetchUrl = React.useRef<string>();
 
-  const show = urls.length > 0 && !userInfo?.isPremium;
+  const show = urls.length > 0 && !premium;
 
-  React.useEffect(() => {
-    if (!show) return;
-
-    const handleFocus = () => {
-      console.log("Window gained focus. Modal is open");
-      checkStatus();
-    };
-
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [show]);
+  // the user leaves for the website to buy premium, so re-read on their return
+  useRefreshUserInfoOnFocus(context.api, show);
 
   React.useEffect(() => {
     if (collectionInstallSession?.mods == null) {
@@ -137,9 +124,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [collectionInstallSession]);
 
   React.useEffect(() => {
-    // if userInfo is updated, and isPremium is true, then retry
-    if (userInfo !== undefined) if (userInfo?.isPremium && urls.length > 0) retry();
-  }, [userInfo]);
+    // an upgrade mid-dialog means the download can go through the api instead
+    if (premium && urls.length > 0) {
+      retry();
+    }
+  }, [premium]);
 
   React.useEffect(() => {
     const fetchFileInfo = async () => {
@@ -177,13 +166,9 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     }
   }, [urls]);
 
-  const checkStatus = React.useCallback(() => {
-    onCheckStatus();
-  }, [onCheckStatus]);
-
   const retry = React.useCallback(() => {
-    onRetry(urls[0]);
-  }, [onRetry, urls]);
+    onRetry();
+  }, [onRetry]);
 
   const cancel = React.useCallback(() => {
     onCancel(urls[0]);

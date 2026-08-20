@@ -5,6 +5,8 @@ import type {
   FileRequirementsReport,
 } from "@nexusmods/file-dependency-resolver";
 
+import { VORTEX_MOD_UID } from "@/extensions/nexus_integration/util/UIDs";
+
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 
 /**
@@ -205,6 +207,11 @@ function classifyDependency(
   hydrate: HydrateFile,
 ): IFileRequirement | undefined {
   const { definitionId, branches } = dependency;
+
+  // Consider any dependencies targeting Vortex as always satisfied
+  if (branches.some((b) => b.recommended?.modUid === VORTEX_MOD_UID)) {
+    return undefined;
+  }
 
   // Satisfied: an acceptable version is enabled on some branch.
   if (branches.some((b) => b.satisfyingEnabled.length > 0)) {

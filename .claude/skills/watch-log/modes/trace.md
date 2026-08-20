@@ -36,6 +36,10 @@ log entry. Scope to one session (default latest, per §B / investigate.md); say 
 collection {totalMods, missing}` → `postprocess collection`) and a **per-member
    roll-up** (each member's modId, outcome, duration), flagging members that failed
    or never reached a terminal phase. Note the `collationId` linking the members'
-   downloads.
+   downloads. **Always state whether the collection is fully installed**, using the
+   fully-installed verdict in §F (`modes/collection-install.md`): `installed =
+   (totalMods - missing) + completed-this-run` vs `totalMods`, postprocess reached,
+   shortfall classified (failed / stuck / skipped-or-unaccounted - skips write no
+   log line).
 7. **Output:** the phase timeline with Δs, the outcome verdict, total/longest-step
    timing, interleaved errors/warnings, and (collections) the per-member table.

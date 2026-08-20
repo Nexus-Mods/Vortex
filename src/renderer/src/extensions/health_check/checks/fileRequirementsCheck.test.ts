@@ -10,12 +10,15 @@ vi.mock("@/extensions/health_check/utils/fileRequirements/installedFiles", () =>
   makeInstalledFileHydrator: vi.fn(),
   makeDownloadedFileHydrator: vi.fn(),
 }));
-vi.mock("../../nexus_integration/nexusV3Client", () => ({
+vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3Client: vi.fn(),
 }));
-vi.mock("../../nexus_integration/selectors", () => ({ isLoggedIn: vi.fn() }));
-vi.mock("../../profile_management/selectors", () => ({ activeProfile: vi.fn() }));
-vi.mock("../../../logging", () => ({ log: vi.fn() }));
+vi.mock("@/extensions/nexus_integration/selectors", () => ({ isLoggedIn: vi.fn() }));
+vi.mock("@/extensions/profile_management/selectors", () => ({ activeProfile: vi.fn() }));
+// mapRequirementsReport compares against this to drop Vortex-targeting dependencies;
+// the real module pulls in a heavy selector chain this test has no use for.
+vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({ VORTEX_MOD_UID: "vortex-mod-uid" }));
+vi.mock("@/logging", () => ({ log: vi.fn() }));
 
 import {
   gatherDownloadedFileRefs,
@@ -26,12 +29,12 @@ import {
   type IInstalledFile,
   type IInstalledFileRef,
 } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
+import { createVortexNexusV3Client } from "@/extensions/nexus_integration/nexusV3Client";
+import { isLoggedIn } from "@/extensions/nexus_integration/selectors";
+import { activeProfile } from "@/extensions/profile_management/selectors";
+import type { IProfile } from "@/extensions/profile_management/types/IProfile";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
-import { isLoggedIn } from "../../nexus_integration/selectors";
-import { activeProfile } from "../../profile_management/selectors";
-import type { IProfile } from "../../profile_management/types/IProfile";
 import type { IFileRequirementsCheckMetadata } from "../utils/fileRequirements/mapRequirementsReport";
 import { checkFileRequirements } from "./fileRequirementsCheck";
 

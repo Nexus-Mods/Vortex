@@ -11,12 +11,16 @@ Prereq: `reference.md` (core) + `shared/sessions.md` + `shared/edge-cases.md`
    so the session is contiguous, or when the user wants older / all sessions — then
    assemble files oldest→newest per Shared. Honor explicit scope: a session index, a
    date/time, or "all sessions".
-2. **Record per session:** start ts, end ts, **duration**, which file(s) it spans,
+2. **Run the release-currency gate** (`shared/sessions.md`) on prod/foreign logs once
+   sessions are enumerated: if no session in the set runs the latest stable/beta (or
+   the `1.0.0` dev marker / newer), warn that the logs are old and probably not
+   actionable, and ask before continuing. State the currency verdict in the report.
+3. **Record per session:** start ts, end ts, **duration**, which file(s) it spans,
    the **termination state** (clean / killed-during-exit / hard-crash / in-progress,
    per the 4-state classification in `shared/sessions.md`), the **app version** (the quoted
    `Vortex Version` value), the **instanceId** (from the `startup instance` line),
-   and the **`[ERRO]` and `[WARN]` counts** (used for ranking in step 4).
-3. **Report for the scoped session:**
+   and the **`[ERRO]` and `[WARN]` counts** (used for ranking in step 5).
+4. **Report for the scoped session:**
     - Termination state (+ window timestamps & files), calling out a **hard crash**
       prominently and noting killed-during-exit as the milder dev-stop signal.
     - `[ERRO]` lines (grouped by normalized signature with counts).
@@ -25,7 +29,7 @@ Prereq: `reference.md` (core) + `shared/sessions.md` + `shared/edge-cases.md`
       like "Reactions"; rely on the `[WARN]` level token.
     - No-level crash signatures (`Unhandled` / `uncaught` / `Traceback` / `FATAL`)
       that may appear outside the structured logger.
-4. **Cross-session signals** (compute across the retained sessions, chronological):
+5. **Cross-session signals** (compute across the retained sessions, chronological):
     - **Most error/warning-prone session:** rank the retained sessions by `[ERRO]` +
       `[WARN]` count (show the top one with its window and counts). If the most prone
       session is **not** the scoped/latest one, **highlight it prominently** and offer
@@ -53,7 +57,7 @@ Prereq: `reference.md` (core) + `shared/sessions.md` + `shared/edge-cases.md`
       downgrade (`from <hi> down to <lo> at <ts>`). Surface this prominently when
       **more than 2 distinct versions** appear across the retained sessions and the
       sequence includes a downgrade. Plain forward upgrades are not flagged.
-5. **Reporting rule:** every report states which single session it covers and the
+6. **Reporting rule:** every report states which single session it covers and the
    exact window; never silently mix sessions. Only widen when the user says "all" or
    names a range — and then label each finding with its session. (Most-prone-session,
    re-install, downgrade, and regression signals are inherently cross-session —

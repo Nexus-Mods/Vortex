@@ -243,3 +243,43 @@ export function buildCollectionItemRows(
 
   return result;
 }
+
+/**
+ * The statuses the collection page offers "Remove" for. "ignored" is one of them: the flag
+ * lives on the rule, so an ignored member can still have a mod installed and an archive
+ * downloaded. Members a running operation owns ("downloading", "installing") are left out.
+ */
+const REMOVABLE_STATUSES: ReadonlySet<CollectionModStatus> = new Set<CollectionModStatus>([
+  "downloaded",
+  "installed",
+  "pending",
+  "ignored",
+]);
+
+/** whether the collection page's "Remove" action applies to this row */
+export function isRemovableItem(row: ICollectionItemRow | undefined): boolean {
+  return row !== undefined && REMOVABLE_STATUSES.has(row.status);
+}
+
+/**
+ * The mods to uninstall and the archives to delete for the rows the user chose to remove.
+ * Each is resolved against the mod/download the row actually points at, which a row reports
+ * independently of its status.
+ */
+export function collectRemovalTargets(
+  rows: ICollectionItemRow[],
+  // keyed by mod id
+  mods: Record<string, IMod>,
+  // keyed by download id
+  downloads: Record<string, IDownload>,
+): { installedModIds: string[]; archiveIds: string[] } {
+  // a row built from an installed mod carries that mod's id; one built from a download or from
+  // the rule alone carries the download id / rule id, neither of which is a key into mods
+  const installedModIds = rows.map((row) => row.id).filter((modId) => mods[modId] !== undefined);
+
+  const archiveIds = rows
+    .map((row) => row.archiveId)
+    .filter((archiveId) => archiveId !== undefined && downloads[archiveId] !== undefined);
+
+  return { installedModIds, archiveIds };
+}

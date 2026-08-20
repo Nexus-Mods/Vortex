@@ -4,17 +4,28 @@
  * present download / not-yet-fetched stub) so the behaviour matches the former
  * modFromRule/modFromDownload, plus the install-session status overlay that makes
  * the session the source of truth for live install state.
+ *
+ * Also covers the row helpers behind the collection page's "Remove" action.
  */
 
 import { describe, it, expect, vi } from "vitest";
 
-import { makeDownload, makeFileInfo, makeMod, makeRule } from "../../../test-utils/builders";
-import type { ICollectionModInstallInfo } from "../../../types/collections/ICollectionInstallSession";
+import {
+  makeCollectionItemRow,
+  makeDownload,
+  makeFileInfo,
+  makeMod,
+  makeRule,
+} from "../../../test-utils/builders";
+import type {
+  CollectionModStatus,
+  ICollectionModInstallInfo,
+} from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
 import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
 import type { IMod, IModAttributes, IModRule } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
-import { buildCollectionItemRows } from "./itemRows";
+import { buildCollectionItemRows, collectRemovalTargets, isRemovableItem } from "./itemRows";
 
 vi.mock("../../../util/log", () => ({ log: vi.fn() }));
 
@@ -367,5 +378,93 @@ describe("buildCollectionItemRows", () => {
     expect(second[idA]).toBe(first[idA]);
     expect(second[idB]).not.toBe(first[idB]);
     expect(second[idB].attributes?.version).toBe("2.1.0");
+  });
+});
+
+describe("isRemovableItem", () => {
+  it.each(["installed", "downloaded", "pending", "ignored"] as CollectionModStatus[])(
+    "offers removal for a %s member",
+    (status) => {
+      // "ignored" belongs here: the flag lives on the rule, so such a member can still have a
+      // mod on disk to remove (issue 23882)
+      expect(isRemovableItem(makeCollectionItemRow({ status }))).toBe(true);
+    },
+  );
+
+  it.each(["downloading", "installing", "failed"] as CollectionModStatus[])(
+    "does not offer removal for a %s member",
+    (status) => {
+      expect(isRemovableItem(makeCollectionItemRow({ status }))).toBe(false);
+    },
+  );
+
+  it("does not offer removal for a missing row", () => {
+    expect(isRemovableItem(undefined)).toBe(false);
+  });
+});
+
+describe("collectRemovalTargets", () => {
+  it("collects the mod and its archive from an installed member", () => {
+    const row = makeCollectionItemRow({ id: "mod-1", archiveId: "dl-1", status: "installed" });
+    const mods = { "mod-1": installedMod("mod-1") };
+    const downloads = { "dl-1": makeDownload({ state: "finished" }) };
+
+    expect(collectRemovalTargets([row], mods, downloads)).toEqual({
+      installedModIds: ["mod-1"],
+      archiveIds: ["dl-1"],
+    });
+  });
+
+  it("collects only the archive of a member that is downloaded but not installed", () => {
+    // such a row is built from the download, so its id is the download id - not a mod to remove
+    const row = makeCollectionItemRow({ id: "dl-1", archiveId: "dl-1", status: "downloaded" });
+    const downloads = { "dl-1": makeDownload({ state: "finished" }) };
+
+    expect(collectRemovalTargets([row], {}, downloads)).toEqual({
+      installedModIds: [],
+      archiveIds: ["dl-1"],
+    });
+  });
+
+  it("collects nothing from a member that is neither installed nor downloaded", () => {
+    const row = makeCollectionItemRow({ id: "rule-id", status: "pending" });
+
+    expect(collectRemovalTargets([row], {}, {})).toEqual({ installedModIds: [], archiveIds: [] });
+  });
+
+  it("skips an archive that is no longer in the downloads", () => {
+    const row = makeCollectionItemRow({ id: "mod-1", archiveId: "dl-gone", status: "installed" });
+    const mods = { "mod-1": installedMod("mod-1") };
+
+    expect(collectRemovalTargets([row], mods, {})).toEqual({
+      installedModIds: ["mod-1"],
+      archiveIds: [],
+    });
+  });
+
+  it("collects the mod of an installed member the user ignored", () => {
+    // built through the row builder so the status is the one the table renders: "ignored"
+    // masks the install, and the mod must still be collected (issue 23882)
+    const rule = requiresRule({ reference: { tag: "member-tag" }, ignored: true });
+    const mods = {
+      "mod-1": { ...installedMod("mod-1", { referenceTag: "member-tag" }), archiveId: "dl-1" },
+    };
+    const downloads = { "dl-1": makeDownload({ state: "finished" }) };
+
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods,
+      downloads,
+      modState: {},
+      sessionMods: {},
+    });
+    const row = rows[modRuleId(rule)];
+
+    expect(row.status).toBe("ignored");
+    expect(isRemovableItem(row)).toBe(true);
+    expect(collectRemovalTargets([row], mods, downloads)).toEqual({
+      installedModIds: ["mod-1"],
+      archiveIds: ["dl-1"],
+    });
   });
 });

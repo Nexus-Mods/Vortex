@@ -3,9 +3,14 @@ import { inspect } from "util";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IGame } from "../../../types/IGame";
+import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
 import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
+// the game selectors directly rather than through util/selectors: that barrel re-exports this
+// extension's own selectors, and importing it from here would close an import cycle onto a leaf
+// module that some forty files depend on
+import { gameById, knownGames } from "../../gamemode_management/selectors";
 import type { IGameStored, IGameStoredExt } from "../../gamemode_management/types/IGameStored";
 
 /**
@@ -75,6 +80,15 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
       elderscrollsonline: "teso",
     }[input.toLowerCase()] || input.toLowerCase()
   );
+}
+
+/**
+ * the nexus page id (domain) for the game an nxm url names, mapping the link's game id through
+ * the games Vortex knows about
+ */
+export function nxmPageId(state: IState, nxmGameId: string): string {
+  const gameId = convertNXMIdReverse(knownGames(state), nxmGameId);
+  return nexusGameId(gameById(state, gameId), nxmGameId);
 }
 
 /**
