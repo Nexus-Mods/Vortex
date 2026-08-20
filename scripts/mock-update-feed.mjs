@@ -13,7 +13,14 @@
  * signed build — this covers resolve → notify → download.)
  *
  * Usage:
- *   node scripts/mock-update-feed.mjs [--port 9877] [--fixture path.json] [--installer path.exe]
+ *   node scripts/mock-update-feed.mjs [--port 9877] [--fixture path.json] [--installer path.exe] [--assets dir]
+ *
+ * --assets serves real files (installers and their .exe.blockmap siblings)
+ * by exact name from a directory, taking precedence over the generated
+ * dummies. Point it at two packaged builds' dist output to exercise the
+ * differential (blockmap) download path end to end: electron-updater logs
+ * "Download block maps (old..., new...)" when it engages, and falls back to
+ * a full download when a blockmap 404s.
  *
  * Then run Vortex with:
  *   VORTEX_UPDATER_API_BASE=http://localhost:9877
@@ -54,6 +61,7 @@ const fixturePath = arg(
   ),
 );
 const installerPath = arg("installer", null);
+const assetsDir = arg("assets", null);
 
 const releases = JSON.parse(readFileSync(fixturePath, "utf8"));
 const installerBytes =
@@ -96,6 +104,44 @@ const server = createServer((req, res) => {
   const download = /^\/Nexus-Mods\/[^/]+\/releases\/download\/([^/]+)\/(.+)$/.exec(url.pathname);
   if (download != null) {
     const [, tag, asset] = download;
+    // real files win over generated dummies (needed for blockmap testing:
+    // blockmaps must match the actual installer bytes)
+    if (assetsDir != null && /^[\w.-]+$/.test(asset)) {
+      try {
+        const filePath = path.join(assetsDir, asset);
+        const content = readFileSync(filePath);
+        // the differential downloader fetches byte ranges of the installer
+        const range = /^bytes=(\d+)-(\d+)?$/.exec(req.headers.range ?? "");
+        if (range != null) {
+          const start = Number(range[1]);
+          const end = range[2] != null ? Number(range[2]) : content.length - 1;
+          const slice = content.subarray(start, end + 1);
+          res.writeHead(206, {
+            "content-type": "application/octet-stream",
+            "content-length": slice.length,
+            "content-range": `bytes ${start}-${end}/${content.length}`,
+            "accept-ranges": "bytes",
+          });
+          res.end(slice);
+          return;
+        }
+        res.writeHead(200, {
+          "content-type": "application/octet-stream",
+          "content-length": content.length,
+          "accept-ranges": "bytes",
+        });
+        res.end(content);
+        return;
+      } catch {
+        // fall through to generated assets / 404
+      }
+    }
+    if (asset.endsWith(".blockmap")) {
+      // no real blockmap available: 404 exercises the full-download fallback
+      res.writeHead(404, { "content-type": "text/plain" });
+      res.end("no blockmap");
+      return;
+    }
     if (asset === "latest.yml") {
       res.writeHead(200, { "content-type": "text/yaml" });
       res.end(latestYmlForTag(tag));
