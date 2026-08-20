@@ -51,45 +51,56 @@ export interface AppInitMetadata {
   warnedAdmin?: number;
 }
 
-/** Status of the auto-updater in main process */
-export interface UpdateStatus {
-  /** Whether an update is available */
-  available: boolean;
-  /** Whether update is downloaded and ready to install */
-  downloaded: boolean;
-  /** Version of the available update */
-  version?: string;
-  /** Release notes/changelog for the update */
-  releaseNotes?: string;
-  /** Download progress (0-100) if downloading */
-  downloadProgress?: number;
-  /** Error message if update check failed */
-  error?: string;
+/**
+ * What kind of update a download/staged installer represents. Patches
+ * auto-download and install on restart; regular updates wait for the user;
+ * downgrades only ever follow an explicit confirmation.
+ */
+export type UpdateKind = "patch" | "update" | "downgrade";
+
+/**
+ * The auto-updater as an explicit state machine (modeled on VS Code's
+ * updater): exactly one state at a time, each carrying only the data valid
+ * for it, so contradictory combinations (stale progress on an error, a patch
+ * flag on a minor update) are unrepresentable. The UI renders purely from
+ * the current state.
+ */
+export type UpdaterState =
+  /** updates turned off (channel "none") */
+  | { type: "disabled" }
+  /** nothing on offer */
+  | { type: "idle" }
+  /** a check is in flight; manual checks always render visible feedback */
+  | { type: "checking"; manual: boolean }
+  /** a newer version needs a user decision to download */
+  | { type: "available"; version: string; releaseNotes?: string }
   /**
-   * The offered version is lower than the running one. Only ever set after
-   * a purposeful switch to the stable channel, never for background checks,
-   * and never presented as a regular update.
+   * the stable channel's latest is older than the running version; only ever
+   * entered on a purposeful switch to stable, awaiting confirm/decline
    */
-  downgrade?: boolean;
+  | { type: "downgrade-offered"; version: string }
+  /** a download is running; percent is absent until the first progress event */
+  | { type: "downloading"; version: string; kind: UpdateKind; percent?: number }
+  /** downloaded and verified; installs on quit, or immediately via Restart Now */
+  | { type: "staged"; version: string; kind: UpdateKind; releaseNotes?: string }
   /**
-   * A user-confirmed downgrade is downloading/installing. Distinct from
-   * `downgrade` (the offer): once confirmed the flow runs to completion and
-   * must not be presented as a regular update download.
+   * a check or download failed in a way the user should hear about; retry
+   * carries the still-known update so a working Download can be offered
    */
-  downgrading?: boolean;
-  /** An update check is in flight */
-  checking?: boolean;
-  /** Whether the most recent check was user-initiated (Check now / channel switch) */
-  manual?: boolean;
-  /**
-   * The available update is a patch-level update that auto-downloads and
-   * installs on restart; the renderer presents these more quietly than
-   * updates that need a user decision.
-   */
-  patch?: boolean;
+  | {
+      type: "error";
+      message: string;
+      manual: boolean;
+      retry?: { version: string; releaseNotes?: string };
+    };
+
+/** The full updater snapshot pushed to (and queried by) the renderer */
+export interface UpdaterSnapshot {
+  state: UpdaterState;
   /**
    * Set on the first launch after an update: the version that was running
-   * before. Drives the one-time "Vortex was updated" notice.
+   * before. Drives the one-time "Vortex was updated" notice; orthogonal to
+   * the state machine.
    */
   justUpdatedFrom?: string;
 }
@@ -338,7 +349,7 @@ export interface MainChannels extends MainCallbackChannels {
   "flags:synchronize": (flags: FeatureFlag[]) => void;
 
   // Auto-updater: main pushes the full status snapshot on every change
-  "updater:status-changed": (status: UpdateStatus) => void;
+  "updater:status-changed": (snapshot: UpdaterSnapshot) => void;
 }
 
 /** Context data the renderer can push to refine feature flag evaluation */
@@ -380,7 +391,7 @@ export interface InvokeChannels {
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 
   // Updater: Query current update status from main process
-  "updater:get-status": () => Promise<UpdateStatus>;
+  "updater:get-status": () => Promise<UpdaterSnapshot>;
   // Updater: Release notes covering the update the app just went through
   // (null when the launch did not follow an update or notes are unavailable).
   // The renderer passes its persisted channel — the handler can be invoked

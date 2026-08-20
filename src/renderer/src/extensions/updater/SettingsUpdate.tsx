@@ -26,6 +26,7 @@ interface IActionProps {
 
 interface ISettingsUpdateState {
   checkUpdateButtonDisabled: boolean;
+  checking: boolean;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -34,12 +35,27 @@ const CHECK_UPDATE_INTERVAL = 60000;
 class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   //static contextType = MainContext
 
+  private unsubscribeStatus: (() => void) | undefined;
+
   constructor(props) {
     super(props);
 
     this.initState({
       checkUpdateButtonDisabled: false,
+      checking: false,
     });
+  }
+
+  public componentDidMount(): void {
+    // a pressed button gives feedback for as long as the work runs: the
+    // label reflects the updater's actual state, not a blind timer
+    this.unsubscribeStatus = window.api.updater.onStatusChanged((snapshot) => {
+      this.nextState.checking = snapshot.state.type === "checking" && snapshot.state.manual;
+    });
+  }
+
+  public componentWillUnmount(): void {
+    this.unsubscribeStatus?.();
   }
 
   private checkUpdateDebouncer = new Debouncer(
@@ -76,7 +92,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   public render(): JSX.Element {
     const { t, installType, updateChannel } = this.props;
 
-    const { checkUpdateButtonDisabled } = this.state;
+    const { checkUpdateButtonDisabled, checking } = this.state;
 
     // managed or development
     if (installType === "managed") {
@@ -112,7 +128,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
                 {t(
                   "You can choose to either receive automatic updates only after they went through some " +
                     "community testing (Stable) or to always get the newest features (Beta). Manual checking for updates is " +
-                    "restricted to every 10 minutes.",
+                    "restricted to once per minute.",
                 )}
               </More>
             </Typography>
@@ -131,10 +147,10 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
               <Button
                 brand="neutral"
-                disabled={checkUpdateButtonDisabled}
+                disabled={checkUpdateButtonDisabled || checking}
                 onClick={this.manualUpdateCheck}
               >
-                {t("Check now")}
+                {checking ? t("Checking...") : t("Check now")}
               </Button>
             </div>
 

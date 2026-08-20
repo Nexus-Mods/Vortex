@@ -1,4 +1,4 @@
-import type { UpdateStatus } from "@vortex/shared/ipc";
+import type { UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResolvedRelease } from "./releaseResolver";
@@ -37,8 +37,8 @@ const {
 });
 
 // @vortex/shared's error module has a duplicate-load guard that trips under
-// vi.resetModules; only these two helpers are used at runtime (the UpdateStatus
-// import is type-only and erased).
+// vi.resetModules; only these two helpers are used at runtime (the type
+// imports are compile-time only and erased).
 vi.mock("@vortex/shared", () => ({
   getErrorMessageOrDefault: (err: unknown) => (err instanceof Error ? err.message : String(err)),
   unknownToError: (err: unknown) => (err instanceof Error ? err : new Error(String(err))),
@@ -83,9 +83,13 @@ function updaterEvent(name: string): ((...args: unknown[]) => void) | undefined 
   return call?.[1] as ((...args: unknown[]) => void) | undefined;
 }
 
-function getStatus(): UpdateStatus {
+function getSnapshot(): UpdaterSnapshot {
   const call = ipcMock.handle.mock.calls.find(([name]) => name === "updater:get-status");
-  return (call![1] as () => UpdateStatus)();
+  return (call![1] as () => UpdaterSnapshot)();
+}
+
+function getState(): UpdaterState {
+  return getSnapshot().state;
 }
 
 async function flush(): Promise<void> {
@@ -126,26 +130,26 @@ describe("checkForUpdates", () => {
   // running version (published later in time) must never become an update.
   it("ignores a resolved release older than the running version", async () => {
     await setup();
-    // drive available to true first so the assertion pins an actual reset
-    updaterEvent("update-available")?.({ version: "2.9.9", releaseNotes: null });
-    expect(getStatus().available).toBe(true);
-    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.4.2", version: "2.4.2" }));
+    // establish a known update first so the assertion pins an actual reset
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.9.9" }));
+    ipcHandler("updater:check-for-updates")(undefined, "beta", false);
+    await flush();
+    expect(getState()).toMatchObject({ type: "available", version: "2.9.9" });
+    autoUpdaterMock.setFeedURL.mockClear();
+    autoUpdaterMock.downloadUpdate.mockClear();
 
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.4.2", version: "2.4.2" }));
     ipcHandler("updater:check-for-updates")(undefined, "beta", false);
     await flush();
 
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
-    const status = getStatus();
-    expect(status.available).toBe(false);
-    expect(status.version).toBeUndefined();
-    expect(status.checking).toBe(false);
+    expect(getState().type).toBe("idle");
   });
 
   // Regression pin #23132: equal version must not trigger a spurious download.
-  it("reports no update when the resolved version equals the current one", async () => {
+  it("reports idle when the resolved version equals the current one", async () => {
     await setup();
-    updaterEvent("update-available")?.({ version: "2.9.9", releaseNotes: null });
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.0", version: "2.6.0" }));
 
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
@@ -153,7 +157,7 @@ describe("checkForUpdates", () => {
 
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
-    expect(getStatus().available).toBe(false);
+    expect(getState().type).toBe("idle");
   });
 
   it("points the generic feed at the resolved release for an upgrade", async () => {
@@ -169,9 +173,22 @@ describe("checkForUpdates", () => {
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
     });
     expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalled();
-    // minor upgrade: no auto-download, and not labeled a patch
+    // minor upgrade: no auto-download, waits for the user
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
-    expect(getStatus().patch).toBe(false);
+    expect(getState()).toMatchObject({ type: "available", version: "2.7.0" });
+  });
+
+  it("carries the resolver's release notes on the available state", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ notesHtml: "<p>from resolver</p>" }));
+
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+
+    expect(getState()).toMatchObject({
+      type: "available",
+      releaseNotes: "<p>from resolver</p>",
+    });
   });
 
   // Regression pin #22609: patch updates auto-download.
@@ -183,8 +200,24 @@ describe("checkForUpdates", () => {
     await flush();
 
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
-    // labeled for the renderer's quieter patch notification
-    expect(getStatus().patch).toBe(true);
+    expect(getState()).toMatchObject({ type: "downloading", version: "2.6.1", kind: "patch" });
+  });
+
+  it("exposes manual checks as a manual checking state", async () => {
+    await setup();
+    let release: (value: unknown) => void = () => undefined;
+    resolveUpdateMock.mockReturnValue(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    expect(getState()).toMatchObject({ type: "checking", manual: true });
+
+    release(resolved({ tag: "v2.6.0", version: "2.6.0" }));
+    await flush();
+    expect(getState().type).toBe("idle");
   });
 
   it("never resolves when the channel is none", async () => {
@@ -200,73 +233,34 @@ describe("checkForUpdates", () => {
     resolveUpdateMock.mockResolvedValue(resolved());
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
-    updaterEvent("update-available")?.({ version: "2.7.0", releaseNotes: null });
-    expect(getStatus().available).toBe(true);
+    expect(getState().type).toBe("available");
     ipcMock.send.mockClear();
 
     ipcHandler("updater:set-channel")(undefined, "none", true);
 
-    const status = getStatus();
-    expect(status.available).toBe(false);
-    expect(status.version).toBeUndefined();
-    expect(status.downgrade).toBeUndefined();
+    expect(getState().type).toBe("disabled");
     // the withdrawal is broadcast so the renderer can dismiss
     expect(ipcMock.send).toHaveBeenCalled();
   });
 
-  // Review finding: a failed download left stale progress, stranding the
-  // renderer on "Downloading…" with the retry button hidden.
-  it("clears download progress when a download fails", async () => {
-    await setup();
-    resolveUpdateMock.mockResolvedValue(resolved());
-    autoUpdaterMock.downloadUpdate.mockRejectedValue(new Error("net::ERR_CONNECTION_REFUSED"));
-
-    ipcHandler("updater:download")(undefined, "stable", false);
-    await flush();
-    updaterEvent("download-progress")?.({ percent: 40 });
-
-    // the library error event also clears it
-    updaterEvent("error")?.(new Error("net::ERR_CONNECTION_REFUSED"));
-
-    const status = getStatus();
-    expect(status.downloadProgress).toBeUndefined();
-    expect(status.error).toContain("ERR_CONNECTION_REFUSED");
-  });
-
-  // Review finding: cancelling a download (channel switch) surfaced as a red
-  // error notification for a deliberate user action.
-  it("does not surface a cancelled download as an error", async () => {
-    await setup();
-    updaterEvent("download-progress")?.({ percent: 40 });
-
-    const cancellation = new Error("cancelled");
-    cancellation.name = "CancellationError";
-    updaterEvent("error")?.(cancellation);
-
-    const status = getStatus();
-    expect(status.error).toBeUndefined();
-    expect(status.downloadProgress).toBeUndefined();
-  });
-
-  it("clears checking but leaves availability untouched when resolution fails", async () => {
+  it("restores what the user could see when a background check fails", async () => {
     await setup();
     // a previously known update survives an offline/failed check
-    updaterEvent("update-available")?.({ version: "2.9.9", releaseNotes: null });
-    resolveUpdateMock.mockRejectedValue(new Error("network down"));
+    resolveUpdateMock.mockResolvedValue(resolved());
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    expect(getState()).toMatchObject({ type: "available", version: "2.7.0" });
 
+    resolveUpdateMock.mockRejectedValue(new Error("network down"));
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
 
-    const status = getStatus();
-    expect(status.checking).toBe(false);
-    expect(status.available).toBe(true);
-    // offline is normal: a BACKGROUND check failure stays out of the status
-    // (it would otherwise raise a red notification every launch and 4h tick)
-    expect(status.error).toBeUndefined();
-    expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
+    // offline is normal: no error state for a BACKGROUND check (it would
+    // raise a red notification every launch and 4h tick)
+    expect(getState()).toMatchObject({ type: "available", version: "2.7.0" });
   });
 
-  it("surfaces a failed MANUAL check via the error field", async () => {
+  it("surfaces a failed MANUAL check as an error state", async () => {
     await setup();
     resolveUpdateMock.mockRejectedValue(new Error("network down"));
 
@@ -274,7 +268,7 @@ describe("checkForUpdates", () => {
     await flush();
 
     // a failed manual check must not read as "up to date"
-    expect(getStatus().error).toContain("network down");
+    expect(getState()).toMatchObject({ type: "error", manual: true });
   });
 });
 
@@ -312,26 +306,77 @@ describe("updater:download", () => {
     await flush();
 
     expect(resolveUpdateMock).toHaveBeenCalledWith("stable", "2.6.0");
-    expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
-      provider: "generic",
-      useMultipleRangeRequest: false,
-      url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
-    });
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
   });
 
-  // Review finding: the download path used to inherit the patch label from
-  // resolveAndApply, flipping a user-initiated download into the silent
-  // patch presentation mid-flight.
-  it("never labels a user-initiated download as a patch", async () => {
+  // A user download is always presented as a regular update, even when the
+  // version is patch-sized — the silent patch flow is auto-download only.
+  it("downloads user requests as regular updates", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
-
+    // pre-existing patch auto-download would have consumed it; simulate the
+    // user pressing Download from an error-retry
     ipcHandler("updater:download")(undefined, "stable", false);
     await flush();
 
+    expect(getState()).toMatchObject({ type: "downloading", kind: "update" });
+  });
+
+  it("skips re-download and installs directly when already staged", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved());
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    updaterEvent("update-downloaded")?.({ version: "2.7.0" });
+    expect(getState()).toMatchObject({ type: "staged", version: "2.7.0" });
+    autoUpdaterMock.downloadUpdate.mockClear();
+
+    ipcHandler("updater:download")(undefined, "stable", true);
+    await flush();
+
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalled();
+  });
+
+  it("does not short-circuit a download when the staged installer is a different version", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
+
+    // a newer beta is now advertised; downloading must re-fetch, not install
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.8.0-beta.1", prerelease: true }));
+    ipcHandler("updater:check-for-updates")(undefined, "beta", false);
+    await flush();
+    autoUpdaterMock.quitAndInstall.mockClear();
+    autoUpdaterMock.downloadUpdate.mockClear();
+
+    ipcHandler("updater:download")(undefined, "beta", true);
+    await flush();
+
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
-    expect(getStatus().patch).toBeUndefined();
+  });
+
+  // Review finding: a failed download left stale progress, stranding the
+  // renderer on "Downloading..." with the retry hidden. The error state now
+  // carries the still-known update for a working retry.
+  it("fails a download into an error state that carries a retry", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved());
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+
+    autoUpdaterMock.downloadUpdate.mockRejectedValue(new Error("net::ERR_CONNECTION_REFUSED"));
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+
+    expect(getState()).toMatchObject({
+      type: "error",
+      manual: true,
+      retry: { version: "2.7.0" },
+    });
   });
 
   // Review finding: a download that lost the generation race could still call
@@ -360,75 +405,77 @@ describe("updater:download", () => {
 
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
   });
+});
 
-  it("skips re-download and installs directly when already downloaded", async () => {
+describe("library events", () => {
+  it("tracks progress as whole-percent downloading updates", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    ipcMock.send.mockClear();
+
+    updaterEvent("download-progress")?.({ percent: 41.2 });
+    updaterEvent("download-progress")?.({ percent: 41.9 });
+    updaterEvent("download-progress")?.({ percent: 42.1 });
+
+    expect(getState()).toMatchObject({ type: "downloading", percent: 42 });
+    // 41.2 and 42.1 broadcast; 41.9 is the same whole percent as 41.2
+    expect(ipcMock.send).toHaveBeenCalledTimes(2);
+  });
+
+  it("stages the download and arms install-on-quit for packaged builds", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+
+    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
+
+    expect(getState()).toMatchObject({ type: "staged", version: "2.6.1", kind: "patch" });
+    expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(true);
+  });
+
+  // A channel flip and back must not forget an installer already on disk.
+  it("re-checks land on staged when the resolved version is already downloaded", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved());
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
     updaterEvent("update-downloaded")?.({ version: "2.7.0" });
 
-    ipcHandler("updater:download")(undefined, "stable", true);
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
 
+    expect(getState()).toMatchObject({ type: "staged", version: "2.7.0" });
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
-    // NODE_ENV=test: install proceeds via quitAndInstall
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalled();
   });
-});
 
-describe("downloaded-state lifecycle", () => {
-  // Field bug: 2.5.0 was downloaded on stable, then a beta switch advertised
-  // 2.6.0-beta.1 with the stale downloaded flag — offering Restart & Install
-  // for a build that isn't on disk.
-  it("resets the downloaded flag when a different version becomes available", async () => {
+  it("fails an active download into an error state via the error event", async () => {
     await setup();
-    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1" }));
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
-    updaterEvent("update-available")?.({ version: "2.6.1", releaseNotes: null });
-    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
-    expect(getStatus().downloaded).toBe(true);
+    expect(getState().type).toBe("downloading");
 
-    updaterEvent("update-available")?.({ version: "2.8.0-beta.1", releaseNotes: null });
-    const afterSwitch = getStatus();
-    expect(afterSwitch.version).toBe("2.8.0-beta.1");
-    expect(afterSwitch.downloaded).toBe(false);
+    updaterEvent("error")?.(new Error("net::ERR_CONNECTION_REFUSED"));
 
-    // switching back to the version whose installer is on disk restores it
-    updaterEvent("update-available")?.({ version: "2.6.1", releaseNotes: null });
-    expect(getStatus().downloaded).toBe(true);
+    expect(getState()).toMatchObject({ type: "error", manual: true });
   });
 
-  it("does not short-circuit a download when the disk installer is a different version", async () => {
+  // Review finding: cancelling a download (channel switch) surfaced as a red
+  // error notification for a deliberate user action.
+  it("does not surface a cancelled download as an error", async () => {
     await setup();
-    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1" }));
-    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
-    await flush();
-    updaterEvent("update-available")?.({ version: "2.6.1", releaseNotes: null });
-    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
-
-    // a newer beta is now advertised; downloading must re-fetch, not install 2.6.1
-    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.8.0-beta.1", prerelease: true }));
-    updaterEvent("update-available")?.({ version: "2.8.0-beta.1", releaseNotes: null });
-    ipcHandler("updater:download")(undefined, "beta", true);
-    await flush();
-
-    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
-    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
-  });
-});
-
-describe("release notes", () => {
-  it("prefers the resolver's collected notes over UpdateInfo", async () => {
-    await setup();
-    resolveUpdateMock.mockResolvedValue(resolved({ notesHtml: "<p>from resolver</p>" }));
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
 
-    updaterEvent("update-available")?.({ version: "2.7.0", releaseNotes: null });
+    const cancellation = new Error("cancelled");
+    cancellation.name = "CancellationError";
+    updaterEvent("error")?.(cancellation);
 
-    expect(getStatus().releaseNotes).toBe("<p>from resolver</p>");
+    expect(getState().type).toBe("idle");
   });
 });
 
@@ -441,10 +488,7 @@ describe("downgrade offers", () => {
     ipcHandler("updater:set-channel")(undefined, "stable", true);
     await flush();
 
-    const status = getStatus();
-    expect(status.available).toBe(true);
-    expect(status.downgrade).toBe(true);
-    expect(status.version).toBe("2.5.0");
+    expect(getState()).toMatchObject({ type: "downgrade-offered", version: "2.5.0" });
     // nothing downloads until the user confirms
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
@@ -461,17 +505,12 @@ describe("downgrade offers", () => {
     // the 5s launch fallback sends manual=false
     ipcHandler("updater:set-channel")(undefined, "stable", false);
     await flush();
-
-    let status = getStatus();
-    expect(status.downgrade).toBeUndefined();
-    expect(status.available).toBe(false);
+    expect(getState().type).toBe("idle");
 
     // Check now on the stable channel doesn't offer either
     ipcHandler("updater:check-for-updates")(undefined, "stable", true);
     await flush();
-    status = getStatus();
-    expect(status.downgrade).toBeUndefined();
-    expect(status.available).toBe(false);
+    expect(getState().type).toBe("idle");
   });
 
   it("declining clears the offer until the next switch to stable", async () => {
@@ -483,10 +522,7 @@ describe("downgrade offers", () => {
 
     ipcHandler("updater:decline-downgrade")(undefined);
 
-    const status = getStatus();
-    expect(status.available).toBe(false);
-    expect(status.downgrade).toBeUndefined();
-    expect(status.version).toBeUndefined();
+    expect(getState().type).toBe("idle");
 
     // the declined offer is consumed: a late confirm must not download
     ipcHandler("updater:download-downgrade")(undefined, true);
@@ -496,7 +532,7 @@ describe("downgrade offers", () => {
     // ...but another purposeful switch to stable raises it again
     ipcHandler("updater:set-channel")(undefined, "stable", true);
     await flush();
-    expect(getStatus().downgrade).toBe(true);
+    expect(getState().type).toBe("downgrade-offered");
   });
 
   it("ignores a decline when no offer is outstanding", async () => {
@@ -504,8 +540,8 @@ describe("downgrade offers", () => {
 
     ipcHandler("updater:decline-downgrade")(undefined);
 
-    expect(getStatus().available).toBe(false);
-    // no spurious status broadcast for a stray decline
+    expect(getState().type).toBe("idle");
+    // no spurious broadcast for a stray decline
     expect(ipcMock.send).not.toHaveBeenCalled();
   });
 
@@ -519,7 +555,7 @@ describe("downgrade offers", () => {
     expect(autoUpdaterMock.allowDowngrade).toBe(false);
   });
 
-  it("downloads a confirmed downgrade with allowDowngrade raised only for that flow", async () => {
+  it("downloads a confirmed downgrade with allowDowngrade raised only for the feed apply", async () => {
     appMock.getVersion.mockReturnValue("2.6.0-beta.1");
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
@@ -532,7 +568,7 @@ describe("downgrade offers", () => {
       allowDowngradeDuringFeedApply = autoUpdaterMock.allowDowngrade;
     });
 
-    ipcHandler("updater:download-downgrade")(undefined, true);
+    ipcHandler("updater:download-downgrade")(undefined, false);
     await flush();
 
     expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
@@ -546,38 +582,13 @@ describe("downgrade offers", () => {
     expect(autoUpdaterMock.allowDowngrade).toBe(false);
     // one-shot marker for the startup downgrade warning
     expect(writePersistedValueMock).toHaveBeenCalledWith("app", ["expectedDowngradeTo"], "2.5.0");
-    // past confirmation the offer flag drops, but the flow stays labeled as a
-    // downgrade so the renderer never presents it as a regular update
-    expect(getStatus().downgrade).toBeUndefined();
-    expect(getStatus().downgrading).toBe(true);
+    // the flow is labeled a downgrade from the moment of the confirm
+    expect(getState()).toMatchObject({ type: "downloading", kind: "downgrade" });
 
-    // the label survives the download completing (the renderer's "restarting
-    // to install" message depends on downloaded + downgrading together)
+    // the label survives the download completing (the renderer's "update on
+    // restart" wording depends on the staged kind)
     updaterEvent("update-downloaded")?.({ version: "2.5.0" });
-    expect(getStatus().downgrading).toBe(true);
-    expect(getStatus().downloaded).toBe(true);
-  });
-
-  // Review finding: a failed downgrade download left available:true with the
-  // older version — the renderer then presented the downgrade as a regular
-  // available update whose Download button could only ever fail.
-  it("resets availability when the downgrade download fails", async () => {
-    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
-    await setup();
-    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
-    ipcHandler("updater:set-channel")(undefined, "stable", true);
-    await flush();
-
-    autoUpdaterMock.downloadUpdate.mockRejectedValue(new Error("sha512 mismatch"));
-    ipcHandler("updater:download-downgrade")(undefined, false);
-    await flush();
-
-    const status = getStatus();
-    expect(status.available).toBe(false);
-    expect(status.version).toBeUndefined();
-    expect(status.downgrading).toBeUndefined();
-    expect(status.error).toContain("sha512");
-    expect(autoUpdaterMock.allowDowngrade).toBe(false);
+    expect(getState()).toMatchObject({ type: "staged", version: "2.5.0", kind: "downgrade" });
   });
 
   it("consumes the offer on confirmation so a double-confirm is a no-op", async () => {
@@ -594,6 +605,25 @@ describe("downgrade offers", () => {
 
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalledTimes(1);
     expect(writePersistedValueMock).toHaveBeenCalledTimes(1);
+  });
+
+  // Review finding: a failed downgrade download left the older version
+  // advertised as a regular available update whose Download could only fail.
+  it("fails a downgrade download into an error state without a retry", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+
+    autoUpdaterMock.downloadUpdate.mockRejectedValue(new Error("sha512 mismatch"));
+    ipcHandler("updater:download-downgrade")(undefined, false);
+    await flush();
+
+    const state = getState();
+    expect(state).toMatchObject({ type: "error", manual: true });
+    expect((state as { retry?: unknown }).retry).toBeUndefined();
+    expect(autoUpdaterMock.allowDowngrade).toBe(false);
   });
 });
 
@@ -643,7 +673,7 @@ describe("install retry", () => {
     }
 
     expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledTimes(5);
-    expect(getStatus().error).toContain("EBUSY");
+    expect(getState()).toMatchObject({ type: "error", manual: true });
   });
 
   it("gives up immediately on a non-lock error", async () => {
@@ -657,7 +687,7 @@ describe("install retry", () => {
     await vi.advanceTimersByTimeAsync(5000);
 
     expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledTimes(1);
-    expect(getStatus().error).toContain("catastrophic");
+    expect(getState()).toMatchObject({ type: "error", message: "catastrophic failure" });
   });
 });
 
@@ -670,20 +700,20 @@ describe("post-update notice", () => {
     await flush();
 
     expect(readPersistedValueMock).toHaveBeenCalledWith("app", ["appVersion"]);
-    expect(getStatus().justUpdatedFrom).toBe("2.5.9");
+    expect(getSnapshot().justUpdatedFrom).toBe("2.5.9");
   });
 
   it("stays unset for a same-version launch or after a downgrade", async () => {
     readPersistedValueMock.mockResolvedValue("2.6.0");
     await setup();
     await flush();
-    expect(getStatus().justUpdatedFrom).toBeUndefined();
+    expect(getSnapshot().justUpdatedFrom).toBeUndefined();
 
     vi.resetModules();
     readPersistedValueMock.mockResolvedValue("2.7.0");
     await setup();
     await flush();
-    expect(getStatus().justUpdatedFrom).toBeUndefined();
+    expect(getSnapshot().justUpdatedFrom).toBeUndefined();
   });
 
   it("serves the changelog for the versions the update covered", async () => {
@@ -698,9 +728,12 @@ describe("post-update notice", () => {
       ([name]) => name === "updater:get-update-changelog",
     );
     expect(call).toBeDefined();
-    await expect((call![1] as () => Promise<string | null>)()).resolves.toBe(
-      "<p>2.6.0 changes</p>",
-    );
+    await expect(
+      (call![1] as (event: unknown, channel: string) => Promise<string | null>)(
+        undefined,
+        "stable",
+      ),
+    ).resolves.toBe("<p>2.6.0 changes</p>");
     // resolved from the pre-update version so the notes span the whole update
     expect(resolveUpdateMock).toHaveBeenCalledWith("stable", "2.5.9");
   });
@@ -712,7 +745,12 @@ describe("post-update notice", () => {
     const call = ipcMock.handle.mock.calls.find(
       ([name]) => name === "updater:get-update-changelog",
     );
-    await expect((call![1] as () => Promise<string | null>)()).resolves.toBeNull();
+    await expect(
+      (call![1] as (event: unknown, channel: string) => Promise<string | null>)(
+        undefined,
+        "stable",
+      ),
+    ).resolves.toBeNull();
     expect(resolveUpdateMock).not.toHaveBeenCalled();
   });
 });
