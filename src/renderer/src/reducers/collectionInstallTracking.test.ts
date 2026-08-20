@@ -50,6 +50,50 @@ describe("installTracking reducer", () => {
       expect(result.activeSession.installedCount).toBe(1);
     });
 
+    it("counts members seeded as ignored or failed toward their totals", () => {
+      // a resumed install seeds each member from reality, so members can already be terminal
+      const state = makeInstallState();
+      const payload = {
+        collectionId: "col1",
+        profileId: "prof1",
+        gameId: "skyrimse",
+        totalRequired: 2,
+        totalOptional: 2,
+        mods: {
+          rule1: { status: "installed", type: "requires", rule: {} },
+          rule2: { status: "failed", type: "requires", rule: {} },
+          rule3: { status: "ignored", type: "recommends", rule: {} },
+          rule4: { status: "ignored", type: "recommends", rule: {} },
+        },
+      };
+
+      const result = reduce(state, actions.startInstallSession, payload);
+
+      expect(result.activeSession.ignoredCount).toBe(2);
+      expect(result.activeSession.failedCount).toBe(1);
+    });
+
+    it("keeps the ignored total at zero when a member seeded as ignored is selected", () => {
+      // an optional skipped in an earlier install of the same collection rehydrates as "ignored";
+      // selecting it moves it off that status, which must not take the total below zero
+      const started = reduce(makeInstallState(), actions.startInstallSession, {
+        collectionId: "col1",
+        profileId: "prof1",
+        gameId: "skyrimse",
+        totalRequired: 0,
+        totalOptional: 1,
+        mods: { rule1: { status: "ignored", type: "recommends", rule: {} } },
+      });
+
+      const result = reduce(started, actions.updateModStatus, {
+        sessionId: "col1_prof1",
+        ruleId: "rule1",
+        status: "pending",
+      });
+
+      expect(result.activeSession.ignoredCount).toBe(0);
+    });
+
     it("computes zero counters for an empty mods object", () => {
       const state = makeInstallState();
       const payload = {

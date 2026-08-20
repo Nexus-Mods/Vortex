@@ -93,13 +93,17 @@ const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
       DOWNLOADED_STATUSES.has(mod.status),
     ).length;
     const installedCount = Object.values(mods).filter((mod) => mod.status === "installed").length;
+    // members seeded terminal (a resumed install, or an optional skipped in an earlier one) count
+    // from the start, otherwise moving one off that status takes its total below zero
+    const failedCount = Object.values(mods).filter((mod) => mod.status === "failed").length;
+    const ignoredCount = Object.values(mods).filter((mod) => mod.status === "ignored").length;
     const session: types.ICollectionInstallSession = {
       ...payload,
       sessionId,
       downloadedCount,
       installedCount,
-      failedCount: 0,
-      ignoredCount: 0,
+      failedCount,
+      ignoredCount,
     };
 
     return { ...state, activeSession: session };
