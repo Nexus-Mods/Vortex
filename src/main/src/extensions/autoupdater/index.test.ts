@@ -248,6 +248,48 @@ describe("updater:download", () => {
   });
 });
 
+describe("downloaded-state lifecycle", () => {
+  // Field bug: 2.5.0 was downloaded on stable, then a beta switch advertised
+  // 2.6.0-beta.1 with the stale downloaded flag — offering Restart & Install
+  // for a build that isn't on disk.
+  it("resets the downloaded flag when a different version becomes available", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    updaterEvent("update-available")?.({ version: "2.6.1", releaseNotes: null });
+    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
+    expect(getStatus().downloaded).toBe(true);
+
+    updaterEvent("update-available")?.({ version: "2.8.0-beta.1", releaseNotes: null });
+    const afterSwitch = getStatus();
+    expect(afterSwitch.version).toBe("2.8.0-beta.1");
+    expect(afterSwitch.downloaded).toBe(false);
+
+    // switching back to the version whose installer is on disk restores it
+    updaterEvent("update-available")?.({ version: "2.6.1", releaseNotes: null });
+    expect(getStatus().downloaded).toBe(true);
+  });
+
+  it("does not short-circuit a download when the disk installer is a different version", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    updaterEvent("update-available")?.({ version: "2.6.1", releaseNotes: null });
+    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
+
+    // a newer beta is now advertised; downloading must re-fetch, not install 2.6.1
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.8.0-beta.1", prerelease: true }));
+    updaterEvent("update-available")?.({ version: "2.8.0-beta.1", releaseNotes: null });
+    ipcHandler("updater:download")(undefined, "beta", true);
+    await flush();
+
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
+  });
+});
+
 describe("release notes", () => {
   it("prefers the resolver's collected notes over UpdateInfo", async () => {
     await setup();

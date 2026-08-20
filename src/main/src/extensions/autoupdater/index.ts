@@ -211,6 +211,18 @@ export function setupAutoUpdater(installType: string): void {
     updateStatus.available = true;
     updateStatus.version = info.version;
     updateStatus.error = undefined;
+    // A previously downloaded installer belongs to the version it was
+    // downloaded for; advertising a different version with downloaded:true
+    // would offer "Restart & Install" for a build that isn't on disk.
+    // Re-advertising the downloaded version (e.g. switching a channel back)
+    // restores it.
+    if (info.version !== downloadedVersion) {
+      updateStatus.downloaded = false;
+      updateStatus.downloadProgress = undefined;
+    } else if (downloadedVersion != null) {
+      updateStatus.downloaded = true;
+      updateStatus.downloadProgress = 100;
+    }
     // The generic feed's latest.yml carries no release notes; the resolver
     // collects them from the GitHub releases instead.
     if (lastResolved?.notesHtml != null) {
@@ -240,11 +252,16 @@ export function setupAutoUpdater(installType: string): void {
 
   // Track whether to auto-install after download
   let installAfterDownloadFlag = false;
+  // The version the downloaded installer actually contains; the downloaded
+  // flag is only meaningful for this version.
+  let downloadedVersion: string | null = null;
 
   // Update downloaded
   autoUpdater.on("update-downloaded", (updateInfo: UpdateInfo) => {
     log("info", "Update downloaded", { version: updateInfo.version });
+    downloadedVersion = updateInfo.version;
     updateStatus.downloaded = true;
+    updateStatus.version = updateInfo.version;
     updateStatus.downloadProgress = 100;
     lastBroadcastPercent = -1;
     broadcastStatus();
@@ -431,9 +448,17 @@ export function setupAutoUpdater(installType: string): void {
     // Already downloaded: don't re-fetch the full installer. Re-issuing
     // downloadUpdate when the file is already present can resolve without
     // re-emitting "update-downloaded", which would strand the install request.
-    // Install directly instead.
-    if (updateStatus.downloaded) {
-      log("info", "Update already downloaded, skipping re-download");
+    // Install directly instead — but only when the installer on disk is the
+    // version currently being offered; a channel switch can leave a stale
+    // download for a different version.
+    if (
+      updateStatus.downloaded &&
+      downloadedVersion != null &&
+      downloadedVersion === updateStatus.version
+    ) {
+      log("info", "Update already downloaded, skipping re-download", {
+        version: downloadedVersion,
+      });
       if (installAfterDownload) {
         attemptInstall();
       }
