@@ -17,11 +17,18 @@ interface FakeStatus {
   checking?: boolean;
 }
 
+interface FakeNotification {
+  id: string;
+  type?: string;
+  message?: string;
+  actions?: Array<{ title: string; action: (dismiss: () => void) => void }>;
+}
+
 function makeContext() {
   const onceCallbacks: Array<() => void> = [];
   // mirror the notifications reducer: same-id send replaces, dismiss removes
-  const notifications: Array<{ id: string }> = [];
-  const sendNotification = vi.fn((notification: { id: string }) => {
+  const notifications: FakeNotification[] = [];
+  const sendNotification = vi.fn((notification: FakeNotification) => {
     const existing = notifications.findIndex((entry) => entry.id === notification.id);
     if (existing >= 0) {
       notifications.splice(existing, 1, notification);
