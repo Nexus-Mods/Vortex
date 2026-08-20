@@ -477,6 +477,33 @@ describe("library events", () => {
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
   });
 
+  // Funnel protection: a patch whose auto-download just failed is not
+  // re-fetched by every subsequent check; it is offered as a downloadable
+  // update instead, and a user-initiated download may retry immediately.
+  it("holds a failed patch auto-download and offers it instead", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    expect(getState().type).toBe("downloading");
+
+    updaterEvent("error")?.(new Error("net::ERR_CONNECTION_REFUSED"));
+    // the failed patch keeps a working Download via retry
+    expect(getState()).toMatchObject({ type: "error", retry: { version: "2.6.1" } });
+    autoUpdaterMock.downloadUpdate.mockClear();
+
+    // the next background check does NOT re-download; it offers
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+    expect(getState()).toMatchObject({ type: "available", version: "2.6.1" });
+
+    // a user-initiated download bypasses the hold
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
+  });
+
   it("fails an active download into an error state via the error event", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
