@@ -117,6 +117,7 @@ try {
 
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
+      getUpdateChangelog: () => betterIpcRenderer.invoke("updater:get-update-changelog"),
       setChannel: (channel: string, manual: boolean) =>
         betterIpcRenderer.send("updater:set-channel", channel, manual),
       checkForUpdates: (channel: string, manual: boolean) =>
@@ -126,6 +127,7 @@ try {
       restartAndInstall: () => betterIpcRenderer.send("updater:restart-and-install"),
       downloadDowngrade: (installAfterDownload: boolean = false) =>
         betterIpcRenderer.send("updater:download-downgrade", installAfterDownload),
+      declineDowngrade: () => betterIpcRenderer.send("updater:decline-downgrade"),
       onStatusChanged: (callback) => {
         const listener = (_: Electron.IpcRendererEvent, status: Parameters<typeof callback>[0]) =>
           callback(status);

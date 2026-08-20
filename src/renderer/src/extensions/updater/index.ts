@@ -37,7 +37,8 @@ function init(context: IExtensionContext): boolean {
         [
           { label: "Close" },
           {
-            label: status.downloaded ? "Restart & Install" : "Download",
+            // matches the notification's action button
+            label: status.downloaded ? "Restart Now" : "Download",
             default: true,
             action: () => {
               if (status.downloaded) {
@@ -63,7 +64,7 @@ function init(context: IExtensionContext): boolean {
       context.api.sendNotification({
         id: "vortex-downgrade-offer",
         type: "warning",
-        message: `Stable version ${status.version} is older than your current version`,
+        message: `Vortex ${status.version} is a downgrade and older than your current version`,
         actions: [
           {
             title: "More",
@@ -76,15 +77,25 @@ function init(context: IExtensionContext): boolean {
 
 Downgrading can damage your application state. Alternatively, stay on your current version and you will be offered the next stable release once it is newer than ${currentVersion}.
 
-If you downgrade, Vortex will restart and install ${status.version} as soon as the download completes.`,
+If you downgrade, Vortex will download ${status.version}; once the download completes you can restart to install it.`,
                 },
                 [
-                  { label: "Stay on current version" },
+                  {
+                    label: "Stay on current version",
+                    action: () => {
+                      // declining forgets the offer (notification included)
+                      // until the next check raises it again
+                      context.api.dismissNotification?.("vortex-downgrade-offer");
+                      window.api.updater.declineDowngrade();
+                    },
+                  },
                   {
                     label: `Downgrade to ${status.version}`,
                     action: () => {
                       context.api.dismissNotification?.("vortex-downgrade-offer");
-                      window.api.updater.downloadDowngrade(true);
+                      // download only: the user restarts when ready, via the
+                      // same ready-to-install notification as regular updates
+                      window.api.updater.downloadDowngrade(false);
                     },
                   },
                 ],
@@ -102,7 +113,12 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
     // so the toast re-appears; skip pushes that change nothing the user sees
     // (e.g. download progress) — unless the notification was dismissed in the
     // meantime, in which case a fresh check resurrects it.
-    let lastShown: { version?: string; downloaded: boolean; downgrade: boolean } | null = null;
+    let lastShown: {
+      version?: string;
+      downloaded: boolean;
+      downgrade: boolean;
+      downgrading: boolean;
+    } | null = null;
 
     const notificationExists = (id: string): boolean =>
       context.api
@@ -111,7 +127,43 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
 
     let prevStatus: UpdateStatus | null = null;
 
+    // One-time notice on the first launch after an update; "View changes"
+    // fetches the notes covering the versions the update went through.
+    let shownUpdatedNotice = false;
+    const showPostUpdateChanges = async () => {
+      const version = getApplication().version;
+      const notes = await window.api.updater.getUpdateChangelog().catch(() => null);
+      await context.api.showDialog(
+        "info",
+        `What's New in ${version}`,
+        {
+          htmlText: notes
+            ? `<div class="changelog-dialog-release">${notes}</div>`
+            : "<p>No release notes are available for this update.</p>",
+        },
+        [{ label: "Close" }],
+        "new-update-changelog-dialog",
+      );
+    };
+
     const handleUpdateStatus = (status: UpdateStatus) => {
+      if (!shownUpdatedNotice && status.justUpdatedFrom != null) {
+        shownUpdatedNotice = true;
+        context.api.sendNotification({
+          id: "vortex-updated",
+          type: "success",
+          message: `Vortex was updated to ${getApplication().version}`,
+          actions: [
+            {
+              title: "View changes",
+              action: () => {
+                void showPostUpdateChanges();
+              },
+            },
+          ],
+        });
+      }
+
       // A user-initiated check deserves visible feedback either way: re-toast
       // the update notification even if nothing changed, or say "up to date".
       const manualCheckCompleted =
@@ -135,14 +187,33 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
         version: status.version,
         downloaded: status.downloaded,
         downgrade: status.downgrade === true,
+        downgrading: status.downgrading === true,
       };
       if (
         lastShown != null &&
         lastShown.version === shown.version &&
         lastShown.downloaded === shown.downloaded &&
         lastShown.downgrade === shown.downgrade &&
+        lastShown.downgrading === shown.downgrading &&
         notificationExists(shown.downgrade ? "vortex-downgrade-offer" : "vortex-update-available")
       ) {
+        return;
+      }
+
+      // A confirmed downgrade downloading is exactly that — describing it as
+      // an available update misstates what is happening. Once downloaded it
+      // falls through to the ordinary ready-to-install notification below,
+      // same buttons and all.
+      if (status.downgrading && !status.downloaded) {
+        if (status.version) {
+          lastShown = shown;
+          context.api.dismissNotification?.("vortex-update-available");
+          context.api.sendNotification({
+            id: "vortex-update-available",
+            type: "info",
+            message: `Downgrading to Vortex ${status.version}`,
+          });
+        }
         return;
       }
 
@@ -157,19 +228,38 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
         return;
       }
       if (status.available && status.version) {
+        // Patch updates download themselves: stay quiet until the download
+        // is staged, then say what actually happens next (install on quit).
+        if (status.patch && !status.downloaded) {
+          return;
+        }
         lastShown = shown;
         context.api.dismissNotification?.("vortex-update-available");
+        if (status.patch) {
+          context.api.sendNotification({
+            id: "vortex-update-available",
+            type: "info",
+            message: "Vortex will update the next time you restart",
+            actions: [
+              {
+                title: "Restart Now",
+                // no dismiss: a packaged app quits here anyway, and if the
+                // install fails (or is skipped in dev) the button must stay
+                action: () => window.api.updater.restartAndInstall(),
+              },
+            ],
+          });
+          return;
+        }
         context.api.sendNotification({
           id: "vortex-update-available",
           type: "info",
-          // once staged, the update installs on quit — say so rather than
-          // surprising the user when they close Vortex
           message: status.downloaded
-            ? `Vortex ${status.version} will install when you close Vortex`
-            : `Vortex ${status.version} is available`,
+            ? `Vortex ${status.version} is ready to install`
+            : `Vortex ${status.version} is available to download`,
           actions: [
             {
-              title: "More",
+              title: "What's New",
               action: () => {
                 void showUpdateDialog(status.version!, status.releaseNotes);
               },
@@ -177,9 +267,8 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
             {
               // Not downloaded yet (minor/major updates wait for the user):
               // the button downloads, and the pushed "downloaded" status then
-              // flips this same notification to Restart & Install. Patch
-              // updates arrive already downloaded, so they start there.
-              title: status.downloaded ? "Restart & Install" : "Download",
+              // flips this same notification to Restart Now.
+              title: status.downloaded ? "Restart Now" : "Download",
               action: () => {
                 if (status.downloaded) {
                   // no dismiss: a packaged app quits here anyway, and if the
@@ -189,7 +278,7 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
                   const channel = context.api.store.getState().settings.update.channel;
                   window.api.updater.downloadUpdate(channel, false);
                   // keep the notification: it live-updates to show the
-                  // Restart & Install action once the download completes
+                  // Restart Now action once the download completes
                 }
               },
             },
