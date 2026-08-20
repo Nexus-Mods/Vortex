@@ -459,8 +459,9 @@ export interface UpdaterApi {
   /**
    * Release notes covering the update the app just went through. Null when
    * this launch did not follow an update or the notes are unavailable.
+   * Takes the renderer's persisted update channel.
    */
-  getUpdateChangelog(): Promise<string | null>;
+  getUpdateChangelog(channel: string): Promise<string | null>;
 
   /**
    * Set the update channel and trigger an update check.

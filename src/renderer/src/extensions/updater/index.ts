@@ -77,7 +77,7 @@ function init(context: IExtensionContext): boolean {
 
 Downgrading can damage your application state. Alternatively, stay on your current version and you will be offered the next stable release once it is newer than ${currentVersion}.
 
-If you downgrade, Vortex will download ${status.version}; once the download completes you can restart to install it.`,
+If you downgrade, Vortex will download ${status.version} and update on restart.`,
                 },
                 [
                   {
@@ -93,8 +93,8 @@ If you downgrade, Vortex will download ${status.version}; once the download comp
                     label: `Downgrade to ${status.version}`,
                     action: () => {
                       context.api.dismissNotification?.("vortex-downgrade-offer");
-                      // download only: the user restarts when ready, via the
-                      // same ready-to-install notification as regular updates
+                      // download without forcing a restart: once staged it
+                      // installs on quit, or via the notification's Restart Now
                       window.api.updater.downloadDowngrade(false);
                     },
                   },
@@ -132,7 +132,8 @@ If you downgrade, Vortex will download ${status.version}; once the download comp
     let shownUpdatedNotice = false;
     const showPostUpdateChanges = async () => {
       const version = getApplication().version;
-      const notes = await window.api.updater.getUpdateChangelog().catch(() => null);
+      const channel = context.api.store.getState().settings.update.channel;
+      const notes = await window.api.updater.getUpdateChangelog(channel).catch(() => null);
       await context.api.showDialog(
         "info",
         `What's New in ${version}`,
@@ -169,14 +170,43 @@ If you downgrade, Vortex will download ${status.version}; once the download comp
       const manualCheckCompleted =
         prevStatus?.checking === true && prevStatus.manual === true && status.checking !== true;
       prevStatus = status;
-      if (manualCheckCompleted) {
-        if (status.available) {
-          lastShown = null; // bypass the dedupe so the toast re-shows
-        } else {
+
+      // Mid-check pushes are transient: every check clears the downgrade and
+      // patch labels before re-resolving, so acting on a checking status
+      // renders the previous offer stripped of its identity (a patch would
+      // briefly show the loud Download notification). Only settled statuses
+      // drive notifications.
+      if (status.checking === true) {
+        return;
+      }
+
+      // The resolver settled on "nothing available": withdraw any standing
+      // notification (a retracted downgrade offer, a failed downgrade, a
+      // release pulled from the feed) so dead buttons don't linger.
+      if (!status.available) {
+        context.api.dismissNotification?.("vortex-update-available");
+        context.api.dismissNotification?.("vortex-downgrade-offer");
+        lastShown = null;
+        if (manualCheckCompleted) {
           context.api.sendNotification({
             id: "vortex-up-to-date",
             type: "success",
             message: `Vortex ${getApplication().version} is up to date`,
+            displayMS: 5000,
+          });
+        }
+        return;
+      }
+
+      if (manualCheckCompleted) {
+        lastShown = null; // bypass the dedupe so the toast re-shows
+        // A patch mid-download shows no standing notification, but a manual
+        // check still owes the user an answer.
+        if (status.patch && !status.downloaded && status.version) {
+          context.api.sendNotification({
+            id: "vortex-up-to-date",
+            type: "info",
+            message: `Vortex ${status.version} is downloading and will update on restart`,
             displayMS: 5000,
           });
           return;
@@ -202,8 +232,8 @@ If you downgrade, Vortex will download ${status.version}; once the download comp
 
       // A confirmed downgrade downloading is exactly that — describing it as
       // an available update misstates what is happening. Once downloaded it
-      // falls through to the ordinary ready-to-install notification below,
-      // same buttons and all.
+      // reads like a staged patch below: it installs on quit, Restart Now
+      // does it straight away.
       if (status.downgrading && !status.downloaded) {
         if (status.version) {
           lastShown = shown;
@@ -235,11 +265,13 @@ If you downgrade, Vortex will download ${status.version}; once the download comp
         }
         lastShown = shown;
         context.api.dismissNotification?.("vortex-update-available");
-        if (status.patch) {
+        // Staged patches and confirmed downgrades install when Vortex closes;
+        // the wording says so, and Restart Now does it straight away.
+        if (status.patch || status.downgrading) {
           context.api.sendNotification({
             id: "vortex-update-available",
             type: "info",
-            message: "Vortex will update the next time you restart",
+            message: "Vortex will update on restart",
             actions: [
               {
                 title: "Restart Now",

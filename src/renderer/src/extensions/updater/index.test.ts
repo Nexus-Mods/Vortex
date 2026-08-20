@@ -1,3 +1,4 @@
+import type { UpdateStatus } from "@vortex/shared/ipc";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
@@ -8,18 +9,9 @@ vi.mock("../../util/application", () => ({
 
 import init from "./index";
 
-interface FakeStatus {
-  available: boolean;
-  downloaded: boolean;
-  version?: string;
-  releaseNotes?: string;
-  downgrade?: boolean;
-  downgrading?: boolean;
-  checking?: boolean;
-  manual?: boolean;
-  patch?: boolean;
-  justUpdatedFrom?: string;
-}
+// the real IPC shape, so a field rename in @vortex/shared breaks these tests
+// instead of silently passing against a stale local copy
+type FakeStatus = Pick<UpdateStatus, "available" | "downloaded"> & Partial<UpdateStatus>;
 
 interface FakeNotification {
   id: string;
@@ -218,12 +210,12 @@ describe("updater status handling", () => {
     // committed flow: nothing for the user to click while it downloads
     expect(downloading.actions).toBeUndefined();
 
-    // once staged it reads like any other staged update, same buttons
+    // once staged it installs on quit, like a patch — and says so
     pushStatus({ available: true, downloaded: true, version: "2.5.0", downgrading: true });
     const downloaded = sendNotification.mock.calls[1]![0];
-    expect(downloaded.message).toContain("2.5.0 is ready to install");
-    expect(downloaded.actions![0]!.title).toBe("What's New");
-    expect(downloaded.actions![1]!.title).toBe("Restart Now");
+    expect(downloaded.message).toBe("Vortex will update on restart");
+    expect(downloaded.actions).toHaveLength(1);
+    expect(downloaded.actions![0]!.title).toBe("Restart Now");
   });
 
   it("keeps a patch update quiet until staged, then offers a restart", async () => {
@@ -237,12 +229,71 @@ describe("updater status handling", () => {
     expect(sendNotification).toHaveBeenCalledTimes(1);
     const notification = sendNotification.mock.calls[0]![0];
     expect(notification.id).toBe("vortex-update-available");
-    expect(notification.message).toBe("Vortex will update the next time you restart");
+    expect(notification.message).toBe("Vortex will update on restart");
     expect(notification.actions).toHaveLength(1);
     expect(notification.actions![0]!.title).toBe("Restart Now");
 
     notification.actions![0]!.action(() => undefined);
     expect(updater.restartAndInstall).toHaveBeenCalledTimes(1);
+  });
+
+  // Review finding: every check broadcasts checking:true statuses that have
+  // the patch/downgrade labels cleared while available/version survive —
+  // acting on them briefly presented a downloading patch as a loud regular
+  // update with a live Download button.
+  it("ignores transient mid-check statuses", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    // e.g. the periodic re-check firing while a patch auto-downloads
+    pushStatus({ available: true, downloaded: false, version: "2.6.1", checking: true });
+    expect(sendNotification).not.toHaveBeenCalled();
+
+    // the settled status carries the real labels again
+    pushStatus({ available: true, downloaded: false, version: "2.6.1", patch: true });
+    expect(sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("answers a manual check during a patch download with a downloading toast", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    pushStatus({
+      available: true,
+      downloaded: false,
+      version: "2.6.1",
+      patch: true,
+      checking: true,
+      manual: true,
+    });
+    pushStatus({
+      available: true,
+      downloaded: false,
+      version: "2.6.1",
+      patch: true,
+      checking: false,
+      manual: true,
+    });
+
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+    const toast = sendNotification.mock.calls[0]![0];
+    expect(toast.message).toContain("2.6.1 is downloading");
+  });
+
+  // Review finding: when main retracts an offer (failed downgrade download,
+  // release pulled from the feed), the standing notification kept dead
+  // buttons on screen.
+  it("withdraws standing notifications when nothing is available any more", async () => {
+    const { sendNotification, notifications, pushStatus } = await setup();
+
+    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+    expect(notifications.some((entry) => entry.id === "vortex-downgrade-offer")).toBe(true);
+
+    pushStatus({ available: false, downloaded: false });
+    expect(notifications).toHaveLength(0);
+
+    // and the next offer still shows (lastShown was reset)
+    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
+    expect(notifications.some((entry) => entry.id === "vortex-downgrade-offer")).toBe(true);
   });
 
   it("shows a one-time 'was updated' notice on the first launch after an update", async () => {

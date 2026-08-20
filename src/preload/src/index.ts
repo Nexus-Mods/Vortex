@@ -117,7 +117,8 @@ try {
 
     updater: {
       getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
-      getUpdateChangelog: () => betterIpcRenderer.invoke("updater:get-update-changelog"),
+      getUpdateChangelog: (channel: string) =>
+        betterIpcRenderer.invoke("updater:get-update-changelog", channel),
       setChannel: (channel: string, manual: boolean) =>
         betterIpcRenderer.send("updater:set-channel", channel, manual),
       checkForUpdates: (channel: string, manual: boolean) =>
