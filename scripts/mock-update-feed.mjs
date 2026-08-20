@@ -105,11 +105,17 @@ const server = createServer((req, res) => {
   if (download != null) {
     const [, tag, asset] = download;
     // real files win over generated dummies (needed for blockmap testing:
-    // blockmaps must match the actual installer bytes)
-    if (assetsDir != null && /^[\w.-]+$/.test(asset)) {
+    // blockmaps must match the actual installer bytes); a per-tag
+    // subdirectory wins over the flat dir, so tag-specific files that share
+    // a name across releases (latest.yml) can coexist
+    if (assetsDir != null && /^[\w.-]+$/.test(asset) && /^[\w.-]+$/.test(tag)) {
       try {
-        const filePath = path.join(assetsDir, asset);
-        const content = readFileSync(filePath);
+        let content;
+        try {
+          content = readFileSync(path.join(assetsDir, tag, asset));
+        } catch {
+          content = readFileSync(path.join(assetsDir, asset));
+        }
         // the differential downloader fetches byte ranges of the installer
         const range = /^bytes=(\d+)-(\d+)?$/.exec(req.headers.range ?? "");
         if (range != null) {
