@@ -951,11 +951,10 @@ class InstallDriver {
     // the session's per-rule mod info, keyed by rule id, reconstructed from reality
     const sessionModInfo = reconstructSessionMods({ rules: required, mods, downloads });
 
-    // Members already present at start (installed by the user, or left by another collection) are
-    // never queued and emit no install event, so this is where they get this collection's tag.
-    // Deliberately not marked installedAsDependency: the user may have installed them themselves.
-    // Collected per mod first - several members can resolve to one mod, and that mod's tags are
-    // written as a whole array.
+    // Members already present at start are never queued and emit no install event, so this is
+    // where they get this collection's tag. Deliberately not marked installedAsDependency: the
+    // user may have installed them themselves. Collected per mod because several members can
+    // resolve to one mod, whose tags are written as a whole array.
     const startTagsByMod = new Map<string, string[]>(); // modId -> tags of the rules it satisfies
     for (const info of Object.values(sessionModInfo)) {
       if (info.status !== "installed" || info.modId === undefined) {

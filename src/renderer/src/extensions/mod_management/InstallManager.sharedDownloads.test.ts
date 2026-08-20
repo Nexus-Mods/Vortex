@@ -1,11 +1,10 @@
 /**
  * Collection members whose archive is already on disk from a DIFFERENT collection: the download
  * carries that collection's referenceTag, so the member is identified by file hash / repo rather
- * than by tag, and the install engine retags the dependency to match the download.
+ * than by tag.
  *
- * The install session is keyed by each member's rule identity, so these tests pin that a member
- * still settles - without a terminal status the completion poll requeues it every tick and the
- * install never finishes.
+ * The session is keyed by each member's rule identity. Without a terminal status the completion
+ * poll requeues the member every tick and the install never finishes.
  */
 import { describe, expect, vi } from "vitest";
 
@@ -42,8 +41,8 @@ const memberRule = makeRule({
   reference: makeExactRef({ tag: "member-orig", gameId: GAME, md5Hint: "abc123" }),
 });
 
-// the reference the engine hands the installer once it has adopted the download's tag
-const adoptedReference = { ...memberRule.reference, tag: FOREIGN_TAG };
+// a member reference whose tag drifted away from the rule the session is keyed with
+const driftedReference = { ...memberRule.reference, tag: FOREIGN_TAG };
 
 /**
  * A collection install where the member's archive is already downloaded under another collection's
@@ -127,16 +126,16 @@ const memberStatus = (h: IInstallManagerHarness) =>
   h.getState().session.collections.activeSession?.mods[modRuleId(memberRule)];
 
 describe("a collection member satisfied by another collection's download", () => {
-  // The installer receives the dependency after its reference was retagged to match the download,
-  // so the "installed" write no longer carries the identity the session was keyed with.
+  // A member whose reference identity drifted from its rule cannot be matched back to the session
+  // by identity, so the "installed" write has to be addressed by the member's own key.
   imTest("settles as installed when its mod is reused", async ({ makeInstallManager }) => {
     const { h } = makeSharedArchiveInstall(makeInstallManager);
 
     internals(h.manager).startQueuedInstallation(
       h.api,
-      // as gathered: the member's session key alongside the reference the engine retagged
+      // as gathered: the member's session key alongside a drifted reference
       {
-        reference: adoptedReference,
+        reference: driftedReference,
         sessionRuleId: modRuleId(memberRule),
         phase: 0,
         extra: {},

@@ -350,8 +350,8 @@ describe("installTracking reducer", () => {
     });
   });
 
-  // A rule id the session does not track identifies no member, so writing it would invent an entry
-  // with no rule and count it towards the totals the completion check and progress bars read.
+  // writing an id the session does not track would invent a rule-less entry and count it towards
+  // the totals completion and progress read
   describe("writes for an untracked rule", () => {
     it("leaves the session untouched on a status update", () => {
       const session = makeSession({

@@ -1256,8 +1256,8 @@ class InstallManager {
     const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
     const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const currentProfile = profileById(state, profileId) ?? activeProfile(state);
-    // the installing dependency's reference, so attribute extractors can take the tag from the
-    // rule being installed rather than from whichever collection stamped the archive first
+    // lets attribute extractors take the tag from the rule being installed rather than from
+    // whichever collection stamped the archive
     const installingReference = modReference;
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
@@ -3323,9 +3323,8 @@ class InstallManager {
           const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
           this.mPendingInstalls.delete(installKey);
           this.mActiveInstalls.delete(installKey);
-          // the mod exists with the wanted install spec, so settle the member: keyed on the
-          // session's own rule, which is the identity the member is tracked under. Without this
-          // the member stays non-terminal and every poll tick selects it again.
+          // the mod exists with the wanted install spec: settle the member on the session's own
+          // rule, or every poll tick selects it again
           this.writeCollectionSession(mod.rule.reference, {
             type: "installed",
             modId: existingMod.id,
@@ -5945,10 +5944,8 @@ class InstallManager {
               this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
               return undefined;
             }
-            // A terminal download/install failure settles the member as failed on the collection
-            // session. Addressed by the dependency's own session key, so it does not depend on
-            // matching the failed download back to a rule - which is how a failed download would
-            // otherwise be left stuck on "downloading". No-ops outside an active collection session
+            // Settle the member as failed, addressed by its own session key so it does not depend
+            // on matching the failed download back to a rule. No-ops outside an active session
             // and over an already-terminal status.
             const settleMemberFailed = () =>
               this.writeCollectionSession(
@@ -6547,10 +6544,9 @@ class InstallManager {
             dep.reference.tag !== undefined &&
             !downloadHasReferenceTag(downloads[downloadId], dep.reference.tag)
           ) {
-            // the archive satisfies this rule too, so record this rule's tag on it alongside any
-            // tag it already carries. The rule and dep.reference are left alone: the install
-            // session is keyed from them, and other collections still resolve the archive by
-            // their own tag.
+            // the archive satisfies this rule too: record this rule's tag alongside the tags it
+            // carries. The rule and dep.reference stay as they are - the session is keyed from
+            // them, and other collections resolve the archive by their own tag.
             batchDispatch(
               api.store,
               appendReferenceTagActions(downloadId, downloads[downloadId], dep.reference.tag),
@@ -6649,17 +6645,16 @@ class InstallManager {
         .sort((a, b) => a - b);
       const lowestPhase = phaseNumbers[0];
 
-      // Check collection session to determine actual current phase. Session ids are
-      // collectionId_profileId, resolved the same way the completion poll resolves them.
+      // Session ids are collectionId_profileId, resolved the same way the completion poll
+      // resolves them.
       const phaseBatchContext = getBatchContext(
         ["install-dependencies", "install-recommendations"],
         "",
       );
       const phaseProfileId =
         phaseBatchContext?.get<string>("profileId") ?? activeProfile(api.getState())?.id;
-      // The ACTIVE session only: phase completion below is read from the active session, and a
-      // finished install of this collection on this profile carries the same id in history, where
-      // every phase would read complete and push the frontier past phases that never ran.
+      // The ACTIVE session only: phase completion below reads it, and a finished install of this
+      // collection carries the same id in history, where every phase reads complete.
       const collectionSession = getCollectionActiveSession(api.getState());
       const activeCollectionSession =
         collectionSession?.sessionId === generateCollectionSessionId(sourceModId, phaseProfileId)
@@ -7708,16 +7703,13 @@ class InstallManager {
   }
 
   /**
-   * Record a dependency install outcome on the active collection session. This is the
-   * direct, in-process write path: the orchestrator already knows which dependency it is
-   * processing, so it addresses the member and dispatches the resulting tracking action.
-   * Additive to the existing api.events.emit calls - it does not replace them.
-   * A no-op when there is no active session, no rule matches, or the write is redundant.
+   * Record a dependency install outcome on the active collection session. A no-op when there is
+   * no active session, no rule matches, or the write is redundant.
    *
-   * Pass the dependency's `sessionRuleId` wherever it is in scope: the member is then addressed
-   * by the key it is tracked under rather than by an identity the engine may have retagged.
-   * `sourceModId` scopes the unmatched-write warning: the dependency pipeline also runs for mods
-   * other than the session's collection, whose writes are expected no-ops.
+   * Pass the dependency's `sessionRuleId` wherever it is in scope, so the member is addressed by
+   * the key it is tracked under rather than by its reference identity. `sourceModId` scopes the
+   * unmatched-write warning: the dependency pipeline also runs for mods outside the session's
+   * collection, whose writes are expected no-ops.
    */
   private writeCollectionSession(
     reference: IModReference,
@@ -7738,9 +7730,9 @@ class InstallManager {
   }
 
   /**
-   * Report a lifecycle outcome that named no session member, since the member then keeps whatever
-   * status it had and the completion poll goes on selecting it. Writes outside an install, and
-   * writes the planner declined for a member it did match, are expected and stay quiet.
+   * Report a lifecycle outcome that named no session member: that member keeps its status and the
+   * completion poll goes on selecting it. Writes outside an install, and writes the planner
+   * declined for a member it did match, are expected and stay quiet.
    */
   private warnUnmatchedSessionWrite(
     reference: IModReference,
