@@ -461,24 +461,32 @@ export function setupAutoUpdater(installType: string): void {
       log("warn", "Downgrade download requested but no downgrade offer is outstanding");
       return;
     }
+    // One-shot consume: a second confirmation must not re-enter the flow.
+    pendingDowngrade = null;
     log("info", "Downgrade download confirmed", { version: target.version });
 
     installAfterDownloadFlag = installAfterDownload;
     const generation = ++checkGeneration;
     updateStatus.checking = true;
+    // Past confirmation this is an ordinary in-flight download; keeping the
+    // downgrade flag would re-trigger the offer UI on every progress push.
+    updateStatus.downgrade = undefined;
     lastBroadcastPercent = -1;
     broadcastStatus();
 
-    autoUpdater.allowDowngrade = true;
     // One-shot marker so the next launch's "Downgrade detected" warning is
-    // suppressed for the version the user knowingly chose.
+    // suppressed for the version the user knowingly chose. Written before
+    // allowDowngrade is raised so the raised window is only the feed apply.
     writePersistedValue("app", ["expectedDowngradeTo"], target.version)
       .catch((err: unknown) => {
         log("warn", "Failed to persist downgrade marker", {
           error: getErrorMessageOrDefault(err),
         });
       })
-      .then(() => applyResolvedFeed(target, generation))
+      .then(() => {
+        autoUpdater.allowDowngrade = true;
+        return applyResolvedFeed(target, generation);
+      })
       .then(() => {
         autoUpdater.allowDowngrade = false;
         if (generation === checkGeneration) {
