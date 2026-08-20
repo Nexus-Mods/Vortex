@@ -20,17 +20,15 @@ build-options:
     # Ref: https://github.com/electron/electron/blob/main/docs/api/environment-variables.md
     ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
 
-    # Node/Yarn offline cache locations for reproducible builds.
+    # Node/pnpm offline cache locations for reproducible builds.
     # Flatpak builds run offline by default; these paths are inside the build sandbox.
     # Ref: https://docs.flatpak.org/en/latest/electron.html#the-application-module
     npm_config_cache: /run/build/vortex/flatpak-node/npm-cache
     npm_config_nodedir: /usr/lib/sdk/node24
     npm_config_offline: "true"
+    npm_config_store_dir: /run/build/vortex/flatpak-node/pnpm-store
     XDG_CACHE_HOME: /run/build/vortex/flatpak-node/cache
-    YARN_CACHE_FOLDER: /run/build/vortex/flatpak-node/yarn-cache
-    YARN_IGNORE_ENGINES: "1"
-    YARN_OFFLINE_MIRROR: /run/build/vortex/flatpak-node/yarn-mirror
-    YARN_OFFLINE_MIRROR_PRUNING: "false"
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
 
     # Dotnet SDK settings for build-time tools (runtime DOTNET_ROOT is set via finish-args).
     DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -42,6 +40,7 @@ build-options:
     # Skip git submodule updates (submodules are already fetched by flatpak-builder).
     # FOMOD installer builds are still needed and run during preinstall.
     NO_PARALLEL: "1"
+    VORTEX_DUCKDB_EXTENSION_SOURCE_DIR: /run/build/vortex/flatpak-duckdb-extensions
     VORTEX_SKIP_SUBMODULES: "1"
 
 finish-args:
@@ -82,8 +81,7 @@ modules:
     build-commands:
       # Steps match `.github/workflows/package.yml` where possible.
 
-      # Configure Yarn for Flatpak caches, then install dependencies.
-      - cp flatpak/yarnrc .yarnrc
+      # Configure NuGet for offline dependency resolution.
       - |
         cat > NuGet.Config <<'EOF'
         <?xml version="1.0" encoding="utf-8"?>
@@ -94,19 +92,20 @@ modules:
           </packageSources>
         </configuration>
         EOF
-      - yarn install --non-interactive --check-files --frozen-lockfile
+      - python3 flatpak/scripts/flatpak_prepare_pnpm.py
+      - pnpm install --frozen-lockfile --offline
       # Build the app following the standard workflow from CONTRIBUTE.md.
-      - yarn run build
+      - pnpm run build
 
       # Prepare app/ directory for packaging
-      - yarn run _install_app
-      - yarn run subprojects_app
-      - yarn run _assets_app
-      - yarn run build_dist
+      - pnpm run _install_app
+      - pnpm run subprojects_app
+      - pnpm run _assets_app
+      - pnpm run build_dist
 
       # Build Electron distribution with electron-builder (dir target)
       # This creates dist/linux-unpacked/ with the electron binary bundled
-      - yarn electron-builder --config electron-builder-config.json --publish never --linux dir
+      - pnpm exec electron-builder --config electron-builder-config.json --publish never --linux dir
 
       # Install the launcher, desktop file, icon, and metainfo into the Flatpak image.
       - install -Dm755 flatpak/run.sh /app/bin/run.sh
@@ -122,3 +121,4 @@ modules:
         path: ..
       - generated-sources.json
       - generated-nuget-sources.json
+      - generated-duckdb-sources.json

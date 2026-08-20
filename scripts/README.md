@@ -32,8 +32,10 @@ Scripts wired into `package.json` can also be called with `pnpm run <name>`.
 
 ## Build and Assets
 
-- `download-duckdb-extensions.ts` -- downloads platform-specific DuckDB
-  extensions listed in `duckdb-extensions.json`. Run via `pnpm run assets`.
+- `download-duckdb-extensions.ts` -- downloads locked platform-specific DuckDB
+  extensions from `src/main/duckdb-extensions.lock.json`. Run with
+  `pnpm run --filter @vortex/main duckdb:download-duckdb-extensions`. Refresh
+  the lock explicitly with `pnpm run --filter @vortex/main duckdb:update-duckdb-lock`.
 
 - `dependency-report.mjs` -- generates `etc/Dependency Report.md` listing
   production dependencies accessible to extensions via Node.js integration
