@@ -131,6 +131,17 @@ describe("updater status handling", () => {
     expect(sendNotification.mock.calls[0]![0].message).toContain("2.8.0");
   });
 
+  it("re-checks periodically so long sessions hear about updates", async () => {
+    const { updater } = await setup();
+    updater.checkForUpdates.mockClear();
+
+    await vi.advanceTimersByTimeAsync(4 * 60 * 60 * 1000);
+    expect(updater.checkForUpdates).toHaveBeenCalledWith("stable", false);
+
+    await vi.advanceTimersByTimeAsync(4 * 60 * 60 * 1000);
+    expect(updater.checkForUpdates).toHaveBeenCalledTimes(2);
+  });
+
   it("ignores non-available statuses (checking, progress)", async () => {
     const { sendNotification, pushStatus } = await setup();
 

@@ -158,6 +158,17 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
       }
     }, 5000);
 
+    // Vortex sessions stay open for days; without a periodic re-check a
+    // long-running instance never hears about updates (including hotfix
+    // patches, which auto-download) until the next launch.
+    const PERIODIC_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
+    setInterval(() => {
+      const channel = context.api.store.getState().settings.update.channel;
+      if (channel !== "none") {
+        window.api.updater.checkForUpdates(channel, false);
+      }
+    }, PERIODIC_CHECK_INTERVAL_MS);
+
     // Main pushes every status change; the one-time getStatus covers a check
     // that finished before this subscription existed (e.g. window reload).
     window.api.updater.onStatusChanged(handleUpdateStatus);
