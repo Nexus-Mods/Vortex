@@ -100,8 +100,14 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
     // keep their createdTime and stay collapsed in the tray. Dismiss and
     // re-send on user-meaningful transitions (new version, download finished)
     // so the toast re-appears; skip pushes that change nothing the user sees
-    // (e.g. download progress).
+    // (e.g. download progress) — unless the notification was dismissed in the
+    // meantime, in which case a fresh check resurrects it.
     let lastShown: { version?: string; downloaded: boolean; downgrade: boolean } | null = null;
+
+    const notificationExists = (id: string): boolean =>
+      context.api
+        .getState()
+        .session.notifications.notifications.some((notification) => notification.id === id);
 
     const handleUpdateStatus = (status: UpdateStatus) => {
       const shown = {
@@ -113,7 +119,8 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
         lastShown != null &&
         lastShown.version === shown.version &&
         lastShown.downloaded === shown.downloaded &&
-        lastShown.downgrade === shown.downgrade
+        lastShown.downgrade === shown.downgrade &&
+        notificationExists(shown.downgrade ? "vortex-downgrade-offer" : "vortex-update-available")
       ) {
         return;
       }
@@ -148,10 +155,11 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
               // flips this same notification to Restart & Install. Patch
               // updates arrive already downloaded, so they start there.
               title: status.downloaded ? "Restart & Install" : "Download",
-              action: (dismiss) => {
+              action: () => {
                 if (status.downloaded) {
+                  // no dismiss: a packaged app quits here anyway, and if the
+                  // install fails (or is skipped in dev) the button must stay
                   window.api.updater.restartAndInstall();
-                  dismiss();
                 } else {
                   const channel = context.api.store.getState().settings.update.channel;
                   window.api.updater.downloadUpdate(channel, false);

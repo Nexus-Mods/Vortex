@@ -19,10 +19,26 @@ interface FakeStatus {
 
 function makeContext() {
   const onceCallbacks: Array<() => void> = [];
-  const sendNotification = vi.fn();
+  // mirror the notifications reducer: same-id send replaces, dismiss removes
+  const notifications: Array<{ id: string }> = [];
+  const sendNotification = vi.fn((notification: { id: string }) => {
+    const existing = notifications.findIndex((entry) => entry.id === notification.id);
+    if (existing >= 0) {
+      notifications.splice(existing, 1, notification);
+    } else {
+      notifications.push(notification);
+    }
+  });
+  const dismissNotification = vi.fn((id: string) => {
+    const existing = notifications.findIndex((entry) => entry.id === id);
+    if (existing >= 0) {
+      notifications.splice(existing, 1);
+    }
+  });
   const state = {
     app: { installType: "regular" },
     settings: { update: { channel: "stable" } },
+    session: { notifications: { notifications } },
   };
   const context = {
     registerReducer: vi.fn(),
@@ -31,12 +47,19 @@ function makeContext() {
     api: {
       getState: () => state,
       sendNotification,
+      dismissNotification,
       showDialog: vi.fn().mockResolvedValue({ action: "Close" }),
       onStateChange: vi.fn(),
       store: { getState: () => state },
     },
   } as unknown as IExtensionContext;
-  return { context, sendNotification, runOnce: () => onceCallbacks.forEach((cb) => cb()) };
+  return {
+    context,
+    sendNotification,
+    dismissNotification,
+    notifications,
+    runOnce: () => onceCallbacks.forEach((cb) => cb()),
+  };
 }
 
 function makeUpdaterApi(initialStatus: FakeStatus) {
@@ -68,14 +91,14 @@ afterEach(() => {
 });
 
 async function setup(initialStatus: FakeStatus = idleStatus) {
-  const { context, sendNotification, runOnce } = makeContext();
+  const { context, sendNotification, dismissNotification, notifications, runOnce } = makeContext();
   const { updater, pushStatus } = makeUpdaterApi(initialStatus);
   vi.stubGlobal("window", { api: { updater } });
   init(context);
   runOnce();
   // let the initial getStatus sync settle
   await vi.advanceTimersByTimeAsync(0);
-  return { sendNotification, updater, pushStatus };
+  return { sendNotification, dismissNotification, notifications, updater, pushStatus };
 }
 
 describe("updater status handling", () => {
@@ -142,6 +165,22 @@ describe("updater status handling", () => {
     // a transition (download finished) re-creates it so the toast re-shows
     pushStatus({ available: true, downloaded: true, version: "2.7.0" });
     expect(sendNotification).toHaveBeenCalledTimes(2);
+  });
+
+  // Field report: after a dismissed notification (e.g. clicking Restart &
+  // Install in dev), a manual re-check of the same version showed nothing.
+  it("resurrects a dismissed notification on the next identical status", async () => {
+    const { sendNotification, notifications, pushStatus } = await setup();
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+
+    // user dismisses it (or an action did)
+    notifications.length = 0;
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    expect(sendNotification).toHaveBeenCalledTimes(2);
+    expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
   });
 
   it("re-checks periodically so long sessions hear about updates", async () => {
