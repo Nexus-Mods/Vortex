@@ -137,6 +137,8 @@ describe("updater status handling", () => {
     expect(second.id).toBe(first.id);
     expect(first.actions[1].title).toBe("Download");
     expect(second.actions[1].title).toBe("Restart & Install");
+    // install-on-quit is disclosed once the download is staged
+    expect(second.message).toContain("will install when you close Vortex");
   });
 
   it("presents a downgrade status as an explicit downgrade offer, not an update", async () => {
