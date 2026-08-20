@@ -1,4 +1,4 @@
-import type { UpdateStatus } from "@vortex/shared/ipc";
+import type { UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
@@ -9,15 +9,12 @@ vi.mock("../../util/application", () => ({
 
 import init from "./index";
 
-// the real IPC shape, so a field rename in @vortex/shared breaks these tests
-// instead of silently passing against a stale local copy
-type FakeStatus = Pick<UpdateStatus, "available" | "downloaded"> & Partial<UpdateStatus>;
-
 interface FakeNotification {
   id: string;
   type?: string;
   message?: string;
   progress?: number;
+  displayMS?: number;
   actions?: Array<{ title: string; action: (dismiss: () => void) => void }>;
 }
 
@@ -68,10 +65,10 @@ function makeContext() {
   };
 }
 
-function makeUpdaterApi(initialStatus: FakeStatus) {
-  let statusListener: ((status: FakeStatus) => void) | undefined;
+function makeUpdaterApi(initialSnapshot: UpdaterSnapshot) {
+  let listener: ((snapshot: UpdaterSnapshot) => void) | undefined;
   const updater = {
-    getStatus: vi.fn().mockResolvedValue(initialStatus),
+    getStatus: vi.fn().mockResolvedValue(initialSnapshot),
     getUpdateChangelog: vi.fn().mockResolvedValue(null),
     setChannel: vi.fn(),
     checkForUpdates: vi.fn(),
@@ -79,15 +76,19 @@ function makeUpdaterApi(initialStatus: FakeStatus) {
     downloadDowngrade: vi.fn(),
     declineDowngrade: vi.fn(),
     restartAndInstall: vi.fn(),
-    onStatusChanged: vi.fn((cb: (status: FakeStatus) => void) => {
-      statusListener = cb;
+    onStatusChanged: vi.fn((cb: (snapshot: UpdaterSnapshot) => void) => {
+      listener = cb;
       return () => undefined;
     }),
   };
-  return { updater, pushStatus: (status: FakeStatus) => statusListener?.(status) };
+  return {
+    updater,
+    pushState: (state: UpdaterState, justUpdatedFrom?: string) =>
+      listener?.({ state, justUpdatedFrom }),
+  };
 }
 
-const idleStatus: FakeStatus = { available: false, downloaded: false };
+const idle: UpdaterSnapshot = { state: { type: "idle" } };
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -99,70 +100,251 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function setup(initialStatus: FakeStatus = idleStatus) {
+async function setup(initialSnapshot: UpdaterSnapshot = idle) {
   const { context, sendNotification, dismissNotification, showDialog, notifications, runOnce } =
     makeContext();
-  const { updater, pushStatus } = makeUpdaterApi(initialStatus);
+  const { updater, pushState } = makeUpdaterApi(initialSnapshot);
   vi.stubGlobal("window", { api: { updater } });
   init(context);
   runOnce();
   // let the initial getStatus sync settle
   await vi.advanceTimersByTimeAsync(0);
-  return { sendNotification, dismissNotification, showDialog, notifications, updater, pushStatus };
+  return { sendNotification, dismissNotification, showDialog, notifications, updater, pushState };
 }
 
-describe("updater status handling", () => {
-  it("shows the update notification when a pushed status is available", async () => {
-    const { sendNotification, pushStatus } = await setup();
+function sent(sendNotification: ReturnType<typeof vi.fn>, id: string): FakeNotification[] {
+  return sendNotification.mock.calls
+    .map(([notification]) => notification as FakeNotification)
+    .filter((notification) => notification.id === id);
+}
 
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+describe("updater state rendering", () => {
+  it("shows the update notification for an available state", async () => {
+    const { sendNotification, pushState } = await setup();
 
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    const notification = sendNotification.mock.calls[0]![0];
-    expect(notification.id).toBe("vortex-update-available");
-    expect(notification.message).toContain("2.7.0");
-    // not downloaded yet: the action is a download, and must say so
-    expect(notification.actions[1].title).toBe("Download");
+    pushState({ type: "available", version: "2.7.0" });
+
+    const updates = sent(sendNotification, "vortex-update-available");
+    expect(updates).toHaveLength(1);
+    expect(updates[0]!.message).toBe("Vortex 2.7.0 is available to download");
+    expect(updates[0]!.actions!.map((action) => action.title)).toEqual(["What's New", "Download"]);
   });
 
-  // Regression pin #22826: a later "downloaded" status must update the same
-  // notification (same id — upsert), flipping the action to Restart.
+  // Regression pin #22826: a later "staged" state must update the same
+  // notification (same id — upsert), flipping the action to Restart Now.
   it("updates the same notification when the download completes", async () => {
-    const { sendNotification, pushStatus } = await setup();
+    const { sendNotification, pushState } = await setup();
 
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    pushStatus({ available: true, downloaded: true, version: "2.7.0" });
+    pushState({ type: "available", version: "2.7.0" });
+    pushState({ type: "staged", version: "2.7.0", kind: "update" });
 
-    expect(sendNotification).toHaveBeenCalledTimes(2);
-    const first = sendNotification.mock.calls[0]![0];
-    const second = sendNotification.mock.calls[1]![0];
-    expect(second.id).toBe(first.id);
-    expect(first.actions[1].title).toBe("Download");
-    expect(first.message).toContain("available to download");
-    expect(second.actions[1].title).toBe("Restart Now");
-    expect(second.message).toContain("ready to install");
+    const updates = sent(sendNotification, "vortex-update-available");
+    expect(updates).toHaveLength(2);
+    expect(updates[1]!.message).toBe("Vortex 2.7.0 is ready to install");
+    expect(updates[1]!.actions!.map((action) => action.title)).toEqual([
+      "What's New",
+      "Restart Now",
+    ]);
   });
 
-  it("presents a downgrade status as an explicit downgrade offer, not an update", async () => {
-    const { sendNotification, pushStatus } = await setup();
+  it("presents a downgrade offer as exactly that, never as an update", async () => {
+    const { sendNotification, pushState } = await setup();
 
-    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
+    pushState({ type: "downgrade-offered", version: "2.5.0" });
 
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    const notification = sendNotification.mock.calls[0]![0];
-    expect(notification.id).toBe("vortex-downgrade-offer");
-    expect(notification.type).toBe("warning");
-    expect(notification.message).toContain("older");
+    const offers = sent(sendNotification, "vortex-downgrade-offer");
+    expect(offers).toHaveLength(1);
+    expect(offers[0]!.type).toBe("warning");
+    expect(offers[0]!.message).toContain("downgrade and older");
+    expect(sent(sendNotification, "vortex-update-available")).toHaveLength(0);
   });
 
-  // Field report: declining left the warning notification up and the offer
-  // armed in main — "Stay on current version" must actually reset both.
+  it("syncs the initial state via getStatus for checks that settled early", async () => {
+    const { sendNotification } = await setup({
+      state: { type: "available", version: "2.8.0" },
+    });
+
+    const updates = sent(sendNotification, "vortex-update-available");
+    expect(updates).toHaveLength(1);
+    expect(updates[0]!.message).toContain("2.8.0");
+  });
+
+  it("re-creates the notification on transitions but not on identical pushes", async () => {
+    const { sendNotification, pushState } = await setup();
+
+    pushState({ type: "available", version: "2.7.0" });
+    // identical push (e.g. re-broadcast) must not churn the notification
+    pushState({ type: "available", version: "2.7.0" });
+    expect(sent(sendNotification, "vortex-update-available")).toHaveLength(1);
+
+    // a transition (download finished) re-creates it so the toast re-shows
+    pushState({ type: "staged", version: "2.7.0", kind: "update" });
+    expect(sent(sendNotification, "vortex-update-available")).toHaveLength(2);
+  });
+
+  // Field report: after a dismissed notification, a re-check of the same
+  // version showed nothing.
+  it("resurrects a dismissed notification on the next identical state", async () => {
+    const { sendNotification, notifications, pushState } = await setup();
+
+    pushState({ type: "available", version: "2.7.0" });
+    expect(sent(sendNotification, "vortex-update-available")).toHaveLength(1);
+
+    // user dismisses it (or an action did)
+    notifications.length = 0;
+
+    pushState({ type: "available", version: "2.7.0" });
+    expect(sent(sendNotification, "vortex-update-available")).toHaveLength(2);
+    expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
+  });
+});
+
+describe("manual check feedback (a pressed button always answers)", () => {
+  it("shows 'Checking...' the moment a manual check starts", async () => {
+    const { sendNotification, pushState } = await setup();
+
+    pushState({ type: "checking", manual: true });
+
+    const checking = sent(sendNotification, "vortex-update-checking");
+    expect(checking).toHaveLength(1);
+    expect(checking[0]!.type).toBe("activity");
+  });
+
+  it("stays silent while a background check runs", async () => {
+    const { sendNotification, pushState } = await setup();
+
+    pushState({ type: "checking", manual: false });
+    pushState({ type: "idle" });
+
+    expect(sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("shows an up-to-date toast when a manual check finds nothing", async () => {
+    const { sendNotification, notifications, pushState } = await setup();
+
+    pushState({ type: "checking", manual: true });
+    pushState({ type: "idle" });
+
+    const toasts = sent(sendNotification, "vortex-up-to-date");
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]!.message).toContain("up to date");
+    // the Checking... feedback settled with the check
+    expect(notifications.some((entry) => entry.id === "vortex-update-checking")).toBe(false);
+  });
+
+  it("re-toasts the unchanged update notification after a manual check", async () => {
+    const { sendNotification, pushState } = await setup();
+
+    pushState({ type: "available", version: "2.7.0" });
+    pushState({ type: "checking", manual: true });
+    pushState({ type: "available", version: "2.7.0" });
+
+    expect(sent(sendNotification, "vortex-update-available")).toHaveLength(2);
+  });
+
+  it("answers a manual check that lands on an in-flight patch download", async () => {
+    const { sendNotification, pushState } = await setup();
+
+    pushState({ type: "checking", manual: true });
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch" });
+
+    const toasts = sent(sendNotification, "vortex-up-to-date");
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]!.message).toContain("2.6.1 is downloading");
+  });
+
+  it("does not claim 'up to date' when a manual check failed", async () => {
+    const { sendNotification, pushState } = await setup();
+
+    pushState({ type: "checking", manual: true });
+    pushState({ type: "error", message: "network down", manual: true });
+
+    expect(sent(sendNotification, "vortex-up-to-date")).toHaveLength(0);
+    expect(sent(sendNotification, "vortex-update-error")).toHaveLength(1);
+  });
+});
+
+describe("downloads", () => {
+  it("shows live progress in the message without re-toasting each tick", async () => {
+    const { sendNotification, dismissNotification, pushState } = await setup();
+
+    pushState({ type: "available", version: "2.7.0" });
+    dismissNotification.mockClear();
+
+    pushState({ type: "downloading", version: "2.7.0", kind: "update", percent: 41 });
+    pushState({ type: "downloading", version: "2.7.0", kind: "update", percent: 42 });
+
+    // progress ticks update in place: no dismiss (which would re-toast)
+    expect(dismissNotification).not.toHaveBeenCalledWith("vortex-update-available");
+    const updates = sent(sendNotification, "vortex-update-available");
+    const last = updates.at(-1)!;
+    expect(last.message).toBe("Downloading Vortex 2.7.0 (42%)");
+    expect(last.progress).toBe(42);
+    // no buttons at all while downloading
+    expect(last.actions).toBeUndefined();
+  });
+
+  it("keeps a patch download quiet until staged, then offers a restart", async () => {
+    const { sendNotification, updater, pushState } = await setup();
+
+    // auto-downloading: nothing to decide, no notification churn
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch" });
+    pushState({ type: "downloading", version: "2.6.1", kind: "patch", percent: 50 });
+    expect(sendNotification).not.toHaveBeenCalled();
+
+    pushState({ type: "staged", version: "2.6.1", kind: "patch" });
+    const updates = sent(sendNotification, "vortex-update-available");
+    expect(updates).toHaveLength(1);
+    expect(updates[0]!.message).toBe("Vortex will update on restart");
+    expect(updates[0]!.actions!.map((action) => action.title)).toEqual(["Restart Now"]);
+
+    updates[0]!.actions![0]!.action(() => undefined);
+    expect(updater.restartAndInstall).toHaveBeenCalledTimes(1);
+  });
+
+  // Field-tested: killing the feed mid-download left "Downloading..." frozen
+  // with no retry. A failed download must recover to a retryable notification
+  // alongside the error one.
+  it("recovers a failed download to a retryable notification", async () => {
+    const { sendNotification, notifications, pushState } = await setup();
+
+    pushState({ type: "available", version: "2.7.0" });
+    pushState({ type: "downloading", version: "2.7.0", kind: "update", percent: 40 });
+    pushState({
+      type: "error",
+      message: "net::ERR_CONNECTION_REFUSED",
+      manual: true,
+      retry: { version: "2.7.0" },
+    });
+
+    expect(notifications.some((entry) => entry.id === "vortex-update-error")).toBe(true);
+    const updates = sent(sendNotification, "vortex-update-available");
+    const last = updates.at(-1)!;
+    expect(last.message).toBe("Vortex 2.7.0 is available to download");
+    expect(last.actions!.map((action) => action.title)).toEqual(["What's New", "Download"]);
+  });
+
+  it("surfaces update errors once and withdraws them on recovery", async () => {
+    const { sendNotification, notifications, pushState } = await setup();
+
+    pushState({ type: "error", message: "signature verification failed", manual: true });
+    pushState({ type: "error", message: "signature verification failed", manual: true });
+
+    expect(sent(sendNotification, "vortex-update-error")).toHaveLength(1);
+    expect(sent(sendNotification, "vortex-update-error")[0]!.type).toBe("error");
+
+    // a later clean state clears the error notification
+    pushState({ type: "idle" });
+    expect(notifications.some((entry) => entry.id === "vortex-update-error")).toBe(false);
+  });
+});
+
+describe("downgrades", () => {
   it("declining the downgrade dismisses the notification and tells main", async () => {
-    const { sendNotification, dismissNotification, showDialog, updater, pushStatus } =
-      await setup();
+    const { sendNotification, dismissNotification, showDialog, updater, pushState } = await setup();
 
-    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
-    const offer = sendNotification.mock.calls[0]![0];
+    pushState({ type: "downgrade-offered", version: "2.5.0" });
+    const offer = sent(sendNotification, "vortex-downgrade-offer")[0]!;
 
     // open the downgrade dialog via the notification's More action
     offer.actions![0]!.action(() => undefined);
@@ -182,10 +364,10 @@ describe("updater status handling", () => {
   });
 
   it("confirming the downgrade downloads without an automatic restart", async () => {
-    const { sendNotification, showDialog, updater, pushStatus } = await setup();
+    const { sendNotification, showDialog, updater, pushState } = await setup();
 
-    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
-    sendNotification.mock.calls[0]![0].actions![0]!.action(() => undefined);
+    pushState({ type: "downgrade-offered", version: "2.5.0" });
+    sent(sendNotification, "vortex-downgrade-offer")[0]!.actions![0]!.action(() => undefined);
     await vi.advanceTimersByTimeAsync(0);
 
     const buttons = showDialog.mock.calls[0]![3] as Array<{
@@ -197,289 +379,66 @@ describe("updater status handling", () => {
     expect(updater.downloadDowngrade).toHaveBeenCalledWith(false);
   });
 
-  // Field report: a confirmed downgrade was narrated as a regular update
-  // ("9.0.0 is available" with a Download button) while it was downloading.
-  it("presents a confirmed downgrade as a downgrade, then as ready to install", async () => {
-    const { sendNotification, pushStatus } = await setup();
+  it("presents a confirmed downgrade as a downgrade, then as ready on restart", async () => {
+    const { sendNotification, pushState } = await setup();
 
-    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrading: true });
+    pushState({ type: "downloading", version: "2.5.0", kind: "downgrade", percent: 12 });
 
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    const downloading = sendNotification.mock.calls[0]![0];
-    expect(downloading.id).toBe("vortex-update-available");
-    expect(downloading.message).toContain("Downgrading to Vortex 2.5.0");
-    // committed flow: nothing for the user to click while it downloads
-    expect(downloading.actions).toBeUndefined();
+    let updates = sent(sendNotification, "vortex-update-available");
+    expect(updates[0]!.message).toBe("Downgrading to Vortex 2.5.0 (12%)");
+    expect(updates[0]!.actions).toBeUndefined();
 
     // once staged it installs on quit, like a patch — and says so
-    pushStatus({ available: true, downloaded: true, version: "2.5.0", downgrading: true });
-    const downloaded = sendNotification.mock.calls[1]![0];
-    expect(downloaded.message).toBe("Vortex will update on restart");
-    expect(downloaded.actions).toHaveLength(1);
-    expect(downloaded.actions![0]!.title).toBe("Restart Now");
+    pushState({ type: "staged", version: "2.5.0", kind: "downgrade" });
+    updates = sent(sendNotification, "vortex-update-available");
+    const last = updates.at(-1)!;
+    expect(last.message).toBe("Vortex will update on restart");
+    expect(last.actions!.map((action) => action.title)).toEqual(["Restart Now"]);
   });
 
-  it("keeps a patch update quiet until staged, then offers a restart", async () => {
-    const { sendNotification, updater, pushStatus } = await setup();
+  // Review finding: when main retracts an offer (failed downgrade, release
+  // pulled from the feed), the standing notification kept dead buttons.
+  it("withdraws standing notifications when nothing is on offer any more", async () => {
+    const { notifications, pushState } = await setup();
 
-    // auto-downloading: nothing to decide, no notification churn
-    pushStatus({ available: true, downloaded: false, version: "2.6.1", patch: true });
-    expect(sendNotification).not.toHaveBeenCalled();
-
-    pushStatus({ available: true, downloaded: true, version: "2.6.1", patch: true });
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    const notification = sendNotification.mock.calls[0]![0];
-    expect(notification.id).toBe("vortex-update-available");
-    expect(notification.message).toBe("Vortex will update on restart");
-    expect(notification.actions).toHaveLength(1);
-    expect(notification.actions![0]!.title).toBe("Restart Now");
-
-    notification.actions![0]!.action(() => undefined);
-    expect(updater.restartAndInstall).toHaveBeenCalledTimes(1);
-  });
-
-  // Review finding: every check broadcasts checking:true statuses that have
-  // the patch/downgrade labels cleared while available/version survive —
-  // acting on them briefly presented a downloading patch as a loud regular
-  // update with a live Download button.
-  it("ignores transient mid-check statuses", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    // e.g. the periodic re-check firing while a patch auto-downloads
-    pushStatus({ available: true, downloaded: false, version: "2.6.1", checking: true });
-    expect(sendNotification).not.toHaveBeenCalled();
-
-    // the settled status carries the real labels again
-    pushStatus({ available: true, downloaded: false, version: "2.6.1", patch: true });
-    expect(sendNotification).not.toHaveBeenCalled();
-  });
-
-  it("answers a manual check during a patch download with a downloading toast", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({
-      available: true,
-      downloaded: false,
-      version: "2.6.1",
-      patch: true,
-      checking: true,
-      manual: true,
-    });
-    pushStatus({
-      available: true,
-      downloaded: false,
-      version: "2.6.1",
-      patch: true,
-      checking: false,
-      manual: true,
-    });
-
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    const toast = sendNotification.mock.calls[0]![0];
-    expect(toast.message).toContain("2.6.1 is downloading");
-  });
-
-  // Review finding: when main retracts an offer (failed downgrade download,
-  // release pulled from the feed), the standing notification kept dead
-  // buttons on screen.
-  it("withdraws standing notifications when nothing is available any more", async () => {
-    const { sendNotification, notifications, pushStatus } = await setup();
-
-    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
-    expect(sendNotification).toHaveBeenCalledTimes(1);
+    pushState({ type: "downgrade-offered", version: "2.5.0" });
     expect(notifications.some((entry) => entry.id === "vortex-downgrade-offer")).toBe(true);
 
-    pushStatus({ available: false, downloaded: false });
+    pushState({ type: "idle" });
     expect(notifications).toHaveLength(0);
 
-    // and the next offer still shows (lastShown was reset)
-    pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
+    // and the next offer still shows
+    pushState({ type: "downgrade-offered", version: "2.5.0" });
     expect(notifications.some((entry) => entry.id === "vortex-downgrade-offer")).toBe(true);
   });
+});
 
+describe("post-update notice", () => {
   it("shows a one-time 'was updated' notice on the first launch after an update", async () => {
-    const { sendNotification, pushStatus } = await setup();
+    const { sendNotification, pushState } = await setup();
 
-    pushStatus({ available: false, downloaded: false, justUpdatedFrom: "2.5.9" });
-    pushStatus({ available: false, downloaded: false, justUpdatedFrom: "2.5.9" });
+    pushState({ type: "idle" }, "2.5.9");
+    pushState({ type: "idle" }, "2.5.9");
 
-    const updated = sendNotification.mock.calls.filter(
-      ([notification]) => notification.id === "vortex-updated",
-    );
+    const updated = sent(sendNotification, "vortex-updated");
     expect(updated).toHaveLength(1);
-    expect(updated[0]![0].message).toContain("was updated to 2.6.0-beta.1");
-    expect(updated[0]![0].actions![0]!.title).toBe("View changes");
-  });
-
-  it("syncs the initial status via getStatus for checks that finished early", async () => {
-    const { sendNotification } = await setup({
-      available: true,
-      downloaded: false,
-      version: "2.8.0",
-    });
-
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    expect(sendNotification.mock.calls[0]![0].message).toContain("2.8.0");
-  });
-
-  it("re-creates the notification on transitions but not on identical pushes", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    // identical push (e.g. re-broadcast) must not churn the notification
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-
-    // a transition (download finished) re-creates it so the toast re-shows
-    pushStatus({ available: true, downloaded: true, version: "2.7.0" });
-    expect(sendNotification).toHaveBeenCalledTimes(2);
-  });
-
-  // Field report: after a dismissed notification (e.g. clicking Restart &
-  // Install in dev), a manual re-check of the same version showed nothing.
-  it("resurrects a dismissed notification on the next identical status", async () => {
-    const { sendNotification, notifications, pushStatus } = await setup();
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-
-    // user dismisses it (or an action did)
-    notifications.length = 0;
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    expect(sendNotification).toHaveBeenCalledTimes(2);
-    expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
-  });
-
-  it("shows an up-to-date toast when a manual check finds nothing", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({ available: false, downloaded: false, checking: true, manual: true });
-    pushStatus({ available: false, downloaded: false, checking: false, manual: true });
-
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-    const toast = sendNotification.mock.calls[0]![0];
-    expect(toast.id).toBe("vortex-up-to-date");
-    expect(toast.message).toContain("up to date");
-  });
-
-  it("re-toasts the unchanged update notification after a manual check", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    expect(sendNotification).toHaveBeenCalledTimes(1);
-
-    // manual re-check resolves the same version: user still expects feedback
-    pushStatus({
-      available: true,
-      downloaded: false,
-      version: "2.7.0",
-      checking: true,
-      manual: true,
-    });
-    pushStatus({
-      available: true,
-      downloaded: false,
-      version: "2.7.0",
-      checking: false,
-      manual: true,
-    });
-
-    expect(sendNotification).toHaveBeenCalledTimes(2);
-    expect(sendNotification.mock.calls[1]![0].id).toBe("vortex-update-available");
-  });
-
-  it("stays quiet when a background check finds nothing", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({ available: false, downloaded: false, checking: true, manual: false });
-    pushStatus({ available: false, downloaded: false, checking: false, manual: false });
-
-    expect(sendNotification).not.toHaveBeenCalled();
-  });
-
-  // Field report: hours of failing downloads were invisible outside the log.
-  it("surfaces update errors once and withdraws them on recovery", async () => {
-    const { sendNotification, notifications, pushStatus } = await setup();
-
-    pushStatus({ available: false, downloaded: false, error: "signature verification failed" });
-    pushStatus({ available: false, downloaded: false, error: "signature verification failed" });
-
-    const errors = sendNotification.mock.calls.filter(
-      ([notification]) => notification.id === "vortex-update-error",
-    );
-    expect(errors).toHaveLength(1);
-    expect(errors[0]![0].type).toBe("error");
-
-    // a later successful check clears the error and the notification
-    pushStatus({ available: false, downloaded: false });
-    expect(notifications.some((entry) => entry.id === "vortex-update-error")).toBe(false);
-  });
-
-  it("does not claim 'up to date' when a manual check failed", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({ available: false, downloaded: false, checking: true, manual: true });
-    pushStatus({ available: false, downloaded: false, manual: true, error: "network down" });
-
-    const ids = sendNotification.mock.calls.map(([notification]) => notification.id);
-    expect(ids).not.toContain("vortex-up-to-date");
-    expect(ids).toContain("vortex-update-error");
-  });
-
-  it("shows live download progress without re-toasting each tick", async () => {
-    const { sendNotification, dismissNotification, pushStatus } = await setup();
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    dismissNotification.mockClear();
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0", downloadProgress: 41 });
-    pushStatus({ available: true, downloaded: false, version: "2.7.0", downloadProgress: 42 });
-
-    // progress ticks update in place: no dismiss (which would re-toast)
-    expect(dismissNotification).not.toHaveBeenCalled();
-    const last = sendNotification.mock.calls.at(-1)![0];
-    // the percent lives in the text: the theme's bar overlay is too subtle
-    expect(last.message).toBe("Downloading Vortex 2.7.0 (42%)");
-    expect(last.progress).toBe(42);
-    // no buttons at all while downloading
-    expect(last.actions).toBeUndefined();
-  });
-
-  // Field-tested: killing the feed mid-download left "Downloading…" frozen
-  // with no retry. A failed download (error set, progress cleared by main)
-  // must recover to a retryable notification alongside the error one.
-  it("recovers a failed download to a retryable notification", async () => {
-    const { sendNotification, notifications, pushStatus } = await setup();
-
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
-    pushStatus({ available: true, downloaded: false, version: "2.7.0", downloadProgress: 40 });
-
-    pushStatus({
-      available: true,
-      downloaded: false,
-      version: "2.7.0",
-      error: "net::ERR_CONNECTION_REFUSED",
-    });
-
-    expect(notifications.some((entry) => entry.id === "vortex-update-error")).toBe(true);
-    const last = sendNotification.mock.calls.at(-1)![0];
-    expect(last.id).toBe("vortex-update-available");
-    expect(last.message).toBe("Vortex 2.7.0 is available to download");
-    expect(last.actions!.map((action) => action.title)).toEqual(["What's New", "Download"]);
+    expect(updated[0]!.message).toContain("was updated to 2.6.0-beta.1");
+    expect(updated[0]!.actions![0]!.title).toBe("View changes");
   });
 
   it("dismisses the 'was updated' notice when an update notification appears", async () => {
-    const { notifications, pushStatus } = await setup();
+    const { notifications, pushState } = await setup();
 
-    pushStatus({ available: false, downloaded: false, justUpdatedFrom: "2.5.9" });
+    pushState({ type: "idle" }, "2.5.9");
     expect(notifications.some((entry) => entry.id === "vortex-updated")).toBe(true);
 
-    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    pushState({ type: "available", version: "2.7.0" }, "2.5.9");
     expect(notifications.some((entry) => entry.id === "vortex-updated")).toBe(false);
     expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
   });
+});
 
+describe("periodic checks", () => {
   it("re-checks periodically so long sessions hear about updates", async () => {
     const { updater } = await setup();
     updater.checkForUpdates.mockClear();
@@ -489,14 +448,5 @@ describe("updater status handling", () => {
 
     await vi.advanceTimersByTimeAsync(4 * 60 * 60 * 1000);
     expect(updater.checkForUpdates).toHaveBeenCalledTimes(2);
-  });
-
-  it("ignores non-available statuses (checking, progress)", async () => {
-    const { sendNotification, pushStatus } = await setup();
-
-    pushStatus({ available: false, downloaded: false, checking: true });
-    pushStatus({ available: false, downloaded: false });
-
-    expect(sendNotification).not.toHaveBeenCalled();
   });
 });
