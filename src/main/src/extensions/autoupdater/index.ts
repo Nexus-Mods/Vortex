@@ -82,6 +82,12 @@ export function setupAutoUpdater(installType: string): void {
   // The version the downloaded installer on disk actually contains; a staged
   // state is only ever valid for this version.
   let downloadedVersion: string | null = null;
+  // A version whose AUTO-download just failed is not auto-retried for a
+  // cooldown (every periodic/manual check would otherwise re-fetch the full
+  // delta); it is offered as a normal downloadable update instead, and a
+  // user-initiated download may always retry immediately.
+  const AUTO_DOWNLOAD_HOLD_MS = 15 * 60 * 1000;
+  let autoDownloadHold: { version: string; until: number } | null = null;
 
   // ---- state machine ------------------------------------------------------
 
@@ -317,12 +323,20 @@ export function setupAutoUpdater(installType: string): void {
     // a successful check, so the network was just up). retry keeps a working
     // Download available alongside the error for regular updates.
     if (current.type === "downloading") {
+      // don't auto-retry this version for a while — every check would
+      // otherwise re-fetch the full delta against the same failure
+      if (current.kind === "patch") {
+        autoDownloadHold = {
+          version: current.version,
+          until: Date.now() + AUTO_DOWNLOAD_HOLD_MS,
+        };
+      }
       setState({
         type: "error",
         message,
         manual: true,
         retry:
-          current.kind === "update"
+          current.kind !== "downgrade"
             ? { version: current.version, releaseNotes: lastResolved?.notesHtml }
             : undefined,
       });
@@ -355,6 +369,7 @@ export function setupAutoUpdater(installType: string): void {
   autoUpdater.on("update-downloaded", (updateInfo: UpdateInfo) => {
     log("info", "Update downloaded", { version: updateInfo.version });
     downloadedVersion = updateInfo.version;
+    autoDownloadHold = null; // a success clears any failure cooldown
     const kind: UpdateKind =
       current.type === "downloading" && current.version === updateInfo.version
         ? current.kind
@@ -520,7 +535,11 @@ export function setupAutoUpdater(installType: string): void {
         // Patch updates auto-download for regular installs; minor/major
         // updates wait for a user decision. A patch found by a MANUAL check
         // downloads visibly — the user's press set it in motion.
-        if (kindFor(resolved.version) === "patch") {
+        const held =
+          autoDownloadHold != null &&
+          autoDownloadHold.version === resolved.version &&
+          Date.now() < autoDownloadHold.until;
+        if (kindFor(resolved.version) === "patch" && !held) {
           log("info", "Patch update detected, auto-downloading", {
             from: currentVersion,
             to: resolved.version,
@@ -531,6 +550,14 @@ export function setupAutoUpdater(installType: string): void {
             log("warn", "Auto-download failed", { error: getErrorMessageOrDefault(err) });
           });
           return;
+        }
+        if (held) {
+          // a patch that just failed its auto-download is offered like a
+          // regular update instead: the user keeps a working Download button
+          // and background checks stop re-fetching against the same failure
+          log("info", "Auto-download on hold after a recent failure, offering instead", {
+            version: resolved.version,
+          });
         }
 
         setState({
