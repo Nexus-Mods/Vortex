@@ -66,9 +66,9 @@ export interface UpdateStatus {
   /** Error message if update check failed */
   error?: string;
   /**
-   * The offered version is lower than the running one. Only ever set for
-   * checks on the stable channel (a prerelease build whose user chose
-   * stable), never presented as a regular update.
+   * The offered version is lower than the running one. Only ever set after
+   * a purposeful switch to the stable channel, never for background checks,
+   * and never presented as a regular update.
    */
   downgrade?: boolean;
   /**
@@ -274,12 +274,12 @@ export interface RendererChannels extends RendererCallbackChannels {
   // Updater: Download the available update (installAfterDownload triggers auto-restart when done)
   "updater:download": (channel: string, installAfterDownload: boolean) => void;
 
-  // Updater: Download the downgrade offered on the stable channel.
-  // Ignored unless a downgrade offer is outstanding.
+  // Updater: Download the downgrade offered after an explicit switch to
+  // stable. Ignored unless a downgrade offer is outstanding.
   "updater:download-downgrade": (installAfterDownload: boolean) => void;
 
-  // Updater: Decline the outstanding downgrade offer. Clears the offer until
-  // the next check (manual, periodic, or next launch) raises it again.
+  // Updater: Decline the outstanding downgrade offer. Clears the offer;
+  // only another purposeful switch to stable raises it again.
   "updater:decline-downgrade": () => void;
 
   // Updater: Restart and install update

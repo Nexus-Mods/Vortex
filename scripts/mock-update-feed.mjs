@@ -90,12 +90,24 @@ function latestYmlForTag(tag) {
   ].join("\n");
 }
 
+function fmtSize(bytes) {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${bytes} B`;
+}
+
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${port}`);
-  console.log(`${req.method} ${url.pathname}`);
 
   const listing = /^\/repos\/Nexus-Mods\/[^/]+\/releases$/.exec(url.pathname);
   if (listing != null) {
+    console.log(
+      `${req.method} ${url.pathname} -> 200 (release listing, ${releases.length} releases)`,
+    );
     res.writeHead(200, { "content-type": "application/json", etag: '"mock-feed"' });
     res.end(JSON.stringify(releases));
     return;
@@ -104,6 +116,7 @@ const server = createServer((req, res) => {
   const download = /^\/Nexus-Mods\/[^/]+\/releases\/download\/([^/]+)\/(.+)$/.exec(url.pathname);
   if (download != null) {
     const [, tag, asset] = download;
+    const label = `${req.method} ${tag}/${asset}`;
     // real files win over generated dummies (needed for blockmap testing:
     // blockmaps must match the actual installer bytes); a per-tag
     // subdirectory wins over the flat dir, so tag-specific files that share
@@ -111,10 +124,13 @@ const server = createServer((req, res) => {
     if (assetsDir != null && /^[\w.-]+$/.test(asset) && /^[\w.-]+$/.test(tag)) {
       try {
         let content;
+        let source;
         try {
           content = readFileSync(path.join(assetsDir, tag, asset));
+          source = `assets\\${tag}`;
         } catch {
           content = readFileSync(path.join(assetsDir, asset));
+          source = "assets";
         }
         // the differential downloader fetches byte ranges of the installer
         const range = /^bytes=(\d+)-(\d+)?$/.exec(req.headers.range ?? "");
@@ -122,6 +138,9 @@ const server = createServer((req, res) => {
           const start = Number(range[1]);
           const end = range[2] != null ? Number(range[2]) : content.length - 1;
           const slice = content.subarray(start, end + 1);
+          console.log(
+            `${label} -> 206 bytes ${start}-${end} (${fmtSize(slice.length)}) [${source}]`,
+          );
           res.writeHead(206, {
             "content-type": "application/octet-stream",
             "content-length": slice.length,
@@ -131,6 +150,7 @@ const server = createServer((req, res) => {
           res.end(slice);
           return;
         }
+        console.log(`${label} -> 200 full file (${fmtSize(content.length)}) [${source}]`);
         res.writeHead(200, {
           "content-type": "application/octet-stream",
           "content-length": content.length,
@@ -144,16 +164,19 @@ const server = createServer((req, res) => {
     }
     if (asset.endsWith(".blockmap")) {
       // no real blockmap available: 404 exercises the full-download fallback
+      console.log(`${label} -> 404 (no blockmap on disk; full-download fallback)`);
       res.writeHead(404, { "content-type": "text/plain" });
       res.end("no blockmap");
       return;
     }
     if (asset === "latest.yml") {
+      console.log(`${label} -> 200 (generated latest.yml for ${tag})`);
       res.writeHead(200, { "content-type": "text/yaml" });
       res.end(latestYmlForTag(tag));
       return;
     }
     if (asset.toLowerCase().endsWith(".exe")) {
+      console.log(`${label} -> 200 (generated dummy installer, ${fmtSize(installerBytes.length)})`);
       res.writeHead(200, {
         "content-type": "application/octet-stream",
         "content-length": installerBytes.length,
@@ -163,6 +186,7 @@ const server = createServer((req, res) => {
     }
   }
 
+  console.log(`${req.method} ${url.pathname} -> 404`);
   res.writeHead(404, { "content-type": "text/plain" });
   res.end("not found");
 });

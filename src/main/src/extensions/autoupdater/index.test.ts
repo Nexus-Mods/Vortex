@@ -341,9 +341,10 @@ describe("downgrade offers", () => {
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
   });
 
-  // A declined offer must come back on the next check — launch sync and the
-  // periodic re-check included — so background stable-channel checks offer too.
-  it("re-offers the downgrade on background stable-channel checks", async () => {
+  // Field report: the offer showed on plain app launch. Downgrades must only
+  // ever be offered on a purposeful switch to stable, never from the launch
+  // sync, Check now, or the periodic re-check.
+  it("never offers a downgrade on a background channel sync", async () => {
     appMock.getVersion.mockReturnValue("2.6.0-beta.1");
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
@@ -352,13 +353,19 @@ describe("downgrade offers", () => {
     ipcHandler("updater:set-channel")(undefined, "stable", false);
     await flush();
 
-    const status = getStatus();
-    expect(status.downgrade).toBe(true);
-    expect(status.available).toBe(true);
-    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+    let status = getStatus();
+    expect(status.downgrade).toBeUndefined();
+    expect(status.available).toBe(false);
+
+    // Check now on the stable channel doesn't offer either
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+    status = getStatus();
+    expect(status.downgrade).toBeUndefined();
+    expect(status.available).toBe(false);
   });
 
-  it("declining clears the offer until the next check", async () => {
+  it("declining clears the offer until the next switch to stable", async () => {
     appMock.getVersion.mockReturnValue("2.6.0-beta.1");
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
@@ -377,8 +384,8 @@ describe("downgrade offers", () => {
     await flush();
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
 
-    // ...but the next stable-channel check raises it again
-    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    // ...but another purposeful switch to stable raises it again
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
     await flush();
     expect(getStatus().downgrade).toBe(true);
   });

@@ -120,15 +120,14 @@ export function pickRelease(
 
 /**
  * Classify what the resolved version means relative to the running version.
- * A lower version is only ever surfaced as a "downgrade-offer" for checks on
- * the stable channel (the user chose stable while running something newer);
- * checks on prerelease channels ignore it — offering it there unasked is the
- * old field bug.
+ * A lower version is only ever surfaced as a "downgrade-offer" when the user
+ * explicitly switched to the stable channel; background checks ignore it —
+ * offering it unasked is the old field bug.
  */
 export function classifyUpdate(
   currentVersion: string,
   resolvedVersion: string | null,
-  opts: { stableChannel: boolean },
+  opts: { switchToStable: boolean },
 ): "upgrade" | "downgrade-offer" | "none" {
   const current = semver.valid(currentVersion);
   if (current == null) {
@@ -141,7 +140,7 @@ export function classifyUpdate(
   if (semver.gt(resolvedVersion, current)) {
     return "upgrade";
   }
-  return opts.stableChannel ? "downgrade-offer" : "none";
+  return opts.switchToStable ? "downgrade-offer" : "none";
 }
 
 /**
