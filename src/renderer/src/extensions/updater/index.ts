@@ -162,7 +162,11 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
         context.api.sendNotification({
           id: "vortex-update-available",
           type: "info",
-          message: `Vortex ${status.version} is available`,
+          // once staged, the update installs on quit — say so rather than
+          // surprising the user when they close Vortex
+          message: status.downloaded
+            ? `Vortex ${status.version} will install when you close Vortex`
+            : `Vortex ${status.version} is available`,
           actions: [
             {
               title: "More",
