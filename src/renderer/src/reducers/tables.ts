@@ -8,7 +8,8 @@ interface TableAttributeState {
 }
 
 interface TableState {
-  attributes: Record<string, TableAttributeState>;
+  // optional: pre-2.6.0 persisted entries may only contain filter/groupBy/collapsedGroups
+  attributes?: Record<string, TableAttributeState>;
   filter?: Record<string, unknown>;
   groupBy?: string;
   collapsedGroups?: string[];
@@ -22,13 +23,16 @@ export const tableReducer = actionsToReducerSpec(defaultState, actions, {
   setAttributeVisible: (state, payload) => {
     const { tableId, attributeId, visible } = payload;
     const table = state[tableId] ?? defaultTableState;
+    // persisted pre-2.6.0 table entries may lack `attributes` (old setSafe reducers
+    // only created the paths they wrote)
+    const tableAttributes = table.attributes ?? {};
     return {
       ...state,
       [tableId]: {
         ...table,
         attributes: {
-          ...table.attributes,
-          [attributeId]: { ...table.attributes[attributeId], enabled: visible },
+          ...tableAttributes,
+          [attributeId]: { ...tableAttributes[attributeId], enabled: visible },
         },
       },
     };
@@ -53,10 +57,12 @@ export const tableReducer = actionsToReducerSpec(defaultState, actions, {
     // ensure sorting for other columns is reset because we don't support sorting by multiple
     // attributes atm
     const attributes: Record<string, TableAttributeState> = Object.fromEntries(
-      Object.entries(table.attributes).map(([iter, attribute]): [string, TableAttributeState] => [
-        iter,
-        { ...attribute, sortDirection: "none" },
-      ]),
+      Object.entries(table.attributes ?? {}).map(
+        ([iter, attribute]): [string, TableAttributeState] => [
+          iter,
+          { ...attribute, sortDirection: "none" },
+        ],
+      ),
     );
     return {
       ...state,
