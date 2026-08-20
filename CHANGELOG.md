@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0-beta.2] - 2026-08-20
+
+### Fixed
+
+- Health check fixes: requirements pointing to the Vortex mod page are now treated as satisfied, and optional collection mods are skipped from file requirement checks ([#23974](https://github.com/Nexus-Mods/Vortex/pull/23974))
+- Plugins left disabled after collection installs ([#23964](https://github.com/Nexus-Mods/Vortex/pull/23964))
+
 ## [2.6.0-beta.1] - 2026-08-11
 
 _First beta of the 2.6 release._
@@ -2216,6 +2223,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.6.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.6.0-beta.2
 [2.6.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.6.0-beta.1
 [2.5.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0
 [2.5.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.5.0-beta.2
