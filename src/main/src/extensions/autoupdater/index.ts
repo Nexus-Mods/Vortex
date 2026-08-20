@@ -91,8 +91,11 @@ export function setupAutoUpdater(installType: string): void {
   // on failure it reports via the "error" event (or, rarely, throws), which we
   // route to handleInstallFailure to decide whether to retry.
   function attemptInstall(): void {
-    if (process.env.NODE_ENV === "development") {
-      log("info", "Skipping install (dev mode)");
+    // Never install from an unpackaged (run-from-source) build: with the dev
+    // updater enabled a real installer may have been downloaded, and running
+    // it would install over the machine's actual Vortex.
+    if (process.env.NODE_ENV === "development" || !app.isPackaged) {
+      log("info", "Skipping install (unpackaged/dev build)");
       return;
     }
     installPending = true;
@@ -163,6 +166,15 @@ export function setupAutoUpdater(installType: string): void {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
 
+  // Run-from-source builds skip the library's check ("application is not
+  // packed"). Opting in via VORTEX_DEV_UPDATER=1 makes it read
+  // dev-app-update.yml (in src/main) instead, so check/notify/download can be
+  // exercised against the mock feed. Installs stay packaged-only regardless.
+  if (!app.isPackaged && process.env.VORTEX_DEV_UPDATER === "1") {
+    autoUpdater.forceDevUpdateConfig = true;
+    log("info", "Dev updater enabled (forceDevUpdateConfig, dev-app-update.yml)");
+  }
+
   // Error handler
   autoUpdater.on("error", (err) => {
     const message = getErrorMessageOrDefault(err);
@@ -227,8 +239,9 @@ export function setupAutoUpdater(installType: string): void {
     lastBroadcastPercent = -1;
     broadcastStatus();
 
-    // Set up auto-install on quit (unless dev mode)
-    if (process.env.NODE_ENV !== "development") {
+    // Set up auto-install on quit (packaged builds only — an unpackaged run
+    // with the dev updater must never install what it downloaded)
+    if (process.env.NODE_ENV !== "development" && app.isPackaged) {
       autoUpdater.autoInstallOnAppQuit = true;
       app.on("before-quit", showUpdateWarning);
       log("info", "Auto-install on quit enabled");
