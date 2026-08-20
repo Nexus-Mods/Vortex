@@ -109,7 +109,28 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
         .getState()
         .session.notifications.notifications.some((notification) => notification.id === id);
 
+    let prevStatus: UpdateStatus | null = null;
+
     const handleUpdateStatus = (status: UpdateStatus) => {
+      // A user-initiated check deserves visible feedback either way: re-toast
+      // the update notification even if nothing changed, or say "up to date".
+      const manualCheckCompleted =
+        prevStatus?.checking === true && prevStatus.manual === true && status.checking !== true;
+      prevStatus = status;
+      if (manualCheckCompleted) {
+        if (status.available) {
+          lastShown = null; // bypass the dedupe so the toast re-shows
+        } else {
+          context.api.sendNotification({
+            id: "vortex-up-to-date",
+            type: "success",
+            message: `Vortex ${getApplication().version} is up to date`,
+            displayMS: 5000,
+          });
+          return;
+        }
+      }
+
       const shown = {
         version: status.version,
         downloaded: status.downloaded,

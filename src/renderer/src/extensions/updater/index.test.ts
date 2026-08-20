@@ -15,6 +15,7 @@ interface FakeStatus {
   releaseNotes?: string;
   downgrade?: boolean;
   checking?: boolean;
+  manual?: boolean;
 }
 
 interface FakeNotification {
@@ -188,6 +189,53 @@ describe("updater status handling", () => {
     pushStatus({ available: true, downloaded: false, version: "2.7.0" });
     expect(sendNotification).toHaveBeenCalledTimes(2);
     expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
+  });
+
+  it("shows an up-to-date toast when a manual check finds nothing", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    pushStatus({ available: false, downloaded: false, checking: true, manual: true });
+    pushStatus({ available: false, downloaded: false, checking: false, manual: true });
+
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+    const toast = sendNotification.mock.calls[0]![0];
+    expect(toast.id).toBe("vortex-up-to-date");
+    expect(toast.message).toContain("up to date");
+  });
+
+  it("re-toasts the unchanged update notification after a manual check", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+
+    // manual re-check resolves the same version: user still expects feedback
+    pushStatus({
+      available: true,
+      downloaded: false,
+      version: "2.7.0",
+      checking: true,
+      manual: true,
+    });
+    pushStatus({
+      available: true,
+      downloaded: false,
+      version: "2.7.0",
+      checking: false,
+      manual: true,
+    });
+
+    expect(sendNotification).toHaveBeenCalledTimes(2);
+    expect(sendNotification.mock.calls[1]![0].id).toBe("vortex-update-available");
+  });
+
+  it("stays quiet when a background check finds nothing", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    pushStatus({ available: false, downloaded: false, checking: true, manual: false });
+    pushStatus({ available: false, downloaded: false, checking: false, manual: false });
+
+    expect(sendNotification).not.toHaveBeenCalled();
   });
 
   it("re-checks periodically so long sessions hear about updates", async () => {
