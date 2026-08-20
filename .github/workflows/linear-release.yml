@@ -32,60 +32,48 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-depth: 0
 
-      - name: Resolve release tag and channel
-        id: release
-        env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-          PRERELEASE: ${{ github.event_name == 'release' && github.event.release.prerelease || contains(inputs.tag, '-') }}
-        run: |
-          if ! git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
-            echo "::error::Tag '$TAG' not found"
-            exit 1
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
-
-      - name: Determine previous release tag
-        id: prev
-        env:
-          TAG: ${{ steps.release.outputs.tag }}
-          PRERELEASE: ${{ steps.release.outputs.prerelease }}
-        run: |
-          # The scan base is the previous tag on the same channel:
-          # pre-releases compare against the previous pre-release, stables
-          # against the previous stable. git log <prev>..<tag> handles tags on
-          # diverged release branches (the reachability difference is exactly
-          # the commits new to this release).
-          if [ "$PRERELEASE" = "true" ]; then
-            pattern='^v[0-9]+\.[0-9]+\.[0-9]+-'
-          else
-            pattern='^v[0-9]+\.[0-9]+\.[0-9]+$'
-          fi
-          prev=$(git tag --list 'v*' | grep -E "$pattern" | grep -vFx "$TAG" \
-            | { cat; echo "$TAG"; } | sort -uV \
-            | awk -v cur="$TAG" '$0 == cur { print p; exit } { p = $0 }')
-          if [ -n "$prev" ]; then
-            echo "Scanning $prev..$TAG"
-          else
-            echo "No previous tag found; the release CLI will use its default scan base"
-          fi
-          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+      - name: Prepare release range
+        id: prepare
+        uses: ./.github/actions/linear-release
+        with:
+          mode: prepare
+          tag: ${{ github.event.release.tag_name || inputs.tag }}
+          # release event carries the flag; on dispatch a '-' in the tag means pre-release
+          prerelease: ${{ github.event_name == 'release' && github.event.release.prerelease || contains(inputs.tag, '-') }}
 
       - name: Sync issues to release
+        id: sync
         uses: linear/linear-release-action@v0
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
-          version: ${{ steps.release.outputs.tag }}
-          base_ref: ${{ steps.prev.outputs.tag }}
+          name: ${{ steps.prepare.outputs.tag }}
+          version: ${{ steps.prepare.outputs.tag }}
+          base_ref: ${{ steps.prepare.outputs.base }}
+          release_notes: ${{ steps.prepare.outputs.notes-file }}
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           log_level: verbose
 
       - name: Mark release as released
+        id: complete
         uses: linear/linear-release-action@v0
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: complete
-          version: ${{ steps.release.outputs.tag }}
+          version: ${{ steps.prepare.outputs.tag }}
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           log_level: verbose
+
+      - name: Write run summary
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        uses: ./.github/actions/linear-release
+        with:
+          mode: summary
+          tag: ${{ steps.prepare.outputs.tag }}
+          prevtag: ${{ steps.prepare.outputs.prevtag }}
+          base: ${{ steps.prepare.outputs.base }}
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+          sync-outcome: ${{ steps.sync.outcome }}
+          complete-outcome: ${{ steps.complete.outcome }}
+          notes-file: ${{ steps.prepare.outputs.notes-file }}
+          release-url: ${{ steps.sync.outputs.release-url }}
