@@ -333,7 +333,12 @@ class Steam implements IGameStore {
             return this.mBaseFolder.then((basePath) =>
               PromiseBB.map(entries, async (entry) => {
                 try {
-                  const protonInfo = await getProtonInfo(basePath, steamAppsPath, entry.appid);
+                  const protonInfo = await getProtonInfo(
+                    basePath,
+                    steamPaths,
+                    steamAppsPath,
+                    entry.appid,
+                  );
                   entry.usesProton = protonInfo.usesProton;
                   entry.compatDataPath = protonInfo.compatDataPath;
                   entry.protonPath = protonInfo.protonPath;
