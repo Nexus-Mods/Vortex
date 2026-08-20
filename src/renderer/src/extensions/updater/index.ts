@@ -96,9 +96,32 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
       });
     };
 
+    // The toast only shows when a notification is created — same-id updates
+    // keep their createdTime and stay collapsed in the tray. Dismiss and
+    // re-send on user-meaningful transitions (new version, download finished)
+    // so the toast re-appears; skip pushes that change nothing the user sees
+    // (e.g. download progress).
+    let lastShown: { version?: string; downloaded: boolean; downgrade: boolean } | null = null;
+
     const handleUpdateStatus = (status: UpdateStatus) => {
+      const shown = {
+        version: status.version,
+        downloaded: status.downloaded,
+        downgrade: status.downgrade === true,
+      };
+      if (
+        lastShown != null &&
+        lastShown.version === shown.version &&
+        lastShown.downloaded === shown.downloaded &&
+        lastShown.downgrade === shown.downgrade
+      ) {
+        return;
+      }
+
       if (status.downgrade) {
         if (status.version) {
+          lastShown = shown;
+          context.api.dismissNotification?.("vortex-downgrade-offer");
           showDowngradeOffer(status);
         } else {
           log("warn", "downgrade status without a version", status);
@@ -106,6 +129,8 @@ If you downgrade, Vortex will restart and install ${status.version} as soon as t
         return;
       }
       if (status.available && status.version) {
+        lastShown = shown;
+        context.api.dismissNotification?.("vortex-update-available");
         context.api.sendNotification({
           id: "vortex-update-available",
           type: "info",
