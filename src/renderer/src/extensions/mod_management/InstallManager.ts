@@ -84,6 +84,7 @@ import {
   isOutstandingOptionalMember,
   isTerminalMemberStatus,
   modRuleId,
+  referenceId,
 } from "../../util/collectionInstallSession";
 import {
   getCollectionActiveSession,
@@ -96,6 +97,7 @@ import {
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import {
+  matchSessionRuleEntry,
   planDependencyErrorRecovery,
   sessionWriteForDependency,
 } from "../../util/collectionSessionWrite";
@@ -148,6 +150,7 @@ import { resolveCategoryId } from "../category_management/util/retrieveCategoryP
 import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
+import { appendReferenceTagActions } from "../download_management/util/referenceTags";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import type { IModType } from "../gamemode_management/types/IModType";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -197,6 +200,8 @@ import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
 import { selectRequeueCandidates } from "./util/requeueCandidates";
 import { OPTIONAL_PHASE, rulePhase } from "./util/rulePhase";
 import testModReference, {
+  downloadHasReferenceTag,
+  downloadReferenceTags,
   downloadToModRef,
   idOnlyRef,
   isDependencyRule,
@@ -292,7 +297,7 @@ function findDownloadByReferenceTag(
   return (
     Object.keys(downloads).find(
       (id) =>
-        downloads[id].modInfo?.referenceTag === reference.tag ||
+        downloadHasReferenceTag(downloads[id], reference.tag) ||
         (reference.md5Hint && downloads[id].fileMD5 === reference.md5Hint),
     ) || null
   );
@@ -722,9 +727,9 @@ class InstallManager {
     if (hasPhaseState) {
       const phaseState = this.mPhaseTracker.get(collectionId);
       if (phaseState) {
-        // Add this download to the cache
-        if (download.modInfo?.referenceTag) {
-          phaseState.downloadLookupCache.byTag.set(download.modInfo.referenceTag, downloadId);
+        // Add this download to the cache under every rule tag it satisfies
+        for (const tag of downloadReferenceTags(download)) {
+          phaseState.downloadLookupCache.byTag.set(tag, downloadId);
         }
         if (download.fileMD5) {
           phaseState.downloadLookupCache.byMd5.set(download.fileMD5, downloadId);
@@ -742,12 +747,17 @@ class InstallManager {
       lookupResults: [], // Will be populated if needed
       download: downloadId,
       phase: rulePhase(matchingRule),
+      sessionRuleId: modRuleId(matchingRule),
     };
 
     // record that this collection mod's download is available, coupled to the install
     // queueing below so we never mark "downloaded" for a download we then don't install
     // (no-op outside an active collection session)
-    this.writeCollectionSession(dependency.reference, { type: "status", status: "downloaded" });
+    this.writeCollectionSession(
+      dependency.reference,
+      { type: "status", status: "downloaded" },
+      dependency.sessionRuleId,
+    );
 
     // Ensure the phase is marked as having downloads finished
     // This is needed when downloads complete after initial dependency processing
@@ -1246,6 +1256,9 @@ class InstallManager {
     const batchContext = getBatchContext(["install-dependencies", "install-recommendations"], "");
     const profileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const currentProfile = profileById(state, profileId) ?? activeProfile(state);
+    // lets attribute extractors take the tag from the rule being installed rather than from
+    // whichever collection stamped the archive
+    const installingReference = modReference;
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mInstallLimit
@@ -1253,7 +1266,7 @@ class InstallManager {
         return new Promise<string>((resolve, reject) => {
           const installationZip = new Zip();
 
-          const fullInfo = { ...info };
+          const fullInfo = { ...info, modReference: installingReference };
           let rules: IRule[] = [];
           let overrides: string[] = [];
           let destinationPath: string;
@@ -2514,10 +2527,12 @@ class InstallManager {
           if (existingMod == null) {
             // about to actually install (not reusing an existing mod): mark installing so
             // the collection session reflects the live install phase
-            this.writeCollectionSession(currentDep.reference, {
-              type: "status",
-              status: "installing",
-            });
+            this.writeCollectionSession(
+              currentDep.reference,
+              { type: "status", status: "installing" },
+              currentDep.sessionRuleId,
+              sourceModId,
+            );
           }
           const modId =
             existingMod != null
@@ -2551,7 +2566,12 @@ class InstallManager {
             // record the successful install on the collection session (no-op outside an
             // active collection session). This is the sole writer of the "installed"
             // status, covering both a freshly installed mod and a reused existing one.
-            this.writeCollectionSession(currentDep.reference, { type: "installed", modId });
+            this.writeCollectionSession(
+              currentDep.reference,
+              { type: "installed", modId },
+              currentDep.sessionRuleId,
+              sourceModId,
+            );
 
             // Apply any extra attributes
             this.applyExtraFromRule(api, gameId, modId, {
@@ -2690,7 +2710,12 @@ class InstallManager {
               // Retries exhausted: settle the member as failed (terminal) so the collection can
               // still complete and the member is not re-prompted. writeCollectionSession no-ops
               // over an already-terminal status, so this only settles a genuinely stuck member.
-              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
+              this.writeCollectionSession(
+                dep.reference,
+                { type: "status", status: "failed" },
+                dep.sessionRuleId,
+                sourceModId,
+              );
               if (recovery.showError) {
                 this.showDependencyError(
                   api,
@@ -3298,6 +3323,12 @@ class InstallManager {
           const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
           this.mPendingInstalls.delete(installKey);
           this.mActiveInstalls.delete(installKey);
+          // the mod exists with the wanted install spec: settle the member on the session's own
+          // rule, or every poll tick selects it again
+          this.writeCollectionSession(mod.rule.reference, {
+            type: "installed",
+            modId: existingMod.id,
+          });
           api.events.emit(
             "did-install-mod",
             gameId,
@@ -3474,7 +3505,7 @@ class InstallManager {
       this.mOptionalDownloadsInFlight.add(key);
       // mark downloading up front so a subsequent poll tick doesn't re-select it before the async
       // gather resolves; the in-flight set is the hard guard, this keeps the session status honest.
-      this.writeCollectionSession(rule.reference, { type: "status", status: "downloading" });
+      this.writeCollectionSession(rule.reference, { type: "status", status: "downloading" }, key);
       gatherDependencies([rule], api, true, undefined, this.addToPhaseStateCache(api))
         .then((deps: IDependency[]): Promise<string | undefined> => {
           const dep = deps[0];
@@ -3517,7 +3548,7 @@ class InstallManager {
           // leave a canceled/torn-down install alone; otherwise settle failed so the member becomes
           // terminal and stops blocking completion.
           if (!(err instanceof UserCanceled) && this.mDependencyInstalls[sourceModId]) {
-            this.writeCollectionSession(rule.reference, { type: "status", status: "failed" });
+            this.writeCollectionSession(rule.reference, { type: "status", status: "failed" }, key);
           }
         });
     }
@@ -3664,9 +3695,13 @@ class InstallManager {
     // the members below fail by watchdog fiat, not by their own attempts: mark the session so
     // the finished dialog presents the install as incomplete rather than complete-with-failures
     api.store.dispatch(markSessionStalled(session.sessionId, true));
-    Object.values(session.mods).forEach((mod) => {
+    Object.entries(session.mods).forEach(([ruleId, mod]) => {
       if (!isTerminalMemberStatus(mod.status) && mod.rule?.reference != null) {
-        this.writeCollectionSession(mod.rule.reference, { type: "status", status: "failed" });
+        this.writeCollectionSession(
+          mod.rule.reference,
+          { type: "status", status: "failed" },
+          ruleId,
+        );
       }
     });
   }
@@ -5533,8 +5568,15 @@ class InstallManager {
               if (successResult === undefined) {
                 return Promise.reject(results[0].error);
               } else {
-                api.store.dispatch(
-                  setDownloadModInfo(results[0].dlId, "referenceTag", referenceTag),
+                // the resolved download may be one another collection already fetched, so the tag
+                // is added to its set rather than replacing what it carries
+                batchDispatch(
+                  api.store,
+                  appendReferenceTagActions(
+                    results[0].dlId,
+                    api.getState().persistent.downloads.files[results[0].dlId],
+                    referenceTag,
+                  ),
                 );
                 if (parentCollection !== undefined) {
                   // See downloadURL: kept off nexus.ids.collectionId to avoid the
@@ -5678,8 +5720,13 @@ class InstallManager {
               [path.join(stagingPath, sourceMod.installationPath, dep.extra.localPath)],
               (dlIds: string[]) => {
                 if (dlIds.length > 0) {
-                  api.store.dispatch(
-                    setDownloadModInfo(dlIds[0], "referenceTag", dep.reference.tag),
+                  batchDispatch(
+                    api.store,
+                    appendReferenceTagActions(
+                      dlIds[0],
+                      api.getState().persistent.downloads.files[dlIds[0]],
+                      dep.reference.tag,
+                    ),
                   );
                   resolve(dlIds[0]);
                 } else {
@@ -5897,13 +5944,16 @@ class InstallManager {
               this.dropUnfulfilled(api, dep, gameId, sourceModId, recommended);
               return undefined;
             }
-            // A terminal download/install failure settles the member as failed on the collection
-            // session. Keyed on the dependency's own reference, so it does not depend on matching the
-            // (possibly md5-less, tag-drifted) failed download back to a rule - which is how a failed
-            // download would otherwise be left stuck on "downloading". No-ops outside an active
-            // collection session and over an already-terminal status.
+            // Settle the member as failed, addressed by its own session key so it does not depend
+            // on matching the failed download back to a rule. No-ops outside an active session
+            // and over an already-terminal status.
             const settleMemberFailed = () =>
-              this.writeCollectionSession(dep.reference, { type: "status", status: "failed" });
+              this.writeCollectionSession(
+                dep.reference,
+                { type: "status", status: "failed" },
+                dep.sessionRuleId,
+                sourceModId,
+              );
             // don't cancel the whole process if one dependency fails to install
             if (innerErr instanceof ProcessCanceled) {
               if (
@@ -6187,7 +6237,12 @@ class InstallManager {
       // mark the dependency as downloading on the collection session (no-op outside an
       // active collection session). Bundled mods are imported, not queued here, so they
       // are naturally excluded - matching the old driver's bundled skip.
-      this.writeCollectionSession(dep.reference, { type: "status", status: "downloading" });
+      this.writeCollectionSession(
+        dep.reference,
+        { type: "status", status: "downloading" },
+        dep.sessionRuleId,
+        sourceModId,
+      );
       if (dep.reference.tag !== undefined) {
         queuedDownloads.push(dep.reference);
       }
@@ -6244,7 +6299,7 @@ class InstallManager {
                 const downloadId = Object.keys(currentDownloads).find(
                   (dlId) =>
                     currentDownloads[dlId].localPath === alreadyDlErr?.fileName ||
-                    currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag,
+                    downloadHasReferenceTag(currentDownloads[dlId], dep.reference?.tag),
                 );
 
                 if (downloadId) {
@@ -6271,8 +6326,8 @@ class InstallManager {
                 // and if so, try to resume it through the concurrent queue
                 setTimeout(() => {
                   const currentDownloads = api.getState().persistent.downloads.files;
-                  const downloadId = Object.keys(currentDownloads).find(
-                    (dlId) => currentDownloads[dlId].modInfo?.referenceTag === dep.reference?.tag,
+                  const downloadId = Object.keys(currentDownloads).find((dlId) =>
+                    downloadHasReferenceTag(currentDownloads[dlId], dep.reference?.tag),
                   );
 
                   if (downloadId && currentDownloads[downloadId].state === "paused") {
@@ -6303,8 +6358,8 @@ class InstallManager {
               // Try to resolve the download by referenceTag if possible
               const tag = dep.reference?.tag;
               if (truthy(tag)) {
-                const foundId = Object.keys(currentDownloads).find(
-                  (dlId) => currentDownloads[dlId]?.modInfo?.referenceTag === tag,
+                const foundId = Object.keys(currentDownloads).find((dlId) =>
+                  downloadHasReferenceTag(currentDownloads[dlId], tag),
                 );
                 if (foundId) {
                   log("info", "Resolved missing download id from referenceTag", {
@@ -6487,23 +6542,18 @@ class InstallManager {
 
           if (
             dep.reference.tag !== undefined &&
-            downloads[downloadId].modInfo?.referenceTag !== undefined &&
-            downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag
+            !downloadHasReferenceTag(downloads[downloadId], dep.reference.tag)
           ) {
-            // we can't change the tag on the download because that might break
-            // dependencies on the other mod
-            // instead we update the rule in the collection. This has to happen immediately,
-            // otherwise the installation might have weird issues around the mod
-            // being installed having a different tag than the rule
-            const reference: IModReference = {
-              ...dep.reference,
-              tag: downloads[downloadId].modInfo.referenceTag,
-            };
-            dep.reference =
-              this.updateModRule(api, gameId, sourceModId, dep, reference, recommended)
-                ?.reference ?? reference;
-
-            dep.mod = findModByRef(dep.reference, api.getState().persistent.mods[gameId]);
+            // the archive satisfies this rule too: record this rule's tag alongside the tags it
+            // carries. The rule and dep.reference stay as they are - the session is keyed from
+            // them, and other collections resolve the archive by their own tag.
+            batchDispatch(
+              api.store,
+              appendReferenceTagActions(downloadId, downloads[downloadId], dep.reference.tag),
+            );
+            this.mPhaseTracker
+              .get(sourceModId)
+              ?.downloadLookupCache?.byTag?.set(dep.reference.tag, downloadId);
           } else {
             log("info", "downloaded as dependency", {
               dependency: dep.reference.logicalFileName,
@@ -6595,8 +6645,21 @@ class InstallManager {
         .sort((a, b) => a - b);
       const lowestPhase = phaseNumbers[0];
 
-      // Check collection session to determine actual current phase
-      const activeCollectionSession = getCollectionSessionById(api.getState(), sourceModId);
+      // Session ids are collectionId_profileId, resolved the same way the completion poll
+      // resolves them.
+      const phaseBatchContext = getBatchContext(
+        ["install-dependencies", "install-recommendations"],
+        "",
+      );
+      const phaseProfileId =
+        phaseBatchContext?.get<string>("profileId") ?? activeProfile(api.getState())?.id;
+      // The ACTIVE session only: phase completion below reads it, and a finished install of this
+      // collection carries the same id in history, where every phase reads complete.
+      const collectionSession = getCollectionActiveSession(api.getState());
+      const activeCollectionSession =
+        collectionSession?.sessionId === generateCollectionSessionId(sourceModId, phaseProfileId)
+          ? collectionSession
+          : undefined;
 
       if (activeCollectionSession) {
         // Determine the highest completed phase from the collection session
@@ -6950,8 +7013,8 @@ class InstallManager {
       if (cache === undefined) {
         return;
       }
-      if (download.modInfo?.referenceTag !== undefined) {
-        cache.byTag.set(download.modInfo.referenceTag, download.id);
+      for (const tag of downloadReferenceTags(download)) {
+        cache.byTag.set(tag, download.id);
       }
       if (download.fileMD5 !== undefined) {
         cache.byMd5.set(download.fileMD5, download.id);
@@ -7640,18 +7703,23 @@ class InstallManager {
   }
 
   /**
-   * Record a dependency install outcome on the active collection session. This is the
-   * direct, in-process write path: the orchestrator already knows which dependency it is
-   * processing, so it matches the rule by reference and dispatches the resulting tracking
-   * action. Additive to the existing api.events.emit calls - it does not replace them.
-   * A no-op when there is no active session, no rule matches, or the write is redundant.
+   * Record a dependency install outcome on the active collection session. A no-op when there is
+   * no active session, no rule matches, or the write is redundant.
+   *
+   * Pass the dependency's `sessionRuleId` wherever it is in scope, so the member is addressed by
+   * the key it is tracked under rather than by its reference identity. `sourceModId` scopes the
+   * unmatched-write warning: the dependency pipeline also runs for mods outside the session's
+   * collection, whose writes are expected no-ops.
    */
   private writeCollectionSession(
     reference: IModReference,
     outcome: CollectionInstallOutcome,
+    ruleId?: string,
+    sourceModId?: string,
   ): void {
-    const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome);
+    const plan = sessionWriteForDependency(this.mApi.getState(), reference, outcome, ruleId);
     if (plan === null) {
+      this.warnUnmatchedSessionWrite(reference, outcome, ruleId, sourceModId);
       return;
     }
     const action =
@@ -7659,6 +7727,37 @@ class InstallManager {
         ? markModInstalled(plan.sessionId, plan.ruleId, plan.write.modId)
         : updateModStatus(plan.sessionId, plan.ruleId, plan.write.status);
     this.mApi.store.dispatch(action);
+  }
+
+  /**
+   * Report a lifecycle outcome that named no session member: that member keeps its status and the
+   * completion poll goes on selecting it. Writes outside an install, and writes the planner
+   * declined for a member it did match, are expected and stay quiet.
+   */
+  private warnUnmatchedSessionWrite(
+    reference: IModReference,
+    outcome: CollectionInstallOutcome,
+    ruleId?: string,
+    sourceModId?: string,
+  ): void {
+    const session = getCollectionActiveSession(this.mApi.getState());
+    if (session === undefined) {
+      return;
+    }
+    if (sourceModId !== undefined && sourceModId !== session.collectionId) {
+      return;
+    }
+    if (ruleId !== undefined && session.mods[ruleId] !== undefined) {
+      return;
+    }
+    if (matchSessionRuleEntry(session, reference) !== undefined) {
+      return;
+    }
+    log("warn", "collection session write matched no member", {
+      ruleId,
+      referenceId: referenceId(reference),
+      outcome: outcome.type,
+    });
   }
 
   /**

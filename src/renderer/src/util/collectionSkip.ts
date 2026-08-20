@@ -98,7 +98,7 @@ function matchesSkip(skip: ICollectionSkip, ref: IModReference): boolean {
  * skipped (required) member as "pending" and the collection could never complete. This is an
  * explicit decision to skip, so it intentionally overrides any terminal protection.
  *
- * Returns true if a member was matched and ignored.
+ * Returns true when a session member was settled.
  */
 export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectionSkip): boolean {
   const state = api.getState();
@@ -120,14 +120,30 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   // The previous mDependentMods.find had the same ambiguity, so this is not a new regression -
   // but disambiguation (which member did the user actually skip?) needs investigation.
   const rule = rules.find((iter) => matchesSkip(skip, iter.reference));
-  if (rule === undefined) {
+  // The session is keyed by each member's rule as it was when the install started, so the entry
+  // is matched on its own snapshot rather than on the live rule.
+  const sessionEntry = Object.entries(session.mods).find(([, info]) =>
+    info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
+  );
+  // Only a rule the session tracks can be settled. A live rule it never saw (the collection
+  // gained it after the install started) still carries the decision durably.
+  const liveRuleId = rule !== undefined ? modRuleId(rule) : undefined;
+  const memberRuleId =
+    sessionEntry?.[0] ??
+    (liveRuleId !== undefined && session.mods[liveRuleId] !== undefined ? liveRuleId : undefined);
+  if (memberRuleId === undefined && rule === undefined) {
     log("error", "could not find collection rule for skipped download", { skip });
     return false;
   }
+  if (memberRuleId === undefined) {
+    log("warn", "skipped member is not tracked by the install session", { sessionId, skip });
+  }
 
   batchDispatch(api.store, [
-    updateModStatus(sessionId, modRuleId(rule), "ignored"),
-    addModRule(gameId, collectionId, { ...rule, ignored: true }),
+    ...(memberRuleId !== undefined ? [updateModStatus(sessionId, memberRuleId, "ignored")] : []),
+    // the durable flag goes on the collection's CURRENT rule only - re-adding a session
+    // snapshot would resurrect a rule the collection no longer carries
+    ...(rule !== undefined ? [addModRule(gameId, collectionId, { ...rule, ignored: true })] : []),
   ]);
-  return true;
+  return memberRuleId !== undefined;
 }

@@ -111,8 +111,8 @@ function persistentRow(
     };
   }
 
-  // downloads are stamped with the rule's referenceTag at download time (and reconciled on a
-  // mismatch), so the tag is authoritative; only a tagless rule needs the scan.
+  // downloads carry a tag per rule they satisfy, so the tag index resolves the archive for every
+  // collection referencing it; only a tagless rule needs the scan.
   const dlId =
     tag !== undefined
       ? indexes.downloadIdByTag.get(tag)
@@ -194,9 +194,14 @@ export function buildCollectionItemRows(
     }
   }
   for (const [dlId, download] of Object.entries(downloads)) {
-    const tag = download.modInfo?.referenceTag;
-    if (typeof tag === "string" && !indexes.downloadIdByTag.has(tag)) {
-      indexes.downloadIdByTag.set(tag, dlId);
+    const { referenceTag, referenceTags } = download.modInfo ?? {};
+    if (typeof referenceTag === "string" && !indexes.downloadIdByTag.has(referenceTag)) {
+      indexes.downloadIdByTag.set(referenceTag, dlId);
+    }
+    for (const tag of referenceTags ?? []) {
+      if (!indexes.downloadIdByTag.has(tag)) {
+        indexes.downloadIdByTag.set(tag, dlId);
+      }
     }
   }
 
