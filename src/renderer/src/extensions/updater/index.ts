@@ -1,5 +1,6 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { getApplication } from "../../util/application";
+import { log } from "../../util/log";
 import settingsReducer from "./reducers";
 import SettingsUpdate from "./SettingsUpdate";
 
@@ -80,6 +81,7 @@ Downgrading can damage your application state. Alternatively, stay on your curre
                   {
                     label: `Downgrade to ${status.version}`,
                     action: () => {
+                      context.api.dismissNotification?.("vortex-downgrade-offer");
                       window.api.updater.downloadDowngrade(true);
                     },
                   },
@@ -96,6 +98,8 @@ Downgrading can damage your application state. Alternatively, stay on your curre
       if (status.downgrade) {
         if (status.version) {
           showDowngradeOffer(status);
+        } else {
+          log("warn", "downgrade status without a version", status);
         }
         return;
       }

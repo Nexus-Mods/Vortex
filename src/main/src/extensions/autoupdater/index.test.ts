@@ -93,6 +93,9 @@ beforeEach(() => {
   autoUpdaterMock.checkForUpdates.mockResolvedValue({ cancellationToken: { cancel: vi.fn() } });
   autoUpdaterMock.downloadUpdate.mockResolvedValue([]);
   writePersistedValueMock.mockResolvedValue(undefined);
+  // start from the real post-init state so assertions on the flag observe
+  // the handlers, not setupAutoUpdater's initialization
+  autoUpdaterMock.allowDowngrade = false;
 });
 
 afterEach(() => {
@@ -302,6 +305,12 @@ describe("downgrade offers", () => {
     ipcHandler("updater:set-channel")(undefined, "stable", true);
     await flush();
 
+    // observe the flag at the moment the feed is applied
+    let allowDowngradeDuringFeedApply: boolean | undefined;
+    autoUpdaterMock.setFeedURL.mockImplementation(() => {
+      allowDowngradeDuringFeedApply = autoUpdaterMock.allowDowngrade;
+    });
+
     ipcHandler("updater:download-downgrade")(undefined, true);
     await flush();
 
@@ -310,10 +319,29 @@ describe("downgrade offers", () => {
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.5.0",
     });
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
-    // dropped again once the library accepted the feed
+    // raised for the feed apply, dropped again once the library accepted it
+    expect(allowDowngradeDuringFeedApply).toBe(true);
     expect(autoUpdaterMock.allowDowngrade).toBe(false);
     // one-shot marker for the startup downgrade warning
     expect(writePersistedValueMock).toHaveBeenCalledWith("app", ["expectedDowngradeTo"], "2.5.0");
+    // past confirmation the status is an ordinary in-flight download
+    expect(getStatus().downgrade).toBeUndefined();
+  });
+
+  it("consumes the offer on confirmation so a double-confirm is a no-op", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+
+    ipcHandler("updater:download-downgrade")(undefined, true);
+    await flush();
+    ipcHandler("updater:download-downgrade")(undefined, true);
+    await flush();
+
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalledTimes(1);
+    expect(writePersistedValueMock).toHaveBeenCalledTimes(1);
   });
 });
 
