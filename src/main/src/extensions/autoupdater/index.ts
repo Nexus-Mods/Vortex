@@ -30,11 +30,16 @@ import {
 } from "./releaseResolver";
 
 /**
- * Show warning dialog before update installs on quit.
- * Prevents users from turning off computer during installation.
+ * Warn once, non-blocking, that the downloaded update installs on quit.
+ * The old implementation used showMessageBoxSync in before-quit: it blocked
+ * the quitting main process (the dialog could not be dismissed) and the
+ * handler was never removed, so every re-entered quit attempt stacked
+ * another modal — an unkillable dialog loop in the field.
  */
 function showUpdateWarning() {
-  dialog.showMessageBoxSync({
+  // one-shot: quit processing can re-fire before-quit
+  app.removeListener("before-quit", showUpdateWarning);
+  void dialog.showMessageBox({
     type: "info",
     title: "Vortex update",
     message:
