@@ -64,12 +64,20 @@ function versionFromTag(tag: string): string | null {
   return semver.valid(tag.replace(/^v/, ""));
 }
 
+// The prerelease flag and the version suffix are two signals for the same
+// fact; when they disagree the release was mispublished — don't trust it.
+// (The whole 1.x era trips this: odd-minor betas were flagged prerelease with
+// no version suffix, so this is summarized once per fetch, not warned per tag.)
+function hasMismatchedPrereleaseFlag(release: GithubReleaseLite): boolean {
+  const version = versionFromTag(release.tag_name);
+  return version != null && release.prerelease !== (semver.prerelease(version) != null);
+}
+
 function isEligible(release: GithubReleaseLite): boolean {
   if (release.draft) {
     return false;
   }
-  const version = versionFromTag(release.tag_name);
-  if (version == null) {
+  if (versionFromTag(release.tag_name) == null) {
     return false;
   }
   const hasUpdateAssets = release.assets.some(
@@ -78,17 +86,7 @@ function isEligible(release: GithubReleaseLite): boolean {
   if (!hasUpdateAssets) {
     return false;
   }
-  // The prerelease flag and the version suffix are two signals for the same
-  // fact; when they disagree the release was mispublished — don't trust it.
-  const hasPrereleaseSuffix = semver.prerelease(version) != null;
-  if (release.prerelease !== hasPrereleaseSuffix) {
-    log("warn", "Release prerelease flag disagrees with its version suffix, skipping", {
-      tag: release.tag_name,
-      prerelease: release.prerelease,
-    });
-    return false;
-  }
-  return true;
+  return !hasMismatchedPrereleaseFlag(release);
 }
 
 function candidatesForChannel(
@@ -263,7 +261,18 @@ async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
   }
 
   if (url != null) {
-    log("warn", "Release listing truncated at page cap", { repo, pages });
+    // expected on the main repo (300+ historical releases); newest releases
+    // are always on page 1, so this never affects the max-semver pick
+    log("debug", "Release listing truncated at page cap", { repo, pages });
+  }
+
+  const mismatched = releases.filter(hasMismatchedPrereleaseFlag);
+  if (mismatched.length > 0) {
+    log("info", "Skipping releases whose prerelease flag disagrees with the version suffix", {
+      repo,
+      count: mismatched.length,
+      sample: mismatched.slice(0, 3).map((release) => release.tag_name),
+    });
   }
 
   return releases;
