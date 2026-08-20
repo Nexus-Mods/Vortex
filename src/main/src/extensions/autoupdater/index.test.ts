@@ -3,27 +3,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResolvedRelease } from "./releaseResolver";
 
-const { autoUpdaterMock, appMock, ipcMock, resolveUpdateMock } = vi.hoisted(() => {
-  return {
-    autoUpdaterMock: {
-      on: vi.fn(),
-      setFeedURL: vi.fn(),
-      checkForUpdates: vi.fn(),
-      downloadUpdate: vi.fn(),
-      quitAndInstall: vi.fn(),
-      allowDowngrade: true,
-      autoDownload: true,
-      autoInstallOnAppQuit: true,
-    },
-    appMock: {
-      getVersion: vi.fn(() => "2.6.0"),
-      on: vi.fn(),
-      removeListener: vi.fn(),
-    },
-    ipcMock: { handle: vi.fn(), on: vi.fn(), send: vi.fn() },
-    resolveUpdateMock: vi.fn(),
-  };
-});
+const { autoUpdaterMock, appMock, ipcMock, resolveUpdateMock, writePersistedValueMock } =
+  vi.hoisted(() => {
+    return {
+      autoUpdaterMock: {
+        on: vi.fn(),
+        setFeedURL: vi.fn(),
+        checkForUpdates: vi.fn(),
+        downloadUpdate: vi.fn(),
+        quitAndInstall: vi.fn(),
+        allowDowngrade: true,
+        autoDownload: true,
+        autoInstallOnAppQuit: true,
+      },
+      appMock: {
+        getVersion: vi.fn(() => "2.6.0"),
+        on: vi.fn(),
+        removeListener: vi.fn(),
+      },
+      ipcMock: { handle: vi.fn(), on: vi.fn(), send: vi.fn() },
+      resolveUpdateMock: vi.fn(),
+      writePersistedValueMock: vi.fn(),
+    };
+  });
 
 // @vortex/shared's error module has a duplicate-load guard that trips under
 // vi.resetModules; only these two helpers are used at runtime (the UpdateStatus
@@ -40,17 +42,19 @@ vi.mock("electron", () => ({
 vi.mock("electron-updater", () => ({ autoUpdater: autoUpdaterMock }));
 vi.mock("../../ipc", () => ({ betterIpcMain: ipcMock }));
 vi.mock("../../logging", () => ({ log: vi.fn() }));
+vi.mock("../../store/mainPersistence", () => ({ writePersistedValue: writePersistedValueMock }));
 vi.mock("./releaseResolver", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   resolveUpdate: resolveUpdateMock,
 }));
 
 function resolved(overrides: Partial<ResolvedRelease> = {}): ResolvedRelease {
+  const tag = overrides.tag ?? "v2.7.0";
   return {
-    tag: "v2.7.0",
-    version: "2.7.0",
+    tag,
+    version: tag.replace(/^v/, ""),
     prerelease: false,
-    downloadBaseUrl: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
+    downloadBaseUrl: `https://github.com/Nexus-Mods/Vortex/releases/download/${tag}`,
     notesHtml: "<p>notes</p>",
     ...overrides,
   };
@@ -88,6 +92,7 @@ beforeEach(() => {
   appMock.getVersion.mockReturnValue("2.6.0");
   autoUpdaterMock.checkForUpdates.mockResolvedValue({ cancellationToken: { cancel: vi.fn() } });
   autoUpdaterMock.downloadUpdate.mockResolvedValue([]);
+  writePersistedValueMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -245,6 +250,70 @@ describe("release notes", () => {
     updaterEvent("update-available")?.({ version: "2.7.0", releaseNotes: null });
 
     expect(getStatus().releaseNotes).toBe("<p>from resolver</p>");
+  });
+});
+
+describe("downgrade offers", () => {
+  it("offers a downgrade only for a manual switch to stable on a prerelease build", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+
+    const status = getStatus();
+    expect(status.available).toBe(true);
+    expect(status.downgrade).toBe(true);
+    expect(status.version).toBe("2.5.0");
+    // nothing downloads until the user confirms
+    expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+  });
+
+  it("never offers a downgrade on a background channel sync", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+
+    // the 5s fallback sends manual=false
+    ipcHandler("updater:set-channel")(undefined, "stable", false);
+    await flush();
+
+    const status = getStatus();
+    expect(status.downgrade).toBeUndefined();
+    expect(status.available).toBe(false);
+  });
+
+  it("ignores download-downgrade when no offer is outstanding", async () => {
+    await setup();
+
+    ipcHandler("updater:download-downgrade")(undefined, true);
+    await flush();
+
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.allowDowngrade).toBe(false);
+  });
+
+  it("downloads a confirmed downgrade with allowDowngrade raised only for that flow", async () => {
+    appMock.getVersion.mockReturnValue("2.6.0-beta.1");
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.5.0", version: "2.5.0" }));
+    ipcHandler("updater:set-channel")(undefined, "stable", true);
+    await flush();
+
+    ipcHandler("updater:download-downgrade")(undefined, true);
+    await flush();
+
+    expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
+      provider: "generic",
+      url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.5.0",
+    });
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
+    // dropped again once the library accepted the feed
+    expect(autoUpdaterMock.allowDowngrade).toBe(false);
+    // one-shot marker for the startup downgrade warning
+    expect(writePersistedValueMock).toHaveBeenCalledWith("app", ["expectedDowngradeTo"], "2.5.0");
   });
 });
 

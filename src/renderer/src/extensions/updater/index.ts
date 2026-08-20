@@ -1,4 +1,5 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import { getApplication } from "../../util/application";
 import settingsReducer from "./reducers";
 import SettingsUpdate from "./SettingsUpdate";
 
@@ -54,10 +55,48 @@ function init(context: IExtensionContext): boolean {
     // React to a status pushed from main (or fetched for the initial sync):
     // upsert the update notification — same id, so repeated statuses update
     // it in place rather than stacking.
+    // A downgrade offer only ever follows an explicit switch to the stable
+    // channel; it is presented as exactly what it is, never as an update.
+    const showDowngradeOffer = (status: UpdateStatus) => {
+      const currentVersion = getApplication().version;
+      context.api.sendNotification({
+        id: "vortex-downgrade-offer",
+        type: "warning",
+        message: `Stable version ${status.version} is older than your current version`,
+        actions: [
+          {
+            title: "More",
+            action: () => {
+              void context.api.showDialog(
+                "question",
+                "Downgrade to stable?",
+                {
+                  text: `Switching to the Stable channel would install Vortex ${status.version}, which is older than the version you are running (${currentVersion}).
+
+Downgrading can damage your application state. Alternatively, stay on your current version and you will be offered the next stable release once it is newer than ${currentVersion}.`,
+                },
+                [
+                  { label: "Stay on current version" },
+                  {
+                    label: `Downgrade to ${status.version}`,
+                    action: () => {
+                      window.api.updater.downloadDowngrade(true);
+                    },
+                  },
+                ],
+                "downgrade-offer-dialog",
+              );
+            },
+          },
+        ],
+      });
+    };
+
     const handleUpdateStatus = (status: UpdateStatus) => {
       if (status.downgrade) {
-        // downgrade offers get their own flow when the channel-switch UX
-        // ships; never present one as a regular update
+        if (status.version) {
+          showDowngradeOffer(status);
+        }
         return;
       }
       if (status.available && status.version) {
