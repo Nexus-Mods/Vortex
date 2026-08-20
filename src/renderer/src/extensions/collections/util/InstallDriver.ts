@@ -35,7 +35,7 @@ import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
-import { appendModReferenceTagActions } from "../../mod_management/util/modReferenceTags";
+import { appendModReferenceTagsActions } from "../../mod_management/util/modReferenceTags";
 import testModReference, {
   isDependencyRule,
   isOptionalRule,
@@ -267,7 +267,7 @@ class InstallDriver {
           setModAttribute(gameId, modId, "fileList", installSpec.fileList),
           // record this collection's tag for the member, keeping any tag another collection
           // stamped, so each collection recognises the mod as one of its own
-          ...appendModReferenceTagActions(gameId, modId, mod, dependent.reference.tag),
+          ...appendModReferenceTagsActions(gameId, modId, mod, [dependent.reference.tag]),
         ]);
 
         if (dependent.type === "requires") {
@@ -954,17 +954,28 @@ class InstallDriver {
     // Members already present at start (installed by the user, or left by another collection) are
     // never queued and emit no install event, so this is where they get this collection's tag.
     // Deliberately not marked installedAsDependency: the user may have installed them themselves.
+    // Collected per mod first - several members can resolve to one mod, and that mod's tags are
+    // written as a whole array.
+    const startTagsByMod = new Map<string, string[]>(); // modId -> tags of the rules it satisfies
+    for (const info of Object.values(sessionModInfo)) {
+      if (info.status !== "installed" || info.modId === undefined) {
+        continue;
+      }
+      const tag = info.rule.reference.tag;
+      if (tag === undefined) {
+        continue;
+      }
+      const tags = startTagsByMod.get(info.modId);
+      if (tags === undefined) {
+        startTagsByMod.set(info.modId, [tag]);
+      } else if (!tags.includes(tag)) {
+        tags.push(tag);
+      }
+    }
     batchDispatch(
       this.mApi.store,
-      Object.values(sessionModInfo).flatMap((info) =>
-        info.status === "installed" && info.modId !== undefined
-          ? appendModReferenceTagActions(
-              this.mGameId,
-              info.modId,
-              mods[info.modId],
-              info.rule.reference.tag,
-            )
-          : [],
+      Array.from(startTagsByMod).flatMap(([modId, tags]) =>
+        appendModReferenceTagsActions(this.mGameId, modId, mods[modId], tags),
       ),
     );
 

@@ -124,6 +124,29 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(rules?.[0]?.reference.tag).toBe("mod-other");
   });
 
+  // A rule the collection gained after the install started has no session entry to settle, so
+  // only the durable flag can carry the decision - and the caller is told nothing was settled.
+  test("records the skip durably for a member the session does not track", ({ makeApi }) => {
+    const trackedRule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
+    const addedRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "mod-added" }),
+    });
+    const h = makeApi(ruleOverrides(trackedRule, addedRule));
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "mod-added" }),
+    });
+
+    expect(matched).toBe(false);
+    expect(durableIgnored(h)).toBe(true);
+    // the member the session does track is left alone, and the untracked rule gains no entry
+    expect(statusOf(h, trackedRule)).toBe("pending");
+    expect(h.getState().session.collections.activeSession?.mods).not.toHaveProperty(
+      modRuleId(addedRule),
+    );
+  });
+
   test("does nothing for a reference that is not a member", ({ makeApi }) => {
     const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
     const h = makeApi(ruleOverrides(rule));

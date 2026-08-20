@@ -6657,10 +6657,14 @@ class InstallManager {
       );
       const phaseProfileId =
         phaseBatchContext?.get<string>("profileId") ?? activeProfile(api.getState())?.id;
-      const activeCollectionSession = getCollectionSessionById(
-        api.getState(),
-        generateCollectionSessionId(sourceModId, phaseProfileId),
-      );
+      // The ACTIVE session only: phase completion below is read from the active session, and a
+      // finished install of this collection on this profile carries the same id in history, where
+      // every phase would read complete and push the frontier past phases that never ran.
+      const collectionSession = getCollectionActiveSession(api.getState());
+      const activeCollectionSession =
+        collectionSession?.sessionId === generateCollectionSessionId(sourceModId, phaseProfileId)
+          ? collectionSession
+          : undefined;
 
       if (activeCollectionSession) {
         // Determine the highest completed phase from the collection session

@@ -271,4 +271,71 @@ describe("a resumed dependency install", () => {
       }
     },
   );
+
+  // Session ids are collectionId_profileId, so an earlier install of the same collection on the
+  // same profile sits in history under the id this round computes. Phase completion is only ever
+  // read from the active session, so a history hit must not drive the phase frontier.
+  imTest(
+    "starts at the lowest gathered phase when the only session for the collection is history",
+    async ({ makeInstallManager }) => {
+      const laterRule = makeRule({
+        type: "requires",
+        phase: 1,
+        reference: makeExactRef({ tag: "member-later", gameId: GAME, fileMD5: "def456" }),
+      });
+      const { h, phaseState } = makeSharedArchiveInstall(makeInstallManager, {
+        rules: [memberRule, laterRule],
+      });
+      const sessionId = generateCollectionSessionId(COLLECTION, PROFILE);
+      h.setState((draft) => {
+        draft.session.collections = makeInstallState({
+          lastActiveSessionId: sessionId,
+          sessionHistory: {
+            [sessionId]: makeSession({
+              sessionId,
+              collectionId: COLLECTION,
+              profileId: PROFILE,
+              gameId: GAME,
+              mods: {
+                [modRuleId(memberRule)]: makeModInstallInfo({
+                  rule: memberRule,
+                  type: "requires",
+                  status: "installed",
+                  phase: 0,
+                }),
+                [modRuleId(laterRule)]: makeModInstallInfo({
+                  rule: laterRule,
+                  type: "requires",
+                  status: "installed",
+                  phase: 1,
+                }),
+              },
+              totalRequired: 2,
+            }),
+          },
+        });
+      });
+      phaseState.allowedPhase = undefined;
+
+      const installing = internals(h.manager).doInstallDependencies(
+        h.api,
+        GAME,
+        COLLECTION,
+        [
+          { reference: memberRule.reference, phase: 0, lookupResults: [], extra: {} },
+          { reference: laterRule.reference, phase: 1, lookupResults: [], extra: {} },
+        ],
+        false,
+        true,
+      );
+
+      try {
+        expect(h.phaseTracker.get(COLLECTION)?.allowedPhase).toBe(0);
+      } finally {
+        internals(h.manager).mDependencyInstalls[COLLECTION]?.();
+        delete internals(h.manager).mDependencyInstalls[COLLECTION];
+        await installing.catch(() => undefined);
+      }
+    },
+  );
 });
