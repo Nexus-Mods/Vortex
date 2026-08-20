@@ -191,8 +191,10 @@ Are you sure you want to switch to the Beta update channel?`,
           ],
         );
       } else if (newChannel === "stable") {
-        // stable or latest
         this.props.onSetUpdateChannel(newChannel);
+        // Switching to stable from a pre-release build means the latest
+        // stable may be older than what's running; the updater will offer
+        // that downgrade separately and explicitly.
       } else if (newChannel === "none") {
         // none
 

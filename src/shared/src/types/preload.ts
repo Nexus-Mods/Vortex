@@ -478,6 +478,12 @@ export interface UpdaterApi {
   restartAndInstall(): void;
 
   /**
+   * Download the downgrade offered after an explicit switch to stable.
+   * Ignored by main unless a downgrade offer is outstanding.
+   */
+  downloadDowngrade(installAfterDownload?: boolean): void;
+
+  /**
    * Subscribe to update-status changes pushed from the main process.
    * Returns an unsubscribe function.
    */

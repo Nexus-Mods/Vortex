@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+
+vi.mock("../../util/application", () => ({
+  getApplication: () => ({ version: "2.6.0-beta.1" }),
+}));
+
 import init from "./index";
 
 interface FakeStatus {
@@ -101,12 +106,16 @@ describe("updater status handling", () => {
     expect(second.actions[1].title).toBe("Restart");
   });
 
-  it("never presents a downgrade status as a regular update", async () => {
+  it("presents a downgrade status as an explicit downgrade offer, not an update", async () => {
     const { sendNotification, pushStatus } = await setup();
 
     pushStatus({ available: true, downloaded: false, version: "2.5.0", downgrade: true });
 
-    expect(sendNotification).not.toHaveBeenCalled();
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+    const notification = sendNotification.mock.calls[0]![0];
+    expect(notification.id).toBe("vortex-downgrade-offer");
+    expect(notification.type).toBe("warning");
+    expect(notification.message).toContain("older");
   });
 
   it("syncs the initial status via getStatus for checks that finished early", async () => {

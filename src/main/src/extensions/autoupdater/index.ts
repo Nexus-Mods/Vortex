@@ -20,6 +20,7 @@ import * as semver from "semver";
 
 import { betterIpcMain } from "../../ipc";
 import { log } from "../../logging";
+import { writePersistedValue } from "../../store/mainPersistence";
 import type { ResolveChannel, ResolvedRelease } from "./releaseResolver";
 import {
   classifyUpdate,
@@ -67,6 +68,9 @@ export function setupAutoUpdater(installType: string): void {
   // the resolver's collected release notes over the (empty) generic-feed ones.
   // Downloads never trust it: updater:download re-resolves every time.
   let lastResolved: ResolvedRelease | null = null;
+  // The downgrade offered after an explicit switch to stable, awaiting the
+  // user's confirmation via updater:download-downgrade. Cleared by any check.
+  let pendingDowngrade: ResolvedRelease | null = null;
   // Overlapping checks are possible (set-channel + manual check-now); only
   // the newest one may write checking/availability/cancellation state.
   let checkGeneration = 0;
@@ -220,6 +224,7 @@ export function setupAutoUpdater(installType: string): void {
     log("info", "Update downloaded", { version: updateInfo.version });
     updateStatus.downloaded = true;
     updateStatus.downloadProgress = 100;
+    lastBroadcastPercent = -1;
     broadcastStatus();
 
     // Set up auto-install on quit (unless dev mode)
@@ -250,17 +255,25 @@ export function setupAutoUpdater(installType: string): void {
     });
   }
 
-  // Resolve the channel's target release and, when it's an upgrade, hand the
-  // feed to electron-updater. Resolves to the release or null (no upgrade).
-  function resolveAndApply(channel: string, generation: number): Promise<ResolvedRelease | null> {
+  type ResolveOutcome =
+    | { verdict: "upgrade" | "downgrade-offer"; release: ResolvedRelease }
+    | { verdict: "none"; release: null };
+
+  // Resolve the channel's target release. Upgrades get handed to
+  // electron-updater as the feed; downgrade offers are returned for the
+  // caller to surface (only ever produced when allowDowngradeOffer is set,
+  // i.e. after an explicit switch to stable). A lower "latest" is otherwise
+  // ignored — offering it unasked is the old field bug.
+  function resolveAndApply(
+    channel: string,
+    generation: number,
+    allowDowngradeOffer: boolean = false,
+  ): Promise<ResolveOutcome> {
     return resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
-      // Note: switchToStable stays false until the explicit channel-switch
-      // downgrade flow ships with its UI; a lower "latest" is ignored here
-      // rather than offered (offering it is the old field bug).
       const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
-        switchToStable: false,
+        switchToStable: allowDowngradeOffer,
       });
-      if (resolved == null || verdict !== "upgrade") {
+      if (resolved == null || verdict === "none") {
         const current = semver.valid(currentVersion);
         if (resolved != null && current != null && semver.lt(resolved.version, current)) {
           log("info", "Latest release is older than the running version, ignoring", {
@@ -272,14 +285,30 @@ export function setupAutoUpdater(installType: string): void {
           log("info", "No update available", { channel, resolved: resolved?.version });
         }
         lastResolved = null;
-        return null;
+        return { verdict: "none", release: null };
       }
-      return applyResolvedFeed(resolved, generation).then(() => resolved);
+      if (verdict === "downgrade-offer") {
+        log("info", "Stable release is older than the running version, offering downgrade", {
+          resolved: resolved.version,
+          currentVersion,
+        });
+        lastResolved = null;
+        return { verdict, release: resolved };
+      }
+      return applyResolvedFeed(resolved, generation).then(() => ({
+        verdict: "upgrade" as const,
+        release: resolved,
+      }));
     });
   }
 
-  // Check for updates
-  const checkForUpdates = (channel: string, manual: boolean = false) => {
+  // Check for updates. allowDowngradeOffer is only set for a manual switch
+  // to the stable channel — the one flow where a lower version may be offered.
+  const checkForUpdates = (
+    channel: string,
+    manual: boolean = false,
+    allowDowngradeOffer: boolean = false,
+  ) => {
     if (!channel || channel === "none") {
       log("debug", "Updates disabled");
       return;
@@ -287,17 +316,19 @@ export function setupAutoUpdater(installType: string): void {
 
     updateChannel = channel;
     const generation = ++checkGeneration;
+    pendingDowngrade = null;
+    updateStatus.downgrade = undefined;
     updateStatus.checking = true;
     broadcastStatus();
     log("info", "Checking for updates", { channel, manual, currentVersion });
 
-    resolveAndApply(channel, generation)
-      .then((resolved) => {
+    resolveAndApply(channel, generation, allowDowngradeOffer)
+      .then((outcome) => {
         if (generation !== checkGeneration) {
           return; // superseded by a newer check; let that one own the status
         }
         updateStatus.checking = false;
-        if (resolved == null) {
+        if (outcome.verdict === "none") {
           updateStatus.available = false;
           updateStatus.version = undefined;
           updateStatus.releaseNotes = undefined;
@@ -305,6 +336,19 @@ export function setupAutoUpdater(installType: string): void {
           broadcastStatus();
           return;
         }
+        if (outcome.verdict === "downgrade-offer") {
+          // Surface the offer; nothing downloads until the user confirms via
+          // updater:download-downgrade.
+          pendingDowngrade = outcome.release;
+          updateStatus.available = true;
+          updateStatus.downgrade = true;
+          updateStatus.version = outcome.release.version;
+          updateStatus.releaseNotes = undefined;
+          updateStatus.error = undefined;
+          broadcastStatus();
+          return;
+        }
+        const resolved = outcome.release;
         broadcastStatus();
         log("info", "Update check completed", { version: resolved.version });
 
@@ -345,7 +389,9 @@ export function setupAutoUpdater(installType: string): void {
     lastResolved = null;
 
     if (channel !== "none" && process.env.IGNORE_UPDATES !== "yes") {
-      checkForUpdates(channel, manual);
+      // A user-initiated switch to stable is the one flow allowed to offer a
+      // downgrade (e.g. leaving the beta channel from a beta build).
+      checkForUpdates(channel, manual, manual === true && channel === "stable");
     }
   });
 
@@ -381,14 +427,15 @@ export function setupAutoUpdater(installType: string): void {
     // superseded can't strand checking:true.
     const generation = ++checkGeneration;
     updateStatus.checking = true;
+    lastBroadcastPercent = -1;
     broadcastStatus();
     resolveAndApply(channel, generation)
-      .then((resolved) => {
+      .then((outcome) => {
         if (generation === checkGeneration) {
           updateStatus.checking = false;
           broadcastStatus();
         }
-        if (resolved == null) {
+        if (outcome.verdict !== "upgrade") {
           throw new Error("no newer release available to download");
         }
         return autoUpdater.downloadUpdate();
@@ -396,6 +443,54 @@ export function setupAutoUpdater(installType: string): void {
       .catch((unknownErr) => {
         const err = unknownToError(unknownErr);
         log("error", "Download failed", { error: err.message });
+        updateStatus.error = err.message;
+        installAfterDownloadFlag = false;
+        if (generation === checkGeneration) {
+          updateStatus.checking = false;
+        }
+        broadcastStatus();
+      });
+  });
+
+  // Download the downgrade the user explicitly confirmed. Only honored while
+  // an offer is outstanding. allowDowngrade is raised for just this flow and
+  // dropped again once the library has accepted the feed.
+  betterIpcMain.on("updater:download-downgrade", (_event, installAfterDownload: boolean) => {
+    const target = pendingDowngrade;
+    if (target == null) {
+      log("warn", "Downgrade download requested but no downgrade offer is outstanding");
+      return;
+    }
+    log("info", "Downgrade download confirmed", { version: target.version });
+
+    installAfterDownloadFlag = installAfterDownload;
+    const generation = ++checkGeneration;
+    updateStatus.checking = true;
+    lastBroadcastPercent = -1;
+    broadcastStatus();
+
+    autoUpdater.allowDowngrade = true;
+    // One-shot marker so the next launch's "Downgrade detected" warning is
+    // suppressed for the version the user knowingly chose.
+    writePersistedValue("app", ["expectedDowngradeTo"], target.version)
+      .catch((err: unknown) => {
+        log("warn", "Failed to persist downgrade marker", {
+          error: getErrorMessageOrDefault(err),
+        });
+      })
+      .then(() => applyResolvedFeed(target, generation))
+      .then(() => {
+        autoUpdater.allowDowngrade = false;
+        if (generation === checkGeneration) {
+          updateStatus.checking = false;
+          broadcastStatus();
+        }
+        return autoUpdater.downloadUpdate();
+      })
+      .catch((unknownErr) => {
+        autoUpdater.allowDowngrade = false;
+        const err = unknownToError(unknownErr);
+        log("error", "Downgrade download failed", { error: err.message });
         updateStatus.error = err.message;
         installAfterDownloadFlag = false;
         if (generation === checkGeneration) {

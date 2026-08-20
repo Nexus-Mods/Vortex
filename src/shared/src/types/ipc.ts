@@ -254,6 +254,10 @@ export interface RendererChannels extends RendererCallbackChannels {
   // Updater: Download the available update (installAfterDownload triggers auto-restart when done)
   "updater:download": (channel: string, installAfterDownload: boolean) => void;
 
+  // Updater: Download the downgrade offered after an explicit switch to stable.
+  // Ignored unless a downgrade offer is outstanding.
+  "updater:download-downgrade": (installAfterDownload: boolean) => void;
+
   // Updater: Restart and install update
   "updater:restart-and-install": () => void;
 
