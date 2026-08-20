@@ -21,6 +21,7 @@
     "publisherName": ["Black Tree Gaming Limited", "Black Tree Gaming Ltd"],
     "signExts": [".dll"],
     "signingHashAlgorithms": ["sha256"],
+    "signExts": [".node", ".dll"],
     "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
     "timeStampServer": "http://timestamp.comodoca.com"
   },

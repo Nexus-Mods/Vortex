@@ -1,3 +1,5 @@
+import type { IExtensionApi } from "../../types/api";
+import { notifyNativeInstallerUnavailable } from "../installer_fomod_shared/utils/nativeAvailability";
 import type {
   ISupportedResult,
   ITestSupportedDetails,
@@ -10,6 +12,7 @@ let testerInstance: VortexModTester | null = null;
  * Test if files are supported by the FOMOD installer
  */
 export const testSupported = async (
+  api: IExtensionApi,
   files: string[],
   details: ITestSupportedDetails | undefined,
   isBasic: boolean,
@@ -23,9 +26,14 @@ export const testSupported = async (
 
   if (testerInstance === null) {
     testerInstance = await VortexModTester.create();
-    if (testerInstance === null) return Promise.resolve({ supported: false, requiredFiles: [] });
+    if (testerInstance === null) {
+      // The addon can't be loaded in this process. Say so, because the
+      // alternative is a silent walk down to the verbatim-copy `fallback`
+      // installer that quietly mis-installs every mod.
+      notifyNativeInstallerUnavailable(api);
+      return { supported: false, requiredFiles: [] };
+    }
   }
 
-  const result = testerInstance.testSupport(files, isBasic ? ["Basic"] : ["XmlScript"]);
-  return Promise.resolve(result);
+  return testerInstance.testSupport(files, isBasic ? ["Basic"] : ["XmlScript"]);
 };

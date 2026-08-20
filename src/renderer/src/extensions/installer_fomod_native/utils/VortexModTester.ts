@@ -3,17 +3,17 @@ import type * as fomodT from "@nexusmods/fomod-installer-native";
 import { log } from "@/logging";
 import type { ISupportedResult } from "@/types/api";
 
+import { loadNativeInstaller } from "../../installer_fomod_shared/utils/nativeAvailability";
+
 export class VortexModTester {
   readonly #fomod: typeof fomodT;
 
   static async create(): Promise<VortexModTester | null> {
-    try {
-      const nativeModule = await import("@nexusmods/fomod-installer-native");
-      return new VortexModTester(nativeModule);
-    } catch (err) {
-      log("error", "Failed to load native FOMOD module", err);
-      return null;
-    }
+    // The load is probed (and its failure logged) once per session by
+    // loadNativeInstaller, which the IPC installer also consults to decide
+    // whether it needs to stand in for us.
+    const nativeModule = await loadNativeInstaller();
+    return nativeModule !== undefined ? new VortexModTester(nativeModule) : null;
   }
 
   private constructor(fomod: typeof fomodT) {

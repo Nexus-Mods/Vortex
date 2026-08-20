@@ -22,7 +22,7 @@ const main = (context: IExtensionContext): boolean => {
         _archivePath: string,
         details?: ITestSupportedDetails,
       ) => {
-        return await testSupported(files, details, false);
+        return await testSupported(context.api, files, details, false);
       },
     ),
     /*install:*/ toBluebird(
@@ -59,7 +59,7 @@ const main = (context: IExtensionContext): boolean => {
         _archivePath: string,
         details?: ITestSupportedDetails,
       ) => {
-        return await testSupported(files, details, true);
+        return await testSupported(context.api, files, details, true);
       },
     ),
     /*install:*/ toBluebird(
