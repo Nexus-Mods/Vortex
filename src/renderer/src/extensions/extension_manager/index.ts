@@ -104,8 +104,8 @@ async function updateAvailableExtensions(
   }
 
   try {
-    const { time, extensions } = await Promise.resolve(fetchAvailableExtensions(true, force));
-    api.store.dispatch(setExtensionsUpdate(time.getTime()));
+    const extensions = await fetchAvailableExtensions(api, force);
+    api.store.dispatch(setExtensionsUpdate(Date.now()));
     api.store.dispatch(setAvailableExtensions(extensions));
     await checkForUpdates(api);
   } catch (err) {

@@ -75,6 +75,7 @@ import type {
   ICollectionInstallState,
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
+import type { IAvailableExtension } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
@@ -1151,6 +1152,22 @@ export function makeLegacyExtensionState(
   overrides: Partial<IExtensionState> = {},
 ): IExtensionState {
   return { enabled: false, ...overrides } as IExtensionState;
+}
+
+/** A catalog entry as the extensions endpoint mapping produces it. */
+export function makeAvailableExtension(
+  overrides: Partial<IAvailableExtension> = {},
+): IAvailableExtension {
+  return {
+    name: "Test Extension",
+    modId: 0,
+    fileId: 0,
+    author: "Test Author",
+    version: "1.0.0",
+    timestamp: 0,
+    image: "image.png",
+    ...overrides,
+  };
 }
 
 let loEntrySeq = 0;
