@@ -366,7 +366,7 @@ export function setupAutoUpdater(installType: string): void {
   // Resolve the channel's target release. Upgrades get handed to
   // electron-updater as the feed; downgrade offers are returned for the
   // caller to surface (only ever produced when allowDowngradeOffer is set,
-  // i.e. for checks on the stable channel). A lower "latest" is otherwise
+  // i.e. after an explicit switch to stable). A lower "latest" is otherwise
   // ignored — offering it unasked is the old field bug.
   function resolveAndApply(
     channel: string,
@@ -375,7 +375,7 @@ export function setupAutoUpdater(installType: string): void {
   ): Promise<ResolveOutcome> {
     return resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
       const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
-        stableChannel: allowDowngradeOffer,
+        switchToStable: allowDowngradeOffer,
       });
       if (resolved == null || verdict === "none") {
         const current = semver.valid(currentVersion);
@@ -410,16 +410,19 @@ export function setupAutoUpdater(installType: string): void {
     });
   }
 
-  // Check for updates. Downgrade offers are only ever raised on the stable
-  // channel (a prerelease build whose user chose stable): every check there —
-  // channel switch, manual, periodic, launch — re-raises a declined offer,
-  // and a decline holds until the next one.
-  const checkForUpdates = (channel: string, manual: boolean = false) => {
+  // Check for updates. allowDowngradeOffer is only set for a purposeful
+  // switch to the stable channel — the one flow where a lower version may be
+  // offered. Background checks (launch sync, periodic, Check now) never
+  // surface downgrades.
+  const checkForUpdates = (
+    channel: string,
+    manual: boolean = false,
+    allowDowngradeOffer: boolean = false,
+  ) => {
     if (!channel || channel === "none") {
       log("debug", "Updates disabled");
       return;
     }
-    const allowDowngradeOffer = channel === "stable";
 
     updateChannel = channel;
     const generation = ++checkGeneration;
@@ -499,7 +502,9 @@ export function setupAutoUpdater(installType: string): void {
     lastResolved = null;
 
     if (channel !== "none" && process.env.IGNORE_UPDATES !== "yes") {
-      checkForUpdates(channel, manual);
+      // A user-initiated switch to stable is the one flow allowed to offer a
+      // downgrade (e.g. leaving the beta channel from a beta build).
+      checkForUpdates(channel, manual, manual === true && channel === "stable");
     }
   });
 
@@ -631,9 +636,8 @@ export function setupAutoUpdater(installType: string): void {
       });
   });
 
-  // The user declined the outstanding downgrade offer: forget it. The next
-  // check (manual, periodic, or next launch) will raise it again if the
-  // situation still holds.
+  // The user declined the outstanding downgrade offer: forget it. Only
+  // another purposeful switch to stable raises it again.
   betterIpcMain.on("updater:decline-downgrade", () => {
     if (pendingDowngrade == null) {
       log("debug", "Downgrade decline with no offer outstanding");

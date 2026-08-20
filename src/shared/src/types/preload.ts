@@ -484,14 +484,14 @@ export interface UpdaterApi {
   restartAndInstall(): void;
 
   /**
-   * Download the downgrade offered on the stable channel.
+   * Download the downgrade offered after an explicit switch to stable.
    * Ignored by main unless a downgrade offer is outstanding.
    */
   downloadDowngrade(installAfterDownload?: boolean): void;
 
   /**
-   * Decline the outstanding downgrade offer. Clears it until the next check
-   * (manual, periodic, or next launch) raises it again.
+   * Decline the outstanding downgrade offer. Clears it; only another
+   * purposeful switch to stable raises it again.
    */
   declineDowngrade(): void;
 
