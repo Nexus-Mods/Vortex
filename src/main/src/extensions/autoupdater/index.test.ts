@@ -206,6 +206,9 @@ describe("checkForUpdates", () => {
     const status = getStatus();
     expect(status.checking).toBe(false);
     expect(status.available).toBe(true);
+    // the failure is surfaced, not swallowed — a failed manual check must
+    // not read as "up to date"
+    expect(status.error).toContain("network down");
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled();
   });
 });

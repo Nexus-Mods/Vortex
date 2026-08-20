@@ -488,6 +488,13 @@ export function setupAutoUpdater(installType: string): void {
       .catch((err) => {
         if (generation === checkGeneration) {
           updateStatus.checking = false;
+          // surface the failure: without this a failed manual check reads as
+          // "up to date", and a background failure is invisible everywhere
+          // but the log
+          updateStatus.error =
+            err instanceof RateLimitError
+              ? "update check rate-limited by GitHub, try again later"
+              : getErrorMessageOrDefault(err);
           broadcastStatus();
         }
         if (err instanceof RateLimitError) {
