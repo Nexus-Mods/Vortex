@@ -100,6 +100,9 @@ beforeEach(() => {
   autoUpdaterMock.allowDowngrade = false;
   autoUpdaterMock.forceDevUpdateConfig = false;
   appMock.isPackaged = true;
+  // a developer machine may have the dev-updater opt-in persisted in the
+  // user environment; tests must never depend on ambient env
+  vi.stubEnv("VORTEX_DEV_UPDATER", "");
 });
 
 afterEach(() => {

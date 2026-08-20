@@ -140,6 +140,10 @@ describe("repoForChannel", () => {
 describe("resolveUpdate fetching", () => {
   beforeEach(() => {
     vi.stubEnv("IS_PREVIEW_BUILD", "");
+    // a developer machine may have the mock-feed overrides persisted in the
+    // user environment; tests must never depend on ambient env
+    vi.stubEnv("VORTEX_UPDATER_API_BASE", "");
+    vi.stubEnv("VORTEX_UPDATER_DOWNLOAD_BASE", "");
   });
 
   it("resolves the picked release with download url and collected notes", async () => {
