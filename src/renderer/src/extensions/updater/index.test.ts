@@ -17,6 +17,7 @@ interface FakeNotification {
   id: string;
   type?: string;
   message?: string;
+  progress?: number;
   actions?: Array<{ title: string; action: (dismiss: () => void) => void }>;
 }
 
@@ -395,6 +396,64 @@ describe("updater status handling", () => {
     pushStatus({ available: false, downloaded: false, checking: false, manual: false });
 
     expect(sendNotification).not.toHaveBeenCalled();
+  });
+
+  // Field report: hours of failing downloads were invisible outside the log.
+  it("surfaces update errors once and withdraws them on recovery", async () => {
+    const { sendNotification, notifications, pushStatus } = await setup();
+
+    pushStatus({ available: false, downloaded: false, error: "signature verification failed" });
+    pushStatus({ available: false, downloaded: false, error: "signature verification failed" });
+
+    const errors = sendNotification.mock.calls.filter(
+      ([notification]) => notification.id === "vortex-update-error",
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0]![0].type).toBe("error");
+
+    // a later successful check clears the error and the notification
+    pushStatus({ available: false, downloaded: false });
+    expect(notifications.some((entry) => entry.id === "vortex-update-error")).toBe(false);
+  });
+
+  it("does not claim 'up to date' when a manual check failed", async () => {
+    const { sendNotification, pushStatus } = await setup();
+
+    pushStatus({ available: false, downloaded: false, checking: true, manual: true });
+    pushStatus({ available: false, downloaded: false, manual: true, error: "network down" });
+
+    const ids = sendNotification.mock.calls.map(([notification]) => notification.id);
+    expect(ids).not.toContain("vortex-up-to-date");
+    expect(ids).toContain("vortex-update-error");
+  });
+
+  it("shows live download progress without re-toasting each tick", async () => {
+    const { sendNotification, dismissNotification, pushStatus } = await setup();
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    dismissNotification.mockClear();
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0", downloadProgress: 41 });
+    pushStatus({ available: true, downloaded: false, version: "2.7.0", downloadProgress: 42 });
+
+    // progress ticks update in place: no dismiss (which would re-toast)
+    expect(dismissNotification).not.toHaveBeenCalled();
+    const last = sendNotification.mock.calls.at(-1)![0];
+    expect(last.message).toBe("Downloading Vortex 2.7.0");
+    expect(last.progress).toBe(42);
+    // no Download button mid-download
+    expect(last.actions!.map((action) => action.title)).toEqual(["What's New"]);
+  });
+
+  it("dismisses the 'was updated' notice when an update notification appears", async () => {
+    const { notifications, pushStatus } = await setup();
+
+    pushStatus({ available: false, downloaded: false, justUpdatedFrom: "2.5.9" });
+    expect(notifications.some((entry) => entry.id === "vortex-updated")).toBe(true);
+
+    pushStatus({ available: true, downloaded: false, version: "2.7.0" });
+    expect(notifications.some((entry) => entry.id === "vortex-updated")).toBe(false);
+    expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
   });
 
   it("re-checks periodically so long sessions hear about updates", async () => {
