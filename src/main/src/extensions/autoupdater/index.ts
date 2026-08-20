@@ -290,7 +290,15 @@ export function setupAutoUpdater(installType: string): void {
   // through this first, so check-before-download holds structurally.
   function applyResolvedFeed(resolved: ResolvedRelease, generation: number): Promise<void> {
     lastResolved = resolved;
-    autoUpdater.setFeedURL({ provider: "generic", url: resolved.downloadBaseUrl });
+    // useMultipleRangeRequest: false — GitHub's release downloads are
+    // S3-backed and don't serve multipart/byteranges; without this every
+    // differential download degrades to a full download (electron-updater's
+    // own GitHub provider hard-codes the same).
+    autoUpdater.setFeedURL({
+      provider: "generic",
+      url: resolved.downloadBaseUrl,
+      useMultipleRangeRequest: false,
+    });
     return autoUpdater.checkForUpdates().then((check) => {
       if (generation === checkGeneration) {
         cancellationToken = check?.cancellationToken;

@@ -154,6 +154,7 @@ describe("checkForUpdates", () => {
 
     expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
       provider: "generic",
+      useMultipleRangeRequest: false,
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
     });
     expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalled();
@@ -206,6 +207,7 @@ describe("updater:download", () => {
     expect(resolveUpdateMock).toHaveBeenCalled();
     expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
       provider: "generic",
+      useMultipleRangeRequest: false,
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
     });
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
@@ -230,6 +232,7 @@ describe("updater:download", () => {
     expect(resolveUpdateMock).toHaveBeenCalledWith("stable", "2.6.0");
     expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
       provider: "generic",
+      useMultipleRangeRequest: false,
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.7.0",
     });
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
@@ -366,6 +369,7 @@ describe("downgrade offers", () => {
 
     expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
       provider: "generic",
+      useMultipleRangeRequest: false,
       url: "https://github.com/Nexus-Mods/Vortex/releases/download/v2.5.0",
     });
     expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalled();
