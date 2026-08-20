@@ -1,3 +1,4 @@
+import * as nodeFs from "fs";
 import * as path from "path";
 
 import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
@@ -363,9 +364,38 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
 export function appDataPath(gameMode: string): string {
   const dataPath = gameSupport.get(gameMode, "appDataPath");
 
-  return process.env.LOCALAPPDATA !== undefined
-    ? path.join(process.env.LOCALAPPDATA, dataPath)
-    : path.resolve(util.getVortexPath("appData"), "..", "Local", dataPath);
+  if (process.env.LOCALAPPDATA !== undefined) {
+    return path.join(process.env.LOCALAPPDATA, dataPath);
+  }
+
+  // For Linux, try to discover appdata folder in game-specific Wine prefix
+  const state = getApi().getState();
+  const game = selectors.gameById(state, gameMode);
+  const steamAppId = game?.details?.steamAppId;
+
+  if (steamAppId && process.platform === "linux") {
+    const discovery = discoveryForGame(gameMode);
+    if (discovery?.path) {
+      const steamApps = path.resolve(discovery.path, "..", "..");
+      const compatData = path.join(
+        steamApps,
+        "compatdata",
+        steamAppId.toString(),
+        "pfx",
+        "drive_c",
+        "users",
+        "steamuser",
+        "AppData",
+        "Local",
+        dataPath,
+      );
+      if (nodeFs.existsSync(compatData)) {
+        return compatData;
+      }
+    }
+  }
+
+  return path.resolve(util.getVortexPath("appData"), "..", "Local", dataPath);
 }
 
 export function gameDataPath(gameMode: string): string {
