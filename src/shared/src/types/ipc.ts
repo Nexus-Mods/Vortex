@@ -308,6 +308,9 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Feature flags: main pushes updated flags after each successful poll
   "flags:synchronize": (flags: FeatureFlag[]) => void;
+
+  // Auto-updater: main pushes the full status snapshot on every change
+  "updater:status-changed": (status: UpdateStatus) => void;
 }
 
 /** Context data the renderer can push to refine feature flag evaluation */

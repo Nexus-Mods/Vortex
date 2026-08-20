@@ -476,6 +476,12 @@ export interface UpdaterApi {
    * Trigger restart and install of the downloaded update.
    */
   restartAndInstall(): void;
+
+  /**
+   * Subscribe to update-status changes pushed from the main process.
+   * Returns an unsubscribe function.
+   */
+  onStatusChanged(callback: (status: UpdateStatus) => void): () => void;
 }
 
 /** API for interacting with the DownloadManager in main */
