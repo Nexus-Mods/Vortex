@@ -88,7 +88,8 @@ describe("updater status handling", () => {
     const notification = sendNotification.mock.calls[0]![0];
     expect(notification.id).toBe("vortex-update-available");
     expect(notification.message).toContain("2.7.0");
-    expect(notification.actions[1].title).toBe("Install");
+    // not downloaded yet: the action is a download, and must say so
+    expect(notification.actions[1].title).toBe("Download");
   });
 
   // Regression pin #22826: a later "downloaded" status must update the same
@@ -103,7 +104,8 @@ describe("updater status handling", () => {
     const first = sendNotification.mock.calls[0]![0];
     const second = sendNotification.mock.calls[1]![0];
     expect(second.id).toBe(first.id);
-    expect(second.actions[1].title).toBe("Restart");
+    expect(first.actions[1].title).toBe("Download");
+    expect(second.actions[1].title).toBe("Restart & Install");
   });
 
   it("presents a downgrade status as an explicit downgrade offer, not an update", async () => {
