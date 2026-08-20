@@ -21,7 +21,7 @@
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { UpdateKind, UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow } from "electron";
 import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
@@ -36,28 +36,6 @@ import {
   resolveUpdate,
   shouldAutoDownload,
 } from "./releaseResolver";
-
-/**
- * Warn once, non-blocking, that the downloaded update installs on quit.
- * The old implementation used showMessageBoxSync in before-quit: it blocked
- * the quitting main process (the dialog could not be dismissed) and the
- * handler was never removed, so every re-entered quit attempt stacked
- * another modal — an unkillable dialog loop in the field.
- */
-function showUpdateWarning() {
-  // one-shot: quit processing can re-fire before-quit
-  app.removeListener("before-quit", showUpdateWarning);
-  void dialog.showMessageBox({
-    type: "info",
-    title: "Vortex update",
-    message:
-      "An update has been downloaded and will now install. " +
-      "Please do not turn off your computer until it's done. " +
-      "If the installation process is interrupted, Vortex may not work correctly.",
-    buttons: ["Continue"],
-    noLink: true,
-  });
-}
 
 function toResolveChannel(channel: string): ResolveChannel {
   return channel === "beta" || channel === "next" ? channel : "stable";
@@ -165,13 +143,38 @@ export function setupAutoUpdater(installType: string): void {
     }
     installPending = true;
     installAttempts += 1;
-    // Drop the before-quit warning so retries don't stack duplicate dialogs.
-    app.removeListener("before-quit", showUpdateWarning);
+    // The quit this triggers must not re-enter the install via the quit hook.
+    app.removeListener("before-quit", installOnQuit);
     log("info", "Installing update", { attempt: installAttempts });
     try {
       autoUpdater.quitAndInstall();
     } catch (unknownErr) {
       handleInstallFailure(unknownToError(unknownErr));
+    }
+  }
+
+  // Install on quit, visibly. The library's autoInstallOnAppQuit path runs
+  // the installer silently (/S) — half a minute of disk churn with zero
+  // feedback. Quitting with an update staged instead triggers the exact same
+  // visible install as Restart Now (auto-update wizard + finish page).
+  // One-shot: quit processing can re-fire before-quit.
+  function installOnQuit(): void {
+    app.removeListener("before-quit", installOnQuit);
+    // only a settled staged update installs; anything else (a different
+    // version advertised since, a download in flight) must not run a stale
+    // installer on the way out
+    if (current.type === "staged") {
+      log("info", "Installing staged update on quit");
+      attemptInstall();
+    }
+  }
+
+  // (re-)arm the quit hook; called whenever a staged installer becomes current
+  function armInstallOnQuit(): void {
+    if (process.env.NODE_ENV !== "development" && app.isPackaged) {
+      app.removeListener("before-quit", installOnQuit);
+      app.on("before-quit", installOnQuit);
+      log("info", "Visible install-on-quit armed");
     }
   }
 
@@ -363,19 +366,16 @@ export function setupAutoUpdater(installType: string): void {
       releaseNotes: lastResolved?.notesHtml,
     });
 
-    // Set up auto-install on quit (packaged builds only — an unpackaged run
-    // with the dev updater must never install what it downloaded)
-    if (process.env.NODE_ENV !== "development" && app.isPackaged) {
-      autoUpdater.autoInstallOnAppQuit = true;
-      app.on("before-quit", showUpdateWarning);
-      log("info", "Auto-install on quit enabled");
+    // Install on quit stays OURS (visible), never the library's silent path:
+    // autoInstallOnAppQuit remains false for the whole app lifetime.
+    armInstallOnQuit();
 
-      // If user requested immediate install, do it now
-      if (installAfterDownloadFlag) {
-        log("info", "Auto-installing after download");
-        installAfterDownloadFlag = false;
-        attemptInstall();
-      }
+    // If user requested immediate install, do it now (packaged builds only —
+    // an unpackaged run with the dev updater must never install)
+    if (installAfterDownloadFlag && process.env.NODE_ENV !== "development" && app.isPackaged) {
+      log("info", "Auto-installing after download");
+      installAfterDownloadFlag = false;
+      attemptInstall();
     }
   });
 
@@ -501,6 +501,7 @@ export function setupAutoUpdater(installType: string): void {
             kind: kindFor(resolved.version),
             releaseNotes: resolved.notesHtml,
           });
+          armInstallOnQuit();
           return;
         }
 
@@ -604,6 +605,7 @@ export function setupAutoUpdater(installType: string): void {
           kind: kindFor(downloadedVersion),
           releaseNotes: current.type === "available" ? current.releaseNotes : undefined,
         });
+        armInstallOnQuit();
       }
       if (installAfterDownload) {
         attemptInstall();

@@ -424,7 +424,7 @@ describe("library events", () => {
     expect(ipcMock.send).toHaveBeenCalledTimes(2);
   });
 
-  it("stages the download and arms install-on-quit for packaged builds", async () => {
+  it("stages the download and arms a VISIBLE install-on-quit", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
@@ -433,7 +433,33 @@ describe("library events", () => {
     updaterEvent("update-downloaded")?.({ version: "2.6.1" });
 
     expect(getState()).toMatchObject({ type: "staged", version: "2.6.1", kind: "patch" });
-    expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(true);
+    // never the library's silent /S quit-install path
+    expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(false);
+    // our quit hook runs the same visible install as Restart Now
+    const quitHook = appMock.on.mock.calls.find(([event]) => event === "before-quit");
+    expect(quitHook).toBeDefined();
+    (quitHook![1] as () => void)();
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not install a stale staged installer on quit", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    updaterEvent("update-downloaded")?.({ version: "2.6.1" });
+
+    // a newer version is advertised since; the staged 2.6.1 is no longer what
+    // the user was told about
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    expect(getState()).toMatchObject({ type: "available", version: "2.7.0" });
+
+    const quitHook = appMock.on.mock.calls.find(([event]) => event === "before-quit");
+    (quitHook![1] as () => void)();
+
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
   });
 
   // A channel flip and back must not forget an installer already on disk.
