@@ -3,7 +3,7 @@
  * Provides a means to browse screenshots and videos captured while playing
  */
 
-import { mdiFolderMultipleImage } from "@mdi/js";
+import { mdiImageOutline } from "@mdi/js";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
 
@@ -24,7 +24,7 @@ function init(context: IExtensionContext) {
     newLayout: true,
     visible: () => activeGameId(context.api.getState()) !== undefined,
     isModernOnly: true,
-    mdi: mdiFolderMultipleImage,
+    mdi: mdiImageOutline,
     props: () => ({
       api: context.api,
     }),

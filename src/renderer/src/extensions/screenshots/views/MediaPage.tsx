@@ -1,4 +1,4 @@
-import { mdiCog, mdiOpenInNew, mdiRefresh } from "@mdi/js";
+import { mdiCogOutline, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -65,22 +65,24 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
       >
         <div className="flex shrink-0 items-center gap-x-2">
           <Button
-            appearance="subdued"
+            appearance="weak"
             brand="neutral"
             disabled={isLoading}
             leftIconPath={mdiRefresh}
             size="sm"
             title={"Refresh"}
             onClick={refreshAll}
+            data-testid={"refresh-media"}
           />
 
           <Button
-            appearance="subdued"
+            appearance="weak"
             brand="neutral"
-            leftIconPath={mdiCog}
+            leftIconPath={mdiCogOutline}
             size="sm"
             title={"Settings"}
             onClick={openSettings}
+            data-testid={"open-media-settings"}
           />
         </div>
       </PageHeader>

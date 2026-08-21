@@ -33,13 +33,25 @@ export default function MediaPageNoResults({
 
       <div className="flex gap-4">
         {refresh && (
-          <Button appearance="subdued" brand="neutral" leftIconPath={mdiRefresh} onClick={refresh}>
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            leftIconPath={mdiRefresh}
+            onClick={refresh}
+            data-testid={"no-results-refresh"}
+          >
             Scan again
           </Button>
         )}
 
         {openSettings && (
-          <Button appearance="subdued" brand="neutral" leftIconPath={mdiCog} onClick={openSettings}>
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            leftIconPath={mdiCog}
+            onClick={openSettings}
+            data-testid={"no-results-settings"}
+          >
             Settings
           </Button>
         )}

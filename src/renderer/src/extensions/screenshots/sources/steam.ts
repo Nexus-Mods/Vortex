@@ -157,16 +157,6 @@ async function discoverSteamClips(
       };
     }),
   );
-  // return thisGameClips.map((c) => ({
-  //   id: `steam-videos-${userId}-${c}`,
-  //   path: path.join(mediaPath, c),
-  //   name: c,
-  //   sourceId: `steam-videos-${userId}`,
-  //   type: "video",
-  //   thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
-  //   createdAt: stats.birthtime,
-  //   modifiedAt: stats.mtime,
-  // }));
 }
 
 export function accountIdToSteam64(accountId: number | string): string {
