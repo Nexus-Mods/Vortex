@@ -1,17 +1,19 @@
 import type { Stats } from "fs";
 import fs from "fs/promises";
-import * as childProcess from "node:child_process";
-import EventEmitter from "node:events";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import collectMedia from "./collectMedia";
+import generateVideoPreview from "./generateVideoPreview";
 import type { GameMediaSource } from "./mediaTypes";
-
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/require-await */
+
+vi.mock("./generateVideoPreview", () => ({
+  default: vi.fn(),
+}));
 
 vi.mock("fs/promises", () => ({
   default: {
@@ -20,6 +22,10 @@ vi.mock("fs/promises", () => ({
     access: vi.fn(),
     mkdir: vi.fn(),
   },
+}));
+
+vi.mock("@/util/getVortexPath", () => ({
+  default: vi.fn(() => "/tmp/vortex-temp"),
 }));
 
 vi.mock("node:child_process", async (importOriginal) => {
@@ -35,7 +41,7 @@ describe("collectMedia", () => {
   const mockedFs = vi.mocked(fs);
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
   });
 
   it("only scans sources not specified in disabled sources", async () => {
@@ -93,6 +99,7 @@ describe("collectMedia", () => {
       { name: "invalid.txt", isFile: () => true },
       { name: "folder", isFile: () => false },
     ] as any);
+    mockedFs.access.mockResolvedValue(undefined);
 
     const sources: Record<string, GameMediaSource> = {
       sourceA: {
@@ -119,16 +126,21 @@ describe("collectMedia", () => {
       { name: "yetanotherfile-thumbnail.png", isFile: () => true },
       { name: "video.mp4", isFile: () => true },
     ] as any);
+    mockedFs.access.mockResolvedValue(undefined);
+
+    const filterFn = vi.fn((s) => !s.toLowerCase().includes("thumbnail"));
 
     const sources: Record<string, GameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",
-        filterFn: (s) => !s.includes("thumbnail"),
+        filterFn,
       },
     };
 
     const result = await collectMedia(sources, []);
+    expect(filterFn).toHaveBeenCalledTimes(4);
+    expect(filterFn).toHaveBeenCalledWith("someFile-thumbnail.png");
     expect(result.map((r) => r.name)).toEqual(["anotherfile.jpg", "video.mp4"]);
   });
 
@@ -194,25 +206,8 @@ describe("collectMedia", () => {
       { name: "someFile.png", isFile: () => true },
       { name: "video.mp4", isFile: () => true },
     ] as any);
-    mockedFs.access.mockImplementation(async () => {
-      throw new Error("ENOENT");
-    });
-    mockedFs.mkdir.mockResolvedValue("");
 
-    vi.mocked(childProcess.spawn).mockImplementation(() => {
-      const proc = new EventEmitter();
-
-      queueMicrotask(() => {
-        proc.emit("exit", 0);
-      });
-
-      return proc as any;
-    });
-
-    // Pretend with FFMPEG installed
-    vi.mocked(childProcess.spawnSync).mockImplementation(() => ({ status: 0 }) as any);
-
-    const result = await collectMedia(
+    await collectMedia(
       {
         src: {
           name: "Test",
@@ -222,12 +217,6 @@ describe("collectMedia", () => {
       [],
     );
 
-    expect(childProcess.spawn).toHaveBeenCalledTimes(1);
-    expect(childProcess.spawn).toHaveBeenCalledWith(
-      "ffmpeg",
-      expect.arrayContaining(["-i", "/tmp/media/video.mp4"]),
-      expect.anything(),
-    );
-    expect(result).toEqual([]);
+    expect(generateVideoPreview).toHaveBeenCalledWith("\\tmp\\media\\video.mp4", "src::video.mp4");
   });
 });
