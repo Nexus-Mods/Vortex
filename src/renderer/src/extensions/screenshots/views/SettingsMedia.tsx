@@ -35,7 +35,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
   const onToggleSource = useCallback(
     (sourceId: string) => {
-      dispatch(setGameMediaSourceEnabled(gameId, sourceId, !disabledSources.includes(sourceId)));
+      dispatch(setGameMediaSourceEnabled(gameId, sourceId, disabledSources.includes(sourceId)));
     },
     [dispatch, gameId, disabledSources],
   );
@@ -56,7 +56,11 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
   const toggleItem = ([id, source]: [string, GameMediaSource]) => (
     <div className="flex w-max items-center gap-3" key={id}>
-      <Switch checked={!disabledSources.includes(id)} onChange={() => onToggleSource(id)} />
+      <Switch
+        checked={!disabledSources.includes(id)}
+        onChange={() => onToggleSource(id)}
+        data-testid={`media-source-toggle-${id}`}
+      />
 
       <div className="min-w-sm grow">
         <Typography as="span" typographyType="body-sm">
@@ -71,8 +75,18 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
       {source.custom && (
         <ToolbarGroup
           actions={[
-            { label: "Edit Source", iconPath: mdiPencil, onClick: () => onEditSource(id, source) },
-            { label: "Delete Source", iconPath: mdiDelete, onClick: () => onDeleteSource(id) },
+            {
+              label: "Edit Source",
+              iconPath: mdiPencil,
+              onClick: () => onEditSource(id, source),
+              testId: `source-actions-edit-${id}`,
+            },
+            {
+              label: "Delete Source",
+              iconPath: mdiDelete,
+              onClick: () => onDeleteSource(id),
+              testId: `source-actions-delete-${id}`,
+            },
           ]}
         />
       )}
@@ -109,7 +123,9 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
           </Typography>
         )}
 
-        {!!customSources && Object.entries(customSources).map(toggleItem)}
+        {!!customSources &&
+          Object.keys(customSources).length > 0 &&
+          Object.entries(customSources).map(toggleItem)}
       </div>
 
       <Button
