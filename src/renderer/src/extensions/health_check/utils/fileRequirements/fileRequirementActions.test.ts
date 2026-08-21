@@ -14,11 +14,9 @@ vi.mock("@/extensions/profile_management/actions/profiles", () => ({
   setModsEnabled: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/logging", () => ({ log: vi.fn() }));
-vi.mock("@/util/api", () => ({
-  opn: vi.fn(() => Promise.resolve()),
-  renderModName: vi.fn(() => "Mod"),
-  sanitizeCSSId: vi.fn((id: string) => id),
-}));
+vi.mock("@/util/opn", () => ({ default: vi.fn(() => Promise.resolve()) }));
+vi.mock("@/extensions/mod_management/util/modName", () => ({ default: vi.fn(() => "Mod") }));
+vi.mock("@/util/util", () => ({ sanitizeCSSId: vi.fn((id: string) => id) }));
 vi.mock("../shared/installTracking", () => ({
   trackedInstall: vi.fn((_api, _identity, run: () => Promise<void>) => run()),
 }));
@@ -29,7 +27,7 @@ import { nexusGames } from "@/extensions/nexus_integration/util";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { opn } from "@/util/api";
+import opn from "@/util/opn";
 
 import { trackedInstall } from "../shared/installTracking";
 import { downloadFileRequirement, installDownloadedFile } from "./fileRequirementActions";

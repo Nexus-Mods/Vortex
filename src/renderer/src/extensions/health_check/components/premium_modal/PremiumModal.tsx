@@ -3,18 +3,20 @@ import React, { type ReactNode, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import {
+  useOptionalIssue,
+  useTracker,
+} from "@/extensions/health_check/hooks/HealthCheckTracking.context";
+import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
+import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
+import { isPremium } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
+import opn from "@/util/opn";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
-
-import { opn } from "../../../../util/api";
-import { PREMIUM_PATH } from "../../../nexus_integration/constants";
-import { isPremium } from "../../../nexus_integration/selectors";
-import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
-import { usePremiumStatusRefresh } from "../../hooks/usePremiumStatusRefresh";
 
 /** Which 1-click flow surfaced the premium upsell modal. */
 export type PremiumTrigger = "single_install" | "batch_install" | "install_all";
@@ -73,7 +75,7 @@ export const PremiumModal = ({
   // The purchase happens on the website, so watch for it while the upsell is up. This is
   // also why "Unlock premium" doesn't close the modal: staying open is what keeps the
   // check armed until the new membership can be seen.
-  usePremiumStatusRefresh(api, isOpen);
+  useRefreshUserInfoOnFocus(api, isOpen);
 
   // Premium specifically, not `!shouldShowPremiumAd`: supporters can't download through
   // the client either, and an absent userInfo would read as a purchase that never happened.

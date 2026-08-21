@@ -33,6 +33,13 @@ Determine the target, in priority order:
 2. **`prod` keyword** → the prod dir `$APPDATA/Vortex/`.
 3. **Default → DEV** dir `$APPDATA/@vortex/main/` (the working build; scan dev unless
    told otherwise).
+4. **No live log dir at all** (no local Vortex install — e.g. the skill running in a
+   claude.ai chat sandbox): the logs arrive as **uploaded files**. Look in the
+   session's uploads dir (`/mnt/user-data/uploads/` on claude.ai), extract any zip
+   first, and treat the files as explicit paths (case 1). Uploaded copies are foreign
+   files — load `shared/multi-file.md` whenever there is more than one. If nothing was
+   uploaded, ask the user to attach `%APPDATA%\Vortex\vortex*.log` (prod) or
+   `%APPDATA%\@vortex\main\vortex*.log` (dev), excluding `network.log`.
 
 State which dir/file was chosen. Quote all paths (`@vortex` and spaces). If the chosen
 dir has no `vortex.log`, say so and offer the other dir rather than silently switching.
@@ -52,13 +59,13 @@ This prints numbered files by suffix descending (older first), then `vortex.log`
 
 ## On-demand chunks (load only what the selected mode needs)
 
-| chunk                   | holds                                                              | loaded by                         |
-| ----------------------- | ------------------------------------------------------------------ | --------------------------------- |
-| `shared/sessions.md`    | session boundary markers, 4-state termination, instanceId, scoping | §B, §E, §F                        |
-| `shared/lifecycle.md`   | download / install / collection / deploy markers + thread keys     | §E, §F                            |
-| `shared/persistence.md` | persist:diff / slow-write / wedged-write markers                   | §C                                |
-| `shared/multi-file.md`  | multiple / foreign-file handling (dedup, no cross-correlate)       | any mode given >1 / foreign files |
-| `shared/edge-cases.md`  | operational edge cases (app running, file-not-yet, firehose)       | §A, §B                            |
+| chunk                   | holds                                                                                                 | loaded by                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `shared/sessions.md`    | session boundary markers, 4-state termination, instanceId, scoping, release-currency (stale-log) gate | §B, §E, §F                        |
+| `shared/lifecycle.md`   | download / install / collection / deploy markers + thread keys                                        | §E, §F                            |
+| `shared/persistence.md` | persist:diff / slow-write / wedged-write markers                                                      | §C                                |
+| `shared/multi-file.md`  | multiple / foreign-file handling (dedup, no cross-correlate)                                          | any mode given >1 / foreign files |
+| `shared/edge-cases.md`  | operational edge cases (app running, file-not-yet, firehose)                                          | §A, §B                            |
 
 Each mode file names its required chunks in its own "Prereq" line. Read this core once;
 load each chunk at most once even when running several modes.

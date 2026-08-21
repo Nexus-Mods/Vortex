@@ -9,6 +9,7 @@ import {
   setUserAPIKey,
 } from "@/extensions/nexus_integration/actions/account";
 import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
+import { scheduleMembershipRefresh } from "@/extensions/nexus_integration/membership";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Popover } from "@/ui/components/popover/Popover";
@@ -59,7 +60,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
       {
         iconPath: mdiRefresh,
         label: t("Refresh user info"),
-        onClick: () => api.events.emit("refresh-user-info"),
+        onClick: () => scheduleMembershipRefresh(api),
       },
       helpAction,
     ],

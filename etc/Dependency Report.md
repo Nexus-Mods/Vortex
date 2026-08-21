@@ -11,7 +11,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @duckdb/node-api | 1.5.1-r.1 |
 | @electron/remote | 2.1.3 |
 | @floating-ui/react | 0.27.20 |
-| @headlessui/react | 1.7.19 |
+| @headlessui/react | 2.2.10 |
 | @hot-updater/bsdiff | 0.30.6 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
@@ -19,7 +19,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
 | @nexusmods/fomod-installer-ipc | 0.13.3 |
 | @nexusmods/fomod-installer-native | 0.13.3 |
-| @nexusmods/nexus-api | 1.7.2 |
+| @nexusmods/nexus-api | 1.7.3 |
 | @nosferatu500/react-sortable-tree | 4.4.0 |
 | @nosferatu500/theme-file-explorer | 3.0.21 |
 | @opentelemetry/api | 1.9.1 |

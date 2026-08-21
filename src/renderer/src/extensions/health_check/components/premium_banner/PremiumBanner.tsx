@@ -2,17 +2,19 @@ import React, { useEffect, useState } from "react";
 import { Trans } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import {
+  useOptionalIssue,
+  useTracker,
+} from "@/extensions/health_check/hooks/HealthCheckTracking.context";
+import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
+import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
-import { opn } from "@/util/api";
+import opn from "@/util/opn";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
-
-import { PREMIUM_PATH } from "../../../nexus_integration/constants";
-import { useOptionalIssue, useTracker } from "../../hooks/HealthCheckTracking.context";
-import { usePremiumStatusRefresh } from "../../hooks/usePremiumStatusRefresh";
 
 /** Where the premium banner is shown. */
 export type BannerPlacement = "list" | "detail";
@@ -34,7 +36,7 @@ export const PremiumBanner = ({
   // premium to somebody who now has it.
   const [sentToPremiumPage, setSentToPremiumPage] = useState(false);
 
-  usePremiumStatusRefresh(api, sentToPremiumPage);
+  useRefreshUserInfoOnFocus(api, sentToPremiumPage);
 
   useEffect(() => {
     if (showPremiumAd) {

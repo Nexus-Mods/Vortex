@@ -120,7 +120,7 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
     undefined,
   );
 
-  const dataFolder = discovery ? path.join(discovery, "data") : undefined;
+  const dataFolder = discovery ? path.join(discovery, "Data") : undefined;
 
   const normalize = (fileName: string) => {
     const noExt = path.basename(fileName, path.extname(fileName)).toLowerCase();

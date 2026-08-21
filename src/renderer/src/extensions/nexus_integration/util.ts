@@ -76,7 +76,12 @@ import { isLoggedIn, userInfo as userInfoSelector } from "./selectors";
 import { accessTokenSchema } from "./types/IJWTAccessToken";
 import type { IMembership, IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from "./util/checkModsVersion";
-import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
+import {
+  convertGameIdReverse,
+  convertNXMIdReverse,
+  nexusGameId,
+  nxmPageId,
+} from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
 import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
 import type { ITokenReply } from "./util/oauth";
@@ -408,9 +413,8 @@ function startDownloadCollection(
   referenceTag?: string,
 ): BluebirdPromise<string> {
   const state: IState = api.getState();
-  const games = knownGames(state);
-  const gameId = convertNXMIdReverse(games, url.gameId);
-  const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+  const gameId = convertNXMIdReverse(knownGames(state), url.gameId);
+  const pageId = nxmPageId(state, url.gameId);
   let revisionInfo: Partial<IRevision>;
 
   const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
@@ -753,9 +757,8 @@ function startDownloadMod(
 ): BluebirdPromise<string> {
   log("info", "start download mod", { urlStr, allowInstall });
   let state = api.getState();
-  const games = knownGames(state);
-  const gameId = convertNXMIdReverse(games, url.gameId);
-  const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+  const gameId = convertNXMIdReverse(knownGames(state), url.gameId);
+  const pageId = nxmPageId(state, url.gameId);
 
   let nexusFileInfo: IFileInfo;
   return getInfoGraphQL(nexus, pageId, url.modId, url.fileId)
@@ -1776,7 +1779,7 @@ function errorFromNexusError(err: NexusError): string {
 
 // Membership is encoded in the user payload / JWT as a set of role strings.
 // Keep those literals in one place so the checks below can't drift.
-const MEMBERSHIP_ROLE = {
+export const MEMBERSHIP_ROLE = {
   premium: "premium",
   supporter: "supporter",
   lifetime: "lifetimepremium",
@@ -1867,7 +1870,8 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   return oauthCred !== undefined ? oauthCred.token : undefined;
 }
 
-function getUserInfo(
+/** Re-read the account from the api into state. Resolves to whether it was updated. */
+export function getUserInfo(
   api: IExtensionApi,
   nexus: Nexus,
   /*userInfo: IValidateKeyResponse*/

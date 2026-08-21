@@ -1,7 +1,7 @@
 import shortid from "shortid";
 
 import * as actions from "../actions/app";
-import type { IApp } from "../types/IState";
+import type { IApp, IExtensionState } from "../types/IState";
 import { actionsToReducerSpec } from "./builder";
 
 const defaultState: IApp = {
@@ -13,6 +13,23 @@ const defaultState: IApp = {
   migrations: [],
   installType: "regular",
 };
+
+// entries are created only by addExtension, so a write through a key naming
+// none must not mint a partial entry holding just that field
+function updateExtension(
+  state: IApp,
+  extensionId: string,
+  changes: Partial<IExtensionState>,
+): IApp {
+  if (state.extensions[extensionId] === undefined) return state;
+  return {
+    ...state,
+    extensions: {
+      ...state.extensions,
+      [extensionId]: { ...state.extensions[extensionId], ...changes },
+    },
+  };
+}
 
 export const appReducer = actionsToReducerSpec(
   defaultState,
@@ -32,43 +49,13 @@ export const appReducer = actionsToReducerSpec(
         },
       };
     },
-    setExtensionEnabled: (state, payload) => ({
-      ...state,
-      extensions: {
-        ...state.extensions,
-        [payload.extensionId]: {
-          ...state.extensions[payload.extensionId],
-          enabled: payload.enabled,
-        },
-      },
-    }),
-    setExtensionVersion: (state, payload) => ({
-      ...state,
-      extensions: {
-        ...state.extensions,
-        [payload.extensionId]: {
-          ...state.extensions[payload.extensionId],
-          version: payload.version,
-        },
-      },
-    }),
-    setExtensionEndorsed: (state, payload) => ({
-      ...state,
-      extensions: {
-        ...state.extensions,
-        [payload.extensionId]: {
-          ...state.extensions[payload.extensionId],
-          endorsed: payload.endorsed,
-        },
-      },
-    }),
-    removeExtension: (state, payload) => ({
-      ...state,
-      extensions: {
-        ...state.extensions,
-        [payload]: { ...state.extensions[payload], remove: true },
-      },
-    }),
+    setExtensionEnabled: (state, payload) =>
+      updateExtension(state, payload.extensionId, { enabled: payload.enabled }),
+    setExtensionVersion: (state, payload) =>
+      updateExtension(state, payload.extensionId, { version: payload.version }),
+    setExtensionEndorsed: (state, payload) =>
+      updateExtension(state, payload.extensionId, { endorsed: payload.endorsed }),
+    removeExtension: (state, payload) => updateExtension(state, payload, { remove: true }),
     forgetExtension: (state, payload) => {
       const { [payload]: _, ...extensions } = state.extensions;
       return { ...state, extensions };
