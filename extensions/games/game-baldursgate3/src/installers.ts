@@ -6,6 +6,7 @@ import getVersion from "exe-version";
 import * as semver from "semver";
 
 import { LSLIB_FILES, GAME_ID } from "./common";
+import { SE_CONFIG_FILES, GAME_ID } from "./common";
 import { logDebug } from "./util";
 
 export async function testLSLib(files: string[], gameId: string): Promise<types.ISupportedResult> {
@@ -275,4 +276,38 @@ export async function installReplacer(files: string[]): Promise<types.IInstallRe
   return Promise.resolve({
     instructions,
   });
+}
+
+
+export async function findSEConfigRoot(files: string[]): string | undefined {
+  const match = files.find(file => {
+    const segments = file.split(path.sep);
+    return segments.length > 1
+      && SE_CONFIG_FILES.includes(segments[0].toLowerCase());
+  });
+  return match ? match.split(path.sep)[0] : undefined;
+}
+
+export async function testSEConfig(files: string[], gameId: string)
+    : Promise<types.ISupportedResult> {
+  const supported = (gameId === GAME_ID) && (findSEConfigRoot(files) !== undefined);
+  return Promise.resolve({ supported, requiredFiles: [] });
+}
+
+export async function installSEConfig(files: string[])
+    : Promise<types.IInstallResult> {
+  const rootName = findSEConfigRoot(files);
+
+  const instructions: types.IInstruction[] = files
+    .filter(file => !file.endsWith(path.sep))
+    .map(file => {
+      const segments = file.split(path.sep);
+      const strip = segments[0].toLowerCase() === rootName.toLowerCase();
+      const destination = strip ? path.join(...segments.slice(1)) : file;
+      return { type: 'copy', source: file, destination } as types.IInstruction;
+    });
+
+  instructions.push({ type: 'setmodtype', value: MOD_TYPE_SE_CONFIG } as any);
+
+  return Promise.resolve({ instructions });
 }
