@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
+import setupRendererTestMocks from "../util/setupMocks";
+setupRendererTestMocks();
+
 import type { IExtensionApi } from "@/types/api";
 
 import MediaPage from "./MediaPage";

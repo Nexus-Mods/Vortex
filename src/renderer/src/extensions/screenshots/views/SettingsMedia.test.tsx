@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
+import setupRendererTestMocks from "../util/setupMocks";
+setupRendererTestMocks();
+
 import SettingsMedia from "./SettingsMedia";
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -55,7 +58,7 @@ import useGameMedia from "../hooks/GameMediaHook";
 const mockedUseGameMedia = vi.mocked(useGameMedia);
 
 const renderComponent = () => {
-  const translate = vi.fn();
+  const translate = vi.fn((key: string) => key);
   const selectDir = vi.fn();
 
   const api: Partial<IExtensionApi> = {
