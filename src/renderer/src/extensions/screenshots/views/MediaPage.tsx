@@ -137,6 +137,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             >
               {items?.map((i) => (
                 <MediaListItem
+                  game={game}
                   item={i}
                   key={`${i.sourceId}:${i.name}`}
                   t={t}
@@ -189,6 +190,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                       ?.filter((i) => i.sourceId === k)
                       .map((i) => (
                         <MediaListItem
+                          game={game}
                           item={i}
                           key={`${i.sourceId}:${i.name}`}
                           t={t}
