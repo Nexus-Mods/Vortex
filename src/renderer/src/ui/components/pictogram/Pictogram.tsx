@@ -26,6 +26,7 @@ const brandMap = {
 } as const satisfies Record<IPictogramBrand, string>;
 
 export type IPictogramName =
+  | "camera"
   | "game"
   | "health-check"
   | "no-mod"
