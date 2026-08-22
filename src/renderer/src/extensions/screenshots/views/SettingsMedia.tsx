@@ -58,8 +58,8 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
     <div className="flex w-max items-center gap-3" key={id}>
       <Switch
         checked={!disabledSources.includes(id)}
-        onChange={() => onToggleSource(id)}
         data-testid={`media-source-toggle-${id}`}
+        onChange={() => onToggleSource(id)}
       />
 
       <div className="min-w-sm grow">
@@ -132,6 +132,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         appearance="moderate"
         brand="neutral"
         className="max-w-48"
+        data-testid={"add-custom-source"}
         leftIconPath={mdiPlus}
         size="sm"
         onClick={() => setShowAddModal(true)}
@@ -143,6 +144,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         api={api}
         existingSource={editSource}
         gameId={gameId}
+        key={editSource?.id ?? "new"}
         visible={showAddModal}
         onClose={closeModal}
       />

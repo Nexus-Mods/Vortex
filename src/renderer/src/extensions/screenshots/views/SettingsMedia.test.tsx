@@ -1,39 +1,55 @@
 import { screen, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-// import { useSelector } from "react-redux";
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
 import SettingsMedia from "./SettingsMedia";
 
-const dispatch = vi.fn();
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-let disabledSources: string[] = [];
+const { dispatch, mockUseDispatch, mockUseSelector, selectorState } = vi.hoisted(() => {
+  const dispatch = vi.fn();
+
+  const selectorState = {
+    persistent: {
+      game_media: {
+        disabledSources: {
+          "game-1": [] as string[],
+        },
+      },
+    },
+  };
+
+  return {
+    dispatch,
+    mockUseDispatch: vi.fn(() => dispatch),
+    mockUseSelector: vi.fn((selector: (state: unknown) => unknown) => selector(selectorState)),
+    selectorState,
+  };
+});
 
 vi.mock("../../../util/selectors", () => ({
   activeGameId: () => "game-1",
 }));
 
-vi.mock("react-redux", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("react-redux")>()),
-  useDispatch: () => dispatch,
-  useSelector: (selector: (state: unknown) => unknown) =>
-    selector({
-      persistent: {
-        game_media: {
-          disabledSources: { "game-1": disabledSources },
-        },
-      },
-    }),
-}));
+vi.mock("react-redux", async (importOriginal) => {
+  const actual = await importOriginal();
 
-import { IExtensionApi } from "@/types/api";
+  return {
+    ...(actual as object),
+    useDispatch: mockUseDispatch,
+    useSelector: mockUseSelector,
+  };
+});
+
+import type { IExtensionApi } from "@/types/api";
 
 vi.mock("../hooks/GameMediaHook", () => ({
   default: vi.fn(),
 }));
 
-import { setGameMediaSourceEnabled } from "../actions/persistent";
+import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
 import useGameMedia from "../hooks/GameMediaHook";
 
 const mockedUseGameMedia = vi.mocked(useGameMedia);
@@ -52,8 +68,8 @@ const renderComponent = () => {
 
 describe("SettingsMedia", () => {
   beforeEach(() => {
-    disabledSources = [];
     vi.clearAllMocks();
+    selectorState.persistent.game_media.disabledSources["game-1"] = [];
     mockedUseGameMedia.mockReturnValue({ defaultSources: {}, customSources: {} } as any);
   });
 
@@ -100,7 +116,7 @@ describe("SettingsMedia", () => {
   });
 
   it("reflects disabled sources", () => {
-    disabledSources = ["sourceB"];
+    selectorState.persistent.game_media.disabledSources["game-1"] = ["sourceB"];
     mockedUseGameMedia.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A" },
@@ -123,7 +139,7 @@ describe("SettingsMedia", () => {
   });
 
   it("toggles sources correctly", async () => {
-    disabledSources = ["sourceB"];
+    selectorState.persistent.game_media.disabledSources["game-1"] = ["sourceB"];
     mockedUseGameMedia.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A" },
@@ -149,9 +165,64 @@ describe("SettingsMedia", () => {
     expect(dispatch).toHaveBeenCalledWith(setGameMediaSourceEnabled("game-1", "sourceB", true));
   });
 
-  it("deletes a custom source", () => {});
+  it("deletes a custom source", async () => {
+    mockedUseGameMedia.mockReturnValue({
+      defaultSources: {
+        sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
+      },
+      customSources: {
+        sourceB: {
+          name: "Source B",
+          path: "/source/B",
+          description: "Example source B (Custom)",
+          custom: true,
+        },
+      },
+    } as any);
 
-  it("opens the add modal", () => {});
+    const user = userEvent.setup();
 
-  it("opens the edit modal", () => {});
+    renderComponent();
+    const deleteButton = screen.getByTestId("source-actions-delete-sourceB");
+    await user.click(deleteButton);
+
+    expect(dispatch).toHaveBeenCalledWith(deleteGameMediaSource("game-1", "sourceB"));
+  });
+
+  it("opens the add modal", async () => {
+    const user = userEvent.setup();
+    renderComponent();
+    const addButton = screen.getByTestId("add-custom-source");
+    await user.click(addButton);
+
+    const modalTitle = screen.queryByText("Add Custom Media Source");
+
+    expect(modalTitle).toBeInTheDocument();
+  });
+
+  it("opens the edit modal", async () => {
+    mockedUseGameMedia.mockReturnValue({
+      defaultSources: {
+        sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
+      },
+      customSources: {
+        sourceB: {
+          name: "Source B",
+          path: "/source/B",
+          description: "Example source B (Custom)",
+          custom: true,
+        },
+      },
+    } as any);
+
+    const user = userEvent.setup();
+
+    renderComponent();
+    await user.click(screen.getByTestId("source-actions-edit-sourceB"));
+
+    expect(screen.getByText("Add Custom Media Source")).toBeInTheDocument();
+    expect(screen.getByLabelText("Source Name")).toHaveValue("Source B");
+    expect(screen.getByLabelText("Description")).toHaveValue("Example source B (Custom)");
+    expect(screen.getByLabelText("Folder Path")).toHaveValue("/source/B");
+  });
 });

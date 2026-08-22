@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 
 import { mdiFolderCog } from "@mdi/js";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 
 import type { IExtensionApi } from "@/types/api";
@@ -28,19 +28,12 @@ export default function SettingsMediaAddSourceModal({
   existingSource,
 }: ISettingsMediaAddSourceModalProps) {
   const t = api.translate;
-  const [sourceName, setSourceName] = useState(existingSource?.source?.name ?? "");
+  const [sourceName, setSourceName] = useState(() => existingSource?.source?.name ?? "");
+  const [sourcePath, setSourcePath] = useState(() => existingSource?.source?.path ?? "");
   const [sourceDescription, setSourceDescription] = useState(
-    existingSource?.source?.description ?? "",
+    () => existingSource?.source?.description ?? "",
   );
-  const [sourcePath, setSourcePath] = useState(existingSource?.source?.path ?? "");
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (!existingSource) return;
-    setSourceName(existingSource?.source?.name);
-    setSourceDescription(existingSource?.source?.description);
-    setSourcePath(existingSource?.source?.path);
-  }, [existingSource]);
 
   const selectDirectory = async () => {
     try {
@@ -77,6 +70,7 @@ export default function SettingsMediaAddSourceModal({
       <form className="flex flex-col gap-2">
         <Input
           required
+          id="media-source-name"
           label="Source Name"
           placeholder={t("e.g. My Screenshots")}
           type="text"
@@ -85,6 +79,7 @@ export default function SettingsMediaAddSourceModal({
         />
 
         <Input
+          id="media-source-description"
           label={t("Description")}
           placeholder={t("e.g. Images saved to my screenshots folder")}
           type="text"
@@ -96,6 +91,7 @@ export default function SettingsMediaAddSourceModal({
           <Input
             required
             fieldClassName="grow"
+            id="media-source-path"
             label={t("Folder Path")}
             type="text"
             value={sourcePath}

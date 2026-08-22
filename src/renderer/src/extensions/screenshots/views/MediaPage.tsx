@@ -67,22 +67,22 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           <Button
             appearance="weak"
             brand="neutral"
+            data-testid={"refresh-media"}
             disabled={isLoading}
             leftIconPath={mdiRefresh}
             size="sm"
             title={"Refresh"}
             onClick={refreshAll}
-            data-testid={"refresh-media"}
           />
 
           <Button
             appearance="weak"
             brand="neutral"
+            data-testid={"open-media-settings"}
             leftIconPath={mdiCogOutline}
             size="sm"
             title={"Settings"}
             onClick={openSettings}
-            data-testid={"open-media-settings"}
           />
         </div>
       </PageHeader>

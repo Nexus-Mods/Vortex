@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
-import { IExtensionApi } from "@/types/api";
+import type { IExtensionApi } from "@/types/api";
 
 import MediaPage from "./MediaPage";
 
@@ -11,17 +11,28 @@ vi.mock("../hooks/GameMediaHook", () => ({
   default: vi.fn(),
 }));
 
-const dispatch = vi.fn();
+const { dispatch, mockUseDispatch } = vi.hoisted(() => {
+  const dispatch = vi.fn();
 
-vi.mock("react-redux", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("react-redux")>()),
-  useDispatch: () => dispatch,
-}));
+  return {
+    dispatch,
+    mockUseDispatch: vi.fn(() => dispatch),
+  };
+});
+
+vi.mock("react-redux", async (importOriginal) => {
+  const actual = await importOriginal();
+
+  return {
+    ...(actual as object),
+    useDispatch: mockUseDispatch,
+  };
+});
 
 import { setOpenMainPage, setSettingsPage } from "@/actions";
 
 import useGameMedia from "../hooks/GameMediaHook";
-import { GameMediaItem } from "../util/mediaTypes";
+import type { GameMediaItem } from "../util/mediaTypes";
 
 const mockedUseGameMedia = vi.mocked(useGameMedia);
 
@@ -34,7 +45,7 @@ const baseMediaState: ReturnType<typeof useGameMedia> = {
   forceCollect: vi.fn().mockResolvedValue(undefined),
   game: { id: "", name: "Test Game", requiredFiles: [], executable: "." },
   disabledSources: [],
-  discovery: {} as any,
+  discovery: {},
   customSources: {},
   defaultSources: {},
 };

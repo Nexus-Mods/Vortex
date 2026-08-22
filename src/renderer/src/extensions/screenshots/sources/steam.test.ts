@@ -2,7 +2,7 @@ import fs from "fs/promises";
 
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
-import { GameMediaItem } from "../util/mediaTypes";
+import type { GameMediaItem } from "../util/mediaTypes";
 import {
   screenshotsFolderBySteamID,
   clipsFolderBySteamID,

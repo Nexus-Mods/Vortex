@@ -128,7 +128,7 @@ describe("collectMedia", () => {
     ] as any);
     mockedFs.access.mockResolvedValue(undefined);
 
-    const filterFn = vi.fn((s) => !s.toLowerCase().includes("thumbnail"));
+    const filterFn = vi.fn((s: string) => !s.toLowerCase().includes("thumbnail"));
 
     const sources: Record<string, GameMediaSource> = {
       sourceA: {

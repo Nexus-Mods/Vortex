@@ -78,12 +78,13 @@ export default function MediaSingleView({
       iconPath: mdiCloudUpload,
       showLabel: true,
       disabled: false,
-      brand: "primary",
+      brand: "info",
       onClick: () => setUploadModalVisible(true),
     },
     {
       label: "Open File",
       iconPath: mdiOpenInNew,
+      showLabel: true,
       onClick: () => window.api.shell.showItemInFolder(entry.path),
     },
   ];
@@ -108,7 +109,7 @@ export default function MediaSingleView({
       </PageHeader>
 
       <div className="my-4 grid h-full grid-cols-[80%_20%] gap-2 px-2">
-        <div>
+        <div className="max-h-dvh">
           <div
             className={`relative w-full ${isAddingTag ? "cursor-crosshair" : ""}`}
             ref={containerRef}
@@ -173,7 +174,7 @@ export default function MediaSingleView({
           </div>
         </div>
 
-        <div className="mx-1 flex flex-col rounded-sm bg-surface-mid p-2 select-text">
+        <div className="mx-1 flex flex-col p-2 select-text">
           <Typography
             as="h6"
             className="mb-2 border-b border-translucent-subdued"

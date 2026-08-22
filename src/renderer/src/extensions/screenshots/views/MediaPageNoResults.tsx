@@ -36,9 +36,9 @@ export default function MediaPageNoResults({
           <Button
             appearance="subdued"
             brand="neutral"
+            data-testid={"no-results-refresh"}
             leftIconPath={mdiRefresh}
             onClick={refresh}
-            data-testid={"no-results-refresh"}
           >
             Scan again
           </Button>
@@ -48,9 +48,9 @@ export default function MediaPageNoResults({
           <Button
             appearance="subdued"
             brand="neutral"
+            data-testid={"no-results-settings"}
             leftIconPath={mdiCog}
             onClick={openSettings}
-            data-testid={"no-results-settings"}
           >
             Settings
           </Button>
