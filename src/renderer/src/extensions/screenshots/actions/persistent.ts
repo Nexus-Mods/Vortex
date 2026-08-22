@@ -21,6 +21,15 @@ export const setGameMediaModTags = createAction(
   }),
 );
 
+export const deleteGameMediaModTag = createAction(
+  "DELETE_GAME_MEDIA_MOD_TAG",
+  (gameId: string, mediaId: string, modId: string) => ({
+    gameId,
+    mediaId,
+    modId,
+  }),
+);
+
 export const setGameMediaSourceEnabled = createAction(
   "SET_GAME_MEDIA_SOURCE_ENABLED",
   (gameId: string, sourceId: string, enabled: boolean) => ({

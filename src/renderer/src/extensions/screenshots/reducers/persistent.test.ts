@@ -194,8 +194,45 @@ describe("deleteGameMediaSource", () => {
   });
 });
 
+describe("deleteGameMediaModTag", () => {
+  it("deletes only the tag supplied", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: {
+        game1: {
+          image1: [
+            {
+              id: "modidentifier1",
+              name: "tag name",
+              x: 1,
+              y: 1,
+              createdAt: new Date().toString(),
+            },
+            {
+              id: "modidentifier2",
+              name: "tag name",
+              x: 1,
+              y: 1,
+              createdAt: new Date().toString(),
+            },
+          ],
+        },
+      },
+      disabledSources: {},
+    };
+
+    const result = persistentReducer.reducers["DELETE_GAME_MEDIA_MOD_TAG"](input, {
+      gameId: "game1",
+      mediaId: "image1",
+      modId: "modidentifier1",
+    });
+
+    expect(result.modTags["game1"]["image1"].length).toEqual(1);
+    expect(result.modTags["game1"]["image1"][0].id).toEqual("modidentifier2");
+  });
+});
+
 describe("setGameMediaModTags", () => {
-  // SET_GAME_MEDIA_MOD_TAGS
   it("stores tags for a media item", () => {
     const input: IGameMediaPersistentState = {
       sources: {},

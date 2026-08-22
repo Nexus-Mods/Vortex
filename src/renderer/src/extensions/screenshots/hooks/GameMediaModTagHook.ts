@@ -64,5 +64,6 @@ export default function useGameMediaModTag(mediaItemId: string) {
     searchTerm,
     setSearchTerm,
     domainName,
+    gameId,
   };
 }

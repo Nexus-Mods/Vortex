@@ -53,6 +53,7 @@ export default function MediaSingleView({
     setPendingCoords,
     onImageClick,
     domainName,
+    gameId,
   } = useGameMediaModTag(entry.id);
 
   const playerRef = useRef<HTMLVideoElement | null>(null);
@@ -108,7 +109,7 @@ export default function MediaSingleView({
         </Button>
       </PageHeader>
 
-      <div className="mx-auto my-4 grid size-full max-w-8xl grid-cols-[80%_20%] gap-2 space-y-6 p-6 px-2">
+      <div className="mx-auto grid size-full max-w-8xl grid-cols-[80%_20%] gap-2 space-y-6 p-4 px-2">
         <div>
           <div
             className={`relative w-full ${isAddingTag ? "cursor-crosshair" : ""}`}
@@ -135,7 +136,14 @@ export default function MediaSingleView({
 
             {/* Persistent markers */}
             {tags?.map((tag) => (
-              <ModTagIndicator key={tag.id} mod={tag} x={tag.x} y={tag.y} />
+              <ModTagIndicator
+                gameId={gameId}
+                key={tag.id}
+                mediaId={entry.id}
+                mod={tag}
+                x={tag.x}
+                y={tag.y}
+              />
             ))}
 
             {/* Floating search at cursor when a pending coord is set */}
@@ -169,12 +177,17 @@ export default function MediaSingleView({
             )}
 
             {isAddingTag && pendingCoords && (
-              <ModTagIndicator x={pendingCoords.x} y={pendingCoords.y} />
+              <ModTagIndicator
+                gameId={gameId}
+                mediaId={entry.id}
+                x={pendingCoords.x}
+                y={pendingCoords.y}
+              />
             )}
           </div>
         </div>
 
-        <div className="mx-1 flex flex-col p-2 select-text">
+        <div className="mx-1 flex flex-col select-text">
           <Typography
             as="h6"
             className="mb-2 border-b border-translucent-subdued"

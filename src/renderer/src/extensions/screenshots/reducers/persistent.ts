@@ -40,6 +40,16 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
       delete newSources[sourceId];
       return { ...state, sources: { ...state.sources, [gameId]: newSources } };
     }),
+    on(actions.deleteGameMediaModTag, (state, payload) => {
+      const { gameId, modId, mediaId } = payload;
+      const currentTags = state.modTags[gameId]?.[mediaId];
+      if (!currentTags) return;
+      const newTags = currentTags.filter((t) => t.id !== modId);
+      return {
+        ...state,
+        modTags: { ...state.modTags, [gameId]: { ...state.modTags[gameId], [mediaId]: newTags } },
+      };
+    }),
     on(actions.setGameMediaModTags, (state, payload) => {
       const { gameId, mediaId, tags } = payload;
       if (!tags || !tags.length) {
