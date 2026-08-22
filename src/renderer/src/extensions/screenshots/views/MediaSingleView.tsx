@@ -108,8 +108,8 @@ export default function MediaSingleView({
         </Button>
       </PageHeader>
 
-      <div className="my-4 grid h-full grid-cols-[80%_20%] gap-2 px-2">
-        <div className="max-h-dvh">
+      <div className="mx-auto my-4 grid size-full max-w-8xl grid-cols-[80%_20%] gap-2 space-y-6 p-6 px-2">
+        <div>
           <div
             className={`relative w-full ${isAddingTag ? "cursor-crosshair" : ""}`}
             ref={containerRef}
