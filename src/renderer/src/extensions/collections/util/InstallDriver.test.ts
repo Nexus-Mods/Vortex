@@ -182,6 +182,32 @@ describe("InstallDriver session lifecycle", () => {
   });
 });
 
+describe("InstallDriver game version selection", () => {
+  test("passes the managed-copy selection from the install dialog to preparation", async ({
+    makeDriver,
+  }) => {
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+      downloads: { [defaultFixture.download.id]: defaultFixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    await h.driver.query(profile, defaultFixture.collection);
+    (h.driver as any).mRevisionInfo = {
+      gameVersions: [{ reference: "1.5.97" }],
+    };
+    const ensureGameVersion = vi.fn().mockResolvedValue("prepared");
+    h.api.ext.ensureGameVersion = ensureGameVersion;
+
+    h.driver.setGameVersionSelection("managed");
+    await (h.driver as any).startImpl();
+
+    expect(ensureGameVersion).toHaveBeenCalledWith(GAME_ID, ["1.5.97"], "prepare");
+    expect(h.dialogCalls).not.toContainEqual(
+      expect.objectContaining({ title: "Prepare compatible game version" }),
+    );
+  });
+});
+
 describe("InstallDriver optional default-skip", () => {
   const reqRule = makeRule({ type: "requires", reference: makeReference({ tag: "req-a" }) });
   const optRule = makeRule({ type: "recommends", reference: makeReference({ tag: "opt-a" }) });

@@ -1,13 +1,14 @@
 import update from "immutability-helper";
 import * as React from "react";
 import { FormControl, ListGroupItem, Panel } from "react-bootstrap";
+import Select from "react-select";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import Toggle from "../../../controls/Toggle";
 import { Button } from "../../../controls/TooltipControls";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import type { IProfile } from "../types/IProfile";
-import type { IProfileFeature } from "../types/IProfileFeature";
+import type { IProfileFeature, IProfileFeatureChoice } from "../types/IProfileFeature";
 
 const MIN_PROFILE_NAME_LENGTH = 3;
 const MAX_PROFILE_NAME_LENGTH = 64;
@@ -15,6 +16,7 @@ const MAX_PROFILE_NAME_LENGTH = 64;
 export interface IEditState {
   edit: IProfile;
   features: IProfileFeature[];
+  choices: Record<string, IProfileFeatureChoice[]>;
 }
 
 export interface IEditProps {
@@ -42,6 +44,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         ? {
             edit: { ...props.profile },
             features,
+            choices: {},
           }
         : {
             edit: {
@@ -52,7 +55,12 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
               lastActivated: 0,
             },
             features,
+            choices: {},
           };
+  }
+
+  public componentDidMount() {
+    void this.loadChoices();
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IEditProps) {
@@ -64,6 +72,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           },
         }),
       );
+      void this.loadChoices(newProps);
     }
   }
 
@@ -127,7 +136,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
 
   private renderFeature = (feature: IProfileFeature) => {
     const { t } = this.props;
-    const { edit } = this.state;
+    const { choices, edit } = this.state;
     if (feature.type === "boolean") {
       return (
         <Toggle
@@ -150,7 +159,40 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           onChange={this.assignString}
         />
       );
+    } else if (feature.type === "select") {
+      const options = choices[feature.id] ?? [];
+      const selectedValue = getSafe(edit, ["features", feature.id], "store");
+      return (
+        <div className="profile-feature-select" key={feature.id}>
+          <label>{t(feature.label)}:</label>
+          <Select
+            clearable={false}
+            disabled={options.length === 0}
+            options={options}
+            value={selectedValue}
+            onChange={(choice: IProfileFeatureChoice) =>
+              this.assignChoice(feature.id, choice?.value ?? "store")
+            }
+          />
+        </div>
+      );
     }
+  };
+
+  private loadChoices = async (props: IEditProps = this.props) => {
+    const profile = this.state.edit;
+    const entries = await Promise.all(
+      this.state.features
+        .filter((feature) => feature.type === "select" && feature.choices !== undefined)
+        .map(async (feature) => [feature.id, await feature.choices(profile)] as const),
+    );
+    if (props === this.props) {
+      this.setState({ choices: Object.fromEntries(entries) });
+    }
+  };
+
+  private assignChoice = (featureId: string, value: string) => {
+    this.setState(setSafe(this.state, ["edit", "features", featureId], value));
   };
 
   private toggleCheckbox = (ticked: boolean, dataId: string) => {

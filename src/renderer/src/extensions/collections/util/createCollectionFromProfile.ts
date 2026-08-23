@@ -47,6 +47,8 @@ function createRulesFromProfile(
         modId !== existingId &&
         // no nested collections allowed
         mods[modId].type !== MOD_TYPE &&
+        // generated game versions are profile infrastructure, not collection mods
+        mods[modId].attributes?.gameVersionManaged !== true &&
         filterFunc(mods[modId]),
     )
     .map((modId) => {

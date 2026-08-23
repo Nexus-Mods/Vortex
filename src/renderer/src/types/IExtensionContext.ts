@@ -13,6 +13,7 @@ import type {
   GameVersionProviderTest,
   IGameVersionProviderOptions,
 } from "../extensions/gameversion_management/types/IGameVersionProvider";
+import type { IGameVersionTransitionProvider } from "../extensions/gameversion_management/types/IGameVersionTransitionProvider";
 import type { IHistoryEvent, IHistoryStack } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 import type {
@@ -32,6 +33,8 @@ import type {
   TestSupported,
 } from "../extensions/mod_management/types/TestSupported";
 import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
+import type { IProfile } from "../extensions/profile_management/types/IProfile";
+import type { IProfileFeatureChoice } from "../extensions/profile_management/types/IProfileFeature";
 import type ReduxProp from "../ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
 import type { Archive } from "../util/archives";
@@ -1494,6 +1497,17 @@ export interface IExtensionContext {
     supported: () => boolean,
   ) => void;
 
+  /** Register a profile setting whose choices may be resolved asynchronously. */
+  registerProfileSelectFeature?: (
+    featureId: string,
+    icon: string,
+    label: string,
+    description: string,
+    supported: () => boolean,
+    choices: (profile: IProfile) => IProfileFeatureChoice[] | PromiseLike<IProfileFeatureChoice[]>,
+    formatValue?: (value: unknown) => string,
+  ) => void;
+
   /**
    * register a game version resolution provider.
    */
@@ -1504,6 +1518,9 @@ export interface IExtensionContext {
     getVersion: GameVersionProviderFunc,
     options?: IGameVersionProviderOptions,
   ) => void;
+
+  /** Register an opt-in provider for non-destructive game-version transitions. */
+  registerGameVersionTransitionProvider?: (provider: IGameVersionTransitionProvider) => void;
 
   /**
    * register a handler that can be used to preview or diff files.

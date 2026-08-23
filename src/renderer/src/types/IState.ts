@@ -6,6 +6,7 @@ import type { ICategoryDictionary } from "../extensions/category_management/type
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IGameVersionSessionState } from "../extensions/gameversion_management/types/IGameVersionState";
 import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
 import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
 import type { IHistoryPersistent, IHistoryState } from "../extensions/history_management/reducers";
@@ -409,6 +410,7 @@ export interface ISessionState {
   history: IHistoryState;
   overlays: IOverlaysState;
   healthCheck: IHealthCheckSessionState;
+  gameVersioning: IGameVersionSessionState;
 }
 
 export interface IState {

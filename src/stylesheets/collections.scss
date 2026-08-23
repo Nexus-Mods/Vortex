@@ -1634,7 +1634,8 @@ ul.collection-mods-page-attrib-tooltip {
     margin-top: $gutter-width;
 }
 
-#collections-profile-select {
+#collections-profile-select,
+#collections-game-version-select {
     //@extend .gutter-above;
 
     place-items: center;

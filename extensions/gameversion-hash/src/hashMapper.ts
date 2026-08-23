@@ -36,14 +36,14 @@ export class HashMapper {
   }
 
   public async generateCacheKey(filePaths: string[]) {
-    const key: number[] = [];
+    const key: string[] = [];
     for (const filePath of filePaths) {
-      const mtime = (await fs.statAsync(filePath)).mtimeMs;
-      key.push(mtime);
+      const stat = await fs.statAsync(filePath);
+      key.push(`${filePath.toLowerCase()}\0${stat.size}\0${stat.mtimeMs}`);
     }
-    key.sort((lhs, rhs) => lhs - rhs);
+    key.sort();
     const hash = crypto.createHash("md5");
-    const buf = hash.update(key.map((k) => k.toString()).join("")).digest();
+    const buf = hash.update(key.join("\n")).digest();
     return buf.toString("hex");
   }
 

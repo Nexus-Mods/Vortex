@@ -232,7 +232,9 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
             {t(feature.label, { ns: feature.namespace })}
           </a>
         </div>
-        <div className="profile-feature-value">{this.renderFeatureValue(feature.type, value)}</div>
+        <div className="profile-feature-value">
+          {feature.formatValue?.(value) ?? this.renderFeatureValue(feature.type, value)}
+        </div>
       </React.Fragment>
     );
   }

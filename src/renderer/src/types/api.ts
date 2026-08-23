@@ -54,6 +54,10 @@ export type {
   IUnavailableReason,
 } from "../extensions/mod_management/types/IDeploymentMethod";
 export type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+export type {
+  IGameVersionTransitionProvider,
+  IGameVersionCatalog,
+} from "../extensions/gameversion_management/types/IGameVersionTransitionProvider";
 export type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 export type { IDeploymentManifest } from "../extensions/mod_management/types/IDeploymentManifest";
 export type {

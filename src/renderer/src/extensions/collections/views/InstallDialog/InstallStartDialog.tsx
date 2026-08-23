@@ -25,6 +25,10 @@ import { batchDispatch } from "../../../../util/util";
 import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
 import { isGamebryoGame } from "../../util/gameSupport";
 import type InstallDriver from "../../util/InstallDriver";
+import type {
+  CollectionGameVersionSelection,
+  ICollectionGameVersionChoice,
+} from "../../util/InstallDriver";
 import CollectionThumbnail from "../CollectionTile";
 import YouCuratedTag from "./YouCuratedThisTag";
 
@@ -63,6 +67,9 @@ interface IInstallDialogState {
   confirmProfile: boolean;
   recommendedNewProfile: boolean;
   skipPluginRules: boolean;
+  gameVersionChoice?: ICollectionGameVersionChoice;
+  gameVersionLoading: boolean;
+  selectedGameVersion: CollectionGameVersionSelection;
 }
 
 function nop() {
@@ -116,6 +123,56 @@ function InstallDialogSelectProfile(props: IInstallDialogSelectProfileProps) {
   );
 }
 
+interface IInstallDialogSelectGameVersionProps {
+  t: TFunction;
+  choice: ICollectionGameVersionChoice;
+  selected: CollectionGameVersionSelection;
+  onSelect: (value: { value: CollectionGameVersionSelection; label: string }) => void;
+}
+
+function InstallDialogSelectGameVersion(props: IInstallDialogSelectGameVersionProps) {
+  const { t, choice, selected, onSelect } = props;
+  const currentLabel =
+    choice.status === "matched"
+      ? t("Use active game installation - compatible ({{version}})", {
+          replace: { version: choice.actualVersion },
+        })
+      : choice.status === "unavailable"
+        ? t("Continue Without Preparing - manual preparation required ({{version}})", {
+            replace: { version: choice.actualVersion ?? t("unknown version") },
+          })
+        : t("Continue Without Preparing - {{version}}", {
+            replace: { version: choice.actualVersion },
+          });
+  const options: Array<{ value: CollectionGameVersionSelection; label: string }> = [
+    { value: "current", label: currentLabel },
+  ];
+  if (choice.status === "available") {
+    options.unshift({
+      value: "managed",
+      label: t("Prepare Game Version - {{version}} (Recommended)", {
+        replace: { version: choice.targetVersion },
+      }),
+    });
+  }
+
+  return (
+    <FlexLayout id="collections-game-version-select" type="row">
+      <FlexLayout.Fixed>{t("Use game installation") + ":"}</FlexLayout.Fixed>
+
+      <FlexLayout.Flex>
+        <Select
+          clearable={false}
+          disabled={choice.status !== "available"}
+          options={options}
+          value={selected}
+          onChange={onSelect}
+        />
+      </FlexLayout.Flex>
+    </FlexLayout>
+  );
+}
+
 interface IInstallDialogConfirmProfileProps {
   t: TFunction;
   collectionName: string;
@@ -148,6 +205,7 @@ function InstallDialogConfirmProfile(props: IInstallDialogConfirmProfileProps) {
 class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
   private mLastCollection: IMod;
   private mUnsubscribeDriver?: () => void;
+  private mGameVersionRequest = 0;
   constructor(props: IProps) {
     super(props);
 
@@ -156,6 +214,8 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       confirmProfile: false,
       recommendedNewProfile: false,
       skipPluginRules: false,
+      gameVersionLoading: true,
+      selectedGameVersion: "current",
     });
   }
 
@@ -164,6 +224,8 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     // before this instance mounts (or on an instance that never mounts at all)
     if (this.props.driver !== undefined) {
       this.mUnsubscribeDriver = this.props.driver.onUpdate(() => this.forceUpdate());
+      this.mLastCollection = this.props.driver.collection;
+      void this.loadGameVersionChoice();
     }
   }
 
@@ -195,7 +257,11 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       if (driver.collection !== this.mLastCollection) {
         this.nextState.confirmProfile = false;
         this.nextState.selectedProfile = undefined;
+        this.nextState.gameVersionChoice = undefined;
+        this.nextState.gameVersionLoading = true;
+        this.nextState.selectedGameVersion = "current";
         this.mLastCollection = driver.collection;
+        void this.loadGameVersionChoice();
       }
     }
   }
@@ -299,6 +365,26 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
             />
           )}
 
+          {this.state.gameVersionChoice?.status !== undefined &&
+          this.state.gameVersionChoice.status !== "not-required" ? (
+            <>
+              <FlexLayout type="row">
+                <p>
+                  {t(
+                    "Choose whether Vortex should prepare the required game version through the normal deployment system.",
+                  )}
+                </p>
+              </FlexLayout>
+
+              <InstallDialogSelectGameVersion
+                choice={this.state.gameVersionChoice}
+                selected={this.state.selectedGameVersion}
+                t={t}
+                onSelect={this.changeGameVersion}
+              />
+            </>
+          ) : null}
+
           <Toggle
             checked={this.props.collectionsInstallWhileDownloading}
             onToggle={this.props.onSetCollectionConcurrency}
@@ -332,7 +418,9 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
             <>
               <Button onClick={this.cancel}>{t("Later")}</Button>
 
-              <Button onClick={this.next}>{t("Install Now")}</Button>
+              <Button disabled={this.state.gameVersionLoading} onClick={this.next}>
+                {t("Install Now")}
+              </Button>
             </>
           )}
         </Modal.Footer>
@@ -343,6 +431,37 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
   private changeProfile = (value: { value: string; label: string }) => {
     if (value) {
       this.nextState.selectedProfile = value.value;
+    }
+  };
+
+  private changeGameVersion = (value: { value: CollectionGameVersionSelection; label: string }) => {
+    if (value) {
+      this.nextState.selectedGameVersion = value.value;
+      this.props.driver.setGameVersionSelection(value.value);
+    }
+  };
+
+  private loadGameVersionChoice = async () => {
+    const request = ++this.mGameVersionRequest;
+    try {
+      const choice = await this.props.driver.inspectGameVersion();
+      if (request !== this.mGameVersionRequest) {
+        return;
+      }
+      const selection = choice.status === "available" ? "managed" : "current";
+      this.nextState.gameVersionChoice = choice;
+      this.nextState.selectedGameVersion = selection;
+      this.props.driver.setGameVersionSelection(selection);
+    } catch {
+      if (request === this.mGameVersionRequest) {
+        this.nextState.gameVersionChoice = { status: "unavailable" };
+        this.nextState.selectedGameVersion = "current";
+        this.props.driver.setGameVersionSelection("current");
+      }
+    } finally {
+      if (request === this.mGameVersionRequest) {
+        this.nextState.gameVersionLoading = false;
+      }
     }
   };
 

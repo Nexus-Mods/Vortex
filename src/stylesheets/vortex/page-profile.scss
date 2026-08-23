@@ -97,8 +97,46 @@
 .profile-edit-panel {
     height: initial;
     margin: $half-gutter;
+    overflow: visible;
+
+    > .panel-body,
+    .list-group-item {
+        overflow: visible;
+    }
+
     .btn {
         margin: 0 4px;
+    }
+
+    .profile-feature-select {
+        display: flex;
+        align-items: center;
+        gap: $half-gutter;
+        margin-top: $gutter-width;
+
+        label {
+            flex: 0 0 auto;
+            margin: 0;
+        }
+
+        .Select {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .Select-menu-outer {
+            z-index: 10;
+        }
+
+        .Select-option.is-selected {
+            background-color: $input-bg;
+            color: $text-color;
+        }
+
+        .Select-option.is-focused {
+            background-color: $brand-secondary;
+            color: $text-color;
+        }
     }
 }
 

@@ -1,3 +1,10 @@
+import type { IProfile } from "./IProfile";
+
+export interface IProfileFeatureChoice {
+  value: string;
+  label: string;
+}
+
 export interface IProfileFeature {
   id: string;
   icon: string;
@@ -10,5 +17,7 @@ export interface IProfileFeature {
   type: string;
   description: string;
   supported: () => boolean;
+  choices?: (profile: IProfile) => IProfileFeatureChoice[] | PromiseLike<IProfileFeatureChoice[]>;
+  formatValue?: (value: unknown) => string;
   namespace?: string;
 }

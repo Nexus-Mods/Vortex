@@ -75,6 +75,14 @@ export type Step =
 
 export type UpdateCB = () => void;
 
+export type CollectionGameVersionSelection = "current" | "managed";
+
+export interface ICollectionGameVersionChoice {
+  status: "not-required" | "matched" | "available" | "unavailable";
+  actualVersion?: string;
+  targetVersion?: string;
+}
+
 class InstallDriver {
   private mApi: IExtensionApi;
   private mProfile: IProfile;
@@ -99,6 +107,7 @@ class InstallDriver {
   private mPrepare: Bluebird<void> = Bluebird.resolve();
   private mTimeStarted: number;
   private mPostprocessing: boolean = false;
+  private mGameVersionSelection: CollectionGameVersionSelection = "current";
 
   // Throttle the progress notification to avoid flooding Redux/UI on every single mod
   // event. (Session status writes are dispatched directly now - InstallManager is the
@@ -367,6 +376,7 @@ class InstallDriver {
     this.mProfile = profile;
     this.mLastCollection = this.mCollection = collection;
     this.mGameId = profile?.gameId ?? activeGameId(this.mApi.getState());
+    this.mGameVersionSelection = "current";
     this.mStep = "query";
     await this.initCollectionInfo();
     this.triggerUpdate();
@@ -393,6 +403,7 @@ class InstallDriver {
     this.mProfile = profile;
     this.mLastCollection = this.mCollection = collection;
     this.mGameId = profile?.gameId ?? activeGameId(this.mApi.getState());
+    this.mGameVersionSelection = "current";
 
     await this.startInstall();
     await this.initCollectionInfo();
@@ -604,6 +615,22 @@ class InstallDriver {
     return this.mCurrentSessionId;
   }
 
+  public setGameVersionSelection(selection: CollectionGameVersionSelection) {
+    this.mGameVersionSelection = selection;
+  }
+
+  public async inspectGameVersion(): Promise<ICollectionGameVersionChoice> {
+    const requiredVersions = await this.getRequiredGameVersions();
+    if (requiredVersions.length === 0) {
+      return { status: "not-required" };
+    }
+    return (
+      this.mApi.ext.inspectGameVersionTransition?.(this.mGameId, requiredVersions) ?? {
+        status: "unavailable",
+      }
+    );
+  }
+
   private async initCollectionInfo() {
     if (this.mCollection?.archiveId === undefined) {
       return;
@@ -621,6 +648,49 @@ class InstallDriver {
       // Not sure if/why this would happen on live, it did occur during testing because the
       // stuff was getting deleted from the DB directly
       this.mRevisionInfo?.collection;
+  }
+
+  private async loadRevisionInfo(): Promise<void> {
+    if (this.mRevisionInfo !== undefined || this.revisionId === undefined) {
+      return;
+    }
+    const state: IState = this.mApi.store.getState();
+    const modInfo = state.persistent.downloads.files[this.mCollection.archiveId]?.modInfo;
+    const nexusInfo = modInfo?.nexus;
+    try {
+      this.mRevisionInfo = Array.isArray(nexusInfo?.revisionInfo?.modFiles)
+        ? nexusInfo.revisionInfo
+        : await this.mInfoCache.getRevisionInfo(
+            this.revisionId,
+            this.collectionSlug,
+            this.revisionNumber,
+          );
+    } catch (err) {
+      log("error", "failed to get remote info for revision", {
+        revisionId: this.revisionId,
+        slug: this.collectionSlug,
+        revisionNumber: this.revisionNumber,
+        error: getErrorMessageOrDefault(err),
+      });
+    }
+  }
+
+  private async getRequiredGameVersions(): Promise<string[]> {
+    const state: IState = this.mApi.store.getState();
+    try {
+      const stagingPath = installPathForGame(state, this.mGameId);
+      const localCollection = await readCollection(
+        this.mApi,
+        path.join(stagingPath, this.mCollection.installationPath, "collection.json"),
+      );
+      if ((localCollection.info.gameVersions?.length ?? 0) > 0) {
+        return localCollection.info.gameVersions;
+      }
+    } catch {
+      // Remote revision metadata is the compatibility fallback.
+    }
+    await this.loadRevisionInfo();
+    return (this.mRevisionInfo?.gameVersions ?? []).map((gameVersion) => gameVersion.reference);
   }
 
   /**
@@ -828,26 +898,11 @@ class InstallDriver {
 
     const state: IState = this.mApi.store.getState();
     const mods = state.persistent.mods[gameId] ?? {};
-    const modInfo = state.persistent.downloads.files[collection.archiveId]?.modInfo;
-    const nexusInfo = modInfo?.nexus;
 
     const slug = this.collectionSlug;
     const revisionId = this.revisionId;
 
-    if (revisionId !== undefined) {
-      try {
-        this.mRevisionInfo = Array.isArray(nexusInfo?.revisionInfo?.modFiles)
-          ? nexusInfo.revisionInfo
-          : await this.mInfoCache.getRevisionInfo(revisionId, slug, this.revisionNumber);
-      } catch (err) {
-        log("error", "failed to get remote info for revision", {
-          revisionId,
-          slug,
-          revisionNumber: this.revisionNumber,
-          error: getErrorMessageOrDefault(err),
-        });
-      }
-    }
+    await this.loadRevisionInfo();
 
     const { userInfo } = state.persistent["nexus"] ?? {};
     // don't request a vote on own collection
@@ -857,11 +912,32 @@ class InstallDriver {
 
     const gameMode = gameId;
     const currentgame = getGame(gameMode);
-    const discovery = discoveryByGame(state, gameMode);
-    const gameVersion = await currentgame.getInstalledVersion(discovery);
-    const gvMatch = (gv) => gv.reference === gameVersion;
-    const revGameVersions = this.mRevisionInfo?.gameVersions ?? [];
-    if ((revGameVersions.length ?? 0 !== 0) && revGameVersions.find(gvMatch) === undefined) {
+    let discovery = discoveryByGame(state, gameMode);
+    let gameVersion = await currentgame.getInstalledVersion(discovery);
+    const requiredVersions = await this.getRequiredGameVersions();
+    let transitionResult: string = "unavailable";
+    if (requiredVersions.length > 0 && !requiredVersions.includes(gameVersion)) {
+      transitionResult = await this.mApi.ext.ensureGameVersion?.(
+        gameId,
+        requiredVersions,
+        this.mGameVersionSelection === "managed" ? "prepare" : "skip",
+      );
+      if (transitionResult === "canceled") {
+        this.mInstallDone = true;
+        return false;
+      }
+      if (transitionResult === "prepared") {
+        const updatedState = this.mApi.getState();
+        discovery = discoveryByGame(updatedState, gameMode);
+        gameVersion = await currentgame.getInstalledVersion(discovery);
+      }
+    }
+    if (
+      requiredVersions.length > 0 &&
+      !requiredVersions.includes(gameVersion) &&
+      transitionResult !== "matched" &&
+      transitionResult !== "prepared"
+    ) {
       const choice = await this.mApi.showDialog(
         "question",
         "Game version mismatch",
@@ -880,7 +956,7 @@ class InstallDriver {
             "while playing with the game version you have installed or to request advice from the curator.",
           parameters: {
             actual: gameVersion,
-            intended: revGameVersions.map((gv) => gv.reference).join(" or "),
+            intended: requiredVersions.join(" or "),
           },
         },
         [{ label: "Cancel" }, { label: "Continue" }],

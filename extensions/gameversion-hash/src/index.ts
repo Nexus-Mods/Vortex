@@ -12,42 +12,72 @@ import {
   IHashingDetails,
 } from "./types/types";
 
-type GameHashCache = { [gameId: string]: string };
+interface IGameHashCacheEntry {
+  version: string;
+  fingerprint: string;
+}
+
+type GameHashCache = { [gameAndPath: string]: IGameHashCacheEntry };
 const CACHE: GameHashCache = {};
+
+function gameCacheKey(game: types.IGame, discovery: types.IDiscoveryResult): string {
+  return `${game.id}\0${path.resolve(discovery.path).toLowerCase()}`;
+}
 
 async function insertCacheEntry(
   hashMapper: HashMapper,
   game: types.IGame,
   discovery: types.IDiscoveryResult,
+  filePaths: string[],
+  fingerprint: string,
 ): Promise<void> {
-  if (!isGameValid(game, discovery)) {
-    return;
-  }
-  const details: IHashingDetails = game.details;
-  const hashPath = details?.hashDirPath
-    ? path.isAbsolute(details.hashDirPath)
-      ? details.hashDirPath
-      : path.join(discovery.path, details.hashDirPath)
-    : undefined;
-  const files = details?.hashFiles
-    ? details.hashFiles
-    : hashPath
-      ? (await fs.readdirAsync(hashPath))
-          .map((file) => path.join(hashPath, file))
-          .filter(async (filePath) => (await queryPath(filePath)).isFile)
-      : [];
-  if (files.length > 0) {
-    const filePaths = files.map((file) =>
-      path.isAbsolute(file) ? file : path.join(discovery.path, file),
-    );
+  if (filePaths.length > 0) {
     const cacheKey = await hashMapper.generateCacheKey(filePaths);
     const cacheValue = hashMapper.getCacheValue(cacheKey);
     const hash = cacheValue ? cacheValue : await generateHash(filePaths);
     if (!cacheValue) {
       hashMapper.insertToCache(cacheKey, hash);
     }
-    CACHE[game.id] = await hashMapper.getUserFacingVersion(hash, game.id);
+    CACHE[gameCacheKey(game, discovery)] = {
+      version: await hashMapper.getUserFacingVersion(hash, game.id),
+      fingerprint,
+    };
   }
+}
+
+async function hashingFiles(
+  game: types.IGame,
+  discovery: types.IDiscoveryResult,
+): Promise<string[]> {
+  const details: IHashingDetails = game.details;
+  if (details?.hashFiles !== undefined) {
+    return details.hashFiles
+      .map((file) => (path.isAbsolute(file) ? file : path.join(discovery.path, file)))
+      .sort();
+  }
+  if (details?.hashDirPath === undefined) {
+    return [];
+  }
+  const hashPath = path.isAbsolute(details.hashDirPath)
+    ? details.hashDirPath
+    : path.join(discovery.path, details.hashDirPath);
+  const result: string[] = [];
+  for (const file of await fs.readdirAsync(hashPath)) {
+    const filePath = path.join(hashPath, file);
+    if ((await queryPath(filePath)).isFile) {
+      result.push(filePath);
+    }
+  }
+  return result.sort();
+}
+
+async function fileFingerprint(filePaths: string[]): Promise<string> {
+  const entries: string[] = [];
+  for (const filePath of filePaths) {
+    const stat = await fs.statAsync(filePath);
+    entries.push(`${path.resolve(filePath).toLowerCase()}\0${stat.size}\0${stat.mtimeMs}`);
+  }
+  return entries.join("\n");
 }
 
 async function generateHash(filePaths: string[]): Promise<string> {
@@ -86,9 +116,13 @@ async function testViability(
   const details: IHashingDetails = game.details;
   if (details?.hashDirPath) {
     if (!path.isAbsolute(details.hashDirPath)) {
-      details.hashDirPath = path.join(discovery.path, details.hashDirPath);
+      const hashDirPath = path.join(discovery.path, details.hashDirPath);
+      const pathInfo = await queryPath(hashDirPath);
+      if (pathInfo.exists && !pathInfo.isFile) {
+        return true;
+      }
+      return false;
     }
-
     const pathInfo = await queryPath(details.hashDirPath);
     if (pathInfo.exists && !pathInfo.isFile) {
       return true;
@@ -124,10 +158,13 @@ async function getHashVersion(
   game: types.IGame,
   discovery: types.IDiscoveryResult,
 ): Promise<string> {
-  if (CACHE[game.id] === undefined) {
-    await insertCacheEntry(hashMapper, game, discovery);
+  const cacheKey = gameCacheKey(game, discovery);
+  const files = await hashingFiles(game, discovery);
+  const fingerprint = await fileFingerprint(files);
+  if (CACHE[cacheKey]?.fingerprint !== fingerprint) {
+    await insertCacheEntry(hashMapper, game, discovery, files, fingerprint);
   }
-  return CACHE[game.id];
+  return CACHE[cacheKey]?.version;
 }
 
 async function getHashDetails(

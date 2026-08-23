@@ -461,6 +461,11 @@ function genOnProfileChange(
                 })
                 .then(() => {
                   log("info", "did deploy previously active profile", prev);
+                  log("info", "will prepare game version for next profile", current);
+                  return api.emitAndAwait("prepare-game-version-for-profile", current);
+                })
+                .then(() => {
+                  log("info", "did prepare game version for next profile", current);
                   log("info", "will deploy next active profile", current);
                   return deploy(api, current);
                 })
@@ -1014,6 +1019,30 @@ function init(context: IExtensionContext): boolean {
       label,
       description,
       supported,
+      namespace: extInfo?.namespace,
+    });
+  };
+
+  context.registerProfileSelectFeature = (
+    featureId: string,
+    icon: string,
+    label: string,
+    description: string,
+    supported: () => boolean,
+    choices: IProfileFeature["choices"],
+    formatValue?: IProfileFeature["formatValue"],
+    extPath?: string,
+    extInfo?: Partial<IRegisteredExtension>,
+  ) => {
+    profileFeatures.push({
+      id: featureId,
+      type: "select",
+      icon,
+      label,
+      description,
+      supported,
+      choices,
+      formatValue,
       namespace: extInfo?.namespace,
     });
   };
