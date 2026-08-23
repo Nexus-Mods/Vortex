@@ -1,5 +1,5 @@
 import { mdiPlayCircleOutline } from "@mdi/js";
-import React from "react";
+import React, { useState } from "react";
 
 import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
 import type { IGameStored } from "@/types/api";
@@ -17,24 +17,29 @@ interface IMediaListItemProps {
 }
 
 export default function MediaListItem({ item, onClick, t, game }: IMediaListItemProps) {
+  const fallbackURL = "assets/images/ad-banner-large.png";
+
+  const [src, setSrc] = useState(() => {
+    if (item.type === "image") return item.thumbnailPath ?? item.path;
+    else if (item.type === "video")
+      return item.thumbnailPath ?? gameTileImageURL(game)?.replace("tile", "hero");
+  });
+
+  const onError = () => {
+    setSrc(fallbackURL);
+  };
+
   return (
     <div
       className="border-inside group relative flex size-full items-center justify-center rounded-sm border-2 border-transparent hover:border-white/70"
       onClick={onClick}
     >
-      {item.type === "image" && <img key={item.id} src={item.thumbnailPath ?? item.path} />}
-
-      {item.type === "video" && (
-        <img
-          className="aspect-video object-contain object-top"
-          key={item.id}
-          src={
-            item.thumbnailPath ??
-            gameTileImageURL(game) ??
-            "assets/images/video-placeholder-temp.png"
-          }
-        />
-      )}
+      <img
+        className="aspect-video object-cover object-right"
+        key={item.id}
+        src={src}
+        onError={onError}
+      />
 
       {/* overlay */}
       <div className="absolute top-0 left-0 size-full opacity-0 group-hover:opacity-100">
