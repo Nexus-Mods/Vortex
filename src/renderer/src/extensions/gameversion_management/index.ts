@@ -159,6 +159,9 @@ function init(context: IExtensionContext): boolean {
     context.api.onAsync("will-remove-mod", (gameId: string, modId: string) =>
       $.gameVersionTransitionManager.handleModRemoval(gameId, modId),
     );
+    context.api.onAsync("did-deploy", (profileId: string) =>
+      $.gameVersionTransitionManager.handleDeployment(profileId),
+    );
 
     let applyingProfileSetting = false;
     context.api.onStateChange(["persistent", "profiles"], (previous, current) => {

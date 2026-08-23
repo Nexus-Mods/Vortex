@@ -6,6 +6,7 @@ import type * as exeVersionT from "exe-version";
 
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+import getVortexPath from "../../util/getVortexPath";
 import lazyRequire from "../../util/lazyRequire";
 import { getGame } from "../gamemode_management/util/getGame";
 import { addMod, setModAttribute } from "../mod_management/actions/mods";
@@ -82,6 +83,7 @@ export default class GameVersionTransitionManager {
   private mJobs = new Map<string, Promise<EnsureGameVersionResult>>();
   private mCatalogs = new Map<string, Promise<ILoadedGameVersionCatalog>>();
   private mUpdatingProfiles = new Set<string>();
+  private mDeployedVersions = new Map<string, string>();
 
   constructor(api: IExtensionApi, providers: IGameVersionTransitionProvider[]) {
     this.mApi = api;
@@ -131,9 +133,29 @@ export default class GameVersionTransitionManager {
     const current = this.mApi.getState() as IState;
     const profileId = current.settings.profiles.activeProfileId;
     const profile = current.persistent.profiles[profileId];
+    if (profile !== undefined) {
+      this.mDeployedVersions.set(profile.gameId, profile.features?.game_version ?? "store");
+    }
     if (profile?.features?.game_version?.startsWith?.("managed:")) {
       await this.prepareProfileVersion(profileId, true);
     }
+  }
+
+  public async handleDeployment(profileId: string): Promise<void> {
+    const state = this.mApi.getState() as IState;
+    const profile = state.persistent.profiles[profileId];
+    if (profile?.gameId !== "skyrimse") {
+      return;
+    }
+    const preference = profile.features?.game_version ?? "store";
+    if (this.mDeployedVersions.get(profile.gameId) === preference) {
+      return;
+    }
+    await fs.rm(
+      path.join(getVortexPath("localAppData"), "Skyrim Special Edition", "ContentCatalog.txt"),
+      { force: true },
+    );
+    this.mDeployedVersions.set(profile.gameId, preference);
   }
 
   public isUpdatingProfile(profileId: string): boolean {
