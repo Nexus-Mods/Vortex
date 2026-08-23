@@ -518,7 +518,7 @@ export default class GameVersionTransitionManager {
     }
 
     const temporaryPath = safePath(stagingPath, `.installing-${modId}-${randomUUID()}`);
-    const cacheRoot = safePath(stagingPath, path.join(".game-version-cache", "sha256"));
+    const cacheRoot = path.join(getVortexPath("userData"), "game-version-cache", "sha256");
     this.setProgress(gameId, resolved.target.version, "planning", 0);
     await fs.mkdir(temporaryPath, { recursive: true });
     try {
