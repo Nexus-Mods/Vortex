@@ -11,6 +11,7 @@ packages:
   - ./extensions/*
   - ./extensions/games/*
   - ./.github/actions/fingerprints
+  - ./.github/actions/linear-release
   - ./.github/actions/prepare-nexusmods-release
 
 catalog:
