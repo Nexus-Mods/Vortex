@@ -55,7 +55,22 @@ function downloadBase(): string {
 }
 
 export function repoForChannel(): string {
+  // Test override ("owner/repo"): lets the staging rehearsal run against a
+  // scratch repo with real GitHub semantics instead of the live repos (see
+  // docs/updater-testing.md and scripts/updater-e2e-staging.mjs).
+  const override = process.env.VORTEX_UPDATER_REPO;
+  if (override != null && override !== "") {
+    return override.includes("/") ? override.split("/")[1]! : override;
+  }
   return process.env.IS_PREVIEW_BUILD === "true" ? "Vortex-Staging" : "Vortex";
+}
+
+export function repoOwner(): string {
+  const override = process.env.VORTEX_UPDATER_REPO;
+  if (override != null && override.includes("/")) {
+    return override.split("/")[0]!;
+  }
+  return OWNER;
 }
 
 // Build metadata compares equal under semver (2.5.0+build == 2.5.0); ties in
@@ -242,7 +257,7 @@ function nextPageUrl(linkHeader: string | null): string | null {
 
 async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
   const releases: GithubReleaseLite[] = [];
-  let url: string | null = `${apiBase()}/repos/${OWNER}/${repo}/releases?per_page=100`;
+  let url: string | null = `${apiBase()}/repos/${repoOwner()}/${repo}/releases?per_page=100`;
   let pages = 0;
 
   while (url != null && pages < MAX_PAGES) {
@@ -311,7 +326,7 @@ export async function resolveUpdate(
     tag: picked.tag_name,
     version: pickedVersion,
     prerelease: picked.prerelease,
-    downloadBaseUrl: `${downloadBase()}/${OWNER}/${repo}/releases/download/${picked.tag_name}`,
+    downloadBaseUrl: `${downloadBase()}/${repoOwner()}/${repo}/releases/download/${picked.tag_name}`,
     notesHtml: notes.length > 0 ? notes.join("\n\n") : undefined,
   };
 }
