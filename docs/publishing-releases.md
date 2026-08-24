@@ -6,13 +6,18 @@ Vortex release goes out, and what still has to be done by hand.
 ## The Release Flow
 
 1. **Package** (`package.yml`) builds and signs the installer, creates a
-   **draft pre-release** on GitHub and on `Vortex-Staging`, and **uploads the
+   **draft release** on GitHub and on `Vortex-Staging`, and **uploads the
    installer to R2**. The file is staged in R2 from this point on, but it is
    not yet the live download. Each of those is a separate dispatch input
    (`release`, `staging-release`, `upload-to-r2`), all on by default.
+   The pre-release flag is set from the version: a suffix like `-beta.1`
+   marks the release as a pre-release, a bare version like `2.5.0` marks it
+   stable. Don't change the flag by hand.
 
-2. **Undraft the release** on GitHub. Clear the draft flag and clear the
-   pre-release flag - only a non-pre-release fires the `released` event.
+2. **Undraft the release** on GitHub. This is the go-live action: for a
+   stable release, undrafting immediately fires the `released` event - which
+   triggers the Nexus Mods upload - and makes the release visible to the
+   auto-updater's stable channel. There is no second step.
 
 After the undraft, two **independent** things make the release public. Neither
 depends on the other:
@@ -28,6 +33,12 @@ depends on the other:
 and the Vortex auto-update channel; they are never uploaded to Nexus Mods.
 Undrafting a pre-release fires `prereleased`, not `released`, so beta releases
 never reach the Upload API.
+
+**Publish order matters on multi-release days.** Vortex installs currently in
+the field pick the newest release **by publish date** on the beta channel, not
+by version. If a beta and a stable hotfix go out the same day, undraft the
+release users should end up on last, or beta users get offered the older one.
+This applies until the updater rework reaches most installs.
 
 ## Running It Manually
 
@@ -88,9 +99,11 @@ the text again rather than replacing it.
 
 ## What Gets Uploaded
 
-Only the installer `.exe` (e.g. `vortex-setup-2.4.0.exe`). The `.yml` metadata
-files (`latest.yml`, `alpha.yml`, `beta.yml`) serve the Vortex auto-updater and
-stay on GitHub Releases.
+Only the installer `.exe` (e.g. `vortex-setup-2.4.0.exe`). The `latest.yml`
+metadata file serves the Vortex auto-updater and stays on GitHub Releases.
+(It is the only metadata file the build produces - there are no per-channel
+`alpha.yml`/`beta.yml` files; every release, beta or stable, carries a
+`latest.yml`.)
 
 ## Safety Guardrails
 
