@@ -17,8 +17,9 @@ changes.
 - `gh` authenticated with write access to the Nexus-Mods org
 - A public scratch repo. `Nexus-Mods/vortex-updater-e2e` exists for this;
   reuse it. It must be public because the updater resolves releases
-  unauthenticated. If you create a fresh one, seed it with a commit first:
-  GitHub can't create a release (it needs a tag) on an empty repo.
+  unauthenticated. A fresh, empty repo is fine: the setup script seeds it
+  with a README commit, since GitHub can't tag (and so can't release) on an
+  empty repo.
 - A Windows machine you're happy to install throwaway Vortex builds on.
   The rehearsal replaces whatever Vortex is in `C:\Program Files\Vortex`.
   Reinstall production afterwards.
@@ -185,4 +186,4 @@ All twelve legs passed. Notes beyond pass/fail:
   dialog on the 9.1.0-beta.1 to 9.0.1 install.
 - Setup snag: the scratch repo was brand new and empty, and `gh release
 create` failed with `422 Repository is empty`. Seeding a README commit
-  fixed it. The script should do this itself.
+  fixed it; the script now does that itself.
