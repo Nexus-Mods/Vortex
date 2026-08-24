@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { getErrorCode } from "@vortex/shared";
+import { getErrorCode, VortexError } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -8,9 +8,18 @@ import type { IState } from "../../../types/IState";
 import { getApplication } from "../../../util/application";
 import * as fs from "../../../util/fs";
 import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
-import { getSafe } from "../../../util/storeHelper";
 import { setModArchiveId } from "../actions/mods";
 import type { IMod } from "../types/IMod";
+
+/**
+ * Whether the staging folder is definitively absent.
+ */
+function folderIsMissing(installPath: string): PromiseLike<boolean> {
+  return fs.statAsync(installPath).then(
+    () => false,
+    (err: unknown) => getErrorCode(err) === "ENOENT",
+  );
+}
 
 /**
  * reads the installation dir and adds mods missing in our database
@@ -29,8 +38,19 @@ function refreshMods(
   const knownModNames: string[] = Object.keys(knownMods).filter((modId) =>
     IGNORABLE_PREFIXES.every((prefix) => !modId.toLowerCase().startsWith(prefix)),
   );
-  return fs
-    .ensureDirAsync(installPath)
+  return Promise.resolve(folderIsMissing(installPath))
+    .then((missing) => {
+      // Never create the folder we are about to treat as the source of truth:
+      // with mods on file, an absent staging folder means unavailable (wrong
+      // drive, path not applied yet), not emptied (GH#23981).
+      if (missing && knownModNames.length > 0) {
+        throw new VortexError(`Staging folder is not available: ${installPath}`, {
+          kind: "fs:not-found",
+          path: installPath,
+        });
+      }
+      return fs.ensureDirAsync(installPath);
+    })
     .then(() => fs.readdirAsync(installPath))
     .then((allNames: string[]) =>
       Promise.all(
@@ -159,25 +179,34 @@ function refreshMods(
     .then(() => {
       const state: IState = api.store.getState();
       const downloads = state.persistent.downloads.files;
-      knownModNames.forEach((modId) => {
-        if (knownMods[modId]?.archiveId && downloads[knownMods[modId].archiveId] === undefined) {
-          const fileName = knownMods[modId]?.attributes?.fileName;
-          log("info", "archive referenced in mod doesn't exist", {
-            modId,
-            archiveId: knownMods[modId].archiveId,
-            fileName,
-          });
-          if (fileName !== undefined) {
-            const archiveId = Object.keys(downloads).find(
-              (iter) => downloads[iter].localPath === fileName,
-            );
-            if (archiveId !== undefined) {
-              log("debug", "reassigning to archive", { modId, archiveId });
-              api.store.dispatch(setModArchiveId(gameId, modId, archiveId));
+      // read from state rather than the caller's snapshot, which still holds
+      // whatever the dialog removed. Rebinding a removed modId revives it as a
+      // record holding nothing but an archiveId (GH#23981).
+      const currentMods = state.persistent.mods[gameId] ?? {};
+      Object.keys(currentMods)
+        .filter((modId) =>
+          IGNORABLE_PREFIXES.every((prefix) => !modId.toLowerCase().startsWith(prefix)),
+        )
+        .forEach((modId) => {
+          const mod = currentMods[modId];
+          if (mod?.archiveId && downloads[mod.archiveId] === undefined) {
+            const fileName = mod.attributes?.fileName;
+            log("info", "archive referenced in mod doesn't exist", {
+              modId,
+              archiveId: mod.archiveId,
+              fileName,
+            });
+            if (fileName !== undefined) {
+              const archiveId = Object.keys(downloads).find(
+                (iter) => downloads[iter].localPath === fileName,
+              );
+              if (archiveId !== undefined) {
+                log("debug", "reassigning to archive", { modId, archiveId });
+                api.store.dispatch(setModArchiveId(gameId, modId, archiveId));
+              }
             }
           }
-        }
-      });
+        });
     });
 }
 

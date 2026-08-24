@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 
 import { verify } from "../../../reducers/verify";
+import { makeMod } from "../../../test-utils/builders";
+import type { IMod } from "../types/IMod";
 import { modsReducer } from "./mods";
 
 const noEmit = (): void => undefined;
@@ -394,7 +396,7 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
           archiveId: "0X09f7lm8",
           attributes: { name: "Directional Movement Keys", version: "1.2.1" },
         },
-        "Good Mod-1-0-0": { installationPath: "Good Mod-1-0-0" },
+        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
       },
     };
 
@@ -436,7 +438,12 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
   });
 
   it("still drops a mod entry that isn't an object", () => {
-    const state = { skyrimse: { good: { installationPath: "good" }, bad: "not an object" } };
+    const state = {
+      skyrimse: {
+        good: makeMod({ id: "good", installationPath: "good" }),
+        bad: "not an object",
+      },
+    };
 
     const result = verify(
       "persistent.mods",
@@ -448,5 +455,178 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
 
     expect(result.skyrimse.good.installationPath).toBe("good");
     expect(result.skyrimse).not.toHaveProperty("bad");
+  });
+
+  it("drops an archive binding whose installationPath was already healed", () => {
+    // a healed installationPath passes its verifier, so the absent state leaf
+    // is the only thing left that gives the phantom away.
+    const state = {
+      skyrimse: {
+        "SkyUI_5_2_SE-12604-5-2SE": {
+          archiveId: "PzULf7gEAd",
+          installationPath: "SkyUI_5_2_SE-12604-5-2SE",
+        },
+        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
+
+    expect(result.skyrimse).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
+    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
+  });
+
+  it("keeps a mod that lost only its state leaf", () => {
+    // it still carries its own identity, so it has to come back untouched -
+    // any change makes hydration report a repaired state and nag about an
+    // invalid app state.
+    const state = {
+      skyrimse: {
+        "Real Mod-1-0-0": {
+          id: "Real Mod-1-0-0",
+          installationPath: "Real Mod-1-0-0",
+          archiveId: "arch1",
+          attributes: { name: "Real Mod", version: "1.0" },
+        },
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
+
+    expect(result).toBe(state);
+  });
+
+  it("keeps a mod whose state leaf went null but still has its identity", () => {
+    const state = {
+      skyrimse: {
+        "Real Mod-1-0-0": {
+          id: "Real Mod-1-0-0",
+          installationPath: "Real Mod-1-0-0",
+          state: null,
+          attributes: { name: "Real Mod" },
+        },
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
+
+    const mod = result.skyrimse["Real Mod-1-0-0"];
+    expect(mod).toBeDefined();
+    expect(mod.id).toBe("Real Mod-1-0-0");
+    expect(mod.attributes).toEqual({ name: "Real Mod" });
+  });
+
+  it("drops an archive binding whose only other leaf went null", () => {
+    // a null leaf is no more evidence of a real mod than a missing one, so
+    // this is still a phantom and has to be culled.
+    const state = {
+      skyrimse: {
+        "SkyUI_5_2_SE-12604-5-2SE": {
+          archiveId: "PzULf7gEAd",
+          installationPath: "SkyUI_5_2_SE-12604-5-2SE",
+          state: null,
+          attributes: null,
+        },
+        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
+
+    expect(result.skyrimse).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
+    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
+  });
+
+  it("drops a record that holds nothing but an archiveId", () => {
+    // a record whose only key is archiveId describes no mod, so healing an
+    // installationPath onto it would just keep a phantom alive.
+    const state = {
+      skyrimse: {
+        "SkyUI_5_2_SE-12604-5-2SE": { archiveId: "PzULf7gEAd" },
+        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
+      },
+    };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
+
+    expect(result.skyrimse).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
+    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
+  });
+});
+
+describe("setModArchiveId", () => {
+  it("rebinds the archive of a known mod", () => {
+    const input = { gameId1: { modId1: { installationPath: "modId1", archiveId: "old" } } };
+    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(input, {
+      gameId: "gameId1",
+      modId: "modId1",
+      archiveId: "new",
+    });
+    expect(result).toEqual({
+      gameId1: { modId1: { installationPath: "modId1", archiveId: "new" } },
+    });
+  });
+
+  it("does nothing if the mod doesn't exist", () => {
+    const input = { gameId1: {} };
+    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(input, {
+      gameId: "gameId1",
+      modId: "modId1",
+      archiveId: "new",
+    });
+    expect(result).toEqual({ gameId1: {} });
+  });
+
+  it("does nothing if the game doesn't exist", () => {
+    const input = { gameId1: { modId1: { installationPath: "modId1" } } };
+    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(input, {
+      gameId: "gameId2",
+      modId: "modId1",
+      archiveId: "new",
+    });
+    expect(result).toEqual({ gameId1: { modId1: { installationPath: "modId1" } } });
+  });
+
+  it("does not resurrect a mod that was just removed", () => {
+    const removed = modsReducer.reducers.REMOVE_MOD(
+      { gameId1: { modId1: { installationPath: "modId1", archiveId: "old", state: "installed" } } },
+      { gameId: "gameId1", modId: "modId1" },
+    );
+    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(removed, {
+      gameId: "gameId1",
+      modId: "modId1",
+      archiveId: "new",
+    });
+    expect(result).toEqual({ gameId1: {} });
   });
 });
