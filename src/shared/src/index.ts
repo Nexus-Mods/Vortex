@@ -5,7 +5,7 @@ export * from "./error-serialization";
 export * from "./download-errors";
 export * from "./types/logging";
 
-export { VortexError } from "./errors/base";
+export { isVortexError, VortexError } from "./errors/base";
 export type {
   VortexErrorData,
   VortexErrorKind,

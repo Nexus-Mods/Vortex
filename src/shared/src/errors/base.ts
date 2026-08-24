@@ -192,6 +192,17 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
   }
 }
 
+/**
+ * Narrows an unknown value to `VortexError` with `data` typed as the full
+ * discriminated union. A bare `instanceof VortexError` narrows `unknown` to
+ * `VortexError<any>`, silently typing `data` as `any`.
+ *
+ * @public
+ */
+export function isVortexError(err: unknown): err is VortexError {
+  return err instanceof VortexError;
+}
+
 const MARK = Symbol.for("vortex.errors.VortexError");
 
 interface TripwireRegistration {

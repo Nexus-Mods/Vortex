@@ -7,6 +7,7 @@ import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import {
   DataInvalid,
   DocumentsPathMissing,
+  isVortexError,
   ProcessCanceled,
   UserCanceled,
 } from "@vortex/shared/errors";
@@ -38,7 +39,7 @@ import SplashScreen from "./SplashScreen";
 import DuckDBSingleton from "./store/DuckDBSingleton";
 import { flattenState } from "./store/flattenState";
 import { healInvalidKeys } from "./store/healInvalidKeys";
-import LevelPersist, { DatabaseLocked, DatabaseOpenError } from "./store/LevelPersist";
+import LevelPersist from "./store/LevelPersist";
 import {
   initMainPersistence,
   readPersistedValue,
@@ -391,7 +392,7 @@ class Application {
         }
 
         app.quit();
-      } else if (err instanceof DatabaseLocked) {
+      } else if (isVortexError(err) && err.data.kind === "database:locked") {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
@@ -399,13 +400,13 @@ class Application {
         );
 
         app.quit();
-      } else if (err instanceof DatabaseOpenError) {
+      } else if (isVortexError(err) && err.data.kind === "database:open-failed") {
         dialog.showErrorBox(
           "Startup failed",
           `Vortex couldn't open its application database at:\n\n` +
-            `${err.path}\n\n` +
-            `Underlying error: ${err.cause}\n\n` +
-            `This is not a "database locked" condition — a different problem is preventing the database from opening. ` +
+            `${err.data.path}\n\n` +
+            `Underlying error: ${err.data.reason}\n\n` +
+            `This is not a "database locked" condition - a different problem is preventing the database from opening. ` +
             `Check that the path is accessible, the drive isn't full or read-only, and that no antivirus is quarantining files in that folder.`,
         );
 

@@ -7,7 +7,7 @@ import type { FileSystem } from "@nexusmods/adaptor-api";
  *
  * The wire-level protocol that carries this interface across the RPC
  * boundary (method names for flat calls, cursor methods for directory
- * enumeration, structured error envelope for `FileSystemError`) is a
+ * enumeration, the error envelope) is a
  * transport implementation detail owned jointly by the adaptor-side
  * client polyfill in `@nexusmods/adaptor-api/fs` (`createFileSystemClient`) and the
  * host-side handler in the main process. Adaptor authors see only the

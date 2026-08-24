@@ -1,6 +1,6 @@
-import { assert, describe, expect, it } from "vitest";
+import { assert, describe, expect, expectTypeOf, it } from "vitest";
 
-import { VortexError } from "./base";
+import { isVortexError, VortexError } from "./base";
 
 // Proves the `declare module` extensibility mechanism actually works: a kind
 // declared here, outside base.ts, must widen VortexErrorKind/VortexErrorData
@@ -54,5 +54,29 @@ describe("VortexError", () => {
 
     assert(err.data.kind === "test:augmented-kind");
     expect(err.data.extra).toBe("value");
+  });
+
+  it("narrows an unknown value to typed kind payloads via isVortexError", () => {
+    const err: unknown = new VortexError("File not found", {
+      kind: "fs:not-found",
+      path: "/some/path",
+    });
+
+    assert(isVortexError(err));
+
+    // A bare `instanceof VortexError` narrows `unknown` to `VortexError<any>`,
+    // silently making `data` an `any`; the guard keeps `data` the full
+    // discriminated union.
+    expectTypeOf(err.data).not.toBeAny();
+
+    assert(err.data.kind === "fs:not-found");
+    expectTypeOf(err.data.path).toEqualTypeOf<string>();
+    expect(err.data.path).toBe("/some/path");
+  });
+
+  it("rejects non-VortexError values in isVortexError", () => {
+    expect(isVortexError(new Error("plain"))).toBe(false);
+    expect(isVortexError(undefined)).toBe(false);
+    expect(isVortexError("boom")).toBe(false);
   });
 });

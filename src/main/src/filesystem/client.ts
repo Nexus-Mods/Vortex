@@ -7,9 +7,6 @@ import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
  * function that dispatches `(method, args)` to the host-side filesystem
  * service, awaits the structured-cloned result, and rethrows any error.
  *
- * An error whose `name === "FileSystemError"` is rehydrated into a real
- * {@link FileSystemError} with its `code` / `isTransient` intact.
- *
  * @public
  */
 export type FileSystemSendFn = (method: string, args: readonly unknown[]) => Promise<unknown>;
