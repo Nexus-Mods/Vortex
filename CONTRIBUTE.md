@@ -1,5 +1,17 @@
 # Contributing
 
+> [!IMPORTANT]
+> Check in with us before starting a large change.
+>
+> Small, self-contained fixes are welcome as a direct pull request. For anything
+> bigger - a new feature, a refactor, a dependency swap, or a change spanning
+> several extensions - open a feature request or ask on Discord first, and
+> wait for a maintainer to agree on the approach.
+>
+> Pull requests that conflict with work already planned or in progress, or that
+> don't fit the architecture, get closed. A short conversation up front saves you
+> from writing something we can't merge.
+
 Recommended editor: [VS Code] with workspace extensions.
 You will be prompted to install them when you first open the repo.
 
