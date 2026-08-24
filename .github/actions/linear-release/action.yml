@@ -1,0 +1,70 @@
+name: Linear release helpers
+description: >-
+  Helpers around the Linear release sync: prepare resolves the commit-scan
+  range (previous same-channel tag and its fork point) and fetches the GitHub
+  release notes; summary writes a human-readable recap of the sync to the
+  run's summary page.
+
+inputs:
+  mode:
+    description: "prepare | summary"
+    required: true
+  tag:
+    description: "The release tag being published (e.g. v2.6.0-beta.1)."
+    required: true
+  prerelease:
+    description: "mode=prepare: 'true' if the tag is a pre-release, anything else for stable."
+    required: false
+    default: "false"
+  github-token:
+    description: "GITHUB_TOKEN for API calls (used by mode=prepare to fetch release notes)."
+    required: false
+    default: ${{ github.token }}
+  prevtag:
+    description: "mode=summary: previous release tag on the channel, from prepare."
+    required: false
+    default: ""
+  base:
+    description: "mode=summary: scan base commit, from prepare. Empty skips the commit sections."
+    required: false
+    default: ""
+  dry-run:
+    description: "mode=summary: 'true' marks the recap as a dry run."
+    required: false
+    default: "false"
+  sync-outcome:
+    description: "mode=summary: outcome of the sync step."
+    required: false
+    default: ""
+  complete-outcome:
+    description: "mode=summary: outcome of the complete step."
+    required: false
+    default: ""
+  notes-file:
+    description: "mode=summary: path of the attached release-notes file, if any."
+    required: false
+    default: ""
+  release-url:
+    description: "mode=summary: Linear release URL reported by the sync step."
+    required: false
+    default: ""
+  linear-workspace:
+    description: "mode=summary: Linear workspace slug used to build issue links."
+    required: false
+    default: nexus-mods
+
+outputs:
+  tag:
+    description: "The validated release tag (mode=prepare)."
+  prerelease:
+    description: "The resolved channel, 'true' or 'false' (mode=prepare)."
+  prevtag:
+    description: "Previous release tag on the tag's channel, empty if none (mode=prepare)."
+  base:
+    description: "Merge-base of prevtag and tag, empty when prevtag is (mode=prepare)."
+  notes-file:
+    description: "Path of the fetched release-notes file, empty if none (mode=prepare)."
+
+runs:
+  using: node24
+  main: dist/index.js
