@@ -18,6 +18,8 @@
  *   node scripts/updater-e2e-staging.mjs teardown --repo owner/scratch
  *
  * setup:
+ *   - seeds the scratch repo with a README if it has no commits yet (GitHub
+ *     can't tag, and so can't release, on an empty repo)
  *   - downloads each version's assets from the Vortex-Staging draft with the
  *     same tag (installer, latest.yml, blockmap)
  *   - creates the release on the scratch repo, prerelease flag derived from
@@ -73,11 +75,46 @@ if (/Nexus-Mods\/(Vortex|Vortex-Staging)$/i.test(repo)) {
   usage(`refusing to publish rehearsal releases to the live repo ${repo}; use a scratch repo`);
 }
 
+// A release needs a tag and a tag needs a commit, so a brand-new scratch repo
+// makes `gh release create` fail with "422 Repository is empty". Seed a README.
+function ensureRepoHasCommit() {
+  try {
+    gh(["api", `repos/${repo}/commits?per_page=1`], { stdio: ["ignore", "pipe", "ignore"] });
+    return;
+  } catch {
+    // 409 for an empty repo; anything else will resurface on the first release create
+  }
+  console.log(`# ${repo} is empty, seeding a README so releases can be tagged`);
+  const readme = [
+    `# ${repo.split("/")[1]}`,
+    "",
+    "Scratch repo for Vortex auto-updater rehearsals. Releases here are throwaway",
+    "test fixtures published by `scripts/updater-e2e-staging.mjs` in Nexus-Mods/Vortex;",
+    "they are not real Vortex builds.",
+    "",
+  ].join("\n");
+  gh(
+    [
+      "api",
+      "-X",
+      "PUT",
+      `repos/${repo}/contents/README.md`,
+      "-f",
+      "message=seed for updater rehearsal releases",
+      "-f",
+      `content=${Buffer.from(readme).toString("base64")}`,
+    ],
+    { stdio: ["ignore", "ignore", "inherit"] },
+  );
+}
+
 function setup() {
   const versions = (opt("versions") ?? "").split(",").filter(Boolean);
   if (versions.length === 0) {
     usage("setup needs --versions (comma-separated tags, in publish order)");
   }
+
+  ensureRepoHasCommit();
 
   for (const tag of versions) {
     const version = tag.replace(/^v/, "");
