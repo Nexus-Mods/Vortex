@@ -30,7 +30,7 @@ export const fetchReleaseNotes = async (
     const { data } = await client.rest.repos.getReleaseByTag({ owner, repo, tag });
     return data.body ?? "";
   } catch (err: unknown) {
-    if ((err as { status?: number }).status === 404) {
+    if (typeof err === "object" && err !== null && "status" in err && err.status === 404) {
       return "";
     }
     throw err;

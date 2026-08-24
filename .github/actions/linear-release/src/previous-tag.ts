@@ -28,5 +28,5 @@ export const previousReleaseTag = (
       valid(candidate) !== null &&
       compare(candidate, tag) < 0,
   );
-  return candidates.sort(compare).at(-1) ?? "";
+  return candidates.toSorted(compare).at(-1) ?? "";
 };

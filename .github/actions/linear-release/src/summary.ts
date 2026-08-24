@@ -40,7 +40,7 @@ export const extractIssueKeys = (subjects: readonly string[]): string[] => {
       }
     }
   }
-  return [...keys].sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
+  return [...keys].toSorted((a, b) => a.localeCompare(b, "en", { numeric: true }));
 };
 
 /** The PR number of a `Merge pull request #N ...` subject, if it is one. */
