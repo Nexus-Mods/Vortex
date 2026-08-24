@@ -5,7 +5,7 @@
 >
 > Small, self-contained fixes are welcome as a direct pull request. For anything
 > bigger - a new feature, a refactor, a dependency swap, or a change spanning
-> several extensions - open a [feature request] or ask on [Discord] first, and
+> several extensions - open a feature request or ask on Discord first, and
 > wait for a maintainer to agree on the approach.
 >
 > Pull requests that conflict with work already planned or in progress, or that
