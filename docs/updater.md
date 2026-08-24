@@ -2,7 +2,9 @@
 
 How Vortex decides that an update exists, what it does about it, and what the
 user sees at every step. For local testing of any of this, see
-[updater-testing.md](./updater-testing.md); for how releases get published,
+[updater-testing.md](./updater-testing.md) and, for the signed end-to-end run
+against real GitHub, [updater-rehearsal.md](./updater-rehearsal.md); for how
+releases get published,
 see [publishing-releases.md](./publishing-releases.md).
 
 ## How an update is found

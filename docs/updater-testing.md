@@ -9,7 +9,8 @@ fixture to match what the user saw and watch what the updater does).
 What it can't cover: real signature verification (local builds are unsigned,
 see the `publisherName` section), GitHub-specific edges (CDN redirects, rate
 limits, prerelease flags), and cross-major "Downgrade detected" startup
-warnings. Those need the Vortex-Staging rehearsal with CI-signed builds.
+warnings. Those need the rehearsal with CI-signed builds against a scratch
+GitHub repo, see [updater-rehearsal.md](./updater-rehearsal.md).
 
 ## 1. Build two test installers
 

@@ -42,7 +42,9 @@ Local installers + the mock feed (`scripts/mock-update-feed.mjs`) exercise
 the whole update cycle offline. The env vars (`VORTEX_UPDATER_API_BASE`,
 `VORTEX_UPDATER_DOWNLOAD_BASE`, `VORTEX_DEV_UPDATER`), asset staging, and the
 unsigned-build `publisherName` caveat are covered in
-`docs/updater-testing.md`.
+`docs/updater-testing.md`. The signed end-to-end run against a scratch
+GitHub repo (`scripts/updater-e2e-staging.mjs`) is in
+`docs/updater-rehearsal.md`.
 
 ## More detail
 
