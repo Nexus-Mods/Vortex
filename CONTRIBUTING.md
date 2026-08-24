@@ -92,7 +92,7 @@ After you have finished the setup steps:
 For iterating on renderer (UI) code, `pnpm run dev` starts Vortex with hot
 module replacement instead of the build/start cycle:
 
-- Component (`.tsx`) edits hot-swap in place via react-refresh — React and
+- Component (`.tsx`) edits hot-swap in place via react-refresh; React and
   Redux state are preserved, no reload.
 - Edits that can't be hot-applied (reducers, utils, extension `index.ts` init
   code) automatically trigger a clean window reload.
@@ -115,10 +115,10 @@ instructions.
 ## Packaging
 
 To build a Windows installer locally (unsigned, for testing production
-behavior), run `pnpm package:nosign` from the repo root — the output lands in
+behavior), run `pnpm package:nosign` from the repo root; the output lands in
 `dist/`. Signed installers are produced by CI only.
 
-- [Windows packaging] — commands, the version placeholder, what the pipeline
+- [Windows packaging]: commands, the version placeholder, what the pipeline
   does, and the traps
 - [Flatpak packaging]
 

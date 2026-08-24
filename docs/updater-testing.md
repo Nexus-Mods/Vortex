@@ -1,12 +1,12 @@
 # Testing the Auto-Updater Locally
 
-The full update cycle — resolve → notify → download (differential) → verify →
-install — can be exercised on one machine with no GitHub access, using
+The full update cycle (resolve, notify, download differentially, verify,
+install) can be exercised on one machine with no GitHub access, using
 packaged local builds and a mock feed. This is how the updater overhaul was
 field-tested; it is also the tool for reproducing user reports (edit a
 fixture to match what the user saw and watch what the updater does).
 
-What it can't cover: real signature verification (local builds are unsigned —
+What it can't cover: real signature verification (local builds are unsigned,
 see the `publisherName` section), GitHub-specific edges (CDN redirects, rate
 limits, prerelease flags), and cross-major "Downgrade detected" startup
 warnings. Those need the Vortex-Staging rehearsal with CI-signed builds.
@@ -14,12 +14,12 @@ warnings. Those need the Vortex-Staging rehearsal with CI-signed builds.
 ## 1. Build two test installers
 
 Updates need two versions. Pick a version far above real releases (e.g.
-`9.0.0` and `9.0.1` — a patch delta, so the auto-download path is testable)
+`9.0.0` and `9.0.1`, a patch delta, so the auto-download path is testable)
 and build each from the repo root:
 
 ```powershell
 pnpm -F "@vortex/main" version 9.0.0 --no-git-tag-version --no-git-checks --allow-same-version
-pnpm package:nosign     # root script — the src/main package scripts fail standalone
+pnpm package:nosign     # root script; the src/main package scripts fail standalone
 node scripts/verify-packaged-asar.mjs   # gate: nested dep versions survived packaging
 ```
 
@@ -47,21 +47,21 @@ C:\src\updtest\assets\
   vortex-setup-9.0.0.exe        vortex-setup-9.0.0.exe.blockmap
   vortex-setup-9.0.1.exe        vortex-setup-9.0.1.exe.blockmap
   latest.yml                    # flat fallback (copy of the newest)
-  v9.0.0\latest.yml             # per-tag manifests — REQUIRED, they share a
+  v9.0.0\latest.yml             # per-tag manifests, required: they share a
   v9.0.1\latest.yml             # filename but differ per version
 ```
 
 Each `latest.yml` must describe its own exe (electron-builder writes one per
-build — copy it before building the next version). Both blockmaps are needed
+build; copy it before building the next version). Both blockmaps are needed
 for differential downloads: the old-version blockmap URL is derived from the
-_running_ app's version.
+running app's version.
 
 ## 3. Fixtures
 
 The feed serves a canned GitHub releases listing. Two useful shapes:
 
-- **Upgrade** (patch flow): `v9.0.1` and `v9.0.0`, both `prerelease: false`.
-- **Downgrade** (offer flow): only `v9.0.0` — a machine running 9.0.1 on the
+- Upgrade (patch flow): `v9.0.1` and `v9.0.0`, both `prerelease: false`.
+- Downgrade (offer flow): only `v9.0.0`. A machine running 9.0.1 on the
   stable channel then has an older "latest".
 
 Each release entry needs `tag_name`, `prerelease`, `draft: false`, and an
@@ -77,7 +77,7 @@ node scripts/mock-update-feed.mjs --port 9877 --fixture C:\src\updtest\releases-
 ```
 
 It serves the releases listing, per-tag `latest.yml`, installers with HTTP
-range support (differential downloads work), and blockmaps — logging every
+range support (differential downloads work), and blockmaps, logging every
 request with what was served and from where. Binds loopback only. A missing
 blockmap 404s, which exercises the full-download fallback.
 
@@ -88,20 +88,20 @@ Two env vars redirect the resolver and the downloads:
 - `VORTEX_UPDATER_API_BASE=http://localhost:9877`
 - `VORTEX_UPDATER_DOWNLOAD_BASE=http://localhost:9877`
 
-For a packaged build launched **from a terminal**, per-session works:
-`$env:VORTEX_UPDATER_API_BASE = "http://localhost:9877"` (PowerShell — `set`
-silently does nothing there). For launches **from the Start menu**, persist
-them user-level:
+For a packaged build launched from a terminal, per-session works:
+`$env:VORTEX_UPDATER_API_BASE = "http://localhost:9877"` (PowerShell; `set`
+silently does nothing there). For launches from the Start menu, persist them
+user-level:
 
 ```powershell
 [Environment]::SetEnvironmentVariable("VORTEX_UPDATER_API_BASE", "http://localhost:9877", "User")
 [Environment]::SetEnvironmentVariable("VORTEX_UPDATER_DOWNLOAD_BASE", "http://localhost:9877", "User")
 ```
 
-**Clear them (set to `$null`) before using a real Vortex again** — a
-production build with these set would look for updates on localhost.
+Clear them (set to `$null`) before using a real Vortex again. A production
+build with these set would look for updates on localhost.
 
-For **run-from-source** (`pnpm start`) there's an opt-in dev updater: set
+For run-from-source (`pnpm start`) there's an opt-in dev updater: set
 `VORTEX_DEV_UPDATER=1` and electron-updater reads `src/main/dev-app-update.yml`.
 Checks, notifications, and downloads all work; installs are hard-gated to
 packaged builds and never run from source.
@@ -109,22 +109,22 @@ packaged builds and never run from source.
 ## 6. The `publisherName` strip (unsigned builds only)
 
 Local builds are unsigned, but the installed `app-update.yml` tells
-electron-updater to require a Black Tree Gaming signature — every download
-then fails verification ("not signed by the application owner"). For test
+electron-updater to require a Black Tree Gaming signature, so every download
+fails verification ("not signed by the application owner"). For test
 installs, delete the `publisherName` block from
 `C:\Program Files\Vortex\resources\app-update.yml`:
 
-- Needs an **elevated** editor/shell (Program Files) — an un-elevated save
-  fails silently.
-- **Restart Vortex afterwards** — the file is read once per session.
-- **Re-strip after every updater-driven install** — each install rewrites it.
+- Needs an elevated editor/shell (Program Files); an un-elevated save fails
+  silently.
+- Restart Vortex afterwards; the file is read once per session.
+- Re-strip after every updater-driven install; each install rewrites it.
 
-That this fails closed is the signature gate working; never weaken it in the
+That this fails closed is the signature gate working. Never weaken it in the
 config, only in the locally installed copy.
 
 ## 7. Between runs
 
-- Delete `%LOCALAPPDATA%\vortex-updater` when switching test builds — the
+- Delete `%LOCALAPPDATA%\vortex-updater` when switching test builds. The
   pending-installer cache short-circuits downloads (a cached installer with a
   different sha is detected and cleaned automatically, but a matching one is
   reused, which may not be what the test intends).
@@ -134,14 +134,15 @@ config, only in the locally installed copy.
 
 ## 8. Test recipes
 
-- **Patch flow**: install the older build, launch → silent differential
-  download → "Vortex will update on restart" → Restart Now (or quit) → UAC →
-  visible installer → relaunch shows "Vortex was updated to {v}".
-- **Downgrade flow**: install/update to the newer build, feed the downgrade
-  fixture, switch channel away and back to Stable → offer → decline (gone
-  until the next purposeful switch) → re-offer → confirm → visible download
-  with percent → staged → survives Check now → Restart Now.
-- **Failure drills**: kill the feed mid-download (error notification + the
+- Patch flow: install the older build and launch. Expect a silent
+  differential download, "Vortex will update on restart", then Restart Now
+  (or quit), UAC, the visible installer, and "Vortex was updated to {v}" on
+  relaunch.
+- Downgrade flow: install/update to the newer build and feed the downgrade
+  fixture. Switch the channel away and back to Stable for the offer. Decline
+  (gone until the next purposeful switch), re-offer, confirm, visible
+  download with percent, staged, survives Check now, Restart Now.
+- Failure drills: kill the feed mid-download (error notification, and the
   update returns to downloadable); launch with the feed down (background
   check silent, Check now loud); switch channels mid-download (cancels, no
-  error); set channel to none with an offer showing (withdrawn).
+  error); set the channel to none with an offer showing (withdrawn).

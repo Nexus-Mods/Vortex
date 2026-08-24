@@ -25,7 +25,7 @@ git restore src/main/package.json
 ```
 
 **Trap:** the `package`/`package:nosign` scripts inside `src/main` fail when
-run standalone ("The system cannot find the path specified") — they expect
+run standalone ("The system cannot find the path specified"); they expect
 the deploy directory that only the root pipeline creates. Always use the root
 script.
 
@@ -48,11 +48,11 @@ script.
 
 ## Output
 
-- `vortex-setup-<version>.exe` — the NSIS installer (assisted, per-machine)
-- `vortex-setup-<version>.exe.blockmap` — enables differential auto-updates;
+- `vortex-setup-<version>.exe`: the NSIS installer (assisted, per-machine)
+- `vortex-setup-<version>.exe.blockmap`: enables differential auto-updates;
   published alongside the installer on GitHub releases
-- `latest.yml` — the auto-updater manifest (version, sha512, file name)
-- `win-unpacked/` — the unpacked app, useful for quick inspection
+- `latest.yml`: the auto-updater manifest (version, sha512, file name)
+- `win-unpacked/`: the unpacked app, useful for quick inspection
 
 ## Signed Release Builds
 
@@ -73,7 +73,7 @@ Do not run `pnpm package` (the signing variant) locally.
 ## Testing the auto-updater with local packages
 
 A pair of local unsigned installers plus the mock update feed exercise the
-entire update cycle offline — see [updater-testing.md] for the full
+entire update cycle offline; see [updater-testing.md] for the full
 workbench (mock feed, env vars, the `publisherName` caveat for unsigned
 builds, blockmap staging).
 

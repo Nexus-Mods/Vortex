@@ -13,7 +13,7 @@ unsigned installer to the repo-root `dist/` (`vortex-setup-<version>.exe`,
 its `.exe.blockmap`, `latest.yml`, `win-unpacked/`). Takes several minutes.
 
 - **Never run the `package`/`package:nosign` scripts inside `src/main`
-  directly** — they fail standalone ("cannot find the path"); only the root
+  directly**: they fail standalone ("cannot find the path"); only the root
   pipeline creates the `src/main/dist` deploy directory they need.
 - Signed builds (`pnpm package`) are CI-only; the signing secrets don't exist
   locally.
@@ -31,7 +31,7 @@ git restore src/main/package.json
 
 ## After building
 
-Run `node scripts/verify-packaged-asar.mjs` — it fails if nested
+Run `node scripts/verify-packaged-asar.mjs`. It fails if nested
 `node_modules` dependency versions were mangled during packaging (this has
 shipped a broken build before; electron-builder is pinned to 24.13.3 because
 of it).
@@ -46,5 +46,5 @@ unsigned-build `publisherName` caveat are covered in
 
 ## More detail
 
-- `docs/packaging/windows.md` — the pipeline explained, CI behavior
-- `docs/publishing-releases.md` — how releases go live
+- `docs/packaging/windows.md`: the pipeline explained, CI behavior
+- `docs/publishing-releases.md`: how releases go live
