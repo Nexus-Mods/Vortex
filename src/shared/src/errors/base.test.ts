@@ -79,4 +79,27 @@ describe("VortexError", () => {
     expect(isVortexError(undefined)).toBe(false);
     expect(isVortexError("boom")).toBe(false);
   });
+
+  it("narrows to a single kind's payload when isVortexError is given the kind", () => {
+    const err: unknown = new VortexError("File not found", {
+      kind: "fs:not-found",
+      path: "/some/path",
+    });
+
+    assert(isVortexError(err, "fs:not-found"));
+
+    expectTypeOf(err.data.kind).toEqualTypeOf<"fs:not-found">();
+    expectTypeOf(err.data.path).toEqualTypeOf<string>();
+    expect(err.data.path).toBe("/some/path");
+  });
+
+  it("rejects a VortexError of a different kind when isVortexError is given a kind", () => {
+    const err: unknown = new VortexError("File not found", {
+      kind: "fs:not-found",
+      path: "/some/path",
+    });
+
+    expect(isVortexError(err, "user-canceled")).toBe(false);
+    expect(isVortexError(new Error("plain"), "fs:not-found")).toBe(false);
+  });
 });

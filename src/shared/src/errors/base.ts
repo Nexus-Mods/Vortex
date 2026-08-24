@@ -194,13 +194,23 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
 
 /**
  * Narrows an unknown value to `VortexError` with `data` typed as the full
- * discriminated union. A bare `instanceof VortexError` narrows `unknown` to
- * `VortexError<any>`, silently typing `data` as `any`.
+ * discriminated union, or, given a `kind`, to that kind's payload. A bare
+ * `instanceof VortexError` narrows `unknown` to `VortexError<any>`, silently
+ * typing `data` as `any`.
+ *
+ * Matches live instances only: an error rehydrated from the IPC wire is a
+ * plain `Error` (with `data` reattached) and does not match until LAZ-749
+ * rebuilds wire errors as real `VortexError` instances.
  *
  * @public
  */
-export function isVortexError(err: unknown): err is VortexError {
-  return err instanceof VortexError;
+export function isVortexError(err: unknown): err is VortexError;
+export function isVortexError<K extends VortexErrorKind>(
+  err: unknown,
+  kind: K,
+): err is VortexError<K>;
+export function isVortexError(err: unknown, kind?: VortexErrorKind): boolean {
+  return err instanceof VortexError && (kind === undefined || err.data.kind === kind);
 }
 
 const MARK = Symbol.for("vortex.errors.VortexError");

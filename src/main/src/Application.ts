@@ -392,7 +392,7 @@ class Application {
         }
 
         app.quit();
-      } else if (isVortexError(err) && err.data.kind === "database:locked") {
+      } else if (isVortexError(err, "database:locked")) {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
@@ -400,7 +400,7 @@ class Application {
         );
 
         app.quit();
-      } else if (isVortexError(err) && err.data.kind === "database:open-failed") {
+      } else if (isVortexError(err, "database:open-failed")) {
         dialog.showErrorBox(
           "Startup failed",
           `Vortex couldn't open its application database at:\n\n` +
