@@ -1,5 +1,6 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
-import { DataInvalid, isVortexError } from "@vortex/shared/errors";
+import { parseError } from "@vortex/shared";
+import { DataInvalid } from "@vortex/shared/errors";
 import { assert, describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../logging", () => ({ log: vi.fn() }));
@@ -433,25 +434,28 @@ describe("LevelPersist.create error classification", () => {
       (e: unknown) => e,
     );
 
-    assert(isVortexError(err));
-    expect(err.data.kind).toBe("database:locked");
-    expect(err.isTransient).toBe(true);
+    const parsed = parseError(err);
+    expect(parsed).toBe(err);
+    expect(parsed.data.kind).toBe("database:locked");
+    expect(parsed.isTransient).toBe(true);
   });
 
-  it("classifies a non-lock open failure as database:open-failed carrying path and reason", async () => {
-    mockSingleton.attachDatabase.mockRejectedValue(new Error("Permission denied"));
+  it("classifies a non-lock open failure as database:open-failed carrying the path", async () => {
+    const rootCause = new Error("Permission denied");
+    mockSingleton.attachDatabase.mockRejectedValue(rootCause);
 
     const err: unknown = await LevelPersist.create("/data/state.v2", 0).then(
       () => null,
       (e: unknown) => e,
     );
 
-    assert(isVortexError(err));
-    assert(err.data.kind === "database:open-failed");
-    expect(err.data.path).toBe("/data/state.v2");
-    expect(err.data.reason).toBe("Permission denied");
-    expect(err.message).toContain("/data/state.v2");
-    expect(err.message).toContain("Permission denied");
+    const parsed = parseError(err);
+    expect(parsed).toBe(err);
+    assert(parsed.data.kind === "database:open-failed");
+    expect(parsed.data.path).toBe("/data/state.v2");
+    expect(parsed.cause).toBe(rootCause);
+    expect(parsed.message).toContain("/data/state.v2");
+    expect(parsed.message).toContain("Permission denied");
   });
 
   it("classifies a corrupt database as DataInvalid", async () => {

@@ -2,12 +2,11 @@ import { mkdirSync, statSync } from "node:fs";
 import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import {
   DataInvalid,
   DocumentsPathMissing,
-  isVortexError,
   ProcessCanceled,
   UserCanceled,
 } from "@vortex/shared/errors";
@@ -364,6 +363,7 @@ class Application {
       await this.regularStartInner(args);
     } catch (err) {
       log("error", "quitting with exception", getErrorMessageOrDefault(err));
+      const parsed = parseError(err);
 
       if (err instanceof UserCanceled) {
         // UserCanceled is thrown by terminate() to unwind the stack.
@@ -392,7 +392,7 @@ class Application {
         }
 
         app.quit();
-      } else if (isVortexError(err, "database:locked")) {
+      } else if (parsed.data.kind === "database:locked") {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
@@ -400,12 +400,12 @@ class Application {
         );
 
         app.quit();
-      } else if (isVortexError(err, "database:open-failed")) {
+      } else if (parsed.data.kind === "database:open-failed") {
         dialog.showErrorBox(
           "Startup failed",
           `Vortex couldn't open its application database at:\n\n` +
-            `${err.data.path}\n\n` +
-            `Underlying error: ${err.data.reason}\n\n` +
+            `${parsed.data.path}\n\n` +
+            `Underlying error: ${getErrorMessageOrDefault(parsed.cause)}\n\n` +
             `This is not a "database locked" condition - a different problem is preventing the database from opening. ` +
             `Check that the path is accessible, the drive isn't full or read-only, and that no antivirus is quarantining files in that folder.`,
         );

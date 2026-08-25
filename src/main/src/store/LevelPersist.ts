@@ -31,7 +31,7 @@ declare module "@vortex/shared/errors" {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kinds without payload use {} like the core catalog
     "database:locked": {};
     /** Opening the database failed for a reason other than lock contention. */
-    "database:open-failed": { path: string; reason: string };
+    "database:open-failed": { path: string };
   }
 }
 
@@ -86,7 +86,7 @@ class LevelPersist implements IPersistor {
         });
         throw new VortexError(
           `Failed to open database at ${persistPath}: ${err.message}`,
-          { kind: "database:open-failed", path: persistPath, reason: err.message },
+          { kind: "database:open-failed", path: persistPath },
           { cause: err },
         );
       }
