@@ -8,16 +8,10 @@ import { IUMMGameConfig } from "./types";
 import { ensureUMM } from "./ummDownloader";
 import { isUMMExecPred, setUMMPath, toBlue } from "./util";
 import { validateIUMMGameConfig } from "./validationCode/validation";
-import AttribDashlet from "./views/AttribDashlet";
 
 // List of games which are supported by this modtype.
 // TODO: Have this populated automatically using UMM's configuration files.
 // const gameSupport = ['dawnofman', 'gardenpaws', 'pathfinderkingmaker', 'oxygennotincluded'];
-
-function showAttrib(state: types.IState) {
-  const gameMode = selectors.activeGameId(state);
-  return getSupportMap()[gameMode] !== undefined;
-}
 
 function isSupported(gameId: string): boolean {
   const gameConf: IUMMGameConfig = getSupportMap()[gameId];
@@ -143,17 +137,6 @@ function init(context: types.IExtensionContext) {
       }
     },
     { minArguments: 1 },
-  );
-
-  context.registerDashlet(
-    "UMM Support",
-    1,
-    2,
-    250,
-    AttribDashlet,
-    showAttrib,
-    () => ({}),
-    undefined,
   );
 
   context.once(() => {
