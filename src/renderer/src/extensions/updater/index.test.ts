@@ -131,7 +131,7 @@ describe("updater state rendering", () => {
   });
 
   // Regression pin #22826: a later "staged" state must update the same
-  // notification (same id — upsert), flipping the action to Restart Now.
+  // notification (same id, upsert), flipping the action to Restart Now.
   it("updates the same notification when the download completes", async () => {
     const { sendNotification, pushState } = await setup();
 
@@ -243,7 +243,7 @@ describe("manual check feedback (a pressed button always answers)", () => {
   });
 
   // Field report: a manual check that found a patch gave only a transient
-  // toast while the download ran on invisibly — anything the user's press
+  // toast while the download ran on invisibly, anything the user's press
   // set in motion downloads visibly, like the downgrade route.
   it("shows a manual check's patch download as a visible download", async () => {
     const { sendNotification, pushState } = await setup();
@@ -402,7 +402,7 @@ describe("downgrades", () => {
     expect(updates[0]!.message).toBe("Downgrading to Vortex 2.5.0 (12%)");
     expect(updates[0]!.actions).toBeUndefined();
 
-    // once staged it installs on quit, like a patch — and says so
+    // once staged it installs on quit, like a patch, and says so
     pushState({ type: "staged", version: "2.5.0", kind: "downgrade" });
     updates = sent(sendNotification, "vortex-update-available");
     const last = updates.at(-1)!;

@@ -290,7 +290,7 @@ describe("updater:download", () => {
   });
 
   // Regression pin: a download must resolve for the channel it was asked
-  // about — a cached resolution from another channel must never be reused.
+  // about, a cached resolution from another channel must never be reused.
   it("re-resolves for the requested channel on every download", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(
@@ -310,7 +310,7 @@ describe("updater:download", () => {
   });
 
   // A user download is always presented as a regular update, even when the
-  // version is patch-sized — the silent patch flow is auto-download only.
+  // version is patch-sized, the silent patch flow is auto-download only.
   it("downloads user requests as regular updates", async () => {
     await setup();
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
@@ -380,7 +380,7 @@ describe("updater:download", () => {
   });
 
   // Review finding: a download that lost the generation race could still call
-  // downloadUpdate — potentially while a confirmed downgrade's temporarily
+  // downloadUpdate, potentially while a confirmed downgrade's temporarily
   // raised allowDowngrade was in effect.
   it("does not download when superseded by a newer check", async () => {
     await setup();
@@ -659,7 +659,7 @@ describe("downgrade offers", () => {
     updaterEvent("update-downloaded")?.({ version: "2.5.0" });
     expect(getState()).toMatchObject({ type: "staged", kind: "downgrade" });
 
-    // a manual re-check ignores the lower version — but must not forget the
+    // a manual re-check ignores the lower version, but must not forget the
     // staged downgrade the user already confirmed
     ipcHandler("updater:check-for-updates")(undefined, "stable", true);
     await flush();

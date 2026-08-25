@@ -14,7 +14,7 @@
  * @vortex/shared/ipc, patterned on VS Code's updater): exactly one state at a
  * time, every transition goes through setState, and the renderer renders
  * purely from the broadcast state. electron-updater's own events never drive
- * the state directly — we already resolved what "latest" means; the library
+ * the state directly, we already resolved what "latest" means; the library
  * events only feed bookkeeping (downloaded-installer tracking, progress,
  * failures of an active download).
  */
@@ -67,7 +67,7 @@ function describeState(state: UpdaterState): string {
 export function setupAutoUpdater(installType: string): void {
   let cancellationToken: CancellationToken | undefined = undefined;
   const currentVersion = app.getVersion();
-  // The release the last successful check resolved to — used only to prefer
+  // The release the last successful check resolved to, used only to prefer
   // the resolver's collected release notes over the (empty) generic-feed ones.
   // Downloads never trust it: updater:download re-resolves every time.
   let lastResolved: ResolvedRelease | null = null;
@@ -160,7 +160,7 @@ export function setupAutoUpdater(installType: string): void {
   }
 
   // Install on quit, visibly. The library's autoInstallOnAppQuit path runs
-  // the installer silently (/S) — half a minute of disk churn with zero
+  // the installer silently (/S), half a minute of disk churn with zero
   // feedback. Quitting with an update staged instead triggers the exact same
   // visible install as Restart Now (auto-update wizard + finish page).
   // One-shot: quit processing can re-fire before-quit.
@@ -210,7 +210,7 @@ export function setupAutoUpdater(installType: string): void {
 
   betterIpcMain.handle("updater:get-status", (): UpdaterSnapshot => snapshot());
 
-  // Release notes for the update the app just went through — the renderer's
+  // Release notes for the update the app just went through, the renderer's
   // post-update "View changes". The resolver collects body_html of releases
   // above the given version, so resolving from the pre-update version yields
   // exactly the versions this update covered. The renderer supplies its
@@ -282,7 +282,7 @@ export function setupAutoUpdater(installType: string): void {
   autoUpdater.disableWebInstaller = true;
 
   // Route the library's own log lines (differential-download fallbacks,
-  // signature verification, cache decisions) into vortex.log — by default
+  // signature verification, cache decisions) into vortex.log, by default
   // they only reach the console and are invisible in the field.
   autoUpdater.logger = {
     info: (message: unknown) => log("info", "electron-updater", { message }),
@@ -323,7 +323,7 @@ export function setupAutoUpdater(installType: string): void {
     // a successful check, so the network was just up). retry keeps a working
     // Download available alongside the error for regular updates.
     if (current.type === "downloading") {
-      // don't auto-retry this version for a while — every check would
+      // don't auto-retry this version for a while, every check would
       // otherwise re-fetch the full delta against the same failure
       if (current.kind === "patch") {
         autoDownloadHold = {
@@ -385,7 +385,7 @@ export function setupAutoUpdater(installType: string): void {
     // autoInstallOnAppQuit remains false for the whole app lifetime.
     armInstallOnQuit();
 
-    // If user requested immediate install, do it now (packaged builds only —
+    // If user requested immediate install, do it now (packaged builds only;
     // an unpackaged run with the dev updater must never install)
     if (installAfterDownloadFlag && process.env.NODE_ENV !== "development" && app.isPackaged) {
       log("info", "Auto-installing after download");
@@ -401,7 +401,7 @@ export function setupAutoUpdater(installType: string): void {
   // through this first, so check-before-download holds structurally.
   function applyResolvedFeed(resolved: ResolvedRelease, generation: number): Promise<void> {
     lastResolved = resolved;
-    // useMultipleRangeRequest: false — GitHub's release downloads are
+    // useMultipleRangeRequest: false, GitHub's release downloads are
     // S3-backed and don't serve multipart/byteranges; without this every
     // differential download degrades to a full download (electron-updater's
     // own GitHub provider hard-codes the same).
@@ -425,7 +425,7 @@ export function setupAutoUpdater(installType: string): void {
   // electron-updater as the feed; downgrade offers are returned for the
   // caller to surface (only ever produced when allowDowngradeOffer is set,
   // i.e. after an explicit switch to stable). A lower "latest" is otherwise
-  // ignored — offering it unasked is the old field bug.
+  // ignored, offering it unasked is the old field bug.
   function resolveAndApply(
     channel: string,
     generation: number,
@@ -467,7 +467,7 @@ export function setupAutoUpdater(installType: string): void {
   // ---- check ---------------------------------------------------------------
 
   // Check for updates. allowDowngradeOffer is only set for a purposeful
-  // switch to the stable channel — the one flow where a lower version may be
+  // switch to the stable channel, the one flow where a lower version may be
   // offered. Background checks (launch sync, periodic, Check now) never
   // surface downgrades.
   const checkForUpdates = (
@@ -495,7 +495,7 @@ export function setupAutoUpdater(installType: string): void {
         }
         if (outcome.verdict === "none") {
           // A staged downgrade the user already confirmed survives checks
-          // that (correctly) ignore the lower version — settling to idle
+          // that (correctly) ignore the lower version, settling to idle
           // would orphan the downloaded installer and silently disarm its
           // install-on-quit.
           if (
@@ -534,7 +534,7 @@ export function setupAutoUpdater(installType: string): void {
 
         // Patch updates auto-download for regular installs; minor/major
         // updates wait for a user decision. A patch found by a MANUAL check
-        // downloads visibly — the user's press set it in motion.
+        // downloads visibly, the user's press set it in motion.
         const held =
           autoDownloadHold != null &&
           autoDownloadHold.version === resolved.version &&
@@ -627,7 +627,7 @@ export function setupAutoUpdater(installType: string): void {
     // Already downloaded: don't re-fetch the full installer. Re-issuing
     // downloadUpdate when the file is already present can resolve without
     // re-emitting "update-downloaded", which would strand the install request.
-    // Install directly instead — but only when the installer on disk is the
+    // Install directly instead, but only when the installer on disk is the
     // version currently on offer; a channel switch can leave a stale download
     // for a different version.
     if (
@@ -767,7 +767,7 @@ export function setupAutoUpdater(installType: string): void {
         if (generation !== checkGeneration) {
           return;
         }
-        // The offer was consumed, so there is nothing valid to retry — the
+        // The offer was consumed, so there is nothing valid to retry, the
         // failed target must not be re-advertised as a regular update.
         setState({ type: "error", message: err.message, manual: true });
       });
