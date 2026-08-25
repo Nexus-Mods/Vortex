@@ -94,6 +94,17 @@ time, every transition logged to `vortex.log` as `Updater state {from, to}`,
 and the renderer's notifications are a pure function of the current state
 (`src/renderer/src/extensions/updater/index.ts`).
 
+The renderer pulls that state rather than being pushed it, the same model the
+downloader and uploader use: main keeps the state, the renderer reads it at a
+cadence that suits the UI. Main numbers every snapshot and
+`updater:get-status(since)` returns everything recorded after the given
+sequence number, so a state that lasts 300 ms (a manual check that finds
+nothing) is still delivered, not sampled past. The poller
+(`src/renderer/src/extensions/updater/updaterStatus.ts`) runs at 200 ms while
+the updater is busy or for a couple of seconds after a request to main, then
+stops. Every updater activity starts in the renderer, so it is always awake
+before anything can happen; an idle Vortex makes no updater IPC at all.
+
 ```mermaid
 stateDiagram-v2
     [*] --> idle
