@@ -255,6 +255,7 @@ describe("manual check feedback (a pressed button always answers)", () => {
     const updates = sent(sendNotification, "vortex-update-available");
     const last = updates.at(-1)!;
     expect(last.message).toBe("Downloading Vortex 2.6.1 (30%)");
+    expect(last.type).toBe("activity");
     expect(last.actions).toBeUndefined();
   });
 
@@ -285,6 +286,8 @@ describe("downloads", () => {
     const last = updates.at(-1)!;
     expect(last.message).toBe("Downloading Vortex 2.7.0 (42%)");
     expect(last.progress).toBe(42);
+    // "activity" is what makes the notifications panel render the bar
+    expect(last.type).toBe("activity");
     // no buttons at all while downloading
     expect(last.actions).toBeUndefined();
   });
