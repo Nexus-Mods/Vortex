@@ -16,6 +16,11 @@ vi.mock("../analytics/mixpanel/modChangeAnalytics", () => ({
   emitModRemoved: vi.fn(),
 }));
 
+// util/Steam reaches this at import time, through the eventHandlers graph, and
+// off Windows it resolves a Steam install from the home directory. There is no
+// ApplicationData to read paths from here.
+vi.mock("../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
+
 vi.mock("./selectors", () => ({
   installPathForGame: () => "D:\\Vortex Mods\\skyrimse",
   installPath: () => "D:\\Vortex Mods\\skyrimse",
