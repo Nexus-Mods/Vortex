@@ -294,12 +294,13 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
           if (state.kind === "patch" && !state.manual) {
             return;
           }
-          // the percent lives in the text: the theme's progress overlay is
-          // too subtle to read, and the collapsed tray shows only the text
+          // "activity" + progress makes the notifications panel draw a real
+          // bar (and a spinner icon); the percent also lives in the text
+          // because the toast and the collapsed tray only show the message
           const verb = state.kind === "downgrade" ? "Downgrading to" : "Downloading";
           context.api.sendNotification({
             id: NOTIF_UPDATE,
-            type: "info",
+            type: "activity",
             message:
               state.percent != null
                 ? `${verb} Vortex ${state.version} (${state.percent}%)`
