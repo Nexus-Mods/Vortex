@@ -80,7 +80,9 @@ node scripts/mock-update-feed.mjs --port 9877 --fixture C:\src\updtest\releases-
 It serves the releases listing, per-tag `latest.yml`, installers with HTTP
 range support (differential downloads work), and blockmaps, logging every
 request with what was served and from where. Binds loopback only. A missing
-blockmap 404s, which exercises the full-download fallback.
+blockmap 404s, which exercises the full-download fallback. Add `--throttle 20`
+(megabytes per second) when you want to watch the progress UI; from localhost
+an untouched 365 MB download finishes in a couple of seconds.
 
 ## 5. Point Vortex at it
 
