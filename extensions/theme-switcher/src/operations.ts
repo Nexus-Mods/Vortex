@@ -4,15 +4,13 @@ import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 
 import * as actions from "./actions";
-import { themesPath } from "./util";
+import { listThemeDirs, themesPath } from "./util";
 
 let themes: string[] = [];
 
-export function readThemes() {
-  const bundledPath = path.join(__dirname, "themes");
-  return util.readExtensibleDir("theme", bundledPath, themesPath()).tap((extThemes) => {
-    themes = extThemes;
-  });
+export async function readThemes(): Promise<string[]> {
+  themes = await listThemeDirs();
+  return themes;
 }
 
 export function themeName(location: string): string {

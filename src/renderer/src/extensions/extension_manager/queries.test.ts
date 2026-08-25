@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import type { ExtensionInfo, IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
+import type { ExtensionInfo, IRegisteredExtension } from "@/types/extensions";
 import type { IExtensionOptional } from "@/types/IState";
 
-import { makeExtensionState, makeLegacyExtensionState } from "../../test-utils/builders";
+import {
+  makeAvailableExtension,
+  makeExtensionState,
+  makeLegacyExtensionState,
+} from "../../test-utils/builders";
 import {
   extensionStateFromScan,
   findDependencyInCatalog,
@@ -15,25 +19,6 @@ import {
   isAlreadyInstalled,
   matchesQuery,
 } from "./queries";
-
-/** Helper to create a test available extension */
-function makeAvailableExtension(overrides: Partial<IAvailableExtension> = {}): IAvailableExtension {
-  return {
-    name: "Test Extension",
-    description: { short: "short", long: "long" },
-    image: "image.png",
-    author: "Test Author",
-    uploader: "uploader",
-    version: "1.0.0",
-    downloads: 0,
-    endorsements: 0,
-    timestamp: 0,
-    tags: [],
-    modId: 0,
-    fileId: 0,
-    ...overrides,
-  };
-}
 
 /** Helper to create extension info */
 function makeExtensionInfo(overrides: Partial<ExtensionInfo> = {}): ExtensionInfo {
@@ -258,13 +243,6 @@ describe("matchesQuery", () => {
 });
 
 describe("findDependencyInCatalog", () => {
-  it("finds a dependency by id", () => {
-    const ext = makeAvailableExtension({ id: "test-extension" });
-    const catalog = [ext];
-    const result = findDependencyInCatalog(catalog, "test-extension");
-    expect(result).toEqual(ext);
-  });
-
   it("finds a dependency by name", () => {
     const ext = makeAvailableExtension({ name: "Test Extension" });
     const catalog = [ext];
@@ -272,17 +250,9 @@ describe("findDependencyInCatalog", () => {
     expect(result).toEqual(ext);
   });
 
-  it("prefers id match over name match", () => {
-    const ext1 = makeAvailableExtension({ id: "test-id", name: "Other Name" });
-    const ext2 = makeAvailableExtension({ id: "other-id", name: "Test Name" });
-    const catalog = [ext1, ext2];
-    const result = findDependencyInCatalog(catalog, "test-id");
-    expect(result).toEqual(ext1);
-  });
-
   it("returns undefined when no match is found", () => {
-    const catalog = [makeAvailableExtension({ id: "other-id" })];
-    const result = findDependencyInCatalog(catalog, "test-id");
+    const catalog = [makeAvailableExtension({ name: "Other Name" })];
+    const result = findDependencyInCatalog(catalog, "Test Name");
     expect(result).toBeUndefined();
   });
 

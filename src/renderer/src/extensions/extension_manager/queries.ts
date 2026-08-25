@@ -83,14 +83,12 @@ export function findInstalledDependency(
   return { key, extension };
 }
 
-/** Find a dependency extension by its declared identifier in the catalog. */
+/** Find a dependency extension by its declared identifier (the extension name) in the catalog. */
 export function findDependencyInCatalog(
   catalog: IAvailableExtension[],
   dependencyId: string,
 ): IAvailableExtension | undefined {
-  return catalog.find(
-    (catalogEntry) => catalogEntry.id === dependencyId || catalogEntry.name === dependencyId,
-  );
+  return catalog.find((catalogEntry) => catalogEntry.name === dependencyId);
 }
 
 /** Checks whether an extension from the catalog is already installed. */

@@ -248,7 +248,7 @@ const GamePicker = ({
   supportedGameList.push(
     ...extensionsUninstalled
       .map((ext) => ({
-        id: ext.gameId || ext.name,
+        id: ext.gameDomain || ext.name,
         name: ext.gameName || ext.name,
         extensionPath: undefined,
         imageURL: ext.image,
