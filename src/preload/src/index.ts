@@ -116,7 +116,7 @@ try {
     },
 
     updater: {
-      getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
+      getStatus: (since?: number) => betterIpcRenderer.invoke("updater:get-status", since),
       getUpdateChangelog: (channel: string) =>
         betterIpcRenderer.invoke("updater:get-update-changelog", channel),
       setChannel: (channel: string, manual: boolean) =>
@@ -129,12 +129,6 @@ try {
       downloadDowngrade: (installAfterDownload: boolean = false) =>
         betterIpcRenderer.send("updater:download-downgrade", installAfterDownload),
       declineDowngrade: () => betterIpcRenderer.send("updater:decline-downgrade"),
-      onStatusChanged: (callback) => {
-        const listener = (_: Electron.IpcRendererEvent, status: Parameters<typeof callback>[0]) =>
-          callback(status);
-        ipcRenderer.on("updater:status-changed", listener);
-        return () => ipcRenderer.removeListener("updater:status-changed", listener);
-      },
     },
 
     dialog: {

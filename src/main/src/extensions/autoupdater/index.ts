@@ -20,8 +20,13 @@
  */
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import type { UpdateKind, UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
-import { app, BrowserWindow } from "electron";
+import type {
+  UpdateKind,
+  UpdaterSnapshot,
+  UpdaterState,
+  UpdaterStatusResponse,
+} from "@vortex/shared/ipc";
+import { app } from "electron";
 import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
@@ -99,11 +104,31 @@ export function setupAutoUpdater(installType: string): void {
     return { state: current, justUpdatedFrom };
   }
 
-  function broadcast(): void {
-    const payload = snapshot();
-    for (const win of BrowserWindow.getAllWindows()) {
-      betterIpcMain.send(win.webContents, "updater:status-changed", payload);
+  // The renderer polls for status, like downloads (IPCDownloadAdapter.ts) and
+  // uploads (uploadV3.ts); nothing is pushed. Its UI reacts to transitions and
+  // some states last well under a poll interval, so every snapshot is numbered
+  // and kept briefly and a poll asks for everything since the last one it saw.
+  const HISTORY_CAP = 32;
+  let seq = 0;
+  const history: Array<{ seq: number; snapshot: UpdaterSnapshot }> = [];
+
+  function record(): void {
+    seq += 1;
+    history.push({ seq, snapshot: snapshot() });
+    if (history.length > HISTORY_CAP) {
+      history.shift();
     }
+  }
+
+  function statusSince(since: number | undefined): UpdaterStatusResponse {
+    return {
+      seq,
+      snapshot: snapshot(),
+      changes:
+        since == null
+          ? []
+          : history.filter((entry) => entry.seq > since).map((entry) => entry.snapshot),
+    };
   }
 
   function setState(next: UpdaterState): void {
@@ -114,7 +139,7 @@ export function setupAutoUpdater(installType: string): void {
       to: describeState(next),
     });
     current = next;
-    broadcast();
+    record();
   }
 
   // What kind of update a version represents for the running install.
@@ -208,7 +233,10 @@ export function setupAutoUpdater(installType: string): void {
 
   // ---- IPC: status + changelog --------------------------------------------
 
-  betterIpcMain.handle("updater:get-status", (): UpdaterSnapshot => snapshot());
+  betterIpcMain.handle(
+    "updater:get-status",
+    (_event, since?: number): UpdaterStatusResponse => statusSince(since),
+  );
 
   // Release notes for the update the app just went through, the renderer's
   // post-update "View changes". The resolver collects body_html of releases
@@ -257,7 +285,7 @@ export function setupAutoUpdater(installType: string): void {
           semver.gt(currentVersion, previous)
         ) {
           justUpdatedFrom = previous;
-          broadcast();
+          record();
         }
       })
       .catch((err: unknown) => {

@@ -4,6 +4,7 @@ import type { IExtensionContext } from "../../types/IExtensionContext";
 import { getApplication } from "../../util/application";
 import settingsReducer from "./reducers";
 import SettingsUpdate from "./SettingsUpdate";
+import { initUpdaterStatus } from "./updaterStatus";
 
 // Notification surfaces. UPDATE is the single slot for "what the updater is
 // doing with a version" (available/downloading/staged); the others are
@@ -48,6 +49,14 @@ function init(context: IExtensionContext): boolean {
 
     let haveSetChannel = false;
 
+    const poller = initUpdaterStatus((since) => window.api.updater.getStatus(since));
+    // every request to main is followed by a poll, so its outcome is seen at
+    // once instead of after an idle interval
+    const act = (request: () => void) => {
+      request();
+      poller.wake();
+    };
+
     const channelNow = () => context.api.store.getState().settings.update.channel;
 
     const dismiss = (id: string) => context.api.dismissNotification?.(id);
@@ -63,7 +72,9 @@ function init(context: IExtensionContext): boolean {
     // callbacks rather than label matching, so a renamed or translated label
     // can't silently break the action.
     const showUpdateDialog = async (version: string, releaseNotes?: string) => {
-      const { state } = await window.api.updater.getStatus();
+      const {
+        snapshot: { state },
+      } = await window.api.updater.getStatus();
       const staged = state.type === "staged";
       await context.api.showDialog(
         "info",
@@ -81,9 +92,9 @@ function init(context: IExtensionContext): boolean {
             default: true,
             action: () => {
               if (staged) {
-                window.api.updater.restartAndInstall();
+                act(() => window.api.updater.restartAndInstall());
               } else {
-                window.api.updater.downloadUpdate(channelNow(), false);
+                act(() => window.api.updater.downloadUpdate(channelNow(), false));
               }
             },
           },
@@ -140,7 +151,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                       // declining forgets the offer (notification included)
                       // until the next purposeful switch to stable
                       dismiss(NOTIF_OFFER);
-                      window.api.updater.declineDowngrade();
+                      act(() => window.api.updater.declineDowngrade());
                     },
                   },
                   {
@@ -149,7 +160,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                       dismiss(NOTIF_OFFER);
                       // download without forcing a restart: once staged it
                       // installs on quit, or via the notification's Restart Now
-                      window.api.updater.downloadDowngrade(false);
+                      act(() => window.api.updater.downloadDowngrade(false));
                     },
                   },
                 ],
@@ -260,7 +271,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
               {
                 title: "Download",
                 action: () => {
-                  window.api.updater.downloadUpdate(channelNow(), false);
+                  act(() => window.api.updater.downloadUpdate(channelNow(), false));
                   // keep the notification: it live-updates through
                   // downloading to staged
                 },
@@ -336,7 +347,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                   // no dismiss: a packaged app quits here anyway, and if the
                   // install fails (or is skipped in dev) the button must stay
                   title: "Restart Now",
-                  action: () => window.api.updater.restartAndInstall(),
+                  action: () => act(() => window.api.updater.restartAndInstall()),
                 },
               ],
             });
@@ -350,7 +361,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
               actions: [
                 {
                   title: "Restart Now",
-                  action: () => window.api.updater.restartAndInstall(),
+                  action: () => act(() => window.api.updater.restartAndInstall()),
                 },
               ],
             });
@@ -406,7 +417,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 {
                   title: "Download",
                   action: () => {
-                    window.api.updater.downloadUpdate(channelNow(), false);
+                    act(() => window.api.updater.downloadUpdate(channelNow(), false));
                   },
                 },
               ],
@@ -425,7 +436,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
     context.api.onStateChange(
       ["settings", "update", "channel"],
       (_oldChannel: string, newChannel: string) => {
-        window.api.updater.setChannel(newChannel, true);
+        act(() => window.api.updater.setChannel(newChannel, true));
         haveSetChannel = true;
       },
     );
@@ -434,7 +445,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
     // check for update in 5 seconds
     setTimeout(() => {
       if (!haveSetChannel) {
-        window.api.updater.setChannel(channelNow(), false);
+        act(() => window.api.updater.setChannel(channelNow(), false));
       }
     }, 5000);
 
@@ -445,17 +456,14 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
     setInterval(() => {
       const channel = channelNow();
       if (channel !== "none") {
-        window.api.updater.checkForUpdates(channel, false);
+        act(() => window.api.updater.checkForUpdates(channel, false));
       }
     }, PERIODIC_CHECK_INTERVAL_MS);
 
-    // Main pushes every state change; the one-time getStatus covers a check
-    // that settled before this subscription existed (e.g. window reload).
-    window.api.updater.onStatusChanged(render);
-    window.api.updater
-      .getStatus()
-      .then(render)
-      .catch(() => undefined);
+    // The renderer polls main for status (see updaterStatus.ts); the first
+    // poll doubles as the initial sync for a check that settled before this
+    // window existed (e.g. a reload).
+    poller.subscribe(render);
   });
 
   return true;

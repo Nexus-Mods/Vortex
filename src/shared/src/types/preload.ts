@@ -23,7 +23,7 @@ import type {
   AppInitMetadata,
   HashAlgorithm,
   Serializable,
-  UpdaterSnapshot,
+  UpdaterStatusResponse,
   VortexPaths,
   WireDownloadCheckpoint,
   WireDownloadState,
@@ -452,9 +452,11 @@ export interface AdaptorsApi {
 /** API for querying update status from main process */
 export interface UpdaterApi {
   /**
-   * Get current update status from main process.
+   * Read the updater's status from main. The renderer polls this; with
+   * `since` (the last seen sequence number) the reply includes every
+   * snapshot recorded after it, in order.
    */
-  getStatus(): Promise<UpdaterSnapshot>;
+  getStatus(since?: number): Promise<UpdaterStatusResponse>;
 
   /**
    * Release notes covering the update the app just went through. Null when
@@ -495,12 +497,6 @@ export interface UpdaterApi {
    * purposeful switch to stable raises it again.
    */
   declineDowngrade(): void;
-
-  /**
-   * Subscribe to update-status changes pushed from the main process.
-   * Returns an unsubscribe function.
-   */
-  onStatusChanged(callback: (snapshot: UpdaterSnapshot) => void): () => void;
 }
 
 /** API for interacting with the DownloadManager in main */

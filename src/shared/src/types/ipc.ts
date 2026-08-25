@@ -110,6 +110,19 @@ export interface UpdaterSnapshot {
   justUpdatedFrom?: string;
 }
 
+/**
+ * Reply to `updater:get-status`. The renderer polls rather than being pushed
+ * (the same model as downloads and uploads). `seq` counts snapshots recorded
+ * so far; passing it back as `since` on the next poll returns every snapshot
+ * after it in `changes`, so a state that lasted 300 ms is still delivered.
+ * `snapshot` is always the latest.
+ */
+export interface UpdaterStatusResponse {
+  seq: number;
+  snapshot: UpdaterSnapshot;
+  changes: UpdaterSnapshot[];
+}
+
 /** Vortex application paths */
 export type VortexPaths = {
   base: string;
@@ -352,9 +365,6 @@ export interface MainChannels extends MainCallbackChannels {
 
   // Feature flags: main pushes updated flags after each successful poll
   "flags:synchronize": (flags: FeatureFlag[]) => void;
-
-  // Auto-updater: main pushes the full status snapshot on every change
-  "updater:status-changed": (snapshot: UpdaterSnapshot) => void;
 }
 
 /** Context data the renderer can push to refine feature flag evaluation */
@@ -395,8 +405,10 @@ export interface InvokeChannels {
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 
-  // Updater: Query current update status from main process
-  "updater:get-status": () => Promise<UpdaterSnapshot>;
+  // Updater: the renderer polls this (pull, like downloads and uploads). With
+  // `since`, the reply also lists every snapshot recorded after that sequence
+  // number, so short-lived states are seen and not sampled past.
+  "updater:get-status": (since?: number) => Promise<UpdaterStatusResponse>;
   // Updater: Release notes covering the update the app just went through
   // (null when the launch did not follow an update or notes are unavailable).
   // The renderer passes its persisted channel, the handler can be invoked
