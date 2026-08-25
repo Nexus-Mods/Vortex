@@ -450,7 +450,24 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       );
     }
 
-    return <div className="table-footer-placeholder">{footer}</div>;
+    // Only the multi-row bar is absolutely positioned, filling a surrounding panel, so
+    // only it needs a placeholder to hold the rows clear of it. The usage hint shown
+    // below two selections lays out in the flow and takes its own height — giving that
+    // the placeholder's fixed height boxes it at 48px on every table that has no
+    // `footerContainer`, which is not something it ever had.
+    return this.isMultiRowFooter() ? (
+      <div className="table-footer-placeholder">{footer}</div>
+    ) : (
+      footer
+    );
+  }
+
+  /** Whether the footer is the multi-row action bar rather than the usage hint. */
+  private isMultiRowFooter(): boolean {
+    const { rowState } = this.state;
+    const selected = Object.keys(rowState).filter((key) => rowState[key].selected);
+
+    return this.useMultiSelect() && selected.length >= 2;
   }
 
   private renderFooterContent(): JSX.Element {
