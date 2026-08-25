@@ -8,7 +8,7 @@ const paths = vi.hoisted(() => ({ pluginDir: "", dataDir: "", native: [] as stri
 
 // resolve the persistor's game paths into per-test temp dirs
 vi.mock("./gameSupport", () => ({
-  gameSupported: () => true,
+  gameSupported: (gameId: string) => gameId === "skyrimse",
   gameDataPath: () => paths.dataDir,
   pluginPath: () => paths.pluginDir,
   pluginFormat: () => "fallout4",
@@ -29,6 +29,8 @@ describe("PluginPersistor", () => {
   // stands in for the redux loadOrder hive, keyed by plugin id
   let hive: Record<string, Partial<ILoadOrder>>;
   let hydrateSpy: Mock;
+
+  const settleWrites = () => persistor.loadFiles("not-a-supported-game");
 
   // mirrors ExtensionManager.hydrateFromPersistor: enumerate getAllKeys, getItem each,
   // REPLACE the hive wholesale with the result
@@ -58,12 +60,7 @@ describe("PluginPersistor", () => {
     persistor.setResetCallback(hydrateSpy);
     await persistor.loadFiles("skyrimse");
     persistor.setKnownPlugins({ "old.esp": "Old.esp" });
-    // wait for the scheduled serialize to land.
-    await vi.waitFor(() =>
-      expect(
-        nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1"),
-      ).not.toContain("Parked.esp"),
-    );
+    await settleWrites();
     await hydrate();
   });
 
