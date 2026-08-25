@@ -13,7 +13,11 @@
  * signed build — this covers resolve → notify → download.)
  *
  * Usage:
- *   node scripts/mock-update-feed.mjs [--port 9877] [--fixture path.json] [--installer path.exe] [--assets dir]
+ *   node scripts/mock-update-feed.mjs [--port 9877] [--fixture path.json] [--installer path.exe] [--assets dir] [--throttle MBps]
+ *
+ * --throttle caps asset transfer speed (megabytes per second) so a download
+ * from localhost takes long enough to watch the progress UI; e.g. --throttle 20
+ * stretches a 365 MB installer to about 18 seconds.
  *
  * --assets serves real files (installers and their .exe.blockmap siblings)
  * by exact name from a directory, taking precedence over the generated
@@ -62,6 +66,32 @@ const fixturePath = arg(
 );
 const installerPath = arg("installer", null);
 const assetsDir = arg("assets", null);
+const throttleMBps = Number(arg("throttle", "0"));
+
+// Writes a body either in one go or, when throttled, in ten slices per
+// second sized to the requested rate.
+function sendBody(res, body) {
+  if (!(throttleMBps > 0)) {
+    res.end(body);
+    return;
+  }
+  const chunk = Math.max(1, Math.floor((throttleMBps * 1024 * 1024) / 10));
+  let offset = 0;
+  const tick = () => {
+    if (res.destroyed) {
+      return;
+    }
+    const end = Math.min(offset + chunk, body.length);
+    res.write(body.subarray(offset, end));
+    offset = end;
+    if (offset >= body.length) {
+      res.end();
+    } else {
+      setTimeout(tick, 100);
+    }
+  };
+  tick();
+}
 
 const releases = JSON.parse(readFileSync(fixturePath, "utf8"));
 const installerBytes =
@@ -158,7 +188,7 @@ const server = createServer((req, res) => {
             "content-range": `bytes ${start}-${end}/${content.length}`,
             "accept-ranges": "bytes",
           });
-          res.end(slice);
+          sendBody(res, slice);
           return;
         }
         console.log(`${label} -> 200 full file (${fmtSize(content.length)}) [${source}]`);
@@ -167,7 +197,7 @@ const server = createServer((req, res) => {
           "content-length": content.length,
           "accept-ranges": "bytes",
         });
-        res.end(content);
+        sendBody(res, content);
         return;
       } catch {
         // fall through to generated assets / 404
