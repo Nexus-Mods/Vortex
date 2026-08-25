@@ -75,7 +75,6 @@ jobs:
           filename: ${{ steps.prepare.outputs.installer-path }}
           version: ${{ steps.prepare.outputs.version }}
           display_name: Vortex ${{ steps.prepare.outputs.version }}
-          description: ${{ steps.prepare.outputs.body }}
           changelog: ${{ steps.prepare.outputs.changelog }}
           category: main
           archive_existing_version: false
