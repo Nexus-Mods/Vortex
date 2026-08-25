@@ -1,4 +1,4 @@
-import { assert, describe, expect, it, test } from "vitest";
+import { assert, describe, expect, expectTypeOf, it, test } from "vitest";
 
 import { VortexError } from "./base";
 import { parseError, parseNodeSystemErrorData } from "./parser";
@@ -17,9 +17,14 @@ function makeSystemError(
 }
 
 describe("parseError", () => {
-  it("passes a VortexError through unchanged", () => {
+  it("passes a VortexError through unchanged, with data typed as the full union", () => {
     const original = new VortexError("already typed", { kind: "user-canceled", skipped: false });
-    expect(parseError(original)).toBe(original);
+    const parsed = parseError(original);
+
+    expect(parsed).toBe(original);
+    expectTypeOf(parsed.data).not.toBeAny();
+    assert(parsed.data.kind === "user-canceled");
+    expect(parsed.data.skipped).toBe(false);
   });
 
   test.for([
