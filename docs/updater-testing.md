@@ -107,7 +107,19 @@ build with these set would look for updates on localhost.
 For run-from-source (`pnpm start`) there's an opt-in dev updater: set
 `VORTEX_DEV_UPDATER=1` and electron-updater reads `src/main/dev-app-update.yml`.
 Checks, notifications, and downloads all work; installs are hard-gated to
-packaged builds and never run from source.
+packaged builds and never run from source. Three things differ from a
+packaged build:
+
+- The dev build reports version `1.0.0` (the placeholder in
+  `src/main/package.json`), so the 9.x fixtures above read as a major update
+  (Download button, visible progress) rather than a patch. To see the
+  downgrade offer you need a stable release below 1.0.0: a `v0.9.0` entry in
+  the fixture plus an `assets\v0.9.0\` directory holding the renamed installer
+  and a `latest.yml` with its sha512 and size. Switch Beta to Stable for the
+  offer.
+- Its log is `%APPDATA%\@vortex\main\vortex.log`, not `%APPDATA%\Vortex`.
+- Its updater cache is `%LOCALAPPDATA%\vortex-updater-dev`; delete it between
+  runs to get the offer back after a download has staged.
 
 ## 6. The `publisherName` strip (unsigned builds only)
 
