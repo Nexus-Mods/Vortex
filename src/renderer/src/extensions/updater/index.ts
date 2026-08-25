@@ -161,7 +161,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
       });
     };
 
-    // ---- state → notifications --------------------------------------------
+    // ---- state -> notifications -------------------------------------------
 
     // The updater is a state machine (see UpdaterState); this is the single
     // mapping from states to Vortex notifications. Everything the user sees
@@ -306,7 +306,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 ? `${verb} Vortex ${state.version} (${state.percent}%)`
                 : `${verb} Vortex ${state.version}`,
             progress: state.percent,
-            // no buttons while the download runs — nothing sensible to click
+            // no buttons while the download runs, nothing sensible to click
           });
           return;
         }

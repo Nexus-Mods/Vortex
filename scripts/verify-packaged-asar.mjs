@@ -13,8 +13,8 @@
  *
  * Checks every nested package (node_modules/<pkg>/node_modules/<dep>) in the
  * deploy tree: if the asar contains that slot, its version must match. Slots
- * absent from the asar entirely are allowed — the packager may legitimately
- * exclude dev-only trees — but a slot present with the WRONG version is
+ * absent from the asar entirely are allowed (the packager may legitimately
+ * exclude dev-only trees) but a slot present with the WRONG version is
  * exactly the corruption this guards against, and fails the run.
  */
 
@@ -81,7 +81,7 @@ function asarVersion(rel) {
   try {
     return JSON.parse(asar.extractFile(asarPath, rel.split("/").join(path.sep)).toString()).version;
   } catch {
-    return null; // not in the asar at all — allowed
+    return null; // not in the asar at all, allowed
   }
 }
 

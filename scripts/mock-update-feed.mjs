@@ -10,7 +10,7 @@
  * latest.yml and a dummy installer are generated per release tag with a
  * matching sha512, so electron-updater's download + hash verification pass.
  * (Authenticode verification and the actual install still need a packaged,
- * signed build — this covers resolve → notify → download.)
+ * signed build; this covers resolve -> notify -> download.)
  *
  * Usage:
  *   node scripts/mock-update-feed.mjs [--port 9877] [--fixture path.json] [--installer path.exe] [--assets dir] [--throttle MBps]
@@ -151,7 +151,7 @@ const server = createServer((req, res) => {
     // blockmaps must match the actual installer bytes); a per-tag
     // subdirectory wins over the flat dir, so tag-specific files that share
     // a name across releases (latest.yml) can coexist. Reject ".."-bearing
-    // segments outright — the character class alone would admit them.
+    // segments outright, the character class alone would admit them.
     const safeSegment = (segment) => /^[\w.-]+$/.test(segment) && !segment.includes("..");
     if (assetsDir != null && safeSegment(asset) && safeSegment(tag)) {
       try {

@@ -4,7 +4,7 @@
  * electron-updater's GitHub provider walks the releases atom feed in
  * publish-date order, so a stable hotfix published after a beta gets offered
  * to beta users as "the latest version". This module resolves the target
- * release ourselves — GitHub REST API, filter, max semver per channel — and
+ * release ourselves (GitHub REST API, filter, max semver per channel) and
  * the updater is then pointed at that release's assets via a generic feed.
  *
  * Must stay loadable in plain node (vitest): no electron imports.
@@ -80,7 +80,7 @@ function versionFromTag(tag: string): string | null {
 }
 
 // The prerelease flag and the version suffix are two signals for the same
-// fact; when they disagree the release was mispublished — don't trust it.
+// fact; when they disagree the release was mispublished, don't trust it.
 // (The whole 1.x era trips this: odd-minor betas were flagged prerelease with
 // no version suffix, so this is summarized once per fetch, not warned per tag.)
 function hasMismatchedPrereleaseFlag(release: GithubReleaseLite): boolean {
@@ -136,7 +136,7 @@ export function pickRelease(
 /**
  * Classify what the resolved version means relative to the running version.
  * A lower version is only ever surfaced as a "downgrade-offer" when the user
- * explicitly switched to the stable channel; background checks ignore it —
+ * explicitly switched to the stable channel; background checks ignore it;
  * offering it unasked is the old field bug.
  */
 export function classifyUpdate(
@@ -296,7 +296,7 @@ async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
 
 /**
  * Resolve the update target for a channel. Returns null when no eligible
- * release exists. Network and rate-limit errors propagate — the caller logs
+ * release exists. Network and rate-limit errors propagate, the caller logs
  * and skips the check, same as being offline.
  */
 export async function resolveUpdate(

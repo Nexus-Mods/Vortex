@@ -82,7 +82,7 @@ export type UpdaterState =
   /**
    * a download is running; percent is absent until the first progress event.
    * manual marks a download the user's own action set in motion (Download,
-   * a confirmed downgrade, a manual check that found a patch) — those render
+   * a confirmed downgrade, a manual check that found a patch), those render
    * visibly; only background-initiated patch downloads stay silent.
    */
   | { type: "downloading"; version: string; kind: UpdateKind; manual: boolean; percent?: number }
@@ -399,7 +399,7 @@ export interface InvokeChannels {
   "updater:get-status": () => Promise<UpdaterSnapshot>;
   // Updater: Release notes covering the update the app just went through
   // (null when the launch did not follow an update or notes are unavailable).
-  // The renderer passes its persisted channel — the handler can be invoked
+  // The renderer passes its persisted channel, the handler can be invoked
   // before the first check has established one in main.
   "updater:get-update-changelog": (channel: string) => Promise<string | null>;
   // Dialog channels
