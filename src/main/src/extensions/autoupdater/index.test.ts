@@ -1,4 +1,4 @@
-import type { UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
+import type { UpdaterSnapshot, UpdaterState, UpdaterStatusResponse } from "@vortex/shared/ipc";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResolvedRelease } from "./releaseResolver";
@@ -46,7 +46,6 @@ vi.mock("@vortex/shared", () => ({
 vi.mock("electron", () => ({
   app: appMock,
   dialog: { showMessageBoxSync: vi.fn() },
-  BrowserWindow: { getAllWindows: () => [{ webContents: {} }] },
 }));
 vi.mock("electron-updater", () => ({ autoUpdater: autoUpdaterMock }));
 vi.mock("../../ipc", () => ({ betterIpcMain: ipcMock }));
@@ -83,9 +82,13 @@ function updaterEvent(name: string): ((...args: unknown[]) => void) | undefined 
   return call?.[1] as ((...args: unknown[]) => void) | undefined;
 }
 
-function getSnapshot(): UpdaterSnapshot {
+function getStatus(since?: number): UpdaterStatusResponse {
   const call = ipcMock.handle.mock.calls.find(([name]) => name === "updater:get-status");
-  return (call![1] as () => UpdaterSnapshot)();
+  return (call![1] as (event: unknown, since?: number) => UpdaterStatusResponse)({}, since);
+}
+
+function getSnapshot(): UpdaterSnapshot {
+  return getStatus().snapshot;
 }
 
 function getState(): UpdaterState {
@@ -234,13 +237,14 @@ describe("checkForUpdates", () => {
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
     expect(getState().type).toBe("available");
-    ipcMock.send.mockClear();
+    const before = getStatus().seq;
 
     ipcHandler("updater:set-channel")(undefined, "none", true);
 
     expect(getState().type).toBe("disabled");
-    // the withdrawal is broadcast so the renderer can dismiss
-    expect(ipcMock.send).toHaveBeenCalled();
+    // the withdrawal is a recorded transition, so the renderer's next poll
+    // sees it and dismisses
+    expect(getStatus(before).changes.map((entry) => entry.state.type)).toEqual(["disabled"]);
   });
 
   it("restores what the user could see when a background check fails", async () => {
@@ -413,15 +417,18 @@ describe("library events", () => {
     resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
     ipcHandler("updater:check-for-updates")(undefined, "stable", false);
     await flush();
-    ipcMock.send.mockClear();
+    const before = getStatus().seq;
 
     updaterEvent("download-progress")?.({ percent: 41.2 });
     updaterEvent("download-progress")?.({ percent: 41.9 });
     updaterEvent("download-progress")?.({ percent: 42.1 });
 
     expect(getState()).toMatchObject({ type: "downloading", percent: 42 });
-    // 41.2 and 42.1 broadcast; 41.9 is the same whole percent as 41.2
-    expect(ipcMock.send).toHaveBeenCalledTimes(2);
+    // 41.2 and 42.1 are recorded; 41.9 is the same whole percent as 41.2
+    expect(getStatus(before).changes.map((entry) => entry.state)).toMatchObject([
+      { percent: 41 },
+      { percent: 42 },
+    ]);
   });
 
   it("stages the download and arms a VISIBLE install-on-quit", async () => {
@@ -590,12 +597,13 @@ describe("downgrade offers", () => {
 
   it("ignores a decline when no offer is outstanding", async () => {
     await setup();
+    const before = getStatus().seq;
 
     ipcHandler("updater:decline-downgrade")(undefined);
 
     expect(getState().type).toBe("idle");
-    // no spurious broadcast for a stray decline
-    expect(ipcMock.send).not.toHaveBeenCalled();
+    // no spurious transition recorded for a stray decline
+    expect(getStatus(before).changes).toEqual([]);
   });
 
   it("ignores download-downgrade when no offer is outstanding", async () => {
@@ -828,5 +836,64 @@ describe("post-update notice", () => {
       ),
     ).resolves.toBeNull();
     expect(resolveUpdateMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("status polling", () => {
+  // The renderer pulls status (like downloads and uploads). Because the UI
+  // reacts to transitions, a poll carries the last sequence number it saw and
+  // gets every snapshot since, so a short-lived state is never sampled past.
+  it("replays every transition since the given sequence number, in order", async () => {
+    await setup();
+    const before = getStatus().seq;
+
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0", version: "2.7.0" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+
+    const response = getStatus(before);
+    expect(response.changes.map((entry) => entry.state.type)).toEqual(["checking", "available"]);
+    expect(response.snapshot.state).toMatchObject({ type: "available", version: "2.7.0" });
+    expect(response.seq).toBe(before + 2);
+  });
+
+  it("returns no changes when the caller is caught up, and none without a since", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0", version: "2.7.0" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+
+    const head = getStatus().seq;
+    expect(getStatus(head).changes).toEqual([]);
+    expect(getStatus().changes).toEqual([]);
+    expect(getStatus().snapshot.state.type).toBe("available");
+  });
+
+  it("keeps a bounded history but always the latest snapshot", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.6.1", version: "2.6.1" }));
+    ipcHandler("updater:check-for-updates")(undefined, "stable", false);
+    await flush();
+    const before = getStatus().seq;
+
+    for (let percent = 1; percent <= 60; percent += 1) {
+      updaterEvent("download-progress")?.({ percent });
+    }
+
+    const response = getStatus(before);
+    expect(response.changes.length).toBeLessThanOrEqual(32);
+    expect(response.changes.at(-1)?.state).toMatchObject({ type: "downloading", percent: 60 });
+    expect(response.snapshot.state).toMatchObject({ type: "downloading", percent: 60 });
+    expect(response.seq).toBe(before + 60);
+  });
+
+  it("counts the post-update notice as a change so a poll picks it up", async () => {
+    readPersistedValueMock.mockResolvedValue("2.5.9");
+    await setup();
+    await flush();
+
+    const response = getStatus(0);
+    expect(response.changes.some((entry) => entry.justUpdatedFrom === "2.5.9")).toBe(true);
+    expect(response.snapshot.justUpdatedFrom).toBe("2.5.9");
   });
 });

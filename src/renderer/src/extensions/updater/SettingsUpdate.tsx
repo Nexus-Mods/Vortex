@@ -1,3 +1,4 @@
+import type { UpdaterSnapshot } from "@vortex/shared/ipc";
 import * as React from "react";
 import { FormGroup } from "react-bootstrap";
 import type * as Redux from "redux";
@@ -14,6 +15,7 @@ import { Typography } from "../../ui/components/typography/Typography";
 import Debouncer from "../../util/Debouncer";
 import { log } from "../../util/log";
 import { setUpdateChannel } from "./actions";
+import { getUpdaterStatus } from "./updaterStatus";
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
@@ -48,9 +50,14 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
   public componentDidMount(): void {
     // a pressed button gives feedback for as long as the work runs: the
-    // label reflects the updater's actual state, not a blind timer
-    this.unsubscribeStatus = window.api.updater.onStatusChanged((snapshot) => {
-      this.nextState.checking = snapshot.state.type === "checking" && snapshot.state.manual;
+    // label reflects the updater's actual state (read from the extension's
+    // status poller), not a blind timer
+    const poller = getUpdaterStatus();
+    const isManualChecking = (snapshot: UpdaterSnapshot | undefined) =>
+      snapshot?.state.type === "checking" && snapshot.state.manual;
+    this.nextState.checking = isManualChecking(poller?.current()) === true;
+    this.unsubscribeStatus = poller?.subscribe((snapshot) => {
+      this.nextState.checking = isManualChecking(snapshot) === true;
     });
   }
 
@@ -181,6 +188,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
     // send what updateChannel you are on, unless it's none, then send stable. manual check as well
     const channel = this.props.updateChannel === "none" ? "stable" : this.props.updateChannel;
     window.api.updater.checkForUpdates(channel, true);
+    getUpdaterStatus()?.wake();
   };
 
   private selectChannel = (value: UpdateChannel) => {
