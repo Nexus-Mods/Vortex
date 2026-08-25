@@ -189,7 +189,11 @@ function refreshMods(
         )
         .forEach((modId) => {
           const mod = currentMods[modId];
-          if (mod?.archiveId && downloads[mod.archiveId] === undefined) {
+          if (
+            mod?.archiveId !== undefined &&
+            mod.archiveId !== "" &&
+            downloads[mod.archiveId] === undefined
+          ) {
             const fileName = mod.attributes?.fileName;
             log("info", "archive referenced in mod doesn't exist", {
               modId,

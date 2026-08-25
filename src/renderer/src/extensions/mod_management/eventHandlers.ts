@@ -502,7 +502,7 @@ export function onGameModeActivated(
       }
       if (err instanceof VortexError && err.data.kind === "fs:not-found") {
         // reconciling against a folder Vortex can't see would list every mod as
-        // removed, so it was skipped entirely
+        // removed, so reconciliation is skipped
         showError(store.dispatch, "Staging folder is not available", err, { allowReport: false });
         return;
       }

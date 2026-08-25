@@ -8,6 +8,8 @@ import type { IPersistor } from "@vortex/shared/state";
 import { getVortexPath } from "../getVortexPath";
 import { log } from "../logging";
 import DuckDBSingleton from "./DuckDBSingleton";
+import { validateLevelLayout } from "./levelLayout";
+import { repairLevelStore } from "./repairLevelStore";
 
 const SEPARATOR: string = "###";
 
@@ -64,6 +66,25 @@ class LevelPersist implements IPersistor {
       const singleton = DuckDBSingleton.getInstance();
       const extensionDir = path.join(getVortexPath("base_unpacked"), "duckdb-extensions");
       await singleton.initialize(extensionDir);
+
+      // Validate the index and repair it if possible.
+      const layout = validateLevelLayout(persistPath);
+      if (!layout.ok) {
+        log("error", "state store level index is invalid", {
+          path: persistPath,
+          levels: layout.levels,
+          problems: layout.problems,
+        });
+        const repair = await repairLevelStore(persistPath, extensionDir);
+        log(repair.repaired ? "info" : "error", "state store repair finished", {
+          repaired: repair.repaired,
+          rows: repair.rows,
+          duplicates: repair.duplicates,
+        });
+        if (!repair.repaired) {
+          throw new DataInvalid("state store level index is invalid and could not be repaired");
+        }
+      }
 
       const alias = singleton.nextAlias();
       const connection = await singleton.attachDatabase(persistPath, alias);
@@ -218,8 +239,8 @@ class LevelPersist implements IPersistor {
       reader = await this.#mConnection.runAndReadAll(`SELECT key, value FROM ${this.#mAlias}.kv`);
     } else {
       reader = await this.#mConnection.runAndReadAll(
-        `SELECT key, value FROM ${this.#mAlias}.kv WHERE key > $1 AND key < $2`,
-        [`${prefix}${SEPARATOR}`, `${prefix}${SEPARATOR}zzzzzzzzzzz`],
+        `SELECT key, value FROM ${this.#mAlias}.kv WHERE starts_with(key, $1)`,
+        [`${prefix}${SEPARATOR}`],
       );
     }
     const rows = reader.getRows();

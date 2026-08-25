@@ -363,7 +363,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         }
         if (err instanceof VortexError && err.data.kind === "fs:not-found") {
           // reconciling against a folder Vortex can't see would delete every
-          // download record for this game, so it was skipped entirely
+          // download record for this game, so reconciliation is skipped
           folderAvailable = false;
           api.showErrorNotification(
             "Download folder is not available",
