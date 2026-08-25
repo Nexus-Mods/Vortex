@@ -66,7 +66,15 @@ export const PagesProvider: FC<React.PropsWithChildren<IPagesProviderProps>> = (
             return priorityDiff;
           }
           return a.title.localeCompare(b.title, undefined, { numeric: true });
-        }),
+        })
+        // A page that has both renderings decides which it is about to draw. Resolved
+        // here because this is where the setting it turns on is already watched, so the
+        // answer follows a change to it, and because MainPageContainer is then handed a
+        // new page object rather than having to subscribe for itself.
+        .map((page) => ({
+          ...page,
+          newLayout: typeof page.newLayout === "function" ? page.newLayout() : page.newLayout,
+        })),
     [mainPages, useModernLayout],
   );
 

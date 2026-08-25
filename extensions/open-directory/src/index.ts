@@ -6,10 +6,12 @@ import Promise from "bluebird";
 import { appDataPath, initGameSupport, settingsPath } from "./gameSupport";
 
 /**
- * These sit behind the mods toolbar's "Open" button rather than in the toolbar's own
- * group, so that they take one slot on the bar between them.
+ * The mods toolbar's own group. These sit behind its "Open" button so that they take one
+ * slot on the bar between them, but they reach it by their shared `open-ext` icon rather
+ * than by registering into the button's group — which is what the classic toolbar did
+ * with them, and it is still there to do it.
  */
-const OPEN_GROUP = "mod-icons-open";
+const OPEN_GROUP = "mod-icons";
 
 function init(context: types.IExtensionContext) {
   initGameSupport(context.api);

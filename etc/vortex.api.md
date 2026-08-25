@@ -730,6 +730,8 @@ interface IBaseProps$1 {
     // (undocumented)
     edgeToEdge?: boolean;
     // (undocumented)
+    footerContainer?: HTMLElement | null;
+    // (undocumented)
     hasActions?: boolean;
     // (undocumented)
     multiSelect?: boolean;
@@ -2707,7 +2709,7 @@ interface IMainPageOptions {
     // (undocumented)
     mdi?: string;
     menuBadge?: React$2.ComponentType<React$2.PropsWithChildren<unknown>>;
-    newLayout?: boolean;
+    newLayout?: boolean | (() => boolean);
     // (undocumented)
     onReset?: () => void;
     // (undocumented)

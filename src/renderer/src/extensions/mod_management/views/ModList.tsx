@@ -23,13 +23,17 @@ import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import DropdownButton from "../../../controls/DropdownButton";
 import type { DropType } from "../../../controls/Dropzone";
 import Dropzone from "../../../controls/Dropzone";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import FlexLayout from "../../../controls/FlexLayout";
 import Icon from "../../../controls/Icon";
+import IconBar from "../../../controls/IconBar";
 import type { ITableRowAction } from "../../../controls/Table";
 import SuperTable from "../../../controls/Table";
 import OptionsFilter from "../../../controls/table/OptionsFilter";
 import TextFilter from "../../../controls/table/TextFilter";
 import { IconButton } from "../../../controls/TooltipControls";
 import ZoomableImage from "../../../controls/ZoomableImage";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type {
   DialogActions,
   DialogType,
@@ -56,6 +60,7 @@ import { Page } from "../../../views/components/Page/Page";
 import { PageContent } from "../../../views/components/Page/PageContent";
 import { PageHeader } from "../../../views/components/Page/PageHeader";
 import { PageScroll } from "../../../views/components/Page/PageScroll";
+import MainPage from "../../../views/MainPage";
 import getDownloadGames from "../../download_management/util/getDownloadGames";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { setModEnabled, setModsEnabled } from "../../profile_management/actions/profiles";
@@ -81,6 +86,7 @@ import VersionFilter from "../util/VersionFilter";
 import Author from "./Author";
 import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
+import InstallArchiveButton from "./InstallArchiveButton";
 import VersionChangelogButton from "./VersionChangelogButton";
 import VersionIconButton from "./VersionIconButton";
 
@@ -145,6 +151,7 @@ interface IConnectedProps extends IModProps {
   downloadPath: string;
   showDropzone: boolean;
   autoInstall: boolean;
+  useModernLayout: boolean;
   // some mod actions are not allowed while installing dependencies/collections
   //  e.g. combining a mod with other patch mods while the collection is still installing.
   suppressModActions: boolean;
@@ -175,6 +182,15 @@ interface IComponentState {
 const nop = () => null;
 
 /**
+ * Keeps an action meant for the new toolbar off the classic one. Manage Rules is
+ * registered once for each — a flashing button here, a plain action with a count there —
+ * and this is the half of that arrangement the classic bar is responsible for; the new
+ * toolbar drops the classic-only half itself. The classic global-icons bar filters the
+ * same way, see `views/layout/Toolbar.tsx`.
+ */
+const filterModernActions = (action: IActionDefinition) => !action.options?.isModernOnly;
+
+/**
  * displays the list of mods installed for the current game.
  *
  */
@@ -191,6 +207,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modSizeAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mAttributes: ITableAttribute[];
+  /** The classic toolbar's own buttons, which it takes as `staticElements`. */
+  private staticButtons: IActionDefinition[];
   private mUpdateDebouncer: Debouncer<[IProps]>;
   private mLastUpdateProps: IModProps = {
     mods: {},
@@ -293,6 +311,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
+    this.staticButtons = [
+      {
+        component: InstallArchiveButton,
+        position: 25,
+        props: () => ({}),
+      },
+      {
+        component: CheckModVersionsButton,
+        position: 50,
+        props: () => ({ groupedMods: this.state.groupedMods }),
+      },
+    ];
+
     this.mAttributes = [
       this.modPictureAttribute,
       this.modEnabledAttribute,
@@ -357,7 +388,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, gameMode, modSources, showDropzone } = this.props;
+    const { gameMode, useModernLayout } = this.props;
 
     if (gameMode === undefined) {
       // shouldn't happen
@@ -367,6 +398,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (this.state.groupedMods === undefined) {
       return null;
     }
+
+    return useModernLayout ? this.renderPage() : this.renderClassicPage();
+  }
+
+  /**
+   * The page as the new UI draws it: its own chrome, a table running to the edges under a
+   * sticky header, and a footer below the table rather than over it.
+   */
+  private renderPage(): JSX.Element {
+    const { t, modSources, showDropzone } = this.props;
 
     let content: JSX.Element;
 
@@ -443,6 +484,92 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  /**
+   * The page as the classic UI draws it, which is as it always did: the toolbar in the
+   * chrome's own header, a panelled table, the footer inside it. The page is registered
+   * registered so that `newLayout` resolves false here, which is what gets it the legacy
+   * wrappers this needs — the header is a portal into one of them.
+   */
+  private renderClassicPage(): JSX.Element {
+    const { t, modSources, showDropzone } = this.props;
+
+    let content: JSX.Element;
+
+    if (Object.keys(this.state.primaryMods).length === 0) {
+      // for some reason I can't use the <Panel> control, it ends up
+      // having no body
+      content = (
+        <div className="panel">
+          <div className="panel-body">
+            <EmptyPlaceholder
+              fill={true}
+              icon="folder-download"
+              subtext={this.renderMoreModsLink(modSources)}
+              text={t("You don't have any installed mods")}
+            />
+          </div>
+        </div>
+      );
+    } else {
+      content = (
+        <Panel>
+          <Panel.Body>
+            <SuperTable
+              actions={this.modActions}
+              data={this.state.primaryMods}
+              detailsTitle={t("Mod Attributes")}
+              staticElements={this.mAttributes}
+              tableId="mods"
+            >
+              <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
+            </SuperTable>
+          </Panel.Body>
+        </Panel>
+      );
+    }
+
+    return (
+      <MainPage domRef={this.setBoundsRef}>
+        <MainPage.Header>
+          <IconBar
+            className="menubar"
+            filter={filterModernActions}
+            group="mod-icons"
+            staticElements={this.staticButtons}
+            t={t}
+          />
+        </MainPage.Header>
+
+        <MainPage.Body>
+          <FlexLayout type="column">
+            <FlexLayout.Flex className="mod-list-container">{content}</FlexLayout.Flex>
+
+            <FlexLayout.Fixed className="mod-drop-container">
+              <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
+                <Panel.Collapse>
+                  <Panel.Body>
+                    <Dropzone
+                      accept={["files"]}
+                      clickable={false}
+                      drop={this.dropMod}
+                      icon="folder-download"
+                    />
+                  </Panel.Body>
+                </Panel.Collapse>
+
+                <CollapseIcon
+                  position="topright"
+                  visible={showDropzone}
+                  onClick={this.toggleDropzone}
+                />
+              </Panel>
+            </FlexLayout.Fixed>
+          </FlexLayout>
+        </MainPage.Body>
+      </MainPage>
+    );
+  }
+
   /** The sources that offer somewhere to go and are willing to be shown right now. */
   private browsableSources(sources: IModSource[]): IModSource[] {
     return sources.filter((source) => {
@@ -454,6 +581,24 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       }
       return source.options.condition();
     });
+  }
+
+  /** The classic empty state's "I know a place..." link, or a menu when there are several. */
+  private renderMoreModsLink(sources: IModSource[]): JSX.Element {
+    const { t } = this.props;
+
+    const browsable = this.browsableSources(sources);
+    const text = t("But don't worry, I know a place...");
+
+    if (browsable.length === 1) {
+      return <a onClick={this.getMoreMods}>{text}</a>;
+    }
+
+    return (
+      <DropdownButton bsStyle="link" container={this.mRef} id="btn-more-mods" title={text}>
+        {browsable.map(this.renderModSource)}
+      </DropdownButton>
+    );
   }
 
   private renderMoreMods(sources: IModSource[]): JSX.Element {
@@ -1738,6 +1883,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     downloadPath: selectors.downloadPath(state),
     showDropzone: state.settings.mods.showDropzone,
     autoInstall: state.settings.automation.install,
+    useModernLayout: state.settings.window.useModernLayout ?? true,
     suppressModActions,
   };
 }

@@ -541,8 +541,18 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
   );
 
   return objects.reduce<IPositionedAction[]>((prev, definition, index) => {
+    // Something registered for the classic toolbar to render, which the classic
+    // toolbar is still there to render — see ModList. Nothing to say about it.
+    if (definition.options?.isClassicOnly) {
+      return prev;
+    }
+
+    // A component can't become an action: the row needs a label and an icon it can
+    // measure, promote, collapse into the overflow menu and let the user pin. So a
+    // component registration only ever draws on the classic bar. Said at debug because
+    // that is now the arrangement rather than a surprise, and this runs every render.
     if (definition.component !== undefined) {
-      log("warn", "toolbar action registered as a component is not shown", {
+      log("debug", "toolbar action registered as a component is shown only in the classic UI", {
         position: definition.position,
       });
       return prev;

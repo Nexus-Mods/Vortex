@@ -1566,6 +1566,42 @@ function unresolvedConflictsNotice(api: types.IExtensionApi): string | undefined
     : undefined;
 }
 
+interface IManageRuleButtonProps {
+  notifications: types.INotification[];
+  onClick: () => void;
+}
+
+/**
+ * Manage Rules as the classic toolbar draws it, flashing while conflicts are waiting.
+ * The new toolbar says the same thing in words instead — see the `notice` on the plain
+ * action below — so each bar takes the one it can render.
+ */
+class ManageRuleButtonImpl extends PureComponentEx<IManageRuleButtonProps & WithT, {}> {
+  public render() {
+    const { t, onClick, notifications } = this.props;
+    const hasConflicts = notifications.find((iter) => iter.id === CONFLICT_NOTIFICATION_ID);
+    return (
+      <ToolbarIcon
+        id="manage-mod-rules-button"
+        icon="connection"
+        text={t("Manage Rules")}
+        className={hasConflicts ? "toolbar-flash-button" : undefined}
+        onClick={onClick}
+      />
+    );
+  }
+}
+
+function mapNotificationsToProps(state: types.IState) {
+  return {
+    notifications: state.session.notifications.notifications,
+  };
+}
+
+const ManageRuleButton = withTranslation(["common"])(
+  connect(mapNotificationsToProps)(ManageRuleButtonImpl) as any,
+);
+
 const pathTool: IPathTools = {
   isAbsolute: path.isAbsolute,
   relative: path.relative,
@@ -1580,17 +1616,26 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["session", "dependencies"], connectionReducer);
   context.registerTableAttribute("mods", makeLoadOrderAttribute(context.api));
   context.registerTableAttribute("mods", makeDependenciesAttribute(context.api));
-  // a plain action for the new toolbar; the flash for unresolved conflicts is now a tooltip count.
+  // One per toolbar: the new one takes a plain action and says how many conflicts are
+  // waiting in its tooltip, the classic one takes the button that flashes for them.
   context.registerAction(
     "mod-icons",
     90,
     "rules",
-    { notice: () => unresolvedConflictsNotice(context.api) },
+    { isModernOnly: true, notice: () => unresolvedConflictsNotice(context.api) },
     "Manage Rules",
     () => {
       showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
     },
   );
+
+  context.registerAction("mod-icons", 90, ManageRuleButton, { isClassicOnly: true }, () => {
+    const state: types.IState = context.api.store.getState();
+    return {
+      notifications: state.session.notifications.notifications,
+      onClick: () => showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true),
+    };
+  });
   context.registerDialog("mod-dependencies-connector", Connector);
   context.registerDialog("mod-dependencies-editor", Editor);
   context.registerDialog("mod-conflict-editor", ConflictEditor, () => ({
