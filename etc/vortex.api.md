@@ -669,47 +669,20 @@ interface IAttributeState {
 
 // @public
 interface IAvailableExtension {
-    // (undocumented)
     author: string;
     // (undocumented)
-    dependencies?: {
-        [key: string]: any;
-    };
-    // (undocumented)
-    description: {
-        short: string;
-        long: string;
-    };
-    // (undocumented)
-    downloads: number;
-    // (undocumented)
-    endorsements: number;
-    // (undocumented)
     fileId: number;
-    // (undocumented)
-    gameId?: string;
-    // (undocumented)
+    gameDomain?: string;
+    gameId?: number;
     gameName?: string;
-    // (undocumented)
-    hide?: boolean;
-    // (undocumented)
-    id?: string;
-    // (undocumented)
-    image: string;
-    // (undocumented)
+    image?: string;
     language?: string;
     // (undocumented)
     modId: number;
     // (undocumented)
     name: string;
-    // (undocumented)
-    tags: string[];
-    // (undocumented)
     timestamp: number;
-    // (undocumented)
     type?: ExtensionType;
-    // (undocumented)
-    uploader: string;
     // (undocumented)
     version: string;
 }
@@ -3158,6 +3131,7 @@ interface INexusAPIExtension {
     nexusGetCollections?: (gameId: string) => PromiseLike<Partial<ICollection>[] | undefined>;
     // (undocumented)
     nexusGetLatestMods?: (gameId: string) => PromiseLike<any>;
+    nexusGetModEndorsementCounts?: (uids: string[]) => PromiseLike<Record<string, number>>;
     // (undocumented)
     nexusGetModFiles?: (gameId: string, modId: number) => PromiseLike<IFileInfo[]>;
     // (undocumented)
@@ -3854,6 +3828,8 @@ interface ISessionGameMode {
     //
     // (undocumented)
     known: IGameStored[];
+    // (undocumented)
+    showHidden: boolean;
 }
 
 // @public (undocumented)
@@ -5179,7 +5155,7 @@ export const Usage: React$2.ComponentClass<IUsageProps>;
 
 // @public (undocumented)
 export namespace util {
-    export { Archive, ArgumentInvalid, Campaign, CollectionInstallOutcomeProps, CollectionsDownloadCancelledEvent, CollectionsDownloadClickedEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadFailedEvent, CollectionsDraftUpdateUploadedEvent, CollectionsDraftUploadedEvent, CollectionsDraftedEvent, CollectionsInstallationCancelledEvent, CollectionsInstallationCompletedEvent, CollectionsInstallationFailedEvent, CollectionsInstallationStartedEvent, ConcurrencyLimiter, Content, CycleError, DataInvalid, Debouncer, GameNotFound, instance$2 as GameStoreHelper, IErrorRendered, IPrettifiedError, IRequestOptions, ISteamEntry, LazyComponent, Method, MissingInterpreter, ModChangeReason, Normalize, NotFound, NotSupportedError, Overlayable, ProcessCanceled, ReduxProp, Section, SetupError, SevenZip, StarterInfo, TextGroup, UserCanceled, addUniqueSafe, batchDispatch, preProcess as bbcodePreProcess, bbcodeToHTML, renderBBCode as bbcodeToReact, buildCopyInstructions, bytesToString, calcDuration, calculateFolderSize, changeOrNop, checksum, coerceToSemver, compileStopPatterns, convertGameIdReverse, copyFileAtomic, copyRecursive, currentGame$1 as currentGame, deBOM, declareInstallers, deepMerge, delay, deleteOrNop, deriveModInstallName as deriveInstallName, instance$1 as epicGamesLauncher, extractExeIcon, fileMD5, findCommonRootDir, findDownloadByRef, findModByRef, findRuleByRef, generateCollectionSessionId, getActivator, getApplication, getCurrentActivator, getCurrentLanguage, getDriveList, getGame, getGames, getManifest, getModSource, getModSources, getModType, getNormalizeFunc, getReduxLog, getSafe, getSafeCI, getText, getVisibleWindow, getVortexPath, _default$14 as github, installIconSet, isChildPath, isFilenameValid, isFuzzyVersion, isPathValid, jsonRequest, lazyRequire, local, lookupFromDownload, makeInstallerFromSpec, makeModReference, makeNormalizingDict, makeOverlayableDictionary, makeQueue, makeReactive, makeRemoteCall, makeUnique, makeUniqueByKey, merge, modRuleId, mutateSafe, nexusGameId, nexusModsURL, normalizeStoreQuery, objDiff, onceCB, open as opn, pad, prettifyNodeErrorMessage, pushSafe, rawRequest, readExtensibleDir, rehydrate, relativeTime, removeMods, removeValue, removeValueIf, renderError, modName as renderModName, renderModReference, request, resolveCategoryName, resolveCategoryPath, ruleInstallSpec, rulePhase, runElevated, runThreaded, sanitizeCSSId, sanitizeFilename, semverCoerce, setDefaultArray, setOrNop, setSafe, setdefault, showActivity, showError, showInfo, showSuccess, sortMods, instance as steam, terminate, testModReference, testRefByIdentifiers, toBlue, toPromise, unique, upload, userFriendlyTime, walk, withContext as withErrorContext, withTrackedActivity, writeFileAtomic };
+    export { Archive, ArgumentInvalid, Campaign, CollectionInstallOutcomeProps, CollectionsDownloadCancelledEvent, CollectionsDownloadClickedEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadFailedEvent, CollectionsDraftUpdateUploadedEvent, CollectionsDraftUploadedEvent, CollectionsDraftedEvent, CollectionsInstallationCancelledEvent, CollectionsInstallationCompletedEvent, CollectionsInstallationFailedEvent, CollectionsInstallationStartedEvent, ConcurrencyLimiter, Content, CycleError, DataInvalid, Debouncer, GameNotFound, instance$2 as GameStoreHelper, IErrorRendered, IPrettifiedError, IRequestOptions, ISteamEntry, LazyComponent, Method, MissingInterpreter, ModChangeReason, Normalize, NotFound, NotSupportedError, Overlayable, ProcessCanceled, ReduxProp, Section, SetupError, SevenZip, StarterInfo, TextGroup, UserCanceled, addUniqueSafe, batchDispatch, preProcess as bbcodePreProcess, bbcodeToHTML, renderBBCode as bbcodeToReact, buildCopyInstructions, bytesToString, calcDuration, calculateFolderSize, changeOrNop, checksum, coerceToSemver, compileStopPatterns, convertGameIdReverse, copyFileAtomic, copyRecursive, currentGame$1 as currentGame, deBOM, declareInstallers, deepMerge, delay, deleteOrNop, deriveModInstallName as deriveInstallName, instance$1 as epicGamesLauncher, extractExeIcon, fileMD5, findCommonRootDir, findDownloadByRef, findModByRef, findRuleByRef, generateCollectionSessionId, getActivator, getApplication, getCurrentActivator, getCurrentLanguage, getDriveList, getGame, getGames, getManifest, getModSource, getModSources, getModType, getNormalizeFunc, getReduxLog, getSafe, getSafeCI, getText, getVisibleWindow, getVortexPath, _default$14 as github, installIconSet, isChildPath, isFilenameValid, isFuzzyVersion, isPathValid, jsonRequest, lazyRequire, local, lookupFromDownload, makeInstallerFromSpec, makeModReference, makeNormalizingDict, makeOverlayableDictionary, makeQueue, makeReactive, makeRemoteCall, makeUnique, makeUniqueByKey, merge, modRuleId, mutateSafe, nexusGameId, nexusModsURL, normalizeStoreQuery, objDiff, onceCB, open as opn, pad, prettifyNodeErrorMessage, pushSafe, rawRequest, rehydrate, relativeTime, removeMods, removeValue, removeValueIf, renderError, modName as renderModName, renderModReference, request, resolveCategoryName, resolveCategoryPath, ruleInstallSpec, rulePhase, runElevated, runThreaded, sanitizeCSSId, sanitizeFilename, semverCoerce, setDefaultArray, setOrNop, setSafe, setdefault, showActivity, showError, showInfo, showSuccess, sortMods, instance as steam, terminate, testModReference, testRefByIdentifiers, toBlue, toPromise, unique, upload, userFriendlyTime, walk, withContext as withErrorContext, withTrackedActivity, writeFileAtomic };
 }
 
 // @public (undocumented)
@@ -5338,23 +5314,23 @@ export class ZoomableImage extends React$2.Component<IZoomableImageProps, {
 // lib/api.d.ts:1110:5 - (ae-forgotten-export) The symbol "IDiscoveredTool" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:1277:5 - (ae-forgotten-export) The symbol "IItemRendererProps" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:1620:5 - (ae-forgotten-export) The symbol "IQueryArgEntry" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:2470:3 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:2807:5 - (ae-forgotten-export) The symbol "IProfileMod" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:3397:5 - (ae-forgotten-export) The symbol "IEditChoice" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:3524:5 - (ae-forgotten-export) The symbol "ICollectionModInstallInfo" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:3858:5 - (ae-forgotten-export) The symbol "IMod" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4192:3 - (ae-forgotten-export) The symbol "IGameDetail" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4617:5 - (ae-forgotten-export) The symbol "IStateVerifier" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5297:7 - (ae-forgotten-export) The symbol "IProgress" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5302:5 - (ae-forgotten-export) The symbol "IExtensionLoadFailure" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5305:5 - (ae-forgotten-export) The symbol "IRunningTool" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5308:5 - (ae-forgotten-export) The symbol "IUIBlocker" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5323:5 - (ae-forgotten-export) The symbol "IRowState" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5366:5 - (ae-forgotten-export) The symbol "IExtensionState$1" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5389:5 - (ae-forgotten-export) The symbol "IDownload" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5392:5 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5410:5 - (ae-forgotten-export) The symbol "IDashletSettings" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5475:5 - (ae-forgotten-export) The symbol "IAttributeState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2467:3 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2806:5 - (ae-forgotten-export) The symbol "IProfileMod" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3396:5 - (ae-forgotten-export) The symbol "IEditChoice" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3523:5 - (ae-forgotten-export) The symbol "ICollectionModInstallInfo" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3857:5 - (ae-forgotten-export) The symbol "IMod" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4191:3 - (ae-forgotten-export) The symbol "IGameDetail" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4616:5 - (ae-forgotten-export) The symbol "IStateVerifier" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5296:7 - (ae-forgotten-export) The symbol "IProgress" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5301:5 - (ae-forgotten-export) The symbol "IExtensionLoadFailure" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5304:5 - (ae-forgotten-export) The symbol "IRunningTool" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5307:5 - (ae-forgotten-export) The symbol "IUIBlocker" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5322:5 - (ae-forgotten-export) The symbol "IRowState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5365:5 - (ae-forgotten-export) The symbol "IExtensionState$1" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5388:5 - (ae-forgotten-export) The symbol "IDownload" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5391:5 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5409:5 - (ae-forgotten-export) The symbol "IDashletSettings" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5474:5 - (ae-forgotten-export) The symbol "IAttributeState" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:5537:7 - (ae-forgotten-export) The symbol "IGameInfoEntry" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:5569:5 - (ae-forgotten-export) The symbol "IOverlay" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:5618:5 - (ae-forgotten-export) The symbol "IModTable" needs to be exported by the entry point api.d.ts
@@ -5366,8 +5342,8 @@ export class ZoomableImage extends React$2.Component<IZoomableImageProps, {
 // lib/api.d.ts:5634:5 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:5635:5 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
 // lib/api.d.ts:5651:5 - (ae-forgotten-export) The symbol "IDiscoveryPhase" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8901:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8902:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:8898:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:8899:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
 // (No @packageDocumentation comment for this package)
 
