@@ -131,7 +131,7 @@ const PopoverMenuItemPin = ({
         }
       }}
     >
-      <Icon path={pin.pinned ? mdiPinOutline : mdiPinOffOutline} size="none" />
+      <Icon path={pin.pinned ? mdiPinOffOutline : mdiPinOutline} size="none" />
     </span>
   );
 };
@@ -277,8 +277,8 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
           panel={action.panel}
           ref={ref}
           tabIndex={tabIndex}
-          onTakeFocus={onTakeFocus}
           onSelect={onSelect}
+          onTakeFocus={onTakeFocus}
         />
       );
     }

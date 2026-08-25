@@ -1,4 +1,4 @@
-import { mdiChevronRight } from "@mdi/js";
+import { mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -285,6 +285,38 @@ describe("PopoverMenu", () => {
 
       await userEvent.keyboard("{ArrowUp}");
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
+    });
+
+    /** The path the pin's icon is currently drawing. */
+    const pinIconPath = (name: string) =>
+      screen.getByRole("button", { name }).querySelector("path")?.getAttribute("d");
+
+    // The icon is an offer, not a report: it shows what the click does, matching the
+    // label beside it, rather than the state the row is already in.
+    it("offers a pin on a row that is not pinned", async () => {
+      await openMenu([
+        [
+          {
+            ...plainAction("Refresh"),
+            pin: { pinned: false, label: "Pin Refresh", onToggle: () => {} },
+          },
+        ],
+      ]);
+
+      expect(pinIconPath("Pin Refresh")).toBe(mdiPinOutline);
+    });
+
+    it("offers to unpin a row that is pinned", async () => {
+      await openMenu([
+        [
+          {
+            ...plainAction("Refresh"),
+            pin: { pinned: true, label: "Unpin Refresh", onToggle: () => {} },
+          },
+        ],
+      ]);
+
+      expect(pinIconPath("Unpin Refresh")).toBe(mdiPinOffOutline);
     });
   });
 
