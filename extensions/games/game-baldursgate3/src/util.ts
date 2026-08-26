@@ -47,7 +47,7 @@ export function profilesPath() {
 }
 
 export function scriptExtenderPath() {
-  reutnr path.join(documentsPath(), "Script Extender");
+  return path.join(documentsPath(), "Script Extender");
 }
 
 export async function fileExists(filePath: string): Promise<boolean> {
