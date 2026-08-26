@@ -497,6 +497,11 @@ export interface UpdaterApi {
    * purposeful switch to stable raises it again.
    */
   declineDowngrade(): void;
+
+  /**
+   * Cancel the download in progress. Ignored by main unless one is running.
+   */
+  cancelDownload(): void;
 }
 
 /** API for interacting with the DownloadManager in main */

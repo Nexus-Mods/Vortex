@@ -897,3 +897,47 @@ describe("status polling", () => {
     expect(response.snapshot.justUpdatedFrom).toBe("2.5.9");
   });
 });
+
+describe("cancelling a download", () => {
+  it("cancels the running download's token when the user asks, and only then", async () => {
+    await setup();
+    const cancel = vi.fn();
+    autoUpdaterMock.checkForUpdates.mockResolvedValue({ cancellationToken: { cancel } });
+
+    // nothing running: a stray cancel is ignored
+    ipcHandler("updater:cancel-download")(undefined);
+    expect(cancel).not.toHaveBeenCalled();
+
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0", version: "2.7.0" }));
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+    expect(getState().type).toBe("downloading");
+    // the user download rides the check's token so it is cancellable at all
+    expect(autoUpdaterMock.downloadUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ cancel }),
+    );
+
+    ipcHandler("updater:cancel-download")(undefined);
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  // builder-util-runtime's CancellationError keeps name "Error" and message
+  // "cancelled", and electron-updater does not emit its error event for it:
+  // the rejection of downloadUpdate is the only signal.
+  it("settles to idle without an error when the cancelled download rejects", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0", version: "2.7.0" }));
+    class CancellationError extends Error {
+      constructor() {
+        super("cancelled");
+      }
+    }
+    autoUpdaterMock.downloadUpdate.mockRejectedValue(new CancellationError());
+
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+
+    expect(getState().type).toBe("idle");
+    expect(getStatus(0).changes.some((entry) => entry.state.type === "error")).toBe(false);
+  });
+});

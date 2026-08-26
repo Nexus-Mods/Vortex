@@ -310,6 +310,8 @@ export interface RendererChannels extends RendererCallbackChannels {
   // Updater: Decline the outstanding downgrade offer. Clears the offer;
   // only another purposeful switch to stable raises it again.
   "updater:decline-downgrade": () => void;
+  // Updater: stop the running download (the user dismissed its notification)
+  "updater:cancel-download": () => void;
 
   // Updater: Restart and install update
   "updater:restart-and-install": () => void;
