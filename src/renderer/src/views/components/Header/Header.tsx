@@ -15,7 +15,6 @@ import {
   knownGames as knownGamesSelector,
 } from "../../../util/selectors";
 import { useSpineContext } from "../Spine/SpineContext";
-import { Notifications } from "./notifications/Notifications";
 import { PremiumIndicator } from "./premium/PremiumIndicator";
 import { ProfileSection } from "./profile/ProfileSection";
 import { StagingIndicator } from "./StagingIndicator";
@@ -90,8 +89,6 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
 
         <div className="flex items-center gap-x-5">
           <TooltipDelayGroup as="div" className="flex gap-x-2">
-            <Notifications />
-
             <ProfileSection />
           </TooltipDelayGroup>
 

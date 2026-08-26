@@ -1,10 +1,10 @@
 import { useCallback, useRef } from "react";
 import { useDispatch } from "react-redux";
 
-import { dismissNotification, fireNotificationAction } from "../../../../actions/notifications";
-import { suppressNotification } from "../../../../actions/notificationSettings";
-import { useExtensionContext } from "../../../../ExtensionProvider";
-import type { INotification, INotificationAction } from "../../../../types/INotification";
+import { dismissNotification, fireNotificationAction } from "@/actions";
+import { suppressNotification } from "@/actions";
+import { useExtensionContext } from "@/ExtensionProvider";
+import type { INotification, INotificationAction } from "@/types/INotification";
 
 interface UseNotificationActionsProps {
   notifications: INotification[];

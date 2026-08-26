@@ -11,6 +11,7 @@ import {
 } from "../../../util/selectors";
 import { DownloadButton } from "./download_button/DownloadButton";
 import { GameButton } from "./GameButton";
+import { Notifications } from "./notifications/Notifications";
 import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
 import { formatGameDisplayName, getGameImageUrls } from "./utils";
@@ -102,7 +103,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
             })}
 
             <SpineButton
-              className="border-2 border-dotted hover:border-solid"
+              className="border-2 border-transparent hover:border-solid"
               iconPath={mdiPlus}
               title="Games"
               onClick={() => handleGlobalPageClick("Games")}
@@ -113,7 +114,11 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
       </div>
 
-      <DownloadButton />
+      <div className="flex flex-col items-center gap-y-3">
+        <Notifications />
+
+        <DownloadButton />
+      </div>
     </TooltipDelayGroup>
   );
 };

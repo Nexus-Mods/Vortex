@@ -5,16 +5,17 @@ import {
   mdiInformationOutline,
   mdiLoading,
 } from "@mdi/js";
-import React, { type FC, useCallback } from "react";
+import React, { useCallback } from "react";
 
-import type { INotification, NotificationType } from "../../../../types/INotification";
-import { Icon } from "../../../../ui/components/icon/Icon";
-import { joinClasses } from "../../../../ui/utils/joinClasses";
+import type { INotification, NotificationType } from "@/types/INotification";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
+import { useNotificationTranslation } from "../hooks/useNotificationTranslation.hook";
+import { addWordBreakOpportunities, createNotificationHandler } from "../utils/Notifications.util";
 import { NotificationActions } from "./NotificationActions";
 import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";
-import { addWordBreakOpportunities, createNotificationHandler } from "./notificationUtils";
-import { useNotificationTranslation } from "./useNotificationTranslation";
 
 const STATUS_MAP = {
   error: { className: "text-danger-strong", icon: mdiAlertOctagon },
@@ -39,14 +40,14 @@ interface INotificationItemProps {
   onExpand?: (groupId: string) => void;
 }
 
-export const NotificationItem: FC<React.PropsWithChildren<INotificationItemProps>> = ({
+export const NotificationItem = ({
   notification,
   collapsed,
   onDismiss,
   onSuppress,
   onTriggerAction,
   onExpand,
-}) => {
+}: INotificationItemProps) => {
   const { actions, id, noDismiss, type, allowSuppress } = notification;
 
   // Handle translation
@@ -59,7 +60,6 @@ export const NotificationItem: FC<React.PropsWithChildren<INotificationItemProps
 
   // Event handlers
   const handleDismiss = useCallback(createNotificationHandler(id, onDismiss), [id, onDismiss]);
-
   const handleSuppress = useCallback(createNotificationHandler(id, onSuppress), [id, onSuppress]);
 
   const handleExpand = useCallback(() => {
@@ -81,7 +81,7 @@ export const NotificationItem: FC<React.PropsWithChildren<INotificationItemProps
   const lines = addWordBreakOpportunities(translatedMessage || "");
 
   return (
-    <div className="flex gap-x-3 rounded-xs bg-surface-low p-2">
+    <div className="flex gap-x-3 border-stroke-weak p-2 not-last:border-b">
       <Icon
         className={joinClasses(["relative mt-0.5 shrink-0", status.className])}
         path={status.icon}
