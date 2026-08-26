@@ -2,8 +2,8 @@
 
 ## Reporting a vulnerability
 
-Please don't report security issues through public GitHub issues, Discord, or
-the forums.
+Please don't report security issues through public GitHub issues, Discord, the
+forums, or the general support address.
 
 Report them privately to **<TODO: security contact email>**, or by using
 [GitHub's private vulnerability reporting](https://github.com/Nexus-Mods/Vortex/security/advisories/new)

@@ -59,8 +59,16 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-**<TODO: conduct contact email>**.
+reported to **support@nexusmods.com**.
+
+Contributors here are also covered by the wider Nexus Mods community policies,
+which apply across the website, forums and comments:
+
+- [Moderation Policy](https://help.nexusmods.com/article/27-moderation-policy)
+- [Forum and Commenting Guidelines](https://help.nexusmods.com/article/22-forum-and-commenting-guidelines)
+- [Reporting Guidelines](https://help.nexusmods.com/article/21-reporting-guidelines)
+
+Where those policies and this Code of Conduct overlap, the stricter applies.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
