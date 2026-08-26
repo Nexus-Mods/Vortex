@@ -20,6 +20,8 @@ import { getUpdaterStatus } from "./updaterStatus";
 interface IConnectedProps {
   updateChannel: UpdateChannel;
   installType: VortexInstallType;
+  // what the updater is doing right now, if anything; the button waits it out
+  busy: "checking" | "downloading" | null;
 }
 
 interface IActionProps {
@@ -28,8 +30,6 @@ interface IActionProps {
 
 interface ISettingsUpdateState {
   checkUpdateButtonDisabled: boolean;
-  // what the updater is doing right now, if anything; the button waits it out
-  busy: "checking" | "downloading" | null;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -38,34 +38,12 @@ const CHECK_UPDATE_INTERVAL = 60000;
 class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   //static contextType = MainContext
 
-  private unsubscribeStatus: (() => void) | undefined;
-
   constructor(props) {
     super(props);
 
     this.initState({
       checkUpdateButtonDisabled: false,
-      busy: null,
     });
-  }
-
-  public componentDidMount(): void {
-    // a pressed button gives feedback for as long as the work runs: the
-    // label reflects the updater's actual state (read from the extension's
-    // status poller), not a blind timer
-    const poller = getUpdaterStatus();
-    const busyFor = (snapshot: UpdaterSnapshot | undefined): ISettingsUpdateState["busy"] =>
-      snapshot?.state.type === "checking" || snapshot?.state.type === "downloading"
-        ? snapshot.state.type
-        : null;
-    this.nextState.busy = busyFor(poller?.current());
-    this.unsubscribeStatus = poller?.subscribe((snapshot) => {
-      this.nextState.busy = busyFor(snapshot);
-    });
-  }
-
-  public componentWillUnmount(): void {
-    this.unsubscribeStatus?.();
   }
 
   private checkUpdateDebouncer = new Debouncer(
@@ -100,9 +78,9 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   }
 
   public render(): JSX.Element {
-    const { t, installType, updateChannel } = this.props;
+    const { t, installType, updateChannel, busy } = this.props;
 
-    const { checkUpdateButtonDisabled, busy } = this.state;
+    const { checkUpdateButtonDisabled } = this.state;
 
     // managed or development
     if (installType === "managed") {
@@ -254,10 +232,20 @@ Are you sure you want to turn off updates?`,
   };
 }
 
+// a pressed button gives feedback for as long as the work runs: the label
+// reflects the updater's actual state (polled into session.updater), not a
+// blind timer, and survives leaving and re-entering the page
+function busyFor(snapshot: UpdaterSnapshot | undefined): IConnectedProps["busy"] {
+  return snapshot?.state.type === "checking" || snapshot?.state.type === "downloading"
+    ? snapshot.state.type
+    : null;
+}
+
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     updateChannel: state.settings.update.channel,
     installType: state.app.installType,
+    busy: busyFor(state.session.updater?.snapshot),
   };
 }
 
