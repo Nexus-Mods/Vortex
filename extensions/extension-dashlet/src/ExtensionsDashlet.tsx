@@ -114,7 +114,6 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
             {ext.name}
           </a>
         </h4>
-        <p className="extension-summary">{ext.description.short}</p>
         <div className="extension-extra">
           <div>
             <Icon name="author" /> {t("By {{author}}", { replace: { author: ext.author } })}
@@ -183,7 +182,7 @@ class ExtensionsDashlet extends ComponentEx<IProps, IExtensionsDashletState> {
     const now = Date.now();
 
     return (
-      ext.uploader !== user &&
+      ext.author !== user &&
       (dlId === undefined || now - downloads[dlId].fileTime > ENDORSEMENT_DELAY) &&
       util.getSafe(extensionState, [extId, "endorsed"], "Undecided") === "Undecided"
     );

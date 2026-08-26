@@ -21,7 +21,6 @@ import {
   resolveCategoryName,
   resolveCategoryPath,
 } from "../extensions/category_management/util/retrieveCategoryPath";
-import { readExtensibleDir } from "../extensions/extension_manager/util";
 import getDriveList from "../extensions/gamemode_management/util/getDriveList";
 import { getGame, getGames } from "../extensions/gamemode_management/util/getGame";
 import { getModType } from "../extensions/gamemode_management/util/modTypeExtensions";
@@ -277,7 +276,6 @@ export {
   pad,
   ProcessCanceled,
   ReduxProp,
-  readExtensibleDir,
   relativeTime,
   removeMods,
   renderModName,

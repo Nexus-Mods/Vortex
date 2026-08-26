@@ -14,9 +14,12 @@ export const sessionReducer: IReducerSpec = {
       setSafe(state, ["disabled", payload.gameId], payload.disabledBy),
     [actions.clearGameDisabled as any]: (state, payload) =>
       update(state, { disabled: { $set: {} } }),
+    [actions.setShowHiddenGames as any]: (state, payload) =>
+      setSafe(state, ["showHidden"], payload),
   },
   defaults: {
     known: [],
     disabled: {},
+    showHidden: false,
   },
 };

@@ -1745,6 +1745,25 @@ export function countryExists(code: string): boolean {
   return code !== undefined && countryMap[code] !== undefined;
 }
 
+// keyed by lower-cased English language name; multi-name entries
+// (e.g. "Spanish; Castilian") yield one key per name
+const codeByEnglishName: Map<string, string> = (() => {
+  const result = new Map<string, string>();
+  for (const [code, entry] of Object.entries(languageMap)) {
+    for (const english of entry.name.split(/[;,]/)) {
+      const norm = english.trim().toLowerCase();
+      if (norm.length > 0 && !result.has(norm)) {
+        result.set(norm, code);
+      }
+    }
+  }
+  return result;
+})();
+
+export function languageCodeByEnglishName(name: string): string | undefined {
+  return codeByEnglishName.get(name.toLowerCase());
+}
+
 export function nativeLanguageName(code: string): string {
   const language = languageMap[code];
   if (language === undefined) {

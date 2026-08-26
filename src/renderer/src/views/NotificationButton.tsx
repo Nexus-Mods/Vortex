@@ -68,6 +68,11 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
   // Local state
   const [expand, setExpand] = React.useState<string | undefined>(undefined);
   const [open, setOpen] = React.useState(false);
+  // Whether the user has closed the popover on what it was showing. `open` can't do
+  // this on its own: it says whether to keep notifications whose display time has run
+  // out, so a popover the user shut on a notification that never expires — an ongoing
+  // activity, or one waiting on a choice -- had nothing to shut it.
+  const [closed, setClosed] = React.useState(false);
   const [resizing, setResizing] = React.useState(false);
   const [filtered, setFiltered] = React.useState<INotification[]>([]);
 
@@ -76,10 +81,11 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
   const updateTimerRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
   const mountedRef = React.useRef(false);
   const prevNotificationsRef = React.useRef(notifications);
+  const prevIdsRef = React.useRef<Set<string>>(new Set());
 
   // Store latest values for callbacks
-  const stateRef = React.useRef({ notifications, open, expand, filtered });
-  stateRef.current = { notifications, open, expand, filtered };
+  const stateRef = React.useRef({ notifications, open, closed, expand, filtered });
+  stateRef.current = { notifications, open, closed, expand, filtered };
 
   // Dispatch callbacks
   const onDismiss = React.useCallback(
@@ -217,16 +223,18 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
   const toggle = React.useCallback(
     (evt: React.MouseEvent<unknown>) => {
       evt.preventDefault();
-      const { open: isOpen } = stateRef.current;
+      // Grouping only ever merges notifications, so anything in `filtered` is on screen.
+      const { closed: isClosed, filtered: filt } = stateRef.current;
+      const isShowing = !isClosed && filt.length > 0;
+
       api.events.emit(
         "analytics-track-click-event",
         "Notifications",
-        `${isOpen ? "Close" : "Open"} Notifications`,
+        `${isShowing ? "Close" : "Open"} Notifications`,
       );
-      setOpen(!isOpen);
-      setTimeout(() => {
-        updateDebouncer.current.runNow(() => null);
-      }, 0);
+
+      setClosed(isShowing);
+      setOpen(!isShowing);
     },
     [api],
   );
@@ -372,6 +380,27 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
     };
   }, [onResize, updateFiltered]);
 
+  // Whether a notification whose display time has run out belongs in `filtered` turns
+  // on `open`, so the filter has to run again when it changes.
+  React.useEffect(() => {
+    updateDebouncer.current.runNow(() => null);
+  }, [open]);
+
+  // A notification arriving is how the popover comes up unasked, so it also undoes a
+  // close — otherwise the first one the user shut the popover on would be the last
+  // they ever saw. Only a notification we haven't seen counts: an activity reporting
+  // progress must not reopen what the user just closed. Silent ones never show at all.
+  React.useEffect(() => {
+    const hasNew = notifications.some(
+      (item) => !prevIdsRef.current.has(item.id) && item.type !== "silent",
+    );
+    prevIdsRef.current = new Set(notifications.map((item) => item.id));
+
+    if (hasNew) {
+      setClosed(false);
+    }
+  }, [notifications]);
+
   // Handle notifications changes
   React.useEffect(() => {
     if (prevNotificationsRef.current !== notifications) {
@@ -401,6 +430,7 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
   const popover = (
     <Popover
       arrowOffsetLeft={64}
+      data-testid="notifications-popover"
       id="notifications-popover"
       style={{ display: hide ? "none" : "block" }}
     >
@@ -427,7 +457,12 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
 
   return (
     <div style={{ display: "inline-block" }}>
-      <Button id="notifications-button" ref={buttonRef} onClick={toggle}>
+      <Button
+        data-testid="notifications-button"
+        id="notifications-button"
+        ref={buttonRef}
+        onClick={toggle}
+      >
         <Icon name="notifications" />
 
         <RadialProgress
@@ -445,7 +480,7 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
         placement="bottom"
         rootClose={false}
         shouldUpdatePosition={resizing}
-        show={items.length > 0}
+        show={!closed && items.length > 0}
         target={buttonRef.current}
         onExit={unExpand}
       >
