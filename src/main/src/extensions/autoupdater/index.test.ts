@@ -941,3 +941,29 @@ describe("cancelling a download", () => {
     expect(getStatus(0).changes.some((entry) => entry.state.type === "error")).toBe(false);
   });
 });
+
+describe("checks while a download is running", () => {
+  // Field-tested: Check now mid-download moved the state to checking then
+  // available while the library kept downloading, and "ready to install"
+  // arrived out of nowhere ten seconds later.
+  it("ignores check requests while downloading, so the state keeps telling the truth", async () => {
+    await setup();
+    resolveUpdateMock.mockResolvedValue(resolved({ tag: "v2.7.0", version: "2.7.0" }));
+    ipcHandler("updater:download")(undefined, "stable", false);
+    await flush();
+    expect(getState().type).toBe("downloading");
+    resolveUpdateMock.mockClear();
+    const before = getStatus().seq;
+
+    ipcHandler("updater:check-for-updates")(undefined, "stable", true);
+    await flush();
+
+    expect(resolveUpdateMock).not.toHaveBeenCalled();
+    expect(getState()).toMatchObject({ type: "downloading", version: "2.7.0" });
+    expect(getStatus(before).changes).toEqual([]);
+
+    // the download still completes normally
+    updaterEvent("update-downloaded")?.({ version: "2.7.0" });
+    expect(getState()).toMatchObject({ type: "staged", version: "2.7.0" });
+  });
+});

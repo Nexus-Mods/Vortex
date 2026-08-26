@@ -664,6 +664,18 @@ export function setupAutoUpdater(installType: string): void {
   });
 
   betterIpcMain.on("updater:check-for-updates", (_event, channel, manual) => {
+    // A check would only re-resolve the version already downloading, while
+    // the library kept downloading underneath a state that no longer said
+    // so. The download's own notification is the feedback here; the Settings
+    // button is disabled for the same reason. Channel switches are different
+    // (they cancel the download first) and take the set-channel path.
+    if (current.type === "downloading") {
+      log("info", "Update check skipped, a download is running", {
+        version: current.version,
+        manual,
+      });
+      return;
+    }
     checkForUpdates(channel, manual);
   });
 
