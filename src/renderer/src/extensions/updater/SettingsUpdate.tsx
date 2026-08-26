@@ -28,7 +28,8 @@ interface IActionProps {
 
 interface ISettingsUpdateState {
   checkUpdateButtonDisabled: boolean;
-  checking: boolean;
+  // what the updater is doing right now, if anything; the button waits it out
+  busy: "checking" | "downloading" | null;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -44,7 +45,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
     this.initState({
       checkUpdateButtonDisabled: false,
-      checking: false,
+      busy: null,
     });
   }
 
@@ -53,11 +54,13 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
     // label reflects the updater's actual state (read from the extension's
     // status poller), not a blind timer
     const poller = getUpdaterStatus();
-    const isManualChecking = (snapshot: UpdaterSnapshot | undefined) =>
-      snapshot?.state.type === "checking" && snapshot.state.manual;
-    this.nextState.checking = isManualChecking(poller?.current()) === true;
+    const busyFor = (snapshot: UpdaterSnapshot | undefined): ISettingsUpdateState["busy"] =>
+      snapshot?.state.type === "checking" || snapshot?.state.type === "downloading"
+        ? snapshot.state.type
+        : null;
+    this.nextState.busy = busyFor(poller?.current());
     this.unsubscribeStatus = poller?.subscribe((snapshot) => {
-      this.nextState.checking = isManualChecking(snapshot) === true;
+      this.nextState.busy = busyFor(snapshot);
     });
   }
 
@@ -99,7 +102,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   public render(): JSX.Element {
     const { t, installType, updateChannel } = this.props;
 
-    const { checkUpdateButtonDisabled, checking } = this.state;
+    const { checkUpdateButtonDisabled, busy } = this.state;
 
     // managed or development
     if (installType === "managed") {
@@ -154,10 +157,14 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
               <Button
                 brand="neutral"
-                disabled={checkUpdateButtonDisabled || checking}
+                disabled={checkUpdateButtonDisabled || busy !== null}
                 onClick={this.manualUpdateCheck}
               >
-                {checking ? t("Checking...") : t("Check now")}
+                {busy === "checking"
+                  ? t("Checking...")
+                  : busy === "downloading"
+                    ? t("Downloading...")
+                    : t("Check now")}
               </Button>
             </div>
 
