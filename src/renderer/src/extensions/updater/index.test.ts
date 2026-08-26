@@ -46,6 +46,7 @@ function makeContext() {
     session: { notifications: { notifications } },
   };
   const showDialog = vi.fn().mockResolvedValue({ action: "Close" });
+  const dispatch = vi.fn();
   const context = {
     registerReducer: vi.fn(),
     registerSettings: vi.fn(),
@@ -56,7 +57,7 @@ function makeContext() {
       dismissNotification,
       showDialog,
       onStateChange: vi.fn(),
-      store: { getState: () => state },
+      store: { getState: () => state, dispatch },
     },
   } as unknown as IExtensionContext;
   return {
@@ -64,6 +65,7 @@ function makeContext() {
     sendNotification,
     dismissNotification,
     showDialog,
+    dispatch,
     notifications,
     runOnce: () => onceCallbacks.forEach((cb) => cb()),
   };
@@ -122,15 +124,30 @@ afterEach(() => {
 });
 
 async function setup(initialSnapshot: UpdaterSnapshot = idle) {
-  const { context, sendNotification, dismissNotification, showDialog, notifications, runOnce } =
-    makeContext();
+  const {
+    context,
+    sendNotification,
+    dismissNotification,
+    showDialog,
+    dispatch,
+    notifications,
+    runOnce,
+  } = makeContext();
   const { updater, pushState } = makeUpdaterApi(initialSnapshot);
   vi.stubGlobal("window", { api: { updater } });
   init(context);
   runOnce();
   // let the poller's first poll deliver the initial snapshot
   await vi.advanceTimersByTimeAsync(0);
-  return { sendNotification, dismissNotification, showDialog, notifications, updater, pushState };
+  return {
+    sendNotification,
+    dismissNotification,
+    showDialog,
+    dispatch,
+    notifications,
+    updater,
+    pushState,
+  };
 }
 
 function sent(sendNotification: ReturnType<typeof vi.fn>, id: string): FakeNotification[] {
@@ -140,6 +157,21 @@ function sent(sendNotification: ReturnType<typeof vi.fn>, id: string): FakeNotif
 }
 
 describe("updater state rendering", () => {
+  // Components (the Settings page) read the updater's state from redux so it
+  // survives leaving and re-entering the page.
+  it("puts every polled snapshot into session.updater", async () => {
+    const { dispatch, pushState } = await setup();
+
+    await pushState({ type: "checking", manual: true });
+    await pushState({ type: "downloading", version: "2.7.0", kind: "update", manual: true });
+
+    const snapshots = dispatch.mock.calls
+      .map(([action]) => action as { type: string; payload: UpdaterSnapshot })
+      .filter((action) => action.type === "SET_UPDATER_SNAPSHOT")
+      .map((action) => action.payload.state.type);
+    expect(snapshots).toEqual(["idle", "checking", "downloading"]);
+  });
+
   it("shows the update notification for an available state", async () => {
     const { sendNotification, pushState } = await setup();
 

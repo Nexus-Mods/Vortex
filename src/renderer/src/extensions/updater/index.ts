@@ -2,7 +2,8 @@ import type { UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { getApplication } from "../../util/application";
-import settingsReducer from "./reducers";
+import { setUpdaterSnapshot } from "./actions";
+import settingsReducer, { sessionReducer } from "./reducers";
 import SettingsUpdate from "./SettingsUpdate";
 import { initUpdaterStatus } from "./updaterStatus";
 
@@ -37,6 +38,7 @@ function stateKey(state: UpdaterState): string {
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "update"], settingsReducer);
+  context.registerReducer(["session", "updater"], sessionReducer);
   context.registerSettings("Vortex", SettingsUpdate);
 
   context.once(() => {
@@ -480,6 +482,11 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
     // The renderer polls main for status (see updaterStatus.ts); the first
     // poll doubles as the initial sync for a check that settled before this
     // window existed (e.g. a reload).
+    // every snapshot goes into session.updater first (so components read it
+    // like any other state, across navigation), then drives the notifications
+    poller.subscribe((snapshot) => {
+      context.api.store.dispatch(setUpdaterSnapshot(snapshot));
+    });
     poller.subscribe(render);
   });
 
