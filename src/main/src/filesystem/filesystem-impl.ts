@@ -201,7 +201,7 @@ function wrapIterator(
  * check is separator-aware (handles Windows case-insensitivity and does not
  * match `/tmp/a` against `/tmp/abc/...`).
  *
- * Throws a {@link FileSystemError} with code `generic` if the entry is not
+ * Throws a `VortexError` with kind `argument-invalid` if the entry is not
  * under the root (e.g. a symlink followed out of the tree). Node's
  * `opendir({ recursive: true })` does not follow symlinks, so this is a
  * defensive check rather than an expected case.

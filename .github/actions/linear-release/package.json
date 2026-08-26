@@ -1,0 +1,27 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/linear-release-action",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "GitHub Action: resolve the commit-scan range for the Linear release sync and write the run summary.",
+  "scripts": {
+    "build": "node ./build.mjs",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm tsc",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint"
+  },
+  "dependencies": {
+    "@actions/core": "catalog:",
+    "@actions/github": "catalog:",
+    "semver": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/semver": "catalog:",
+    "rolldown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

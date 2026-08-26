@@ -935,6 +935,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusModFileContents: eh.onModFileContents(api, nexus),
     nexusGetModInfo: eh.onGetModInfo(api, nexus),
     nexusGetModRequirements: eh.onGetModRequirements(nexus),
+    nexusGetModEndorsementCounts: eh.onGetModEndorsementCounts(nexus),
     nexusGetPreferences: eh.onGetPreferences(api, nexus),
     nexusGetUserKeyData: eh.onGetUserKeyData(api),
   };

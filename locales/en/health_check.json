@@ -78,6 +78,7 @@
       "missing_for": "Missing required mod for: <modLink>{{modName}}</modLink>",
       "missing_for_plural": "Missing required mods for: <modLink>{{modName}}</modLink>",
       "install_via_mod_page": "Install via mod page",
+      "view_mod_page": "View mod page",
       "install_one_click": "1-click install",
       "downloading": "Downloading...",
       "installing": "Installing...",
@@ -136,7 +137,7 @@
       "buttons": {
         "primary": "Unlock 1-click installs",
         "secondary": {
-          "single": "Go to mod page (free)",
+          "single": "Install via mod page (free)",
           "all": "Return and open mod pages"
         }
       }

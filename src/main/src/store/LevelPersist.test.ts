@@ -1,7 +1,17 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { parseError } from "@vortex/shared";
+import { DataInvalid } from "@vortex/shared/errors";
+import { assert, describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../logging", () => ({ log: vi.fn() }));
+
+const mockSingleton = vi.hoisted(() => ({
+  initialize: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  nextAlias: vi.fn<() => string>().mockReturnValue("db0"),
+  attachDatabase: vi.fn<(path: string, alias: string) => Promise<unknown>>(),
+}));
+vi.mock("./DuckDBSingleton", () => ({ default: { getInstance: () => mockSingleton } }));
+vi.mock("../getVortexPath", () => ({ getVortexPath: vi.fn().mockReturnValue("/base") }));
 
 import { log } from "../logging";
 import LevelPersist from "./LevelPersist";
@@ -406,5 +416,56 @@ describe("LevelPersist write timing breadcrumbs", () => {
       // Fast write + trace not enabled -> no logging at all.
       expect(logMock).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("LevelPersist.create error classification", () => {
+  beforeEach(() => {
+    mockSingleton.attachDatabase.mockReset();
+  });
+
+  it("classifies exhausted lock contention as database:locked", async () => {
+    mockSingleton.attachDatabase.mockRejectedValue(
+      new Error("IO Error: Could not set lock on file: already held by a different process"),
+    );
+
+    const err: unknown = await LevelPersist.create("/data/state.v2", 0).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    const parsed = parseError(err);
+    expect(parsed).toBe(err);
+    expect(parsed.data.kind).toBe("database:locked");
+    expect(parsed.isTransient).toBe(true);
+  });
+
+  it("classifies a non-lock open failure as database:open-failed carrying the path", async () => {
+    const rootCause = new Error("Permission denied");
+    mockSingleton.attachDatabase.mockRejectedValue(rootCause);
+
+    const err: unknown = await LevelPersist.create("/data/state.v2", 0).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    const parsed = parseError(err);
+    expect(parsed).toBe(err);
+    assert(parsed.data.kind === "database:open-failed");
+    expect(parsed.data.path).toBe("/data/state.v2");
+    expect(parsed.cause).toBe(rootCause);
+    expect(parsed.message).toContain("/data/state.v2");
+    expect(parsed.message).toContain("Permission denied");
+  });
+
+  it("classifies a corrupt database as DataInvalid", async () => {
+    mockSingleton.attachDatabase.mockRejectedValue(new Error("database file is corrupt"));
+
+    const err: unknown = await LevelPersist.create("/data/state.v2", 0).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    expect(err).toBeInstanceOf(DataInvalid);
   });
 });

@@ -54,7 +54,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between pl-4.5"
+      className="flex h-11 items-center justify-between gap-x-6 pl-4.5"
       style={{ WebkitAppRegion: "drag" }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-x-1">
@@ -71,12 +71,12 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
 
         <Typography
           brand="none"
-          className="flex min-w-0 items-center gap-x-2 truncate font-semibold"
+          className="flex grow items-center gap-x-2 overflow-hidden font-semibold whitespace-nowrap"
         >
-          <span className="shrink-0 text-neutral-strong">{title}</span>
+          <span className="truncate text-neutral-strong">{title}</span>
 
           {!!profileName && (
-            <span className="max-w-[33%] min-w-0 truncate text-neutral-subdued">{profileName}</span>
+            <span className="shrink-9999 truncate text-neutral-subdued">{profileName}</span>
           )}
         </Typography>
       </div>

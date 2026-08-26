@@ -1,66 +1,30 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import type { IAvailableExtension } from "../../types/extensions";
-import { filterInstallableExtensions, selectorMatch } from "./util";
+import { makeApiHarness, makeAvailableExtension, makeDownload } from "../../test-utils/builders";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import { fetchExtensionList } from "./availableExtensions";
+import installExtension from "./installExtension";
+import { downloadAndInstallExtension, selectorMatch } from "./util";
 
-function makeExtension(overrides: Partial<IAvailableExtension> = {}): IAvailableExtension {
-  return {
-    name: "Some Extension",
-    description: { short: "short", long: "long" },
-    image: "image.png",
-    author: "someone",
-    uploader: "someone",
-    version: "1.0.0",
-    downloads: 0,
-    endorsements: 0,
-    timestamp: 0,
-    tags: [],
-    modId: 0,
-    fileId: 0,
-    ...overrides,
-  };
-}
+vi.mock("./availableExtensions", () => ({
+  fetchExtensionList: vi.fn(),
+  dedupeGameExtensions: (extensions: unknown) => extensions,
+  groupGameExtensionsByGameId: () => new Map(),
+}));
 
-describe("filterInstallableExtensions", () => {
-  it("keeps extensions with both modId and fileId", () => {
-    const extensions = [makeExtension({ modId: 1, fileId: 2 })];
-    expect(filterInstallableExtensions(extensions)).toEqual(extensions);
-  });
+vi.mock("./installExtension", () => ({ default: vi.fn() }));
 
-  it("drops extensions missing modId", () => {
-    const extensions = [makeExtension({ modId: undefined, fileId: 2 })];
-    expect(filterInstallableExtensions(extensions)).toEqual([]);
-  });
+vi.mock("../nexus_integration/util", () => ({
+  nexusGames: () => [],
+  nexusGamesProm: async () => [],
+}));
 
-  it("drops extensions missing fileId", () => {
-    const extensions = [makeExtension({ modId: 1, fileId: undefined })];
-    expect(filterInstallableExtensions(extensions)).toEqual([]);
-  });
-
-  it("drops legacy GitHub-hosted entries lacking both modId and fileId", () => {
-    const extensions = [makeExtension({ modId: undefined, fileId: undefined })];
-    expect(filterInstallableExtensions(extensions)).toEqual([]);
-  });
-
-  it("keeps only the qualifying entries out of a mixed list", () => {
-    const nexusExt = makeExtension({ name: "Nexus Extension", modId: 1, fileId: 2 });
-    const githubExt = makeExtension({
-      name: "GitHub Extension",
-      modId: undefined,
-      fileId: undefined,
-    });
-    const partialExt = makeExtension({ name: "Partial Extension", modId: 3, fileId: undefined });
-
-    expect(filterInstallableExtensions([nexusExt, githubExt, partialExt])).toEqual([nexusExt]);
-  });
-
-  it("returns an empty array unchanged", () => {
-    expect(filterInstallableExtensions([])).toEqual([]);
-  });
-});
+vi.mock("../download_management/selectors", () => ({
+  downloadPathForGame: () => "C:/downloads/site",
+}));
 
 describe("selectorMatch", () => {
-  const ext = makeExtension({ modId: 42, fileId: 7 });
+  const ext = makeAvailableExtension({ modId: 42, fileId: 7 });
 
   it("matches on modId", () => {
     expect(selectorMatch(ext, { modId: 42 })).toBe(true);
@@ -72,5 +36,31 @@ describe("selectorMatch", () => {
 
   it("returns false when the selector is undefined", () => {
     expect(selectorMatch(ext, undefined)).toBe(false);
+  });
+});
+
+describe("downloadAndInstallExtension", () => {
+  it("installs a downloaded archive even when the catalog fetch fails", async () => {
+    vi.mocked(fetchExtensionList).mockRejectedValueOnce(new Error("endpoint unavailable"));
+
+    const harness = makeApiHarness({
+      downloads: { "dl-1": makeDownload({ id: "dl-1", localPath: "some-extension.7z" }) },
+    });
+    harness.api.emitAndAwait = vi.fn(async () => [
+      "dl-1",
+    ]) as unknown as IExtensionApi["emitAndAwait"];
+
+    const result = await downloadAndInstallExtension(harness.api, {
+      name: "Some Extension",
+      modId: 42,
+      fileId: 7,
+    });
+
+    expect(result).toBe(true);
+    expect(vi.mocked(installExtension)).toHaveBeenCalledWith(
+      harness.api,
+      expect.stringContaining("some-extension.7z"),
+      expect.objectContaining({ catalogEntry: undefined }),
+    );
   });
 });

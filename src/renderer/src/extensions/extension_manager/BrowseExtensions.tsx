@@ -1,6 +1,8 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as React from "react";
 import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from "react-bootstrap";
-import * as semver from "semver";
+
+import { log } from "@/logging";
 
 import bbcode from "../../controls/bbcode";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
@@ -13,11 +15,10 @@ import { IconButton } from "../../controls/TooltipControls";
 import ZoomableImage from "../../controls/ZoomableImage";
 import type { IAvailableExtension, ISelector } from "../../types/extensions";
 import type { IExtensionState, IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
 import opn from "../../util/opn";
-import { largeNumToString } from "../../util/util";
+import { SITE_ID } from "../gamemode_management/constants";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
-import { findInCatalog } from "./queries";
+import { findInCatalog, findInstalled } from "./queries";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
@@ -33,14 +34,21 @@ export interface IBrowseExtensionsProps {
   onRefreshExtensions: () => void;
 }
 
-type SortOrder = "name" | "endorsements" | "downloads" | "recent";
+type SortOrder = "name" | "recent";
+
+/** Description texts fetched on selection; the extensions endpoint carries none. */
+interface IModDescription {
+  summary?: string;
+  description?: string;
+}
 
 interface IBrowseExtensionsState {
-  error: Error;
   selected?: ISelector;
   installing: string[];
   searchTerm: string;
   sort: SortOrder;
+  // keyed by mod ID
+  descriptions: Record<number, IModDescription>;
 }
 
 function makeSelectorId(ext: IAvailableExtension): string {
@@ -56,18 +64,6 @@ interface IConnectedProps {
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
 
-const version = (() => {
-  let result: string;
-
-  return () => {
-    if (result === undefined) {
-      result = getApplication().version;
-    }
-
-    return result;
-  };
-})();
-
 function nop() {
   // nop
 }
@@ -78,11 +74,11 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     super(props);
 
     this.initState({
-      error: undefined,
       selected: undefined,
       installing: [],
       searchTerm: "",
       sort: "name",
+      descriptions: {},
     });
 
     this.mModalRef = React.createRef();
@@ -96,6 +92,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       this.nextState.selected = {
         modId: nextProps.localState.preselectModId,
       };
+      this.fetchDescription(nextProps.localState.preselectModId);
     }
   }
 
@@ -137,12 +134,6 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                       <FormControl componentClass="select" onChange={this.changeSort} value={sort}>
                         <option key={"name"} value={"name"}>
                           {t("Name")}
-                        </option>
-                        <option key={"endorsements"} value={"endorsements"}>
-                          {t("Endorsements")}
-                        </option>
-                        <option key="downloads" value="downloads">
-                          {t("Downloads")}
                         </option>
                         <option key="recent" value="recent">
                           {t("Last update")}
@@ -196,9 +187,6 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private filterSearch = (test: IAvailableExtension) => {
     const { searchTerm } = this.state;
-    if (test.hide) {
-      return false;
-    }
 
     if (!searchTerm) {
       return true;
@@ -207,62 +195,37 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const searchTermNorm = searchTerm.toUpperCase();
 
     return (
-      test.name?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1 ||
-      test.author?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1 ||
-      test.description?.short?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1 ||
-      test.description?.long?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1
+      test.name.toUpperCase().includes(searchTermNorm) ||
+      test.author.toUpperCase().includes(searchTermNorm)
     );
   };
 
-  private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
-    switch (this.state.sort) {
-      case "downloads":
-        return (rhs.downloads || 0) - (lhs.downloads || 0);
-      case "endorsements":
-        return (rhs.endorsements || 0) - (lhs.endorsements || 0);
-      case "recent":
-        return (rhs.timestamp || 0) - (lhs.timestamp || 0);
-      default:
-        return lhs.name.localeCompare(rhs.name);
-    }
-  };
-
-  private isCompatible(ext: IAvailableExtension): boolean {
-    if (
-      ext.dependencies === undefined ||
-      ext.dependencies["vortex"] === undefined ||
-      process.env.NODE_ENV === "development"
-    ) {
-      return true;
-    }
-
-    return semver.satisfies(version(), ext.dependencies["vortex"], {
-      includePrerelease: true,
-    });
-  }
+  private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number =>
+    this.state.sort === "recent"
+      ? (rhs.timestamp || 0) - (lhs.timestamp || 0)
+      : lhs.name.localeCompare(rhs.name);
 
   private isInstalled(ext: IAvailableExtension): boolean {
-    const { extensions } = this.props;
+    return findInstalled(this.props.extensions, { modId: ext.modId }) !== undefined;
+  }
 
-    return (
-      Object.keys(extensions)
-        // looking at modid for mods hosted on nexus and the id for games in vortex-games.
-        // In the past we used the name for games from the repo but that meant that the games
-        // couldn't be renamed without causing issues for this list, not sure why that was
-        // done in the first place.
-        .find((key) => {
-          const iter = extensions[key];
-          return (
-            (ext.modId !== undefined && iter.modId === ext.modId) ||
-            (ext.id !== undefined && key === ext.id)
-          );
-        }) !== undefined
+  private renderAction(ext: IAvailableExtension): React.JSX.Element {
+    const { t } = this.props;
+    const { installing } = this.state;
+
+    return installing.indexOf(ext.name) !== -1 ? (
+      <Spinner />
+    ) : this.isInstalled(ext) ? (
+      <div>{t("Installed")}</div>
+    ) : (
+      <a className="extension-subscribe" data-modid={ext.modId} onClick={this.install}>
+        {t("Install")}
+      </a>
     );
   }
 
-  private renderListEntry = (ext: IAvailableExtension, idx: number) => {
-    const { t } = this.props;
-    const { installing, selected } = this.state;
+  private renderListEntry = (ext: IAvailableExtension) => {
+    const { selected } = this.state;
 
     const classes = ["extension-item"];
 
@@ -270,52 +233,23 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       classes.push("selected");
     }
 
-    const installed = this.isInstalled(ext);
-    const incompatible = !this.isCompatible(ext);
-
-    const action =
-      installing.indexOf(ext.name) !== -1 ? (
-        <Spinner />
-      ) : installed ? (
-        <div>{t("Installed")}</div>
-      ) : incompatible ? (
-        <div>{t("Incompatible")}</div>
-      ) : (
-        <a className="extension-subscribe" data-modid={ext.modId} onClick={this.install}>
-          {t("Install")}
-        </a>
-      );
-
     return (
       <ListGroupItem
         className={classes.join(" ")}
         key={makeSelectorId(ext)}
         data-modid={ext.modId}
         onClick={this.select}
-        disabled={installed || incompatible}
+        disabled={this.isInstalled(ext)}
       >
         <div className="extension-header">
           <div className="extension-title">
             <span className="extension-name">{ext.name}</span>
             <span className="extension-version">{ext.version}</span>
           </div>
-          <div className="extension-stats">
-            {ext.downloads !== undefined ? (
-              <div className="extension-downloads">
-                <Icon name="download" /> {largeNumToString(ext.downloads)}
-              </div>
-            ) : null}
-            {ext.endorsements !== undefined ? (
-              <div className="extension-endorsements">
-                <Icon name="endorse-yes" /> {largeNumToString(ext.endorsements)}
-              </div>
-            ) : null}
-          </div>
         </div>
-        <div className="extension-description">{ext.description.short}</div>
         <div className="extension-footer">
           <div className="extension-author">{ext.author}</div>
-          {action}
+          {this.renderAction(ext)}
         </div>
       </ListGroupItem>
     );
@@ -323,12 +257,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private renderDescription = (ext: IAvailableExtension) => {
     const { t } = this.props;
-    const { installing } = this.state;
     if (ext === undefined) {
       return null;
     }
-
-    const installed = this.isInstalled(ext);
 
     const openInBrowser = (
       <a className="extension-browse" data-modid={ext.modId} onClick={this.openPage}>
@@ -337,18 +268,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       </a>
     );
 
-    const action =
-      installing.indexOf(ext.name) !== -1 ? (
-        <Spinner />
-      ) : installed ? (
-        <div>{t("Installed")}</div>
-      ) : !this.isCompatible(ext) ? (
-        <div>{t("Incompatible")}</div>
-      ) : (
-        <a className="extension-subscribe" data-modid={ext.modId} onClick={this.install}>
-          {t("Install")}
-        </a>
-      );
+    const details = this.state.descriptions[ext.modId];
 
     return (
       <FlexLayout type="column">
@@ -367,28 +287,20 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                     {t("by")} {ext.author}
                   </span>
                 </div>
-                <div className="description-short">{ext.description.short}</div>
-                <div className="description-stats">
-                  {ext.downloads !== undefined ? (
-                    <div className="extension-downloads">
-                      <Icon name="download" /> {ext.downloads}
-                    </div>
-                  ) : null}
-                  {ext.endorsements !== undefined ? (
-                    <div className="extension-endorsements">
-                      <Icon name="endorse-yes" /> {ext.endorsements}
-                    </div>
-                  ) : null}
-                </div>
+                {details?.summary !== undefined ? (
+                  <div className="description-short">{details.summary}</div>
+                ) : null}
                 <div className="description-actions">
-                  {action} {openInBrowser}
+                  {this.renderAction(ext)} {openInBrowser}
                 </div>
               </FlexLayout>
             </FlexLayout.Flex>
           </FlexLayout>
         </FlexLayout.Fixed>
         <FlexLayout.Flex>
-          <div className="description-text">{bbcode(ext.description.long)}</div>
+          <div className="description-text">
+            {details === undefined ? <Spinner /> : bbcode(details.description ?? "")}
+          </div>
         </FlexLayout.Flex>
       </FlexLayout>
     );
@@ -421,6 +333,27 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const modIdStr = evt.currentTarget.getAttribute("data-modid");
     const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
     this.nextState.selected = { modId };
+    this.fetchDescription(modId);
+  };
+
+  private fetchDescription = (modId: number | undefined) => {
+    if (modId === undefined || this.nextState.descriptions[modId] !== undefined) return;
+
+    void (async () => {
+      try {
+        const info = await this.context.api.ext.nexusGetModInfo?.(SITE_ID, modId);
+        this.nextState.descriptions[modId] = {
+          summary: info?.summary,
+          description: info?.description,
+        };
+      } catch (err) {
+        log("warn", "failed to fetch extension description", {
+          modId,
+          error: getErrorMessageOrDefault(err),
+        });
+        this.nextState.descriptions[modId] = {};
+      }
+    })();
   };
 
   private openPage = (evt: React.MouseEvent<any>) => {

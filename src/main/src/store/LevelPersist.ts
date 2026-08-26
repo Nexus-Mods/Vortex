@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import type { DuckDBConnection, DuckDBResultReader } from "@duckdb/node-api";
 import { unknownToError } from "@vortex/shared";
-import { DataInvalid } from "@vortex/shared/errors";
+import { DataInvalid, VortexError } from "@vortex/shared/errors";
 import type { IPersistor } from "@vortex/shared/state";
 
 import { getVortexPath } from "../getVortexPath";
@@ -24,21 +24,14 @@ function traceWritesEnabled(): boolean {
   return process.env.VORTEX_TRACE_DB_WRITES === "1";
 }
 
-export class DatabaseLocked extends Error {
-  constructor() {
-    super("Database is locked");
-    this.name = this.constructor.name;
-  }
-}
-
-export class DatabaseOpenError extends Error {
-  public readonly path: string;
-  public override readonly cause: string;
-  constructor(persistPath: string, cause: string) {
-    super(`Failed to open database at ${persistPath}: ${cause}`);
-    this.name = this.constructor.name;
-    this.path = persistPath;
-    this.cause = cause;
+// Database kinds are main-process-specific, declared next to their throw sites.
+declare module "@vortex/shared/errors" {
+  interface VortexErrorKindMap {
+    /** Another process holds the database lock (usually a second Vortex instance). */
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kinds without payload use {} like the core catalog
+    "database:locked": {};
+    /** Opening the database failed for a reason other than lock contention. */
+    "database:open-failed": { path: string };
   }
 }
 
@@ -91,7 +84,11 @@ class LevelPersist implements IPersistor {
           message: err.message,
           path: persistPath,
         });
-        throw new DatabaseOpenError(persistPath, err.message);
+        throw new VortexError(
+          `Failed to open database at ${persistPath}: ${err.message}`,
+          { kind: "database:open-failed", path: persistPath },
+          { cause: err },
+        );
       }
       log("warn", "duckdb: openDB locked, retrying", {
         message: err.message,
@@ -99,7 +96,11 @@ class LevelPersist implements IPersistor {
         path: persistPath,
       });
       if (tries === 0) {
-        throw new DatabaseLocked();
+        throw new VortexError(
+          "Database is locked",
+          { kind: "database:locked" },
+          { isTransient: true, cause: err },
+        );
       }
       await delay(500);
       return LevelPersist.create(persistPath, tries - 1, false);
