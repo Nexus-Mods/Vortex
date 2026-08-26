@@ -45,7 +45,9 @@ Two rules govern all the feedback:
    Check now shows "Checking..." (on the button and as a notification) and
    always answers: the update re-shows, an "up to date" toast, or an error.
    A download the user set in motion (Download, a downgrade confirm, or a
-   manual check that found a patch) shows live progress.
+   manual check that found a patch) shows live progress. Closing that
+   notification cancels the download; nothing is offered again until the
+   next check.
 
 ## Downgrades
 
