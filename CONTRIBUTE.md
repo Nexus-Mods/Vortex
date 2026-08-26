@@ -38,8 +38,6 @@ something we can't merge.
 - Link the issue it fixes.
 - Say what you tested and on which platform.
 - Run `pnpm run build`, `pnpm run test`, and `pnpm run lint` before you open it.
-- Expect a first response within about a week. Nudge us on Discord if it's been
-  longer.
 
 Pull requests that conflict with work already planned or in progress, that
 don't fit the architecture, or that are too big for us to review, get closed.
