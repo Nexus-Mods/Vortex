@@ -70,6 +70,25 @@ export class AppUpdatedEvent implements MixpanelEvent {
   }
 }
 
+/** Fields on the app_ui_mode_changed event. */
+export interface UIModeChangedProps {
+  /** The mode being switched *to*, not the one being left. */
+  is_legacy_ui: boolean;
+}
+
+/**
+ * Sent when the user switches between the legacy and modern UI from Settings > Theme.
+ * Pairs with is_legacy_ui on app_launched: that reports the mode a session runs in,
+ * this reports the moment someone changes it.
+ */
+export class AppUIModeChangedEvent implements MixpanelEvent {
+  readonly eventName = "app_ui_mode_changed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: UIModeChangedProps) {
+    this.properties = { ...props };
+  }
+}
+
 /**
  * Event sent when an upsell prompt is clicked in the application.
  */

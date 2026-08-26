@@ -3,7 +3,8 @@
  * properties (game_id / profile_id) while a game is active, clears them when none is, and
  * no-ops entirely when analytics hasn't been started (user opted out).
  *
- * Also covers is_legacy_ui on app_launched, which reports which UI the session is running.
+ * Also covers is_legacy_ui, which app_launched reports for the session and
+ * app_ui_mode_changed reports when the user switches.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,7 +24,7 @@ vi.mock("mixpanel-browser", () => ({ default: mp }));
 vi.mock("../../../util/application", () => ({ getApplication: () => ({ version: "1.2.3" }) }));
 
 import analyticsMixpanel from "./MixpanelAnalytics";
-import { AppLaunchedEvent } from "./MixpanelEvents";
+import { AppLaunchedEvent, AppUIModeChangedEvent } from "./MixpanelEvents";
 
 const userInfo = {
   userId: 42,
@@ -111,5 +112,26 @@ describe("AppLaunchedEvent is_legacy_ui", () => {
     const event = new AppLaunchedEvent("win32", "10.0.22000", "x64");
 
     expect(event.properties.is_legacy_ui).toBeUndefined();
+  });
+});
+
+describe("AppUIModeChangedEvent", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  it.each([true, false])("reports the mode switched to (is_legacy_ui=%s)", (isLegacyUI) => {
+    analyticsMixpanel.start(userInfo, false);
+
+    analyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacyUI }));
+
+    expect(mp.track).toHaveBeenCalledWith("app_ui_mode_changed", { is_legacy_ui: isLegacyUI });
+  });
+
+  it("carries no other properties, so the event stays cheap to read", () => {
+    const event = new AppUIModeChangedEvent({ is_legacy_ui: true });
+
+    expect(Object.keys(event.properties)).toEqual(["is_legacy_ui"]);
   });
 });
