@@ -330,15 +330,28 @@ export function setupAutoUpdater(installType: string): void {
 
   // ---- electron-updater events (bookkeeping, never primary state control) --
 
+  // builder-util-runtime's CancellationError keeps the default name ("Error")
+  // and the message "cancelled"; the library also does not emit its error
+  // event for it, so cancellations arrive as rejections of downloadUpdate.
+  function isCancellation(err: Error): boolean {
+    return err.constructor.name === "CancellationError" || err.message === "cancelled";
+  }
+
+  // A cancelled download (dismissed notification or channel switch) is the
+  // user's own doing, not a failure to report: settle to idle, nothing on offer
+  // until the next check.
+  function settleCancelledDownload(): void {
+    log("info", "Update download cancelled");
+    installAfterDownloadFlag = false;
+    if (current.type === "downloading") {
+      setState({ type: "idle" });
+    }
+  }
+
   autoUpdater.on("error", (err) => {
     const message = getErrorMessageOrDefault(err);
-    // A cancelled download (channel switch mid-download) is the user's own
-    // doing, not a failure to report. The superseding check owns the state.
-    if (err instanceof Error && err.name === "CancellationError") {
-      log("info", "Update download cancelled");
-      if (current.type === "downloading") {
-        setState({ type: "idle" });
-      }
+    if (err instanceof Error && isCancellation(err)) {
+      settleCancelledDownload();
       return;
     }
     log("error", "Auto-updater error", { error: message });
@@ -573,9 +586,14 @@ export function setupAutoUpdater(installType: string): void {
             to: resolved.version,
           });
           setState({ type: "downloading", version: resolved.version, kind: "patch", manual });
-          autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
+          autoUpdater.downloadUpdate(cancellationToken).catch((unknownErr) => {
+            const err = unknownToError(unknownErr);
+            if (isCancellation(err)) {
+              settleCancelledDownload();
+              return;
+            }
             // state transition owned by the "error" event handler
-            log("warn", "Auto-download failed", { error: getErrorMessageOrDefault(err) });
+            log("warn", "Auto-download failed", { error: err.message });
           });
           return;
         }
@@ -725,10 +743,16 @@ export function setupAutoUpdater(installType: string): void {
             manual: true,
           });
         }
-        return autoUpdater.downloadUpdate();
+        // the check's token, so a channel switch or a dismissed notification
+        // can cancel this download (a fresh token would be unreachable)
+        return autoUpdater.downloadUpdate(cancellationToken);
       })
       .catch((unknownErr) => {
         const err = unknownToError(unknownErr);
+        if (isCancellation(err)) {
+          settleCancelledDownload();
+          return;
+        }
         log("error", "Download failed", { error: err.message });
         installAfterDownloadFlag = false;
         if (generation !== checkGeneration) {
@@ -785,11 +809,15 @@ export function setupAutoUpdater(installType: string): void {
           log("info", "Downgrade download superseded by a newer check, not downloading");
           return;
         }
-        return autoUpdater.downloadUpdate();
+        return autoUpdater.downloadUpdate(cancellationToken);
       })
       .catch((unknownErr) => {
         autoUpdater.allowDowngrade = false;
         const err = unknownToError(unknownErr);
+        if (isCancellation(err)) {
+          settleCancelledDownload();
+          return;
+        }
         log("error", "Downgrade download failed", { error: err.message });
         installAfterDownloadFlag = false;
         if (generation !== checkGeneration) {
@@ -811,6 +839,19 @@ export function setupAutoUpdater(installType: string): void {
     log("info", "Downgrade offer declined", { version: pendingDowngrade.version });
     pendingDowngrade = null;
     setState({ type: "idle" });
+  });
+
+  // The user closed the download notification: stop the download. The
+  // library's CancellationError then settles the state to idle (the error
+  // handler treats a cancellation as the user's own doing, not a failure).
+  betterIpcMain.on("updater:cancel-download", () => {
+    if (current.type !== "downloading") {
+      log("debug", "Cancel requested with no download running");
+      return;
+    }
+    log("info", "Update download cancelled by the user", { version: current.version });
+    installAfterDownloadFlag = false;
+    cancellationToken?.cancel();
   });
 
   betterIpcMain.on("updater:restart-and-install", () => {

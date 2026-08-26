@@ -129,6 +129,7 @@ try {
       downloadDowngrade: (installAfterDownload: boolean = false) =>
         betterIpcRenderer.send("updater:download-downgrade", installAfterDownload),
       declineDowngrade: () => betterIpcRenderer.send("updater:decline-downgrade"),
+      cancelDownload: () => betterIpcRenderer.send("updater:cancel-download"),
     },
 
     dialog: {

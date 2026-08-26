@@ -59,7 +59,17 @@ function init(context: IExtensionContext): boolean {
 
     const channelNow = () => context.api.store.getState().settings.update.channel;
 
-    const dismiss = (id: string) => context.api.dismissNotification?.(id);
+    // Our own dismissals (a state moved on) must not read as the user closing
+    // a notification, which for a running download means "cancel it".
+    let dismissingOurselves = false;
+    const dismiss = (id: string) => {
+      dismissingOurselves = true;
+      try {
+        context.api.dismissNotification?.(id);
+      } finally {
+        dismissingOurselves = false;
+      }
+    };
 
     const notificationExists = (id: string): boolean =>
       context.api
@@ -317,7 +327,14 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 ? `${verb} Vortex ${state.version} (${state.percent}%)`
                 : `${verb} Vortex ${state.version}`,
             progress: state.percent,
-            // no buttons while the download runs, nothing sensible to click
+            // no buttons while the download runs; closing the notification is
+            // the one control, and it cancels the download
+            onDismiss: () => {
+              if (dismissingOurselves) {
+                return;
+              }
+              act(() => window.api.updater.cancelDownload());
+            },
           });
           return;
         }

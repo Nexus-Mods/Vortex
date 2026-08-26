@@ -17,6 +17,7 @@ interface FakeNotification {
   progress?: number;
   displayMS?: number;
   actions?: Array<{ title: string; action: (dismiss: () => void) => void }>;
+  onDismiss?: () => void;
 }
 
 function makeContext() {
@@ -31,10 +32,12 @@ function makeContext() {
       notifications.push(notification);
     }
   });
+  // like the real dismissNotification thunk: remove, then fire onDismiss
   const dismissNotification = vi.fn((id: string) => {
     const existing = notifications.findIndex((entry) => entry.id === id);
     if (existing >= 0) {
-      notifications.splice(existing, 1);
+      const [removed] = notifications.splice(existing, 1);
+      removed?.onDismiss?.();
     }
   });
   const state = {
@@ -89,6 +92,7 @@ function makeUpdaterApi(initialSnapshot: UpdaterSnapshot) {
     downloadUpdate: vi.fn(),
     downloadDowngrade: vi.fn(),
     declineDowngrade: vi.fn(),
+    cancelDownload: vi.fn(),
     restartAndInstall: vi.fn(),
   };
   return {
@@ -294,6 +298,50 @@ describe("manual check feedback (a pressed button always answers)", () => {
 });
 
 describe("downloads", () => {
+  // Ruling: closing the download notification is the one control it has, and
+  // it means "stop". Our own dismissals (the state moved on) must not cancel.
+  it("cancels the download when the user closes its notification", async () => {
+    const { dismissNotification, updater, pushState } = await setup();
+
+    await pushState({ type: "available", version: "2.7.0" });
+    await pushState({
+      type: "downloading",
+      version: "2.7.0",
+      kind: "update",
+      manual: true,
+      percent: 12,
+    });
+
+    // the user clicks the X
+    dismissNotification("vortex-update-available");
+
+    expect(updater.cancelDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not cancel when the notification is replaced or dismissed by a transition", async () => {
+    const { updater, pushState } = await setup();
+
+    await pushState({
+      type: "downloading",
+      version: "2.7.0",
+      kind: "update",
+      manual: true,
+      percent: 12,
+    });
+    // progress ticks replace the notification in place
+    await pushState({
+      type: "downloading",
+      version: "2.7.0",
+      kind: "update",
+      manual: true,
+      percent: 40,
+    });
+    // the download finished: the renderer dismisses and re-sends as "ready to install"
+    await pushState({ type: "staged", version: "2.7.0", kind: "update" });
+
+    expect(updater.cancelDownload).not.toHaveBeenCalled();
+  });
+
   it("shows live progress in the message without re-toasting each tick", async () => {
     const { sendNotification, dismissNotification, pushState } = await setup();
 
