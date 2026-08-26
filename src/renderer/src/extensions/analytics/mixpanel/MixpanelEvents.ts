@@ -35,16 +35,18 @@ export function mapPlatformToMixpanel(platform: string): string {
  * @param os Operating system (Node.js platform string: win32, darwin, linux)
  * @param os_version Operating system version (e.g., "10.0.22000" for Windows 11)
  * @param architecture CPU architecture (e.g., "x64", "arm64")
+ * @param is_legacy_ui True when the session is running the legacy (classic) UI rather than the modern one
  */
 export class AppLaunchedEvent implements MixpanelEvent {
   readonly eventName = "app_launched";
   readonly properties: Record<string, any>;
 
-  constructor(os: string, os_version?: string, architecture?: string) {
+  constructor(os: string, os_version?: string, architecture?: string, is_legacy_ui?: boolean) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
       $os_version: os_version, // Not auto-tracked by mixpanel-browser
       architecture, // Custom property for CPU architecture
+      is_legacy_ui, // Custom property for which UI the session is running
     };
   }
 }

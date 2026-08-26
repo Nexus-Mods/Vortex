@@ -6,6 +6,10 @@ flowchart LR
 
 ```
 
+App
+
+app_launched { is_legacy_ui } // true = legacy/classic UI, false = modern
+
 Mods
 
 mods_download_started

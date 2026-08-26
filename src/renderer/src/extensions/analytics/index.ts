@@ -26,6 +26,8 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
+    // `?? true` because state persisted before the setting existed has no value for it.
+    const isLegacyUI = () => !(context.api.getState().settings.window.useModernLayout ?? true);
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ["settings", "analytics", "enabled"];
@@ -130,6 +132,7 @@ function init(context: IExtensionContext): boolean {
             process.platform, // OS platform (e.g., "win32", "darwin", "linux")
             os.release(), // OS version (e.g., "10.0.22000" for Windows 11)
             getCPUArch(), // Architecture (e.g., "x64", "arm64")
+            isLegacyUI(), // UI mode (true when running the legacy/classic UI)
           ),
         );
 
