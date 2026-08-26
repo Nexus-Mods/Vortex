@@ -9,7 +9,7 @@ import {
   knownGames as knownGamesSelector,
   profiles as profilesSelector,
 } from "../../../util/selectors";
-import { DownloadButton } from "./DownloadButton";
+import { DownloadButton } from "./download_button/DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
 import { useSpineContext } from "./SpineContext";
