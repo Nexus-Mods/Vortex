@@ -51,6 +51,7 @@ The majority of Vortex code is open-source. We are committed to a transparent de
 - Bug Report: If you see an error message or encounter an issue while using our application, please create a [bug report](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=).
 - Feature Request: If you have an idea or if there is a capability that is missing and would make development easier and more robust, please submit a [feature request](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=).
 - Review Extension: If you're creating a game extension and need us to review it, please submit a [review extension](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=extension+%3Agear%3A&projects=&template=review-extension.yaml&title=Review%3A+Game+Name) request.
+- Pull Request: Read [CONTRIBUTE.md](CONTRIBUTE.md) first. We are in the middle of large foundational changes and can only take small pull requests at the moment, so check with us before starting anything big.
 
 ## License
 

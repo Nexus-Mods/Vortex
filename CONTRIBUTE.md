@@ -1,16 +1,62 @@
 # Contributing
 
+Thanks for wanting to work on Vortex. Before you start, there's one thing we
+need to be upfront about.
+
 > [!IMPORTANT]
-> Check in with us before starting a large change.
+> **We can only take small pull requests at the moment.**
 >
-> Small, self-contained fixes are welcome as a direct pull request. For anything
-> bigger - a new feature, a refactor, a dependency swap, or a change spanning
-> several extensions - open a feature request or ask on Discord first, and
-> wait for a maintainer to agree on the approach.
+> Vortex is going through large foundational changes, and we don't have the
+> review capacity to take on big contributions alongside that work. If you
+> send us a large PR right now, it will most likely sit unreviewed until it
+> no longer applies to the code underneath it, and we'd have to close it.
+> You'd have spent real time on something we couldn't merge, which is why
+> we'd rather tell you here than in a closed PR later.
 >
-> Pull requests that conflict with work already planned or in progress, or that
-> don't fit the architecture, get closed. A short conversation up front saves you
-> from writing something we can't merge.
+> This is about our capacity, not about the quality of what you're offering.
+> We are hiring, and it will change.
+
+## What counts as small
+
+As a rough guide, a PR we can review without a conversation first is under
+**400 changed lines** across **10 files or fewer**, ignoring lockfiles,
+generated files, and mass renames.
+
+Those aren't hard limits. A 500-line change that's one self-contained fix with
+tests is fine. A 200-line change touching six extensions probably isn't, because
+the review cost is in the blast radius, not the line count.
+
+If your change is bigger than that, or spans several extensions, open a feature
+request or ask on Discord **before you write it** and wait for a maintainer to
+agree on the approach. A short conversation up front saves you from writing
+something we can't merge.
+
+## Pull requests
+
+- One logical change per PR. If the description needs the word "and", it's
+  probably two PRs.
+- Link the issue it fixes.
+- Say what you tested and on which platform.
+- Run `pnpm run build`, `pnpm run test`, and `pnpm run lint` before you open it.
+- Expect a first response within about a week. Nudge us on Discord if it's been
+  longer.
+
+Pull requests that conflict with work already planned or in progress, that
+don't fit the architecture, or that are too big for us to review, get closed.
+That's not a judgement on the code.
+
+## AI-assisted contributions
+
+Use whatever tools you like. The requirement is the same either way: **you are
+the author, and you need to understand every line you submit.**
+
+In practice that means you can explain why the change is written the way it is,
+you've run it, and you've read the diff. If a reviewer asks about a decision in
+your PR, "that's what the model produced" isn't an answer.
+
+We close large machine-generated PRs without detailed review. We don't have the
+capacity to audit thousands of lines nobody on either side has read, and the
+size rule above applies regardless of how the code was written.
 
 Recommended editor: [VS Code] with workspace extensions.
 You will be prompted to install them when you first open the repo.
