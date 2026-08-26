@@ -1,6 +1,6 @@
 {
   "name": "quickbms-support",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "QuickBMS extractor support",
   "scripts": {
     "build": "node build.mjs && node download_dependencies.js && pnpm extractInfo",
