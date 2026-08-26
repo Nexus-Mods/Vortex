@@ -47,7 +47,9 @@ Two rules govern all the feedback:
    A download the user set in motion (Download, a downgrade confirm, or a
    manual check that found a patch) shows live progress. Closing that
    notification cancels the download; nothing is offered again until the
-   next check.
+   next check. While a download runs, Check now is disabled ("Downloading...")
+   and any check request is ignored, so the state keeps describing what the
+   updater is actually doing.
 
 ## Downgrades
 
