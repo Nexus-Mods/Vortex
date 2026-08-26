@@ -1,6 +1,6 @@
 # Vortex Debugging Guide
 
-This guide covers various methods for debugging Vortex, from simple console logging to advanced debugging techniques with breakpoints and inspection tools. It assumes you can build Vortex per `CONTRIBUTE.md`.
+This guide covers various methods for debugging Vortex, from simple console logging to advanced debugging techniques with breakpoints and inspection tools. It assumes you can build Vortex per `CONTRIBUTING.md`.
 
 ---
 
@@ -40,7 +40,7 @@ ls src/main/out/main/main.js
 
 When iterating on renderer/UI code, `pnpm run dev` avoids the rebuild/restart
 cycle entirely: it starts webpack and tailwind in watch mode and launches
-Electron with hot module replacement (see `CONTRIBUTE.md` → "Hot reload").
+Electron with hot module replacement (see `CONTRIBUTING.md` → "Hot reload").
 DevTools debugging works as usual (`START_DEVTOOLS=true` in `.env`, or pass
 `--inspect=9229` through: `pnpm run dev --inspect=9229`). Console messages
 prefixed `[vortex-hmr]` report applied updates and fallback reloads. Note that
