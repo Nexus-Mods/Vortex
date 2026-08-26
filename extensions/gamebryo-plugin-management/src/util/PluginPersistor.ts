@@ -115,6 +115,7 @@ class PluginPersistor implements types.IPersistor {
           // start watching for external changes
           .then(() => {
             this.startWatch();
+            this.serialize();
             return Promise.resolve();
           })
       );
@@ -542,8 +543,12 @@ class PluginPersistor implements types.IPersistor {
         if (data.length === 0) {
           // not even a header? I don't trust this. Read once more in case we caught a write
           // mid-flight, then leave the current state alone: a truncated file is not a
-          // statement that every plugin is gone, and adopting it would discard the lot
-          return retry ? Promise.resolve() : this.deserialize(true, adoptForeign);
+          if (retry) {
+            // The persistor must still count as loaded, or serialize() drops every write
+            this.mLoaded = true;
+            return Promise.resolve();
+          }
+          return this.deserialize(true, adoptForeign);
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
         this.initFromKeyList(newPlugins, keys, true, offset);
