@@ -1,5 +1,5 @@
 import { mdiDownload } from "@mdi/js";
-import React, { type FC } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 
 import type { DownloadState } from "@/extensions/download_management/types/IDownload";
@@ -9,7 +9,7 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { useSpineContext } from "./SpineContext";
+import { useSpineContext } from "../SpineContext";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = ["init", "started", "finalizing"];
 
@@ -21,7 +21,7 @@ interface DownloadProgress {
   estimatedMins: number; // Estimated time remaining in minutes
 }
 
-function useDownloadProgress(): DownloadProgress {
+const useDownloadProgress = (): DownloadProgress => {
   return useSelector((state: IState) => {
     const files = state.persistent.downloads?.files ?? {};
     const speed = state.persistent.downloads?.speed ?? 0;
@@ -70,15 +70,17 @@ function useDownloadProgress(): DownloadProgress {
       estimatedMins,
     };
   });
-}
+};
 
-const ProgressRing: FC<
-  React.PropsWithChildren<{
-    isActive: boolean;
-    isPaused: boolean;
-    progress: number;
-  }>
-> = ({ isActive, isPaused, progress }) => {
+const ProgressRing = ({
+  isActive,
+  isPaused,
+  progress,
+}: {
+  isActive: boolean;
+  isPaused: boolean;
+  progress: number;
+}) => {
   const size = 48;
   const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
@@ -89,7 +91,10 @@ const ProgressRing: FC<
     <svg className="pointer-events-none absolute inset-0 -rotate-90" height={size} width={size}>
       {/* Background circle */}
       <circle
-        className="stroke-stroke-weak"
+        className={joinClasses([
+          "transition-colors",
+          isActive ? "stroke-stroke-moderate" : "stroke-stroke-weak",
+        ])}
         cx={size / 2}
         cy={size / 2}
         fill="none"
@@ -104,7 +109,7 @@ const ProgressRing: FC<
           isActive
             ? "stroke-neutral-strong"
             : isPaused
-              ? "stroke-neutral-moderate"
+              ? "stroke-stroke-moderate"
               : "stroke-info-subdued group-hover/download:stroke-info-strong",
         ])}
         cx={size / 2}
@@ -119,7 +124,7 @@ const ProgressRing: FC<
   );
 };
 
-export const DownloadButton: FC<React.PropsWithChildren<unknown>> = () => {
+export const DownloadButton = () => {
   const { selection, selectDownloads } = useSpineContext();
 
   const isActive = selection.type === "downloads";
