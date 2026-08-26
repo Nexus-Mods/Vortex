@@ -223,6 +223,41 @@ describe("PluginPersistor", () => {
       expect(onExternalChange).not.toHaveBeenCalled();
     });
 
+    it("re-asserts the plugin files from the known set after loading", async () => {
+      // on a profile switch the known-plugins refresh lands while the persistor is
+      // disabled, so its serialize is dropped; loading must then write the files back
+      // from the refreshed known set or they keep the previous profile's entries
+      await persistor.disable();
+      persistor.setKnownPlugins({ "new.esp": "New.esp" });
+
+      await persistor.loadFiles("skyrimse");
+
+      await vi.waitFor(() => {
+        const written = nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1");
+        expect(written).toContain("New.esp");
+        expect(written).not.toContain("Old.esp");
+      });
+    });
+
+    it("stays writable after the initial load finds an empty plugins file", async () => {
+      const freshDir = nodeFs.mkdtempSync(path.join(os.tmpdir(), "plugin-empty-"));
+      paths.pluginDir = freshDir;
+      nodeFs.writeFileSync(path.join(freshDir, "plugins.txt"), "", { encoding: "latin1" });
+      const fresh = new PluginPersistor(vi.fn(), () => false);
+      fresh.setResetCallback(vi.fn(async () => undefined));
+      await fresh.loadFiles("skyrimse");
+
+      fresh.setKnownPlugins({ "new.esp": "New.esp" });
+      await fresh.setItem(["new.esp"], JSON.stringify({ enabled: true, loadOrder: 0 }));
+
+      await vi.waitFor(() => {
+        const written = nodeFs.readFileSync(path.join(freshDir, "plugins.txt"), "latin1");
+        expect(written).toContain("*New.esp");
+      });
+      await fresh.disable();
+      nodeFs.rmSync(freshDir, { recursive: true, force: true });
+    });
+
     it("clears a pending choice when the persistor is disabled", async () => {
       // the prompt can outlive the game it was raised for; left pending it blocks the
       // next game's initial read and the hive is never populated
