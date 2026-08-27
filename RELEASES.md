@@ -96,11 +96,10 @@ Backend changes that affect extensions are noted in the vortex-api CHANGELOG as 
 
 ### How we notify you
 
-- **Mod Author Discord** and **#vortex-testing** in the Nexus Discord: release announcements, deprecation notices and beta testing.
+- **[#vortex-testing](https://discord.com/channels/215154001799413770/1433013672053178409)** in the [Nexus Discord](https://discord.gg/nexusmods): deprecation notices, API changes and beta testing. This is the main channel for extension developers.
+- **Mod Author Discord**: wider release announcements.
 - **[vortex-api CHANGELOG](https://github.com/Nexus-Mods/Vortex/blob/master/packages/vortex-api/CHANGELOG.md)** and **[MIGRATION guide](https://github.com/Nexus-Mods/Vortex/blob/master/packages/vortex-api/docs/MIGRATION.md)**: what changed and how to move.
 - Authors of affected extensions are contacted directly when a breaking change lands on master.
-
-A dedicated extension developer channel is planned, to carry deprecation notices on its own rather than mixed in with release chatter. Until it exists, the channels above are the ones to watch.
 
 ## Bug reports and hotfixes
 
