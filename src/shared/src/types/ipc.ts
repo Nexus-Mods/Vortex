@@ -65,6 +65,13 @@ export interface UpdateStatus {
   downloadProgress?: number;
   /** Error message if update check failed */
   error?: string;
+  /**
+   * The offered version is lower than the running one. Only ever set after
+   * an explicit switch to the stable channel, never for background checks.
+   */
+  downgrade?: boolean;
+  /** An update check is in flight */
+  checking?: boolean;
 }
 
 /** Vortex application paths */

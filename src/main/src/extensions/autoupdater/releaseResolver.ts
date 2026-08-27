@@ -1,0 +1,307 @@
+/**
+ * Deterministic release resolution for the auto-updater.
+ *
+ * electron-updater's GitHub provider walks the releases atom feed in
+ * publish-date order, so a stable hotfix published after a beta gets offered
+ * to beta users as "the latest version". This module resolves the target
+ * release ourselves — GitHub REST API, filter, max semver per channel — and
+ * the updater is then pointed at that release's assets via a generic feed.
+ *
+ * Must stay loadable in plain node (vitest): no electron imports.
+ */
+
+import * as semver from "semver";
+
+import { log } from "../../logging";
+
+export type ResolveChannel = "stable" | "beta" | "next";
+
+export interface GithubReleaseLite {
+  tag_name: string;
+  name?: string;
+  draft: boolean;
+  prerelease: boolean;
+  published_at?: string;
+  body_html?: string;
+  assets: Array<{ name: string }>;
+}
+
+export interface ResolvedRelease {
+  tag: string;
+  version: string;
+  prerelease: boolean;
+  downloadBaseUrl: string;
+  notesHtml?: string;
+}
+
+export class RateLimitError extends Error {
+  constructor(public readonly resetAt: Date) {
+    super(`GitHub API rate limit exceeded, resets at ${resetAt.toISOString()}`);
+    this.name = "RateLimitError";
+  }
+}
+
+const OWNER = "Nexus-Mods";
+const MAX_PAGES = 3;
+const INSTALLER_ASSET = /^vortex-setup-.*\.exe$/i;
+
+// Overridable so tests and the mock update feed can stand in for GitHub.
+function apiBase(): string {
+  return process.env.VORTEX_UPDATER_API_BASE || "https://api.github.com";
+}
+
+function downloadBase(): string {
+  return process.env.VORTEX_UPDATER_DOWNLOAD_BASE || "https://github.com";
+}
+
+export function repoForChannel(): string {
+  return process.env.IS_PREVIEW_BUILD === "true" ? "Vortex-Staging" : "Vortex";
+}
+
+// Build metadata compares equal under semver (2.5.0+build == 2.5.0); ties in
+// pickRelease keep the first-seen release. Vortex doesn't tag with metadata.
+function versionFromTag(tag: string): string | null {
+  return semver.valid(tag.replace(/^v/, ""));
+}
+
+function isEligible(release: GithubReleaseLite): boolean {
+  if (release.draft) {
+    return false;
+  }
+  const version = versionFromTag(release.tag_name);
+  if (version == null) {
+    return false;
+  }
+  const hasUpdateAssets = release.assets.some(
+    (asset) => asset.name === "latest.yml" || INSTALLER_ASSET.test(asset.name),
+  );
+  if (!hasUpdateAssets) {
+    return false;
+  }
+  // The prerelease flag and the version suffix are two signals for the same
+  // fact; when they disagree the release was mispublished — don't trust it.
+  const hasPrereleaseSuffix = semver.prerelease(version) != null;
+  if (release.prerelease !== hasPrereleaseSuffix) {
+    log("warn", "Release prerelease flag disagrees with its version suffix, skipping", {
+      tag: release.tag_name,
+      prerelease: release.prerelease,
+    });
+    return false;
+  }
+  return true;
+}
+
+function candidatesForChannel(
+  releases: GithubReleaseLite[],
+  channel: ResolveChannel,
+): GithubReleaseLite[] {
+  const eligible = releases.filter(isEligible);
+  // beta/next take everything: a newer stable beats an older beta.
+  return channel === "stable" ? eligible.filter((release) => !release.prerelease) : eligible;
+}
+
+/**
+ * Pick the target release for a channel: max semver among eligible
+ * candidates. Never depends on array order or publish dates.
+ */
+export function pickRelease(
+  releases: GithubReleaseLite[],
+  channel: ResolveChannel,
+): GithubReleaseLite | null {
+  let best: GithubReleaseLite | null = null;
+  let bestVersion: string | null = null;
+  for (const release of candidatesForChannel(releases, channel)) {
+    const version = versionFromTag(release.tag_name)!;
+    if (bestVersion == null || semver.gt(version, bestVersion)) {
+      best = release;
+      bestVersion = version;
+    }
+  }
+  return best;
+}
+
+/**
+ * Classify what the resolved version means relative to the running version.
+ * A lower version is only ever surfaced as a "downgrade-offer" when the user
+ * explicitly switched to the stable channel; background checks ignore it.
+ */
+export function classifyUpdate(
+  currentVersion: string,
+  resolvedVersion: string | null,
+  opts: { switchToStable: boolean },
+): "upgrade" | "downgrade-offer" | "none" {
+  const current = semver.valid(currentVersion);
+  if (current == null) {
+    log("warn", "Current version is not valid semver", { currentVersion });
+    return "none";
+  }
+  if (resolvedVersion == null || semver.eq(resolvedVersion, current)) {
+    return "none";
+  }
+  if (semver.gt(resolvedVersion, current)) {
+    return "upgrade";
+  }
+  return opts.switchToStable ? "downgrade-offer" : "none";
+}
+
+/**
+ * Patch-level updates auto-download for regular installs; minor/major wait
+ * for the user. Same gate the updater has always applied.
+ */
+export function shouldAutoDownload(
+  currentVersion: string,
+  targetVersion: string,
+  installType: string,
+): boolean {
+  return (
+    installType === "regular" &&
+    semver.gt(targetVersion, currentVersion) &&
+    semver.satisfies(targetVersion, `~${currentVersion}`, { includePrerelease: true })
+  );
+}
+
+interface CacheEntry {
+  etag: string;
+  body: string;
+  linkHeader: string | null;
+}
+
+const etagCache = new Map<string, CacheEntry>();
+let rateLimitedUntil: Date | null = null;
+
+export function _resetCacheForTests(): void {
+  etagCache.clear();
+  rateLimitedUntil = null;
+}
+
+async function fetchPage(url: string): Promise<{ body: string; linkHeader: string | null }> {
+  if (rateLimitedUntil != null) {
+    if (Date.now() < rateLimitedUntil.getTime()) {
+      throw new RateLimitError(rateLimitedUntil);
+    }
+    rateLimitedUntil = null;
+  }
+
+  const cached = etagCache.get(url);
+  const headers: Record<string, string> = {
+    accept: "application/vnd.github.html+json",
+    "x-github-api-version": "2022-11-28",
+    "user-agent": "Vortex",
+  };
+  if (cached != null) {
+    headers["if-none-match"] = cached.etag;
+  }
+
+  const response = await fetch(url, { headers });
+
+  if (response.status === 304 && cached != null) {
+    return { body: cached.body, linkHeader: response.headers.get("link") ?? cached.linkHeader };
+  }
+
+  if (
+    (response.status === 403 || response.status === 429) &&
+    response.headers.get("x-ratelimit-remaining") === "0"
+  ) {
+    // A proxy or mock feed can send a garbage reset header; NaN or 0 would
+    // produce an Invalid Date (whose toISOString throws) or a 1970 reset that
+    // never short-circuits. Fall back to a minute in either case.
+    const parsed = Number(response.headers.get("x-ratelimit-reset"));
+    const resetAt =
+      Number.isFinite(parsed) && parsed > 0
+        ? new Date(parsed * 1000)
+        : new Date(Date.now() + 60_000);
+    rateLimitedUntil = resetAt;
+    throw new RateLimitError(resetAt);
+  }
+
+  if (!response.ok) {
+    const snippet = (await response.text()).slice(0, 200);
+    throw new Error(`Release feed request failed with status ${response.status}: ${snippet}`);
+  }
+
+  const body = await response.text();
+  const etag = response.headers.get("etag");
+  const linkHeader = response.headers.get("link");
+  if (etag != null) {
+    etagCache.set(url, { etag, body, linkHeader });
+  }
+  return { body, linkHeader };
+}
+
+function nextPageUrl(linkHeader: string | null): string | null {
+  if (linkHeader == null) {
+    return null;
+  }
+  for (const part of linkHeader.split(",")) {
+    const match = /<([^>]+)>\s*;\s*rel="next"/.exec(part);
+    if (match?.[1] != null) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
+async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
+  const releases: GithubReleaseLite[] = [];
+  let url: string | null = `${apiBase()}/repos/${OWNER}/${repo}/releases?per_page=100`;
+  let pages = 0;
+
+  while (url != null && pages < MAX_PAGES) {
+    const { body, linkHeader } = await fetchPage(url);
+    let page: unknown;
+    try {
+      page = JSON.parse(body);
+    } catch {
+      throw new Error("Release feed returned malformed JSON");
+    }
+    if (!Array.isArray(page)) {
+      throw new Error("Release feed returned an unexpected shape");
+    }
+    releases.push(...(page as GithubReleaseLite[]));
+    pages += 1;
+    url = nextPageUrl(linkHeader);
+  }
+
+  if (url != null) {
+    log("warn", "Release listing truncated at page cap", { repo, pages });
+  }
+
+  return releases;
+}
+
+/**
+ * Resolve the update target for a channel. Returns null when no eligible
+ * release exists. Network and rate-limit errors propagate — the caller logs
+ * and skips the check, same as being offline.
+ */
+export async function resolveUpdate(
+  channel: ResolveChannel,
+  currentVersion: string,
+): Promise<ResolvedRelease | null> {
+  const repo = repoForChannel();
+  const releases = await fetchReleases(repo);
+  const picked = pickRelease(releases, channel);
+  if (picked == null) {
+    return null;
+  }
+  const pickedVersion = versionFromTag(picked.tag_name)!;
+
+  const current = semver.valid(currentVersion);
+  const notes = candidatesForChannel(releases, channel)
+    .map((release) => ({ release, version: versionFromTag(release.tag_name)! }))
+    .filter(
+      ({ version }) =>
+        current != null && semver.gt(version, current) && semver.lte(version, pickedVersion),
+    )
+    .sort((lhs, rhs) => semver.rcompare(lhs.version, rhs.version))
+    .map(({ release }) => release.body_html)
+    .filter((body): body is string => body != null && body.trim().length > 0);
+
+  return {
+    tag: picked.tag_name,
+    version: pickedVersion,
+    prerelease: picked.prerelease,
+    downloadBaseUrl: `${downloadBase()}/${OWNER}/${repo}/releases/download/${picked.tag_name}`,
+    notesHtml: notes.length > 0 ? notes.join("\n\n") : undefined,
+  };
+}

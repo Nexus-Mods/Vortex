@@ -3,6 +3,12 @@
  *
  * Handles Electron auto-updater functionality in main process.
  * UI/notifications are handled by the renderer - this just manages the update mechanics.
+ *
+ * Release resolution is ours (releaseResolver.ts): the GitHub releases API is
+ * queried directly and the max-semver release for the active channel wins.
+ * electron-updater is then pointed at that release's assets via a generic
+ * feed, so its job reduces to sha512-verified download, installer signature
+ * verification (publisherName from the packaged app-update.yml), and install.
  */
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
@@ -12,8 +18,15 @@ import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
 
-import { betterIpcMain } from "../ipc";
-import { log } from "../logging";
+import { betterIpcMain } from "../../ipc";
+import { log } from "../../logging";
+import type { ResolveChannel, ResolvedRelease } from "./releaseResolver";
+import {
+  classifyUpdate,
+  RateLimitError,
+  resolveUpdate,
+  shouldAutoDownload,
+} from "./releaseResolver";
 
 /**
  * Show warning dialog before update installs on quit.
@@ -38,14 +51,25 @@ const updateStatus: UpdateStatus = {
   downloaded: false,
 };
 
+function toResolveChannel(channel: string): ResolveChannel {
+  return channel === "beta" || channel === "next" ? channel : "stable";
+}
+
 /**
  * Set up the auto-updater in main process.
  * Handles checking for updates, downloading, and installing.
  */
 export function setupAutoUpdater(installType: string): void {
   let cancellationToken: CancellationToken | undefined = undefined;
-  const currentVersion = semver.parse(app.getVersion());
+  const currentVersion = app.getVersion();
   let updateChannel = "stable";
+  // The release the last successful check resolved to — used only to prefer
+  // the resolver's collected release notes over the (empty) generic-feed ones.
+  // Downloads never trust it: updater:download re-resolves every time.
+  let lastResolved: ResolvedRelease | null = null;
+  // Overlapping checks are possible (set-channel + manual check-now); only
+  // the newest one may write checking/availability/cancellation state.
+  let checkGeneration = 0;
 
   // Launching the freshly downloaded installer can fail transiently with EBUSY
   // (and similar lock errors) while antivirus still has the ~360 MB file open.
@@ -109,18 +133,18 @@ export function setupAutoUpdater(installType: string): void {
       releaseNotes: updateStatus.releaseNotes,
       downloadProgress: updateStatus.downloadProgress,
       error: updateStatus.error,
+      downgrade: updateStatus.downgrade,
+      checking: updateStatus.checking,
     };
   });
 
-  log("info", "setupAutoUpdater", {
-    installType,
-    currentVersion: currentVersion?.version,
-  });
+  log("info", "setupAutoUpdater", { installType, currentVersion });
 
-  // Configure autoUpdater
-  autoUpdater.allowDowngrade = true;
+  // Configure autoUpdater. Downgrades are never taken from background checks;
+  // the resolver decides what "latest" means and only strictly-newer versions
+  // are handed to electron-updater at all.
+  autoUpdater.allowDowngrade = false;
   autoUpdater.autoDownload = false;
-  autoUpdater.fullChangelog = true;
   autoUpdater.autoInstallOnAppQuit = false;
 
   // Error handler
@@ -143,15 +167,15 @@ export function setupAutoUpdater(installType: string): void {
 
   // Update available
   autoUpdater.on("update-available", (info: UpdateInfo) => {
-    log("info", "Update available", {
-      version: info.version,
-      currentVersion: currentVersion?.version,
-    });
+    log("info", "Update available", { version: info.version, currentVersion });
     updateStatus.available = true;
     updateStatus.version = info.version;
     updateStatus.error = undefined;
-    // Capture release notes - can be string or array of release note objects
-    if (typeof info.releaseNotes === "string") {
+    // The generic feed's latest.yml carries no release notes; the resolver
+    // collects them from the GitHub releases instead.
+    if (lastResolved?.notesHtml != null) {
+      updateStatus.releaseNotes = lastResolved.notesHtml;
+    } else if (typeof info.releaseNotes === "string") {
       updateStatus.releaseNotes = info.releaseNotes;
     } else if (Array.isArray(info.releaseNotes)) {
       updateStatus.releaseNotes = info.releaseNotes
@@ -190,6 +214,47 @@ export function setupAutoUpdater(installType: string): void {
     }
   });
 
+  // Point electron-updater at the resolved release and let it re-check;
+  // resolves once the library has accepted the feed. Every download goes
+  // through this first, so check-before-download holds structurally.
+  function applyResolvedFeed(resolved: ResolvedRelease, generation: number): Promise<void> {
+    lastResolved = resolved;
+    autoUpdater.setFeedURL({ provider: "generic", url: resolved.downloadBaseUrl });
+    return autoUpdater.checkForUpdates().then((check) => {
+      if (generation === checkGeneration) {
+        cancellationToken = check?.cancellationToken;
+      }
+    });
+  }
+
+  // Resolve the channel's target release and, when it's an upgrade, hand the
+  // feed to electron-updater. Resolves to the release or null (no upgrade).
+  function resolveAndApply(channel: string, generation: number): Promise<ResolvedRelease | null> {
+    return resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
+      // Note: switchToStable stays false until the explicit channel-switch
+      // downgrade flow ships with its UI; a lower "latest" is ignored here
+      // rather than offered (offering it is the old field bug).
+      const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
+        switchToStable: false,
+      });
+      if (resolved == null || verdict !== "upgrade") {
+        const current = semver.valid(currentVersion);
+        if (resolved != null && current != null && semver.lt(resolved.version, current)) {
+          log("info", "Latest release is older than the running version, ignoring", {
+            resolved: resolved.version,
+            currentVersion,
+            channel,
+          });
+        } else {
+          log("info", "No update available", { channel, resolved: resolved?.version });
+        }
+        lastResolved = null;
+        return null;
+      }
+      return applyResolvedFeed(resolved, generation).then(() => resolved);
+    });
+  }
+
   // Check for updates
   const checkForUpdates = (channel: string, manual: boolean = false) => {
     if (!channel || channel === "none") {
@@ -197,47 +262,32 @@ export function setupAutoUpdater(installType: string): void {
       return;
     }
 
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
     updateChannel = channel;
+    const generation = ++checkGeneration;
+    updateStatus.checking = true;
+    log("info", "Checking for updates", { channel, manual, currentVersion });
 
-    log("info", "Checking for updates", { channel, manual, isPreviewBuild });
+    resolveAndApply(channel, generation)
+      .then((resolved) => {
+        if (generation !== checkGeneration) {
+          return; // superseded by a newer check; let that one own the status
+        }
+        updateStatus.checking = false;
+        if (resolved == null) {
+          updateStatus.available = false;
+          updateStatus.version = undefined;
+          updateStatus.releaseNotes = undefined;
+          updateStatus.error = undefined;
+          return;
+        }
+        log("info", "Update check completed", { version: resolved.version });
 
-    autoUpdater.allowPrerelease = channel !== "stable";
-    // publisherName for installer signature verification comes from the packaged
-    // app-update.yml (win.signtoolOptions.publisherName in the builder config);
-    // electron-updater 6.x ignores it in setFeedURL options.
-    autoUpdater.setFeedURL({
-      provider: "github",
-      owner: "Nexus-Mods",
-      repo: isPreviewBuild ? "Vortex-Staging" : "Vortex",
-    });
-
-    autoUpdater
-      .checkForUpdates()
-      .then((check) => {
-        log("info", "Update check completed");
-        cancellationToken = check?.cancellationToken;
-
-        const updateVersion = check?.updateInfo?.version;
-
-        // Auto-download patch updates for regular installs;
-        // minor/major updates require user-initiated download via renderer.
-        // Require strict-newer: with allowDowngrade = true the feed may
-        // report the current version as "latest", which would otherwise
-        // satisfy the `~current` range and trigger a bogus downloadUpdate
-        // that electron-updater rejects with "Please check update first".
-        if (
-          installType === "regular" &&
-          currentVersion != null &&
-          updateVersion != null &&
-          semver.gt(updateVersion, currentVersion.version) &&
-          semver.satisfies(updateVersion, `~${currentVersion.version}`, {
-            includePrerelease: true,
-          })
-        ) {
+        // Auto-download patch updates for regular installs; minor/major
+        // updates require user-initiated download via renderer.
+        if (shouldAutoDownload(currentVersion, resolved.version, installType)) {
           log("info", "Patch update detected, auto-downloading", {
-            from: currentVersion.version,
-            to: updateVersion,
+            from: currentVersion,
+            to: resolved.version,
           });
           autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
             log("warn", "Auto-download failed", {
@@ -247,9 +297,14 @@ export function setupAutoUpdater(installType: string): void {
         }
       })
       .catch((err) => {
-        log("warn", "Update check failed", {
-          error: getErrorMessageOrDefault(err),
-        });
+        if (generation === checkGeneration) {
+          updateStatus.checking = false;
+        }
+        if (err instanceof RateLimitError) {
+          log("warn", "Update check rate-limited", { resetAt: err.resetAt.toISOString() });
+        } else {
+          log("warn", "Update check failed", { error: getErrorMessageOrDefault(err) });
+        }
       });
   };
 
@@ -260,6 +315,7 @@ export function setupAutoUpdater(installType: string): void {
     if (cancellationToken) {
       cancellationToken.cancel();
     }
+    lastResolved = null;
 
     if (channel !== "none" && process.env.IGNORE_UPDATES !== "yes") {
       checkForUpdates(channel, manual);
@@ -290,20 +346,24 @@ export function setupAutoUpdater(installType: string): void {
 
     installAfterDownloadFlag = installAfterDownload;
 
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
-    autoUpdater.allowPrerelease = channel !== "stable";
-    autoUpdater.setFeedURL({
-      provider: "github",
-      owner: "Nexus-Mods",
-      repo: isPreviewBuild ? "Vortex-Staging" : "Vortex",
-    });
-
-    autoUpdater.downloadUpdate().catch((unknownErr) => {
-      const err = unknownToError(unknownErr);
-      log("error", "Download failed", { error: err.message });
-      updateStatus.error = err.message;
-      installAfterDownloadFlag = false;
-    });
+    // Always re-resolve for the channel the renderer asked about: a cached
+    // resolution could belong to a different channel, and re-applying the
+    // feed guarantees the library-side check-before-download. The resolver's
+    // ETag cache makes the repeat lookup cheap.
+    const generation = ++checkGeneration;
+    resolveAndApply(channel, generation)
+      .then((resolved) => {
+        if (resolved == null) {
+          throw new Error("no newer release available to download");
+        }
+        return autoUpdater.downloadUpdate();
+      })
+      .catch((unknownErr) => {
+        const err = unknownToError(unknownErr);
+        log("error", "Download failed", { error: err.message });
+        updateStatus.error = err.message;
+        installAfterDownloadFlag = false;
+      });
   });
 
   betterIpcMain.on("updater:restart-and-install", () => {
