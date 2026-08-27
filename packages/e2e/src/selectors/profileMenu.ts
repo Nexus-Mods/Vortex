@@ -8,7 +8,11 @@ import type { Locator, Page } from "@playwright/test";
  */
 export class ProfileMenu {
   readonly page: Page;
-  /** Logged-in trigger: avatar button rendering the user's profile image. */
+  /**
+   * Logged-in trigger: the avatar button. Matched on its test id rather than its
+   * image, since the spine's game buttons carry one too and render first, and the
+   * avatar falls back to an icon when the profile image doesn't load.
+   */
   readonly avatarButton: Locator;
   /** "Logout" item inside the opened menu. */
   readonly logoutItem: Locator;
@@ -17,7 +21,7 @@ export class ProfileMenu {
 
   constructor(page: Page) {
     this.page = page;
-    this.avatarButton = page.locator("button:has(img[alt])").first();
+    this.avatarButton = page.getByTestId("profile-menu-trigger");
     this.logoutItem = page.getByRole("menuitem", { name: /logout/i });
     this.loginButton = page.getByRole("button", { name: /log in/i }).first();
   }
