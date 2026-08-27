@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "@/ExtensionProvider";
-import type { INotification } from "@/types/INotification";
+import type { INotification, NotificationType } from "@/types/INotification";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -14,6 +14,13 @@ import { NotificationItem } from "./components/NotificationItem";
 import { useNotificationActions } from "./hooks/useNotificationActions.hook";
 import { useNotificationFiltering } from "./hooks/useNotificationFiltering.hook";
 import { useNotificationItems } from "./hooks/useNotificationItems.hook";
+
+/**
+ * Types that never pull the tray open. Silent is invisible everywhere; activity reports
+ * background progress — a download starting, a game being set up — which belongs in the
+ * tray for whoever opens it, but isn't news worth interrupting anyone for.
+ */
+const QUIET_TYPES: NotificationType[] = ["activity", "silent"];
 
 /**
  * The pip reports the most serious thing waiting, so severities are ranked rather than
@@ -93,11 +100,12 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
     }
   }, [popoverOpen, expand]);
 
-  // Auto-open popover when new notifications arrive.
-  // Silent notifications should never open the tray.
+  // Auto-open popover when new notifications arrive, for the types worth interrupting for.
   useEffect(() => {
     const currentIds = new Set(notifications.map((n) => n.id));
-    const hasNew = notifications.some((n) => !prevIdsRef.current.has(n.id) && n.type !== "silent");
+    const hasNew = notifications.some(
+      (n) => !prevIdsRef.current.has(n.id) && !QUIET_TYPES.includes(n.type),
+    );
     prevIdsRef.current = currentIds;
 
     if (hasNew && !popoverOpen && buttonRef.current) {
@@ -123,7 +131,7 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
         as={SpineButton}
         border="hidden"
         disabled={!visibleCount}
-        iconPath={visibleCount ? mdiBell : mdiBellOutline}
+        iconPath={popoverOpen ? mdiBell : mdiBellOutline}
         isActive={popoverOpen}
         ref={buttonRef}
         title="Notifications"

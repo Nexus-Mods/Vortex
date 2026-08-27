@@ -135,6 +135,21 @@ describe("Notifications trigger", () => {
     expect(bell).toHaveClass("border-neutral-strong");
   });
 
+  it.each<NotificationType>(["activity", "silent"])(
+    "does not open itself for a %s notification",
+    (type) => {
+      // Switching game sends an activity notification while it sets the game up. Progress
+      // belongs in the tray for whoever opens it, not thrown in front of them.
+      const { bell } = renderComponent([type]);
+      expect(bell).toHaveAttribute("aria-expanded", "false");
+    },
+  );
+
+  it("still opens itself for something worth reading", () => {
+    const { bell } = renderComponent(["error"]);
+    expect(bell).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("closes itself once the last notification has gone", async () => {
     // Switching game fires a burst of notifications that expire on their own. The tray
     // auto-opens for them, and an open tray with nothing in it is just a lit bell.
