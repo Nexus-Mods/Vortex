@@ -23,7 +23,7 @@ import type {
   AppInitMetadata,
   HashAlgorithm,
   Serializable,
-  UpdateStatus,
+  UpdaterStatusResponse,
   VortexPaths,
   WireDownloadCheckpoint,
   WireDownloadState,
@@ -452,9 +452,18 @@ export interface AdaptorsApi {
 /** API for querying update status from main process */
 export interface UpdaterApi {
   /**
-   * Get current update status from main process.
+   * Read the updater's status from main. The renderer polls this; with
+   * `since` (the last seen sequence number) the reply includes every
+   * snapshot recorded after it, in order.
    */
-  getStatus(): Promise<UpdateStatus>;
+  getStatus(since?: number): Promise<UpdaterStatusResponse>;
+
+  /**
+   * Release notes covering the update the app just went through. Null when
+   * this launch did not follow an update or the notes are unavailable.
+   * Takes the renderer's persisted update channel.
+   */
+  getUpdateChangelog(channel: string): Promise<string | null>;
 
   /**
    * Set the update channel and trigger an update check.
@@ -476,6 +485,23 @@ export interface UpdaterApi {
    * Trigger restart and install of the downloaded update.
    */
   restartAndInstall(): void;
+
+  /**
+   * Download the downgrade offered after an explicit switch to stable.
+   * Ignored by main unless a downgrade offer is outstanding.
+   */
+  downloadDowngrade(installAfterDownload?: boolean): void;
+
+  /**
+   * Decline the outstanding downgrade offer. Clears it; only another
+   * purposeful switch to stable raises it again.
+   */
+  declineDowngrade(): void;
+
+  /**
+   * Cancel the download in progress. Ignored by main unless one is running.
+   */
+  cancelDownload(): void;
 }
 
 /** API for interacting with the DownloadManager in main */

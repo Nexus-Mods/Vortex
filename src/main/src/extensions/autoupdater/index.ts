@@ -9,17 +9,31 @@
  * electron-updater is then pointed at that release's assets via a generic
  * feed, so its job reduces to sha512-verified download, installer signature
  * verification (publisherName from the packaged app-update.yml), and install.
+ *
+ * The updater is modeled as an explicit state machine (UpdaterState in
+ * @vortex/shared/ipc, patterned on VS Code's updater): exactly one state at a
+ * time, every transition goes through setState, and the renderer renders
+ * purely from the broadcast state. electron-updater's own events never drive
+ * the state directly, we already resolved what "latest" means; the library
+ * events only feed bookkeeping (downloaded-installer tracking, progress,
+ * failures of an active download).
  */
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import type { UpdateStatus } from "@vortex/shared/ipc";
-import { app, dialog } from "electron";
+import type {
+  UpdateKind,
+  UpdaterSnapshot,
+  UpdaterState,
+  UpdaterStatusResponse,
+} from "@vortex/shared/ipc";
+import { app } from "electron";
 import type { CancellationToken, UpdateInfo } from "electron-updater";
 import { autoUpdater } from "electron-updater";
 import * as semver from "semver";
 
 import { betterIpcMain } from "../../ipc";
 import { log } from "../../logging";
+import { readPersistedValue, writePersistedValue } from "../../store/mainPersistence";
 import type { ResolveChannel, ResolvedRelease } from "./releaseResolver";
 import {
   classifyUpdate,
@@ -28,31 +42,27 @@ import {
   shouldAutoDownload,
 } from "./releaseResolver";
 
-/**
- * Show warning dialog before update installs on quit.
- * Prevents users from turning off computer during installation.
- */
-function showUpdateWarning() {
-  dialog.showMessageBoxSync({
-    type: "info",
-    title: "Vortex update",
-    message:
-      "An update has been downloaded and will now install. " +
-      "Please do not turn off your computer until it's done. " +
-      "If the installation process is interrupted, Vortex may not work correctly.",
-    buttons: ["Continue"],
-    noLink: true,
-  });
-}
-
-// Track update status for renderer queries
-const updateStatus: UpdateStatus = {
-  available: false,
-  downloaded: false,
-};
-
 function toResolveChannel(channel: string): ResolveChannel {
   return channel === "beta" || channel === "next" ? channel : "stable";
+}
+
+function describeState(state: UpdaterState): string {
+  switch (state.type) {
+    case "checking":
+      return state.manual ? "checking(manual)" : "checking";
+    case "available":
+      return `available ${state.version}`;
+    case "downgrade-offered":
+      return `downgrade-offered ${state.version}`;
+    case "downloading":
+      return `downloading ${state.version} (${state.kind}${state.percent != null ? ` ${state.percent}%` : ""})`;
+    case "staged":
+      return `staged ${state.version} (${state.kind})`;
+    case "error":
+      return `error${state.manual ? "(manual)" : ""}`;
+    default:
+      return state.type;
+  }
 }
 
 /**
@@ -62,14 +72,82 @@ function toResolveChannel(channel: string): ResolveChannel {
 export function setupAutoUpdater(installType: string): void {
   let cancellationToken: CancellationToken | undefined = undefined;
   const currentVersion = app.getVersion();
-  let updateChannel = "stable";
-  // The release the last successful check resolved to — used only to prefer
+  // The release the last successful check resolved to, used only to prefer
   // the resolver's collected release notes over the (empty) generic-feed ones.
   // Downloads never trust it: updater:download re-resolves every time.
   let lastResolved: ResolvedRelease | null = null;
+  // The downgrade offered after an explicit switch to stable, awaiting the
+  // user's confirmation via updater:download-downgrade. Cleared by any check.
+  let pendingDowngrade: ResolvedRelease | null = null;
   // Overlapping checks are possible (set-channel + manual check-now); only
-  // the newest one may write checking/availability/cancellation state.
+  // the newest one may own the state and the shared electron-updater.
   let checkGeneration = 0;
+  // Install-after-download requested (patch auto-flow never sets this).
+  let installAfterDownloadFlag = false;
+  // The version the downloaded installer on disk actually contains; a staged
+  // state is only ever valid for this version.
+  let downloadedVersion: string | null = null;
+  // A version whose AUTO-download just failed is not auto-retried for a
+  // cooldown (every periodic/manual check would otherwise re-fetch the full
+  // delta); it is offered as a normal downloadable update instead, and a
+  // user-initiated download may always retry immediately.
+  const AUTO_DOWNLOAD_HOLD_MS = 15 * 60 * 1000;
+  let autoDownloadHold: { version: string; until: number } | null = null;
+
+  // ---- state machine ------------------------------------------------------
+
+  let current: UpdaterState = { type: "idle" };
+  // One-time post-update notice; orthogonal to the state machine.
+  let justUpdatedFrom: string | undefined;
+
+  function snapshot(): UpdaterSnapshot {
+    return { state: current, justUpdatedFrom };
+  }
+
+  // The renderer polls for status, like downloads (IPCDownloadAdapter.ts) and
+  // uploads (uploadV3.ts); nothing is pushed. Its UI reacts to transitions and
+  // some states last well under a poll interval, so every snapshot is numbered
+  // and kept briefly and a poll asks for everything since the last one it saw.
+  const HISTORY_CAP = 32;
+  let seq = 0;
+  const history: Array<{ seq: number; snapshot: UpdaterSnapshot }> = [];
+
+  function record(): void {
+    seq += 1;
+    history.push({ seq, snapshot: snapshot() });
+    if (history.length > HISTORY_CAP) {
+      history.shift();
+    }
+  }
+
+  function statusSince(since: number | undefined): UpdaterStatusResponse {
+    return {
+      seq,
+      snapshot: snapshot(),
+      changes:
+        since == null
+          ? []
+          : history.filter((entry) => entry.seq > since).map((entry) => entry.snapshot),
+    };
+  }
+
+  function setState(next: UpdaterState): void {
+    // progress ticks are debug noise; real transitions are info
+    const progressTick = current.type === "downloading" && next.type === "downloading";
+    log(progressTick ? "debug" : "info", "Updater state", {
+      from: describeState(current),
+      to: describeState(next),
+    });
+    current = next;
+    record();
+  }
+
+  // What kind of update a version represents for the running install.
+  function kindFor(version: string): UpdateKind {
+    return shouldAutoDownload(currentVersion, version, installType) ? "patch" : "update";
+  }
+
+  // ---- install ------------------------------------------------------------
 
   // Launching the freshly downloaded installer can fail transiently with EBUSY
   // (and similar lock errors) while antivirus still has the ~360 MB file open.
@@ -87,19 +165,47 @@ export function setupAutoUpdater(installType: string): void {
   // on failure it reports via the "error" event (or, rarely, throws), which we
   // route to handleInstallFailure to decide whether to retry.
   function attemptInstall(): void {
-    if (process.env.NODE_ENV === "development") {
-      log("info", "Skipping install (dev mode)");
+    // Never install from an unpackaged (run-from-source) build: with the dev
+    // updater enabled a real installer may have been downloaded, and running
+    // it would install over the machine's actual Vortex.
+    if (process.env.NODE_ENV === "development" || !app.isPackaged) {
+      log("info", "Skipping install (unpackaged/dev build)");
       return;
     }
     installPending = true;
     installAttempts += 1;
-    // Drop the before-quit warning so retries don't stack duplicate dialogs.
-    app.removeListener("before-quit", showUpdateWarning);
+    // The quit this triggers must not re-enter the install via the quit hook.
+    app.removeListener("before-quit", installOnQuit);
     log("info", "Installing update", { attempt: installAttempts });
     try {
       autoUpdater.quitAndInstall();
     } catch (unknownErr) {
       handleInstallFailure(unknownToError(unknownErr));
+    }
+  }
+
+  // Install on quit, visibly. The library's autoInstallOnAppQuit path runs
+  // the installer silently (/S), half a minute of disk churn with zero
+  // feedback. Quitting with an update staged instead triggers the exact same
+  // visible install as Restart Now (auto-update wizard + finish page).
+  // One-shot: quit processing can re-fire before-quit.
+  function installOnQuit(): void {
+    app.removeListener("before-quit", installOnQuit);
+    // only a settled staged update installs; anything else (a different
+    // version advertised since, a download in flight) must not run a stale
+    // installer on the way out
+    if (current.type === "staged") {
+      log("info", "Installing staged update on quit");
+      attemptInstall();
+    }
+  }
+
+  // (re-)arm the quit hook; called whenever a staged installer becomes current
+  function armInstallOnQuit(): void {
+    if (process.env.NODE_ENV !== "development" && app.isPackaged) {
+      app.removeListener("before-quit", installOnQuit);
+      app.on("before-quit", installOnQuit);
+      log("info", "Visible install-on-quit armed");
     }
   }
 
@@ -120,106 +226,231 @@ export function setupAutoUpdater(installType: string): void {
         error: err.message,
         attempts: installAttempts,
       });
-      updateStatus.error = err.message;
+      // an install is always user-visible; the installer is still staged
+      setState({ type: "error", message: err.message, manual: true });
     }
   }
 
-  // Register invoke handler for status queries
-  betterIpcMain.handle("updater:get-status", (): UpdateStatus => {
-    return {
-      available: updateStatus.available,
-      downloaded: updateStatus.downloaded,
-      version: updateStatus.version,
-      releaseNotes: updateStatus.releaseNotes,
-      downloadProgress: updateStatus.downloadProgress,
-      error: updateStatus.error,
-      downgrade: updateStatus.downgrade,
-      checking: updateStatus.checking,
-    };
-  });
+  // ---- IPC: status + changelog --------------------------------------------
+
+  betterIpcMain.handle(
+    "updater:get-status",
+    (_event, since?: number): UpdaterStatusResponse => statusSince(since),
+  );
+
+  // Release notes for the update the app just went through, the renderer's
+  // post-update "View changes". The resolver collects body_html of releases
+  // above the given version, so resolving from the pre-update version yields
+  // exactly the versions this update covered. The renderer supplies its
+  // persisted channel: this handler is clickable before the first check has
+  // run. Cached so repeat clicks don't share rate-limit fate with real checks.
+  let changelogCache: { channel: string; notes: string | null } | null = null;
+  betterIpcMain.handle(
+    "updater:get-update-changelog",
+    async (_event, channel: string): Promise<string | null> => {
+      if (justUpdatedFrom == null) {
+        return null;
+      }
+      const resolveChannel = toResolveChannel(channel);
+      if (changelogCache != null && changelogCache.channel === resolveChannel) {
+        return changelogCache.notes;
+      }
+      try {
+        const resolvedRelease = await resolveUpdate(resolveChannel, justUpdatedFrom);
+        const notes = resolvedRelease?.notesHtml ?? null;
+        if (notes != null) {
+          changelogCache = { channel: resolveChannel, notes };
+        }
+        return notes;
+      } catch (err) {
+        log("warn", "Failed to fetch post-update changelog", {
+          error: getErrorMessageOrDefault(err),
+        });
+        return null;
+      }
+    },
+  );
+
+  // Surface "Vortex was updated" on the first launch after an update: the
+  // renderer store persists appVersion each run, so at startup it still holds
+  // the previous run's version. Not in dev, where the version is a moving
+  // placeholder.
+  if (process.env.NODE_ENV !== "development") {
+    void readPersistedValue<string>("app", ["appVersion"])
+      .then((previous) => {
+        if (
+          previous != null &&
+          semver.valid(previous) != null &&
+          semver.valid(currentVersion) != null &&
+          semver.gt(currentVersion, previous)
+        ) {
+          justUpdatedFrom = previous;
+          record();
+        }
+      })
+      .catch((err: unknown) => {
+        log("debug", "Could not read previous app version", {
+          error: getErrorMessageOrDefault(err),
+        });
+      });
+  }
 
   log("info", "setupAutoUpdater", { installType, currentVersion });
 
-  // Configure autoUpdater. Downgrades are never taken from background checks;
-  // the resolver decides what "latest" means and only strictly-newer versions
-  // are handed to electron-updater at all.
+  // ---- electron-updater configuration --------------------------------------
+
+  // Downgrades are never taken from background checks; the resolver decides
+  // what "latest" means and only strictly-newer versions are handed to
+  // electron-updater at all.
   autoUpdater.allowDowngrade = false;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+  // Vortex ships full NSIS installers only; refuse web-installer files (which
+  // can lack signature verification).
+  autoUpdater.disableWebInstaller = true;
 
-  // Error handler
+  // Route the library's own log lines (differential-download fallbacks,
+  // signature verification, cache decisions) into vortex.log, by default
+  // they only reach the console and are invisible in the field.
+  autoUpdater.logger = {
+    info: (message: unknown) => log("info", "electron-updater", { message }),
+    warn: (message: unknown) => log("warn", "electron-updater", { message }),
+    error: (message: unknown) => log("warn", "electron-updater error", { message }),
+    debug: (message: string) => log("debug", "electron-updater", { message }),
+  };
+
+  // Run-from-source builds skip the library's check ("application is not
+  // packed"). Opting in via VORTEX_DEV_UPDATER=1 makes it read
+  // dev-app-update.yml (in src/main) instead, so check/notify/download can be
+  // exercised against the mock feed. Installs stay packaged-only regardless.
+  if (!app.isPackaged && process.env.VORTEX_DEV_UPDATER === "1") {
+    autoUpdater.forceDevUpdateConfig = true;
+    log("info", "Dev updater enabled (forceDevUpdateConfig, dev-app-update.yml)");
+  }
+
+  // ---- electron-updater events (bookkeeping, never primary state control) --
+
+  // builder-util-runtime's CancellationError keeps the default name ("Error")
+  // and the message "cancelled"; the library also does not emit its error
+  // event for it, so cancellations arrive as rejections of downloadUpdate.
+  function isCancellation(err: Error): boolean {
+    return err.constructor.name === "CancellationError" || err.message === "cancelled";
+  }
+
+  // A cancelled download (dismissed notification or channel switch) is the
+  // user's own doing, not a failure to report: settle to idle, nothing on offer
+  // until the next check.
+  function settleCancelledDownload(): void {
+    log("info", "Update download cancelled");
+    installAfterDownloadFlag = false;
+    if (current.type === "downloading") {
+      setState({ type: "idle" });
+    }
+  }
+
   autoUpdater.on("error", (err) => {
     const message = getErrorMessageOrDefault(err);
+    if (err instanceof Error && isCancellation(err)) {
+      settleCancelledDownload();
+      return;
+    }
     log("error", "Auto-updater error", { error: message });
-    updateStatus.error = message;
     // A failed installer launch surfaces here; retry if it's a transient lock.
     if (installPending) {
       handleInstallFailure(unknownToError(err));
+      return;
     }
+    // A dying download is always user-relevant (a download only starts after
+    // a successful check, so the network was just up). retry keeps a working
+    // Download available alongside the error for regular updates.
+    if (current.type === "downloading") {
+      // don't auto-retry this version for a while, every check would
+      // otherwise re-fetch the full delta against the same failure
+      if (current.kind === "patch") {
+        autoDownloadHold = {
+          version: current.version,
+          until: Date.now() + AUTO_DOWNLOAD_HOLD_MS,
+        };
+      }
+      setState({
+        type: "error",
+        message,
+        manual: true,
+        retry:
+          current.kind !== "downgrade"
+            ? { version: current.version, releaseNotes: lastResolved?.notesHtml }
+            : undefined,
+      });
+    }
+    // Errors outside a download (e.g. a library-side check hiccup) are owned
+    // by the promise chain that started the operation.
   });
 
-  // Update not available
-  autoUpdater.on("update-not-available", () => {
-    log("info", "No update available", { channel: updateChannel });
-    updateStatus.available = false;
-    updateStatus.error = undefined;
-  });
-
-  // Update available
+  // The resolver already decided availability; these events only maintain the
+  // downloaded-installer bookkeeping.
   autoUpdater.on("update-available", (info: UpdateInfo) => {
-    log("info", "Update available", { version: info.version, currentVersion });
-    updateStatus.available = true;
-    updateStatus.version = info.version;
-    updateStatus.error = undefined;
-    // The generic feed's latest.yml carries no release notes; the resolver
-    // collects them from the GitHub releases instead.
-    if (lastResolved?.notesHtml != null) {
-      updateStatus.releaseNotes = lastResolved.notesHtml;
-    } else if (typeof info.releaseNotes === "string") {
-      updateStatus.releaseNotes = info.releaseNotes;
-    } else if (Array.isArray(info.releaseNotes)) {
-      updateStatus.releaseNotes = info.releaseNotes
-        .map((note) => (typeof note === "string" ? note : note.note))
-        .join("\n\n");
+    log("debug", "Library advertises version", { version: info.version });
+  });
+  autoUpdater.on("update-not-available", () => {
+    log("debug", "Library advertises no update", { channel: "generic feed" });
+  });
+
+  // Download progress. Progress events fire many times per second on a
+  // ~360 MB installer; broadcast only whole-percent changes.
+  autoUpdater.on("download-progress", (progress: { percent: number }) => {
+    if (current.type !== "downloading") {
+      return;
+    }
+    const wholePercent = Math.floor(progress.percent);
+    if (wholePercent !== current.percent) {
+      setState({ ...current, percent: wholePercent });
     }
   });
 
-  // Download progress
-  autoUpdater.on("download-progress", (progress: { percent: number }) => {
-    log("debug", "Download progress", { percent: progress.percent });
-    updateStatus.downloadProgress = progress.percent;
-  });
-
-  // Track whether to auto-install after download
-  let installAfterDownloadFlag = false;
-
-  // Update downloaded
   autoUpdater.on("update-downloaded", (updateInfo: UpdateInfo) => {
     log("info", "Update downloaded", { version: updateInfo.version });
-    updateStatus.downloaded = true;
-    updateStatus.downloadProgress = 100;
+    downloadedVersion = updateInfo.version;
+    autoDownloadHold = null; // a success clears any failure cooldown
+    const kind: UpdateKind =
+      current.type === "downloading" && current.version === updateInfo.version
+        ? current.kind
+        : kindFor(updateInfo.version);
+    setState({
+      type: "staged",
+      version: updateInfo.version,
+      kind,
+      releaseNotes: lastResolved?.notesHtml,
+    });
 
-    // Set up auto-install on quit (unless dev mode)
-    if (process.env.NODE_ENV !== "development") {
-      autoUpdater.autoInstallOnAppQuit = true;
-      app.on("before-quit", showUpdateWarning);
-      log("info", "Auto-install on quit enabled");
+    // Install on quit stays OURS (visible), never the library's silent path:
+    // autoInstallOnAppQuit remains false for the whole app lifetime.
+    armInstallOnQuit();
 
-      // If user requested immediate install, do it now
-      if (installAfterDownloadFlag) {
-        log("info", "Auto-installing after download");
-        installAfterDownloadFlag = false;
-        attemptInstall();
-      }
+    // If user requested immediate install, do it now (packaged builds only;
+    // an unpackaged run with the dev updater must never install)
+    if (installAfterDownloadFlag && process.env.NODE_ENV !== "development" && app.isPackaged) {
+      log("info", "Auto-installing after download");
+      installAfterDownloadFlag = false;
+      attemptInstall();
     }
   });
+
+  // ---- resolution ----------------------------------------------------------
 
   // Point electron-updater at the resolved release and let it re-check;
   // resolves once the library has accepted the feed. Every download goes
   // through this first, so check-before-download holds structurally.
   function applyResolvedFeed(resolved: ResolvedRelease, generation: number): Promise<void> {
     lastResolved = resolved;
-    autoUpdater.setFeedURL({ provider: "generic", url: resolved.downloadBaseUrl });
+    // useMultipleRangeRequest: false, GitHub's release downloads are
+    // S3-backed and don't serve multipart/byteranges; without this every
+    // differential download degrades to a full download (electron-updater's
+    // own GitHub provider hard-codes the same).
+    autoUpdater.setFeedURL({
+      provider: "generic",
+      url: resolved.downloadBaseUrl,
+      useMultipleRangeRequest: false,
+    });
     return autoUpdater.checkForUpdates().then((check) => {
       if (generation === checkGeneration) {
         cancellationToken = check?.cancellationToken;
@@ -227,19 +458,27 @@ export function setupAutoUpdater(installType: string): void {
     });
   }
 
-  // Resolve the channel's target release and, when it's an upgrade, hand the
-  // feed to electron-updater. Resolves to the release or null (no upgrade).
-  function resolveAndApply(channel: string, generation: number): Promise<ResolvedRelease | null> {
+  type ResolveOutcome =
+    | { verdict: "upgrade" | "downgrade-offer"; release: ResolvedRelease }
+    | { verdict: "none"; release: null };
+
+  // Resolve the channel's target release. Upgrades get handed to
+  // electron-updater as the feed; downgrade offers are returned for the
+  // caller to surface (only ever produced when allowDowngradeOffer is set,
+  // i.e. after an explicit switch to stable). A lower "latest" is otherwise
+  // ignored, offering it unasked is the old field bug.
+  function resolveAndApply(
+    channel: string,
+    generation: number,
+    allowDowngradeOffer: boolean = false,
+  ): Promise<ResolveOutcome> {
     return resolveUpdate(toResolveChannel(channel), currentVersion).then((resolved) => {
-      // Note: switchToStable stays false until the explicit channel-switch
-      // downgrade flow ships with its UI; a lower "latest" is ignored here
-      // rather than offered (offering it is the old field bug).
       const verdict = classifyUpdate(currentVersion, resolved?.version ?? null, {
-        switchToStable: false,
+        switchToStable: allowDowngradeOffer,
       });
-      if (resolved == null || verdict !== "upgrade") {
-        const current = semver.valid(currentVersion);
-        if (resolved != null && current != null && semver.lt(resolved.version, current)) {
+      if (resolved == null || verdict === "none") {
+        const currentValid = semver.valid(currentVersion);
+        if (resolved != null && currentValid != null && semver.lt(resolved.version, currentValid)) {
           log("info", "Latest release is older than the running version, ignoring", {
             resolved: resolved.version,
             currentVersion,
@@ -249,66 +488,158 @@ export function setupAutoUpdater(installType: string): void {
           log("info", "No update available", { channel, resolved: resolved?.version });
         }
         lastResolved = null;
-        return null;
+        return { verdict: "none", release: null };
       }
-      return applyResolvedFeed(resolved, generation).then(() => resolved);
+      if (verdict === "downgrade-offer") {
+        log("info", "Stable release is older than the running version, offering downgrade", {
+          resolved: resolved.version,
+          currentVersion,
+        });
+        lastResolved = null;
+        return { verdict, release: resolved };
+      }
+      return applyResolvedFeed(resolved, generation).then(() => ({
+        verdict: "upgrade" as const,
+        release: resolved,
+      }));
     });
   }
 
-  // Check for updates
-  const checkForUpdates = (channel: string, manual: boolean = false) => {
+  // ---- check ---------------------------------------------------------------
+
+  // Check for updates. allowDowngradeOffer is only set for a purposeful
+  // switch to the stable channel, the one flow where a lower version may be
+  // offered. Background checks (launch sync, periodic, Check now) never
+  // surface downgrades.
+  const checkForUpdates = (
+    channel: string,
+    manual: boolean = false,
+    allowDowngradeOffer: boolean = false,
+  ) => {
     if (!channel || channel === "none") {
       log("debug", "Updates disabled");
       return;
     }
 
-    updateChannel = channel;
     const generation = ++checkGeneration;
-    updateStatus.checking = true;
+    pendingDowngrade = null;
+    // remembered so a failed BACKGROUND check can restore what the user could
+    // already see instead of stranding "checking" or wiping a known update
+    const before = current;
+    setState({ type: "checking", manual });
     log("info", "Checking for updates", { channel, manual, currentVersion });
 
-    resolveAndApply(channel, generation)
-      .then((resolved) => {
+    resolveAndApply(channel, generation, allowDowngradeOffer)
+      .then((outcome) => {
         if (generation !== checkGeneration) {
-          return; // superseded by a newer check; let that one own the status
+          return; // superseded by a newer check; let that one own the state
         }
-        updateStatus.checking = false;
-        if (resolved == null) {
-          updateStatus.available = false;
-          updateStatus.version = undefined;
-          updateStatus.releaseNotes = undefined;
-          updateStatus.error = undefined;
+        if (outcome.verdict === "none") {
+          // A staged downgrade the user already confirmed survives checks
+          // that (correctly) ignore the lower version, settling to idle
+          // would orphan the downloaded installer and silently disarm its
+          // install-on-quit.
+          if (
+            before.type === "staged" &&
+            before.kind === "downgrade" &&
+            downloadedVersion === before.version
+          ) {
+            setState(before);
+          } else {
+            setState({ type: "idle" });
+          }
           return;
         }
+        if (outcome.verdict === "downgrade-offer") {
+          // Surface the offer; nothing downloads until the user confirms via
+          // updater:download-downgrade.
+          pendingDowngrade = outcome.release;
+          setState({ type: "downgrade-offered", version: outcome.release.version });
+          return;
+        }
+        const resolved = outcome.release;
         log("info", "Update check completed", { version: resolved.version });
 
-        // Auto-download patch updates for regular installs; minor/major
-        // updates require user-initiated download via renderer.
-        if (shouldAutoDownload(currentVersion, resolved.version, installType)) {
+        // An installer already on disk for exactly this version: it is staged,
+        // not merely available (a channel flip and back must not forget it).
+        if (downloadedVersion === resolved.version) {
+          setState({
+            type: "staged",
+            version: resolved.version,
+            kind: kindFor(resolved.version),
+            releaseNotes: resolved.notesHtml,
+          });
+          armInstallOnQuit();
+          return;
+        }
+
+        // Patch updates auto-download for regular installs; minor/major
+        // updates wait for a user decision. A patch found by a MANUAL check
+        // downloads visibly, the user's press set it in motion.
+        const held =
+          autoDownloadHold != null &&
+          autoDownloadHold.version === resolved.version &&
+          Date.now() < autoDownloadHold.until;
+        if (kindFor(resolved.version) === "patch" && !held) {
           log("info", "Patch update detected, auto-downloading", {
             from: currentVersion,
             to: resolved.version,
           });
-          autoUpdater.downloadUpdate(cancellationToken).catch((err) => {
-            log("warn", "Auto-download failed", {
-              error: getErrorMessageOrDefault(err),
-            });
+          setState({ type: "downloading", version: resolved.version, kind: "patch", manual });
+          autoUpdater.downloadUpdate(cancellationToken).catch((unknownErr) => {
+            const err = unknownToError(unknownErr);
+            if (isCancellation(err)) {
+              settleCancelledDownload();
+              return;
+            }
+            // state transition owned by the "error" event handler
+            log("warn", "Auto-download failed", { error: err.message });
+          });
+          return;
+        }
+        if (held) {
+          // a patch that just failed its auto-download is offered like a
+          // regular update instead: the user keeps a working Download button
+          // and background checks stop re-fetching against the same failure
+          log("info", "Auto-download on hold after a recent failure, offering instead", {
+            version: resolved.version,
           });
         }
+
+        setState({
+          type: "available",
+          version: resolved.version,
+          releaseNotes: resolved.notesHtml,
+        });
       })
       .catch((err) => {
-        if (generation === checkGeneration) {
-          updateStatus.checking = false;
-        }
         if (err instanceof RateLimitError) {
           log("warn", "Update check rate-limited", { resetAt: err.resetAt.toISOString() });
         } else {
           log("warn", "Update check failed", { error: getErrorMessageOrDefault(err) });
         }
+        if (generation !== checkGeneration) {
+          return;
+        }
+        if (manual) {
+          // a pressed button always gets an answer
+          setState({
+            type: "error",
+            message:
+              err instanceof RateLimitError
+                ? "update check rate-limited by GitHub, try again later"
+                : getErrorMessageOrDefault(err),
+            manual: true,
+          });
+        } else {
+          // offline is normal: restore whatever the user could already see
+          setState(before.type === "checking" ? { type: "idle" } : before);
+        }
       });
   };
 
-  // IPC Handlers
+  // ---- IPC: commands --------------------------------------------------------
+
   betterIpcMain.on("updater:set-channel", (_event, channel, manual) => {
     log("info", "Update channel changed", { channel, manual });
 
@@ -317,27 +648,63 @@ export function setupAutoUpdater(installType: string): void {
     }
     lastResolved = null;
 
-    if (channel !== "none" && process.env.IGNORE_UPDATES !== "yes") {
-      checkForUpdates(channel, manual);
+    if (channel === "none") {
+      // Updates disabled: withdraw whatever was on offer, or a standing
+      // notification keeps live buttons for an update the user opted out of.
+      pendingDowngrade = null;
+      setState({ type: "disabled" });
+      return;
+    }
+
+    if (process.env.IGNORE_UPDATES !== "yes") {
+      // A user-initiated switch to stable is the one flow allowed to offer a
+      // downgrade (e.g. leaving the beta channel from a beta build).
+      checkForUpdates(channel, manual, manual === true && channel === "stable");
     }
   });
 
   betterIpcMain.on("updater:check-for-updates", (_event, channel, manual) => {
+    // A check would only re-resolve the version already downloading, while
+    // the library kept downloading underneath a state that no longer said
+    // so. The download's own notification is the feedback here; the Settings
+    // button is disabled for the same reason. Channel switches are different
+    // (they cancel the download first) and take the set-channel path.
+    if (current.type === "downloading") {
+      log("info", "Update check skipped, a download is running", {
+        version: current.version,
+        manual,
+      });
+      return;
+    }
     checkForUpdates(channel, manual);
   });
 
   betterIpcMain.on("updater:download", (_event, channel: string, installAfterDownload: boolean) => {
-    log("info", "Download update requested", {
-      channel,
-      installAfterDownload,
-    });
+    log("info", "Download update requested", { channel, installAfterDownload });
 
     // Already downloaded: don't re-fetch the full installer. Re-issuing
     // downloadUpdate when the file is already present can resolve without
     // re-emitting "update-downloaded", which would strand the install request.
-    // Install directly instead.
-    if (updateStatus.downloaded) {
-      log("info", "Update already downloaded, skipping re-download");
+    // Install directly instead, but only when the installer on disk is the
+    // version currently on offer; a channel switch can leave a stale download
+    // for a different version.
+    if (
+      downloadedVersion != null &&
+      (current.type === "staged" || current.type === "available") &&
+      current.version === downloadedVersion
+    ) {
+      log("info", "Update already downloaded, skipping re-download", {
+        version: downloadedVersion,
+      });
+      if (current.type !== "staged") {
+        setState({
+          type: "staged",
+          version: downloadedVersion,
+          kind: kindFor(downloadedVersion),
+          releaseNotes: current.type === "available" ? current.releaseNotes : undefined,
+        });
+        armInstallOnQuit();
+      }
       if (installAfterDownload) {
         attemptInstall();
       }
@@ -346,24 +713,157 @@ export function setupAutoUpdater(installType: string): void {
 
     installAfterDownloadFlag = installAfterDownload;
 
+    // Press feedback: the version being asked about is whatever is on offer.
+    // The resolver may still supersede it below (it re-resolves every time).
+    const requestedVersion =
+      current.type === "available"
+        ? current.version
+        : current.type === "error" && current.retry != null
+          ? current.retry.version
+          : null;
+
     // Always re-resolve for the channel the renderer asked about: a cached
     // resolution could belong to a different channel, and re-applying the
     // feed guarantees the library-side check-before-download. The resolver's
     // ETag cache makes the repeat lookup cheap.
     const generation = ++checkGeneration;
+    if (requestedVersion != null) {
+      setState({ type: "downloading", version: requestedVersion, kind: "update", manual: true });
+    } else {
+      setState({ type: "checking", manual: true });
+    }
     resolveAndApply(channel, generation)
-      .then((resolved) => {
-        if (resolved == null) {
+      .then((outcome) => {
+        if (outcome.verdict !== "upgrade") {
           throw new Error("no newer release available to download");
         }
-        return autoUpdater.downloadUpdate();
+        if (generation !== checkGeneration) {
+          // superseded by a newer check/download: that flow owns the updater
+          // now, and downloading here could ride a downgrade's temporarily
+          // raised allowDowngrade
+          log("info", "Download superseded by a newer check, not downloading");
+          return;
+        }
+        // a user download never legitimately needs the downgrade override; a
+        // superseded downgrade flow may still be mid-feed-apply with it raised
+        autoUpdater.allowDowngrade = false;
+        if (current.type !== "downloading" || current.version !== outcome.release.version) {
+          setState({
+            type: "downloading",
+            version: outcome.release.version,
+            kind: "update",
+            manual: true,
+          });
+        }
+        // the check's token, so a channel switch or a dismissed notification
+        // can cancel this download (a fresh token would be unreachable)
+        return autoUpdater.downloadUpdate(cancellationToken);
       })
       .catch((unknownErr) => {
         const err = unknownToError(unknownErr);
+        if (isCancellation(err)) {
+          settleCancelledDownload();
+          return;
+        }
         log("error", "Download failed", { error: err.message });
-        updateStatus.error = err.message;
         installAfterDownloadFlag = false;
+        if (generation !== checkGeneration) {
+          return;
+        }
+        setState({
+          type: "error",
+          message: err.message,
+          manual: true,
+          retry:
+            requestedVersion != null
+              ? { version: requestedVersion, releaseNotes: lastResolved?.notesHtml }
+              : undefined,
+        });
       });
+  });
+
+  // Download the downgrade the user explicitly confirmed. Only honored while
+  // an offer is outstanding. allowDowngrade is raised for just this flow and
+  // dropped again once the library has accepted the feed.
+  betterIpcMain.on("updater:download-downgrade", (_event, installAfterDownload: boolean) => {
+    const target = pendingDowngrade;
+    if (target == null) {
+      log("warn", "Downgrade download requested but no downgrade offer is outstanding");
+      return;
+    }
+    // One-shot consume: a second confirmation must not re-enter the flow.
+    pendingDowngrade = null;
+    log("info", "Downgrade download confirmed", { version: target.version });
+
+    installAfterDownloadFlag = installAfterDownload;
+    const generation = ++checkGeneration;
+    // press feedback: the confirm is visible immediately
+    setState({ type: "downloading", version: target.version, kind: "downgrade", manual: true });
+
+    // One-shot marker so the next launch's "Downgrade detected" warning is
+    // suppressed for the version the user knowingly chose. Written before
+    // allowDowngrade is raised so the raised window is only the feed apply.
+    writePersistedValue("app", ["expectedDowngradeTo"], target.version)
+      .catch((err: unknown) => {
+        log("warn", "Failed to persist downgrade marker", {
+          error: getErrorMessageOrDefault(err),
+        });
+      })
+      .then(() => {
+        autoUpdater.allowDowngrade = true;
+        return applyResolvedFeed(target, generation);
+      })
+      .then(() => {
+        autoUpdater.allowDowngrade = false;
+        if (generation !== checkGeneration) {
+          // a newer check superseded the confirmed downgrade mid-apply;
+          // downloading now would fight that flow over the shared updater
+          log("info", "Downgrade download superseded by a newer check, not downloading");
+          return;
+        }
+        return autoUpdater.downloadUpdate(cancellationToken);
+      })
+      .catch((unknownErr) => {
+        autoUpdater.allowDowngrade = false;
+        const err = unknownToError(unknownErr);
+        if (isCancellation(err)) {
+          settleCancelledDownload();
+          return;
+        }
+        log("error", "Downgrade download failed", { error: err.message });
+        installAfterDownloadFlag = false;
+        if (generation !== checkGeneration) {
+          return;
+        }
+        // The offer was consumed, so there is nothing valid to retry, the
+        // failed target must not be re-advertised as a regular update.
+        setState({ type: "error", message: err.message, manual: true });
+      });
+  });
+
+  // The user declined the outstanding downgrade offer: forget it. Only
+  // another purposeful switch to stable raises it again.
+  betterIpcMain.on("updater:decline-downgrade", () => {
+    if (pendingDowngrade == null) {
+      log("debug", "Downgrade decline with no offer outstanding");
+      return;
+    }
+    log("info", "Downgrade offer declined", { version: pendingDowngrade.version });
+    pendingDowngrade = null;
+    setState({ type: "idle" });
+  });
+
+  // The user closed the download notification: stop the download. The
+  // library's CancellationError then settles the state to idle (the error
+  // handler treats a cancellation as the user's own doing, not a failure).
+  betterIpcMain.on("updater:cancel-download", () => {
+    if (current.type !== "downloading") {
+      log("debug", "Cancel requested with no download running");
+      return;
+    }
+    log("info", "Update download cancelled by the user", { version: current.version });
+    installAfterDownloadFlag = false;
+    cancellationToken?.cancel();
   });
 
   betterIpcMain.on("updater:restart-and-install", () => {

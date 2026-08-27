@@ -4,7 +4,7 @@
  * electron-updater's GitHub provider walks the releases atom feed in
  * publish-date order, so a stable hotfix published after a beta gets offered
  * to beta users as "the latest version". This module resolves the target
- * release ourselves — GitHub REST API, filter, max semver per channel — and
+ * release ourselves (GitHub REST API, filter, max semver per channel) and
  * the updater is then pointed at that release's assets via a generic feed.
  *
  * Must stay loadable in plain node (vitest): no electron imports.
@@ -55,7 +55,22 @@ function downloadBase(): string {
 }
 
 export function repoForChannel(): string {
+  // Test override ("owner/repo"): lets the staging rehearsal run against a
+  // scratch repo with real GitHub semantics instead of the live repos (see
+  // docs/updater-testing.md and scripts/updater-e2e-staging.mjs).
+  const override = process.env.VORTEX_UPDATER_REPO;
+  if (override != null && override !== "") {
+    return override.includes("/") ? override.split("/")[1]! : override;
+  }
   return process.env.IS_PREVIEW_BUILD === "true" ? "Vortex-Staging" : "Vortex";
+}
+
+export function repoOwner(): string {
+  const override = process.env.VORTEX_UPDATER_REPO;
+  if (override != null && override.includes("/")) {
+    return override.split("/")[0]!;
+  }
+  return OWNER;
 }
 
 // Build metadata compares equal under semver (2.5.0+build == 2.5.0); ties in
@@ -64,12 +79,20 @@ function versionFromTag(tag: string): string | null {
   return semver.valid(tag.replace(/^v/, ""));
 }
 
+// The prerelease flag and the version suffix are two signals for the same
+// fact; when they disagree the release was mispublished, don't trust it.
+// (The whole 1.x era trips this: odd-minor betas were flagged prerelease with
+// no version suffix, so this is summarized once per fetch, not warned per tag.)
+function hasMismatchedPrereleaseFlag(release: GithubReleaseLite): boolean {
+  const version = versionFromTag(release.tag_name);
+  return version != null && release.prerelease !== (semver.prerelease(version) != null);
+}
+
 function isEligible(release: GithubReleaseLite): boolean {
   if (release.draft) {
     return false;
   }
-  const version = versionFromTag(release.tag_name);
-  if (version == null) {
+  if (versionFromTag(release.tag_name) == null) {
     return false;
   }
   const hasUpdateAssets = release.assets.some(
@@ -78,17 +101,7 @@ function isEligible(release: GithubReleaseLite): boolean {
   if (!hasUpdateAssets) {
     return false;
   }
-  // The prerelease flag and the version suffix are two signals for the same
-  // fact; when they disagree the release was mispublished — don't trust it.
-  const hasPrereleaseSuffix = semver.prerelease(version) != null;
-  if (release.prerelease !== hasPrereleaseSuffix) {
-    log("warn", "Release prerelease flag disagrees with its version suffix, skipping", {
-      tag: release.tag_name,
-      prerelease: release.prerelease,
-    });
-    return false;
-  }
-  return true;
+  return !hasMismatchedPrereleaseFlag(release);
 }
 
 function candidatesForChannel(
@@ -123,7 +136,8 @@ export function pickRelease(
 /**
  * Classify what the resolved version means relative to the running version.
  * A lower version is only ever surfaced as a "downgrade-offer" when the user
- * explicitly switched to the stable channel; background checks ignore it.
+ * explicitly switched to the stable channel; background checks ignore it;
+ * offering it unasked is the old field bug.
  */
 export function classifyUpdate(
   currentVersion: string,
@@ -243,7 +257,7 @@ function nextPageUrl(linkHeader: string | null): string | null {
 
 async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
   const releases: GithubReleaseLite[] = [];
-  let url: string | null = `${apiBase()}/repos/${OWNER}/${repo}/releases?per_page=100`;
+  let url: string | null = `${apiBase()}/repos/${repoOwner()}/${repo}/releases?per_page=100`;
   let pages = 0;
 
   while (url != null && pages < MAX_PAGES) {
@@ -263,7 +277,18 @@ async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
   }
 
   if (url != null) {
-    log("warn", "Release listing truncated at page cap", { repo, pages });
+    // expected on the main repo (300+ historical releases); newest releases
+    // are always on page 1, so this never affects the max-semver pick
+    log("debug", "Release listing truncated at page cap", { repo, pages });
+  }
+
+  const mismatched = releases.filter(hasMismatchedPrereleaseFlag);
+  if (mismatched.length > 0) {
+    log("info", "Skipping releases whose prerelease flag disagrees with the version suffix", {
+      repo,
+      count: mismatched.length,
+      sample: mismatched.slice(0, 3).map((release) => release.tag_name),
+    });
   }
 
   return releases;
@@ -271,7 +296,7 @@ async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
 
 /**
  * Resolve the update target for a channel. Returns null when no eligible
- * release exists. Network and rate-limit errors propagate — the caller logs
+ * release exists. Network and rate-limit errors propagate, the caller logs
  * and skips the check, same as being offline.
  */
 export async function resolveUpdate(
@@ -301,7 +326,7 @@ export async function resolveUpdate(
     tag: picked.tag_name,
     version: pickedVersion,
     prerelease: picked.prerelease,
-    downloadBaseUrl: `${downloadBase()}/${OWNER}/${repo}/releases/download/${picked.tag_name}`,
+    downloadBaseUrl: `${downloadBase()}/${repoOwner()}/${repo}/releases/download/${picked.tag_name}`,
     notesHtml: notes.length > 0 ? notes.join("\n\n") : undefined,
   };
 }

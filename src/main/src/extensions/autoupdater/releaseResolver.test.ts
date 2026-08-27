@@ -10,6 +10,7 @@ import {
   pickRelease,
   RateLimitError,
   repoForChannel,
+  repoOwner,
   resolveUpdate,
   shouldAutoDownload,
 } from "./releaseResolver";
@@ -53,7 +54,7 @@ afterEach(() => {
 describe("pickRelease", () => {
   // Regression pin for the shipped bug: electron-updater 4.6.5 walked the
   // atom feed by publish date, so beta users on 2.5.0-beta.2 were offered the
-  // older stable 2.4.2 (published later) as an "update" — a bogus downgrade.
+  // older stable 2.4.2 (published later) as an "update", a bogus downgrade.
   it("picks max semver per channel from date-interleaved releases", () => {
     expect(pickRelease(fixture, "stable")?.tag_name).toBe("v2.5.0");
     expect(pickRelease(fixture, "beta")?.tag_name).toBe("v2.6.0-beta.1");
@@ -130,9 +131,22 @@ describe("shouldAutoDownload", () => {
 
 describe("repoForChannel", () => {
   it("selects the staging repo only for preview builds", () => {
+    vi.stubEnv("VORTEX_UPDATER_REPO", "");
     vi.stubEnv("IS_PREVIEW_BUILD", "");
     expect(repoForChannel()).toBe("Vortex");
     vi.stubEnv("IS_PREVIEW_BUILD", "true");
+    expect(repoForChannel()).toBe("Vortex-Staging");
+  });
+
+  // Test override for the staging rehearsal: a scratch repo with real GitHub
+  // semantics, so live repos are never touched by tests.
+  it("honors the VORTEX_UPDATER_REPO override", () => {
+    vi.stubEnv("IS_PREVIEW_BUILD", "true");
+    vi.stubEnv("VORTEX_UPDATER_REPO", "someuser/updater-e2e");
+    expect(repoOwner()).toBe("someuser");
+    expect(repoForChannel()).toBe("updater-e2e");
+    vi.stubEnv("VORTEX_UPDATER_REPO", "");
+    expect(repoOwner()).toBe("Nexus-Mods");
     expect(repoForChannel()).toBe("Vortex-Staging");
   });
 });
@@ -140,6 +154,11 @@ describe("repoForChannel", () => {
 describe("resolveUpdate fetching", () => {
   beforeEach(() => {
     vi.stubEnv("IS_PREVIEW_BUILD", "");
+    // a developer machine may have the mock-feed overrides persisted in the
+    // user environment; tests must never depend on ambient env
+    vi.stubEnv("VORTEX_UPDATER_API_BASE", "");
+    vi.stubEnv("VORTEX_UPDATER_DOWNLOAD_BASE", "");
+    vi.stubEnv("VORTEX_UPDATER_REPO", "");
   });
 
   it("resolves the picked release with download url and collected notes", async () => {
