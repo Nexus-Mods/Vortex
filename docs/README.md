@@ -26,6 +26,7 @@ Project and coding documentation. To set up and build Vortex, start with
 
 ## Subsystems
 
+- [mod-management/collections.md](mod-management/collections.md) - Collections and phased installation; phase invariants
 - [mod-management/EXTERNAL-CHANGES.md](mod-management/EXTERNAL-CHANGES.md) - The External Changes dialog: change types, actions, auto-resolution
 - [updater.md](updater.md) - How updates are detected, downloaded and applied
 - [updater-testing.md](updater-testing.md) - Exercising the update cycle offline with the mock feed

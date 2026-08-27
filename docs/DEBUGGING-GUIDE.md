@@ -8,13 +8,14 @@ This guide covers various methods for debugging Vortex, from simple console logg
 
 1. [VS Code Debugging](#vs-code-debugging)
 2. [Log Files](#log-files)
-3. [Console Debugging](#console-debugging)
-4. [Chrome DevTools](#chrome-devtools)
-5. [Redux DevTools](#redux-devtools)
-6. [Production Build Debugging](#production-build-debugging)
-7. [Native Module Debugging](#native-module-debugging)
+3. [Diagnostic Environment Variables](#diagnostic-environment-variables)
+4. [Console Debugging](#console-debugging)
+5. [Chrome DevTools](#chrome-devtools)
+6. [Redux DevTools](#redux-devtools)
+7. [Production Build Debugging](#production-build-debugging)
 8. [Common Issues](#common-issues)
 9. [Performance Debugging](#performance-debugging)
+10. [Advanced Debugging Tools](#advanced-debugging-tools)
 
 ---
 
@@ -227,6 +228,25 @@ log("error", "download failed", {
 - Use appropriate log levels
 - Don't log sensitive information (passwords, API keys)
 - Log state transitions and important decisions
+
+---
+
+## Diagnostic Environment Variables
+
+### `VORTEX_TRACE_DB_WRITES=1`
+
+Turns on per-write breadcrumb logging in `LevelPersist`. Every persistence write
+(`setItem`, `removeItem`, `bulkSetItem`, `bulkRemoveItem`) emits a
+`level_pivot Write enter` line at debug level before the call and a
+`level_pivot Write exit` line after, each with `method`, `alias`, `count` and
+`elapsedMs`.
+
+This is the tool for diagnosing an indefinite shutdown hang in the persist
+queue: the last `enter` line with no matching `exit` pinpoints the wedged call.
+
+Off by default. With the variable unset, the same code path still emits a
+`level_pivot slow Write` warning when a single write exceeds 250 ms
+(`SLOW_WRITE_THRESHOLD_MS` in `src/main/src/store/LevelPersist.ts`).
 
 ---
 
