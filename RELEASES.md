@@ -86,9 +86,11 @@ The compatibility patch is a one-off fix. We're not adopting the extension as a 
 
 ### Backend API
 
-Vortex talks to Nexus Mods services, and those change too. Breaking changes to them get the same window: two minor bumps' notice before the change reaches production.
+Vortex depends on Nexus Mods platform APIs. Those have their own deprecation policy, which is longer than a Vortex release window, and it's owned by the platform rather than set here.
 
-After that window, older Vortex versions may lose functionality or stop working entirely. Updating is the fix. We don't keep old clients served indefinitely.
+Where a platform change forces a breaking change in Vortex, the Vortex side of it follows the window above: two minor bumps' notice before the change reaches production.
+
+Either way, older Vortex versions may lose functionality or stop working entirely. Updating is the fix. We don't keep old clients working indefinitely.
 
 Backend changes that affect extensions are noted in the vortex-api CHANGELOG as well as the channels below.
 
