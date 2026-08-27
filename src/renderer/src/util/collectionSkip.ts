@@ -114,17 +114,19 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   const rules = (state.persistent.mods[gameId]?.[collectionId]?.rules ?? []).filter((rule) =>
     isDependencyRule(rule),
   );
-  // NOTE (LAZ-483 follow-up): find() returns the FIRST matching rule. This relies on collection
-  // members having distinct identities; if two members share the matched identifier (e.g. the
-  // same logicalFileName, or two fuzzy rules on one modId), the wrong member could be ignored.
-  // The previous mDependentMods.find had the same ambiguity, so this is not a new regression -
-  // but disambiguation (which member did the user actually skip?) needs investigation.
-  const rule = rules.find((iter) => matchesSkip(skip, iter.reference));
   // The session is keyed by each member's rule as it was when the install started, so the entry
   // is matched on its own snapshot rather than on the live rule.
   const sessionEntry = Object.entries(session.mods).find(([, info]) =>
     info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
   );
+
+  // This relies on members having distinct identities; if two members share the matched
+  // identifier (e.g. the same logicalFileName, or two fuzzy rules on one modId), the wrong member
+  // could be ignored. Not a regression - this falls back to inability to identify a mod
+  // uniquely due to available data.
+  const rule =
+    rules.find((iter) => modRuleId(iter) === sessionEntry?.[0]) ??
+    rules.find((iter) => matchesSkip(skip, iter.reference));
   // Only a rule the session tracks can be settled. A live rule it never saw (the collection
   // gained it after the install started) still carries the decision durably.
   const liveRuleId = rule !== undefined ? modRuleId(rule) : undefined;

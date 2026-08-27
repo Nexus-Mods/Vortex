@@ -102,6 +102,45 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(durableIgnored(h)).toBe(true);
   });
 
+  test("settles and durably flags the same member when two members share a file", ({ makeApi }) => {
+    const ruleX = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "tag-x", fileMD5: "shared-md5" }),
+    });
+    const ruleY = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "tag-y", fileMD5: "shared-md5" }),
+    });
+    const h = makeApi({
+      // the live scan meets Y first (md5 hit), the session scan meets X first (tag hit)
+      mods: {
+        [GAME_ID]: { [COLLECTION_ID]: makeMod({ id: COLLECTION_ID, rules: [ruleY, ruleX] }) },
+      },
+      session: makeInstallState({
+        activeSession: makeSession({
+          sessionId: SESSION_ID,
+          collectionId: COLLECTION_ID,
+          gameId: GAME_ID,
+          mods: {
+            [modRuleId(ruleX)]: makeModInstallInfo({ rule: ruleX, status: "pending" }),
+            [modRuleId(ruleY)]: makeModInstallInfo({ rule: ruleY, status: "pending" }),
+          },
+        }),
+      }),
+    });
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "tag-x", fileMD5: "shared-md5" }),
+    });
+
+    expect(matched).toBe(true);
+    expect(statusOf(h, ruleX)).toBe("ignored");
+    expect(statusOf(h, ruleY)).toBe("pending");
+    const rules = h.getState().persistent.mods[GAME_ID][COLLECTION_ID].rules ?? [];
+    const flagged = rules.filter((rule) => rule.ignored === true).map((rule) => rule.reference.tag);
+    expect(flagged).toEqual(["tag-x"]);
+  });
+
   // a session can track a member the collection's current rules no longer carry (the rules were
   // replaced mid-install); the skip settles the session entry without re-adding the old rule
   test("settles a member whose rule left the collection without re-adding it", ({ makeApi }) => {
