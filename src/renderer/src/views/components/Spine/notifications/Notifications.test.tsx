@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -133,6 +133,22 @@ describe("Notifications trigger", () => {
     const { bell } = renderComponent(["info"]);
     expect(bell).toHaveAttribute("aria-expanded", "true");
     expect(bell).toHaveClass("border-neutral-strong");
+  });
+
+  it("closes itself once the last notification has gone", async () => {
+    // Switching game fires a burst of notifications that expire on their own. The tray
+    // auto-opens for them, and an open tray with nothing in it is just a lit bell.
+    mocks.notifications = [notification("info")];
+    const { rerender } = render(<Notifications />);
+    const bell = screen.getByRole("button", { name: "Notifications" });
+    expect(bell).toHaveAttribute("aria-expanded", "true");
+
+    mocks.notifications = [];
+    rerender(<Notifications />);
+
+    await waitFor(() => {
+      expect(bell).toHaveAttribute("aria-expanded", "false");
+    });
   });
 
   it("is not marked active while the tray is closed", () => {

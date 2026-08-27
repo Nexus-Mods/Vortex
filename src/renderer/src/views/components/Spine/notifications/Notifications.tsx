@@ -46,6 +46,7 @@ export const pipSeverity = (notifications: INotification[]): PipSeverity | undef
 };
 
 interface INotificationsContentProps {
+  close: () => void;
   popoverOpen: boolean;
 }
 
@@ -54,7 +55,7 @@ interface INotificationsContentProps {
  * react to it directly. The outer component just manages the Popover state.
  * This allows us to reset expand state and trigger auto-open when new notifications arrive.
  */
-const NotificationsContent = ({ popoverOpen }: INotificationsContentProps) => {
+const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps) => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 
@@ -103,6 +104,15 @@ const NotificationsContent = ({ popoverOpen }: INotificationsContentProps) => {
       buttonRef.current.click();
     }
   }, [notifications, popoverOpen]);
+
+  // The tray auto-opens for notifications that then expire on their own. Left open with
+  // nothing to show, its panel unmounts but the bell stays lit — and `disabled` comes on
+  // with it, so it can't be clicked shut either.
+  useEffect(() => {
+    if (popoverOpen && !visibleCount) {
+      close();
+    }
+  }, [close, popoverOpen, visibleCount]);
 
   const { items, collapsed } = useNotificationItems({ filtered, expand });
 
@@ -160,5 +170,7 @@ const NotificationsContent = ({ popoverOpen }: INotificationsContentProps) => {
 };
 
 export const Notifications = () => (
-  <Popover>{({ open }) => <NotificationsContent popoverOpen={open} />}</Popover>
+  <Popover>
+    {({ close, open }) => <NotificationsContent close={close} popoverOpen={open} />}
+  </Popover>
 );
