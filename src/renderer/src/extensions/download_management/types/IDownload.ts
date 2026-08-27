@@ -85,6 +85,9 @@ export interface IModInfo {
     [key: string]: any;
   };
   referenceTag?: string;
+  // every collection-rule tag this archive satisfies; append-only superset of referenceTag, which
+  // holds the first tag stamped and is what older Vortex versions read
+  referenceTags?: string[];
   revisionNumber?: number;
   source?: string;
   // Allow additional properties

@@ -135,6 +135,55 @@ describe("buildCollectionItemRows", () => {
     expect(row.status).toBe("installed");
   });
 
+  it("resolves each collection's rule against a download shared between them", () => {
+    // one archive satisfies rules in several collections, so it carries a tag per rule
+    const ours = requiresRule({ reference: { tag: "ours" } });
+    const theirs = requiresRule({ reference: { tag: "theirs", description: "Theirs" } });
+    const rows = buildCollectionItemRows({
+      rules: [ours, theirs],
+      mods: {},
+      downloads: {
+        shared: makeDownload({
+          id: "shared",
+          state: "finished",
+          size: 200,
+          received: 200,
+          modInfo: { referenceTag: "theirs", referenceTags: ["theirs", "ours"] },
+        }),
+      },
+      modState: {},
+      sessionMods: {},
+    });
+
+    expect(rows[modRuleId(ours)].status).toBe("downloaded");
+    expect(rows[modRuleId(theirs)].status).toBe("downloaded");
+  });
+
+  it("resolves a mod reused by a second collection through any of its reference tags", () => {
+    // the mod was installed by another collection first, so the legacy referenceTag holds that
+    // collection's tag and ours only appears in the referenceTags array; the tag index must hit,
+    // not fall through to the hash backup, which can land on a different variant of the same file
+    const rule = requiresRule({ reference: { tag: "ours", fileMD5: "hash-shared" } });
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: {
+        variant: installedMod("variant", { referenceTag: "unrelated", fileMD5: "hash-shared" }),
+        shared: installedMod("shared", {
+          referenceTag: "theirs",
+          referenceTags: ["theirs", "ours"],
+          fileMD5: "hash-shared",
+        }),
+      },
+      downloads: {},
+      modState: {},
+      sessionMods: {},
+    });
+    const row = rows[modRuleId(rule)];
+
+    expect(row.id).toBe("shared");
+    expect(row.status).toBe("installed");
+  });
+
   it("falls back to fileMD5 when a tagged rule's installed mod carries a different tag", () => {
     // a member whose referenceTag drifted, or that was matched by hash rather than tag, is still
     // recognised by content hash - so it is not wrongly shown as not-installed
