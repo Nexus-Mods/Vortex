@@ -86,7 +86,7 @@ Short-lived provider created per crash:
 
 Main process watches for changes via `persist:diff` IPC in `src/main/telemetry/ipcHandler.ts`. Initial value read from LevelDB at startup in `src/main/Application.ts`.
 
-> [!note]
+> [!NOTE]
 > `setTelemetryEnabled` and `isTelemetryEnabled` live in `src/main/telemetry/state.ts`. All callers must use static TypeScript imports (compiled to `require()`), not `await import()`, to share the same CJS module singleton.
 
 ## Error Fingerprinting
