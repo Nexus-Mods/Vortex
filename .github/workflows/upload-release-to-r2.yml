@@ -25,7 +25,7 @@ jobs:
       FORK_BRANCH: NexusMods.Vortex-2.6.2-91B10DEA202E4B9D86857DEB8DD750FB
     steps:
       - name: Close PR
-        run: gh pr close "$PR" -R microsoft/winget-pkgs --comment "Closing: this was opened by a test run of our release automation. Will be resubmitted."
+        run: gh pr close "$PR" -R microsoft/winget-pkgs --comment "Closing - this was opened by a test run of our release automation. Will be resubmitted."
 
       - name: Delete branch on fork
         run: gh api -X DELETE "repos/Nexus-Mods/winget-pkgs/git/refs/heads/$FORK_BRANCH"
