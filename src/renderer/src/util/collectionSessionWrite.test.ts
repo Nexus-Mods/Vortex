@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import type { IModReference } from "../extensions/mod_management/types/IMod";
 import {
   makeInstallState,
   makeModInstallInfo,
@@ -17,6 +18,7 @@ import type {
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
 import {
+  matchSessionRuleEntry,
   planDependencyErrorRecovery,
   planSessionWrite,
   sessionWriteForDependency,
@@ -127,11 +129,73 @@ describe("sessionWriteForDependency", () => {
     ).toBeNull();
   });
 
+  // a dependency carries its member's session key (sessionRuleId), captured while its rule was in
+  // hand, so a write still addresses the member when its reference identity drifts
+  it("resolves the member named by rule id even when the reference identity differs", () => {
+    const state = stateWith([{ ruleId: "r1", status: "downloaded" }]);
+    expect(
+      sessionWriteForDependency(
+        state,
+        refForTag("retagged"),
+        { type: "installed", modId: "mod-1" },
+        "r1",
+      ),
+    ).toEqual({
+      sessionId: "col1_prof1",
+      ruleId: "r1",
+      write: { kind: "markInstalled", modId: "mod-1" },
+    });
+  });
+
+  it("falls back to reference matching when the rule id is not tracked", () => {
+    const state = stateWith([{ ruleId: "r1", status: "pending" }]);
+    expect(
+      sessionWriteForDependency(
+        state,
+        refForTag("r1"),
+        { type: "status", status: "installing" },
+        "stale-key",
+      ),
+    ).toEqual({
+      sessionId: "col1_prof1",
+      ruleId: "r1",
+      write: { kind: "updateStatus", status: "installing" },
+    });
+  });
+
   it("returns null when the write would override a user-ignored mod", () => {
     const state = stateWith([{ ruleId: "r1", status: "ignored" }]);
     expect(
       sessionWriteForDependency(state, refForTag("r1"), { type: "installed", modId: "mod-1" }),
     ).toBeNull();
+  });
+});
+
+describe("matchSessionRuleEntry", () => {
+  const sessionWith = (refs: Record<string, IModReference>) =>
+    makeSession({
+      mods: Object.fromEntries(
+        Object.entries(refs).map(([ruleId, reference]) => [
+          ruleId,
+          makeModInstallInfo({ rule: makeRule({ reference }) }),
+        ]),
+      ),
+    });
+
+  it("names the member a reference identifies", () => {
+    const session = sessionWith({ r1: { tag: "r1" }, r2: { tag: "r2" } });
+    expect(matchSessionRuleEntry(session, makeReference({ tag: "r2" }))?.[0]).toBe("r2");
+  });
+
+  it("names no member for a reference no member carries", () => {
+    const session = sessionWith({ r1: { tag: "r1" } });
+    expect(matchSessionRuleEntry(session, makeReference({ tag: "other" }))).toBeUndefined();
+  });
+
+  // an id-less reference would otherwise alias onto any other id-less member
+  it("names no member for a reference with no identifying field", () => {
+    const session = sessionWith({ r1: {} });
+    expect(matchSessionRuleEntry(session, {})).toBeUndefined();
   });
 });
 
