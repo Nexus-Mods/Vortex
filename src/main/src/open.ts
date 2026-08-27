@@ -34,17 +34,5 @@ export function openFile(filePath: string): void {
 }
 
 export function showItemInFolder(filePath: string): void {
-  const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(filePath);
-
-  try {
-    shell.showItemInFolder(pathToFileURL(resolvedPath).toString());
-  } catch (err) {
-    log("error", "failed to show item in folder. Falling back to opening folder.", {
-      filePath,
-      resolvedPath,
-      error: err,
-    });
-    const parentDir = path.dirname(resolvedPath);
-    openFile(parentDir);
-  }
+  shell.showItemInFolder(path.resolve(filePath));
 }
