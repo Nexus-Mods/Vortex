@@ -135,3 +135,14 @@ To add a new language:
 4. Submit PR with your `locales/{language}/` folder
 
 The structure provides context - you don't need to read code!
+
+## Key formats in existing code
+
+The format above (`namespace:section.key`) is the target. Existing code also
+uses `section::key` and `common:::key` forms, in roughly equal measure to the
+standard one, from before this guide existed.
+
+Neither form is being actively migrated yet, and there is no lint rule enforcing
+either. When touching existing strings, match the surrounding namespace rather
+than converting as a drive-by; a mixed namespace is harder to reason about than
+a consistently old one. New namespaces should use the standard format.

@@ -7,6 +7,7 @@ Project and coding documentation. To set up and build Vortex, start with
 
 ## Start here
 
+- [repo-layout.md](repo-layout.md) - Where everything lives, and where to start for a given change
 - [writing-documentation.md](writing-documentation.md) - Conventions for adding to these docs
 
 ## Debugging
@@ -16,6 +17,8 @@ Project and coding documentation. To set up and build Vortex, start with
 
 ## Writing code
 
+- [frontend.md](frontend.md) - Renderer conventions: React, types, props, styling, Redux, icons, accessibility
+- [testing.md](testing.md) - Running tests, component-test selectors, mocking `vortex-api` in extension tests
 - [design-system/page-migration.md](design-system/page-migration.md) - Converting a legacy `MainPage` to the new `Page` layout
 - [I18N_MIGRATION_GUIDE.md](I18N_MIGRATION_GUIDE.md) - Namespaces, key format, using `t` correctly
 - [I18N_STATUS.md](I18N_STATUS.md) - Migration progress by namespace
