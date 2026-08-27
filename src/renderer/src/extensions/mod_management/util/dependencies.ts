@@ -355,6 +355,7 @@ async function gatherDependenciesGraph(
   gameMode: string,
   recommendations: boolean,
   addToCache?: (download: IDownload) => void,
+  sessionRuleId?: string,
 ): Promise<IDependencyNode> {
   const state = api.getState();
   const downloads = state.persistent.downloads.files;
@@ -416,7 +417,7 @@ async function gatherDependenciesGraph(
       download: downloadId,
       mod,
       reference: rule.reference,
-      sessionRuleId: modRuleId(rule),
+      sessionRuleId,
       lookupResults: lookupResults.map((iter) =>
         makeLookupResult(iter as ILookupResult, urlFromHint),
       ),
@@ -525,7 +526,16 @@ function gatherDependencies(
     Promise.all(
       requirements.map((rule: IModRule) =>
         Promise.resolve(
-          limit.do(() => gatherDependenciesGraph(rule, api, gameMode, recommendations, addToCache)),
+          limit.do(() =>
+            gatherDependenciesGraph(
+              rule,
+              api,
+              gameMode,
+              recommendations,
+              addToCache,
+              modRuleId(rule),
+            ),
+          ),
         )
           .then((node: IDependencyNode) => {
             onProgress();

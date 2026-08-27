@@ -23,6 +23,7 @@ import type { IDriverHarnessState, IInstallManagerHarness } from "../../test-uti
 import { test as imTest } from "../../test-utils/installManagerTest";
 import { generateCollectionSessionId, modRuleId } from "../../util/collectionInstallSession";
 import { MOD_TYPE } from "../collections/constants";
+import { OPTIONAL_PHASE } from "./util/rulePhase";
 
 vi.mock("../../logging", () => ({ log: vi.fn() }));
 
@@ -169,6 +170,42 @@ describe("a collection member satisfied by another collection's download", () =>
     expect(memberStatus(h)?.status).toBe("installed");
     expect(memberStatus(h)?.modId).toBe(SHARED_MOD);
     expect(installEvents.length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("a required and an optional member backed by the same file", () => {
+  // same reference identity, so the two session entries differ only in their rule id; the settle
+  // write must land on the entry being requeued, not on whichever entry matches the reference first
+  const optionalRule = makeRule({
+    type: "recommends",
+    reference: memberRule.reference,
+    ignored: false,
+  });
+
+  imTest("settles the requeued optional on its own session entry", ({ makeInstallManager }) => {
+    const { h } = makeSharedArchiveInstall(makeInstallManager, {
+      rules: [memberRule, optionalRule],
+    });
+    h.setState((draft) => {
+      const mods = draft.session.collections.activeSession.mods;
+      // the required member already settled on the shared mod
+      mods[modRuleId(memberRule)].status = "installed";
+      mods[modRuleId(memberRule)].modId = SHARED_MOD;
+      mods[modRuleId(optionalRule)] = makeModInstallInfo({
+        rule: optionalRule,
+        type: "recommends",
+        status: "downloaded",
+        phase: OPTIONAL_PHASE,
+      });
+    });
+
+    const mgr = internals(h.manager);
+    const status = mgr.checkCollectionPhaseStatus(h.api, COLLECTION, OPTIONAL_PHASE);
+    mgr.reQueueDownloadedMods(h.api, COLLECTION, status.allMods, OPTIONAL_PHASE);
+
+    const optional = h.getState().session.collections.activeSession?.mods[modRuleId(optionalRule)];
+    expect(optional?.status).toBe("installed");
+    expect(optional?.modId).toBe(SHARED_MOD);
   });
 });
 

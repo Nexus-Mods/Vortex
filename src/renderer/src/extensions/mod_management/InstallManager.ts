@@ -843,7 +843,12 @@ class InstallManager {
     // requeued, so without this the member stays on "downloading" while rendering "Download failed"
     // - bucketed under the Downloading filter and missed by the Failed filter. Mirrors how
     // handleDownloadSkipped settles a skipped member, then lets the phase advance past it.
-    this.writeCollectionSession(matchingRule.reference, { type: "status", status: "failed" });
+    this.writeCollectionSession(
+      matchingRule.reference,
+      { type: "status", status: "failed" },
+      modRuleId(matchingRule),
+      collectionId,
+    );
     this.maybeAdvancePhase(collectionId, api);
   }
 
@@ -3324,11 +3329,14 @@ class InstallManager {
           this.mPendingInstalls.delete(installKey);
           this.mActiveInstalls.delete(installKey);
           // the mod exists with the wanted install spec: settle the member on the session's own
-          // rule, or every poll tick selects it again
-          this.writeCollectionSession(mod.rule.reference, {
-            type: "installed",
-            modId: existingMod.id,
-          });
+          // rule, or every poll tick selects it again. mod.rule is the session snapshot, so its
+          // rule id addresses this entry even when another member shares the reference identity.
+          this.writeCollectionSession(
+            mod.rule.reference,
+            { type: "installed", modId: existingMod.id },
+            modRuleId(mod.rule),
+            sourceModId,
+          );
           api.events.emit(
             "did-install-mod",
             gameId,
@@ -7731,8 +7739,9 @@ class InstallManager {
 
   /**
    * Report a lifecycle outcome that named no session member: that member keeps its status and the
-   * completion poll goes on selecting it. Writes outside an install, and writes the planner
-   * declined for a member it did match, are expected and stay quiet.
+   * completion poll goes on selecting it. Writes outside an install, writes the planner declined
+   * for a member it did match, and unaddressed writes (a transitive sub-dependency gathered under
+   * a member carries no session key and is not a member) are expected and stay quiet.
    */
   private warnUnmatchedSessionWrite(
     reference: IModReference,
@@ -7740,6 +7749,9 @@ class InstallManager {
     ruleId?: string,
     sourceModId?: string,
   ): void {
+    if (ruleId === undefined) {
+      return;
+    }
     const session = getCollectionActiveSession(this.mApi.getState());
     if (session === undefined) {
       return;
@@ -7747,7 +7759,7 @@ class InstallManager {
     if (sourceModId !== undefined && sourceModId !== session.collectionId) {
       return;
     }
-    if (ruleId !== undefined && session.mods[ruleId] !== undefined) {
+    if (session.mods[ruleId] !== undefined) {
       return;
     }
     if (matchSessionRuleEntry(session, reference) !== undefined) {
