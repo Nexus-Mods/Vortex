@@ -489,6 +489,25 @@ export const isCollectionPhaseComplete = (state: IState, phase: number): boolean
 };
 
 /**
+ * Check if a phase settled successfully - every required member installed or ignored.
+ * For the re-entry phase frontier only: a `failed` member deliberately does not count, because a
+ * re-entered install re-gathers it for retry and that retry has to run at its own phase,
+ * serialized before later phases. Mid-install advancement reads isCollectionPhaseComplete, where
+ * `failed` is terminal so a broken member never wedges the walk.
+ * @param phase The phase number to check
+ */
+export const isCollectionPhaseSettledSuccessfully = (state: IState, phase: number): boolean => {
+  const phaseMods = getCollectionModsForPhase(state, phase);
+  const requiredPhaseMods = phaseMods.filter(isRequiredRule);
+
+  if (requiredPhaseMods.length === 0) {
+    return true;
+  }
+
+  return requiredPhaseMods.every((mod) => mod.status === "installed" || mod.status === "ignored");
+};
+
+/**
  * Get the current phase being processed
  * @returns The lowest phase number with incomplete mods, or -1 if all complete
  */

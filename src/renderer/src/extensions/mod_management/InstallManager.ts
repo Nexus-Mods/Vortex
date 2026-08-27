@@ -93,6 +93,7 @@ import {
   getCollectionSessionById,
   getCollectionStatusBreakdown,
   isCollectionPhaseComplete,
+  isCollectionPhaseSettledSuccessfully,
 } from "../../util/collectionInstallSessionSelectors";
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
@@ -6684,9 +6685,11 @@ class InstallManager {
         // consecutively-complete phases and stop at the first incomplete one. Taking the highest
         // complete phase anywhere would jump the frontier to the trailing optional phase whenever
         // its members are all ignored (terminal) while a required phase is still pending.
+        // A failed required member breaks the prefix: this round re-gathers it for retry, and that
+        // retry has to run at its own phase, serialized before the phases after it.
         let highestCompletedPhase = -1;
         for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
-          if (!isCollectionPhaseComplete(api.getState(), phase)) {
+          if (!isCollectionPhaseSettledSuccessfully(api.getState(), phase)) {
             break;
           }
           highestCompletedPhase = phase;

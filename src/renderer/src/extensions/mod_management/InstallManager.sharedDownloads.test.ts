@@ -262,26 +262,118 @@ describe("resolving a member's already-present download", () => {
 describe("a resumed dependency install", () => {
   // Phase state is rebuilt per round, so the round has to read how far the collection already got
   // from the active session; starting at the lowest gathered phase would redo settled phases.
-  imTest(
-    "starts at the first incomplete phase of the active session",
-    async ({ makeInstallManager }) => {
-      const laterRule = makeRule({
+  imTest("re-enters at the failed required member's phase", async ({ makeInstallManager }) => {
+    const laterRule = makeRule({
+      type: "requires",
+      phase: 1,
+      reference: makeExactRef({ tag: "member-later", gameId: GAME, fileMD5: "def456" }),
+    });
+    const { h, phaseState } = makeSharedArchiveInstall(makeInstallManager, {
+      rules: [memberRule, laterRule],
+    });
+    // phase 0 has a FAILED required member, which the round re-gathers for retry - so the
+    // frontier must start AT phase 0, not past it; phase 1 stays gated until the retry settles
+    h.setState((draft) => {
+      const mods = draft.session.collections.activeSession!.mods;
+      mods[modRuleId(memberRule)].status = "failed";
+      mods[modRuleId(laterRule)] = makeModInstallInfo({
+        rule: laterRule,
         type: "requires",
+        status: "pending",
         phase: 1,
-        reference: makeExactRef({ tag: "member-later", gameId: GAME, fileMD5: "def456" }),
+      });
+    });
+    phaseState.allowedPhase = undefined;
+
+    const installing = internals(h.manager).doInstallDependencies(
+      h.api,
+      GAME,
+      COLLECTION,
+      [
+        { reference: memberRule.reference, phase: 0, lookupResults: [], extra: {} },
+        { reference: laterRule.reference, phase: 1, lookupResults: [], extra: {} },
+      ],
+      false,
+      true,
+    );
+
+    try {
+      expect(h.phaseTracker.get(COLLECTION)?.allowedPhase).toBe(0);
+    } finally {
+      internals(h.manager).mDependencyInstalls[COLLECTION]?.();
+      delete internals(h.manager).mDependencyInstalls[COLLECTION];
+      await installing.catch(() => undefined);
+    }
+  });
+
+  // The gather re-lists a member whose reference drifted from the mod that satisfies it, so a
+  // settled phase can arrive with its member still in the dependency list. The frontier reads the
+  // session, not the list, and starts past the phase rather than redoing it.
+  imTest("starts past a genuinely complete prefix", async ({ makeInstallManager }) => {
+    const laterRule = makeRule({
+      type: "requires",
+      phase: 1,
+      reference: makeExactRef({ tag: "member-later", gameId: GAME, fileMD5: "def456" }),
+    });
+    const { h, phaseState } = makeSharedArchiveInstall(makeInstallManager, {
+      rules: [memberRule, laterRule],
+    });
+    h.setState((draft) => {
+      const mods = draft.session.collections.activeSession.mods;
+      mods[modRuleId(memberRule)].status = "installed";
+      mods[modRuleId(memberRule)].modId = SHARED_MOD;
+      mods[modRuleId(laterRule)] = makeModInstallInfo({
+        rule: laterRule,
+        type: "requires",
+        status: "pending",
+        phase: 1,
+      });
+    });
+    phaseState.allowedPhase = undefined;
+
+    const installing = internals(h.manager).doInstallDependencies(
+      h.api,
+      GAME,
+      COLLECTION,
+      [
+        { reference: memberRule.reference, phase: 0, lookupResults: [], extra: {} },
+        { reference: laterRule.reference, phase: 1, lookupResults: [], extra: {} },
+      ],
+      false,
+      true,
+    );
+
+    try {
+      expect(h.phaseTracker.get(COLLECTION)?.allowedPhase).toBe(1);
+    } finally {
+      internals(h.manager).mDependencyInstalls[COLLECTION]?.();
+      delete internals(h.manager).mDependencyInstalls[COLLECTION];
+      await installing.catch(() => undefined);
+    }
+  });
+
+  // Optionals run in a trailing phase of their own, reached only once every required phase has
+  // settled - the round that installs them gathers nothing else.
+  imTest(
+    "reaches the optional phase when the required prefix is complete",
+    async ({ makeInstallManager }) => {
+      const optionalRule = makeRule({
+        type: "recommends",
+        ignored: false,
+        reference: makeExactRef({ tag: "member-opt", gameId: GAME, fileMD5: "def456" }),
       });
       const { h, phaseState } = makeSharedArchiveInstall(makeInstallManager, {
-        rules: [memberRule, laterRule],
+        rules: [memberRule, optionalRule],
       });
-      // phase 0 settled terminally (failed counts as terminal), phase 1 still outstanding
       h.setState((draft) => {
-        const mods = draft.session.collections.activeSession!.mods;
-        mods[modRuleId(memberRule)].status = "failed";
-        mods[modRuleId(laterRule)] = makeModInstallInfo({
-          rule: laterRule,
-          type: "requires",
+        const mods = draft.session.collections.activeSession.mods;
+        mods[modRuleId(memberRule)].status = "installed";
+        mods[modRuleId(memberRule)].modId = SHARED_MOD;
+        mods[modRuleId(optionalRule)] = makeModInstallInfo({
+          rule: optionalRule,
+          type: "recommends",
           status: "pending",
-          phase: 1,
+          phase: OPTIONAL_PHASE,
         });
       });
       phaseState.allowedPhase = undefined;
@@ -291,15 +383,19 @@ describe("a resumed dependency install", () => {
         GAME,
         COLLECTION,
         [
-          { reference: memberRule.reference, phase: 0, lookupResults: [], extra: {} },
-          { reference: laterRule.reference, phase: 1, lookupResults: [], extra: {} },
+          {
+            reference: optionalRule.reference,
+            phase: OPTIONAL_PHASE,
+            lookupResults: [],
+            extra: {},
+          },
         ],
-        false,
+        true,
         true,
       );
 
       try {
-        expect(h.phaseTracker.get(COLLECTION)?.allowedPhase).toBe(1);
+        expect(h.phaseTracker.get(COLLECTION)?.allowedPhase).toBeGreaterThanOrEqual(OPTIONAL_PHASE);
       } finally {
         internals(h.manager).mDependencyInstalls[COLLECTION]?.();
         delete internals(h.manager).mDependencyInstalls[COLLECTION];
