@@ -3,9 +3,10 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { serializeError, isVortexError, VortexError } from "@vortex/shared";
+import { serializeError } from "@vortex/shared";
 import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
+import { assertVortexError } from "../test-utils/assertions";
 import { defaultRetryStrategy } from "../transfer/retry";
 import { createTestServer, type TestServer } from "./test-server";
 import { uploadFile, type UploadOptions } from "./transport";
@@ -81,8 +82,7 @@ describe("uploadFile", () => {
       (e: unknown) => e,
     );
 
-    assert(isVortexError(err));
-    assert(err.data.kind === "http:bad-status");
+    assertVortexError(err, "http:bad-status");
     expect(err.data.statusCode).toBe(403);
     expect(server.requests).toHaveLength(1);
   });
@@ -129,7 +129,7 @@ describe("uploadFile", () => {
       (e: unknown) => e,
     );
 
-    assert(isVortexError(err));
+    assertVortexError(err);
     // A bare "Server returned 403" is unactionable; the code names the cause.
     expect(err.message).toContain("SignatureDoesNotMatch");
     expect(err.message).toContain("403");
@@ -175,7 +175,7 @@ describe("uploadFile", () => {
       fastRetry,
     ).catch((e: unknown) => e);
 
-    assert(isVortexError(err));
+    assertVortexError(err);
     expect(err.data).toMatchObject({ url: `${server.baseUrl}/denied` });
     expect(JSON.stringify(err.data)).not.toContain("secret");
   });

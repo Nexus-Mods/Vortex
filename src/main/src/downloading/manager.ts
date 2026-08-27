@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { VortexError, parseError } from "@vortex/shared";
+import { type VortexError, parseError } from "@vortex/shared";
 import type {
   ByteRange,
   Chunker,
@@ -354,6 +354,7 @@ export class DownloadManager {
         const parsedError = parseError(err);
         const isCancellation = parsedError.data.kind === "user-canceled";
         progressReporter.status = isCancellation ? "canceled" : "failed";
+        terminalError = parsedError;
         if (!isCancellation) {
           log("warn", "download failed", { downloadId, err });
         }

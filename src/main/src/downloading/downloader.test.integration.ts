@@ -3,13 +3,14 @@ import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { VortexError, isVortexError } from "@vortex/shared";
+import { VortexError } from "@vortex/shared";
 import type { ResolvedResource, ResolvedEndpoint, Resolver, Chunk } from "@vortex/shared/download";
 import { staticChunker } from "@vortex/shared/download";
 import { RateLimiter } from "limiter";
 import { CookieJar } from "tough-cookie";
 import { assert, describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
+import { assertVortexError } from "../test-utils/assertions";
 import { defaultRetryStrategy } from "../transfer/retry";
 import { download, type TimeoutOptions } from "./downloader";
 import { ProgressReporter } from "./progress";
@@ -852,8 +853,7 @@ describe("download", () => {
       const err = await runDownload(route.url, tmp.dir, {
         abortController,
       }).promise.catch((e) => e);
-      assert(isVortexError(err));
-      assert(err.data.kind === "user-canceled");
+      assertVortexError(err, "user-canceled");
     });
   });
 
@@ -991,8 +991,7 @@ describe("download", () => {
         },
       ).catch((e) => e);
 
-      assert(isVortexError(err));
-      assert(err.data.kind === "user-canceled");
+      assertVortexError(err, "user-canceled");
     });
   });
 
