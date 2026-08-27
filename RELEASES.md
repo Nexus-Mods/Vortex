@@ -51,8 +51,8 @@ API changes are documented in:
 
 We accept bug reports against:
 
-- **Current stable** (2.6.x): reports accepted, fixes shipped in the next release or a hotfix.
-- **Current beta** (2.7.0-beta.x): reports accepted for the cycle that beta is in.
+- **Current stable**: reports accepted, fixes shipped in the next release or a hotfix.
+- **Current beta**: reports accepted for the cycle that beta is in.
 
 Older versions aren't supported. If you're on one, update to current stable before reporting a bug.
 
@@ -60,11 +60,13 @@ Vortex is actively developed against live Nexus Mods services. It isn't an everg
 
 ## Breaking changes
 
-Deprecation windows are counted in minor releases, not weeks, so they hold if the cadence changes. Two minor releases is about 4 weeks at the current 2-week cadence.
+Deprecation windows are counted in releases, not weeks, so they hold if the cadence changes.
+
+Each release cycle bumps the minor version: 2.7, then 2.8, then 2.9. So "two releases" means two of those minor bumps, currently about 4 weeks. Patch releases (2.7.1) are hotfixes and don't count toward the window.
 
 ### vortex-api
 
-Where possible, API changes that affect extensions go through a two-release deprecation window: an API deprecated in one minor release is removed no earlier than two minor releases later. Deprecated in 2.7, removed in 2.9 at the earliest. Affected authors are notified at deprecation time.
+Where possible, API changes that affect extensions go through a two-release deprecation window. An API deprecated in one release is removed no earlier than two minor bumps later: deprecate in x.y, remove in x.y+2 at the earliest. Affected authors are notified at deprecation time.
 
 For changes that can’t be deprecated (such as React upgrades), the breaking change ships in a single release. Affected authors are notified directly when the change lands on master, with the API diff and target stable date.
 
@@ -74,7 +76,7 @@ Timing for the breaking release:
 - **T-2 weeks (beta cut):** public announcement in the Nexus Discord (#vortex, #vortex-testing), Mod Author Discord, and forums. Beta is available; new API is on NPM.
 - **T-0:** stable ships.
 
-Minimum notice for the breaking release is one beta cut. For deprecation-eligible changes, total notice from deprecation to removal is two minor releases or more.
+Minimum notice for the breaking release is one beta cut. For deprecation-eligible changes, total notice from deprecation to removal is two minor bumps or more.
 
 If an extension author doesn't respond before stable, the extension may not work correctly with the new Vortex version.
 
@@ -84,7 +86,7 @@ The compatibility patch is a one-off fix. We're not adopting the extension as a 
 
 ### Backend API
 
-Vortex talks to Nexus Mods services, and those change too. Breaking changes to them get the same window: two minor releases' notice before the change reaches production.
+Vortex talks to Nexus Mods services, and those change too. Breaking changes to them get the same window: two minor bumps' notice before the change reaches production.
 
 After that window, older Vortex versions may lose functionality or stop working entirely. Updating is the fix. We don't keep old clients served indefinitely.
 
