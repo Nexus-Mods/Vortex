@@ -6696,7 +6696,7 @@ class InstallManager {
         const rules = api.getState().persistent.mods[gameId]?.[sourceModId]?.rules ?? [];
         const nextPhaseAfterCompleted =
           this.mPhaseTracker.phaseSet(sourceModId, rules).find((p) => p > highestCompletedPhase) ??
-          highestCompletedPhase + 1;
+          highestCompletedPhase;
         const effectiveStartPhase = Math.max(lowestPhase, nextPhaseAfterCompleted);
 
         if (

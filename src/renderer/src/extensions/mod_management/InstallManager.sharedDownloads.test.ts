@@ -376,9 +376,7 @@ describe("a resumed dependency install", () => {
       const optionalDeps = [
         { reference: optionalRule.reference, phase: OPTIONAL_PHASE, lookupResults: [], extra: {} },
       ];
-      expect(await frontierAfterRound(h, optionalDeps, true)).toBeGreaterThanOrEqual(
-        OPTIONAL_PHASE,
-      );
+      expect(await frontierAfterRound(h, optionalDeps, true)).toBe(OPTIONAL_PHASE);
     },
   );
 
