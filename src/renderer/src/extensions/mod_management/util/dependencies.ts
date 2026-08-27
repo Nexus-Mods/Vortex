@@ -355,7 +355,6 @@ async function gatherDependenciesGraph(
   gameMode: string,
   recommendations: boolean,
   addToCache?: (download: IDownload) => void,
-  sessionRuleId?: string,
 ): Promise<IDependencyNode> {
   const state = api.getState();
   const downloads = state.persistent.downloads.files;
@@ -417,7 +416,6 @@ async function gatherDependenciesGraph(
       download: downloadId,
       mod,
       reference: rule.reference,
-      sessionRuleId,
       lookupResults: lookupResults.map((iter) =>
         makeLookupResult(iter as ILookupResult, urlFromHint),
       ),
@@ -526,19 +524,15 @@ function gatherDependencies(
     Promise.all(
       requirements.map((rule: IModRule) =>
         Promise.resolve(
-          limit.do(() =>
-            gatherDependenciesGraph(
-              rule,
-              api,
-              gameMode,
-              recommendations,
-              addToCache,
-              modRuleId(rule),
-            ),
-          ),
+          limit.do(() => gatherDependenciesGraph(rule, api, gameMode, recommendations, addToCache)),
         )
           .then((node: IDependencyNode) => {
             onProgress();
+            if (node !== null) {
+              // only these top-level rules are collection members, so only their nodes address a
+              // session entry; the sub-dependencies gathered under them carry no key
+              node.sessionRuleId = modRuleId(rule);
+            }
             return Promise.resolve(node);
           })
           .catch((err) => {

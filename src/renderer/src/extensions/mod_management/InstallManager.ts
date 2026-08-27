@@ -3330,8 +3330,7 @@ class InstallManager {
           this.mPendingInstalls.delete(installKey);
           this.mActiveInstalls.delete(installKey);
           // the mod exists with the wanted install spec: settle the member on the session's own
-          // rule, or every poll tick selects it again. mod.rule is the session snapshot, so its
-          // rule id addresses this entry even when another member shares the reference identity.
+          // rule, or every poll tick selects it again.
           this.writeCollectionSession(
             mod.rule.reference,
             { type: "installed", modId: existingMod.id },
@@ -6681,12 +6680,8 @@ class InstallManager {
           allPhases.add(mod.phase ?? 0);
         });
 
-        // The highest phase whose COMPLETE PREFIX is unbroken - i.e. advance only through
-        // consecutively-complete phases and stop at the first incomplete one. Taking the highest
-        // complete phase anywhere would jump the frontier to the trailing optional phase whenever
-        // its members are all ignored (terminal) while a required phase is still pending.
-        // A failed required member breaks the prefix: this round re-gathers it for retry, and that
-        // retry has to run at its own phase, serialized before the phases after it.
+        // The highest phase whose COMPLETE PREFIX is unbroken.
+        // A failed required member breaks the prefix and its retry runs at its own phase.
         let highestCompletedPhase = -1;
         for (const phase of Array.from(allPhases).sort((a, b) => a - b)) {
           if (!isCollectionPhaseSettledSuccessfully(api.getState(), phase)) {
@@ -7741,10 +7736,7 @@ class InstallManager {
   }
 
   /**
-   * Report a lifecycle outcome that named no session member: that member keeps its status and the
-   * completion poll goes on selecting it. Writes outside an install, writes the planner declined
-   * for a member it did match, and unaddressed writes (a transitive sub-dependency gathered under
-   * a member carries no session key and is not a member) are expected and stay quiet.
+   * Report a lifecycle outcome that named no session member.
    */
   private warnUnmatchedSessionWrite(
     reference: IModReference,

@@ -4,9 +4,7 @@
  * to gatherDependencies/findModByRef; tested here without the InstallManager orchestration.
  *
  * Also covers gatherDependencies' session addressing: the install session tracks the collection's
- * OWN rules, so only a top-level node carries its rule's session key. A transitive sub-dependency
- * is not a member, and an addressed write for it would warn "matched no member" on every lifecycle
- * event.
+ * OWN rules, so only a top-level node carries its rule's session key.
  */
 import { describe, expect, vi } from "vitest";
 
@@ -55,12 +53,12 @@ describe("gatherDependencies", () => {
       extra: { rules: [subRule] },
     });
     const h = makeApi();
-    const api = Object.assign(h.api, {
+    Object.assign(h.api, {
       lookupModReference: vi.fn().mockResolvedValue([]),
       lookupModMeta: vi.fn().mockResolvedValue([]),
     });
 
-    const deps = await gatherDependencies([memberRule], api, false);
+    const deps = await gatherDependencies([memberRule], h.api, false);
 
     const member = deps.find((dep) => dep.reference.tag === "member-tag");
     const sub = deps.find((dep) => dep.reference.tag === "sub-tag");

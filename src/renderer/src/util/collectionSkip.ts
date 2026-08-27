@@ -116,22 +116,23 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   );
   // The session is keyed by each member's rule as it was when the install started, so the entry
   // is matched on its own snapshot rather than on the live rule.
-  const sessionEntry = Object.entries(session.mods).find(([, info]) =>
-    info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
-  );
+  const [sessionRuleId] =
+    Object.entries(session.mods).find(([, info]) =>
+      info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
+    ) ?? [];
 
-  // This relies on members having distinct identities; if two members share the matched
+  // The fallback scan relies on members having distinct identities; if two share the matched
   // identifier (e.g. the same logicalFileName, or two fuzzy rules on one modId), the wrong member
-  // could be ignored. Not a regression - this falls back to inability to identify a mod
-  // uniquely due to available data.
+  // could be ignored.
   const rule =
-    rules.find((iter) => modRuleId(iter) === sessionEntry?.[0]) ??
-    rules.find((iter) => matchesSkip(skip, iter.reference));
+    (sessionRuleId !== undefined
+      ? rules.find((iter) => modRuleId(iter) === sessionRuleId)
+      : undefined) ?? rules.find((iter) => matchesSkip(skip, iter.reference));
   // Only a rule the session tracks can be settled. A live rule it never saw (the collection
   // gained it after the install started) still carries the decision durably.
   const liveRuleId = rule !== undefined ? modRuleId(rule) : undefined;
   const memberRuleId =
-    sessionEntry?.[0] ??
+    sessionRuleId ??
     (liveRuleId !== undefined && session.mods[liveRuleId] !== undefined ? liveRuleId : undefined);
   if (memberRuleId === undefined && rule === undefined) {
     log("error", "could not find collection rule for skipped download", { skip });
