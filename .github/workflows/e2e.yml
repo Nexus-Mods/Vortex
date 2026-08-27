@@ -56,6 +56,7 @@ jobs:
         uses: pnpm/setup@v2
         with:
           cache: true
+          install: false
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig

@@ -22,6 +22,7 @@ jobs:
       - uses: pnpm/setup@v2
         with:
           cache: true
+          install: false
       - name: Fix pnpm node-gyp permissions
         run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher

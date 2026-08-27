@@ -35,6 +35,7 @@ jobs:
         uses: pnpm/setup@v2
         with:
           cache: true
+          install: false
 
       - name: Fix pnpm node-gyp permissions
         if: runner.os == 'Linux'
