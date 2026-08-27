@@ -14,7 +14,7 @@ name: Annotate Mixpanel Release
 
 on:
   release:
-    types: [released]
+    types: [prereleased, released]
   workflow_dispatch:
     inputs:
       tag:
