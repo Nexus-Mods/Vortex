@@ -31,72 +31,12 @@ and the Vortex auto-update channel; they are never uploaded to Nexus Mods.
 Undrafting a pre-release fires `prereleased`, not `released`, so beta releases
 never reach the Upload API.
 
-<<<<<<< HEAD
 **Publish order matters on multi-release days.** Vortex installs currently in
 the field pick the newest release **by publish date** on the beta channel, not
 by version. If a beta and a stable hotfix go out the same day, undraft the
 release users should end up on last, or beta users get offered the older one.
 This applies until the updater rework reaches most installs.
 
-## Running It Manually
-
-**Actions → Publish Release to Nexus Mods → Run workflow.** Use this to
-re-publish, to publish a release that predates the automation, or to upload to
-the test mod page.
-
-- **Release tag**: the tag to publish (e.g. `v2.4.0`). Required - there is no
-  "latest release" fallback, so a mistyped tag fails rather than publishing
-  something unintended.
-- **Dry run?**: `true` (default) validates the release and prints the changelog
-  without uploading. Set to `false` to actually upload.
-- **File ID** / **Mod ID**: override the repository variables below to upload to
-  the test mod page instead of the live one. **Pass both or neither** - they
-  address the same mod page, and the workflow rejects a half-applied override
-  that would put the file on one page and the changelog on another.
-
-Prefer these inputs over temporarily editing the repository variables: the
-automatic `released` path always reads the variables, so a forgotten revert
-would misdirect the next real release. A per-run input cannot leak.
-
-## Nexus Identifiers
-
-The workflow needs two identifiers, both read from repository variables:
-
-| Variable               | Meaning                                    |
-| ---------------------- | ------------------------------------------ |
-| `NEXUS_VORTEX_FILE_ID` | The Nexus file the new version is added to |
-| `NEXUS_VORTEX_MOD_ID`  | The mod the changelog entry is attached to |
-
-The file ID is on the mod page's Files tab under **API Info**, or in the edit
-menu of **Manage Files**. The mod ID comes from
-`GET https://api.nexusmods.com/v3/games/site/mods/1` - use the `id` field, not
-the `1` from the URL. The workflow fails fast with a clear error if either
-variable is unset.
-
-## The Changelog
-
-The Upload API takes plain text, so the workflow flattens `CHANGELOG.md` into
-one bullet per line:
-
-```text
-Health check page: Bulk mod install (#23642)
-Reworked the Recently Managed dashlet for portrait game tiles (#23680)
-Restored the system tray icon (#23689)
-```
-
-A stable entry (`## [2.4.0]`) only points at the beta entries below it, so the
-workflow collects the release's own entry **plus every pre-release entry below
-it, stopping at the previous stable release**. For `2.4.0` that means `2.4.0`,
-`2.4.0-beta.2`, and `2.4.0-beta.1`, but nothing from `2.3.0`. The collected
-bullets are then regrouped into Keep-a-Changelog section order (Added,
-Changed, Deprecated, Removed, Fixed, Security), newest entry first within each
-section, with markdown links collapsed to `(#1234)` and code spans stripped.
-
-Changelog uploads are **additive**: publishing the same version twice appends
-the text again rather than replacing it.
-
-=======
->>>>>>> 192d91778 (Merge pull request #24044 from Nexus-Mods/removed-nm-release)
 ## What Gets Uploaded
 
 Only the installer `.exe` (e.g. `vortex-setup-2.4.0.exe`). The `latest.yml`
