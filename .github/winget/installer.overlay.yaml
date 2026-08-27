@@ -1,0 +1,19 @@
+# Fields Vortex owns in the winget installer manifest (NexusMods.Vortex.installer.yaml).
+# Merged over komac's output by winget-release.yml; keys here win, arrays are
+# replaced, anything absent is carried forward from the previous version.
+# Dependencies are not listed here: they come from runtime-dependencies.json at the repo root.
+Protocols:
+  - nxm
+# installer.nsh preInit aborts below Windows 10
+MinimumOSVersion: 10.0.0.0
+# perMachine NSIS -> RequestExecutionLevel admin
+ElevationRequirement: elevationRequired
+# Matches the Apps & Features entry electron-builder writes; ProductCode is derived from appId
+AppsAndFeaturesEntries:
+  - DisplayName: Vortex
+    Publisher: Black Tree Gaming Ltd.
+    ProductCode: 57979c68-f490-55b8-8fed-8b017a5af2fe
+InstallationMetadata:
+  DefaultInstallLocation: '%ProgramFiles%\Vortex'
+  Files:
+    - RelativeFilePath: Vortex.exe

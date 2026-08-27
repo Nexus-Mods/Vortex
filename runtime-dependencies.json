@@ -1,0 +1,12 @@
+[
+  {
+    "file": "VC_redist.x64.exe",
+    "url": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+    "winget": "Microsoft.VCRedist.2015+.x64"
+  },
+  {
+    "file": "windowsdesktop-runtime-win-x64.exe",
+    "url": "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe",
+    "winget": "Microsoft.DotNet.DesktopRuntime.9"
+  }
+]
