@@ -50,8 +50,10 @@ decisions when appropriate.
 
 ## Scope
 
-This Code of Conduct applies within all community spaces, and also applies when
-an individual is officially representing the community in public spaces.
+This Code of Conduct applies within Nexus-managed Vortex community spaces, and
+also applies when an individual is officially representing the community in
+public spaces.
+
 Examples of representing our community include using an official email address,
 posting via an official social media account, or acting as an appointed
 representative at an online or offline event.
@@ -61,24 +63,34 @@ representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
 reported to **support@nexusmods.com**.
 
-Contributors here are also covered by the wider Nexus Mods community policies,
-which apply across the website, forums and comments:
+Contributors who also use Nexus Mods services remain subject to the Nexus Mods
+Terms of Service and the policies applicable to those services, including:
 
 - [Moderation Policy](https://help.nexusmods.com/article/27-moderation-policy)
 - [Forum and Commenting Guidelines](https://help.nexusmods.com/article/22-forum-and-commenting-guidelines)
 - [Reporting Guidelines](https://help.nexusmods.com/article/21-reporting-guidelines)
 
-Where those policies and this Code of Conduct overlap, the stricter applies.
+This Code of Conduct governs participation in Vortex community spaces. Conduct
+may also result in separate action under Nexus Mods policies where those
+policies apply.
 
-All complaints will be reviewed and investigated promptly and fairly.
+Reports will be reviewed fairly and appropriate action will be taken where
+necessary.
 
-All community leaders are obligated to respect the privacy and security of the
-reporter of any incident.
+Reports will be handled as confidentially as reasonably possible. Information
+may be shared where necessary to investigate or enforce this Code of Conduct,
+protect users, or comply with legal obligations.
+
+Enforcement decisions made under this Code of Conduct may be appealed by
+contacting **support@nexusmods.com**.
 
 ## Enforcement Guidelines
 
-Community leaders will follow these Community Impact Guidelines in determining
-the consequences for any action they deem in violation of this Code of Conduct:
+Community leaders may use these Community Impact Guidelines when determining the
+appropriate response to a violation of this Code of Conduct. Enforcement
+decisions will take account of the severity and context of the conduct, any
+previous relevant conduct, and the safety of the community. These measures do
+not need to be applied sequentially.
 
 ### 1. Correction
 
@@ -87,7 +99,8 @@ unprofessional or unwelcome in the community.
 
 **Consequence**: A private, written warning from community leaders, providing
 clarity around the nature of the violation and an explanation of why the
-behaviour was inappropriate. A public apology may be requested.
+behaviour was inappropriate. An apology or other appropriate remedial action may
+be requested.
 
 ### 2. Warning
 
@@ -96,21 +109,22 @@ actions.
 
 **Consequence**: A warning with consequences for continued behaviour. No
 interaction with the people involved, including unsolicited interaction with
-those enforcing the Code of Conduct, for a specified period of time. This
-includes avoiding interactions in community spaces as well as external channels
-like social media. Violating these terms may lead to a temporary or permanent
-ban.
+those enforcing the Code of Conduct, within Nexus-managed community spaces for
+a specified period of time. Continued targeted or unsolicited contact through
+external channels may be considered when determining whether further
+restrictions on participation in Nexus-managed community spaces are
+appropriate.
 
 ### 3. Temporary Ban
 
 **Community Impact**: A serious violation of community standards, including
 sustained inappropriate behaviour.
 
-**Consequence**: A temporary ban from any sort of interaction or public
-communication with the community for a specified period of time. No public or
-private interaction with the people involved, including unsolicited interaction
-with those enforcing the Code of Conduct, is allowed during this period.
-Violating these terms may lead to a permanent ban.
+**Consequence**: A temporary ban from interaction or public participation
+within Nexus-managed community spaces for a specified period of time. Continued
+targeted or unsolicited contact with the people involved, including those
+enforcing the Code of Conduct, may be considered when determining whether
+further restrictions, including a permanent ban, are appropriate.
 
 ### 4. Permanent Ban
 
@@ -127,6 +141,10 @@ This Code of Conduct is adapted from the [Contributor Covenant][homepage],
 version 2.1, available at
 https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.
 
+Contributor Covenant version 2.1 is licensed under the
+[Creative Commons Attribution 4.0 International License][cc-by]. Changes have
+been made to adapt the Code of Conduct to Nexus Mods and the Vortex community.
+
 Community Impact Guidelines were inspired by
 [Mozilla's code of conduct enforcement ladder][mozilla].
 
@@ -135,4 +153,6 @@ https://www.contributor-covenant.org/faq. Translations are available at
 https://www.contributor-covenant.org/translations.
 
 [homepage]: https://www.contributor-covenant.org
+[cc-by]: https://creativecommons.org/licenses/by/4.0/
+[mozilla]: https://github.com/mozilla/inclusion
 [mozilla]: https://github.com/mozilla/inclusion
