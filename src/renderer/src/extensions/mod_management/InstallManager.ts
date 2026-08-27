@@ -12,7 +12,8 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML, InsufficientDiskSpace } from "@vortex/shared/errors";
+import { parseError } from "@vortex/shared";
+import { AlreadyDownloaded, InsufficientDiskSpace } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
@@ -5432,7 +5433,7 @@ class InstallManager {
                     return resolve(id);
                   } else if (error instanceof AlreadyDownloaded) {
                     return resolve(error.downloadId);
-                  } else if (error instanceof DownloadIsHTML) {
+                  } else if (parseError(error).data.kind === "download:is-html") {
                     // If this is a google drive link and the file exceeds the
                     //  virus testing limit, Google will return an HTML page asking
                     //  the user for consent to download the file. Lets try this using
@@ -5934,7 +5935,7 @@ class InstallManager {
               );
               return undefined;
             }
-            if (innerErr instanceof DownloadIsHTML) {
+            if (parseError(innerErr).data.kind === "download:is-html") {
               settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               const message =
