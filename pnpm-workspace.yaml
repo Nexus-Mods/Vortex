@@ -12,7 +12,6 @@ packages:
   - ./extensions/games/*
   - ./.github/actions/fingerprints
   - ./.github/actions/linear-release
-  - ./.github/actions/prepare-nexusmods-release
 
 catalog:
   7z-bin: github:Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a

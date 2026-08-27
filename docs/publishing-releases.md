@@ -25,15 +25,13 @@ depends on the other:
 - **The R2 download**. The installer is already in
   R2 from step 1; it goes live when the **download tag in the website repo** is
   pointed at the new version.
-- **The Nexus Mods mod page.** `publish-release.yml` runs automatically on the
-  `released` event: it downloads the installer from the release, builds the
-  changelog from `CHANGELOG.md`, and uploads both via the Upload API.
 
 **Stable releases only.** Betas and alphas are distributed via GitHub Releases
 and the Vortex auto-update channel; they are never uploaded to Nexus Mods.
 Undrafting a pre-release fires `prereleased`, not `released`, so beta releases
 never reach the Upload API.
 
+<<<<<<< HEAD
 **Publish order matters on multi-release days.** Vortex installs currently in
 the field pick the newest release **by publish date** on the beta channel, not
 by version. If a beta and a stable hotfix go out the same day, undraft the
@@ -97,6 +95,8 @@ section, with markdown links collapsed to `(#1234)` and code spans stripped.
 Changelog uploads are **additive**: publishing the same version twice appends
 the text again rather than replacing it.
 
+=======
+>>>>>>> 192d91778 (Merge pull request #24044 from Nexus-Mods/removed-nm-release)
 ## What Gets Uploaded
 
 Only the installer `.exe` (e.g. `vortex-setup-2.4.0.exe`). The `latest.yml`
@@ -119,59 +119,10 @@ metadata file serves the Vortex auto-updater and stays on GitHub Releases.
 
 ## Troubleshooting
 
-- **"No CHANGELOG.md entry found for version X"**: add a `## [X]` section to
-  `CHANGELOG.md`. Note the workflow reads `CHANGELOG.md` **as of the release
-  tag**, so the entry has to exist in the commit that was packaged.
-- **"No Nexus file ID / mod ID"**: set the repository variables above.
 - **"Release X is a draft"**: undraft the release first.
 - **"Release X is marked as a prerelease"**: betas are never published to Nexus
   Mods. Check the tag.
 - **"No .exe installer asset found"**: check that the Package workflow
   completed and attached the installer.
-- **Dry-run looks correct but upload fails**: verify `NEXUS_API_KEY` is valid
-  and check the upload-action error in the run logs.
 - **Installer missing from R2**: re-run **Upload Release to R2** manually with
   the release tag; it is kept as a fallback for exactly this.
-
-## The Action
-
-The preparation step is a bundled JS action at
-[`.github/actions/prepare-nexusmods-release/`](../.github/actions/prepare-nexusmods-release/).
-It is an ordinary package in the Vortex pnpm workspace and uses the shared
-toolchain - rolldown to bundle, `tsconfig.strict.json` for typechecking, the
-shared oxlint and vitest configs - so the workflow itself needs no toolchain
-setup or install step.
-
-GitHub runs the committed `dist/index.js` directly and never builds it, so
-**after editing `src/` you must rebuild and commit the bundle**:
-
-```bash
-pnpm nx run-many -t typecheck test lint build \
-  --projects @vortex/prepare-nexusmods-release-action
-```
-
-`pnpm run build` at the repo root rebuilds it too, along with every other
-package. A stale bundle therefore shows up as an uncommitted `dist/index.js`
-after a build.
-
-To dry-run the preparation locally, set the inputs as `INPUT_*` environment
-variables (how `@actions/core` reads them) and run the built bundle. Note the
-hyphenated names need `env` rather than a `VAR=value` prefix. It needs `gh` CLI
-repo auth:
-
-```bash
-cd .github/actions/prepare-nexusmods-release
-env "INPUT_TAG=v2.4.0" \
-    "INPUT_DRY-RUN=true" \
-    "INPUT_CHANGELOG-PATH=../../../CHANGELOG.md" \
-    "INPUT_DOWNLOAD-DIR=./release-assets" \
-  node dist/index.js
-```
-
-`INPUT_TAG` is required.
-
-## Advanced: Archive Behaviour
-
-`archive_existing_version` is `false`, so the workflow **replaces the previous
-file on the mod page** instead of archiving it. To archive the old file,
-contact the Nexus Mods team before running the workflow.
