@@ -17,7 +17,11 @@ import type {
   CollectionModStatus,
 } from "../types/collections/ICollectionInstallSession";
 import type { IDownload, IMod, IState } from "../types/IState";
-import { isOutstandingOptionalMember, isTerminalMemberStatus } from "./collectionInstallSession";
+import {
+  isOutstandingOptionalMember,
+  isSuccessfulMemberStatus,
+  isTerminalMemberStatus,
+} from "./collectionInstallSession";
 
 /**
  * Selectors for the installTracking reducer
@@ -471,22 +475,34 @@ export const getCollectionCompletedMods = (state: IState): ICollectionModInstall
 };
 
 /**
+ * Whether every required member of a phase satisfies `settled`. Optional members never gate a
+ * phase, and a phase with no required members is settled.
+ */
+const everyRequiredPhaseMod = (
+  state: IState,
+  phase: number,
+  settled: (status: CollectionModStatus) => boolean,
+): boolean =>
+  getCollectionModsForPhase(state, phase)
+    .filter(isRequiredRule)
+    .every((mod) => settled(mod.status));
+
+/**
  * Check if a specific phase is complete
  * @param phase The phase number to check
  * @returns True if all required mods in the phase are completed
  */
-export const isCollectionPhaseComplete = (state: IState, phase: number): boolean => {
-  const phaseMods = getCollectionModsForPhase(state, phase);
-  const requiredPhaseMods = phaseMods.filter(isRequiredRule);
+export const isCollectionPhaseComplete = (state: IState, phase: number): boolean =>
+  everyRequiredPhaseMod(state, phase, isTerminalMemberStatus);
 
-  if (requiredPhaseMods.length === 0) {
-    return true;
-  }
-
-  return requiredPhaseMods.every(
-    (mod) => mod.status === "installed" || mod.status === "failed" || mod.status === "ignored",
-  );
-};
+/**
+ * Check if a phase settled successfully - every required member installed or ignored.
+ * On re-entry check that a failed member's retry runs at its own phase,
+ * serialized before later phases. Mid-install advancement reads isCollectionPhaseComplete.
+ * @param phase The phase number to check
+ */
+export const isCollectionPhaseSettledSuccessfully = (state: IState, phase: number): boolean =>
+  everyRequiredPhaseMod(state, phase, isSuccessfulMemberStatus);
 
 /**
  * Get the current phase being processed

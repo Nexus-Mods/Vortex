@@ -23,6 +23,7 @@ export interface IDependency extends IModInstallSpec {
   mod?: IMod;
   phase?: number;
   extra?: IModRuleExtra;
+  sessionRuleId?: string;
 }
 
 export interface IDependencyError {

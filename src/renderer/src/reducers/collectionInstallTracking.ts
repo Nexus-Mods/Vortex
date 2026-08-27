@@ -5,6 +5,7 @@ import {
   startInstallSession,
   updateModStatus,
 } from "../actions/collectionInstallTracking";
+import { log } from "../logging";
 import type * as types from "../types/api";
 import { generateCollectionSessionId } from "../util/collectionInstallSession";
 import { actionsToReducerSpec } from "./builder";
@@ -61,6 +62,21 @@ function adjustCounters(
   return { downloadedCount, installedCount, failedCount, ignoredCount };
 }
 
+/**
+ * Whether the session tracks this rule id. Applying a write for an id it does not track would
+ * invent a rule-less entry and count it towards the totals completion and progress read.
+ */
+function isTrackedRule(session: types.ICollectionInstallSession, ruleId: string): boolean {
+  if (session.mods[ruleId] !== undefined) {
+    return true;
+  }
+  log("warn", "collection session write for an untracked rule", {
+    sessionId: session.sessionId,
+    ruleId,
+  });
+  return false;
+}
+
 const defaultState: types.ICollectionInstallState = {
   activeSession: undefined,
   lastActiveSessionId: undefined,
@@ -76,13 +92,17 @@ const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
       DOWNLOADED_STATUSES.has(mod.status),
     ).length;
     const installedCount = Object.values(mods).filter((mod) => mod.status === "installed").length;
+    // members seeded terminal (a resumed install, or an optional skipped in an earlier one) count
+    // from the start, otherwise moving one off that status takes its total below zero
+    const failedCount = Object.values(mods).filter((mod) => mod.status === "failed").length;
+    const ignoredCount = Object.values(mods).filter((mod) => mod.status === "ignored").length;
     const session: types.ICollectionInstallSession = {
       ...payload,
       sessionId,
       downloadedCount,
       installedCount,
-      failedCount: 0,
-      ignoredCount: 0,
+      failedCount,
+      ignoredCount,
     };
 
     return { ...state, activeSession: session };
@@ -90,6 +110,9 @@ const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
 
   updateModStatus: (state, payload) => {
     if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+    if (!isTrackedRule(state.activeSession, payload.ruleId)) {
       return state;
     }
 
@@ -112,6 +135,9 @@ const collectionInstallReducer = actionsToReducerSpec(defaultState, actions, {
 
   markModInstalled: (state, payload) => {
     if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
+      return state;
+    }
+    if (!isTrackedRule(state.activeSession, payload.ruleId)) {
       return state;
     }
 

@@ -20,13 +20,13 @@ import {
   makeReference,
   makeRule,
   makeSession,
+  managerInternals as internals,
 } from "../../test-utils/builders";
 import type { IDriverHarnessState, IInstallManagerHarness } from "../../test-utils/harnessTypes";
 import { test as imTest } from "../../test-utils/installManagerTest";
 import { generateCollectionSessionId, modRuleId } from "../../util/collectionInstallSession";
 import { getCollectionInstallProgress } from "../../util/collectionInstallSessionSelectors";
 import { MOD_TYPE } from "../collections/constants";
-import type InstallManager from "./InstallManager";
 import { OPTIONAL_PHASE } from "./util/rulePhase";
 
 vi.mock("../../util/log", () => {
@@ -37,49 +37,6 @@ vi.mock("../../util/log", () => {
 const GAME = "skyrimse";
 const PROFILE = "prof-1";
 const COLLECTION = "col-1";
-
-// the private InstallManager internals these tests drive directly
-interface IManagerInternals {
-  reQueueDownloadedMods: (
-    api: unknown,
-    sourceModId: string,
-    allMods: unknown[],
-    currentPhase: number,
-  ) => void;
-  checkCollectionPhaseStatus: (
-    api: unknown,
-    sourceModId: string,
-    phase: number,
-  ) => { phaseComplete: boolean; needsRequeue: boolean; allMods: unknown[] };
-  driveSelectedOptionals: (api: unknown, sourceModId: string) => void;
-  admitSettledOptionalPhase: (sourceModId: string, api: unknown) => void;
-  pollAllPhasesComplete: (api: unknown, sourceModId: string) => Promise<void>;
-  withInstructions: (
-    api: unknown,
-    sourceName: string,
-    title: string,
-    id: string,
-    instructions: string,
-    recommendations: boolean,
-    cb: () => PromiseLike<unknown>,
-  ) => Promise<unknown>;
-  mPendingInstalls: Map<string, unknown>;
-  startQueuedInstallation: (
-    api: unknown,
-    dep: unknown,
-    downloadId: string,
-    gameId: string,
-    sourceModId: string,
-    recommended: boolean,
-    phase: number,
-  ) => void;
-  mDependencyInstalls: Record<string, () => void>;
-  maybeAdvancePhase: (sourceModId: string, api: unknown) => void;
-  getTerminalModCount: (api: unknown, sourceModId: string) => number;
-}
-
-const internals = (manager: InstallManager): IManagerInternals =>
-  manager as unknown as IManagerInternals;
 
 const requiredRule = makeRule({
   type: "requires",
