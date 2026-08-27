@@ -156,21 +156,22 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
       </PopoverButton>
 
       {popoverOpen && !!items.length && (
-        <PopoverPanel
-          anchor={{ gap: 8, to: "right end" }}
-          className="max-h-[50vh] w-xs space-y-0.5 overflow-y-auto"
-        >
-          {items.map((notification) => (
-            <NotificationItem
-              collapsed={collapsed[notification.group]}
-              key={notification.id}
-              notification={notification}
-              onDismiss={dismissAll}
-              onExpand={handleExpandGroup}
-              onSuppress={suppress}
-              onTriggerAction={triggerAction}
-            />
-          ))}
+        <PopoverPanel anchor={{ gap: 8, to: "right end" }} className="w-xs overflow-visible!">
+          <span className="pointer-events-none absolute bottom-6 left-0 size-2 -translate-x-1/2 translate-y-1/2 rotate-45 border-b border-l border-stroke-weak bg-surface-mid" />
+
+          <div className="max-h-[50vh] space-y-0.5 overflow-y-auto">
+            {items.map((notification) => (
+              <NotificationItem
+                collapsed={collapsed[notification.group]}
+                key={notification.id}
+                notification={notification}
+                onDismiss={dismissAll}
+                onExpand={handleExpandGroup}
+                onSuppress={suppress}
+                onTriggerAction={triggerAction}
+              />
+            ))}
+          </div>
         </PopoverPanel>
       )}
     </>

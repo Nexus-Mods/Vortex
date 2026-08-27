@@ -6,6 +6,7 @@ import {
   FloatingPortal,
   limitShift,
   offset,
+  type OpenChangeReason,
   type Placement,
   safePolygon,
   shift,
@@ -102,6 +103,24 @@ export const Tooltip = ({
   }
 
   const arrowRef = useRef<SVGSVGElement>(null);
+  const referenceRef = useRef<HTMLElement | null>(null);
+
+  // Headless UI refocuses its own trigger when its panel closes and the browser calls that
+  // :focus-visible, so only its data-focus — React Aria's modality tracking — means keyboard.
+  const handleOpenChange = (next: boolean, _event?: Event, reason?: OpenChangeReason) => {
+    const element = referenceRef.current;
+
+    if (
+      next &&
+      reason === "focus" &&
+      element?.hasAttribute("data-headlessui-state") === true &&
+      !element.hasAttribute("data-focus")
+    ) {
+      return;
+    }
+
+    setOpen(next);
+  };
 
   const { context, floatingStyles, refs } = useFloating({
     middleware: [
@@ -136,7 +155,7 @@ export const Tooltip = ({
     ],
     open,
     placement,
-    onOpenChange: setOpen,
+    onOpenChange: handleOpenChange,
     whileElementsMounted: autoUpdate,
   });
 
@@ -167,7 +186,7 @@ export const Tooltip = ({
   // `ref` isn't on ReactElement until React 19, and isValidElement leaves `props` as
   // any, so pin both once here. Merging refs keeps any the caller set on the trigger.
   const trigger = children as ReactElement<Record<string, unknown>> & { ref?: Ref<unknown> };
-  const triggerRef = useMergeRefs([refs.setReference, trigger.ref]);
+  const triggerRef = useMergeRefs([refs.setReference, referenceRef, trigger.ref]);
 
   // Guarded despite the types, so an absent or empty body gives a bare trigger.
   const body = customContent ?? content;
