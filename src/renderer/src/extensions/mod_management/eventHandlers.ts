@@ -814,15 +814,12 @@ export function onRemoveMods(
   const installationPath = installPathForGame(state, gameId);
 
   const mods = state.persistent.mods[gameId];
-  // removal keys off mod.id, so fall back to the map key for a record whose id
-  // leaf was lost to a partial write - otherwise it can never be removed
-  // (GH#23981).
+  // removal keys off mod.id, so take it from the map key, which is the modId by
+  // definition. A record whose id leaf was lost to a partial write could
+  // otherwise never be removed (GH#23981).
   const removeMods: IMod[] = modIds
     .filter((modId) => mods[modId] !== undefined)
-    .map((modId) => {
-      const mod = mods[modId];
-      return mod.id === undefined || mod.id === "" ? { ...mod, id: modId } : mod;
-    });
+    .map((modId) => ({ ...mods[modId], id: modId }));
 
   // TODO: no indication anything is happening until undeployment was successful.
   //   we used to remove the mod right away but then if undeployment failed the mod was gone

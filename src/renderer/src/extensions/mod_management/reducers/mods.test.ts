@@ -457,35 +457,9 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
     expect(result.skyrimse).not.toHaveProperty("bad");
   });
 
-  it("drops an archive binding whose installationPath was already healed", () => {
-    // a healed installationPath passes its verifier, so the absent state leaf
-    // is the only thing left that gives the phantom away.
-    const state = {
-      skyrimse: {
-        "SkyUI_5_2_SE-12604-5-2SE": {
-          archiveId: "PzULf7gEAd",
-          installationPath: "SkyUI_5_2_SE-12604-5-2SE",
-        },
-        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
-      },
-    };
-
-    const result = verify(
-      "persistent.mods",
-      modsReducer.verifiers,
-      state,
-      modsReducer.defaults,
-      noEmit,
-    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
-
-    expect(result.skyrimse).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
-    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
-  });
-
   it("keeps a mod that lost only its state leaf", () => {
-    // it still carries its own identity, so it has to come back untouched -
-    // any change makes hydration report a repaired state and nag about an
-    // invalid app state.
+    // it comes back untouched: any change makes hydration report a repaired
+    // state and nag about an invalid app state.
     const state = {
       skyrimse: {
         "Real Mod-1-0-0": {
@@ -508,7 +482,7 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
     expect(result).toBe(state);
   });
 
-  it("keeps a mod whose state leaf went null but still has its identity", () => {
+  it("keeps a mod whose state leaf went null", () => {
     const state = {
       skyrimse: {
         "Real Mod-1-0-0": {
@@ -532,55 +506,6 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
     expect(mod).toBeDefined();
     expect(mod.id).toBe("Real Mod-1-0-0");
     expect(mod.attributes).toEqual({ name: "Real Mod" });
-  });
-
-  it("drops an archive binding whose only other leaf went null", () => {
-    // a null leaf is no more evidence of a real mod than a missing one, so
-    // this is still a phantom and has to be culled.
-    const state = {
-      skyrimse: {
-        "SkyUI_5_2_SE-12604-5-2SE": {
-          archiveId: "PzULf7gEAd",
-          installationPath: "SkyUI_5_2_SE-12604-5-2SE",
-          state: null,
-          attributes: null,
-        },
-        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
-      },
-    };
-
-    const result = verify(
-      "persistent.mods",
-      modsReducer.verifiers,
-      state,
-      modsReducer.defaults,
-      noEmit,
-    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
-
-    expect(result.skyrimse).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
-    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
-  });
-
-  it("drops a record that holds nothing but an archiveId", () => {
-    // a record whose only key is archiveId describes no mod, so healing an
-    // installationPath onto it would just keep a phantom alive.
-    const state = {
-      skyrimse: {
-        "SkyUI_5_2_SE-12604-5-2SE": { archiveId: "PzULf7gEAd" },
-        "Good Mod-1-0-0": makeMod({ id: "Good Mod-1-0-0", installationPath: "Good Mod-1-0-0" }),
-      },
-    };
-
-    const result = verify(
-      "persistent.mods",
-      modsReducer.verifiers,
-      state,
-      modsReducer.defaults,
-      noEmit,
-    ) as Record<string, Record<string, IMod>>; // keyed by gameId, then modId
-
-    expect(result.skyrimse).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
-    expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
   });
 });
 

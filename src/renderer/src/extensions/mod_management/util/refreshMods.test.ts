@@ -8,6 +8,18 @@ const createdDirs: string[] = [];
 
 const enoent = () => Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 
+const stat = (full: string) => {
+  if (stagingEntries.has(full)) {
+    return Promise.resolve({ isDirectory: () => true, ctime: new Date(0) });
+  }
+  const sep = Math.max(full.lastIndexOf("\\"), full.lastIndexOf("/"));
+  const dir = full.slice(0, sep);
+  const name = full.slice(sep + 1);
+  return (stagingEntries.get(dir) ?? []).includes(name)
+    ? Promise.resolve({ isDirectory: () => true, ctime: new Date(0) })
+    : Promise.reject(enoent());
+};
+
 vi.mock("../../../util/fs", () => ({
   ensureDirAsync: vi.fn((dir: string) => {
     createdDirs.push(dir);
@@ -20,17 +32,8 @@ vi.mock("../../../util/fs", () => ({
     const entries = stagingEntries.get(dir);
     return entries === undefined ? Promise.reject(enoent()) : Promise.resolve(entries);
   }),
-  statAsync: vi.fn((full: string) => {
-    if (stagingEntries.has(full)) {
-      return Promise.resolve({ isDirectory: () => true, ctime: new Date(0) });
-    }
-    const sep = Math.max(full.lastIndexOf("\\"), full.lastIndexOf("/"));
-    const dir = full.slice(0, sep);
-    const name = full.slice(sep + 1);
-    return (stagingEntries.get(dir) ?? []).includes(name)
-      ? Promise.resolve({ isDirectory: () => true, ctime: new Date(0) })
-      : Promise.reject(enoent());
-  }),
+  statAsync: vi.fn((full: string) => stat(full)),
+  statSilentAsync: vi.fn((full: string) => stat(full)),
   removeAsync: vi.fn(() => Promise.resolve()),
 }));
 
@@ -116,12 +119,31 @@ describe("refreshMods", () => {
         archiveId: "goneId",
         attributes: { fileName: "SkyUI.7z" },
       }),
+      "Survivor-1-0-0": makeMod({
+        id: "Survivor-1-0-0",
+        installationPath: "Survivor-1-0-0",
+      }),
     };
     const downloads = { freshId: makeDownload({ id: "freshId", localPath: "SkyUI.7z" }) };
 
-    const harness = await run(mods, [], downloads);
+    const harness = await run(mods, ["Survivor-1-0-0"], downloads);
 
-    expect(harness.getState().persistent.mods[GAME]).toEqual({});
+    const remaining = harness.getState().persistent.mods[GAME];
+    expect(remaining).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
+    expect(remaining).toHaveProperty("Survivor-1-0-0");
+  });
+
+  it("keeps every record when the staging folder reads empty", async () => {
+    const mods = {
+      "SkyUI_5_2_SE-12604-5-2SE": makeMod({
+        id: "SkyUI_5_2_SE-12604-5-2SE",
+        installationPath: "SkyUI_5_2_SE-12604-5-2SE",
+      }),
+    };
+
+    const harness = await run(mods, [], {});
+
+    expect(harness.getState().persistent.mods[GAME]).toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
   });
 
   it("refuses to reconcile when the staging folder is missing", async () => {

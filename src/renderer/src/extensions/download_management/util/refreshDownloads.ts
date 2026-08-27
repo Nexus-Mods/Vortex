@@ -1,23 +1,11 @@
 import * as path from "path";
 
-import { getErrorCode, VortexError } from "@vortex/shared";
+import { VortexError } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import { knownArchiveExt } from "../../../util/archives";
+import { folderIsMissing } from "../../../util/folderIsMissing";
 import * as fs from "../../../util/fs";
-
-/**
- * Whether the folder is definitively absent. Any other stat failure is left
- * alone so ensureDirWritableAsync still gets its chance to fix permissions.
- */
-async function folderIsMissing(downloadPath: string): Promise<boolean> {
-  try {
-    await fs.statAsync(downloadPath);
-    return false;
-  } catch (err: unknown) {
-    return getErrorCode(err) === "ENOENT";
-  }
-}
 
 /** archive files in the folder; read errors propagate */
 async function readArchiveNames(downloadPath: string): Promise<string[]> {

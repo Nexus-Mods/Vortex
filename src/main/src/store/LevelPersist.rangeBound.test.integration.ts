@@ -64,10 +64,8 @@ describe("LevelPersist.getAllKVs prefix range", () => {
   });
 
   it("returns a non-ascii mod when reading a whole hive", async () => {
-    // the hive read is what hydration performs (SubPersistor passes the hive
-    // as the prefix). The bound is compared against the whole key, so it
-    // resolves at the segment after the hive - "mods" against the sentinel -
-    // and never reaches the mod name.
+    // the hive read is what hydration performs: SubPersistor passes the hive as
+    // the prefix, so the mod name sits several segments deeper in the key.
     const persist = await open();
     await persist.setItem([...PREFIX.split("###"), "Ätherische Rüstung-123", "id"], '"Aether"');
 
@@ -78,11 +76,11 @@ describe("LevelPersist.getAllKVs prefix range", () => {
   it("returns every mod regardless of where its id sorts", async () => {
     const persist = await open();
     const ids = [
-      "SkyUI-12604-5-2SE", // ascii, below the sentinel
+      "SkyUI-12604-5-2SE", // ascii
       "Ätherische Rüstung-123", // U+00C4 -> 0xC3 in utf-8, above 'z'
       "日本語 Voice Pack-9", // CJK, above 'z'
       "~tilde prefixed-1", // 0x7E, above 'z'
-      "zzzzzzzzzzzz-last-1", // sorts past the literal sentinel
+      "zzzzzzzzzzzz-last-1", // a long run of 'z'
     ];
     for (const id of ids) {
       await persist.setItem([...PREFIX.split("###"), id, "id"], `"${id}"`);

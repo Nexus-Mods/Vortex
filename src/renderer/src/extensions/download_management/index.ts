@@ -286,7 +286,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
 
   let nameIdMap: { [name: string]: string } = {};
-  let downloads = {};
+  // dlId -> download record
+  let downloads: Record<string, IDownload> = {};
   let downloadChangeHandler: (evt: string, fileName: string) => void;
   // when the folder turns out to be unavailable nothing gets reconciled, so
   // there is also nothing to watch and no refresh to announce
@@ -316,10 +317,13 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         normalize,
       );
 
+      // Get the downloads for this game, but only the ones that
+      // have a valid localPath.
       const knownDLs = Object.keys(downloads)
         .filter(
           (dlId) =>
             getDownloadGames(downloads[dlId])[0] === gameId &&
+            downloads[dlId].localPath !== undefined &&
             !isTempDownloadName(downloads[dlId].localPath),
         )
         .map((dlId) => normalize(downloads[dlId].localPath || ""));

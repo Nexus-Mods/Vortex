@@ -3,7 +3,7 @@ import * as _ from "lodash";
 import type { IRule } from "modmeta-db";
 
 import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { VerifierDrop, VerifierDropParent } from "../../../types/IExtensionContext";
+import { VerifierDropParent } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { removeValue } from "../../../util/storeHelper";
 import {
@@ -24,19 +24,6 @@ import { referenceEqual } from "../util/testModReference";
 // heal (healInvalidKeys) so both agree on what's recoverable.
 function isUnusableModId(modId: string): boolean {
   return isClobberedKeySegment(modId);
-}
-
-// Leaves that carry a mod's own identity, as opposed to bookkeeping like its
-// staging folder or its binding to a download.
-const IDENTITY_KEYS = ["id", "state", "type", "attributes"];
-
-// Whether a record describes a mod at all.
-function hasModIdentity(mod: unknown): boolean {
-  if (mod === null || typeof mod !== "object") {
-    return false;
-  }
-  const record = mod as Record<string, unknown>;
-  return IDENTITY_KEYS.some((key) => record[key] != null);
 }
 
 function reduceRule(input: IRule): IRule {
@@ -79,14 +66,14 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.setModArchiveId as any]: (state, payload) => {
       const { gameId, modId, archiveId } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+      if (state[gameId]?.[modId] === undefined) {
         return state;
       }
       return setSafe(state, [gameId, modId, "archiveId"], archiveId);
     },
     [actions.setModInstallationPath as any]: (state, payload) => {
       const { gameId, modId, installPath } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+      if (state[gameId]?.[modId] === undefined) {
         return state;
       }
       return setSafe(state, [gameId, modId, "installationPath"], installPath);
@@ -255,36 +242,13 @@ export const modsReducer: IReducerSpec = {
               // clobber into a name that can't name a real staging folder (a torn
               // write / bit-rot leaves U+FFFD replacement chars or control chars,
               // producing a phantom that would otherwise nag "Mods changed on
-              // disk" every launch. A record carrying no identity is dropped
-              // for the same reason (GH#23981).
+              // disk" every launch.
               repair: (_input, _def, context) => {
                 const modId = context?.parentKey;
-                if (
-                  typeof modId === "string" &&
-                  modId.length > 0 &&
-                  !isUnusableModId(modId) &&
-                  hasModIdentity(context?.parent)
-                ) {
+                if (typeof modId === "string" && modId.length > 0 && !isUnusableModId(modId)) {
                   return modId;
                 }
                 throw new VerifierDropParent();
-              },
-            },
-            state: {
-              type: "string",
-              description: () => "Mod with no state and no identity will be dropped.",
-              noUndefined: true,
-              noNull: true,
-              noEmpty: true,
-              required: true,
-              // A phantom carrying a healed installationPath passes that
-              // verifier, so its missing state is the only thing left to catch
-              // it by (GH#23981).
-              repair: (_input, _def, context) => {
-                if (!hasModIdentity(context?.parent)) {
-                  throw new VerifierDropParent();
-                }
-                throw new VerifierDrop();
               },
             },
             attributes: {

@@ -6,20 +6,11 @@ import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { getApplication } from "../../../util/application";
+import { folderIsMissing } from "../../../util/folderIsMissing";
 import * as fs from "../../../util/fs";
 import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
 import { setModArchiveId } from "../actions/mods";
 import type { IMod } from "../types/IMod";
-
-/**
- * Whether the staging folder is definitively absent.
- */
-function folderIsMissing(installPath: string): PromiseLike<boolean> {
-  return fs.statAsync(installPath).then(
-    () => false,
-    (err: unknown) => getErrorCode(err) === "ENOENT",
-  );
-}
 
 /**
  * reads the installation dir and adds mods missing in our database
@@ -72,6 +63,14 @@ function refreshMods(
       const removedMods = knownModNames.filter((name: string) => filtered.indexOf(name) === -1);
 
       if (addedMods.length === 0 && removedMods.length === 0) {
+        return Promise.resolve();
+      }
+
+      if (filtered.length === 0) {
+        log("error", "staging folder read empty, keeping the mod records", {
+          stagingFolder: installPath,
+          keptRecords: removedMods.length,
+        });
         return Promise.resolve();
       }
 

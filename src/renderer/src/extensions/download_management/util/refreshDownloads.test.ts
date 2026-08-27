@@ -11,6 +11,15 @@ const created: string[] = [];
 
 const enoent = () => Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 
+const stat = (target: string) => {
+  if (target === DL_PATH) {
+    return onDisk === undefined
+      ? Promise.reject(enoent())
+      : Promise.resolve({ isDirectory: () => true });
+  }
+  return Promise.resolve({ isDirectory: () => false });
+};
+
 vi.mock("../../../util/fs", () => ({
   ensureDirWritableAsync: vi.fn((dir: string) => {
     created.push(dir);
@@ -23,16 +32,9 @@ vi.mock("../../../util/fs", () => ({
     }
     return onDisk === undefined ? Promise.reject(enoent()) : Promise.resolve(onDisk);
   }),
-  statAsync: vi.fn((target: string) => {
-    if (target === DL_PATH) {
-      return onDisk === undefined
-        ? Promise.reject(enoent())
-        : Promise.resolve({
-            isDirectory: () => true,
-          });
-    }
-    return Promise.resolve({ isDirectory: () => false });
-  }),
+  statAsync: vi.fn((target: string) => stat(target)),
+  // folderIsMissing probes with the silent variant, so it has to answer too
+  statSilentAsync: vi.fn((target: string) => stat(target)),
 }));
 
 vi.mock("../../../logging", () => {

@@ -8,8 +8,6 @@ import type { IPersistor } from "@vortex/shared/state";
 import { getVortexPath } from "../getVortexPath";
 import { log } from "../logging";
 import DuckDBSingleton from "./DuckDBSingleton";
-import { validateLevelLayout } from "./levelLayout";
-import { repairLevelStore } from "./repairLevelStore";
 
 const SEPARATOR: string = "###";
 
@@ -67,25 +65,6 @@ class LevelPersist implements IPersistor {
       const extensionDir = path.join(getVortexPath("base_unpacked"), "duckdb-extensions");
       await singleton.initialize(extensionDir);
 
-      // Validate the index and repair it if possible.
-      const layout = validateLevelLayout(persistPath);
-      if (!layout.ok) {
-        log("error", "state store level index is invalid", {
-          path: persistPath,
-          levels: layout.levels,
-          problems: layout.problems,
-        });
-        const repair = await repairLevelStore(persistPath, extensionDir);
-        log(repair.repaired ? "info" : "error", "state store repair finished", {
-          repaired: repair.repaired,
-          rows: repair.rows,
-          duplicates: repair.duplicates,
-        });
-        if (!repair.repaired) {
-          throw new DataInvalid("state store level index is invalid and could not be repaired");
-        }
-      }
-
       const alias = singleton.nextAlias();
       const connection = await singleton.attachDatabase(persistPath, alias);
       return new LevelPersist(connection, alias);
@@ -124,7 +103,7 @@ class LevelPersist implements IPersistor {
         );
       }
       await delay(500);
-      return LevelPersist.create(persistPath, tries - 1, false);
+      return LevelPersist.create(persistPath, tries - 1, repair);
     }
   }
 
