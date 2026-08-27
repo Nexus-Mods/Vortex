@@ -90,6 +90,31 @@ update spanned.
 - A failed background check (offline is normal) logs and changes nothing.
 - Cancelling a download by switching channels is not an error.
 
+## Analytics
+
+Every step of the funnel is a Mixpanel event, emitted by
+`src/renderer/src/extensions/updater/updaterAnalytics.ts` from the state
+transitions and the buttons, and carrying `update_channel`:
+
+| event                             | when                                                                                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app_update_check_completed`      | a check settled; `outcome` is `up_to_date`, `offered` or `failed`. Manual checks always, background checks only when the outcome is not `up_to_date` |
+| `app_update_offered`              | a version was offered (`kind`: `patch`, `update`, `downgrade`)                                                                                       |
+| `app_update_download_started`     | a download began                                                                                                                                     |
+| `app_update_download_completed`   | downloaded and verified, with `duration_ms`                                                                                                          |
+| `app_update_download_failed`      | with `error_message` and whether a retry was offered                                                                                                 |
+| `app_update_install_started`      | Restart Now, from the notification or the dialog                                                                                                     |
+| `app_update_downgrade_decided`    | the downgrade dialog was answered (`accepted`)                                                                                                       |
+| `app_update_channel_changed`      | a confirmed channel change                                                                                                                           |
+| `app_update_release_notes_viewed` | What's New or View changes opened                                                                                                                    |
+| `app_updated`                     | first launch after an update, `from_version` and `to_version`                                                                                        |
+
+`app_launched` carries `update_channel` too, as the population these events are
+measured against. Events emitted before analytics has started (the launch
+check and a patch download run before login restores) are queued by the
+tracker and sent once consent and login are in; they are dropped if the user
+declines.
+
 ## The state machine
 
 The updater is a single explicit state machine (`UpdaterState` in
