@@ -1,11 +1,10 @@
 name: Publish to WinGet
 
-# Opens a PR against microsoft/winget-pkgs for Vortex from the
-# Nexus-Mods/winget-pkgs fork whenever a stable release is published.
+# Experiment: close the winget-pkgs PR opened by the previous test run and
+# delete its branch on the fork. Uses PERSONAL_ACCESS_TOKEN because only the
+# PR author can close a PR on microsoft/winget-pkgs.
 
 on:
-  release:
-    types: [released]
   workflow_dispatch:
     inputs:
       tag:
@@ -17,18 +16,16 @@ permissions:
   contents: read
 
 jobs:
-  winget:
-    name: Submit to winget-pkgs
-    # `released` never fires for pre-releases, but a beta could still be
-    # published as a full release by mistake; winget has no channels.
-    if: ${{ !contains(inputs.tag || github.event.release.tag_name, '-') }}
-    runs-on: windows-latest
+  close:
+    name: Close winget-pkgs PR
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      PR: 425304
+      FORK_BRANCH: NexusMods.Vortex-2.6.2-91B10DEA202E4B9D86857DEB8DD750FB
     steps:
-      - uses: vedantmgoyal9/winget-releaser@v2
-        with:
-          identifier: NexusMods.Vortex
-          installers-regex: '^vortex-setup-\d+\.\d+\.\d+\.exe$'
-          release-tag: ${{ inputs.tag || github.event.release.tag_name }}
-          release-notes-url: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.tag || github.event.release.tag_name }}
-          fork-user: Nexus-Mods
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - name: Close PR
+        run: gh pr close "$PR" -R microsoft/winget-pkgs --comment "Closing: this was opened by a test run of our release automation. Will be resubmitted."
+
+      - name: Delete branch on fork
+        run: gh api -X DELETE "repos/Nexus-Mods/winget-pkgs/git/refs/heads/$FORK_BRANCH"
