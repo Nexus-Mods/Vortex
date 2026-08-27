@@ -149,7 +149,7 @@ catalog:
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1
   electron-redux: github:TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
-  electron-updater: 4.6.5
+  electron-updater: 6.8.9
   encoding-down: 6.3.0
   enquirer: 2.4.1
   eslint: 10.6.0

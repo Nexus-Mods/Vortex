@@ -203,12 +203,13 @@ export function setupAutoUpdater(installType: string): void {
     log("info", "Checking for updates", { channel, manual, isPreviewBuild });
 
     autoUpdater.allowPrerelease = channel !== "stable";
+    // publisherName for installer signature verification comes from the packaged
+    // app-update.yml (win.signtoolOptions.publisherName in the builder config);
+    // electron-updater 6.x ignores it in setFeedURL options.
     autoUpdater.setFeedURL({
       provider: "github",
       owner: "Nexus-Mods",
       repo: isPreviewBuild ? "Vortex-Staging" : "Vortex",
-      private: false,
-      publisherName: ["Black Tree Gaming Ltd", "Black Tree Gaming Limited"],
     });
 
     autoUpdater
@@ -295,8 +296,6 @@ export function setupAutoUpdater(installType: string): void {
       provider: "github",
       owner: "Nexus-Mods",
       repo: isPreviewBuild ? "Vortex-Staging" : "Vortex",
-      private: false,
-      publisherName: ["Black Tree Gaming Ltd", "Black Tree Gaming Limited"],
     });
 
     autoUpdater.downloadUpdate().catch((unknownErr) => {
