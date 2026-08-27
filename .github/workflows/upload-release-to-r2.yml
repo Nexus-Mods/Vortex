@@ -1,10 +1,15 @@
-name: Manual Upload Release to R2
+name: Publish to WinGet
+
+# Opens a PR against microsoft/winget-pkgs for Vortex from the
+# Nexus-Mods/winget-pkgs fork whenever a stable release is published.
 
 on:
+  release:
+    types: [released]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (e.g. v2.1.1)"
+        description: "Release tag (e.g. v2.6.2)"
         required: true
         type: string
 
@@ -12,27 +17,18 @@ permissions:
   contents: read
 
 jobs:
-  upload:
-    runs-on: platform-cluster
+  winget:
+    name: Submit to winget-pkgs
+    # `released` never fires for pre-releases, but a beta could still be
+    # published as a full release by mistake; winget has no channels.
+    if: ${{ !contains(inputs.tag || github.event.release.tag_name, '-') }}
+    runs-on: windows-latest
     steps:
-      - name: Install tools
-        run: |
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list
-          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
-          unzip -q awscliv2.zip
-          sudo apt-get update -qq && sudo apt-get install -y gh
-          sudo ./aws/install --update
-          rm -rf awscliv2.zip aws
-
-      - name: Download release asset
-        run: gh release download ${{ inputs.tag }} --pattern "vortex-setup-*.exe" --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload to R2
-        run: aws s3 cp $(ls vortex-setup-*.exe) s3://nexusmodsapp/ --endpoint-url "${{ secrets.NEXUSMODS_R2_ENDPOINT }}"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.NEXUSMODSAPP_R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUSMODSAPP_R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
+      - uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: NexusMods.Vortex
+          installers-regex: '^vortex-setup-\d+\.\d+\.\d+\.exe$'
+          release-tag: ${{ inputs.tag || github.event.release.tag_name }}
+          release-notes-url: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.tag || github.event.release.tag_name }}
+          fork-user: Nexus-Mods
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
