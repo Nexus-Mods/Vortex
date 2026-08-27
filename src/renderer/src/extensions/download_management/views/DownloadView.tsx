@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { isVortexError } from "@vortex/shared";
+import { parseError } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import _ from "lodash";
@@ -419,15 +419,19 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     if (err === null) {
       return;
     }
+
     const urlInvalid = ["moved permanently", "forbidden", "gone"];
     const title = resume ? "Failed to resume download" : "Failed to start download";
-    if (err instanceof ProcessCanceled) {
-      this.props.onShowError(title, err, undefined, false);
-    } else if (err instanceof UserCanceled) {
+
+    // TODO: remove cases that can never be hit after error rework LAZ-751, LAZ-750, LAZ-747
+    const vortexError = parseError(err);
+    if (vortexError.data.kind === "process-canceled") {
+      this.props.onShowError(title, vortexError, undefined, false);
+    } else if (vortexError.data.kind === "user-canceled") {
       // nop
-    } else if (err instanceof DataInvalid || err instanceof URIError) {
+    } else if (vortexError.data.kind === "data-invalid" || err instanceof URIError) {
       this.props.onShowError(title, err, undefined, false);
-    } else if (isVortexError(err) && err.data.kind === "download:is-html") {
+    } else if (vortexError.data.kind === "download:is-html") {
       if (resume) {
         this.props.onShowError(
           title,

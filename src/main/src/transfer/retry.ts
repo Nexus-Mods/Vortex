@@ -1,4 +1,4 @@
-import { VortexError, isVortexError, unknownToError } from "@vortex/shared";
+import { parseError, unknownToError } from "@vortex/shared";
 import type { VortexErrorKind } from "@vortex/shared";
 import type { RetryContext, RetryStrategy, RetryVerdict } from "@vortex/shared/download";
 import { HTTPError } from "got";
@@ -70,13 +70,6 @@ export function defaultRetryStrategy(
 }
 
 function isRetryableError(err: Error, codes: Set<string>, statusCodes: Set<number>): boolean {
-  if (isVortexError(err)) {
-    if (nonRetryableKinds.has(err.data.kind)) return false;
-
-    // For resolver or network errors, inspect the cause.
-    return err.cause instanceof Error ? isRetryableError(err.cause, codes, statusCodes) : false;
-  }
-
   if (err instanceof HTTPError) {
     if (statusCodes.has(err.response.statusCode)) {
       return true;
@@ -87,7 +80,13 @@ function isRetryableError(err: Error, codes: Set<string>, statusCodes: Set<numbe
     return codes.has(err.code);
   }
 
-  return false;
+  const parsedError = parseError(err);
+  if (nonRetryableKinds.has(parsedError.data.kind)) return false;
+
+  if (parsedError.data.kind === "http:generic" && parsedError.data.originalCode !== undefined)
+    return codes.has(parsedError.data.originalCode);
+
+  return err.cause instanceof Error ? isRetryableError(err.cause, codes, statusCodes) : false;
 }
 
 /**

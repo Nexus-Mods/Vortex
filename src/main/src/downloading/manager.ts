@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { VortexError, isVortexError } from "@vortex/shared";
+import { VortexError, parseError } from "@vortex/shared";
 import type {
   ByteRange,
   Chunker,
@@ -251,7 +251,7 @@ export class DownloadManager {
     // that callers awaiting only pause() don't see unhandled rejections.
     // Non-cancellation errors still reject.
     const promise = rawPromise.catch((err) => {
-      if (isVortexError(err) && err.data.kind === "user-canceled") return;
+      if (parseError(err).data.kind === "user-canceled") return;
       throw err;
     });
 
@@ -351,9 +351,9 @@ export class DownloadManager {
       },
       (err) => {
         if (progressReporter.status !== "running") return;
-        const isCancellation = isVortexError(err) && err.data.kind === "user-canceled";
+        const parsedError = parseError(err);
+        const isCancellation = parsedError.data.kind === "user-canceled";
         progressReporter.status = isCancellation ? "canceled" : "failed";
-        if (err instanceof VortexError) terminalError = err;
         if (!isCancellation) {
           log("warn", "download failed", { downloadId, err });
         }
