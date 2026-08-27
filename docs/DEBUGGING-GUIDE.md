@@ -166,10 +166,11 @@ Vortex writes detailed logs that are invaluable for debugging.
 
 ### Log Locations
 
-**Development Build:**
+**Development Build** (run from source; Electron names the folder after the
+`@vortex/main` package):
 
 ```
-%appdata%/vortex_devel/*.log
+%appdata%/@vortex/main/*.log
 ```
 
 **Production Build:**
@@ -189,13 +190,13 @@ Vortex writes detailed logs that are invaluable for debugging.
 
 ```powershell
 # Tail the latest log file (PowerShell)
-Get-Content "$env:APPDATA\vortex_devel\vortex0.log" -Wait -Tail 50
+Get-Content "$env:APPDATA\@vortex\main\vortex.log" -Wait -Tail 50
 
 # Filter for errors only
-Get-Content "$env:APPDATA\vortex_devel\vortex0.log" | Select-String "ERRO"
+Get-Content "$env:APPDATA\@vortex\main\vortex.log" | Select-String "ERRO"
 
 # Search for specific keyword
-Get-Content "$env:APPDATA\vortex_devel\vortex0.log" | Select-String "download"
+Get-Content "$env:APPDATA\@vortex\main\vortex.log" | Select-String "download"
 ```
 
 ### Adding Log Statements
@@ -427,8 +428,8 @@ Sometimes issues only occur in production builds. Here's how to debug them.
 ### Build Production (Unsigned)
 
 ```bash
-# Creates installer without code signing (faster)
-pnpm run package:local
+# Creates an unsigned installer (run from the repo root)
+pnpm package:nosign
 ```
 
 This downloads required redistributables and creates an unsigned installer in `dist/` directory.

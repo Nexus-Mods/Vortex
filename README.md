@@ -53,6 +53,10 @@ The majority of Vortex code is open-source. We are committed to a transparent de
 - Review Extension: If you're creating a game extension and need us to review it, please submit a [review extension](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=extension+%3Agear%3A&projects=&template=review-extension.yaml&title=Review%3A+Game+Name) request.
 - Pull Request: Read [CONTRIBUTING.md](CONTRIBUTING.md) first. We are in the middle of large foundational changes and can only take small pull requests at the moment, so check with us before starting anything big.
 
+## Developing
+
+To build and run Vortex from source, start with [CONTRIBUTING.md](./CONTRIBUTING.md). It covers setup for each platform, the build/run/hot-reload workflow, debugging, and packaging. Deeper guides (debugging, packaging, the auto-updater, release process) live in [docs/](./docs).
+
 ## License
 
 This project is licensed under the [GPL-3.0](https://github.com/Nexus-Mods/Vortex/blob/master/LICENSE.md) license.
