@@ -137,6 +137,7 @@ describe("Notifications trigger", () => {
 
   it("is not marked active while the tray is closed", () => {
     renderComponent([]);
-    expect(screen.getByRole("button", { name: "Notifications" })).toHaveClass("border-stroke-weak");
+    // The resting border is transparent — it only paints on hover or while open.
+    expect(screen.getByRole("button", { name: "Notifications" })).toHaveClass("border-transparent");
   });
 });

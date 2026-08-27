@@ -69,7 +69,6 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
       className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3"
     >
       <SpineButton
-        className="border-2"
         iconPath={mdiHome}
         isActive={selection.type === "home"}
         title="Home"
@@ -103,7 +102,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
             })}
 
             <SpineButton
-              className="border-2 border-transparent hover:border-solid"
+              border="hidden"
               iconPath={mdiPlus}
               title="Games"
               onClick={() => handleGlobalPageClick("Games")}

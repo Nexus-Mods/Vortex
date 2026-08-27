@@ -2,7 +2,7 @@ import { render, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import type * as ReactRedux from "react-redux";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import type { IState } from "@/types/IState";
 
@@ -11,11 +11,14 @@ import type { SpineSelection } from "../SpineContext";
 // The component derives everything from the store via a selector, so useSelector is
 // run against a hand-built state rather than a real store — that keeps the progress
 // maths under test instead of stubbing it out.
-const mocks = vi.hoisted(() => ({
-  state: { persistent: { downloads: { files: {}, speed: 0 } } } as unknown as IState,
-  selectDownloads: vi.fn(),
-  selection: { type: "home" } as SpineSelection,
-}));
+// Annotated rather than asserted so `selection` stays checked against the real union.
+const mocks = vi.hoisted(
+  (): { selectDownloads: Mock; selection: SpineSelection; state: IState } => ({
+    state: { persistent: { downloads: { files: {}, speed: 0 } } } as unknown as IState,
+    selectDownloads: vi.fn(),
+    selection: { type: "home" },
+  }),
+);
 
 vi.mock("react-redux", async (importOriginal) => ({
   ...(await importOriginal<typeof ReactRedux>()),
@@ -55,8 +58,9 @@ const setStore = (downloads: IDownloadFixture[], speedMBps = 0) => {
   } as unknown as IState;
 };
 
-const setSelection = (type: SpineSelection["type"]) => {
-  mocks.selection = { type } as SpineSelection;
+// Only the variants that carry no extra data — "game" would need a gameId with it.
+const setSelection = (type: "downloads" | "home") => {
+  mocks.selection = { type };
 };
 
 const renderComponent = () => {

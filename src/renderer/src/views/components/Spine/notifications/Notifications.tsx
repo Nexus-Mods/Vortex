@@ -1,24 +1,15 @@
 import { Popover, PopoverButton } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
-import React, {
-  type ButtonHTMLAttributes,
-  forwardRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "@/ExtensionProvider";
 import type { INotification } from "@/types/INotification";
-import { Icon } from "@/ui/components/icon/Icon";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
-import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { notifications as notificationsSelector } from "../../../../util/selectors";
+import { SpineButton } from "../SpineButton";
 import { NotificationItem } from "./components/NotificationItem";
 import { useNotificationActions } from "./hooks/useNotificationActions.hook";
 import { useNotificationFiltering } from "./hooks/useNotificationFiltering.hook";
@@ -53,49 +44,6 @@ export const pipSeverity = (notifications: INotification[]): PipSeverity | undef
 
   return "info";
 };
-
-interface ITriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  iconPath: string;
-  severity?: PipSeverity;
-}
-
-/**
- * Sibling of the spine's download button, so it borrows that button's shape and border
- * treatment rather than the header Button it used to render as.
- */
-const Trigger = forwardRef<HTMLButtonElement, ITriggerProps>(
-  ({ "aria-label": ariaLabel, "aria-expanded": isOpen, iconPath, severity, ...props }, ref) => (
-    <Tooltip content={ariaLabel} disabled={!!isOpen} placement="right">
-      <button
-        aria-expanded={isOpen}
-        aria-label={ariaLabel}
-        className={joinClasses([
-          "relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-          "hover:border-neutral-strong hover:bg-surface-translucent-high",
-          isOpen
-            ? "border-neutral-strong bg-surface-translucent-low text-neutral-strong"
-            : "border-transparent text-neutral-moderate",
-        ])}
-        {...props}
-        ref={ref}
-      >
-        <Icon className="transition-colors" path={iconPath} size="lg" />
-
-        {!!severity && (
-          <span
-            className={joinClasses([
-              "pointer-events-none absolute top-0 right-0 size-3 rounded-full border-2 border-surface-base",
-              PIP_COLOURS[severity],
-            ])}
-            data-testid="notification-pip"
-          />
-        )}
-      </button>
-    </Tooltip>
-  ),
-);
-
-Trigger.displayName = "NotificationsTrigger";
 
 interface INotificationsContentProps {
   popoverOpen: boolean;
@@ -161,12 +109,15 @@ const NotificationsContent = ({ popoverOpen }: INotificationsContentProps) => {
   return (
     <>
       <PopoverButton
-        aria-label="Notifications"
-        as={Trigger}
+        isCircular
+        as={SpineButton}
+        border="hidden"
         disabled={!visibleCount}
         iconPath={visibleCount ? mdiBell : mdiBellOutline}
+        isActive={popoverOpen}
         ref={buttonRef}
-        severity={severity}
+        title="Notifications"
+        tooltipDisabled={popoverOpen}
         onClick={() => {
           api.events.emit(
             "analytics-track-click-event",
@@ -174,7 +125,17 @@ const NotificationsContent = ({ popoverOpen }: INotificationsContentProps) => {
             `${popoverOpen ? "Close" : "Open"} Notifications`,
           );
         }}
-      />
+      >
+        {!!severity && (
+          <span
+            className={joinClasses([
+              "pointer-events-none absolute top-0 right-0 size-3 rounded-full border-2 border-surface-base",
+              PIP_COLOURS[severity],
+            ])}
+            data-testid="notification-pip"
+          />
+        )}
+      </PopoverButton>
 
       {popoverOpen && !!items.length && (
         <PopoverPanel
