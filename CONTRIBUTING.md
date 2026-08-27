@@ -131,9 +131,11 @@ information.
 
 ## Further Reading
 
+- [All documentation] - indexed by topic
 - [Debugging]
 - [Docker Dev Containers]
 
+[All documentation]: ./docs/README.md
 [Arch-based setup]: ./docs/install-instructions/archlinux.md
 [CLI]: https://git-scm.com/
 [Debian-based setup]: ./docs/install-instructions/debian-based.md

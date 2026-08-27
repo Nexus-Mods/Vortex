@@ -386,7 +386,8 @@ Vortex uses Redux for state management. Redux DevTools Extension provides powerf
 
 ### Setup
 
-The Redux DevTools integration is in [src/util/reduxDevTools.ts](src/util/reduxDevTools.ts).
+The Redux DevTools integration is wired up in `src/renderer/src/renderer.tsx` and
+`src/main/src/Application.ts`.
 
 ### Features
 
