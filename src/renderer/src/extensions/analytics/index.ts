@@ -140,6 +140,7 @@ function init(context: IExtensionContext): boolean {
             os.release(), // OS version (e.g., "10.0.22000" for Windows 11)
             getCPUArch(), // Architecture (e.g., "x64", "arm64")
             isLegacyUI(), // UI mode (true when running the legacy/classic UI)
+            context.api.getState().settings.update.channel, // population for the update funnel
           ),
         );
 

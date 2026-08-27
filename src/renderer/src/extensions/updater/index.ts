@@ -5,6 +5,7 @@ import { getApplication } from "../../util/application";
 import { setUpdaterSnapshot } from "./actions";
 import settingsReducer, { sessionReducer } from "./reducers";
 import SettingsUpdate from "./SettingsUpdate";
+import { createUpdaterAnalytics, isTransition } from "./updaterAnalytics";
 import { initUpdaterStatus } from "./updaterStatus";
 
 // Notification surfaces. UPDATE is the single slot for "what the updater is
@@ -61,6 +62,15 @@ function init(context: IExtensionContext): boolean {
 
     const channelNow = () => context.api.store.getState().settings.update.channel;
 
+    // Mixpanel funnel (see updaterAnalytics.ts): transitions from render(),
+    // decisions from the buttons below. The tracker queues anything emitted
+    // before analytics has started, so early launch events are not lost.
+    const analytics = createUpdaterAnalytics({
+      api: context.api,
+      currentVersion: () => getApplication().version,
+      channel: channelNow,
+    });
+
     // Our own dismissals (a state moved on) must not read as the user closing
     // a notification, which for a running download means "cancel it".
     let dismissingOurselves = false;
@@ -104,6 +114,7 @@ function init(context: IExtensionContext): boolean {
             default: true,
             action: () => {
               if (staged) {
+                analytics.installStarted(state, "dialog");
                 act(() => window.api.updater.restartAndInstall());
               } else {
                 act(() => window.api.updater.downloadUpdate(channelNow(), false));
@@ -163,6 +174,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                       // declining forgets the offer (notification included)
                       // until the next purposeful switch to stable
                       dismiss(NOTIF_OFFER);
+                      analytics.downgradeDecided(version, false);
                       act(() => window.api.updater.declineDowngrade());
                     },
                   },
@@ -170,6 +182,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                     label: `Downgrade to ${version}`,
                     action: () => {
                       dismiss(NOTIF_OFFER);
+                      analytics.downgradeDecided(version, true);
                       // download without forcing a restart: once staged it
                       // installs on quit, or via the notification's Restart Now
                       act(() => window.api.updater.downloadDowngrade(false));
@@ -206,6 +219,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
       // one-time "was updated" notice; any actionable state below supersedes it
       if (!shownUpdatedNotice && snapshot.justUpdatedFrom != null) {
         shownUpdatedNotice = true;
+        analytics.appUpdated(snapshot.justUpdatedFrom);
         context.api.sendNotification({
           id: NOTIF_UPDATED,
           type: "success",
@@ -214,6 +228,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
             {
               title: "View changes",
               action: () => {
+                analytics.releaseNotesViewed(getApplication().version, "post_update");
                 void showPostUpdateChanges();
               },
             },
@@ -227,6 +242,10 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
 
       const key = stateKey(state);
       const sameAsPrev = prev != null && stateKey(prev) === key;
+
+      if (isTransition(prev, state)) {
+        analytics.onTransition(prev, state);
+      }
 
       switch (state.type) {
         case "disabled":
@@ -277,6 +296,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
               {
                 title: "What's New",
                 action: () => {
+                  analytics.releaseNotesViewed(state.version, "notification");
                   void showUpdateDialog(state.version, state.releaseNotes);
                 },
               },
@@ -359,6 +379,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 {
                   title: "What's New",
                   action: () => {
+                    analytics.releaseNotesViewed(state.version, "notification");
                     void showUpdateDialog(state.version, state.releaseNotes);
                   },
                 },
@@ -366,7 +387,10 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                   // no dismiss: a packaged app quits here anyway, and if the
                   // install fails (or is skipped in dev) the button must stay
                   title: "Restart Now",
-                  action: () => act(() => window.api.updater.restartAndInstall()),
+                  action: () => {
+                    analytics.installStarted(state, "notification");
+                    act(() => window.api.updater.restartAndInstall());
+                  },
                 },
               ],
             });
@@ -380,7 +404,10 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
               actions: [
                 {
                   title: "Restart Now",
-                  action: () => act(() => window.api.updater.restartAndInstall()),
+                  action: () => {
+                    analytics.installStarted(state, "notification");
+                    act(() => window.api.updater.restartAndInstall());
+                  },
                 },
               ],
             });
@@ -430,6 +457,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 {
                   title: "What's New",
                   action: () => {
+                    analytics.releaseNotesViewed(retry.version, "notification");
                     void showUpdateDialog(retry.version, retry.releaseNotes);
                   },
                 },
@@ -454,7 +482,8 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
     // check for update when the user changes the update channel
     context.api.onStateChange(
       ["settings", "update", "channel"],
-      (_oldChannel: string, newChannel: string) => {
+      (oldChannel: string, newChannel: string) => {
+        analytics.channelChanged(oldChannel, newChannel);
         act(() => window.api.updater.setChannel(newChannel, true));
         haveSetChannel = true;
       },
