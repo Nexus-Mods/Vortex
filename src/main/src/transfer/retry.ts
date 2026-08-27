@@ -1,9 +1,24 @@
-import { unknownToError } from "@vortex/shared";
+import { VortexError, isVortexError, unknownToError } from "@vortex/shared";
+import type { VortexErrorKind } from "@vortex/shared";
 import type { RetryContext, RetryStrategy, RetryVerdict } from "@vortex/shared/download";
-import { DownloadError, UploadError } from "@vortex/shared/errors";
 import { HTTPError } from "got";
 
 import { isCancellation } from "./cancellation";
+
+const nonRetryableKinds = new Set<VortexErrorKind>([
+  // Local filesystems errors never resolve themselves.
+  "fs:not-found",
+  "fs:no-space",
+  "fs:already-exists",
+  "fs:no-permissions",
+  "fs:not-a-directory",
+  "fs:not-a-file",
+  "fs:directory-not-empty",
+  // Server diverged from the bytes we asked for; retrying would repeat the same mismatch.
+  "http:protocol-violation",
+  // User explicitly stopped us.
+  "user-canceled",
+]);
 
 const retryableErrorCodes = new Set([
   // Connection timed out (POSIX.1-2001).
@@ -55,16 +70,10 @@ export function defaultRetryStrategy(
 }
 
 function isRetryableError(err: Error, codes: Set<string>, statusCodes: Set<number>): boolean {
-  if (err instanceof DownloadError || err instanceof UploadError) {
-    if (
-      err.code === "fs-error" ||
-      err.code === "protocol-violation" ||
-      err.code === "cancellation"
-    ) {
-      return false;
-    }
+  if (isVortexError(err)) {
+    if (nonRetryableKinds.has(err.data.kind)) return false;
 
-    // For resolver or network errors, inspect the cause
+    // For resolver or network errors, inspect the cause.
     return err.cause instanceof Error ? isRetryableError(err.cause, codes, statusCodes) : false;
   }
 

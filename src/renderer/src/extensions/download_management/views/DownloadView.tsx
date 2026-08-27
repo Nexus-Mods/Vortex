@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { DownloadIsHTML } from "@vortex/shared/errors";
+import { isVortexError } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import _ from "lodash";
@@ -427,7 +427,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       // nop
     } else if (err instanceof DataInvalid || err instanceof URIError) {
       this.props.onShowError(title, err, undefined, false);
-    } else if (err instanceof DownloadIsHTML) {
+    } else if (isVortexError(err) && err.data.kind === "download:is-html") {
       if (resume) {
         this.props.onShowError(
           title,

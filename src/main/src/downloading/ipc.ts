@@ -1,6 +1,7 @@
-import { downloadErrorToWire } from "@vortex/shared";
+import { serializeError } from "@vortex/shared";
 import type { DownloadState, ResolvedEndpoint, ResolvedResource } from "@vortex/shared/download";
 import { staticChunker } from "@vortex/shared/download";
+import type { Serializable } from "@vortex/shared/ipc";
 import type {
   WireDownloadCheckpoint,
   WireEndpoint,
@@ -131,6 +132,11 @@ export function init(manager: DownloadManager): void {
 function stateToWire(state: DownloadState) {
   return {
     ...state,
-    error: state.status === "failed" ? downloadErrorToWire(state.error) : null,
+    // SerializedError is structurally serializable across IPC (every field is
+    // a structured-clone-safe value), but TypeScript's Serializable constraint
+    // requires an explicit index signature and won't infer it from the
+    // recursive `cause` chain.
+    error:
+      state.status === "failed" ? (serializeError(state.error) as unknown as Serializable) : null,
   };
 }

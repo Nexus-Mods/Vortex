@@ -3,8 +3,8 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { UploadError } from "@vortex/shared/errors";
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { VortexError, isVortexError } from "@vortex/shared";
+import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
 import { defaultRetryStrategy } from "../transfer/retry";
 import { uploadS3Multipart } from "./s3Multipart";
@@ -94,9 +94,9 @@ describe("uploadS3Multipart", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(UploadError);
-    expect((err as UploadError).code).toBe("protocol-violation");
-    expect((err as UploadError).message).toMatch(/Multipart layout mismatch/);
+    assert(isVortexError(err));
+    assert(err.data.kind === "http:protocol-violation");
+    expect(err.message).toMatch(/Multipart layout mismatch/);
     expect(server.requests).toHaveLength(0);
   });
 
@@ -112,9 +112,9 @@ describe("uploadS3Multipart", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(UploadError);
-    expect((err as UploadError).code).toBe("protocol-violation");
-    expect((err as UploadError).message).toMatch(/ETag/);
+    assert(isVortexError(err));
+    assert(err.data.kind === "http:protocol-violation");
+    expect(err.message).toMatch(/ETag/);
   });
 
   it("retries the completion request on a server error", async () => {
@@ -154,8 +154,8 @@ describe("uploadS3Multipart", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(UploadError);
-    expect((err as UploadError).code).toBe("protocol-violation");
-    expect((err as UploadError).message).toContain("InternalError");
+    assert(isVortexError(err));
+    assert(err.data.kind === "http:protocol-violation");
+    expect(err.message).toContain("InternalError");
   });
 });

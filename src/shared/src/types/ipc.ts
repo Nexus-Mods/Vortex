@@ -20,7 +20,6 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
-import type { DownloadErrorPayload } from "./errors";
 import type { FeatureFlag } from "./flags";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -100,15 +99,9 @@ export type WireResolvedResource = {
   chunkEndpoints?: WireEndpoint[];
 };
 
-type Wirify<T> = { [K in keyof T]: T[K] extends URL ? string : T[K] };
-export type WireDownloadError = {
-  payload: Wirify<DownloadErrorPayload>;
-  message: string;
-};
-
 export type WireDownloadState = DownloadProgress & {
   status: DownloadStatus;
-  error: WireDownloadError | null;
+  error: Serializable | null;
 };
 
 export type WireDownloadCheckpoint = DownloadCheckpoint<string>;

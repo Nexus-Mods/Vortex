@@ -192,6 +192,18 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
   }
 }
 
+/**
+ * Type predicate for narrowing `unknown` to {@link VortexError}. The plain
+ * `instanceof VortexError` check narrows to `VortexError<any>` because TS
+ * cannot carry a generic parameter through an instanceof test — see
+ * https://github.com/microsoft/TypeScript/issues/17473. This predicate keeps
+ * the default generic (`VortexErrorKind`) so callers can branch on
+ * `data.kind` without a cast.
+ */
+export function isVortexError(err: unknown): err is VortexError {
+  return err instanceof VortexError;
+}
+
 const MARK = Symbol.for("vortex.errors.VortexError");
 
 interface TripwireRegistration {

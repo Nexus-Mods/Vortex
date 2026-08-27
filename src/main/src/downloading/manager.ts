@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { VortexError, isVortexError } from "@vortex/shared";
 import type {
   ByteRange,
   Chunker,
@@ -10,7 +11,6 @@ import type {
   RetryStrategy,
 } from "@vortex/shared/download";
 import { staticChunker } from "@vortex/shared/download";
-import { DownloadError } from "@vortex/shared/errors";
 import { RateLimiter } from "limiter";
 import PQueue from "p-queue";
 import type { CookieJar } from "tough-cookie";
@@ -251,11 +251,11 @@ export class DownloadManager {
     // that callers awaiting only pause() don't see unhandled rejections.
     // Non-cancellation errors still reject.
     const promise = rawPromise.catch((err) => {
-      if (err instanceof DownloadError && err.code === "cancellation") return;
+      if (isVortexError(err) && err.data.kind === "user-canceled") return;
       throw err;
     });
 
-    let terminalError: DownloadError | null = null;
+    let terminalError: VortexError | null = null;
 
     const cancel = (): DownloadState => {
       if (progressReporter.status === "running") {
@@ -351,9 +351,9 @@ export class DownloadManager {
       },
       (err) => {
         if (progressReporter.status !== "running") return;
-        const isCancellation = err instanceof DownloadError && err.code === "cancellation";
+        const isCancellation = isVortexError(err) && err.data.kind === "user-canceled";
         progressReporter.status = isCancellation ? "canceled" : "failed";
-        if (err instanceof DownloadError) terminalError = err;
+        if (err instanceof VortexError) terminalError = err;
         if (!isCancellation) {
           log("warn", "download failed", { downloadId, err });
         }

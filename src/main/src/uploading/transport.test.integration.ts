@@ -3,9 +3,8 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { serializeError } from "@vortex/shared";
-import { UploadError } from "@vortex/shared/errors";
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { serializeError, isVortexError, VortexError } from "@vortex/shared";
+import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
 import { defaultRetryStrategy } from "../transfer/retry";
 import { createTestServer, type TestServer } from "./test-server";
@@ -82,11 +81,9 @@ describe("uploadFile", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(UploadError);
-    expect((err as UploadError).payload).toMatchObject({
-      code: "network-bad-status",
-      statusCode: 403,
-    });
+    assert(isVortexError(err));
+    assert(err.data.kind === "http:bad-status");
+    expect(err.data.statusCode).toBe(403);
     expect(server.requests).toHaveLength(1);
   });
 
@@ -132,9 +129,10 @@ describe("uploadFile", () => {
       (e: unknown) => e,
     );
 
+    assert(isVortexError(err));
     // A bare "Server returned 403" is unactionable; the code names the cause.
-    expect((err as UploadError).message).toContain("SignatureDoesNotMatch");
-    expect((err as UploadError).message).toContain("403");
+    expect(err.message).toContain("SignatureDoesNotMatch");
+    expect(err.message).toContain("403");
   });
 
   it("produces an error that survives the IPC hop", async () => {
@@ -154,9 +152,12 @@ describe("uploadFile", () => {
     // not be cloned" and hid the actual failure.
     const serialized = serializeError(err);
     expect(() => structuredClone(serialized)).not.toThrow();
-    expect(serialized.name).toBe("UploadError");
+    expect(serialized.name).toBe("VortexError");
     expect(serialized.message).toContain("AccessDenied");
-    expect(serialized.data?.payload).toMatchObject({ statusCode: 403 });
+    expect(serialized.data?.data).toMatchObject({
+      kind: "http:bad-status",
+      statusCode: 403,
+    });
   });
 
   it("keeps a signed URL's credentials out of the error payload", async () => {
@@ -167,15 +168,16 @@ describe("uploadFile", () => {
       res.end();
     });
 
-    const err = (await uploadFile(
+    const err = await uploadFile(
       `${server.baseUrl}/denied?X-Amz-Signature=secret`,
       filePath,
       128,
       fastRetry,
-    ).catch((e: unknown) => e)) as UploadError;
+    ).catch((e: unknown) => e);
 
-    expect(err.payload).toMatchObject({ url: `${server.baseUrl}/denied` });
-    expect(JSON.stringify(err.payload)).not.toContain("secret");
+    assert(isVortexError(err));
+    expect(err.data).toMatchObject({ url: `${server.baseUrl}/denied` });
+    expect(JSON.stringify(err.data)).not.toContain("secret");
   });
 
   it("reports byte progress up to the full size", async () => {
