@@ -52,6 +52,12 @@ jobs:
       - name: Install volta, Node.js and Yarn
         uses: volta-cli/action@v5
 
+      # NOTE: pnpm's standalone binary requires libatomic1, which is missing
+      # by default on the ubuntu-latest runner image
+      - name: Install libatomic
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libatomic1
+
       - name: Install pnpm
         uses: pnpm/setup@v2
         with:
