@@ -363,8 +363,7 @@ async function installExtensionImpl(
       const state: IExtensionState = {
         name: data?.catalogEntry?.name ?? extensionInfo?.name ?? path.basename(destPath),
         author: data?.catalogEntry?.author ?? extensionInfo?.author ?? "<unknown>",
-        description:
-          data?.catalogEntry?.description?.short ?? extensionInfo?.description ?? "<missing>",
+        description: extensionInfo?.description ?? "<missing>",
         version: data?.catalogEntry?.version ?? extensionInfo?.version ?? "0.0.1",
 
         endorsed: "Undecided",

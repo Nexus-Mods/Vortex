@@ -13,3 +13,8 @@ export const setGameDisabled = safeCreateAction(
   "SET_GAME_DISABLED",
   (gameId: string, disabledBy: string) => ({ gameId, disabledBy }),
 );
+
+export const setShowHiddenGames = safeCreateAction(
+  "SET_SHOW_HIDDEN_GAMES",
+  (show: boolean) => show,
+);

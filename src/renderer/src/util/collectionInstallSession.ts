@@ -20,6 +20,13 @@ export function isTerminalMemberStatus(status: CollectionModStatus): boolean {
 }
 
 /**
+ * Same as isTerminalMemberStatus but only the "successful" outcomes.
+ */
+export function isSuccessfulMemberStatus(status: CollectionModStatus): boolean {
+  return status === "installed" || status === "ignored";
+}
+
+/**
  * An optional (recommends) member with no decided outcome yet, so it still blocks completion.
  *
  * This is the single definition of "an optional that still needs installing" as judged from the

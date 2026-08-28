@@ -603,8 +603,8 @@ catalogs:
       specifier: github:TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
       version: 1.4.9-sync
     electron-updater:
-      specifier: 4.6.5
-      version: 4.6.5
+      specifier: 6.8.9
+      version: 6.8.9
     encoding-down:
       specifier: 6.3.0
       version: 6.3.0
@@ -705,8 +705,8 @@ catalogs:
       specifier: 4.17.23
       version: 4.17.23
     loot:
-      specifier: github:Nexus-Mods/node-loot#7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
-      version: 6.2.2
+      specifier: github:Nexus-Mods/node-loot#cc1515667f494be188e3b1172a3bc8db3dc52eb5
+      version: 6.2.3
     lru-cache:
       specifier: 11.2.7
       version: 11.2.7
@@ -1170,15 +1170,24 @@ importers:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
 
-  .github/actions/prepare-nexusmods-release:
+  .github/actions/linear-release:
     dependencies:
       '@actions/core':
         specifier: 'catalog:'
         version: 1.11.1
+      '@actions/github':
+        specifier: 'catalog:'
+        version: 6.0.1
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
     devDependencies:
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
       rolldown:
         specifier: 'catalog:'
         version: 1.1.4
@@ -1818,7 +1827,7 @@ importers:
     optionalDependencies:
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5
 
   extensions/gamebryo-savegame-management:
     dependencies:
@@ -4297,7 +4306,7 @@ importers:
         version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
-        version: 4.6.5(supports-color@10.2.2)
+        version: 6.8.9(supports-color@10.2.2)
       encoding-down:
         specifier: 'catalog:'
         version: 6.3.0
@@ -4960,9 +4969,6 @@ importers:
       electron-redux:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
-      electron-updater:
-        specifier: 'catalog:'
-        version: 4.6.5(supports-color@10.2.2)
       encoding-down:
         specifier: 'catalog:'
         version: 6.3.0
@@ -7537,8 +7543,8 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@tootallnate/once@2.0.0':
-    resolution: {integrity: sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==}
+  '@tootallnate/once@2.0.1':
+    resolution: {integrity: sha512-HqmEUIGRJ5fSXchkVgR5F7qn48bDBzv0kWj/Kfu5e6uci4UlEeng4331LnBkWffb++Ei3FOVLxo8JJWMFBDMeQ==}
     engines: {node: '>= 10'}
 
   '@tybys/wasm-util@0.10.3':
@@ -8644,12 +8650,12 @@ packages:
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
 
-  builder-util-runtime@8.9.2:
-    resolution: {integrity: sha512-rhuKm5vh7E0aAmT6i8aoSfEjxzdYEFX7zDApK+eNgOhjofnWb74d9SRJv0H/8nsgOkos0TZ4zxW0P8J4N7xQ2A==}
-    engines: {node: '>=12.0.0'}
-
   builder-util-runtime@9.2.4:
     resolution: {integrity: sha512-upp+biKpN/XZMLim7aguUyW8s0FUpDvOtK6sbanMFDAMBzpHDqdhgVYm6zc9HJ6nWo7u2Lxk60i2M6Jd3aiNrA==}
+    engines: {node: '>=12.0.0'}
+
+  builder-util-runtime@9.7.0:
+    resolution: {integrity: sha512-g/kR520giAFYkSXTzcmF3kqQq7wi8F6N6SzeDgZrqTBN+VHdmgWOyTdD1yD7AATDId/yXLvuP34CxW46/BwCdw==}
     engines: {node: '>=12.0.0'}
 
   builder-util@24.13.1:
@@ -9360,8 +9366,8 @@ packages:
   electron-to-chromium@1.5.325:
     resolution: {integrity: sha512-PwfIw7WQSt3xX7yOf5OE/unLzsK9CaN2f/FvV3WjPR1Knoc1T9vePRVV4W1EM301JzzysK51K7FNKcusCr0zYA==}
 
-  electron-updater@4.6.5:
-    resolution: {integrity: sha512-kdTly8O9mSZfm9fslc1mnCY+mYOeaYRy7ERa2Fed240u01BKll3aiupzkd07qKw69KvhBSzuHroIW3mF0D8DWA==}
+  electron-updater@6.8.9:
+    resolution: {integrity: sha512-ZhVxM9iGONUpZGI1FxdMRgJjUFXi7AYGVa5PwKlO1tV1/4zDxQmfKpXOHVztKrd6L9rLcFjERvi1Mf2vxyTkig==}
 
   electron@43.0.0:
     resolution: {integrity: sha512-PV60GsWU6qufhuOhw3n+Yix3WPDcqDtBqE8orbEQGQGHEkgp9o/JCPgb7L4vIL0r1HnfPdqSRtboOTqbDkcFDQ==}
@@ -10665,9 +10671,9 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d:
-    resolution: {gitHosted: true, integrity: sha512-/bqsW+y5n7JJNUiclZpvIFxT4DWVa7PXnQLHpiWQZvQ4FB1zW1XbC8brJTh6SAebh9E8MyUEnst/jQZhJ1hwtA==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d}
-    version: 6.2.2
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5:
+    resolution: {gitHosted: true, integrity: sha512-eSEUw3b32+S+3Ex9vwAJif464JnoEX4ooQb3JPQVnT0sOSL6NRnwpGUn1c8hx/HB7jC5Aa/ZUk/qV+KzY964Vw==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5}
+    version: 6.2.3
 
   lowercase-keys@3.0.0:
     resolution: {integrity: sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==}
@@ -12422,6 +12428,9 @@ packages:
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
 
+  tiny-typed-emitter@2.1.0:
+    resolution: {integrity: sha512-qVtvMxeXbVej0cQWKqVSSAHmKZEHAvxdF8HEUBFWts8h+xEo5m/lEiPakuyZ3BnCBjOD8i24kzNOiOLLgsSxhA==}
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -12804,10 +12813,6 @@ packages:
   verror@1.10.0:
     resolution: {integrity: sha512-ZZKSmDAEFOijERBLkmYfJ+vmk3w+7hOLYDNkRCuRuMJGEmqYNCNLyBBFwWKVMhfwaEF3WOd0Zlw86U/WC/+nYw==}
     engines: {'0': node >=0.6.0}
-
-  verror@1.10.1:
-    resolution: {integrity: sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==}
-    engines: {node: '>=0.6.0'}
 
   vfile-message@2.0.4:
     resolution: {integrity: sha512-DjssxRGkMvifUOJre00juHoP9DPWuzjxKuMDrhNbk2TdaYYBNMStsNhEOt3idrtI12VQYM/1+iM0KOzXi4pxwQ==}
@@ -15448,7 +15453,7 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@tootallnate/once@2.0.0': {}
+  '@tootallnate/once@2.0.1': {}
 
   '@tybys/wasm-util@0.10.3':
     dependencies:
@@ -16648,14 +16653,14 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  builder-util-runtime@8.9.2(supports-color@10.2.2):
+  builder-util-runtime@9.2.4:
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       sax: 1.6.0
     transitivePeerDependencies:
       - supports-color
 
-  builder-util-runtime@9.2.4:
+  builder-util-runtime@9.7.0(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       sax: 1.6.0
@@ -17288,7 +17293,7 @@ snapshots:
       iconv-corefoundation: 1.1.7
       plist: 3.1.0
       smart-buffer: 4.2.0
-      verror: 1.10.1
+      verror: 1.10.0
     optional: true
 
   dnd-core@14.0.1:
@@ -17437,16 +17442,16 @@ snapshots:
 
   electron-to-chromium@1.5.325: {}
 
-  electron-updater@4.6.5(supports-color@10.2.2):
+  electron-updater@6.8.9(supports-color@10.2.2):
     dependencies:
-      '@types/semver': 7.7.1
-      builder-util-runtime: 8.9.2(supports-color@10.2.2)
+      builder-util-runtime: 9.7.0(supports-color@10.2.2)
       fs-extra: 10.1.0
       js-yaml: 4.1.1
       lazy-val: 1.0.5
       lodash.escaperegexp: 4.1.2
       lodash.isequal: 4.5.0
-      semver: 7.8.5
+      semver: 7.7.4
+      tiny-typed-emitter: 2.1.0
     transitivePeerDependencies:
       - supports-color
 
@@ -18251,7 +18256,7 @@ snapshots:
 
   http-proxy-agent@5.0.0:
     dependencies:
-      '@tootallnate/once': 2.0.0
+      '@tootallnate/once': 2.0.1
       agent-base: 6.0.2
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -18822,7 +18827,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7b6028fb2caeb3a2af6a0c3d68630c033cc01e8d:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23
@@ -20661,6 +20666,8 @@ snapshots:
 
   tiny-invariant@1.3.3: {}
 
+  tiny-typed-emitter@2.1.0: {}
+
   tinybench@2.9.0: {}
 
   tinycolor2@1.6.0: {}
@@ -21004,13 +21011,6 @@ snapshots:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
       extsprintf: 1.4.1
-
-  verror@1.10.1:
-    dependencies:
-      assert-plus: 1.0.0
-      core-util-is: 1.0.2
-      extsprintf: 1.4.1
-    optional: true
 
   vfile-message@2.0.4:
     dependencies:

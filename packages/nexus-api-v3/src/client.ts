@@ -169,6 +169,21 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       return Array.from(data.data.versions);
     },
 
+    /** Fetch Vortex extensions, themes, and translations, split into three lists. */
+    async getVortexExtensions(): Promise<{
+      extensions: components["schemas"]["VortexExtension"][];
+      themes: components["schemas"]["VortexAsset"][];
+      translations: components["schemas"]["VortexAsset"][];
+    }> {
+      const { data, error, response } = await client.GET("/vortex/extensions");
+      if (error) throw toV3Error(error, response);
+      return {
+        extensions: Array.from(data.data.extensions),
+        themes: Array.from(data.data.themes),
+        translations: Array.from(data.data.translations),
+      };
+    },
+
     /**
      * Resolve mod-level display details (name, summary, status, thumbnail, adult
      * flag) for a set of composite mod UIDs. Up to 2000 `modIds` per call;

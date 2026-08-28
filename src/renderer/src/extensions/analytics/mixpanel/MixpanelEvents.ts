@@ -35,16 +35,18 @@ export function mapPlatformToMixpanel(platform: string): string {
  * @param os Operating system (Node.js platform string: win32, darwin, linux)
  * @param os_version Operating system version (e.g., "10.0.22000" for Windows 11)
  * @param architecture CPU architecture (e.g., "x64", "arm64")
+ * @param is_legacy_ui True when the session is running the legacy (classic) UI rather than the modern one
  */
 export class AppLaunchedEvent implements MixpanelEvent {
   readonly eventName = "app_launched";
   readonly properties: Record<string, any>;
 
-  constructor(os: string, os_version?: string, architecture?: string) {
+  constructor(os: string, os_version?: string, architecture?: string, is_legacy_ui?: boolean) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
       $os_version: os_version, // Not auto-tracked by mixpanel-browser
       architecture, // Custom property for CPU architecture
+      is_legacy_ui, // Custom property for which UI the session is running
     };
   }
 }
@@ -65,6 +67,25 @@ export class AppUpdatedEvent implements MixpanelEvent {
       to_version,
       $os: mapPlatformToMixpanel(os),
     };
+  }
+}
+
+/** Fields on the app_ui_mode_changed event. */
+export interface UIModeChangedProps {
+  /** The mode being switched *to*, not the one being left. */
+  is_legacy_ui: boolean;
+}
+
+/**
+ * Sent when the user switches between the legacy and modern UI from Settings > Theme.
+ * Pairs with is_legacy_ui on app_launched: that reports the mode a session runs in,
+ * this reports the moment someone changes it.
+ */
+export class AppUIModeChangedEvent implements MixpanelEvent {
+  readonly eventName = "app_ui_mode_changed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: UIModeChangedProps) {
+    this.properties = { ...props };
   }
 }
 

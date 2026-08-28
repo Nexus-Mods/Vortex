@@ -2,7 +2,7 @@ import { mkdirSync, statSync } from "node:fs";
 import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import {
   DataInvalid,
@@ -38,7 +38,7 @@ import SplashScreen from "./SplashScreen";
 import DuckDBSingleton from "./store/DuckDBSingleton";
 import { flattenState } from "./store/flattenState";
 import { healInvalidKeys } from "./store/healInvalidKeys";
-import LevelPersist, { DatabaseLocked, DatabaseOpenError } from "./store/LevelPersist";
+import LevelPersist from "./store/LevelPersist";
 import {
   initMainPersistence,
   readPersistedValue,
@@ -363,6 +363,7 @@ class Application {
       await this.regularStartInner(args);
     } catch (err) {
       log("error", "quitting with exception", getErrorMessageOrDefault(err));
+      const parsed = parseError(err);
 
       if (err instanceof UserCanceled) {
         // UserCanceled is thrown by terminate() to unwind the stack.
@@ -391,7 +392,7 @@ class Application {
         }
 
         app.quit();
-      } else if (err instanceof DatabaseLocked) {
+      } else if (parsed.data.kind === "database:locked") {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
@@ -399,13 +400,13 @@ class Application {
         );
 
         app.quit();
-      } else if (err instanceof DatabaseOpenError) {
+      } else if (parsed.data.kind === "database:open-failed") {
         dialog.showErrorBox(
           "Startup failed",
           `Vortex couldn't open its application database at:\n\n` +
-            `${err.path}\n\n` +
-            `Underlying error: ${err.cause}\n\n` +
-            `This is not a "database locked" condition — a different problem is preventing the database from opening. ` +
+            `${parsed.data.path}\n\n` +
+            `Underlying error: ${getErrorMessageOrDefault(parsed.cause)}\n\n` +
+            `This is not a "database locked" condition - a different problem is preventing the database from opening. ` +
             `Check that the path is accessible, the drive isn't full or read-only, and that no antivirus is quarantining files in that folder.`,
         );
 
@@ -660,6 +661,24 @@ class Application {
     }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
+      // A downgrade the user explicitly confirmed through the updater's
+      // channel-switch flow sets a one-shot marker; don't warn about it.
+      // "" is the cleared sentinel: the persistence layer stores it as '""',
+      // which readPersistedValue parses back to "" and the guard below skips.
+      const expectedDowngrade = await readPersistedValue<string>("app", ["expectedDowngradeTo"]);
+      if (expectedDowngrade != null && expectedDowngrade !== "") {
+        await writePersistedValue("app", ["expectedDowngradeTo"], "");
+      }
+      if (expectedDowngrade === currentVersion) {
+        log("info", "Expected downgrade detected, skipping warning", {
+          from: lastVersion,
+          to: currentVersion,
+        });
+        // Returning here also bypasses the update-migration branch below,
+        // which is correct: a downgrade can never satisfy its gt() condition.
+        return;
+      }
+
       const res = await this.showDialog({
         type: "warning",
         title: "Downgrade detected",

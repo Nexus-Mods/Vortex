@@ -52,7 +52,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | drivelist | 10.0.2 |
 | electron-context-menu | 3.6.1 |
 | electron-redux | 1.4.9-sync |
-| electron-updater | 4.6.5 |
+| electron-updater | 6.8.9 |
 | encoding-down | 6.3.0 |
 | exe-version | link:../../packages/exe-version |
 | feedparser | 2.3.0 |

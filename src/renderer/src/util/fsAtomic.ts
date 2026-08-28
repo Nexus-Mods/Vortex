@@ -129,7 +129,6 @@ export function copyFileAtomic(srcPath: string, destPath: string): PromiseBB<voi
         }
       }),
     )
-    .catch((err) => (getErrorCode(err) === "ENOENT" ? PromiseBB.resolve() : PromiseBB.reject(err)))
     .then(() => (tmpPath !== undefined ? fs.renameAsync(tmpPath, destPath) : PromiseBB.resolve()))
     .catch((unknownErr) => {
       const err = unknownToError(unknownErr);
@@ -141,6 +140,11 @@ export function copyFileAtomic(srcPath: string, destPath: string): PromiseBB<voi
           log("error", "failed to clean up temporary file", cleanupErr);
         }
       }
-      return PromiseBB.reject(err);
+      // the tmp cleanup callback fails on the already-closed fd, leaving the file behind
+      const removeTmp =
+        tmpPath !== undefined
+          ? fs.removeAsync(tmpPath).catch(() => PromiseBB.resolve())
+          : PromiseBB.resolve();
+      return removeTmp.then(() => PromiseBB.reject(err));
     });
 }

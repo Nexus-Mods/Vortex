@@ -1,5 +1,7 @@
+import { readdir } from "node:fs/promises";
 import * as path from "path";
 
+import { getErrorCode } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import PromiseBB from "bluebird";
 import * as React from "react";
@@ -25,7 +27,6 @@ import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { getPreloadApi } from "../../util/preloadAccess";
 import { truthy } from "../../util/util";
-import { readExtensibleDir } from "../extension_manager/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";
 import {
@@ -552,48 +553,59 @@ function isValidLanguageCode(langId: string) {
   }
 }
 
-function readLocales(extensions: IAvailableExtension[]): PromiseBB<ILanguage[]> {
+/** List the subdirectories of a base directory; a missing base yields none. */
+async function listSubdirectories(basePath: string): Promise<string[]> {
+  try {
+    const entries = await readdir(basePath, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(basePath, entry.name));
+  } catch (err) {
+    if (getErrorCode(err) === "ENOENT") return [];
+    throw err;
+  }
+}
+
+async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
   const bundledLanguages = getVortexPath("locales");
   const userLanguages = path.normalize(path.join(getVortexPath("userData"), "locales"));
 
   const translationExts = extensions.filter((ext) => ext.type === "translation");
 
-  let local: string[] = [];
+  try {
+    const files = (
+      await Promise.all([bundledLanguages, userLanguages].map(listSubdirectories))
+    ).flat();
+    const local = files.map((file) => path.basename(file));
 
-  return PromiseBB.join(
-    readExtensibleDir("translation", bundledLanguages, userLanguages)
-      .map((file: string) => path.basename(file))
-      .tap((files) => (local = files)),
-    translationExts.map((ext) => ext.language),
-  )
-    .then((fileLists) => Array.from(new Set([].concat(...fileLists))))
-    .filter((langId: string) => isValidLanguageCode(langId))
-    .then((files) => {
-      // files contains just the unique languages being supported, but there
-      // may be multiple extensions providing the same language
-      const loc = new Set(local);
-      const locales = files.map((key: string) => {
-        let language;
-        let country;
+    // the unique languages being supported; there may be multiple extensions
+    // providing the same language
+    const keys = Array.from(
+      new Set([...local, ...translationExts.map((ext) => ext.language)]),
+    ).filter((langId): langId is string => langId !== undefined && isValidLanguageCode(langId));
 
-        const [languageKey, countryKey] = key.split("-");
-        language = nativeLanguageName(languageKey);
-        if (countryKey !== undefined) {
-          country = nativeCountryName(countryKey);
-        }
+    const loc = new Set(local);
+    // keyed by locale code
+    const extsByLanguage = new Map<string, IAvailableExtension[]>();
+    for (const ext of translationExts) {
+      if (ext.language === undefined) continue;
+      extsByLanguage.set(ext.language, [...(extsByLanguage.get(ext.language) ?? []), ext]);
+    }
 
-        const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
-          ? []
-          : translationExts.filter((iter) => iter.language === key);
-        return { key, language, country, ext };
-      });
+    return keys.map((key) => {
+      const [languageKey, countryKey] = key.split("-");
+      const language = nativeLanguageName(languageKey);
+      const country = countryKey !== undefined ? nativeCountryName(countryKey) : undefined;
 
-      return locales;
-    })
-    .catch((err) => {
-      log("warn", "failed to read locales", err);
-      return [];
+      const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
+        ? []
+        : (extsByLanguage.get(key) ?? []);
+      return { key, language, country, ext };
     });
+  } catch (err) {
+    log("warn", "failed to read locales", err);
+    return [];
+  }
 }
 
 function SettingsInterface(props: IBaseProps) {

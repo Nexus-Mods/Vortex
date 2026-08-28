@@ -116,7 +116,9 @@ try {
     },
 
     updater: {
-      getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
+      getStatus: (since?: number) => betterIpcRenderer.invoke("updater:get-status", since),
+      getUpdateChangelog: (channel: string) =>
+        betterIpcRenderer.invoke("updater:get-update-changelog", channel),
       setChannel: (channel: string, manual: boolean) =>
         betterIpcRenderer.send("updater:set-channel", channel, manual),
       checkForUpdates: (channel: string, manual: boolean) =>
@@ -124,6 +126,10 @@ try {
       downloadUpdate: (channel: string, installAfterDownload: boolean = false) =>
         betterIpcRenderer.send("updater:download", channel, installAfterDownload),
       restartAndInstall: () => betterIpcRenderer.send("updater:restart-and-install"),
+      downloadDowngrade: (installAfterDownload: boolean = false) =>
+        betterIpcRenderer.send("updater:download-downgrade", installAfterDownload),
+      declineDowngrade: () => betterIpcRenderer.send("updater:decline-downgrade"),
+      cancelDownload: () => betterIpcRenderer.send("updater:cancel-download"),
     },
 
     dialog: {

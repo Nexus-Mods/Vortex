@@ -24,6 +24,7 @@ import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
+import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
 import { CollapsibleSection } from "../components/CollapsibleSection";
 import { GamesGrid } from "../components/GamesGrid";
@@ -69,12 +70,14 @@ interface IConnectedProps {
   extensionsInstalled: { [extId: string]: IExtensionState };
   sortManaged: string;
   sortUnmanaged: string;
+  showHidden: boolean;
 }
 
 interface IActionProps {
   onSetPickerLayout: (layout: "list" | "small" | "large") => void;
   onSetSortManaged: (sorting: string) => void;
   onSetSortUnmanaged: (sorting: string) => void;
+  onSetShowHidden: (show: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
@@ -100,6 +103,7 @@ const GamePicker = ({
   profiles,
   sortManaged,
   sortUnmanaged,
+  showHidden,
   gameMode,
   nexusGames,
   onRefreshGameInfo,
@@ -107,8 +111,8 @@ const GamePicker = ({
   onSetPickerLayout,
   onSetSortManaged,
   onSetSortUnmanaged,
+  onSetShowHidden,
 }: IProps) => {
-  const [showHidden, setShowHidden] = useState(false);
   const [currentFilterValue, setCurrentFilterValue] = useState("");
   const [unmanagedPage, setUnmanagedPage] = useState(1);
 
@@ -244,7 +248,7 @@ const GamePicker = ({
   supportedGameList.push(
     ...extensionsUninstalled
       .map((ext) => ({
-        id: ext.gameId || ext.name,
+        id: ext.gameDomain || ext.name,
         name: ext.gameName || ext.name,
         extensionPath: undefined,
         imageURL: ext.image,
@@ -290,12 +294,12 @@ const GamePicker = ({
       onSetPickerLayout(DEFAULT_PICKER_LAYOUT);
       onSetSortManaged("alphabetical");
       onSetSortUnmanaged("popular");
-      setShowHidden(false);
+      onSetShowHidden(false);
       setUnmanagedPage(1);
     },
     onSetPickerLayout,
     onToggleHidden: () => {
-      setShowHidden((prev) => !prev);
+      onSetShowHidden(!showHidden);
       setUnmanagedPage(1);
     },
   });
@@ -473,6 +477,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     extensionsInstalled: state.app.extensions ?? {},
     sortManaged: state.settings.gameMode.sortManaged ?? "alphabetical",
     sortUnmanaged: state.settings.gameMode.sortUnmanaged ?? "alphabetical",
+    showHidden: state.session.gameMode.showHidden ?? false,
   };
 }
 
@@ -481,6 +486,7 @@ function mapDispatchToProps(dispatch): IActionProps {
     onSetPickerLayout: (layout) => dispatch(setPickerLayout(layout)),
     onSetSortManaged: (sorting: string) => dispatch(setSortManaged(sorting)),
     onSetSortUnmanaged: (sorting: string) => dispatch(setSortUnmanaged(sorting)),
+    onSetShowHidden: (show: boolean) => dispatch(setShowHiddenGames(show)),
   };
 }
 

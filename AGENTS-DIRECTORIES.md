@@ -56,6 +56,6 @@ Common extension examples:
 
 ## Usually Ignore
 
-- `dist/`, `src/main/out/`, `src/main/dist/` - Build output
+- `dist/`, `src/main/out/`, `src/main/dist/` - Build output (packaging output/input — see `AGENTS-PACKAGING.md` when working on installers)
 - `test-results/` - Test artifacts
 - `node_modules/` - Dependencies

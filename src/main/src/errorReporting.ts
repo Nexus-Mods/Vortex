@@ -1,6 +1,7 @@
 import { type Dirent } from "node:fs";
 import { readdir, readFile, rename, stat, unlink, utimes } from "node:fs/promises";
 import * as path from "node:path";
+import { inspect } from "node:util";
 
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
@@ -25,13 +26,27 @@ export function isErrorReportingDisabled(): boolean {
   return errorReportingDisabled;
 }
 
+// Object props (e.g. VortexError.data) render as JSON; template
+// interpolation would flatten them to "[object Object]". Circular
+// values fall back to util.inspect, which renders them legibly.
+function formatDetailValue(value: unknown): string {
+  if (typeof value !== "object" || value === null) {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return inspect(value);
+  }
+}
+
 export function errorToReportableError(error: Error): ReportableError {
   return {
     message: error.message,
     stack: error.stack,
     allowReport: "allowReport" in error && !!error.allowReport,
     details: Object.entries(error)
-      .map(([key, value]) => `${key}: ${value}`)
+      .map(([key, value]) => `${key}: ${formatDetailValue(value)}`)
       .join("\n"),
   };
 }

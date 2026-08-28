@@ -1,0 +1,114 @@
+# .github/workflows/annotate-mixpanel-release.yml
+#
+# Creates a Mixpanel annotation whenever a Vortex release goes out. Stable and
+# beta releases get different Mixpanel tags so they can be toggled separately
+# on dashboards. Drafts never fire either trigger type.
+#
+# Required secret:    MIXPANEL_SERVICE_ACCOUNT        -> "sa-username:sa-secret"
+# Required variables: MIXPANEL_PROJECT_ID             -> 1234
+#                     MIXPANEL_ANNOTATION_TAG_ID      -> 1234   (stable releases)
+#                     MIXPANEL_ANNOTATION_TAG_ID_BETA -> 1234   (beta releases)
+#                     MIXPANEL_PROJECT_TZ             -> Europe/London
+
+name: Annotate Mixpanel Release
+
+on:
+  release:
+    types: [prereleased, released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to annotate (e.g. 'v2.6.1' or 'v2.7.0-beta.1')."
+        required: true
+        type: string
+      dry-run:
+        description: "Print the payload without posting it."
+        type: boolean
+        default: true
+
+concurrency:
+  group: mixpanel-annotate-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  annotate:
+    runs-on: ubuntu-latest
+    env:
+      API: https://eu.mixpanel.com/api/app
+      PROJECT_ID: ${{ vars.MIXPANEL_PROJECT_ID }}
+      PROJECT_TZ: ${{ vars.MIXPANEL_PROJECT_TZ || 'Europe/London' }}
+      TAG_ID: ${{ vars.MIXPANEL_ANNOTATION_TAG_ID }}
+      TAG_ID_BETA: ${{ vars.MIXPANEL_ANNOTATION_TAG_ID_BETA }}
+      SA: ${{ secrets.MIXPANEL_SERVICE_ACCOUNT }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      DRY_RUN: ${{ inputs.dry-run || false }}
+    steps:
+      - name: Resolve release
+        id: rel
+        run: |
+          set -euo pipefail
+          # published_at comes straight from the event payload on a release
+          # trigger; workflow_dispatch has to look it up.
+          published="${{ github.event.release.published_at }}"
+          prerelease="${{ github.event.release.prerelease }}"
+          if [ -z "$published" ]; then
+            read -r published prerelease < <(
+              gh release view "$TAG" --repo "${{ github.repository }}" \
+                --json publishedAt,isPrerelease \
+                --jq '[.publishedAt, (.isPrerelease|tostring)] | @tsv'
+            )
+          fi
+          channel=stable
+          [ "$prerelease" = "true" ] && channel=beta
+
+          version="${TAG#v}"
+          # GitHub timestamps are UTC; Mixpanel reads the date in project time.
+          local_ts=$(TZ="$PROJECT_TZ" date -d "$published" '+%Y-%m-%d %H:%M:%S')
+
+          {
+            echo "channel=$channel"
+            echo "version=$version"
+            echo "date=$local_ts"
+            echo "day=${local_ts%% *}"
+            echo "description=Vortex $version Released"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Skip if already annotated
+        id: dedupe
+        run: |
+          set -euo pipefail
+          day="${{ steps.rel.outputs.day }}"
+          exists=$(curl -sS --fail-with-body -u "$SA" \
+            "$API/projects/$PROJECT_ID/annotations?fromDate=$day&toDate=$day" \
+            | jq -r --arg d "${{ steps.rel.outputs.description }}" \
+                'any(.results[]?; .description == $d)')
+          echo "exists=$exists" >> "$GITHUB_OUTPUT"
+          [ "$exists" = "true" ] && echo "::notice::$day already has an annotation for ${{ steps.rel.outputs.version }}."
+          exit 0
+
+      - name: Create annotation
+        if: steps.dedupe.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+          tag_id="$TAG_ID"
+          [ "${{ steps.rel.outputs.channel }}" = "beta" ] && tag_id="$TAG_ID_BETA"
+          payload=$(jq -nc \
+            --arg date "${{ steps.rel.outputs.date }}" \
+            --arg description "${{ steps.rel.outputs.description }}" \
+            --arg tag_id "$tag_id" \
+            '{date: $date, description: $description}
+             + (if $tag_id == "" then {} else {tags: [($tag_id|tonumber)]} end)')
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run - would POST: $payload"
+            exit 0
+          fi
+
+          curl -sS --fail-with-body -u "$SA" \
+            -X POST "$API/projects/$PROJECT_ID/annotations" \
+            -H 'Content-Type: application/json' \
+            -d "$payload"

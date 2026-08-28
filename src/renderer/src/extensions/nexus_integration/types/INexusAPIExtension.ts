@@ -109,6 +109,9 @@ export interface INexusAPIExtension {
     uids: string[],
   ) => PromiseLike<{ [uid: string]: Partial<IModRequirements> }>;
 
+  /** Endorsement counts for the given mod UIDs, keyed by UID. */
+  nexusGetModEndorsementCounts?: (uids: string[]) => PromiseLike<Record<string, number>>;
+
   // Retrieves user data which is persistently stored in Vortex's state.
   nexusGetUserKeyData?: () => PromiseLike<IValidateKeyDataV2>;
 }

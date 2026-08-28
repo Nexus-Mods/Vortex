@@ -6,6 +6,11 @@ flowchart LR
 
 ```
 
+App
+
+app_launched { is_legacy_ui } // true = legacy/classic UI, false = modern
+app_ui_mode_changed { is_legacy_ui } // the mode switched to, from Settings > Theme
+
 Mods
 
 mods_download_started

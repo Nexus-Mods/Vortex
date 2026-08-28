@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { updateModStatus } from "../../actions/collectionInstallTracking";
+import { log } from "../../logging";
 import {
   makeDownload,
   makeMod,
@@ -10,8 +11,11 @@ import {
 } from "../../test-utils/builders";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+import { modRuleId } from "../../util/collectionInstallSession";
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
+import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import InstallManager from "./InstallManager";
+import type { IModReference } from "./types/IMod";
 import { lookupFromDownload } from "./util/dependencies";
 import type { InstallPhaseTracker } from "./util/InstallPhaseTracker";
 
@@ -23,6 +27,7 @@ vi.mock("../../util/log", () => {
   const log = vi.fn();
   return { default: log, log };
 });
+vi.mock("../../logging", () => ({ log: vi.fn() }));
 
 // TODO: prefer the shared api/harness fixtures (makeApiHarness and the test.extend fixtures in
 // test-utils) over the hand-built mockApi/mockState in this file; new tests should seed state with
@@ -44,6 +49,12 @@ interface IInstallManagerTestable {
     silent: boolean,
   ): Promise<unknown[]>;
   markPhaseDownloadsFinished(sourceModId: string, phase: number, api: IExtensionApi): void;
+  writeCollectionSession(
+    reference: IModReference,
+    outcome: CollectionInstallOutcome,
+    ruleId?: string,
+    sourceModId?: string,
+  ): void;
   // per-collection phase-gating state now lives on the tracker; tests drive it directly
   mPhaseTracker: InstallPhaseTracker;
 }
@@ -454,6 +465,86 @@ describe("collection download failure handling", () => {
 
     // status leaves "downloading" so the row is no longer mis-bucketed under the Downloading filter
     expect(dispatch).toHaveBeenCalledWith(updateModStatus("col-1_prof1", "rule-1", "failed"));
+  });
+
+  it("keeps an unaddressed write that names no member quiet", () => {
+    // a transitive sub-dependency gathered under a member carries no session key and has no
+    // session entry; its lifecycle writes are expected no-ops, not warnings
+    installManager.writeCollectionSession(
+      { tag: "sub-dependency-tag" },
+      { type: "status", status: "downloading" },
+      undefined,
+      "col-1",
+    );
+
+    expect(vi.mocked(log)).not.toHaveBeenCalledWith(
+      "warn",
+      "collection session write matched no member",
+      expect.anything(),
+    );
+  });
+
+  it("reports an addressed write whose member the session does not track", () => {
+    installManager.writeCollectionSession(
+      { tag: "member-gone-tag" },
+      { type: "status", status: "downloading" },
+      "requires_member-gone-tag",
+      "col-1",
+    );
+
+    expect(vi.mocked(log)).toHaveBeenCalledWith(
+      "warn",
+      "collection session write matched no member",
+      expect.objectContaining({ ruleId: "requires_member-gone-tag" }),
+    );
+  });
+
+  it("settles the failed download's own member when another member shares its file", () => {
+    // two members reference the same logical file pinned to different versions, so their session
+    // keys differ while their reference identity (referenceId) collides on the file name; the
+    // write must be addressed by the matched rule's key, not by first reference match
+    const requiredV1 = makeRule({
+      type: "requires",
+      reference: { logicalFileName: "SharedMod", versionMatch: "1.0.0" },
+    });
+    const optionalV2 = makeRule({
+      type: "recommends",
+      reference: { logicalFileName: "SharedMod", versionMatch: "2.0.0" },
+    });
+    state.session = {
+      collections: {
+        activeSession: makeSession({
+          sessionId: "col-1_prof1",
+          collectionId: "col-1",
+          gameId: "skyrimse",
+          mods: {
+            [modRuleId(requiredV1)]: makeModInstallInfo({
+              rule: requiredV1,
+              type: "requires",
+              status: "installed",
+            }),
+            [modRuleId(optionalV2)]: makeModInstallInfo({
+              rule: optionalV2,
+              type: "recommends",
+              status: "downloading",
+            }),
+          },
+        }),
+      },
+    };
+    // the failed download is the 2.0.0 file, so it matches only the optional member
+    vi.mocked(lookupFromDownload).mockReturnValue({
+      logicalFileName: "SharedMod",
+      version: "2.0.0",
+      fileMD5: "dl-md5",
+      fileName: "member.zip",
+    } as never);
+
+    installManager.handleDownloadFailed(api, "dl-fail");
+
+    expect(dispatch).toHaveBeenCalledWith(
+      updateModStatus("col-1_prof1", modRuleId(optionalV2), "failed"),
+    );
   });
 
   it("settles the member as failed when its download terminally fails in the install phase", async () => {
