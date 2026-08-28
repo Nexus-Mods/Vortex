@@ -1,11 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { log, selectors, types } from "@nexusmods/vortex-api";
+import { log, types } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 
 import ARCWrapper from "./ARCWrapper";
-import AttribDashlet from "./AttribDashlet";
 import { arcGameId, arcVersion } from "./gameSupport";
 import { ArcGame } from "./types";
 
@@ -56,12 +55,6 @@ function createARCHandler(
   return Promise.resolve(new ARCHandler(api, fileName, options));
 }
 
-function isSupported(state: types.IState) {
-  const gameMode = selectors.activeGameId(state);
-
-  return ["dragonsdogma"].indexOf(gameMode) !== -1;
-}
-
 function init(context: types.IExtensionContext) {
   try {
     fs.statSync(path.join(__dirname, "ARCtool.exe"));
@@ -76,17 +69,6 @@ function init(context: types.IExtensionContext) {
 
   context.registerArchiveType("arc", (fileName, options) =>
     createARCHandler(context.api, fileName, options),
-  );
-
-  context.registerDashlet(
-    "ARC Support",
-    1,
-    2,
-    250,
-    AttribDashlet,
-    isSupported,
-    () => ({}),
-    undefined,
   );
 
   return true;

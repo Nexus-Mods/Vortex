@@ -1,5 +1,8 @@
 import type { IMod } from "@/extensions/mod_management/types/IMod";
-import { isDependencyRule } from "@/extensions/mod_management/util/testModReference";
+import {
+  isDependencyRule,
+  modReferenceTags,
+} from "@/extensions/mod_management/util/testModReference";
 import type { IProfile } from "@/extensions/profile_management/types/IProfile";
 
 /**
@@ -29,8 +32,11 @@ export function collectionManagedTags(
   return tags;
 }
 
-/** Whether a mod's own referenceTag matches one of the given collection-managed tags. */
+/**
+ * Whether any tag the mod carries is one of the given collection-managed tags. A mod can belong
+ * to several collections, each recording its own tag, so all of them count - reading only the
+ * first-stamped `referenceTag` would drop the mod from every collection but that one.
+ */
 export function isCollectionManaged(mod: IMod, collectionTags: Set<string>): boolean {
-  const referenceTag = (mod.attributes as { referenceTag?: string } | undefined)?.referenceTag;
-  return referenceTag != null && collectionTags.has(referenceTag);
+  return modReferenceTags(mod).some((tag) => collectionTags.has(tag));
 }

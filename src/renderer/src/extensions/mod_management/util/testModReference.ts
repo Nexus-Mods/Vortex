@@ -34,9 +34,46 @@ export interface IModLookupInfo {
   modId?: string;
   source?: string;
   referenceTag?: string;
+  // every collection-rule tag the mod or archive satisfies; referenceTag holds the first of them
+  referenceTags?: string[];
   installerChoices?: IChoiceType;
   patches?: IModPatches;
   fileList?: IFileListItem[];
+}
+
+/**
+ * Every collection-rule tag a download satisfies: the legacy single field unioned with the tag
+ * array, deduped. Empty when the archive carries no tag.
+ */
+export function downloadReferenceTags(download: IDownload | undefined): string[] {
+  const { referenceTag, referenceTags } = download?.modInfo ?? {};
+  const tags = new Set<string>(Array.isArray(referenceTags) ? referenceTags : []);
+  if (typeof referenceTag === "string") {
+    tags.add(referenceTag);
+  }
+  return Array.from(tags);
+}
+
+/** Whether a download satisfies this collection-rule tag. Runs inside per-download scans. */
+export function downloadHasReferenceTag(
+  download: IDownload | undefined,
+  tag: string | undefined,
+): boolean {
+  if (tag === undefined) {
+    return false;
+  }
+  const modInfo = download?.modInfo;
+  return modInfo?.referenceTag === tag || modInfo?.referenceTags?.includes(tag) === true;
+}
+
+/** Every collection-rule tag an installed mod satisfies, as its attributes record them. */
+export function modReferenceTags(mod: IMod | undefined): string[] {
+  const attrs = mod?.attributes ?? {};
+  const tags = new Set<string>(Array.isArray(attrs.referenceTags) ? attrs.referenceTags : []);
+  if (typeof attrs.referenceTag === "string") {
+    tags.add(attrs.referenceTag);
+  }
+  return Array.from(tags);
 }
 
 export function modAttributesToLookupInfo(
@@ -62,6 +99,7 @@ export function modAttributesToLookupInfo(
     modId: attrs.modId?.toString(),
     source: attrs.source,
     referenceTag: attrs.referenceTag,
+    referenceTags: attrs.referenceTags,
     installerChoices: attrs.installerChoices,
     patches: attrs.patches,
     fileList: attrs.fileList,
@@ -212,7 +250,9 @@ function hasIdentifyingMarker(
     (ref.fileExpression !== undefined && (mod.fileName ?? mod.name) !== undefined) ||
     (ref.logicalFileName !== undefined && mod.logicalFileName !== undefined) ||
     (ref.repo !== undefined && mod.source !== undefined) ||
-    (allowTag && ref.tag !== undefined && mod.referenceTag !== undefined)
+    (allowTag &&
+      ref.tag !== undefined &&
+      (mod.referenceTag !== undefined || (mod.referenceTags?.length ?? 0) > 0))
   );
 }
 
@@ -258,7 +298,8 @@ function testRef(
   }
 
   if (ref.tag != null) {
-    if (mod.referenceTag === ref.tag) {
+    // an archive shared between collections carries a tag per rule, so any of them is a hit
+    if (mod.referenceTag === ref.tag || mod.referenceTags?.includes(ref.tag) === true) {
       return true;
     } else {
       // tags differ. if the mod has no stricter attribute we have to refuse here, otherwise

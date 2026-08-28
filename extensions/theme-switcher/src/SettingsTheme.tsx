@@ -270,7 +270,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   };
 
   private toggleLegacyUI = (useLegacy: boolean) => {
-    this.context.api.events.emit("analytics-track-click-event", "Themes", "Toggle legacy UI");
+    this.context.api.events.emit("analytics-track-ui-mode-changed", useLegacy);
     this.props.onSetUseModernLayout(!useLegacy);
   };
 

@@ -51,20 +51,76 @@ export interface AppInitMetadata {
   warnedAdmin?: number;
 }
 
-/** Status of the auto-updater in main process */
-export interface UpdateStatus {
-  /** Whether an update is available */
-  available: boolean;
-  /** Whether update is downloaded and ready to install */
-  downloaded: boolean;
-  /** Version of the available update */
-  version?: string;
-  /** Release notes/changelog for the update */
-  releaseNotes?: string;
-  /** Download progress (0-100) if downloading */
-  downloadProgress?: number;
-  /** Error message if update check failed */
-  error?: string;
+/**
+ * What kind of update a download/staged installer represents. Patches
+ * auto-download and install on restart; regular updates wait for the user;
+ * downgrades only ever follow an explicit confirmation.
+ */
+export type UpdateKind = "patch" | "update" | "downgrade";
+
+/**
+ * The auto-updater as an explicit state machine (modeled on VS Code's
+ * updater): exactly one state at a time, each carrying only the data valid
+ * for it, so contradictory combinations (stale progress on an error, a patch
+ * flag on a minor update) are unrepresentable. The UI renders purely from
+ * the current state.
+ */
+export type UpdaterState =
+  /** updates turned off (channel "none") */
+  | { type: "disabled" }
+  /** nothing on offer */
+  | { type: "idle" }
+  /** a check is in flight; manual checks always render visible feedback */
+  | { type: "checking"; manual: boolean }
+  /** a newer version needs a user decision to download */
+  | { type: "available"; version: string; releaseNotes?: string }
+  /**
+   * the stable channel's latest is older than the running version; only ever
+   * entered on a purposeful switch to stable, awaiting confirm/decline
+   */
+  | { type: "downgrade-offered"; version: string }
+  /**
+   * a download is running; percent is absent until the first progress event.
+   * manual marks a download the user's own action set in motion (Download,
+   * a confirmed downgrade, a manual check that found a patch), those render
+   * visibly; only background-initiated patch downloads stay silent.
+   */
+  | { type: "downloading"; version: string; kind: UpdateKind; manual: boolean; percent?: number }
+  /** downloaded and verified; installs on quit, or immediately via Restart Now */
+  | { type: "staged"; version: string; kind: UpdateKind; releaseNotes?: string }
+  /**
+   * a check or download failed in a way the user should hear about; retry
+   * carries the still-known update so a working Download can be offered
+   */
+  | {
+      type: "error";
+      message: string;
+      manual: boolean;
+      retry?: { version: string; releaseNotes?: string };
+    };
+
+/** The full updater snapshot pushed to (and queried by) the renderer */
+export interface UpdaterSnapshot {
+  state: UpdaterState;
+  /**
+   * Set on the first launch after an update: the version that was running
+   * before. Drives the one-time "Vortex was updated" notice; orthogonal to
+   * the state machine.
+   */
+  justUpdatedFrom?: string;
+}
+
+/**
+ * Reply to `updater:get-status`. The renderer polls rather than being pushed
+ * (the same model as downloads and uploads). `seq` counts snapshots recorded
+ * so far; passing it back as `since` on the next poll returns every snapshot
+ * after it in `changes`, so a state that lasted 300 ms is still delivered.
+ * `snapshot` is always the latest.
+ */
+export interface UpdaterStatusResponse {
+  seq: number;
+  snapshot: UpdaterSnapshot;
+  changes: UpdaterSnapshot[];
 }
 
 /** Vortex application paths */
@@ -250,6 +306,16 @@ export interface RendererChannels extends RendererCallbackChannels {
   // Updater: Download the available update (installAfterDownload triggers auto-restart when done)
   "updater:download": (channel: string, installAfterDownload: boolean) => void;
 
+  // Updater: Download the downgrade offered after an explicit switch to
+  // stable. Ignored unless a downgrade offer is outstanding.
+  "updater:download-downgrade": (installAfterDownload: boolean) => void;
+
+  // Updater: Decline the outstanding downgrade offer. Clears the offer;
+  // only another purposeful switch to stable raises it again.
+  "updater:decline-downgrade": () => void;
+  // Updater: stop the running download (the user dismissed its notification)
+  "updater:cancel-download": () => void;
+
   // Updater: Restart and install update
   "updater:restart-and-install": () => void;
 
@@ -344,8 +410,15 @@ export interface InvokeChannels {
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 
-  // Updater: Query current update status from main process
-  "updater:get-status": () => Promise<UpdateStatus>;
+  // Updater: the renderer polls this (pull, like downloads and uploads). With
+  // `since`, the reply also lists every snapshot recorded after that sequence
+  // number, so short-lived states are seen and not sampled past.
+  "updater:get-status": (since?: number) => Promise<UpdaterStatusResponse>;
+  // Updater: Release notes covering the update the app just went through
+  // (null when the launch did not follow an update or notes are unavailable).
+  // The renderer passes its persisted channel, the handler can be invoked
+  // before the first check has established one in main.
+  "updater:get-update-changelog": (channel: string) => Promise<string | null>;
   // Dialog channels
   "dialog:showOpen": (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>;
   "dialog:showSave": (options: SaveDialogOptions) => Promise<SaveDialogReturnValue>;

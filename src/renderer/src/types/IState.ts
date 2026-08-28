@@ -11,6 +11,7 @@ import type { IHealthCheckSessionState } from "../extensions/health_check/reduce
 import type { IHistoryPersistent, IHistoryState } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
+import type { IUpdaterSessionState } from "../extensions/updater/reducers";
 import type { ICollectionInstallState } from "./collections/ICollectionInstallSession";
 import type { ExtensionType, IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
@@ -409,6 +410,7 @@ export interface ISessionState {
   history: IHistoryState;
   overlays: IOverlaysState;
   healthCheck: IHealthCheckSessionState;
+  updater: IUpdaterSessionState;
 }
 
 export interface IState {

@@ -181,4 +181,12 @@ runs:
           exit 1
         }
 
+        # Guards against the packager mangling nested dependency versions in
+        # the asar (bit us with electron-builder 26's module collector).
+        node scripts/verify-packaged-asar.mjs
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "packaged asar does not match the deploy tree"
+          exit 1
+        }
+
         Write-Output "✅ Package validation successful - installer and metadata files created"

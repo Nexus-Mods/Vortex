@@ -23,7 +23,7 @@ def ensure_tool(tool_name: str) -> None:
         return
 
     print(f"{tool_name} not found on PATH.")
-    print("Install it with your distro package manager (see CONTRIBUTE.md).")
+    print("Install it with your distro package manager (see CONTRIBUTING.md).")
     print("On NixOS: run 'nix develop'.")
     raise SystemExit(1)
 

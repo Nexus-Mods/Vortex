@@ -661,6 +661,24 @@ class Application {
     }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
+      // A downgrade the user explicitly confirmed through the updater's
+      // channel-switch flow sets a one-shot marker; don't warn about it.
+      // "" is the cleared sentinel: the persistence layer stores it as '""',
+      // which readPersistedValue parses back to "" and the guard below skips.
+      const expectedDowngrade = await readPersistedValue<string>("app", ["expectedDowngradeTo"]);
+      if (expectedDowngrade != null && expectedDowngrade !== "") {
+        await writePersistedValue("app", ["expectedDowngradeTo"], "");
+      }
+      if (expectedDowngrade === currentVersion) {
+        log("info", "Expected downgrade detected, skipping warning", {
+          from: lastVersion,
+          to: currentVersion,
+        });
+        // Returning here also bypasses the update-migration branch below,
+        // which is correct: a downgrade can never satisfy its gt() condition.
+        return;
+      }
+
       const res = await this.showDialog({
         type: "warning",
         title: "Downgrade detected",
