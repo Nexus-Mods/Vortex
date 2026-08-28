@@ -131,9 +131,6 @@ export interface Shell {
 
   /** Opens the file using the default application for the file extension */
   openFile(filePath: string): void;
-
-  /** Opens the file explorer with the file selected */
-  showItemInFolder(filePath: string): void;
 }
 
 export interface Diag {
