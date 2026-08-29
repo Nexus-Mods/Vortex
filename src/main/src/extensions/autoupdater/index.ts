@@ -144,7 +144,10 @@ export function setupAutoUpdater(installType: string): void {
 
   // What kind of update a version represents for the running install.
   function kindFor(version: string): UpdateKind {
-    return shouldAutoDownload(currentVersion, version, installType) ? "patch" : "update";
+    // dev classifies as "managed" (no uninstaller), so treat it as regular like initUpdater and
+    // the renderer extension already do, otherwise the patch path is unreachable from source
+    const effectiveInstallType = process.env.NODE_ENV === "development" ? "regular" : installType;
+    return shouldAutoDownload(currentVersion, version, effectiveInstallType) ? "patch" : "update";
   }
 
   // ---- install ------------------------------------------------------------

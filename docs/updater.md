@@ -7,6 +7,21 @@ against real GitHub, [updater-rehearsal.md](./updater-rehearsal.md); for how
 releases get published,
 see [publishing-releases.md](./publishing-releases.md).
 
+## Install types
+
+`installType` decides whether Vortex updates itself at all. `identifyInstallType`
+(`Application.ts`) sets it at startup from one probe: if `Uninstall Vortex.exe` sits next to the
+app it is `regular`, otherwise `managed`.
+
+`managed` means a third-party launcher (Steam, GOG Galaxy, Epic) owns updating. `initUpdater`
+never calls `setupAutoUpdater`, the renderer extension returns before it starts polling, and
+Settings shows a callout instead of the update controls.
+
+Two things to know. No managed build ships yet, so the path is untested. And because the probe
+infers `managed` from a _missing_ uninstaller, a run-from-source build lands there too, which is
+why each gate also treats `NODE_ENV === "development"` as regular. Both go away when managed
+installs are detected properly rather than inferred.
+
 ## How an update is found
 
 Vortex resolves releases itself instead of trusting electron-updater's GitHub
