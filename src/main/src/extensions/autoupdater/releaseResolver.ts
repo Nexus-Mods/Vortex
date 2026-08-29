@@ -14,7 +14,7 @@ import * as semver from "semver";
 
 import { log } from "../../logging";
 
-export type ResolveChannel = "stable" | "beta" | "next";
+export type ResolveChannel = "stable" | "beta";
 
 export interface GithubReleaseLite {
   tag_name: string;
@@ -62,7 +62,7 @@ export function repoForChannel(): string {
   if (override != null && override !== "") {
     return override.includes("/") ? override.split("/")[1]! : override;
   }
-  return process.env.IS_PREVIEW_BUILD === "true" ? "Vortex-Staging" : "Vortex";
+  return "Vortex";
 }
 
 export function repoOwner(): string {

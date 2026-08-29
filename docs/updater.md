@@ -17,10 +17,17 @@ app it is `regular`, otherwise `managed`.
 never calls `setupAutoUpdater`, the renderer extension returns before it starts polling, and
 Settings shows a callout instead of the update controls.
 
-Two things to know. No managed build ships yet, so the path is untested. And because the probe
-infers `managed` from a _missing_ uninstaller, a run-from-source build lands there too, which is
-why each gate also treats `NODE_ENV === "development"` as regular. Both go away when managed
+No managed build ships yet, so that path is untested. And because the probe infers `managed` from
+a _missing_ uninstaller, a run-from-source build lands there too. Both go away when managed
 installs are detected properly rather than inferred.
+
+In development the install type is therefore meaningless, so it is ignored and
+`VORTEX_DEV_UPDATER=1` decides on its own: without it the updater does nothing at all, and with
+it everything runs. That matters because electron-updater refuses to check an unpackaged build,
+so every check without the opt-in would fail after spending a real GitHub request.
+
+`isUpdaterActive` in `src/main/src/extensions/updater.ts` is the single gate for both rules, and
+`updater initialized` logs the answer as `active` at startup.
 
 ## How an update is found
 
@@ -178,7 +185,13 @@ network features).
 
 ## Channels
 
-`settings.update.channel`: `stable` (default), `beta`, `none`, plus a hidden
-`next` used by preview builds (`IS_PREVIEW_BUILD=true` reads releases from
-`Vortex-Staging` instead of `Vortex`; the channel itself never changes the
-repo). Manual checks are rate-limited to once per minute in the Settings UI.
+`settings.update.channel`: `stable` (default), `beta` and `none`. Manual checks are rate-limited
+to once per minute in the Settings UI.
+
+A fourth channel, `next`, was retired: it was only ever a second name for `beta` and had not been
+used in years. An install may still have it persisted, so `toUpdateChannel` reads anything
+unrecognised as `stable`.
+
+The channel never selects the repo. To point a build at a different one, set
+`VORTEX_UPDATER_REPO` (for example `Nexus-Mods/Vortex-Staging`), which redirects both the release
+lookup and the installer download.

@@ -43,7 +43,8 @@ import {
 } from "./releaseResolver";
 
 function toResolveChannel(channel: string): ResolveChannel {
-  return channel === "beta" || channel === "next" ? channel : "stable";
+  // anything unrecognised, including the retired "next", resolves on the stable track
+  return channel === "beta" ? "beta" : "stable";
 }
 
 function describeState(state: UpdaterState): string {

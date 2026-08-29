@@ -89,16 +89,19 @@ If your environment requires the system-provided Electron package (for example N
 
 #### Special Modes (Optional)
 
-| Profile                      | Purpose                              | Notes                                                                     |
-| ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------- |
-| Debug Electron (Staging)     | Main + renderer with preview updater | Sets `IS_PREVIEW_BUILD=true` to test release updates via [Vortex-Staging] |
-| Debug Main Process (Staging) | Main only with preview updater       | Same as above                                                             |
+| Profile                      | Purpose                             | Notes                                                                                                                        |
+| ---------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Debug Electron (Staging)     | Main + renderer with the updater on | Sets `VORTEX_DEV_UPDATER=1` and `VORTEX_UPDATER_REPO=Nexus-Mods/Vortex-Staging` to test release updates via [Vortex-Staging] |
+| Debug Main Process (Staging) | Main only with the updater on       | Same as above                                                                                                                |
 
 ### Staging
 
-- **Staging**: Preview build mode used to test release updates via [Vortex-Staging].
+- **Staging**: runs the updater against [Vortex-Staging] instead of the production repo, to test
+  release updates before they are undrafted on the main repo.
 
-The update channel named `next` is unrelated and is forced back to `beta`, so it doesn't affect staging.
+The updater does nothing at all in a build run from source unless `VORTEX_DEV_UPDATER=1` is set,
+which is why the staging profiles set it alongside the repo override. `VORTEX_UPDATER_REPO` takes
+any `owner/repo`, so the same trick points a build at a scratch repo.
 
 ### Debug Only One Process (Optional)
 

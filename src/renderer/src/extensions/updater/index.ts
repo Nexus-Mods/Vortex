@@ -1,6 +1,7 @@
 import type { UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import { toUpdateChannel } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import { setUpdaterSnapshot } from "./actions";
 import settingsReducer, { sessionReducer } from "./reducers";
@@ -43,10 +44,9 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings("Vortex", SettingsUpdate);
 
   context.once(() => {
-    if (
-      context.api.getState().app.installType !== "regular" &&
-      process.env.NODE_ENV !== "development"
-    ) {
+    // main decides this (see isUpdaterActive): a managed install is updated by its launcher, and
+    // a build run from source has to opt in with VORTEX_DEV_UPDATER
+    if (!context.api.getState().app.updaterActive) {
       return;
     }
 
@@ -60,7 +60,7 @@ function init(context: IExtensionContext): boolean {
       poller.wake();
     };
 
-    const channelNow = () => context.api.store.getState().settings.update.channel;
+    const channelNow = () => toUpdateChannel(context.api.store.getState().settings.update.channel);
 
     // Mixpanel funnel (see updaterAnalytics.ts): transitions from render(),
     // decisions from the buttons below. The tracker queues anything emitted

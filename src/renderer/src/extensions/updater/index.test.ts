@@ -44,7 +44,7 @@ function makeContext() {
     }
   });
   const state = {
-    app: { installType: "regular" },
+    app: { installType: "regular", updaterActive: true },
     settings: { update: { channel: "stable" } },
     session: { notifications: { notifications } },
   };
