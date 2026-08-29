@@ -38,10 +38,12 @@ for review. If you're on `master`, branch first.
 
 ## Toolchain
 
-Node and pnpm are pinned exactly: Volta pins node 24.17.0, `packageManager` pins
-pnpm 11.10.0 with an integrity hash, and `engines` requires node 24.17.0. Use
-`pnpm`. Never `npm install` or `yarn`, and don't bump those versions unless
-asked.
+Node and pnpm are pinned exactly: `packageManager` pins pnpm 11.10.0 with an
+integrity hash, and `devEngines.runtime` plus the `node` catalog entry pin node
+24.17.0, which `pnpm install` downloads into `node_modules`. That pinned node is
+what scripts run under, not whatever is on `PATH` — check with
+`pnpm exec node --version`. Use `pnpm`. Never `npm install` or `yarn`, and don't
+bump those versions unless asked.
 
 ## Tool use
 
