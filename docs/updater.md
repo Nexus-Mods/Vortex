@@ -106,7 +106,7 @@ transitions and the buttons, and carrying `update_channel`:
 | `app_update_install_started`      | Restart Now, from the notification or the dialog                                                                                                     |
 | `app_update_downgrade_decided`    | the downgrade dialog was answered (`accepted`)                                                                                                       |
 | `app_update_channel_changed`      | a confirmed channel change                                                                                                                           |
-| `app_update_release_notes_viewed` | What's New or View changes opened                                                                                                                    |
+| `app_update_release_notes_viewed` | What's New or View changes opened; `source` says which (`offer`, `staged`, `error_retry`, `post_update`)                                             |
 | `app_updated`                     | first launch after an update, `from_version` and `to_version`                                                                                        |
 
 `app_launched` carries `update_channel` too, as the population these events are

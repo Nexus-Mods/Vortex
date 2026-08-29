@@ -227,7 +227,8 @@ export class AppUpdateChannelChangedEvent implements MixpanelEvent {
   }
 }
 
-export type UpdateReleaseNotesSource = "notification" | "post_update";
+/** Which button: the three What's New sites are distinct funnel moments, counted apart. */
+export type UpdateReleaseNotesSource = "offer" | "staged" | "error_retry" | "post_update";
 
 export interface AppUpdateReleaseNotesViewedProps {
   to_version: string;

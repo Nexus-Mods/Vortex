@@ -161,7 +161,7 @@ describe("updater analytics: decisions", () => {
     const { analytics, events } = harness("beta");
     analytics.downgradeDecided("2.5.0", false);
     analytics.channelChanged("beta", "stable");
-    analytics.releaseNotesViewed("2.7.0", "notification");
+    analytics.releaseNotesViewed("2.7.0", "offer");
     analytics.appUpdated("2.5.9");
 
     expect(names(events)).toEqual([
@@ -183,6 +183,22 @@ describe("updater analytics: decisions", () => {
       update_channel: "stable",
     });
     expect(events[3]!.properties).toMatchObject({ from_version: "2.5.9", to_version: "2.6.0" });
+  });
+
+  // collapsing these would lose whether notes are read before downloading or before restarting
+  it("keeps the release notes sources apart", () => {
+    const { analytics, events } = harness("stable");
+    analytics.releaseNotesViewed("2.7.0", "offer");
+    analytics.releaseNotesViewed("2.7.0", "staged");
+    analytics.releaseNotesViewed("2.7.0", "error_retry");
+    analytics.releaseNotesViewed("2.6.0", "post_update");
+
+    expect(events.map((event) => event.properties["source"])).toEqual([
+      "offer",
+      "staged",
+      "error_retry",
+      "post_update",
+    ]);
   });
 });
 
