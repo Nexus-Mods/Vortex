@@ -156,7 +156,8 @@ export class AppUpdateDownloadFailedEvent implements MixpanelEvent {
   }
 }
 
-export type UpdateCheckOutcome = "up_to_date" | "offered" | "failed";
+/** `already_staged` is a re-confirmation of an update the user already has, not a new offer. */
+export type UpdateCheckOutcome = "up_to_date" | "offered" | "failed" | "already_staged";
 
 export interface AppUpdateCheckCompletedProps {
   manual: boolean;

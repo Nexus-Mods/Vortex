@@ -58,20 +58,25 @@ export function createUpdaterAnalytics(deps: UpdaterAnalyticsDeps): UpdaterAnaly
 
   const onTransition = (prev: UpdaterState | null, next: UpdaterState) => {
     // a check settled: report every manual outcome, and background failures
-    // and offers; the background "nothing new" is left out on purpose
+    // and offers; the background "nothing new" is left out on purpose, which
+    // covers landing back on an already-staged update as well as finding
+    // nothing (checks run 4-hourly, so neither is worth repeating forever)
     if (prev?.type === "checking" && next.type !== "checking") {
       const outcome =
         next.type === "error"
           ? "failed"
           : next.type === "idle" || next.type === "disabled"
             ? "up_to_date"
-            : "offered";
-      if (prev.manual || outcome !== "up_to_date") {
+            : next.type === "staged"
+              ? "already_staged"
+              : "offered";
+      const nothingNew = outcome === "up_to_date" || outcome === "already_staged";
+      if (prev.manual || !nothingNew) {
         emit(
           new AppUpdateCheckCompletedEvent({
             manual: prev.manual,
             outcome,
-            error_message: next.type === "error" ? next.message : undefined,
+            error_message: next.type === "error" ? next.message.slice(0, 200) : undefined,
             ...base(),
           }),
         );
