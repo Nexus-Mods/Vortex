@@ -28,7 +28,7 @@ Project and coding documentation. To set up and build Vortex, start with
 
 - [mod-management/collections.md](mod-management/collections.md) - Collections and phased installation; phase invariants
 - [mod-management/EXTERNAL-CHANGES.md](mod-management/EXTERNAL-CHANGES.md) - The External Changes dialog: change types, actions, auto-resolution
-- [updater.md](updater.md) - How updates are detected, downloaded and applied
+- [updater.md](updater.md) - How updates are detected, downloaded and applied; install types, the state machine, channels and the analytics funnel
 - [updater-testing.md](updater-testing.md) - Exercising the update cycle offline with the mock feed
 - [updater-rehearsal.md](updater-rehearsal.md) - Signed end-to-end rehearsal against a real GitHub repo
 
@@ -41,16 +41,17 @@ Project and coding documentation. To set up and build Vortex, start with
 - [branching-and-release-strategy.md](branching-and-release-strategy.md) - Master, release branches, what lands where
 - [cherry-pick-workflow.md](cherry-pick-workflow.md) - Automated cherry-picks between branches
 - [publishing-releases.md](publishing-releases.md) - What happens when a release goes out
+- [RELEASES.md](../RELEASES.md) - Which versions are supported, deprecation windows for `vortex-api` and the backend API, and how extension authors are notified
 
 ## Installing from source
 
-- [install-instructions/](install-instructions/generic.md) - Per-distro prerequisites:
-  [generic](install-instructions/generic.md) ·
+- [install-instructions/](install-instructions/README.md) - Per-platform prerequisites, then the shared repository bootstrap:
   [Windows](install-instructions/windows.md) ·
   [Arch](install-instructions/archlinux.md) ·
   [Debian](install-instructions/debian-based.md) ·
   [Fedora](install-instructions/fedora.md) ·
   [NixOS](install-instructions/nixos.md) ·
+  [generic](install-instructions/generic.md) ·
   [shared setup](install-instructions/shared.md)
 
 ## Research

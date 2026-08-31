@@ -65,7 +65,7 @@ const { t } = useTranslation(['collection', 'common']);
 
 ## Example: BrowseNexusPage.tsx
 
-See `src/extensions/browse_nexus/views/BrowseNexusPage.tsx` for a complete working example.
+See `src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx` for a complete working example.
 
 **Before:**
 
@@ -96,7 +96,7 @@ const { t } = useTranslation(['collection', 'common']);
 
 ## When Adding New Features
 
-1. Check if namespace exists in `src/util/i18n.ts` line 165
+1. Check if namespace exists in the `ns` array in `src/renderer/src/util/i18n.ts`
 2. If not, create `locales/en/{namespace}.json`
 3. Add namespace to i18n.ts configuration
 4. Use proper keys from day one

@@ -30,7 +30,7 @@ The recommended workflow is VS Code's integrated debugger. Use **Debug Electron*
 pnpm run build
 
 # 2. Ensure main build output exists
-ls src/main/out/main/main.js
+ls src/main/build/main.cjs
 ```
 
 1. Open VS Code in the Vortex project root
@@ -50,8 +50,8 @@ full reload — reload the window (Ctrl+R) if breakpoints stop hitting.
 
 ### Set Breakpoints
 
-- **Main Process**: Set breakpoints in `src/main/main.ts`, `src/main/*.ts`
-- **Renderer Process**: Set breakpoints in `src/renderer.tsx`, `src/views/*.tsx`, `src/extensions/**/*.ts`
+- **Main Process**: Set breakpoints in `src/main/src/main.ts`, `src/main/src/*.ts`
+- **Renderer Process**: Set breakpoints in `src/renderer/src/renderer.tsx`, `src/renderer/src/views/*.tsx`, `src/renderer/src/extensions/**/*.ts`
 
 ### Debug Configuration
 
@@ -63,7 +63,7 @@ VS Code debug configurations are defined in `.vscode/launch.json`. The default *
 **Important Notes:**
 
 - Always run `pnpm run build` before debugging to ensure source maps are current
-- If breakpoints aren't hitting, check that `out/` directory has recent files
+- If breakpoints aren't hitting, check that `src/main/build/` has recent files
 - The renderer attach profile needs a running Electron instance with `--remote-debugging-port=9222` (provided by the main-process profiles or `pnpm run start`)
 
 ### Debug Configurations (Profiles)
@@ -118,7 +118,7 @@ Use **Debug Main Process** (or its staging variant) when you want to inspect sta
 
 1. Start Vortex with **Debug Main Process**, **Debug Main Process (Staging)**, or `pnpm run start`.
 2. Launch **Debug Renderer Process** to attach to port `9222`.
-3. Set breakpoints in `src/renderer.tsx`, `src/views/*.tsx`, and `src/extensions/**/*.ts`.
+3. Set breakpoints in `src/renderer/src/renderer.tsx`, `src/renderer/src/views/*.tsx`, and `src/renderer/src/extensions/**/*.ts`.
 
 ### Debug Actions
 
@@ -235,6 +235,21 @@ log("error", "download failed", {
 ---
 
 ## Diagnostic Environment Variables
+
+Set these in `.env` or in the environment of the launching shell. The updater and
+telemetry ones are owned by the docs listed, which have the full context.
+
+| Variable                                                  | Effect                                                                                                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `VORTEX_TRACE_DB_WRITES=1`                                | Per-write breadcrumbs in `LevelPersist`. See below                                                                      |
+| `VORTEX_ENABLE_LOGGING=1`                                 | Turns on file logging in a build that isn't `NODE_ENV=development`                                                      |
+| `START_DEVTOOLS=true`                                     | Opens DevTools on launch                                                                                                |
+| `DEBUG_REACT_RENDERS=true`                                | Stops window focus and blur updating state, so inspecting renders doesn't cause any                                     |
+| `HIGHLIGHT_I18N=true`                                     | Uppercases every translated string and prefixes it `TT:`, so hardcoded strings stand out. Traces duplicate translations |
+| `VORTEX_DEV_UPDATER=1`, `VORTEX_UPDATER_REPO`             | The updater from source, and which repo it reads. See [updater.md](updater.md)                                          |
+| `VORTEX_UPDATER_API_BASE`, `VORTEX_UPDATER_DOWNLOAD_BASE` | Point the updater at the mock feed. See [updater-testing.md](updater-testing.md)                                        |
+| `VORTEX_COLLECTOR_URL`                                    | OTLP endpoint override. See [error-reporting/telemetry-otel.md](error-reporting/telemetry-otel.md)                      |
+| `VORTEX_E2E=1`, `VORTEX_E2E_HEADLESS=1`                   | Set by the Playwright harness. See [testing.md](testing.md)                                                             |
 
 ### `VORTEX_TRACE_DB_WRITES=1`
 
@@ -539,7 +554,7 @@ If a native module crashes:
 **Solutions:**
 
 1. Rebuild the project: `pnpm run build`
-2. Check source maps exist in `src/main/out/` directory
+2. Check source maps exist in `src/main/build/` directory
 3. Verify `outFiles` in launch.json matches build output
 4. Clear VS Code breakpoint cache: Restart VS Code
 5. Check file path matches (Windows path separators)

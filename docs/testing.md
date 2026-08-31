@@ -11,6 +11,13 @@ app and a real game install and runs separately.
 
 Use `pnpm run test -- <path>` to run a single test file or directory.
 
+The E2E harness sets two environment variables. `VORTEX_E2E=1` skips installing
+the React and Redux DevTools chrome extensions (`installDevelExtensions` in
+`src/main/src/devel.ts`), which otherwise slow the launch and add DevTools
+targets the harness would have to ignore. `VORTEX_E2E_HEADLESS=1` makes the
+`window:show` IPC handler in `src/main/src/ipcHandlers.ts` a no-op, so windows
+stay hidden. Set them only through the harness; a normal dev run wants neither.
+
 Tests are colocated with the code they cover, as `src/**/*.test.ts` (or
 `*.test.tsx` for components). Component tests use `vitest` with
 `@testing-library/react` v16.

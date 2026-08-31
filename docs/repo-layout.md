@@ -82,7 +82,7 @@ own workspace glob):
 
 Generated or vendored, and not worth searching:
 
-- `dist/`, `src/main/out/`, `src/main/dist/` - Build output. These are packaging
+- `src/main/build/`, `src/main/dist/`, `src/renderer/lib/` - Build output. These are packaging
   output and input; see [packaging/windows.md](packaging/windows.md) when
   working on installers.
 - `test-results/` - Test artifacts

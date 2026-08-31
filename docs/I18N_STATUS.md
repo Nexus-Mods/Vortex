@@ -22,7 +22,7 @@
 
 ### Working Examples
 
-1. **BrowseNexusPage.tsx** (`src/extensions/browse_nexus/views/BrowseNexusPage.tsx`)
+1. **BrowseNexusPage.tsx** (`src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx`)
     - 13 strings migrated to proper namespaced keys
     - Uses `collection` and `common` namespaces
     - Shows proper key structure: `namespace:::section:::key`
@@ -80,9 +80,9 @@ Future migrations should follow the pattern established in BrowseNexusPage.tsx.
 ## Tools & Resources
 
 - **Migration Guide:** `docs/I18N_MIGRATION_GUIDE.md`
-- **Example File:** `src/extensions/browse_nexus/views/BrowseNexusPage.tsx`
+- **Example File:** `src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx`
 - **Namespace Files:** `locales/en/*.json`
-- **i18n Config:** `src/util/i18n.ts` (line 165 - namespace registration)
+- **i18n Config:** `src/renderer/src/util/i18n.ts` (the `ns` array registers namespaces)
 
 ## Benefits of Migration
 
@@ -106,27 +106,39 @@ Once fully migrated, this will enable:
 
 ## Configuration
 
-### i18n.ts Namespace Registration (line 165-174)
+### Namespace registration
+
+The `ns` array in `src/renderer/src/util/i18n.ts`, with `defaultNS` and
+`fallbackNS` both set to `common`:
 
 ```typescript
 ns: [
-  'common',
-  'collection',
-  'mod_management',
-  'download_management',
-  'profile_management',
-  'nexus_integration',
-  'gamemode_management',
-  'extension_manager',
+  "common",
+  "collection",
+  "mod_management",
+  "download_management",
+  "profile_management",
+  "nexus_integration",
+  "gamemode_management",
+  "extension_manager",
+  "health_check",
 ],
 ```
 
-### Separator Configuration (line 177-178)
+### Separator configuration
 
 ```typescript
-nsSeparator: ':',   // namespace:section.key (standard i18next)
-keySeparator: '.',  // for nested sections (standard i18next)
+nsSeparator: ":::",
+keySeparator: "::",
 ```
+
+> [!WARNING]
+> These do not match the `namespace:section.key` format that
+> [I18N_MIGRATION_GUIDE.md](I18N_MIGRATION_GUIDE.md) gives as the target, and
+> that the locale files are already structured for. With these separators
+> `t("collection:browse.title")` is a single literal key rather than namespace
+> `collection` plus nested key `browse.title`. Confirm which side is wrong
+> before migrating more strings.
 
 ## Success Metrics
 
