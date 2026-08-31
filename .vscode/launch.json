@@ -94,7 +94,8 @@
       "env": {
         "NODE_ENV": "development",
         "START_DEVTOOLS": "true",
-        "IS_PREVIEW_BUILD": "true"
+        "VORTEX_DEV_UPDATER": "1",
+        "VORTEX_UPDATER_REPO": "Nexus-Mods/Vortex-Staging"
       },
       "envFile": "${workspaceFolder}/.env",
       "console": "internalConsole",
