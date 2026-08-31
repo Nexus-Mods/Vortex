@@ -47,9 +47,26 @@ API changes are documented in:
 > [!NOTE]
 > ⚠️ Running two Vortex instances against the same game folder will get them out of sync. A Vortex instance is only aware of the changes it has made to a game folder, it can’t pick up changes made to the game folder outside of Vortex.
 
+## Supported versions
+
+We accept bug reports against:
+
+- **Current stable**: reports accepted, fixes shipped in the next release or a hotfix.
+- **Current beta**: reports accepted for the cycle that beta is in.
+
+Older versions aren't supported. If you're on one, update to current stable before reporting a bug.
+
+Vortex is actively developed against live Nexus Mods services. It isn't an evergreen project, and we don't keep old versions working indefinitely.
+
 ## Breaking changes
 
-Where possible, API changes that affect extensions go through a 2-release deprecation window: the old behaviour stays for ~4 weeks before being removed. Affected authors are notified at deprecation time.
+Deprecation windows are counted in releases, not weeks, so they hold if the cadence changes.
+
+Each release cycle bumps the minor version: 2.7, then 2.8, then 2.9. So "two releases" means two of those minor bumps, currently about 4 weeks. Patch releases (2.7.1) are hotfixes and don't count toward the window.
+
+### vortex-api
+
+Where possible, API changes that affect extensions go through a two-release deprecation window. An API deprecated in one release is removed no earlier than two minor bumps later: deprecate in x.y, remove in x.y+2 at the earliest. Affected authors are notified at deprecation time.
 
 For changes that can’t be deprecated (such as React upgrades), the breaking change ships in a single release. Affected authors are notified directly when the change lands on master, with the API diff and target stable date.
 
@@ -59,13 +76,30 @@ Timing for the breaking release:
 - **T-2 weeks (beta cut):** public announcement in the Nexus Discord (#vortex, #vortex-testing), Mod Author Discord, and forums. Beta is available; new API is on NPM.
 - **T-0:** stable ships.
 
-Minimum notice for the breaking release is 2 weeks (beta cut). For deprecation-eligible changes, total notice from deprecation to breaking release is 4+ weeks.
+Minimum notice for the breaking release is one beta cut. For deprecation-eligible changes, total notice from deprecation to removal is two minor bumps or more.
 
 If an extension author doesn't respond before stable, the extension may not work correctly with the new Vortex version.
 
 If a critical extension's author hasn't responded by stable release day, the Vortex team may contribute a compatibility patch to keep users’ setups working. We make a final outreach attempt, check the licence allows modification, download and patch the existing extension build, and publish the patched version on Nexus Mods clearly labelled as community-maintained, with attribution to the original author.
 
 The compatibility patch is a one-off fix. We're not adopting the extension as a long-term maintained product. If the original author resurfaces, maintenance can be handed back.
+
+### Backend API
+
+Vortex depends on Nexus Mods platform APIs. Those have their own deprecation policy, which is longer than a Vortex release window, and it's owned by the platform rather than set here.
+
+Where a platform change forces a breaking change in Vortex, the Vortex side of it follows the window above: two minor bumps' notice before the change reaches production.
+
+Either way, older Vortex versions may lose functionality or stop working entirely. Updating is the fix. We don't keep old clients working indefinitely.
+
+Backend changes that affect extensions are noted in the vortex-api CHANGELOG as well as the channels below.
+
+### How we notify you
+
+- **[#vortex-testing](https://discord.com/channels/215154001799413770/1433013672053178409)** in the [Nexus Discord](https://discord.gg/nexusmods): deprecation notices, API changes and beta testing. This is the main channel for extension developers.
+- **Mod Author Discord**: wider release announcements.
+- **[vortex-api CHANGELOG](https://github.com/Nexus-Mods/Vortex/blob/master/packages/vortex-api/CHANGELOG.md)** and **[MIGRATION guide](https://github.com/Nexus-Mods/Vortex/blob/master/packages/vortex-api/docs/MIGRATION.md)**: what changed and how to move.
+- Authors of affected extensions are contacted directly when a breaking change lands on master.
 
 ## Bug reports and hotfixes
 
