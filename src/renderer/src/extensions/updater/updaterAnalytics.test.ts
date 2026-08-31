@@ -105,8 +105,7 @@ describe("updater analytics: the funnel", () => {
   it("a staged update restored by a check (no download watched) is not a completion", () => {
     const { analytics, events } = harness();
     analytics.onTransition(checkingBackground, staged);
-    expect(names(events)).toEqual(["app_update_check_completed"]);
-    expect(events[0]!.properties).toMatchObject({ outcome: "offered", manual: false });
+    expect(events).toHaveLength(0);
   });
 });
 
@@ -129,6 +128,28 @@ describe("updater analytics: checks", () => {
     const { analytics, events } = harness();
     analytics.onTransition(checkingBackground, { type: "idle" });
     expect(events).toHaveLength(0);
+  });
+
+  // landing back on an update the user already has is not an offer: counting it as one would
+  // inflate the offer rate by 6 a day for anyone who leaves an update staged
+  it("reports a manual check that lands on an already-staged update as such", () => {
+    const { analytics, events } = harness();
+    analytics.onTransition(checkingManual, staged);
+    expect(names(events)).toEqual(["app_update_check_completed"]);
+    expect(events[0]!.properties).toMatchObject({ manual: true, outcome: "already_staged" });
+  });
+
+  // the emitter passes the message through untouched: truncation is the event constructors' job,
+  // so a caller cannot forget it
+  it("truncates long error messages on both failure events", () => {
+    const { analytics, events } = harness();
+    const long = "x".repeat(500);
+    analytics.onTransition(checkingManual, { type: "error", message: long, manual: true });
+    analytics.onTransition(downloading, { type: "error", message: long, manual: true });
+
+    expect(names(events)).toEqual(["app_update_check_completed", "app_update_download_failed"]);
+    expect(events[0]!.properties["error_message"]).toHaveLength(200);
+    expect(events[1]!.properties["error_message"]).toHaveLength(200);
   });
 
   it("reports a background check that fails or offers", () => {
@@ -161,7 +182,7 @@ describe("updater analytics: decisions", () => {
     const { analytics, events } = harness("beta");
     analytics.downgradeDecided("2.5.0", false);
     analytics.channelChanged("beta", "stable");
-    analytics.releaseNotesViewed("2.7.0", "notification");
+    analytics.releaseNotesViewed("2.7.0", "offer");
     analytics.appUpdated("2.5.9");
 
     expect(names(events)).toEqual([
@@ -183,6 +204,22 @@ describe("updater analytics: decisions", () => {
       update_channel: "stable",
     });
     expect(events[3]!.properties).toMatchObject({ from_version: "2.5.9", to_version: "2.6.0" });
+  });
+
+  // collapsing these would lose whether notes are read before downloading or before restarting
+  it("keeps the release notes sources apart", () => {
+    const { analytics, events } = harness("stable");
+    analytics.releaseNotesViewed("2.7.0", "offer");
+    analytics.releaseNotesViewed("2.7.0", "staged");
+    analytics.releaseNotesViewed("2.7.0", "error_retry");
+    analytics.releaseNotesViewed("2.6.0", "post_update");
+
+    expect(events.map((event) => event.properties["source"])).toEqual([
+      "offer",
+      "staged",
+      "error_retry",
+      "post_update",
+    ]);
   });
 });
 

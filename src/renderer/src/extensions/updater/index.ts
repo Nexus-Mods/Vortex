@@ -296,7 +296,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
               {
                 title: "What's New",
                 action: () => {
-                  analytics.releaseNotesViewed(state.version, "notification");
+                  analytics.releaseNotesViewed(state.version, "offer");
                   void showUpdateDialog(state.version, state.releaseNotes);
                 },
               },
@@ -379,7 +379,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 {
                   title: "What's New",
                   action: () => {
-                    analytics.releaseNotesViewed(state.version, "notification");
+                    analytics.releaseNotesViewed(state.version, "staged");
                     void showUpdateDialog(state.version, state.releaseNotes);
                   },
                 },
@@ -457,7 +457,7 @@ If you downgrade, Vortex will download ${version} and update on restart.`,
                 {
                   title: "What's New",
                   action: () => {
-                    analytics.releaseNotesViewed(retry.version, "notification");
+                    analytics.releaseNotesViewed(retry.version, "error_retry");
                     void showUpdateDialog(retry.version, retry.releaseNotes);
                   },
                 },
