@@ -139,6 +139,8 @@ describe("updater analytics: checks", () => {
     expect(events[0]!.properties).toMatchObject({ manual: true, outcome: "already_staged" });
   });
 
+  // the emitter passes the message through untouched: truncation is the event constructors' job,
+  // so a caller cannot forget it
   it("truncates long error messages on both failure events", () => {
     const { analytics, events } = harness();
     const long = "x".repeat(500);

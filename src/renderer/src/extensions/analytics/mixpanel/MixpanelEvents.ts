@@ -139,6 +139,16 @@ export class AppUpdateDownloadCompletedEvent implements MixpanelEvent {
   }
 }
 
+/**
+ * Error messages can be arbitrarily long (stack traces, upstream HTTP bodies). Truncated in the
+ * event constructors rather than at the call sites, so a new caller cannot forget to do it.
+ */
+const MAX_ERROR_MESSAGE_LENGTH = 200;
+
+function truncateErrorMessage(message: string | undefined): string | undefined {
+  return message?.slice(0, MAX_ERROR_MESSAGE_LENGTH);
+}
+
 export interface AppUpdateDownloadFailedProps {
   to_version: string;
   kind: UpdateKindProp;
@@ -152,7 +162,7 @@ export class AppUpdateDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "app_update_download_failed";
   readonly properties: Record<string, unknown>;
   constructor(props: AppUpdateDownloadFailedProps) {
-    this.properties = { ...props };
+    this.properties = { ...props, error_message: truncateErrorMessage(props.error_message) };
   }
 }
 
@@ -175,7 +185,7 @@ export class AppUpdateCheckCompletedEvent implements MixpanelEvent {
   readonly eventName = "app_update_check_completed";
   readonly properties: Record<string, unknown>;
   constructor(props: AppUpdateCheckCompletedProps) {
-    this.properties = { ...props };
+    this.properties = { ...props, error_message: truncateErrorMessage(props.error_message) };
   }
 }
 

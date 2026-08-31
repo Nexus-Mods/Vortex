@@ -76,7 +76,7 @@ export function createUpdaterAnalytics(deps: UpdaterAnalyticsDeps): UpdaterAnaly
           new AppUpdateCheckCompletedEvent({
             manual: prev.manual,
             outcome,
-            error_message: next.type === "error" ? next.message.slice(0, 200) : undefined,
+            error_message: next.type === "error" ? next.message : undefined,
             ...base(),
           }),
         );
@@ -145,7 +145,7 @@ export function createUpdaterAnalytics(deps: UpdaterAnalyticsDeps): UpdaterAnaly
             new AppUpdateDownloadFailedEvent({
               to_version: prev.version,
               kind: prev.kind,
-              error_message: next.message.slice(0, 200),
+              error_message: next.message,
               retry_offered: next.retry != null,
               ...base(),
             }),
