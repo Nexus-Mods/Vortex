@@ -29,6 +29,7 @@ import { installDevelExtensions } from "./devel";
 import { terminate, terminateAsync } from "./errorHandling";
 import { disableErrorReporting, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
+import { isUpdaterActive } from "./extensions/updater";
 import { validateFiles } from "./fileValidation";
 import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { shutdownHashWorker } from "./hash/host";
@@ -505,6 +506,9 @@ class Application {
     // fetches it via getInitMetadata() early in its boot.
     log("debug", "checking how Vortex was installed");
     await this.identifyInstallType();
+    // the renderer's updater extension gates on this; it cannot work it out itself because
+    // VORTEX_DEV_UPDATER is read at runtime and only NODE_ENV is inlined into its bundle
+    this.mAppMetadata!.updaterActive = isUpdaterActive(this.mAppMetadata!.installType ?? "");
     this.mAppMetadata!.version = app.getVersion();
 
     log("debug", "checking if migration is required");

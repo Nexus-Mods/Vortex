@@ -534,7 +534,10 @@ async function mapWithConcurrency<T, R>(
  * @class InstallManager
  */
 class InstallManager {
-  private static readonly MAX_SIMULTANEOUS_INSTALLS = 5;
+  // Exported so other features that fire their own install fan-out (e.g. health check's bulk
+  // install actions) can size their own queue against the same, already-tuned budget instead of
+  // picking an unrelated number.
+  static readonly MAX_SIMULTANEOUS_INSTALLS = 5;
   private mApi: IExtensionApi;
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;

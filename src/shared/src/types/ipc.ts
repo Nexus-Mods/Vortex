@@ -43,6 +43,8 @@ export interface AppInitMetadata {
   commandLine: Record<string, unknown>;
   /** Install type (regular installer or managed like Epic/MS Store) */
   installType?: "regular" | "managed";
+  /** Whether the updater runs at all; decided in main, since the renderer cannot read the env */
+  updaterActive?: boolean;
   /** Application version string */
   version?: string;
   /** Instance ID for crash reporting */

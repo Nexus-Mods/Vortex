@@ -130,22 +130,19 @@ describe("shouldAutoDownload", () => {
 });
 
 describe("repoForChannel", () => {
-  it("selects the staging repo only for preview builds", () => {
+  it("uses the production repo by default", () => {
     vi.stubEnv("VORTEX_UPDATER_REPO", "");
-    vi.stubEnv("IS_PREVIEW_BUILD", "");
+    expect(repoOwner()).toBe("Nexus-Mods");
     expect(repoForChannel()).toBe("Vortex");
-    vi.stubEnv("IS_PREVIEW_BUILD", "true");
-    expect(repoForChannel()).toBe("Vortex-Staging");
   });
 
-  // Test override for the staging rehearsal: a scratch repo with real GitHub
+  // The override is how a build is pointed at staging or at a scratch repo with real GitHub
   // semantics, so live repos are never touched by tests.
   it("honors the VORTEX_UPDATER_REPO override", () => {
-    vi.stubEnv("IS_PREVIEW_BUILD", "true");
     vi.stubEnv("VORTEX_UPDATER_REPO", "someuser/updater-e2e");
     expect(repoOwner()).toBe("someuser");
     expect(repoForChannel()).toBe("updater-e2e");
-    vi.stubEnv("VORTEX_UPDATER_REPO", "");
+    vi.stubEnv("VORTEX_UPDATER_REPO", "Nexus-Mods/Vortex-Staging");
     expect(repoOwner()).toBe("Nexus-Mods");
     expect(repoForChannel()).toBe("Vortex-Staging");
   });
@@ -153,7 +150,6 @@ describe("repoForChannel", () => {
 
 describe("resolveUpdate fetching", () => {
   beforeEach(() => {
-    vi.stubEnv("IS_PREVIEW_BUILD", "");
     // a developer machine may have the mock-feed overrides persisted in the
     // user environment; tests must never depend on ambient env
     vi.stubEnv("VORTEX_UPDATER_API_BASE", "");

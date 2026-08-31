@@ -104,11 +104,24 @@ user-level:
 Clear them (set to `$null`) before using a real Vortex again. A production
 build with these set would look for updates on localhost.
 
-For run-from-source (`pnpm start`) there's an opt-in dev updater: set
-`VORTEX_DEV_UPDATER=1` and electron-updater reads `src/main/dev-app-update.yml`.
-Checks, notifications, and downloads all work; installs are hard-gated to
-packaged builds and never run from source. Three things differ from a
-packaged build:
+To test against a real GitHub repo rather than the mock feed, use
+`VORTEX_UPDATER_REPO` instead. It takes `owner/repo` and redirects both the release
+lookup and the installer download, so an installed production build can be pointed at
+staging before the release is undrafted on the main repo:
+
+```powershell
+$env:VORTEX_UPDATER_REPO = "Nexus-Mods/Vortex-Staging"
+```
+
+The release has to be undrafted on whichever repo you point at. The resolver rejects
+drafts, and GitHub does not return them to an unauthenticated client anyway.
+
+For run-from-source (`pnpm start`) the updater is off entirely unless you opt in with
+`VORTEX_DEV_UPDATER=1`. Without it nothing runs: no checks, no polling, no GitHub
+requests, and `updater initialized` logs `"active":false`. With it set, the updater
+starts and electron-updater reads `src/main/dev-app-update.yml`, so checks,
+notifications, and downloads all work; installs are hard-gated to packaged builds and
+never run from source. Three things differ from a packaged build:
 
 - The dev build reports version `1.0.0` (the placeholder in
   `src/main/package.json`), so the 9.x fixtures above read as a major update

@@ -7,6 +7,28 @@ against real GitHub, [updater-rehearsal.md](./updater-rehearsal.md); for how
 releases get published,
 see [publishing-releases.md](./publishing-releases.md).
 
+## Install types
+
+`installType` decides whether Vortex updates itself at all. `identifyInstallType`
+(`Application.ts`) sets it at startup from one probe: if `Uninstall Vortex.exe` sits next to the
+app it is `regular`, otherwise `managed`.
+
+`managed` means a third-party launcher (Steam, GOG Galaxy, Epic) owns updating. `initUpdater`
+never calls `setupAutoUpdater`, the renderer extension returns before it starts polling, and
+Settings shows a callout instead of the update controls.
+
+No managed build ships yet, so that path is untested. And because the probe infers `managed` from
+a _missing_ uninstaller, a run-from-source build lands there too. Both go away when managed
+installs are detected properly rather than inferred.
+
+In development the install type is therefore meaningless, so it is ignored and
+`VORTEX_DEV_UPDATER=1` decides on its own: without it the updater does nothing at all, and with
+it everything runs. That matters because electron-updater refuses to check an unpackaged build,
+so every check without the opt-in would fail after spending a real GitHub request.
+
+`isUpdaterActive` in `src/main/src/extensions/updater.ts` is the single gate for both rules, and
+`updater initialized` logs the answer as `active` at startup.
+
 ## How an update is found
 
 Vortex resolves releases itself instead of trusting electron-updater's GitHub
@@ -90,6 +112,31 @@ update spanned.
 - A failed background check (offline is normal) logs and changes nothing.
 - Cancelling a download by switching channels is not an error.
 
+## Analytics
+
+Every step of the funnel is a Mixpanel event, emitted by
+`src/renderer/src/extensions/updater/updaterAnalytics.ts` from the state
+transitions and the buttons, and carrying `update_channel`:
+
+| event                             | when                                                                                                                                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app_update_check_completed`      | a check settled; `outcome` is `up_to_date`, `offered`, `failed` or `already_staged` (the update was in hand before the check). Manual checks always, background checks only when something changed |
+| `app_update_offered`              | a version was offered (`kind`: `patch`, `update`, `downgrade`)                                                                                                                                     |
+| `app_update_download_started`     | a download began                                                                                                                                                                                   |
+| `app_update_download_completed`   | downloaded and verified, with `duration_ms`                                                                                                                                                        |
+| `app_update_download_failed`      | with `error_message` and whether a retry was offered                                                                                                                                               |
+| `app_update_install_started`      | Restart Now, from the notification or the dialog                                                                                                                                                   |
+| `app_update_downgrade_decided`    | the downgrade dialog was answered (`accepted`)                                                                                                                                                     |
+| `app_update_channel_changed`      | a confirmed channel change                                                                                                                                                                         |
+| `app_update_release_notes_viewed` | What's New or View changes opened; `source` says which (`offer`, `staged`, `error_retry`, `post_update`)                                                                                           |
+| `app_updated`                     | first launch after an update, `from_version` and `to_version`                                                                                                                                      |
+
+`app_launched` carries `update_channel` too, as the population these events are
+measured against. Events emitted before analytics has started (the launch
+check and a patch download run before login restores) are queued by the
+tracker and sent once consent and login are in; they are dropped if the user
+declines.
+
 ## The state machine
 
 The updater is a single explicit state machine (`UpdaterState` in
@@ -138,7 +185,13 @@ network features).
 
 ## Channels
 
-`settings.update.channel`: `stable` (default), `beta`, `none`, plus a hidden
-`next` used by preview builds (`IS_PREVIEW_BUILD=true` reads releases from
-`Vortex-Staging` instead of `Vortex`; the channel itself never changes the
-repo). Manual checks are rate-limited to once per minute in the Settings UI.
+`settings.update.channel`: `stable` (default), `beta` and `none`. Manual checks are rate-limited
+to once per minute in the Settings UI.
+
+A fourth channel, `next`, was retired: it was only ever a second name for `beta` and had not been
+used in years. An install may still have it persisted, so `toUpdateChannel` reads anything
+unrecognised as `stable`.
+
+The channel never selects the repo. To point a build at a different one, set
+`VORTEX_UPDATER_REPO` (for example `Nexus-Mods/Vortex-Staging`), which redirects both the release
+lookup and the installer download.
