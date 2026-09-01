@@ -1,5 +1,5 @@
 /**
- * @see AGENTS-COLLECTIONS.md - For collections & phased installation documentation
+ * @see docs/mod-management/collections.md - For collections & phased installation documentation
  */
 
 import * as os from "os";
@@ -59,7 +59,7 @@ import { generate as shortid } from "shortid";
  * - `deployedPhases` - Phases that have been deployed
  * - `isDeploying` - CRITICAL: Blocks installs during deployment
  *
- * See AGENTS-COLLECTIONS.md for architectural overview.
+ * See docs/mod-management/collections.md for architectural overview.
  */
 import { removeDownload, setDownloadModInfo, startActivity, stopActivity } from "../../actions";
 import {
@@ -3048,7 +3048,7 @@ class InstallManager {
         const existing = phaseState?.deploymentPromises.get(checkPhase);
         if (existing?.deployOnSettle && !hasDeployed) {
           // CRITICAL: Block new installations during deployment to prevent file conflicts.
-          // Removing this check causes race conditions. See AGENTS-COLLECTIONS.md.
+          // Removing this check causes race conditions. See docs/mod-management/collections.md.
           if (phaseState) {
             phaseState.isDeploying = true;
           }
