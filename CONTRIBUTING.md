@@ -37,7 +37,8 @@ something we can't merge.
   probably two PRs.
 - Link the issue it fixes.
 - Say what you tested and on which platform.
-- Run `pnpm run build`, `pnpm run test`, and `pnpm run lint` before you open it.
+- Run `pnpm run verify` before you open it. That covers formatting, lint,
+  typecheck, build and tests.
 
 Pull requests that conflict with work already planned or in progress, that
 don't fit the architecture, or that are too big for us to review, get closed.
@@ -86,6 +87,11 @@ After you have finished the setup steps:
 
 1. `pnpm run build`
 2. `pnpm run start`
+
+A pre-commit hook runs `oxfmt` over every staged file, markdown included, so
+expect your formatting to be rewritten. Running `pnpm run format` first makes the
+hook a no-op. The hook can also trigger a dependency install mid-commit, so a
+commit sometimes takes about 30 seconds and prints install output.
 
 ### Hot reload (`pnpm run dev`)
 
