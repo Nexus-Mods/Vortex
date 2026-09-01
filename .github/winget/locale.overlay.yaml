@@ -21,9 +21,9 @@ Tags:
   - nexus-mods
 Documentations:
   - DocumentLabel: Vortex Wiki
-    DocumentUrl: https://modding.wiki/en/vortextest/vortex
+    DocumentUrl: https://modding.wiki/en/vortex
   - DocumentLabel: How to report Vortex bugs
-    DocumentUrl: https://modding.wiki/en/vortextest/vortex/bug-reports
+    DocumentUrl: https://modding.wiki/en/vortex/bug-reports
   - DocumentLabel: Vortex Discord
     DocumentUrl: https://discord.gg/nexusmods
 InstallationNotes: Vortex registers itself as the handler for nxm:// links on first launch so downloads from nexusmods.com open in Vortex.
