@@ -11,6 +11,12 @@ App
 app_launched { is_legacy_ui } // true = legacy/classic UI, false = modern
 app_ui_mode_changed { is_legacy_ui } // the mode switched to, from Settings > Theme
 
+Toolbar
+
+toolbar_action_clicked { toolbar, action, extension, surface } // mods page only for now
+// action = stable id, never the translated label; extension = absent for the page's own
+// surface = bar | overflow | menu (reached directly, via the kebab, or inside Open.../Import...)
+
 Mods
 
 mods_download_started

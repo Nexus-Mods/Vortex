@@ -827,3 +827,131 @@ describe("fitVisibleActions", () => {
     });
   });
 });
+
+describe("click tracking", () => {
+  const trackedToolbar = (actions: IToolbarAction[], onActionClick: () => void, max?: number) =>
+    render(
+      <Toolbar onActionClick={onActionClick}>
+        <ToolbarGroup actions={actions} maxVisible={max} />
+      </Toolbar>,
+    );
+
+  it("reports a visible action's click, and still runs it exactly once", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    trackedToolbar([{ label: "Deploy", id: "deploy", onClick }], onActionClick);
+
+    await userEvent.click(screen.getByRole("button", { name: "Deploy" }));
+
+    expect(onActionClick).toHaveBeenCalledWith({ id: "deploy", extension: undefined }, "bar");
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("reports an overflowed action against the overflow, not the bar", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    const actions = [...makeActions(7), { label: "Overflowed", id: "overflowed", onClick }];
+    trackedToolbar(actions, onActionClick, 7);
+
+    await userEvent.click(getKebab());
+    await userEvent.click(screen.getByText("Overflowed"));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "overflowed", extension: undefined },
+      "overflow",
+    );
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("names the extension an action came from", async () => {
+    const onActionClick = vi.fn();
+    trackedToolbar(
+      [
+        {
+          label: "Manage Rules",
+          id: "Manage Rules",
+          extension: "mod-dependency-manager",
+          onClick: vi.fn(),
+        },
+      ],
+      onActionClick,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Manage Rules" }));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "Manage Rules", extension: "mod-dependency-manager" },
+      "bar",
+    );
+  });
+
+  // The label is the only other thing to hand, and it is translated. Reporting an action
+  // under a name that changes with the language would split one button across as many
+  // ids as there are locales, which is worse than not reporting it at all. An action
+  // without an id cannot be pinned either — see `useToolbarPinning`.
+  it("says nothing about an action that has no id, but still runs it", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    trackedToolbar([{ label: "Nameless", onClick }], onActionClick);
+
+    await userEvent.click(screen.getByRole("button", { name: "Nameless" }));
+
+    expect(onActionClick).not.toHaveBeenCalled();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  // An empty id is no identity at all — reporting it would put `action: ""` in the
+  // dashboard, which reads as a real button nobody can name.
+  it("treats an empty id as no identity", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    trackedToolbar([{ label: "Blank", id: "", onClick }], onActionClick);
+
+    await userEvent.click(screen.getByRole("button", { name: "Blank" }));
+
+    expect(onActionClick).not.toHaveBeenCalled();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("leaves an untracked toolbar's actions alone", async () => {
+    const onClick = vi.fn();
+    render(
+      <Toolbar>
+        <ToolbarGroup actions={[{ label: "Deploy", id: "deploy", onClick }]} />
+      </Toolbar>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Deploy" }));
+
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  describe("panel actions", () => {
+    const panelAction: IToolbarAction = {
+      label: "Open",
+      id: "open",
+      panel: () => <span>Panel content</span>,
+    };
+
+    it("counts opening the panel as a click on the control", async () => {
+      const onActionClick = vi.fn();
+      trackedToolbar([panelAction], onActionClick);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      expect(screen.getByText("Panel content")).toBeInTheDocument();
+      expect(onActionClick).toHaveBeenCalledWith({ id: "open", extension: undefined }, "bar");
+    });
+
+    it("does not count closing it again as a second click", async () => {
+      const onActionClick = vi.fn();
+      trackedToolbar([panelAction], onActionClick);
+
+      const trigger = screen.getByRole("button", { name: "Open" });
+      await userEvent.click(trigger);
+      await userEvent.click(trigger);
+
+      expect(onActionClick).toHaveBeenCalledOnce();
+    });
+  });
+});
