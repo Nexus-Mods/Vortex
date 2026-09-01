@@ -16,11 +16,7 @@ preferences, MCP servers, skills, and which doc to load for a task. If you find
 yourself writing "the renderer is structured as..." into `AGENTS.md`, it belongs
 in `docs/`.
 
-We used to keep this content in `AGENTS-DIRECTORIES.md`, `AGENTS-FRONTEND.md`
-and four siblings. It rotted, because a file only agents read never gets
-reviewed the way a doc a human opens does: by the time we moved them, one had
-eight wrong paths in sixty lines. One home, one audience-neutral voice, and the
-docs get maintained.
+One home, one audience-neutral voice, and the docs get maintained.
 
 These files stay at the repo root by convention: `README.md`,
 `CONTRIBUTING.md`, `CODESTYLE.md`, `CHANGELOG.md`, `RELEASES.md`,
