@@ -630,6 +630,14 @@ describe("ToolbarGroup", () => {
      */
     const pinOf = (label: string) => within(rowFor(label)).getByRole("button");
 
+    /**
+     * The reset link, which sits below the menu rather than in it — the same shape the
+     * display options panel ends in.
+     */
+    const queryResetLink = () => screen.queryByRole("button", { name: "Reset pins to default" });
+
+    const resetLink = () => screen.getByRole("button", { name: "Reset pins to default" });
+
     it("puts the pinned actions on the bar, and every action in the menu", async () => {
       renderToolbar({
         actions: pinnable([
@@ -733,6 +741,37 @@ describe("ToolbarGroup", () => {
       await openMenu();
       expect(within(rowFor("Nameless")).queryByRole("button")).not.toBeInTheDocument();
       expect(pinOf("Deploy")).toBeInTheDocument();
+    });
+
+    describe("resetting to defaults", () => {
+      it("offers no reset until the user has decided something", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", true]]) });
+
+        await openMenu();
+        expect(queryResetLink()).not.toBeInTheDocument();
+      });
+
+      it("offers one once a decision has been made", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", true]]), decisions: { deploy: false } });
+
+        await openMenu();
+        expect(resetLink()).toBeInTheDocument();
+      });
+
+      // The pins above move back, which is the confirmation — and with nothing left to
+      // undo the link takes itself away.
+      it("puts the bar back, leaves the menu open, and removes itself", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", true]]), decisions: { deploy: false } });
+
+        await openMenu();
+        expect(barLabels()).toEqual([]);
+
+        await userEvent.click(resetLink());
+
+        expect(barLabels()).toEqual(["Deploy"]);
+        expect(screen.getByRole("menu")).toBeInTheDocument();
+        expect(queryResetLink()).not.toBeInTheDocument();
+      });
     });
   });
 });
