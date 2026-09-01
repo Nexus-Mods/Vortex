@@ -17,15 +17,28 @@ vi.mock("@/contexts", () => ({ useMainContext: () => ({ api: { events: { emit } 
 
 import { useToolbarAnalytics } from "./useToolbarAnalytics.hook";
 
-/** Reports one use of the mods toolbar, and hands back what that put on the wire. */
-const report = (action: IToolbarActionIdentity, surface: ToolbarSurface): MixpanelEvent => {
-  const { result } = renderHook(() => useToolbarAnalytics("mods"));
-  result.current(action, surface);
-
+/** What the last call put on the wire, having checked it went to the generic funnel. */
+const lastEvent = (): MixpanelEvent => {
   const [name, event] = emit.mock.calls.at(-1) ?? [];
   expect(name).toBe("analytics-track-mixpanel-event");
 
   return event as MixpanelEvent;
+};
+
+/** Reports one click on the mods toolbar. */
+const report = (action: IToolbarActionIdentity, surface: ToolbarSurface): MixpanelEvent => {
+  const { result } = renderHook(() => useToolbarAnalytics("mods"));
+  result.current.onActionClick(action, surface);
+
+  return lastEvent();
+};
+
+/** Reports one pin or unpin on the mods toolbar. */
+const reportPin = (action: IToolbarActionIdentity, pinned: boolean): MixpanelEvent => {
+  const { result } = renderHook(() => useToolbarAnalytics("mods"));
+  result.current.onPinChange(action, pinned);
+
+  return lastEvent();
 };
 
 beforeEach(() => {
@@ -52,5 +65,31 @@ describe("useToolbarAnalytics", () => {
     const event = report({ id: "deploy-mods" }, "bar");
 
     expect(Object.keys(event.properties)).not.toContain("extension");
+  });
+});
+
+describe("useToolbarAnalytics pin tracking", () => {
+  it.each([true, false])("reports the state a pin was moved to (pinned=%s)", (pinned) => {
+    const event = reportPin({ id: "deploy" }, pinned);
+
+    expect(event.eventName).toBe("toolbar_pin_changed");
+    expect(event.properties).toEqual({ action: "deploy", pinned, toolbar: "mods" });
+  });
+
+  it("names the extension a pinned action came from", () => {
+    const event = reportPin({ id: "Manage Rules", extension: "mod-dependency-manager" }, true);
+
+    expect(event.properties.extension).toBe("mod-dependency-manager");
+  });
+
+  // No action, because a reset is about the whole toolbar rather than one button.
+  it("reports a reset against the toolbar alone", () => {
+    const { result } = renderHook(() => useToolbarAnalytics("mods"));
+    result.current.onPinsReset();
+
+    const event = lastEvent();
+
+    expect(event.eventName).toBe("toolbar_pins_reset");
+    expect(event.properties).toEqual({ toolbar: "mods" });
   });
 });

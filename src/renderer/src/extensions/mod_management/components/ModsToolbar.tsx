@@ -15,12 +15,12 @@ import { useModToolbarActions } from "../hooks/useModToolbarActions.hook";
  * these buttons earn their place, and nothing on the classic bar is measured at all.
  */
 export const ModsToolbar = ({ t }: { t: TFunction }) => {
-  const onActionClick = useToolbarAnalytics("mods");
-  const actions = useModToolbarActions(t, onActionClick);
+  const tracking = useToolbarAnalytics("mods");
+  const actions = useModToolbarActions(t, tracking.onActionClick);
 
   return (
     // without `flex-1` the toolbar keeps every action and runs over the page title
-    <Toolbar className="flex-1 justify-end" pinningId="mods" onActionClick={onActionClick}>
+    <Toolbar className="flex-1 justify-end" pinningId="mods" tracking={tracking}>
       <ToolbarGroup actions={actions} />
     </Toolbar>
   );

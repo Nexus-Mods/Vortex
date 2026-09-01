@@ -4,8 +4,8 @@ import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/Popover
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import type { IToolbarActionIdentity, IToolbarContext, ToolbarSurface } from "./Toolbar.context";
-import { useToolbarContext } from "./Toolbar.context";
+import type { IToolbarAnalytics, ToolbarSurface } from "./Toolbar.context";
+import { identityOf, useToolbarContext } from "./Toolbar.context";
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarOverflow } from "./ToolbarOverflow";
 import { ToolbarPanelButton } from "./ToolbarPanelButton";
@@ -76,18 +76,6 @@ const controlProps = (action: IToolbarAction) => ({
 });
 
 /**
- * What an action calls itself when its clicks are counted: the same `id` a decision to
- * pin it is stored against, which is already required to survive a change of language
- * or release. Never its label — that is translated, and an identity derived from one
- * splits a single button across as many ids as there are languages.
- *
- * An action without one says nothing about itself, so its clicks go unrecorded rather
- * than recorded wrongly. It cannot be pinned either, and `useToolbarPinning` says so.
- */
-const identityOf = (action: IToolbarAction): IToolbarActionIdentity | undefined =>
-  action.id ? { id: action.id, extension: action.extension } : undefined;
-
-/**
  * The half of {@link IToolbarAction} that runs something when activated, as one type
  * rather than the either-or. Copying an action means spreading it, and spreading the
  * either-or gives back an either-or that no longer knows which half it came from.
@@ -113,7 +101,7 @@ const runsSomething = (action: IToolbarAction): action is IToolbarClickAction =>
 export const trackedActions = (
   actions: IToolbarAction[],
   surface: ToolbarSurface,
-  onActionClick: IToolbarContext["onActionClick"],
+  onActionClick: IToolbarAnalytics["onActionClick"] | undefined,
 ): IToolbarAction[] => {
   if (onActionClick === undefined) {
     return actions;
@@ -147,7 +135,7 @@ export const trackedActions = (
  */
 const panelClickReporter = (
   action: IToolbarAction,
-  onActionClick: IToolbarContext["onActionClick"],
+  onActionClick: IToolbarAnalytics["onActionClick"] | undefined,
 ): (() => void) | undefined => {
   const identity = runsSomething(action) ? undefined : identityOf(action);
 
@@ -194,7 +182,7 @@ const ToolbarGroupBody = ({
   pinningEnabled,
   ...props
 }: IGroupBodyProps) => {
-  const { onActionClick } = useToolbarContext();
+  const { tracking } = useToolbarContext();
   const { groupRef, isMeasuring, visible } = useToolbarOverflow({
     actionCount: barActions.length,
     alwaysReserveOverflow: pinningEnabled,
@@ -205,7 +193,7 @@ const ToolbarGroupBody = ({
   const visibleActions = trackedActions(
     barActions.filter((_, index) => visible.has(index)),
     "bar",
-    onActionClick,
+    tracking?.onActionClick,
   );
   const hiddenActions = barActions.filter((_, index) => !visible.has(index));
 
@@ -215,7 +203,7 @@ const ToolbarGroupBody = ({
   const menuActions = trackedActions(
     pinningEnabled ? actions : hiddenActions,
     "overflow",
-    onActionClick,
+    tracking?.onActionClick,
   );
 
   return (
@@ -229,7 +217,7 @@ const ToolbarGroupBody = ({
         <ToolbarControl
           action={action}
           key={action.label}
-          onClick={panelClickReporter(action, onActionClick)}
+          onClick={panelClickReporter(action, tracking?.onActionClick)}
         />
       ))}
 

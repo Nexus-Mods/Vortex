@@ -8,6 +8,7 @@ import { toolbarReducer } from "@/reducers/toolbars";
 import type { IToolbarStates } from "@/types/IState";
 
 import { Toolbar } from "./Toolbar";
+import type { IToolbarAnalytics } from "./Toolbar.context";
 import { ToolbarGroup, type IToolbarAction } from "./ToolbarGroup";
 import { fitVisibleActions, type IToolbarGroupMetrics } from "./useToolbarOverflow.hook";
 
@@ -54,6 +55,13 @@ const makeActions = (count: number): IToolbarAction[] =>
 const KEBAB_TEST_ID = "toolbar-overflow";
 
 const getKebab = () => screen.getByTestId(KEBAB_TEST_ID);
+
+/** Tracking whose every callback is a spy, for a test that cares about only one. */
+const silentTracking = (): IToolbarAnalytics => ({
+  onActionClick: vi.fn(),
+  onPinChange: vi.fn(),
+  onPinsReset: vi.fn(),
+});
 
 const queryKebab = () => screen.queryByTestId(KEBAB_TEST_ID);
 
@@ -578,17 +586,19 @@ describe("ToolbarGroup", () => {
       actions,
       decisions = {},
       width = 1000,
+      tracking,
     }: {
       actions: IToolbarAction[];
       decisions?: { [actionId: string]: boolean };
       width?: number;
+      tracking?: Partial<IToolbarAnalytics>;
     }) => {
       stubLayout(width);
       const store = makeStore({ mods: { pinned: decisions } });
 
       render(
         <Provider store={store as never}>
-          <Toolbar pinningId="mods">
+          <Toolbar pinningId="mods" tracking={tracking && { ...silentTracking(), ...tracking }}>
             <ToolbarGroup actions={actions} />
           </Toolbar>
         </Provider>,
@@ -773,6 +783,45 @@ describe("ToolbarGroup", () => {
         expect(queryResetLink()).not.toBeInTheDocument();
       });
     });
+
+    describe("tracking", () => {
+      it("reports a pin, and the unpin that undoes it", async () => {
+        const onPinChange = vi.fn();
+        renderToolbar({ actions: pinnable([["Deploy", false]]), tracking: { onPinChange } });
+
+        await openMenu();
+        await userEvent.click(pinOf("Deploy"));
+
+        expect(onPinChange).toHaveBeenLastCalledWith({ id: "deploy", extension: undefined }, true);
+
+        await userEvent.click(pinOf("Deploy"));
+
+        expect(onPinChange).toHaveBeenLastCalledWith({ id: "deploy", extension: undefined }, false);
+      });
+
+      it("reports a reset to defaults", async () => {
+        const onPinsReset = vi.fn();
+        renderToolbar({
+          actions: pinnable([["Deploy", false]]),
+          decisions: { deploy: true },
+          tracking: { onPinsReset },
+        });
+
+        await openMenu();
+        await userEvent.click(resetLink());
+
+        expect(onPinsReset).toHaveBeenCalledOnce();
+      });
+
+      it("says nothing on a toolbar that isn't tracked", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", false]]) });
+
+        await openMenu();
+        await userEvent.click(pinOf("Deploy"));
+
+        expect(screen.getByRole("toolbar")).toBeInTheDocument();
+      });
+    });
   });
 });
 
@@ -870,7 +919,7 @@ describe("fitVisibleActions", () => {
 describe("click tracking", () => {
   const trackedToolbar = (actions: IToolbarAction[], onActionClick: () => void, max?: number) =>
     render(
-      <Toolbar onActionClick={onActionClick}>
+      <Toolbar tracking={{ ...silentTracking(), onActionClick }}>
         <ToolbarGroup actions={actions} maxVisible={max} />
       </Toolbar>,
     );

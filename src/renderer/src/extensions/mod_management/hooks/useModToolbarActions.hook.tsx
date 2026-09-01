@@ -12,7 +12,7 @@ import { log } from "@/logging";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
-import type { IToolbarContext } from "@/ui/components/toolbar/Toolbar.context";
+import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
 import { fileMD5 } from "@/util/checksum";
@@ -631,7 +631,7 @@ const useActionMenu = (
   t: TFunction,
   menu: IActionMenu,
   adopted: IPositionedAction[],
-  onActionClick: IToolbarContext["onActionClick"],
+  onActionClick: IToolbarAnalytics["onActionClick"] | undefined,
 ): IPositionedAction | undefined => {
   const registered = useRegisteredActions(menu.group);
 
@@ -679,7 +679,7 @@ const useActionMenu = (
  */
 export const useModToolbarActions = (
   t: TFunction,
-  onActionClick?: IToolbarContext["onActionClick"],
+  onActionClick?: IToolbarAnalytics["onActionClick"],
 ): IToolbarAction[] => {
   const installFromFile = useInstallFromFileAction(t);
   const checkVersions = useCheckVersionsAction(t);
