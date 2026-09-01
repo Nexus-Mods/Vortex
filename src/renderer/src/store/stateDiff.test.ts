@@ -159,4 +159,20 @@ describe("computeStateDiff", () => {
     expect(ops[0].type).toBe("set");
     expect(ops[0].path).toEqual(["attributes", "installTime"]);
   });
+
+  // one dispatch can change a whole game's mod table, past the engine's argument-spread limit
+  it("diffs a subtree with more leaves than the engine spread limit", () => {
+    const LEAVES = 200_000;
+    // keyed by synthetic leaf id
+    const wide: Record<string, number> = {};
+    for (let i = 0; i < LEAVES; i++) {
+      wide[`leaf-${i}`] = i;
+    }
+    const oldState = { mods: {} as Record<string, number> };
+    const newState = { mods: wide };
+
+    const ops = computeStateDiff(oldState, newState);
+
+    expect(ops).toHaveLength(LEAVES);
+  });
 });
