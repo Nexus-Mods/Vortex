@@ -1,10 +1,11 @@
-import { UploadError } from "@vortex/shared/errors";
+import { VortexError } from "@vortex/shared";
 import { AbortError } from "got";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { assert, describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("./transport", () => ({ uploadFile: vi.fn() }));
 vi.mock("./s3Multipart", () => ({ uploadS3Multipart: vi.fn() }));
 
+import { assertVortexError } from "../test-utils/assertions";
 import { UploadManager } from "./manager";
 import { uploadS3Multipart } from "./s3Multipart";
 import { uploadFile } from "./transport";
@@ -135,15 +136,15 @@ describe("UploadManager", () => {
       transfer.settle()(new AbortError({ options: {} } as never));
 
       const err = await promise.catch((e: unknown) => e);
-      expect(err).toBeInstanceOf(UploadError);
-      expect((err as UploadError).code).toBe("cancellation");
+      assertVortexError(err, "user-canceled");
     });
 
     it("leaves a genuine failure classified as it was", async () => {
-      const failure = new UploadError(
-        { code: "network-bad-status", url: "https://s3.example.com/upload", statusCode: 403 },
-        "Server returned 403",
-      );
+      const failure = new VortexError("Server returned 403", {
+        kind: "http:bad-status",
+        url: "https://s3.example.com/upload",
+        statusCode: 403,
+      });
       mockUploadFile.mockRejectedValue(failure);
 
       await expect(manager.upload(request(1))).rejects.toBe(failure);

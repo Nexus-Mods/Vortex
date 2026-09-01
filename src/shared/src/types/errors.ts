@@ -1,58 +1,5 @@
 import { VortexError } from "../errors/base";
 
-export type DownloadErrorPayload =
-  | { code: "cancellation" }
-  | { code: "network-error"; url: URL }
-  | { code: "network-timeout"; url: URL }
-  | { code: "network-bad-status"; url: URL; statusCode: number }
-  | { code: "precondition-failed"; url: URL }
-  | { code: "protocol-violation"; url: URL }
-  | { code: "is-html"; url: URL }
-  | { code: "fs-error"; path: string }
-  | { code: "resolver-error" };
-
-export class DownloadError extends Error {
-  readonly payload: DownloadErrorPayload;
-
-  constructor(payload: DownloadErrorPayload, message: string, cause?: unknown) {
-    super(message, { cause });
-    this.name = "DownloadError";
-    this.payload = payload;
-  }
-
-  public get code(): DownloadErrorPayload["code"] {
-    return this.payload.code;
-  }
-}
-
-/**
- * Unlike {@link DownloadErrorPayload}, `url` rides as a string: an upload error
- * is thrown in main and crosses to the renderer through the generic error
- * serializer, which copies the payload verbatim. A `URL` instance is not
- * structured-cloneable, so it would fail the IPC hop.
- */
-export type UploadErrorPayload =
-  | { code: "cancellation" }
-  | { code: "network-error"; url: string }
-  | { code: "network-timeout"; url: string }
-  | { code: "network-bad-status"; url: string; statusCode: number }
-  | { code: "protocol-violation"; url: string }
-  | { code: "fs-error"; path: string };
-
-export class UploadError extends Error {
-  readonly payload: UploadErrorPayload;
-
-  constructor(payload: UploadErrorPayload, message: string, cause?: unknown) {
-    super(message, { cause });
-    this.name = "UploadError";
-    this.payload = payload;
-  }
-
-  public get code(): UploadErrorPayload["code"] {
-    return this.payload.code;
-  }
-}
-
 export interface ReportableError {
   message: string;
   title?: string;
@@ -322,19 +269,6 @@ export class AlreadyDownloaded extends Error {
 
   public set downloadId(id: string) {
     this.mId = id;
-  }
-}
-
-export class DownloadIsHTML extends Error {
-  private mUrl: string;
-  constructor(inputUrl: string) {
-    super("");
-    this.name = this.constructor.name;
-    this.mUrl = inputUrl;
-  }
-
-  public get url(): string {
-    return this.mUrl;
   }
 }
 

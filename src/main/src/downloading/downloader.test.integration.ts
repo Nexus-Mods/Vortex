@@ -3,13 +3,14 @@ import { readFile, mkdtemp, mkdir, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { VortexError } from "@vortex/shared";
 import type { ResolvedResource, ResolvedEndpoint, Resolver, Chunk } from "@vortex/shared/download";
 import { staticChunker } from "@vortex/shared/download";
-import { DownloadError } from "@vortex/shared/errors";
 import { RateLimiter } from "limiter";
 import { CookieJar } from "tough-cookie";
-import { describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
+import { assert, describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
+import { assertVortexError } from "../test-utils/assertions";
 import { defaultRetryStrategy } from "../transfer/retry";
 import { download, type TimeoutOptions } from "./downloader";
 import { ProgressReporter } from "./progress";
@@ -348,7 +349,7 @@ describe("download", () => {
           { checkpoint },
         ),
       ).rejects.toMatchObject({
-        payload: { code: "protocol-violation", url: route.url },
+        data: { kind: "http:protocol-violation", url: route.url.toString() },
       });
     });
 
@@ -442,7 +443,7 @@ describe("download", () => {
       setTimeout(() => abortController.abort(), 200);
 
       await expect(promise).rejects.toMatchObject({
-        payload: { code: "cancellation" },
+        data: { kind: "user-canceled" },
       });
     });
   });
@@ -517,7 +518,7 @@ describe("download", () => {
     await using tmp = await makeTmpDir();
 
     await expect(runDownload(route.url, tmp.dir).promise).rejects.toMatchObject({
-      payload: { code: "protocol-violation", url: route.url },
+      data: { kind: "http:protocol-violation", url: route.url.toString() },
     });
   });
 
@@ -628,7 +629,7 @@ describe("download", () => {
       using route = server.route(handler);
       await using tmp = await makeTmpDir();
       await expect(runDownload(route.url, tmp.dir).promise).rejects.toMatchObject({
-        payload: { code: "precondition-failed", url: route.url },
+        data: { kind: "http:precondition-failed", url: route.url.toString() },
       });
     });
   });
@@ -639,7 +640,7 @@ describe("download", () => {
       await using tmp = await makeTmpDir();
       const dest = path.join(tmp.dir, "output");
       await expect(runDownload(route.url, dest).promise).rejects.toMatchObject({
-        payload: { code: "network-bad-status", statusCode, url: route.url },
+        data: { kind: "http:bad-status", statusCode, url: route.url.toString() },
       });
     });
 
@@ -647,7 +648,7 @@ describe("download", () => {
       using route = server.route(serveStatus(200, { "content-type": "text/html; charset=utf-8" }));
       await using tmp = await makeTmpDir();
       await expect(runDownload(route.url, tmp.dir).promise).rejects.toMatchObject({
-        payload: { code: "is-html", url: route.url },
+        data: { kind: "download:is-html", url: route.url.toString() },
       });
     });
   });
@@ -806,7 +807,7 @@ describe("download", () => {
       abortController.abort();
       await expect(
         runDownload(route.url, tmp.dir, { abortController }).promise,
-      ).rejects.toMatchObject({ payload: { code: "cancellation" } });
+      ).rejects.toMatchObject({ data: { kind: "user-canceled" } });
     });
 
     it("rejects with code 'cancellation' when cancelled during a single (non-chunked) download", async () => {
@@ -825,7 +826,7 @@ describe("download", () => {
       const { promise } = runDownload(route.url, tmp.dir, { abortController });
       abortController.abort();
       await expect(promise).rejects.toMatchObject({
-        payload: { code: "cancellation" },
+        data: { kind: "user-canceled" },
       });
     });
 
@@ -838,7 +839,7 @@ describe("download", () => {
       const { promise } = runDownload(route.url, tmp.dir, { abortController });
       abortController.abort();
       await expect(promise).rejects.toMatchObject({
-        payload: { code: "cancellation" },
+        data: { kind: "user-canceled" },
       });
     });
 
@@ -852,8 +853,7 @@ describe("download", () => {
       const err = await runDownload(route.url, tmp.dir, {
         abortController,
       }).promise.catch((e) => e);
-      expect(err).toBeInstanceOf(DownloadError);
-      expect((err as DownloadError).code).toBe("cancellation");
+      assertVortexError(err, "user-canceled");
     });
   });
 
@@ -891,7 +891,7 @@ describe("download", () => {
           },
         ),
       ).rejects.toMatchObject({
-        payload: { code: "network-timeout" },
+        data: { kind: "http:timeout", url: route.url.toString() },
       });
     }, 1_000);
 
@@ -955,7 +955,7 @@ describe("download", () => {
           },
         ),
       ).rejects.toMatchObject({
-        payload: { code: "network-timeout" },
+        data: { kind: "http:timeout", url: route.url.toString() },
       });
     }, 1_000);
 
@@ -991,8 +991,7 @@ describe("download", () => {
         },
       ).catch((e) => e);
 
-      expect(err).toBeInstanceOf(DownloadError);
-      expect((err as DownloadError).code).toBe("cancellation");
+      assertVortexError(err, "user-canceled");
     });
   });
 
@@ -1042,7 +1041,7 @@ describe("download", () => {
           retry: defaultRetryStrategy(2, 50, 200),
         }),
       ).rejects.toMatchObject({
-        payload: { code: "network-bad-status" },
+        data: { kind: "http:bad-status", url: route.url.toString() },
       });
     });
 
@@ -1278,7 +1277,7 @@ describe("download", () => {
           retry: defaultRetryStrategy(3, 50, 200),
         }),
       ).rejects.toMatchObject({
-        payload: { code: "network-bad-status", statusCode: 404 },
+        data: { kind: "http:bad-status", statusCode: 404, url: route.url.toString() },
       });
 
       // Only one HEAD was attempted — no retries.
@@ -1308,7 +1307,7 @@ describe("download", () => {
           { abortSignal: abortController.signal },
         ),
       ).rejects.toMatchObject({
-        payload: { code: "cancellation" },
+        data: { kind: "user-canceled" },
       });
     });
   });

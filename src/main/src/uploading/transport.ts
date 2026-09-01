@@ -5,8 +5,8 @@
  */
 import { createReadStream } from "node:fs";
 
+import { type VortexError } from "@vortex/shared";
 import type { RetryStrategy } from "@vortex/shared/download";
-import type { UploadError } from "@vortex/shared/errors";
 import type { ExtendOptions, Got, Response } from "got";
 import got from "got";
 
@@ -176,17 +176,17 @@ function logRejection(
   label: string,
   size: number,
   sentHeaders: string[],
-  err: UploadError,
+  err: VortexError,
 ): void {
-  // Narrow on the payload, not the `code` getter, to reach `statusCode`.
-  const { payload } = err;
+  const { data } = err;
+  const statusCode = data.kind === "http:bad-status" ? data.statusCode : undefined;
   const missing = missingSignedHeaders(url, sentHeaders);
   log("warn", "upload request rejected", {
     label,
     url: redactUrl(url),
     size,
-    code: payload.code,
-    statusCode: payload.code === "network-bad-status" ? payload.statusCode : undefined,
+    code: data.kind,
+    statusCode,
     error: err.message,
     sentHeaders: sentHeaders.join(", "),
     // Non-empty means the signature cannot match, whatever else is wrong.

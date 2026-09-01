@@ -2,6 +2,7 @@ import { type FileHandle as NodeFileHandle, access, open } from "node:fs/promise
 import type { IncomingHttpHeaders } from "node:http";
 
 import { getErrorCode } from "@vortex/shared";
+import { VortexError, parseError } from "@vortex/shared";
 import type {
   ByteRange,
   Chunk,
@@ -11,7 +12,6 @@ import type {
   Resolver,
   RetryStrategy,
 } from "@vortex/shared/download";
-import { DownloadError } from "@vortex/shared/errors";
 import type { Got, Headers, ExtendOptions } from "got";
 import got from "got";
 import type { RateLimiter } from "limiter";
@@ -58,7 +58,7 @@ export async function download<T>(
   },
 ): Promise<void> {
   if (options?.abortSignal?.aborted) {
-    throw new DownloadError({ code: "cancellation" }, "Download cancelled");
+    throw new VortexError("Download cancelled", { kind: "user-canceled", skipped: false });
   }
 
   // Resuming opens the partial file with r+, which requires it to exist; drop the checkpoint when
@@ -90,7 +90,7 @@ export async function download<T>(
   try {
     resolved = normalize(await strategy.resolver(resource));
   } catch (err) {
-    throw new DownloadError({ code: "resolver-error" }, "Resolver failed", err);
+    throw new VortexError("Resolver failed", { kind: "download:resolver-error" }, { cause: err });
   }
 
   let probe: ProbeResult;
@@ -102,7 +102,11 @@ export async function download<T>(
     );
   } catch (err) {
     if (isCancellation(err)) {
-      throw new DownloadError({ code: "cancellation" }, "Download cancelled", err);
+      throw new VortexError(
+        "Download cancelled",
+        { kind: "user-canceled", skipped: false },
+        { cause: err },
+      );
     }
 
     throw toNetworkError(resolved.probeEndpoint, err);
@@ -135,18 +139,14 @@ export async function download<T>(
     const fd = await open(dest, flag);
     handle = { fd, path: dest };
   } catch (err) {
-    throw new DownloadError({ code: "fs-error", path: dest }, `Failed to open ${dest}`, err);
+    throw parseError(err, { path: dest }, () => `Failed to open ${dest}`);
   }
 
   if (checkpoint && probe.size) {
     try {
       await handle.fd.truncate(probe.size);
     } catch (err) {
-      throw new DownloadError(
-        { code: "fs-error", path: handle.path },
-        `Failed to truncate ${handle.path}`,
-        err,
-      );
+      throw parseError(err, { path: handle.path }, () => `Failed to truncate ${handle.path}`);
     }
   }
 
@@ -274,7 +274,11 @@ export async function download<T>(
     }
   } catch (err) {
     if (isCancellation(err)) {
-      throw new DownloadError({ code: "cancellation" }, "Download cancelled", err);
+      throw new VortexError(
+        "Download cancelled",
+        { kind: "user-canceled", skipped: false },
+        { cause: err },
+      );
     }
 
     throw err;
@@ -294,10 +298,10 @@ async function probeUrl(
 
   const contentType = response.headers["content-type"] ?? "";
   if (contentType.startsWith("text/html")) {
-    throw new DownloadError(
-      { code: "is-html", url: endpoint.url },
-      "Server returned an HTML page instead of a file",
-    );
+    throw new VortexError("Server returned an HTML page instead of a file", {
+      kind: "download:is-html",
+      url: endpoint.url.toString(),
+    });
   }
 
   const size = getSize(response.headers, "content-length");
@@ -312,10 +316,10 @@ async function probeUrl(
 
   // NOTE(erri120): Server has to do the precondition check of the ETag.
   if (etag && previousETag && etag !== previousETag) {
-    throw new DownloadError(
-      { code: "protocol-violation", url: endpoint.url },
-      "ETag has changed, server didn't validate precondition",
-    );
+    throw new VortexError("ETag has changed, server didn't validate precondition", {
+      kind: "http:protocol-violation",
+      url: endpoint.url.toString(),
+    });
   }
 
   const fileName =
@@ -395,9 +399,9 @@ async function downloadStream(
 
       if (remaining !== undefined) {
         if (buffer.length > remaining) {
-          throw new DownloadError(
-            { code: "protocol-violation", url: endpoint.url },
+          throw new VortexError(
             `Server sent ${buffer.length} bytes but only ${remaining} were expected; response exceeds requested range`,
+            { kind: "http:protocol-violation", url: endpoint.url.toString() },
           );
         }
         remaining -= buffer.length;
@@ -413,15 +417,11 @@ async function downloadStream(
         if (progress) progress.bytesWritten += result.bytesWritten;
         writePosition += result.bytesWritten;
       } catch (err) {
-        throw new DownloadError(
-          { code: "fs-error", path: handle.path },
-          `Failed to write to ${handle.path}`,
-          err,
-        );
+        throw parseError(err, { path: handle.path }, () => `Failed to write to ${handle.path}`);
       }
     }
   } catch (err) {
-    if (err instanceof DownloadError || isCancellation(err)) throw err;
+    if (err instanceof VortexError || isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl!, err);
   }
 }
