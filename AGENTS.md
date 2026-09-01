@@ -6,10 +6,7 @@ to load for a task. It deliberately duplicates nothing from `docs/`.
 
 ## Verification
 
-`pnpm run verify` from the repo root runs format, build and test in one pass.
-Build covers lint and typecheck, so there is no need to run those separately, and
-everything fans out through Nx to the affected packages, so there is no need to
-change directory into one.
+`pnpm run verify` from the repo root.
 
 Scope a single test with `pnpm run test -- <path>`.
 
