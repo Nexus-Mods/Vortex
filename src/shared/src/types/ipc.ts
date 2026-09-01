@@ -290,6 +290,9 @@ export interface RendererChannels extends RendererCallbackChannels {
   /** Opens the file using the default application for the file extension */
   "shell:openFile": (filePath: string) => void;
 
+  /** Opens the OS file manager with the file selected */
+  "shell:showItemInFolder": (filePath: string) => void;
+
   // Persistence: Send diff operations to main for persistence
   "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;
 
