@@ -294,6 +294,28 @@ async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
   return releases;
 }
 
+// The What's New dialog shows the notes of every release the update spans, so
+// each body needs a version heading of its own; without one the bodies run
+// together and the reader can't tell which change came in which release. The
+// version is validated semver and the date is ours, so neither can inject
+// markup into the dialog's innerHTML.
+function releaseSection(version: string, body: string, publishedAt?: string): string {
+  const published =
+    publishedAt != null && !Number.isNaN(Date.parse(publishedAt))
+      ? `<span class="changelog-release-date">${formatReleaseDate(publishedAt)}</span>`
+      : "";
+  return [
+    `<section class="changelog-release">`,
+    `<h4 class="changelog-release-version">${version}${published}</h4>`,
+    `<div class="changelog-release-body">${body}</div>`,
+    `</section>`,
+  ].join("");
+}
+
+function formatReleaseDate(publishedAt: string): string {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(new Date(publishedAt));
+}
+
 /**
  * Resolve the update target for a channel. Returns null when no eligible
  * release exists. Network and rate-limit errors propagate, the caller logs
@@ -319,8 +341,11 @@ export async function resolveUpdate(
         current != null && semver.gt(version, current) && semver.lte(version, pickedVersion),
     )
     .sort((lhs, rhs) => semver.rcompare(lhs.version, rhs.version))
-    .map(({ release }) => release.body_html)
-    .filter((body): body is string => body != null && body.trim().length > 0);
+    .flatMap(({ release, version }) =>
+      release.body_html != null && release.body_html.trim().length > 0
+        ? [releaseSection(version, release.body_html, release.published_at)]
+        : [],
+    );
 
   return {
     tag: picked.tag_name,
