@@ -19,16 +19,6 @@ const config = createConfig(INPUT, OUTPUT, "cjs", [], (id) => {
 const bundle = await rolldown(config);
 await bundle.write(config.output);
 
-const BOOTSTRAP_INPUT = path.resolve(import.meta.dirname, "./src/node-adaptor-host/bootstrap.ts");
-const BOOTSTRAP_OUTPUT = path.join(mainOutputDirectory, "bootstrap.mjs");
-
-const bootstrapConfig = createConfig(BOOTSTRAP_INPUT, BOOTSTRAP_OUTPUT, "esm", [], (id) =>
-  id.startsWith("@nexusmods/adaptor-api"),
-);
-
-const bootstrapBundle = await rolldown(bootstrapConfig);
-await bootstrapBundle.write(bootstrapConfig.output);
-
 // Each worker_thread bundles to a standalone CJS entry next to main.cjs, spawned
 // by its host. They share one external policy: bundle relative/local sources,
 // leave node built-ins and dependencies external.
