@@ -17,8 +17,6 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - name: Install volta, Node.js
-        uses: volta-cli/action@v5
       - uses: pnpm/setup@v2
         with:
           cache: true

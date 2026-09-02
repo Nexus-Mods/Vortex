@@ -39,9 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install volta, Node.js
-        uses: volta-cli/action@v5
-
       - name: Install pnpm
         uses: pnpm/setup@v2
         with:
@@ -91,9 +88,6 @@ jobs:
         run: |
           git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
           git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
-
-      - name: Install volta, Node.js
-        uses: volta-cli/action@v5
 
       - name: Install pnpm
         uses: pnpm/setup@v2

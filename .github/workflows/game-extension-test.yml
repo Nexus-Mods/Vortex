@@ -57,19 +57,8 @@ jobs:
 
       - uses: pnpm/setup@v2
         with:
+          cache: true
           install: false
-
-      - name: Read Node.js version from package.json
-        id: node-version
-        run: |
-          NODE_VERSION=$(node -p "require('./package.json').engines.node")
-          echo "NODE_VERSION=$NODE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "Using Node.js version: $NODE_VERSION"
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: pnpm
 
       - name: Install dependencies
         run: |
