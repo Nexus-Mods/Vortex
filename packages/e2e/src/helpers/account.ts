@@ -4,15 +4,14 @@ import { test } from "../fixtures/vortex-app";
 import { ProfileMenu } from "../selectors/profileMenu";
 import { Timeouts } from "./timeouts";
 
-/**
- * Sign out through the profile menu's Logout item and verify the app is left
- * logged out: the avatar is replaced by the header "Log in" control.
- */
 export async function logoutFromVortex(vortexWindow: Page): Promise<void> {
   const profileMenu = new ProfileMenu(vortexWindow);
 
-  await test.step("Open the profile dropdown", async () => {
+  await test.step("The header shows the signed-in avatar", async () => {
     await expect(profileMenu.avatarButton).toBeVisible({ timeout: Timeouts.NETWORK });
+  });
+
+  await test.step("Click the avatar to open the account menu", async () => {
     await profileMenu.avatarButton.click();
     await expect(profileMenu.logoutItem).toBeVisible();
   });
@@ -22,7 +21,7 @@ export async function logoutFromVortex(vortexWindow: Page): Promise<void> {
     await expect(profileMenu.loginButton).toBeVisible({ timeout: Timeouts.NETWORK });
   });
 
-  await test.step("Verify the avatar is no longer shown", async () => {
+  await test.step("The avatar is no longer shown in the header", async () => {
     await expect(profileMenu.avatarButton).toBeHidden();
   });
 }

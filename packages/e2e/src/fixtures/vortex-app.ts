@@ -294,9 +294,6 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
-              // Reuse a locally-captured Nexus session (pnpm auth:capture) so the
-              // OAuth flow lands on the consent screen and skips the captcha-gated
-              // credential login. Absent on CI → full OAuth credential flow, unchanged.
               const seededStorageState = seededAuthStatePath(user);
               const loginResult = await loginToNexus(app, window, user, {
                 skipSteps: true,

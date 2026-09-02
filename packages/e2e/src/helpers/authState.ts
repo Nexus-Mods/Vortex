@@ -21,10 +21,9 @@ export function authStatePath(user: NexusUser): string {
 }
 
 /**
- * The captured storage-state path for a user when one exists, else undefined —
- * pass straight to loginToNexus as storageStatePath. Present (local runs after
- * `pnpm auth:capture`) the OAuth flow lands on the consent screen and skips the
- * captcha-gated credential form; absent (CI) the full credential flow runs.
+ * A user's captured storage-state path if `pnpm auth:capture` has been run,
+ * else undefined. Pass to loginToNexus: with it the OAuth flow lands on the
+ * consent screen and skips the captcha; without it (CI) the full flow runs.
  */
 export function seededAuthStatePath(user: NexusUser): string | undefined {
   const captured = authStatePath(user);

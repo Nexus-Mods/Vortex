@@ -9,7 +9,6 @@ import {
 import { test } from "../fixtures/vortex-app";
 import { LoginPage } from "../selectors/loginPage";
 import { type DiagnosticsTeardown, instrumentNexusPage } from "./diagnostics";
-import { installExternalOpenSpy } from "./externalOpen";
 import { launchNexusBrowser } from "./nexusBrowser";
 import { Timeouts } from "./timeouts";
 import { freeUser, type NexusUser } from "./users";
@@ -77,10 +76,10 @@ export async function loginToNexus(
   await step("Click the login button", async () => {
     await expect(vortexLoginPage.vortexLoginButton).toBeVisible({ timeout: Timeouts.NETWORK });
 
-    // A spy rather than a plain stub, so callers can assert which URL the app
-    // opened. Retried because the main process may not be ready yet.
     await expect(async () => {
-      await installExternalOpenSpy(vortexApp);
+      await vortexApp.evaluate(({ shell }) => {
+        shell.openExternal = () => Promise.resolve();
+      });
     }).toPass({ timeout: Timeouts.NETWORK });
 
     await vortexLoginPage.vortexLoginButton.click();
