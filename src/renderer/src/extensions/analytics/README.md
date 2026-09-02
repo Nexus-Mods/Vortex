@@ -23,6 +23,19 @@ toolbar_pins_reset { toolbar } // the whole toolbar back to defaults, so no acti
 // the menu" rather than "did not fit" — and a menu interaction reports twice, the Open...
 // parent on `bar` and then the row on `menu`
 
+Table
+
+table_columns_viewed { table, columns, hidden_columns, column_count } // once per table per session
+table_column_toggled { table, column, visible } // visible = the state moved to
+// table = the id the table stores its layout against: mods | downloads | extensions |
+// collection-mods | collection-add-mods
+// column ids are the attribute ids that layout is stored against, never the translated header
+// columns = on show, in the order drawn; hidden_columns = offered by the toggle menu but off
+// a column in neither list was never offered here: no extension provides it, or its own
+// condition said no. Attributes that can't be a column (details pane, inline) are left out
+// of both, and toggling one is not an event
+// once per session, so the answer stays per install however often the page is opened
+
 Mods
 
 mods_download_started
