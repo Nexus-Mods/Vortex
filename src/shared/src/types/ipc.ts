@@ -2,6 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { SerializedVortexError } from "../errors/serialization";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
 import type {
@@ -241,6 +242,17 @@ export interface SerializedError {
  */
 export type WireResult<T> = { ok: true; value: T } | { ok: false; error: Serializable };
 
+/**
+ * The pair-shape envelope used by the invoke/handle and callback paths: the
+ * channel's return value lives in `data`, the optional VortexError lives in
+ * `error`. The receiver narrows on `error !== undefined` and deserializes-and-
+ * throws when present. Sender and receiver are owned by us and every pair flows
+ * through the better-IPC helpers, so no collision check is needed.
+ */
+export type WireReply<T> =
+  | { data: T; error?: undefined }
+  | { data?: undefined; error: SerializedVortexError };
+
 export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
 
@@ -259,7 +271,7 @@ export type RendererCallbackChannels = {
   [C in keyof CallbackChannels as `callback:${C}`]: CallbackChannels[C] extends (
     ...args: infer _Args
   ) => Promise<infer Return>
-    ? (collationId: number, result: WireResult<Return>) => void
+    ? (collationId: number, result: Return) => void
     : never;
 };
 

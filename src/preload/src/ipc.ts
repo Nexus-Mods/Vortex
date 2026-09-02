@@ -3,7 +3,9 @@
 // without importing `index.ts`'s top-level `expose()` side effects (which need
 // a full Electron context to evaluate).
 
-import { type ErrorOriginTracker, rehydrateSerializedError, serializeError } from "@vortex/shared";
+import { VortexError } from "@vortex/shared";
+import type { ErrorOriginTracker } from "@vortex/shared/errors";
+import { deserializeVortexError, toWireError } from "@vortex/shared/errors";
 import type {
   RendererChannels,
   InvokeChannels,
@@ -11,8 +13,7 @@ import type {
   CallbackChannels,
   SerializableArgs,
   AssertSerializable,
-  SerializedError,
-  WireResult,
+  WireReply,
 } from "@vortex/shared/ipc";
 import { ipcRenderer } from "electron";
 
@@ -26,11 +27,11 @@ import { ipcRenderer } from "electron";
 // same one the callback threw. The "renderer" namespace keeps these refs
 // distinct from any tracker main owns.
 const ORIGIN_STASH_MAX = 512;
-const originStash = new Map<string, Error>();
+const originStash = new Map<string, VortexError>();
 let originSeq = 0;
 export const errorOriginTracker: ErrorOriginTracker = {
   namespace: "renderer",
-  capture: (err: Error): string => {
+  capture: (err) => {
     const id = `${originSeq++}`;
     originStash.set(id, err);
     if (originStash.size > ORIGIN_STASH_MAX) {
@@ -39,7 +40,7 @@ export const errorOriginTracker: ErrorOriginTracker = {
     }
     return id;
   },
-  resolve: (id: string): Error | undefined => {
+  resolve: (id) => {
     const err = originStash.get(id);
     if (err !== undefined) originStash.delete(id);
     return err;
@@ -50,20 +51,13 @@ export async function rendererInvoke<C extends keyof InvokeChannels>(
   channel: C,
   ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
 ): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
-  const reply = await ipcRenderer.invoke(channel, ...args);
-  if (isWireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>(reply)) {
-    if (reply.ok) return reply.value;
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    throw rehydrateSerializedError(reply.error as unknown as SerializedError, errorOriginTracker);
+  const reply: WireReply<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> =
+    await ipcRenderer.invoke(channel, ...args);
+  if (reply.error) {
+    throw deserializeVortexError(reply.error, errorOriginTracker);
+  } else {
+    return reply.data;
   }
-
-  return reply;
-}
-
-function isWireResult<T>(value: unknown): value is WireResult<T> {
-  return (
-    typeof value === "object" && value !== null && "ok" in value && typeof value.ok === "boolean"
-  );
 }
 
 export function rendererSend<C extends keyof RendererChannels>(
@@ -113,19 +107,16 @@ export function rendererCallback<C extends keyof CallbackChannels>(
   ) => {
     handler(collationId, ...args)
       .then((value) => {
-        ipcRenderer.send(`callback:${channel}`, collationId, {
-          ok: true,
-          value,
-        });
+        const reply: WireReply<typeof value> = { data: value };
+        ipcRenderer.send(`callback:${channel}`, collationId, reply);
         return undefined;
       })
       .catch((err: unknown) => {
-        ipcRenderer.send(`callback:${channel}`, collationId, {
-          ok: false,
-          error: serializeError(err, errorOriginTracker),
-        });
+        const reply: WireReply<unknown> = { error: toWireError(err) };
+        ipcRenderer.send(`callback:${channel}`, collationId, reply);
       });
   };
+
   ipcRenderer.on(channel, listener);
   return () => ipcRenderer.removeListener(channel, listener);
 }

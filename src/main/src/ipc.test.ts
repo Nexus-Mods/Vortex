@@ -1,15 +1,12 @@
-import { rehydrateSerializedError, VortexError } from "@vortex/shared";
-import { UserCanceled, isErrorOfType } from "@vortex/shared/errors";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { VortexError } from "@vortex/shared";
+import { deserializeVortexError, UserCanceled } from "@vortex/shared/errors";
+import type { WireReply } from "@vortex/shared/ipc";
+import { assert, describe, it, expect, vi, beforeEach } from "vitest";
 
-// Match rehydrateSerializedError's own parameter type so the round-trip below
-// uses a single, consistent SerializedError declaration.
-type SerializedError = Parameters<typeof rehydrateSerializedError>[0];
-
-// The WireResult envelope betterIpcMain.handle wraps every reply in.
-type Envelope = { ok: true; value: unknown } | { ok: false; error: SerializedError };
-
-type InvokeHandler = (event: Electron.IpcMainInvokeEvent, ...args: unknown[]) => Promise<Envelope>;
+type InvokeHandler = (
+  event: Electron.IpcMainInvokeEvent,
+  ...args: unknown[]
+) => Promise<WireReply<string>>;
 
 // Capture the handler registered via ipcMain.handle so the test can invoke it
 // directly and inspect the envelope it returns.
@@ -33,7 +30,7 @@ const trustedEvent = {
   senderFrame: null,
 } as unknown as Electron.IpcMainInvokeEvent;
 
-async function callHandler(channel: string): Promise<Envelope> {
+async function callHandler(channel: string): Promise<WireReply<string>> {
   const fn = handlers.get(channel);
   if (fn === undefined) throw new Error(`no handler registered for ${channel}`);
   return fn(trustedEvent);
@@ -42,53 +39,49 @@ async function callHandler(channel: string): Promise<Envelope> {
 describe("betterIpcMain.handle envelope", () => {
   beforeEach(() => handlers.clear());
 
-  it("wraps a successful result in an ok envelope", async () => {
+  it("wraps a successful result in a { data } envelope", async () => {
     betterIpcMain.handle("app:getName", () => "vortex");
 
     const result = await callHandler("app:getName");
-
-    expect(result).toEqual({ ok: true, value: "vortex" });
+    assert(result.error === undefined);
+    expect(result.data).toBe("vortex");
   });
 
-  it("serializes a thrown UserCanceled so it round-trips with its type intact", async () => {
-    // Regression: errors thrown across the invoke boundary used to be flattened
-    // by Electron to a generic `Error` (name "Error"), so the renderer's
-    // isErrorOfType(err, UserCanceled) gate failed and cancellations leaked into
-    // telemetry. The envelope must carry the name so rehydration restores it.
+  it("serializes a thrown UserCanceled into a VortexError wire form", async () => {
+    // UserCanceled is a compat class that extends VortexError<"user-canceled">;
+    // the boundary entry point passes it through, so the wire form carries
+    // `kind: "user-canceled"` directly (no double-nesting under a generic
+    // `data` bag). The renderer branches on data.kind.
     betterIpcMain.handle("app:getName", () => {
       throw new UserCanceled();
     });
 
     const result = await callHandler("app:getName");
-    if (!("error" in result)) throw new Error("expected failure envelope");
+    assert(result.error !== undefined);
 
-    expect(result.error.name).toBe("UserCanceled");
+    expect(result.error.message).toBe("canceled by user");
+    expect(result.error.data.kind).toBe("user-canceled");
 
-    // The renderer side rehydrates the serialized error before throwing it.
-    const rehydrated = rehydrateSerializedError(result.error);
-    expect(rehydrated.name).toBe("UserCanceled");
-    expect(isErrorOfType(rehydrated, UserCanceled)).toBe(true);
+    const rehydrated = deserializeVortexError(result.error);
+    expect(rehydrated).toBeInstanceOf(VortexError);
+    expect(rehydrated.data.kind).toBe("user-canceled");
   });
 
   it("preserves error.kind across the envelope (for VortexError branch checks)", async () => {
     // Regression: a VortexError thrown across the invoke boundary must round-trip
-    // with its discriminator intact so the renderer can branch on data.kind. The
-    // envelope carries `name` (for the by-reference fallback) and the full
-    // VortexError data payload (for `isErrorOfType(err, VortexError)` rehydration).
+    // with its discriminator intact so the renderer can branch on data.kind.
     betterIpcMain.handle("app:getName", () => {
       throw new VortexError("Download cancelled", { kind: "user-canceled", skipped: false });
     });
 
     const result = await callHandler("app:getName");
-    if (!("error" in result)) throw new Error("expected failure envelope");
+    assert(result.error !== undefined);
 
-    expect(result.error.name).toBe("VortexError");
-    // The VortexError `data` rides under `data.data` because the envelope bag
-    // and the discriminator share the name `data`.
-    expect(result.error.data?.data).toMatchObject({ kind: "user-canceled" });
+    expect(result.error.message).toBe("Download cancelled");
+    expect(result.error.data).toMatchObject({ kind: "user-canceled" });
 
-    const rehydrated = rehydrateSerializedError(result.error);
-    expect(isErrorOfType(rehydrated, VortexError)).toBe(true);
-    expect(rehydrated.name).toBe("VortexError");
+    const rehydrated = deserializeVortexError(result.error);
+    expect(rehydrated).toBeInstanceOf(VortexError);
+    expect(rehydrated.data.kind).toBe("user-canceled");
   });
 });
