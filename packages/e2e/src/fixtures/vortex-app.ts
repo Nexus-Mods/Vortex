@@ -294,6 +294,9 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
             try {
               const window = await setupMainWindow(app, Timeouts.SNAPSHOT);
               windowTeardown = await instrumentVortexWindow(app, window, "snapshot");
+              // Reuse a Nexus session saved locally by `pnpm auth:capture`, so
+              // logging in skips the captcha. CI has none, so it logs in with
+              // the username and password as before.
               const seededStorageState = seededAuthStatePath(user);
               const loginResult = await loginToNexus(app, window, user, {
                 skipSteps: true,
