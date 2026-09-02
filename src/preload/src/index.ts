@@ -1,23 +1,12 @@
-import { type ErrorOriginTracker, rehydrateSerializedError, serializeError } from "@vortex/shared";
-import type {
-  AppInitMetadata,
-  RendererChannels,
-  InvokeChannels,
-  MainChannels,
-  CallbackChannels,
-  SerializableArgs,
-  AssertSerializable,
-  Serializable,
-  SerializedError,
-  WireResult,
-} from "@vortex/shared/ipc";
+import type { AppInitMetadata, Serializable } from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
 import { contextBridge, ipcRenderer } from "electron";
-
-// NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
+// NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are some rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.
 // 2) Use betterIpcRenderer defined below instead of raw ipcRenderer.
+
+import { rendererCallback, rendererInvoke, rendererOff, rendererOn, rendererSend } from "./ipc";
 
 const betterIpcRenderer = {
   invoke: rendererInvoke,
@@ -25,36 +14,6 @@ const betterIpcRenderer = {
   on: rendererOn,
   off: rendererOff,
   callback: rendererCallback,
-};
-
-// Pass renderer-owned errors by reference across the IPC round-trip: a callback
-// error serialized here (rendererCallback) is stashed live and handed straight
-// back when its proxied copy returns (rendererInvoke) — preserving identity,
-// prototype and the real throw-site stack. Bounded, so a one-way error that
-// never returns is evicted rather than retained; an evicted ref just falls back
-// to generic-Error hydration. The renderer and preload share one V8 context
-// (contextIsolation is off for the main window), so the stashed object is the
-// same one the callback threw. The "renderer" namespace keeps these refs
-// distinct from any tracker main owns.
-const ORIGIN_STASH_MAX = 512;
-const originStash = new Map<string, Error>();
-let originSeq = 0;
-const errorOriginTracker: ErrorOriginTracker = {
-  namespace: "renderer",
-  capture: (err: Error): string => {
-    const id = `${originSeq++}`;
-    originStash.set(id, err);
-    if (originStash.size > ORIGIN_STASH_MAX) {
-      const oldest = originStash.keys().next().value;
-      if (oldest !== undefined) originStash.delete(oldest);
-    }
-    return id;
-  },
-  resolve: (id: string): Error | undefined => {
-    const err = originStash.get(id);
-    if (err !== undefined) originStash.delete(id);
-    return err;
-  },
 };
 
 try {
@@ -347,88 +306,4 @@ function expose<K extends keyof PreloadWindow>(key: K, value: PreloadWindow[K]) 
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     (window as unknown as PreloadWindow)[key] = value;
   }
-}
-
-async function rendererInvoke<C extends keyof InvokeChannels>(
-  channel: C,
-  ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
-): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
-  const reply = await ipcRenderer.invoke(channel, ...args);
-  if (isWireResult<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>(reply)) {
-    if (reply.ok) return reply.value;
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    throw rehydrateSerializedError(reply.error as unknown as SerializedError, errorOriginTracker);
-  }
-
-  return reply;
-}
-
-function isWireResult<T>(value: unknown): value is WireResult<T> {
-  return (
-    typeof value === "object" && value !== null && "ok" in value && typeof value.ok === "boolean"
-  );
-}
-
-function rendererSend<C extends keyof RendererChannels>(
-  channel: C,
-  ...args: SerializableArgs<Parameters<RendererChannels[C]>>
-): void {
-  ipcRenderer.send(channel, ...args);
-}
-
-function rendererOn<C extends keyof MainChannels>(
-  channel: C,
-  listener: (
-    event: Electron.IpcRendererEvent,
-    ...args: SerializableArgs<Parameters<MainChannels[C]>>
-  ) => void,
-): void {
-  ipcRenderer.on(channel, listener);
-}
-
-function rendererOff<C extends keyof MainChannels>(
-  channel: C,
-  listener: (
-    event: Electron.IpcRendererEvent,
-    ...args: SerializableArgs<Parameters<MainChannels[C]>>
-  ) => void,
-): void {
-  ipcRenderer.off(channel, listener);
-}
-
-// Registers a handler for a callback channel. Main sends a request on `channel`
-// with a collation id; the handler produces (or rejects with) a value, which is
-// sent back on `callback:${channel}` wrapped in a WireCallbackResult. Rejections
-// are serialized so main can rehydrate the real error instead of waiting out the
-// callback timeout. Returns an unsubscribe function. This is the renderer-side
-// counterpart to betterIpcMain.callback.
-function rendererCallback<C extends keyof CallbackChannels>(
-  channel: C,
-  handler: (
-    collationId: number,
-    ...args: SerializableArgs<Parameters<CallbackChannels[C]>>
-  ) => Promise<Awaited<ReturnType<CallbackChannels[C]>>>,
-): () => void {
-  const listener = (
-    _event: Electron.IpcRendererEvent,
-    collationId: number,
-    ...args: SerializableArgs<Parameters<CallbackChannels[C]>>
-  ) => {
-    handler(collationId, ...args)
-      .then((value) => {
-        ipcRenderer.send(`callback:${channel}`, collationId, {
-          ok: true,
-          value,
-        });
-        return undefined;
-      })
-      .catch((err: unknown) => {
-        ipcRenderer.send(`callback:${channel}`, collationId, {
-          ok: false,
-          error: serializeError(err, errorOriginTracker),
-        });
-      });
-  };
-  ipcRenderer.on(channel, listener);
-  return () => ipcRenderer.removeListener(channel, listener);
 }
