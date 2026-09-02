@@ -80,7 +80,7 @@ export const INVALID_LO_MOD_TYPES = [
   "bg3-replacer",
   "bg3-loose",
   "dinput",
-  "bg3-se-config"
+  "bg3-se-config",
 ];
 
 export const IGNORE_PATTERNS = [path.join("**", "info.json")];
@@ -116,4 +116,4 @@ export const LSLIB_FILES = new Set(["divine.exe", "lslib.dll"]);
 
 export const NOTIF_IMPORT_ACTIVITY = "bg3-loadorder-import-activity";
 
-export const SE_CONFIG_FILES = ['script extender', 'se_config']
+export const SE_CONFIG_FILES = ["script extender", "se_config"];
