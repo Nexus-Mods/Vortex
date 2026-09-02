@@ -1,5 +1,4 @@
 import { test, expect } from "../fixtures/vortex-app";
-import { logoutFromVortex } from "../helpers/account";
 import { seededAuthStatePath } from "../helpers/authState";
 import { loginToNexus } from "../helpers/login";
 import { Timeouts } from "../helpers/timeouts";
@@ -10,7 +9,25 @@ test.describe("Account - Sign out", () => {
   test.use({ nexusUser: freeUser });
 
   test("[QA-97] logged-in user can sign out via the profile menu", async ({ vortexWindow }) => {
-    await logoutFromVortex(vortexWindow);
+    const profileMenu = new ProfileMenu(vortexWindow);
+
+    await test.step("The header shows the signed-in avatar", async () => {
+      await expect(profileMenu.avatarButton).toBeVisible({ timeout: Timeouts.NETWORK });
+    });
+
+    await test.step("Click the avatar to open the account menu", async () => {
+      await profileMenu.avatarButton.click();
+      await expect(profileMenu.logoutItem).toBeVisible();
+    });
+
+    await test.step("Click Logout", async () => {
+      await profileMenu.logoutItem.dispatchEvent("click");
+      await expect(profileMenu.loginButton).toBeVisible({ timeout: Timeouts.NETWORK });
+    });
+
+    await test.step("The avatar is no longer shown in the header", async () => {
+      await expect(profileMenu.avatarButton).toBeHidden();
+    });
   });
 
   test("[QA-98] user can log back in after signing out", async ({
@@ -19,7 +36,12 @@ test.describe("Account - Sign out", () => {
   }, testInfo) => {
     const profileMenu = new ProfileMenu(vortexWindow);
 
-    await logoutFromVortex(vortexWindow);
+    await test.step("Sign out from the account menu", async () => {
+      await expect(profileMenu.avatarButton).toBeVisible({ timeout: Timeouts.NETWORK });
+      await profileMenu.avatarButton.click();
+      await profileMenu.logoutItem.dispatchEvent("click");
+      await expect(profileMenu.loginButton).toBeVisible({ timeout: Timeouts.NETWORK });
+    });
 
     await test.step("Click Log in and complete the login flow on the website", async () => {
       await loginToNexus(vortexApp, vortexWindow, freeUser, {
