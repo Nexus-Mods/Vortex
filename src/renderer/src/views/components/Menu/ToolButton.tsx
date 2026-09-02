@@ -3,24 +3,24 @@ import { pathToFileURL } from "url";
 import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 
-import { useWindowContext } from "../../../contexts";
-import { Icon } from "../../../ui/components/icon/Icon";
-import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { joinClasses } from "../../../ui/utils/joinClasses";
-import type { IStarterInfo } from "../../../util/StarterInfo";
+import { useWindowContext } from "@/contexts";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Image } from "@/ui/components/image/Image";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import type { IStarterInfo } from "@/util/StarterInfo";
+
 import StarterInfo from "../../../util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   starter: IStarterInfo;
-  isPrimary?: boolean;
   isValid?: boolean;
   isRunning?: boolean;
 }
 
 export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
   starter,
-  isPrimary = false,
   isValid = true,
   isRunning = false,
   ...props
@@ -46,17 +46,18 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
     >
       <button
         aria-label={starter.name}
-        className={joinClasses("group/tool-button relative size-8 shrink-0 rounded-sm", {
+        className={joinClasses("group/tool-button relative size-9 shrink-0 rounded-sm", {
           "pointer-events-none cursor-not-allowed": isRunning,
         })}
         {...props}
       >
         {imageSrc ? (
-          <img
+          <Image
             alt={starter.name}
-            className={joinClasses("absolute inset-0 size-full rounded-sm object-cover", {
+            className={joinClasses("absolute inset-0 size-full rounded-sm", {
               "opacity-40 grayscale": !isValid,
             })}
+            imageType="other"
             src={imageSrc}
           />
         ) : (
