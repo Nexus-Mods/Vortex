@@ -1,6 +1,13 @@
 import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
-import { mdiChevronRight } from "@mdi/js";
-import React, { forwardRef, type KeyboardEvent, type ReactNode, useEffect, useRef } from "react";
+import { mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
+import React, {
+  forwardRef,
+  type KeyboardEvent,
+  type ReactNode,
+  type SyntheticEvent,
+  useEffect,
+  useRef,
+} from "react";
 
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { dropdownItemBrandClass } from "@/ui/components/dropdown/dropdownItemBrand";
@@ -29,6 +36,11 @@ interface IMenuActionBase {
   isLoading?: boolean;
   panelRole?: "dialog" | "menu";
   brand?: IButtonBrand;
+  pin?: {
+    pinned: boolean;
+    label: string;
+    onToggle: () => void;
+  };
 }
 
 /**
@@ -58,9 +70,11 @@ const takeFocus = (row: HTMLButtonElement) => row.focus({ preventScroll: true })
 const PopoverMenuItemContent = ({
   action,
   hasPanel = false,
+  hasFocus,
 }: {
   action: IMenuAction;
   hasPanel?: boolean;
+  hasFocus: boolean;
 }) => (
   <>
     {!!action.iconPath && (
@@ -69,9 +83,58 @@ const PopoverMenuItemContent = ({
 
     <span className="nxm-dropdown-item-label">{action.label}</span>
 
-    {hasPanel && <Icon className="nxm-dropdown-item-icon" path={mdiChevronRight} size="none" />}
+    {!!action.pin && <PopoverMenuItemPin hasFocus={hasFocus} pin={action.pin} />}
+
+    <Icon
+      className={joinClasses("nxm-dropdown-item-icon", {
+        "nxm-dropdown-item-chevron-hidden": !hasPanel,
+      })}
+      path={mdiChevronRight}
+      size="none"
+    />
   </>
 );
+
+/**
+ * The pin toggle within a row. Tabbable on the row the keyboard is on rather than the
+ * row the menu keeps its own tab stop on — which is always the first — so arrowing
+ * down and pressing Tab reaches the pin of the row you are actually on. Reaching for
+ * the row's `tabIndex` instead left every other pin unreachable, and Tab took focus
+ * out of the panel, closing the menu.
+ */
+const PopoverMenuItemPin = ({
+  hasFocus,
+  pin,
+}: {
+  hasFocus: boolean;
+  pin: NonNullable<IMenuAction["pin"]>;
+}) => {
+  const toggle = (event: SyntheticEvent) => {
+    // The row would otherwise run what the row says: this is a control within it,
+    // and activating it says only what it says.
+    event.preventDefault();
+    event.stopPropagation();
+    pin.onToggle();
+  };
+
+  return (
+    <span
+      aria-label={pin.label}
+      aria-pressed={pin.pinned}
+      className="nxm-dropdown-item-pin"
+      role="button"
+      tabIndex={hasFocus ? 0 : -1}
+      onClick={toggle}
+      onKeyDown={(event: KeyboardEvent<HTMLSpanElement>) => {
+        if (["Enter", " "].includes(event.key)) {
+          toggle(event);
+        }
+      }}
+    >
+      <Icon path={pin.pinned ? mdiPinOffOutline : mdiPinOutline} size="none" />
+    </span>
+  );
+};
 
 /**
  * A row whose panel opens beside it, leaving the menu itself open — the panel is
@@ -166,7 +229,7 @@ const PopoverMenuPanelItem = forwardRef<
             }}
             onMouseLeave={closeAfterHover}
           >
-            <PopoverMenuItemContent hasPanel action={action} />
+            <PopoverMenuItemContent hasPanel action={action} hasFocus={hasFocus} />
           </HeadlessPopoverButton>
 
           <PopoverPanel
@@ -214,8 +277,8 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
           panel={action.panel}
           ref={ref}
           tabIndex={tabIndex}
-          onTakeFocus={onTakeFocus}
           onSelect={onSelect}
+          onTakeFocus={onTakeFocus}
         />
       );
     }
@@ -237,7 +300,7 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
         onFocus={onTakeFocus}
         onMouseEnter={(event) => takeFocus(event.currentTarget)}
       >
-        <PopoverMenuItemContent action={action} />
+        <PopoverMenuItemContent action={action} hasFocus={hasFocus} />
       </button>
     );
   },

@@ -86,7 +86,7 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["persistent", "categories"], categoryReducer);
 
   context.registerDialog("categories", CategoryDialog);
-  context.registerAction("mod-icons", 80, "categories", {}, "Categories", () => {
+  context.registerAction("mod-icons", 80, "categories", { pinned: true }, "Categories", () => {
     context.api.store.dispatch(setDialogVisible("categories"));
   });
 
