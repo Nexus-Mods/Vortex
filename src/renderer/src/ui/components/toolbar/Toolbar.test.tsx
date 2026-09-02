@@ -8,6 +8,7 @@ import { toolbarReducer } from "@/reducers/toolbars";
 import type { IToolbarStates } from "@/types/IState";
 
 import { Toolbar } from "./Toolbar";
+import type { IToolbarAnalytics } from "./Toolbar.context";
 import { ToolbarGroup, type IToolbarAction } from "./ToolbarGroup";
 import { fitVisibleActions, type IToolbarGroupMetrics } from "./useToolbarOverflow.hook";
 
@@ -54,6 +55,13 @@ const makeActions = (count: number): IToolbarAction[] =>
 const KEBAB_TEST_ID = "toolbar-overflow";
 
 const getKebab = () => screen.getByTestId(KEBAB_TEST_ID);
+
+/** Tracking whose every callback is a spy, for a test that cares about only one. */
+const silentTracking = (): IToolbarAnalytics => ({
+  onActionClick: vi.fn(),
+  onPinChange: vi.fn(),
+  onPinsReset: vi.fn(),
+});
 
 const queryKebab = () => screen.queryByTestId(KEBAB_TEST_ID);
 
@@ -578,17 +586,19 @@ describe("ToolbarGroup", () => {
       actions,
       decisions = {},
       width = 1000,
+      tracking,
     }: {
       actions: IToolbarAction[];
       decisions?: { [actionId: string]: boolean };
       width?: number;
+      tracking?: Partial<IToolbarAnalytics>;
     }) => {
       stubLayout(width);
       const store = makeStore({ mods: { pinned: decisions } });
 
       render(
         <Provider store={store as never}>
-          <Toolbar pinningId="mods">
+          <Toolbar pinningId="mods" tracking={tracking && { ...silentTracking(), ...tracking }}>
             <ToolbarGroup actions={actions} />
           </Toolbar>
         </Provider>,
@@ -629,6 +639,14 @@ describe("ToolbarGroup", () => {
      * reason the kebab is found by test id.
      */
     const pinOf = (label: string) => within(rowFor(label)).getByRole("button");
+
+    /**
+     * The reset link, which sits below the menu rather than in it — the same shape the
+     * display options panel ends in.
+     */
+    const queryResetLink = () => screen.queryByRole("button", { name: "Reset pins to default" });
+
+    const resetLink = () => screen.getByRole("button", { name: "Reset pins to default" });
 
     it("puts the pinned actions on the bar, and every action in the menu", async () => {
       renderToolbar({
@@ -734,6 +752,76 @@ describe("ToolbarGroup", () => {
       expect(within(rowFor("Nameless")).queryByRole("button")).not.toBeInTheDocument();
       expect(pinOf("Deploy")).toBeInTheDocument();
     });
+
+    describe("resetting to defaults", () => {
+      it("offers no reset until the user has decided something", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", true]]) });
+
+        await openMenu();
+        expect(queryResetLink()).not.toBeInTheDocument();
+      });
+
+      it("offers one once a decision has been made", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", true]]), decisions: { deploy: false } });
+
+        await openMenu();
+        expect(resetLink()).toBeInTheDocument();
+      });
+
+      // The pins above move back, which is the confirmation — and with nothing left to
+      // undo the link takes itself away.
+      it("puts the bar back, leaves the menu open, and removes itself", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", true]]), decisions: { deploy: false } });
+
+        await openMenu();
+        expect(barLabels()).toEqual([]);
+
+        await userEvent.click(resetLink());
+
+        expect(barLabels()).toEqual(["Deploy"]);
+        expect(screen.getByRole("menu")).toBeInTheDocument();
+        expect(queryResetLink()).not.toBeInTheDocument();
+      });
+    });
+
+    describe("tracking", () => {
+      it("reports a pin, and the unpin that undoes it", async () => {
+        const onPinChange = vi.fn();
+        renderToolbar({ actions: pinnable([["Deploy", false]]), tracking: { onPinChange } });
+
+        await openMenu();
+        await userEvent.click(pinOf("Deploy"));
+
+        expect(onPinChange).toHaveBeenLastCalledWith({ id: "deploy", extension: undefined }, true);
+
+        await userEvent.click(pinOf("Deploy"));
+
+        expect(onPinChange).toHaveBeenLastCalledWith({ id: "deploy", extension: undefined }, false);
+      });
+
+      it("reports a reset to defaults", async () => {
+        const onPinsReset = vi.fn();
+        renderToolbar({
+          actions: pinnable([["Deploy", false]]),
+          decisions: { deploy: true },
+          tracking: { onPinsReset },
+        });
+
+        await openMenu();
+        await userEvent.click(resetLink());
+
+        expect(onPinsReset).toHaveBeenCalledOnce();
+      });
+
+      it("says nothing on a toolbar that isn't tracked", async () => {
+        renderToolbar({ actions: pinnable([["Deploy", false]]) });
+
+        await openMenu();
+        await userEvent.click(pinOf("Deploy"));
+
+        expect(screen.getByRole("toolbar")).toBeInTheDocument();
+      });
+    });
   });
 });
 
@@ -824,6 +912,134 @@ describe("fitVisibleActions", () => {
 
     it("gives up every action when the budget only covers the kebab", () => {
       expect(fitBesideMenu(40)).toEqual([]);
+    });
+  });
+});
+
+describe("click tracking", () => {
+  const trackedToolbar = (actions: IToolbarAction[], onActionClick: () => void, max?: number) =>
+    render(
+      <Toolbar tracking={{ ...silentTracking(), onActionClick }}>
+        <ToolbarGroup actions={actions} maxVisible={max} />
+      </Toolbar>,
+    );
+
+  it("reports a visible action's click, and still runs it exactly once", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    trackedToolbar([{ label: "Deploy", id: "deploy", onClick }], onActionClick);
+
+    await userEvent.click(screen.getByRole("button", { name: "Deploy" }));
+
+    expect(onActionClick).toHaveBeenCalledWith({ id: "deploy", extension: undefined }, "bar");
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("reports an overflowed action against the overflow, not the bar", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    const actions = [...makeActions(7), { label: "Overflowed", id: "overflowed", onClick }];
+    trackedToolbar(actions, onActionClick, 7);
+
+    await userEvent.click(getKebab());
+    await userEvent.click(screen.getByText("Overflowed"));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "overflowed", extension: undefined },
+      "overflow",
+    );
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("names the extension an action came from", async () => {
+    const onActionClick = vi.fn();
+    trackedToolbar(
+      [
+        {
+          label: "Manage Rules",
+          id: "Manage Rules",
+          extension: "mod-dependency-manager",
+          onClick: vi.fn(),
+        },
+      ],
+      onActionClick,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Manage Rules" }));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "Manage Rules", extension: "mod-dependency-manager" },
+      "bar",
+    );
+  });
+
+  // The label is the only other thing to hand, and it is translated. Reporting an action
+  // under a name that changes with the language would split one button across as many
+  // ids as there are locales, which is worse than not reporting it at all. An action
+  // without an id cannot be pinned either — see `useToolbarPinning`.
+  it("says nothing about an action that has no id, but still runs it", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    trackedToolbar([{ label: "Nameless", onClick }], onActionClick);
+
+    await userEvent.click(screen.getByRole("button", { name: "Nameless" }));
+
+    expect(onActionClick).not.toHaveBeenCalled();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  // An empty id is no identity at all — reporting it would put `action: ""` in the
+  // dashboard, which reads as a real button nobody can name.
+  it("treats an empty id as no identity", async () => {
+    const onActionClick = vi.fn();
+    const onClick = vi.fn();
+    trackedToolbar([{ label: "Blank", id: "", onClick }], onActionClick);
+
+    await userEvent.click(screen.getByRole("button", { name: "Blank" }));
+
+    expect(onActionClick).not.toHaveBeenCalled();
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("leaves an untracked toolbar's actions alone", async () => {
+    const onClick = vi.fn();
+    render(
+      <Toolbar>
+        <ToolbarGroup actions={[{ label: "Deploy", id: "deploy", onClick }]} />
+      </Toolbar>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Deploy" }));
+
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  describe("panel actions", () => {
+    const panelAction: IToolbarAction = {
+      label: "Open",
+      id: "open",
+      panel: () => <span>Panel content</span>,
+    };
+
+    it("counts opening the panel as a click on the control", async () => {
+      const onActionClick = vi.fn();
+      trackedToolbar([panelAction], onActionClick);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      expect(screen.getByText("Panel content")).toBeInTheDocument();
+      expect(onActionClick).toHaveBeenCalledWith({ id: "open", extension: undefined }, "bar");
+    });
+
+    it("does not count closing it again as a second click", async () => {
+      const onActionClick = vi.fn();
+      trackedToolbar([panelAction], onActionClick);
+
+      const trigger = screen.getByRole("button", { name: "Open" });
+      await userEvent.click(trigger);
+      await userEvent.click(trigger);
+
+      expect(onActionClick).toHaveBeenCalledOnce();
     });
   });
 });

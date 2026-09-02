@@ -2,10 +2,13 @@ import { mdiDotsHorizontal } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
 import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
+import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
+import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 
 import type { IToolbarAction } from "./ToolbarGroup";
 import { TOOLBAR_OVERFLOW_ATTRIBUTE } from "./useToolbarOverflow.hook";
@@ -16,12 +19,19 @@ interface IToolbarOverflowProps {
   pinning?: {
     isPinned: (action: IToolbarAction) => boolean;
     togglePin: (action: IToolbarAction) => void;
+    canReset: boolean;
+    reset: () => void;
   };
 }
 
 /**
  * The actions a group had no room for, as a menu hung off a kebab button. They
  * arrive already ordered and belong together, so they go in as a single group.
+ *
+ * Where pinning is offered the menu ends in a reset link, shown only once there is
+ * something to undo. Resetting leaves the menu open — the pins above visibly move
+ * back, which is the confirmation — and the link then removes itself, there being
+ * nothing left to reset.
  */
 export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => {
   const { t } = useTranslation();
@@ -61,7 +71,28 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
       />
 
       <PopoverPanel className="nxm-popover-panel-dropdown">
-        {({ close }) => <PopoverMenu actions={[rows]} label={label} onSelect={close} />}
+        {({ close }) => (
+          <>
+            <PopoverMenu actions={[rows]} label={label} onSelect={close} />
+
+            {!!pinning?.canReset && (
+              <>
+                <DropdownDivider />
+
+                <PopoverPanelGroupItem className="h-auto justify-end py-3">
+                  <TypographyLink
+                    brand="info"
+                    typographyType="body-sm"
+                    variant="secondary"
+                    onClick={pinning.reset}
+                  >
+                    {t("Reset pins to default")}
+                  </TypographyLink>
+                </PopoverPanelGroupItem>
+              </>
+            )}
+          </>
+        )}
       </PopoverPanel>
     </Popover>
   );

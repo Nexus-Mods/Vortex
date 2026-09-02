@@ -12,7 +12,9 @@ import { log } from "@/logging";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
+import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
 import { fileMD5 } from "@/util/checksum";
 import { TemporaryError, UserCanceled } from "@/util/CustomErrors";
 import * as fs from "@/util/fs";
@@ -604,6 +606,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",
+        extension: definition.options?.namespace,
         onClick: () => definition.action?.(instanceIds),
       },
     });
@@ -628,6 +631,7 @@ const useActionMenu = (
   t: TFunction,
   menu: IActionMenu,
   adopted: IPositionedAction[],
+  onActionClick: IToolbarAnalytics["onActionClick"] | undefined,
 ): IPositionedAction | undefined => {
   const registered = useRegisteredActions(menu.group);
 
@@ -643,7 +647,12 @@ const useActionMenu = (
     }
 
     const label = t(menu.label);
-    const actions = entries.map((entry) => entry.action);
+
+    const actions = trackedActions(
+      entries.map((entry) => entry.action),
+      "menu",
+      onActionClick,
+    );
 
     return {
       position: menu.position,
@@ -658,7 +667,7 @@ const useActionMenu = (
         ),
       },
     };
-  }, [adopted, menu, registered, t]);
+  }, [adopted, menu, onActionClick, registered, t]);
 };
 
 /**
@@ -668,7 +677,10 @@ const useActionMenu = (
  * see `useToolbarPinning` — and anything that doesn't fit is collapsed into the
  * overflow menu by {@link ToolbarGroup}, so this is a flat list.
  */
-export const useModToolbarActions = (t: TFunction): IToolbarAction[] => {
+export const useModToolbarActions = (
+  t: TFunction,
+  onActionClick?: IToolbarAnalytics["onActionClick"],
+): IToolbarAction[] => {
   const installFromFile = useInstallFromFileAction(t);
   const checkVersions = useCheckVersionsAction(t);
   const deploy = useDeployAction(t);
@@ -681,8 +693,13 @@ export const useModToolbarActions = (t: TFunction): IToolbarAction[] => {
     [registered],
   );
 
-  const open = useActionMenu(t, OPEN_MENU, byIcon[OPEN_MENU.icon] ?? NO_ACTIONS);
-  const importFrom = useActionMenu(t, IMPORT_MENU, byIcon[IMPORT_MENU.icon] ?? NO_ACTIONS);
+  const open = useActionMenu(t, OPEN_MENU, byIcon[OPEN_MENU.icon] ?? NO_ACTIONS, onActionClick);
+  const importFrom = useActionMenu(
+    t,
+    IMPORT_MENU,
+    byIcon[IMPORT_MENU.icon] ?? NO_ACTIONS,
+    onActionClick,
+  );
 
   return useMemo(
     () =>

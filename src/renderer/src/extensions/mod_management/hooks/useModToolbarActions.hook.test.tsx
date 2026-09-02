@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, expect, it, vi } from "vitest";
@@ -24,10 +24,16 @@ vi.mock("@/contexts", () => ({
 /**
  * The registrations under test. `useRegisteredActions` reads the group through this;
  * the rest of the module has to stay, `ActionControl` taking `extend` from it.
+ *
+ * Group-aware, because the real thing is: an extension registers into `mod-icons`, and
+ * anything that reaches the "Open ..." or "Import ..." menus does so by its icon rather
+ * than by registering into their groups. Answering every group with the same list puts
+ * each action in a menu *and* on the bar.
  */
 vi.mock("@/ExtensionProvider", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useExtensionObjects: () => objects.current,
+  useExtensionObjects: (_registerFunc: unknown, _static: unknown, group: string) =>
+    group === "mod-icons" ? objects.current : [],
 }));
 
 const state = {
@@ -62,12 +68,27 @@ import { useModToolbarActions } from "./useModToolbarActions.hook";
 
 const t = ((key: string) => key) as never;
 
-const labels = (definitions: IActionDefinition[]): string[] => {
+const actionsFor = (definitions: IActionDefinition[], onActionClick?: () => void) => {
   objects.current = definitions;
-  const { result } = renderHook(() => useModToolbarActions(t));
+  const { result } = renderHook(() => useModToolbarActions(t, onActionClick));
 
-  return result.current.map((action) => action.label);
+  return result.current;
 };
+
+const labels = (definitions: IActionDefinition[]): string[] =>
+  actionsFor(definitions).map((action) => action.label);
+
+const byLabel = (definitions: IActionDefinition[], label: string, onActionClick?: () => void) =>
+  actionsFor(definitions, onActionClick).find((action) => action.label === label);
+
+/** Two registrations sharing the "open-ext" icon, which is what folds them into a menu. */
+const opener = (title: string, namespace: string): IActionDefinition => ({
+  icon: "open-ext",
+  title,
+  position: 90,
+  options: { namespace },
+  action: () => undefined,
+});
 
 const plain = (title: string, options: IActionDefinition["options"] = {}): IActionDefinition => ({
   icon: "rules",
@@ -104,5 +125,76 @@ describe("useModToolbarActions", () => {
     } as unknown as IActionDefinition;
 
     expect(labels([asComponent])).toHaveLength(4);
+  });
+});
+
+describe("useModToolbarActions tracking identity", () => {
+  it("identifies a registered action by its bare title and its extension", () => {
+    const action = byLabel(
+      [plain("Manage Rules", { namespace: "mod-dependency-manager" })],
+      "Manage Rules",
+    );
+
+    expect(action?.id).toBe("Manage Rules");
+    expect(action?.extension).toBe("mod-dependency-manager");
+  });
+
+  // A notice follows state, so folding it into the label the way the bar does would
+  // split one button across as many ids as it has things to say.
+  it("keeps the notice out of the identity, though the label shows it", () => {
+    const withNotice = plain("Manage Rules", {
+      namespace: "mod-dependency-manager",
+      notice: () => "2 unresolved",
+    });
+    const action = byLabel([withNotice], "Manage Rules (2 unresolved)");
+
+    expect(action?.id).toBe("Manage Rules");
+  });
+
+  // "Open..." is built from a translated word, so the menu's own stable id is what
+  // both a pin and a click are recorded against.
+  it("identifies the Open menu by its own id", () => {
+    const menu = byLabel(
+      [opener("Open Mod Folder", "open-directory"), opener("Open Game Folder", "open-directory")],
+      "Open...",
+    );
+
+    expect(menu?.id).toBe("open");
+  });
+
+  it("counts a row inside that menu against the menu, not the bar", () => {
+    const onActionClick = vi.fn();
+    const menu = byLabel(
+      [opener("Open Mod Folder", "open-directory"), opener("Open Game Folder", "open-directory")],
+      "Open...",
+      onActionClick,
+    );
+
+    const { getByRole } = render(
+      <>{menu?.panel?.({ close: () => undefined, dismiss: () => undefined })}</>,
+    );
+    fireEvent.click(getByRole("menuitem", { name: "Open Mod Folder" }));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "Open Mod Folder", extension: "open-directory" },
+      "menu",
+    );
+  });
+
+  // Collapsed to a single entry it goes on the bar, where the group counts it like any
+  // other action — counting it here as well would report every use twice.
+  it("leaves a one-entry menu to the bar", () => {
+    const onActionClick = vi.fn();
+    const only = byLabel(
+      [opener("Open Mod Folder", "open-directory")],
+      "Open Mod Folder",
+      onActionClick,
+    );
+
+    only?.onClick?.();
+
+    expect(onActionClick).not.toHaveBeenCalled();
+    expect(only?.id).toBe("Open Mod Folder");
+    expect(only?.extension).toBe("open-directory");
   });
 });

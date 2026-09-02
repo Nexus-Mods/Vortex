@@ -5,7 +5,7 @@ import { resetPinnedActions, setActionPinned } from "@/actions/toolbars";
 import { log } from "@/logging";
 import type { IState } from "@/types/IState";
 
-import { useToolbarContext } from "./Toolbar.context";
+import { identityOf, useToolbarContext } from "./Toolbar.context";
 import type { IToolbarAction } from "./ToolbarGroup";
 
 const NO_DECISIONS: { [actionId: string]: boolean } = {};
@@ -32,7 +32,7 @@ export interface IToolbarPinning {
  * treated as pinned so that a toolbar offering pinning never silently drops it.
  */
 export const useToolbarPinning = (actions: IToolbarAction[]): IToolbarPinning => {
-  const { pinningId } = useToolbarContext();
+  const { pinningId, tracking } = useToolbarContext();
   const dispatch = useDispatch();
 
   const decisions = useSelector(
@@ -64,16 +64,26 @@ export const useToolbarPinning = (actions: IToolbarAction[]): IToolbarPinning =>
         return;
       }
 
-      dispatch(setActionPinned(pinningId, action.id, !isPinned(action)));
+      const pinned = !isPinned(action);
+      dispatch(setActionPinned({ toolbarId: pinningId, actionId: action.id, pinned }));
+
+      // Reported from here rather than from the menu row, so that every route to a
+      // pin change is counted and none has to remember to say so.
+      const identity = identityOf(action);
+
+      if (identity !== undefined) {
+        tracking?.onPinChange(identity, pinned);
+      }
     },
-    [dispatch, isPinned, pinningId],
+    [dispatch, isPinned, pinningId, tracking],
   );
 
   const reset = useCallback(() => {
     if (pinningId !== null) {
-      dispatch(resetPinnedActions(pinningId));
+      dispatch(resetPinnedActions({ toolbarId: pinningId }));
+      tracking?.onPinsReset();
     }
-  }, [dispatch, pinningId]);
+  }, [dispatch, pinningId, tracking]);
 
   const pinnedActions = useMemo(
     () => (pinningId === null ? actions : actions.filter((action) => isPinned(action))),

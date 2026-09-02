@@ -53,7 +53,12 @@ const focusPanel = (element: HTMLElement | null) => {
  * settings by default, or a menu, which is styled as a dropdown and left to focus
  * its own first row.
  */
-export const ToolbarPanelButton = ({ panel, panelRole, ...props }: IToolbarPanelButtonProps) => {
+export const ToolbarPanelButton = ({
+  panel,
+  panelRole,
+  onClick,
+  ...props
+}: IToolbarPanelButtonProps) => {
   const isMenu = panelRole === "menu";
 
   return (
@@ -66,6 +71,7 @@ export const ToolbarPanelButton = ({ panel, panelRole, ...props }: IToolbarPanel
             aria-haspopup={panelRole ?? "dialog"}
             as={PopoverButton}
             tooltipDisabled={open}
+            onClick={open ? undefined : onClick}
           />
 
           <PopoverPanel
