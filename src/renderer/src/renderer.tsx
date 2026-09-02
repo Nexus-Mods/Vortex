@@ -135,6 +135,7 @@ import {
   setApplicationVersion,
   setInstallType,
   setInstanceId,
+  setUpdaterActive,
   setWarnedAdmin,
 } from "./actions/app";
 import { addNotification, setupNotificationSuppression } from "./actions/notifications";
@@ -508,6 +509,9 @@ function applyAppMetadata(metadata: AppInitMetadata): void {
   }
   if (metadata.installType) {
     store.dispatch(setInstallType(metadata.installType));
+  }
+  if (metadata.updaterActive !== undefined) {
+    store.dispatch(setUpdaterActive(metadata.updaterActive));
   }
   if (metadata.instanceId) {
     store.dispatch(setInstanceId(metadata.instanceId));

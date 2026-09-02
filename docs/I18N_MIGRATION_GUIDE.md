@@ -65,7 +65,7 @@ const { t } = useTranslation(['collection', 'common']);
 
 ## Example: BrowseNexusPage.tsx
 
-See `src/extensions/browse_nexus/views/BrowseNexusPage.tsx` for a complete working example.
+See `src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx` for a complete working example.
 
 **Before:**
 
@@ -96,7 +96,7 @@ const { t } = useTranslation(['collection', 'common']);
 
 ## When Adding New Features
 
-1. Check if namespace exists in `src/util/i18n.ts` line 165
+1. Check if namespace exists in the `ns` array in `src/renderer/src/util/i18n.ts`
 2. If not, create `locales/en/{namespace}.json`
 3. Add namespace to i18n.ts configuration
 4. Use proper keys from day one
@@ -135,3 +135,14 @@ To add a new language:
 4. Submit PR with your `locales/{language}/` folder
 
 The structure provides context - you don't need to read code!
+
+## Key formats in existing code
+
+The format above (`namespace:section.key`) is the target. Existing code also
+uses `section::key` and `common:::key` forms, in roughly equal measure to the
+standard one, from before this guide existed.
+
+Neither form is being actively migrated yet, and there is no lint rule enforcing
+either. When touching existing strings, match the surrounding namespace rather
+than converting as a drive-by; a mixed namespace is harder to reason about than
+a consistently old one. New namespaces should use the standard format.

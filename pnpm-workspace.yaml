@@ -241,7 +241,6 @@ catalog:
   sass: 1.101.0
   semver: 7.7.4
   shortid: 2.2.17
-  simple-git: 3.33.0
   simple-vdf: github:Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
   source-map-loader: 5.0.0
   source-map-support: 0.5.21

@@ -119,18 +119,6 @@ async function getGameVersion(api, gamePath, exePath) {
   const appManifest = path.join(gamePath, "appxmanifest.xml");
   try {
     await fs.statAsync(appManifest);
-    if (api.ext?.["getHashVersion"]) {
-      const state = api.getState();
-      const game = selectors.gameById(state, GAME_ID);
-      const discovery = selectors.discoveryByGame(state, GAME_ID);
-      return new Promise((resolve, reject) => {
-        api.ext?.["getHashVersion"](game, discovery, (err, ver) => {
-          return err !== null ? reject(err) : resolve(ver);
-        });
-      });
-    } else {
-      throw new util.NotSupportedError();
-    }
   } catch (err) {
     const fullPath = path.join(gamePath, exePath);
     const fileVersion = getFileVersion(fullPath);

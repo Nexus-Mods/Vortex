@@ -1,7 +1,8 @@
 # NixOS Setup
 
 NixOS `flake.nix` provides all deps out of box, matching repo Node/Electron.
-It skips Volta/Corepack flow.
+The flake supplies `pnpm` and `node.js` directly, so it replaces the `pnpm`
+install step in [Shared Setup].
 
 Validated on 13 April 2026. If any step is out of date, please open a [PR] or [issue].
 
@@ -45,7 +46,7 @@ pnpm install
 5. Build the project:
 
 ```bash
-pnpm run build:all
+pnpm run build
 ```
 
 6. Start Vortex:
@@ -84,6 +85,7 @@ gitkraken .
 - [nix-direnv]
 
 [direnv]: https://github.com/nix-community/nix-direnv
+[Shared Setup]: ./shared.md
 [Nix flake]: ../../flake.nix
 [Nix packages search]: https://search.nixos.org/packages
 [nix-direnv]: https://github.com/nix-community/nix-direnv

@@ -53,14 +53,6 @@ export const Toolbar: FC<React.PropsWithChildren<unknown>> = () => {
 
       <div className="main-toolbar-right">
         <div className="toolbar-version">
-          {process.env.IS_PREVIEW_BUILD === "true" ? (
-            <div className="toolbar-version-container toolbar-version-staging">
-              <Icon name="conflict" />
-
-              <div className="toolbar-version-text">Staging</div>
-            </div>
-          ) : null}
-
           {process.env.NODE_ENV === "development" ? (
             <div className="toolbar-version-container toolbar-version-dev">
               <Icon name="mods" />

@@ -5,7 +5,8 @@ import {
   rehydrateSerializedError,
   serializeError,
 } from "./error-serialization";
-import { DownloadError, ProcessCanceled } from "./types/errors";
+import { VortexError } from "./errors/base";
+import { ProcessCanceled } from "./types/errors";
 
 // A round-trip mirrors what crosses the IPC boundary: serialize on one side,
 // hand the plain object to the other, rehydrate there. An optional tracker is
@@ -89,17 +90,29 @@ describe("serializeError / rehydrateSerializedError", () => {
     expect(roundTrip("just a string").message).toBe("just a string");
   });
 
-  it("round-trips a DownloadError generically (name + code + payload, no concrete prototype)", () => {
+  it("round-trips a VortexError generically (name + data, no concrete prototype)", () => {
+    // The `data` field rides as an own property under `serialized.data.data`
+    // because both the envelope bag and the error kind share the name `data`.
+    // Inside it, `kind` is preserved and `URL` instances in payload fields are
+    // stringified so the envelope stays structured-cloneable across IPC.
     const out = roundTrip(
-      new DownloadError(
-        { code: "network-bad-status", url: new URL("https://cdn.example/file"), statusCode: 503 },
-        "Server returned 503",
-      ),
+      new VortexError("Server returned 503", {
+        kind: "http:bad-status",
+        url: "https://cdn.example/file",
+        statusCode: 503,
+      }),
     );
-    expect(out).not.toBeInstanceOf(DownloadError);
-    expect(out.name).toBe("DownloadError");
-    expect((out as Error & { code?: string }).code).toBe("network-bad-status");
-    expect((out as Error & { payload?: { statusCode: number } }).payload?.statusCode).toBe(503);
+    expect(out).not.toBeInstanceOf(VortexError);
+    expect(out.name).toBe("VortexError");
+    expect(out.message).toBe("Server returned 503");
+    // `out.data` exists at runtime via Object.assign but the return type of
+    // rehydrateSerializedError is the base Error, so we widen to access it.
+    const rehydratedData = (out as Error & { data?: Record<string, unknown> }).data;
+    expect(rehydratedData).toMatchObject({
+      kind: "http:bad-status",
+      statusCode: 503,
+      url: "https://cdn.example/file",
+    });
   });
 });
 

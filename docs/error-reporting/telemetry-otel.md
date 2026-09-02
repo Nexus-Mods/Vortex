@@ -12,11 +12,11 @@ Only traces containing at least one ERROR-status span are exported. Non-error tr
 
 ## Main Process
 
-**Setup**: `createMainTelemetryProvider()` in `src/main/telemetry/setup.ts` — called once at startup.
+**Setup**: `createMainTelemetryProvider()` in `src/main/src/telemetry/setup.ts` — called once at startup.
 
 ### RingBufferSpanProcessor
 
-**File**: `src/main/telemetry/RingBufferSpanProcessor.ts`
+**File**: `src/main/src/telemetry/RingBufferSpanProcessor.ts`
 
 - Maintains a circular buffer of up to 500 finished spans (configurable via `maxSpans`)
 - `onStart` — span added to the in-flight map
@@ -42,7 +42,7 @@ onExportSpans: (spans) => {
 
 ## Renderer Process
 
-**Setup**: `src/renderer/extensions/telemetry/index.ts`
+**Setup**: `src/renderer/src/telemetry/setup.ts`
 
 `ForwardingSpanProcessor` sends every completed span to main via IPC:
 
@@ -59,17 +59,17 @@ Spans are serialized to plain JSON (`SerializedSpan`) for IPC transfer.
 
 **Files**:
 
-- Renderer: `src/renderer/extensions/telemetry/index.ts`
-- Preload bridge: `src/preload/index.ts`
-- Main receiver: `src/main/telemetry/ipcHandler.ts`
+- Renderer: `src/renderer/src/telemetry/setup.ts`
+- Preload bridge: `src/preload/src/index.ts`
+- Main receiver: `src/main/src/telemetry/ipcHandler.ts`
 
 ### Bluebird Context Propagation
 
-`patchBluebirdContext()` in `src/renderer/extensions/telemetry/bluebird-patch.ts` installs a hook so OTel context propagates correctly through Bluebird promise chains.
+`patchBluebirdContext()` in `src/renderer/src/telemetry/bluebird-patch.ts` installs a hook so OTel context propagates correctly through Bluebird promise chains.
 
 ## Crash Reporter Subprocess
 
-**Setup**: `reportCrash()` in `src/main/errorReporting.ts`
+**Setup**: `reportCrash()` in `src/main/src/errorReporting.ts`
 
 Short-lived provider created per crash:
 
@@ -84,10 +84,10 @@ Short-lived provider created per crash:
 
 `settings.analytics.enabled` in Redux state controls whether spans are exported.
 
-Main process watches for changes via `persist:diff` IPC in `src/main/telemetry/ipcHandler.ts`. Initial value read from LevelDB at startup in `src/main/Application.ts`.
+Main process watches for changes via `persist:diff` IPC in `src/main/src/telemetry/ipcHandler.ts`. Initial value read from LevelDB at startup in `src/main/src/Application.ts`.
 
-> [!note]
-> `setTelemetryEnabled` and `isTelemetryEnabled` live in `src/main/telemetry/state.ts`. All callers must use static TypeScript imports (compiled to `require()`), not `await import()`, to share the same CJS module singleton.
+> [!NOTE]
+> `setTelemetryEnabled` and `isTelemetryEnabled` live in `src/main/src/telemetry/state.ts`. All callers must use static TypeScript imports (compiled to `require()`), not `await import()`, to share the same CJS module singleton.
 
 ## Error Fingerprinting
 

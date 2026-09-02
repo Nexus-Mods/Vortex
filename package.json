@@ -32,6 +32,7 @@
     "lint": "pnpm nx run-many -t lint",
     "lint:verbose": "pnpm nx run-many -t lint:verbose",
     "test": "pnpm nx run-many -t test test:integration --exclude @vortex/e2e",
+    "verify": "echo pnpm run format && pnpm run format && echo pnpm run build && pnpm run build && echo pnpm run test && pnpm run test",
     "api": "pnpm nx run @nexusmods/vortex-api:build",
     "format": "pnpm oxfmt",
     "format:check": "pnpm oxfmt --check",

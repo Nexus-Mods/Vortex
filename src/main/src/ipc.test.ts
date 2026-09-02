@@ -1,5 +1,5 @@
-import { rehydrateSerializedError } from "@vortex/shared";
-import { DownloadError, UserCanceled, isErrorOfType } from "@vortex/shared/errors";
+import { rehydrateSerializedError, VortexError } from "@vortex/shared";
+import { UserCanceled, isErrorOfType } from "@vortex/shared/errors";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Match rehydrateSerializedError's own parameter type so the round-trip below
@@ -70,19 +70,25 @@ describe("betterIpcMain.handle envelope", () => {
     expect(isErrorOfType(rehydrated, UserCanceled)).toBe(true);
   });
 
-  it("preserves error.code across the envelope (for isEnvironmentalError checks)", async () => {
+  it("preserves error.kind across the envelope (for VortexError branch checks)", async () => {
+    // Regression: a VortexError thrown across the invoke boundary must round-trip
+    // with its discriminator intact so the renderer can branch on data.kind. The
+    // envelope carries `name` (for the by-reference fallback) and the full
+    // VortexError data payload (for `isErrorOfType(err, VortexError)` rehydration).
     betterIpcMain.handle("app:getName", () => {
-      throw new DownloadError({ code: "cancellation" }, "Download cancelled");
+      throw new VortexError("Download cancelled", { kind: "user-canceled", skipped: false });
     });
 
     const result = await callHandler("app:getName");
     if (!("error" in result)) throw new Error("expected failure envelope");
 
-    expect(result.error.name).toBe("DownloadError");
-    expect(result.error.code).toBe("cancellation");
+    expect(result.error.name).toBe("VortexError");
+    // The VortexError `data` rides under `data.data` because the envelope bag
+    // and the discriminator share the name `data`.
+    expect(result.error.data?.data).toMatchObject({ kind: "user-canceled" });
 
     const rehydrated = rehydrateSerializedError(result.error);
-    expect(isErrorOfType(rehydrated, DownloadError)).toBe(true);
-    expect((rehydrated as Error & { code?: string }).code).toBe("cancellation");
+    expect(isErrorOfType(rehydrated, VortexError)).toBe(true);
+    expect(rehydrated.name).toBe("VortexError");
   });
 });

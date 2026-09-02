@@ -1,3 +1,5 @@
+import { EventEmitter } from "node:events";
+
 import type { UpdaterSnapshot, UpdaterState, UpdaterStatusResponse } from "@vortex/shared/ipc";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +9,7 @@ vi.mock("../../util/application", () => ({
   getApplication: () => ({ version: "2.6.0-beta.1" }),
 }));
 
+import type { MixpanelEvent } from "../analytics/mixpanel/MixpanelEvents";
 import init from "./index";
 import { getUpdaterStatus } from "./updaterStatus";
 
@@ -41,7 +44,7 @@ function makeContext() {
     }
   });
   const state = {
-    app: { installType: "regular" },
+    app: { installType: "regular", updaterActive: true },
     settings: { update: { channel: "stable" } },
     session: { notifications: { notifications } },
   };
@@ -57,6 +60,7 @@ function makeContext() {
       dismissNotification,
       showDialog,
       onStateChange: vi.fn(),
+      events: new EventEmitter(),
       store: { getState: () => state, dispatch },
     },
   } as unknown as IExtensionContext;
@@ -140,6 +144,7 @@ async function setup(initialSnapshot: UpdaterSnapshot = idle) {
   // let the poller's first poll deliver the initial snapshot
   await vi.advanceTimersByTimeAsync(0);
   return {
+    context,
     sendNotification,
     dismissNotification,
     showDialog,
@@ -589,5 +594,62 @@ describe("periodic checks", () => {
 
     await vi.advanceTimersByTimeAsync(4 * 60 * 60 * 1000);
     expect(updater.checkForUpdates).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("analytics", () => {
+  function collect(context: IExtensionContext): MixpanelEvent[] {
+    const events: MixpanelEvent[] = [];
+    context.api.events.on("analytics-track-mixpanel-event", (e: MixpanelEvent) => events.push(e));
+    return events;
+  }
+
+  it("emits the funnel from transitions, once per transition (no ticks, no re-renders)", async () => {
+    const { context, pushState } = await setup();
+    const events = collect(context);
+
+    await pushState({ type: "checking", manual: true });
+    await pushState({ type: "available", version: "2.7.0" });
+    await pushState({ type: "available", version: "2.7.0" });
+    await pushState({
+      type: "downloading",
+      version: "2.7.0",
+      kind: "update",
+      manual: true,
+      percent: 10,
+    });
+    await pushState({
+      type: "downloading",
+      version: "2.7.0",
+      kind: "update",
+      manual: true,
+      percent: 50,
+    });
+    await pushState({ type: "staged", version: "2.7.0", kind: "update" });
+
+    expect(events.map((e) => e.eventName)).toEqual([
+      "app_update_check_completed",
+      "app_update_offered",
+      "app_update_download_started",
+      "app_update_download_completed",
+    ]);
+    expect(events.every((e) => e.properties.update_channel === "stable")).toBe(true);
+  });
+
+  it("emits install_started from Restart Now and app_updated from the post-update notice", async () => {
+    const { context, sendNotification, pushState } = await setup();
+    const events = collect(context);
+
+    await pushState({ type: "staged", version: "2.7.0", kind: "update" }, "2.5.9");
+    const staged = sent(sendNotification, "vortex-update-available").at(-1)!;
+    staged.actions!.find((a) => a.title === "Restart Now")!.action(() => undefined);
+
+    const names = events.map((e) => e.eventName);
+    expect(names).toContain("app_updated");
+    expect(names).toContain("app_update_install_started");
+    const install = events.find((e) => e.eventName === "app_update_install_started")!;
+    expect(install.properties).toMatchObject({ to_version: "2.7.0", source: "notification" });
+    const updated = events.find((e) => e.eventName === "app_updated")!;
+    expect(updated.properties).toMatchObject({ from_version: "2.5.9", to_version: "2.6.0-beta.1" });
   });
 });

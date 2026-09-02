@@ -20,7 +20,6 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
-import type { DownloadErrorPayload } from "./errors";
 import type { FeatureFlag } from "./flags";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -43,6 +42,8 @@ export interface AppInitMetadata {
   commandLine: Record<string, unknown>;
   /** Install type (regular installer or managed like Epic/MS Store) */
   installType?: "regular" | "managed";
+  /** Whether the updater runs at all; decided in main, since the renderer cannot read the env */
+  updaterActive?: boolean;
   /** Application version string */
   version?: string;
   /** Instance ID for crash reporting */
@@ -156,15 +157,9 @@ export type WireResolvedResource = {
   chunkEndpoints?: WireEndpoint[];
 };
 
-type Wirify<T> = { [K in keyof T]: T[K] extends URL ? string : T[K] };
-export type WireDownloadError = {
-  payload: Wirify<DownloadErrorPayload>;
-  message: string;
-};
-
 export type WireDownloadState = DownloadProgress & {
   status: DownloadStatus;
-  error: WireDownloadError | null;
+  error: Serializable | null;
 };
 
 export type WireDownloadCheckpoint = DownloadCheckpoint<string>;
@@ -287,6 +282,9 @@ export interface RendererChannels extends RendererCallbackChannels {
 
   /** Opens the file using the default application for the file extension */
   "shell:openFile": (filePath: string) => void;
+
+  /** Opens the OS file manager with the file selected */
+  "shell:showItemInFolder": (filePath: string) => void;
 
   // Persistence: Send diff operations to main for persistence
   "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;

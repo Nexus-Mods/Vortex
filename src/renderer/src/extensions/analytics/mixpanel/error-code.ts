@@ -1,43 +1,59 @@
 import { getErrorCode } from "@vortex/shared";
-import { DownloadError, isErrorOfType } from "@vortex/shared/errors";
+import { type VortexErrorKind, VortexError, isErrorOfType } from "@vortex/shared/errors";
 
 /**
  * Stable, low-cardinality tokens for the analytics `error_code` property.
  *
- * A DownloadError carries an explicit sub-code; any other error is reduced to a
- * snake_case token derived from its class name (the name survives the IPC
- * boundary, where a rehydrated error loses its prototype but keeps its name).
- * A raw OS/Node `code` is passed through lowercased only as a last resort — we
- * don't normalize or map it (that's the typed-error layer's job), we just avoid
- * discarding the one signal a bare errno Error carries.
+ * A VortexError thrown by the downloader carries an explicit `data.kind`;
+ * any other error is reduced to a snake_case token derived from its class
+ * name (the name survives the IPC boundary, where a rehydrated error loses
+ * its prototype but keeps its name). A raw OS/Node `code` is passed through
+ * lowercased only as a last resort — we don't normalize or map it (that's
+ * the typed-error layer's job), we just avoid discarding the one signal a
+ * bare errno Error carries.
  */
 
 /**
- * DownloadError payload code -> token. This is a deliberate mapping, not a
- * mechanical kebab->snake rename: it exists to keep one failure cause reporting
- * one token no matter how it reached us. So it collapses related codes into a
- * shared bucket (`protocol-violation` + `network-error` -> `network_error`) and
- * names codes to match the tokens the class-name path produces for the same
- * failure (`cancellation` -> `user_canceled`, `network-bad-status` ->
- * `http_error`), so a live sub-code and its IPC-rehydrated concrete class don't
- * fork the funnel. `satisfies` keeps it exhaustive: adding a DownloadErrorPayload
- * code without a token here is a build error.
+ * Download-side VortexError `data.kind` -> token. Deliberate mapping, not a
+ * mechanical kebab->snake rename: it collapses related kinds into a shared
+ * bucket (`http:protocol-violation` + `http:generic` -> `network_error`) and
+ * names kinds to match the tokens the class-name path produces for the same
+ * failure (`user-canceled` -> `user_canceled`, `http:bad-status` ->
+ * `http_error`), so a live kind and its IPC-rehydrated concrete error don't
+ * fork the funnel.
+ *
+ * The `fs:*` cluster is handled separately below so all FS kinds funnel to
+ * `fs_error` without enumerating every variant.
  */
-const DOWNLOAD_CODE_MAP = {
-  cancellation: "user_canceled",
-  "network-error": "network_error",
-  "network-timeout": "timeout",
-  "network-bad-status": "http_error",
-  "precondition-failed": "precondition_failed",
-  "protocol-violation": "network_error",
-  "is-html": "download_is_html",
-  "fs-error": "fs_error",
-  "resolver-error": "resolver_error",
-} satisfies Record<DownloadError["code"], string>;
+const DOWNLOAD_KIND_MAP: Partial<Record<VortexErrorKind, string>> = {
+  "user-canceled": "user_canceled",
+  "http:generic": "network_error",
+  "http:timeout": "timeout",
+  "http:bad-status": "http_error",
+  "http:precondition-failed": "precondition_failed",
+  "http:protocol-violation": "network_error",
+  "download:is-html": "download_is_html",
+  "download:resolver-error": "resolver_error",
+};
 
-function downloadCodeToken(code: unknown): string {
-  const map: Record<string, string> = DOWNLOAD_CODE_MAP;
-  return typeof code === "string" && map[code] !== undefined ? map[code] : "network_error";
+function downloadKindToken(kind: VortexErrorKind): string {
+  if (kind.startsWith("fs:")) return "fs_error";
+  return DOWNLOAD_KIND_MAP[kind] ?? "network_error";
+}
+
+/**
+ * Whether a {@link VortexErrorKind} is one the download layer can produce. The
+ * kind drives a different UI flow only for these; other VortexError kinds
+ * (data-invalid, process-canceled, etc.) are best classified by their class
+ * name instead of a download token.
+ */
+function isDownloadSideKind(kind: VortexErrorKind): boolean {
+  return (
+    kind === "user-canceled" ||
+    kind.startsWith("http:") ||
+    kind.startsWith("download:") ||
+    kind.startsWith("fs:")
+  );
 }
 
 /** PascalCase class name -> snake_case token (UserCanceled -> user_canceled). */
@@ -50,8 +66,13 @@ export function classifyErrorCode(err: unknown): string {
   if (!(err instanceof Error)) {
     return "unknown_error";
   }
-  if (isErrorOfType(err, DownloadError)) {
-    return downloadCodeToken(err.payload?.code);
+  // Both live and IPC-rehydrated VortexError carry the same `name` and a
+  // `data` own-property with the kind discriminator.
+  if (isErrorOfType(err, VortexError)) {
+    const data = (err as Error & { data?: { kind?: VortexErrorKind } }).data;
+    if (data?.kind !== undefined && isDownloadSideKind(data.kind)) {
+      return downloadKindToken(data.kind);
+    }
   }
   if (err.name && err.name !== "Error") {
     return errorNameToToken(err.name);
