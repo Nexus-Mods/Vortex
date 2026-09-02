@@ -1,8 +1,8 @@
 import { mdiEyeOff, mdiClose } from "@mdi/js";
-import React, { type FC, type MouseEvent } from "react";
+import React, { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "../../../../ui/components/button/Button";
+import { Button } from "@/ui/components/button/Button";
 
 interface NotificationControlsProps {
   noDismiss?: boolean;
@@ -12,13 +12,13 @@ interface NotificationControlsProps {
   onSuppress: (e: MouseEvent) => void;
 }
 
-export const NotificationControls: FC<React.PropsWithChildren<NotificationControlsProps>> = ({
+export const NotificationControls = ({
   noDismiss,
   allowSuppress,
   collapsed,
   onDismiss,
   onSuppress,
-}) => {
+}: NotificationControlsProps) => {
   const { t } = useTranslation(["common"]);
 
   if (noDismiss && !allowSuppress) {
@@ -29,8 +29,8 @@ export const NotificationControls: FC<React.PropsWithChildren<NotificationContro
     <div className="relative flex shrink-0 items-start gap-x-1">
       {allowSuppress && (
         <Button
-          brand="neutral"
           appearance="weak"
+          brand="neutral"
           leftIconPath={mdiEyeOff}
           size="sm"
           title={t("Never show again")}
@@ -40,8 +40,8 @@ export const NotificationControls: FC<React.PropsWithChildren<NotificationContro
 
       {!noDismiss && (
         <Button
-          brand="neutral"
           appearance="weak"
+          brand="neutral"
           leftIconPath={mdiClose}
           size="sm"
           title={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}

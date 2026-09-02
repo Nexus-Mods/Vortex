@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 import { useWindowContext } from "@/contexts";
 import { Button } from "@/ui/components/button/Button";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { nxmPanelClose, nxmPanelOpen } from "@/ui/icon-paths";
 
@@ -15,7 +14,6 @@ import {
   knownGames as knownGamesSelector,
 } from "../../../util/selectors";
 import { useSpineContext } from "../Spine/SpineContext";
-import { Notifications } from "./notifications/Notifications";
 import { PremiumIndicator } from "./premium/PremiumIndicator";
 import { ProfileSection } from "./profile/ProfileSection";
 import { StagingIndicator } from "./StagingIndicator";
@@ -89,11 +87,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
         <PremiumIndicator />
 
         <div className="flex items-center gap-x-5">
-          <TooltipDelayGroup as="div" className="flex gap-x-2">
-            <Notifications />
-
-            <ProfileSection />
-          </TooltipDelayGroup>
+          <ProfileSection />
 
           <div className="h-6 w-0.5 rounded-md bg-stroke-weak" />
 

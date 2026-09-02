@@ -1,8 +1,8 @@
-import React, { type FC, type MouseEvent } from "react";
+import React, { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { INotificationAction } from "../../../../types/INotification";
-import { Button } from "../../../../ui/components/button/Button";
+import type { INotificationAction } from "@/types/INotification";
+import { Button } from "@/ui/components/button/Button";
 
 interface NotificationActionsProps {
   actions?: INotificationAction[];
@@ -11,12 +11,12 @@ interface NotificationActionsProps {
   onExpand?: () => void;
 }
 
-export const NotificationActions: FC<React.PropsWithChildren<NotificationActionsProps>> = ({
+export const NotificationActions = ({
   actions,
   collapsed,
   onActionClick,
   onExpand,
-}) => {
+}: NotificationActionsProps) => {
   const { t } = useTranslation(["common"]);
 
   if (!actions?.length && collapsed <= 1) {
@@ -27,8 +27,8 @@ export const NotificationActions: FC<React.PropsWithChildren<NotificationActions
     <div className="flex gap-x-1">
       {actions?.map((action: INotificationAction) => (
         <Button
-          brand="neutral"
           appearance="moderate"
+          brand="neutral"
           key={action.title ?? action.icon}
           size="sm"
           onClick={onActionClick(action.title)}
@@ -38,7 +38,7 @@ export const NotificationActions: FC<React.PropsWithChildren<NotificationActions
       ))}
 
       {collapsed > 1 && onExpand && (
-        <Button brand="neutral" appearance="moderate" size="sm" onClick={onExpand}>
+        <Button appearance="moderate" brand="neutral" size="sm" onClick={onExpand}>
           {t("{{ count }} More", { count: collapsed - 1 })}
         </Button>
       )}

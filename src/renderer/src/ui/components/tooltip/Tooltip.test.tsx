@@ -143,6 +143,30 @@ describe("Tooltip", () => {
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
+  it("stays down when it is disabled while open and then re-enabled", async () => {
+    const view = (disabled: boolean) => (
+      <Tooltip content="Deploys every enabled mod" delay={0} disabled={disabled}>
+        <button type="button">Deploy</button>
+      </Tooltip>
+    );
+
+    const { rerender } = render(view(false));
+    await userEvent.hover(screen.getByRole("button", { name: "Deploy" }));
+    await waitFor(() => {
+      expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    });
+
+    // The trigger's own panel takes over, then closes again. Being disabled unregisters
+    // the trigger as Floating UI's reference, so a tooltip left open across that comes
+    // back before it can be placed, in the corner of the window.
+    rerender(view(true));
+    rerender(view(false));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    });
+  });
+
   it("attaches nothing when the body resolves to nothing", async () => {
     // The XOr type normally prevents this; the runtime guard covers a caller
     // passing `content={someMaybeUndefinedValue}`.

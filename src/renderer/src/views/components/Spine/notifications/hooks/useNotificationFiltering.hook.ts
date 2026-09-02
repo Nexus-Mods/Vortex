@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { INotification } from "../../../../types/INotification";
-import Debouncer from "../../../../util/Debouncer";
+import type { INotification } from "@/types/INotification";
+
+import Debouncer from "../../../../../util/Debouncer";
 
 const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
   warning: 10000,
