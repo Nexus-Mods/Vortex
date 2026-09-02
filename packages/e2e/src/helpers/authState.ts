@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 import type { NexusUser } from "./users";
@@ -17,4 +18,15 @@ export const AUTH_DIR = path.resolve(import.meta.dirname, "..", "..", ".auth");
 export function authStatePath(user: NexusUser): string {
   const safe = user.username.replace(/[^a-zA-Z0-9._-]/g, "_");
   return path.join(AUTH_DIR, `${safe}.json`);
+}
+
+/**
+ * The captured storage-state path for a user when one exists, else undefined —
+ * pass straight to loginToNexus as storageStatePath. Present (local runs after
+ * `pnpm auth:capture`) the OAuth flow lands on the consent screen and skips the
+ * captcha-gated credential form; absent (CI) the full credential flow runs.
+ */
+export function seededAuthStatePath(user: NexusUser): string | undefined {
+  const captured = authStatePath(user);
+  return fs.existsSync(captured) ? captured : undefined;
 }
