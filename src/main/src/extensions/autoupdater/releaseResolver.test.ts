@@ -174,6 +174,37 @@ describe("resolveUpdate fetching", () => {
     expect(resolved?.notesHtml).not.toContain("2.4.1");
   });
 
+  it("wraps each release's notes in its own section under a version heading", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(fixture)));
+
+    const notes = (await resolveUpdate("beta", "2.5.0-beta.1"))?.notesHtml ?? "";
+
+    // the What's New dialog groups by these; without them the bodies of every
+    // release the update spans run together as one blob
+    expect(notes).toContain(
+      '<h4 class="changelog-release-version">2.6.0-beta.1<span class="changelog-release-date">',
+    );
+    expect(notes).toContain(
+      '<div class="changelog-release-body"><p>2.6.0-beta.1: new collections workflow</p></div>',
+    );
+    // 2.5.0-beta.2, 2.5.0 and 2.6.0-beta.1 all fall in the range
+    expect(notes.match(/<section class="changelog-release">/g)).toHaveLength(3);
+    // newest first, and each body stays inside its own section
+    expect(notes.indexOf("2.6.0-beta.1")).toBeLessThan(notes.indexOf("2.5.0: stable rollup"));
+  });
+
+  it("omits the date for a release with no publish timestamp", async () => {
+    const undated = fixture.map((entry) =>
+      entry.tag_name === "v2.5.0" ? { ...entry, published_at: undefined } : entry,
+    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(undated)));
+
+    const notes = (await resolveUpdate("stable", "2.4.2"))?.notesHtml ?? "";
+
+    expect(notes).toContain('<h4 class="changelog-release-version">2.5.0</h4>');
+    expect(notes).not.toContain("changelog-release-date");
+  });
+
   it("serves the cached body on 304 and sends if-none-match", async () => {
     const fetchMock = vi
       .fn()
