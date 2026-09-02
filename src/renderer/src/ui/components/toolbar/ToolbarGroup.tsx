@@ -1,6 +1,5 @@
 import React, { type HTMLAttributes } from "react";
 
-import type { IButtonBrand } from "@/ui/components/button/Button";
 import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/PopoverMenuItem";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -14,12 +13,12 @@ export type IToolbarPanel = IPopoverPanel;
 
 /**
  * One toolbar control: a menu action, plus what only a toolbar can say about it —
- * how it's coloured, whether its label shows as text, and whether the row may
- * collapse it into the overflow. Activating it either runs `onClick` or opens
- * `panel`; activation has a single meaning, so the two are mutually exclusive.
+ * whether its label shows as text, and whether the row may collapse it into the
+ * overflow. Its `brand` comes from the action itself, so the colour survives the
+ * collapse. Activating it either runs `onClick` or opens `panel`; activation has a
+ * single meaning, so the two are mutually exclusive.
  */
 export type IToolbarAction = IMenuAction & {
-  brand?: IButtonBrand;
   showLabel?: boolean;
   testId?: string;
   pinned?: boolean;
@@ -65,7 +64,11 @@ const controlProps = (action: IToolbarAction) => ({
  */
 const ToolbarControl = ({ action }: { action: IToolbarAction }) =>
   action.panel ? (
-    <ToolbarPanelButton {...controlProps(action)} panel={action.panel} />
+    <ToolbarPanelButton
+      {...controlProps(action)}
+      panel={action.panel}
+      panelRole={action.panelRole}
+    />
   ) : (
     <ToolbarButton
       {...controlProps(action)}

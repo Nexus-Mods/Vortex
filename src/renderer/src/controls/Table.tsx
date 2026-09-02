@@ -37,7 +37,7 @@ import { Table, TBody, TD, TH, THead, TR } from "./table/MyTable";
 import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
 import ToolbarIcon from "./ToolbarIcon";
-import Usage from "./Usage";
+import { UsageAlert } from "./UsageAlert";
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -71,6 +71,11 @@ export interface IBaseProps {
   // drops its horizontal padding around the table in exchange.
   edgeToEdge?: boolean;
   hasActions?: boolean;
+  // Where to put the footer — the multi-selection bar, or the hint standing in for it
+  // — instead of over the bottom of the table. For a page that gives it a place of its
+  // own, so it stops overlaying the rows and can sit beside whatever else the page
+  // keeps down there.
+  footerContainer?: HTMLElement | null;
   onChangeSelection?: (ids: string[]) => void;
   children?: React.ReactNode;
 }
@@ -337,12 +342,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const openClass = detailsOpen ? "open" : "closed";
 
+    const detailsPane =
+      showDetails === false ? null : (
+        <div className={`table-details-pane ${openClass}`}>{this.renderDetails()}</div>
+      );
+
     const containerClasses = ["table-container"];
     if (showDetails) {
       containerClasses.push("has-details");
     }
     if (stickyHeader) {
-      containerClasses.push("sticky-header");
+      // grow past the last row, so the details pane doesn't open one row tall
+      containerClasses.push("sticky-header", "flex-auto");
     }
     if (edgeToEdge) {
       containerClasses.push("edge-to-edge");
@@ -375,8 +386,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           </div>
         )}
 
-        {showDetails === false ? null : (
-          <div className={`table-details-pane ${openClass}`}>{this.renderDetails()}</div>
+        {stickyHeader ? (
+          // A table that scrolls with the page is as tall as its rows and as wide as
+          // its columns, so a pane positioned against it would be too. The layer is
+          // what sticks to the visible part of the scroll instead.
+          <div className="table-details-layer">{detailsPane}</div>
+        ) : (
+          detailsPane
         )}
       </div>
     );
@@ -416,6 +432,45 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderFooter(): JSX.Element {
+    const { footerContainer } = this.props;
+    const footer = this.renderFooterContent();
+
+    if (footer === null) {
+      return null;
+    }
+
+    // Given a place of its own the footer lays out in the page's flow there, so it needs
+    // neither the absolute positioning that fills the table nor the placeholder that
+    // keeps the rows clear of it. Without one it fills the bottom of the table as it
+    // always has, which every other table still does.
+    if (footerContainer) {
+      return ReactDOM.createPortal(
+        <div className="table-footer-detached">{footer}</div>,
+        footerContainer,
+      );
+    }
+
+    // Only the multi-row bar is absolutely positioned, filling a surrounding panel, so
+    // only it needs a placeholder to hold the rows clear of it. The usage hint shown
+    // below two selections lays out in the flow and takes its own height — giving that
+    // the placeholder's fixed height boxes it at 48px on every table that has no
+    // `footerContainer`, which is not something it ever had.
+    return this.isMultiRowFooter() ? (
+      <div className="table-footer-placeholder">{footer}</div>
+    ) : (
+      footer
+    );
+  }
+
+  /** Whether the footer is the multi-row action bar rather than the usage hint. */
+  private isMultiRowFooter(): boolean {
+    const { rowState } = this.state;
+    const selected = Object.keys(rowState).filter((key) => rowState[key].selected);
+
+    return this.useMultiSelect() && selected.length >= 2;
+  }
+
+  private renderFooterContent(): JSX.Element {
     const { t, tableId } = this.props;
     const { multiRowActions, rowState } = this.state;
 
@@ -427,40 +482,35 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     if (selected.length < 2) {
       return (
-        <Usage infoId="table-multiselect">
+        <UsageAlert infoId="table-multiselect">
           {t(
             "Did you know? You can select multiple items using ctrl+click or shift+click or " +
               "select everything using ctrl+a and then do things with all selected items at once.",
           )}
-        </Usage>
+        </UsageAlert>
       );
     }
 
-    // the footer itself (.table-footer) is absolutely positioned so it fills out a surrounding
-    // panel. To ensure the table body isn't overlapped by the footer, insert a placeholder
-    // that needs to be the same size as the footer itself (see css)
     return (
-      <div className="table-footer-placeholder">
-        <div className="table-footer">
-          <IconBar
-            className="menubar"
-            group={`${tableId}-multirow-actions`}
-            groupByIcon={false}
-            instanceId={selected}
-            staticElements={multiRowActions}
-            t={t}
+      <div className="table-footer">
+        <IconBar
+          className="menubar"
+          group={`${tableId}-multirow-actions`}
+          groupByIcon={false}
+          instanceId={selected}
+          staticElements={multiRowActions}
+          t={t}
+        />
+
+        <div className="menubar">
+          <p>{t("{{ count }} item selected", { count: selected.length })}</p>
+
+          <ToolbarIcon
+            icon="deselect"
+            key="btn-deselect"
+            text={t("Deselect All")}
+            onClick={this.deselectAll}
           />
-
-          <div className="menubar">
-            <p>{t("{{ count }} item selected", { count: selected.length })}</p>
-
-            <ToolbarIcon
-              icon="deselect"
-              key="btn-deselect"
-              text={t("Deselect All")}
-              onClick={this.deselectAll}
-            />
-          </div>
         </div>
       </div>
     );

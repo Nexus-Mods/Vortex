@@ -94,6 +94,38 @@ describe("PopoverMenu", () => {
       await openMenu([[{ ...plainAction("Logout"), disabled: true }]]);
       expect(screen.getByRole("menuitem", { name: "Logout" })).toBeDisabled();
     });
+
+    it("brands a row that asks for it", async () => {
+      await openMenu([[{ ...plainAction("Deploy Mods"), brand: "primary" }]]);
+
+      expect(screen.getByRole("menuitem", { name: "Deploy Mods" })).toHaveClass(
+        "nxm-dropdown-item-primary",
+      );
+    });
+
+    it("brands a destructive row", async () => {
+      await openMenu([[{ ...plainAction("Remove"), brand: "danger" }]]);
+
+      expect(screen.getByRole("menuitem", { name: "Remove" })).toHaveClass(
+        "nxm-dropdown-item-danger",
+      );
+    });
+
+    it("brands a row whose panel is a submenu", async () => {
+      await openMenu([[{ ...submenuAction(helpRows), brand: "premium" }]]);
+
+      expect(screen.getByRole("menuitem", { name: "Help" })).toHaveClass(
+        "nxm-dropdown-item-premium",
+      );
+    });
+
+    it("leaves a row alone when it asks for no brand", async () => {
+      await openMenu([[plainAction("Logout")]]);
+
+      expect(screen.getByRole("menuitem", { name: "Logout" }).className).not.toMatch(
+        /nxm-dropdown-item-(primary|info|neutral|success|premium)/,
+      );
+    });
   });
 
   describe("interactions", () => {
@@ -135,16 +167,16 @@ describe("PopoverMenu", () => {
 
   // The highlight is state the menu keeps, not a `:hover` or `:focus-visible` rule,
   // so exactly one row can ever wear it however the pointer and keyboard are mixed.
-  describe("the active row", () => {
-    const activeRows = () =>
+  describe("the focused row", () => {
+    const focusedRows = () =>
       screen
         .getAllByRole("menuitem")
-        .filter((row) => row.classList.contains("nxm-dropdown-item-active"))
+        .filter((row) => row.classList.contains("nxm-dropdown-item-focus"))
         .map((row) => row.textContent?.trim());
 
     it("marks the row the menu opened on", async () => {
       await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
-      expect(activeRows()).toEqual(["View profile"]);
+      expect(focusedRows()).toEqual(["View profile"]);
     });
 
     it("moves with the arrow keys, and only ever marks one", async () => {
@@ -154,17 +186,17 @@ describe("PopoverMenu", () => {
       ]);
 
       await userEvent.keyboard("{ArrowDown}");
-      expect(activeRows()).toEqual(["Refresh"]);
+      expect(focusedRows()).toEqual(["Refresh"]);
 
       await userEvent.keyboard("{ArrowDown}");
-      expect(activeRows()).toEqual(["Logout"]);
+      expect(focusedRows()).toEqual(["Logout"]);
     });
 
     it("follows the pointer to a hovered row", async () => {
       await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
 
       await userEvent.hover(screen.getByRole("menuitem", { name: "Logout" }));
-      expect(activeRows()).toEqual(["Logout"]);
+      expect(focusedRows()).toEqual(["Logout"]);
     });
 
     // The case a `:hover` rule got wrong: the pointer stays put while the keyboard
@@ -177,7 +209,7 @@ describe("PopoverMenu", () => {
       await userEvent.hover(screen.getByRole("menuitem", { name: "Refresh" }));
       await userEvent.keyboard("{ArrowDown}");
 
-      expect(activeRows()).toEqual(["Logout"]);
+      expect(focusedRows()).toEqual(["Logout"]);
     });
   });
 
@@ -338,10 +370,10 @@ describe("PopoverMenu", () => {
     it("holds the row in the hover state while its submenu is open", async () => {
       const row = await openParent();
 
-      expect(row).not.toHaveClass("nxm-dropdown-item-active");
+      expect(row).not.toHaveClass("nxm-dropdown-item-focus");
 
       await userEvent.click(row);
-      expect(row).toHaveClass("nxm-dropdown-item-active");
+      expect(row).toHaveClass("nxm-dropdown-item-focus");
     });
 
     it("opens the submenu with ArrowRight and closes it with ArrowLeft", async () => {

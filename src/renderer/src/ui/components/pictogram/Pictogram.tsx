@@ -28,6 +28,7 @@ const brandMap = {
 export type IPictogramName =
   | "game"
   | "health-check"
+  | "mod"
   | "no-mod"
   | "preferences"
   | "premium"

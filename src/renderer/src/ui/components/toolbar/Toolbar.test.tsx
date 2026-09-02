@@ -343,10 +343,10 @@ describe("ToolbarGroup", () => {
     it("holds the row in the hover state while its panel is open", async () => {
       const row = await openOverflow();
 
-      expect(row).not.toHaveClass("nxm-dropdown-item-active");
+      expect(row).not.toHaveClass("nxm-dropdown-item-focus");
 
       await userEvent.click(row);
-      expect(row).toHaveClass("nxm-dropdown-item-active");
+      expect(row).toHaveClass("nxm-dropdown-item-focus");
     });
 
     it("keeps both open while the panel's controls are used", async () => {
