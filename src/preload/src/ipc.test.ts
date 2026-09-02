@@ -1,11 +1,10 @@
 import { VortexError } from "@vortex/shared";
 import { toWireError } from "@vortex/shared/errors";
-import type { IpcRendererEvent } from "electron";
 import { describe, expect, it, vi } from "vitest";
 
 // Capture the listener registered via ipcRenderer.on so the test can invoke it
 // directly with a mocked event and the args main would send.
-type InvokeListener = (event: IpcRendererEvent, ...args: unknown[]) => void;
+type InvokeListener = (event: unknown, ...args: unknown[]) => void;
 const invokeListeners = new Map<string, InvokeListener>();
 type SendPayload = readonly unknown[];
 const sentPayloads: Array<{ channel: string; args: SendPayload }> = [];
@@ -16,7 +15,7 @@ let nextInvokeReply: unknown = undefined;
 
 vi.mock("electron", () => ({
   ipcRenderer: {
-    invoke: vi.fn(async (_channel: string, ..._args: unknown[]) => nextInvokeReply),
+    invoke: vi.fn<() => Promise<unknown>>(async () => nextInvokeReply),
     on: (channel: string, listener: InvokeListener) => {
       invokeListeners.set(channel, listener);
     },
@@ -31,7 +30,7 @@ vi.mock("electron", () => ({
 
 import { errorOriginTracker, rendererCallback, rendererInvoke } from "./ipc";
 
-const fakeEvent = {} as IpcRendererEvent;
+const fakeEvent = {};
 
 // Build a wire form the way main would, going through the boundary entry
 // point. This is the only way the test can produce a ref-tagged wire form
@@ -87,7 +86,9 @@ describe("rendererCallback envelope", () => {
     const listener = invokeListeners.get("example:ping");
     if (listener === undefined) throw new Error("listener not registered");
 
-    await listener(fakeEvent, 7);
+    listener(fakeEvent, 7);
+    // Drain microtasks: handler().then(...) fires ipcRenderer.send asynchronously.
+    await new Promise((resolve) => setImmediate(resolve));
 
     expect(sentPayloads).toHaveLength(1);
     const entry = sentPayloads[0];
@@ -105,9 +106,9 @@ describe("rendererCallback envelope", () => {
     const listener = invokeListeners.get("example:ping");
     if (listener === undefined) throw new Error("listener not registered");
 
-    await listener(fakeEvent, 9);
-    // The rejection fires through `handler().then().catch(...)` — wait for the
-    // microtask chain to flush before asserting on the captured send payload.
+    listener(fakeEvent, 9);
+    // Drain the rejection microtask chain (handler().then().catch(...)) before
+    // asserting on the captured send payload.
     await new Promise((resolve) => setImmediate(resolve));
 
     expect(sentPayloads).toHaveLength(1);
@@ -115,9 +116,7 @@ describe("rendererCallback envelope", () => {
     if (entry === undefined) throw new Error("expected one sent payload");
     expect(entry.channel).toBe("callback:example:ping");
     expect(entry.args[0]).toBe(9);
-    const reply = entry.args[1] as { error?: { data: { kind?: unknown } } };
-    expect(reply.error).toBeDefined();
-    expect(reply.error?.data.kind).toBe("user-canceled");
+    expect(entry.args[1]).toMatchObject({ error: { data: { kind: "user-canceled" } } });
   });
 
   it("coerces a non-VortexError throw into a VortexError wire form", async () => {
@@ -132,15 +131,12 @@ describe("rendererCallback envelope", () => {
     const listener = invokeListeners.get("example:ping");
     if (listener === undefined) throw new Error("listener not registered");
 
-    await listener(fakeEvent, 11);
-    // Drain the rejection microtask chain before asserting.
+    listener(fakeEvent, 11);
     await new Promise((resolve) => setImmediate(resolve));
 
     expect(sentPayloads).toHaveLength(1);
     const entry = sentPayloads[0];
     if (entry === undefined) throw new Error("expected one sent payload");
-    const reply = entry.args[1] as { error?: { data: { kind?: unknown } } };
-    expect(reply.error).toBeDefined();
-    expect(reply.error?.data.kind).toBeDefined();
+    expect(entry.args[1]).toMatchObject({ error: { data: { kind: "unknown" } } });
   });
 });

@@ -79,10 +79,11 @@ describe("serializeVortexError / deserializeVortexError", () => {
     expect(cause2.cause).toBeUndefined();
   });
 
-  it("truncates the cause chain beyond MAX_CAUSE_DEPTH (3 levels)", () => {
-    let current: VortexError = new VortexError("depth 4", { kind: "test:deep", tag: "r" });
-    for (let i = 3; i >= 0; i--) {
-      current = new VortexError(`depth ${i}`, { kind: "test:deep", tag: "r" }, { cause: current });
+  it("truncates the cause chain beyond MAX_CAUSE_DEPTH", () => {
+    // Build a chain that exceeds the limit so truncation is observable.
+    let current: VortexError = new VortexError("innermost", { kind: "test:deep", tag: "r" });
+    for (let i = 0; i < 8; i++) {
+      current = new VortexError(`level ${i}`, { kind: "test:deep", tag: "r" }, { cause: current });
     }
     const out = deserializeVortexError(serializeVortexError(current));
 
@@ -92,7 +93,7 @@ describe("serializeVortexError / deserializeVortexError", () => {
       err = err.cause;
       level++;
     }
-    expect(level).toBe(3);
+    expect(level).toBe(5);
   });
 
   it("coerces a non-VortexError Error cause into a VortexError cause", () => {

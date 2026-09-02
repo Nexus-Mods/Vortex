@@ -217,32 +217,6 @@ export type WireUploadProgress = {
 };
 
 /**
- * Structured error envelope shared across the IPC boundaries. The serializer is
- * agnostic to the error classes it carries: it serializes `name`, `code`, and
- * any extra own enumerable properties (in `data`), with `cause` chains
- * serialized recursively. The receiver rehydrates a generic `Error` with those
- * fields copied back, so callers can branch on `err.name` and reconstruct their
- * concrete error type.
- */
-export interface SerializedError {
-  message: string;
-  name?: string;
-  code?: string;
-  data?: Record<string, unknown>;
-  cause?: SerializedError;
-}
-
-/**
- * A reply envelope crossing an IPC boundary: either a successful value or a
- * serialized error. Electron's native invoke serialization would
- * otherwise reduce it to a generic `Error`, losing its type/name.
- * The error rides as an opaque {@link Serializable}
- * (a {@link SerializedError} shape at runtime) so it
- * satisfies the IPC serialization contract.
- */
-export type WireResult<T> = { ok: true; value: T } | { ok: false; error: Serializable };
-
-/**
  * The pair-shape envelope used by the invoke/handle and callback paths: the
  * channel's return value lives in `data`, the optional VortexError lives in
  * `error`. The receiver narrows on `error !== undefined` and deserializes-and-
