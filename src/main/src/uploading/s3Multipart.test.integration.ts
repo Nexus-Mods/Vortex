@@ -3,9 +3,9 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { VortexError } from "@vortex/shared";
 import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
-import { assertVortexError } from "../test-utils/assertions";
 import { defaultRetryStrategy } from "../transfer/retry";
 import { uploadS3Multipart } from "./s3Multipart";
 import { createTestServer, respondOk, type TestServer } from "./test-server";
@@ -94,7 +94,7 @@ describe("uploadS3Multipart", () => {
       (e: unknown) => e,
     );
 
-    assertVortexError(err, "http:protocol-violation");
+    assert(err instanceof VortexError && err.data.kind === "http:protocol-violation");
     expect(err.message).toMatch(/Multipart layout mismatch/);
     expect(server.requests).toHaveLength(0);
   });
@@ -111,7 +111,7 @@ describe("uploadS3Multipart", () => {
       (e: unknown) => e,
     );
 
-    assertVortexError(err, "http:protocol-violation");
+    assert(err instanceof VortexError && err.data.kind === "http:protocol-violation");
     expect(err.message).toMatch(/ETag/);
   });
 
@@ -152,7 +152,7 @@ describe("uploadS3Multipart", () => {
       (e: unknown) => e,
     );
 
-    assertVortexError(err, "http:protocol-violation");
+    assert(err instanceof VortexError && err.data.kind === "http:protocol-violation");
     expect(err.message).toContain("InternalError");
   });
 });

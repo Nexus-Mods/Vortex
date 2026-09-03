@@ -10,7 +10,6 @@ import { RateLimiter } from "limiter";
 import { CookieJar } from "tough-cookie";
 import { assert, describe, it, expect, vi, beforeAll, afterAll, test } from "vitest";
 
-import { assertVortexError } from "../test-utils/assertions";
 import { defaultRetryStrategy } from "../transfer/retry";
 import { download, type TimeoutOptions } from "./downloader";
 import { ProgressReporter } from "./progress";
@@ -853,7 +852,8 @@ describe("download", () => {
       const err = await runDownload(route.url, tmp.dir, {
         abortController,
       }).promise.catch((e) => e);
-      assertVortexError(err, "user-canceled");
+
+      assert(err instanceof VortexError && err.data.kind === "user-canceled");
     });
   });
 
@@ -991,7 +991,7 @@ describe("download", () => {
         },
       ).catch((e) => e);
 
-      assertVortexError(err, "user-canceled");
+      assert(err instanceof VortexError && err.data.kind === "user-canceled");
     });
   });
 

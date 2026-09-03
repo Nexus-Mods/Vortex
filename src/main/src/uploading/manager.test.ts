@@ -5,7 +5,6 @@ import { assert, describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("./transport", () => ({ uploadFile: vi.fn() }));
 vi.mock("./s3Multipart", () => ({ uploadS3Multipart: vi.fn() }));
 
-import { assertVortexError } from "../test-utils/assertions";
 import { UploadManager } from "./manager";
 import { uploadS3Multipart } from "./s3Multipart";
 import { uploadFile } from "./transport";
@@ -136,7 +135,7 @@ describe("UploadManager", () => {
       transfer.settle()(new AbortError({ options: {} } as never));
 
       const err = await promise.catch((e: unknown) => e);
-      assertVortexError(err, "user-canceled");
+      assert(err instanceof VortexError && err.data.kind === "user-canceled");
     });
 
     it("leaves a genuine failure classified as it was", async () => {
