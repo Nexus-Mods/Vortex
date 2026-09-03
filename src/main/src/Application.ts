@@ -33,6 +33,7 @@ import { isUpdaterActive } from "./extensions/updater";
 import { validateFiles } from "./fileValidation";
 import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { shutdownHashWorker } from "./hash/host";
+import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -896,7 +897,7 @@ class Application {
 
     // Register handler so renderer can request metadata via invoke (avoids
     // race conditions with the fire-and-forget app:init send pattern)
-    ipcMain.handle("app:getInitMetadata", () => this.mAppMetadata);
+    betterIpcMain.handle("app:getInitMetadata", () => this.mAppMetadata!);
 
     // 1. Create LevelPersist for the base path
     const levelPersistor = await LevelPersist.create(

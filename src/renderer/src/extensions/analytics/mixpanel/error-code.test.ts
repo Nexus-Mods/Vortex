@@ -35,14 +35,6 @@ describe("classifyErrorCode", () => {
     ).toBe("fs_error");
   });
 
-  it("classifies a VortexError rehydrated across IPC (name only, prototype lost)", () => {
-    // A rehydrated VortexError: plain Error with the name preserved and the data
-    // reattached as an own property.
-    const wire = Object.assign(new Error("x"), { data: { kind: "http:bad-status" } });
-    wire.name = "VortexError";
-    expect(classifyErrorCode(wire)).toBe("http_error");
-  });
-
   it("passes a raw Node/OS error code through lowercased when there is no typed signal", () => {
     // Stopgap behaviour — see the TODO in error-code.ts. Pins the passthrough so the
     // eventual project-wide node-error classification replaces it deliberately.

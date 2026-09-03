@@ -2,9 +2,13 @@ import { randomUUID } from "node:crypto";
 import { access, copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import * as path from "node:path";
 
-import { rehydrateSerializedError, unknownToError } from "@vortex/shared";
-import { AlreadyDownloaded, UserCanceled } from "@vortex/shared/errors";
-import type { SerializedError } from "@vortex/shared/ipc";
+import { unknownToError } from "@vortex/shared";
+import {
+  AlreadyDownloaded,
+  deserializeVortexError,
+  type SerializedVortexError,
+  UserCanceled,
+} from "@vortex/shared/errors";
 import type {
   WireDownloadCheckpoint,
   WireDownloadState,
@@ -61,7 +65,7 @@ import { batchDispatch, flatten } from "./util/util";
 function rehydrateDownloadError(state: WireDownloadState): Error | null {
   if (state.status === "canceled") return new UserCanceled();
   if (state.status !== "failed" || state.error === null) return null;
-  return rehydrateSerializedError(state.error as unknown as SerializedError);
+  return deserializeVortexError(state.error as unknown as SerializedVortexError);
 }
 
 type ProtocolHandler = (

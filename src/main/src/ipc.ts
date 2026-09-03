@@ -1,4 +1,4 @@
-import { rehydrateSerializedError, serializeError } from "@vortex/shared";
+import { deserializeVortexError, toWireError } from "@vortex/shared/errors";
 import type {
   RendererChannels,
   MainChannels,
@@ -7,7 +7,7 @@ import type {
   AssertSerializable,
   CallbackChannels,
   MainCallbackChannels,
-  SerializedError,
+  WireReply,
 } from "@vortex/shared/ipc";
 import { ipcMain, type WebContents } from "electron";
 
@@ -130,13 +130,13 @@ function mainCallback<C extends keyof CallbackChannels>(
     resolve = undefined;
     reject = undefined;
 
-    const result = args[1] as unknown as
-      | { ok: true; value: unknown }
-      | { ok: false; error: SerializedError };
-    if ("error" in result) {
-      rej(rehydrateSerializedError(result.error));
+    const result = args[1] as unknown as WireReply<
+      AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>
+    >;
+    if (result.error) {
+      rej(deserializeVortexError(result.error));
     } else {
-      res(result.value as AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>);
+      res(result.data);
     }
   });
 
@@ -160,14 +160,17 @@ function mainHandle<C extends keyof InvokeChannels>(
 ): void {
   ipcMain.handle(
     channel,
-    async (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
+    async (
+      event,
+      ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
+    ): Promise<WireReply<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>> => {
       ipcLogger(logOptions, channel, event, args);
       try {
         assertTrustedSender(event);
         const value = await listener(event, ...args);
-        return { ok: true, value };
+        return { data: value };
       } catch (err) {
-        return { ok: false, error: serializeError(err) };
+        return { error: toWireError(err) };
       }
     },
   );

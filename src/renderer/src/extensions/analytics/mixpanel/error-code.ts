@@ -1,16 +1,14 @@
 import { getErrorCode } from "@vortex/shared";
-import { type VortexErrorKind, VortexError, isErrorOfType } from "@vortex/shared/errors";
+import { type VortexErrorKind, VortexError } from "@vortex/shared/errors";
 
 /**
  * Stable, low-cardinality tokens for the analytics `error_code` property.
  *
  * A VortexError thrown by the downloader carries an explicit `data.kind`;
  * any other error is reduced to a snake_case token derived from its class
- * name (the name survives the IPC boundary, where a rehydrated error loses
- * its prototype but keeps its name). A raw OS/Node `code` is passed through
- * lowercased only as a last resort — we don't normalize or map it (that's
- * the typed-error layer's job), we just avoid discarding the one signal a
- * bare errno Error carries.
+ * name. A raw OS/Node `code` is passed through lowercased only as a last
+ * resort — we don't normalize or map it (that's the typed-error layer's
+ * job), we just avoid discarding the one signal a bare errno Error carries.
  */
 
 /**
@@ -66,12 +64,11 @@ export function classifyErrorCode(err: unknown): string {
   if (!(err instanceof Error)) {
     return "unknown_error";
   }
-  // Both live and IPC-rehydrated VortexError carry the same `name` and a
-  // `data` own-property with the kind discriminator.
-  if (isErrorOfType(err, VortexError)) {
-    const data = (err as Error & { data?: { kind?: VortexErrorKind } }).data;
-    if (data?.kind !== undefined && isDownloadSideKind(data.kind)) {
-      return downloadKindToken(data.kind);
+  // Rehydrated VortexErrors are real VortexError instances — the wire form
+  // preserves the kind discriminator on `data.kind`.
+  if (err instanceof VortexError) {
+    if (err.data.kind !== undefined && isDownloadSideKind(err.data.kind)) {
+      return downloadKindToken(err.data.kind);
     }
   }
   if (err.name && err.name !== "Error") {

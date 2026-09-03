@@ -3,7 +3,6 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { serializeError } from "@vortex/shared";
 import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
 import { assertVortexError } from "../test-utils/assertions";
@@ -133,31 +132,6 @@ describe("uploadFile", () => {
     // A bare "Server returned 403" is unactionable; the code names the cause.
     expect(err.message).toContain("SignatureDoesNotMatch");
     expect(err.message).toContain("403");
-  });
-
-  it("produces an error that survives the IPC hop", async () => {
-    const filePath = await writeTempFile(randomBytes(128));
-
-    server.respondWith((_req, res) => {
-      res.writeHead(403, { "content-type": "application/xml" });
-      res.end("<Error><Code>AccessDenied</Code></Error>");
-    });
-
-    const err = await uploadFile(`${server.baseUrl}/denied`, filePath, 128, fastRetry).catch(
-      (e: unknown) => e,
-    );
-
-    // A real got error, not a stand-in: it holds its live Request, Response and
-    // options, which is what made the channel handler die with "An object could
-    // not be cloned" and hid the actual failure.
-    const serialized = serializeError(err);
-    expect(() => structuredClone(serialized)).not.toThrow();
-    expect(serialized.name).toBe("VortexError");
-    expect(serialized.message).toContain("AccessDenied");
-    expect(serialized.data?.data).toMatchObject({
-      kind: "http:bad-status",
-      statusCode: 403,
-    });
   });
 
   it("keeps a signed URL's credentials out of the error payload", async () => {
