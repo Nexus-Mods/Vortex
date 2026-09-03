@@ -152,9 +152,9 @@ export type VortexErrorData = {
  *
  * @public
  */
-export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extends Error {
+export class VortexError extends Error {
   /** Error data keyed on the error kind. */
-  readonly data: { [P in K]: { kind: P } & VortexErrorKindMap[P] }[K];
+  readonly data: VortexErrorData;
 
   /**
    * Whether the root cause is transient (retrying may succeed without any
@@ -178,7 +178,7 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
    */
   constructor(
     message: string,
-    data: { [P in K]: { kind: P } & VortexErrorKindMap[P] }[K],
+    data: VortexErrorData,
     meta?: {
       isTransient?: boolean;
       cause?: unknown;
