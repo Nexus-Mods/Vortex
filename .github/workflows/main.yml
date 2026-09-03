@@ -60,17 +60,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install volta, Node.js and Yarn
-        uses: volta-cli/action@v5
-
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/setup@v2
         with:
           cache: true
-
-      - name: Fix pnpm node-gyp permissions
-        if: runner.os == 'Linux'
-        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+          install: false
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig

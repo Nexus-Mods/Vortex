@@ -39,16 +39,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install volta, Node.js
-        uses: volta-cli/action@v5
-
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/setup@v2
         with:
           cache: true
-
-      - name: Fix pnpm node-gyp permissions
-        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+          install: false
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
@@ -94,16 +89,11 @@ jobs:
           git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
           git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
 
-      - name: Install volta, Node.js
-        uses: volta-cli/action@v5
-
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/setup@v2
         with:
           cache: true
-
-      - name: Fix pnpm node-gyp permissions
-        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+          install: false
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig

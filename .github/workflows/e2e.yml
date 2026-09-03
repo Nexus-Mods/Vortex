@@ -49,13 +49,17 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Install volta, Node.js and Yarn
-        uses: volta-cli/action@v5
+      # NOTE: pnpm's standalone binary requires libatomic1, which is missing
+      # by default on our custom runner images
+      - name: Install libatomic
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libatomic1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/setup@v2
         with:
           cache: true
+          install: false
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
