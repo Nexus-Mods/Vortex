@@ -129,35 +129,13 @@ describe("dedupeGameExtensions", () => {
   const contender = (modId: number, gameId: number, timestamp = 0) =>
     makeAvailableExtension({ name: `ext-${modId}`, modId, type: "game", gameId, timestamp });
 
-  it("keeps the most endorsed extension of a contested game", () => {
-    const broken = contender(1361, 1955);
-    const curated = contender(1547, 1955);
-
-    const result = dedupeGameExtensions([broken, curated], { 1361: 2, 1547: 43 });
-    expect(result).toEqual([curated]);
-  });
-
-  it("breaks endorsement ties by newest upload", () => {
-    const older = contender(1, 7, 1000);
-    const newer = contender(2, 7, 2000);
-
-    expect(dedupeGameExtensions([newer, older], {})).toEqual([newer]);
-  });
-
-  it("treats a missing endorsement count as zero", () => {
-    const unknown = contender(1, 7, 2000);
-    const endorsed = contender(2, 7, 1000);
-
-    expect(dedupeGameExtensions([unknown, endorsed], { 2: 1 })).toEqual([endorsed]);
-  });
-
   it("keeps uncontested games and preserves order", () => {
     const solo = contender(1, 7);
     const winner = contender(2, 8);
     const loser = contender(3, 8);
     const anotherSolo = contender(4, 9);
 
-    const result = dedupeGameExtensions([solo, winner, loser, anotherSolo], { 2: 5 });
+    const result = dedupeGameExtensions([solo, winner, loser, anotherSolo]);
     expect(result).toEqual([solo, winner, anotherSolo]);
   });
 
@@ -170,7 +148,7 @@ describe("dedupeGameExtensions", () => {
     });
     const unresolved = makeAvailableExtension({ name: "unresolved", modId: 7, type: "game" });
 
-    const result = dedupeGameExtensions([theme, translation, unresolved], {});
+    const result = dedupeGameExtensions([theme, translation, unresolved]);
     expect(result).toEqual([theme, translation, unresolved]);
   });
 });
