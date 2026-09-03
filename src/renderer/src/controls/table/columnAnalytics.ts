@@ -56,9 +56,9 @@ export const columnsOf = ({
 
 /**
  * Says which columns a table is showing, so that a decision to drop one rests on how
- * many installs still have it rather than on guesswork. One event per table per session
- * keeps the answer per-install: the page can be left and come back to any number of
- * times without weighting one user's layout more than another's.
+ * many installs still have it rather than on guesswork. One event per table per game
+ * per session keeps the answer per-install: the page can be left and come back to any
+ * number of times without weighting one user's layout more than another's.
  */
 const columnsViewedEvent = (table: string, { visible, hidden }: ITableColumns): MixpanelEvent => ({
   eventName: "app_table_columns_viewed",
@@ -80,31 +80,47 @@ const columnToggledEvent = (table: string, column: string, visible: boolean): Mi
 });
 
 /**
- * Tables whose columns this session has already reported. Module scope, so it is the
+ * Table and game pairs this session has already reported. Module scope, so it is the
  * window's lifetime that bounds it: a reload is a new session and reports again, which
  * is the same thing every other per-session count here means.
  */
 const reported = new Set<string>();
 
+/**
+ * Keyed by game as well as table, because game extensions contribute columns and those
+ * are the ones that differ from one game to the next. Keyed on the table alone, a user
+ * who switched game mid-session reported nothing the second time and their only snapshot
+ * was stamped with whichever game they happened to open first.
+ *
+ * Neither a game id nor a table id contains a colon, so the two can't run together.
+ */
+const reportKey = (table: string, game: string | undefined): string => `${game ?? "none"}:${table}`;
+
 /** Forgets what this session reported. For tests; a session has no reason to. */
 export const resetReportedColumns = (): void => reported.clear();
 
 /**
- * Reports `table`'s columns, once per session. Silent on a table showing nothing yet:
- * attributes arrive from extensions and can be gated on state, so an empty list means
- * the set hasn't settled rather than that the user hid everything — and the table
- * refuses to hide its last column anyway.
+ * Reports `table`'s columns, once per game per session. Silent on a table showing nothing
+ * yet: attributes arrive from extensions and can be gated on state, so an empty list means
+ * the set hasn't settled rather than that the user hid everything — and the table refuses
+ * to hide its last column anyway.
+ *
+ * `game` bounds the gate only. What the event is stamped with is mixpanel's `game_id`
+ * super property, which the analytics layer keeps in step with the active game.
  */
 export const emitTableColumnsViewed = (
   api: IExtensionApi,
   table: string,
+  game: string | undefined,
   columns: ITableColumns,
 ): void => {
-  if (columns.visible.length === 0 || reported.has(table)) {
+  const key = reportKey(table, game);
+
+  if (columns.visible.length === 0 || reported.has(key)) {
     return;
   }
 
-  reported.add(table);
+  reported.add(key);
   api.events.emit("analytics-track-mixpanel-event", columnsViewedEvent(table, columns));
 };
 

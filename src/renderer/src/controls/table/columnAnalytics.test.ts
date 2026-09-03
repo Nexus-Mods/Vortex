@@ -25,6 +25,9 @@ function harness() {
   return { api: { events: emitter } as unknown as IExtensionApi, events };
 }
 
+/** The active game the plain cases report under; the per-game cases name their own. */
+const GAME = "skyrimse";
+
 const attribute = (
   id: string,
   overrides: {
@@ -108,7 +111,10 @@ describe("table column analytics", () => {
     it("says which columns are on show, which are off, and how many there are", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "mods", { visible: ["name", "version"], hidden: ["author"] });
+      emitTableColumnsViewed(h.api, "mods", GAME, {
+        visible: ["name", "version"],
+        hidden: ["author"],
+      });
 
       expect(h.events).toHaveLength(1);
       expect(h.events[0].eventName).toBe("app_table_columns_viewed");
@@ -123,8 +129,8 @@ describe("table column analytics", () => {
     it("reports a table once a session, however often the page is opened", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "mods", { visible: ["name"], hidden: [] });
-      emitTableColumnsViewed(h.api, "mods", { visible: ["name", "version"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name", "version"], hidden: [] });
 
       expect(h.events).toHaveLength(1);
     });
@@ -132,8 +138,8 @@ describe("table column analytics", () => {
     it("reports each table separately", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "mods", { visible: ["name"], hidden: [] });
-      emitTableColumnsViewed(h.api, "downloads", { visible: ["filename"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "downloads", GAME, { visible: ["filename"], hidden: [] });
 
       expect(h.events.map((event) => event.properties.table)).toStrictEqual(["mods", "downloads"]);
     });
@@ -145,11 +151,11 @@ describe("table column analytics", () => {
     it("gates on the id it is handed, so tables sharing a layout id each report", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "collection-mods-edit", {
+      emitTableColumnsViewed(h.api, "collection-mods-edit", GAME, {
         visible: ["name", "phase"],
         hidden: ["category"],
       });
-      emitTableColumnsViewed(h.api, "collection-mods-view", {
+      emitTableColumnsViewed(h.api, "collection-mods-view", GAME, {
         visible: ["name", "uploader"],
         hidden: [],
       });
@@ -164,13 +170,47 @@ describe("table column analytics", () => {
       ]);
     });
 
+    // Game extensions contribute columns, and those are the ones that differ from one game
+    // to the next. Keyed on the table alone, a user who switched game mid-session reported
+    // nothing the second time and their only snapshot was stamped with the first game.
+    it("reports a table again for a game it hasn't been reported for", () => {
+      const h = harness();
+
+      emitTableColumnsViewed(h.api, "mods", "skyrimse", { visible: ["name", "esp"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", "stardewvalley", { visible: ["name"], hidden: [] });
+
+      expect(h.events.map((event) => event.properties.visible_columns)).toStrictEqual([
+        ["name", "esp"],
+        ["name"],
+      ]);
+    });
+
+    it("still reports a table once for a game it has been reported for", () => {
+      const h = harness();
+
+      emitTableColumnsViewed(h.api, "mods", "skyrimse", { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", "stardewvalley", { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", "skyrimse", { visible: ["name", "esp"], hidden: [] });
+
+      expect(h.events).toHaveLength(2);
+    });
+
+    it("counts no active game as a game of its own", () => {
+      const h = harness();
+
+      emitTableColumnsViewed(h.api, "extensions", undefined, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "extensions", undefined, { visible: ["name"], hidden: [] });
+
+      expect(h.events).toHaveLength(1);
+    });
+
     it("says nothing about a table with no columns yet, and reports it once it has some", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "mods", { visible: [], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: [], hidden: [] });
       expect(h.events).toHaveLength(0);
 
-      emitTableColumnsViewed(h.api, "mods", { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name"], hidden: [] });
       expect(h.events).toHaveLength(1);
     });
   });

@@ -17,6 +17,7 @@ import {
   setCollapsedGroups,
   setGroupingAttribute,
 } from "../actions/tables";
+import { activeGameId } from "../extensions/profile_management/selectors";
 import smoothScroll from "../smoothScroll";
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IAttributeState } from "../types/IAttributeState";
@@ -1652,7 +1653,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   /**
    * Says which of this table's columns the user has in front of them, so the case for
    * dropping one can be made from how many installs still show it. See
-   * {@link emitTableColumnsViewed} for why this happens once a session.
+   * {@link emitTableColumnsViewed} for why this happens once a game a session.
+   *
+   * The game is read here rather than taken from props so it is the one in effect when
+   * the debounce fires, which is what the columns being reported were built from.
    */
   private reportColumns() {
     const { analyticsId, columnBlacklist, objects, tableId } = this.props;
@@ -1660,6 +1664,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     emitTableColumnsViewed(
       this.context.api,
       analyticsId ?? tableId,
+      activeGameId(this.context.api.getState()),
       columnsOf({
         attributes: objects,
         visible: this.mVisibleAttributes ?? [],

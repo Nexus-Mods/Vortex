@@ -25,7 +25,7 @@ app_toolbar_pins_reset { toolbar } // the whole toolbar back to defaults, so no 
 
 Table
 
-app_table_columns_viewed { table, visible_columns, hidden_columns, visible_column_count } // once per table per session
+app_table_columns_viewed { table, visible_columns, hidden_columns, visible_column_count } // once per table per game per session
 app_table_column_toggled { table, column, visible } // visible = the state moved to
 // table = mods | downloads | extensions | collection-mods-edit | collection-mods-view |
 // collection-add-mods
@@ -37,7 +37,12 @@ app_table_column_toggled { table, column, visible } // visible = the state moved
 // a column in neither list was never offered here: no extension provides it, or its own
 // condition said no. Attributes that can't be a column (details pane, inline) are left out
 // of both, and toggling one is not an event
-// once per session, so the answer stays per install however often the page is opened
+// once per game a session, so the answer stays per install however often the page is
+// opened — and a user who switches game reports again rather than leaving their only
+// snapshot stamped with whichever game they opened first. game_id comes from the super
+// property, so it isn't in the event's own fields
+// game extensions contribute columns, so the same table is a different set of columns
+// from one game to the next, which is what makes the per-game breakdown worth having
 
 Mods
 
