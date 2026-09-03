@@ -66,11 +66,14 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.setModArchiveId as any]: (state, payload) => {
       const { gameId, modId, archiveId } = payload;
+      if (state[gameId]?.[modId] === undefined) {
+        return state;
+      }
       return setSafe(state, [gameId, modId, "archiveId"], archiveId);
     },
     [actions.setModInstallationPath as any]: (state, payload) => {
       const { gameId, modId, installPath } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+      if (state[gameId]?.[modId] === undefined) {
         return state;
       }
       return setSafe(state, [gameId, modId, "installationPath"], installPath);

@@ -1,7 +1,12 @@
 import * as path from "path";
 
 import { mdiDownload } from "@mdi/js";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+  VortexError,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
@@ -47,6 +52,7 @@ import extendAPI from "./util/extendApi";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
 import queryInfo from "./util/queryDLInfo";
+import { refreshDownloads } from "./util/refreshDownloads";
 import setDownloadGames from "./util/setDownloadGames";
 import type { IDownloadViewProps } from "./views/DownloadView";
 import DownloadView from "./views/DownloadView";
@@ -71,37 +77,6 @@ function withAddInProgress(fileName: string, cb: () => PromiseLike<void>): Promi
   return PromiseBB.resolve(cb()).finally(() => {
     addLocalInProgress.delete(fileName);
   });
-}
-
-function refreshDownloads(
-  downloadPath: string,
-  knownDLs: string[],
-  normalize: (input: string) => string,
-  onAddDownload: (name: string) => PromiseBB<void>,
-  onRemoveDownload: (name: string) => PromiseBB<void>,
-  confirmElevation: () => PromiseBB<void>,
-) {
-  return fs
-    .ensureDirWritableAsync(downloadPath, confirmElevation)
-    .then(() => fs.readdirAsync(downloadPath))
-    .filter((filePath: string) => knownArchiveExt(filePath))
-    .filter((filePath: string) =>
-      fs
-        .statAsync(path.join(downloadPath, filePath))
-        .then((stat) => !stat.isDirectory())
-        .catch(() => false),
-    )
-    .then((downloadNames: string[]) => {
-      const dlsNormalized = downloadNames.map(normalize);
-      const addedDLs = downloadNames.filter(
-        (name: string, idx: number) => knownDLs.indexOf(dlsNormalized[idx]) === -1,
-      );
-      const removedDLs = knownDLs.filter((name: string) => dlsNormalized.indexOf(name) === -1);
-
-      return PromiseBB.map(addedDLs, onAddDownload).then(() =>
-        PromiseBB.map(removedDLs, onRemoveDownload),
-      );
-    });
 }
 
 function attributeExtractor(input: any) {
@@ -311,8 +286,12 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
 
   let nameIdMap: { [name: string]: string } = {};
-  let downloads = {};
+  // dlId -> download record
+  let downloads: Record<string, IDownload> = {};
   let downloadChangeHandler: (evt: string, fileName: string) => void;
+  // when the folder turns out to be unavailable nothing gets reconciled, so
+  // there is also nothing to watch and no refresh to announce
+  let folderAvailable = true;
   return (removeInvalidDownloads(api, gameId) as any)
     .then(() => removeInvalidFileExts(api, gameId))
     .then(() =>
@@ -338,10 +317,13 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         normalize,
       );
 
+      // Get the downloads for this game, but only the ones that
+      // have a valid localPath.
       const knownDLs = Object.keys(downloads)
         .filter(
           (dlId) =>
             getDownloadGames(downloads[dlId])[0] === gameId &&
+            downloads[dlId].localPath !== undefined &&
             !isTempDownloadName(downloads[dlId].localPath),
         )
         .map((dlId) => normalize(downloads[dlId].localPath || ""));
@@ -379,15 +361,30 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
               ],
             );
           }),
-      )
-        .catch(UserCanceled, () => null)
-        .catch((err) => {
-          api.showErrorNotification("Failed to refresh download directory", err, {
-            allowReport: err.code !== "EPERM",
-          });
+      ).catch((err: unknown) => {
+        if (err instanceof UserCanceled) {
+          return null;
+        }
+        if (err instanceof VortexError && err.data.kind === "fs:not-found") {
+          // reconciling against a folder Vortex can't see would delete every
+          // download record for this game, so reconciliation is skipped
+          folderAvailable = false;
+          api.showErrorNotification(
+            "Download folder is not available",
+            getErrorMessageOrDefault(err),
+            { allowReport: false },
+          );
+          return null;
+        }
+        api.showErrorNotification("Failed to refresh download directory", err, {
+          allowReport: getErrorCode(err) !== "EPERM",
         });
+      });
     })
     .then(() => {
+      if (!folderAvailable) {
+        return;
+      }
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
       api.events.emit("downloads-refreshed");
     })

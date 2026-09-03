@@ -50,14 +50,13 @@ import {
   needToDeployForGame,
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+import { truthy } from "../../util/util";
 import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
 import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
 import {
-  forgetMod,
   removeProfile,
   setProfile,
   setProfileActivated,
@@ -73,6 +72,7 @@ import { syncFromProfile, syncToProfile } from "./sync";
 import { CorruptActiveProfile } from "./types/Errors";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
+import { sanitizeProfile } from "./util/sanitizeProfile";
 import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
 import TransferDialog from "./views/TransferDialog";
@@ -89,24 +89,6 @@ function profilePath(profile: IProfile): string {
 
 function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): PromiseBB<void> {
   return fs.ensureDirAsync(profilePath(currentProfile));
-}
-
-function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
-  const state: IState = store.getState();
-  const batched = [];
-  Object.keys(profile.modState || {}).forEach((modId) => {
-    if (getSafe(state.persistent.mods, [profile.gameId, modId], undefined) === undefined) {
-      log("debug", "removing info of missing mod from profile", {
-        profile: profile.id,
-        game: profile.gameId,
-        modId,
-      });
-      batched.push(forgetMod(profile.id, modId));
-    }
-  });
-  if (batched.length > 0) {
-    batchDispatch(store, batched);
-  }
 }
 
 function refreshProfile(

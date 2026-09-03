@@ -896,7 +896,10 @@ class Application {
     };
 
     // Register handler so renderer can request metadata via invoke (avoids
-    // race conditions with the fire-and-forget app:init send pattern)
+    // race conditions with the fire-and-forget app:init send pattern).
+    // Clear handler first to avoid duplicate registration if setupPersistence()
+    // is called more than once (e.g. after a repair).
+    ipcMain.removeHandler("app:getInitMetadata");
     betterIpcMain.handle("app:getInitMetadata", () => this.mAppMetadata!);
 
     // 1. Create LevelPersist for the base path
