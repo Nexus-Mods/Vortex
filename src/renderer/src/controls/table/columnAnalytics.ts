@@ -64,9 +64,9 @@ const columnsViewedEvent = (table: string, { visible, hidden }: ITableColumns): 
   eventName: "app_table_columns_viewed",
   properties: {
     table,
-    columns: visible,
+    visible_columns: visible,
     hidden_columns: hidden,
-    column_count: visible.length,
+    visible_column_count: visible.length,
   },
 });
 

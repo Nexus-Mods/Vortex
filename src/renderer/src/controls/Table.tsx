@@ -56,6 +56,8 @@ export interface ITableRowAction extends IActionDefinition {
 
 export interface IBaseProps {
   tableId: string;
+  /** This table's id in the analytics. Defaults to `tableId`; set where two tables share one. */
+  analyticsId?: string;
   data: { [rowId: string]: any };
   // cheap-ass way to force the table to refresh its data cache. This will only affect
   // 'volatile' fields as normal data fields would prompt a table refresh anyway
@@ -1653,11 +1655,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
    * {@link emitTableColumnsViewed} for why this happens once a session.
    */
   private reportColumns() {
-    const { columnBlacklist, objects, tableId } = this.props;
+    const { analyticsId, columnBlacklist, objects, tableId } = this.props;
 
     emitTableColumnsViewed(
       this.context.api,
-      tableId,
+      analyticsId ?? tableId,
       columnsOf({
         attributes: objects,
         visible: this.mVisibleAttributes ?? [],
@@ -1667,14 +1669,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private setAttributeVisible = (attribute: ITableAttribute, visible: boolean) => {
-    const { onSetAttributeVisible, tableId } = this.props;
+    const { analyticsId, onSetAttributeVisible, tableId } = this.props;
 
     // The same menu toggles attributes that are never columns, and hiding one of those
     // says nothing about the columns this is counting.
     if (isColumn(attribute)) {
-      emitTableColumnToggled(this.context.api, tableId, attribute.id, visible);
+      emitTableColumnToggled(this.context.api, analyticsId ?? tableId, attribute.id, visible);
     }
 
+    // The layout is stored against `tableId`, so that stays whatever the numbers call it.
     onSetAttributeVisible(tableId, attribute.id, visible);
   };
 

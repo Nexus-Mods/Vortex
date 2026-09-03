@@ -25,12 +25,15 @@ app_toolbar_pins_reset { toolbar } // the whole toolbar back to defaults, so no 
 
 Table
 
-app_table_columns_viewed { table, columns, hidden_columns, column_count } // once per table per session
+app_table_columns_viewed { table, visible_columns, hidden_columns, visible_column_count } // once per table per session
 app_table_column_toggled { table, column, visible } // visible = the state moved to
-// table = the id the table stores its layout against: mods | downloads | extensions |
-// collection-mods | collection-add-mods
+// table = mods | downloads | extensions | collection-mods-edit | collection-mods-view |
+// collection-add-mods
+// usually the id the table stores its layout against, except where two tables share one:
+// authoring a collection and viewing one are both `collection-mods` for layout but are
+// different sets of columns, so they report under their own ids and neither is dropped
 // column ids are the attribute ids that layout is stored against, never the translated header
-// columns = on show, in the order drawn; hidden_columns = offered by the toggle menu but off
+// visible_columns = on show, in the order drawn; hidden_columns = offered by the toggle menu but off
 // a column in neither list was never offered here: no extension provides it, or its own
 // condition said no. Attributes that can't be a column (details pane, inline) are left out
 // of both, and toggling one is not an event

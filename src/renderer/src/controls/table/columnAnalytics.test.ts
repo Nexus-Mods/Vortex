@@ -114,9 +114,9 @@ describe("table column analytics", () => {
       expect(h.events[0].eventName).toBe("app_table_columns_viewed");
       expect(h.events[0].properties).toStrictEqual({
         table: "mods",
-        columns: ["name", "version"],
+        visible_columns: ["name", "version"],
         hidden_columns: ["author"],
-        column_count: 2,
+        visible_column_count: 2,
       });
     });
 
@@ -136,6 +136,32 @@ describe("table column analytics", () => {
       emitTableColumnsViewed(h.api, "downloads", { visible: ["filename"], hidden: [] });
 
       expect(h.events.map((event) => event.properties.table)).toStrictEqual(["mods", "downloads"]);
+    });
+
+    // Two tables can share the `tableId` their layout is stored against — authoring a
+    // collection and viewing one are both `collection-mods` — so the gate keys on the id
+    // it is handed, not on the table. Handing it one id for two different sets of columns
+    // is what would report whichever came first and silently drop the other.
+    it("gates on the id it is handed, so tables sharing a layout id each report", () => {
+      const h = harness();
+
+      emitTableColumnsViewed(h.api, "collection-mods-edit", {
+        visible: ["name", "phase"],
+        hidden: ["category"],
+      });
+      emitTableColumnsViewed(h.api, "collection-mods-view", {
+        visible: ["name", "uploader"],
+        hidden: [],
+      });
+
+      expect(h.events.map((event) => event.properties.table)).toStrictEqual([
+        "collection-mods-edit",
+        "collection-mods-view",
+      ]);
+      expect(h.events.map((event) => event.properties.visible_columns)).toStrictEqual([
+        ["name", "phase"],
+        ["name", "uploader"],
+      ]);
     });
 
     it("says nothing about a table with no columns yet, and reports it once it has some", () => {

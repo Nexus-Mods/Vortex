@@ -974,6 +974,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       <div className="collection-mods-container">
         <Table
           actions={this.mActions}
+          analyticsId="collection-mods-edit"
           data={entries}
           showDetails={false}
           staticElements={this.mColumns}
