@@ -13,6 +13,7 @@ import { languageCodeByEnglishName } from "../settings_interface/languagemap";
  */
 export type VortexAsset = components["schemas"]["VortexAsset"];
 export type VortexExtension = components["schemas"]["VortexExtension"];
+export type VortexTranslation = components["schemas"]["VortexTranslation"];
 export type VortexData = components["schemas"]["VortexData"];
 
 /**
@@ -87,7 +88,7 @@ export function mapAvailableExtensions(data: VortexData): IAvailableExtension[] 
     ...data.translations.map((translation) =>
       toAvailableExtension(translation, {
         type: "translation",
-        language: parseTranslationLocale(translation.name),
+        language: translation.locale ?? parseTranslationLocale(translation.name),
       }),
     ),
   ];

@@ -173,7 +173,7 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
     async getVortexExtensions(): Promise<{
       extensions: components["schemas"]["VortexExtension"][];
       themes: components["schemas"]["VortexAsset"][];
-      translations: components["schemas"]["VortexAsset"][];
+      translations: components["schemas"]["VortexTranslation"][];
     }> {
       const { data, error, response } = await client.GET("/vortex/extensions");
       if (error) throw toV3Error(error, response);

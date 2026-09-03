@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { makeAvailableExtension } from "../../test-utils/builders";
-import type { VortexAsset, VortexData, VortexExtension } from "./availableExtensions";
+import type {
+  VortexAsset,
+  VortexData,
+  VortexExtension,
+  VortexTranslation,
+} from "./availableExtensions";
 import {
   dedupeGameExtensions,
   mapAvailableExtensions,
@@ -24,6 +29,11 @@ function makeAsset(overrides: Partial<VortexAsset> = {}): VortexAsset {
 
 function makeWireExtension(overrides: Partial<VortexExtension> = {}): VortexExtension {
   return { ...makeAsset(), type: "other", ...overrides };
+}
+
+function makeTranslation(overrides: Partial<VortexTranslation> = {}): VortexTranslation {
+  const { locale = "en", ...rest } = overrides;
+  return { ...makeAsset(), locale, ...rest };
 }
 
 function makeData(overrides: Partial<VortexData> = {}): VortexData {
@@ -60,13 +70,29 @@ describe("mapAvailableExtensions", () => {
   it("maps themes and translations to their extension types", () => {
     const data = makeData({
       themes: [makeAsset({ name: "Some Theme" })],
-      translations: [makeAsset({ name: "German Translation" })],
+      translations: [makeTranslation({ locale: "de" })],
     });
 
     const [theme, translation] = mapAvailableExtensions(data);
     expect(theme.type).toBe("theme");
     expect(translation.type).toBe("translation");
     expect(translation.language).toBe("de");
+  });
+
+  it("passes a BCP 47 script subtag from the API through unchanged", () => {
+    const data = makeData({
+      translations: [makeTranslation({ locale: "zh-Hans" })],
+    });
+
+    expect(mapAvailableExtensions(data)[0].language).toBe("zh-Hans");
+  });
+
+  it("falls back to parseTranslationLocale when the API locale is null", () => {
+    const data = makeData({
+      translations: [makeTranslation({ locale: null, name: "Vortex Translation (pt-BR)" })],
+    });
+
+    expect(mapAvailableExtensions(data)[0].language).toBe("pt-BR");
   });
 
   it("drops entries whose ids do not parse", () => {
