@@ -78,6 +78,7 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
   // on the first effect run and trigger the auto-open.
   const prevIdsRef = useRef<Set<string>>(new Set());
   const [expand, setExpand] = useState<string | undefined>(undefined);
+  const [isRinging, setIsRinging] = useState(false);
 
   const filtered = useNotificationFiltering({
     notifications,
@@ -100,16 +101,20 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
     }
   }, [popoverOpen, expand]);
 
-  // Auto-open popover when new notifications arrive, for the types worth interrupting for.
+  // Auto-open popover when new notifications arrive, for the types worth interrupting for,
+  // and ring the bell for the one type that arrives without the tray opening itself.
   useEffect(() => {
     const currentIds = new Set(notifications.map((n) => n.id));
-    const hasNew = notifications.some(
-      (n) => !prevIdsRef.current.has(n.id) && !QUIET_TYPES.includes(n.type),
-    );
+    const isNew = (notification: INotification) => !prevIdsRef.current.has(notification.id);
+    const hasNew = notifications.some((n) => isNew(n) && !QUIET_TYPES.includes(n.type));
+    const hasNewActivity = notifications.some((n) => isNew(n) && n.type === "activity");
+
     prevIdsRef.current = currentIds;
 
     if (hasNew && !popoverOpen && buttonRef.current) {
       buttonRef.current.click();
+    } else if (hasNewActivity && !popoverOpen) {
+      setIsRinging(true);
     }
   }, [notifications, popoverOpen]);
 
@@ -131,11 +136,15 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
         as={SpineButton}
         border="hidden"
         disabled={!visibleCount}
+        iconClassName={joinClasses("origin-top", {
+          "motion-safe:animate-bell-ring": isRinging,
+        })}
         iconPath={popoverOpen ? mdiBell : mdiBellOutline}
         isActive={popoverOpen}
         ref={buttonRef}
         title="Notifications"
         tooltipDisabled={popoverOpen}
+        onAnimationEnd={() => setIsRinging(false)}
         onClick={() => {
           api.events.emit(
             "analytics-track-click-event",

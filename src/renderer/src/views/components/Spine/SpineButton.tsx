@@ -20,6 +20,7 @@ const BORDER_CLASSES: Record<SpineButtonBorder, string> = {
 interface ISpineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   border?: SpineButtonBorder;
   className?: string;
+  iconClassName?: string;
   iconPath?: false | string;
   isActive?: boolean;
   isCircular?: boolean;
@@ -39,6 +40,7 @@ export const SpineButton = forwardRef<HTMLButtonElement, PropsWithChildren<ISpin
       border = "visible",
       children,
       className,
+      iconClassName,
       iconPath,
       isActive,
       isCircular,
@@ -63,7 +65,13 @@ export const SpineButton = forwardRef<HTMLButtonElement, PropsWithChildren<ISpin
         {...props}
         ref={ref}
       >
-        {!!iconPath && <Icon className="transition-colors" path={iconPath} size="lg" />}
+        {!!iconPath && (
+          <Icon
+            className={joinClasses(["transition-colors", iconClassName])}
+            path={iconPath}
+            size="lg"
+          />
+        )}
 
         {children}
       </button>

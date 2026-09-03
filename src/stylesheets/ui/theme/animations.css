@@ -1,0 +1,25 @@
+@theme {
+    --animate-bell-ring: bell-ring 0.8s ease-out;
+
+    @keyframes bell-ring {
+        0%,
+        100% {
+            transform: rotate(0deg);
+        }
+        15% {
+            transform: rotate(9deg);
+        }
+        32% {
+            transform: rotate(-7deg);
+        }
+        49% {
+            transform: rotate(5deg);
+        }
+        66% {
+            transform: rotate(-3deg);
+        }
+        83% {
+            transform: rotate(1.5deg);
+        }
+    }
+}

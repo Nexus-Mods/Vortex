@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -42,13 +42,18 @@ const notification = (type: NotificationType): INotification => ({
   message: `a ${type}`,
 });
 
+const RING = "motion-safe:animate-bell-ring";
+
 const renderComponent = (types: NotificationType[]) => {
   mocks.notifications = types.map(notification);
   const { container } = render(<Notifications />);
+  const bell = within(container).getByRole("button", { name: "Notifications" });
 
   return {
     container,
-    bell: within(container).getByRole("button", { name: "Notifications" }),
+    bell,
+    /** The bell glyph, the only svg on the button — the pip beside it is a span. */
+    glyph: () => bell.querySelector("svg"),
     pip: () => within(container).queryByTestId("notification-pip"),
   };
 };
@@ -163,6 +168,49 @@ describe("Notifications trigger", () => {
 
     await waitFor(() => {
       expect(bell).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+
+  // LAZ-1041: an `activity` notification reaches the tray without opening it, so the bell
+  // is the only thing that can report it. Everything else either opens the tray itself or
+  // is invisible, and ringing on top of that would be noise.
+  describe("ringing", () => {
+    it("rings for an activity notification, which the tray won't open for", () => {
+      const { glyph } = renderComponent(["activity"]);
+      expect(glyph()).toHaveClass(RING);
+    });
+
+    it.each<NotificationType>(["error", "warning", "info", "success"])(
+      "does not ring for a %s notification, which opens the tray instead",
+      (type) => {
+        const { bell, glyph } = renderComponent([type]);
+        expect(bell).toHaveAttribute("aria-expanded", "true");
+        expect(glyph()).not.toHaveClass(RING);
+      },
+    );
+
+    it("does not ring for a silent notification, which the user never sees", () => {
+      const { glyph } = renderComponent(["silent"]);
+      expect(glyph()).not.toHaveClass(RING);
+    });
+
+    it("does not ring when nothing is waiting", () => {
+      const { glyph } = renderComponent([]);
+      expect(glyph()).not.toHaveClass(RING);
+    });
+
+    it("stops ringing once the swing has finished, so the next one can ring", () => {
+      const { glyph } = renderComponent(["activity"]);
+      expect(glyph()).toHaveClass(RING);
+
+      fireEvent.animationEnd(glyph()!);
+
+      expect(glyph()).not.toHaveClass(RING);
+    });
+
+    it("swings from the bell's mounting rather than its middle", () => {
+      const { glyph } = renderComponent(["activity"]);
+      expect(glyph()).toHaveClass("origin-top");
     });
   });
 
