@@ -1,4 +1,4 @@
-import { render, within } from "@testing-library/react";
+import { render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import type * as ReactRedux from "react-redux";
@@ -201,6 +201,123 @@ describe("DownloadButton", () => {
       const { button } = renderComponent();
       expect(button).toHaveTextContent("mb/s");
       expect(button).not.toHaveTextContent("paused");
+    });
+  });
+
+  // LAZ-1041: the arrow and the readout share the middle of the button, so they take
+  // turns — the arrow leaves downwards, then the readout fades in; the readout fades out,
+  // then the arrow drops back in from the top. Headless UI's Transition owns the mounting
+  // and the leave, and its `afterLeave` is what lets the arrow back.
+  describe("handover", () => {
+    const renderWith = (downloads: IDownloadFixture[], speedMBps = 0) => {
+      setStore(downloads, speedMBps);
+      const { container, rerender } = render(<DownloadButton />);
+
+      return {
+        /** The arrow, which Transition unmounts once it has finished leaving. */
+        arrow: () => container.querySelector("svg[role='presentation']"),
+        readout: () => within(container).queryByText(/mb\/s|mins|paused/),
+        update: (next: IDownloadFixture[], speed = 0) => {
+          setStore(next, speed);
+          rerender(<DownloadButton />);
+        },
+      };
+    };
+
+    it("shows the arrow while nothing is downloading", () => {
+      const { arrow, readout } = renderWith([]);
+      expect(arrow()).toBeInTheDocument();
+      expect(readout()).toBeNull();
+    });
+
+    it("takes the arrow away once a download starts", async () => {
+      const { arrow, update } = renderWith([]);
+
+      update([{ state: "started", size: 1000, received: 250 }], 8.6);
+
+      await waitFor(() => expect(arrow()).toBeNull());
+    });
+
+    it("puts the readout up while a download runs", () => {
+      const { readout } = renderWith([{ state: "started", size: 1000, received: 250 }], 8.6);
+      expect(readout()).toBeInTheDocument();
+    });
+
+    it("brings the arrow back once the download ends", async () => {
+      const { arrow, update } = renderWith([{ state: "started", size: 1000, received: 250 }], 8.6);
+      await waitFor(() => expect(arrow()).toBeNull());
+
+      update([{ state: "finished", size: 1000, received: 1000 }]);
+
+      await waitFor(() => expect(arrow()).toBeInTheDocument());
+    });
+
+    // The download is gone by the time the readout is fading, so its live figures have
+    // fallen back to zero. Reading them would snap the number to 0.0 on the way out.
+    it("keeps the figure it was showing while it fades out", () => {
+      const { button, update } = (() => {
+        setStore([{ state: "started", size: 1000, received: 250 }], 8.6);
+        const { container, rerender } = render(<DownloadButton />);
+        return {
+          button: within(container).getByRole("button", { name: "Downloads" }),
+          update: (next: IDownloadFixture[], speed = 0) => {
+            setStore(next, speed);
+            rerender(<DownloadButton />);
+          },
+        };
+      })();
+
+      expect(button).toHaveTextContent("8.6");
+
+      update([{ state: "finished", size: 1000, received: 1000 }]);
+
+      expect(button).toHaveTextContent("8.6");
+      expect(button).not.toHaveTextContent("0.0");
+    });
+
+    it("keeps the arrow away while any download is still running", async () => {
+      const { arrow, update } = renderWith([{ state: "started", size: 1000, received: 250 }], 8.6);
+      await waitFor(() => expect(arrow()).toBeNull());
+
+      // One finishes while another is still going: the readout still has the button.
+      update(
+        [
+          { state: "finished", size: 500, received: 500 },
+          { state: "started", size: 1000, received: 400 },
+        ],
+        8.6,
+      );
+
+      await waitFor(() => expect(arrow()).toBeNull());
+    });
+
+    // A download is `init` from the moment it is queued, before any of it transfers. That
+    // is what keeps a collection's queue holding the button, rather than each of its
+    // files handing it back and taking it again.
+    it("counts a queued download as running, not just a transferring one", async () => {
+      const { arrow, readout, update } = renderWith([]);
+
+      update([{ state: "init", size: 1000, received: 0 }]);
+
+      expect(readout()).toBeInTheDocument();
+      await waitFor(() => expect(arrow()).toBeNull());
+    });
+
+    it("shows the figures it had rather than the zeroes an empty queue reports", () => {
+      setStore([{ state: "started", size: 1000, received: 250 }], 8.6);
+      const { container, rerender } = render(<DownloadButton />);
+      const button = within(container).getByRole("button", { name: "Downloads" });
+
+      setStore([{ state: "finished", size: 1000, received: 1000 }]);
+      rerender(<DownloadButton />);
+
+      expect(button).toHaveTextContent("8.6");
+      expect(button).not.toHaveTextContent("0.0");
+    });
+
+    it("labels a paused download rather than showing it a speed", () => {
+      const { readout } = renderWith([{ state: "paused", size: 1000, received: 250 }]);
+      expect(readout()).toHaveTextContent("paused");
     });
   });
 
