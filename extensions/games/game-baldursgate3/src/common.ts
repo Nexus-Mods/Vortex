@@ -80,6 +80,7 @@ export const INVALID_LO_MOD_TYPES = [
   "bg3-replacer",
   "bg3-loose",
   "dinput",
+  "bg3-se-config",
 ];
 
 export const IGNORE_PATTERNS = [path.join("**", "info.json")];
@@ -87,6 +88,7 @@ export const MOD_TYPE_LSLIB = "bg3-lslib-divine-tool";
 export const MOD_TYPE_BG3SE = "bg3-bg3se";
 export const MOD_TYPE_REPLACER = "bg3-replacer";
 export const MOD_TYPE_LOOSE = "bg3-loose";
+export const MOD_TYPE_SECONFIG = "bg3-se-config";
 
 export const ORIGINAL_FILES = new Set([
   "assets.pak",
@@ -113,3 +115,5 @@ export const ORIGINAL_FILES = new Set([
 export const LSLIB_FILES = new Set(["divine.exe", "lslib.dll"]);
 
 export const NOTIF_IMPORT_ACTIVITY = "bg3-loadorder-import-activity";
+
+export const SE_CONFIG_FILES = ["script extender", "se_config"];
