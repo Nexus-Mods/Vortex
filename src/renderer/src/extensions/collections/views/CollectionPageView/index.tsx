@@ -644,6 +644,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
                 <Panel.Body>
                   <Table
                     actions={this.mModActions}
+                    analyticsId="collection-mods-view"
                     data={itemRows}
                     showDetails={false}
                     staticElements={this.mAttributes}
