@@ -1,15 +1,16 @@
 import { useCallback, useMemo } from "react";
 
+import { log } from "@/util/log";
+import type { IStarterInfo } from "@/util/StarterInfo";
+
 import type { IExtensionApi } from "../../../types/api";
-import { log } from "../../../util/log";
 import { activeProfile } from "../../../util/selectors";
-import type { IStarterInfo } from "../../../util/StarterInfo";
 import StarterInfo from "../../../util/StarterInfo";
 import { useToolsData } from "./useToolsData";
 import { useToolsRunning } from "./useToolsRunning";
 import { useToolsValidation } from "./useToolsValidation";
 
-const MAX_VISIBLE_TOOLS = 5;
+const MAX_VISIBLE_TOOLS = 10;
 
 export type ShowErrorCallback = (
   message: string,
@@ -19,6 +20,7 @@ export type ShowErrorCallback = (
 
 export interface UseToolsResult {
   gameId: string | undefined;
+  gameName: string | undefined;
   visibleTools: IStarterInfo[];
   primaryStarter: IStarterInfo | undefined;
   primaryToolId: string | undefined;
@@ -127,11 +129,12 @@ export const useTools = (onShowError: ShowErrorCallback, api: IExtensionApi): Us
 
     log("info", `Enabled mods at game launch: ${enabledMods.length}`);
 
-    StarterInfo.run(primaryStarter as StarterInfo, api, onShowError);
+    StarterInfo.run(primaryStarter, api, onShowError);
   }, [primaryStarter, api, onShowError]);
 
   return {
     gameId,
+    gameName: gameStarter?.name,
     visibleTools,
     primaryStarter,
     primaryToolId,

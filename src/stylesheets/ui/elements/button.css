@@ -320,24 +320,4 @@
             width: calc(var(--spacing) * 6);
         }
     }
-
-    .nxm-button-lg {
-        min-width: calc(var(--spacing) * 24);
-        min-height: calc(var(--spacing) * 9);
-        padding-inline: calc(var(--spacing) * 3);
-
-        font-size: var(--text-body-lg);
-        line-height: var(--text-body-lg--line-height);
-        letter-spacing: var(--text-body-lg--letter-spacing);
-
-        & .nxm-button-icon {
-            width: calc(var(--spacing) * 5);
-            height: calc(var(--spacing) * 5);
-        }
-
-        &.nxm-button-icon-only {
-            min-width: 0;
-            width: calc(var(--spacing) * 9);
-        }
-    }
 }

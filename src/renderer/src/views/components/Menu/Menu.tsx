@@ -2,10 +2,11 @@ import React, { useState, type FC, useLayoutEffect, useRef, useEffect } from "re
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import { setOpenMainPage } from "../../../actions";
-import { usePagesContext, useWindowContext } from "../../../contexts";
-import { TooltipDelayGroup } from "../../../ui/components/tooltip/TooltipDelayGroup";
-import { joinClasses } from "../../../ui/utils/joinClasses";
+import { setOpenMainPage } from "@/actions";
+import { usePagesContext, useWindowContext } from "@/contexts";
+import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
 import { DownloadsMenuContent } from "./DownloadsMenuContent";
@@ -14,11 +15,11 @@ import { ToolsProvider, useToolsContext } from "./ToolsContext";
 import { ToolsSection } from "./ToolsSection";
 
 const toolPadding = {
-  1: "pb-28",
-  2: "pb-37.5",
-  3: "pb-47",
-  4: "pb-56.5",
-  5: "pb-66",
+  1: "pb-32",
+  2: "pb-42",
+  3: "pb-52",
+  4: "pb-62",
+  5: "pb-72",
 };
 
 const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
@@ -58,7 +59,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
       as="div"
       className={joinClasses([
         "relative -mt-1 flex shrink-0 flex-col pr-0.5 transition-[width]",
-        menuIsCollapsed ? "w-16" : "w-56",
+        menuIsCollapsed ? "w-16" : "w-55.5",
       ])}
     >
       {canScrollUp && (
@@ -69,7 +70,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
         <div
           className={joinClasses([
             "flex flex-col gap-y-0.5 pt-1 transition-[width]",
-            menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-50 pb-28",
+            menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-49 pb-34",
           ])}
         >
           {selection.type === "downloads" ? (

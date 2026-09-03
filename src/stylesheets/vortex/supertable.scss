@@ -205,10 +205,10 @@
             left: 0;
             right: 0;
             content: "";
-            height: 10px;
+            height: 6px;
             position: absolute;
             pointer-events: none;
-            background: linear-gradient(to bottom, rgb(0 0 0 / 50%), transparent);
+            background: linear-gradient(to bottom, rgb(0 0 0 / 30%), transparent);
         }
     }
 }

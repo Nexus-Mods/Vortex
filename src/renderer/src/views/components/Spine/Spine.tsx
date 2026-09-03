@@ -1,4 +1,4 @@
-import { mdiHome, mdiPlus } from "@mdi/js";
+import { mdiHome, mdiHomeOutline, mdiPlus } from "@mdi/js";
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -69,7 +69,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
       className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3"
     >
       <SpineButton
-        iconPath={mdiHome}
+        iconPath={selection.type === "home" ? mdiHome : mdiHomeOutline}
         isActive={selection.type === "home"}
         title="Home"
         onClick={selectHome}
