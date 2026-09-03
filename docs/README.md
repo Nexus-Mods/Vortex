@@ -26,6 +26,8 @@ Project and coding documentation. To set up and build Vortex, start with
 
 ## Subsystems
 
+- [extensions.md](extensions.md) - What an extension is, how core, bundled and user extensions load, the lifecycle and the registration surface
+- [game-support.md](game-support.md) - How a game comes to be supported: bundled extensions, stubs, GDL, community extensions, and how they are published and picked up
 - [mod-management/collections.md](mod-management/collections.md) - Collections and phased installation; phase invariants
 - [mod-management/EXTERNAL-CHANGES.md](mod-management/EXTERNAL-CHANGES.md) - The External Changes dialog: change types, actions, auto-resolution
 - [updater.md](updater.md) - How updates are detected, downloaded and applied; install types, the state machine, channels and the analytics funnel
@@ -34,6 +36,7 @@ Project and coding documentation. To set up and build Vortex, start with
 
 ## Building and shipping
 
+- [releasing.md](releasing.md) - Start here: the whole path from merged PR to a user, which doc owns each stage, plus the post-release automation, signing operations and announcing
 - [packaging/windows.md](packaging/windows.md) - Local unsigned installers, the pipeline, signed CI builds
 - [packaging/flatpak.md](packaging/flatpak.md) - Building and installing the Flatpak
 - [flatpak/technical.md](flatpak/technical.md) - Flatpak manifest and runtime details
