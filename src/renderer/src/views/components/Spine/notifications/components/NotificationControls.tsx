@@ -1,4 +1,4 @@
-import { mdiEyeOff, mdiClose } from "@mdi/js";
+import { mdiEyeOffOutline, mdiClose } from "@mdi/js";
 import React, { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -31,7 +31,7 @@ export const NotificationControls = ({
         <Button
           appearance="weak"
           brand="neutral"
-          leftIconPath={mdiEyeOff}
+          leftIconPath={mdiEyeOffOutline}
           size="sm"
           title={t("Never show again")}
           onClick={onSuppress}

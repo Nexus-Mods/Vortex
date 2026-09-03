@@ -1,4 +1,4 @@
-import { mdiDownload } from "@mdi/js";
+import { mdiDownload, mdiDownloadOutline } from "@mdi/js";
 import React from "react";
 import { useSelector } from "react-redux";
 
@@ -145,7 +145,7 @@ export const DownloadButton = () => {
       // The ring is the outline while a download runs, so the border steps aside for it.
       border={showProgress ? "none" : "visible"}
       className="group/download flex-col gap-y-0.5"
-      iconPath={!showProgress && mdiDownload}
+      iconPath={!showProgress && (isActive ? mdiDownload : mdiDownloadOutline)}
       isActive={isActive}
       title="Downloads"
       onClick={() => selectDownloads()}

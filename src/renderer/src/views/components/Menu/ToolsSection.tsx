@@ -155,15 +155,15 @@ export const ToolsSection: FC<React.PropsWithChildren<ToolsSectionProps>> = ({ i
   return (
     <div
       className={joinClasses([
-        "absolute bottom-3 left-3 z-2 flex flex-col items-center gap-y-3 shadow-lg transition-[left,width]",
-        menuIsCollapsed ? "w-10" : "w-50",
+        "absolute bottom-3 left-3 z-2 flex flex-col items-center gap-y-3 transition-[left,width]",
+        menuIsCollapsed ? "w-10" : "w-49",
       ])}
     >
       {!!visibleTools.length && (
         <div
           className={joinClasses([
-            "flex flex-wrap items-center gap-1 border-b border-stroke-weak pb-3 transition-[translate,opacity]",
-            menuIsCollapsed ? "w-10 justify-center" : "w-full",
+            "flex items-center gap-1 border-b border-stroke-weak pb-3 transition-[translate,opacity]",
+            menuIsCollapsed ? "w-10 flex-wrap justify-center" : "w-full flex-wrap-reverse",
             isAnimating ? "translate-y-6 opacity-0 duration-0" : "duration-200",
           ])}
         >

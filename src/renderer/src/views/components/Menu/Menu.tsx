@@ -59,7 +59,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
       as="div"
       className={joinClasses([
         "relative -mt-1 flex shrink-0 flex-col pr-0.5 transition-[width]",
-        menuIsCollapsed ? "w-16" : "w-56",
+        menuIsCollapsed ? "w-16" : "w-55.5",
       ])}
     >
       {canScrollUp && (
@@ -70,7 +70,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
         <div
           className={joinClasses([
             "flex flex-col gap-y-0.5 pt-1 transition-[width]",
-            menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-50 pb-34",
+            menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-49 pb-34",
           ])}
         >
           {selection.type === "downloads" ? (

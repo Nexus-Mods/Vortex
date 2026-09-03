@@ -10,7 +10,7 @@ import { useToolsData } from "./useToolsData";
 import { useToolsRunning } from "./useToolsRunning";
 import { useToolsValidation } from "./useToolsValidation";
 
-const MAX_VISIBLE_TOOLS = 5;
+const MAX_VISIBLE_TOOLS = 10;
 
 export type ShowErrorCallback = (
   message: string,

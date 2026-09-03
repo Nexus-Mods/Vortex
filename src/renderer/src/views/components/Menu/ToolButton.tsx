@@ -5,7 +5,6 @@ import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 
 import { useWindowContext } from "@/contexts";
 import { Icon } from "@/ui/components/icon/Icon";
-import { Image } from "@/ui/components/image/Image";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -52,12 +51,11 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
         {...props}
       >
         {imageSrc ? (
-          <Image
+          <img
             alt={starter.name}
-            className={joinClasses("absolute inset-0 size-full rounded-sm", {
+            className={joinClasses("absolute inset-0 size-full rounded-sm object-cover", {
               "opacity-40 grayscale": !isValid,
             })}
-            imageType="other"
             src={imageSrc}
           />
         ) : (
@@ -65,7 +63,7 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
             appearance="moderate"
             as="span"
             className={joinClasses(
-              "absolute inset-0 flex items-center justify-center bg-surface-high leading-none",
+              "absolute inset-0 flex items-center justify-center rounded-sm bg-surface-high leading-none",
               { "opacity-40": !isValid },
             )}
             typographyType="body-lg"
@@ -77,7 +75,7 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
         <span
           className={joinClasses(
             [
-              "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-stroke-moderate transition-colors",
+              "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-surface-low transition-colors",
               "group-hover/tool-button:border-stroke-strong group-hover/tool-button:bg-translucent-600",
               "group-focus-visible/tool-button:border-stroke-strong group-focus-visible/tool-button:bg-translucent-600",
             ],
