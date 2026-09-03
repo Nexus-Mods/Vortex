@@ -91,7 +91,7 @@ export interface IAvailableExtension {
   gameDomain?: string;
   /** game display name, resolved from the local Nexus games list */
   gameName?: string;
-  /** locale code, translations only, derived from the mod name */
+  /** BCP 47 locale code, translations only */
   language?: string;
 }
 
