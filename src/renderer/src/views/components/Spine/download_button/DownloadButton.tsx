@@ -87,7 +87,11 @@ const ProgressRing = ({
   const offset = circumference - (progress / 100) * circumference;
 
   return (
-    <svg className="pointer-events-none absolute inset-0 -rotate-90" height={size} width={size}>
+    <svg
+      className="pointer-events-none absolute top-1/2 left-1/2 -translate-1/2 -rotate-90"
+      height={size}
+      width={size}
+    >
       {/* Background circle */}
       <circle
         className={joinClasses([
