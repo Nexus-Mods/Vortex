@@ -3,7 +3,7 @@ import path from "path";
 
 /**
  * The mods toolbar is the one toolbar whose use is counted, so what is checked here is
- * the opt-in itself: that a click on it reaches Mixpanel as `toolbar_action_clicked`, and
+ * the opt-in itself: that a click on it reaches Mixpanel as `app_toolbar_action_clicked`, and
  * that the classic bar this page still renders alongside it stays unmeasured.
  */
 import { render, screen } from "@testing-library/react";
@@ -53,7 +53,7 @@ describe("ModsToolbar", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Deploy Mods" }));
 
-    expect(trackedEvent()?.eventName).toBe("toolbar_action_clicked");
+    expect(trackedEvent()?.eventName).toBe("app_toolbar_action_clicked");
     expect(trackedEvent()?.properties).toEqual({
       action: "deploy",
       surface: "bar",

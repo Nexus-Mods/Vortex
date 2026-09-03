@@ -61,7 +61,7 @@ export const columnsOf = ({
  * times without weighting one user's layout more than another's.
  */
 const columnsViewedEvent = (table: string, { visible, hidden }: ITableColumns): MixpanelEvent => ({
-  eventName: "table_columns_viewed",
+  eventName: "app_table_columns_viewed",
   properties: {
     table,
     columns: visible,
@@ -75,7 +75,7 @@ const columnsViewedEvent = (table: string, { visible, hidden }: ITableColumns): 
  * cannot: it can't tell a default nobody minded from one somebody chose.
  */
 const columnToggledEvent = (table: string, column: string, visible: boolean): MixpanelEvent => ({
-  eventName: "table_column_toggled",
+  eventName: "app_table_column_toggled",
   properties: { table, column, visible },
 });
 

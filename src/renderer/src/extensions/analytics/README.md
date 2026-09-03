@@ -13,9 +13,9 @@ app_ui_mode_changed { is_legacy_ui } // the mode switched to, from Settings > Th
 
 Toolbar
 
-toolbar_action_clicked { toolbar, action, extension, surface } // mods page only for now
-toolbar_pin_changed { toolbar, action, extension, pinned } // pinned = the state moved to
-toolbar_pins_reset { toolbar } // the whole toolbar back to defaults, so no action
+app_toolbar_action_clicked { toolbar, action, extension, surface } // mods page only for now
+app_toolbar_pin_changed { toolbar, action, extension, pinned } // pinned = the state moved to
+app_toolbar_pins_reset { toolbar } // the whole toolbar back to defaults, so no action
 // action = the same stable id pinning stores against, never the translated label
 // extension = absent for an action the page owns rather than one registered into it
 // surface = bar | overflow | menu (reached directly, via the kebab, or inside Open.../Import...)
@@ -25,8 +25,8 @@ toolbar_pins_reset { toolbar } // the whole toolbar back to defaults, so no acti
 
 Table
 
-table_columns_viewed { table, columns, hidden_columns, column_count } // once per table per session
-table_column_toggled { table, column, visible } // visible = the state moved to
+app_table_columns_viewed { table, columns, hidden_columns, column_count } // once per table per session
+app_table_column_toggled { table, column, visible } // visible = the state moved to
 // table = the id the table stores its layout against: mods | downloads | extensions |
 // collection-mods | collection-add-mods
 // column ids are the attribute ids that layout is stored against, never the translated header

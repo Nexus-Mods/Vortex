@@ -111,7 +111,7 @@ describe("table column analytics", () => {
       emitTableColumnsViewed(h.api, "mods", { visible: ["name", "version"], hidden: ["author"] });
 
       expect(h.events).toHaveLength(1);
-      expect(h.events[0].eventName).toBe("table_columns_viewed");
+      expect(h.events[0].eventName).toBe("app_table_columns_viewed");
       expect(h.events[0].properties).toStrictEqual({
         table: "mods",
         columns: ["name", "version"],
@@ -156,7 +156,7 @@ describe("table column analytics", () => {
       emitTableColumnToggled(h.api, "mods", "author", false);
 
       expect(h.events).toHaveLength(1);
-      expect(h.events[0].eventName).toBe("table_column_toggled");
+      expect(h.events[0].eventName).toBe("app_table_column_toggled");
       expect(h.events[0].properties).toStrictEqual({
         table: "mods",
         column: "author",
