@@ -36,9 +36,16 @@ test.describe("Account - Sign out", () => {
   }, testInfo) => {
     const profileMenu = new ProfileMenu(vortexWindow);
 
-    await test.step("Sign out from the account menu", async () => {
+    await test.step("The header shows the signed-in avatar", async () => {
       await expect(profileMenu.avatarButton).toBeVisible({ timeout: Timeouts.NETWORK });
+    });
+
+    await test.step("Click the avatar to open the account menu", async () => {
       await profileMenu.avatarButton.click();
+      await expect(profileMenu.logoutItem).toBeVisible();
+    });
+
+    await test.step("Click Logout", async () => {
       await profileMenu.logoutItem.dispatchEvent("click");
       await expect(profileMenu.loginButton).toBeVisible({ timeout: Timeouts.NETWORK });
     });
