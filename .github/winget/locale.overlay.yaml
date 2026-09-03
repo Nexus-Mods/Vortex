@@ -1,0 +1,30 @@
+# Fields Vortex owns in the winget locale manifest (NexusMods.Vortex.locale.en-US.yaml).
+# Merged over komac's output by winget-release.yml; keys here win, arrays are
+# replaced, anything absent is carried forward from the previous version.
+Publisher: Black Tree Gaming Ltd.
+PublisherUrl: https://www.nexusmods.com
+PublisherSupportUrl: https://forums.nexusmods.com/forum/4306-vortex-support/
+PrivacyUrl: https://help.nexusmods.com/article/20-privacy-policy
+Author: Nexus Mods
+PackageName: Vortex
+PackageUrl: https://www.nexusmods.com/about/vortex
+License: GPL-3.0
+LicenseUrl: https://github.com/Nexus-Mods/Vortex/blob/master/LICENSE.md
+Moniker: vortex
+ShortDescription: Vortex is the easiest way to manage your mods, so you can spend more time playing.
+Description: |-
+  Vortex is the Nexus Mods mod manager. It helps you download, install, organise, update, enable, disable, and remove mods while keeping track of the files and choices that affect each game.
+Tags:
+  - mod-manager
+  - modding
+  - mods
+  - nexus-mods
+Documentations:
+  - DocumentLabel: Vortex Wiki
+    DocumentUrl: https://modding.wiki/en/vortex
+  - DocumentLabel: How to report Vortex bugs
+    DocumentUrl: https://modding.wiki/en/vortex/bug-reports
+  - DocumentLabel: Vortex Discord
+    DocumentUrl: https://discord.gg/nexusmods
+InstallationNotes: Vortex registers itself as the handler for nxm:// links on first launch so downloads from nexusmods.com open in Vortex.
+# Icons are restricted to verified publishers in winget-pkgs; Microsoft populates them.
