@@ -178,8 +178,7 @@ const INSTALL_PATH_RE = new RegExp(String.raw`(?:${WIN}|${UNIX})${SEGS}(?=${ANCH
  * already-redacted `<USER>` aren't consumed (the latter keeps it idempotent). */
 const USER_HOME_RE = /(\/(?:Users|home)\/)([^/\t\r\n'"<>:|?*]+)/gi;
 
-/** How far to follow a `cause` chain. Also bounds a chain that loops. */
-const MAX_CAUSE_DEPTH = 5;
+export const MAX_CAUSE_DEPTH = 5;
 
 /** The lines below a stack's header, when at least one of them is a frame. */
 const framesOf = (stack: string | undefined): string | undefined => {

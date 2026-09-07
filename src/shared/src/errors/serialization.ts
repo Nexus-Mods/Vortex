@@ -1,3 +1,4 @@
+import { MAX_CAUSE_DEPTH } from "../errors";
 import {
   ArgumentInvalid,
   CycleError,
@@ -42,9 +43,6 @@ export interface ErrorOriginTracker {
 
 /** Key under which the by-reference token rides in `data`. */
 export const ORIGIN_REF_KEY = "__originRef" as const;
-
-/** How many levels of `cause` chain to carry across the wire. */
-const MAX_CAUSE_DEPTH = 5;
 
 type WithRef<T> = T & { [ORIGIN_REF_KEY]?: string };
 
