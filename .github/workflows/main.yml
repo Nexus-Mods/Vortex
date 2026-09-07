@@ -20,7 +20,7 @@ on:
       - "vortex.bat"
       - "translation-strings.txt"
   pull_request:
-    branches: [master, release/*, integration/*]
+    branches: [master, release/*, integration/*, task/laz-*, fix/laz-*]
     paths-ignore:
       - "**.md"
       - "docs/**"

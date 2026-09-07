@@ -2,7 +2,7 @@ name: Format
 
 on:
   pull_request:
-    branches: [master, integration/*]
+    branches: [master, integration/*, task/laz-*, fix/laz-*]
     paths-ignore:
       - "**.md"
       - "docs/**"
