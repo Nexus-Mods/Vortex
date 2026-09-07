@@ -1,8 +1,8 @@
-import { Message, PluginCleaningData, Tag } from "loot";
+import type { Message, PluginCleaningData, Tag } from "loot";
 
-import { IDialog } from "../views/UserlistEditor";
-import { ILoadOrder } from "./ILoadOrder";
-import { ILootReference } from "./ILOOTList";
+import type { IDialog } from "../views/UserlistEditor";
+import type { ILoadOrder } from "./ILoadOrder";
+import type { ILootReference } from "./ILOOTList";
 
 /**
  * generic information about a plugin

@@ -1,7 +1,7 @@
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 import { removeGroupRule, setGroup } from "../actions/userlist";
-import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 /**
  * Find every reference in the userlist to a LOOT group that doesn't exist in either the

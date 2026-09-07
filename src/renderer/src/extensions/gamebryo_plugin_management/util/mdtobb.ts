@@ -1,4 +1,5 @@
-import parse, { Node } from "markdown-ast";
+import type { Node } from "markdown-ast";
+import parse from "markdown-ast";
 
 function astToBBCode(input: Node): string {
   const rec = () => {

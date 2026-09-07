@@ -1,6 +1,6 @@
 import { createAction } from "redux-act";
 
-import { IPluginCombined, IPlugins } from "../types/IPlugins";
+import type { IPluginCombined, IPlugins } from "../types/IPlugins";
 
 const uiOnlyMeta =
   process.type === "renderer" ? () => ({ forward: false, scope: "local" }) : undefined;

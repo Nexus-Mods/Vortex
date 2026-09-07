@@ -11,6 +11,8 @@ import * as fs from "fs";
 import * as https from "https";
 import * as path from "path";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 const API_KEY = process.env.NEXUS_API_KEY;
 if (!API_KEY) {
   console.error("NEXUS_API_KEY environment variable required");
@@ -94,7 +96,7 @@ async function nexusGet<T>(endpoint: string): Promise<T> {
           try {
             resolve(JSON.parse(data));
           } catch (e) {
-            reject(new Error(`JSON parse error for ${url}: ${e}`));
+            reject(new Error(`JSON parse error for ${url}: ${getErrorMessageOrDefault(e)}`));
           }
         });
         res.on("error", reject);
@@ -116,7 +118,7 @@ async function fetchJson<T>(url: string): Promise<T> {
           try {
             resolve(JSON.parse(data));
           } catch (e) {
-            reject(new Error(`JSON parse error for ${url}: ${e}`));
+            reject(new Error(`JSON parse error for ${url}: ${getErrorMessageOrDefault(e)}`));
           }
         });
         res.on("error", reject);
@@ -158,7 +160,9 @@ async function downloadFile(url: string, dest: string): Promise<void> {
         file.close();
         try {
           fs.unlinkSync(dest);
-        } catch {}
+        } catch {
+          // best-effort cleanup of the partial download
+        }
         reject(err);
       });
   });
@@ -393,7 +397,9 @@ async function collectPluginsForGame(game: GameConfig): Promise<ManifestEntry[]>
         // Clean up archive
         try {
           fs.unlinkSync(archivePath);
-        } catch {}
+        } catch {
+          // best-effort cleanup
+        }
       }
     } catch (e: any) {
       console.warn(`  Error processing mod ${mod.mod_id}: ${e.message}`);

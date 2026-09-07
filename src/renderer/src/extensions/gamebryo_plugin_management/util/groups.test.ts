@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 
 import { removeGroupRule, setGroup } from "../actions/userlist";
-import { ILOOTList } from "../types/ILOOTList";
-import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import type { ILOOTList } from "../types/ILOOTList";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { missingGroupFixes } from "./groups";
 
 // missingGroupFixes only reads state.masterlist and state.userlist, so we build a minimal
