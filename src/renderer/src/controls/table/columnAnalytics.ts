@@ -92,9 +92,26 @@ const reported = new Set<string>();
  * who switched game mid-session reported nothing the second time and their only snapshot
  * was stamped with whichever game they happened to open first.
  *
+ * The game is the numeric Nexus id, the same one the event is stamped with. Keying on the
+ * internal id instead let a report be gated as one game and labelled another, because the
+ * two resolve at different times. See {@link gameIdPending}.
+ *
  * Neither a game id nor a table id contains a colon, so the two can't run together.
  */
-const reportKey = (table: string, game: string | undefined): string => `${game ?? "none"}:${table}`;
+const reportKey = (table: string, game: number | null): string => `${game ?? "none"}:${table}`;
+
+/**
+ * Whether a game is active but the numeric id it reports under hasn't arrived yet.
+ *
+ * The internal id is in state from the first frame; the numeric one comes from the games
+ * list. Until this session looks it up, mixpanel's `game_id` super property still holds
+ * the last session's, so reporting in that window labels the snapshot with the wrong game
+ * and spends the slot on it. No active game at all is not that case: nothing is coming.
+ */
+export const gameIdPending = (
+  internalGameId: string | undefined,
+  numericGameId: number | null,
+): boolean => internalGameId !== undefined && numericGameId === null;
 
 /** Forgets what this session reported. For tests; a session has no reason to. */
 export const resetReportedColumns = (): void => reported.clear();
@@ -106,12 +123,13 @@ export const resetReportedColumns = (): void => reported.clear();
  * to hide its last column anyway.
  *
  * `game` bounds the gate only. What the event is stamped with is mixpanel's `game_id`
- * super property, which the analytics layer keeps in step with the active game.
+ * super property, so this is the numeric id and the caller is expected to have waited for
+ * one. See {@link gameIdPending}.
  */
 export const emitTableColumnsViewed = (
   api: IExtensionApi,
   table: string,
-  game: string | undefined,
+  game: number | null,
   columns: ITableColumns,
 ): void => {
   const key = reportKey(table, game);

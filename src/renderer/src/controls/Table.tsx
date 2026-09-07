@@ -17,6 +17,7 @@ import {
   setCollapsedGroups,
   setGroupingAttribute,
 } from "../actions/tables";
+import { numericNexusGameId } from "../extensions/analytics/mixpanel/numericGameId";
 import { activeGameId } from "../extensions/profile_management/selectors";
 import smoothScroll from "../smoothScroll";
 import type { IActionDefinition } from "../types/IActionDefinition";
@@ -36,6 +37,7 @@ import {
   columnsOf,
   emitTableColumnsViewed,
   emitTableColumnToggled,
+  gameIdPending,
   isColumn,
 } from "./table/columnAnalytics";
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
@@ -154,6 +156,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   // isn't yet what the user is looking at.
   private static COLUMN_REPORT_DEBOUNCE = 2000;
 
+  // How many of those to wait through for the games list before reporting with no game
+  // rather than the wrong one. A cold start has been seen to take 21.6s.
+  private static COLUMN_REPORT_MAX_WAITS = 12;
+
   private mVisibleAttributes: ITableAttribute[];
   private mVisibleDetails: ITableAttribute[];
   private mVisibleInlines: ITableAttribute[];
@@ -177,6 +183,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mHeaderUpdateDebouncer: Debouncer;
   private mUpdateCalculatedDebouncer: Debouncer;
   private mColumnReportDebouncer: Debouncer;
+  private mColumnReportWaits: number = 0;
   private mLastScroll: number;
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
@@ -1661,10 +1668,25 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private reportColumns() {
     const { analyticsId, columnBlacklist, objects, tableId } = this.props;
 
+    const activeGame = activeGameId(this.context.api.getState());
+    const game = activeGame === undefined ? null : numericNexusGameId(activeGame);
+
+    // Giving up reports under no game rather than staying silent: a row with no game can
+    // be filtered out, silence can't be seen. That also leaves the real game's slot
+    // unspent, so the table reports properly if its columns change once the list lands.
+    if (
+      gameIdPending(activeGame, game) &&
+      this.mColumnReportWaits < SuperTable.COLUMN_REPORT_MAX_WAITS
+    ) {
+      this.mColumnReportWaits += 1;
+      this.mColumnReportDebouncer.schedule();
+      return;
+    }
+
     emitTableColumnsViewed(
       this.context.api,
       analyticsId ?? tableId,
-      activeGameId(this.context.api.getState()),
+      game,
       columnsOf({
         attributes: objects,
         visible: this.mVisibleAttributes ?? [],

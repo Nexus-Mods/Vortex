@@ -14,6 +14,7 @@ import {
   columnsOf,
   emitTableColumnsViewed,
   emitTableColumnToggled,
+  gameIdPending,
   isColumn,
   resetReportedColumns,
 } from "./columnAnalytics";
@@ -25,8 +26,13 @@ function harness() {
   return { api: { events: emitter } as unknown as IExtensionApi, events };
 }
 
-/** The active game the plain cases report under; the per-game cases name their own. */
-const GAME = "skyrimse";
+/**
+ * The active game the plain cases report under; the per-game cases name their own. The
+ * numeric Nexus id, because that is what the event is stamped with. Skyrim SE here, and
+ * Stardew Valley below.
+ */
+const GAME = 1704;
+const OTHER_GAME = 1303;
 
 const attribute = (
   id: string,
@@ -107,6 +113,24 @@ describe("table column analytics", () => {
     });
   });
 
+  describe("gameIdPending", () => {
+    // The internal id is in state from the first frame, the numeric one comes from the
+    // games list. Reporting in between would label the snapshot with whatever the
+    // previous session left registered and spend the game's only report on it.
+    it("holds while an active game has no numeric id yet", () => {
+      expect(gameIdPending("skyrimse", null)).toBe(true);
+    });
+
+    it("doesn't hold once the numeric id has arrived", () => {
+      expect(gameIdPending("skyrimse", GAME)).toBe(false);
+    });
+
+    // Not the same case: nothing is coming, so there is nothing to wait for.
+    it("doesn't hold when there is no active game at all", () => {
+      expect(gameIdPending(undefined, null)).toBe(false);
+    });
+  });
+
   describe("emitTableColumnsViewed", () => {
     it("says which columns are on show, which are off, and how many there are", () => {
       const h = harness();
@@ -176,8 +200,8 @@ describe("table column analytics", () => {
     it("reports a table again for a game it hasn't been reported for", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "mods", "skyrimse", { visible: ["name", "esp"], hidden: [] });
-      emitTableColumnsViewed(h.api, "mods", "stardewvalley", { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name", "esp"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", OTHER_GAME, { visible: ["name"], hidden: [] });
 
       expect(h.events.map((event) => event.properties.visible_columns)).toStrictEqual([
         ["name", "esp"],
@@ -188,9 +212,9 @@ describe("table column analytics", () => {
     it("still reports a table once for a game it has been reported for", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "mods", "skyrimse", { visible: ["name"], hidden: [] });
-      emitTableColumnsViewed(h.api, "mods", "stardewvalley", { visible: ["name"], hidden: [] });
-      emitTableColumnsViewed(h.api, "mods", "skyrimse", { visible: ["name", "esp"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", OTHER_GAME, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name", "esp"], hidden: [] });
 
       expect(h.events).toHaveLength(2);
     });
@@ -198,10 +222,25 @@ describe("table column analytics", () => {
     it("counts no active game as a game of its own", () => {
       const h = harness();
 
-      emitTableColumnsViewed(h.api, "extensions", undefined, { visible: ["name"], hidden: [] });
-      emitTableColumnsViewed(h.api, "extensions", undefined, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "extensions", null, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "extensions", null, { visible: ["name"], hidden: [] });
 
       expect(h.events).toHaveLength(1);
+    });
+
+    // The caller reports without a game rather than staying silent when the games list
+    // never arrives. That must not cost the game its own report, or an install that
+    // started up slowly would be counted as having no game for the rest of the session.
+    it("leaves a game's own report unspent after one made without a game", () => {
+      const h = harness();
+
+      emitTableColumnsViewed(h.api, "mods", null, { visible: ["name"], hidden: [] });
+      emitTableColumnsViewed(h.api, "mods", GAME, { visible: ["name", "esp"], hidden: [] });
+
+      expect(h.events.map((event) => event.properties.visible_columns)).toStrictEqual([
+        ["name"],
+        ["name", "esp"],
+      ]);
     });
 
     it("says nothing about a table with no columns yet, and reports it once it has some", () => {
