@@ -2,20 +2,6 @@ import { z } from "../zodJitless";
 import { VortexError } from "./base";
 
 /**
- * A classified error stands in for the raw one it wraps, so it takes over that
- * error's frames. Without this every error coerced here reports the classifier's
- * own call site, which is identical for all of them and so collapses their
- * fingerprints into one bucket.
- */
-function adoptCauseFrames(err: VortexError, cause: Error): VortexError {
-  const frames = cause.stack?.split("\n").slice(1).join("\n");
-  if (frames !== undefined && frames.length > 0) {
-    err.stack = `${err.name}: ${err.message}\n${frames}`;
-  }
-  return err;
-}
-
-/**
  * Tries to parse the input as an error.
  *
  * @public
@@ -40,25 +26,17 @@ export function parseError(
 
   const parsedSystemError = parseNodeSystemError(cause, context);
   if (!parsedSystemError) {
-    return adoptCauseFrames(
-      new VortexError(
-        `Unknown error thrown: ${cause.name} ${cause.message}`,
-        { kind: "unknown" },
-        {
-          cause,
-        },
-      ),
-      cause,
+    return new VortexError(
+      `Unknown error thrown: ${cause.name} ${cause.message}`,
+      { kind: "unknown" },
+      { cause },
     );
   }
 
   const { message: originalMessage, data, isTransient } = parsedSystemError;
   const message =
     getMessage?.({ data: { ...data }, isTransient: isTransient ?? false }) ?? originalMessage;
-  return adoptCauseFrames(
-    new VortexError(message, data, { cause, isTransient: isTransient ?? false }),
-    cause,
-  );
+  return new VortexError(message, data, { cause, isTransient: isTransient ?? false });
 }
 
 /** POSIX codes for network-level failures. */

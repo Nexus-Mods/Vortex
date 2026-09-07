@@ -2,7 +2,12 @@ import * as path from "path";
 import { inspect } from "util";
 
 import { type Span, context, ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
-import { isEnvironmentalError, parseError, unknownToError } from "@vortex/shared";
+import {
+  isEnvironmentalError,
+  parseError,
+  resolveReportedStack,
+  unknownToError,
+} from "@vortex/shared";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import type PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
@@ -309,7 +314,9 @@ export function toError(
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
-    let stack = input.stack;
+    // crashinfo.json carries no cause chain, so the throw site has to be
+    // resolved here rather than by the reporter that reads the file back.
+    let stack = resolveReportedStack(input);
     if (sourceStack !== undefined) {
       stack += "\n\nReported from:\n" + sourceStack;
     }

@@ -178,6 +178,43 @@ const INSTALL_PATH_RE = new RegExp(String.raw`(?:${WIN}|${UNIX})${SEGS}(?=${ANCH
  * already-redacted `<USER>` aren't consumed (the latter keeps it idempotent). */
 const USER_HOME_RE = /(\/(?:Users|home)\/)([^/\t\r\n'"<>:|?*]+)/gi;
 
+/** How far to follow a `cause` chain. Also bounds a chain that loops. */
+const MAX_CAUSE_DEPTH = 5;
+
+/** The lines below a stack's header, when at least one of them is a frame. */
+const framesOf = (stack: string | undefined): string | undefined => {
+  if (stack === undefined) {
+    return undefined;
+  }
+  const [, ...rest] = stack.split("\n");
+  return rest.some((line) => line.trim().startsWith("at ")) ? rest.join("\n") : undefined;
+};
+
+/**
+ * The stack to report for an error: its own header over the frames of the
+ * deepest cause that has any.
+ *
+ * A classified error is built by whatever classified it, so its own frames point
+ * at the classifier rather than at the failure — the error it wraps carries the
+ * real throw site. Since frames are what {@link computeErrorFingerprint} hashes,
+ * reporting the classifier's would collapse every error it touches into one
+ * fingerprint. The header stays ours so the first line still names the error
+ * actually being reported.
+ *
+ * Errors are read, never mutated: each error's own `stack` keeps describing
+ * where that error was constructed, which is the truth.
+ */
+export const resolveReportedStack = (error: Error): string | undefined => {
+  let frames = framesOf(error.stack);
+  let cause: unknown = error.cause;
+  for (let depth = 0; depth < MAX_CAUSE_DEPTH && cause instanceof Error; depth += 1) {
+    frames = framesOf(cause.stack) ?? frames;
+    cause = cause.cause;
+  }
+
+  return frames === undefined ? error.stack : `${error.name}: ${error.message}\n${frames}`;
+};
+
 /** Strips the trailing `:column` from a `:line:col` position, keeping `:line`.
  *  V8 reports the call-site column for each frame, which differs per invocation
  *  even for the same minified line — same function calling out at multiple

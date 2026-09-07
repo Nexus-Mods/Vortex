@@ -71,3 +71,65 @@ describe("recordErrorOnSpan fingerprint discriminator", () => {
     expect(attributes["error.fingerprint"]).toBe(expected);
   });
 });
+
+/** A wrapper as `parseError` builds one: its own frames point at the
+ *  classifier, the error it wraps has the real throw site. */
+const wrapped = (): Error => {
+  const cause = new Error("EPERM: operation not permitted");
+  cause.stack = ["Error: EPERM: operation not permitted", "    at open (src/fs.ts:9:1)"].join("\n");
+  const classified = new Error("no permissions", { cause });
+  classified.stack = ["Error: no permissions", "    at classify (src/parser.ts:1:1)"].join("\n");
+  return classified;
+};
+
+describe("recordErrorOnSpan throw-site resolution", () => {
+  it("reports the cause's frames under the wrapper's own header", () => {
+    const { span, attributes } = fakeSpan();
+    recordErrorOnSpan(span, wrapped(), VERSION);
+
+    // The fingerprint is computed from the stack the span reports, so matching
+    // it against the cause's frames proves which stack was chosen.
+    expect(attributes["error.fingerprint"]).toBe(
+      computeErrorFingerprint("    at open (src/fs.ts:9:1)", VERSION, undefined),
+    );
+  });
+
+  it("does not use the wrapper's own frames", () => {
+    const a = fakeSpan();
+    const b = fakeSpan();
+    const bare = new Error("no permissions");
+    bare.stack = ["Error: no permissions", "    at classify (src/parser.ts:1:1)"].join("\n");
+
+    recordErrorOnSpan(a.span, wrapped(), VERSION);
+    recordErrorOnSpan(b.span, bare, VERSION);
+
+    expect(a.attributes["error.fingerprint"]).not.toBe(b.attributes["error.fingerprint"]);
+  });
+
+  it("keeps its own frames when the cause has none", () => {
+    const { span, attributes } = fakeSpan();
+    const cause = new Error("opaque");
+    cause.stack = "Error: opaque";
+    const err = new Error("wrapper", { cause });
+    err.stack = ["Error: wrapper", "    at f (src/foo.ts:1:2)"].join("\n");
+
+    recordErrorOnSpan(span, err, VERSION);
+
+    expect(attributes["error.fingerprint"]).toBe(
+      computeErrorFingerprint("    at f (src/foo.ts:1:2)", VERSION, undefined),
+    );
+  });
+
+  it("survives a cause chain that loops", () => {
+    const { span, attributes } = fakeSpan();
+    const a = new Error("a");
+    a.stack = ["Error: a", "    at a (src/a.ts:1:1)"].join("\n");
+    const b = new Error("b", { cause: a });
+    b.stack = ["Error: b", "    at b (src/b.ts:1:1)"].join("\n");
+    (a as { cause?: unknown }).cause = b;
+
+    recordErrorOnSpan(span, b, VERSION);
+
+    expect(attributes["error.fingerprint"]).toBeDefined();
+  });
+});
