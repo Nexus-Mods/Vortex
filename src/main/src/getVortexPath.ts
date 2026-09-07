@@ -87,12 +87,7 @@ function getPackagePath(unpacked: boolean): string {
     // basePath is <app>/build, which holds the bundle but no package.json, so it
     // can't be handed to electron.exe as an app path. The unpacked variant has to
     // stay on build, that's where LICENSE.md and the bundled binaries live.
-    if (unpacked) {
-      return basePath;
-    }
-    return path.basename(applicationPath) === "build"
-      ? path.dirname(applicationPath)
-      : applicationPath;
+    return unpacked ? basePath : applicationPath;
   }
 
   let res = basePath;

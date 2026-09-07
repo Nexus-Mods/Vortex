@@ -1,5 +1,6 @@
 import { assert, describe, expect, expectTypeOf, it, test } from "vitest";
 
+import { computeErrorFingerprint } from "../errors";
 import { VortexError } from "./base";
 import { parseError, parseNodeSystemErrorData } from "./parser";
 
@@ -188,5 +189,79 @@ describe("parseNodeSystemErrorData", () => {
     { label: "non-object", input: 42 },
   ])("returns undefined for $label", ({ input }) => {
     expect(parseNodeSystemErrorData(input)).toBeUndefined();
+  });
+});
+
+/** A raw Node system error created right here, so its stack starts at this line. */
+const rawFsError = (path: string): Error =>
+  Object.assign(new Error("ENOENT mock error"), {
+    code: "ENOENT",
+    errno: -2,
+    syscall: "open",
+    path,
+  });
+
+describe("throw-site frames", () => {
+  it("keeps the frames of the error it classified, not the classifier's own", () => {
+    const parsed = parseError(rawFsError("/a"));
+
+    expect(parsed.stack).toBeDefined();
+    // parseError builds a new VortexError, so without frame adoption every
+    // classified error would report this file instead of the real throw site.
+    expect(parsed.stack).not.toContain("parser.ts");
+    expect(parsed.stack).toContain("parser.test.ts");
+  });
+
+  it("heads the stack with the classified error, not the raw one", () => {
+    const parsed = parseError(rawFsError("/a"));
+
+    expect(parsed.stack?.split("\n")[0]).toBe(
+      "VortexError: File or directory does not exist at '/a'",
+    );
+    // The raw message is replaced, so the header can't be the cause's.
+    expect(parsed.stack?.split("\n")[0]).not.toContain("mock error");
+  });
+
+  it("gives errors from different throw sites different fingerprints", () => {
+    // Two raw errors originating on different lines...
+    const failingOpen = (): Error => rawFsError("/a");
+    const failingRename = (): Error => rawFsError("/b");
+
+    // ...both classified from a single call site, so parseError's own frames are
+    // identical for the pair and only the adopted frames can tell them apart.
+    // Without adoption these hash alike, which is exactly the bug this guards.
+    const fingerprints = [failingOpen, failingRename].map((make) =>
+      computeErrorFingerprint(parseError(make()).stack, "1.2.3"),
+    );
+
+    expect(fingerprints[0]).toBeDefined();
+    expect(fingerprints[0]).not.toBe(fingerprints[1]);
+  });
+
+  it("adopts frames for an unrecognised error too", () => {
+    const parsed = parseError(new Error("no code here"));
+
+    assert(parsed.data.kind === "unknown");
+    expect(parsed.stack).not.toContain("parser.ts");
+    expect(parsed.stack).toContain("parser.test.ts");
+  });
+
+  it("leaves its own stack in place when the cause has none", () => {
+    const cause = rawFsError("/a");
+    cause.stack = undefined;
+
+    const parsed = parseError(cause);
+    expect(parsed.stack).toBeDefined();
+    expect(parsed.stack).toContain("VortexError");
+  });
+
+  it("leaves its own stack in place when the cause's stack has no frames", () => {
+    const cause = rawFsError("/a");
+    cause.stack = "Error: ENOENT mock error";
+
+    const parsed = parseError(cause);
+    // A header with nothing under it would fingerprint to undefined, so the
+    // classifier's frames are better than none.
+    expect(parsed.stack).toContain("at ");
   });
 });
