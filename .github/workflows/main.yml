@@ -2,7 +2,7 @@ name: Main
 
 on:
   push:
-    branches: [master, release/*]
+    branches: [master, release/*, integration/*]
     paths-ignore:
       - "**.md"
       - "docs/**"
@@ -20,7 +20,7 @@ on:
       - "vortex.bat"
       - "translation-strings.txt"
   pull_request:
-    branches: [master, release/*]
+    branches: [master, release/*, integration/*]
     paths-ignore:
       - "**.md"
       - "docs/**"
