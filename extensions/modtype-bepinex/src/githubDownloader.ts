@@ -9,6 +9,7 @@ import * as semver from "semver";
 
 import { raiseConsentDialog } from "./bepInExDownloader";
 import { resolveBixPackage } from "./common";
+import { buildGithubDownloadInfo } from "./downloadInfo";
 import { IBepInExGameConfig, IGithubRelease } from "./types";
 
 const GITHUB_URL = "https://api.github.com/repos/BepInEx/BepInEx";
@@ -186,10 +187,7 @@ async function startDownload(
       .on("error", (err) => reject(err))
       .end();
   });
-  const dlInfo = {
-    game: gameId,
-    name: "BepInEx",
-  };
+  const dlInfo = buildGithubDownloadInfo(gameId);
 
   api.events.emit(
     "start-download",
