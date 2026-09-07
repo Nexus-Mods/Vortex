@@ -5,15 +5,15 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
-import { usePageScrolled } from "./Page.context";
+import { usePage } from "./Page.context";
 import { PageContent } from "./PageContent";
 
 export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   isFullWidth?: boolean;
-  children?: ReactNode | ((scrolled: boolean) => ReactNode);
+  children?: ReactNode | ((compact: boolean) => ReactNode);
   pictogramName?: IPictogramName;
   subtitle?: string;
-} & XOr<{ title: string }, { customTitle: ReactNode | ((scrolled: boolean) => ReactNode) }>;
+} & XOr<{ title: string }, { customTitle: ReactNode | ((compact: boolean) => ReactNode) }>;
 
 /**
  * Full-bleed header for a non-scrolling `Page`. The bar itself spans the full
@@ -22,11 +22,15 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
  * `max-w-8xl` so it lines up with the scrolled content. It trades its hairline
  * for a shadow once that sibling is scrolled — unless `isFullWidth`, where
  * content reaches the bar itself, so the hairline stays and the shadow is
- * skipped; pass a render-prop child to react to the scroll too.
+ * skipped.
+ *
+ * Scrolling also shrinks the header to its compact form, which the
+ * always-compact-headers setting can instead pin on; pass a render-prop child
+ * to follow that state too.
  *
  * Pass `title` for the common heading, or `customTitle` when the title needs
  * more than a string (e.g. a badge alongside it); `subtitle` renders below
- * either. `title` goes subdued once scrolled — `customTitle` takes a
+ * either. `title` goes subdued once compact — `customTitle` takes a
  * render-prop so it can match.
  */
 export const PageHeader = ({
@@ -39,7 +43,7 @@ export const PageHeader = ({
   subtitle,
   ...rest
 }: IPageHeaderProps) => {
-  const scrolled = usePageScrolled();
+  const { compact, scrolled } = usePage();
 
   return (
     <div
@@ -52,7 +56,7 @@ export const PageHeader = ({
       <PageContent className="flex items-start gap-x-2 px-6" isFullWidth={isFullWidth}>
         {!!pictogramName && (
           <Pictogram
-            className={joinClasses(["transition-[width,height]", scrolled ? "size-7" : "size-14"])}
+            className={joinClasses(["transition-[width,height]", compact ? "size-7" : "size-14"])}
             name={pictogramName}
             size="none"
           />
@@ -61,9 +65,9 @@ export const PageHeader = ({
         <div className="min-w-0 grow">
           <div className="flex items-center justify-between gap-x-6">
             <div className="min-w-0">
-              {(typeof customTitle === "function" ? customTitle(scrolled) : customTitle) ?? (
+              {(typeof customTitle === "function" ? customTitle(compact) : customTitle) ?? (
                 <Typography
-                  appearance={scrolled ? "subdued" : "moderate"}
+                  appearance={compact ? "subdued" : "moderate"}
                   as="h2"
                   className="transition-colors"
                   typographyType="heading-xs"
@@ -73,13 +77,13 @@ export const PageHeader = ({
               )}
             </div>
 
-            {typeof children === "function" ? children(scrolled) : children}
+            {typeof children === "function" ? children(compact) : children}
           </div>
 
           {!!subtitle && (
             <Typography
               appearance="subdued"
-              className={joinClasses("truncate", { hidden: scrolled })}
+              className={joinClasses("truncate", { hidden: compact })}
             >
               {subtitle}
             </Typography>

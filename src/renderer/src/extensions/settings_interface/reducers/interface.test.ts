@@ -29,3 +29,11 @@ describe("setProfilesVisible", () => {
     expect(result).toEqual({ profilesVisible: true });
   });
 });
+
+describe("setAlwaysCompactHeaders", () => {
+  it("sets the always compact headers preference", () => {
+    const input = { alwaysCompactHeaders: false };
+    const result = settingsReducer.reducers.SET_ALWAYS_COMPACT_HEADERS(input, true);
+    expect(result).toEqual({ alwaysCompactHeaders: true });
+  });
+});

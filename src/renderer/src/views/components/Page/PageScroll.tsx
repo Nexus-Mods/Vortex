@@ -6,7 +6,7 @@ import React, {
   useContext,
 } from "react";
 
-import { PageScrollContext } from "./Page.context";
+import { PageContext } from "./Page.context";
 import { PageContent } from "./PageContent";
 
 export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
@@ -36,7 +36,7 @@ export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
  */
 export const PageScroll = forwardRef<HTMLDivElement, IPageScrollProps>(
   ({ children, className, isFullWidth = false, onScroll, ...rest }, ref) => {
-    const context = useContext(PageScrollContext);
+    const context = useContext(PageContext);
 
     const handleScroll = useCallback(
       (event: UIEvent<HTMLDivElement>) => {
