@@ -84,7 +84,15 @@ function getLocalesPath(): string {
  */
 function getPackagePath(unpacked: boolean): string {
   if (isDevelopment) {
-    return basePath;
+    // basePath is <app>/build, which holds the bundle but no package.json, so it
+    // can't be handed to electron.exe as an app path. The unpacked variant has to
+    // stay on build, that's where LICENSE.md and the bundled binaries live.
+    if (unpacked) {
+      return basePath;
+    }
+    return path.basename(applicationPath) === "build"
+      ? path.dirname(applicationPath)
+      : applicationPath;
   }
 
   let res = basePath;

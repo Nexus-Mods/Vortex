@@ -1,5 +1,6 @@
 import { assert, describe, expect, it } from "vitest";
 
+import { ProcessCanceled, UserCanceled } from "../types/errors";
 import { VortexError } from "./base";
 
 // Proves the `declare module` extensibility mechanism actually works: a kind
@@ -54,5 +55,41 @@ describe("VortexError", () => {
 
     assert(err.data.kind === "test:augmented-kind");
     expect(err.data.extra).toBe("value");
+  });
+});
+
+describe("instanceof by kind", () => {
+  it("matches the subclass an error was thrown as", () => {
+    expect(new UserCanceled() instanceof UserCanceled).toBe(true);
+    expect(new UserCanceled() instanceof VortexError).toBe(true);
+  });
+
+  it("does not match a different subclass", () => {
+    expect(new UserCanceled() instanceof ProcessCanceled).toBe(false);
+    expect(new ProcessCanceled("nope") instanceof UserCanceled).toBe(false);
+  });
+
+  it("matches a base VortexError carrying the subclass's kind", () => {
+    // How an error arrives after crossing IPC: rebuilt from `data` alone, so it
+    // is a base VortexError even though it was thrown as UserCanceled.
+    const rehydrated = new VortexError("canceled by user", {
+      kind: "user-canceled",
+      skipped: false,
+    });
+
+    expect(rehydrated instanceof UserCanceled).toBe(true);
+    expect(rehydrated instanceof ProcessCanceled).toBe(false);
+  });
+
+  it("rejects errors that are not VortexErrors", () => {
+    expect(new Error("plain") instanceof VortexError).toBe(false);
+    expect(new Error("plain") instanceof UserCanceled).toBe(false);
+  });
+
+  it("rejects non-errors, including a look-alike with the right kind", () => {
+    expect((null as unknown) instanceof UserCanceled).toBe(false);
+    expect((undefined as unknown) instanceof UserCanceled).toBe(false);
+    expect(("user-canceled" as unknown) instanceof UserCanceled).toBe(false);
+    expect({ data: { kind: "user-canceled" } } instanceof UserCanceled).toBe(false);
   });
 });

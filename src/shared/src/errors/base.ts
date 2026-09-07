@@ -67,6 +67,7 @@ export interface VortexErrorKindMap {
   "fs:not-a-directory": FileSystemErrorData;
   "fs:not-a-file": FileSystemErrorData;
   "fs:not-found": FileSystemErrorData;
+  "fs:read-only": FileSystemErrorData;
 
   // HTTP.
   "http:bad-status": { url: string; statusCode: number };
@@ -143,6 +144,14 @@ export type VortexErrorData = {
 }[VortexErrorKind];
 
 /**
+ * Real prototype-chain membership, the check `instanceof` would do if
+ * VortexError didn't override it. Kept separate so the override can use it
+ * without re-entering itself.
+ */
+const isVortexErrorInstance = (value: object): value is VortexError =>
+  Object.prototype.isPrototypeOf.call(VortexError.prototype, value);
+
+/**
  * The one error class Vortex constructs. Identity lives in `data.kind`,
  * not in the class prototype, because prototype identity doesn't survive
  * every boundary Vortex has.
@@ -153,6 +162,35 @@ export type VortexErrorData = {
  * @public
  */
 export class VortexError extends Error {
+  /**
+   * The kind a subclass stands for, set once per subclass. Left undefined on
+   * VortexError itself, which stands for all of them.
+   */
+  static readonly errorKind?: VortexErrorKind;
+
+  /**
+   * Identity by kind rather than by prototype, shared by every subclass — `this`
+   * is whichever constructor `instanceof` was written against.
+   *
+   * An error that crossed IPC is rebuilt from `data` alone, so it comes back as
+   * a base VortexError and no longer sits on its subclass prototype. Matching on
+   * `data.kind` keeps `err instanceof UserCanceled` true for it, which the ~160
+   * call sites written that way rely on.
+   *
+   * Uses `isPrototypeOf` rather than `instanceof` because `instanceof` here
+   * would re-enter this method.
+   */
+  static override [Symbol.hasInstance](value: unknown): boolean {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    if (!isVortexErrorInstance(value)) {
+      return false;
+    }
+    const expected = this.errorKind;
+    return expected === undefined || value.data?.kind === expected;
+  }
+
   /** Error data keyed on the error kind. */
   readonly data: VortexErrorData;
 

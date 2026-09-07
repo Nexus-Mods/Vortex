@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { computeErrorFingerprint, isEnvironmentalError, sanitizeFramePath } from "./errors";
+import { VortexError } from "./errors/base";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -397,11 +398,32 @@ describe("computeErrorFingerprint", () => {
 // isEnvironmentalError
 // ---------------------------------------------------------------------------
 
-const withCode = (code: string): Error => Object.assign(new Error(code), { code });
+/** A raw Node system error naming a path, which the classifier can reach an
+ *  `fs:*` verdict for. */
+const withCode = (code: string): Error =>
+  Object.assign(new Error(code), { code, errno: -1, syscall: "open", path: "C:/tmp/x" });
+
+/** The same code with no path — `spawn`, `process.kill`, a socket bind. The
+ *  classifier deliberately declines to call these filesystem errors. */
+const withCodeNoPath = (code: string): Error =>
+  Object.assign(new Error(code), { code, errno: -1, syscall: "kill" });
+
+/** A classified error as it arrives after crossing IPC: rebuilt from `data`
+ *  alone, so it carries a kind but no `code` property. */
+const classified = (kind: "fs:no-permissions" | "fs:not-found" | "os:generic"): VortexError =>
+  kind === "os:generic"
+    ? new VortexError("classified", { kind, originalCode: "EPERM", errno: -1, syscall: "kill" })
+    : new VortexError("classified", { kind, path: "C:/tmp/x", originalCode: "EPERM" });
 
 describe("isEnvironmentalError", () => {
-  it.each(["EPERM", "EACCES", "ENOSPC", "EROFS"])("returns true for %s", (code) => {
+  it.each(["EPERM", "EACCES", "ENOSPC", "EROFS"])("returns true for %s naming a path", (code) => {
     expect(isEnvironmentalError(withCode(code))).toBe(true);
+  });
+
+  it.each(["EPERM", "EACCES"])("returns false for a pathless %s", (code) => {
+    // Not a filesystem verdict, so it stays reportable rather than being
+    // written off as the user's environment.
+    expect(isEnvironmentalError(withCodeNoPath(code))).toBe(false);
   });
 
   it("returns false for unrelated error codes", () => {
@@ -412,6 +434,21 @@ describe("isEnvironmentalError", () => {
 
   it("returns false for plain Error without code", () => {
     expect(isEnvironmentalError(new Error("boom"))).toBe(false);
+  });
+
+  it("recognises an already-classified error that crossed IPC", () => {
+    expect(isEnvironmentalError(classified("fs:no-permissions"))).toBe(true);
+    expect(isEnvironmentalError(classified("fs:not-found"))).toBe(false);
+  });
+
+  it("ignores a payload code the classifier did not turn into an fs verdict", () => {
+    expect(isEnvironmentalError(classified("os:generic"))).toBe(false);
+  });
+
+  it("returns false for a VortexError carrying no code at all", () => {
+    expect(
+      isEnvironmentalError(new VortexError("nope", { kind: "user-canceled", skipped: false })),
+    ).toBe(false);
   });
 
   it("returns true when allowReport is explicitly false", () => {

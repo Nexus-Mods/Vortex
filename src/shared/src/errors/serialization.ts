@@ -41,6 +41,12 @@ export interface SerializedVortexError {
   message: string;
   data: WithRef<VortexErrorData>;
   isTransient: boolean;
+  /**
+   * Throw-site stack. Without it a rehydrated error's stack starts at
+   * {@link deserializeVortexError}, which is identical for every error that
+   * crosses the boundary and so collapses them all onto one fingerprint.
+   */
+  stack?: string;
   cause?: SerializedVortexError;
 }
 
@@ -60,6 +66,10 @@ export function serializeVortexError(err: VortexError, depth: number = 0): Seria
     data: serializedData,
     isTransient: err.isTransient,
   };
+
+  if (err.stack !== undefined) {
+    result.stack = err.stack;
+  }
 
   if (err.cause !== undefined) {
     const serializedCause = serializeCause(err.cause, depth + 1);
@@ -105,10 +115,17 @@ export function deserializeVortexError(
     data[ORIGIN_REF_KEY] = ref;
   }
 
-  return new VortexError(serialized.message, data, {
+  const result = new VortexError(serialized.message, data, {
     isTransient: serialized.isTransient,
     cause,
   });
+
+  // Replaces the boundary stack captured by the line above with the real one.
+  if (serialized.stack !== undefined) {
+    result.stack = serialized.stack;
+  }
+
+  return result;
 }
 
 /**

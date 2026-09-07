@@ -1,3 +1,6 @@
+import type { VortexErrorKind } from "./errors/base";
+import { parseError } from "./errors/parser";
+
 /** Extracts an error message from an unknown value in a catch statement */
 export function getErrorMessage(err: unknown): string | null {
   if (err instanceof Error) {
@@ -86,17 +89,23 @@ export function getErrorNativeCode(err: unknown): number | bigint | null {
  * bug. Telemetry export filters these out — exporting them spams our error
  * tracking with issues we cannot fix in code.
  */
-const ENVIRONMENTAL_ERROR_CODES = new Set([
-  "EPERM", // Operation not permitted (e.g. write-protected Program Files folder)
-  "EACCES", // Permission denied (filesystem ACL or process lacks rights)
-  "ENOSPC", // No space left on the device (disk full)
-  "EROFS", // Read-only filesystem (mount option or hardware switch)
+const ENVIRONMENTAL_ERROR_KINDS = new Set<VortexErrorKind>([
+  "fs:no-permissions", // write-protected folder, ACL, or a file held by another process
+  "fs:no-space", // disk full
+  "fs:read-only", // read-only mount or hardware switch
 ]);
 
 /**
  * Returns true if the error represents a user-environment problem rather
  * than a Vortex bug. Honors an explicit `allowReport === false` flag set
- * by `prettifyNodeErrorMessage`, falling back to a code-based check.
+ * by `prettifyNodeErrorMessage`, falling back to the classified kind.
+ *
+ * Deliberately keyed on the kind rather than the raw code: the classifier only
+ * reaches an `fs:*` verdict when the failure actually names a path, so a bare
+ * EPERM/EACCES from `spawn`, `process.kill` or a socket bind stays reportable
+ * instead of being written off as the user's environment. Reading the kind also
+ * works for an error that crossed IPC, which arrives rebuilt from `data` alone
+ * and no longer carries a `code` property.
  */
 export function isEnvironmentalError(err: unknown): boolean {
   if (!(err instanceof Error)) {
@@ -105,8 +114,7 @@ export function isEnvironmentalError(err: unknown): boolean {
   if ("allowReport" in err && err.allowReport === false) {
     return true;
   }
-  const code = getErrorCode(err);
-  return code !== null && ENVIRONMENTAL_ERROR_CODES.has(code);
+  return ENVIRONMENTAL_ERROR_KINDS.has(parseError(err).data.kind);
 }
 
 type ErrorWithSystemCode = Error & { systemCode: number | bigint };
