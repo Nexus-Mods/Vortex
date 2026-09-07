@@ -1,10 +1,13 @@
-import { ComponentEx, selectors, Toggle, types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
+import { ComponentEx } from "../../../controls/ComponentEx";
+import Toggle from "../../../controls/Toggle";
+import type { IState } from "../../../types/IState";
+import { activeGameId } from "../../profile_management/selectors";
 import { setAutoEnable } from "../actions/settings";
 import { NAMESPACE } from "../statics";
 import { gameSupported } from "../util/gameSupport";
@@ -54,8 +57,8 @@ class Settings extends ComponentEx<IProps, {}> {
   };
 }
 
-function mapStateToProps(state: types.IState): IConnectedProps {
-  const gameMode = selectors.activeGameId(state);
+function mapStateToProps(state: IState): IConnectedProps {
+  const gameMode = activeGameId(state);
   return {
     gameMode,
     autoEnable: (state.settings as any).plugins.autoEnable,

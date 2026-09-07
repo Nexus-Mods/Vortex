@@ -1,7 +1,8 @@
-import { ComponentEx, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { connect } from "react-redux";
 
+import { ComponentEx } from "../../../controls/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
 import Line from "./Line";
 
 interface ICoord {
@@ -48,16 +49,8 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
 function mapStateToProps(state: any): IConnectorProps {
   return {
-    source: util.getSafe(
-      state,
-      ["session", "pluginDependencies", "connection", "source"],
-      undefined,
-    ),
-    target: util.getSafe(
-      state,
-      ["session", "pluginDependencies", "connection", "target"],
-      undefined,
-    ),
+    source: getSafe(state, ["session", "pluginDependencies", "connection", "source"], undefined),
+    target: getSafe(state, ["session", "pluginDependencies", "connection", "target"], undefined),
   };
 }
 

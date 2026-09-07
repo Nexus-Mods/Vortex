@@ -1,14 +1,14 @@
-import { types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import Select from "react-select";
 
+import type { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
 import { NAMESPACE } from "../statics";
 
 function nop() {
   return "";
 }
 
-export class PluginStatusFilterComponent extends React.Component<types.IFilterProps, {}> {
+export class PluginStatusFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
     const { t, filter } = this.props;
 
@@ -37,7 +37,7 @@ export class PluginStatusFilterComponent extends React.Component<types.IFilterPr
   };
 }
 
-class PluginStatusFilter implements types.ITableFilter {
+class PluginStatusFilter implements ITableFilter {
   public component = PluginStatusFilterComponent;
   public raw = false;
 

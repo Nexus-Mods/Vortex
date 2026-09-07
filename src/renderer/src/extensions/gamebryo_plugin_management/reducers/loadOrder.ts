@@ -1,6 +1,6 @@
-import type { types } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import * as actions from "../actions/loadOrder";
 import toPluginId from "../util/toPluginId";
 
@@ -8,7 +8,7 @@ import toPluginId from "../util/toPluginId";
  * reducer for changes to the plugin list. entries are keyed by plugin id (lowercased, ghost suffix
  * stripped) via toPluginId, so the key never diverges from the rest of the extension.
  */
-export const loadOrderReducer: types.IReducerSpec = {
+export const loadOrderReducer: IReducerSpec = {
   reducers: {
     [actions.setPluginEnabled as any]: (state, payload) => {
       const id = toPluginId(payload.pluginName);

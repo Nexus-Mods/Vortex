@@ -1,6 +1,9 @@
 import * as path from "path";
 
-import { fs, types, util } from "@nexusmods/vortex-api";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import * as fs from "../../../util/fs";
+import getVortexPath from "../../../util/getVortexPath";
+import { rawRequest } from "../../../util/network";
 
 const LOOT_LIST_REVISION = "v0.29";
 const DOWNLOAD_THROTTLE_MS = 30 * 60 * 1000; // 30 minutes
@@ -24,7 +27,7 @@ async function tryRemoveDotGit(localPath: string) {
 
 let lastUpdated: number = 0;
 export async function isMasterlistOutdated(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   localPath: string,
 ): Promise<boolean> {
@@ -33,7 +36,7 @@ export async function isMasterlistOutdated(
   }
   const masterlistUrl = getListUrl(gameId);
   try {
-    const remoteMasterlist = await util.rawRequest(masterlistUrl);
+    const remoteMasterlist = await rawRequest(masterlistUrl);
     const localHash = await api.genMd5Hash(localPath);
     const remoteHash = await api.genMd5Hash(remoteMasterlist);
     return localHash.md5sum !== remoteHash.md5sum;
@@ -45,14 +48,14 @@ export async function isMasterlistOutdated(
 export async function downloadMasterlist(gameId: string, localPath: string) {
   lastUpdated = Date.now();
   await tryRemoveDotGit(localPath);
-  const buf = await util.rawRequest(getListUrl(gameId));
+  const buf = await rawRequest(getListUrl(gameId));
   await fs.ensureDirWritableAsync(path.dirname(localPath));
   await fs.writeFileAsync(localPath, buf);
 }
 
 export async function downloadPrelude(localPath: string) {
   await tryRemoveDotGit(localPath);
-  const buf = await util.rawRequest(getListUrl());
+  const buf = await rawRequest(getListUrl());
   await fs.ensureDirWritableAsync(path.dirname(localPath));
   await fs.writeFileAsync(localPath, buf);
 }
@@ -68,5 +71,5 @@ export async function masterlistExists(gameId: string) {
 }
 
 export function masterlistFilePath(gameMode: string) {
-  return path.join(util.getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
+  return path.join(getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
 }

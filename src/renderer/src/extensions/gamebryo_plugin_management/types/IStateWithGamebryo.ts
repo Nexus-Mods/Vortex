@@ -1,15 +1,14 @@
-import { types } from "@nexusmods/vortex-api";
-
-import { ILoadOrder } from "./ILoadOrder";
-import { ILOOTList } from "./ILOOTList";
-import { IPluginCombined, IPluginDependencies, IPlugins } from "./IPlugins";
+import type { IState } from "../../../types/IState";
+import type { ILoadOrder } from "./ILoadOrder";
+import type { ILOOTList } from "./ILOOTList";
+import type { IPluginCombined, IPluginDependencies, IPlugins } from "./IPlugins";
 
 // No idea what we need to do with this,
 // do we keep the ex type here or move it somewhere?
-export interface IStateWithGamebryo extends types.IState {
+export interface IStateWithGamebryo extends IState {
   masterlist: ILOOTList;
   userlist: ILOOTList;
-  session: types.IState["session"] & {
+  session: IState["session"] & {
     plugins?: {
       pluginList: IPlugins;
       pluginInfo: { [id: string]: IPluginCombined };
@@ -17,7 +16,7 @@ export interface IStateWithGamebryo extends types.IState {
     };
     pluginDependencies?: IPluginDependencies;
   };
-  settings: types.IState["settings"] & {
+  settings: IState["settings"] & {
     plugins?: {
       autoSort: boolean;
       autoEnable: boolean;

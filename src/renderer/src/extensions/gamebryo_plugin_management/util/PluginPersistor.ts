@@ -1,9 +1,14 @@
 import * as path from "path";
 
-import { fs, log, types, util } from "@nexusmods/vortex-api";
-import Promise from "bluebird";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import { UserCanceled } from "@vortex/shared/errors";
+import Bluebird from "bluebird";
 
-import { ILoadOrder } from "../types/ILoadOrder";
+import { log } from "../../../logging";
+import type { IErrorOptions, IPersistor } from "../../../types/IExtensionContext";
+import * as fs from "../../../util/fs";
+import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
+import type { ILoadOrder } from "../types/ILoadOrder";
 import {
   gameDataPath,
   gameSupported,
@@ -25,22 +30,22 @@ const retryCount = 3;
  * persistor syncing to and from the gamebryo plugins.txt and loadorder.txt
  *
  * @class PluginPersistor
- * @implements {types.IPersistor}
+ * @implements {IPersistor}
  */
-class PluginPersistor implements types.IPersistor {
+class PluginPersistor implements IPersistor {
   private mDataPath: string;
   private mPluginPath: string;
   private mPluginFormat: PluginFormat;
   private mNativePlugins: string[];
   private mGameId: string;
-  private mResetCallback: () => Promise<void>;
+  private mResetCallback: () => Bluebird<void>;
 
   private mWatch: fs.FSWatcher;
   private mRefreshTimer: NodeJS.Timeout;
   private mLastWriteTime: Date = new Date();
   private mSerializing: boolean = false;
   private mSerializeScheduled: boolean = false;
-  private mSerializeQueue: Promise<void> = Promise.resolve();
+  private mSerializeQueue: Bluebird<void> = Bluebird.resolve();
 
   // "dynamic" plugins for which we store a load order (excluding native)
   private mPlugins: IPluginMap;
@@ -53,13 +58,13 @@ class PluginPersistor implements types.IPersistor {
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
+  private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
   private mOnExternalChange: () => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
 
   constructor(
-    onError: (message: string, details: Error, options?: types.IErrorOptions) => void,
+    onError: (message: string, details: Error, options?: IErrorOptions) => void,
     controlLoadOrder: () => boolean,
   ) {
     this.mPlugins = {};
@@ -67,18 +72,18 @@ class PluginPersistor implements types.IPersistor {
     this.mControlOrder = controlLoadOrder;
   }
 
-  public disable(): Promise<void> {
+  public disable(): Bluebird<void> {
     log("debug", "PluginPersistor.disable called");
     return this.enqueue(
       () =>
-        new Promise<void>((resolve) => {
+        new Bluebird<void>((resolve) => {
           this.mPlugins = {};
           this.mPluginPath = undefined;
           this.mPluginFormat = undefined;
           this.mNativePlugins = undefined;
           this.mLoaded = false;
           this.mExternalChoicePending = false;
-          let prom = Promise.resolve();
+          let prom = Bluebird.resolve();
           if (this.mResetCallback) {
             prom = this.reset();
           }
@@ -96,10 +101,10 @@ class PluginPersistor implements types.IPersistor {
     );
   }
 
-  public loadFiles(gameMode: string): Promise<void> {
+  public loadFiles(gameMode: string): Bluebird<void> {
     return this.enqueue(() => {
       if (!gameSupported(gameMode)) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
       this.mDataPath = gameDataPath(gameMode);
       this.mPluginPath = pluginPath(gameMode);
@@ -116,7 +121,7 @@ class PluginPersistor implements types.IPersistor {
           .then(() => {
             this.startWatch();
             this.serialize();
-            return Promise.resolve();
+            return Bluebird.resolve();
           })
       );
     });
@@ -163,17 +168,17 @@ class PluginPersistor implements types.IPersistor {
     gameId: string,
     // keyed by plugin id (toPluginId form)
     loadOrder: Record<string, ILoadOrder>,
-  ): Promise<void> {
+  ): Bluebird<void> {
     return this.enqueue(() => {
       try {
         if (!this.mLoaded || this.mPluginPath === undefined || gameId !== this.mGameId) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         const entries = Object.entries(loadOrder ?? {});
         if (entries.length === 0) {
           // an empty hive means a profile/game activation is mid-flight; syncing it
           // would serialize every plugin as disabled
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         const nativeSet = new Set(this.mNativePlugins ?? []);
         const next: IPluginMap = { ...this.mPlugins };
@@ -187,38 +192,38 @@ class PluginPersistor implements types.IPersistor {
           };
         });
         this.mPlugins = next;
-        return Promise.resolve(this.doSerialize()).catch((err) => {
+        return Bluebird.resolve(this.doSerialize()).catch((err) => {
           log("error", "failed to write plugin state after collection install", {
             error: err.message,
           });
         });
       } catch (err) {
         log("error", "failed to sync plugin state after collection install", {
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
     });
   }
 
-  public getItem(key: string[]): Promise<string> {
+  public getItem(key: string[]): Bluebird<string> {
     if (key.length === 1) {
       // I think right now this branch is always used
-      return Promise.resolve(
+      return Bluebird.resolve(
         JSON.stringify({
-          ...util.getSafe(this.mPlugins, key, undefined),
+          ...getSafe(this.mPlugins, key, undefined),
           loadOrder: this.loadOrder(key[0]),
         }),
       );
     } else if (key.length === 2 && key[1] === "loadOrder") {
       // This case doesn't actually seem to occur
-      return Promise.resolve(this.loadOrder(key[0]).toString());
+      return Bluebird.resolve(this.loadOrder(key[0]).toString());
     } else {
-      return Promise.resolve(JSON.stringify(util.getSafe(this.mPlugins, key, undefined)));
+      return Bluebird.resolve(JSON.stringify(getSafe(this.mPlugins, key, undefined)));
     }
   }
 
-  public setItem(key: string[], value: string): Promise<void> {
+  public setItem(key: string[], value: string): Bluebird<void> {
     let newValue = JSON.parse(value);
     if (
       key.length > 0 &&
@@ -226,7 +231,7 @@ class PluginPersistor implements types.IPersistor {
       this.mNativePlugins[key[0]] !== undefined
     ) {
       // ignore native plugins
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     if (key.length === 1) {
@@ -235,27 +240,27 @@ class PluginPersistor implements types.IPersistor {
       newValue -= this.mInstalledNative.length;
     }
 
-    if (newValue !== util.getSafe(this.mPlugins, key, undefined)) {
-      this.mPlugins = util.setSafe(this.mPlugins, key, newValue);
+    if (newValue !== getSafe(this.mPlugins, key, undefined)) {
+      this.mPlugins = setSafe(this.mPlugins, key, newValue);
       return this.serialize();
     } else {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
   }
 
-  public removeItem(key: string[]): Promise<void> {
-    this.mPlugins = util.deleteOrNop(this.mPlugins, key);
+  public removeItem(key: string[]): Bluebird<void> {
+    this.mPlugins = deleteOrNop(this.mPlugins, key);
     if (this.mPlugins[key[0]] !== undefined && Object.keys(this.mPlugins[key[0]]).length === 0) {
       delete this.mPlugins[key[0]];
     }
     return this.serialize();
   }
 
-  public getAllKeys(): Promise<string[][]> {
-    return Promise.resolve(Object.keys(this.mKnownPlugins || {}).map((key) => [key]));
+  public getAllKeys(): Bluebird<string[][]> {
+    return Bluebird.resolve(Object.keys(this.mKnownPlugins || {}).map((key) => [key]));
   }
 
-  private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
+  private reportError(message: string, detail: Error, options?: IErrorOptions) {
     if (!this.mFailed) {
       this.mOnError(message, detail, options);
       this.mFailed = true;
@@ -293,7 +298,7 @@ class PluginPersistor implements types.IPersistor {
     return input.filter(
       (name) =>
         nativePluginSet.has(name.toLowerCase()) ||
-        util.getSafe(this.mPlugins, [name.toLowerCase(), "enabled"], false),
+        getSafe(this.mPlugins, [name.toLowerCase(), "enabled"], false),
     );
   }
 
@@ -304,33 +309,32 @@ class PluginPersistor implements types.IPersistor {
     return input
       .filter((name) => !nativePluginSet.has(name.toLowerCase()))
       .map((name) =>
-        util.getSafe<boolean | "ghost">(this.mPlugins, [name.toLowerCase(), "enabled"], false) ===
-        true
+        getSafe<boolean | "ghost">(this.mPlugins, [name.toLowerCase(), "enabled"], false) === true
           ? "*" + name
           : name,
       );
   }
 
-  private enqueue(fn: () => Promise<void>): Promise<void> {
+  private enqueue(fn: () => Bluebird<void>): Bluebird<void> {
     this.mSerializeQueue = this.mSerializeQueue.then(fn);
     return this.mSerializeQueue;
   }
 
-  private serialize(): Promise<void> {
+  private serialize(): Bluebird<void> {
     if (!this.mLoaded) {
       // this happens during initialization, when the persistor is initially created
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     if (this.mExternalChoicePending) {
       // don't serialize while the user is deciding whether to keep or revert a foreign rewrite
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     if (!this.mSerializeScheduled) {
       this.mSerializeScheduled = true;
       // ensure we don't try to concurrently write the files
       this.enqueue(
         () =>
-          new Promise<void>((resolve) => {
+          new Bluebird<void>((resolve) => {
             setTimeout(() => {
               this.doSerialize()
                 .then(() => resolve())
@@ -342,7 +346,7 @@ class PluginPersistor implements types.IPersistor {
           }),
       );
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   private loadOrder(pluginId: string): number {
@@ -356,7 +360,7 @@ class PluginPersistor implements types.IPersistor {
     return this.mPlugins[pluginId].loadOrder + this.mInstalledNative.length;
   }
 
-  private doSerialize(): Promise<void> {
+  private doSerialize(): Bluebird<void> {
     if (this.mPluginPath === undefined || this.mDataPath === undefined) {
       return;
     }
@@ -403,14 +407,14 @@ class PluginPersistor implements types.IPersistor {
         if (this.mPluginFormat === "original" && this.mControlOrder()) {
           const offset = 946684800;
           const oneDay = 24 * 60 * 60;
-          return Promise.mapSeries(sorted, (fileName, idx) => {
+          return Bluebird.mapSeries(sorted, (fileName, idx) => {
             const mtime = offset + oneDay * idx;
             return fs
               .utimesAsync(path.join(this.mDataPath, fileName), mtime, mtime)
-              .catch((err) => (err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err)));
+              .catch((err) => (err.code === "ENOENT" ? Bluebird.resolve() : Bluebird.reject(err)));
           }).then(() => undefined);
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .then(() => {
@@ -421,7 +425,7 @@ class PluginPersistor implements types.IPersistor {
         this.mLastWriteTime = stats.mtime;
         return null;
       })
-      .catch(util.UserCanceled, () => null)
+      .catch(UserCanceled, () => null)
       .catch((err) => {
         if (err.code !== "EBUSY") {
           // Disallow error reports for:
@@ -500,13 +504,13 @@ class PluginPersistor implements types.IPersistor {
     return loadOrderPos;
   }
 
-  private deserialize(retry: boolean = false, adoptForeign: boolean = false): Promise<void> {
+  private deserialize(retry: boolean = false, adoptForeign: boolean = false): Bluebird<void> {
     if (this.mPluginPath === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     if (this.mExternalChoicePending && !adoptForeign) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     const foreign = { detected: false };
@@ -517,7 +521,7 @@ class PluginPersistor implements types.IPersistor {
 
     const newPlugins: IPluginMap = {};
 
-    let phaseOne: Promise<Buffer>;
+    let phaseOne: Bluebird<Buffer>;
     // for games with the old format we use the loadorder.txt file as reference for the
     // load order and only use the plugins.txt as "backup".
     // for newer games, since all plugins are listed, we don't really need the loadorder.txt
@@ -546,28 +550,28 @@ class PluginPersistor implements types.IPersistor {
           if (retry) {
             // The persistor must still count as loaded, or serialize() drops every write
             this.mLoaded = true;
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
           return this.deserialize(true, adoptForeign);
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
         this.initFromKeyList(newPlugins, keys, true, offset);
 
-        return Promise.resolve()
+        return Bluebird.resolve()
           .then(() => {
             if (
               this.mPluginFormat !== "original" ||
               this.mControlOrder() ||
               this.mGameId === "skyrim"
             ) {
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
 
             return fs
               .readdirAsync(this.mDataPath)
               .filter((fileName: string) => newPlugins[toPluginId(fileName)] !== undefined)
               .then((fileNames: string[]) =>
-                Promise.map(fileNames, (fileName) =>
+                Bluebird.map(fileNames, (fileName) =>
                   fs
                     .statAsync(path.join(this.mDataPath, fileName))
                     .then((stat) => ({ fileName, fileTime: stat.mtimeMs })),
@@ -589,13 +593,13 @@ class PluginPersistor implements types.IPersistor {
             ) {
               // a foreign rewrite while Vortex holds state for this game: the user decides
               this.promptExternalChange();
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
             this.adoptParsed(newPlugins);
-            return Promise.resolve();
+            return Bluebird.resolve();
           });
       })
-      .catch(util.UserCanceled, (err) => {
+      .catch(UserCanceled, (err) => {
         this.mLoaded = true;
         this.reportError("reading plugin list canceled", err, {
           allowReport: false,
@@ -657,10 +661,10 @@ class PluginPersistor implements types.IPersistor {
                 this.scheduleRefresh(500);
               }
             })
-            .catch(util.UserCanceled, () => Promise.resolve())
+            .catch(UserCanceled, () => Bluebird.resolve())
             .catch((err) =>
               err.code === "ENOENT"
-                ? Promise.resolve()
+                ? Bluebird.resolve()
                 : this.mOnError(`failed to read "${fileName}"`, err, {
                     allowReport: err.code !== "EPERM",
                   }),
@@ -716,7 +720,7 @@ class PluginPersistor implements types.IPersistor {
       return;
     }
     this.mExternalChoicePending = true;
-    Promise.resolve(this.mOnExternalChange())
+    Bluebird.resolve(this.mOnExternalChange())
       .then((choice) => {
         this.mExternalChoicePending = false;
         if (choice === "keep") {
@@ -724,7 +728,7 @@ class PluginPersistor implements types.IPersistor {
         }
         // revert: rewrite the files from Vortex's own state
         return this.enqueue(() =>
-          Promise.resolve(this.doSerialize()).catch((err) => {
+          Bluebird.resolve(this.doSerialize()).catch((err) => {
             log("error", "failed to revert external plugin file change", {
               error: err.message,
             });

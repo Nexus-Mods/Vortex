@@ -1,40 +1,48 @@
 import * as path from "path";
 
-import {
-  ComponentEx,
-  FlexLayout,
-  Icon,
-  IconBar,
-  Image,
-  ITableRowAction,
-  log,
-  MainPage,
-  More,
-  selectors,
-  Spinner,
-  Table,
-  TableTextFilter,
-  ToolbarIcon,
-  tooltip,
-  types,
-  Usage,
-  util,
-} from "@nexusmods/vortex-api";
-import Promise from "bluebird";
-import I18next, { TFunction } from "i18next";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import { ProcessCanceled } from "@vortex/shared/errors";
+import Bluebird from "bluebird";
+import type { TFunction } from "i18next";
+import type I18next from "i18next";
 import update from "immutability-helper";
 import * as _ from "lodash";
-import { Message, PluginCleaningData } from "loot";
+import type { Message, PluginCleaningData } from "loot";
 import * as React from "react";
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 import Select from "react-select";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { generate as shortid } from "shortid";
 
+import { ComponentEx } from "../../../controls/ComponentEx";
+import FlexLayout from "../../../controls/FlexLayout";
+import Icon from "../../../controls/Icon";
+import IconBar from "../../../controls/IconBar";
+import Image from "../../../controls/Image";
+import More from "../../../controls/More";
+import Spinner from "../../../controls/Spinner";
+import Table, { type ITableRowAction } from "../../../controls/Table";
+import TableTextFilter from "../../../controls/table/TextFilter";
+import ToolbarIcon from "../../../controls/ToolbarIcon";
+import * as tooltip from "../../../controls/TooltipControls";
+import Usage from "../../../controls/Usage";
+import { log } from "../../../logging";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IState } from "../../../types/IState";
+import type { ICustomProps, ITableAttribute } from "../../../types/ITableAttribute";
+import Debouncer from "../../../util/Debouncer";
+import { getSafe } from "../../../util/storeHelper";
+import { sanitizeCSSId } from "../../../util/util";
+import MainPage from "../../../views/MainPage";
+import { resolveCategoryName } from "../../category_management/util/retrieveCategoryPath";
+import { needToDeploy } from "../../mod_management/selectors";
+import type { IMod } from "../../mod_management/types/IMod";
+import renderModName from "../../mod_management/util/modName";
+import { activeProfile } from "../../profile_management/selectors";
 /* eslint-disable */
 import { setPluginEnabled } from "../actions/loadOrder";
 import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from "../actions/plugins";
@@ -78,9 +86,9 @@ interface IBaseProps {
   ): string[];
   isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
   isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
-  isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => Promise<boolean>;
-  openLOOTSite: () => Promise<any>;
-  parseESPFile: (filePath: string, gameMode: string) => Promise<IESPFile>;
+  isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => Bluebird<boolean>;
+  openLOOTSite: () => Bluebird<any>;
+  parseESPFile: (filePath: string, gameMode: string) => Bluebird<IESPFile>;
   safeBasename: (filePath: string) => string;
   installedPlugins: () => Set<string>;
 }
@@ -97,7 +105,7 @@ interface IConnectedProps {
   userlist: ILOOTList;
   masterlist: ILOOTList;
   deployProgress: string;
-  mods: { [id: string]: types.IMod };
+  mods: { [id: string]: IMod };
 }
 
 interface IActionProps {
@@ -153,7 +161,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, IGroupSelectSta
     const { t, plugins, masterlist, userlist } = this.props;
     const { inputValue } = this.state;
 
-    let group = util.getSafe(plugins, [0, "group"], "");
+    let group = getSafe(plugins, [0, "group"], "");
     if (plugins.find((plugin) => plugin.group !== group) !== undefined) {
       group = "";
     }
@@ -301,19 +309,19 @@ function nop() {
 }
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
-  private staticButtons: types.IActionDefinition[];
-  private pluginEnabledAttribute: types.ITableAttribute;
+  private staticButtons: IActionDefinition[];
+  private pluginEnabledAttribute: ITableAttribute;
   private actions: ITableRowAction[];
   private mLang: string;
   private mCollator: Intl.Collator;
   private mMounted: boolean = false;
   private mCachedGameMode: string;
   private mUpdateId: string;
-  private updateDetailsDebouncer: util.Debouncer;
+  private updateDetailsDebouncer: Debouncer;
 
   private installedNative: { [name: string]: number } = {};
 
-  private pluginAttributes: Array<types.ITableAttribute<IPluginCombined>> = [];
+  private pluginAttributes: Array<ITableAttribute<IPluginCombined>> = [];
 
   constructor(props) {
     super(props);
@@ -482,7 +490,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             onClick: () =>
               this.context.api.events.emit("autosort-plugins", true, () => {
                 this.updatePlugins(this.props.plugins, this.props.gameMode)
-                  .catch(util.ProcessCanceled, () => null)
+                  .catch(ProcessCanceled, () => null)
                   .catch((err) => {
                     log("warn", "failed to update plugins", {
                       error: err.message,
@@ -506,14 +514,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.updateDetailsDebouncer = new util.Debouncer((pluginList: IPlugins, gameId: string) => {
+    this.updateDetailsDebouncer = new Debouncer((pluginList: IPlugins, gameId: string) => {
       if (this.props.modActivity !== undefined && this.props.modActivity.length > 0) {
         log("debug", "deferring update plugin details because mod activity");
         this.updateDetailsDebouncer.schedule(undefined, pluginList, gameId);
-        return Promise.resolve();
+        return Bluebird.resolve();
       }
       return this.updatePlugins(pluginList, gameId)
-        .catch(util.ProcessCanceled, () => null)
+        .catch(ProcessCanceled, () => null)
         .catch((err) => {
           log("warn", "failed to update plugins", { error: err.message });
         });
@@ -575,7 +583,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       .then(() =>
         this.applyUserlist(this.props.userlist.plugins || [], this.props.masterlist.plugins || []),
       )
-      .catch(util.ProcessCanceled, () => null)
+      .catch(ProcessCanceled, () => null)
       .catch((err) => {
         log("warn", "failed to update plugins", { error: err.message });
       });
@@ -774,16 +782,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       this.nextState.pluginsLoot = {};
       this.nextState.pluginsCombined = {};
 
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     const pluginNames: string[] = Object.keys(pluginsIn ?? {});
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
-    return Promise.each(pluginNames, async (pluginName: string) => {
+    return Bluebird.each(pluginNames, async (pluginName: string) => {
       if (updateId !== this.mUpdateId) {
-        return Promise.reject(new util.ProcessCanceled("new update started"));
+        return Bluebird.reject(new ProcessCanceled("new update started"));
       }
       try {
         const esp = await this.props.parseESPFile(
@@ -816,7 +824,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       } catch (err) {
         log("info", "failed to parse esp", {
           path: pluginsIn[pluginName].filePath,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         pluginsParsed[pluginName] = {
           isMaster: false,
@@ -833,9 +841,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     })
       .then(
         () =>
-          new Promise((resolve, reject) => {
+          new Bluebird((resolve, reject) => {
             if (this.mUpdateId !== updateId) {
-              return reject(new util.ProcessCanceled("new update started"));
+              return reject(new ProcessCanceled("new update started"));
             }
             if (pluginNames.length > 0) {
               this.context.api.events.emit(
@@ -855,7 +863,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       )
       .then(() => {
         if (updateId !== this.mUpdateId) {
-          return Promise.reject(new util.ProcessCanceled("new update started"));
+          return Bluebird.reject(new ProcessCanceled("new update started"));
         }
 
         const pluginsCombined = this.detailedPlugins(pluginsIn, pluginsLoot, pluginsParsed);
@@ -883,7 +891,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           }, {});
 
         this.props.onUpdatePluginInfo(_.cloneDeep(pluginsCombined));
-        return Promise.resolve();
+        return Bluebird.resolve();
       });
   }
 
@@ -898,7 +906,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       }
       if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         this.props.onSetPluginGhost(key, this.props.gameMode, false, true);
-      } else if (!util.getSafe(loadOrder, [key, "enabled"], false)) {
+      } else if (!getSafe(loadOrder, [key, "enabled"], false)) {
         onSetPluginEnabled(key, true);
       }
     });
@@ -916,7 +924,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
       if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
         this.props.onSetPluginGhost(key, gameMode, false, false);
-      } else if (util.getSafe<boolean>(loadOrder, [key, "enabled"], false)) {
+      } else if (getSafe<boolean>(loadOrder, [key, "enabled"], false)) {
         onSetPluginEnabled(key, false);
       }
     });
@@ -1059,18 +1067,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private eslify(plugin: IPluginCombined, enable: boolean): Promise<void> {
+  private eslify(plugin: IPluginCombined, enable: boolean): Bluebird<void> {
     try {
       this.props.onSetPluginLight(plugin.id, enable);
       this.nextState.pluginsCombined[plugin.id].isLight = enable;
-      return Promise.resolve();
+      return Bluebird.resolve();
     } catch (err) {
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
   }
 
   private eslifySelected = (pluginIds: string[]) => {
-    Promise.map(
+    Bluebird.map(
       pluginIds
         .map((pluginId) => this.state.pluginsCombined[pluginId])
         .filter(
@@ -1101,7 +1109,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   };
 
   private uneslifySelected = (pluginIds: string[]) => {
-    Promise.map(
+    Bluebird.map(
       pluginIds
         .map((pluginId) => this.state.pluginsCombined[pluginId])
         .filter(
@@ -1164,11 +1172,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       return "";
     }
 
-    const mod = util.getSafe(this.props.mods, [plugin.modId], undefined);
+    const mod = getSafe(this.props.mods, [plugin.modId], undefined);
     if (mod === undefined) {
       return "";
     }
-    return util.renderModName(mod, { version: false });
+    return renderModName(mod, { version: false });
   };
 
   private highlightMod = (evt: React.MouseEvent<any>) => {
@@ -1178,10 +1186,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // for the fact that the mods page might not be mounted yet
     setTimeout(() => {
       this.context.api.events.emit("mods-scroll-to", modId);
-      this.context.api.highlightControl(
-        `.${(util as any).sanitizeCSSId(modId)} > .cell-name`,
-        4000,
-      );
+      this.context.api.highlightControl(`.${sanitizeCSSId(modId)} > .cell-name`, 4000);
     }, 200);
   };
 
@@ -1276,7 +1281,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return this.mCollator;
   }
 
-  private makeAttributes(): Array<types.ITableAttribute<IPluginCombined>> {
+  private makeAttributes(): Array<ITableAttribute<IPluginCombined>> {
     return [
       {
         id: "name",
@@ -1314,8 +1319,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: "Mod Category",
         edit: {},
         calc: (plugin) =>
-          util.resolveCategoryName(
-            util.getSafe(this.props.mods, [plugin.modId, "attributes", "category"], undefined),
+          resolveCategoryName(
+            getSafe(this.props.mods, [plugin.modId, "attributes", "category"], undefined),
             this.context.api.store.getState(),
           ),
         placement: "both",
@@ -1497,9 +1502,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         description: "Group",
         icon: "sort-down",
         placement: "table",
-        calc: (plugin) => util.getSafe(plugin, ["group"], "") || "default",
+        calc: (plugin) => getSafe(plugin, ["group"], "") || "default",
         customRenderer: (plugin: IPluginCombined) => {
-          const grp = util.getSafe(plugin, ["group"], "") || "default";
+          const grp = getSafe(plugin, ["group"], "") || "default";
           const ulEntry = (this.props.userlist.plugins || []).find(
             (iter) => toPluginId(iter.name) === plugin.id,
           );
@@ -1523,7 +1528,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         name: "Group",
         description: "Group",
         placement: "detail",
-        calc: (plugin) => util.getSafe(plugin, ["group"], "") || "",
+        calc: (plugin) => getSafe(plugin, ["group"], "") || "",
         customRenderer: (plugins) => {
           const { masterlist, userlist } = this.props;
           if (!Array.isArray(plugins)) {
@@ -1617,7 +1622,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           plugin: IPluginCombined,
           detail: boolean,
           t: TFunction,
-          props: types.ICustomProps,
+          props: ICustomProps,
         ) => <DependencyIcon plugin={plugin} t={t} onHighlight={props.onHighlight} />,
         calc: () => null,
         isToggleable: true,
@@ -1686,7 +1691,7 @@ const emptyLOOTList: ILOOTList = {
 };
 
 function mapStateToProps(state: any): IConnectedProps {
-  const profile = selectors.activeProfile(state);
+  const profile = activeProfile(state);
   const gameMode = profile !== undefined ? profile.gameId : undefined;
   return {
     gameMode,
@@ -1698,16 +1703,14 @@ function mapStateToProps(state: any): IConnectedProps {
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity["plugins"] ?? emptyList,
     modActivity: state.session.base.activity["mods"],
-    deployProgress: util.getSafe(
+    deployProgress: getSafe(
       state.session.base,
       ["progress", "profile", "deploying", "text"],
       undefined,
     ),
-    needToDeploy: selectors.needToDeploy(state),
+    needToDeploy: needToDeploy(state),
     mods:
-      profile !== undefined
-        ? (state as types.IState).persistent.mods[gameMode] || emptyObj
-        : emptyObj,
+      profile !== undefined ? (state as IState).persistent.mods[gameMode] || emptyObj : emptyObj,
   };
 }
 

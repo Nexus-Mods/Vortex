@@ -1,31 +1,36 @@
-import { Advanced, ComponentEx, log, selectors, tooltip, util } from "@nexusmods/vortex-api";
-import I18next from "i18next";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import type I18next from "i18next";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Button, Overlay, Popover } from "react-bootstrap";
-import {
+import type {
   ConnectDragPreview,
   ConnectDragSource,
   ConnectDropTarget,
-  DragSource,
   DragSourceConnector,
   DragSourceMonitor,
   DragSourceSpec,
-  DropTarget,
   DropTargetConnector,
   DropTargetMonitor,
   DropTargetSpec,
 } from "react-dnd";
+import { DragSource, DropTarget } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 
+import Advanced from "../../../controls/Advanced";
+import { ComponentEx } from "../../../controls/ComponentEx";
+import * as tooltip from "../../../controls/TooltipControls";
+import { log } from "../../../logging";
+import { getSafe } from "../../../util/storeHelper";
+import { activeGameId } from "../../profile_management/selectors";
 import { addRule, removeRule } from "../actions/userlist";
 import { setCreateRule, setQuickEdit, setSource, setTarget } from "../actions/userlistEdit";
 import { NAMESPACE } from "../statics";
-import { ILOOTList, ILOOTPlugin, ILootReference } from "../types/ILOOTList";
-import { IPluginCombined } from "../types/IPlugins";
+import type { ILOOTList, ILOOTPlugin, ILootReference } from "../types/ILOOTList";
+import type { IPluginCombined } from "../types/IPlugins";
 
 type TranslationFunction = typeof I18next.t;
 
@@ -83,7 +88,7 @@ function componentCenter(component: React.Component<any, any>) {
       y: box.top + box.height / 2,
     };
   } catch (err) {
-    log("error", "failed to find component", { error: err.message });
+    log("error", "failed to find component", { error: getErrorMessageOrDefault(err) });
   }
 }
 
@@ -251,10 +256,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const { t, masterlist, plugin, quickEdit, userlist } = this.props;
     const refPlugin = userlist.find((iter) => iter.name === quickEdit.plugin);
     const refMasterPlugin = masterlist.find((iter) => iter.name === quickEdit.plugin);
-    const masterEnabled =
-      util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
+    const masterEnabled = getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
     const thisEnabled =
-      masterEnabled || util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
+      masterEnabled || getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
 
     const tooltipText = t("load {{ reference }} after {{ name }}", {
       replace: {
@@ -312,14 +316,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           {t("Loads after:", { ns: NAMESPACE })}
           <ul>
             {Array.from(
-              util
-                .getSafe(lootRules, ["ro", "after"], [])
-                .map((ref) => this.renderRule(ref, "after", true)),
+              getSafe(lootRules, ["ro", "after"], []).map((ref) =>
+                this.renderRule(ref, "after", true),
+              ),
             )}
             {Array.from(
-              util
-                .getSafe(lootRules, ["rw", "after"], [])
-                .map((ref) => this.renderRule(ref, "after", false)),
+              getSafe(lootRules, ["rw", "after"], []).map((ref) =>
+                this.renderRule(ref, "after", false),
+              ),
             )}
           </ul>
         </div>,
@@ -335,14 +339,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           {t("Requires:", { ns: NAMESPACE })}
           <ul>
             {Array.from(
-              util
-                .getSafe(lootRules, ["ro", "req"], [])
-                .map((ref) => this.renderRule(ref, "requires", true)),
+              getSafe(lootRules, ["ro", "req"], []).map((ref) =>
+                this.renderRule(ref, "requires", true),
+              ),
             )}
             {Array.from(
-              util
-                .getSafe(lootRules, ["rw", "req"], [])
-                .map((ref) => this.renderRule(ref, "requires", false)),
+              getSafe(lootRules, ["rw", "req"], []).map((ref) =>
+                this.renderRule(ref, "requires", false),
+              ),
             )}
           </ul>
         </div>,
@@ -358,14 +362,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           {t("Incompatible:", { ns: NAMESPACE })}
           <ul>
             {Array.from(
-              util
-                .getSafe(lootRules, ["ro", "inc"], [])
-                .map((ref) => this.renderRule(ref, "incompatible", true)),
+              getSafe(lootRules, ["ro", "inc"], []).map((ref) =>
+                this.renderRule(ref, "incompatible", true),
+              ),
             )}
             {Array.from(
-              util
-                .getSafe(lootRules, ["rw", "inc"], [])
-                .map((ref) => this.renderRule(ref, "incompatible", false)),
+              getSafe(lootRules, ["rw", "inc"], []).map((ref) =>
+                this.renderRule(ref, "incompatible", false),
+              ),
             )}
           </ul>
         </div>,
@@ -462,7 +466,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private toggleQuick = () => {
     const { onAddRule, onRemoveRule, plugin, quickEdit, userlist } = this.props;
     const refPlugin = userlist.find((iter) => iter.name === quickEdit.plugin);
-    const thisEnabled = util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
+    const thisEnabled = getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.id) !== -1;
     if (thisEnabled) {
       onRemoveRule(quickEdit.plugin, plugin.id, quickEdit.mode);
     } else {
@@ -505,7 +509,7 @@ const emptyList: ILOOTList = {
 
 function mapStateToProps(state): IConnectedProps {
   return {
-    gameId: selectors.activeGameId(state),
+    gameId: activeGameId(state),
     userlist: (state.userlist || emptyList).plugins,
     masterlist: (state.masterlist || emptyList).plugins,
     quickEdit: state.session.pluginDependencies.quickEdit,

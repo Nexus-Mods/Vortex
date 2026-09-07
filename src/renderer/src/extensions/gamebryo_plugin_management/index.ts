@@ -3,12 +3,47 @@ import { stat as fsStat } from "fs/promises";
 import * as path from "path";
 import * as nodeUtil from "util";
 
-import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
-import Promise from "bluebird";
-import I18next from "i18next";
-import * as Redux from "redux";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { UserCanceled } from "@vortex/shared/errors";
+import Bluebird from "bluebird";
+import type I18next from "i18next";
+import type * as Redux from "redux";
 import { createSelector } from "reselect";
 
+import { dismissNotification } from "../../actions/notifications";
+import { startActivity, stopActivity } from "../../actions/session";
+import { setAttributeFilter } from "../../actions/tables";
+import { log } from "../../logging";
+import ReduxProp from "../../ReduxProp";
+import type { IDialogResult } from "../../types/IDialog";
+import type {
+  IErrorOptions,
+  IExtensionApi,
+  IExtensionContext,
+  ThunkStore,
+} from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
+import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
+import * as fs from "../../util/fs";
+import getVortexPath from "../../util/getVortexPath";
+import makeReactive from "../../util/makeReactive";
+import { showError } from "../../util/message";
+import opn from "../../util/opn";
+import { getSafe } from "../../util/storeHelper";
+import { batchDispatch, delay, setdefault } from "../../util/util";
+import { currentGameDiscovery, discoveryByGame } from "../gamemode_management/selectors";
+import { getGame } from "../gamemode_management/util/getGame";
+import { setDeploymentNecessary } from "../mod_management/actions/deployment";
+import { installPathForGame } from "../mod_management/selectors";
+import { getCurrentActivator } from "../mod_management/util/deploymentMethods";
+import {
+  activeGameId,
+  activeProfile,
+  lastActiveProfileForGame,
+  profileById,
+} from "../profile_management/selectors";
+import type { IProfile } from "../profile_management/types/IProfile";
 /* eslint-disable */
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from "./actions/loadOrder";
 import {
@@ -75,7 +110,7 @@ interface IModStates {
   [modId: string]: IModState;
 }
 
-function isFile(fileName: string): Promise<boolean> {
+function isFile(fileName: string): Bluebird<boolean> {
   return (
     fs
       .isDirectoryAsync(fileName)
@@ -88,13 +123,13 @@ function isFile(fileName: string): Promise<boolean> {
       //  the following isPlugin predicate anyway so we can just return false here.
       .catch((err) =>
         ["ENOENT", "UNKNOWN"].indexOf(err.code) !== -1
-          ? Promise.resolve(true)
-          : Promise.reject(err),
+          ? Bluebird.resolve(true)
+          : Bluebird.reject(err),
       )
   );
 }
 
-function isPlugin(filePath: string, fileName: string, gameMode: string): Promise<boolean> {
+function isPlugin(filePath: string, fileName: string, gameMode: string): Bluebird<boolean> {
   if (path.extname(fileName) === GHOST_EXT) {
     fileName = path.basename(fileName, GHOST_EXT);
   }
@@ -103,20 +138,20 @@ function isPlugin(filePath: string, fileName: string, gameMode: string): Promise
     !fileName ||
     pluginExtensions(gameMode).indexOf(path.extname(path.basename(fileName)).toLowerCase()) === -1
   ) {
-    return Promise.resolve(false);
+    return Bluebird.resolve(false);
   }
-  return isFile(path.join(filePath, fileName)).catch(util.UserCanceled, () => false);
+  return isFile(path.join(filePath, fileName)).catch(UserCanceled, () => false);
 }
 
 /**
  * updates the list of known plugins for the managed game
  */
 function updatePluginListImpl(
-  store: types.ThunkStore<any>,
+  store: ThunkStore<any>,
   newModList: IModStates,
   gameId: string,
-): Promise<void> {
-  const state: types.IState = store.getState();
+): Bluebird<void> {
+  const state: IState = store.getState();
 
   const pluginSources: { [pluginName: string]: string } = {};
   const pluginStates: IPlugins = {};
@@ -128,40 +163,40 @@ function updatePluginListImpl(
       modId,
       filePath: path.join(basePath, fileName),
       isNative: isNativePlugin(gameId, fileName),
-      warnings: util.getSafe(state, ["session", "plugins", "pluginList", pluginId, "warnings"], {}),
+      warnings: getSafe(state, ["session", "plugins", "pluginList", pluginId, "warnings"], {}),
       deployed,
     };
-    return Promise.resolve();
+    return Bluebird.resolve();
   };
 
-  const discovery = (selectors as any).discoveryByGame(state, gameId);
+  const discovery = discoveryByGame(state, gameId);
   if (discovery === undefined || discovery.path === undefined) {
     // paranoia, this shouldn't happen
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
   const readErrors = [];
 
   const gameMods = state.persistent.mods[gameId] || {};
-  const game = util.getGame(gameId);
+  const game = getGame(gameId);
   if (game === undefined) {
     // we may get here if the active game is no longer supported due to
     // the extension being disabled.
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   const modType = game.details?.dataModType || "";
   const modPath = game.getModPaths(discovery.path)[modType];
 
   const enabledModIds = Object.keys(gameMods).filter((modId) =>
-    util.getSafe(newModList, [modId, "enabled"], false),
+    getSafe(newModList, [modId, "enabled"], false),
   );
 
-  const activator = util.getCurrentActivator(state, gameId, true);
+  const activator = getCurrentActivator(state, gameId, true);
 
-  const installBasePath = selectors.installPathForGame(state, gameId);
+  const installBasePath = installPathForGame(state, gameId);
   // create a cache of all plugins that originate from a mod so we can assign
   // the correct origin further down
-  return Promise.map(enabledModIds, (modId: string) => {
+  return Bluebird.map(enabledModIds, (modId: string) => {
     const mod = gameMods[modId];
     if (mod === undefined || mod.installationPath === undefined) {
       log("error", "mod not found", { gameId, modId });
@@ -177,7 +212,7 @@ function updatePluginListImpl(
       )
       .filter((fileName: string) =>
         isPlugin(modInstPath, fileName, gameId).then((res) =>
-          Promise.resolve(res && !isOverriden(fileName)),
+          Bluebird.resolve(res && !isOverriden(fileName)),
         ),
       )
       .each((fileName: string) => {
@@ -194,7 +229,7 @@ function updatePluginListImpl(
   })
     .then(() => {
       if (readErrors.length > 0) {
-        util.showError(
+        showError(
           store.dispatch,
           "Failed to read some mods",
           "The following mods could not be searched (see log for details):\n" +
@@ -202,11 +237,11 @@ function updatePluginListImpl(
           { allowReport: false, id: "failed-to-read-mods" },
         );
       } else {
-        store.dispatch(actions.dismissNotification("failed-to-read-mods"));
+        store.dispatch(dismissNotification("failed-to-read-mods"));
       }
 
       if (discovery === undefined) {
-        return Promise.resolve([]);
+        return Bluebird.resolve([]);
       }
       // if reading the mod directory fails that's probably a broken installation,
       // but it's not the responsible of this extension to report that, the
@@ -214,7 +249,7 @@ function updatePluginListImpl(
       return fs.readdirAsync(modPath).catch((err) => []);
     })
     .then(async (fileNames: string[]) => {
-      return Promise.filter(fileNames, (val) => isPlugin(modPath, val, gameId))
+      return Bluebird.filter(fileNames, (val) => isPlugin(modPath, val, gameId))
         .each((fileName: string) => setPluginState(modPath, fileName, true))
         .then(async () => {
           store.dispatch(setPluginList(pluginStates));
@@ -223,7 +258,7 @@ function updatePluginListImpl(
               (key) => !pluginStates[key].deployed,
             );
             if (notDeployed !== undefined) {
-              store.dispatch((actions as any).setDeploymentNecessary(gameId, true));
+              store.dispatch(setDeploymentNecessary(gameId, true));
             }
             const knownPlugins = Object.keys(pluginStates).reduce((prev, pluginId) => {
               prev[pluginId] = path.basename(pluginStates[pluginId].filePath);
@@ -247,11 +282,11 @@ function updatePluginListImpl(
               pluginPersistor.setKnownPlugins(knownPlugins, blueprintIds);
             }
           }
-          return Promise.resolve();
+          return Bluebird.resolve();
         });
     })
     .catch((err: Error) => {
-      util.showError(store.dispatch, "Failed to update plugin list", err);
+      showError(store.dispatch, "Failed to update plugin list", err);
     });
 }
 
@@ -259,11 +294,11 @@ function withActivity<T>(
   store: Redux.Store<any>,
   groupId: string,
   activity: string,
-  cb: () => Promise<T>,
-): Promise<T> {
-  store.dispatch(actions.startActivity(groupId, activity));
+  cb: () => Bluebird<T>,
+): Bluebird<T> {
+  store.dispatch(startActivity(groupId, activity));
   return cb().finally(() => {
-    store.dispatch(actions.stopActivity(groupId, activity));
+    store.dispatch(stopActivity(groupId, activity));
   });
 }
 
@@ -274,11 +309,11 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameI
 }
 
 function renamePlugin(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   plugin: IPluginCombined,
   targetPath: string,
-): Promise<void> {
+): Bluebird<void> {
   const renameProm = fs.renameAsync(plugin.filePath, targetPath);
   if (!plugin.modId) {
     return renameProm;
@@ -286,7 +321,7 @@ function renamePlugin(
     // if we have a corresponding mod we need to rename the file in the staging directory instead,
     // deployment will later figure out the file in the game directory
     const state = api.getState();
-    const stagingPath = selectors.installPathForGame(state, gameId);
+    const stagingPath = installPathForGame(state, gameId);
     const mod = state.persistent.mods[gameId][plugin.modId];
     const srcName = path.basename(plugin.filePath);
     const dstName = path.basename(targetPath);
@@ -302,7 +337,7 @@ function renamePlugin(
   }
 }
 
-interface IExtensionContextExt extends types.IExtensionContext {
+interface IExtensionContextExt extends IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string | (() => PromiseLike<string[]>)) => void;
 }
 
@@ -313,7 +348,7 @@ let loot: LootInterface;
 let refreshTimer: NodeJS.Timeout;
 let deploying = false;
 
-function makeSetPluginGhost(api: types.IExtensionApi) {
+function makeSetPluginGhost(api: IExtensionApi) {
   return (pluginId: string, gameMode: string, ghosted: boolean, enabled: boolean) => {
     const state = api.store.getState();
     const { pluginList } = state.session.plugins;
@@ -351,7 +386,7 @@ function makeSetPluginGhost(api: types.IExtensionApi) {
 // TODO bad hack. converting a plugin to light or back invalidates the cache the PluginList
 // holds so we use this to force an update. The better solution would be to decouple the cache
 // from the component and update the cache directly
-const forceListUpdate = util.makeReactive({});
+const forceListUpdate = makeReactive({});
 
 function register(
   context: IExtensionContextExt,
@@ -367,7 +402,7 @@ function register(
   context.registerReducer(["settings", "plugins"], settingsReducer);
   context.registerReducer(["session", "pluginDependencies"], userlistEditReducer);
 
-  const pluginActivity = new util.ReduxProp(
+  const pluginActivity = new ReduxProp(
     context.api,
     [["session", "base", "activity", "plugins"]],
     (activity: string[]) => activity !== undefined && activity.length > 0,
@@ -406,7 +441,7 @@ function register(
     return flag || path.extname(filePath).toLowerCase() === ".esl";
   };
 
-  const openLOOTSite = () => util.opn("https://loot.github.io/").catch(() => null);
+  const openLOOTSite = () => opn("https://loot.github.io/").catch(() => null);
 
   const parseESPFile = async (filePath: string, gameMode: string): Promise<IESPFile> => {
     const fileInfo = await ESPFile.open(filePath, gameMode);
@@ -428,7 +463,7 @@ function register(
   };
 
   const loadOrder = (state) => state.loadOrder;
-  const enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
+  const enabledPlugins = createSelector(loadOrder, activeGameId, (order, gameId) => {
     if (!gameSupported(gameId)) {
       return new Set<string>([]);
     }
@@ -442,7 +477,7 @@ function register(
     );
   });
 
-  const pluginCounter = new util.ReduxProp(
+  const pluginCounter = new ReduxProp(
     context.api,
     [["session", "plugins", "newlyAddedPlugins"]],
     (value: number) => (value > 0 ? value : undefined),
@@ -456,7 +491,7 @@ function register(
     group: "per-game",
     visible: () => {
       const state = context.api.store.getState();
-      const gameMode = selectors.activeGameId(state);
+      const gameMode = activeGameId(state);
       return gameSupported(gameMode);
     },
     props: () => ({
@@ -474,8 +509,8 @@ function register(
       forceListUpdate,
       safeBasename,
       installedPlugins,
-      nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
-        ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
+      nativePlugins: gameSupported(activeGameId(context.api.store.getState()))
+        ? nativePlugins(activeGameId(context.api.store.getState()))
         : [],
       onRefreshPlugins: () => updateCurrentProfile(context.api),
       onSetPluginGhost: makeSetPluginGhost(context.api),
@@ -487,10 +522,10 @@ function register(
 
   for (const gameId of supportedGames()) {
     context.registerProfileFile(gameId, () =>
-      Promise.resolve([path.join(pluginPath(gameId), "plugins.txt")]),
+      Bluebird.resolve([path.join(pluginPath(gameId), "plugins.txt")]),
     );
     context.registerProfileFile(gameId, () =>
-      Promise.resolve([path.join(pluginPath(gameId), "loadorder.txt")]),
+      Bluebird.resolve([path.join(pluginPath(gameId), "loadorder.txt")]),
     );
   }
 
@@ -500,12 +535,12 @@ function register(
     "connection",
     "LOOT Rules",
     "This profile has its own plugin rules and groups",
-    () => gameSupported(selectors.activeGameId(context.api.store.getState())),
+    () => gameSupported(activeGameId(context.api.store.getState())),
   );
 
   context.registerSettings("Workarounds", Settings, undefined, () => {
     const state = context.api.store.getState();
-    const gameMode = selectors.activeGameId(state);
+    const gameMode = activeGameId(state);
     return supportedGames().indexOf(gameMode) !== -1;
   });
 
@@ -518,15 +553,15 @@ function register(
         onSortCallback(new Error("incorrect lootSortAsync call parameters"), []);
         return;
       }
-      const profile = selectors.activeProfile(context.api.store.getState());
+      const profile = activeProfile(context.api.store.getState());
       try {
         const masterListExists = await masterlistExists(profile.gameId);
         if (!masterListExists) {
           await loot.downloadMasterlist(profile.gameId);
         }
         await updatePluginList(context.api.store, profile.modState, profile.gameId);
-        await new Promise((resolve, reject) => {
-          const pluginList = util.getSafe(
+        await new Bluebird((resolve, reject) => {
+          const pluginList = getSafe(
             context.api.getState(),
             ["session", "plugins", "pluginList"],
             {},
@@ -551,7 +586,7 @@ function register(
         });
       } catch (err) {
         log("error", "failed to update plugin list", err);
-        onSortCallback(err, []);
+        onSortCallback(unknownToError(err), []);
         return;
       }
     },
@@ -583,7 +618,7 @@ function register(
         },
         [{ label: "Cancel" }, { label: "Reset" }],
       )
-      .then((result: types.IDialogResult) => {
+      .then((result: IDialogResult) => {
         if (result.action === "Reset") {
           const state: IStateWithGamebryo = context.api.store.getState();
           const userlist = state.userlist;
@@ -591,7 +626,7 @@ function register(
           const unsetGroups = (userlist?.plugins ?? [])
             .filter((plugin) => plugin.group !== undefined)
             .map((plugin) => setGroup(plugin.name, undefined));
-          util.batchDispatch(context.api.store, [...unsetGroups, clearUserlist()]);
+          batchDispatch(context.api.store, [...unsetGroups, clearUserlist()]);
           context.api.sendNotification({
             type: "success",
             message: "Plugin rules have been reset to defaults",
@@ -608,8 +643,8 @@ function register(
       //  know that the plugin management is enabled for this profile.
       if (process.type === "renderer") {
         const { profileId, enabled } = action.payload;
-        const profile = selectors.profileById(state, profileId);
-        const currentState = util.getSafe(state, ["pluginManagementEnabled", profileId], false);
+        const profile = profileById(state, profileId);
+        const currentState = getSafe(state, ["pluginManagementEnabled", profileId], false);
         if (currentState !== enabled) {
           if (enabled) {
             syncGameSupport(profile.gameId, getGameSupport()[profile.gameId]);
@@ -652,7 +687,7 @@ function register(
   context.registerAPI(
     "isBlueprintPlugin",
     async (pluginFilePath: string): Promise<boolean> => {
-      const gameMode = selectors.activeGameId(context.api.getState());
+      const gameMode = activeGameId(context.api.getState());
       if (!supportsBlueprintPlugins(gameMode)) {
         return false;
       }
@@ -670,7 +705,7 @@ function register(
   );
 
   context.registerTest("plugins-locked", "gamemode-activated", () =>
-    testPluginsLocked(selectors.activeGameId(context.api.store.getState())),
+    testPluginsLocked(activeGameId(context.api.store.getState())),
   );
   context.registerTest("master-missing", "gamemode-activated", () =>
     testMissingMasters(context.api, pluginInfoCache),
@@ -706,7 +741,7 @@ function register(
  * the store
  */
 function initPersistor(context: IExtensionContextExt) {
-  const onError = (message: string, detail: Error, options?: types.IErrorOptions) => {
+  const onError = (message: string, detail: Error, options?: IErrorOptions) => {
     context.api.showErrorNotification(message, detail, options);
   };
 
@@ -746,22 +781,22 @@ function initPersistor(context: IExtensionContextExt) {
 /**
  * update the plugin list for the currently active profile
  */
-function updateCurrentProfile(api: types.IExtensionApi): Promise<void> {
-  const gameId = selectors.activeGameId(api.getState());
+function updateCurrentProfile(api: IExtensionApi): Bluebird<void> {
+  const gameId = activeGameId(api.getState());
 
   if (!gameSupported(gameId)) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
-  const profile = selectors.activeProfile(api.getState());
+  const profile = activeProfile(api.getState());
   if (profile === undefined) {
     log("warn", "no profile active");
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
-  return new Promise<void>(async (resolve, reject) => {
+  return new Bluebird<void>(async (resolve, reject) => {
     await updatePluginList(api.store, profile.modState, profile.gameId);
-    const pluginList = util.getSafe(api.getState(), ["session", "plugins", "pluginList"], {});
+    const pluginList = getSafe(api.getState(), ["session", "plugins", "pluginList"], {});
     api.events.emit("plugin-details", profile.gameId, Object.keys(pluginList ?? {}), resolve);
   });
 }
@@ -772,8 +807,8 @@ function updateCurrentProfile(api: types.IExtensionApi): Promise<void> {
  * stale writes.
  */
 async function swapUserlistForProfile(
-  oldProfile: types.IProfile | undefined,
-  newProfile: types.IProfile | undefined,
+  oldProfile: IProfile | undefined,
+  newProfile: IProfile | undefined,
 ): Promise<void> {
   const oldHasLocal = oldProfile?.features?.local_loot_rules === true;
   const newHasLocal = newProfile?.features?.local_loot_rules === true;
@@ -787,20 +822,19 @@ async function swapUserlistForProfile(
     return;
   }
 
-  const userDataPath = util.getVortexPath("userData");
+  const userDataPath = getVortexPath("userData");
   const activeFile = path.join(userDataPath, gameId, "userlist.yaml");
   const globalBackup = path.join(userDataPath, gameId, "userlist.yaml.global");
 
-  const getProfileDir = (profile: types.IProfile) =>
+  const getProfileDir = (profile: IProfile) =>
     path.join(userDataPath, gameId, "profiles", profile.id);
-  const getProfileFile = (profile: types.IProfile) =>
-    path.join(getProfileDir(profile), "userlist.yaml");
+  const getProfileFile = (profile: IProfile) => path.join(getProfileDir(profile), "userlist.yaml");
 
   const copyIgnoringMissing = async (src: string, dest: string) => {
     try {
       await fs.copyAsync(src, dest, { noSelfCopy: true });
     } catch (err) {
-      if (err.code !== "ENOENT") {
+      if (getErrorCode(err) !== "ENOENT") {
         throw err;
       }
     }
@@ -829,7 +863,7 @@ async function swapUserlistForProfile(
       // profile has a saved copy — restore it
       await fs.copyAsync(getProfileFile(newProfile), activeFile, { noSelfCopy: true });
     } catch (err) {
-      if (err.code === "ENOENT") {
+      if (getErrorCode(err) === "ENOENT") {
         // first time: seed the profile dir from the current file
         await fs.ensureDirAsync(getProfileDir(newProfile));
         await copyIgnoringMissing(activeFile, getProfileFile(newProfile));
@@ -842,7 +876,7 @@ async function swapUserlistForProfile(
 
 let watcher: fs.FSWatcher;
 
-function stopSync(): Promise<void> {
+function stopSync(): Bluebird<void> {
   if (watcher !== undefined) {
     watcher.close();
     watcher = undefined;
@@ -850,21 +884,21 @@ function stopSync(): Promise<void> {
 
   if (pluginPersistor === undefined) {
     log("debug", "stopSync: pluginPersistor is undefined, resolving immediately");
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   return pluginPersistor.disable();
 }
 
-function startSync(api: types.IExtensionApi): Promise<void> {
+function startSync(api: IExtensionApi): Bluebird<void> {
   const store = api.store;
 
   // start with a clean slate
   store.dispatch(setPluginOrder([], false));
 
-  const gameId = selectors.activeGameId(store.getState());
+  const gameId = activeGameId(store.getState());
 
-  let prom: Promise<void> = Promise.resolve();
+  let prom: Bluebird<void> = Bluebird.resolve();
 
   if (pluginPersistor !== undefined) {
     prom = pluginPersistor.loadFiles(gameId);
@@ -879,12 +913,12 @@ function startSync(api: types.IExtensionApi): Promise<void> {
   }
 
   return prom.then(() => {
-    const gameDiscovery = selectors.currentGameDiscovery(store.getState());
+    const gameDiscovery = currentGameDiscovery(store.getState());
     if (gameDiscovery === undefined || gameDiscovery.path === undefined) {
       return;
     }
 
-    const game = util.getGame(gameId);
+    const game = getGame(gameId);
     if (game === undefined) {
       return;
     }
@@ -892,7 +926,7 @@ function startSync(api: types.IExtensionApi): Promise<void> {
     if (modPath === undefined) {
       // can this even happen?
       log("error", "mod path unknown", {
-        discovery: nodeUtil.inspect(selectors.currentGameDiscovery(store.getState())),
+        discovery: nodeUtil.inspect(currentGameDiscovery(store.getState())),
       });
       return;
     }
@@ -945,22 +979,22 @@ function startSync(api: types.IExtensionApi): Promise<void> {
       });
     } catch (err) {
       api.showErrorNotification("Failed to watch mod directory", err, {
-        allowReport: err.code !== "ENOENT",
+        allowReport: getErrorCode(err) !== "ENOENT",
       });
     }
   });
 }
 
-function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
+function testPluginsLocked(gameMode: string): Bluebird<ITestResult> {
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const filePath = path.join(pluginPath(gameMode), "plugins.txt");
-  return new Promise<types.ITestResult>((resolve, reject) => {
+  return new Bluebird<ITestResult>((resolve, reject) => {
     access(filePath, constants.W_OK, (err) => {
       if (err && err.code === "EPERM") {
-        const res: types.ITestResult = {
+        const res: ITestResult = {
           description: {
             short: "plugins.txt is write protected",
             long:
@@ -983,21 +1017,21 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
 function testMissingGroupsImpl(
   t: TranslationFunction,
   store: Redux.Store<IStateWithGamebryo>,
-): Promise<types.ITestResult> {
+): Bluebird<ITestResult> {
   const state = store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const { missing, actions } = missingGroupFixes(state);
 
   // nothing found => everything good
   if (missing.length === 0) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
-  const res: types.ITestResult = {
+  const res: ITestResult = {
     description: {
       short: "Invalid group rules",
       long: t(
@@ -1014,42 +1048,42 @@ function testMissingGroupsImpl(
     },
     severity: "error",
     automaticFix: () => {
-      util.batchDispatch(store, actions);
-      return Promise.resolve();
+      batchDispatch(store, actions);
+      return Bluebird.resolve();
     },
   };
-  return Promise.resolve(res);
+  return Bluebird.resolve(res);
 }
 
 function testMissingGroups(
   t: TranslationFunction,
   store: Redux.Store<IStateWithGamebryo>,
   tries: number = 10,
-): Promise<types.ITestResult> {
-  return Promise.delay(100 * (10 - tries)).then(() => {
+): Bluebird<ITestResult> {
+  return Bluebird.delay(100 * (10 - tries)).then(() => {
     const state = store.getState();
     return state.userlist.__isLoaded && state.masterlist.__isLoaded
       ? testMissingGroupsImpl(t, store)
       : tries > 0
         ? testMissingGroups(t, store, tries - 1)
-        : Promise.resolve(undefined);
+        : Bluebird.resolve(undefined);
   });
 }
 
 function testUserlistInvalid(
   t: TranslationFunction,
   state: IStateWithGamebryo,
-): Promise<types.ITestResult> {
-  const gameMode = selectors.activeGameId(state);
+): Bluebird<ITestResult> {
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const userlist: ILOOTList = state.userlist;
   const names = new Set<string>();
 
   if (userlist === undefined || userlist.plugins === undefined) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   // search for duplicate plugin entries
@@ -1065,8 +1099,8 @@ function testUserlistInvalid(
     return false;
   });
   if (duplicate !== undefined) {
-    const userlistPath = path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml");
-    return Promise.resolve({
+    const userlistPath = path.join(getVortexPath("userData"), gameMode, "userlist.yaml");
+    return Bluebird.resolve({
       description: {
         short: "Duplicate entries",
         long: t(
@@ -1082,7 +1116,7 @@ function testUserlistInvalid(
           },
         ),
       },
-      severity: "warning" as types.ProblemSeverity,
+      severity: "warning" as ProblemSeverity,
     });
   }
 
@@ -1093,8 +1127,8 @@ function testUserlistInvalid(
     return duplicateAfter !== undefined;
   });
   if (plugin !== undefined) {
-    const userlistPath = path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml");
-    return Promise.resolve({
+    const userlistPath = path.join(getVortexPath("userData"), gameMode, "userlist.yaml");
+    return Bluebird.resolve({
       description: {
         short: "Duplicate dependencies",
         long: t(
@@ -1111,22 +1145,22 @@ function testUserlistInvalid(
           },
         ),
       },
-      severity: "warning" as types.ProblemSeverity,
+      severity: "warning" as ProblemSeverity,
     });
   }
-  return Promise.resolve(undefined);
+  return Bluebird.resolve(undefined);
 }
 
 function testMasterlistOutdated(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   infoCache?: PluginInfoCache,
-): Promise<types.ITestResult> {
+): Bluebird<ITestResult> {
   const state = api.store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
-  return new Promise<types.ITestResult>((resolve, reject) =>
+  return new Bluebird<ITestResult>((resolve, reject) =>
     isMasterlistOutdated(api, gameMode, masterlistFilePath(gameMode))
       .then((isOutdated) => {
         if (isOutdated) {
@@ -1139,20 +1173,20 @@ function testMasterlistOutdated(
 }
 
 async function testExceededPluginLimit(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   infoCache: PluginInfoCache,
-): Promise<types.ITestResult> {
+): Promise<ITestResult> {
   const { translate, store } = api;
   const state = store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
-  const loadOrder = util.getSafe(state, ["loadOrder"], {});
+  const loadOrder = getSafe(state, ["loadOrder"], {});
   const pluginList = state.session.plugins.pluginList ?? {};
   const plugins: Record<string, any> = {};
   for (const key of Object.keys(pluginList)) {
-    if (util.getSafe(loadOrder, [key, "enabled"], false)) {
+    if (getSafe(loadOrder, [key, "enabled"], false)) {
       let isLight;
       try {
         isLight = (await infoCache.getInfo(pluginList[key].filePath)).isLight;
@@ -1178,7 +1212,7 @@ async function testExceededPluginLimit(
   const mediumGame = supportsMediumMasters(gameMode);
   const regLimit = mediumGame ? 253 : eslGame ? 254 : 255;
   return regular.length > regLimit || medium.length > 256 || light.length > 4096
-    ? Promise.resolve({
+    ? Bluebird.resolve({
         description: {
           short: "You've exceeded the plugin limit for your game",
           long: translate(
@@ -1194,9 +1228,9 @@ async function testExceededPluginLimit(
             },
           ),
         },
-        severity: "warning" as types.ProblemSeverity,
+        severity: "warning" as ProblemSeverity,
       })
-    : Promise.resolve(undefined);
+    : Bluebird.resolve(undefined);
 }
 
 interface IESPInfo {
@@ -1213,8 +1247,8 @@ class PluginInfoCache {
   private mCache: {
     [id: string]: { lastModified: number; lastINO: bigint; info: IESPInfo };
   } = {};
-  private mAPI: types.IExtensionApi;
-  constructor(api: types.IExtensionApi) {
+  private mAPI: IExtensionApi;
+  constructor(api: IExtensionApi) {
     this.mAPI = api;
   }
 
@@ -1230,7 +1264,7 @@ class PluginInfoCache {
       mtime = Date.now();
     }
 
-    const activeGameMode = selectors.activeGameId(this.mAPI.getState());
+    const activeGameMode = activeGameId(this.mAPI.getState());
     if (
       this.mCache[id] === undefined ||
       mtime !== this.mCache[id].lastModified ||
@@ -1256,24 +1290,24 @@ class PluginInfoCache {
   }
 }
 
-function testTriggerSort(api: types.IExtensionApi): Promise<types.ITestResult> {
-  return new Promise<types.ITestResult>((resolve, reject) => {
+function testTriggerSort(api: IExtensionApi): Bluebird<ITestResult> {
+  return new Bluebird<ITestResult>((resolve, reject) => {
     api.onAsync("did-deploy", async () => {
-      await new Promise((res) => setTimeout(res, 2000));
+      await new Bluebird((res) => setTimeout(res, 2000));
       api.events.emit("autosort-plugins", true, (err: Error) => resolve);
     });
   });
 }
 
 async function testMissingMasters(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   infoCache: PluginInfoCache,
-): Promise<types.ITestResult> {
+): Promise<ITestResult> {
   const { translate, store } = api;
   const state = store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const pluginList = state.session.plugins.pluginList ?? {};
@@ -1291,7 +1325,7 @@ async function testMissingMasters(
     } catch (err) {
       log("warn", "failed to parse esp file", {
         name: pluginList[plugin].filePath,
-        err: err.message,
+        err: getErrorMessageOrDefault(err),
       });
       pluginDetails.push({ name: plugin, masterList: [] });
     }
@@ -1303,7 +1337,7 @@ async function testMissingMasters(
     const missing = plugin.masterList.filter(
       (requiredMaster) => !activePlugins.has(requiredMaster.toLowerCase()),
     );
-    const oldWarn = util.getSafe(
+    const oldWarn = getSafe(
       state,
       ["session", "plugins", "pluginList", plugin.name, "warnings", "missing-master"],
       false,
@@ -1320,12 +1354,12 @@ async function testMissingMasters(
   }, {});
 
   if (Object.keys(broken).length === 0) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   } else {
     const link = (pluginName: string) => {
       return `[link="cb://showplugin/${pluginName}"]${pluginName}[/link]`;
     };
-    return Promise.resolve({
+    return Bluebird.resolve({
       description: {
         short: "Missing Masters",
         long:
@@ -1352,17 +1386,17 @@ async function testMissingMasters(
             showplugin: (pluginName: string) => {
               // have to update state and gameMode as they may have changed since the
               // message was generated
-              const stateNow: types.IState = store.getState();
-              const gameModeNow = selectors.activeGameId(stateNow);
+              const stateNow: IState = store.getState();
+              const gameModeNow = activeGameId(stateNow);
               if (gameSupported(gameModeNow)) {
                 api.events.emit("show-main-page", "gamebryo-plugins");
-                store.dispatch(actions.setAttributeFilter("gamebryo-plugins", "name", pluginName));
+                store.dispatch(setAttributeFilter("gamebryo-plugins", "name", pluginName));
               }
             },
           },
         },
       },
-      severity: "warning" as types.ProblemSeverity,
+      severity: "warning" as ProblemSeverity,
     });
   }
 }
@@ -1373,14 +1407,14 @@ async function testMissingMasters(
  * plugins in memory, which destroys references and produces unresolved FormIDs.
  */
 async function testBlueprintMasters(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   infoCache: PluginInfoCache,
-): Promise<types.ITestResult> {
+): Promise<ITestResult> {
   const { translate, store } = api;
   const state = store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode) || !supportsBlueprintPlugins(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const pluginList = state.session.plugins.pluginList ?? {};
@@ -1409,7 +1443,7 @@ async function testBlueprintMasters(
     } catch (err) {
       log("warn", "failed to parse esp file", {
         name: pluginList[plugin].filePath,
-        err: err.message,
+        err: getErrorMessageOrDefault(err),
       });
       pluginDetails.push({ name: plugin, isBlueprint: false, masterList: [] });
     }
@@ -1420,7 +1454,7 @@ async function testBlueprintMasters(
   );
 
   if (blueprintPlugins.size === 0) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const broken = pluginDetails.reduce(
@@ -1440,12 +1474,12 @@ async function testBlueprintMasters(
   );
 
   if (Object.keys(broken).length === 0) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const link = (pluginName: string) => `[link="cb://showplugin/${pluginName}"]${pluginName}[/link]`;
 
-  return Promise.resolve({
+  return Bluebird.resolve({
     description: {
       short: translate("Blueprint plugin used as master"),
       long:
@@ -1475,32 +1509,32 @@ async function testBlueprintMasters(
       context: {
         callbacks: {
           showplugin: (pluginName: string) => {
-            const stateNow: types.IState = store.getState();
-            const gameModeNow = selectors.activeGameId(stateNow);
+            const stateNow: IState = store.getState();
+            const gameModeNow = activeGameId(stateNow);
             if (gameSupported(gameModeNow)) {
               api.events.emit("show-main-page", "gamebryo-plugins");
-              store.dispatch(actions.setAttributeFilter("gamebryo-plugins", "name", pluginName));
+              store.dispatch(setAttributeFilter("gamebryo-plugins", "name", pluginName));
             }
           },
         },
       },
     },
-    severity: "error" as types.ProblemSeverity,
+    severity: "error" as ProblemSeverity,
   });
 }
 
-function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResult> {
+function testRulesUnfulfilled(api: IExtensionApi): Bluebird<ITestResult> {
   const { translate: t, store } = api;
 
   const state = store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (!gameSupported(gameMode)) {
-    return Promise.resolve(undefined);
+    return Bluebird.resolve(undefined);
   }
 
   const pluginInfo: { [id: string]: IPluginCombined } = state.session.plugins?.pluginInfo || {};
 
-  const discovery = selectors.discoveryByGame(state, gameMode);
+  const discovery = discoveryByGame(state, gameMode);
 
   const natives = new Set<string>(nativePlugins(gameMode));
   const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
@@ -1539,7 +1573,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResu
     }
     const name = depName(entry);
     const id = name.toLowerCase();
-    util.setdefault(target, id, { display: name, refs: [] }).refs.push(source);
+    setdefault(target, id, { display: name, refs: [] }).refs.push(source);
     // the loot api returns the regular file name as a fallback if no display name is specified
     // in the user-/masterlist - without escaping characters that may be special in markdown.
     if (!!entry["display"] && entry["display"] !== name) {
@@ -1569,15 +1603,15 @@ function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResu
   // checks.
 
   const dataPath = gameDataPath(gameMode);
-  const exists = (id: string): Promise<boolean> =>
+  const exists = (id: string): Bluebird<boolean> =>
     [".esp", ".esl", ".esm"].includes(path.extname(id))
-      ? Promise.resolve(pluginsSet.has(id))
+      ? Bluebird.resolve(pluginsSet.has(id))
       : fs
           .statAsync(path.resolve(dataPath, id))
           .then(() => true)
           .catch((err) => false);
 
-  return Promise.map(Object.keys(reqCheck), (reqId) =>
+  return Bluebird.map(Object.keys(reqCheck), (reqId) =>
     exists(reqId).then((existsRes) => {
       if (!existsRes) {
         required.push(
@@ -1590,7 +1624,7 @@ function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResu
     }),
   )
     .then(() =>
-      Promise.map(Object.keys(incCheck), (incId) =>
+      Bluebird.map(Object.keys(incCheck), (incId) =>
         exists(incId).then((existsRes) => {
           if (existsRes) {
             incompatible.push(
@@ -1605,14 +1639,14 @@ function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResu
     )
     .then(() => {
       if (required.length === 0 && incompatible.length === 0) {
-        return Promise.resolve(undefined);
+        return Bluebird.resolve(undefined);
       } else {
         const reqLine = (left: string, right: string) =>
           `[tr][td]${left}[/td][td]${t("requires")}[/td][td]${right}[/td][/tr]`;
         const incLine = (left: string, right: string) =>
           `[tr][td]${left}[/td][td]${t("is incompatible with")}[/td][td]${right}[/td][/tr]`;
 
-        return Promise.resolve<types.ITestResult>({
+        return Bluebird.resolve<ITestResult>({
           description: {
             short: t("Plugin dependencies unfulfilled"),
             long:
@@ -1627,9 +1661,9 @@ function testRulesUnfulfilled(api: types.IExtensionApi): Promise<types.ITestResu
               "[/tbody][/table]",
             localize: false,
           },
-          severity: "warning" as types.ProblemSeverity,
+          severity: "warning" as ProblemSeverity,
           onRecheck: () => {
-            return new Promise((resolve, reject) => {
+            return new Bluebird((resolve, reject) => {
               api.events.emit(
                 "plugin-details",
                 gameMode,
@@ -1653,22 +1687,22 @@ const PLUGIN_DETAILS_TIMEOUT = 30000;
 // Whether the collections install flow has flagged this profile as still owing a plugin sort (set
 // when a collection install begins, cleared once a sort succeeds). Lives in the cross-extension
 // transactions slice; read here and by the profile-did-change drain.
-function hasPendingPluginSort(state: types.IState, profileId: string): boolean {
+function hasPendingPluginSort(state: IState, profileId: string): boolean {
   return Object.keys(state.persistent.transactions.pendingPluginSort?.[profileId] ?? {}).length > 0;
 }
 
-function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void> {
-  const state: types.IState = api.getState();
+function onDidDeploy(api: IExtensionApi, profileId: string): Bluebird<void> {
+  const state: IState = api.getState();
   const profile = state.persistent.profiles[profileId];
-  const activeGameId = selectors.activeGameId(state);
-  const discovery = selectors.discoveryByGame(state, activeGameId);
+  const currentGameId = activeGameId(state);
+  const discovery = discoveryByGame(state, currentGameId);
   return discovery?.path != null &&
-    profile?.gameId === activeGameId &&
+    profile?.gameId === currentGameId &&
     gameSupported(profile?.gameId)
     ? updatePluginList(api.store, profile.modState, profile.gameId)
         .then(
           () =>
-            new Promise<void>((resolve) => {
+            new Bluebird<void>((resolve) => {
               // This runs inside the awaited 'did-deploy' event, so it must never wait forever: if
               // it did, the deployment's finally could not clear the "deployment" mod-activity and
               // every later plugin update/sort would be deferred indefinitely.
@@ -1691,11 +1725,7 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
               api.events.once("profile-will-change", done);
               api.events.once("gamemode-activated", done);
               timeout = setTimeout(done, PLUGIN_DETAILS_TIMEOUT);
-              const pluginList = util.getSafe(
-                api.getState(),
-                ["session", "plugins", "pluginList"],
-                {},
-              );
+              const pluginList = getSafe(api.getState(), ["session", "plugins", "pluginList"], {});
               api.events.emit(
                 "plugin-details",
                 profile.gameId,
@@ -1704,7 +1734,7 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
               );
             }),
         )
-        .then(() => util.delay(500)) // wait a bit for the plugin details to be updated
+        .then(() => delay(500)) // wait a bit for the plugin details to be updated
         .then(() => {
           // A collection install that hasn't been sorted yet leaves a per-profile "sort owed"
           // marker. Such a sort must run even when the user disabled auto-sort (the collection
@@ -1714,8 +1744,8 @@ function onDidDeploy(api: types.IExtensionApi, profileId: string): Promise<void>
           const force = hasPendingPluginSort(api.getState(), profileId);
           return api.events.emit("autosort-plugins", force);
         })
-        .then(() => Promise.resolve())
-    : Promise.resolve();
+        .then(() => Bluebird.resolve())
+    : Bluebird.resolve();
 }
 
 function sanitizeForIPC(obj: any) {
@@ -1731,7 +1761,7 @@ function sanitizeForIPC(obj: any) {
 function init(context: IExtensionContextExt) {
   const setPluginLight = async (id: string, enable: boolean) => {
     const state: IStateWithGamebryo = context.api.getState();
-    const profile = selectors.activeProfile(state);
+    const profile = activeProfile(state);
     const plugin: IPlugin = state.session.plugins.pluginList[id];
     if (plugin === undefined) {
       return;
@@ -1776,7 +1806,7 @@ function init(context: IExtensionContextExt) {
         context.api.events.on(
           "will-install-dependencies",
           (gameId: string, modId: string, recommendations: boolean, onCancel: () => void) => {
-            const state: types.IState = context.api.getState();
+            const state: IState = context.api.getState();
             if (!gameSupported(gameId)) {
               return;
             }
@@ -1805,7 +1835,7 @@ function init(context: IExtensionContextExt) {
             const state = context.api.getState<IStateWithGamebryo>();
 
             // Only during collection dependency installation
-            const activeSession = selectors.getCollectionActiveSession(state);
+            const activeSession = getCollectionActiveSession(state);
             if (activeSession === undefined) {
               return;
             }
@@ -1815,13 +1845,13 @@ function init(context: IExtensionContextExt) {
               return;
             }
 
-            const installBasePath = selectors.installPathForGame(state, gameId);
+            const installBasePath = installPathForGame(state, gameId);
             if (installBasePath === undefined) {
               return;
             }
 
             const modInstPath = path.join(installBasePath, mod.installationPath);
-            const activator = util.getCurrentActivator(state, gameId, true);
+            const activator = getCurrentActivator(state, gameId, true);
 
             fs.readdirAsync(modInstPath)
               .map((fileName: string) =>
@@ -1835,7 +1865,7 @@ function init(context: IExtensionContextExt) {
 
                 // Read fresh state and merge new entries into existing plugin list
                 const currentState = context.api.getState<IStateWithGamebryo>();
-                const existingPlugins: IPlugins = util.getSafe(
+                const existingPlugins: IPlugins = getSafe(
                   currentState,
                   ["session", "plugins", "pluginList"],
                   {},
@@ -1868,7 +1898,7 @@ function init(context: IExtensionContextExt) {
 
         context.api.onAsync("will-deploy", () => {
           deploying = true;
-          return Promise.resolve();
+          return Bluebird.resolve();
         });
 
         context.api.events.on(
@@ -1877,21 +1907,21 @@ function init(context: IExtensionContextExt) {
             if (!gameSupported(gameId)) {
               return;
             }
-            const profileId = selectors.lastActiveProfileForGame(context.api.getState(), gameId);
+            const profileId = lastActiveProfileForGame(context.api.getState(), gameId);
             if (!profileId) {
               return;
             }
             // persist the loadOrder hive before the plugin list refresh: the postprocess
             // enable batch may still be inside the debounced diff pipeline
             const state = context.api.getState<IStateWithGamebryo>();
-            const flushed: Promise<void> =
+            const flushed: Bluebird<void> =
               pluginPersistor !== undefined
                 ? pluginPersistor.syncFromState(gameId, state.loadOrder ?? {}).catch((err) => {
                     log("error", "failed to sync plugin state after collection install", {
                       error: err.message,
                     });
                   })
-                : Promise.resolve();
+                : Bluebird.resolve();
             flushed.then(() => onDidDeploy(context.api, profileId));
           },
         );
@@ -1910,10 +1940,10 @@ function init(context: IExtensionContextExt) {
               pluginsChangedQueued = false;
               context.api.events.emit("trigger-test-run", "plugins-changed", 500);
             }
-            const activeCollection = selectors.getCollectionActiveSession(context.api.getState());
+            const activeCollection = getCollectionActiveSession(context.api.getState());
             if (activeCollection || deployOptions?.isCollectionPostprocessCall) {
               // handled in 'collection-postprocess-complete' event
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
             return onDidDeploy(context.api, profileId);
           },
@@ -1945,7 +1975,7 @@ function init(context: IExtensionContextExt) {
         // when the user toggles local_loot_rules on the active profile,
         // immediately back up the global userlist and seed the profile copy
         context.api.onStateChange(["persistent", "profiles"], (previous, current) => {
-          const activeProfileId = util.getSafe(
+          const activeProfileId = getSafe(
             context.api.store.getState(),
             ["settings", "profiles", "activeProfileId"],
             undefined,
@@ -1962,7 +1992,7 @@ function init(context: IExtensionContextExt) {
           if (profile === undefined || !gameSupported(profile.gameId)) {
             return;
           }
-          const userDataPath = util.getVortexPath("userData");
+          const userDataPath = getVortexPath("userData");
           const activeFile = path.join(userDataPath, profile.gameId, "userlist.yaml");
           const globalBackup = path.join(userDataPath, profile.gameId, "userlist.yaml.global");
           const profDir = path.join(userDataPath, profile.gameId, "profiles", profile.id);
@@ -1972,7 +2002,7 @@ function init(context: IExtensionContextExt) {
             try {
               await fs.copyAsync(src, dest, { noSelfCopy: true });
             } catch (err) {
-              if (err.code !== "ENOENT") {
+              if (getErrorCode(err) !== "ENOENT") {
                 throw err;
               }
             }
@@ -1985,7 +2015,11 @@ function init(context: IExtensionContextExt) {
               await fs.ensureDirAsync(profDir);
               await copyIgnoringMissing(activeFile, profFile);
             })().catch((err) => {
-              log("warn", "failed to initialize per-profile userlist", err.message);
+              log(
+                "warn",
+                "failed to initialize per-profile userlist",
+                getErrorMessageOrDefault(err),
+              );
             });
           } else if (!currFeature && prevFeature) {
             // toggled OFF: save profile state, restore global backup
@@ -1997,7 +2031,7 @@ function init(context: IExtensionContextExt) {
                 await userlistPersistor.loadFiles(profile.gameId);
               }
             })().catch((err) => {
-              log("warn", "failed to restore global userlist", err.message);
+              log("warn", "failed to restore global userlist", getErrorMessageOrDefault(err));
             });
           }
         });
@@ -2015,16 +2049,16 @@ function init(context: IExtensionContextExt) {
 
         context.api.events.on(
           "profile-will-change",
-          (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
+          (nextProfileId: string, enqueue: (cb: () => PromiseLike<void>) => void) => {
             const state = context.api.store.getState();
-            const oldProfileId = util.getSafe(
+            const oldProfileId = getSafe(
               state,
               ["settings", "profiles", "activeProfileId"],
               undefined,
             );
             const oldProfile = state.persistent.profiles[oldProfileId];
             const nextProfile =
-              nextProfileId !== undefined ? selectors.profileById(state, nextProfileId) : undefined;
+              nextProfileId !== undefined ? profileById(state, nextProfileId) : undefined;
 
             if (nextProfileId === undefined) {
               context.api.store.dispatch(setPluginList(undefined));
@@ -2035,49 +2069,51 @@ function init(context: IExtensionContextExt) {
                     .then(() =>
                       userlistPersistor !== undefined
                         ? userlistPersistor.disable()
-                        : Promise.resolve(),
+                        : Bluebird.resolve(),
                     )
                     .then(() =>
                       masterlistPersistor !== undefined
                         ? masterlistPersistor.disable()
-                        : Promise.resolve(),
+                        : Bluebird.resolve(),
                     )
                     .then(() => swapUserlistForProfile(oldProfile, undefined))
                     .then(() => loot.wait())
                     .catch((err) => {
                       context.api.showErrorNotification("Failed to change profile", err);
-                      return Promise.resolve();
+                      return Bluebird.resolve();
                     }),
                 );
               }
               return;
             }
-            const gameMode = selectors.activeGameId(state);
+            const gameMode = activeGameId(state);
             if (nextProfile !== undefined && nextProfile.gameId !== gameMode) {
               context.api.store.dispatch(setPluginList(undefined));
             }
             enqueue(() => {
               return stopSync()
                 .then(() =>
-                  userlistPersistor !== undefined ? userlistPersistor.disable() : Promise.resolve(),
+                  userlistPersistor !== undefined
+                    ? userlistPersistor.disable()
+                    : Bluebird.resolve(),
                 )
                 .then(() =>
                   masterlistPersistor !== undefined
                     ? masterlistPersistor.disable()
-                    : Promise.resolve(),
+                    : Bluebird.resolve(),
                 )
                 .then(() => swapUserlistForProfile(oldProfile, nextProfile))
                 .then(() => loot.wait())
                 .catch((err) => {
                   context.api.showErrorNotification("Failed to change profile", err);
-                  return Promise.resolve();
+                  return Bluebird.resolve();
                 });
             });
           },
         );
 
         context.api.events.on("profile-did-change", (newProfileId: string) => {
-          const newProfile = util.getSafe(
+          const newProfile = getSafe(
             store.getState(),
             ["persistent", "profiles", newProfileId],
             undefined,
@@ -2111,7 +2147,7 @@ function init(context: IExtensionContextExt) {
 
         context.api.events.on("did-update-masterlist", () => {
           if (masterlistPersistor !== undefined) {
-            const gameId = selectors.activeGameId(context.api.store.getState());
+            const gameId = activeGameId(context.api.store.getState());
             masterlistPersistor.loadFiles(gameId);
           }
         });

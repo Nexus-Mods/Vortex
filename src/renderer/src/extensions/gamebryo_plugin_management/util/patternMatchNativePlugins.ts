@@ -1,15 +1,16 @@
 /* eslint-disable */
 import path from "path";
 
-import { fs, types } from "@nexusmods/vortex-api";
 import memoizeOne from "memoize-one";
 
+import * as fs from "../../../util/fs";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { gameDataPath, IGameSupport, pluginExtensions } from "./gameSupport";
 
 export const patternMatchNativePlugins = memoizeOne(
   async (
     gameMode: string,
-    discovery: types.IDiscoveryResult,
+    discovery: IDiscoveryResult,
     gameSupport: IGameSupport,
   ): Promise<string[]> => {
     if (!discovery?.path || !gameSupport?.nativePluginsPatterns) {

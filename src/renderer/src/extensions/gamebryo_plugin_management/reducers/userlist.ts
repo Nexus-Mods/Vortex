@@ -1,5 +1,12 @@
-import { types, util } from "@nexusmods/vortex-api";
-
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import {
+  addUniqueSafe,
+  deleteOrNop,
+  pushSafe,
+  removeValue,
+  removeValueIf,
+  setSafe,
+} from "../../../util/storeHelper";
 import * as actions from "../actions/userlist";
 
 type RuleType = "after" | "requires" | "incompatible";
@@ -18,11 +25,11 @@ function listForType(type: string) {
 /**
  * reducer for changes to settings regarding mods
  */
-const userlistReducer: types.IReducerSpec = {
+const userlistReducer: IReducerSpec = {
   reducers: {
     ["persist/REHYDRATE"]: (state, payload) => {
       if (payload.hasOwnProperty("userlist")) {
-        return util.setSafe(state, [], payload.userlist);
+        return setSafe(state, [], payload.userlist);
       } else {
         return state;
       }
@@ -37,9 +44,9 @@ const userlistReducer: types.IReducerSpec = {
       const list = listForType(payload.type);
       if (existing !== -1) {
         const statePath = ["plugins", existing, list];
-        return (util as any).addUniqueSafe(state, statePath, payload.reference);
+        return addUniqueSafe(state, statePath, payload.reference);
       } else {
-        const res = util.pushSafe(state, ["plugins"], {
+        const res = pushSafe(state, ["plugins"], {
           name: payload.pluginId,
           [list]: [payload.reference],
         });
@@ -55,7 +62,7 @@ const userlistReducer: types.IReducerSpec = {
       }
       const list = listForType(payload.type);
       if (existing !== -1) {
-        return util.removeValueIf(
+        return removeValueIf(
           state,
           ["plugins", existing, list],
           (ref) => ref.toUpperCase() === payload.reference.toUpperCase(),
@@ -67,7 +74,7 @@ const userlistReducer: types.IReducerSpec = {
     [actions.addGroup as any]: (state, payload) =>
       state.groups.find((group) => group.name.toUpperCase() === payload.group.toUpperCase()) ===
       undefined
-        ? util.pushSafe(state, ["groups"], {
+        ? pushSafe(state, ["groups"], {
             name: payload.group,
             after: [],
           })
@@ -75,7 +82,7 @@ const userlistReducer: types.IReducerSpec = {
     [actions.removeGroup as any]: (state, payload) => {
       // need to remove the group from all rules
       state.groups.forEach((group, idx) => {
-        state = util.removeValue(state, ["groups", idx, "after"], payload.group);
+        state = removeValue(state, ["groups", idx, "after"], payload.group);
       });
 
       state.plugins.forEach((plugin, idx) => {
@@ -84,11 +91,11 @@ const userlistReducer: types.IReducerSpec = {
           payload.group !== undefined &&
           plugin.group.toUpperCase() === payload.group.toUpperCase()
         ) {
-          state = util.setSafe(state, ["plugins", idx, "group"], "default");
+          state = setSafe(state, ["plugins", idx, "group"], "default");
         }
       });
 
-      return util.removeValueIf(
+      return removeValueIf(
         state,
         ["groups"],
         (group) => group.name.toUpperCase() === payload.group.toUpperCase(),
@@ -103,12 +110,12 @@ const userlistReducer: types.IReducerSpec = {
       }
 
       if (payload.group === undefined) {
-        return existing !== -1 ? util.deleteOrNop(state, ["plugins", existing, "group"]) : state;
+        return existing !== -1 ? deleteOrNop(state, ["plugins", existing, "group"]) : state;
       }
 
       return existing !== -1
-        ? util.setSafe(state, ["plugins", existing, "group"], payload.group)
-        : util.pushSafe(state, ["plugins"], {
+        ? setSafe(state, ["plugins", existing, "group"], payload.group)
+        : pushSafe(state, ["plugins"], {
             name: payload.pluginId,
             group: payload.group,
           });
@@ -118,12 +125,12 @@ const userlistReducer: types.IReducerSpec = {
         (group) => group.name.toUpperCase() === payload.groupId.toUpperCase(),
       );
       if (idx === -1) {
-        return util.pushSafe(state, ["groups"], {
+        return pushSafe(state, ["groups"], {
           name: payload.groupId,
           after: [payload.reference],
         });
       } else {
-        return util.addUniqueSafe(state, ["groups", idx, "after"], payload.reference);
+        return addUniqueSafe(state, ["groups", idx, "after"], payload.reference);
       }
     },
     [actions.clearUserlist as any]: () => ({ plugins: [], groups: [] }),
@@ -134,7 +141,7 @@ const userlistReducer: types.IReducerSpec = {
       if (idx === -1) {
         return state;
       }
-      return util.removeValue(state, ["groups", idx, "after"], payload.reference);
+      return removeValue(state, ["groups", idx, "after"], payload.reference);
     },
   },
   defaults: { plugins: [], groups: [] },

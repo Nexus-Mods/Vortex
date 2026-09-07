@@ -1,7 +1,5 @@
 import * as fs from "fs";
 
-// Schema definitions in ./schemas.ts serve as the declarative format spec.
-// This module reads directly from the Buffer for performance.
 import {
   FLAG_MASTER,
   FLAG_LIGHT,

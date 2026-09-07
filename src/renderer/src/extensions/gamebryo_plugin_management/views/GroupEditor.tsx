@@ -1,11 +1,23 @@
-import { actions, ComponentEx, ContextMenu, log, Modal, types, Usage } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
+import { showDialog } from "../../../actions/notifications";
+import { ComponentEx } from "../../../controls/ComponentEx";
+import ContextMenu from "../../../controls/ContextMenu";
+import Modal from "../../../controls/Modal";
+import Usage from "../../../controls/Usage";
+import { log } from "../../../logging";
+import type {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+  IDialogResult,
+} from "../../../types/IDialog";
+import type { IState } from "../../../types/IState";
 import {
   addGroup,
   addGroupRule,
@@ -15,9 +27,10 @@ import {
 } from "../actions/userlist";
 import { openGroupEditor } from "../actions/userlistEdit";
 import { NAMESPACE } from "../statics";
-import { ILOOTList } from "../types/ILOOTList";
+import type { ILOOTList } from "../types/ILOOTList";
 import genGraphStyle from "../util/genGraphStyle";
-import GraphView, { IGraphElement, IGraphSelection } from "./GraphView";
+import type { IGraphElement, IGraphSelection } from "./GraphView";
+import GraphView from "./GraphView";
 
 interface IConnectedProps {
   open: boolean;
@@ -33,11 +46,11 @@ interface IActionProps {
   onAddGroupRule: (group: string, reference: string) => void;
   onRemoveGroupRule: (group: string, reference: string) => void;
   onShowDialog: (
-    type: types.DialogType,
+    type: DialogType,
     title: string,
-    content: types.IDialogContent,
-    actions: types.DialogActions,
-  ) => Promise<types.IDialogResult>;
+    content: IDialogContent,
+    actions: DialogActions,
+  ) => Promise<IDialogResult>;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -195,7 +208,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         input: [{ id: "newGroup", value: "New group name", label: "Group Name" }],
       },
       [{ label: "Cancel" }, { label: "Add", default: true }],
-    ).then((result: types.IDialogResult) => {
+    ).then((result: IDialogResult) => {
       if (result.action === "Add") {
         if (result.input.newGroup.trim().length === 0) {
           log("error", "Group name can't be empty");
@@ -225,7 +238,7 @@ class GroupEditor extends ComponentEx<IProps, IComponentState> {
         ],
       },
       [{ label: "Cancel" }, { label: "Continue" }],
-    ).then((result: types.IDialogResult) => {
+    ).then((result: IDialogResult) => {
       if (result.action === "Cancel") {
         return;
       }
@@ -345,7 +358,7 @@ function mapStateToProps(state): IConnectedProps {
   };
 }
 
-type DispatchFunc = ThunkDispatch<types.IState, null, Redux.Action>;
+type DispatchFunc = ThunkDispatch<IState, null, Redux.Action>;
 
 function mapDispatchToProps(dispatch: DispatchFunc): IActionProps {
   return {
@@ -358,7 +371,7 @@ function mapDispatchToProps(dispatch: DispatchFunc): IActionProps {
     onRemoveGroupRule: (groupId: string, reference: string) =>
       dispatch(removeGroupRule(groupId, reference)),
     onShowDialog: (type, title, content, dialogActions) =>
-      dispatch((actions.showDialog as any)(type, title, content, dialogActions)),
+      dispatch((showDialog as any)(type, title, content, dialogActions)),
   };
 }
 

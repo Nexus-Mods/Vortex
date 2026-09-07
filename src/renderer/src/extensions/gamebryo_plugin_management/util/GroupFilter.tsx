@@ -1,11 +1,12 @@
-import { types, selectors } from "@nexusmods/vortex-api";
-import Promise from "bluebird";
 import * as _ from "lodash";
 import * as React from "react";
 import { connect } from "react-redux";
 import Select from "react-select";
 
-import { ILOOTList } from "../types/ILOOTList";
+import type { IState } from "../../../types/IState";
+import type { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import { activeGameId } from "../../profile_management/selectors";
+import type { ILOOTList } from "../types/ILOOTList";
 
 interface IConnectedProps {
   gameId: string;
@@ -13,7 +14,7 @@ interface IConnectedProps {
   masterlist: ILOOTList;
 }
 
-type IProps = types.IFilterProps & IConnectedProps;
+type IProps = IFilterProps & IConnectedProps;
 
 class GroupFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
@@ -50,7 +51,7 @@ const emptyList: ILOOTList = {
 };
 
 function mapStateToProps(state: any): IConnectedProps {
-  const gameId = selectors.activeGameId(state);
+  const gameId = activeGameId(state);
   return {
     gameId,
     userlist: state.userlist || emptyList,
@@ -60,11 +61,11 @@ function mapStateToProps(state: any): IConnectedProps {
 
 const GroupFilterComponentConn = connect(mapStateToProps)(GroupFilterComponent) as any;
 
-class GroupFilter implements types.ITableFilter {
+class GroupFilter implements ITableFilter {
   public component = GroupFilterComponentConn;
   public raw = false;
 
-  public matches(filter: any, value: any, state: types.IState): boolean {
+  public matches(filter: any, value: any, state: IState): boolean {
     if (!Array.isArray(filter) || filter.length === 0) {
       // no filter category set
       return true;

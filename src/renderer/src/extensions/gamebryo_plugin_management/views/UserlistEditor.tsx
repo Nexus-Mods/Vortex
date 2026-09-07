@@ -1,18 +1,21 @@
-import { ComponentEx, Icon, tooltip, types } from "@nexusmods/vortex-api";
-import I18next from "i18next";
+import type I18next from "i18next";
 import * as React from "react";
 import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import Select from "react-select";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
+import { ComponentEx } from "../../../controls/ComponentEx";
+import Icon from "../../../controls/Icon";
+import * as tooltip from "../../../controls/TooltipControls";
+import type { IState } from "../../../types/IState";
 import { addRule, removeRule } from "../actions/userlist";
 import { closeDialog } from "../actions/userlistEdit";
-import { ILOOTPlugin } from "../types/ILOOTList";
-import { IPlugins } from "../types/IPlugins";
-import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import type { ILOOTPlugin } from "../types/ILOOTList";
+import type { IPlugins } from "../types/IPlugins";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 type RuleType = "after" | "requires" | "incompatible";
 
@@ -119,6 +122,12 @@ class Editor extends ComponentEx<IProps, IComponentState> {
       label: input,
     }));
 
+    const typeOptions: ISelectOption[] = [
+      { value: "after", label: t("Must Load After") },
+      { value: "requires", label: t("Requires") },
+      { value: "incompatible", label: t("Is Incompatible With") },
+    ];
+
     return (
       <Modal id="manage-plugin-rules-dialog" show={dialog !== undefined} onHide={this.close}>
         <ModalHeader>
@@ -151,26 +160,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 onChange={this.selectPlugin}
               />
               <Select
-                options={[
-                  { value: "after", label: t("Must Load After") },
-                  { value: "requires", label: t("Requires") },
-                  { value: "incompatible", label: t("Is Incompatible With") },
-                ]}
-                value={
-                  dialog.type
-                    ? (() => {
-                        const typeLabels = {
-                          after: t("Must Load After"),
-                          requires: t("Requires"),
-                          incompatible: t("Is Incompatible With"),
-                        };
-                        return {
-                          value: dialog.type,
-                          label: typeLabels[dialog.type],
-                        };
-                      })()
-                    : null
-                }
+                options={typeOptions}
+                value={typeOptions.find((option) => option.value === dialog.type) || null}
                 clearable={false}
                 onChange={this.selectType}
               />
@@ -317,7 +308,7 @@ function mapStateToProps(state: IStateWithGamebryo): IConnectedProps {
   };
 }
 
-type Dispatch = ThunkDispatch<types.IState, null, Redux.Action>;
+type Dispatch = ThunkDispatch<IState, null, Redux.Action>;
 
 function mapDispatchToProps(dispatch: Dispatch): IActionProps {
   return {

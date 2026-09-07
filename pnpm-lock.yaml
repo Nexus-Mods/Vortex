@@ -4234,6 +4234,15 @@ importers:
       crc-32:
         specifier: 'catalog:'
         version: 1.2.2
+      cytoscape:
+        specifier: 'catalog:'
+        version: 3.33.1
+      cytoscape-cose-bilkent:
+        specifier: 'catalog:'
+        version: 4.1.0(cytoscape@3.33.1)
+      cytoscape-edgehandles:
+        specifier: 'catalog:'
+        version: 3.6.0(cytoscape@3.33.1)
       d3:
         specifier: 'catalog:'
         version: 5.16.0
@@ -4312,6 +4321,9 @@ importers:
       is-admin:
         specifier: 'catalog:'
         version: 3.0.0
+      js-yaml:
+        specifier: 'catalog:'
+        version: 4.1.1
       json-socket:
         specifier: 'catalog:'
         version: https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
@@ -4330,6 +4342,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      markdown-ast:
+        specifier: 'catalog:'
+        version: 0.2.1
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -4354,6 +4369,9 @@ importers:
       openapi-fetch:
         specifier: 'catalog:'
         version: 0.17.0
+      p-limit:
+        specifier: 'catalog:'
+        version: 7.3.0
       p-queue:
         specifier: 'catalog:'
         version: 9.3.0
@@ -4767,6 +4785,9 @@ importers:
       '@types/graphlib':
         specifier: 'catalog:'
         version: 2.1.12
+      '@types/js-yaml':
+        specifier: 'catalog:'
+        version: 4.0.9
       '@types/json-socket':
         specifier: 'catalog:'
         version: 0.1.21
@@ -4896,6 +4917,15 @@ importers:
       csstype:
         specifier: 'catalog:'
         version: 3.2.3
+      cytoscape:
+        specifier: 'catalog:'
+        version: 3.33.1
+      cytoscape-cose-bilkent:
+        specifier: 'catalog:'
+        version: 4.1.0(cytoscape@3.33.1)
+      cytoscape-edgehandles:
+        specifier: 'catalog:'
+        version: 3.6.0(cytoscape@3.33.1)
       d3:
         specifier: 'catalog:'
         version: 5.16.0
@@ -4971,6 +5001,9 @@ importers:
       is-admin:
         specifier: 'catalog:'
         version: 3.0.0
+      js-yaml:
+        specifier: 'catalog:'
+        version: 4.1.1
       json-loader:
         specifier: 'catalog:'
         version: 0.5.7
@@ -4983,6 +5016,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      markdown-ast:
+        specifier: 'catalog:'
+        version: 0.2.1
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -5004,6 +5040,9 @@ importers:
       numeral:
         specifier: 'catalog:'
         version: 2.0.6
+      p-limit:
+        specifier: 'catalog:'
+        version: 7.3.0
       p-queue:
         specifier: 'catalog:'
         version: 9.3.0

@@ -1,30 +1,36 @@
 import * as path from "path";
 
-import { fs, types, util } from "@nexusmods/vortex-api";
-import Promise from "bluebird";
+import { UserCanceled } from "@vortex/shared/errors";
+import type { IPersistor } from "@vortex/shared/state";
+import Bluebird from "bluebird";
 import { dialog as dialogIn } from "electron";
 import { dump, load } from "js-yaml";
 import * as _ from "lodash";
 
-import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
+import type { IErrorOptions } from "../../../types/IExtensionContext";
+import { getApplication } from "../../../util/application";
+import { terminate } from "../../../util/errorHandling";
+import * as fs from "../../../util/fs";
+import getVortexPath from "../../../util/getVortexPath";
+import type { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
 import { gameSupported } from "./gameSupport";
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
  *
  * @class UserlistPersistor
- * @implements {types.IPersistor}
+ * @implements {IPersistor}
  */
-class UserlistPersistor implements types.IPersistor {
+class UserlistPersistor implements IPersistor {
   private mResetCallback: () => void;
   private mUserlistPath: string;
   private mUserlist: ILOOTList;
-  private mSerializeQueue: Promise<void> = Promise.resolve();
+  private mSerializeQueue: Bluebird<void> = Bluebird.resolve();
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  private mLoadedPromise: Promise<void>;
+  private mLoadedPromise: Bluebird<void>;
   private mMode: "userlist" | "masterlist";
-  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
+  private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
 
   constructor(mode: "userlist" | "masterlist", onError: (message: string, details: Error) => void) {
     this.mUserlist = {
@@ -34,19 +40,19 @@ class UserlistPersistor implements types.IPersistor {
     };
     this.mOnError = onError;
     this.mMode = mode;
-    this.mLoadedPromise = new Promise((resolve, reject) => {
+    this.mLoadedPromise = new Bluebird((resolve, reject) => {
       this.mOnLoaded = resolve;
     });
   }
 
-  public wait(): Promise<void> {
+  public wait(): Bluebird<void> {
     return this.mLoadedPromise;
   }
 
-  public disable(): Promise<void> {
+  public disable(): Bluebird<void> {
     return this.enqueue(
       () =>
-        new Promise<void>((resolve) => {
+        new Bluebird<void>((resolve) => {
           this.mUserlist = {
             globals: [],
             plugins: [],
@@ -54,7 +60,7 @@ class UserlistPersistor implements types.IPersistor {
           };
           this.mUserlistPath = undefined;
           this.mLoaded = false;
-          this.mLoadedPromise = new Promise((loadResolve, reject) => {
+          this.mLoadedPromise = new Bluebird((loadResolve, reject) => {
             this.mOnLoaded = loadResolve;
           });
           if (this.mResetCallback) {
@@ -65,14 +71,14 @@ class UserlistPersistor implements types.IPersistor {
     );
   }
 
-  public loadFiles(gameMode: string): Promise<void> {
+  public loadFiles(gameMode: string): Bluebird<void> {
     if (!gameSupported(gameMode)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     this.mUserlistPath =
       this.mMode === "userlist"
-        ? path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml")
-        : path.join(util.getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
+        ? path.join(getVortexPath("userData"), gameMode, "userlist.yaml")
+        : path.join(getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
 
     // read the files now and update the store
     return this.deserialize();
@@ -82,55 +88,55 @@ class UserlistPersistor implements types.IPersistor {
     this.mResetCallback = cb;
   }
 
-  public getItem(key: string[]): Promise<string> {
+  public getItem(key: string[]): Bluebird<string> {
     if (key.length === 1 && key[0] === "__isLoaded") {
-      return Promise.resolve(this.mLoaded ? "true" : "false");
+      return Bluebird.resolve(this.mLoaded ? "true" : "false");
     }
-    return Promise.resolve(JSON.stringify(this.mUserlist[key[0]]));
+    return Bluebird.resolve(JSON.stringify(this.mUserlist[key[0]]));
   }
 
-  public setItem(key: string[], value: string): Promise<void> {
+  public setItem(key: string[], value: string): Bluebird<void> {
     this.mUserlist[key[0]] = JSON.parse(value);
     return this.serialize();
   }
 
-  public removeItem(key: string[]): Promise<void> {
+  public removeItem(key: string[]): Bluebird<void> {
     this.mUserlist[key[0]] = [];
     return this.serialize();
   }
 
-  public getAllKeys(): Promise<string[][]> {
-    return Promise.resolve(
+  public getAllKeys(): Bluebird<string[][]> {
+    return Bluebird.resolve(
       [].concat(["__isLoaded"], Object.keys(this.mUserlist)).map((key) => [key]),
     );
   }
 
   private mOnLoaded: () => void = () => null;
 
-  private enqueue(fn: () => Promise<void>): Promise<void> {
+  private enqueue(fn: () => Bluebird<void>): Bluebird<void> {
     this.mSerializeQueue = this.mSerializeQueue.then(fn);
     return this.mSerializeQueue;
   }
 
-  private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
+  private reportError(message: string, detail: Error, options?: IErrorOptions) {
     if (!this.mFailed) {
       this.mOnError(message, detail, options);
       this.mFailed = true;
     }
   }
 
-  private serialize(): Promise<void> {
+  private serialize(): Bluebird<void> {
     if (!this.mLoaded) {
       // this happens during initialization, when the persistor is initially created, with default
       // values.
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     // ensure we don't try to concurrently write the files
     this.mSerializeQueue = this.mSerializeQueue.then(() => this.doSerialize());
     return this.mSerializeQueue;
   }
 
-  private doSerialize(): Promise<void> {
+  private doSerialize(): Bluebird<void> {
     if (
       this.mUserlist === undefined ||
       this.mUserlistPath === undefined ||
@@ -147,7 +153,7 @@ class UserlistPersistor implements types.IPersistor {
       .then(() => {
         this.mFailed = false;
       })
-      .catch(util.UserCanceled, () => undefined)
+      .catch(UserCanceled, () => undefined)
       .catch((err) => {
         this.reportError("Failed to write userlist", err);
       });
@@ -166,7 +172,7 @@ class UserlistPersistor implements types.IPersistor {
       }
     };
 
-    let res = 0;
+    let res: number;
     if (this.mMode === "masterlist") {
       res = await showMessageBox({
         title: "Masterlist invalid",
@@ -196,7 +202,7 @@ class UserlistPersistor implements types.IPersistor {
     }
 
     if (res === 1) {
-      util.getApplication().quit();
+      getApplication().quit();
     } else {
       fs.removeSync(this.mUserlistPath);
     }
@@ -227,9 +233,9 @@ class UserlistPersistor implements types.IPersistor {
     }, []);
   }
 
-  private deserialize(): Promise<void> {
+  private deserialize(): Bluebird<void> {
     if (this.mUserlist === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     let empty: boolean = false;
@@ -274,7 +280,7 @@ class UserlistPersistor implements types.IPersistor {
         if (didChange) {
           return this.serialize();
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .catch((err) => {
@@ -290,7 +296,7 @@ class UserlistPersistor implements types.IPersistor {
         } else {
           // if we can't read the file but the file is there,
           // we would be destroying its content if we don't quit right now.
-          util.terminate(
+          terminate(
             {
               message:
                 "Failed to read userlist file for this game. " +

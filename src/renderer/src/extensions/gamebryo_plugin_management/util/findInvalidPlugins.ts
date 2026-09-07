@@ -1,7 +1,7 @@
-import pLimit from "p-limit";
+import { getErrorCode } from "@vortex/shared";
 
 import { ESPFile } from "../esp/ESPFile";
-import { IPlugins } from "../types/IPlugins";
+import type { IPlugins } from "../types/IPlugins";
 import toPluginId from "./toPluginId";
 
 // header reads are cheap, but a large profile can hold hundreds of plugins, so bound how many files
@@ -26,6 +26,7 @@ export async function findInvalidPlugins(
   gameMode: string,
 ): Promise<Set<string>> {
   const invalid = new Set<string>();
+  const { default: pLimit } = await import("p-limit");
   const limit = pLimit(CONCURRENCY);
   await Promise.all(
     pluginIds.map((id: string) =>
@@ -37,7 +38,7 @@ export async function findInvalidPlugins(
         try {
           await ESPFile.open(filePath, gameMode);
         } catch (err) {
-          if (err.code === "EINVAL") {
+          if (getErrorCode(err) === "EINVAL") {
             invalid.add(id);
           }
         }

@@ -1,19 +1,17 @@
-import { types, util } from "@nexusmods/vortex-api";
-
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/settings";
 
 /**
  * reducer for changes to settings regarding mods
  */
-export const settingsReducer: types.IReducerSpec = {
+export const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.setAutoSortEnabled as any]: (state, payload) =>
-      util.setSafe(state, ["autoSort"], payload),
-    [actions.setAutoEnable as any]: (state, payload) =>
-      util.setSafe(state, ["autoEnable"], payload),
+    [actions.setAutoSortEnabled as any]: (state, payload) => setSafe(state, ["autoSort"], payload),
+    [actions.setAutoEnable as any]: (state, payload) => setSafe(state, ["autoEnable"], payload),
     [actions.setPluginManagementEnabled as any]: (state, payload) => {
       const { profileId, enabled } = payload;
-      return util.setSafe(state, ["pluginManagementEnabled", profileId], enabled);
+      return setSafe(state, ["pluginManagementEnabled", profileId], enabled);
     },
   },
   defaults: {

@@ -1,12 +1,12 @@
-import type { types } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import * as actions from "../actions/plugins";
 
 /**
  * reducer for changes to the plugin list
  */
-export const pluginsReducer: types.IReducerSpec = {
+export const pluginsReducer: IReducerSpec = {
   reducers: {
     [actions.setPluginList as any]: (state, payload) =>
       update(state, { pluginList: { $set: payload.plugins ?? {} } }),

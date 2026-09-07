@@ -1,9 +1,19 @@
 import * as path from "path";
 
-import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
-import Promise from "bluebird";
+import Bluebird from "bluebird";
 import memoizeOne from "memoize-one";
 
+import { log } from "../../../logging";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import * as fs from "../../../util/fs";
+import getVortexPath from "../../../util/getVortexPath";
+import { getSafe } from "../../../util/storeHelper";
+import { makeOverlayableDictionary } from "../../../util/util";
+import { discoveryByGame, gameById } from "../../gamemode_management/selectors";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import { modPathsForGame } from "../../mod_management/selectors";
+import { lastActiveProfileForGame } from "../../profile_management/selectors";
 /* eslint-disable */
 import { PluginFormat } from "../util/PluginPersistor";
 import { patternMatchNativePlugins } from "./patternMatchNativePlugins";
@@ -30,7 +40,7 @@ export interface IGameSupport {
   minRevision?: number;
 }
 
-const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
+const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
   {
     skyrim: {
       appDataPath: "Skyrim",
@@ -263,20 +273,20 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
 );
 
 function applyNativePlugins(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameMode: string,
   fileName: string,
-): Promise<void> {
+): Bluebird<void> {
   const state = api.store.getState();
-  const game = selectors.gameById(state, gameMode);
+  const game = gameById(state, gameMode);
   const nativePlugins = game?.details?.nativePlugins || gameSupport[gameMode].nativePlugins;
   const gameNativePlugins = new Set<string>(nativePlugins);
   const discovery = discoveryForGame(gameMode);
   if (discovery?.path === undefined || !game) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   } else {
     const cccFilePath = path.join(discovery.path, fileName);
-    return Promise.resolve()
+    return Bluebird.resolve()
       .then(() => patternMatchNativePlugins(gameMode, discovery, gameSupport[gameMode]))
       .then((patternMatched) => {
         patternMatched.forEach((fileName) => {
@@ -315,17 +325,17 @@ export function syncGameSupport(gameId: string, gameSupportData: IGameSupport): 
   }
 }
 
-let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
-let getApi: () => types.IExtensionApi = () => undefined;
-export function initGameSupport(api: types.IExtensionApi): Promise<void> {
-  discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
+let discoveryForGame: (gameId: string) => IDiscoveryResult = () => undefined;
+let getApi: () => IExtensionApi = () => undefined;
+export function initGameSupport(api: IExtensionApi): Bluebird<void> {
+  discoveryForGame = (gameId: string) => discoveryByGame(api.store.getState(), gameId);
   getApi = () => api;
-  const state: types.IState = api.store.getState();
+  const state: IState = api.store.getState();
   const { discovered } = state.settings.gameMode;
 
-  return Promise.resolve()
+  return Bluebird.resolve()
     .then(() =>
-      Promise.all([
+      Bluebird.all([
         applyNativePlugins(api, "skyrimse", "Skyrim.ccc"),
         applyNativePlugins(api, "fallout4", "Fallout4.ccc"),
         applyNativePlugins(api, "starfield", "Starfield.ccc"),
@@ -334,29 +344,29 @@ export function initGameSupport(api: types.IExtensionApi): Promise<void> {
     )
     .then(() => {
       if (discovered["skyrimvr"]?.path !== undefined) {
-        const game = selectors.gameById(state, "skyrimvr");
+        const game = gameById(state, "skyrimvr");
         if (game?.details?.supportsESL !== undefined) {
           gameSupport["skyrimvr"].supportsESL = game.details.supportsESL;
         }
       }
       if (discovered["fallout4vr"]?.path !== undefined) {
-        const game = selectors.gameById(state, "fallout4vr");
+        const game = gameById(state, "fallout4vr");
         if (game?.details?.supportsESL !== undefined) {
           gameSupport["fallout4vr"].supportsESL = game.details.supportsESL;
         }
       }
       if (discovered["oblivionremastered"]?.path !== undefined) {
-        const game = selectors.gameById(state, "oblivionremastered");
+        const game = gameById(state, "oblivionremastered");
         const dataModType = game?.details?.dataModType;
         if (dataModType && process.type === "renderer") {
           // The main thread can't deal with most selectors. We rely on the IPC channels
           //  to sync the data over to it.
-          const pluginsPath = selectors.modPathsForGame(state, "oblivionremastered")[dataModType];
+          const pluginsPath = modPathsForGame(state, "oblivionremastered")[dataModType];
           gameSupport["oblivionremastered"].pluginsPath = pluginsPath;
           gameSupport["oblivionremastered"].gameDataPath = pluginsPath;
         }
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     });
 }
 
@@ -365,7 +375,7 @@ export function appDataPath(gameMode: string): string {
 
   return process.env.LOCALAPPDATA !== undefined
     ? path.join(process.env.LOCALAPPDATA, dataPath)
-    : path.resolve(util.getVortexPath("appData"), "..", "Local", dataPath);
+    : path.resolve(getVortexPath("appData"), "..", "Local", dataPath);
 }
 
 export function gameDataPath(gameMode: string): string {
@@ -404,10 +414,8 @@ export function gameSupported(gameMode: string, sort?: boolean): boolean {
   }
   const state = getApi().getState();
   const defaultVal = ["starfield", "oblivionremastered"].includes(gameMode) ? false : true;
-  const profileId = selectors.lastActiveProfileForGame(state, gameMode);
-  if (
-    !util.getSafe(state, ["settings", "plugins", "pluginManagementEnabled", profileId], defaultVal)
-  ) {
+  const profileId = lastActiveProfileForGame(state, gameMode);
+  if (!getSafe(state, ["settings", "plugins", "pluginManagementEnabled", profileId], defaultVal)) {
     return false;
   }
   return gameSupport.has(gameMode);

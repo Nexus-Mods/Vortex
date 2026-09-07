@@ -1,22 +1,36 @@
 import * as path from "path";
 
-import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
+import { getErrorCode } from "@vortex/shared";
+import { ProcessCanceled, UserCanceled } from "@vortex/shared/errors";
 import type { Action } from "redux";
 
+import { setAttributeFilter, setAttributeVisible } from "../../../actions/tables";
+import { log } from "../../../logging";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import { getCollectionActiveSession } from "../../../util/collectionInstallSessionSelectors";
+import * as fs from "../../../util/fs";
+import { batchDispatch } from "../../../util/util";
+import { removeMod } from "../../mod_management/actions/mods";
+import { installPath } from "../../mod_management/selectors";
+import type { IMod } from "../../mod_management/types/IMod";
+import renderModName from "../../mod_management/util/modName";
+import { activeGameId, activeProfile } from "../../profile_management/selectors";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPluginEnabled } from "../actions/loadOrder";
 import { incrementNewPluginCounter } from "../actions/plugins";
 import { GHOST_EXT, NAMESPACE } from "../statics";
 import { gameSupported, pluginExtensions } from "./gameSupport";
 
 function notifyMultiplePlugins(
-  api: types.IExtensionApi,
-  mod: types.IMod,
-  profile: types.IProfile,
+  api: IExtensionApi,
+  mod: IMod,
+  profile: IProfile,
   plugins: string[],
 ) {
   const t = api.translate;
   const { store } = api;
-  const modName = util.renderModName(mod, { version: false });
+  const modName = renderModName(mod, { version: false });
   api.sendNotification({
     id: `multiple-plugins-${mod.id}`,
     type: "info",
@@ -33,12 +47,12 @@ function notifyMultiplePlugins(
       {
         title: "Show",
         action: (dismiss) => {
-          const stateNow: types.IState = store.getState();
-          const gameModeNow = selectors.activeGameId(stateNow);
+          const stateNow: IState = store.getState();
+          const gameModeNow = activeGameId(stateNow);
           if (gameModeNow === profile.gameId) {
             api.events.emit("show-main-page", "gamebryo-plugins");
-            store.dispatch(actions.setAttributeVisible("gamebryo-plugins", "modName", true));
-            store.dispatch(actions.setAttributeFilter("gamebryo-plugins", "modName", modName));
+            store.dispatch(setAttributeVisible("gamebryo-plugins", "modName", true));
+            store.dispatch(setAttributeFilter("gamebryo-plugins", "modName", modName));
           } else {
             api.sendNotification({
               type: "info",
@@ -68,12 +82,12 @@ function notifyMultiplePlugins(
  * (exactly) one. If there are more the user gets a notification asking whether to enable all.
  */
 export async function handleModEnabled(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   profileId: string,
   modId: string,
 ): Promise<void> {
-  const state: types.IState = api.store.getState();
-  const currentProfile = selectors.activeProfile(state);
+  const state: IState = api.store.getState();
+  const currentProfile = activeProfile(state);
   if (currentProfile === undefined) {
     return;
   }
@@ -82,7 +96,7 @@ export async function handleModEnabled(
     return;
   }
 
-  const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
+  const mod: IMod = state.persistent.mods[currentProfile.gameId][modId];
   if (mod === undefined) {
     log("error", "newly activated mod not found", {
       profileId,
@@ -92,23 +106,23 @@ export async function handleModEnabled(
   }
 
   // sampled before the directory read so a tail-of-install member does not lose the session
-  const collectionInstallActive = selectors.getCollectionActiveSession(state) !== undefined;
+  const collectionInstallActive = getCollectionActiveSession(state) !== undefined;
 
   let files: string[];
   try {
-    files = await fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath));
+    files = await fs.readdirAsync(path.join(installPath(state), mod.installationPath));
   } catch (err) {
-    if (err instanceof util.ProcessCanceled || err instanceof util.UserCanceled) {
+    if (err instanceof ProcessCanceled || err instanceof UserCanceled) {
       return;
     }
-    if (err.code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       api.showErrorNotification(
         "A mod could no longer be found on disk. Please don't delete mods manually " +
           "but uninstall them through Vortex.",
         err,
         { allowReport: false },
       );
-      api.store.dispatch(actions.removeMod(currentProfile.gameId, modId));
+      api.store.dispatch(removeMod(currentProfile.gameId, modId));
     } else {
       api.showErrorNotification("Failed to read mod", err);
     }
@@ -137,7 +151,7 @@ export async function handleModEnabled(
   ) {
     const batched: Action[] = plugins.map((plugin) => setPluginEnabled(plugin, true));
     batched.push(incrementNewPluginCounter(plugins.length));
-    util.batchDispatch(api.store, batched);
+    batchDispatch(api.store, batched);
   } else {
     notifyMultiplePlugins(api, mod, currentProfile, plugins);
   }

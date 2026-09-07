@@ -1,29 +1,32 @@
 import * as path from "path";
 
-import { selectors, types } from "@nexusmods/vortex-api";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IHistoryEvent, IHistoryStack, Revertability } from "../../history_management/types";
+import { activeGameId, activeProfile } from "../../profile_management/selectors";
 import { setPluginEnabled } from "../actions/loadOrder";
 import { GHOST_EXT } from "../statics";
-import { ILoadOrder } from "../types/ILoadOrder";
-import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import type { ILoadOrder } from "../types/ILoadOrder";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 export type EventTypes = "plugin-enabled" | "plugin-disabled" | "plugins-sorted";
 
 interface IEventType {
-  describe: (evt: types.IHistoryEvent) => string;
+  describe: (evt: IHistoryEvent) => string;
   revert?: {
-    describe: (evt: types.IHistoryEvent) => string;
-    possible: (evt: types.IHistoryEvent) => boolean;
-    do: (evt: types.IHistoryEvent) => Promise<void>;
+    describe: (evt: IHistoryEvent) => string;
+    possible: (evt: IHistoryEvent) => boolean;
+    do: (evt: IHistoryEvent) => Promise<void>;
   };
 }
 
-class PluginHistory implements types.IHistoryStack {
-  private mApi: types.IExtensionApi;
+class PluginHistory implements IHistoryStack {
+  private mApi: IExtensionApi;
   private mEventTypes: { [key: string]: IEventType };
 
   constructor(
-    api: types.IExtensionApi,
+    api: IExtensionApi,
     setPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void,
     setPluginLight: (pluginId: string, enable: boolean) => void,
   ) {
@@ -48,7 +51,7 @@ class PluginHistory implements types.IHistoryStack {
             }),
           possible: (evt) => {
             const state: IStateWithGamebryo = this.mApi.getState();
-            const profile = selectors.activeProfile(state);
+            const profile = activeProfile(state);
             if (profile.id !== evt.data.profileId) {
               return false;
             }
@@ -57,7 +60,7 @@ class PluginHistory implements types.IHistoryStack {
           do: (evt) => {
             if (evt.data.wasGhost) {
               const state: IStateWithGamebryo = this.mApi.getState();
-              const profile = selectors.activeProfile(state);
+              const profile = activeProfile(state);
               setPluginGhost(evt.data.id, profile.gameId, true, false);
             } else {
               api.store.dispatch(setPluginEnabled(evt.data.id, evt.data.oldState));
@@ -80,7 +83,7 @@ class PluginHistory implements types.IHistoryStack {
             }),
           possible: (evt) => {
             const state: IStateWithGamebryo = this.mApi.getState();
-            const profile = selectors.activeProfile(state);
+            const profile = activeProfile(state);
             if (profile.id !== evt.data.profileId) {
               return false;
             }
@@ -89,7 +92,7 @@ class PluginHistory implements types.IHistoryStack {
           do: (evt) => {
             if (evt.data.wasGhost) {
               const state: IStateWithGamebryo = this.mApi.getState();
-              const profile = selectors.activeProfile(state);
+              const profile = activeProfile(state);
               setPluginGhost(evt.data.id, profile.gameId, true, false);
             } else {
               api.store.dispatch(setPluginEnabled(evt.data.id, evt.data.oldState));
@@ -112,7 +115,7 @@ class PluginHistory implements types.IHistoryStack {
             }),
           possible: (evt) => {
             const state: IStateWithGamebryo = this.mApi.getState();
-            const profile = selectors.activeProfile(state);
+            const profile = activeProfile(state);
             if (profile.id !== evt.data.profileId) {
               return false;
             }
@@ -124,7 +127,7 @@ class PluginHistory implements types.IHistoryStack {
           },
           do: (evt) => {
             const state: IStateWithGamebryo = this.mApi.getState();
-            const profile = selectors.activeProfile(state);
+            const profile = activeProfile(state);
             setPluginGhost(evt.data.id, profile.gameId, false, true);
             return Promise.resolve();
           },
@@ -162,9 +165,10 @@ class PluginHistory implements types.IHistoryStack {
               setPluginLight(evt.data.id, !evt.data.enable);
               return Promise.resolve();
             } catch (err) {
-              if (err.code === "ENOENT") {
-                api.showErrorNotification("File no longer exists", err, {
-                  message: err.path,
+              if (getErrorCode(err) === "ENOENT") {
+                const fileErr = unknownToError(err) as Error & { path?: string };
+                api.showErrorNotification("File no longer exists", fileErr, {
+                  message: fileErr.path,
                   allowReport: false,
                 });
                 return Promise.resolve();
@@ -181,8 +185,7 @@ class PluginHistory implements types.IHistoryStack {
   }
 
   public init() {
-    const addToHistory: (stack: string, entry: types.IHistoryEvent) => void =
-      this.mApi.ext.addToHistory;
+    const addToHistory: (stack: string, entry: IHistoryEvent) => void = this.mApi.ext.addToHistory;
 
     interface IPluginMap {
       [pluginId: string]: ILoadOrder;
@@ -194,8 +197,8 @@ class PluginHistory implements types.IHistoryStack {
       );
 
       const state: IStateWithGamebryo = this.mApi.getState();
-      const gameMode = selectors.activeGameId(state);
-      const profile = selectors.activeProfile(state);
+      const gameMode = activeGameId(state);
+      const profile = activeProfile(state);
 
       if (profile !== undefined) {
         allIds.forEach((id) => {
@@ -227,7 +230,7 @@ class PluginHistory implements types.IHistoryStack {
 
     this.mApi.events.on("autosort-plugins", () => {
       const state: IStateWithGamebryo = this.mApi.getState();
-      const gameMode = selectors.activeGameId(state);
+      const gameMode = activeGameId(state);
 
       addToHistory("plugins", {
         type: "plugins-sorted",
@@ -241,21 +244,21 @@ class PluginHistory implements types.IHistoryStack {
     return 100;
   }
 
-  public describe(evt: types.IHistoryEvent): string {
+  public describe(evt: IHistoryEvent): string {
     if (this.mEventTypes[evt.type] === undefined) {
       return `Unsupported event ${evt.type}`;
     }
     return this.mEventTypes[evt.type].describe(evt);
   }
 
-  public describeRevert(evt: types.IHistoryEvent): string {
+  public describeRevert(evt: IHistoryEvent): string {
     if (this.mEventTypes[evt.type]?.revert === undefined) {
       return undefined;
     }
     return this.mEventTypes[evt.type].revert.describe(evt);
   }
 
-  public canRevert(evt: types.IHistoryEvent): types.Revertability {
+  public canRevert(evt: IHistoryEvent): Revertability {
     if (this.mEventTypes[evt.type]?.revert === undefined) {
       return "never";
     } else if (!this.mEventTypes[evt.type].revert.possible(evt)) {
@@ -264,7 +267,7 @@ class PluginHistory implements types.IHistoryStack {
     return "yes";
   }
 
-  public revert(evt: types.IHistoryEvent): Promise<void> {
+  public revert(evt: IHistoryEvent): Promise<void> {
     return this.mEventTypes[evt.type].revert.do(evt);
   }
 }

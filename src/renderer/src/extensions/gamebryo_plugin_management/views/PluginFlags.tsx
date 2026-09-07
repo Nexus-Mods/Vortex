@@ -1,10 +1,10 @@
-import { tooltip } from "@nexusmods/vortex-api";
-import I18next from "i18next";
+import type I18next from "i18next";
 import * as React from "react";
 
+import * as tooltip from "../../../controls/TooltipControls";
 import { NAMESPACE } from "../statics";
 /* eslint-disable max-lines-per-function */
-import { IPluginCombined } from "../types/IPlugins";
+import type { IPluginCombined } from "../types/IPlugins";
 
 type TranslationFunction = typeof I18next.t;
 
