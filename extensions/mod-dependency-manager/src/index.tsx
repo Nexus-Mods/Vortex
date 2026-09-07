@@ -1625,6 +1625,7 @@ function main(context: types.IExtensionContext) {
     {
       isModernOnly: true,
       notice: () => unresolvedConflictsNotice(context.api),
+      brand: () => (unresolvedConflictsNotice(context.api) ? "info" : undefined),
       pinned: true,
     },
     "Manage Rules",
