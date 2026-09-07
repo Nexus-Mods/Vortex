@@ -10,23 +10,25 @@ import { useSelector } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import { showDialog } from "../../actions/notifications";
-import { resetSuppression } from "../../actions/notificationSettings";
-import { setCustomTitlebar } from "../../actions/window";
+import { showDialog } from "@/actions";
+import { resetSuppression } from "@/actions";
+import { setCustomTitlebar } from "@/actions";
+import type { IAvailableExtension } from "@/types/extensions";
+import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "@/types/IDialog";
+import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
+import { Picker } from "@/ui/components/picker/Picker";
+import { Typography } from "@/ui/components/typography/Typography";
+import { relaunch } from "@/util/commandLine";
+import { log } from "@/util/log";
+import { getPreloadApi } from "@/util/preloadAccess";
+import { useReduceMotion } from "@/util/reduceMotion";
+import { truthy } from "@/util/util";
+
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import Toggle from "../../controls/Toggle";
-import type { IAvailableExtension } from "../../types/extensions";
-import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../../types/IDialog";
-import type { IState } from "../../types/IState";
-import { Button } from "../../ui/components/button/Button";
-import { Picker } from "../../ui/components/picker/Picker";
-import { Typography } from "../../ui/components/typography/Typography";
-import { relaunch } from "../../util/commandLine";
 import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { getPreloadApi } from "../../util/preloadAccess";
-import { truthy } from "../../util/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";
 import {
@@ -44,6 +46,7 @@ import {
   setHideTopLevelCategory,
   setLanguage,
   setProfilesVisible,
+  setReduceMotion,
   setRelativeTimes,
 } from "./actions/interface";
 import { nativeCountryName, nativeLanguageName } from "./languagemap";
@@ -76,6 +79,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAlwaysCompactHeaders: (enabled: boolean) => void;
+  onSetReduceMotion: (enabled: boolean) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetAutoInstall: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
@@ -101,6 +105,7 @@ type IProps = IBaseProps &
   IActionProps &
   IConnectedProps & {
     currentLanguage: string;
+    reduceMotion: boolean;
     extensions: IAvailableExtension[];
     languages: ILanguage[];
     onReloadLanguages: () => void;
@@ -142,6 +147,8 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       profilesVisible,
       hideTopLevelCategory,
       onSetForegroundDL,
+      onSetReduceMotion,
+      reduceMotion,
       relativeTimes,
       startup,
       startMinimized,
@@ -241,6 +248,16 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
                 <Typography appearance="subdued" typographyType="body-sm">
                   {t("Keep page headers compact for less motion and more vertical space.")}
+                </Typography>
+              </Toggle>
+            </div>
+
+            <div>
+              <Toggle checked={reduceMotion} onToggle={onSetReduceMotion}>
+                {t("Reduce motion")}
+
+                <Typography appearance="subdued" typographyType="body-sm">
+                  {t("Minimise non-essential animations and visual effects.")}
                 </Typography>
               </Toggle>
             </div>
@@ -552,6 +569,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetAlwaysCompactHeaders: (enabled: boolean) => {
       dispatch(setAlwaysCompactHeaders(enabled));
     },
+    onSetReduceMotion: (enabled: boolean) => {
+      dispatch(setReduceMotion(enabled));
+    },
     onResetNotificationSuppression: () => {
       dispatch(resetSuppression(null));
     },
@@ -644,6 +664,10 @@ function SettingsInterface(props: IBaseProps) {
 
   const forceReload = React.useCallback(() => setIteration((i) => i + 1), []);
 
+  // Effective rather than stored, so the toggle shows what the OS asked for until the
+  // user makes a choice of their own.
+  const reduceMotion = useReduceMotion();
+
   React.useEffect(() => {
     (async () => {
       const langs = await readLocales(exts);
@@ -665,6 +689,7 @@ function SettingsInterface(props: IBaseProps) {
       currentLanguage={lang}
       extensions={exts}
       languages={languages}
+      reduceMotion={reduceMotion}
       onReloadLanguages={forceReload}
     />
   );

@@ -41,3 +41,13 @@ describe("setAlwaysCompactHeaders", () => {
     });
   });
 });
+
+describe("setReduceMotion", () => {
+  it("creates the correct action", () => {
+    expect(interfaceActions.setReduceMotion(true)).toEqual({
+      error: false,
+      type: "SET_REDUCE_MOTION",
+      payload: true,
+    });
+  });
+});
