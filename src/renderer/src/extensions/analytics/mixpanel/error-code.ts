@@ -4,12 +4,11 @@ import { type VortexErrorKind, VortexError } from "@vortex/shared/errors";
 /**
  * Stable, low-cardinality tokens for the analytics `error_code` property.
  *
- * Dispatch is on `data.kind`, which is the only part of an error that survives
- * the IPC boundary: main serializes to `SerializedVortexError` and the renderer
- * rebuilds a base VortexError from `data` alone, so the concrete class, the
- * `name` and the Node `code` property are all gone by the time we see it.
- * Anything still classified by class name is therefore renderer-local, and that
- * branch retires with the renderer's VortexError migration.
+ * A VortexError thrown by the downloader carries an explicit `data.kind`;
+ * any other error is reduced to a snake_case token derived from its class
+ * name. A raw OS/Node `code` is passed through lowercased only as a last
+ * resort — we don't normalize or map it (that's the typed-error layer's
+ * job), we just avoid discarding the one signal a bare errno Error carries.
  */
 
 /**
@@ -41,9 +40,10 @@ function downloadKindToken(kind: VortexErrorKind): string {
 }
 
 /**
- * Whether a {@link VortexErrorKind} is one the download layer can produce.
- * These are the kinds the collapsing map above is calibrated for; every other
- * kind gets a mechanical token from {@link kindToToken}.
+ * Whether a {@link VortexErrorKind} is one the download layer can produce. The
+ * kind drives a different UI flow only for these; other VortexError kinds
+ * (data-invalid, process-canceled, etc.) are best classified by their class
+ * name instead of a download token.
  */
 function isDownloadSideKind(kind: VortexErrorKind): boolean {
   return (
@@ -54,44 +54,9 @@ function isDownloadSideKind(kind: VortexErrorKind): boolean {
   );
 }
 
-/**
- * Kinds the classifier reaches when it could not attribute the failure. The
- * name carries no cause, so the raw OS code is the only signal left.
- */
-const CATCH_ALL_KINDS = new Set<VortexErrorKind>(["os:generic", "unknown"]);
-
 /** PascalCase class name -> snake_case token (UserCanceled -> user_canceled). */
 function errorNameToToken(name: string): string {
   return name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
-}
-
-/**
- * Kind -> snake_case token (`data-invalid` -> `data_invalid`, `os:unsupported`
- * -> `os_unsupported`), chosen to land on the same token the class-name branch
- * produces for the equivalent renderer-local error.
- */
-function kindToToken(kind: VortexErrorKind): string {
-  return kind.replace(/[:-]/g, "_");
-}
-
-function vortexErrorToken(err: VortexError): string {
-  const { kind } = err.data;
-
-  if (isDownloadSideKind(kind)) {
-    return downloadKindToken(kind);
-  }
-
-  if (CATCH_ALL_KINDS.has(kind)) {
-    // `code` is not a property of VortexError, so the classifier's copy of the
-    // raw errno is the only one that survives serialization.
-    const originalCode = "originalCode" in err.data ? err.data.originalCode : undefined;
-    if (typeof originalCode === "string" && originalCode.length > 0) {
-      return originalCode.toLowerCase();
-    }
-    return "unknown_error";
-  }
-
-  return kindToToken(kind);
 }
 
 /** Maps an arbitrary caught value to a stable analytics error code. */
@@ -99,18 +64,16 @@ export function classifyErrorCode(err: unknown): string {
   if (!(err instanceof Error)) {
     return "unknown_error";
   }
-
+  // Rehydrated VortexErrors are real VortexError instances — the wire form
+  // preserves the kind discriminator on `data.kind`.
   if (err instanceof VortexError) {
-    return vortexErrorToken(err);
+    if (err.data.kind !== undefined && isDownloadSideKind(err.data.kind)) {
+      return downloadKindToken(err.data.kind);
+    }
   }
-
-  // Renderer-local errors predating the VortexError migration still carry their
-  // class identity. Anything from main was handled above; its `name` would read
-  // "VortexError" here, which is no signal at all.
-  if (err.name !== "" && err.name !== "Error") {
+  if (err.name && err.name !== "Error") {
     return errorNameToToken(err.name);
   }
-
   // TODO: replace this lowercased passthrough with the project-wide node-error
   // classification once it exists — that consolidated typed taxonomy should own
   // turning raw errno codes into stable tokens, not this analytics-only stopgap.
