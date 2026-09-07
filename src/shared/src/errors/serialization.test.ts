@@ -1,5 +1,6 @@
 import { assert, describe, expect, it } from "vitest";
 
+import { CycleError, NotFound, ProcessCanceled, SetupError, UserCanceled } from "../types/errors";
 import { VortexError } from "./base";
 import {
   ORIGIN_REF_KEY,
@@ -191,6 +192,49 @@ describe("toWireError (boundary entry point)", () => {
     expect(deserializeVortexError(relayed, tracker)).toBe(original);
   });
 
+  it("carries the throw-site stack across the wire", () => {
+    const original = new VortexError("from main", { kind: "test:tag", name: "x" });
+    const onWire = serializeVortexError(original);
+
+    expect(onWire.stack).toBe(original.stack);
+    expect(deserializeVortexError(onWire).stack).toBe(original.stack);
+  });
+
+  it("gives rehydrated errors distinct stacks", () => {
+    // Without a stack on the wire every rehydrated error reports the stack of
+    // deserializeVortexError itself, which collapses them onto one fingerprint.
+    const first = deserializeVortexError(
+      serializeVortexError(new VortexError("one", { kind: "test:tag", name: "a" })),
+    );
+    const second = deserializeVortexError(
+      serializeVortexError(new VortexError("two", { kind: "test:tag", name: "b" })),
+    );
+
+    expect(first.stack).not.toBe(second.stack);
+  });
+
+  it("carries stacks for the whole cause chain", () => {
+    const root = new VortexError("root", { kind: "test:tag", name: "root" });
+    const wrapper = new VortexError(
+      "wrapper",
+      { kind: "test:tag", name: "outer" },
+      { cause: root },
+    );
+
+    const rehydrated = deserializeVortexError(serializeVortexError(wrapper));
+
+    expect(rehydrated.stack).toBe(wrapper.stack);
+    assert(rehydrated.cause instanceof VortexError);
+    expect(rehydrated.cause.stack).toBe(root.stack);
+  });
+
+  it("keeps the boundary stack when the wire form carries none", () => {
+    const onWire = serializeVortexError(new VortexError("x", { kind: "test:tag", name: "x" }));
+    delete onWire.stack;
+
+    expect(deserializeVortexError(onWire).stack).toBeDefined();
+  });
+
   it("ignores a ref minted under a different namespace", () => {
     const trackerA = makeTracker("main");
     const original = new VortexError("from main", { kind: "test:tag", name: "x" });
@@ -210,5 +254,62 @@ describe("toWireError (boundary entry point)", () => {
     expect(out).not.toBe(original);
     expect(out).not.toBe(stashB.get("0"));
     expect(out.data.kind).toBe("test:tag");
+  });
+});
+
+const roundTrip = (err: VortexError): VortexError =>
+  deserializeVortexError(serializeVortexError(err));
+
+describe("class reconstruction", () => {
+  it("brings back the concrete class for a kind that has one", () => {
+    const wire = roundTrip(new UserCanceled(true));
+
+    expect(wire).toBeInstanceOf(UserCanceled);
+    expect(wire).not.toBeInstanceOf(ProcessCanceled);
+    expect(wire.name).toBe("UserCanceled");
+  });
+
+  it("restores accessors backed by private fields", () => {
+    // These read `#private` fields, so only the real constructor can make them
+    // work — grafting a prototype onto a base instance would throw here.
+    expect(roundTrip(new ProcessCanceled("nope", { detail: 1 }))).toHaveProperty("extraInfo", {
+      detail: 1,
+    });
+    expect(roundTrip(new SetupError("bad", "downloader"))).toHaveProperty(
+      "component",
+      "downloader",
+    );
+    expect(roundTrip(new UserCanceled(true))).toHaveProperty("skipped", true);
+    expect(roundTrip(new CycleError([["a", "b"]]))).toHaveProperty("cycles", [["a", "b"]]);
+  });
+
+  it("keeps the wire's message rather than the one the constructor synthesizes", () => {
+    const original = new NotFound("thing");
+    original.message = "a message the thrower customised";
+
+    expect(roundTrip(original).message).toBe("a message the thrower customised");
+  });
+
+  it("preserves data, isTransient and the cause through reconstruction", () => {
+    const cause = new VortexError("root", { kind: "test:tag", name: "root" });
+    const original = new ProcessCanceled("outer", "info");
+    const wire = deserializeVortexError(
+      serializeVortexError(
+        new VortexError(original.message, original.data, { isTransient: true, cause }),
+      ),
+    );
+
+    assert(wire.data.kind === "process-canceled");
+    expect(wire.data.extraInfo).toBe("info");
+    expect(wire.isTransient).toBe(true);
+    assert(wire.cause instanceof VortexError);
+    expect(wire.cause.message).toBe("root");
+  });
+
+  it("falls back to a base VortexError for a kind with no class", () => {
+    const wire = roundTrip(new VortexError("no class for this", { kind: "test:tag", name: "x" }));
+
+    expect(wire.constructor).toBe(VortexError);
+    expect(wire.data.kind).toBe("test:tag");
   });
 });

@@ -42,6 +42,7 @@ describe("parseError", () => {
       { code: "ENOENT", kind: "fs:not-found", path: "/missing" },
       { code: "EEXIST", kind: "fs:already-exists", path: "/existing" },
       { code: "ENOSPC", kind: "fs:no-space", path: "/dev/sda1" },
+      { code: "EROFS", kind: "fs:read-only", path: "/mnt/readonly/file" },
       { code: "ENOTDIR", kind: "fs:not-a-directory", path: "/not/a/dir" },
       { code: "EISDIR", kind: "fs:not-a-file", path: "/some/dir" },
       { code: "ENOTEMPTY", kind: "fs:directory-not-empty", path: "/non/empty" },

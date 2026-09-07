@@ -88,6 +88,12 @@ function parseNodeSystemError(
       message: `File at '${path}' already exists`,
       data: { kind: "fs:already-exists", ...osData, path },
     };
+  } else if (originalCode === "EROFS") {
+    // EROFS: Read-only filesystem (POSIX.1-2001).
+    return {
+      message: `Filesystem is read-only: '${path}'`,
+      data: { kind: "fs:read-only", ...osData, path },
+    };
   } else if (originalCode === "ENOSPC") {
     // ENOSPC: No space left on device (POSIX.1-2001)
     return {
