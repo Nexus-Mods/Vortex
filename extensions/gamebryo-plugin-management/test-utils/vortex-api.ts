@@ -21,14 +21,19 @@ import { batchDispatch, makeOverlayableDictionary } from "../../../src/renderer/
  */
 
 // real node-fs behavior wrapped in Bluebird (production code relies on Bluebird's
-// predicate .catch), except readdirAsync which tests arrange per-case
+// predicate .catch and chains .filter on readdirAsync). readdirAsync is a vi.fn whose
+// default reads the real directory; suites arrange it per-case to override, and
+// mockReset restores this default. utimesAsync returns a native promise: its only
+// consumer uses a plain .catch.
 export const fs = {
-  readdirAsync: vi.fn(),
+  readdirAsync: vi.fn((dirPath: string) => PromiseBB.resolve(nodeFs.promises.readdir(dirPath))),
   ensureDirAsync: (dirPath: string) =>
     PromiseBB.resolve(nodeFs.promises.mkdir(dirPath, { recursive: true })).then(() => undefined),
   readFileAsync: (filePath: string, options?: { encoding?: BufferEncoding }) =>
     PromiseBB.resolve(nodeFs.promises.readFile(filePath, options)),
   statAsync: (filePath: string) => PromiseBB.resolve(nodeFs.promises.stat(filePath)),
+  utimesAsync: (filePath: string, atime: number, mtime: number) =>
+    nodeFs.promises.utimes(filePath, atime, mtime),
   // inert: a real OS watcher takes the worker process down on Windows CI, and nothing here
   // drives the persistor through fs events - the tests trigger its reads directly
   watch: () => ({ on: () => undefined, close: () => undefined }) as unknown as nodeFs.FSWatcher,

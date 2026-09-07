@@ -4,14 +4,19 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-const paths = vi.hoisted(() => ({ pluginDir: "", dataDir: "", native: [] as string[] }));
+const paths = vi.hoisted(() => ({
+  pluginDir: "",
+  dataDir: "",
+  native: [] as string[],
+  format: "fallout4" as "fallout4" | "original",
+}));
 
 // resolve the persistor's game paths into per-test temp dirs
 vi.mock("./gameSupport", () => ({
   gameSupported: (gameId: string) => gameId === "skyrimse",
   gameDataPath: () => paths.dataDir,
   pluginPath: () => paths.pluginDir,
-  pluginFormat: () => "fallout4",
+  pluginFormat: () => paths.format,
   nativePlugins: () => paths.native,
 }));
 
@@ -43,10 +48,27 @@ describe("PluginPersistor", () => {
     hive = next;
   };
 
+  const tmpDirs: string[] = [];
+  const tmpDir = (prefix: string) => {
+    const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), prefix));
+    tmpDirs.push(dir);
+    return dir;
+  };
+
+  const persistors: PluginPersistor[] = [];
+  const makePersistor = async (controlOrder: boolean = false) => {
+    const made = new PluginPersistor(vi.fn(), () => controlOrder);
+    made.setResetCallback(vi.fn(async () => undefined));
+    await made.loadFiles("skyrimse");
+    persistors.push(made);
+    return made;
+  };
+
   beforeEach(async () => {
-    paths.pluginDir = nodeFs.mkdtempSync(path.join(os.tmpdir(), "plugin-persistor-"));
-    paths.dataDir = nodeFs.mkdtempSync(path.join(os.tmpdir(), "plugin-data-"));
+    paths.pluginDir = tmpDir("plugin-persistor-");
+    paths.dataDir = tmpDir("plugin-data-");
     paths.native = [];
+    paths.format = "fallout4";
     // one plugin enabled and persisted (the install-time single-plugin case) plus one
     // known-but-disabled plugin whose position only the persistor remembers
     nodeFs.writeFileSync(
@@ -66,8 +88,12 @@ describe("PluginPersistor", () => {
 
   afterEach(async () => {
     await persistor.disable();
-    nodeFs.rmSync(paths.pluginDir, { recursive: true, force: true });
-    nodeFs.rmSync(paths.dataDir, { recursive: true, force: true });
+    for (const made of persistors.splice(0)) {
+      await made.disable();
+    }
+    for (const dir of tmpDirs.splice(0)) {
+      nodeFs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("does not rehydrate state from a known-plugins refresh", async () => {
@@ -328,6 +354,156 @@ describe("PluginPersistor", () => {
     await persistor.syncFromState("skyrimse", hive as Record<string, ILoadOrder>);
 
     expect(JSON.parse(await persistor.getItem(["multi.esp"])).enabled).toBe(true);
+  });
+
+  describe("missing plugins.txt", () => {
+    it("stays writable when no plugins.txt exists yet", async () => {
+      paths.pluginDir = tmpDir("plugin-missing-");
+      const fresh = await makePersistor();
+
+      fresh.setKnownPlugins({ "new.esp": "New.esp" });
+      await fresh.setItem(["new.esp"], JSON.stringify({ enabled: true, loadOrder: 0 }));
+
+      await vi.waitFor(() => {
+        const written = nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1");
+        expect(written).toContain("*New.esp");
+      });
+    });
+
+    it("keeps its state and recreates the file when plugins.txt is deleted externally", async () => {
+      nodeFs.rmSync(path.join(paths.pluginDir, "plugins.txt"));
+
+      await persistor.loadFiles("skyrimse");
+
+      expect(JSON.parse(await persistor.getItem(["old.esp"])).enabled).toBe(true);
+      await vi.waitFor(() => {
+        const written = nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1");
+        expect(written).toContain("*Old.esp");
+      });
+    });
+  });
+
+  it("keeps blueprint plugins out of both plugin files", async () => {
+    persistor.setKnownPlugins({ "old.esp": "Old.esp", "bp.esm": "BP.esm" }, new Set(["bp.esm"]));
+
+    await vi.waitFor(() => {
+      const pluginsTxt = nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1");
+      const loadorderTxt = nodeFs.readFileSync(path.join(paths.pluginDir, "loadorder.txt"), "utf8");
+      expect(pluginsTxt).toContain("*Old.esp");
+      expect(pluginsTxt).not.toContain("BP.esm");
+      expect(loadorderTxt).toContain("Old.esp");
+      expect(loadorderTxt).not.toContain("BP.esm");
+    });
+  });
+
+  describe("native plugin load order", () => {
+    let native: PluginPersistor;
+
+    beforeEach(async () => {
+      paths.native = ["skyrim.esm"];
+      paths.pluginDir = tmpDir("plugin-native-lo-");
+      nodeFs.writeFileSync(
+        path.join(paths.pluginDir, "plugins.txt"),
+        `${VORTEX_HEADER}\r\n*Old.esp\r\n`,
+        { encoding: "latin1" },
+      );
+      native = await makePersistor();
+      native.setKnownPlugins({ "skyrim.esm": "Skyrim.esm", "old.esp": "Old.esp" });
+    });
+
+    it("reports an installed native plugin at its native index", async () => {
+      expect(JSON.parse(await native.getItem(["skyrim.esm"])).loadOrder).toBe(0);
+    });
+
+    it("round-trips a dynamic plugin's load order across the native offset", async () => {
+      await native.setItem(["old.esp"], JSON.stringify({ enabled: true, loadOrder: 3 }));
+
+      expect(JSON.parse(await native.getItem(["old.esp"])).loadOrder).toBe(3);
+    });
+  });
+
+  describe("original plugin format (Oblivion/Fallout 3 family)", () => {
+    // the mocked gameSupport pairs the original format with "skyrimse", a pairing
+    // production never produces; deserialize's skyrim exemption from file-time
+    // ordering is therefore deliberately not covered here
+    beforeEach(() => {
+      paths.format = "original";
+      paths.pluginDir = tmpDir("plugin-original-");
+      paths.dataDir = tmpDir("plugin-original-data-");
+      // both files must exist: the original format reads loadorder.txt as the order
+      // reference first and plugins.txt (enabled names only, no markers) second
+      nodeFs.writeFileSync(
+        path.join(paths.pluginDir, "loadorder.txt"),
+        `${VORTEX_HEADER}\r\nOld.esp\r\nParked.esp\r\n`,
+        { encoding: "utf8" },
+      );
+      nodeFs.writeFileSync(
+        path.join(paths.pluginDir, "plugins.txt"),
+        `${VORTEX_HEADER}\r\nOld.esp\r\n`,
+        { encoding: "latin1" },
+      );
+    });
+
+    it("reads the order from loadorder.txt and the enabled set from plugins.txt", async () => {
+      const p = await makePersistor(true);
+
+      expect(JSON.parse(await p.getItem(["old.esp"]))).toMatchObject({
+        enabled: true,
+        loadOrder: 0,
+      });
+      expect(JSON.parse(await p.getItem(["parked.esp"]))).toMatchObject({
+        enabled: false,
+        loadOrder: 1,
+      });
+    });
+
+    it("writes only enabled plugins to plugins.txt, without enable markers", async () => {
+      const p = await makePersistor(true);
+      p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+
+      await vi.waitFor(() => {
+        const pluginsTxt = nodeFs.readFileSync(path.join(paths.pluginDir, "plugins.txt"), "latin1");
+        const loadorderTxt = nodeFs.readFileSync(
+          path.join(paths.pluginDir, "loadorder.txt"),
+          "utf8",
+        );
+        expect(pluginsTxt).toContain("Old.esp");
+        expect(pluginsTxt).not.toContain("*Old.esp");
+        expect(pluginsTxt).not.toContain("Parked.esp");
+        expect(loadorderTxt).toContain("Parked.esp");
+      });
+    });
+
+    it("orders plugins by their file time when not controlling the load order", async () => {
+      // Parked.esp deliberately older than Old.esp: on-disk time, not loadorder.txt, wins
+      const early = new Date(Date.now() - 60_000);
+      const late = new Date();
+      nodeFs.writeFileSync(path.join(paths.dataDir, "Old.esp"), "");
+      nodeFs.writeFileSync(path.join(paths.dataDir, "Parked.esp"), "");
+      nodeFs.utimesSync(path.join(paths.dataDir, "Parked.esp"), early, early);
+      nodeFs.utimesSync(path.join(paths.dataDir, "Old.esp"), late, late);
+
+      const p = await makePersistor(false);
+
+      expect(JSON.parse(await p.getItem(["parked.esp"])).loadOrder).toBe(0);
+      expect(JSON.parse(await p.getItem(["old.esp"])).loadOrder).toBe(1);
+    });
+
+    it("stamps data file times to match the load order when controlling it", async () => {
+      const epoch = 946684800; // 2000-01-01
+      nodeFs.writeFileSync(path.join(paths.dataDir, "Old.esp"), "");
+      nodeFs.writeFileSync(path.join(paths.dataDir, "Parked.esp"), "");
+
+      const p = await makePersistor(true);
+      p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+
+      await vi.waitFor(() => {
+        expect(nodeFs.statSync(path.join(paths.dataDir, "Old.esp")).mtimeMs).toBe(epoch * 1000);
+        expect(nodeFs.statSync(path.join(paths.dataDir, "Parked.esp")).mtimeMs).toBe(
+          (epoch + 86400) * 1000,
+        );
+      });
+    });
   });
 
   it("rehydrates when the installed-native set changes, and only then", async () => {
