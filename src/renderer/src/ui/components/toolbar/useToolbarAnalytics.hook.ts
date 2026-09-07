@@ -28,7 +28,7 @@ const toolbarActionClickedEvent = ({
   surface,
   ...event
 }: IToolbarActionEvent & { surface: ToolbarSurface }): MixpanelEvent => ({
-  eventName: "toolbar_action_clicked",
+  eventName: "app_toolbar_action_clicked",
   properties: { ...actionProperties(event), surface },
 });
 
@@ -41,7 +41,7 @@ const toolbarPinChangedEvent = ({
   pinned,
   ...event
 }: IToolbarActionEvent & { pinned: boolean }): MixpanelEvent => ({
-  eventName: "toolbar_pin_changed",
+  eventName: "app_toolbar_pin_changed",
   properties: { ...actionProperties(event), pinned },
 });
 
@@ -51,7 +51,7 @@ const toolbarPinChangedEvent = ({
  * do not.
  */
 const toolbarPinsResetEvent = ({ toolbar }: { toolbar: string }): MixpanelEvent => ({
-  eventName: "toolbar_pins_reset",
+  eventName: "app_toolbar_pins_reset",
   properties: { toolbar },
 });
 
