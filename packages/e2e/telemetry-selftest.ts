@@ -147,25 +147,48 @@ async function stubPingWire(app: ElectronApplication, wire: WireError): Promise<
   }, wire);
 }
 
-/** What the renderer actually catches, so stack loss is visible without ClickStack. */
-const PROBE = `async (invoke) => {
-  try {
-    await invoke();
-    return { threw: false };
-  } catch (e) {
-    return {
-      threw: true,
-      ctor: e?.constructor?.name,
-      name: e?.name,
-      message: e?.message,
-      kind: e?.data?.kind,
-      stack: e?.stack,
-    };
-  }
-}`;
+/** Which preload call to make. Crosses to the page as data, so the page
+ *  function below stays a real function and no code is built from strings. */
+type ProbeTarget =
+  | { call: "ping" }
+  | { call: "extractFileIcon"; exePath: string; iconPath: string };
 
-async function probePing(win: Page): Promise<unknown> {
-  return win.evaluate(`(${PROBE})(() => window.api.example.ping())`) as unknown as Promise<unknown>;
+/** The slice of the preload surface the probes touch. */
+interface ProbeApi {
+  example: { ping: () => Promise<unknown> };
+  app: { extractFileIcon: (exePath: string, iconPath: string) => Promise<unknown> };
+}
+
+/** What the renderer actually catches, so stack loss is visible without ClickStack. */
+interface ProbeResult {
+  threw: boolean;
+  ctor?: string;
+  name?: string;
+  message?: string;
+  kind?: string;
+  stack?: string;
+}
+
+async function probe(win: Page, target: ProbeTarget): Promise<ProbeResult> {
+  return win.evaluate(async (t: ProbeTarget): Promise<ProbeResult> => {
+    const { api } = window as unknown as { api: ProbeApi };
+    try {
+      await (t.call === "ping"
+        ? api.example.ping()
+        : api.app.extractFileIcon(t.exePath, t.iconPath));
+      return { threw: false };
+    } catch (e) {
+      const err = e as Partial<Error> & { data?: { kind?: string } };
+      return {
+        threw: true,
+        ctor: err?.constructor?.name,
+        name: err?.name,
+        message: err?.message,
+        kind: err?.data?.kind,
+        stack: err?.stack,
+      };
+    }
+  }, target);
 }
 
 /**
@@ -173,10 +196,8 @@ async function probePing(win: Page): Promise<unknown> {
  * directory that doesn't exist makes the main-side handler throw a real ENOENT.
  * That exercises main's `toWireError` rather than a hand-crafted envelope.
  */
-async function probeExtractIcon(win: Page, iconPath: string): Promise<unknown> {
-  return win.evaluate(
-    `(${PROBE})(() => window.api.app.extractFileIcon(${JSON.stringify(process.execPath)}, ${JSON.stringify(iconPath)}))`,
-  ) as unknown as Promise<unknown>;
+function iconTarget(iconPath: string): ProbeTarget {
+  return { call: "extractFileIcon", exePath: process.execPath, iconPath };
 }
 
 /**
@@ -213,8 +234,15 @@ function terminateCount(dir: string): number {
 }
 
 /** Fire the call with no rejection handler, so it reaches the global error handler. */
-async function fireUncaught(win: Page, expression: string): Promise<void> {
-  await win.evaluate(`setTimeout(() => { ${expression}; }, 0)`);
+async function fireUncaught(win: Page, target: ProbeTarget): Promise<void> {
+  await win.evaluate((t: ProbeTarget) => {
+    setTimeout(() => {
+      const { api } = window as unknown as { api: ProbeApi };
+      void (t.call === "ping"
+        ? api.example.ping()
+        : api.app.extractFileIcon(t.exePath, t.iconPath));
+    }, 0);
+  }, target);
 }
 
 interface StubState {
@@ -379,14 +407,14 @@ async function main(): Promise<void> {
     // A write into System32 fails with EPERM/EACCES, i.e. an environmental error
     // that isEnvironmentalError must still recognise after the IPC round-trip.
     const protectedIconPath = path.join("C:/Windows/System32", `${MARKER}.png`);
-    log(`probe real main throw: ${JSON.stringify(await probeExtractIcon(win3, bogusIconPath))}`);
+    log(`probe real main throw: ${JSON.stringify(await probe(win3, iconTarget(bogusIconPath)))}`);
     log(
-      `probe environmental throw: ${JSON.stringify(await probeExtractIcon(win3, protectedIconPath))}`,
+      `probe environmental throw: ${JSON.stringify(await probe(win3, iconTarget(protectedIconPath)))}`,
     );
     await stubPingWire(app3, genericWire);
-    log(`probe wire generic: ${JSON.stringify(await probePing(win3))}`);
+    log(`probe wire generic: ${JSON.stringify(await probe(win3, { call: "ping" }))}`);
     await stubPingWire(app3, canceledWire);
-    log(`probe wire user-canceled: ${JSON.stringify(await probePing(win3))}`);
+    log(`probe wire user-canceled: ${JSON.stringify(await probe(win3, { call: "ping" }))}`);
 
     // Uncaught: reaches renderer.tsx errorHandler -> recordErrorSpan / terminate.
     /**
@@ -396,11 +424,11 @@ async function main(): Promise<void> {
      */
     const step = async (
       label: string,
-      expression: string,
+      target: ProbeTarget,
       expectTerminate: boolean,
     ): Promise<void> => {
       const before = terminateCount(dir3);
-      await fireUncaught(win3, expression);
+      await fireUncaught(win3, target);
 
       const waited = await waitFor(async () => terminateCount(dir3) > before, SETTLE_MS);
       const terminated = waited !== null;
@@ -416,25 +444,17 @@ async function main(): Promise<void> {
     };
 
     await stubPingWire(app3, genericWire);
-    await step("ipc-generic", "window.api.example.ping()", true);
+    await step("ipc-generic", { call: "ping" }, true);
 
     await stubPingWire(app3, canceledWire);
     // A cancellation must not be treated as a crash, even after the round-trip.
-    await step("ipc-usercanceled", "window.api.example.ping()", false);
+    await step("ipc-usercanceled", { call: "ping" }, false);
 
-    await step(
-      "real-main-throw",
-      `window.api.app.extractFileIcon(${JSON.stringify(process.execPath)}, ${JSON.stringify(bogusIconPath)})`,
-      true,
-    );
+    await step("real-main-throw", iconTarget(bogusIconPath), true);
 
     // Still terminates (state is unknown after an unhandled throw) but must not
     // offer to report — assert on the button set rather than on the dialog count.
-    await step(
-      "environmental-throw",
-      `window.api.app.extractFileIcon(${JSON.stringify(process.execPath)}, ${JSON.stringify(protectedIconPath)})`,
-      true,
-    );
+    await step("environmental-throw", iconTarget(protectedIconPath), true);
     const dialogs = (await readStubState(app3)).dialogs;
     log(`environmental dialog answered with: ${JSON.stringify(dialogs.at(-1))}`);
 
