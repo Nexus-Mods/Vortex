@@ -27,7 +27,8 @@ export interface ICycleEdge {
  * generated at runtime, so node-loot's index.d.ts cannot supply them (and mis-declares parts
  * of the callback surface it does have - loadPlugins/getPlugin/getGroupsPath as synchronous,
  * isClosed missing); only the payload types come from it.
- * TODO: fix index.d.ts upstream in Nexus-Mods/node-loot so this member list can be derived.
+ * TODO LAZ-1068: fix index.d.ts upstream in Nexus-Mods/node-loot so this member list can be
+ * derived.
  */
 export interface ILootProm {
   clearConditionCacheAsync: () => Promise<void>;
