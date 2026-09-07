@@ -5157,6 +5157,10 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+    optionalDependencies:
+      loot:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5
 
   src/shared:
     dependencies:

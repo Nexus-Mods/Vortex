@@ -47,6 +47,27 @@ await copy(
   join(BUILD, "assets/css/bootstrap.scss"),
 );
 
+// node-loot runtime pieces, resolved from the renderer's deps: loot must stay out
+// of @vortex/main's tree, or electron-rebuild force-rebuilds it against electron
+// headers and the link fails where libloot is absent. The install-time node-gyp
+// build targets napi, so electron loads it without a rebuild. The package layout
+// is preserved so async.js's relative require of build/Release/node-loot resolves,
+// and libloot.dll is placed next to the binding because the Windows loader
+// searches the loaded module's directory.
+try {
+  const rendererRequire = createRequire(join(WORKSPACE, "src/renderer/package.json"));
+  const lootDir = dirname(rendererRequire.resolve("loot/package.json"));
+  await copy(join(lootDir, "index.js"), join(ASSETS, "loot/index.js"));
+  await copy(join(lootDir, "async.js"), join(ASSETS, "loot/async.js"));
+  await copy(
+    join(lootDir, "build/Release/node-loot.node"),
+    join(ASSETS, "loot/build/Release/node-loot.node"),
+  );
+  await copy(join(lootDir, "loot_api/libloot.dll"), join(ASSETS, "loot/build/Release/libloot.dll"));
+} catch {
+  console.log("skipped node-loot runtime pieces (loot is not installed on this platform)");
+}
+
 // Static files
 await copy(join(WORKSPACE, "LICENSE.md"), join(BUILD, "LICENSE.md"));
 await copy(join(WORKSPACE, "src/renderer/src/index.html"), join(BUILD, "index.html"));

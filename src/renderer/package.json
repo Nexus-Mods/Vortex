@@ -228,5 +228,8 @@
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "catalog:"
+  },
+  "optionalDependencies": {
+    "loot": "catalog:"
   }
 }
