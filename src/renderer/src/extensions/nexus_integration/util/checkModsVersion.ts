@@ -110,6 +110,15 @@ export function checkModVersion(
     return PromiseBB.resolve();
   }
 
+  // #21979: a source that is set and isn't 'nexus' means an extension or a non-Nexus
+  // downloader vouched for this file's origin. Any modId still on the mod is an
+  // md5-lookup artifact pointing at an unrelated Nexus mod; checking it for updates
+  // is what pulls in a foreign file and breaks the install. `source` undefined is
+  // left alone - legacy installs predate the attribute and must keep updating.
+  if (truthy(mod.attributes?.source) && mod.attributes.source !== "nexus") {
+    return PromiseBB.resolve();
+  }
+
   const gameId = getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode;
   const game = gameById(store.getState(), gameId);
   const fallBackGameId = gameId === "site" ? "site" : gameId;
