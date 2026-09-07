@@ -1,4 +1,3 @@
-import { MAX_CAUSE_DEPTH } from "../errors";
 import {
   ArgumentInvalid,
   CycleError,
@@ -11,7 +10,7 @@ import {
   SetupError,
   UserCanceled,
 } from "../types/errors";
-import { VortexError, type VortexErrorData } from "./base";
+import { MAX_CAUSE_DEPTH, VortexError, type VortexErrorData } from "./base";
 import { parseError } from "./parser";
 
 /**

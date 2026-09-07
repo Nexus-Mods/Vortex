@@ -1,12 +1,7 @@
 import type { Span } from "@opentelemetry/api";
 import { SpanStatusCode } from "@opentelemetry/api";
 
-import {
-  computeErrorFingerprint,
-  getErrorCode,
-  resolveReportedStack,
-  sanitizeFramePath,
-} from "../errors";
+import { computeErrorFingerprint, getErrorCode, sanitizeFramePath } from "../errors";
 
 /**
  * Record an error on a span: compute fingerprint, record the exception,
@@ -26,11 +21,7 @@ export const recordErrorOnSpan = (
   attributes?: Record<string, string | number | boolean>,
 ): void => {
   const sanitizedMessage = sanitizeFramePath(error.message);
-  // The frames of the deepest cause, not necessarily this error's own — see
-  // resolveReportedStack. Both the fingerprint and exception.stacktrace come
-  // from this one value, so they cannot disagree.
-  const reportedStack = resolveReportedStack(error);
-  const sanitizedStack = reportedStack !== undefined ? sanitizeFramePath(reportedStack) : undefined;
+  const sanitizedStack = error.stack !== undefined ? sanitizeFramePath(error.stack) : undefined;
   const sanitized = new Error(sanitizedMessage);
   sanitized.name = error.name;
   sanitized.stack = sanitizedStack;

@@ -1,13 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import {
-  MAX_CAUSE_DEPTH,
-  computeErrorFingerprint,
-  isEnvironmentalError,
-  resolveReportedStack,
-  sanitizeFramePath,
-} from "./errors";
-import { VortexError } from "./errors/base";
+import { computeErrorFingerprint, isEnvironmentalError, sanitizeFramePath } from "./errors";
+import { CAUSE_SEPARATOR, VortexError } from "./errors/base";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -476,101 +470,53 @@ describe("isEnvironmentalError", () => {
 });
 
 // ---------------------------------------------------------------------------
-// resolveReportedStack
+// computeErrorFingerprint on a chained stack
 // ---------------------------------------------------------------------------
 
 /** An error with a deterministic stack: header from name/message, then the given frames. */
-const withFrames = (err: Error, ...frames: string[]): Error => {
+const withFrames = <T extends Error>(err: T, ...frames: string[]): T => {
   err.stack = [`${err.name}: ${err.message}`, ...frames.map((f) => `    ${f}`)].join("\n");
   return err;
 };
 
-const OWN_FRAME = "at classify (src/parser.ts:39:10)";
 const CAUSE_FRAME = "at open (node:internal/fs/promises:640:25)";
 
-describe("resolveReportedStack", () => {
-  it("returns the error's own stack when there is no cause", () => {
-    const err = withFrames(new Error("plain"), OWN_FRAME);
-    expect(resolveReportedStack(err)).toBe(err.stack);
-  });
+/** A chained stack as VortexError builds one: wrapper frames, then the cause's. */
+const chained = (wrapperFrame: string, cause: Error): string =>
+  `${withFrames(new Error("wrapper"), wrapperFrame).stack}\n${CAUSE_SEPARATOR}${cause.stack}`;
 
-  it("puts the cause's frames under the error's own header", () => {
+describe("computeErrorFingerprint on a chained stack", () => {
+  it("hashes the last section, i.e. the throw site", () => {
     const cause = withFrames(new Error("EPERM"), CAUSE_FRAME);
-    const err = withFrames(new TypeError("no permissions", { cause }), OWN_FRAME);
 
-    expect(resolveReportedStack(err)).toBe(`TypeError: no permissions\n    ${CAUSE_FRAME}`);
+    expect(
+      computeErrorFingerprint(chained("at classify (src/parser.ts:1:1)", cause), VERSION),
+    ).toBe(computeErrorFingerprint(cause.stack, VERSION));
   });
 
-  it("does not mutate either error", () => {
+  it("ignores the wrapper's frames, so different classifier paths still group together", () => {
     const cause = withFrames(new Error("EPERM"), CAUSE_FRAME);
-    const err = withFrames(new Error("wrapper", { cause }), OWN_FRAME);
-    const ownBefore = err.stack;
-    const causeBefore = cause.stack;
 
-    resolveReportedStack(err);
-
-    expect(err.stack).toBe(ownBefore);
-    expect(cause.stack).toBe(causeBefore);
+    expect(computeErrorFingerprint(chained("at classifyA (src/a.ts:1:1)", cause), VERSION)).toBe(
+      computeErrorFingerprint(chained("at classifyB (src/b.ts:1:1)", cause), VERSION),
+    );
   });
 
-  it("walks to the deepest cause that has frames", () => {
-    const root = withFrames(new Error("root"), "at root (src/root.ts:1:1)");
-    const middle = withFrames(new Error("middle", { cause: root }), "at middle (src/mid.ts:1:1)");
-    const err = withFrames(new Error("top", { cause: middle }), OWN_FRAME);
-
-    expect(resolveReportedStack(err)).toBe("Error: top\n    at root (src/root.ts:1:1)");
-  });
-
-  it("keeps the last framed cause when a deeper one has no frames", () => {
-    const root = new Error("root");
-    root.stack = "Error: root";
-    const middle = withFrames(new Error("middle", { cause: root }), "at middle (src/mid.ts:1:1)");
-    const err = withFrames(new Error("top", { cause: middle }), OWN_FRAME);
-
-    expect(resolveReportedStack(err)).toBe("Error: top\n    at middle (src/mid.ts:1:1)");
-  });
-
-  it.each([
-    ["a header with no frames", Object.assign(new Error("opaque"), { stack: "Error: opaque" })],
-    ["no stack at all", Object.assign(new Error("opaque"), { stack: undefined })],
-    ["a non-Error value", "just a string"],
-    ["an object with a stack property", { stack: `Error: fake\n    ${CAUSE_FRAME}` }],
-  ])("falls back to the error's own stack when the cause is %s", (_label, cause) => {
-    const err = withFrames(new Error("wrapper", { cause }), OWN_FRAME);
-    expect(resolveReportedStack(err)).toBe(err.stack);
-  });
-
-  it("composes from the cause even when the error itself has no stack", () => {
+  it("does not group a wrapped error with a bare error thrown from the wrapper's frame", () => {
     const cause = withFrames(new Error("EPERM"), CAUSE_FRAME);
-    const err = new Error("wrapper", { cause });
-    err.stack = undefined;
+    const bare = withFrames(new Error("wrapper"), "at classify (src/parser.ts:1:1)");
 
-    expect(resolveReportedStack(err)).toBe(`Error: wrapper\n    ${CAUSE_FRAME}`);
+    expect(
+      computeErrorFingerprint(chained("at classify (src/parser.ts:1:1)", cause), VERSION),
+    ).not.toBe(computeErrorFingerprint(bare.stack, VERSION));
   });
 
-  it("returns undefined when neither the error nor any cause has a stack", () => {
-    const cause = Object.assign(new Error("opaque"), { stack: undefined });
-    const err = Object.assign(new Error("wrapper", { cause }), { stack: undefined });
+  it("uses the throw site of a VortexError built from a raw error", () => {
+    const raw = withFrames(new Error("EPERM"), CAUSE_FRAME);
+    const err = new VortexError("no permissions", { kind: "unknown" }, { cause: raw });
 
-    expect(resolveReportedStack(err)).toBeUndefined();
-  });
-
-  it("stops at MAX_CAUSE_DEPTH", () => {
-    // Frames only on the link past the cap; the walk must not reach it.
-    let tail: Error = withFrames(new Error("deep"), "at deep (src/deep.ts:1:1)");
-    for (let i = 0; i < MAX_CAUSE_DEPTH; i += 1) {
-      tail = Object.assign(new Error(`link ${i}`, { cause: tail }), { stack: `Error: link ${i}` });
-    }
-    const err = withFrames(new Error("top", { cause: tail }), OWN_FRAME);
-
-    expect(resolveReportedStack(err)).toBe(err.stack);
-  });
-
-  it("terminates on a cause chain that loops", () => {
-    const a = withFrames(new Error("a"), "at a (src/a.ts:1:1)");
-    const b = withFrames(new Error("b", { cause: a }), "at b (src/b.ts:1:1)");
-    (a as { cause?: unknown }).cause = b;
-
-    expect(resolveReportedStack(b)).toBeDefined();
+    expect(computeErrorFingerprint(err.stack, VERSION)).toBe(
+      computeErrorFingerprint(raw.stack, VERSION),
+    );
   });
 });
