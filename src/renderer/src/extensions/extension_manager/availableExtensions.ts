@@ -13,6 +13,7 @@ import { languageCodeByEnglishName } from "../settings_interface/languagemap";
  */
 export type VortexAsset = components["schemas"]["VortexAsset"];
 export type VortexExtension = components["schemas"]["VortexExtension"];
+export type VortexTranslation = components["schemas"]["VortexTranslation"];
 export type VortexData = components["schemas"]["VortexData"];
 
 /**
@@ -87,7 +88,7 @@ export function mapAvailableExtensions(data: VortexData): IAvailableExtension[] 
     ...data.translations.map((translation) =>
       toAvailableExtension(translation, {
         type: "translation",
-        language: parseTranslationLocale(translation.name),
+        language: translation.locale ?? parseTranslationLocale(translation.name),
       }),
     ),
   ];
@@ -119,19 +120,10 @@ export function groupGameExtensionsByGameId(
 }
 
 /**
- * Keep one game extension per game: nothing stops several extensions for the
- * same game from being listed, so the most endorsed wins and the newest upload
- * breaks ties. Everything else passes through unchanged.
+ * Keep one game extension per game. The API de-dups already but this is a last effort check.
  */
-export function dedupeGameExtensions(
-  extensions: IAvailableExtension[],
-  // keyed by mod ID
-  endorsementsByModId: Record<number, number>,
-): IAvailableExtension[] {
+export function dedupeGameExtensions(extensions: IAvailableExtension[]): IAvailableExtension[] {
   const beats = (challenger: IAvailableExtension, champion: IAvailableExtension): boolean => {
-    const challengerVotes = endorsementsByModId[challenger.modId] ?? 0;
-    const championVotes = endorsementsByModId[champion.modId] ?? 0;
-    if (challengerVotes !== championVotes) return challengerVotes > championVotes;
     return challenger.timestamp > champion.timestamp;
   };
 

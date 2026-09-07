@@ -54,7 +54,8 @@ export const setModTypeConflictsSetting = createAction(
   (enabled: boolean) => ({ enabled }),
 );
 
-export const setHasUnsolvedConflicts = createAction(
-  "SET_HAS_UNSOLVED_CONFLICTS",
-  (hasUnsolvedConflicts: boolean) => ({ hasUnsolvedConflicts }),
+/** How many conflicts between two mods have neither a rule nor a resolution. */
+export const setUnsolvedConflictsCount = createAction(
+  "SET_UNSOLVED_CONFLICTS_COUNT",
+  (count: number) => ({ count }),
 );

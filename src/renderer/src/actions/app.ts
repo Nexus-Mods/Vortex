@@ -41,3 +41,5 @@ export const setInstanceId = createAction("SET_INSTANCE_ID", id<string>);
 export const setWarnedAdmin = createAction("SET_WARNED_ADMIN", id<number>);
 
 export const setInstallType = createAction("SET_INSTALL_TYPE", id<VortexInstallType>);
+
+export const setUpdaterActive = createAction("SET_UPDATER_ACTIVE", id<boolean>);

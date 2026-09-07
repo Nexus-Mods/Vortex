@@ -3,6 +3,7 @@ import * as os from "os";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
+import { toUpdateChannel } from "@/types/IState";
 import { getCPUArch } from "@/util/nativeArch";
 
 import { activeGameId, activeProfileId } from "../../util/selectors";
@@ -140,6 +141,8 @@ function init(context: IExtensionContext): boolean {
             os.release(), // OS version (e.g., "10.0.22000" for Windows 11)
             getCPUArch(), // Architecture (e.g., "x64", "arm64")
             isLegacyUI(), // UI mode (true when running the legacy/classic UI)
+            // normalised so a stale retired channel never reaches Mixpanel
+            toUpdateChannel(context.api.getState().settings.update.channel), // population for the update funnel
           ),
         );
 

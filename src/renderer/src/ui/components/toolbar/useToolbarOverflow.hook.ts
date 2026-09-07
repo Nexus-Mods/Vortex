@@ -16,15 +16,17 @@ interface IToolbarMeasurement {
 }
 
 interface IFitParams {
+  actionCount: number;
+  alwaysReserveOverflow?: boolean;
   availableWidth: number | null;
   maxVisible?: number;
   metrics: IToolbarGroupMetrics | null;
-  pinned: readonly boolean[];
 }
 
 interface IOverflowParams {
+  actionCount: number;
+  alwaysReserveOverflow?: boolean;
   maxVisible?: number;
-  pinned: readonly boolean[];
   signature: string;
 }
 
@@ -103,26 +105,21 @@ const measureAvailableWidth = (
 };
 
 /**
- * Which actions render as buttons, by index. Pinned actions always do, wherever
- * they sit in the list; the unpinned ones then fill whatever room is left, in
- * order, so the tail of the row collapses first.
+ * Which actions render as buttons, by index: as many from the front as fit, so the
+ * tail of the row collapses first.
  *
- * Returning a set rather than a count is what lets a pin sit anywhere: the
- * visible actions are no longer necessarily a leading run of the list.
- *
- * A row too narrow for the pinned actions alone keeps them regardless — that is
- * what pinning asks for, so the group overflows rather than dropping them.
+ * `alwaysReserveOverflow` is for a group whose menu is there whatever fits — a
+ * toolbar offering pinning keeps the full list behind it — so the kebab's width
+ * comes off the budget even when nothing has collapsed.
  */
 export const fitVisibleActions = ({
+  actionCount,
+  alwaysReserveOverflow = false,
   availableWidth,
   maxVisible,
   metrics,
-  pinned,
 }: IFitParams): Set<number> => {
   const slots = maxVisible ?? Number.POSITIVE_INFINITY;
-
-  const pinnedIndices = pinned.flatMap((isPinned, index) => (isPinned ? [index] : []));
-  const unpinnedIndices = pinned.flatMap((isPinned, index) => (isPinned ? [] : [index]));
 
   const fits = (indices: number[], withKebab: boolean): boolean => {
     // `availableWidth` is checked against null rather than falsiness: 0 is a real
@@ -149,10 +146,10 @@ export const fitVisibleActions = ({
     );
   };
 
-  // Give up unpinned actions from the end until what's left fits.
-  for (let taken = unpinnedIndices.length; taken >= 0; taken--) {
-    const visible = [...pinnedIndices, ...unpinnedIndices.slice(0, taken)];
-    const withKebab = taken < unpinnedIndices.length;
+  // Give up actions from the end until what's left fits.
+  for (let taken = actionCount; taken >= 0; taken--) {
+    const visible = Array.from({ length: taken }, (_, index) => index);
+    const withKebab = alwaysReserveOverflow || taken < actionCount;
 
     if (visible.length + (withKebab ? 1 : 0) > slots) {
       continue;
@@ -163,7 +160,7 @@ export const fitVisibleActions = ({
     }
   }
 
-  return new Set(pinnedIndices);
+  return new Set();
 };
 
 /**
@@ -175,12 +172,15 @@ export const fitVisibleActions = ({
  * arithmetic in {@link fitVisibleActions}. Both passes happen in layout effects,
  * so the un-collapsed row is never painted.
  *
- * `pinned` is deliberately absent from `signature`: pinning changes which controls
- * show, not how wide any of them is, so the cached measurements still hold.
+ * `signature` covers the controls the group renders, so unpinning one — which takes
+ * it off the bar — re-measures, where the widths of those left are unchanged.
  */
-export const useToolbarOverflow = ({ maxVisible, pinned, signature }: IOverflowParams) => {
-  const actionCount = pinned.length;
-
+export const useToolbarOverflow = ({
+  actionCount,
+  alwaysReserveOverflow,
+  maxVisible,
+  signature,
+}: IOverflowParams) => {
   const { element: row, signature: rowSignature, width: rowWidth } = useToolbarContext();
 
   const groupRef = useRef<HTMLDivElement>(null);
@@ -211,12 +211,13 @@ export const useToolbarOverflow = ({ maxVisible, pinned, signature }: IOverflowP
   }, [minimumFootprint, row, rowSignature, rowWidth]);
 
   const visible = isMeasuring
-    ? new Set(pinned.map((_, index) => index))
+    ? new Set(Array.from({ length: actionCount }, (_, index) => index))
     : fitVisibleActions({
+        actionCount,
+        alwaysReserveOverflow,
         availableWidth,
         maxVisible,
         metrics: measurement?.metrics ?? null,
-        pinned,
       });
 
   return { groupRef, isMeasuring, visible };

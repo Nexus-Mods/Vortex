@@ -1,4 +1,4 @@
-import { UploadError } from "@vortex/shared/errors";
+import { VortexError } from "@vortex/shared";
 import type { WireS3MultipartRequest, WireUploadRequest } from "@vortex/shared/ipc";
 
 import { isCancellation } from "../transfer/cancellation";
@@ -51,9 +51,9 @@ export class UploadManager {
   }
 
   /**
-   * Stops a running upload. The call that started it rejects with an
-   * `UploadError` carrying `cancellation`. Unknown ids are ignored: an upload
-   * that has already settled is nothing to cancel.
+   * Stops a running upload. The call that started it rejects with a
+   * `VortexError` carrying `kind: "user-canceled"`. Unknown ids are ignored:
+   * an upload that has already settled is nothing to cancel.
    */
   cancel(uploadId: number): void {
     this.#uploads.get(uploadId)?.abort.abort();
@@ -96,7 +96,11 @@ export class UploadManager {
       });
     } catch (err) {
       if (isCancellation(err)) {
-        throw new UploadError({ code: "cancellation" }, "Upload canceled", err);
+        throw new VortexError(
+          "Upload canceled",
+          { kind: "user-canceled", skipped: false },
+          { cause: err },
+        );
       }
       throw err;
     } finally {

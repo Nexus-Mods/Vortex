@@ -1,29 +1,50 @@
+import { VortexError, parseError } from "@vortex/shared";
 import type { ResolvedEndpoint } from "@vortex/shared/download";
-import { DownloadError } from "@vortex/shared/errors";
-import { TimeoutError, HTTPError, RequestError } from "got";
+import { HTTPError, RequestError, TimeoutError } from "got";
 
-export function toNetworkError(endpoint: URL | ResolvedEndpoint, err: unknown): DownloadError {
+/**
+ * Classifies an error thrown by the downloader network code path into the
+ * matching `http:*` {@link VortexError} kind. Anything we can't pin down is
+ * funnelled through {@link parseError} so the same Node/POSIX classification
+ * the FS backend uses drives the network fallback (network POSIX codes with
+ * a URL context collapse to `http:generic`, everything else to `os:generic`
+ * or `unknown`).
+ */
+export function toNetworkError(endpoint: URL | ResolvedEndpoint, err: unknown): VortexError {
   const url = endpoint instanceof URL ? endpoint : endpoint.url;
+  const urlString = url.toString();
 
-  if (err instanceof DownloadError) return err;
-  if (err instanceof TimeoutError)
-    return new DownloadError({ code: "network-timeout", url }, "Request timed out", err);
+  if (err instanceof TimeoutError) {
+    return new VortexError(
+      "Request timed out",
+      { kind: "http:timeout", url: urlString },
+      { cause: err },
+    );
+  }
+
   if (err instanceof HTTPError) {
     if (err.response.statusCode === 412) {
-      return new DownloadError(
-        { code: "precondition-failed", url },
-        `Server returned 412 Precondition Failed due to a resource change`,
-        err,
+      return new VortexError(
+        "Server returned 412 Precondition Failed due to a resource change",
+        { kind: "http:precondition-failed", url: urlString },
+        { cause: err },
       );
     }
 
-    return new DownloadError(
-      { code: "network-bad-status", url, statusCode: err.response.statusCode },
+    return new VortexError(
       `Server returned ${err.response.statusCode}`,
-      err,
+      { kind: "http:bad-status", url: urlString, statusCode: err.response.statusCode },
+      { cause: err },
     );
   }
-  if (err instanceof RequestError)
-    return new DownloadError({ code: "network-error", url }, "Network request failed", err);
-  return new DownloadError({ code: "network-error", url }, "Unknown network error", err);
+
+  if (err instanceof RequestError) {
+    return parseError(err, { url: urlString }, ({ data, isTransient }) =>
+      data.kind === "http:generic" || data.kind === "os:generic"
+        ? `Network request failed${isTransient ? " (transient)" : ""}`
+        : undefined,
+    );
+  }
+
+  return parseError(err, { url: urlString });
 }

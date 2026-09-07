@@ -86,6 +86,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
               aria-haspopup="menu"
               aria-label={label}
               brand="neutral"
+              data-testid="profile-menu-trigger"
               leftIcon={
                 userInfo.profileUrl ? (
                   <Image

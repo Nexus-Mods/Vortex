@@ -8,7 +8,7 @@
  * listing those ETags in part order. That protocol — not just the URLs — is
  * what ties this file to S3-compatible storage.
  */
-import { UploadError } from "@vortex/shared/errors";
+import { VortexError } from "@vortex/shared";
 
 import { log } from "../logging";
 import { redactUrl } from "./errors";
@@ -34,10 +34,10 @@ export async function uploadS3Multipart(
   const totalParts = partPresignedUrls.length;
   const expectedParts = Math.ceil(fileSize / partSizeBytes);
   if (expectedParts !== totalParts) {
-    throw new UploadError(
-      { code: "protocol-violation", url: redactUrl(completePresignedUrl) },
+    throw new VortexError(
       `Multipart layout mismatch: server returned ${totalParts} presigned URLs ` +
         `but ${fileSize} bytes at ${partSizeBytes} bytes/part needs ${expectedParts}`,
+      { kind: "http:protocol-violation", url: redactUrl(completePresignedUrl) },
     );
   }
 
@@ -64,9 +64,9 @@ export async function uploadS3Multipart(
 
     const { etag } = response.headers;
     if (!etag) {
-      throw new UploadError(
-        { code: "protocol-violation", url: redactUrl(url) },
+      throw new VortexError(
         `Server did not return an ETag for part ${partNumber} of multipart upload`,
+        { kind: "http:protocol-violation", url: redactUrl(url) },
       );
     }
 
@@ -92,9 +92,9 @@ async function completeMultipart(
   // S3 streams the completion response, so a failure that surfaces after the
   // headers were sent arrives as an <Error> document under a 200 status.
   if (response.body.includes("<Error>")) {
-    throw new UploadError(
-      { code: "protocol-violation", url: redactUrl(url) },
+    throw new VortexError(
       `Multipart completion reported an error: ${extractS3ErrorCode(response.body) ?? "unknown"}`,
+      { kind: "http:protocol-violation", url: redactUrl(url) },
     );
   }
 }

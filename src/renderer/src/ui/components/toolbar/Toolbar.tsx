@@ -13,6 +13,13 @@ import { type IToolbarContext, ToolbarContext } from "./Toolbar.context";
 
 interface IToolbarProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  /** Lets the user choose which actions sit on the bar, stored under this id. */
+  pinningId?: string;
+  /**
+   * Opts this toolbar into tracking. Omitted, its controls report nothing —
+   * see {@link IToolbarContext.tracking}.
+   */
+  tracking?: IToolbarContext["tracking"];
 }
 
 /**
@@ -35,7 +42,7 @@ const rowWidthFrom = (signature: string): number | null => {
  * rather than an effect means the measurement reaches a render without being
  * copied into state first, and React does the change detection.
  */
-const useRowLayout = (row: HTMLElement | null): IToolbarContext => {
+const useRowLayout = (row: HTMLElement | null): Omit<IToolbarContext, "pinningId" | "tracking"> => {
   const subscribe = useCallback(
     (onSizeChange: () => void) => {
       if (!row || typeof ResizeObserver === "undefined") {
@@ -97,12 +104,17 @@ const useRowLayout = (row: HTMLElement | null): IToolbarContext => {
  * because a toolbar sized by its content can't tell how much room it actually
  * has. Add a `flex-1` (or `shrink`) class to opt such a toolbar into collapsing.
  */
-export const Toolbar = ({ children, className, ...props }: IToolbarProps) => {
+export const Toolbar = ({ children, className, pinningId, tracking, ...props }: IToolbarProps) => {
   const [row, setRow] = useState<HTMLDivElement | null>(null);
   const layout = useRowLayout(row);
 
+  const context = useMemo<IToolbarContext>(
+    () => ({ ...layout, pinningId: pinningId ?? null, tracking }),
+    [layout, pinningId, tracking],
+  );
+
   return (
-    <ToolbarContext.Provider value={layout}>
+    <ToolbarContext.Provider value={context}>
       <div
         className={joinClasses(["nxm-toolbar", className])}
         ref={setRow}

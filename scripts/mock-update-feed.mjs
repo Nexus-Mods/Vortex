@@ -222,7 +222,8 @@ const server = createServer((req, res) => {
         "content-type": "application/octet-stream",
         "content-length": installerBytes.length,
       });
-      res.end(installerBytes);
+      // via sendBody so --throttle applies here too, not only on the --assets path
+      sendBody(res, installerBytes);
       return;
     }
   }

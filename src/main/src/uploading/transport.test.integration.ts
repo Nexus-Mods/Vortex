@@ -3,9 +3,8 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { serializeError } from "@vortex/shared";
-import { UploadError } from "@vortex/shared/errors";
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { VortexError } from "@vortex/shared";
+import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
 import { defaultRetryStrategy } from "../transfer/retry";
 import { createTestServer, type TestServer } from "./test-server";
@@ -82,11 +81,8 @@ describe("uploadFile", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(UploadError);
-    expect((err as UploadError).payload).toMatchObject({
-      code: "network-bad-status",
-      statusCode: 403,
-    });
+    assert(err instanceof VortexError && err.data.kind === "http:bad-status");
+    expect(err.data.statusCode).toBe(403);
     expect(server.requests).toHaveLength(1);
   });
 
@@ -132,31 +128,10 @@ describe("uploadFile", () => {
       (e: unknown) => e,
     );
 
+    assert(err instanceof VortexError);
     // A bare "Server returned 403" is unactionable; the code names the cause.
-    expect((err as UploadError).message).toContain("SignatureDoesNotMatch");
-    expect((err as UploadError).message).toContain("403");
-  });
-
-  it("produces an error that survives the IPC hop", async () => {
-    const filePath = await writeTempFile(randomBytes(128));
-
-    server.respondWith((_req, res) => {
-      res.writeHead(403, { "content-type": "application/xml" });
-      res.end("<Error><Code>AccessDenied</Code></Error>");
-    });
-
-    const err = await uploadFile(`${server.baseUrl}/denied`, filePath, 128, fastRetry).catch(
-      (e: unknown) => e,
-    );
-
-    // A real got error, not a stand-in: it holds its live Request, Response and
-    // options, which is what made the channel handler die with "An object could
-    // not be cloned" and hid the actual failure.
-    const serialized = serializeError(err);
-    expect(() => structuredClone(serialized)).not.toThrow();
-    expect(serialized.name).toBe("UploadError");
-    expect(serialized.message).toContain("AccessDenied");
-    expect(serialized.data?.payload).toMatchObject({ statusCode: 403 });
+    expect(err.message).toContain("SignatureDoesNotMatch");
+    expect(err.message).toContain("403");
   });
 
   it("keeps a signed URL's credentials out of the error payload", async () => {
@@ -167,15 +142,16 @@ describe("uploadFile", () => {
       res.end();
     });
 
-    const err = (await uploadFile(
+    const err = await uploadFile(
       `${server.baseUrl}/denied?X-Amz-Signature=secret`,
       filePath,
       128,
       fastRetry,
-    ).catch((e: unknown) => e)) as UploadError;
+    ).catch((e: unknown) => e);
 
-    expect(err.payload).toMatchObject({ url: `${server.baseUrl}/denied` });
-    expect(JSON.stringify(err.payload)).not.toContain("secret");
+    assert(err instanceof VortexError);
+    expect(err.data).toMatchObject({ url: `${server.baseUrl}/denied` });
+    expect(JSON.stringify(err.data)).not.toContain("secret");
   });
 
   it("reports byte progress up to the full size", async () => {

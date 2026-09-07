@@ -2,6 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { SerializedVortexError } from "../errors/serialization";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
 import type {
@@ -20,7 +21,6 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
-import type { DownloadErrorPayload } from "./errors";
 import type { FeatureFlag } from "./flags";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -43,6 +43,8 @@ export interface AppInitMetadata {
   commandLine: Record<string, unknown>;
   /** Install type (regular installer or managed like Epic/MS Store) */
   installType?: "regular" | "managed";
+  /** Whether the updater runs at all; decided in main, since the renderer cannot read the env */
+  updaterActive?: boolean;
   /** Application version string */
   version?: string;
   /** Instance ID for crash reporting */
@@ -156,15 +158,9 @@ export type WireResolvedResource = {
   chunkEndpoints?: WireEndpoint[];
 };
 
-type Wirify<T> = { [K in keyof T]: T[K] extends URL ? string : T[K] };
-export type WireDownloadError = {
-  payload: Wirify<DownloadErrorPayload>;
-  message: string;
-};
-
 export type WireDownloadState = DownloadProgress & {
   status: DownloadStatus;
-  error: WireDownloadError | null;
+  error: Serializable | null;
 };
 
 export type WireDownloadCheckpoint = DownloadCheckpoint<string>;
@@ -221,30 +217,15 @@ export type WireUploadProgress = {
 };
 
 /**
- * Structured error envelope shared across the IPC boundaries. The serializer is
- * agnostic to the error classes it carries: it serializes `name`, `code`, and
- * any extra own enumerable properties (in `data`), with `cause` chains
- * serialized recursively. The receiver rehydrates a generic `Error` with those
- * fields copied back, so callers can branch on `err.name` and reconstruct their
- * concrete error type.
+ * The pair-shape envelope used by the invoke/handle and callback paths: the
+ * channel's return value lives in `data`, the optional VortexError lives in
+ * `error`. The receiver narrows on `error !== undefined` and deserializes-and-
+ * throws when present. Sender and receiver are owned by us and every pair flows
+ * through the better-IPC helpers, so no collision check is needed.
  */
-export interface SerializedError {
-  message: string;
-  name?: string;
-  code?: string;
-  data?: Record<string, unknown>;
-  cause?: SerializedError;
-}
-
-/**
- * A reply envelope crossing an IPC boundary: either a successful value or a
- * serialized error. Electron's native invoke serialization would
- * otherwise reduce it to a generic `Error`, losing its type/name.
- * The error rides as an opaque {@link Serializable}
- * (a {@link SerializedError} shape at runtime) so it
- * satisfies the IPC serialization contract.
- */
-export type WireResult<T> = { ok: true; value: T } | { ok: false; error: Serializable };
+export type WireReply<T> =
+  | { data: T; error?: undefined }
+  | { data?: undefined; error: SerializedVortexError };
 
 export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
@@ -264,7 +245,7 @@ export type RendererCallbackChannels = {
   [C in keyof CallbackChannels as `callback:${C}`]: CallbackChannels[C] extends (
     ...args: infer _Args
   ) => Promise<infer Return>
-    ? (collationId: number, result: WireResult<Return>) => void
+    ? (collationId: number, result: Return) => void
     : never;
 };
 
@@ -287,6 +268,9 @@ export interface RendererChannels extends RendererCallbackChannels {
 
   /** Opens the file using the default application for the file extension */
   "shell:openFile": (filePath: string) => void;
+
+  /** Opens the OS file manager with the file selected */
+  "shell:showItemInFolder": (filePath: string) => void;
 
   // Persistence: Send diff operations to main for persistence
   "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;

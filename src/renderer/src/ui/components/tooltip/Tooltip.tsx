@@ -6,6 +6,7 @@ import {
   FloatingPortal,
   limitShift,
   offset,
+  type OpenChangeReason,
   type Placement,
   safePolygon,
   shift,
@@ -88,14 +89,44 @@ export const Tooltip = ({
   showArrow = true,
 }: ITooltipProps) => {
   const [open, setOpen] = useState(false);
+
+  // Disabling unregisters the trigger as Floating UI's reference, so a tooltip left open
+  // across it would come back unplaced — in the window's corner — once re-enabled.
+  const [wasDisabled, setWasDisabled] = useState(disabled);
+
+  if (disabled !== wasDisabled) {
+    setWasDisabled(disabled);
+
+    if (disabled) {
+      setOpen(false);
+    }
+  }
+
   const arrowRef = useRef<SVGSVGElement>(null);
+  const referenceRef = useRef<HTMLElement | null>(null);
+
+  // Headless UI refocuses its own trigger when its panel closes and the browser calls that
+  // :focus-visible, so only its data-focus — React Aria's modality tracking — means keyboard.
+  const handleOpenChange = (next: boolean, _event?: Event, reason?: OpenChangeReason) => {
+    const element = referenceRef.current;
+
+    if (
+      next &&
+      reason === "focus" &&
+      element?.hasAttribute("data-headlessui-state") === true &&
+      !element.hasAttribute("data-focus")
+    ) {
+      return;
+    }
+
+    setOpen(next);
+  };
 
   const { context, floatingStyles, refs } = useFloating({
     middleware: [
       offset(showArrow ? TRIGGER_GAP + ARROW_HEIGHT : TRIGGER_GAP),
-      // Swap sides rather than overflow. crossAxis is off so shift handles the
-      // other axis — otherwise a trigger near an edge flips to an unasked-for
-      // side when sliding a pixel would have done.
+      // Swap sides rather than overflow. crossAxis off so shift handles the other axis,
+      // or a trigger near an edge flips to an unasked-for side when a nudge would do.
       flip({ crossAxis: false, fallbackAxisSideDirection: "start", padding: COLLISION_PADDING }),
       // Slide along the edge; limitShift stops it detaching from the trigger.
       shift({ limiter: limitShift(), padding: COLLISION_PADDING }),
@@ -124,7 +155,7 @@ export const Tooltip = ({
     ],
     open,
     placement,
-    onOpenChange: setOpen,
+    onOpenChange: handleOpenChange,
     whileElementsMounted: autoUpdate,
   });
 
@@ -155,13 +186,16 @@ export const Tooltip = ({
   // `ref` isn't on ReactElement until React 19, and isValidElement leaves `props` as
   // any, so pin both once here. Merging refs keeps any the caller set on the trigger.
   const trigger = children as ReactElement<Record<string, unknown>> & { ref?: Ref<unknown> };
-  const triggerRef = useMergeRefs([refs.setReference, trigger.ref]);
+  const triggerRef = useMergeRefs([refs.setReference, referenceRef, trigger.ref]);
 
-  // Guarded despite the types, so `content={maybeUndefined}` gives a bare trigger.
+  // Guarded despite the types, so an absent or empty body gives a bare trigger.
   const body = customContent ?? content;
 
-  if (disabled || !isValidElement(children) || body === null || body === undefined) {
-    return children;
+  if (disabled || !isValidElement(children) || !body) {
+    // Kept as the reference so a tooltip re-enabled mid-close has somewhere to be placed.
+    // cloneElement is the only way to put a ref on a caller's element before React 19.
+    // eslint-disable-next-line @eslint-react/no-clone-element
+    return isValidElement(children) ? cloneElement(trigger, { ref: triggerRef }) : children;
   }
 
   const referenceProps = interactions.getReferenceProps({ ref: triggerRef, ...trigger.props });
@@ -177,6 +211,8 @@ export const Tooltip = ({
 
   return (
     <>
+      {/* Floating UI's documented trigger pattern, for the reason given above. */}
+      {/* eslint-disable-next-line @eslint-react/no-clone-element */}
       {cloneElement(trigger, { ...referenceProps, onPointerDown: handlePointerDown })}
 
       {isMounted && (

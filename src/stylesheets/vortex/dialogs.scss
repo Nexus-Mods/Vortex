@@ -176,43 +176,98 @@
 
         .dialog-container {
             .dialog-content-html {
-                gap: 8px;
                 padding-right: 16px;
 
-                // need different sizes in case github releases markdown come in as h1's and h2's etc
-                // when really they should h4s, h5s for their level of importance and consistency
-
                 .changelog-dialog-release {
+                    // the release notes are real markup from the GitHub API, so
+                    // the pre-wrap that .dialog-content-html applies for plain
+                    // text would turn every newline between tags into a blank
+                    // line and every indent into leading spaces
+                    white-space: normal;
+                    display: flex;
+                    flex-direction: column;
                     gap: 12px;
 
-                    h1 {
-                        font-size: 1.3em;
+                    // one section per release, emitted by releaseResolver.ts;
+                    // the h4 is the version, everything below it is that
+                    // release's own notes
+                    .changelog-release {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+
+                        + .changelog-release {
+                            border-top: 1px solid $border-color;
+                            padding-top: 16px;
+                        }
                     }
 
-                    h2 {
-                        font-size: 1.2em;
-                    }
-
-                    h3 {
-                        font-size: 1.1em;
-                    }
-
-                    // these are going to be set in code as each release heading
-
-                    h4 {
+                    .changelog-release-version {
+                        display: flex;
+                        align-items: baseline;
+                        justify-content: space-between;
+                        gap: 8px;
                         font-size: 1.6em;
                         line-height: 1;
-                        margin: 10px 0 0 0;
+                        margin: 0;
                     }
 
-                    ul {
+                    .changelog-release-date {
+                        font-size: 0.55em;
+                        font-weight: normal;
+                        color: $text-color-disabled;
+                    }
+
+                    // block flow rather than a flex column: the body is
+                    // arbitrary markup from a release author, and as flex items
+                    // a small image would be stretched to the dialog width
+                    .changelog-release-body {
+                        > * + * {
+                            margin-top: 8px;
+                        }
+
+                        // release authors reach for h1 and h2 freely; clamp
+                        // every level so a release body can't outshout the
+                        // version heading above it
+                        h1,
+                        h2,
+                        h3,
+                        h4,
+                        h5,
+                        h6 {
+                            font-size: 1.15em;
+                            margin: 12px 0 0 0;
+                        }
+                    }
+
+                    ul,
+                    ol {
                         padding-inline-start: 32px;
-                        line-height: 1;
                         margin: 0;
 
                         li {
                             line-height: 1.5;
                         }
+                    }
+
+                    // tailwind's preflight resets list-style globally, which
+                    // leaves GitHub's plain <ul> bullets invisible
+                    ul {
+                        list-style: disc;
+                    }
+
+                    ul ul {
+                        list-style: circle;
+                    }
+
+                    ol {
+                        list-style: decimal;
+                    }
+
+                    // GitHub task lists ship their own checkbox
+                    ul.contains-task-list {
+                        list-style: none;
+                        padding-inline-start: 0;
                     }
 
                     p {

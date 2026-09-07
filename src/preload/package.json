@@ -8,7 +8,8 @@
     "build": "node ./build.mjs",
     "typecheck": "pnpm tsc",
     "lint": "pnpm exec oxlint --quiet",
-    "lint:verbose": "pnpm exec oxlint"
+    "lint:verbose": "pnpm exec oxlint",
+    "test": "pnpm vitest run --config ./vitest.config.ts"
   },
   "nx": {
     "targets": {

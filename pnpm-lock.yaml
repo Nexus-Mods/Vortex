@@ -875,9 +875,6 @@ catalogs:
     shortid:
       specifier: 2.2.17
       version: 2.2.17
-    simple-git:
-      specifier: 3.33.0
-      version: 3.33.0
     simple-vdf:
       specifier: github:Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
       version: 1.1.3
@@ -2747,46 +2744,6 @@ importers:
       xml2js:
         specifier: 'catalog:'
         version: 0.5.0
-
-  extensions/gameversion-hash:
-    dependencies:
-      simple-git:
-        specifier: 'catalog:'
-        version: 3.33.0(supports-color@10.2.2)
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/node':
-        specifier: 24.12.2
-        version: 24.12.2
-      '@types/react':
-        specifier: '18'
-        version: 18.3.31
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      '@types/redux-thunk':
-        specifier: 'catalog:'
-        version: 2.1.0(redux@4.2.1)
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      react:
-        specifier: 'catalog:'
-        version: 18.3.1
-      react-bootstrap:
-        specifier: 'catalog:'
-        version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
-      react-dom:
-        specifier: 'catalog:'
-        version: 18.3.1(react@18.3.1)
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
 
   extensions/issue-tracker:
     devDependencies:
@@ -6340,12 +6297,6 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
-
-  '@kwsites/file-exists@1.1.1':
-    resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
-
-  '@kwsites/promise-deferred@1.1.1':
-    resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
 
   '@malept/cross-spawn-promise@1.1.1':
     resolution: {integrity: sha512-RTBGWL5FWQcg9orDOCcp4LvItNzUPcyEU9bwaeJX0rJ1IQxzucC48Y0/sQLp/g6t99IQgAlGIaesJS+gTn7tVQ==}
@@ -12129,9 +12080,6 @@ packages:
   simple-get@4.0.1:
     resolution: {integrity: sha512-brv7p5WgH0jmQJr1ZDDfKDOSeWWg+OVypG99A/5vYGPqJ6pxiaHLy8nxtFjBA7oMa01ebA9gfh1uMCFqOuXxvA==}
 
-  simple-git@3.33.0:
-    resolution: {integrity: sha512-D4V/tGC2sjsoNhoMybKyGoE+v8A60hRawKQ1iFRA1zwuDgGZCBJ4ByOzZ5J8joBbi4Oam0qiPH+GhzmSBwbJng==}
-
   simple-update-notifier@2.0.0:
     resolution: {integrity: sha512-a2B9Y0KlNXl9u/vsW6sTIu9vGEpfKu2wRV6l1H3XEas/0gUIzGzBoP/IouTcUQbm9JWZLH3COxyn03TYlFax6w==}
     engines: {node: '>=10'}
@@ -14431,14 +14379,6 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@keyv/serialize@1.1.1': {}
-
-  '@kwsites/file-exists@1.1.1(supports-color@10.2.2)':
-    dependencies:
-      debug: 4.4.3(supports-color@10.2.2)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@kwsites/promise-deferred@1.1.1': {}
 
   '@malept/cross-spawn-promise@1.1.1':
     dependencies:
@@ -20397,14 +20337,6 @@ snapshots:
       decompress-response: 6.0.0
       once: 1.4.0
       simple-concat: 1.0.1
-
-  simple-git@3.33.0(supports-color@10.2.2):
-    dependencies:
-      '@kwsites/file-exists': 1.1.1(supports-color@10.2.2)
-      '@kwsites/promise-deferred': 1.1.1
-      debug: 4.4.3(supports-color@10.2.2)
-    transitivePeerDependencies:
-      - supports-color
 
   simple-update-notifier@2.0.0:
     dependencies:

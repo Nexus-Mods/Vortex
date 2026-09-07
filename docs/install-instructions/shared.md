@@ -5,26 +5,13 @@ guide or from [Generic Installation Instructions].
 
 These steps cover the shared repository bootstrap flow for Windows and Linux.
 
+`pnpm` is the only tool you need to install by hand. The repository pins its own
+`pnpm` and `node.js` versions and fetches them on install, so no version manager
+is involved.
+
 ## Setup
 
-1. Open a terminal and install [Volta].
-
-Linux:
-
-```bash
-curl https://get.volta.sh | bash
-```
-
-Windows:
-
-```powershell
-winget install Volta.Volta
-```
-
-After installing Volta, close and reopen terminal to update `$PATH`.
-You can verify Volta is working by running `volta --version`.
-
-2. Clone the repository through your git client or CLI with submodules, then open a terminal in that folder:
+1. Clone the repository through your git client or CLI with submodules, then open a terminal in that folder:
 
 Linux:
 
@@ -42,26 +29,43 @@ cd C:\v
 
 Use `C:\v` on Windows to avoid path length issues.
 
-3. Install the pinned `node.js` and `yarn` versions:
+2. Install [pnpm]. The installer is self-contained, so you do not need `node.js`
+   or `npm` first:
+
+Linux:
 
 ```bash
-volta install node@22 yarn@v1
+curl -fsSL https://get.pnpm.io/install.sh | sh -
 ```
 
-4. Install `pnpm` through Corepack:
+Windows:
 
-```bash
-npm install --global corepack@latest
-corepack install
+```powershell
+winget install -e --id pnpm.pnpm
 ```
 
-5. Install Vortex dependencies:
+Close and reopen your terminal so `pnpm` resolves from `PATH`, then verify with
+`pnpm --version`.
+
+If Windows Defender blocks the winget binary, use pnpm's own installer instead:
+
+```powershell
+Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression
+```
+
+3. Install Vortex dependencies:
 
 ```bash
 pnpm install
 ```
 
-6. Install the git pre-commit hook for auto-formatting:
+The version you installed in step 2 only bootstraps the process. `pnpm` reads
+`packageManager` from `package.json`, switches itself to that exact version, then
+downloads the pinned `node.js` runtime declared in `devEngines.runtime`. Building
+the native modules is the slow part of this step.
+
+This also installs the git pre-commit hook for auto-formatting. If the hook is
+missing, install it by hand:
 
 ```bash
 pnpm run prepare
@@ -71,18 +75,30 @@ pnpm run prepare
 
 ```bash
 git --version
-volta --version
-node --version
-yarn --version
 pnpm --version
+pnpm exec node --version
+pnpm nx --version
 python3 --version
 dotnet --list-sdks
 ```
 
+`pnpm exec node --version` reports the repository's pinned `node.js` version,
+which is not necessarily the one on your `PATH`.
+
 ## Notes
 
-- If `volta` is not available after reopening terminal, add `~/.volta/bin` to your shell `PATH`
-- You may want to pin Node locally with `volta pin node@22.22.0` to match the repo's `package.json`
+- Volta, Corepack, `npm` and a global `node.js` are not required. The `node.js`
+  version is pinned by `devEngines.runtime` in `package.json` and by the `node`
+  runtime entry in the `pnpm-workspace.yaml` catalog.
+- `nx` is a dev dependency of the repository. Always run it as `pnpm nx <target>`;
+  do not install it globally.
+- If you want `node` and `npm` on `PATH` for unrelated projects, install `node.js`
+  separately. It will not conflict, because repository scripts resolve `node` from
+  `node_modules/.bin` first.
+- Yarn 1 is only used by the Flatpak packaging flow. See [Flatpak maintenance].
+- CI provisions `node.js` through Volta. That is a CI-only path and is not needed
+  for local development.
 
 [Generic Installation Instructions]: ./generic.md
-[Volta]: https://docs.volta.sh/guide/getting-started
+[Flatpak maintenance]: ../flatpak/maintenance.md
+[pnpm]: https://pnpm.io/installation

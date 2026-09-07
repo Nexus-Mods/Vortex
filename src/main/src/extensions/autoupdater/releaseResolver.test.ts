@@ -130,22 +130,19 @@ describe("shouldAutoDownload", () => {
 });
 
 describe("repoForChannel", () => {
-  it("selects the staging repo only for preview builds", () => {
+  it("uses the production repo by default", () => {
     vi.stubEnv("VORTEX_UPDATER_REPO", "");
-    vi.stubEnv("IS_PREVIEW_BUILD", "");
+    expect(repoOwner()).toBe("Nexus-Mods");
     expect(repoForChannel()).toBe("Vortex");
-    vi.stubEnv("IS_PREVIEW_BUILD", "true");
-    expect(repoForChannel()).toBe("Vortex-Staging");
   });
 
-  // Test override for the staging rehearsal: a scratch repo with real GitHub
+  // The override is how a build is pointed at staging or at a scratch repo with real GitHub
   // semantics, so live repos are never touched by tests.
   it("honors the VORTEX_UPDATER_REPO override", () => {
-    vi.stubEnv("IS_PREVIEW_BUILD", "true");
     vi.stubEnv("VORTEX_UPDATER_REPO", "someuser/updater-e2e");
     expect(repoOwner()).toBe("someuser");
     expect(repoForChannel()).toBe("updater-e2e");
-    vi.stubEnv("VORTEX_UPDATER_REPO", "");
+    vi.stubEnv("VORTEX_UPDATER_REPO", "Nexus-Mods/Vortex-Staging");
     expect(repoOwner()).toBe("Nexus-Mods");
     expect(repoForChannel()).toBe("Vortex-Staging");
   });
@@ -153,7 +150,6 @@ describe("repoForChannel", () => {
 
 describe("resolveUpdate fetching", () => {
   beforeEach(() => {
-    vi.stubEnv("IS_PREVIEW_BUILD", "");
     // a developer machine may have the mock-feed overrides persisted in the
     // user environment; tests must never depend on ambient env
     vi.stubEnv("VORTEX_UPDATER_API_BASE", "");
@@ -176,6 +172,37 @@ describe("resolveUpdate fetching", () => {
     expect(resolved?.notesHtml).toContain("2.6.0-beta.1");
     expect(resolved?.notesHtml).toContain("2.5.0");
     expect(resolved?.notesHtml).not.toContain("2.4.1");
+  });
+
+  it("wraps each release's notes in its own section under a version heading", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(fixture)));
+
+    const notes = (await resolveUpdate("beta", "2.5.0-beta.1"))?.notesHtml ?? "";
+
+    // the What's New dialog groups by these; without them the bodies of every
+    // release the update spans run together as one blob
+    expect(notes).toContain(
+      '<h4 class="changelog-release-version">2.6.0-beta.1<span class="changelog-release-date">',
+    );
+    expect(notes).toContain(
+      '<div class="changelog-release-body"><p>2.6.0-beta.1: new collections workflow</p></div>',
+    );
+    // 2.5.0-beta.2, 2.5.0 and 2.6.0-beta.1 all fall in the range
+    expect(notes.match(/<section class="changelog-release">/g)).toHaveLength(3);
+    // newest first, and each body stays inside its own section
+    expect(notes.indexOf("2.6.0-beta.1")).toBeLessThan(notes.indexOf("2.5.0: stable rollup"));
+  });
+
+  it("omits the date for a release with no publish timestamp", async () => {
+    const undated = fixture.map((entry) =>
+      entry.tag_name === "v2.5.0" ? { ...entry, published_at: undefined } : entry,
+    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(undated)));
+
+    const notes = (await resolveUpdate("stable", "2.4.2"))?.notesHtml ?? "";
+
+    expect(notes).toContain('<h4 class="changelog-release-version">2.5.0</h4>');
+    expect(notes).not.toContain("changelog-release-date");
   });
 
   it("serves the cached body on 304 and sends if-none-match", async () => {

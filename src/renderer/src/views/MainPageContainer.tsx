@@ -168,7 +168,10 @@ export const MainPageContainer: React.FC<React.PropsWithChildren<IBaseProps>> = 
   let content: JSX.Element;
   try {
     const props = page.propsFunc();
-    if (page.newLayout) {
+    // Already resolved by PagesContext, so a page that decides for itself has had its
+    // say by now. Compared against `true` rather than tested for truth so an unresolved
+    // callback can't pass for a yes.
+    if (page.newLayout === true) {
       // Redesigned pages render their own Page, so we skip the legacy
       // `.main-page` / header / body-container chrome to keep the subtree flat.
       content = (

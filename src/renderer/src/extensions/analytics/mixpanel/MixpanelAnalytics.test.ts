@@ -135,3 +135,42 @@ describe("AppUIModeChangedEvent", () => {
     expect(Object.keys(event.properties)).toEqual(["is_legacy_ui"]);
   });
 });
+
+describe("MixpanelAnalytics pre-start queue", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  const event = (name: string) => ({ eventName: name, properties: { n: name } });
+
+  it("sends events queued before start once it starts, in order", () => {
+    analyticsMixpanel.trackEvent(event("first"));
+    analyticsMixpanel.trackEvent(event("second"));
+    expect(mp.track).not.toHaveBeenCalled();
+
+    analyticsMixpanel.start(userInfo, false);
+
+    expect(mp.track.mock.calls.map(([name]) => name)).toEqual(["first", "second"]);
+  });
+
+  it("keeps only the most recent 50 queued events", () => {
+    for (let i = 0; i < 60; i += 1) {
+      analyticsMixpanel.trackEvent(event(`e${i}`));
+    }
+    analyticsMixpanel.start(userInfo, false);
+
+    const names = mp.track.mock.calls.map(([name]) => name);
+    expect(names).toHaveLength(50);
+    expect(names[0]).toBe("e10");
+    expect(names.at(-1)).toBe("e59");
+  });
+
+  it("drops the queue on stop, so nothing captured before opting out is sent later", () => {
+    analyticsMixpanel.trackEvent(event("early"));
+    analyticsMixpanel.stop();
+    analyticsMixpanel.start(userInfo, false);
+
+    expect(mp.track).not.toHaveBeenCalled();
+  });
+});

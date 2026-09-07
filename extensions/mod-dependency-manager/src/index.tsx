@@ -30,7 +30,7 @@ import {
   setConflictInfo,
   setEditCycle,
   setFileOverrideDialog,
-  setHasUnsolvedConflicts,
+  setUnsolvedConflictsCount,
   setModTypeConflictsSetting,
 } from "./actions";
 import { sessionReducer as connectionReducer, settingsReducer } from "./reducers";
@@ -480,7 +480,7 @@ async function updateConflictInfo(
 
   if (Object.keys(unsolved).length === 0) {
     store.dispatch(actions.dismissNotification(CONFLICT_NOTIFICATION_ID));
-    store.dispatch(setHasUnsolvedConflicts(false));
+    store.dispatch(setUnsolvedConflictsCount(0));
   } else {
     const message: string[] = [
       t(
@@ -531,7 +531,11 @@ async function updateConflictInfo(
       );
     };
 
-    store.dispatch(setHasUnsolvedConflicts(true));
+    store.dispatch(
+      setUnsolvedConflictsCount(
+        Object.values(unsolved).reduce((count, conflicts) => count + conflicts.length, 0),
+      ),
+    );
     store.dispatch(
       actions.addNotification({
         type: "warning",
@@ -1542,11 +1546,36 @@ function once(api: types.IExtensionApi) {
   );
 }
 
+/** What Manage Rules says while conflicts are unresolved: how many, or just that there are. */
+function unresolvedConflictsNotice(api: types.IExtensionApi): string | undefined {
+  const state = api.getState();
+  const count = util.getSafe<number>(
+    state,
+    ["session", "dependencies", "unsolvedConflictsCount"],
+    undefined,
+  );
+
+  if (count > 0) {
+    return count === 1
+      ? api.translate("1 unresolved conflict")
+      : api.translate("{{count}} unresolved conflicts", { replace: { count } });
+  }
+
+  return util.getSafe(state, ["session", "dependencies", "hasUnsolvedConflicts"], false)
+    ? api.translate("Unresolved conflicts")
+    : undefined;
+}
+
 interface IManageRuleButtonProps {
   notifications: types.INotification[];
   onClick: () => void;
 }
 
+/**
+ * Manage Rules as the classic toolbar draws it, flashing while conflicts are waiting.
+ * The new toolbar says the same thing in words instead — see the `notice` on the plain
+ * action below — so each bar takes the one it can render.
+ */
 class ManageRuleButtonImpl extends PureComponentEx<IManageRuleButtonProps & WithT, {}> {
   public render() {
     const { t, onClick, notifications } = this.props;
@@ -1562,14 +1591,15 @@ class ManageRuleButtonImpl extends PureComponentEx<IManageRuleButtonProps & With
     );
   }
 }
-function mapStateToProps(state: types.IState) {
+
+function mapNotificationsToProps(state: types.IState) {
   return {
     notifications: state.session.notifications.notifications,
   };
 }
 
 const ManageRuleButton = withTranslation(["common"])(
-  connect(mapStateToProps)(ManageRuleButtonImpl) as any,
+  connect(mapNotificationsToProps)(ManageRuleButtonImpl) as any,
 );
 
 const pathTool: IPathTools = {
@@ -1586,7 +1616,24 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["session", "dependencies"], connectionReducer);
   context.registerTableAttribute("mods", makeLoadOrderAttribute(context.api));
   context.registerTableAttribute("mods", makeDependenciesAttribute(context.api));
-  context.registerAction("mod-icons", 90, ManageRuleButton, {}, () => {
+  // One per toolbar: the new one takes a plain action and says how many conflicts are
+  // waiting in its tooltip, the classic one takes the button that flashes for them.
+  context.registerAction(
+    "mod-icons",
+    90,
+    "rules",
+    {
+      isModernOnly: true,
+      notice: () => unresolvedConflictsNotice(context.api),
+      pinned: true,
+    },
+    "Manage Rules",
+    () => {
+      showUnsolvedConflictsDialog(context.api, dependencyState.modRules, true);
+    },
+  );
+
+  context.registerAction("mod-icons", 90, ManageRuleButton, { isClassicOnly: true }, () => {
     const state: types.IState = context.api.store.getState();
     return {
       notifications: state.session.notifications.notifications,

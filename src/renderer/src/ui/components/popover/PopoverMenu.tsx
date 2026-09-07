@@ -23,7 +23,7 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
   const rowsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   /**
-   * Which row the menu considers active. The highlight reads from this rather than
+   * Which row the menu considers focused. The highlight reads from this rather than
    * from `:hover` or `:focus-visible`, so the pointer and the arrow keys can't light
    * up two rows between them.
    *
@@ -31,7 +31,7 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
    * menu focuses the first row. Nothing clears it, so a row keeps the highlight while
    * the submenu it opened holds focus.
    */
-  const [activeRow, setActiveRow] = useState(0);
+  const [focusedRow, setFocusedRow] = useState(0);
 
   const focusableRows = () =>
     rowsRef.current.filter((row): row is HTMLButtonElement => !!row && !row.disabled);
@@ -55,8 +55,11 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
     }
 
     const focusable = focusableRows();
-    const active = event.currentTarget.ownerDocument.activeElement;
-    const current = focusable.indexOf(active as HTMLButtonElement);
+    const focused = event.currentTarget.ownerDocument.activeElement;
+    // The row focus is on, or the row holding whatever is — a row can contain a
+    // control of its own, such as a pin, and arrowing from there has to carry on
+    // from that row rather than from nowhere.
+    const current = focusable.findIndex((row) => row === focused || row.contains(focused));
 
     const destinations: Record<string, number | undefined> = {
       ArrowDown: current + 1,
@@ -97,13 +100,13 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
           {section.map(({ action, index }) => (
             <PopoverMenuItem
               action={action}
-              isActive={index === activeRow}
+              hasFocus={index === focusedRow}
               key={index}
               ref={(element) => {
                 rowsRef.current[index] = element;
               }}
               tabIndex={index === 0 ? 0 : -1}
-              onActivate={() => setActiveRow(index)}
+              onTakeFocus={() => setFocusedRow(index)}
               onSelect={onSelect}
             />
           ))}

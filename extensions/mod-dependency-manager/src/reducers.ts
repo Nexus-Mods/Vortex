@@ -62,8 +62,13 @@ export const sessionReducer: types.IReducerSpec = {
     [actions.highlightConflictIcon as any]: (state, payload) =>
       util.setSafe(state, ["highlightConflicts"], payload),
     [actions.setEditCycle as any]: (state, payload) => util.setSafe(state, ["editCycle"], payload),
-    [actions.setHasUnsolvedConflicts as any]: (state, payload) =>
-      util.setSafe(state, ["hasUnsolvedConflicts"], payload.hasUnsolvedConflicts),
+    // The count is what the mods toolbar says in the Manage Rules tooltip; the boolean
+    // stays derived from it for what already reads that.
+    [actions.setUnsolvedConflictsCount as any]: (state, payload) => ({
+      ...state,
+      unsolvedConflictsCount: payload.count,
+      hasUnsolvedConflicts: payload.count > 0,
+    }),
   },
   defaults: {
     connection: undefined,
@@ -73,6 +78,7 @@ export const sessionReducer: types.IReducerSpec = {
     conflictDialog: undefined,
     overrideDialog: undefined,
     editCycle: undefined,
+    unsolvedConflictsCount: 0,
     hasUnsolvedConflicts: false,
   },
 };

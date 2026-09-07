@@ -1,4 +1,4 @@
-import { mdiChevronRight } from "@mdi/js";
+import { mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -94,6 +94,38 @@ describe("PopoverMenu", () => {
       await openMenu([[{ ...plainAction("Logout"), disabled: true }]]);
       expect(screen.getByRole("menuitem", { name: "Logout" })).toBeDisabled();
     });
+
+    it("brands a row that asks for it", async () => {
+      await openMenu([[{ ...plainAction("Deploy Mods"), brand: "primary" }]]);
+
+      expect(screen.getByRole("menuitem", { name: "Deploy Mods" })).toHaveClass(
+        "nxm-dropdown-item-primary",
+      );
+    });
+
+    it("brands a destructive row", async () => {
+      await openMenu([[{ ...plainAction("Remove"), brand: "danger" }]]);
+
+      expect(screen.getByRole("menuitem", { name: "Remove" })).toHaveClass(
+        "nxm-dropdown-item-danger",
+      );
+    });
+
+    it("brands a row whose panel is a submenu", async () => {
+      await openMenu([[{ ...submenuAction(helpRows), brand: "premium" }]]);
+
+      expect(screen.getByRole("menuitem", { name: "Help" })).toHaveClass(
+        "nxm-dropdown-item-premium",
+      );
+    });
+
+    it("leaves a row alone when it asks for no brand", async () => {
+      await openMenu([[plainAction("Logout")]]);
+
+      expect(screen.getByRole("menuitem", { name: "Logout" }).className).not.toMatch(
+        /nxm-dropdown-item-(primary|info|neutral|success|premium)/,
+      );
+    });
   });
 
   describe("interactions", () => {
@@ -135,16 +167,16 @@ describe("PopoverMenu", () => {
 
   // The highlight is state the menu keeps, not a `:hover` or `:focus-visible` rule,
   // so exactly one row can ever wear it however the pointer and keyboard are mixed.
-  describe("the active row", () => {
-    const activeRows = () =>
+  describe("the focused row", () => {
+    const focusedRows = () =>
       screen
         .getAllByRole("menuitem")
-        .filter((row) => row.classList.contains("nxm-dropdown-item-active"))
+        .filter((row) => row.classList.contains("nxm-dropdown-item-focus"))
         .map((row) => row.textContent?.trim());
 
     it("marks the row the menu opened on", async () => {
       await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
-      expect(activeRows()).toEqual(["View profile"]);
+      expect(focusedRows()).toEqual(["View profile"]);
     });
 
     it("moves with the arrow keys, and only ever marks one", async () => {
@@ -154,17 +186,17 @@ describe("PopoverMenu", () => {
       ]);
 
       await userEvent.keyboard("{ArrowDown}");
-      expect(activeRows()).toEqual(["Refresh"]);
+      expect(focusedRows()).toEqual(["Refresh"]);
 
       await userEvent.keyboard("{ArrowDown}");
-      expect(activeRows()).toEqual(["Logout"]);
+      expect(focusedRows()).toEqual(["Logout"]);
     });
 
     it("follows the pointer to a hovered row", async () => {
       await openMenu([[plainAction("View profile"), plainAction("Logout")]]);
 
       await userEvent.hover(screen.getByRole("menuitem", { name: "Logout" }));
-      expect(activeRows()).toEqual(["Logout"]);
+      expect(focusedRows()).toEqual(["Logout"]);
     });
 
     // The case a `:hover` rule got wrong: the pointer stays put while the keyboard
@@ -177,7 +209,7 @@ describe("PopoverMenu", () => {
       await userEvent.hover(screen.getByRole("menuitem", { name: "Refresh" }));
       await userEvent.keyboard("{ArrowDown}");
 
-      expect(activeRows()).toEqual(["Logout"]);
+      expect(focusedRows()).toEqual(["Logout"]);
     });
   });
 
@@ -229,6 +261,63 @@ describe("PopoverMenu", () => {
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
     });
+
+    // A row can hold a control of its own, and arrowing from there has to carry on
+    // from that row. Read as "no row at all", ArrowDown went to the first row and
+    // ArrowUp to the last, wherever you were.
+    it("carries on from the row a focused control belongs to", async () => {
+      const pinnable = (label: string): IMenuAction => ({
+        ...plainAction(label),
+        pin: { pinned: false, label: `Pin ${label}`, onToggle: () => {} },
+      });
+
+      await openMenu([[pinnable("View profile"), pinnable("Refresh"), pinnable("Logout")]]);
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
+
+      screen.getByRole("button", { name: "Pin Refresh" }).focus();
+
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
+
+      screen.getByRole("button", { name: "Pin Logout" }).focus();
+
+      await userEvent.keyboard("{ArrowUp}");
+      expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
+    });
+
+    /** The path the pin's icon is currently drawing. */
+    const pinIconPath = (name: string) =>
+      screen.getByRole("button", { name }).querySelector("path")?.getAttribute("d");
+
+    // The icon is an offer, not a report: it shows what the click does, matching the
+    // label beside it, rather than the state the row is already in.
+    it("offers a pin on a row that is not pinned", async () => {
+      await openMenu([
+        [
+          {
+            ...plainAction("Refresh"),
+            pin: { pinned: false, label: "Pin Refresh", onToggle: () => {} },
+          },
+        ],
+      ]);
+
+      expect(pinIconPath("Pin Refresh")).toBe(mdiPinOutline);
+    });
+
+    it("offers to unpin a row that is pinned", async () => {
+      await openMenu([
+        [
+          {
+            ...plainAction("Refresh"),
+            pin: { pinned: true, label: "Unpin Refresh", onToggle: () => {} },
+          },
+        ],
+      ]);
+
+      expect(pinIconPath("Unpin Refresh")).toBe(mdiPinOffOutline);
+    });
   });
 
   describe("nested menus", () => {
@@ -251,18 +340,19 @@ describe("PopoverMenu", () => {
       const row = await openParent();
 
       expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).not.toBeInTheDocument();
       // Decorative: the chevron must not become part of the row's name.
       expect(row).toHaveAccessibleName("Help");
     });
 
-    it("leaves a row that just runs an action without one", async () => {
+    // A row that opens nothing keeps the space a chevron would take, so the pins of
+    // every row line up, and withholds the mark itself.
+    it("hides the chevron on a row that just runs an action", async () => {
       await openMenu([[plainAction("Logout")]]);
+      const row = screen.getByRole("menuitem", { name: "Logout" });
 
-      expect(
-        screen
-          .getByRole("menuitem", { name: "Logout" })
-          .querySelector(`path[d="${mdiChevronRight}"]`),
-      ).not.toBeInTheDocument();
+      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).toBeInTheDocument();
     });
 
     it("opens the submenu from its row", async () => {
@@ -338,10 +428,10 @@ describe("PopoverMenu", () => {
     it("holds the row in the hover state while its submenu is open", async () => {
       const row = await openParent();
 
-      expect(row).not.toHaveClass("nxm-dropdown-item-active");
+      expect(row).not.toHaveClass("nxm-dropdown-item-focus");
 
       await userEvent.click(row);
-      expect(row).toHaveClass("nxm-dropdown-item-active");
+      expect(row).toHaveClass("nxm-dropdown-item-focus");
     });
 
     it("opens the submenu with ArrowRight and closes it with ArrowLeft", async () => {

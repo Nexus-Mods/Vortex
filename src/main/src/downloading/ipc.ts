@@ -1,6 +1,7 @@
-import { downloadErrorToWire } from "@vortex/shared";
 import type { DownloadState, ResolvedEndpoint, ResolvedResource } from "@vortex/shared/download";
 import { staticChunker } from "@vortex/shared/download";
+import { toWireError } from "@vortex/shared/errors";
+import type { Serializable } from "@vortex/shared/ipc";
 import type {
   WireDownloadCheckpoint,
   WireEndpoint,
@@ -131,6 +132,9 @@ export function init(manager: DownloadManager): void {
 function stateToWire(state: DownloadState) {
   return {
     ...state,
-    error: state.status === "failed" ? downloadErrorToWire(state.error) : null,
+    // VortexErrorData's `unknown`-bearing payloads fail AssertSerializable, so
+    // the wire field stays opaque `Serializable | null` and we cast at the
+    // boundary.
+    error: state.status === "failed" ? (toWireError(state.error) as unknown as Serializable) : null,
   };
 }

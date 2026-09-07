@@ -2,7 +2,7 @@
 
 ## Entry Point
 
-`showError()` in `src/renderer/util/message.ts` — all user-visible error notifications go through here. Renderer process only.
+`showError()` in `src/renderer/src/util/message.ts` — all user-visible error notifications go through here. Renderer process only.
 
 ## Reporting Decision
 
@@ -26,7 +26,7 @@ When allowed:
 
 ```
 showError()
-  └─ recordErrorSpan(title, error)              src/renderer/util/errorHandling.ts
+  └─ recordErrorSpan(title, error)              src/renderer/src/util/errorHandling.ts
        ├─ active span exists → applyErrorToSpan(activeSpan, ...)
        └─ no active span    → create root span "error.report", applyErrorToSpan, span.end()
             └─ applyErrorToSpan()
@@ -40,7 +40,7 @@ ERROR status on the span triggers automatic export in `RingBufferSpanProcessor` 
 
 ## Ambient Context (Legacy)
 
-`globalContext` in `src/renderer/util/errorHandling.ts` holds the current operational state (active game, mod being installed, etc.). Entries are attached to every span as `context.<key>` attributes.
+`globalContext` in `src/renderer/src/util/errorHandling.ts` holds the current operational state (active game, mod being installed, etc.). Entries are attached to every span as `context.<key>` attributes.
 
 ```typescript
 setErrorContext("gameId", "skyrimse");
@@ -61,7 +61,7 @@ Higher-level operations use `withTrackedActivity()` instead of calling `showErro
 - On unhandled throw: status set to `ERROR`, exception recorded, re-thrown
 - `{ root: true }` starts a new trace — use this for top-level user-initiated operations
 
-**File**: `src/renderer/util/errorHandling.ts`
+**File**: `src/renderer/src/util/errorHandling.ts`
 
 ## Extension Error Links
 

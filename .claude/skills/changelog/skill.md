@@ -268,5 +268,4 @@ These are taken from existing entries and illustrate the target style:
 ## Style anchors (read if uncertain)
 
 - The current `CHANGELOG.md` is the canonical style reference. When in doubt, mimic the most recent 2-3 entries.
-- `AGENTS.md` in the repo root documents the reference-link convention under `## Changelog`.
 - Keep a Changelog 1.1.0: <https://keepachangelog.com/en/1.1.0/>

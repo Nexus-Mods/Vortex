@@ -10,7 +10,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import { Button, type IButtonAppearance, type IButtonBrand } from "./Button";
 
-const BRANDS: IButtonBrand[] = ["primary", "info", "neutral", "success", "premium"];
+const BRANDS: IButtonBrand[] = ["primary", "info", "neutral", "success", "danger", "premium"];
 const APPEARANCES: IButtonAppearance[] = ["strong", "moderate", "subdued", "weak"];
 
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -73,8 +73,6 @@ export const ButtonDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button size="lg">Large</Button>
-
           <Button>Medium (default)</Button>
 
           <Button size="sm">Small</Button>
@@ -154,8 +152,6 @@ export const ButtonDemo = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button aria-label="Settings (lg)" leftIconPath={mdiCog} size="lg" />
-
           <Button aria-label="Settings (md)" leftIconPath={mdiCog} />
 
           <Button aria-label="Settings (sm)" leftIconPath={mdiCog} size="sm" />

@@ -29,9 +29,11 @@ import { installDevelExtensions } from "./devel";
 import { terminate, terminateAsync } from "./errorHandling";
 import { disableErrorReporting, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
+import { isUpdaterActive } from "./extensions/updater";
 import { validateFiles } from "./fileValidation";
 import { getVortexPath, setVortexPath } from "./getVortexPath";
 import { shutdownHashWorker } from "./hash/host";
+import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -505,6 +507,9 @@ class Application {
     // fetches it via getInitMetadata() early in its boot.
     log("debug", "checking how Vortex was installed");
     await this.identifyInstallType();
+    // the renderer's updater extension gates on this; it cannot work it out itself because
+    // VORTEX_DEV_UPDATER is read at runtime and only NODE_ENV is inlined into its bundle
+    this.mAppMetadata!.updaterActive = isUpdaterActive(this.mAppMetadata!.installType ?? "");
     this.mAppMetadata!.version = app.getVersion();
 
     log("debug", "checking if migration is required");
@@ -891,8 +896,11 @@ class Application {
     };
 
     // Register handler so renderer can request metadata via invoke (avoids
-    // race conditions with the fire-and-forget app:init send pattern)
-    ipcMain.handle("app:getInitMetadata", () => this.mAppMetadata);
+    // race conditions with the fire-and-forget app:init send pattern).
+    // Clear handler first to avoid duplicate registration if setupPersistence()
+    // is called more than once (e.g. after a repair).
+    ipcMain.removeHandler("app:getInitMetadata");
+    betterIpcMain.handle("app:getInitMetadata", () => this.mAppMetadata!);
 
     // 1. Create LevelPersist for the base path
     const levelPersistor = await LevelPersist.create(

@@ -167,7 +167,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
 
               {!starter.isGame && (
                 <DropdownItem
-                  className="nxm-dropdown-item-danger"
+                  brand="danger"
                   leftIconPath={mdiDelete}
                   onClick={() => onRemove(starterInfo)}
                 >

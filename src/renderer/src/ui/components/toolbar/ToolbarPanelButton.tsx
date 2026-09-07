@@ -8,7 +8,10 @@ import { ToolbarButton, type IToolbarButtonProps } from "./ToolbarButton";
 import type { IToolbarPanel } from "./ToolbarGroup";
 import { TOOLBAR_CONTROL_ATTRIBUTE } from "./useToolbarOverflow.hook";
 
-export type IToolbarPanelButtonProps = IToolbarButtonProps & { panel: IToolbarPanel };
+export type IToolbarPanelButtonProps = IToolbarButtonProps & {
+  panel: IToolbarPanel;
+  panelRole?: "dialog" | "menu";
+};
 
 /**
  * Moves focus into the panel as it opens, so opening from the keyboard lands in the
@@ -23,6 +26,9 @@ export type IToolbarPanelButtonProps = IToolbarButtonProps & { panel: IToolbarPa
  * Declared out here so the ref keeps one identity: an inline callback would be a new
  * ref every render, and refocus the panel each time — taking focus back off whatever
  * the user had just opened inside it.
+ *
+ * Only for a panel of settings. A panel that is a menu focuses its own first row, so it
+ * doesn't take the ref.
  */
 const focusPanel = (element: HTMLElement | null) => {
   if (element === null) {
@@ -42,18 +48,40 @@ const focusPanel = (element: HTMLElement | null) => {
  * row can't tell the two kinds of action apart: same size, same tooltip, same
  * accessible name. Headless UI anchors and portals the panel, so it escapes the
  * toolbar's clipping ancestors and flips itself when there's no room below.
+ *
+ * `panelRole` says which kind of panel it is, as it does on a menu row: rows of
+ * settings by default, or a menu, which is styled as a dropdown and left to focus
+ * its own first row.
  */
-export const ToolbarPanelButton = ({ panel, ...props }: IToolbarPanelButtonProps) => (
-  // The wrapper is what the group lays out, so it is what the group measures.
-  <Popover {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}>
-    {({ open }) => (
-      <>
-        <ToolbarButton {...props} as={PopoverButton} tooltipDisabled={open} />
+export const ToolbarPanelButton = ({
+  panel,
+  panelRole,
+  onClick,
+  ...props
+}: IToolbarPanelButtonProps) => {
+  const isMenu = panelRole === "menu";
 
-        <PopoverPanel className="nxm-popover-panel-controls" ref={focusPanel}>
-          {({ close }) => <>{panel({ close, dismiss: close })}</>}
-        </PopoverPanel>
-      </>
-    )}
-  </Popover>
-);
+  return (
+    // The wrapper is what the group lays out, so it is what the group measures.
+    <Popover {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}>
+      {({ open }) => (
+        <>
+          <ToolbarButton
+            {...props}
+            aria-haspopup={panelRole ?? "dialog"}
+            as={PopoverButton}
+            tooltipDisabled={open}
+            onClick={open ? undefined : onClick}
+          />
+
+          <PopoverPanel
+            className={isMenu ? "nxm-popover-panel-dropdown" : "nxm-popover-panel-controls"}
+            ref={isMenu ? undefined : focusPanel}
+          >
+            {({ close }) => <>{panel({ close, dismiss: close })}</>}
+          </PopoverPanel>
+        </>
+      )}
+    </Popover>
+  );
+};

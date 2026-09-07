@@ -1,4 +1,4 @@
-import type { DownloadError } from "./errors";
+import type { VortexError } from "../errors/base";
 
 /**
  * A range starting at 0 with a length of 500 bytes is represented as start=0, end=499
@@ -108,7 +108,7 @@ export type DownloadCheckpoint<T = unknown> = {
 };
 
 export type DownloadState = DownloadProgress &
-  ({ status: Exclude<DownloadStatus, "failed"> } | { status: "failed"; error: DownloadError });
+  ({ status: Exclude<DownloadStatus, "failed"> } | { status: "failed"; error: VortexError });
 
 export type PauseResult<T = unknown> =
   | (DownloadState & { status: "paused"; checkpoint: DownloadCheckpoint<T> })

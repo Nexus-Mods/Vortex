@@ -1,5 +1,5 @@
 /**
- * @see AGENTS-COLLECTIONS.md - For collections & phased installation documentation
+ * @see docs/mod-management/collections.md - For collections & phased installation documentation
  */
 
 import * as os from "os";
@@ -12,7 +12,8 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML, InsufficientDiskSpace } from "@vortex/shared/errors";
+import { parseError } from "@vortex/shared";
+import { AlreadyDownloaded, InsufficientDiskSpace } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
@@ -58,7 +59,7 @@ import { generate as shortid } from "shortid";
  * - `deployedPhases` - Phases that have been deployed
  * - `isDeploying` - CRITICAL: Blocks installs during deployment
  *
- * See AGENTS-COLLECTIONS.md for architectural overview.
+ * See docs/mod-management/collections.md for architectural overview.
  */
 import { removeDownload, setDownloadModInfo, startActivity, stopActivity } from "../../actions";
 import {
@@ -534,7 +535,10 @@ async function mapWithConcurrency<T, R>(
  * @class InstallManager
  */
 class InstallManager {
-  private static readonly MAX_SIMULTANEOUS_INSTALLS = 5;
+  // Exported so other features that fire their own install fan-out (e.g. health check's bulk
+  // install actions) can size their own queue against the same, already-tuned budget instead of
+  // picking an unrelated number.
+  static readonly MAX_SIMULTANEOUS_INSTALLS = 5;
   private mApi: IExtensionApi;
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
@@ -3044,7 +3048,7 @@ class InstallManager {
         const existing = phaseState?.deploymentPromises.get(checkPhase);
         if (existing?.deployOnSettle && !hasDeployed) {
           // CRITICAL: Block new installations during deployment to prevent file conflicts.
-          // Removing this check causes race conditions. See AGENTS-COLLECTIONS.md.
+          // Removing this check causes race conditions. See docs/mod-management/collections.md.
           if (phaseState) {
             phaseState.isDeploying = true;
           }
@@ -5475,7 +5479,7 @@ class InstallManager {
                     return resolve(id);
                   } else if (error instanceof AlreadyDownloaded) {
                     return resolve(error.downloadId);
-                  } else if (error instanceof DownloadIsHTML) {
+                  } else if (parseError(error).data.kind === "download:is-html") {
                     // If this is a google drive link and the file exceeds the
                     //  virus testing limit, Google will return an HTML page asking
                     //  the user for consent to download the file. Lets try this using
@@ -5992,7 +5996,7 @@ class InstallManager {
               );
               return undefined;
             }
-            if (innerErr instanceof DownloadIsHTML) {
+            if (parseError(innerErr).data.kind === "download:is-html") {
               settleMemberFailed();
               const refName = renderModReference(dep.reference, undefined);
               const message =

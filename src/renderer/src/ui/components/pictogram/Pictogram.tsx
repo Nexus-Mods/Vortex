@@ -29,6 +29,7 @@ export type IPictogramName =
   | "camera"
   | "game"
   | "health-check"
+  | "mod"
   | "no-mod"
   | "preferences"
   | "premium"

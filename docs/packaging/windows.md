@@ -39,12 +39,17 @@ script.
 3. electron-builder runs from that deploy directory
    (`src/main/electron-builder.config.json`) and writes its output to the
    repo-root `dist/` (`directories.output: ../../../dist`).
-4. `scripts/verify-packaged-asar.mjs` should be run afterwards: it compares
-   every nested `node_modules` dependency version in the deploy tree against
-   what actually landed in the asar, and fails on mismatches. This guard
-   exists because electron-builder 26's pnpm module collector shipped a build
-   with ~50 wrong nested dependency versions (we are pinned to 24.13.3 until
-   that is fixed upstream).
+4. `scripts/verify-packaged-asar.mjs` should be run afterwards:
+
+    ```bash
+    node scripts/verify-packaged-asar.mjs
+    ```
+
+    It compares every nested `node_modules` dependency version in the deploy
+    tree against what actually landed in the asar, and fails on mismatches. This guard
+    exists because electron-builder 26's pnpm module collector shipped a build
+    with ~50 wrong nested dependency versions (we are pinned to 24.13.3 until
+    that is fixed upstream).
 
 ## Output
 
@@ -77,9 +82,15 @@ entire update cycle offline; see [updater-testing.md] for the full
 workbench (mock feed, env vars, the `publisherName` caveat for unsigned
 builds, blockmap staging).
 
+For the signed end-to-end run against real GitHub, which covers what the mock
+feed can't (real API shapes, CDN redirects, prerelease and draft semantics,
+Authenticode), see [updater-rehearsal.md] and
+`scripts/updater-e2e-staging.mjs`.
+
 ## References
 
 - [updater-testing.md]
+- [updater-rehearsal.md]
 - [electron-builder documentation]
 - [electron-builder NSIS configuration]
 - [Package workflow]
@@ -88,4 +99,5 @@ builds, blockmap staging).
 [electron-builder documentation]: https://www.electron.build/
 [electron-builder NSIS configuration]: https://www.electron.build/configuration/nsis
 [package.yml]: ../../.github/workflows/package.yml
+[updater-rehearsal.md]: ../updater-rehearsal.md
 [updater-testing.md]: ../updater-testing.md

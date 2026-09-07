@@ -7,7 +7,7 @@ import type { ThunkDispatch } from "redux-thunk";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import type { UpdateChannel, IState } from "../../types/IState";
-import { UPDATE_CHANNELS } from "../../types/IState";
+import { UPDATE_CHANNELS, toUpdateChannel } from "../../types/IState";
 import type { VortexInstallType } from "../../types/VortexInstallType";
 import { Button } from "../../ui/components/button/Button";
 import { Picker } from "../../ui/components/picker/Picker";
@@ -20,6 +20,7 @@ import { getUpdaterStatus } from "./updaterStatus";
 interface IConnectedProps {
   updateChannel: UpdateChannel;
   installType: VortexInstallType;
+  updaterActive: boolean;
   // what the updater is doing right now, if anything; the button waits it out
   busy: "checking" | "downloading" | null;
 }
@@ -78,7 +79,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   }
 
   public render(): JSX.Element {
-    const { t, installType, updateChannel, busy } = this.props;
+    const { t, installType, updaterActive, updateChannel, busy } = this.props;
 
     const { checkUpdateButtonDisabled } = this.state;
 
@@ -94,6 +95,15 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
       }
 
       // managed and development
+    }
+
+    // nothing below would do anything: the updater is not running
+    if (!updaterActive && process.env.NODE_ENV === "development") {
+      return this.renderCallout(
+        t(
+          "Updates are off in development mode. Set VORTEX_DEV_UPDATER=1 before starting Vortex to turn them on.",
+        ),
+      );
     }
 
     // regular
@@ -145,14 +155,6 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
                     : t("Check now")}
               </Button>
             </div>
-
-            {updateChannel === "next"
-              ? this.renderCallout(
-                  t(
-                    "Vortex is running in preview mode and using the hidden 'next' update channel.",
-                  ),
-                )
-              : null}
 
             {updateChannel === "none"
               ? this.renderCallout(
@@ -243,8 +245,9 @@ function busyFor(snapshot: UpdaterSnapshot | undefined): IConnectedProps["busy"]
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    updateChannel: state.settings.update.channel,
+    updateChannel: toUpdateChannel(state.settings.update.channel),
     installType: state.app.installType,
+    updaterActive: state.app.updaterActive,
     busy: busyFor(state.session.updater?.snapshot),
   };
 }

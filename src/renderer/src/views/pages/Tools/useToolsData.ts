@@ -12,7 +12,7 @@ import type StarterInfo from "../../../util/StarterInfo";
 import { truthy } from "../../../util/util";
 import { generateGameStarter, generateToolStarters } from "./toolStarters";
 
-const MAX_PINNED_TOOLS = 5;
+const MAX_PINNED_TOOLS = 10;
 
 async function validateTools(starters: IStarterInfo[], discoveryPath: string): Promise<string[]> {
   const validIds: string[] = [];

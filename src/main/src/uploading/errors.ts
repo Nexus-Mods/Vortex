@@ -1,4 +1,4 @@
-import { UploadError } from "@vortex/shared/errors";
+import { VortexError, parseError } from "@vortex/shared";
 import { TimeoutError, HTTPError, RequestError } from "got";
 
 /** How much of an unrecognised error body to keep in the message. */
@@ -118,31 +118,34 @@ function parseAmzDate(value: string | null): Date | undefined {
   );
 }
 
-export function toUploadError(url: string, err: unknown): UploadError {
+export function toUploadError(url: string, err: unknown): VortexError {
   const redacted = redactUrl(url);
 
-  if (err instanceof UploadError) return err;
   if (err instanceof TimeoutError) {
-    return new UploadError(
-      { code: "network-timeout", url: redacted },
+    return new VortexError(
       "Upload request timed out",
-      err,
+      { kind: "http:timeout", url: redacted },
+      { cause: err },
     );
   }
   if (err instanceof HTTPError) {
     const { statusCode } = err.response;
     const body = typeof err.response.body === "string" ? err.response.body : "";
     const detail = describeErrorBody(body);
-    return new UploadError(
-      { code: "network-bad-status", url: redacted, statusCode },
+    return new VortexError(
       detail === undefined
         ? `Server returned ${statusCode}`
         : `Server returned ${statusCode} — ${detail}`,
-      err,
+      { kind: "http:bad-status", url: redacted, statusCode },
+      { cause: err },
     );
   }
   if (err instanceof RequestError) {
-    return new UploadError({ code: "network-error", url: redacted }, "Network request failed", err);
+    return parseError(err, { url: redacted }, ({ data, isTransient }) =>
+      data.kind === "http:generic" || data.kind === "os:generic"
+        ? `Upload network request failed${isTransient ? " (transient)" : ""}`
+        : undefined,
+    );
   }
-  return new UploadError({ code: "network-error", url: redacted }, "Unknown network error", err);
+  return parseError(err, { url: redacted });
 }
