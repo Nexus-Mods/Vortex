@@ -3066,6 +3066,16 @@ class ExtensionManager {
       // order, and collections' once() relies on those extensions being set up
       // first (cf. gameversion_management before gamemode_management).
       collections: () => require("./extensions/collections/index.ts"),
+      // the key keeps the pre-fold extension name (hyphens): it is the public requireExtension
+      // contract (gamebryo-plugin-indexlock, gamebryo-archive-check, out-of-band extensions)
+      // and the historical i18n namespace.
+      // TODO LAZ-1061: lift the platform gate as part of the Linux support work
+      ...(process.platform === "win32"
+        ? {
+            "gamebryo-plugin-management": () =>
+              require("./extensions/gamebryo_plugin_management/index.ts"),
+          }
+        : {}),
       recovery: () => require("./extensions/recovery/index.ts"),
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),

@@ -7,7 +7,6 @@ import { pl } from "date-fns/locale";
 import getVersion from "exe-version";
 import type i18next from "i18next";
 import type { Message, PluginMetadata } from "loot";
-import { LootAsync } from "loot";
 import {} from "redux-thunk";
 
 import { startActivity, stopActivity } from "../../actions/session";
@@ -19,6 +18,7 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
+import { webpackRequireHack } from "../../util/webpack-hacks";
 import { currentGameDiscovery, discoveryByGame } from "../gamemode_management/selectors";
 import { clearPendingPluginSort } from "../mod_management/actions/transactions";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
@@ -26,6 +26,8 @@ import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
 import { GHOST_EXT, NAMESPACE } from "./statics";
+import { EdgeType } from "./types/ILoot";
+import type { ICycleEdge, ILootProm, ILootRef, ILootStaticProm } from "./types/ILoot";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { findInvalidPlugins } from "./util/findInvalidPlugins";
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
@@ -36,26 +38,17 @@ import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
 
-const LootProm: any = Bluebird.promisifyAll(LootAsync);
-
-enum EdgeType {
-  userGroup = "userGroup",
-  masterlistGroup = "masterlistGroup",
-  hardcoded = "hardcoded",
-  master = "master",
-  masterFlag = "masterFlag",
-  masterlistLoadAfter = "masterlistLoadAfter",
-  masterlistRequirement = "masterlistRequirement",
-  userLoadAfter = "userlistLoadAfter",
-  userRequirement = "userlistRequirement",
-  assetOverlap = "assetOverlap",
-  recordOverlap = "recordOverlap",
-  tieBreak = "tieBreak",
-}
-
-interface ICycleEdge {
-  name: string;
-  typeOfEdgeToNextVertex: EdgeType;
+// A CJS module at a runtime path has to come in through the raw node require,
+// the renderer's own import() resolves through the browser loader, which cannot load it.
+let LootProm: ILootStaticProm | undefined;
+function getLootProm(): ILootStaticProm {
+  if (LootProm === undefined) {
+    const lootModule = webpackRequireHack(
+      path.join(getVortexPath("assets_unpacked"), "loot", "index.js"),
+    ) as typeof import("loot");
+    LootProm = Bluebird.promisifyAll(lootModule.LootAsync) as unknown as ILootStaticProm;
+  }
+  return LootProm;
 }
 
 // Single actionable warning for plugins LOOT could not parse (corrupt/invalid) and that were
@@ -95,7 +88,7 @@ function reportSkippedInvalidPlugins(api: IExtensionApi, plugins: string[]): voi
 
 class LootInterface {
   private mExtensionApi: IExtensionApi;
-  private mInitPromise: Bluebird<{ game: string; loot: typeof LootProm }> = Bluebird.resolve({
+  private mInitPromise: Bluebird<ILootRef> = Bluebird.resolve({
     game: undefined,
     loot: undefined,
   });
@@ -299,7 +292,7 @@ class LootInterface {
   private async doSort(
     pluginNames: string[],
     gameMode: string,
-    loot: typeof LootProm,
+    loot: ILootProm,
     excluded: string[] = [],
   ) {
     const { store } = this.mExtensionApi;
@@ -475,13 +468,13 @@ class LootInterface {
   private onGameModeChanged = async (api: IExtensionApi, gameMode: string) => {
     const oldInitProm = this.mInitPromise;
 
-    let onRes: (x: { game: string; loot: LootAsync }) => void;
+    let onRes: (x: ILootRef) => void;
 
-    this.mInitPromise = new Bluebird<{ game: string; loot: LootAsync }>((resolve) => {
+    this.mInitPromise = new Bluebird<ILootRef>((resolve) => {
       onRes = resolve;
     });
 
-    const { game, loot }: { game: string; loot: LootAsync } = await oldInitProm;
+    const { game, loot }: ILootRef = await oldInitProm;
     if (gameMode === game) {
       this.mInitPromise = oldInitProm;
       onRes({ game, loot });
@@ -493,7 +486,7 @@ class LootInterface {
     }
   };
 
-  private startStopLoot(api: IExtensionApi, gameMode: string, loot: LootAsync) {
+  private startStopLoot(api: IExtensionApi, gameMode: string, loot: ILootProm | undefined) {
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
       // to run instructions after being closed.
@@ -522,10 +515,7 @@ class LootInterface {
     }
   }
 
-  private async getLoot(
-    api: IExtensionApi,
-    gameId: string,
-  ): Promise<{ game: string; loot: typeof LootProm }> {
+  private async getLoot(api: IExtensionApi, gameId: string): Promise<ILootRef> {
     let res = await this.mInitPromise;
     if (res.game !== gameId) {
       this.onGameModeChanged(api, gameId);
@@ -712,7 +702,7 @@ class LootInterface {
     });
   };
 
-  public loadLists = async (gameMode: string, loot: typeof LootProm) => {
+  public loadLists = async (gameMode: string, loot: ILootProm) => {
     const masterlistPath = path.join(
       getVortexPath("userData"),
       gameMode,
@@ -768,7 +758,7 @@ class LootInterface {
   };
 
   // tslint:disable-next-line:member-ordering
-  private readLists = Bluebird.method(async (gameMode: string, loot: typeof LootProm) => {
+  private readLists = Bluebird.method(async (gameMode: string, loot: ILootProm) => {
     const t = this.mExtensionApi.translate;
     const masterlistPath = path.join(
       getVortexPath("userData"),
@@ -853,11 +843,11 @@ class LootInterface {
       });
     }
 
-    let loot: any;
+    let loot: ILootProm;
 
     try {
       loot = Bluebird.promisifyAll(
-        await LootProm.createAsync(
+        await getLootProm().createAsync(
           this.convertGameId(gameMode, false),
           this.gamePath,
           localPath,
@@ -865,7 +855,7 @@ class LootInterface {
           this.logCB,
           this.fork,
         ),
-      );
+      ) as unknown as ILootProm;
     } catch (err) {
       this.mExtensionApi.showErrorNotification("Failed to initialize LOOT", err, {
         allowReport: false,
@@ -1002,7 +992,7 @@ class LootInterface {
     edgeGroup: string,
     next: ICycleEdge,
     nextGroup: string,
-    loot: typeof LootProm,
+    loot: ILootProm,
   ): Promise<string> {
     switch (edge.typeOfEdgeToNextVertex) {
       case EdgeType.master:
@@ -1074,7 +1064,7 @@ class LootInterface {
   private async renderCycle(
     t: typeof i18next.t,
     cycle: ICycleEdge[],
-    loot: typeof LootProm,
+    loot: ILootProm,
   ): Promise<string> {
     const state = this.mExtensionApi.store.getState();
     const lines = await Promise.all(
@@ -1108,7 +1098,7 @@ class LootInterface {
   private async getSolutions(
     t: typeof i18next.t,
     cycle: ICycleEdge[],
-    loot: typeof LootProm,
+    loot: ILootProm,
   ): Promise<ICheckbox[]> {
     const userTypes = [EdgeType.userLoadAfter, EdgeType.userRequirement];
 
@@ -1192,7 +1182,7 @@ class LootInterface {
     return result;
   }
 
-  private async applyFix(key: string, loot: typeof LootProm) {
+  private async applyFix(key: string, loot: ILootProm) {
     const api = this.mExtensionApi;
 
     const args = key.split(":");
@@ -1232,7 +1222,7 @@ class LootInterface {
     }
   }
 
-  private async reportCycle(err: Error, loot: typeof LootProm) {
+  private async reportCycle(err: Error, loot: ILootProm) {
     const api = this.mExtensionApi;
     const t = api.translate;
 

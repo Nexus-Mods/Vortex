@@ -1794,11 +1794,6 @@ function init(context: IExtensionContextExt) {
       initGameSupport(context.api).then(() => {
         const store = context.api.store;
 
-        context.api.setStylesheet(
-          "plugin-management",
-          path.join(__dirname, "plugin_management.scss"),
-        );
-
         loot = new LootInterface(context.api);
 
         let pluginsChangedQueued = false;

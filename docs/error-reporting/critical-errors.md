@@ -88,11 +88,11 @@ Separate from the renderer-side `errorIgnored` flag in `src/renderer/src/util/er
 
 ### Renderer Process — `terminate()`
 
-| File                                                                  | Trigger                                                                                                                    |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `src/renderer/src/renderer.tsx`                                       | `uncaughtException` / `unhandledRejection` global handler                                                                  |
-| `src/renderer/src/extensions/mod_management/InstallManager.ts`        | Attempt to change download state with a duplicate or invalid ID — `allowReport = false` (programming error, not user data) |
-| `extensions/gamebryo-plugin-management/src/util/UserlistPersistor.ts` | Cannot read the userlist file even though it exists — `allowReport = false`; user directed to repair or delete the file    |
+| File                                                                               | Trigger                                                                                                                    |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/renderer.tsx`                                                    | `uncaughtException` / `unhandledRejection` global handler                                                                  |
+| `src/renderer/src/extensions/mod_management/InstallManager.ts`                     | Attempt to change download state with a duplicate or invalid ID — `allowReport = false` (programming error, not user data) |
+| `src/renderer/src/extensions/gamebryo_plugin_management/util/UserlistPersistor.ts` | Cannot read the userlist file even though it exists — `allowReport = false`; user directed to repair or delete the file    |
 
 ### Renderer Process — direct exit (no dialog)
 

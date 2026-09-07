@@ -35,6 +35,7 @@ import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
 import type { ICustomProps, ITableAttribute } from "../../../types/ITableAttribute";
 import Debouncer from "../../../util/Debouncer";
+import getVortexPath from "../../../util/getVortexPath";
 import { getSafe } from "../../../util/storeHelper";
 import { sanitizeCSSId } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
@@ -685,7 +686,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               <UsageX infoId="sorting-with-loot2" opaque>
                 {t("Auto load order sorting is powered by ")}
                 <a onClick={this.props.openLOOTSite}>
-                  LOOT <Image srcs={[path.join(__dirname, "loot_icon.png")]} />
+                  LOOT{" "}
+                  <Image srcs={[path.join(getVortexPath("assets"), "images", "loot_icon.png")]} />
                 </a>
                 <More id="sorting-with-loot" name="Sorting with LOOT">
                   {t(
