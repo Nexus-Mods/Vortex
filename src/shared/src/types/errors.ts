@@ -28,8 +28,6 @@ function captureStackTrace<T extends Error>(
  * @deprecated Use `VortexError` directly
  */
 export class UserCanceled extends VortexError {
-  static override readonly errorKind = "user-canceled";
-
   public skipped: boolean;
 
   constructor(skipped?: boolean) {
@@ -43,8 +41,6 @@ export class UserCanceled extends VortexError {
  * @deprecated Use `VortexError` directly
  */
 export class DataInvalid extends VortexError {
-  static override readonly errorKind = "data-invalid";
-
   constructor(message: string) {
     super(message, { kind: "data-invalid" });
   }
@@ -55,8 +51,6 @@ export class DataInvalid extends VortexError {
  * @deprecated Use `VortexError` directly
  */
 export class NotSupportedError extends VortexError {
-  static override readonly errorKind = "not-supported";
-
   constructor() {
     super("Not supported", { kind: "not-supported" });
   }
@@ -101,8 +95,6 @@ export class InsufficientDiskSpace extends Error {
  * @deprecated Use `VortexError` directly
  */
 export class ProcessCanceled extends VortexError {
-  static override readonly errorKind = "process-canceled";
-
   #extraInfo?: unknown;
 
   constructor(message: string, extraInfo?: unknown) {
@@ -120,8 +112,6 @@ export class ProcessCanceled extends VortexError {
  * @deprecated Use `VortexError` directly
  */
 export class ArgumentInvalid extends VortexError {
-  static override readonly errorKind = "argument-invalid";
-
   constructor(argument: string) {
     super(`Invalid argument: "${argument}"`, { kind: "argument-invalid", argument });
   }
@@ -146,8 +136,6 @@ export class DocumentsPathMissing extends Error {
  * @deprecated Use `VortexError` directly
  */
 export class SetupError extends VortexError {
-  static override readonly errorKind = "setup-error";
-
   #component?: string;
 
   constructor(message: string, component?: string) {
@@ -197,8 +185,6 @@ export class HTTPError extends Error {
  * @deprecated Use `VortexError` directly
  */
 export class MissingInterpreter extends VortexError {
-  static override readonly errorKind = "missing-interpreter";
-
   #url?: string;
 
   constructor(message: string, url?: string) {
@@ -216,8 +202,6 @@ export class MissingInterpreter extends VortexError {
  * @deprecated Use `VortexError` directly
  */
 export class NotFound extends VortexError {
-  static override readonly errorKind = "not-found";
-
   constructor(what: string) {
     super(`Not found: "${what}"`, { kind: "not-found", resourceType: what });
   }
@@ -302,8 +286,6 @@ export class AlreadyDownloaded extends Error {
  * @deprecated Use `VortexError` directly
  */
 export class CycleError extends VortexError {
-  static override readonly errorKind = "cycle-error";
-
   #cycles: string[][];
 
   constructor(cycles: string[][]) {
@@ -321,8 +303,6 @@ export class CycleError extends VortexError {
  * @deprecated Use `VortexError` directly
  */
 export class GameNotFound extends VortexError {
-  static override readonly errorKind = "game-not-found";
-
   #gameId: string;
 
   constructor(search: string) {

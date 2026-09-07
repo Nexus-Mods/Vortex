@@ -1,5 +1,6 @@
 import { assert, describe, expect, it } from "vitest";
 
+import { CycleError, NotFound, ProcessCanceled, SetupError, UserCanceled } from "../types/errors";
 import { VortexError } from "./base";
 import {
   ORIGIN_REF_KEY,
@@ -253,5 +254,62 @@ describe("toWireError (boundary entry point)", () => {
     expect(out).not.toBe(original);
     expect(out).not.toBe(stashB.get("0"));
     expect(out.data.kind).toBe("test:tag");
+  });
+});
+
+const roundTrip = (err: VortexError): VortexError =>
+  deserializeVortexError(serializeVortexError(err));
+
+describe("class reconstruction", () => {
+  it("brings back the concrete class for a kind that has one", () => {
+    const wire = roundTrip(new UserCanceled(true));
+
+    expect(wire).toBeInstanceOf(UserCanceled);
+    expect(wire).not.toBeInstanceOf(ProcessCanceled);
+    expect(wire.name).toBe("UserCanceled");
+  });
+
+  it("restores accessors backed by private fields", () => {
+    // These read `#private` fields, so only the real constructor can make them
+    // work — grafting a prototype onto a base instance would throw here.
+    expect(roundTrip(new ProcessCanceled("nope", { detail: 1 }))).toHaveProperty("extraInfo", {
+      detail: 1,
+    });
+    expect(roundTrip(new SetupError("bad", "downloader"))).toHaveProperty(
+      "component",
+      "downloader",
+    );
+    expect(roundTrip(new UserCanceled(true))).toHaveProperty("skipped", true);
+    expect(roundTrip(new CycleError([["a", "b"]]))).toHaveProperty("cycles", [["a", "b"]]);
+  });
+
+  it("keeps the wire's message rather than the one the constructor synthesizes", () => {
+    const original = new NotFound("thing");
+    original.message = "a message the thrower customised";
+
+    expect(roundTrip(original).message).toBe("a message the thrower customised");
+  });
+
+  it("preserves data, isTransient and the cause through reconstruction", () => {
+    const cause = new VortexError("root", { kind: "test:tag", name: "root" });
+    const original = new ProcessCanceled("outer", "info");
+    const wire = deserializeVortexError(
+      serializeVortexError(
+        new VortexError(original.message, original.data, { isTransient: true, cause }),
+      ),
+    );
+
+    assert(wire.data.kind === "process-canceled");
+    expect(wire.data.extraInfo).toBe("info");
+    expect(wire.isTransient).toBe(true);
+    assert(wire.cause instanceof VortexError);
+    expect(wire.cause.message).toBe("root");
+  });
+
+  it("falls back to a base VortexError for a kind with no class", () => {
+    const wire = roundTrip(new VortexError("no class for this", { kind: "test:tag", name: "x" }));
+
+    expect(wire.constructor).toBe(VortexError);
+    expect(wire.data.kind).toBe("test:tag");
   });
 });

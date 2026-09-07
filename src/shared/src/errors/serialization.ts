@@ -1,3 +1,15 @@
+import {
+  ArgumentInvalid,
+  CycleError,
+  DataInvalid,
+  GameNotFound,
+  MissingInterpreter,
+  NotFound,
+  NotSupportedError,
+  ProcessCanceled,
+  SetupError,
+  UserCanceled,
+} from "../types/errors";
 import { VortexError, type VortexErrorData } from "./base";
 import { parseError } from "./parser";
 
@@ -115,17 +127,67 @@ export function deserializeVortexError(
     data[ORIGIN_REF_KEY] = ref;
   }
 
-  const result = new VortexError(serialized.message, data, {
-    isTransient: serialized.isTransient,
-    cause,
-  });
+  const result = revive(serialized.message, data, serialized.isTransient, cause);
 
-  // Replaces the boundary stack captured by the line above with the real one.
+  // Replaces the boundary stack captured by the constructor with the real one.
   if (serialized.stack !== undefined) {
     result.stack = serialized.stack;
   }
 
   return result;
+}
+
+/**
+ * Rebuild the concrete class for a kind that has one, so instanceof
+ * and the accessors those classes declare keep working on an
+ * error that crossed a boundary.
+ *
+ * @deprecated Transitional. Exists so the existing `instanceof` call sites
+ * keep working while the codebase moves to branching on `data.kind`. Remove this
+ * and the {@link revive} call above once they have.
+ */
+function reviveClass(message: string, data: VortexErrorData): VortexError | undefined {
+  switch (data.kind) {
+    case "argument-invalid":
+      return new ArgumentInvalid(data.argument);
+    case "cycle-error":
+      return new CycleError(data.cycles);
+    case "data-invalid":
+      return new DataInvalid(message);
+    case "game-not-found":
+      return new GameNotFound(data.gameId);
+    case "missing-interpreter":
+      return new MissingInterpreter(message, data.url);
+    case "not-found":
+      return new NotFound(data.resourceType ?? "");
+    case "not-supported":
+      return new NotSupportedError();
+    case "process-canceled":
+      return new ProcessCanceled(message, data.extraInfo);
+    case "setup-error":
+      return new SetupError(message, data.component);
+    case "user-canceled":
+      return new UserCanceled(data.skipped);
+    default:
+      return undefined;
+  }
+}
+
+function revive(
+  message: string,
+  data: WithRef<VortexErrorData>,
+  isTransient: boolean,
+  cause: VortexError | undefined,
+): VortexError {
+  const revived = reviveClass(message, data);
+  if (revived === undefined) {
+    return new VortexError(message, data, { isTransient, cause });
+  }
+
+  // The constructors synthesize their own message and payload, so overwrite both
+  // with the wire's — a thrower may have customised the message, and `data`
+  // carries the origin-ref token the subclass constructor knows nothing about.
+  return Object.assign(revived, { message, data, isTransient, cause });
 }
 
 /**
