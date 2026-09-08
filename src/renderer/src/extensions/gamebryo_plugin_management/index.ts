@@ -56,6 +56,8 @@ import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import LootInterface from "./autosort";
 import { ESPFile } from "./esp/ESPFile";
+import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
+import { indexReducer } from "./reducers/indexlock";
 import { loadOrderReducer } from "./reducers/loadOrder";
 import { pluginsReducer } from "./reducers/plugins";
 import { settingsReducer } from "./reducers/settings";
@@ -401,6 +403,9 @@ function register(
   });
   context.registerReducer(["settings", "plugins"], settingsReducer);
   context.registerReducer(["session", "pluginDependencies"], userlistEditReducer);
+  context.registerReducer(["persistent", "plugins", "lockedIndices"], indexReducer);
+
+  context.registerTableAttribute("gamebryo-plugins", genLockIndexAttribute(context.api));
 
   const pluginActivity = new ReduxProp(
     context.api,
@@ -1795,6 +1800,10 @@ function init(context: IExtensionContextExt) {
         const store = context.api.store;
 
         loot = new LootInterface(context.api);
+
+        // folded gamebryo-plugin-indexlock wiring; only attaches listeners, no ordering
+        // dependency within this block
+        onceIndexLock(context.api, () => deploying);
 
         let pluginsChangedQueued = false;
 

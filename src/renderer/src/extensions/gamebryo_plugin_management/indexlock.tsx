@@ -1,12 +1,18 @@
-import { selectors, types, util } from "@nexusmods/vortex-api";
-import Promise from "bluebird";
 import * as React from "react";
 
-import LockIndex from "./LockIndex";
-import { indexReducer } from "./reducers";
-import { IPlugin } from "./types";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import type { ITableAttribute } from "../../types/ITableAttribute";
+import Debouncer from "../../util/Debouncer";
+import { getSafe } from "../../util/storeHelper";
+import { activeGameId } from "../profile_management/selectors";
+import { NAMESPACE } from "./statics";
+import type { ILoadOrder } from "./types/ILoadOrder";
+import type { IPluginCombined } from "./types/IPlugins";
+import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
+import LockIndex from "./views/LockIndex";
 
-function genAttribute(api: types.IExtensionApi): types.ITableAttribute<IPlugin> {
+export function genLockIndexAttribute(api: IExtensionApi): ITableAttribute<IPluginCombined> {
   return {
     id: "lockIndex",
     name: "Lock Mod Index",
@@ -21,14 +27,14 @@ function genAttribute(api: types.IExtensionApi): types.ITableAttribute<IPlugin> 
         "Further note: This lets you place non-master esps before masters but the game " +
         "will not load them in this order.",
     ),
-    customRenderer: (plugin: IPlugin) => (
-      <LockIndex plugin={plugin} gameMode={selectors.activeGameId(api.store.getState())} />
+    customRenderer: (plugin: IPluginCombined) => (
+      <LockIndex plugin={plugin} gameMode={activeGameId(api.store.getState())} />
     ),
-    calc: (plugin: IPlugin) => {
-      const state: types.IState = api.store.getState();
-      const gameMode = selectors.activeGameId(state);
+    calc: (plugin: IPluginCombined) => {
+      const state: IState = api.store.getState();
+      const gameMode = activeGameId(state);
       const statePath = ["persistent", "plugins", "lockedIndices", gameMode, plugin.name];
-      return util.getSafe(state, statePath, undefined);
+      return getSafe(state, statePath, undefined);
     },
     placement: "detail",
     isVolatile: true,
@@ -36,28 +42,22 @@ function genAttribute(api: types.IExtensionApi): types.ITableAttribute<IPlugin> 
   };
 }
 
-interface ILoadOrderEntry {
-  name: string;
-  enabled: boolean;
-  loadOrder: number;
-}
-
-function genApplyIndexlock(api: types.IExtensionApi) {
+function genApplyIndexlock(api: IExtensionApi) {
   let updating: boolean = false;
-  return (newLoadOrder: { [key: string]: ILoadOrderEntry }) => {
+  return (newLoadOrder: { [key: string]: ILoadOrder }) => {
     if (updating) {
       return;
     }
 
-    const state: types.IState = api.store.getState();
-    const gameMode = selectors.activeGameId(state);
-    const fixed = util.getSafe(state, ["persistent", "plugins", "lockedIndices", gameMode], {});
+    const state: IState = api.store.getState();
+    const gameMode = activeGameId(state);
+    const fixed = getSafe(state, ["persistent", "plugins", "lockedIndices", gameMode], {});
     if (Object.keys(fixed).length === 0) {
       // hopefully the default case: nothing locked
       return;
     }
 
-    const pluginInfo: { [id: string]: any } = util.getSafe(
+    const pluginInfo: { [id: string]: any } = getSafe(
       state,
       ["session", "plugins", "pluginInfo"],
       {},
@@ -98,9 +98,9 @@ function genApplyIndexlock(api: types.IExtensionApi) {
     }
 
     const isNative = (id: string) =>
-      util.getSafe(state.session, ["plugins", "pluginList", id, "isNative"], false);
+      getSafe(state.session, ["plugins", "pluginList", id, "isNative"], false);
 
-    const isEnabled = (id: string, entry: ILoadOrderEntry) => entry.enabled || isNative(id);
+    const isEnabled = (id: string, entry: ILoadOrder) => entry.enabled || isNative(id);
 
     // this inserts all fixed-index plugins in the middle of the list
     // tslint:disable-next-line:prefer-for-of
@@ -108,7 +108,7 @@ function genApplyIndexlock(api: types.IExtensionApi) {
       if (
         newLoadOrder[sorted[idx]] === undefined ||
         !isEnabled(sorted[idx], newLoadOrder[sorted[idx]]) ||
-        util.getSafe(pluginInfo, [sorted[idx], "isLight"], false)
+        getSafe(pluginInfo, [sorted[idx], "isLight"], false)
       ) {
         continue;
       }
@@ -136,45 +136,23 @@ function genApplyIndexlock(api: types.IExtensionApi) {
   };
 }
 
-function init(context: types.IExtensionContext) {
-  context.requireExtension("gamebryo-plugin-management");
-  context.registerReducer(["persistent", "plugins", "lockedIndices"], indexReducer);
+/** once-time wiring of the folded gamebryo-plugin-indexlock extension */
+export function onceIndexLock(api: IExtensionApi, isDeploying: () => boolean): void {
+  const applyIndexlock = genApplyIndexlock(api);
+  const liDebouncer = new Debouncer(() => {
+    applyIndexlock(api.getState<IStateWithGamebryo>().loadOrder ?? {});
+    return Promise.resolve();
+  }, 2000);
 
-  context.registerTableAttribute("gamebryo-plugins", genAttribute(context.api));
-
-  context.once(() => {
-    const { store } = context.api;
-    const liDebouncer = new util.Debouncer(() => {
-      applyIndexlock(util.getSafe(store.getState(), ["loadOrder"], {}));
-      return Promise.resolve();
-    }, 2000);
-    const applyIndexlock = genApplyIndexlock(context.api);
-
-    let deploying = false;
-
-    context.api.onAsync("will-deploy", () => {
-      deploying = true;
-      return Promise.resolve();
-    });
-    context.api.onAsync("did-deploy", () => {
-      deploying = false;
-      return Promise.resolve();
-    });
-
-    context.api.onStateChange(["loadOrder"], (oldState, newState) => {
-      if (!deploying) {
-        return applyIndexlock(newState);
-      }
-    });
-    context.api.onStateChange(["session", "plugins", "pluginInfo"], () => {
-      const state = store.getState();
-      applyIndexlock(state.loadOrder);
-    });
-    context.api.onStateChange(["persistent", "plugins", "lockedIndices"], () => {
-      liDebouncer.schedule();
-    });
+  api.onStateChange(["loadOrder"], (_oldState, newState) => {
+    if (!isDeploying()) {
+      return applyIndexlock(newState);
+    }
   });
-  return true;
+  api.onStateChange(["session", "plugins", "pluginInfo"], () => {
+    applyIndexlock(api.getState<IStateWithGamebryo>().loadOrder);
+  });
+  api.onStateChange(["persistent", "plugins", "lockedIndices"], () => {
+    liDebouncer.schedule();
+  });
 }
-
-export default init;

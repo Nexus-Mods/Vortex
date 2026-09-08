@@ -1,16 +1,16 @@
-import { types, util } from "@nexusmods/vortex-api";
-
-import * as actions from "./actions";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { deleteOrNop, setSafe } from "../../../util/storeHelper";
+import * as actions from "../actions/indexlock";
 
 /**
- * reducer for changes to the plugin list
+ * reducer for the manually locked plugin indices, keyed by game then plugin id
  */
-export const indexReducer: types.IReducerSpec = {
+export const indexReducer: IReducerSpec = {
   reducers: {
     [actions.lockPluginIndex as any]: (state, payload) =>
       payload.index !== undefined
-        ? util.setSafe(state, [payload.gameId, payload.plugin], payload.index)
-        : util.deleteOrNop(state, [payload.gameId, payload.plugin]),
+        ? setSafe(state, [payload.gameId, payload.plugin], payload.index)
+        : deleteOrNop(state, [payload.gameId, payload.plugin]),
   },
   defaults: {},
 };

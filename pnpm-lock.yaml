@@ -1636,60 +1636,6 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0
 
-  extensions/gamebryo-plugin-indexlock:
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/react':
-        specifier: '18'
-        version: 18.3.31
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/react-dom':
-        specifier: '18'
-        version: 18.3.7(@types/react@18.3.31)
-      '@types/react-redux':
-        specifier: 'catalog:'
-        version: 7.1.34
-      '@types/react-router':
-        specifier: 'catalog:'
-        version: 2.0.61
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      '@types/redux-thunk':
-        specifier: 'catalog:'
-        version: 2.1.0(redux@4.2.1)
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      i18next:
-        specifier: 'catalog:'
-        version: 21.10.0
-      iconv-lite:
-        specifier: 'catalog:'
-        version: 0.5.2
-      immutability-helper:
-        specifier: 'catalog:'
-        version: 3.1.1
-      json-loader:
-        specifier: 'catalog:'
-        version: 0.5.7
-      react-i18next:
-        specifier: 'catalog:'
-        version: 11.18.6(i18next@21.10.0)(react-dom@18.3.1)(react@18.3.1)
-      redux:
-        specifier: 'catalog:'
-        version: 4.2.1
-      redux-act:
-        specifier: 'catalog:'
-        version: 1.8.0
-
   extensions/gamebryo-savegame-management:
     dependencies:
       lz4js:
