@@ -93,7 +93,7 @@ export interface VortexErrorKindMap {
    * request context). `originalCode` carries the raw code for logging and
    * message lookup; it is not meant to be branched on.
    */
-  "os:generic": OsErrorData;
+  "os:generic": Pick<OsErrorData, "originalCode"> & Partial<OsErrorData>;
 
   /**
    * Nothing above matched. The parser/classifier that produced this
