@@ -95,6 +95,7 @@
     "@types/encoding-down": "catalog:",
     "@types/fs-extra": "catalog:",
     "@types/graphlib": "catalog:",
+    "@types/js-yaml": "catalog:",
     "@types/json-socket": "catalog:",
     "@types/jsonwebtoken": "catalog:",
     "@types/lodash": "catalog:",
@@ -138,6 +139,9 @@
     "content-type": "catalog:",
     "crc-32": "catalog:",
     "csstype": "catalog:",
+    "cytoscape": "catalog:",
+    "cytoscape-cose-bilkent": "catalog:",
+    "cytoscape-edgehandles": "catalog:",
     "d3": "catalog:",
     "date-fns": "catalog:",
     "dayjs": "catalog:",
@@ -165,8 +169,10 @@
     "is-admin": "catalog:",
     "json-loader": "catalog:",
     "json-socket": "catalog:",
+    "js-yaml": "catalog:",
     "jsonwebtoken": "catalog:",
     "lodash": "catalog:",
+    "markdown-ast": "catalog:",
     "memoize-one": "catalog:",
     "minimatch": "catalog:",
     "mixpanel-browser": "catalog:",
@@ -174,6 +180,7 @@
     "node-7z": "catalog:",
     "normalize-url": "catalog:",
     "numeral": "catalog:",
+    "p-limit": "catalog:",
     "p-queue": "catalog:",
     "packery": "catalog:",
     "permissions": "catalog:",
@@ -228,5 +235,8 @@
   },
   "dependencies": {
     "@cyclonedx/cyclonedx-library": "catalog:"
+  },
+  "optionalDependencies": {
+    "loot": "catalog:"
   }
 }

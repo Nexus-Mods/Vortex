@@ -78,7 +78,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi, IReducerSpec } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
@@ -98,6 +98,8 @@ import type {
   IDriverHarnessState,
   IFbloHarness,
   IFbloHarnessOpts,
+  IGameHarness,
+  IGameHarnessOpts,
   IHealthCheckHarness,
   IHealthCheckHarnessOpts,
   IInstallContextHarness,
@@ -660,6 +662,18 @@ export function resetHarnessRegistries(): void {
 }
 
 /**
+ * An extension reducer spec a domain harness hooks into the harness dispatch, alongside the
+ * built-ins. `spec.reducers` is keyed by action type; `read`/`write` address the state slice
+ * the spec owns (the harness state is plain mutable data).
+ */
+export interface IHarnessReducerBinding {
+  spec: IReducerSpec;
+  // the slice is opaque to the harness: whatever the spec's reducers produce, keyed as they key it
+  read: (state: IState) => Record<string, unknown>;
+  write: (state: IState, slice: Record<string, unknown>) => void;
+}
+
+/**
  * A controllable fake IExtensionApi over a seeded, structurally-partial IState. This is the
  * seam for code that reads state + dispatches actions + reacts to the global event bus.
  *
@@ -671,9 +685,18 @@ export function resetHarnessRegistries(): void {
  *   still assertable). Batched actions are unwrapped.
  * - the persistent / session slices are seeded from `overrides` (builder-style) and can be
  *   mutated mid-test via `setState`.
+ * - `extraReducers` lets a domain harness (e.g. gamebryo) bind its extension's reducer specs
+ *   to the slices they own, so its writes are observable by read-back too.
  */
-export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IApiHarness {
+export function makeApiHarness(
+  overrides: Partial<IDriverHarnessState> = {},
+  extraReducers: IHarnessReducerBinding[] = [],
+): IApiHarness {
   const state = makeDriverState(overrides);
+  // each bound slice starts from its spec's defaults (copied, so harnesses never share one)
+  for (const binding of extraReducers) {
+    binding.write(state, { ...binding.spec.defaults });
+  }
   const dispatched: ITrackedAction[] = [];
 
   const apply = (action: ITrackedAction | null | undefined): void => {
@@ -705,6 +728,12 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     const downloadReducerFn = downloadReducers[action.type];
     if (downloadReducerFn !== undefined) {
       state.persistent.downloads = downloadReducerFn(state.persistent.downloads, action.payload);
+    }
+    for (const binding of extraReducers) {
+      const reduce = binding.spec.reducers[action.type];
+      if (reduce !== undefined) {
+        binding.write(state, reduce(binding.read(state), action.payload));
+      }
     }
   };
 
@@ -794,6 +823,30 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
 }
 
 /**
+ * A fake api seeded with an active profile on a game (active + last-active set in state) and the
+ * game's installed mods: the shared base the game-scoped domain harnesses build on.
+ */
+export function makeGameHarness(
+  opts: IGameHarnessOpts = {},
+  extraReducers: IHarnessReducerBinding[] = [],
+): IGameHarness {
+  const gameId = opts.gameId ?? "skyrimse";
+  const profileId = opts.profileId ?? "profile-1";
+  const base = makeApiHarness(
+    {
+      profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
+      mods: { [gameId]: opts.mods ?? {} },
+    },
+    extraReducers,
+  );
+  base.setState((draft) => {
+    draft.settings.profiles.activeProfileId = profileId;
+    draft.settings.profiles.lastActiveProfile = { [gameId]: profileId };
+  });
+  return { ...base, gameId, profileId };
+}
+
+/**
  * A file-based load order harness: a fake api seeded with an active profile and the game's mods,
  * plus an UpdateSet constructed against it. UpdateSet is injected so builders.ts stays free of the
  * renderer view layer, mirroring makeDriverHarness.
@@ -802,18 +855,9 @@ export function makeFbloHarness(
   UpdateSetCtor: new (api: IExtensionApi, isFBLO: (gameId: string) => boolean) => UpdateSet,
   opts: IFbloHarnessOpts = {},
 ): IFbloHarness {
-  const gameId = opts.gameId ?? "skyrimse";
-  const profileId = opts.profileId ?? "profile-1";
-  const base = makeApiHarness({
-    profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
-    mods: { [gameId]: opts.mods ?? {} },
-  });
-  base.setState((draft) => {
-    draft.settings.profiles.activeProfileId = profileId;
-    draft.settings.profiles.lastActiveProfile = { [gameId]: profileId };
-  });
+  const base = makeGameHarness(opts);
   const updateSet = new UpdateSetCtor(base.api, opts.isFBLO ?? (() => true));
-  return { ...base, updateSet, gameId, profileId };
+  return { ...base, updateSet };
 }
 
 /**

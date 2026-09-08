@@ -422,9 +422,6 @@ catalogs:
     '@types/react-datepicker':
       specifier: 2.11.1
       version: 2.11.1
-    '@types/react-faux-dom':
-      specifier: 4.1.8
-      version: 4.1.8
     '@types/react-redux':
       specifier: 7.1.34
       version: 7.1.34
@@ -917,9 +914,6 @@ catalogs:
     turbowalk:
       specifier: github:Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       version: 3.1.1
-    typed-binary:
-      specifier: 4.3.3
-      version: 4.3.3
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -1695,136 +1689,6 @@ importers:
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
-
-  extensions/gamebryo-plugin-management:
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/js-yaml':
-        specifier: 'catalog:'
-        version: 4.0.9
-      '@types/react':
-        specifier: '18'
-        version: 18.3.31
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/react-dom':
-        specifier: '18'
-        version: 18.3.7(@types/react@18.3.31)
-      '@types/react-faux-dom':
-        specifier: 'catalog:'
-        version: 4.1.8
-      '@types/react-redux':
-        specifier: 'catalog:'
-        version: 7.1.34
-      '@types/react-router':
-        specifier: 'catalog:'
-        version: 2.0.61
-      '@types/react-select':
-        specifier: 'catalog:'
-        version: 1.3.6
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      '@types/redux-thunk':
-        specifier: 'catalog:'
-        version: 2.1.0(redux@4.2.1)
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      cytoscape:
-        specifier: 'catalog:'
-        version: 3.33.1
-      cytoscape-cose-bilkent:
-        specifier: 'catalog:'
-        version: 4.1.0(cytoscape@3.33.1)
-      cytoscape-edgehandles:
-        specifier: 'catalog:'
-        version: 3.6.0(cytoscape@3.33.1)
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
-      electron:
-        specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
-      exe-version:
-        specifier: workspace:*
-        version: link:../../packages/exe-version
-      i18next:
-        specifier: 'catalog:'
-        version: 21.10.0
-      immutability-helper:
-        specifier: 'catalog:'
-        version: 3.1.1
-      js-yaml:
-        specifier: 'catalog:'
-        version: 4.1.1
-      json-loader:
-        specifier: 'catalog:'
-        version: 0.5.7
-      lodash:
-        specifier: 'catalog:'
-        version: 4.17.23
-      markdown-ast:
-        specifier: 'catalog:'
-        version: 0.2.1
-      memoize-one:
-        specifier: 'catalog:'
-        version: 5.2.1
-      p-limit:
-        specifier: 'catalog:'
-        version: 7.3.0
-      prop-types:
-        specifier: 'catalog:'
-        version: 15.8.1
-      react:
-        specifier: 'catalog:'
-        version: 18.3.1
-      react-dnd:
-        specifier: 14.0.5
-        version: 14.0.5(@types/hoist-non-react-statics@3.3.7)(@types/node@24.12.2)(@types/react@18.3.31)(react@18.3.1)
-      react-dnd-html5-backend:
-        specifier: 'catalog:'
-        version: 14.1.0
-      react-dom:
-        specifier: 'catalog:'
-        version: 18.3.1(react@18.3.1)
-      react-i18next:
-        specifier: 'catalog:'
-        version: 11.18.6(i18next@21.10.0)(react-dom@18.3.1)(react@18.3.1)
-      react-markdown:
-        specifier: 'catalog:'
-        version: 6.0.3(@types/react@18.3.31)(react@18.3.1)(supports-color@10.2.2)
-      react-select:
-        specifier: 'catalog:'
-        version: 1.3.0(react-dom@18.3.1)(react@18.3.1)
-      redux:
-        specifier: 'catalog:'
-        version: 4.2.1
-      redux-act:
-        specifier: 'catalog:'
-        version: 1.8.0
-      redux-thunk:
-        specifier: 'catalog:'
-        version: 2.4.2(redux@4.2.1)
-      reselect:
-        specifier: 'catalog:'
-        version: 4.1.8
-      shortid:
-        specifier: 'catalog:'
-        version: 2.2.17
-      typed-binary:
-        specifier: 'catalog:'
-        version: 4.3.3
-    optionalDependencies:
-      loot:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5
 
   extensions/gamebryo-savegame-management:
     dependencies:
@@ -4234,6 +4098,15 @@ importers:
       crc-32:
         specifier: 'catalog:'
         version: 1.2.2
+      cytoscape:
+        specifier: 'catalog:'
+        version: 3.33.1
+      cytoscape-cose-bilkent:
+        specifier: 'catalog:'
+        version: 4.1.0(cytoscape@3.33.1)
+      cytoscape-edgehandles:
+        specifier: 'catalog:'
+        version: 3.6.0(cytoscape@3.33.1)
       d3:
         specifier: 'catalog:'
         version: 5.16.0
@@ -4312,6 +4185,9 @@ importers:
       is-admin:
         specifier: 'catalog:'
         version: 3.0.0
+      js-yaml:
+        specifier: 'catalog:'
+        version: 4.1.1
       json-socket:
         specifier: 'catalog:'
         version: https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
@@ -4330,6 +4206,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      markdown-ast:
+        specifier: 'catalog:'
+        version: 0.2.1
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -4354,6 +4233,9 @@ importers:
       openapi-fetch:
         specifier: 'catalog:'
         version: 0.17.0
+      p-limit:
+        specifier: 'catalog:'
+        version: 7.3.0
       p-queue:
         specifier: 'catalog:'
         version: 9.3.0
@@ -4767,6 +4649,9 @@ importers:
       '@types/graphlib':
         specifier: 'catalog:'
         version: 2.1.12
+      '@types/js-yaml':
+        specifier: 'catalog:'
+        version: 4.0.9
       '@types/json-socket':
         specifier: 'catalog:'
         version: 0.1.21
@@ -4896,6 +4781,15 @@ importers:
       csstype:
         specifier: 'catalog:'
         version: 3.2.3
+      cytoscape:
+        specifier: 'catalog:'
+        version: 3.33.1
+      cytoscape-cose-bilkent:
+        specifier: 'catalog:'
+        version: 4.1.0(cytoscape@3.33.1)
+      cytoscape-edgehandles:
+        specifier: 'catalog:'
+        version: 3.6.0(cytoscape@3.33.1)
       d3:
         specifier: 'catalog:'
         version: 5.16.0
@@ -4971,6 +4865,9 @@ importers:
       is-admin:
         specifier: 'catalog:'
         version: 3.0.0
+      js-yaml:
+        specifier: 'catalog:'
+        version: 4.1.1
       json-loader:
         specifier: 'catalog:'
         version: 0.5.7
@@ -4983,6 +4880,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      markdown-ast:
+        specifier: 'catalog:'
+        version: 0.2.1
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -5004,6 +4904,9 @@ importers:
       numeral:
         specifier: 'catalog:'
         version: 2.0.6
+      p-limit:
+        specifier: 'catalog:'
+        version: 7.3.0
       p-queue:
         specifier: 'catalog:'
         version: 9.3.0
@@ -5157,6 +5060,10 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+    optionalDependencies:
+      loot:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5
 
   src/shared:
     dependencies:
@@ -7793,9 +7700,6 @@ packages:
     resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
     peerDependencies:
       '@types/react': '18'
-
-  '@types/react-faux-dom@4.1.8':
-    resolution: {integrity: sha512-jP9uLEjIaqXptKrUckGm5JKSNMpiHzFLbO0Bb06WSYOOvhj6EsEFc2iLu3dNyYT1oKwyLIMCCsyrjrbxC+C7Qw==}
 
   '@types/react-redux@7.1.34':
     resolution: {integrity: sha512-GdFaVjEbYv4Fthm2ZLvj1VSCedV7TqE5y1kNwnjSdBOTXuRSgowux6J8TAct15T3CKBr63UMk+2CO7ilRhyrAQ==}
@@ -12565,9 +12469,6 @@ packages:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
     engines: {node: '>= 0.6'}
 
-  typed-binary@4.3.3:
-    resolution: {integrity: sha512-W2hLsSzt3k/tg38gDE4Fn/QiwcoqGuUHBc2cb3mXuH7KcYxe/GM57vzW14s2/bawB4R5knGgGq8Xb57vsaJ4Sg==}
-
   typed-emitter@1.4.0:
     resolution: {integrity: sha512-weBmoo3HhpKGgLBOYwe8EB31CzDFuaK7CCL+axXhUYhn4jo6DSkHnbefboCF5i4DQ2aMFe0C/FdTWcPdObgHyg==}
 
@@ -15718,10 +15619,6 @@ snapshots:
       popper.js: 1.16.1
 
   '@types/react-dom@18.3.7(@types/react@18.3.31)':
-    dependencies:
-      '@types/react': 18.3.31
-
-  '@types/react-faux-dom@4.1.8':
     dependencies:
       '@types/react': 18.3.31
 
@@ -20767,8 +20664,6 @@ snapshots:
     dependencies:
       media-typer: 0.3.0
       mime-types: 2.1.35
-
-  typed-binary@4.3.3: {}
 
   typed-emitter@1.4.0: {}
 

@@ -12,6 +12,7 @@ import type { ICollectionMod } from "../extensions/collections/types/ICollection
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type { IStateWithGamebryo } from "../extensions/gamebryo_plugin_management/types/IStateWithGamebryo";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type InstallContext from "../extensions/mod_management/InstallContext";
@@ -80,23 +81,38 @@ export interface IDriverHarness extends IApiHarness {
   driver: InstallDriver;
 }
 
-/** What a file-based load order test arranges. */
-export interface IFbloHarnessOpts {
+/** What a game-scoped harness arranges: an active profile on a game plus its installed mods. */
+export interface IGameHarnessOpts {
   // the managed game (defaults to skyrimse); set active + last-active in state
   gameId?: string;
   // the active profile id (defaults to profile-1)
   profileId?: string;
   // the game's installed mods, keyed by modId (state.persistent.mods[gameId])
   mods?: Record<string, IMod>;
+}
+
+export interface IGameHarness extends IApiHarness {
+  gameId: string;
+  profileId: string;
+}
+
+/** What a file-based load order test arranges. */
+export interface IFbloHarnessOpts extends IGameHarnessOpts {
   // whether a game uses FBLO, as UpdateSet asks (defaults to always true)
   isFBLO?: (gameId: string) => boolean;
 }
 
-export interface IFbloHarness extends IApiHarness {
+export interface IFbloHarness extends IGameHarness {
   // an UpdateSet constructed against the fake api
   updateSet: UpdateSet;
-  gameId: string;
-  profileId: string;
+}
+
+/** What a gamebryo plugin-management test arranges. */
+export type IGamebryoHarnessOpts = IGameHarnessOpts;
+
+export interface IGamebryoHarness extends IGameHarness {
+  // read the live fake state including the gamebryo hives
+  getGamebryoState: () => IStateWithGamebryo;
 }
 
 // What a download-adapter test arranges: the single seeded download's fields, an optional stored

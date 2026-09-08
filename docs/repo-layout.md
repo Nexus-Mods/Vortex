@@ -30,8 +30,9 @@ Examples worth reading as reference:
 - `src/renderer/src/extensions/mod_management/` - Installation, deployment,
   phased collection installs
 - `src/renderer/src/extensions/collections/` - Collections support
+- `src/renderer/src/extensions/gamebryo_plugin_management/` - Bethesda plugin
+  management
 - `extensions/mod-dependency-manager/` - Mod dependency handling
-- `extensions/gamebryo-plugin-management/` - Bethesda plugin management
 
 ## Packages
 
