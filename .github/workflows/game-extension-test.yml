@@ -55,10 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/setup@v2
-        with:
-          cache: true
-          install: false
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Install dependencies
         run: |

@@ -77,10 +77,7 @@ runs:
       run: .\download-codesigntool.ps1
 
     - name: Install pnpm
-      uses: pnpm/setup@v2
-      with:
-        cache: true
-        install: false
+      uses: ./.github/actions/setup-pnpm
 
     - name: Bump versions
       shell: pwsh

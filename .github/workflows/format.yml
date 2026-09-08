@@ -17,10 +17,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/setup@v2
-        with:
-          cache: true
-          install: false
+      - uses: ./.github/actions/setup-pnpm
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
