@@ -1,6 +1,13 @@
 import { assert, describe, expect, it } from "vitest";
 
-import { CycleError, NotFound, ProcessCanceled, SetupError, UserCanceled } from "../types/errors";
+import {
+  CycleError,
+  HTTPError,
+  NotFound,
+  ProcessCanceled,
+  SetupError,
+  UserCanceled,
+} from "../types/errors";
 import { VortexError } from "./base";
 import {
   ORIGIN_REF_KEY,
@@ -281,6 +288,15 @@ describe("class reconstruction", () => {
     );
     expect(roundTrip(new UserCanceled(true))).toHaveProperty("skipped", true);
     expect(roundTrip(new CycleError([["a", "b"]]))).toHaveProperty("cycles", [["a", "b"]]);
+  });
+
+  it("revives an HTTPError with its status code and url", () => {
+    const wire = roundTrip(new HTTPError(520, "Request Failed", "https://api/download_link"));
+
+    expect(wire).toBeInstanceOf(HTTPError);
+    expect(wire).toHaveProperty("statusCode", 520);
+    expect(wire).toHaveProperty("url", "https://api/download_link");
+    expect(wire.data).toMatchObject({ kind: "http:bad-status", statusCode: 520 });
   });
 
   it("keeps the wire's message rather than the one the constructor synthesizes", () => {

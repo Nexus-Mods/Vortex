@@ -171,6 +171,29 @@ describe("parseError", () => {
         expect(result.isTransient).toBe(isTransient);
       });
     });
+
+    describe("code without errno/syscall (socket hang up, TLS disconnect)", () => {
+      const socketHangUp = () => Object.assign(new Error("socket hang up"), { code: "ECONNRESET" });
+
+      it("with URL -> http:generic", () => {
+        const result = parseError(socketHangUp(), { url });
+        assert(result.data.kind === "http:generic");
+        expect(result.data.url).toBe(url);
+        expect(result.data.originalCode).toBe("ECONNRESET");
+      });
+
+      it("without URL -> os:generic, keeping the message", () => {
+        const result = parseError(socketHangUp());
+        assert(result.data.kind === "os:generic");
+        expect(result.data.originalCode).toBe("ECONNRESET");
+        expect(result.message).toBe("socket hang up");
+      });
+
+      it("a non-network code is still unknown", () => {
+        const result = parseError(Object.assign(new Error("boom"), { code: "ERR_SOMETHING" }));
+        assert(result.data.kind === "unknown");
+      });
+    });
   });
 });
 

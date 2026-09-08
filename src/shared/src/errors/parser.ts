@@ -1,5 +1,5 @@
 import { z } from "../zodJitless";
-import { VortexError } from "./base";
+import { type OsErrorData, VortexError } from "./base";
 
 /**
  * Tries to parse the input as an error.
@@ -56,7 +56,11 @@ function parseNodeSystemError(
 ): { message: string; data: VortexError["data"]; isTransient?: boolean } | undefined {
   const data = parseNodeSystemErrorData(cause);
   if (!data) {
-    return undefined;
+    // "socket hang up" and TLS disconnects carry a POSIX code but no errno/syscall
+    const code = (cause as { code?: unknown }).code;
+    return typeof code === "string" && NETWORK_POSIX_CODES.has(code)
+      ? networkError(code, { originalCode: code }, cause.message, context)
+      : undefined;
   }
 
   const { code: originalCode, errno, syscall } = data;
@@ -133,20 +137,29 @@ function parseNodeSystemError(
       isTransient: true,
     };
   } else if (NETWORK_POSIX_CODES.has(originalCode)) {
-    const isTransient = originalCode === "ETIMEDOUT";
-
-    if (context?.url !== undefined) {
-      return {
-        message: `Network error (${originalCode}) for '${context.url}': ${message}`,
-        data: { kind: "http:generic", url: context.url, ...osData },
-        isTransient,
-      };
-    }
-
-    return { message, data: { kind: "os:generic", ...osData }, isTransient };
+    return networkError(originalCode, osData, message, context);
   }
 
   return { message, data: { kind: "os:generic", ...osData } };
+}
+
+function networkError(
+  originalCode: string,
+  osData: Partial<OsErrorData>,
+  message: string,
+  context?: { path?: string; url?: string },
+): { message: string; data: VortexError["data"]; isTransient: boolean } {
+  const isTransient = originalCode === "ETIMEDOUT";
+
+  if (context?.url !== undefined) {
+    return {
+      message: `Network error (${originalCode}) for '${context.url}': ${message}`,
+      data: { kind: "http:generic", url: context.url, ...osData },
+      isTransient,
+    };
+  }
+
+  return { message, data: { kind: "os:generic", ...osData, originalCode }, isTransient };
 }
 
 export function parseNodeSystemErrorData(input: unknown): NodeSystemErrorData | undefined {

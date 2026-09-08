@@ -39,10 +39,19 @@ export function toNetworkError(endpoint: URL | ResolvedEndpoint, err: unknown): 
   }
 
   if (err instanceof RequestError) {
-    return parseError(err, { url: urlString }, ({ data, isTransient }) =>
+    const parsed = parseError(err, { url: urlString }, ({ data, isTransient }) =>
       data.kind === "http:generic" || data.kind === "os:generic"
         ? `Network request failed${isTransient ? " (transient)" : ""}`
         : undefined,
+    );
+    if (parsed.data.kind !== "unknown") return parsed;
+
+    // got's own codes (ERR_READING_RESPONSE_STREAM, ...) have no POSIX mapping: the connection
+    // dropped mid-request, which is worth retrying
+    return new VortexError(
+      "Network request failed (transient)",
+      { kind: "http:generic", url: urlString, originalCode: err.code },
+      { cause: err, isTransient: true },
     );
   }
 

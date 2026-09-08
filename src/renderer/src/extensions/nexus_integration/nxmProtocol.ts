@@ -1,6 +1,6 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
+import { HTTPError as NexusHTTPError, NexusError, RateLimitError } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
@@ -536,6 +536,11 @@ export class NxmProtocol {
       const http = new HTTPError(error.statusCode, error.message, error.request);
       http.stack = error.stack;
       error = http;
+    } else if (error instanceof NexusHTTPError) {
+      const http = new HTTPError(error.statusCode, error.message, error.url);
+      // the api client already formats "HTTP (code) - message"
+      Object.assign(http, { message: error.message, stack: error.stack });
+      error = http;
     }
 
     // A 401 means the Nexus client could not authenticate the request and could not (or did not)
@@ -547,7 +552,12 @@ export class NxmProtocol {
     if (error instanceof HTTPError && error.statusCode === 401) {
       throw new ProcessCanceled("You are not logged in to Nexus Mods!");
     }
-    throw error;
+    // The error crosses IPC to the downloader, which only understands VortexError kinds; a raw
+    // socket failure from the api client would otherwise arrive as "Unknown error thrown".
+    const parsed = parseError(error, undefined, ({ data }) =>
+      data.kind === "os:generic" ? "Network request failed" : undefined,
+    );
+    throw parsed.data.kind === "unknown" ? error : parsed;
   }
 
   /** Hand an incoming link to the queued download that sent the user to fetch it. */
