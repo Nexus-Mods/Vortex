@@ -508,7 +508,6 @@ Production logs are in:
 **Projects:**
 
 - winapi-bindings
-- bsatk
 - loot
 - gamebryo-savegame
 

@@ -122,7 +122,6 @@ catalog:
   bluebird: 3.7.2
   bootstrap-sass: 3.4.3
   bs58: 4.0.1
-  bsatk: github:Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
   classnames: 2.5.1
   cli-table3: 0.6.5
   commander: 4.1.1
@@ -323,7 +322,6 @@ overrides:
 allowBuilds:
   "@nexusmods/fomod-installer-native": true
   "@parcel/watcher": true
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59: true
   core-js: true
   core-js-pure: false
   drivelist@https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd: true
