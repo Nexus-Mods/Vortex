@@ -1,9 +1,16 @@
 import * as path from "path";
 
-import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
-import Bluebird from "bluebird";
-
-import { IDataArchive, IGameData, IIncompatibleArchive } from "./types";
+import { log } from "../../logging";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
+import * as fs from "../../util/fs";
+import { getSafe } from "../../util/storeHelper";
+import { discoveryByGame } from "../gamemode_management/selectors";
+import { modsForGame } from "../mod_management/selectors";
+import { activeGameId } from "../profile_management/selectors";
+import type { IDataArchive, IGameData, IIncompatibleArchive } from "./types/IArchiveCheck";
+import type { IPluginCombined } from "./types/IPlugins";
+import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 
 const archiveData: IGameData[] = [
   {
@@ -68,38 +75,27 @@ const archiveData: IGameData[] = [
   },
 ];
 
-function runTest(context: types.IExtensionContext) {
-  const state = context.api.getState();
-  const plugInfo = util.getSafe(state, ["session", "plugins", "pluginInfo"], {});
-  return checkForErrors(context.api, plugInfo) as any;
+/** health test of the folded gamebryo-archive-check extension */
+export async function testIncompatibleArchives(api: IExtensionApi): Promise<ITestResult> {
+  const plugInfo = api.getState<IStateWithGamebryo>().session.plugins?.pluginInfo ?? {};
+  return checkForErrors(api, plugInfo);
 }
 
-function main(context: types.IExtensionContext) {
-  context.requireExtension("gamebryo-plugin-management");
-  context.registerTest(
-    "incompatible-mod-archives",
-    "plugins-changed",
-    (): Bluebird<types.ITestResult> => runTest(context),
-  );
-
-  // context.registerTest('incompatible-mod-archives', 'loot-info-updated',
-  //   (): Bluebird<types.ITestResult> => runTest(context));
-
-  return true;
-}
-
-async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
+async function checkForErrors(
+  api: IExtensionApi,
+  pluginsObj: { [id: string]: IPluginCombined },
+): Promise<ITestResult> {
   // Check this is a game we want to run this check on.
-  const state = api.getState();
-  const activeGameId = selectors.activeGameId(state);
-  const gameData: IGameData = archiveData.find((g) => g.gameId === activeGameId);
+  const state = api.getState<IStateWithGamebryo>();
+  const gameId = activeGameId(state);
+  const gameData: IGameData = archiveData.find((g) => g.gameId === gameId);
   if (!gameData) {
-    return Bluebird.resolve(undefined);
+    return undefined;
   }
 
   // Get the plugins for the current game.
   if (!pluginsObj || !Object.keys(pluginsObj)) {
-    return Bluebird.resolve(undefined);
+    return undefined;
   }
 
   const plugins = Object.keys(pluginsObj)
@@ -108,19 +104,14 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
 
   // We want only enabled plugins that load archives, but aren't base game files.
   const archiveLoaders = plugins.filter(
-    (p) =>
-      !p.isNative && p.loadsArchive && util.getSafe(state, ["loadOrder", p.id, "enabled"], false),
+    (p) => !p.isNative && p.loadsArchive && getSafe(state, ["loadOrder", p.id, "enabled"], false),
   );
 
   // Get the list of mods and the data folder path.
-  const mods = util.getSafe(state, ["persistent", "mods", activeGameId], {});
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", activeGameId, "path"],
-    undefined,
-  );
+  const mods = modsForGame(state, gameId);
+  const discoveryPath = discoveryByGame(state, gameId)?.path;
 
-  const dataFolder = discovery ? path.join(discovery, "Data") : undefined;
+  const dataFolder = discoveryPath ? path.join(discoveryPath, "Data") : undefined;
 
   const normalize = (fileName: string) => {
     const noExt = path.basename(fileName, path.extname(fileName)).toLowerCase();
@@ -142,22 +133,20 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
 
     // If there's nothing to check, we can exit here.
     if (!archivesToCheck.length) {
-      return Bluebird.resolve(undefined);
+      return undefined;
     }
 
     let pos = 0;
 
     // Updatable notification.
-    const progress = (archiveName) => {
-      api.store.dispatch(
-        actions.addNotification({
-          id: checkNotifId,
-          progress: (pos * 100) / archivesToCheck.length,
-          title: "Checking archives",
-          message: archiveName,
-          type: "activity",
-        }),
-      );
+    const progress = (archiveName: string) => {
+      api.sendNotification({
+        id: checkNotifId,
+        progress: (pos * 100) / archivesToCheck.length,
+        title: "Checking archives",
+        message: archiveName,
+        type: "activity",
+      });
       ++pos;
     };
 
@@ -188,19 +177,19 @@ async function checkForErrors(api: types.IExtensionApi, pluginsObj: any) {
 
     api.dismissNotification(checkNotifId);
 
-    return issues?.length > 0 ? genTestResult(api, issues, gameData) : Bluebird.resolve(undefined);
+    return issues?.length > 0 ? genTestResult(api, issues, gameData) : undefined;
   } catch (err) {
     api.dismissNotification(checkNotifId);
     api.showErrorNotification("Error checking for archive errors", err);
-    return Bluebird.resolve(undefined);
+    return undefined;
   }
 }
 
 function genTestResult(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   issues: IIncompatibleArchive[],
   gameData: IGameData,
-): Bluebird<types.ITestResult> {
+): ITestResult {
   const t = api.translate;
   const thisGame = gameData.gameName;
   const groupedErrors = issues.reduce(
@@ -246,7 +235,7 @@ function genTestResult(
     );
   });
 
-  return Bluebird.resolve({
+  return {
     description: {
       short: "Incompatible mod archive(s)",
       long:
@@ -269,8 +258,8 @@ function genTestResult(
           },
         ),
     },
-    severity: "error" as types.ProblemSeverity,
-  });
+    severity: "error" as ProblemSeverity,
+  };
 }
 
 async function streamArchiveVersion(filePath: string): Promise<any> {
@@ -278,7 +267,7 @@ async function streamArchiveVersion(filePath: string): Promise<any> {
   const stream = fs.createReadStream(filePath, { start: 0, end: 8 });
 
   return (
-    new Promise((resolve, reject) => {
+    new Promise((resolve) => {
       // Create a buffer to house those bytes.
       const data = Buffer.alloc(9);
       stream.on("data", (chunk) => {
@@ -286,7 +275,7 @@ async function streamArchiveVersion(filePath: string): Promise<any> {
         data.fill(chunk);
         // Resolve to the archive version number.
         const versionBytes = data.slice(4, 8);
-        const version = versionBytes.reduce((accum, entry) => (accum += entry), 0);
+        const version = versionBytes.reduce((accum, entry) => accum + entry, 0);
         resolve(version);
       });
 
@@ -296,5 +285,3 @@ async function streamArchiveVersion(filePath: string): Promise<any> {
       .finally(() => stream.destroy())
   );
 }
-
-export default main;

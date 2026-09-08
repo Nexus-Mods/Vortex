@@ -54,6 +54,7 @@ import {
 } from "./actions/plugins";
 import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
+import { testIncompatibleArchives } from "./archiveCheck";
 import LootInterface from "./autosort";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
@@ -735,6 +736,9 @@ function register(
   );
   context.registerTest("exceeded-plugin-limit", "plugins-changed", () =>
     testExceededPluginLimit(context.api, pluginInfoCache),
+  );
+  context.registerTest("incompatible-mod-archives", "plugins-changed", () =>
+    testIncompatibleArchives(context.api),
   );
   context.registerDialog("plugin-dependencies-connector", Connector);
   context.registerDialog("userlist-editor", UserlistEditor);

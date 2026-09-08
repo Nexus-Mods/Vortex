@@ -1,4 +1,5 @@
-import { types } from "@nexusmods/vortex-api";
+import type { IMod } from "../../mod_management/types/IMod";
+import type { IPluginCombined } from "./IPlugins";
 
 export interface IDataArchive {
   name: string;
@@ -9,8 +10,8 @@ export interface IIncompatibleArchive {
   name: string;
   version: string;
   validVersion: string;
-  plugin: any; // IPluginCombined isn't exported and I think I prefer it that way.
-  mod: types.IMod;
+  plugin: IPluginCombined;
+  mod: IMod;
 }
 
 export interface IGameData {
