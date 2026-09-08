@@ -7,7 +7,7 @@ import type { IHistoryEvent, IHistoryStack, Revertability } from "../../history_
 import { activeGameId, activeProfile } from "../../profile_management/selectors";
 import { setPluginEnabled } from "../actions/loadOrder";
 import { GHOST_EXT } from "../statics";
-import type { ILoadOrder } from "../types/ILoadOrder";
+import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 export type EventTypes = "plugin-enabled" | "plugin-disabled" | "plugins-sorted";
@@ -188,7 +188,7 @@ class PluginHistory implements IHistoryStack {
     const addToHistory: (stack: string, entry: IHistoryEvent) => void = this.mApi.ext.addToHistory;
 
     interface IPluginMap {
-      [pluginId: string]: ILoadOrder;
+      [pluginId: string]: IPluginLoadOrderEntry;
     }
 
     this.mApi.onStateChange(["loadOrder"], (prev: IPluginMap, current: IPluginMap) => {

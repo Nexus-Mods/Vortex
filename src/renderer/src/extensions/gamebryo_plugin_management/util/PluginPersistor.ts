@@ -8,7 +8,7 @@ import { log } from "../../../logging";
 import type { IErrorOptions, IPersistor } from "../../../types/IExtensionContext";
 import * as fs from "../../../util/fs";
 import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
-import type { ILoadOrder } from "../types/ILoadOrder";
+import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import {
   gameDataPath,
   gameSupported,
@@ -21,7 +21,7 @@ import toPluginId from "../util/toPluginId";
 export type PluginFormat = "original" | "fallout4";
 
 interface IPluginMap {
-  [id: string]: ILoadOrder;
+  [id: string]: IPluginLoadOrderEntry;
 }
 
 const retryCount = 3;
@@ -167,7 +167,7 @@ class PluginPersistor implements IPersistor {
   public syncFromState(
     gameId: string,
     // keyed by plugin id (toPluginId form)
-    loadOrder: Record<string, ILoadOrder>,
+    loadOrder: Record<string, IPluginLoadOrderEntry>,
   ): Bluebird<void> {
     return this.enqueue(() => {
       try {

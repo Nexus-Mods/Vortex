@@ -1,8 +1,8 @@
 import type { Message, PluginCleaningData, Tag } from "loot";
 
 import type { IDialog } from "../views/UserlistEditor";
-import type { ILoadOrder } from "./ILoadOrder";
 import type { ILootReference } from "./ILOOTList";
+import type { IPluginLoadOrderEntry } from "./IPluginLoadOrderEntry";
 
 /**
  * generic information about a plugin
@@ -102,7 +102,7 @@ export interface IPluginsLoot {
 }
 
 export type IPluginCombined = IPlugin &
-  ILoadOrder &
+  IPluginLoadOrderEntry &
   IPluginParsed &
   IPluginLoot &
   IPluginUserlist & {

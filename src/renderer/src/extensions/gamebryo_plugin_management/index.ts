@@ -65,8 +65,8 @@ import userlistReducer from "./reducers/userlist";
 import userlistEditReducer from "./reducers/userlistEdit";
 import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
-import { ILoadOrder } from "./types/ILoadOrder";
 import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
+import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
 import { IPlugin, IPluginCombined, IPlugins } from "./types/IPlugins";
 import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
@@ -1317,7 +1317,7 @@ async function testMissingMasters(
 
   const pluginList = state.session.plugins.pluginList ?? {};
   const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
   );
@@ -1424,7 +1424,7 @@ async function testBlueprintMasters(
 
   const pluginList = state.session.plugins.pluginList ?? {};
   const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
   );
@@ -1542,7 +1542,7 @@ function testRulesUnfulfilled(api: IExtensionApi): Bluebird<ITestResult> {
   const discovery = discoveryByGame(state, gameMode);
 
   const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) =>
       pluginInfo[plugin] !== undefined && (loadOrder[plugin].enabled || natives.has(plugin)),

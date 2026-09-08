@@ -6,8 +6,7 @@ import type { ITableAttribute } from "../../types/ITableAttribute";
 import Debouncer from "../../util/Debouncer";
 import { getSafe } from "../../util/storeHelper";
 import { activeGameId } from "../profile_management/selectors";
-import { NAMESPACE } from "./statics";
-import type { ILoadOrder } from "./types/ILoadOrder";
+import type { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
 import type { IPluginCombined } from "./types/IPlugins";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import LockIndex from "./views/LockIndex";
@@ -44,7 +43,7 @@ export function genLockIndexAttribute(api: IExtensionApi): ITableAttribute<IPlug
 
 function genApplyIndexlock(api: IExtensionApi) {
   let updating: boolean = false;
-  return (newLoadOrder: { [key: string]: ILoadOrder }) => {
+  return (newLoadOrder: { [key: string]: IPluginLoadOrderEntry }) => {
     if (updating) {
       return;
     }
@@ -100,7 +99,7 @@ function genApplyIndexlock(api: IExtensionApi) {
     const isNative = (id: string) =>
       getSafe(state.session, ["plugins", "pluginList", id, "isNative"], false);
 
-    const isEnabled = (id: string, entry: ILoadOrder) => entry.enabled || isNative(id);
+    const isEnabled = (id: string, entry: IPluginLoadOrderEntry) => entry.enabled || isNative(id);
 
     // this inserts all fixed-index plugins in the middle of the list
     // tslint:disable-next-line:prefer-for-of
