@@ -538,8 +538,9 @@ export class NxmProtocol {
       error = http;
     } else if (error instanceof NexusHTTPError) {
       const http = new HTTPError(error.statusCode, error.message, error.url);
-      // the api client already formats "HTTP (code) - message"
-      Object.assign(http, { message: error.message, stack: error.stack });
+      // the api client's message is already "HTTP (code) - message"
+      http.message = error.message;
+      http.stack = error.stack;
       error = http;
     }
 
@@ -552,12 +553,7 @@ export class NxmProtocol {
     if (error instanceof HTTPError && error.statusCode === 401) {
       throw new ProcessCanceled("You are not logged in to Nexus Mods!");
     }
-    // The error crosses IPC to the downloader, which only understands VortexError kinds; a raw
-    // socket failure from the api client would otherwise arrive as "Unknown error thrown".
-    const parsed = parseError(error, undefined, ({ data }) =>
-      data.kind === "os:generic" ? "Network request failed" : undefined,
-    );
-    throw parsed.data.kind === "unknown" ? error : parsed;
+    throw error;
   }
 
   /** Hand an incoming link to the queued download that sent the user to fetch it. */

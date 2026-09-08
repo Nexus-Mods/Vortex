@@ -169,6 +169,12 @@ describe("toWireError (boundary entry point)", () => {
     expect(wire.data[ORIGIN_REF_KEY]).toBeUndefined();
   });
 
+  it("classifies a raw socket hang up rather than sending it as unknown", () => {
+    const wire = toWireError(Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }));
+    expect(wire.data).toMatchObject({ kind: "os:generic", originalCode: "ECONNRESET" });
+    expect(wire.message).toBe("socket hang up");
+  });
+
   it("does not tag a ref token when no tracker is passed", () => {
     const wire = toWireError(new VortexError("hi", { kind: "test:tag", name: "x" }));
     expect(wire.data[ORIGIN_REF_KEY]).toBeUndefined();

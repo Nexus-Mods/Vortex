@@ -1,5 +1,5 @@
 import { z } from "../zodJitless";
-import { type OsErrorData, VortexError } from "./base";
+import { VortexError, type VortexErrorKindMap } from "./base";
 
 /**
  * Tries to parse the input as an error.
@@ -56,10 +56,13 @@ function parseNodeSystemError(
 ): { message: string; data: VortexError["data"]; isTransient?: boolean } | undefined {
   const data = parseNodeSystemErrorData(cause);
   if (!data) {
-    // "socket hang up" and TLS disconnects carry a POSIX code but no errno/syscall
+    // Node reports a peer closing the socket with a plain Error carrying only `code: "ECONNRESET"`,
+    // no errno or syscall: "socket hang up" from the http client and the TLS wrap's onerror.
+    // https://github.com/nodejs/node/blob/51c992f99bc0ec6dc1cafdc9f00defa28eead3ea/lib/internal/errors.js#L847-L856
+    // https://github.com/nodejs/node/blob/51c992f99bc0ec6dc1cafdc9f00defa28eead3ea/lib/internal/tls/wrap.js#L1361-L1366
     const code = "code" in cause ? cause.code : undefined;
-    return typeof code === "string" && NETWORK_POSIX_CODES.has(code)
-      ? networkError(code, { originalCode: code }, cause.message, context)
+    return code === "ECONNRESET"
+      ? networkError({ originalCode: code }, cause.message, context)
       : undefined;
   }
 
@@ -137,29 +140,28 @@ function parseNodeSystemError(
       isTransient: true,
     };
   } else if (NETWORK_POSIX_CODES.has(originalCode)) {
-    return networkError(originalCode, osData, message, context);
+    return networkError(osData, message, context);
   }
 
   return { message, data: { kind: "os:generic", ...osData } };
 }
 
 function networkError(
-  originalCode: string,
-  osData: Partial<OsErrorData>,
+  osData: VortexErrorKindMap["os:generic"],
   message: string,
   context?: { path?: string; url?: string },
 ): { message: string; data: VortexError["data"]; isTransient: boolean } {
-  const isTransient = originalCode === "ETIMEDOUT";
+  const isTransient = osData.originalCode === "ETIMEDOUT";
 
   if (context?.url !== undefined) {
     return {
-      message: `Network error (${originalCode}) for '${context.url}': ${message}`,
+      message: `Network error (${osData.originalCode}) for '${context.url}': ${message}`,
       data: { kind: "http:generic", url: context.url, ...osData },
       isTransient,
     };
   }
 
-  return { message, data: { kind: "os:generic", ...osData, originalCode }, isTransient };
+  return { message, data: { kind: "os:generic", ...osData }, isTransient };
 }
 
 export function parseNodeSystemErrorData(input: unknown): NodeSystemErrorData | undefined {

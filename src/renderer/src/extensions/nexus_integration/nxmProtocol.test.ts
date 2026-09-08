@@ -1,5 +1,4 @@
 import { HTTPError as NexusHTTPError, NexusError, RateLimitError } from "@nexusmods/nexus-api";
-import { VortexError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
@@ -240,24 +239,6 @@ describe("nxm protocol resolver", () => {
       expect((err as HTTPError).statusCode).toBe(520);
       expect((err as HTTPError).message).toBe("HTTP (520) - Request Failed");
       expect((err as HTTPError).data).toMatchObject({ kind: "http:bad-status", statusCode: 520 });
-    });
-
-    test("classifies a dropped connection instead of passing the raw socket error on", async ({
-      makeNxm,
-    }) => {
-      const { harness, resolve } = makeNxm();
-      harness.getDownloadURLs.mockRejectedValue(
-        Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }),
-      );
-
-      const err = await resolve(MOD_URL).catch((caught: unknown) => caught);
-
-      expect(err).toBeInstanceOf(VortexError);
-      expect((err as VortexError).data).toMatchObject({
-        kind: "os:generic",
-        originalCode: "ECONNRESET",
-      });
-      expect((err as VortexError).message).toBe("Network request failed");
     });
 
     test("reports a 401 as a log-in problem rather than a raw http error", async ({ makeNxm }) => {

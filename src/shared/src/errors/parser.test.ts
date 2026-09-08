@@ -177,7 +177,7 @@ describe("parseError", () => {
       });
     });
 
-    describe("code without errno/syscall (socket hang up, TLS disconnect)", () => {
+    describe("ECONNRESET without errno/syscall (socket hang up, TLS disconnect)", () => {
       it("with URL -> http:generic", () => {
         const result = parseError(socketHangUp(), { url });
         assert(result.data.kind === "http:generic");
@@ -192,10 +192,13 @@ describe("parseError", () => {
         expect(result.message).toBe("socket hang up");
       });
 
-      it("a non-network code is still unknown", () => {
-        const result = parseError(Object.assign(new Error("boom"), { code: "ERR_SOMETHING" }));
-        assert(result.data.kind === "unknown");
-      });
+      test.for([{ code: "ERR_SOMETHING" }, { code: "ETIMEDOUT" }])(
+        "any other code without errno/syscall ($code) is still unknown",
+        ({ code }) => {
+          const result = parseError(Object.assign(new Error("boom"), { code }));
+          assert(result.data.kind === "unknown");
+        },
+      );
     });
   });
 });

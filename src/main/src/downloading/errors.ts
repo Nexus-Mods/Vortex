@@ -46,12 +46,12 @@ export function toNetworkError(endpoint: URL | ResolvedEndpoint, err: unknown): 
     );
     if (parsed.data.kind !== "unknown") return parsed;
 
-    // got's own codes (ERR_READING_RESPONSE_STREAM, ...) have no POSIX mapping: the connection
-    // dropped mid-request, which is worth retrying
+    // got's own codes (ERR_READING_RESPONSE_STREAM, ...) have no POSIX mapping; the retry
+    // strategy decides by `originalCode`
     return new VortexError(
-      "Network request failed (transient)",
+      "Network request failed",
       { kind: "http:generic", url: urlString, originalCode: err.code },
-      { cause: err, isTransient: true },
+      { cause: err },
     );
   }
 
