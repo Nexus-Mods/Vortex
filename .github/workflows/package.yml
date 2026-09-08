@@ -140,7 +140,7 @@ jobs:
     name: Upload Installer to R2
     needs: build
     if: ${{ inputs.upload-to-r2 }}
-    runs-on: platform-cluster
+    runs-on: platform-cluster-public
     permissions:
       contents: read
     steps:
