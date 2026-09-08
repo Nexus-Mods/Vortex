@@ -67,6 +67,7 @@ export interface VortexErrorKindMap {
   "fs:not-a-directory": FileSystemErrorData;
   "fs:not-a-file": FileSystemErrorData;
   "fs:not-found": FileSystemErrorData;
+  "fs:read-only": FileSystemErrorData;
 
   // HTTP.
   "http:bad-status": { url: string; statusCode: number };
@@ -152,9 +153,20 @@ export type VortexErrorData = {
  *
  * @public
  */
-export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extends Error {
+/**
+ * Introduces the wrapped error's stack in a {@link VortexError}'s stack. Also
+ * what `computeErrorFingerprint` splits on to find the throw site.
+ *
+ * @public
+ */
+export const CAUSE_SEPARATOR = "Caused by: ";
+
+/** How deep a cause chain is followed: by the stack walk here and by the wire form. */
+export const MAX_CAUSE_DEPTH = 5;
+
+export class VortexError extends Error {
   /** Error data keyed on the error kind. */
-  readonly data: { [P in K]: { kind: P } & VortexErrorKindMap[P] }[K];
+  readonly data: VortexErrorData;
 
   /**
    * Whether the root cause is transient (retrying may succeed without any
@@ -178,7 +190,7 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
    */
   constructor(
     message: string,
-    data: { [P in K]: { kind: P } & VortexErrorKindMap[P] }[K],
+    data: VortexErrorData,
     meta?: {
       isTransient?: boolean;
       cause?: unknown;
@@ -189,6 +201,19 @@ export class VortexError<out K extends VortexErrorKind = VortexErrorKind> extend
 
     this.data = data;
     this.isTransient = meta?.isTransient ?? false;
+
+    // Our own frames point at whoever classified the error; the wrapped error
+    // carries the real throw site. Keep both so the fingerprint and the log
+    // see the chain down to the throw site. V8 leaves a plain Error's `cause`
+    // out of its stack, so walk those; a VortexError's stack already has its chain.
+    let cause = meta?.cause;
+    for (let depth = 0; depth < MAX_CAUSE_DEPTH && cause instanceof Error; depth += 1) {
+      if (cause.stack !== undefined) {
+        this.stack = `${this.stack}\n${CAUSE_SEPARATOR}${cause.stack}`;
+      }
+      if (cause instanceof VortexError) break;
+      cause = cause.cause;
+    }
   }
 }
 

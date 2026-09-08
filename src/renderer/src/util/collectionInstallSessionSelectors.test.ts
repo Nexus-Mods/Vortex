@@ -25,6 +25,8 @@ import {
   getCollectionPhaseProgress,
   getCollectionStatusBreakdown,
   getFailedOptionalMods,
+  isCollectionPhaseComplete,
+  isCollectionPhaseSettledSuccessfully,
 } from "./collectionInstallSessionSelectors";
 
 interface Entry {
@@ -150,6 +152,41 @@ describe("getCollectionInstallProgress optional handling", () => {
       { ruleId: "o1", type: "recommends", status: "installed" },
     ]);
     expect(getCollectionInstallProgress(state)!.isComplete).toBe(false);
+  });
+});
+
+describe("isCollectionPhaseSettledSuccessfully", () => {
+  it("reports a phase whose required members all installed", () => {
+    const state = stateWith([
+      { ruleId: "r1", phase: 0, type: "requires", status: "installed" },
+      { ruleId: "r2", phase: 0, type: "requires", status: "installed" },
+    ]);
+    expect(isCollectionPhaseSettledSuccessfully(state, 0)).toBe(true);
+  });
+
+  it("reports a phase holding a failed required member as not settled", () => {
+    const state = stateWith([
+      { ruleId: "r1", phase: 0, type: "requires", status: "installed" },
+      { ruleId: "r2", phase: 0, type: "requires", status: "failed" },
+    ]);
+
+    expect(isCollectionPhaseSettledSuccessfully(state, 0)).toBe(false);
+    // the divergence the re-entry frontier needs: mid-install advancement counts the same failed
+    // member as terminal, so the walk moves on and the install still completes
+    expect(isCollectionPhaseComplete(state, 0)).toBe(true);
+  });
+
+  it("counts a member the user ignored as settled", () => {
+    const state = stateWith([
+      { ruleId: "r1", phase: 0, type: "requires", status: "installed" },
+      { ruleId: "r2", phase: 0, type: "requires", status: "ignored" },
+    ]);
+    expect(isCollectionPhaseSettledSuccessfully(state, 0)).toBe(true);
+  });
+
+  it("reports a phase of only optional members as settled", () => {
+    const state = stateWith([{ ruleId: "o1", phase: 0, type: "recommends", status: "pending" }]);
+    expect(isCollectionPhaseSettledSuccessfully(state, 0)).toBe(true);
   });
 });
 

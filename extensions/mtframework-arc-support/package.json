@@ -1,6 +1,6 @@
 {
   "name": "mtframework-arc-support",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Support for arc archives used in MT Framework (Capcom) games",
   "scripts": {
     "build": "node build.mjs && node download_arctool.js && pnpm extractInfo",

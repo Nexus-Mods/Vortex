@@ -3024,7 +3024,6 @@ class ExtensionManager {
   private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions: Record<string, () => unknown> = {
       about_dialog: () => require("./extensions/about_dialog/index.ts"),
-      adaptor_bridge: () => require("./extensions/adaptor_bridge/index.ts"),
       analytics: () => require("./extensions/analytics/index.ts"),
       browse_nexus: () => require("./extensions/browse_nexus/index.ts"),
       browser: () => require("./extensions/browser/index.ts"),

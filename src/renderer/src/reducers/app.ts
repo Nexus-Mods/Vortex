@@ -12,6 +12,8 @@ const defaultState: IApp = {
   warnedAdmin: 0,
   migrations: [],
   installType: "regular",
+  // main overwrites this at startup; false until then so nothing checks before we know
+  updaterActive: false,
 };
 
 // entries are created only by addExtension, so a write through a key naming
@@ -63,6 +65,7 @@ export const appReducer = actionsToReducerSpec(
     setInstanceId: (state, payload) => ({ ...state, instanceId: payload }),
     setWarnedAdmin: (state, payload) => ({ ...state, warnedAdmin: payload }),
     setInstallType: (state, payload) => ({ ...state, installType: payload }),
+    setUpdaterActive: (state, payload) => ({ ...state, updaterActive: payload }),
     completeMigration: (state, payload) => ({
       ...state,
       migrations: [...state.migrations, payload],

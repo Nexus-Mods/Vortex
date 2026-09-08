@@ -10,7 +10,7 @@ import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import { renderModReference } from "../../mod_management/util/modName";
-import { isDependencyRule } from "../../mod_management/util/testModReference";
+import { isDependencyRule, modReferenceTags } from "../../mod_management/util/testModReference";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 
 /**
@@ -70,10 +70,10 @@ function rowFromDownload(dlId: string, download: IDownload, rule: IModRule): Ite
 // its installed mod / download without the findModByRef/findDownloadByRef per-rule scan that
 // dominated render time on large collections.
 interface RowIndexes {
-  // installed mod by referenceTag, and (backup) by content hash
+  // installed mod by each reference tag it satisfies, and (backup) by content hash
   modByTag: Map<string, IMod>;
   modByMd5: Map<string, IMod>;
-  // download id by referenceTag
+  // download id by each reference tag the archive satisfies
   downloadIdByTag: Map<string, string>;
 }
 
@@ -111,8 +111,8 @@ function persistentRow(
     };
   }
 
-  // downloads are stamped with the rule's referenceTag at download time (and reconciled on a
-  // mismatch), so the tag is authoritative; only a tagless rule needs the scan.
+  // downloads carry a tag per rule they satisfy, so the tag index resolves the archive for every
+  // collection referencing it; only a tagless rule needs the scan.
   const dlId =
     tag !== undefined
       ? indexes.downloadIdByTag.get(tag)
@@ -176,17 +176,18 @@ export function buildCollectionItemRows(
 
   // Built once so each rule resolves its mod/download in O(1) instead of scanning every mod/download
   // (those per-rule scans dominated render time on large collections). Installed mods are keyed by
-  // referenceTag and by content hash (fileMD5); downloads by referenceTag. First entry wins on the
-  // (rare) duplicate, matching findModByRef's first-match.
+  // every reference tag they satisfy and by content hash (fileMD5); downloads by every reference
+  // tag. First entry wins on the (rare) duplicate, matching findModByRef's first-match.
   const indexes: RowIndexes = {
     modByTag: new Map<string, IMod>(),
     modByMd5: new Map<string, IMod>(),
     downloadIdByTag: new Map<string, string>(),
   };
   for (const mod of Object.values(mods)) {
-    const tag = mod.attributes?.referenceTag;
-    if (typeof tag === "string" && !indexes.modByTag.has(tag)) {
-      indexes.modByTag.set(tag, mod);
+    for (const tag of modReferenceTags(mod)) {
+      if (!indexes.modByTag.has(tag)) {
+        indexes.modByTag.set(tag, mod);
+      }
     }
     const md5 = mod.attributes?.fileMD5;
     if (typeof md5 === "string" && !indexes.modByMd5.has(md5)) {
@@ -194,9 +195,14 @@ export function buildCollectionItemRows(
     }
   }
   for (const [dlId, download] of Object.entries(downloads)) {
-    const tag = download.modInfo?.referenceTag;
-    if (typeof tag === "string" && !indexes.downloadIdByTag.has(tag)) {
-      indexes.downloadIdByTag.set(tag, dlId);
+    const { referenceTag, referenceTags } = download.modInfo ?? {};
+    if (typeof referenceTag === "string" && !indexes.downloadIdByTag.has(referenceTag)) {
+      indexes.downloadIdByTag.set(referenceTag, dlId);
+    }
+    for (const tag of referenceTags ?? []) {
+      if (!indexes.downloadIdByTag.has(tag)) {
+        indexes.downloadIdByTag.set(tag, dlId);
+      }
     }
   }
 

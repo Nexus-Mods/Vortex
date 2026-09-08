@@ -28,7 +28,8 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { AlreadyDownloaded, DownloadIsHTML } from "@vortex/shared/errors";
+import { VortexError } from "@vortex/shared";
+import { AlreadyDownloaded } from "@vortex/shared/errors";
 import BluebirdPromise from "bluebird";
 import type { TFunction } from "i18next";
 import jwt from "jsonwebtoken";
@@ -382,7 +383,12 @@ export function startDownload(
 
   if (["vortex", "site"].includes(url.gameId) && url.view) {
     api.events.emit("show-extension-page", url.modId);
-    return BluebirdPromise.reject(new DownloadIsHTML(nxmurl));
+    return BluebirdPromise.reject(
+      new VortexError("Server returned an HTML page instead of a file", {
+        kind: "download:is-html",
+        url: nxmurl,
+      }),
+    );
   }
 
   if (!["mod", "collection"].includes(url.type)) {

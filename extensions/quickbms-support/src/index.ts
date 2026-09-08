@@ -2,7 +2,6 @@ import path from "path";
 
 import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 
-import AttribDashlet from "./AttribDashlet";
 import {
   IAttachmentData,
   IListEntry,
@@ -17,11 +16,6 @@ const GAME_SUPPORT: string[] = [];
 const DEPRECATED_NOTIF_ID = "deprecated-qbms-call";
 
 let _GAMEMODE_SUPPORTED = false;
-
-function showAttrib(state: types.IState) {
-  const gameMode = selectors.activeGameId(state);
-  return GAME_SUPPORT.includes(gameMode);
-}
 
 function queryAttachment(data: IAttachmentData) {
   return fs
@@ -214,17 +208,6 @@ function raiseDeprecatedAPINotification(context: types.IExtensionContext) {
 }
 
 function init(context: types.IExtensionContext) {
-  context.registerDashlet(
-    "QBMS Support",
-    1,
-    2,
-    250,
-    AttribDashlet,
-    showAttrib,
-    () => ({}),
-    undefined,
-  );
-
   context.registerAPI(
     "qbmsRegisterGame",
     (gameMode: string) => {

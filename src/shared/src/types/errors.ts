@@ -1,58 +1,5 @@
 import { VortexError } from "../errors/base";
 
-export type DownloadErrorPayload =
-  | { code: "cancellation" }
-  | { code: "network-error"; url: URL }
-  | { code: "network-timeout"; url: URL }
-  | { code: "network-bad-status"; url: URL; statusCode: number }
-  | { code: "precondition-failed"; url: URL }
-  | { code: "protocol-violation"; url: URL }
-  | { code: "is-html"; url: URL }
-  | { code: "fs-error"; path: string }
-  | { code: "resolver-error" };
-
-export class DownloadError extends Error {
-  readonly payload: DownloadErrorPayload;
-
-  constructor(payload: DownloadErrorPayload, message: string, cause?: unknown) {
-    super(message, { cause });
-    this.name = "DownloadError";
-    this.payload = payload;
-  }
-
-  public get code(): DownloadErrorPayload["code"] {
-    return this.payload.code;
-  }
-}
-
-/**
- * Unlike {@link DownloadErrorPayload}, `url` rides as a string: an upload error
- * is thrown in main and crosses to the renderer through the generic error
- * serializer, which copies the payload verbatim. A `URL` instance is not
- * structured-cloneable, so it would fail the IPC hop.
- */
-export type UploadErrorPayload =
-  | { code: "cancellation" }
-  | { code: "network-error"; url: string }
-  | { code: "network-timeout"; url: string }
-  | { code: "network-bad-status"; url: string; statusCode: number }
-  | { code: "protocol-violation"; url: string }
-  | { code: "fs-error"; path: string };
-
-export class UploadError extends Error {
-  readonly payload: UploadErrorPayload;
-
-  constructor(payload: UploadErrorPayload, message: string, cause?: unknown) {
-    super(message, { cause });
-    this.name = "UploadError";
-    this.payload = payload;
-  }
-
-  public get code(): UploadErrorPayload["code"] {
-    return this.payload.code;
-  }
-}
-
 export interface ReportableError {
   message: string;
   title?: string;
@@ -80,7 +27,7 @@ function captureStackTrace<T extends Error>(
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class UserCanceled extends VortexError<"user-canceled"> {
+export class UserCanceled extends VortexError {
   public skipped: boolean;
 
   constructor(skipped?: boolean) {
@@ -93,7 +40,7 @@ export class UserCanceled extends VortexError<"user-canceled"> {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class DataInvalid extends VortexError<"data-invalid"> {
+export class DataInvalid extends VortexError {
   constructor(message: string) {
     super(message, { kind: "data-invalid" });
   }
@@ -103,7 +50,7 @@ export class DataInvalid extends VortexError<"data-invalid"> {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class NotSupportedError extends VortexError<"not-supported"> {
+export class NotSupportedError extends VortexError {
   constructor() {
     super("Not supported", { kind: "not-supported" });
   }
@@ -147,13 +94,16 @@ export class InsufficientDiskSpace extends Error {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class ProcessCanceled extends VortexError<"process-canceled"> {
+export class ProcessCanceled extends VortexError {
+  #extraInfo?: unknown;
+
   constructor(message: string, extraInfo?: unknown) {
     super(message, { kind: "process-canceled", extraInfo });
+    this.#extraInfo = extraInfo;
   }
 
   public get extraInfo(): unknown {
-    return this.data.extraInfo;
+    return this.#extraInfo;
   }
 }
 
@@ -161,7 +111,7 @@ export class ProcessCanceled extends VortexError<"process-canceled"> {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class ArgumentInvalid extends VortexError<"argument-invalid"> {
+export class ArgumentInvalid extends VortexError {
   constructor(argument: string) {
     super(`Invalid argument: "${argument}"`, { kind: "argument-invalid", argument });
   }
@@ -185,13 +135,16 @@ export class DocumentsPathMissing extends Error {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class SetupError extends VortexError<"setup-error"> {
+export class SetupError extends VortexError {
+  #component?: string;
+
   constructor(message: string, component?: string) {
     super(message, { kind: "setup-error", component });
+    this.#component = component;
   }
 
   public get component(): string | undefined {
-    return this.data.component;
+    return this.#component;
   }
 }
 
@@ -231,13 +184,16 @@ export class HTTPError extends Error {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class MissingInterpreter extends VortexError<"missing-interpreter"> {
+export class MissingInterpreter extends VortexError {
+  #url?: string;
+
   constructor(message: string, url?: string) {
     super(message, { kind: "missing-interpreter", url });
+    this.#url = url;
   }
 
   public get url(): string | undefined {
-    return this.data.url;
+    return this.#url;
   }
 }
 
@@ -245,7 +201,7 @@ export class MissingInterpreter extends VortexError<"missing-interpreter"> {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class NotFound extends VortexError<"not-found"> {
+export class NotFound extends VortexError {
   constructor(what: string) {
     super(`Not found: "${what}"`, { kind: "not-found", resourceType: what });
   }
@@ -325,30 +281,20 @@ export class AlreadyDownloaded extends Error {
   }
 }
 
-export class DownloadIsHTML extends Error {
-  private mUrl: string;
-  constructor(inputUrl: string) {
-    super("");
-    this.name = this.constructor.name;
-    this.mUrl = inputUrl;
-  }
-
-  public get url(): string {
-    return this.mUrl;
-  }
-}
-
 /**
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class CycleError extends VortexError<"cycle-error"> {
+export class CycleError extends VortexError {
+  #cycles: string[][];
+
   constructor(cycles: string[][]) {
     super("Rules contain cycles", { kind: "cycle-error", cycles });
+    this.#cycles = cycles;
   }
 
   public get cycles(): string[][] {
-    return this.data.cycles;
+    return this.#cycles;
   }
 }
 
@@ -356,27 +302,15 @@ export class CycleError extends VortexError<"cycle-error"> {
  * @public
  * @deprecated Use `VortexError` directly
  */
-export class GameNotFound extends VortexError<"game-not-found"> {
+export class GameNotFound extends VortexError {
+  #gameId: string;
+
   constructor(search: string) {
     super("Not in Steam library", { kind: "game-not-found", gameId: search });
+    this.#gameId = search;
   }
 
   public get search(): string {
-    return this.data.gameId;
+    return this.#gameId;
   }
-}
-
-/**
- * Class-identity check that also survives the IPC boundary. An error that
- * crossed the wire is rebuilt as a plain `Error` (its prototype is lost), so
- * `instanceof` fails — but `error-serialization` preserves the original type on
- * `err.name` (falling back to `constructor.name`), so we match on either. Any
- * custom payload is carried across as own-enumerable properties and reattached,
- * so callers reading those fields still work on a rehydrated instance.
- */
-export function isErrorOfType<T extends Error>(
-  err: unknown,
-  ctor: new (...args: never[]) => T,
-): err is T {
-  return err instanceof ctor || (err instanceof Error && err.name === ctor.name);
 }

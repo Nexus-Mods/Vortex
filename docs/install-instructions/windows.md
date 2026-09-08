@@ -3,7 +3,7 @@
 Open PowerShell or Command Prompt first. Install Windows prerequisites here,
 then continue with [Shared Setup].
 
-Validated on 13 April 2026 (Windows 11 25H2). If any step is out of date, please
+Validated on 29 August 2026 (Windows 11 25H2). If any step is out of date, please
 open a [PR] or [issue].
 
 ## Install Dependencies
@@ -36,8 +36,6 @@ so `node-gyp` needs ATL, MFC, and Windows 11 SDK.
 winget install --id Git.Git -e
 ```
 
-Git for Windows should be on `PATH` after install.
-
 ### Python 3.14
 
 ```powershell
@@ -67,7 +65,27 @@ Some native build pieces need CMake during local builds.
 winget install --id Microsoft.DotNet.SDK.9 -e
 ```
 
+### Node.js (Optional)
+
+Vortex does not need this. `pnpm` downloads the pinned `node.js` version during
+[Shared Setup], and that version is used regardless of what is on your `PATH`.
+Install it only if you want `node` and `npm` available for other projects:
+
+```powershell
+winget install -e --id OpenJS.NodeJS.LTS
+```
+
 ## Verify Install
+
+Restart computer so `git`, `python` and `cmake` resolves from `PATH`.
+
+To verify `PATH` after restart
+
+```powershell
+$env:path -split ';'
+```
+
+To verify installed dependencies
 
 ```powershell
 git --version
@@ -84,10 +102,6 @@ After the prerequisites above are installed, continue with [Shared Setup].
 
 - Use VS 2022 Build Tools for this repo, not newer MSVC toolsets.
 - Use `C:\v` due to path length limits in Windows and Git.
-
-## Troubleshooting
-
-- If Yarn 1 throws cache parse errors, run `yarn cache clean` and retry.
 
 ## Extra Resources
 

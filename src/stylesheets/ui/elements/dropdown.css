@@ -24,7 +24,7 @@
         width: 100%;
         height: 1px;
         display: block;
-        margin-block: calc(var(--spacing) * 1.5);
+        margin-block: calc(var(--spacing) * 0.5);
         background-color: var(--color-surface-translucent-mid);
     }
 
@@ -41,16 +41,51 @@
         font-weight: var(--font-weight-semibold);
     }
 
+    .nxm-dropdown-item-pin {
+        display: flex;
+        flex-shrink: 0;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        width: calc(var(--spacing) * 6);
+        height: calc(var(--spacing) * 6);
+        border-radius: var(--radius-sm);
+        color: var(--color-neutral-subdued);
+        margin-right: calc(var(--spacing) * 1.5);
+
+        transition-property:
+            color, background-color, border-color, outline-color, fill, stroke, opacity,
+            pointer-events;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:hover,
+        &:focus-visible {
+            outline: none;
+            color: var(--color-neutral-strong);
+            background-color: var(--color-surface-translucent-high);
+        }
+
+        > svg {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+        }
+    }
+
+    .nxm-dropdown-item-chevron-hidden {
+        visibility: hidden;
+    }
+
     .nxm-dropdown-item {
         display: flex;
         flex-shrink: 0;
         align-items: center;
-        height: calc(var(--spacing) * 8);
-        column-gap: calc(var(--spacing) * 3);
-        color: var(--color-neutral-subdued);
         border-radius: var(--radius-sm);
+        height: calc(var(--spacing) * 8);
+        color: var(--color-neutral-moderate);
+        column-gap: calc(var(--spacing) * 1.5);
         margin-inline: calc(var(--spacing) * 1);
-        padding-inline: calc(var(--spacing) * 3);
+        padding-inline: calc(var(--spacing) * 1.5);
 
         transition-property:
             color, background-color, border-color, outline-color, fill, stroke, opacity,
@@ -63,7 +98,7 @@
             cursor: not-allowed;
         }
 
-        &.nxm-dropdown-item-active,
+        &.nxm-dropdown-item-focus,
         &.nxm-dropdown-item-hoverable:enabled:hover {
             color: var(--color-neutral-strong);
             background-color: var(--color-surface-translucent-mid);
@@ -91,10 +126,26 @@
             height: calc(var(--spacing) * 4);
         }
 
+        &.nxm-dropdown-item-primary .nxm-dropdown-item-icon:first-child {
+            color: var(--color-primary-moderate);
+        }
+
+        &.nxm-dropdown-item-info .nxm-dropdown-item-icon:first-child {
+            color: var(--color-info-moderate);
+        }
+
+        &.nxm-dropdown-item-success .nxm-dropdown-item-icon:first-child {
+            color: var(--color-success-moderate);
+        }
+
+        &.nxm-dropdown-item-premium .nxm-dropdown-item-icon:first-child {
+            color: var(--color-premium-moderate);
+        }
+
         &.nxm-dropdown-item-danger {
             color: var(--color-danger-strong);
 
-            &.nxm-dropdown-item-active,
+            &.nxm-dropdown-item-focus,
             &.nxm-dropdown-item-hoverable:enabled:hover {
                 color: var(--color-danger-strong);
             }

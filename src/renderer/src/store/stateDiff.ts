@@ -19,24 +19,24 @@ function isObject(state: unknown): state is Record<string, unknown> {
 /**
  * Compute the diff operations needed to transform oldState into newState.
  * Returns an array of DiffOperation objects that can be sent over IPC
- * for persistence in the main process.
+ * for persistence in the main process. Recursively append.
  *
  * @param oldState - The previous state
  * @param newState - The new state
  * @param path - Current path in the state tree (used for recursion)
+ * @param operations - Accumulator the recursion appends to
  * @returns Array of diff operations (set/remove)
  */
 export function computeStateDiff<T>(
   oldState: T,
   newState: T,
   path: string[] = [],
+  operations: DiffOperation[] = [],
 ): DiffOperation[] {
   // No change - no operations needed
   if (oldState === newState) {
-    return [];
+    return operations;
   }
-
-  const operations: DiffOperation[] = [];
 
   if (isObject(oldState) && isObject(newState)) {
     // Both are objects - compare keys recursively
@@ -61,11 +61,11 @@ export function computeStateDiff<T>(
         // the old rows. For primitives the container-path remove covers it.
         operations.push({ type: "remove", path: currentPath });
         if (isObject(oldState[key])) {
-          operations.push(...collectRemoveOperations(currentPath, oldState[key]));
+          collectRemoveOperations(currentPath, oldState[key], operations);
         }
       } else if (oldState[key] !== newState[key]) {
         // Key exists in both but value changed - recurse
-        operations.push(...computeStateDiff(oldState[key], newState[key], currentPath));
+        computeStateDiff(oldState[key], newState[key], currentPath, operations);
       }
       // If oldState[key] === newState[key], no operation needed
     }
@@ -75,7 +75,7 @@ export function computeStateDiff<T>(
       if (oldState[key] === undefined && newState[key] !== undefined) {
         const currentPath = [...path, key];
         // Key was added - collect all set operations for this subtree
-        operations.push(...collectSetOperations(currentPath, newState[key]));
+        collectSetOperations(currentPath, newState[key], operations);
       }
     }
   } else {
@@ -84,7 +84,7 @@ export function computeStateDiff<T>(
       // Value changed or added
       if (isObject(newState)) {
         // New value is an object - add all its leaf values
-        operations.push(...collectSetOperations(path, newState));
+        collectSetOperations(path, newState, operations);
       } else {
         // New value is a primitive
         operations.push({ type: "set", path, value: newState });
@@ -95,7 +95,7 @@ export function computeStateDiff<T>(
       // matters under prefix-delete and why the leaf removes are required).
       operations.push({ type: "remove", path });
       if (isObject(oldState)) {
-        operations.push(...collectRemoveOperations(path, oldState));
+        collectRemoveOperations(path, oldState, operations);
       }
     }
   }
@@ -105,40 +105,48 @@ export function computeStateDiff<T>(
 
 /**
  * Collect all set operations needed to persist an entire state subtree.
- * Recursively traverses objects to find all leaf values.
+ * Recursively traverses objects to find all leaf values, appending to `operations`.
  */
-function collectSetOperations(path: string[], state: unknown): DiffOperation[] {
+function collectSetOperations(
+  path: string[],
+  state: unknown,
+  operations: DiffOperation[] = [],
+): DiffOperation[] {
   if (state === undefined) {
-    return [];
+    return operations;
   }
 
   if (isObject(state)) {
-    const operations: DiffOperation[] = [];
     for (const key of Object.keys(state)) {
-      operations.push(...collectSetOperations([...path, key], state[key]));
+      collectSetOperations([...path, key], state[key], operations);
     }
     return operations;
   }
 
   // Leaf value - create set operation
-  return [{ type: "set", path, value: state }];
+  operations.push({ type: "set", path, value: state });
+  return operations;
 }
 
 /**
  * Collect all remove operations needed to clear an entire state subtree.
- * Recursively traverses objects to find all leaf values.
+ * Recursively traverses objects to find all leaf values, appending to `operations`.
  */
-function collectRemoveOperations(path: string[], state: unknown): DiffOperation[] {
+function collectRemoveOperations(
+  path: string[],
+  state: unknown,
+  operations: DiffOperation[] = [],
+): DiffOperation[] {
   if (isObject(state)) {
-    const operations: DiffOperation[] = [];
     for (const key of Object.keys(state)) {
-      operations.push(...collectRemoveOperations([...path, key], state[key]));
+      collectRemoveOperations([...path, key], state[key], operations);
     }
     return operations;
   }
 
   // Leaf value - create remove operation
-  return [{ type: "remove", path }];
+  operations.push({ type: "remove", path });
+  return operations;
 }
 
 /**

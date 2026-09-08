@@ -1,0 +1,120 @@
+import {
+  mdiAlertOctagon,
+  mdiAlertOutline,
+  mdiCheckCircleOutline,
+  mdiInformationOutline,
+  mdiLoading,
+} from "@mdi/js";
+import React, { useCallback } from "react";
+
+import type { INotification, NotificationType } from "@/types/INotification";
+import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
+
+import { useNotificationTranslation } from "../hooks/useNotificationTranslation.hook";
+import { addWordBreakOpportunities, createNotificationHandler } from "../utils/Notifications.util";
+import { NotificationActions } from "./NotificationActions";
+import { NotificationContent } from "./NotificationContent";
+import { NotificationControls } from "./NotificationControls";
+
+const STATUS_MAP = {
+  error: { className: "text-danger-strong", icon: mdiAlertOctagon },
+  warning: { className: "text-warning-strong", icon: mdiAlertOutline },
+  success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
+  info: { className: "text-info-strong", icon: mdiInformationOutline },
+  activity: { className: "text-info-strong animate-spin", icon: mdiLoading },
+  global: { className: "text-info-strong", icon: mdiInformationOutline },
+  silent: { className: "text-info-strong", icon: mdiInformationOutline },
+} satisfies Record<NotificationType, { className: string; icon: string }>;
+
+const getNotificationStatus = (type: NotificationType): { className: string; icon: string } => {
+  return STATUS_MAP[type];
+};
+
+interface INotificationItemProps {
+  notification: INotification;
+  collapsed: number;
+  onDismiss: (id: string) => void;
+  onSuppress: (id: string) => void;
+  onTriggerAction: (notificationId: string, actionTitle: string) => void;
+  onExpand?: (groupId: string) => void;
+}
+
+export const NotificationItem = ({
+  notification,
+  collapsed,
+  onDismiss,
+  onSuppress,
+  onTriggerAction,
+  onExpand,
+}: INotificationItemProps) => {
+  const { actions, id, noDismiss, type, allowSuppress } = notification;
+
+  // Handle translation
+  const { translatedTitle, translatedMessage } = useNotificationTranslation({
+    notification,
+    collapsed,
+  });
+
+  const status = getNotificationStatus(type);
+
+  // Event handlers
+  const handleDismiss = useCallback(createNotificationHandler(id, onDismiss), [id, onDismiss]);
+  const handleSuppress = useCallback(createNotificationHandler(id, onSuppress), [id, onSuppress]);
+
+  const handleExpand = useCallback(() => {
+    if (notification.group && onExpand) {
+      onExpand(notification.group);
+    }
+  }, [notification.group, onExpand]);
+
+  const handleActionClick = useCallback(
+    (actionTitle: string) =>
+      createNotificationHandler(id, (notifId) => onTriggerAction(notifId, actionTitle)),
+    [id, onTriggerAction],
+  );
+
+  if (translatedMessage === undefined && translatedTitle === undefined) {
+    return null;
+  }
+
+  const lines = addWordBreakOpportunities(translatedMessage || "");
+
+  return (
+    <div className="flex gap-x-3 border-stroke-weak p-2 not-last:border-b">
+      <Icon
+        className={joinClasses(["relative mt-0.5 shrink-0", status.className])}
+        path={status.icon}
+        size="sm"
+      />
+
+      <div className="relative flex grow flex-col gap-y-2">
+        <NotificationContent lines={lines} title={translatedTitle} />
+
+        {type === "activity" && notification.progress !== undefined && (
+          <div className="h-1 w-full overflow-hidden rounded-full bg-surface-high">
+            <div
+              className="h-full rounded-full bg-info-strong transition-[width] duration-300"
+              style={{ width: `${notification.progress}%` }}
+            />
+          </div>
+        )}
+
+        <NotificationActions
+          actions={actions}
+          collapsed={collapsed}
+          onActionClick={handleActionClick}
+          onExpand={handleExpand}
+        />
+      </div>
+
+      <NotificationControls
+        allowSuppress={allowSuppress}
+        collapsed={collapsed}
+        noDismiss={noDismiss}
+        onDismiss={handleDismiss}
+        onSuppress={handleSuppress}
+      />
+    </div>
+  );
+};

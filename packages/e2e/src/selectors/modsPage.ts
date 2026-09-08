@@ -11,7 +11,7 @@ export type ModStatus = (typeof MOD_STATUS)[keyof typeof MOD_STATUS];
 export class ModsPage {
   readonly page: Page;
   readonly installFromFileButton: Locator;
-  /** Toolbar "Deploy Mods" button (flashes when a deployment is pending). */
+  /** Toolbar "Deploy Mods" button (highlighted when a deployment is pending). */
   readonly deployButton: Locator;
   /** Toolbar Quick Launcher "Play" button that starts the managed game. */
   readonly playButton: Locator;
@@ -29,8 +29,10 @@ export class ModsPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.installFromFileButton = page.locator("#install-from-archive");
-    this.deployButton = page.locator("#deploy-mods");
+    // the new toolbar renders actions rather than components, so these carry a
+    // data-testid instead of the id the old button components had
+    this.installFromFileButton = page.locator('[data-testid="install-from-archive"]');
+    this.deployButton = page.locator('[data-testid="deploy-mods"]');
     this.playButton = page.locator("#btn-quicklaunch-play");
     this.statusButton = page.locator("#btn-mods-enabled").first();
     this.emptyState = page.getByText(/don't have any installed mods/i);

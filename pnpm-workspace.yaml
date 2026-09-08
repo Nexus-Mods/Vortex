@@ -12,7 +12,6 @@ packages:
   - ./extensions/games/*
   - ./.github/actions/fingerprints
   - ./.github/actions/linear-release
-  - ./.github/actions/prepare-nexusmods-release
 
 catalog:
   7z-bin: github:Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
@@ -150,7 +149,7 @@ catalog:
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1
   electron-redux: github:TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
-  electron-updater: 4.6.5
+  electron-updater: 6.8.9
   encoding-down: 6.3.0
   enquirer: 2.4.1
   eslint: 10.6.0
@@ -242,7 +241,6 @@ catalog:
   sass: 1.101.0
   semver: 7.7.4
   shortid: 2.2.17
-  simple-git: 3.33.0
   simple-vdf: github:Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
   source-map-loader: 5.0.0
   source-map-support: 0.5.21

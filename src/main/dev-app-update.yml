@@ -1,0 +1,13 @@
+# Config for electron-updater when running from source with
+# VORTEX_DEV_UPDATER=1 (see extensions/autoupdater). Packaged builds use the
+# app-update.yml that electron-builder generates instead; this file is only
+# read when the dev updater is explicitly opted into.
+#
+# The url is a placeholder: the release resolver overrides the feed on every
+# check. Pair with scripts/mock-update-feed.mjs and the
+# VORTEX_UPDATER_API_BASE / VORTEX_UPDATER_DOWNLOAD_BASE overrides.
+# No publisherName on purpose: signature verification is skipped so the mock
+# feed can serve unsigned dummy installers.
+provider: generic
+url: http://localhost:9877
+updaterCacheDirName: vortex-updater-dev

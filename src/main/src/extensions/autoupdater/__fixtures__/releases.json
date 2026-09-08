@@ -1,0 +1,56 @@
+[
+  {
+    "tag_name": "v2.6.0-beta.1",
+    "name": "2.6.0-beta.1",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-08-11T11:30:35Z",
+    "body_html": "<p>2.6.0-beta.1: new collections workflow</p>",
+    "assets": [{ "name": "vortex-setup-2.6.0-beta.1.exe" }, { "name": "latest.yml" }]
+  },
+  {
+    "tag_name": "v2.5.0",
+    "name": "2.5.0",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-08-10T12:24:50Z",
+    "body_html": "<p>2.5.0: stable rollup</p>",
+    "assets": [{ "name": "vortex-setup-2.5.0.exe" }, { "name": "latest.yml" }]
+  },
+  {
+    "tag_name": "v2.4.2",
+    "name": "2.4.2",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-07-30T08:49:12Z",
+    "body_html": "<p>2.4.2: hotfix published after 2.5.0-beta.2</p>",
+    "assets": [{ "name": "vortex-setup-2.4.2.exe" }, { "name": "latest.yml" }]
+  },
+  {
+    "tag_name": "v2.5.0-beta.2",
+    "name": "2.5.0-beta.2",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-07-30T08:19:26Z",
+    "body_html": "<p>2.5.0-beta.2: beta fixes</p>",
+    "assets": [{ "name": "vortex-setup-2.5.0-beta.2.exe" }, { "name": "latest.yml" }]
+  },
+  {
+    "tag_name": "v2.5.0-beta.1",
+    "name": "2.5.0-beta.1",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-07-29T12:27:01Z",
+    "body_html": "<p>2.5.0-beta.1: first beta</p>",
+    "assets": [{ "name": "vortex-setup-2.5.0-beta.1.exe" }, { "name": "latest.yml" }]
+  },
+  {
+    "tag_name": "v2.4.1",
+    "name": "2.4.1",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-07-29T11:53:19Z",
+    "body_html": "<p>2.4.1: stable hotfix</p>",
+    "assets": [{ "name": "vortex-setup-2.4.1.exe" }, { "name": "latest.yml" }]
+  }
+]

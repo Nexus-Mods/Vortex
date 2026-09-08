@@ -10,9 +10,19 @@ import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from "../constants";
 import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";
 
+/**
+ * Events emitted before analytics has started (consent given, user known) are
+ * held here and sent once it does. Early startup work such as the auto-updater
+ * runs before login restores, so without this its events would be lost, not
+ * merely late. Bounded; oldest dropped first. Cleared on stop(), so nothing
+ * captured before a "No" ever leaves the machine.
+ */
+const MAX_PENDING_EVENTS = 50;
+
 class MixpanelAnalytics {
   private user: number;
   private isInitialized: boolean = false;
+  private pending: MixpanelEvent[] = [];
 
   /**
    * isUserSet returns if the user is set
@@ -62,6 +72,22 @@ class MixpanelAnalytics {
       environment,
       superProperties,
     });
+
+    this.flushPending();
+  }
+
+  private flushPending() {
+    if (this.pending.length === 0) {
+      return;
+    }
+    const queued = this.pending;
+    this.pending = [];
+    analyticsServiceLog("mixpanel", "debug", "Sending events queued before start", {
+      count: queued.length,
+    });
+    for (const event of queued) {
+      this.trackEvent(event);
+    }
   }
 
   /**
@@ -173,6 +199,7 @@ class MixpanelAnalytics {
     }
     this.user = null;
     this.isInitialized = false;
+    this.pending = [];
   }
 
   /**
@@ -180,10 +207,16 @@ class MixpanelAnalytics {
    */
   public trackEvent(event: MixpanelEvent) {
     if (!this.isUserSet()) {
-      // Silently ignore when analytics is disabled (user opted out)
-      // This is expected behavior, not an error condition
-      analyticsServiceLog("mixpanel", "debug", "Event not tracked (analytics disabled)", {
+      // Not started yet: either analytics is off (opted out, or not asked yet)
+      // or login has not restored. Queue it; start() sends the queue, stop()
+      // drops it.
+      this.pending.push(event);
+      if (this.pending.length > MAX_PENDING_EVENTS) {
+        this.pending.shift();
+      }
+      analyticsServiceLog("mixpanel", "debug", "Event queued (analytics not started)", {
         eventName: event.eventName,
+        queued: this.pending.length,
       });
       return;
     }

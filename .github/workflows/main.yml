@@ -3,8 +3,40 @@ name: Main
 on:
   push:
     branches: [master, release/*]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "locales/**"
+      - ".devcontainer/**"
+      - "docker/**"
+      - "flatpak/**"
+      - "*.nix"
+      - "flake.*"
+      - "default.nix"
+      - "shell.nix"
+      - ".env.example"
+      - ".envrc"
+      - ".editorconfig"
+      - "vortex.bat"
+      - "translation-strings.txt"
   pull_request:
     branches: [master, release/*]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "locales/**"
+      - ".devcontainer/**"
+      - "docker/**"
+      - "flatpak/**"
+      - "*.nix"
+      - "flake.*"
+      - "default.nix"
+      - "shell.nix"
+      - ".env.example"
+      - ".envrc"
+      - ".editorconfig"
+      - "vortex.bat"
+      - "translation-strings.txt"
   workflow_dispatch:
 
 concurrency:

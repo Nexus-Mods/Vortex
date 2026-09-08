@@ -95,7 +95,7 @@ modules:
         </configuration>
         EOF
       - yarn install --non-interactive --check-files --frozen-lockfile
-      # Build the app following the standard workflow from CONTRIBUTE.md.
+      # Build the app following the standard workflow from CONTRIBUTING.md.
       - yarn run build
 
       # Prepare app/ directory for packaging

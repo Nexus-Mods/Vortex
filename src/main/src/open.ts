@@ -32,3 +32,7 @@ export function openFile(filePath: string): void {
     });
   });
 }
+
+export function showItemInFolder(filePath: string): void {
+  shell.showItemInFolder(path.resolve(filePath));
+}

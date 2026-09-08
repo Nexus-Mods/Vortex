@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { getErrorCode } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import { UserCanceled } from "../../util/CustomErrors";
@@ -24,8 +25,8 @@ export function syncToProfile(
           })
           .catch((err) => {
             log("warn", "failed to copy to profile", { filePath, destPath });
-            if (err.code !== "EBADF") {
-              // EBADF would indicate the file doesn't exist, which isn't a problem,
+            if (!["EBADF", "ENOENT"].includes(getErrorCode(err))) {
+              // both indicate the file doesn't exist, which isn't a problem,
               // it's as if the file was empty
               onError("failed to sync to profile: " + filePath, err);
             }

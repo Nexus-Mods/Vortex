@@ -7,6 +7,7 @@ import * as semver from "semver";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IDownload } from "../../../types/IState";
+import { modRuleId } from "../../../util/collectionInstallSession";
 import ConcurrencyLimiter from "../../../util/ConcurrencyLimiter";
 import { NotFound, ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
@@ -19,6 +20,7 @@ import { findModByRef } from "./findModByRef";
 import { isFuzzyVersion } from "./isFuzzyVersion";
 import { rulePhase } from "./rulePhase";
 import testModReference, {
+  downloadReferenceTags,
   isOptionalRule,
   ruleInstallSpec,
   testRefByIdentifiers,
@@ -259,6 +261,7 @@ export function lookupFromDownload(download: IDownload): IModLookupInfo {
     game: download.game,
     source: download.modInfo?.source,
     referenceTag: download.modInfo?.referenceTag,
+    referenceTags: download.modInfo?.referenceTags,
     modId,
     fileId,
   };
@@ -525,6 +528,11 @@ function gatherDependencies(
         )
           .then((node: IDependencyNode) => {
             onProgress();
+            if (node !== null) {
+              // only these top-level rules are collection members, so only their nodes address a
+              // session entry; the sub-dependencies gathered under them carry no key
+              node.sessionRuleId = modRuleId(rule);
+            }
             return Promise.resolve(node);
           })
           .catch((err) => {

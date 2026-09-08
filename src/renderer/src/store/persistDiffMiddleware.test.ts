@@ -255,3 +255,56 @@ describe("flushPendingDiffsSync (GH#23363 quit flush)", () => {
     expect(sendDiff).not.toHaveBeenCalled();
   });
 });
+
+/** The only path state takes to disk, so one fault must cost at most one flush window. */
+describe("fault tolerance", () => {
+  const deliveredValues = (sendDiff: ReturnType<typeof vi.fn>) =>
+    sendDiff.mock.calls
+      .flatMap((call) => call[1] as DiffOperation[])
+      .filter((op) => op.type === "set")
+      .map((op) => op.value);
+
+  it("keeps flushing after a send failure", () => {
+    vi.useFakeTimers();
+    const sendDiff = vi.fn().mockImplementationOnce(() => {
+      throw new Error("ipc send failed");
+    });
+    const mw = createPersistDiffMiddleware(() => ({ sendDiff }));
+    const store = createStore(reducer, applyMiddleware(mw));
+    store.dispatch({ type: "INIT" });
+
+    store.dispatch({ type: "SET_PERSISTENT", payload: { marker: 1 } });
+    // the failing flush is contained by the middleware, not re-thrown out of the timer
+    expect(() => vi.runAllTimers()).not.toThrow();
+
+    store.dispatch({ type: "SET_PERSISTENT", payload: { marker: 2 } });
+    vi.runAllTimers();
+
+    expect(deliveredValues(sendDiff)).toContain(2);
+  });
+
+  it("keeps persisting after a change whose diff computation fails", () => {
+    vi.useFakeTimers();
+    const sendDiff = vi.fn();
+    const mw = createPersistDiffMiddleware(() => ({ sendDiff }));
+    const store = createStore(reducer, applyMiddleware(mw));
+    store.dispatch({ type: "INIT" });
+
+    // collecting this subtree recurses once per nesting level, so the diff dies on stack depth
+    let bomb: unknown = 1;
+    for (let i = 0; i < 100_000; i++) {
+      bomb = { d: bomb };
+    }
+    expect(() =>
+      store.dispatch({ type: "SET_PERSISTENT", payload: { marker: 1, bomb } }),
+    ).not.toThrow();
+
+    store.dispatch({ type: "SET_PERSISTENT", payload: { marker: 1, second: 2 } });
+    vi.runAllTimers();
+
+    const values = deliveredValues(sendDiff);
+    expect(values).toContain(2);
+    // the change from the failed window rides the next successful diff
+    expect(values).toContain(1);
+  });
+});

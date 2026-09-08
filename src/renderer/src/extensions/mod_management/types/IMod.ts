@@ -89,6 +89,9 @@ export interface ICommonModAttributes {
   installTime?: string | Date;
   installedAsDependency?: boolean;
   referenceTag?: string;
+  // every collection-rule tag this mod satisfies; append-only superset of referenceTag, which
+  // holds the first tag stamped and is what older Vortex versions read
+  referenceTags?: string[];
 
   // Installer and patching
   installerChoices?: IChoiceType;

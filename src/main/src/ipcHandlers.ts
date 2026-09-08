@@ -35,7 +35,7 @@ import { relaunch } from "./cli";
 import { getVortexPath } from "./getVortexPath";
 import { hashFile } from "./hash/host";
 import { betterIpcMain } from "./ipc";
-import { openUrl, openFile } from "./open";
+import { openUrl, openFile, showItemInFolder } from "./open";
 import { extraWebViews } from "./webview";
 
 // Type-safe interface for global Redux state accessors
@@ -208,6 +208,10 @@ export function init() {
 
   betterIpcMain.on("shell:openFile", (_event, filePath) => {
     openFile(filePath);
+  });
+
+  betterIpcMain.on("shell:showItemInFolder", (_event, filePath) => {
+    showItemInFolder(filePath);
   });
 
   // ============================================================================

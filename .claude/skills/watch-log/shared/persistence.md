@@ -1,6 +1,6 @@
 # Shared chunk — persistence markers (duckdb / level_pivot)
 
-Load for the persistence mode (§C). See `AGENTS-DEBUGGING.md` and
+Load for the persistence mode (§C). See `docs/DEBUGGING-GUIDE.md` (Diagnostic Environment Variables) and
 `src/main/src/store/LevelPersist.ts`. (For write-latency _attribution_ — the
 `VORTEX_TRACE_DB_WRITES=1` stage timing + `[lp-trace]` scan/commit markers — use the
 sibling `watch-persistence-trace` skill, not this chunk.)

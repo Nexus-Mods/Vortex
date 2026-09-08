@@ -1,3 +1,4 @@
+import type { UpdaterSnapshot } from "@vortex/shared/ipc";
 import * as React from "react";
 import { FormGroup } from "react-bootstrap";
 import type * as Redux from "redux";
@@ -6,7 +7,7 @@ import type { ThunkDispatch } from "redux-thunk";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import type { UpdateChannel, IState } from "../../types/IState";
-import { UPDATE_CHANNELS } from "../../types/IState";
+import { UPDATE_CHANNELS, toUpdateChannel } from "../../types/IState";
 import type { VortexInstallType } from "../../types/VortexInstallType";
 import { Button } from "../../ui/components/button/Button";
 import { Picker } from "../../ui/components/picker/Picker";
@@ -14,10 +15,14 @@ import { Typography } from "../../ui/components/typography/Typography";
 import Debouncer from "../../util/Debouncer";
 import { log } from "../../util/log";
 import { setUpdateChannel } from "./actions";
+import { getUpdaterStatus } from "./updaterStatus";
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
   installType: VortexInstallType;
+  updaterActive: boolean;
+  // what the updater is doing right now, if anything; the button waits it out
+  busy: "checking" | "downloading" | null;
 }
 
 interface IActionProps {
@@ -74,7 +79,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
   }
 
   public render(): JSX.Element {
-    const { t, installType, updateChannel } = this.props;
+    const { t, installType, updaterActive, updateChannel, busy } = this.props;
 
     const { checkUpdateButtonDisabled } = this.state;
 
@@ -90,6 +95,15 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
       }
 
       // managed and development
+    }
+
+    // nothing below would do anything: the updater is not running
+    if (!updaterActive && process.env.NODE_ENV === "development") {
+      return this.renderCallout(
+        t(
+          "Updates are off in development mode. Set VORTEX_DEV_UPDATER=1 before starting Vortex to turn them on.",
+        ),
+      );
     }
 
     // regular
@@ -112,7 +126,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
                 {t(
                   "You can choose to either receive automatic updates only after they went through some " +
                     "community testing (Stable) or to always get the newest features (Beta). Manual checking for updates is " +
-                    "restricted to every 10 minutes.",
+                    "restricted to once per minute.",
                 )}
               </More>
             </Typography>
@@ -131,20 +145,16 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
               <Button
                 brand="neutral"
-                disabled={checkUpdateButtonDisabled}
+                disabled={checkUpdateButtonDisabled || busy !== null}
                 onClick={this.manualUpdateCheck}
               >
-                {t("Check now")}
+                {busy === "checking"
+                  ? t("Checking...")
+                  : busy === "downloading"
+                    ? t("Downloading...")
+                    : t("Check now")}
               </Button>
             </div>
-
-            {updateChannel === "next"
-              ? this.renderCallout(
-                  t(
-                    "Vortex is running in preview mode and using the hidden 'next' update channel.",
-                  ),
-                )
-              : null}
 
             {updateChannel === "none"
               ? this.renderCallout(
@@ -165,6 +175,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
     // send what updateChannel you are on, unless it's none, then send stable. manual check as well
     const channel = this.props.updateChannel === "none" ? "stable" : this.props.updateChannel;
     window.api.updater.checkForUpdates(channel, true);
+    getUpdaterStatus()?.wake();
   };
 
   private selectChannel = (value: UpdateChannel) => {
@@ -191,8 +202,10 @@ Are you sure you want to switch to the Beta update channel?`,
           ],
         );
       } else if (newChannel === "stable") {
-        // stable or latest
         this.props.onSetUpdateChannel(newChannel);
+        // Switching to stable from a pre-release build means the latest
+        // stable may be older than what's running; the updater will offer
+        // that downgrade separately and explicitly.
       } else if (newChannel === "none") {
         // none
 
@@ -221,10 +234,21 @@ Are you sure you want to turn off updates?`,
   };
 }
 
+// a pressed button gives feedback for as long as the work runs: the label
+// reflects the updater's actual state (polled into session.updater), not a
+// blind timer, and survives leaving and re-entering the page
+function busyFor(snapshot: UpdaterSnapshot | undefined): IConnectedProps["busy"] {
+  return snapshot?.state.type === "checking" || snapshot?.state.type === "downloading"
+    ? snapshot.state.type
+    : null;
+}
+
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    updateChannel: state.settings.update.channel,
+    updateChannel: toUpdateChannel(state.settings.update.channel),
     installType: state.app.installType,
+    updaterActive: state.app.updaterActive,
+    busy: busyFor(state.session.updater?.snapshot),
   };
 }
 

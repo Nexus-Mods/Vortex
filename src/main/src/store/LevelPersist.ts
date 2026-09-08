@@ -103,7 +103,7 @@ class LevelPersist implements IPersistor {
         );
       }
       await delay(500);
-      return LevelPersist.create(persistPath, tries - 1, false);
+      return LevelPersist.create(persistPath, tries - 1, repair);
     }
   }
 
@@ -218,8 +218,8 @@ class LevelPersist implements IPersistor {
       reader = await this.#mConnection.runAndReadAll(`SELECT key, value FROM ${this.#mAlias}.kv`);
     } else {
       reader = await this.#mConnection.runAndReadAll(
-        `SELECT key, value FROM ${this.#mAlias}.kv WHERE key > $1 AND key < $2`,
-        [`${prefix}${SEPARATOR}`, `${prefix}${SEPARATOR}zzzzzzzzzzz`],
+        `SELECT key, value FROM ${this.#mAlias}.kv WHERE starts_with(key, $1)`,
+        [`${prefix}${SEPARATOR}`],
       );
     }
     const rows = reader.getRows();

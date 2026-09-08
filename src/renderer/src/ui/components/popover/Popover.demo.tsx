@@ -6,12 +6,18 @@
 
 import {
   mdiAccountCircle,
+  mdiBroom,
+  mdiCheckCircleOutline,
+  mdiDeleteOutline,
   mdiFilterOutline,
   mdiHelpCircleOutline,
   mdiInformationOutline,
   mdiLogout,
+  mdiPalette,
   mdiRefresh,
+  mdiRocketLaunchOutline,
   mdiSortVariant,
+  mdiStarOutline,
   mdiTune,
   mdiViewGrid,
   mdiViewList,
@@ -106,6 +112,22 @@ const twoSubmenuActions: IMenuAction[][] = [
     },
   ],
   [{ label: "Refresh", iconPath: mdiRefresh, onClick: () => {} }],
+];
+
+/**
+ * One row per brand, which the toolbar leans on: an action collapsed off the bar into
+ * the overflow keeps the emphasis it had as a button. `danger` is the one brand a row
+ * takes further than the icon, colouring the whole row.
+ */
+const brandedActions: IMenuAction[][] = [
+  [
+    { label: "Deploy Mods", iconPath: mdiRocketLaunchOutline, brand: "primary", onClick: () => {} },
+    { label: "Check for Updates", iconPath: mdiRefresh, brand: "info", onClick: () => {} },
+    { label: "Verified", iconPath: mdiCheckCircleOutline, brand: "success", onClick: () => {} },
+    { label: "Go Premium", iconPath: mdiStarOutline, brand: "premium", onClick: () => {} },
+    { label: "Purge Mods", iconPath: mdiBroom, brand: "neutral", onClick: () => {} },
+  ],
+  [{ label: "Remove Mod", iconPath: mdiDeleteOutline, brand: "danger", onClick: () => {} }],
 ];
 
 export const PopoverDemo = () => {
@@ -242,6 +264,32 @@ export const PopoverDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
+          Branded rows
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          A row takes the same brands a Button does, so an action reads the same whether it sits on
+          a toolbar or in the overflow menu it collapsed into. Only the icon is tinted — the labels
+          stay one even column of text to read down. neutral is the default, so it tints nothing.
+          danger is the exception, colouring the whole row rather than just its icon — a destructive
+          action being the one thing in a menu that should be hard to pick by accident.
+        </Typography>
+
+        <div className="flex flex-wrap gap-4">
+          <Popover>
+            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiPalette} />
+
+            <PopoverPanel className="nxm-popover-panel-dropdown">
+              {({ close }) => (
+                <PopoverMenu actions={brandedActions} label="Branded rows" onSelect={close} />
+              )}
+            </PopoverPanel>
+          </Popover>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
           Design Notes
         </Typography>
 
@@ -258,6 +306,11 @@ export const PopoverDemo = () => {
           <li>
             Fill a panel of settings with PopoverPanelGroup rows, and give it
             nxm-popover-panel-controls; a panel of menu rows takes nxm-popover-panel-dropdown
+          </li>
+
+          <li>
+            A menu row takes the same brand a Button does, tinting its icon rather than its label —
+            except danger, which colours the whole row
           </li>
 
           <li>Use Dropdown instead when the items are one-shot actions rather than controls</li>

@@ -724,3 +724,96 @@ describe("InstallDriver journey: re-attribution of an already-installed member",
     expect(h.driver.isInstallComplete(false)).toBe(false);
   });
 });
+
+describe("InstallDriver collection membership tags", () => {
+  // A member mod can belong to more than one collection: identity (here the file hash) is what
+  // attributes it, and each collection's tag is recorded so it stays recognisable as their member.
+  const sharedRule = makeRule({
+    type: "requires",
+    reference: makeReference({ tag: "ours", fileMD5: "shared-hash" }),
+  });
+  const sharedFixture = makeCollectionFixture({ id: "col-shared", rule: sharedRule });
+  const sharedMod = makeMod({
+    id: "m-shared",
+    attributes: {
+      referenceTag: "theirs",
+      referenceTags: ["theirs"],
+      fileMD5: "shared-hash",
+    },
+  });
+
+  test("records the installing rule's tag on a member whose mod carries another's", async ({
+    startCollection,
+  }) => {
+    const h = await startCollection(sharedFixture);
+    h.setState((draft) => {
+      draft.persistent.mods[GAME_ID][sharedMod.id] = sharedMod;
+    });
+
+    h.emit("did-install-mod", GAME_ID, sharedFixture.download.id, sharedMod.id);
+
+    await vi.waitFor(() => {
+      expect(
+        h.getState().persistent.mods[GAME_ID][sharedMod.id].attributes?.referenceTags,
+      ).toContain("ours");
+    });
+    // the other collection's tag is kept, so its own rules still match this mod
+    expect(h.getState().persistent.mods[GAME_ID][sharedMod.id].attributes?.referenceTags).toContain(
+      "theirs",
+    );
+  });
+
+  // A member already present when the collection is added is never queued and emits no install
+  // event, so the tag has to be recorded while the install session is built.
+  test("records the rule's tag on a member that was already installed at start", async ({
+    makeDriver,
+  }) => {
+    const h = makeDriver({
+      mods: {
+        [GAME_ID]: {
+          [sharedFixture.collection.id]: sharedFixture.collection,
+          [sharedMod.id]: sharedMod,
+        },
+      },
+      downloads: { [sharedFixture.download.id]: sharedFixture.download },
+      profiles: { [profile.id]: profile },
+    });
+
+    await h.driver.start(profile, sharedFixture.collection);
+
+    const attributes = h.getState().persistent.mods[GAME_ID][sharedMod.id].attributes;
+    expect(attributes?.referenceTags).toContain("ours");
+    // the user may have installed it themselves, so it is not marked as pulled in by a collection
+    expect(attributes?.installedAsDependency).toBeUndefined();
+  });
+
+  // Two members can resolve to the same installed mod (same file, pinned twice), so the tags are
+  // recorded per mod rather than per member - one write per member would only keep the last tag.
+  test("records both rules' tags when two members resolve to the same installed mod", async ({
+    makeDriver,
+  }) => {
+    const firstRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "ours-first", fileMD5: "shared-hash" }),
+    });
+    const secondRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "ours-second", fileMD5: "shared-hash" }),
+    });
+    const fixture = buildCollectionFixture("col-twice", [firstRule, secondRule]);
+    const h = makeDriver({
+      mods: {
+        [GAME_ID]: { [fixture.collection.id]: fixture.collection, [sharedMod.id]: sharedMod },
+      },
+      downloads: { [fixture.download.id]: fixture.download },
+      profiles: { [profile.id]: profile },
+    });
+
+    await h.driver.start(profile, fixture.collection);
+
+    const tags = h.getState().persistent.mods[GAME_ID][sharedMod.id].attributes?.referenceTags;
+    expect(tags).toContain("ours-first");
+    expect(tags).toContain("ours-second");
+    expect(tags).toContain("theirs");
+  });
+});

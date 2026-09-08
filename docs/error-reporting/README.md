@@ -10,13 +10,13 @@
 
 ## Key Files
 
-- `src/renderer/util/message.ts` - `showError()` entry point for non-critical errors
-- `src/renderer/util/errorHandling.ts` - `withTrackedActivity`, `recordErrorSpan`, `terminate` (renderer)
-- `src/main/errorHandling.ts` - `terminate` / `terminateAsync` for main-process crashes
-- `src/main/errorReporting.ts` - `reportCrash()` — short-lived OTel provider for crash spans
-- `src/main/telemetry/RingBufferSpanProcessor.ts` - Circular buffer; auto-exports on ERROR status
-- `src/main/telemetry/setup.ts` - `createMainTelemetryProvider`, OTLP exporter config
-- `src/main/telemetry/ipcHandler.ts` - Renderer→main span IPC bridge; analytics opt-in watcher
+- `src/renderer/src/util/message.ts` - `showError()` entry point for non-critical errors
+- `src/renderer/src/util/errorHandling.ts` - `withTrackedActivity`, `recordErrorSpan`, `terminate` (renderer)
+- `src/main/src/errorHandling.ts` - `terminate` / `terminateAsync` for main-process crashes
+- `src/main/src/errorReporting.ts` - `reportCrash()` — short-lived OTel provider for crash spans
+- `src/main/src/telemetry/RingBufferSpanProcessor.ts` - Circular buffer; auto-exports on ERROR status
+- `src/main/src/telemetry/setup.ts` - `createMainTelemetryProvider`, OTLP exporter config
+- `src/main/src/telemetry/ipcHandler.ts` - Renderer→main span IPC bridge; analytics opt-in watcher
 - `src/shared/src/telemetry/spans.ts` - `recordErrorOnSpan` shared utility
 - `src/shared/src/errors.ts` - `computeErrorFingerprint` for deduplication
 

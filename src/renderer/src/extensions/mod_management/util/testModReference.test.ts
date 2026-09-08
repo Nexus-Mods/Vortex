@@ -1111,3 +1111,38 @@ describe("findRuleByRef", () => {
     expect(findRuleByRef(undefined, mod)).toBeUndefined();
   });
 });
+
+describe("multiple reference tags", () => {
+  const taggedMod = (attributes: IModAttributes): IMod => ({
+    id: "mod-multi",
+    state: "installed",
+    type: "",
+    installationPath: "mods/mod-multi",
+    attributes,
+  });
+
+  // one archive can satisfy rules in several collections, so each collection's tag is recorded
+  // alongside the first one rather than replacing it
+  it("matches a reference against any tag the mod carries", () => {
+    const mod = taggedMod({ referenceTag: "other", referenceTags: ["other", "mine"] });
+    expect(testModReference(mod, { tag: "mine" })).toBe(true);
+    expect(testModReference(mod, { tag: "other" })).toBe(true);
+  });
+
+  it("does not match a tag the mod does not carry", () => {
+    const mod = taggedMod({ referenceTag: "other", referenceTags: ["other", "mine"] });
+    expect(testModReference(mod, { tag: "absent" })).toBe(false);
+  });
+
+  // a fuzzy reference drops fileMD5 as a marker, so without a tag hit there is nothing left to
+  // match on and the member would be re-downloaded
+  it("matches a fuzzy hash-only reference through the tag set", () => {
+    const mod = taggedMod({
+      referenceTag: "other",
+      referenceTags: ["other", "mine"],
+      fileMD5: "abc123",
+      version: "1.2.0",
+    });
+    expect(testModReference(mod, { tag: "mine", fileMD5: "abc123", versionMatch: "*" })).toBe(true);
+  });
+});

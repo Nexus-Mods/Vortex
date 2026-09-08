@@ -164,9 +164,10 @@ export function createPersistDiffMiddleware(
   let flushTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
-   * Flush all pending diffs to main process
+   * Flush all pending diffs to main process.
    */
   const flushDiffs = () => {
+    flushTimeout = null;
     const persistApi = getApi();
     if (persistApi == null) {
       return;
@@ -176,14 +177,20 @@ export function createPersistDiffMiddleware(
       PersistedHive,
       PendingHiveDiffs,
     ][]) {
-      if (operations.size > 0) {
-        // Serialize operations to ensure IPC compatibility
-        const serializedOps = Array.from(operations.values(), serializeOperation);
+      // Serialize operations to ensure IPC compatibility
+      const serializedOps = Array.from(operations.values(), serializeOperation);
+      try {
         persistApi.sendDiff(hive, serializedOps);
+        // cleared only once the send succeeded, so a failure keeps the queue for the next flush
+        delete pendingDiffs[hive];
+      } catch (err) {
+        log("error", "failed to send state diff for persistence", {
+          hive,
+          operationCount: serializedOps.length,
+          error: getErrorMessageOrDefault(err),
+        });
       }
     }
-    pendingDiffs = {};
-    flushTimeout = null;
   };
 
   /**
@@ -283,24 +290,30 @@ export function createPersistDiffMiddleware(
       }
 
       // Compute and queue diffs for each persisted hive
-      for (const hive of persistedHives) {
-        const oldHive = previousState[hive as keyof IState];
-        const newHive = newState[hive as keyof IState];
+      try {
+        for (const hive of persistedHives) {
+          const oldHive = previousState[hive as keyof IState];
+          const newHive = newState[hive as keyof IState];
 
-        // Skip if hive hasn't changed (reference equality)
-        if (oldHive === newHive) {
-          continue;
+          // Skip if hive hasn't changed (reference equality)
+          if (oldHive === newHive) {
+            continue;
+          }
+
+          // Compute diff for this hive
+          const operations = computeStateDiff(oldHive, newHive);
+          if (operations.length > 0) {
+            queueDiffs(hive as PersistedHive, operations);
+          }
         }
 
-        // Compute diff for this hive
-        const operations = computeStateDiff(oldHive, newHive);
-        if (operations.length > 0) {
-          queueDiffs(hive as PersistedHive, operations);
-        }
+        // Update previous state for next comparison
+        previousState = newState;
+      } catch (err) {
+        log("error", "failed to compute state diff, changes held for the next attempt", {
+          error: getErrorMessageOrDefault(err),
+        });
       }
-
-      // Update previous state for next comparison
-      previousState = newState;
 
       return result;
     };

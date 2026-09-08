@@ -2,6 +2,9 @@
  * Tests for MixpanelAnalytics.setGameContext: it registers the active game/profile super
  * properties (game_id / profile_id) while a game is active, clears them when none is, and
  * no-ops entirely when analytics hasn't been started (user opted out).
+ *
+ * Also covers is_legacy_ui, which app_launched reports for the session and
+ * app_ui_mode_changed reports when the user switches.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -21,6 +24,7 @@ vi.mock("mixpanel-browser", () => ({ default: mp }));
 vi.mock("../../../util/application", () => ({ getApplication: () => ({ version: "1.2.3" }) }));
 
 import analyticsMixpanel from "./MixpanelAnalytics";
+import { AppLaunchedEvent, AppUIModeChangedEvent } from "./MixpanelEvents";
 
 const userInfo = {
   userId: 42,
@@ -82,5 +86,91 @@ describe("MixpanelAnalytics.setGameContext", () => {
     expect(mp.unregister).toHaveBeenCalledWith("game_id");
     expect(mp.unregister).toHaveBeenCalledWith("profile_id");
     expect(mp.register).not.toHaveBeenCalled();
+  });
+});
+
+describe("AppLaunchedEvent is_legacy_ui", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  it.each([true, false])("sends is_legacy_ui=%s through to mixpanel", (isLegacyUI) => {
+    analyticsMixpanel.start(userInfo, false);
+
+    analyticsMixpanel.trackEvent(new AppLaunchedEvent("win32", "10.0.22000", "x64", isLegacyUI));
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_launched",
+      expect.objectContaining({ is_legacy_ui: isLegacyUI }),
+    );
+  });
+
+  it("leaves is_legacy_ui undefined when the caller omits it", () => {
+    // The argument is optional, so an absent value must read as "unknown" downstream rather
+    // than defaulting to a mode the session may not be in.
+    const event = new AppLaunchedEvent("win32", "10.0.22000", "x64");
+
+    expect(event.properties.is_legacy_ui).toBeUndefined();
+  });
+});
+
+describe("AppUIModeChangedEvent", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  it.each([true, false])("reports the mode switched to (is_legacy_ui=%s)", (isLegacyUI) => {
+    analyticsMixpanel.start(userInfo, false);
+
+    analyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacyUI }));
+
+    expect(mp.track).toHaveBeenCalledWith("app_ui_mode_changed", { is_legacy_ui: isLegacyUI });
+  });
+
+  it("carries no other properties, so the event stays cheap to read", () => {
+    const event = new AppUIModeChangedEvent({ is_legacy_ui: true });
+
+    expect(Object.keys(event.properties)).toEqual(["is_legacy_ui"]);
+  });
+});
+
+describe("MixpanelAnalytics pre-start queue", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  const event = (name: string) => ({ eventName: name, properties: { n: name } });
+
+  it("sends events queued before start once it starts, in order", () => {
+    analyticsMixpanel.trackEvent(event("first"));
+    analyticsMixpanel.trackEvent(event("second"));
+    expect(mp.track).not.toHaveBeenCalled();
+
+    analyticsMixpanel.start(userInfo, false);
+
+    expect(mp.track.mock.calls.map(([name]) => name)).toEqual(["first", "second"]);
+  });
+
+  it("keeps only the most recent 50 queued events", () => {
+    for (let i = 0; i < 60; i += 1) {
+      analyticsMixpanel.trackEvent(event(`e${i}`));
+    }
+    analyticsMixpanel.start(userInfo, false);
+
+    const names = mp.track.mock.calls.map(([name]) => name);
+    expect(names).toHaveLength(50);
+    expect(names[0]).toBe("e10");
+    expect(names.at(-1)).toBe("e59");
+  });
+
+  it("drops the queue on stop, so nothing captured before opting out is sent later", () => {
+    analyticsMixpanel.trackEvent(event("early"));
+    analyticsMixpanel.stop();
+    analyticsMixpanel.start(userInfo, false);
+
+    expect(mp.track).not.toHaveBeenCalled();
   });
 });

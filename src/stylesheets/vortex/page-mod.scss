@@ -35,6 +35,12 @@
 
 .mod-drop-container {
     margin-top: $half-gutter;
+
+    // Spacing the selection bar brings with it, so an empty slot leaves none behind —
+    // which a gap on the container would.
+    .table-footer-detached {
+        margin-bottom: $half-gutter;
+    }
 }
 
 .version-option {
@@ -92,13 +98,12 @@
     background-color: $table-bg;
 }
 
+// Sits after the last row rather than sticking to the bottom of the page as you
+// scroll, so it reads as the end of the list. Nothing passes behind it any more,
+// which is what the translucent band it used to carry was for.
 #more-mods-container {
     display: flex;
     justify-content: center;
-    position: sticky;
-    // should be 0 but there seems to be a subpixel-imprecision
-    bottom: -1px;
-    background: rgba($gray-lighter, 0.7);
     padding: 1em 0;
 }
 

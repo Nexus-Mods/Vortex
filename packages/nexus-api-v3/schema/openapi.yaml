@@ -21,7 +21,10 @@ info:
     it will be marked as\n`deprecated` with a minimum **90-day deprecation period**
     and migration guidance.\n\n**Beta endpoints:** Changes will be marked as `deprecated`
     with a minimum **10-day\ndeprecation period** and migration guidance.\n\nDeprecated
-    fields continue to function during the deprecation period.\n"
+    fields continue to function during the deprecation period.\n\n### Upcoming Changes\n\n|
+    Date | Change |\n| ---- | ------ |\n| 2026-12-01 | `md5` becomes required on [create
+    upload](#tag/uploads/operation/createUpload). Single-part uploads that omit it
+    will be rejected. |\n"
   contact:
     name: Nexus Mods
     url: https://nexusmods.com
@@ -1184,6 +1187,47 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}/download-repacked":
+    post:
+      tags:
+        - mods
+      summary: Download the repacked archive
+      operationId: downloadRepackedModFileVersion
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+        - name: Application-Name
+          in: header
+          required: false
+          description: The client making the request, recorded against the download.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A link to the repacked archive.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DownloadRepackedModFileVersionResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
   "/mod-file-versions/move":
     post:
       tags:
@@ -1299,7 +1343,9 @@ paths:
       description: |
         Get the state of an upload session.
         ### Next steps
-        * Once the `state` is `available`, the upload may be used to [create a mod file](#tag/mod-files/operation/createModFile).
+        * Once the `state` is `available`, the upload can become a mod file version - either the first version of
+          a [new mod file](#tag/mod-files/operation/createModFile), or a
+          [new version of an existing mod file](#tag/mod-files/operation/createModFileVersion).
         ### FAQ
         * How do I create an upload?
            * Use [create upload](#tag/uploads/operation/createUpload) to start a new upload session.
@@ -1346,9 +1392,12 @@ paths:
     post:
       tags:
         - uploads
+      x-badges:
+        - name: md5 required from 2026-12-01
+          color: orange
       summary: Create upload
       description: |
-        Creates a new upload session. This allows you to upload data for a new mod file.
+        Creates a new upload session. This allows you to upload the data for a new mod file version.
 
         ⚠️ Files larger than 100 MiB must use a [multi part upload](#tag/uploads/operation/createMultipartUpload).
 
@@ -1358,13 +1407,30 @@ paths:
              from your request. This value is part of the presigned URL signature, so the upload is rejected if the
              header is missing or does not match.
         * Once all data is uploaded, [finalise the upload](#tag/uploads/operation/finaliseUpload).
+
+        ### Content integrity (`md5`)
+
+        Supplying `md5` binds the presigned URL to that one file. The digest forms part of the URL
+        signature, so the URL cannot be reused to upload different content, and storage rejects a body
+        that does not match it.
+
+        ⚠️ `md5` is **optional today and becomes required on or after 2026-12-01**. Send it now to
+        avoid a breaking change later.
+
+        * `md5` in your request body is the **hex** digest — the 32 characters `md5sum` prints, in
+          upper or lower case.
+        * Your `PUT` must also carry a `Content-MD5` header holding the **base64** encoding of the same
+          digest (`openssl dgst -md5 -binary <file> | base64`). As with `Content-Disposition`, this value
+          is part of the signature, so the upload is rejected if it is missing or does not match.
+        * Retrying the same bytes to the same URL still succeeds, so this does not affect resumed or
+          repeated uploads.
       operationId: createUpload
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreateUploadRequest"
+              "$ref": "#/components/schemas/CreateSinglePartUploadRequest"
       responses:
         "201":
           description: Upload ID and presigned URL
@@ -1401,8 +1467,8 @@ paths:
         - uploads
       summary: Create multipart upload
       description: "Creates a new multipart upload session. This allows you to upload
-        data for a new mod file.\n\n\U0001F4A1 Files smaller than 100 MiB can use
-        the simpler [single part upload](#tag/uploads/operation/createUpload).\n\n###
+        the data for a new mod file version.\n\n\U0001F4A1 Files smaller than 100
+        MiB can use the simpler [single part upload](#tag/uploads/operation/createUpload).\n\n###
         Next steps\nMultipart upload uses the [Amazon S3 multipart upload specification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html).\n\n*
         Call `PUT` with your file data to each `part_presigned_urls`.\n   * Each part
         must be `part_size_bytes` bytes, apart from the final part which may be smaller.\n
@@ -1467,11 +1533,13 @@ paths:
         - uploads
       summary: Finalise upload
       description: |
-        Closes the upload session once all data is uploaded. Sessions must be closed before you can use the upload as a mod file.
+        Closes the upload session once all data is uploaded. Sessions must be closed before the upload can become a
+        mod file version.
         ### Next steps
-        * Wait for the upload to be ready for use as a mod file. Use [get upload](#tag/uploads/operation/getUpload) to check that `state`
+        * Wait for the upload to be ready. Use [get upload](#tag/uploads/operation/getUpload) to check that `state`
           is `available`.
-        * [Create a mod file](#tag/mod-files/operation/createModFile) from this upload.
+        * Use it as the first version of a [new mod file](#tag/mod-files/operation/createModFile), or as a
+          [new version of an existing mod file](#tag/mod-files/operation/createModFileVersion).
       operationId: finaliseUpload
       parameters:
         - name: id
@@ -2235,6 +2303,19 @@ components:
         changelog:
           type: string
           description: The changelog text that was added for this version.
+    DownloadRepackedModFileVersionResponse:
+      type: object
+      required:
+        - download_url
+        - expires_at
+      properties:
+        download_url:
+          type: string
+          description: The URL to initiate the download of the repacked archive.
+        expires_at:
+          type: string
+          format: date-time
+          description: The date and time when the download URL will expire.
     MoveModFileVersionsRequest:
       type: object
       required:
@@ -2803,11 +2884,44 @@ components:
           type: integer
           format: int64
           nullable: false
-          description: Size of file in bytes.
+          description: Size of the archive being uploaded, in bytes.
         filename:
           type: string
           nullable: false
-          description: User-defined filename.
+          description: |
+            Filename for the archive being uploaded. This is the name sent in the `Content-Disposition` header
+            when you upload the data, not the name of the mod file version created from it.
+    CreateSinglePartUploadRequest:
+      type: object
+      required:
+        - size_bytes
+        - filename
+      properties:
+        size_bytes:
+          type: integer
+          format: int64
+          nullable: false
+          description: Size of the archive being uploaded, in bytes.
+        filename:
+          type: string
+          nullable: false
+          description: |
+            Filename for the archive being uploaded. This is the name sent in the `Content-Disposition` header
+            when you upload the data, not the name of the mod file version created from it.
+        md5:
+          type: string
+          nullable: true
+          description: |
+            ⚠️ **Optional today, required on or after 2026-12-01.** From that date, single-part
+            uploads that omit it are rejected.
+
+            Hex MD5 digest of the file - the 32 hex characters `md5sum` prints. Accepted in upper or
+            lower case, and `null` is treated the same as omitting the field.
+
+            Binds the presigned URL to this one file, so it cannot be reused to upload different
+            content. Your `PUT` must send the same digest base64-encoded in a `Content-MD5` header
+            (`openssl dgst -md5 -binary <file> | base64`).
+          pattern: "^[0-9a-fA-F]{32}$"
     CreateUploadSuccess:
       type: object
       allOf:
@@ -3281,7 +3395,7 @@ components:
           type: array
           description: All Vortex translations.
           items:
-            "$ref": "#/components/schemas/VortexAsset"
+            "$ref": "#/components/schemas/VortexTranslation"
     VortexAsset:
       type: object
       description: |
@@ -3360,3 +3474,20 @@ components:
                 The Nexus Mods game ID, determined by code analysis. Present only
                 when `type` is `game`.
               example: "1"
+    VortexTranslation:
+      description: "A Vortex translation, with the language it translates into.
+
+        "
+      allOf:
+        - "$ref": "#/components/schemas/VortexAsset"
+        - type: object
+          required:
+            - locale
+          properties:
+            locale:
+              type: string
+              nullable: true
+              description: |
+                BCP 47 language tag the translation's strings are in (e.g. `pt-BR`).
+                Null when a locale could not be determined for it.
+              example: pt-BR

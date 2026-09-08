@@ -2,7 +2,6 @@
 // on the extensions and re-compiles them properly. They are completely
 // removed during compilation
 import {} from "./about_dialog";
-import {} from "./adaptor_bridge";
 import {} from "./analytics";
 import {} from "./browse_nexus";
 import {} from "./browser";

@@ -603,8 +603,8 @@ catalogs:
       specifier: github:TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
       version: 1.4.9-sync
     electron-updater:
-      specifier: 4.6.5
-      version: 4.6.5
+      specifier: 6.8.9
+      version: 6.8.9
     encoding-down:
       specifier: 6.3.0
       version: 6.3.0
@@ -875,9 +875,6 @@ catalogs:
     shortid:
       specifier: 2.2.17
       version: 2.2.17
-    simple-git:
-      specifier: 3.33.0
-      version: 3.33.0
     simple-vdf:
       specifier: github:Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
       version: 1.1.3
@@ -1188,25 +1185,6 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
-      rolldown:
-        specifier: 'catalog:'
-        version: 1.1.4
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
-
-  .github/actions/prepare-nexusmods-release:
-    dependencies:
-      '@actions/core':
-        specifier: 'catalog:'
-        version: 1.11.1
-    devDependencies:
-      '@types/node':
-        specifier: 24.12.2
-        version: 24.12.2
       rolldown:
         specifier: 'catalog:'
         version: 1.1.4
@@ -2767,46 +2745,6 @@ importers:
         specifier: 'catalog:'
         version: 0.5.0
 
-  extensions/gameversion-hash:
-    dependencies:
-      simple-git:
-        specifier: 'catalog:'
-        version: 3.33.0(supports-color@10.2.2)
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/node':
-        specifier: 24.12.2
-        version: 24.12.2
-      '@types/react':
-        specifier: '18'
-        version: 18.3.31
-      '@types/react-bootstrap':
-        specifier: 'catalog:'
-        version: 0.32.37
-      '@types/redux':
-        specifier: 'catalog:'
-        version: 3.6.0
-      '@types/redux-thunk':
-        specifier: 'catalog:'
-        version: 2.1.0(redux@4.2.1)
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      react:
-        specifier: 'catalog:'
-        version: 18.3.1
-      react-bootstrap:
-        specifier: 'catalog:'
-        version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
-      react-dom:
-        specifier: 'catalog:'
-        version: 18.3.1(react@18.3.1)
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
   extensions/issue-tracker:
     devDependencies:
       '@nexusmods/nexus-api':
@@ -4325,7 +4263,7 @@ importers:
         version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
-        version: 4.6.5(supports-color@10.2.2)
+        version: 6.8.9(supports-color@10.2.2)
       encoding-down:
         specifier: 'catalog:'
         version: 6.3.0
@@ -4988,9 +4926,6 @@ importers:
       electron-redux:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
-      electron-updater:
-        specifier: 'catalog:'
-        version: 4.6.5(supports-color@10.2.2)
       encoding-down:
         specifier: 'catalog:'
         version: 6.3.0
@@ -6363,12 +6298,6 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@kwsites/file-exists@1.1.1':
-    resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
-
-  '@kwsites/promise-deferred@1.1.1':
-    resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
-
   '@malept/cross-spawn-promise@1.1.1':
     resolution: {integrity: sha512-RTBGWL5FWQcg9orDOCcp4LvItNzUPcyEU9bwaeJX0rJ1IQxzucC48Y0/sQLp/g6t99IQgAlGIaesJS+gTn7tVQ==}
     engines: {node: '>= 10'}
@@ -7565,8 +7494,8 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@tootallnate/once@2.0.0':
-    resolution: {integrity: sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==}
+  '@tootallnate/once@2.0.1':
+    resolution: {integrity: sha512-HqmEUIGRJ5fSXchkVgR5F7qn48bDBzv0kWj/Kfu5e6uci4UlEeng4331LnBkWffb++Ei3FOVLxo8JJWMFBDMeQ==}
     engines: {node: '>= 10'}
 
   '@tybys/wasm-util@0.10.3':
@@ -8672,12 +8601,12 @@ packages:
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
 
-  builder-util-runtime@8.9.2:
-    resolution: {integrity: sha512-rhuKm5vh7E0aAmT6i8aoSfEjxzdYEFX7zDApK+eNgOhjofnWb74d9SRJv0H/8nsgOkos0TZ4zxW0P8J4N7xQ2A==}
-    engines: {node: '>=12.0.0'}
-
   builder-util-runtime@9.2.4:
     resolution: {integrity: sha512-upp+biKpN/XZMLim7aguUyW8s0FUpDvOtK6sbanMFDAMBzpHDqdhgVYm6zc9HJ6nWo7u2Lxk60i2M6Jd3aiNrA==}
+    engines: {node: '>=12.0.0'}
+
+  builder-util-runtime@9.7.0:
+    resolution: {integrity: sha512-g/kR520giAFYkSXTzcmF3kqQq7wi8F6N6SzeDgZrqTBN+VHdmgWOyTdD1yD7AATDId/yXLvuP34CxW46/BwCdw==}
     engines: {node: '>=12.0.0'}
 
   builder-util@24.13.1:
@@ -9388,8 +9317,8 @@ packages:
   electron-to-chromium@1.5.325:
     resolution: {integrity: sha512-PwfIw7WQSt3xX7yOf5OE/unLzsK9CaN2f/FvV3WjPR1Knoc1T9vePRVV4W1EM301JzzysK51K7FNKcusCr0zYA==}
 
-  electron-updater@4.6.5:
-    resolution: {integrity: sha512-kdTly8O9mSZfm9fslc1mnCY+mYOeaYRy7ERa2Fed240u01BKll3aiupzkd07qKw69KvhBSzuHroIW3mF0D8DWA==}
+  electron-updater@6.8.9:
+    resolution: {integrity: sha512-ZhVxM9iGONUpZGI1FxdMRgJjUFXi7AYGVa5PwKlO1tV1/4zDxQmfKpXOHVztKrd6L9rLcFjERvi1Mf2vxyTkig==}
 
   electron@43.0.0:
     resolution: {integrity: sha512-PV60GsWU6qufhuOhw3n+Yix3WPDcqDtBqE8orbEQGQGHEkgp9o/JCPgb7L4vIL0r1HnfPdqSRtboOTqbDkcFDQ==}
@@ -12151,9 +12080,6 @@ packages:
   simple-get@4.0.1:
     resolution: {integrity: sha512-brv7p5WgH0jmQJr1ZDDfKDOSeWWg+OVypG99A/5vYGPqJ6pxiaHLy8nxtFjBA7oMa01ebA9gfh1uMCFqOuXxvA==}
 
-  simple-git@3.33.0:
-    resolution: {integrity: sha512-D4V/tGC2sjsoNhoMybKyGoE+v8A60hRawKQ1iFRA1zwuDgGZCBJ4ByOzZ5J8joBbi4Oam0qiPH+GhzmSBwbJng==}
-
   simple-update-notifier@2.0.0:
     resolution: {integrity: sha512-a2B9Y0KlNXl9u/vsW6sTIu9vGEpfKu2wRV6l1H3XEas/0gUIzGzBoP/IouTcUQbm9JWZLH3COxyn03TYlFax6w==}
     engines: {node: '>=10'}
@@ -12449,6 +12375,9 @@ packages:
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
+
+  tiny-typed-emitter@2.1.0:
+    resolution: {integrity: sha512-qVtvMxeXbVej0cQWKqVSSAHmKZEHAvxdF8HEUBFWts8h+xEo5m/lEiPakuyZ3BnCBjOD8i24kzNOiOLLgsSxhA==}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -12832,10 +12761,6 @@ packages:
   verror@1.10.0:
     resolution: {integrity: sha512-ZZKSmDAEFOijERBLkmYfJ+vmk3w+7hOLYDNkRCuRuMJGEmqYNCNLyBBFwWKVMhfwaEF3WOd0Zlw86U/WC/+nYw==}
     engines: {'0': node >=0.6.0}
-
-  verror@1.10.1:
-    resolution: {integrity: sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==}
-    engines: {node: '>=0.6.0'}
 
   vfile-message@2.0.4:
     resolution: {integrity: sha512-DjssxRGkMvifUOJre00juHoP9DPWuzjxKuMDrhNbk2TdaYYBNMStsNhEOt3idrtI12VQYM/1+iM0KOzXi4pxwQ==}
@@ -14455,14 +14380,6 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@kwsites/file-exists@1.1.1(supports-color@10.2.2)':
-    dependencies:
-      debug: 4.4.3(supports-color@10.2.2)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@kwsites/promise-deferred@1.1.1': {}
-
   '@malept/cross-spawn-promise@1.1.1':
     dependencies:
       cross-spawn: 7.0.6
@@ -15476,7 +15393,7 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@tootallnate/once@2.0.0': {}
+  '@tootallnate/once@2.0.1': {}
 
   '@tybys/wasm-util@0.10.3':
     dependencies:
@@ -16676,14 +16593,14 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  builder-util-runtime@8.9.2(supports-color@10.2.2):
+  builder-util-runtime@9.2.4:
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       sax: 1.6.0
     transitivePeerDependencies:
       - supports-color
 
-  builder-util-runtime@9.2.4:
+  builder-util-runtime@9.7.0(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       sax: 1.6.0
@@ -17316,7 +17233,7 @@ snapshots:
       iconv-corefoundation: 1.1.7
       plist: 3.1.0
       smart-buffer: 4.2.0
-      verror: 1.10.1
+      verror: 1.10.0
     optional: true
 
   dnd-core@14.0.1:
@@ -17465,16 +17382,16 @@ snapshots:
 
   electron-to-chromium@1.5.325: {}
 
-  electron-updater@4.6.5(supports-color@10.2.2):
+  electron-updater@6.8.9(supports-color@10.2.2):
     dependencies:
-      '@types/semver': 7.7.1
-      builder-util-runtime: 8.9.2(supports-color@10.2.2)
+      builder-util-runtime: 9.7.0(supports-color@10.2.2)
       fs-extra: 10.1.0
       js-yaml: 4.1.1
       lazy-val: 1.0.5
       lodash.escaperegexp: 4.1.2
       lodash.isequal: 4.5.0
-      semver: 7.8.5
+      semver: 7.7.4
+      tiny-typed-emitter: 2.1.0
     transitivePeerDependencies:
       - supports-color
 
@@ -18279,7 +18196,7 @@ snapshots:
 
   http-proxy-agent@5.0.0:
     dependencies:
-      '@tootallnate/once': 2.0.0
+      '@tootallnate/once': 2.0.1
       agent-base: 6.0.2
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -20421,14 +20338,6 @@ snapshots:
       once: 1.4.0
       simple-concat: 1.0.1
 
-  simple-git@3.33.0(supports-color@10.2.2):
-    dependencies:
-      '@kwsites/file-exists': 1.1.1(supports-color@10.2.2)
-      '@kwsites/promise-deferred': 1.1.1
-      debug: 4.4.3(supports-color@10.2.2)
-    transitivePeerDependencies:
-      - supports-color
-
   simple-update-notifier@2.0.0:
     dependencies:
       semver: 7.8.5
@@ -20688,6 +20597,8 @@ snapshots:
       xtend: 4.0.2
 
   tiny-invariant@1.3.3: {}
+
+  tiny-typed-emitter@2.1.0: {}
 
   tinybench@2.9.0: {}
 
@@ -21032,13 +20943,6 @@ snapshots:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
       extsprintf: 1.4.1
-
-  verror@1.10.1:
-    dependencies:
-      assert-plus: 1.0.0
-      core-util-is: 1.0.2
-      extsprintf: 1.4.1
-    optional: true
 
   vfile-message@2.0.4:
     dependencies:

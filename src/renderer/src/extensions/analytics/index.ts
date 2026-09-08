@@ -3,6 +3,7 @@ import * as os from "os";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
+import { toUpdateChannel } from "@/types/IState";
 import { getCPUArch } from "@/util/nativeArch";
 
 import { activeGameId, activeProfileId } from "../../util/selectors";
@@ -11,7 +12,7 @@ import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import { AppLaunchedEvent } from "./mixpanel/MixpanelEvents";
+import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
@@ -26,6 +27,8 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
+    // `?? true` because state persisted before the setting existed has no value for it.
+    const isLegacyUI = () => !(context.api.getState().settings.window.useModernLayout ?? true);
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ["settings", "analytics", "enabled"];
@@ -69,6 +72,13 @@ function init(context: IExtensionContext): boolean {
     // Mixpanel specific event
     context.api.events.on("analytics-track-mixpanel-event", (event: MixpanelEvent) => {
       AnalyticsMixpanel.trackEvent(event);
+    });
+
+    // Emitted by the Settings > Theme toggle. Driven by the user action rather than a
+    // state listener, because the 2.0 migration writes the same setting during startup
+    // and would otherwise report itself as a switch the user never made.
+    context.api.events.on("analytics-track-ui-mode-changed", (isLegacy: boolean) => {
+      AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
     });
 
     // Keep the active-game super properties in sync so every event carries game scope.
@@ -130,6 +140,9 @@ function init(context: IExtensionContext): boolean {
             process.platform, // OS platform (e.g., "win32", "darwin", "linux")
             os.release(), // OS version (e.g., "10.0.22000" for Windows 11)
             getCPUArch(), // Architecture (e.g., "x64", "arm64")
+            isLegacyUI(), // UI mode (true when running the legacy/classic UI)
+            // normalised so a stale retired channel never reaches Mixpanel
+            toUpdateChannel(context.api.getState().settings.update.channel), // population for the update funnel
           ),
         );
 

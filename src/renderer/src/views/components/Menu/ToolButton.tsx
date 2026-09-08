@@ -3,24 +3,23 @@ import { pathToFileURL } from "url";
 import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 
-import { useWindowContext } from "../../../contexts";
-import { Icon } from "../../../ui/components/icon/Icon";
-import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { joinClasses } from "../../../ui/utils/joinClasses";
-import type { IStarterInfo } from "../../../util/StarterInfo";
+import { useWindowContext } from "@/contexts";
+import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import type { IStarterInfo } from "@/util/StarterInfo";
+
 import StarterInfo from "../../../util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   starter: IStarterInfo;
-  isPrimary?: boolean;
   isValid?: boolean;
   isRunning?: boolean;
 }
 
 export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
   starter,
-  isPrimary = false,
   isValid = true,
   isRunning = false,
   ...props
@@ -46,7 +45,7 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
     >
       <button
         aria-label={starter.name}
-        className={joinClasses("group/tool-button relative size-8 shrink-0 rounded-sm", {
+        className={joinClasses("group/tool-button relative size-9 shrink-0 rounded-sm", {
           "pointer-events-none cursor-not-allowed": isRunning,
         })}
         {...props}
@@ -64,7 +63,7 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
             appearance="moderate"
             as="span"
             className={joinClasses(
-              "absolute inset-0 flex items-center justify-center bg-surface-high leading-none",
+              "absolute inset-0 flex items-center justify-center rounded-sm bg-surface-high leading-none",
               { "opacity-40": !isValid },
             )}
             typographyType="body-lg"
@@ -76,7 +75,7 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
         <span
           className={joinClasses(
             [
-              "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-stroke-moderate transition-colors",
+              "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-surface-low transition-colors",
               "group-hover/tool-button:border-stroke-strong group-hover/tool-button:bg-translucent-600",
               "group-focus-visible/tool-button:border-stroke-strong group-focus-visible/tool-button:bg-translucent-600",
             ],

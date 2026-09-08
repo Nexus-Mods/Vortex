@@ -3,7 +3,6 @@ import * as path from "path";
 
 import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 
-import AttribDashlet from "./AttribDashlet";
 import { ensureBepInExPack } from "./bepInExDownloader";
 import { addGameSupport, getDownload, getSupportMap, MODTYPE_BIX_INJECTOR } from "./common";
 import {
@@ -14,11 +13,6 @@ import {
 } from "./installers";
 import { IBepInExGameConfig, INexusDownloadInfo } from "./types";
 import { createDirectories, dismissNotifications, toBlue } from "./util";
-
-function showAttrib(state: types.IState) {
-  const gameMode = selectors.activeGameId(state);
-  return getSupportMap()[gameMode] !== undefined;
-}
 
 function isSupported(gameId: string) {
   const isGameSupported = !["valheim"].includes(gameId);
@@ -170,17 +164,6 @@ function init(context: types.IExtensionContext) {
 
     return false;
   };
-
-  context.registerDashlet(
-    "BepInEx Support",
-    1,
-    2,
-    250,
-    AttribDashlet,
-    showAttrib,
-    () => ({}),
-    undefined,
-  );
 
   context.registerAPI(
     "bepinexAddGame",

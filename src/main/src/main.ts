@@ -41,7 +41,6 @@ if (process.env.VORTEX_E2E === "1") {
   }
 }
 
-import { initAdaptorHost } from "./adaptors";
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { init as initDownloadIpc } from "./downloading/ipc";
@@ -304,11 +303,6 @@ async function main(): Promise<void> {
   initIpcHandlers();
   initDownloadIpc(downloadManager);
   initUploadIpc(uploadManager);
-  initAdaptorHost().catch((err: unknown) => {
-    log("warn", "Failed to initialize adaptor host", {
-      error: err instanceof Error ? err.message : "unknown error",
-    });
-  });
   initTelemetryIpcHandler();
 
   StylesheetCompiler.init();

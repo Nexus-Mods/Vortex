@@ -2,7 +2,7 @@
 
 Prereq: `reference.md` (core) + `shared/persistence.md`. Scope to one
 session (default latest, per §B / investigate.md). Confirm current message strings /
-threshold against `AGENTS-DEBUGGING.md` and `src/main/src/store/LevelPersist.ts`.
+threshold against `docs/DEBUGGING-GUIDE.md` (Diagnostic Environment Variables) and `src/main/src/store/LevelPersist.ts`.
 
 1. **Activity:** count `Received persist:diff` (with hive + operationCount) over the
    window to show persist load.

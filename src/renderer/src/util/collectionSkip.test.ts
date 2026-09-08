@@ -27,9 +27,11 @@ const GAME_ID = "skyrimse";
 const COLLECTION_ID = "col-1";
 const SESSION_ID = "sess-1";
 
-// the harness slices for an active session whose collection tracks the single given member rule
-function ruleOverrides(rule: IModRule): Partial<IDriverHarnessState> {
-  const collection = makeMod({ id: COLLECTION_ID, rules: [rule] });
+// the harness slices for an active session whose collection tracks the single given member rule.
+// `liveRule` models the collection carrying a different snapshot of that member than the session
+// was keyed with, which is what retagging a rule mid-install leaves behind.
+function ruleOverrides(rule: IModRule, liveRule: IModRule = rule): Partial<IDriverHarnessState> {
+  const collection = makeMod({ id: COLLECTION_ID, rules: [liveRule] });
   const session = makeSession({
     sessionId: SESSION_ID,
     collectionId: COLLECTION_ID,
@@ -72,6 +74,116 @@ describe("markCollectionMemberSkipped - automatic skip (mod reference)", () => {
     expect(matched).toBe(true);
     expect(statusOf(h, rule)).toBe("ignored");
     expect(durableIgnored(h)).toBe(true);
+  });
+
+  // the session is keyed by the member's rule as it was when the install started, so a skip
+  // arriving with the retagged reference (same file, new tag) has to settle that same entry
+  test("ignores the member whose live rule was retagged", ({ makeApi }) => {
+    const rule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "mod-a", fileMD5: "abc123" }),
+    });
+    const liveRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "adopted-tag", fileMD5: "abc123" }),
+    });
+    const h = makeApi(ruleOverrides(rule, liveRule));
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "adopted-tag", fileMD5: "abc123" }),
+    });
+
+    expect(matched).toBe(true);
+    expect(statusOf(h, rule)).toBe("ignored");
+    expect(h.getState().session.collections.activeSession?.mods).not.toHaveProperty(
+      modRuleId(liveRule),
+    );
+    // the durable flag still lands on the collection's current rule
+    expect(durableIgnored(h)).toBe(true);
+  });
+
+  test("settles and durably flags the same member when two members share a file", ({ makeApi }) => {
+    const ruleX = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "tag-x", fileMD5: "shared-md5" }),
+    });
+    const ruleY = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "tag-y", fileMD5: "shared-md5" }),
+    });
+    const h = makeApi({
+      // the live scan meets Y first (md5 hit), the session scan meets X first (tag hit)
+      mods: {
+        [GAME_ID]: { [COLLECTION_ID]: makeMod({ id: COLLECTION_ID, rules: [ruleY, ruleX] }) },
+      },
+      session: makeInstallState({
+        activeSession: makeSession({
+          sessionId: SESSION_ID,
+          collectionId: COLLECTION_ID,
+          gameId: GAME_ID,
+          mods: {
+            [modRuleId(ruleX)]: makeModInstallInfo({ rule: ruleX, status: "pending" }),
+            [modRuleId(ruleY)]: makeModInstallInfo({ rule: ruleY, status: "pending" }),
+          },
+        }),
+      }),
+    });
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "tag-x", fileMD5: "shared-md5" }),
+    });
+
+    expect(matched).toBe(true);
+    expect(statusOf(h, ruleX)).toBe("ignored");
+    expect(statusOf(h, ruleY)).toBe("pending");
+    const rules = h.getState().persistent.mods[GAME_ID][COLLECTION_ID].rules ?? [];
+    const flagged = rules.filter((rule) => rule.ignored === true).map((rule) => rule.reference.tag);
+    expect(flagged).toEqual(["tag-x"]);
+  });
+
+  // a session can track a member the collection's current rules no longer carry (the rules were
+  // replaced mid-install); the skip settles the session entry without re-adding the old rule
+  test("settles a member whose rule left the collection without re-adding it", ({ makeApi }) => {
+    const rule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
+    const unrelatedRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "mod-other" }),
+    });
+    const h = makeApi(ruleOverrides(rule, unrelatedRule));
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "mod-a" }),
+    });
+
+    expect(matched).toBe(true);
+    expect(statusOf(h, rule)).toBe("ignored");
+    // the collection's current rules are untouched
+    const rules = h.getState().persistent.mods[GAME_ID][COLLECTION_ID].rules;
+    expect(rules).toHaveLength(1);
+    expect(rules?.[0]?.reference.tag).toBe("mod-other");
+  });
+
+  // A rule the collection gained after the install started has no session entry to settle, so
+  // only the durable flag can carry the decision - and the caller is told nothing was settled.
+  test("records the skip durably for a member the session does not track", ({ makeApi }) => {
+    const trackedRule = makeRule({ type: "requires", reference: makeReference({ tag: "mod-a" }) });
+    const addedRule = makeRule({
+      type: "requires",
+      reference: makeReference({ tag: "mod-added" }),
+    });
+    const h = makeApi(ruleOverrides(trackedRule, addedRule));
+
+    const matched = markCollectionMemberSkipped(h.api, {
+      reference: makeReference({ tag: "mod-added" }),
+    });
+
+    expect(matched).toBe(false);
+    expect(durableIgnored(h)).toBe(true);
+    // the member the session does track is left alone, and the untracked rule gains no entry
+    expect(statusOf(h, trackedRule)).toBe("pending");
+    expect(h.getState().session.collections.activeSession?.mods).not.toHaveProperty(
+      modRuleId(addedRule),
+    );
   });
 
   test("does nothing for a reference that is not a member", ({ makeApi }) => {

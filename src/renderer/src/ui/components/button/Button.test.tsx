@@ -63,6 +63,7 @@ describe("Button", () => {
       ["info", "nxm-button-info"],
       ["neutral", "nxm-button-neutral"],
       ["success", "nxm-button-success"],
+      ["danger", "nxm-button-danger"],
       ["premium", "nxm-button-premium"],
     ] as const)('applies correct class for brand="%s"', (brand, cls) => {
       render(<Button brand={brand}>Click</Button>);
@@ -97,15 +98,9 @@ describe("Button", () => {
       expect(getButton()).toHaveClass("nxm-button-sm");
     });
 
-    it('applies lg class for size="lg"', () => {
-      render(<Button size="lg">Click</Button>);
-      expect(getButton()).toHaveClass("nxm-button-lg");
-    });
-
     it('does not apply a size class for size="md" (default)', () => {
       render(<Button>Click</Button>);
       expect(getButton()).not.toHaveClass("nxm-button-sm");
-      expect(getButton()).not.toHaveClass("nxm-button-lg");
     });
   });
 
