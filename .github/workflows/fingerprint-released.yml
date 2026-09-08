@@ -2,13 +2,23 @@ name: Fingerprints - Mark as released
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to scan (e.g. 'v2.6.1' or 'v2.7.0-beta.1'). Tags with a '-' are pre-releases."
+        required: true
+        type: string
+      dry-run:
+        description: "Log the rows without writing them to ClickHouse."
+        type: boolean
+        default: true
 
 permissions:
   contents: read
   pull-requests: read
 
 concurrency:
-  group: fingerprint-released-${{ github.event.release.tag_name }}
+  group: fingerprint-released-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: false
 
 jobs:
@@ -19,6 +29,10 @@ jobs:
       - uses: ./.github/actions/fingerprints
         with:
           mode: release
+          # only read when there is no release payload (workflow_dispatch)
+          tag: ${{ inputs.tag }}
+          prerelease: ${{ contains(inputs.tag, '-') }}
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
           clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
           clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}

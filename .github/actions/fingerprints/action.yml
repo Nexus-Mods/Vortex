@@ -23,8 +23,24 @@ inputs:
     description: "mode=resolve: required when status=released and remove=false."
     required: false
     default: ""
+  tag:
+    description: "mode=release: release tag to scan when there is no `release` event payload (workflow_dispatch)."
+    required: false
+    default: ""
+  prerelease:
+    description: "mode=release: 'true' if `tag` is a pre-release. Ignored when the release payload is present."
+    required: false
+    default: "false"
+  pr-number:
+    description: "mode=pr: merged pull request to scan when there is no `pull_request` event payload (workflow_dispatch)."
+    required: false
+    default: ""
+  dry-run:
+    description: "Log the collected rows without writing them to ClickHouse."
+    required: false
+    default: "false"
   github-token:
-    description: "GITHUB_TOKEN for API calls (used by mode=release)."
+    description: "GITHUB_TOKEN for API calls (mode=release, and mode=pr with pr-number)."
     required: false
     default: ${{ github.token }}
   clickhouse-url:

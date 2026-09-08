@@ -95,17 +95,34 @@ const collectFingerprintRowsSince = async (
   return { rows, mergedCount };
 };
 
+interface ReleaseRef {
+  tag_name?: string;
+  prerelease?: boolean;
+}
+
+/** The release to scan: the `release` event payload, else the `tag`/`prerelease` inputs. */
+const releaseRef = (ctx: typeof github.context): ReleaseRef | undefined => {
+  const fromEvent: ReleaseRef | undefined = ctx.payload.release;
+  if (fromEvent?.tag_name) {
+    return fromEvent;
+  }
+  const tag = core.getInput("tag");
+  return tag === ""
+    ? undefined
+    : { tag_name: tag, prerelease: core.getInput("prerelease") === "true" };
+};
+
 /**
- * Runs on a published GitHub release. Walks PRs merged since the previous
- * release on the same channel (pre-releases against the previous pre-release,
- * stables against the previous stable), collects referenced fingerprints, and
- * marks them as released in the database.
+ * Runs on a published GitHub release, or on a dispatched tag. Walks PRs merged
+ * since the previous release on the same channel (pre-releases against the
+ * previous pre-release, stables against the previous stable), collects
+ * referenced fingerprints, and marks them as released in the database.
  */
 export const collectFromRelease = async (octokit: Octokit): Promise<CollectResult> => {
   const ctx = github.context;
-  const release: { tag_name?: string; prerelease?: boolean } | undefined = ctx.payload.release;
+  const release = releaseRef(ctx);
   if (!release?.tag_name) {
-    throw new Error("mode=release needs a `release` event payload.");
+    throw new Error("mode=release needs a `release` event payload or a `tag` input.");
   }
   const version = release.tag_name;
   const prerelease = release.prerelease === true;
