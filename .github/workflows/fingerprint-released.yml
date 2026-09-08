@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   sync:
-    runs-on: platform-cluster
+    runs-on: platform-cluster-public
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/fingerprints
