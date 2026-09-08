@@ -3,6 +3,7 @@ import {
   CycleError,
   DataInvalid,
   GameNotFound,
+  HTTPError,
   MissingInterpreter,
   NotFound,
   NotSupportedError,
@@ -153,6 +154,8 @@ function reviveClass(message: string, data: VortexErrorData): VortexError | unde
       return new DataInvalid(message);
     case "game-not-found":
       return new GameNotFound(data.gameId);
+    case "http:bad-status":
+      return new HTTPError(data.statusCode, message, data.url);
     case "missing-interpreter":
       return new MissingInterpreter(message, data.url);
     case "not-found":

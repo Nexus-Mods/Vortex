@@ -1,6 +1,13 @@
 import { assert, describe, expect, it } from "vitest";
 
-import { CycleError, NotFound, ProcessCanceled, SetupError, UserCanceled } from "../types/errors";
+import {
+  CycleError,
+  HTTPError,
+  NotFound,
+  ProcessCanceled,
+  SetupError,
+  UserCanceled,
+} from "../types/errors";
 import { VortexError } from "./base";
 import {
   ORIGIN_REF_KEY,
@@ -162,6 +169,12 @@ describe("toWireError (boundary entry point)", () => {
     expect(wire.data[ORIGIN_REF_KEY]).toBeUndefined();
   });
 
+  it("classifies a raw socket hang up rather than sending it as unknown", () => {
+    const wire = toWireError(Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }));
+    expect(wire.data).toMatchObject({ kind: "os:generic", originalCode: "ECONNRESET" });
+    expect(wire.message).toBe("socket hang up");
+  });
+
   it("does not tag a ref token when no tracker is passed", () => {
     const wire = toWireError(new VortexError("hi", { kind: "test:tag", name: "x" }));
     expect(wire.data[ORIGIN_REF_KEY]).toBeUndefined();
@@ -281,6 +294,15 @@ describe("class reconstruction", () => {
     );
     expect(roundTrip(new UserCanceled(true))).toHaveProperty("skipped", true);
     expect(roundTrip(new CycleError([["a", "b"]]))).toHaveProperty("cycles", [["a", "b"]]);
+  });
+
+  it("revives an HTTPError with its status code and url", () => {
+    const wire = roundTrip(new HTTPError(520, "Request Failed", "https://api/download_link"));
+
+    expect(wire).toBeInstanceOf(HTTPError);
+    expect(wire).toHaveProperty("statusCode", 520);
+    expect(wire).toHaveProperty("url", "https://api/download_link");
+    expect(wire.data).toMatchObject({ kind: "http:bad-status", statusCode: 520 });
   });
 
   it("keeps the wire's message rather than the one the constructor synthesizes", () => {
