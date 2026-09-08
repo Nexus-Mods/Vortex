@@ -1,15 +1,14 @@
 name: Fingerprints - Mark as released
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
 
 permissions:
   contents: read
   pull-requests: read
 
 concurrency:
-  group: fingerprint-released-${{ github.ref }}
+  group: fingerprint-released-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:

@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
+import { previousReleaseTag } from "./previous-tag";
 import { type CollectResult, type FingerprintRow, PR_FINGERPRINT_RE, Status } from "./types";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
@@ -95,13 +96,19 @@ const collectFingerprintRowsSince = async (
 };
 
 /**
- * Should be triggered when we have a new Vorted release (push to a `v*` tag).
- * Walks merged PRs since the previous release, collects referenced fingerprints,
- * and marks them as released in the database.
+ * Runs on a published GitHub release. Walks PRs merged since the previous
+ * release on the same channel (pre-releases against the previous pre-release,
+ * stables against the previous stable), collects referenced fingerprints, and
+ * marks them as released in the database.
  */
 export const collectFromRelease = async (octokit: Octokit): Promise<CollectResult> => {
   const ctx = github.context;
-  const version = ctx.ref.replace("refs/tags/", "");
+  const release: { tag_name?: string; prerelease?: boolean } | undefined = ctx.payload.release;
+  if (!release?.tag_name) {
+    throw new Error("mode=release needs a `release` event payload.");
+  }
+  const version = release.tag_name;
+  const prerelease = release.prerelease === true;
 
   const tags = await octokit.paginate(octokit.rest.repos.listTags, {
     owner: ctx.repo.owner,
@@ -109,14 +116,15 @@ export const collectFromRelease = async (octokit: Octokit): Promise<CollectResul
     per_page: 100,
   });
 
-  const tagNames = tags.map((t) => t.name).filter((n) => n.startsWith("v"));
-  const currentIndex = tagNames.indexOf(version);
-  if (currentIndex < 0) {
-    throw new Error(`Current tag ${version} not found in repository tag list.`);
-  }
-  const previousTag = tagNames[currentIndex + 1];
-  if (!previousTag) {
-    core.info("No previous tag found, nothing to mark as released.");
+  const previousTag = previousReleaseTag(
+    tags.map((t) => t.name),
+    version,
+    prerelease,
+  );
+  if (previousTag === "") {
+    core.info(
+      `No previous ${prerelease ? "pre-release" : "stable release"} before ${version}, nothing to mark as released.`,
+    );
     return { rows: [], dbMode: "insert" };
   }
 

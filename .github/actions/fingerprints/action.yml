@@ -1,6 +1,6 @@
 name: Update resolved fingerprints
 description: >-
-  Collect fingerprints (from a PR body, release tags, or manual inputs) and
+  Collect fingerprints (from a PR body, a published release, or manual inputs) and
   write to vortex.resolved_fingerprints in ClickHouse.
 
 inputs:

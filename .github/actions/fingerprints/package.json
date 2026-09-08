@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "commonjs",
-  "description": "GitHub Action: collect fingerprints from PR body / release tag / manual input and write to vortex.resolved_fingerprints in ClickHouse.",
+  "description": "GitHub Action: collect fingerprints from PR body / published release / manual input and write to vortex.resolved_fingerprints in ClickHouse.",
   "scripts": {
     "build": "node ./build.mjs",
     "test": "pnpm exec vitest run",
@@ -15,10 +15,12 @@
   "dependencies": {
     "@actions/core": "catalog:",
     "@actions/github": "catalog:",
-    "@clickhouse/client": "catalog:"
+    "@clickhouse/client": "catalog:",
+    "semver": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/semver": "catalog:",
     "rolldown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
