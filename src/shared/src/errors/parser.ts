@@ -57,7 +57,7 @@ function parseNodeSystemError(
   const data = parseNodeSystemErrorData(cause);
   if (!data) {
     // "socket hang up" and TLS disconnects carry a POSIX code but no errno/syscall
-    const code = (cause as { code?: unknown }).code;
+    const code = "code" in cause ? cause.code : undefined;
     return typeof code === "string" && NETWORK_POSIX_CODES.has(code)
       ? networkError(code, { originalCode: code }, cause.message, context)
       : undefined;

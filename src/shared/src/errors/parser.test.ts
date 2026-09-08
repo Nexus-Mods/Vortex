@@ -16,6 +16,11 @@ function makeSystemError(
   });
 }
 
+/** How Node reports a dropped socket: a POSIX code, but no errno or syscall. */
+function socketHangUp(): Error {
+  return Object.assign(new Error("socket hang up"), { code: "ECONNRESET" });
+}
+
 describe("parseError", () => {
   it("passes a VortexError through unchanged, with data typed as the full union", () => {
     const original = new VortexError("already typed", { kind: "user-canceled", skipped: false });
@@ -173,8 +178,6 @@ describe("parseError", () => {
     });
 
     describe("code without errno/syscall (socket hang up, TLS disconnect)", () => {
-      const socketHangUp = () => Object.assign(new Error("socket hang up"), { code: "ECONNRESET" });
-
       it("with URL -> http:generic", () => {
         const result = parseError(socketHangUp(), { url });
         assert(result.data.kind === "http:generic");
