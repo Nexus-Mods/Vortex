@@ -39,3 +39,11 @@ export const setRelativeTimes = safeCreateAction(
 );
 
 export const setForegroundDL = safeCreateAction("SET_FOREGROUND_DL", (enabled: boolean) => enabled);
+
+/**
+ * keep page headers in their compact (scrolled) form at all times
+ */
+export const setAlwaysCompactHeaders = safeCreateAction(
+  "SET_ALWAYS_COMPACT_HEADERS",
+  (enabled: boolean) => enabled,
+);

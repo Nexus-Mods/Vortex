@@ -59,12 +59,19 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 - `title` — the string heading. Mutually exclusive (`XOr`) with `customTitle`
   (an arbitrary node, e.g. a title with a badge).
-- `subtitle` — the subheading below the title (hidden once scrolled).
+- `subtitle` — the subheading below the title (hidden once the header is compact).
 - `pictogramName` — see Step 4.
 - `children` — rendered on the **right side** of the header, for page actions. Examples:
   Health Check puts its "last updated" label + refresh/settings buttons here; Games puts
   its search box + display options here. `children` may also be a render-prop
-  `(scrolled: boolean) => ReactNode` when the actions need to react to scroll.
+  `(compact: boolean) => ReactNode` when the actions need to follow the compact state.
+
+The header's **compact** form — small pictogram, no subtitle, subdued title — normally
+arrives on scroll, but the "Always use compact headers" interface setting
+(`settings.interface.alwaysCompactHeaders`) pins it on. `Page` owns that decision and
+publishes it as `compact` on its context, so a `PageHeader` gets it for free. Read both
+that and `scrolled` — which stays what genuinely tracks the scroll position, and so
+drives the header's shadow — with `usePage()`.
 
 ## Step 3 — migrate tabs
 

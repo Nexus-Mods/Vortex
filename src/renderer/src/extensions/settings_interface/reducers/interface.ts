@@ -1,6 +1,7 @@
 import update from "immutability-helper";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "@/types/IExtensionContext";
+
 import * as actions from "../actions/interface";
 
 /**
@@ -24,6 +25,8 @@ const settingsReducer: IReducerSpec = {
       update(state, { relativeTimes: { $set: payload } }),
     [actions.setForegroundDL as any]: (state, payload) =>
       update(state, { foregroundDL: { $set: payload } }),
+    [actions.setAlwaysCompactHeaders as any]: (state, payload) =>
+      update(state, { alwaysCompactHeaders: { $set: payload } }),
   },
   defaults: {
     language: "en",
@@ -33,6 +36,7 @@ const settingsReducer: IReducerSpec = {
     hideTopLevelCategory: false,
     relativeTimes: true,
     foregroundDL: true,
+    alwaysCompactHeaders: false,
     usage: {},
   },
 };

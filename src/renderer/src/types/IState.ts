@@ -225,6 +225,7 @@ export interface ISettingsInterface {
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
+  alwaysCompactHeaders: boolean;
   dashboardLayout: string[];
   foregroundDL: boolean;
   dashletSettings: { [dashletId: string]: IDashletSettings };

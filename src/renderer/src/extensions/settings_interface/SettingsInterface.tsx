@@ -38,6 +38,7 @@ import {
 } from "./actions/automation";
 import {
   setAdvancedMode,
+  setAlwaysCompactHeaders,
   setDesktopNotifications,
   setForegroundDL,
   setHideTopLevelCategory,
@@ -56,6 +57,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   profilesVisible: boolean;
+  alwaysCompactHeaders: boolean;
   autoDeployment: boolean;
   autoInstall: boolean;
   autoEnable: boolean;
@@ -73,6 +75,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetLanguage: (language: string) => void;
+  onSetAlwaysCompactHeaders: (enabled: boolean) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetAutoInstall: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
@@ -126,6 +129,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const {
       t,
+      alwaysCompactHeaders,
       autoDeployment,
       autoEnable,
       autoInstall,
@@ -228,6 +232,16 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
             <div>
               <Toggle checked={relativeTimes} onToggle={this.toggleRelativeTimes}>
                 {t('Use relative times (e.g. "3 months ago")')}
+              </Toggle>
+            </div>
+
+            <div>
+              <Toggle checked={alwaysCompactHeaders} onToggle={this.toggleAlwaysCompactHeaders}>
+                {t("Always use compact headers")}
+
+                <Typography appearance="subdued" typographyType="body-sm">
+                  {t("Keep page headers compact for less motion and more vertical space.")}
+                </Typography>
               </Toggle>
             </div>
           </div>
@@ -336,6 +350,11 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
   private toggleAcceleration = () => {
     this.props.changeStartup("disableGPU", this.props.startup.disableGPU !== true);
+  };
+
+  private toggleAlwaysCompactHeaders = () => {
+    const { alwaysCompactHeaders, onSetAlwaysCompactHeaders } = this.props;
+    onSetAlwaysCompactHeaders(!alwaysCompactHeaders);
   };
 
   private toggleRelativeTimes = () => {
@@ -486,6 +505,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     relativeTimes: state.settings.interface.relativeTimes,
+    alwaysCompactHeaders: state.settings.interface.alwaysCompactHeaders === true,
     suppressedNotifications: state.settings.notifications.suppress,
     foregroundDL: state.settings.interface.foregroundDL,
   };
@@ -528,6 +548,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetRelativeTimes: (enabled: boolean) => {
       dispatch(setRelativeTimes(enabled));
+    },
+    onSetAlwaysCompactHeaders: (enabled: boolean) => {
+      dispatch(setAlwaysCompactHeaders(enabled));
     },
     onResetNotificationSuppression: () => {
       dispatch(resetSuppression(null));
