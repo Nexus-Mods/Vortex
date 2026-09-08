@@ -521,9 +521,6 @@ catalogs:
     bs58:
       specifier: 4.0.1
       version: 4.0.1
-    bsatk:
-      specifier: github:Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
-      version: 2.1.0
     classnames:
       specifier: 2.5.1
       version: 2.5.1
@@ -1572,33 +1569,6 @@ importers:
       lz4js:
         specifier: ^0.2.0
         version: 0.2.0
-      rimraf:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-      tmp:
-        specifier: 'catalog:'
-        version: 0.1.0
-
-  extensions/gamebryo-bsa-support:
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/node':
-        specifier: 24.12.2
-        version: 24.12.2
-      '@types/rimraf':
-        specifier: 'catalog:'
-        version: 2.0.5
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      bsatk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
       rimraf:
         specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
@@ -8395,11 +8365,6 @@ packages:
 
   bs58@4.0.1:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
-
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
-    resolution: {gitHosted: true, integrity: sha512-x0ygf1FRt9qc22ffqKoSpwZwct/dNw8CVh3R9Djiyi3OzmGf1soOdWwFXwysHC3JEkSoeXKV0EXzPeGdOG8Q4Q==, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59}
-    version: 2.1.0
-    os: [win32, linux]
 
   buffer-crc32@0.2.13:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
@@ -16381,13 +16346,6 @@ snapshots:
   bs58@4.0.1:
     dependencies:
       base-x: 3.0.11
-
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
-    dependencies:
-      autogypi: 0.2.2
-      node-addon-api: 8.5.0
-      node-gyp: 12.3.0
-      prebuild-install: 7.1.3
 
   buffer-crc32@0.2.13: {}
 
