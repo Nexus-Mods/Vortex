@@ -1,12 +1,20 @@
-import { ComponentEx, FlexLayout, Toggle, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { ControlLabel, FormControl, FormGroup, Radio } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
-import { lockPluginIndex } from "./actions";
-import { IPlugin } from "./types";
+import { ComponentEx } from "../../../controls/ComponentEx";
+import FlexLayout from "../../../controls/FlexLayout";
+import type { IState } from "../../../types/IState";
+import { getSafe } from "../../../util/storeHelper";
+import { lockPluginIndex } from "../actions/indexlock";
+import { NAMESPACE } from "../statics";
+import type { IPluginCombined } from "../types/IPlugins";
+
+// look translations up in the extension namespace first, then the pre-fold extension's own
+// namespace so existing community translation packs keep working
+const NS_CHAIN = [NAMESPACE, "gamebryo-lockindex"];
 
 function toHex(input: number) {
   if (input === undefined) {
@@ -21,7 +29,7 @@ function toHex(input: number) {
 
 export interface IBaseProps {
   gameMode: string;
-  plugin: IPlugin;
+  plugin: IPluginCombined;
 }
 
 interface IConnectedProps {
@@ -37,10 +45,6 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 class LockIndex extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, lockedIndex } = this.props;
-    const title =
-      lockedIndex !== undefined
-        ? t("Locked to index", { replace: { lockedIndex: toHex(lockedIndex) } })
-        : t("Sorted automatically");
     return (
       <FlexLayout type="column">
         <Radio
@@ -49,7 +53,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
           data-value="automatic"
           onChange={this.onToggleEvt}
         >
-          {t("Sorted automatically")}
+          {t("Sorted automatically", { ns: NS_CHAIN })}
         </Radio>
         <Radio
           name="lockedGroup"
@@ -57,7 +61,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
           data-value="locked"
           onChange={this.onToggleEvt}
         >
-          {t("Locked to index")}
+          {t("Locked to index", { ns: NS_CHAIN })}
         </Radio>
         {this.renderIndex()}
       </FlexLayout>
@@ -74,7 +78,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
         <FormControl
           type="text"
           value={lockedIndex !== undefined ? toHex(lockedIndex) : ""}
-          placeholder={t("Automatic")}
+          placeholder={t("Automatic", { ns: NS_CHAIN })}
           onChange={this.setIndex}
           disabled={lockedIndex === undefined}
         />
@@ -83,6 +87,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
             {t(
               "Actual index differs. If this is the case after sorting it may be " +
                 "this index isn't possible.",
+              { ns: NS_CHAIN },
             )}
           </ControlLabel>
         )}
@@ -90,7 +95,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
     );
   }
 
-  private onToggle = (newValue: boolean, dataId?: string) => {
+  private onToggle = (newValue: boolean) => {
     const { gameMode, onLockPluginIndex, plugin } = this.props;
     onLockPluginIndex(gameMode, plugin.name.toLowerCase(), newValue ? plugin.modIndex : undefined);
     this.forceUpdate();
@@ -110,7 +115,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
   };
 }
 
-function mapStateToProps(state: types.IState, ownProps: IBaseProps): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   const statePath = [
     "persistent",
     "plugins",
@@ -119,7 +124,7 @@ function mapStateToProps(state: types.IState, ownProps: IBaseProps): IConnectedP
     ownProps.plugin.name.toLowerCase(),
   ];
   return {
-    lockedIndex: util.getSafe(state, statePath, undefined),
+    lockedIndex: getSafe(state, statePath, undefined),
   };
 }
 
@@ -130,6 +135,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   };
 }
 
-export default withTranslation(["common", "gamebryo-lockindex"])(
+export default withTranslation(["common", ...NS_CHAIN])(
   connect(mapStateToProps, mapDispatchToProps)(LockIndex) as any,
 ) as React.ComponentClass<IBaseProps>;

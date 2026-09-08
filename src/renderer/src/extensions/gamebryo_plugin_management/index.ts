@@ -54,8 +54,11 @@ import {
 } from "./actions/plugins";
 import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
+import { testIncompatibleArchives } from "./archiveCheck";
 import LootInterface from "./autosort";
 import { ESPFile } from "./esp/ESPFile";
+import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
+import { indexReducer } from "./reducers/indexlock";
 import { loadOrderReducer } from "./reducers/loadOrder";
 import { pluginsReducer } from "./reducers/plugins";
 import { settingsReducer } from "./reducers/settings";
@@ -63,8 +66,8 @@ import userlistReducer from "./reducers/userlist";
 import userlistEditReducer from "./reducers/userlistEdit";
 import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
-import { ILoadOrder } from "./types/ILoadOrder";
 import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
+import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
 import { IPlugin, IPluginCombined, IPlugins } from "./types/IPlugins";
 import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
@@ -401,6 +404,9 @@ function register(
   });
   context.registerReducer(["settings", "plugins"], settingsReducer);
   context.registerReducer(["session", "pluginDependencies"], userlistEditReducer);
+  context.registerReducer(["persistent", "plugins", "lockedIndices"], indexReducer);
+
+  context.registerTableAttribute("gamebryo-plugins", genLockIndexAttribute(context.api));
 
   const pluginActivity = new ReduxProp(
     context.api,
@@ -730,6 +736,9 @@ function register(
   );
   context.registerTest("exceeded-plugin-limit", "plugins-changed", () =>
     testExceededPluginLimit(context.api, pluginInfoCache),
+  );
+  context.registerTest("incompatible-mod-archives", "plugins-changed", () =>
+    testIncompatibleArchives(context.api),
   );
   context.registerDialog("plugin-dependencies-connector", Connector);
   context.registerDialog("userlist-editor", UserlistEditor);
@@ -1312,7 +1321,7 @@ async function testMissingMasters(
 
   const pluginList = state.session.plugins.pluginList ?? {};
   const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
   );
@@ -1419,7 +1428,7 @@ async function testBlueprintMasters(
 
   const pluginList = state.session.plugins.pluginList ?? {};
   const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
   );
@@ -1537,7 +1546,7 @@ function testRulesUnfulfilled(api: IExtensionApi): Bluebird<ITestResult> {
   const discovery = discoveryByGame(state, gameMode);
 
   const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
+  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
     (plugin: string) =>
       pluginInfo[plugin] !== undefined && (loadOrder[plugin].enabled || natives.has(plugin)),
@@ -1795,6 +1804,10 @@ function init(context: IExtensionContextExt) {
         const store = context.api.store;
 
         loot = new LootInterface(context.api);
+
+        // folded gamebryo-plugin-indexlock wiring; only attaches listeners, no ordering
+        // dependency within this block
+        onceIndexLock(context.api, () => deploying);
 
         let pluginsChangedQueued = false;
 

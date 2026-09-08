@@ -1,6 +1,6 @@
 import type { IState } from "../../../types/IState";
-import type { ILoadOrder } from "./ILoadOrder";
 import type { ILOOTList } from "./ILOOTList";
+import type { IPluginLoadOrderEntry } from "./IPluginLoadOrderEntry";
 import type { IPluginCombined, IPluginDependencies, IPlugins } from "./IPlugins";
 
 // No idea what we need to do with this,
@@ -23,5 +23,5 @@ export interface IStateWithGamebryo extends IState {
       pluginManagementEnabled: { [profileId: string]: boolean };
     };
   };
-  loadOrder: { [pluginId: string]: ILoadOrder };
+  loadOrder: { [pluginId: string]: IPluginLoadOrderEntry };
 }

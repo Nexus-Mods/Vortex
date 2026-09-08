@@ -51,8 +51,8 @@ import { setAutoSortEnabled } from "../actions/settings";
 import { addGroup, addGroupRule, setGroup } from "../actions/userlist";
 import { GHOST_EXT, NAMESPACE } from "../statics";
 import { IESPFile } from "../types/IESPFile";
-import { ILoadOrder } from "../types/ILoadOrder";
 import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
+import { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/IPlugins";
 import GroupFilter from "../util/GroupFilter";
 import toPluginId from "../util/toPluginId";
@@ -98,7 +98,7 @@ interface IConnectedProps {
   gameMode: string;
   language: string;
   plugins: IPlugins;
-  loadOrder: { [name: string]: ILoadOrder };
+  loadOrder: { [name: string]: IPluginLoadOrderEntry };
   autoSort: boolean;
   activity: string[];
   modActivity: string[];
@@ -1039,7 +1039,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return result;
   }
 
-  private applyLoadOrder(loadOrder: { [pluginId: string]: ILoadOrder }) {
+  private applyLoadOrder(loadOrder: { [pluginId: string]: IPluginLoadOrderEntry }) {
     const { pluginsCombined } = this.state;
 
     const updateSet = {};
