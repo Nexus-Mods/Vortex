@@ -1,6 +1,6 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
+import { HTTPError as NexusHTTPError, NexusError, RateLimitError } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
@@ -534,6 +534,12 @@ export class NxmProtocol {
     let error = err;
     if (error instanceof NexusError) {
       const http = new HTTPError(error.statusCode, error.message, error.request);
+      http.stack = error.stack;
+      error = http;
+    } else if (error instanceof NexusHTTPError) {
+      const http = new HTTPError(error.statusCode, error.message, error.url);
+      // the api client's message is already "HTTP (code) - message"
+      http.message = error.message;
       http.stack = error.stack;
       error = http;
     }

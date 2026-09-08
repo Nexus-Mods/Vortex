@@ -16,6 +16,11 @@ function makeSystemError(
   });
 }
 
+/** How Node reports a dropped socket: a POSIX code, but no errno or syscall. */
+function socketHangUp(): Error {
+  return Object.assign(new Error("socket hang up"), { code: "ECONNRESET" });
+}
+
 describe("parseError", () => {
   it("passes a VortexError through unchanged, with data typed as the full union", () => {
     const original = new VortexError("already typed", { kind: "user-canceled", skipped: false });
@@ -170,6 +175,30 @@ describe("parseError", () => {
         assert(result.data.kind === "os:generic");
         expect(result.isTransient).toBe(isTransient);
       });
+    });
+
+    describe("ECONNRESET without errno/syscall (socket hang up, TLS disconnect)", () => {
+      it("with URL -> http:generic", () => {
+        const result = parseError(socketHangUp(), { url });
+        assert(result.data.kind === "http:generic");
+        expect(result.data.url).toBe(url);
+        expect(result.data.originalCode).toBe("ECONNRESET");
+      });
+
+      it("without URL -> os:generic, keeping the message", () => {
+        const result = parseError(socketHangUp());
+        assert(result.data.kind === "os:generic");
+        expect(result.data.originalCode).toBe("ECONNRESET");
+        expect(result.message).toBe("socket hang up");
+      });
+
+      test.for([{ code: "ERR_SOMETHING" }, { code: "ETIMEDOUT" }])(
+        "any other code without errno/syscall ($code) is still unknown",
+        ({ code }) => {
+          const result = parseError(Object.assign(new Error("boom"), { code }));
+          assert(result.data.kind === "unknown");
+        },
+      );
     });
   });
 });
