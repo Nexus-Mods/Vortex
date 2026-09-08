@@ -37,3 +37,21 @@ describe("setAlwaysCompactHeaders", () => {
     expect(result).toEqual({ alwaysCompactHeaders: true });
   });
 });
+
+describe("setReduceMotion", () => {
+  it("records the choice", () => {
+    const result = settingsReducer.reducers.SET_REDUCE_MOTION({}, true);
+    expect(result).toEqual({ reduceMotion: true });
+  });
+
+  // Unset means "follow the OS", so an explicit false has to be stored as false rather
+  // than left absent.
+  it("records turning it back off", () => {
+    const result = settingsReducer.reducers.SET_REDUCE_MOTION({ reduceMotion: true }, false);
+    expect(result).toEqual({ reduceMotion: false });
+  });
+
+  it("has no default, so an untouched setting follows the OS", () => {
+    expect(settingsReducer.defaults).not.toHaveProperty("reduceMotion");
+  });
+});

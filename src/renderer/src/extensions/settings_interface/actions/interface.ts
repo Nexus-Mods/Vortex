@@ -47,3 +47,9 @@ export const setAlwaysCompactHeaders = safeCreateAction(
   "SET_ALWAYS_COMPACT_HEADERS",
   (enabled: boolean) => enabled,
 );
+
+/**
+ * turn non-essential animation down. Dispatching this records an explicit choice; until
+ * then the setting is absent and the operating system's preference is followed.
+ */
+export const setReduceMotion = safeCreateAction("SET_REDUCE_MOTION", (enabled: boolean) => enabled);

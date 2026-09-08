@@ -168,6 +168,7 @@ import GlobalNotifications from "./util/GlobalNotifications";
 import { init as getI18n, changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
 import { showError } from "./util/message";
 import migrate from "./util/migrate";
+import { applyReduceMotion, reduceMotionFromState } from "./util/reduceMotion";
 import { readStartupSettings } from "./util/startupSettings";
 import { getSafe } from "./util/storeHelper";
 import { bytesToString, getAllPropertyNames } from "./util/util";
@@ -920,6 +921,7 @@ function renderer(extensions: ExtensionManager | null) {
   }
 
   webFrame.setZoomFactor(getSafe(store.getState(), ["settings", "window", "zoomFactor"], 1));
+  applyReduceMotion(reduceMotionFromState(store.getState()));
 
   ReactDOM.render(<LoadingScreen extensions={extensions} />, document.getElementById("content"));
   ipcRenderer.send("show-window");
