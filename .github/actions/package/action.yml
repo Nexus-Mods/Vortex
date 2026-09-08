@@ -136,7 +136,7 @@ runs:
       if: steps.packaged-native-cache.outputs.cache-hit != 'true' # skip when cached
       shell: pwsh
       working-directory: src/main/dist
-      run: npx electron-rebuild
+      run: pnpm exec electron-rebuild
 
     - name: Build Installer
       shell: pwsh
