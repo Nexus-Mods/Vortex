@@ -1,7 +1,8 @@
+import type { OpenChangeReason } from "@floating-ui/react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
 import { Tooltip, type ITooltipPlacement } from "./Tooltip";
 import { TooltipDelayGroup } from "./TooltipDelayGroup";
@@ -167,6 +168,28 @@ describe("Tooltip", () => {
     });
   });
 
+  // A disabled tooltip used to keep its hover, focus and delay-group machinery live. It
+  // rendered nothing, but it still claimed the delay group's currentId, and the group
+  // closes whichever member is not current — so the real tooltip on the same trigger (the
+  // spine's download button has both) was shut again the moment it opened, and you had to
+  // hover twice.
+  it("asks for nothing while disabled, so it cannot disturb another tooltip", async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <Tooltip disabled content="Downloads" delay={0} onOpenChange={onOpenChange}>
+        <button type="button">Downloads</button>
+      </Tooltip>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Downloads" });
+
+    await userEvent.hover(trigger);
+    trigger.focus();
+    await userEvent.click(document.body);
+
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
   it("attaches nothing when the body resolves to nothing", async () => {
     // The XOr type normally prevents this; the runtime guard covers a caller
     // passing `content={someMaybeUndefinedValue}`.
@@ -187,6 +210,163 @@ describe("Tooltip", () => {
     await userEvent.hover(screen.getByRole("button", { name: "Clipped trigger" }));
     await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
     expect(screen.getByTestId("clipper")).not.toContainElement(screen.getByRole("tooltip"));
+  });
+});
+
+describe("Tooltip with a controlled open state", () => {
+  const renderControlled = (
+    open: boolean,
+    onOpenChange: (open: boolean, reason?: OpenChangeReason) => void = () => undefined,
+  ) => {
+    render(
+      <Tooltip
+        content="Deploys every enabled mod"
+        delay={0}
+        open={open}
+        onOpenChange={onOpenChange}
+      >
+        <button type="button">Deploy</button>
+      </Tooltip>,
+    );
+
+    return { trigger: screen.getByRole("button", { name: "Deploy" }) };
+  };
+
+  it("shows the content without anyone hovering", async () => {
+    renderControlled(true);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+  });
+
+  it("stays down on hover, because the caller owns the answer", async () => {
+    const { trigger } = renderControlled(false);
+    await userEvent.hover(trigger);
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  it("reports a hover so the caller can tell it from an open it asked for", async () => {
+    const onOpenChange = vi.fn();
+    const { trigger } = renderControlled(false, onOpenChange);
+
+    await userEvent.hover(trigger);
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(true, "hover"));
+  });
+
+  it("reports a dismissal, so the caller can stop saying open", async () => {
+    const onOpenChange = vi.fn();
+    renderControlled(true, onOpenChange);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false, "escape-key"));
+  });
+});
+
+describe("Tooltip that persists", () => {
+  const renderPersistent = (
+    persistent: boolean,
+    onOpenChange: (open: boolean, reason?: OpenChangeReason) => void = () => undefined,
+  ) => {
+    render(
+      <>
+        <Tooltip
+          content="Downloading Eastern Vagabond Armor"
+          delay={0}
+          open
+          persistent={persistent}
+          onOpenChange={onOpenChange}
+        >
+          <button type="button">Downloads</button>
+        </Tooltip>
+
+        <button type="button">Somewhere else</button>
+      </>,
+    );
+
+    return {
+      elsewhere: screen.getByRole("button", { name: "Somewhere else" }),
+      trigger: screen.getByRole("button", { name: "Downloads" }),
+    };
+  };
+
+  it("ignores a press elsewhere in the app", async () => {
+    const onOpenChange = vi.fn();
+    const { elsewhere } = renderPersistent(true, onOpenChange);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    await userEvent.click(elsewhere);
+
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false, "outside-press");
+  });
+
+  it("ignores a press on its own trigger", async () => {
+    const onOpenChange = vi.fn();
+    const { trigger } = renderPersistent(true, onOpenChange);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    await userEvent.click(trigger);
+
+    expect(onOpenChange).not.toHaveBeenCalledWith(false, "reference-press");
+  });
+
+  it("still closes on Escape, so it is never a trap", async () => {
+    const onOpenChange = vi.fn();
+    renderPersistent(true, onOpenChange);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false, "escape-key"));
+  });
+
+  it("yields to a press elsewhere once it stops persisting", async () => {
+    const onOpenChange = vi.fn();
+    const { elsewhere } = renderPersistent(false, onOpenChange);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    await userEvent.click(elsewhere);
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false, "outside-press"));
+  });
+
+  // A delay group closes whichever member is not current, so only one shows at a time.
+  // That is the mechanism an announcement has to be exempt from.
+  const renderInGroup = (persistent: boolean, onOpenChange: Mock) => {
+    render(
+      <TooltipDelayGroup as="div" delay={0}>
+        <Tooltip
+          content="Downloading Eastern Vagabond Armor"
+          delay={0}
+          open
+          persistent={persistent}
+          onOpenChange={onOpenChange}
+        >
+          <button type="button">Downloads</button>
+        </Tooltip>
+
+        <Tooltip content="Notifications" delay={0}>
+          <button type="button">Bell</button>
+        </Tooltip>
+      </TooltipDelayGroup>,
+    );
+  };
+
+  it("is not closed by a neighbour opening in the same delay group", async () => {
+    const onOpenChange = vi.fn();
+    renderInGroup(true, onOpenChange);
+    await waitFor(() => expect(screen.getAllByRole("tooltip")).toHaveLength(1));
+
+    await userEvent.hover(screen.getByRole("button", { name: "Bell" }));
+    await waitFor(() => expect(screen.getAllByRole("tooltip")).toHaveLength(2));
+
+    expect(onOpenChange).not.toHaveBeenCalledWith(false, undefined);
+  });
+
+  it("is asked to close by a neighbour when it is not persisting", async () => {
+    const onOpenChange = vi.fn();
+    renderInGroup(false, onOpenChange);
+    await waitFor(() => expect(screen.getAllByRole("tooltip")).toHaveLength(1));
+
+    await userEvent.hover(screen.getByRole("button", { name: "Bell" }));
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false, undefined));
   });
 });
 
