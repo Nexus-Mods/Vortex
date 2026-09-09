@@ -2,7 +2,7 @@
 #
 # Creates a Mixpanel annotation whenever a Vortex release goes out. Stable and
 # beta releases get different Mixpanel tags so they can be toggled separately
-# on dashboards. Drafts never fire either trigger type.
+# on dashboards.
 #
 # Required secret:    MIXPANEL_SERVICE_ACCOUNT        -> "sa-username:sa-secret"
 # Required variables: MIXPANEL_PROJECT_ID             -> 1234
@@ -14,7 +14,7 @@ name: Annotate Mixpanel Release
 
 on:
   release:
-    types: [prereleased, released]
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:

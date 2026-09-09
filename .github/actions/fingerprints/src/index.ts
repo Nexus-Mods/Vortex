@@ -3,15 +3,21 @@ import * as github from "@actions/github";
 
 import { applyToClickHouse } from "./clickhouse";
 import { collectFromInput } from "./collect-input";
-import { collectFromPR } from "./collect-pr";
+import { collectFromPR, fetchPullRequest } from "./collect-pr";
 import { collectFromRelease } from "./collect-release";
 import { type CollectResult, MODES, Mode, isMode } from "./types";
 
 /** Routes a validated `mode` to its collector and returns the result. */
 const dispatch = async (mode: Mode): Promise<CollectResult> => {
   switch (mode) {
-    case Mode.PR:
-      return collectFromPR();
+    case Mode.PR: {
+      const prNumber = core.getInput("pr-number");
+      if (prNumber === "") {
+        return collectFromPR();
+      }
+      const token = core.getInput("github-token", { required: true });
+      return collectFromPR(await fetchPullRequest(github.getOctokit(token), Number(prNumber)));
+    }
 
     case Mode.Release: {
       const token = core.getInput("github-token", { required: true });
@@ -30,7 +36,8 @@ const dispatch = async (mode: Mode): Promise<CollectResult> => {
 
 /**
  * Action entry point. Validates the `mode` input, dispatches to the matching
- * collector, and writes the result to ClickHouse. No-ops on empty collection.
+ * collector, and writes the result to ClickHouse. No-ops on empty collection;
+ * `dry-run` stops after logging the rows.
  */
 const run = async (): Promise<void> => {
   const mode = core.getInput("mode", { required: true });
@@ -41,6 +48,16 @@ const run = async (): Promise<void> => {
 
   if (result.rows.length === 0) {
     core.info("No rows to process.");
+    return;
+  }
+
+  for (const row of result.rows) {
+    core.info(
+      `${result.dbMode} ${row.fingerprint} status=${row.status} release=${row.release_version || "-"} ${row.pr_url}`,
+    );
+  }
+  if (core.getBooleanInput("dry-run")) {
+    core.info(`Dry run - ${result.rows.length} row(s) not written to ClickHouse.`);
     return;
   }
 
