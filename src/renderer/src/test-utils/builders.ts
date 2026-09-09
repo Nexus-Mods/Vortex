@@ -26,6 +26,7 @@ import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
+import type { PluginInterface, PluginMetadata } from "loot";
 import { applyMiddleware, createStore, type Middleware } from "redux";
 import { batch } from "redux-act";
 import thunkMiddleware from "redux-thunk";
@@ -45,7 +46,8 @@ import { downloadPathForGame } from "../extensions/download_management/selectors
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
-import type { IPlugin } from "../extensions/gamebryo_plugin_management/types/IPlugins";
+import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
+import type { IPlugin, IPluginLoot } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
@@ -104,6 +106,7 @@ import type {
   IDownloadAdapterOpts,
   IDriverHarness,
   IDriverHarnessState,
+  IFakeLoot,
   IFbloHarness,
   IFbloHarnessOpts,
   IGameHarness,
@@ -184,6 +187,91 @@ export function makePlugin(overrides: Partial<IPlugin> = {}): IPlugin {
     filePath: path.join(os.tmpdir(), "vortex-test-plugins", "One.esp"),
     isNative: false,
     deployed: true,
+    ...overrides,
+  };
+}
+
+/** LOOT's masterlist/userlist metadata answer for a plugin (getPluginMetadata). */
+export function makePluginMetadata(overrides: Partial<PluginMetadata> = {}): PluginMetadata {
+  return {
+    name: "One.esp",
+    group: "",
+    messages: [],
+    tags: [],
+    cleanInfo: [],
+    dirtyInfo: [],
+    incompatibilities: [],
+    loadAfterFiles: [],
+    locations: [],
+    requirements: [],
+    ...overrides,
+  };
+}
+
+/** LOOT's loaded-plugin answer (getPlugin), as read after a loadPlugins pass. */
+export function makeLootPluginInterface(overrides: Partial<PluginInterface> = {}): PluginInterface {
+  return {
+    name: "One.esp",
+    version: "",
+    masters: [],
+    bashTags: [],
+    crc: 0,
+    isMaster: false,
+    isLightPlugin: false,
+    isValidAsLightPlugin: false,
+    IsMediumPlugin: false,
+    IsValidAsMediumPlugin: false,
+    IsUpdatePlugin: false,
+    IsValidAsUpdatePlugin: false,
+    isEmpty: false,
+    loadsArchive: false,
+    ...overrides,
+  };
+}
+
+/**
+ * The loot answers denormalised onto one plugin (IPluginLoot). Defaults to the empty shape
+ * autosort answers for a plugin loot knows nothing about.
+ */
+export function makePluginLoot(overrides: Partial<IPluginLoot> = {}): IPluginLoot {
+  return {
+    messages: [],
+    currentTags: [],
+    suggestedTags: [],
+    cleanliness: [],
+    dirtyness: [],
+    group: undefined,
+    isValidAsLightPlugin: false,
+    loadsArchive: false,
+    isEmpty: false,
+    incompatibilities: [],
+    requirements: [],
+    version: "",
+    ...overrides,
+  };
+}
+
+/** A fake loot instance: open, every call succeeding, sort echoing its input. */
+export function makeFakeLoot(overrides: Partial<IFakeLoot> = {}): IFakeLoot {
+  return {
+    clearConditionCacheAsync: vi.fn<ILootProm["clearConditionCacheAsync"]>(() => Promise.resolve()),
+    close: vi.fn<ILootProm["close"]>(),
+    getGroupsPathAsync: vi.fn<ILootProm["getGroupsPathAsync"]>(() =>
+      Promise.resolve<ICycleEdge[]>([]),
+    ),
+    getPluginAsync: vi.fn<ILootProm["getPluginAsync"]>(() => Promise.resolve(undefined)),
+    getPluginMetadataAsync: vi.fn<ILootProm["getPluginMetadataAsync"]>(() =>
+      Promise.resolve(undefined),
+    ),
+    isClosed: vi.fn<ILootProm["isClosed"]>(() => false),
+    loadCurrentLoadOrderStateAsync: vi.fn<ILootProm["loadCurrentLoadOrderStateAsync"]>(() =>
+      Promise.resolve(),
+    ),
+    loadListsAsync: vi.fn<ILootProm["loadListsAsync"]>(() => Promise.resolve()),
+    loadPluginsAsync: vi.fn<ILootProm["loadPluginsAsync"]>(() => Promise.resolve()),
+    sortPluginsAsync: vi.fn<ILootProm["sortPluginsAsync"]>((pluginNames) =>
+      Promise.resolve([...pluginNames]),
+    ),
     ...overrides,
   };
 }

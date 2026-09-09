@@ -625,7 +625,7 @@ class LootInterface {
           return;
         }
         try {
-          const meta: PluginMetadata = await loot.getPluginMetadataAsync(pluginName);
+          const meta: PluginMetadata | undefined = await loot.getPluginMetadataAsync(pluginName);
           let info;
           try {
             const id = toPluginId(pluginName);
