@@ -27,7 +27,7 @@ import { shutdownBsdiffWorker } from "./bsdiff/host";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
 import { terminate, terminateAsync } from "./errorHandling";
-import { disableErrorReporting, reportCrash } from "./errorReporting";
+import { disableErrorReporting, isReportableExit, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { isUpdaterActive } from "./extensions/updater";
 import { validateFiles } from "./fileValidation";
@@ -36,6 +36,7 @@ import { shutdownHashWorker } from "./hash/host";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
+import { ReloadBudget } from "./reloadBudget";
 import SplashScreen from "./SplashScreen";
 import DuckDBSingleton from "./store/DuckDBSingleton";
 import { flattenState } from "./store/flattenState";
@@ -66,6 +67,10 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
     return semver.minor(previous) > semver.minor(current);
   }
 }
+
+// a helper that dies on every relaunch tells us everything with the first few
+const MAX_PROCESS_GONE_REPORTS = 3;
+const PROCESS_GONE_REPORT_WINDOW_MS = 60_000;
 
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
@@ -126,6 +131,7 @@ class Application {
   private mAppMetadata: AppInitMetadata | undefined;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
+  private mProcessGoneReports = new Map<string, ReloadBudget>();
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -248,7 +254,11 @@ class Application {
       });
 
       // GPU/utility crashes never reach the JS error handlers
-      if (!["clean-exit", "killed"].includes(details.reason)) {
+      if (
+        !["clean-exit", "killed"].includes(details.reason) &&
+        isReportableExit(details.exitCode) &&
+        this.allowProcessGoneReport(`${details.type}:${details.reason}:${details.exitCode}`)
+      ) {
         reportCrash(
           "ChildProcessGone",
           {
@@ -854,6 +864,15 @@ class Application {
     }
 
     log("info", "state backup imported");
+  }
+
+  private allowProcessGoneReport(kind: string): boolean {
+    let budget = this.mProcessGoneReports.get(kind);
+    if (budget === undefined) {
+      budget = new ReloadBudget(MAX_PROCESS_GONE_REPORTS, PROCESS_GONE_REPORT_WINDOW_MS);
+      this.mProcessGoneReports.set(kind, budget);
+    }
+    return budget.allow();
   }
 
   private multiUserPath() {

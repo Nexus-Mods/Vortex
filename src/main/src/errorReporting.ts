@@ -312,6 +312,15 @@ async function collectCrashDumps(): Promise<IDumpFile[]> {
   return found;
 }
 
+// STATUS_DLL_INIT_FAILED_LOGOFF: Windows kills every process of a session with this at logoff,
+// and Chromium keeps relaunching its helpers into it until the main process is gone
+const WINDOWS_SESSION_END_EXIT_CODE = -1073741205;
+
+/** Whether a process that died with `exitCode` faulted, rather than being torn down by the OS. */
+export function isReportableExit(exitCode: number): boolean {
+  return exitCode !== WINDOWS_SESSION_END_EXIT_CODE;
+}
+
 /**
  * Create a short-lived OTel provider, record a crash error span,
  * flush the export, and shut down.

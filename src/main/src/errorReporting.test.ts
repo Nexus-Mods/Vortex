@@ -5,7 +5,7 @@ vi.mock("electron", () => ({ app: { getPath: vi.fn(), getVersion: vi.fn() } }));
 vi.mock("./logging", () => ({ log: vi.fn() }));
 vi.mock("./minidump", () => ({ summarizeMinidumpFile: vi.fn() }));
 
-import { errorToReportableError } from "./errorReporting";
+import { errorToReportableError, isReportableExit } from "./errorReporting";
 
 describe("errorToReportableError", () => {
   it("renders a VortexError's payload fields legibly in details", () => {
@@ -28,5 +28,16 @@ describe("errorToReportableError", () => {
 
     expect(report.details).toContain("code: EPERM");
     expect(report.allowReport).toBe(false);
+  });
+});
+
+describe("isReportableExit", () => {
+  it("skips processes torn down by a Windows logoff", () => {
+    expect(isReportableExit(-1073741205)).toBe(false);
+  });
+
+  it("reports genuine faults", () => {
+    expect(isReportableExit(-1073741819)).toBe(true);
+    expect(isReportableExit(34)).toBe(true);
   });
 });

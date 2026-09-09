@@ -7,7 +7,7 @@ import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
 import { terminate, terminateAsync } from "./errorHandling";
-import { reportCrash } from "./errorReporting";
+import { isReportableExit, reportCrash } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
@@ -184,7 +184,10 @@ class MainWindow {
 
         // hard renderer crashes never reach the JS error handlers, so this
         // is the only place they can be reported
-        if (!["clean-exit", "killed"].includes(details.reason)) {
+        if (
+          !["clean-exit", "killed"].includes(details.reason) &&
+          isReportableExit(details.exitCode)
+        ) {
           reportCrash(
             "RenderProcessGone",
             {
