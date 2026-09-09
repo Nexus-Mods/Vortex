@@ -23,6 +23,10 @@ on:
         description: "Release version (required when status is released and remove is false)"
         required: false
         default: ""
+      dry-run:
+        description: "Log the rows without writing them to ClickHouse."
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,6 +43,7 @@ jobs:
           remove: ${{ inputs.remove }}
           status: ${{ inputs.status }}
           release-version: ${{ inputs.release_version }}
+          dry-run: ${{ inputs.dry-run }}
           clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
           clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
           clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}
