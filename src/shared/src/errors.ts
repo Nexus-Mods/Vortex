@@ -57,6 +57,28 @@ export function getErrorCode(err: unknown): string | null {
 }
 
 /**
+ * Extracts the HTTP status code from a potential error object. What carries it
+ * varies by source - nexus-api raises both `NexusError` and `HTTPError` with a
+ * `statusCode` getter, and Vortex's own `HTTPError` matches them - so read the
+ * property rather than test for a class.
+ */
+export function getErrorStatusCode(err: unknown): number | null {
+  if (!(err instanceof Error)) {
+    return null;
+  }
+
+  if (!("statusCode" in err)) {
+    return null;
+  }
+
+  if (typeof err.statusCode !== "number") {
+    return null;
+  }
+
+  return err.statusCode;
+}
+
+/**
  * Extracts the native error code from Windows errors.
  * Checks both `nativeCode` and `systemCode` properties that are
  * attached by the native error handling in renderer.tsx.

@@ -26,6 +26,7 @@ import {
   getErrorCode,
   getErrorMessage,
   getErrorMessageOrDefault,
+  getErrorStatusCode,
   unknownToError,
 } from "@vortex/shared";
 import { VortexError } from "@vortex/shared";
@@ -1955,14 +1956,16 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
   //Promise.resolve(getUserInfo(api, nexus));
 }
 
+// nexus-api retries a 401 through a token refresh of its own and rethrows it only once that
+// hasn't helped, so one reaching us is final; 403 is an account we may no longer act for at all.
+const REFUSED_STATUS_CODES = [401, 403];
+
 /**
- * Whether the site turned the credentials down, which is the only answer that means the
- * session is over. nexus-api retries a 401 through a token refresh of its own and rethrows
- * it only once that hasn't helped, so one reaching us is final; a 403 is an account we may
- * no longer act for at all. Every other failure says nothing about the credentials.
+ * Whether the site turned the credentials down, which is the only answer that means the session
+ * is over — every other way a request can fail says nothing about the credentials.
  */
-const isLoginRefused = (err: { statusCode?: number }): boolean =>
-  err.statusCode === 401 || err.statusCode === 403;
+const isLoginRefused = (err: unknown): boolean =>
+  REFUSED_STATUS_CODES.includes(getErrorStatusCode(err) ?? 0);
 
 /**
  * The account the access token describes on its own. All of this is signed into the token, so
@@ -2010,7 +2013,7 @@ export function updateToken(
   )
     .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
-    .catch((err) => {
+    .catch((err: unknown) => {
       if (isLoginRefused(err)) {
         api.showErrorNotification("Authentication failed, please log in again", err, {
           allowReport: false,
@@ -2026,7 +2029,7 @@ export function updateToken(
       // Clearing it left the header with no account *and* no login button, because the
       // credentials that stay in state still count as logged in.
       log("info", "couldn't validate the login, keeping the known account", {
-        message: err.message,
+        message: getErrorMessage(err),
       });
       if (userInfoSelector(api.getState()) === undefined) {
         // nothing persisted to keep - a first run offline, or a session an older build
