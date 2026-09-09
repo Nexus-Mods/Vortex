@@ -525,7 +525,7 @@ catalogs:
       specifier: 4.0.1
       version: 4.0.1
     bsatk:
-      specifier: github:Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
+      specifier: github:Nexus-Mods/node-bsatk#99eb422d9b1a455ed8c2b4005f243439a0a34c8d
       version: 2.1.0
     classnames:
       specifier: 2.5.1
@@ -705,7 +705,7 @@ catalogs:
       specifier: 4.17.23
       version: 4.17.23
     loot:
-      specifier: github:Nexus-Mods/node-loot#cc1515667f494be188e3b1172a3bc8db3dc52eb5
+      specifier: github:Nexus-Mods/node-loot#f558b3579d3a515ee92f08849818ba1b98bfdf2c
       version: 6.2.3
     lru-cache:
       specifier: 11.2.7
@@ -1632,7 +1632,7 @@ importers:
         version: 3.7.2
       bsatk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59
+        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
@@ -1825,7 +1825,7 @@ importers:
     optionalDependencies:
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c
 
   extensions/gamebryo-savegame-management:
     dependencies:
@@ -8577,8 +8577,8 @@ packages:
   bs58@4.0.1:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
 
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
-    resolution: {gitHosted: true, integrity: sha512-x0ygf1FRt9qc22ffqKoSpwZwct/dNw8CVh3R9Djiyi3OzmGf1soOdWwFXwysHC3JEkSoeXKV0EXzPeGdOG8Q4Q==, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59}
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d:
+    resolution: {gitHosted: true, integrity: sha512-lE+nQ4fV7W3Z44n7RyCKo/xGS1n/883nDAAeEApZAb7wwcAavoBp6H4CW8qoJtQTv/dovXG948wow1L5j26ryQ==, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d}
     version: 2.1.0
     os: [win32, linux]
 
@@ -10623,8 +10623,8 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5:
-    resolution: {gitHosted: true, integrity: sha512-eSEUw3b32+S+3Ex9vwAJif464JnoEX4ooQb3JPQVnT0sOSL6NRnwpGUn1c8hx/HB7jC5Aa/ZUk/qV+KzY964Vw==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5}
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c:
+    resolution: {gitHosted: true, integrity: sha512-AD/wtAiTibmQ7i3y99xGyvqaQZNnr25qBlDVMIN74KeyCPZHhAbc76FDtqrWA/YlZA7IC0GUJvBm7f0ErqvmKQ==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c}
     version: 6.2.3
 
   lowercase-keys@3.0.0:
@@ -16577,7 +16577,7 @@ snapshots:
     dependencies:
       base-x: 3.0.11
 
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d:
     dependencies:
       autogypi: 0.2.2
       node-addon-api: 8.5.0
@@ -18775,7 +18775,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23

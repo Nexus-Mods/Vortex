@@ -123,7 +123,7 @@ catalog:
   bluebird: 3.7.2
   bootstrap-sass: 3.4.3
   bs58: 4.0.1
-  bsatk: github:Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
+  bsatk: github:Nexus-Mods/node-bsatk#99eb422d9b1a455ed8c2b4005f243439a0a34c8d
   classnames: 2.5.1
   cli-table3: 0.6.5
   commander: 4.1.1
@@ -183,7 +183,7 @@ catalog:
   limiter: 3.0.0
   lint-staged: 17.0.8
   lodash: 4.17.23
-  loot: github:Nexus-Mods/node-loot#cc1515667f494be188e3b1172a3bc8db3dc52eb5
+  loot: github:Nexus-Mods/node-loot#f558b3579d3a515ee92f08849818ba1b98bfdf2c
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
   memoize-one: 5.2.1
@@ -326,7 +326,7 @@ overrides:
 allowBuilds:
   "@nexusmods/fomod-installer-native": true
   "@parcel/watcher": true
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59: true
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d: true
   core-js: true
   core-js-pure: false
   drivelist@https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd: true
@@ -334,7 +334,7 @@ allowBuilds:
   esbuild: true
   font-scanner: true
   leveldown: true
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5: true
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c: true
   node@runtime:24.17.0: true
   nx: false
   winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1: true
