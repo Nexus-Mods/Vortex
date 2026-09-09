@@ -1955,6 +1955,52 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
   //Promise.resolve(getUserInfo(api, nexus));
 }
 
+/**
+ * Codes for "we never reached the site", as opposed to the site telling us the credentials
+ * are no good. While the network is down the Disableable proxy stands in for every request
+ * and rejects with ProcessCanceled, and the calls that bypass it fail with a socket error.
+ */
+const CONNECTION_ERROR_CODES = [
+  "EAI_AGAIN",
+  "ECONNABORTED",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EHOSTUNREACH",
+  "ENETDOWN",
+  "ENETUNREACH",
+  "ENOTFOUND",
+  "EPIPE",
+  "ESOCKETTIMEDOUT",
+  "ETIMEDOUT",
+];
+
+const isConnectionError = (err: Error): boolean =>
+  err instanceof ProcessCanceled ||
+  err instanceof TimeoutError ||
+  CONNECTION_ERROR_CODES.includes(getErrorCode(err) ?? "") ||
+  getErrorMessage(err).includes("getaddrinfo");
+
+/**
+ * The account the access token describes on its own. All of this is signed into the token, so
+ * reading it needs no request, which makes it the fallback for a session we hold credentials
+ * for but can't reach the site to flesh out. The avatar and email only exist server-side and
+ * come out empty; the header falls back to the generic account icon for an empty avatar.
+ */
+export function userInfoFromToken(token: string): IValidateKeyDataV2 | undefined {
+  const parsed = accessTokenSchema.safeParse(jwt.decode(token));
+  if (!parsed.success) {
+    return undefined;
+  }
+
+  return {
+    email: "",
+    name: parsed.data.user.username,
+    profileUrl: "",
+    userId: parsed.data.user.id,
+    ...deriveMembership(parsed.data.user),
+  };
+}
+
 export function updateToken(
   api: IExtensionApi,
   nexus: Nexus,
@@ -1981,6 +2027,27 @@ export function updateToken(
     .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
     .catch((err) => {
+      if (isConnectionError(err)) {
+        // Being offline is not a rejected login. setOAuthCredentials keeps the credentials and
+        // only fails on the avatar lookup it makes afterwards, so the session is still good and
+        // the last known account is still the best answer we have. Clearing it here left the
+        // header with no account *and* no login button: the credentials that stay in state count
+        // as logged in, so nothing rendered the "Log in" call to action either.
+        log("info", "no connection to validate the login with, keeping the known account", {
+          message: err.message,
+        });
+        if (userInfoSelector(api.getState()) === undefined) {
+          // nothing persisted to keep - a first run offline, or a session an older build
+          // already wiped - so fall back to what the token itself says
+          const fromToken = userInfoFromToken(credentials.token);
+          if (fromToken !== undefined) {
+            api.store.dispatch(setUserInfo(fromToken));
+          }
+        }
+        api.events.emit("did-login", err);
+        return false;
+      }
+
       api.showErrorNotification("Authentication failed, please log in again", err, {
         allowReport: false,
       });
