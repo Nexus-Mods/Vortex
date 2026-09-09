@@ -4,6 +4,8 @@ import { Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
+import * as bcp47 from "@/bcp47";
+
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
 import Modal from "../../../controls/Modal";
 import Table from "../../../controls/Table";
@@ -60,7 +62,7 @@ function makeColumns(
       filter: new TableTextFilter(true),
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
         if (collator === undefined) {
-          collator = new Intl.Collator(locale, { sensitivity: "base" });
+          collator = bcp47.getCollator(locale);
         }
         return collator.compare(lhs, rhs);
       },

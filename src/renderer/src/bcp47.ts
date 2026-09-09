@@ -70,3 +70,11 @@ export function displayBcp47(
     return tag;
   }
 }
+
+/**
+ * An `Intl.Collator` keyed to a BCP 47 locale, falling back to English when
+ * the input isn't recognised.
+ */
+export function getCollator(locale?: string): Intl.Collator {
+  return new Intl.Collator(isValidBcp47(locale) ? locale : "en", { sensitivity: "base" });
+}

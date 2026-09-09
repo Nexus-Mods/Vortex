@@ -16,6 +16,8 @@ import type * as Redux from "redux";
 import { createSelector } from "reselect";
 import * as semver from "semver";
 
+import * as bcp47 from "@/bcp47";
+
 import { setAttributeFilter, setAttributeSort } from "../../../../actions/tables";
 import { ComponentEx } from "../../../../controls/ComponentEx";
 import FlexLayout from "../../../../controls/FlexLayout";
@@ -123,7 +125,7 @@ const getCollator = (() => {
   return (locale: string): Intl.Collator => {
     if (collator === undefined || locale !== language) {
       language = locale;
-      collator = new Intl.Collator(locale, { sensitivity: "base" });
+      collator = bcp47.getCollator(locale);
     }
     return collator;
   };

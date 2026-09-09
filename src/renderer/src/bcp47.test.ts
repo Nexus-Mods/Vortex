@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { displayBcp47, isValidBcp47, parseBcp47 } from "./bcp47";
+import { displayBcp47, getCollator, isValidBcp47, parseBcp47 } from "./bcp47";
 
 describe("parseBcp47", () => {
   it("canonicalises the language subtag", () => {
@@ -78,5 +78,11 @@ describe("displayBcp47", () => {
 
   it("falls back to the raw tag for unknown languages", () => {
     expect(displayBcp47("xx")).toBe("xx");
+  });
+});
+
+describe("getCollator", () => {
+  it("doesn't throw for invalid tags", () => {
+    expect(() => getCollator("xx")).not.throw();
   });
 });
