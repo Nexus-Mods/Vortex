@@ -274,8 +274,8 @@ describe("validate* extension install checks", () => {
     const extPath = path.join("mock", "translation-ext");
 
     it("throws when there are no locale-like subdirectories", async () => {
-      // "docs" isn't a well-formed BCP-47 tag, so Date#toLocaleString rejects
-      // it and isLocaleCode filters it out entirely.
+      // "docs" isn't a well-formed BCP-47 tag, so isValidBcp47 rejects it and
+      // the filter removes it.
       mockDirTree({ [extPath]: [dir("docs"), file("readme.txt")] });
       await expect(validateTranslation(extPath)).rejects.toThrow(
         "Expected exactly one language subdirectory",
@@ -298,15 +298,39 @@ describe("validate* extension install checks", () => {
       await expect(validateTranslation(extPath)).resolves.toBeUndefined();
     });
 
-    it("throws 'Directory isn't a language code' for an unrecognized language", async () => {
-      // well-formed enough for Date#toLocaleString, but not a real language code
+    it("treats a private-use tag as not a language code", async () => {
+      // "xx" is well-formed BCP-47 but isValidBcp47 rejects it, so it is
+      // filtered out and we report the same error as the empty case.
       mockDirTree({ [extPath]: [dir("xx")] });
-      await expect(validateTranslation(extPath)).rejects.toThrow("Directory isn't a language code");
+      await expect(validateTranslation(extPath)).rejects.toThrow(
+        "Expected exactly one language subdirectory",
+      );
     });
 
-    it("throws 'Directory isn't a language code' for a valid language with an invalid country", async () => {
+    it("treats a known language with an unknown region as not a language code", async () => {
+      // "en-XX" is structurally fine, but isValidBcp47 rejects unknown regions.
       mockDirTree({ [extPath]: [dir("en-XX")] });
-      await expect(validateTranslation(extPath)).rejects.toThrow("Directory isn't a language code");
+      await expect(validateTranslation(extPath)).rejects.toThrow(
+        "Expected exactly one language subdirectory",
+      );
+    });
+
+    it("accepts a script subtag (zh-Hans)", async () => {
+      const langDir = path.join(extPath, "zh-Hans");
+      mockDirTree({
+        [extPath]: [dir("zh-Hans")],
+        [langDir]: [file("strings.json")],
+      });
+      await expect(validateTranslation(extPath)).resolves.toBeUndefined();
+    });
+
+    it("accepts a script subtag with a region (zh-Hant-CN)", async () => {
+      const langDir = path.join(extPath, "zh-Hant-CN");
+      mockDirTree({
+        [extPath]: [dir("zh-Hant-CN")],
+        [langDir]: [file("strings.json")],
+      });
+      await expect(validateTranslation(extPath)).resolves.toBeUndefined();
     });
 
     it("throws 'No translation files' when the language directory has no json files", async () => {
