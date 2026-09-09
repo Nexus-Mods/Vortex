@@ -63,4 +63,49 @@ describe("downloadAndInstallExtension", () => {
       expect.objectContaining({ catalogEntry: undefined }),
     );
   });
+
+  it("resolves the file id from the catalog when the download info only carries a mod id", async () => {
+    vi.mocked(fetchExtensionList).mockResolvedValueOnce([
+      makeAvailableExtension({ name: "Game: Cyberpunk 2077", modId: 196, fileId: 9 }),
+    ]);
+
+    const harness = makeApiHarness({
+      downloads: { "dl-1": makeDownload({ id: "dl-1", localPath: "cyberpunk.7z" }) },
+    });
+    const emitAndAwait = vi.fn(async () => ["dl-1"]);
+    harness.api.emitAndAwait = emitAndAwait as unknown as IExtensionApi["emitAndAwait"];
+
+    const result = await downloadAndInstallExtension(harness.api, {
+      name: "Game: Cyberpunk 2077",
+      modId: 196,
+    });
+
+    expect(result).toBe(true);
+    expect(emitAndAwait).toHaveBeenCalledWith(
+      "nexus-download",
+      "site",
+      196,
+      9,
+      expect.any(String),
+      false,
+    );
+  });
+
+  it("does not start a download when neither the info nor the catalog has a file id", async () => {
+    const harness = makeApiHarness();
+    const emitAndAwait = vi.fn(async () => ["dl-1"]);
+    harness.api.emitAndAwait = emitAndAwait as unknown as IExtensionApi["emitAndAwait"];
+    harness.api.showDialog = vi.fn(async () => ({
+      action: "Close",
+      input: {},
+    })) as unknown as IExtensionApi["showDialog"];
+
+    const result = await downloadAndInstallExtension(harness.api, {
+      name: "Game: Not Listed",
+      modId: 197,
+    });
+
+    expect(result).toBe(false);
+    expect(emitAndAwait).not.toHaveBeenCalled();
+  });
 });
