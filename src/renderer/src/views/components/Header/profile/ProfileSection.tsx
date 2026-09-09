@@ -40,22 +40,24 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
 
   // Signed out there is no account to open, so the slot carries the help options on
   // their own — the login call to action lives in the premium slot instead.
-  if (!loggedIn || !userInfo) {
+  if (!loggedIn) {
     return <HelpMenu />;
   }
 
-  const label = userInfo.name ?? t("Account");
+  const label = userInfo?.name ?? t("Account");
 
   const sections: IMenuAction[][] = [
-    [
-      {
-        iconPath: mdiAccountCircle,
-        label: t("View profile on web"),
-        onClick: () => {
-          opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
-        },
-      },
-    ],
+    !userInfo
+      ? []
+      : [
+          {
+            iconPath: mdiAccountCircle,
+            label: t("View profile on web"),
+            onClick: () => {
+              opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
+            },
+          },
+        ],
     [
       {
         iconPath: mdiRefresh,
@@ -88,7 +90,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
               brand="neutral"
               data-testid="profile-menu-trigger"
               leftIcon={
-                userInfo.profileUrl ? (
+                userInfo?.profileUrl ? (
                   <Image
                     alt={userInfo.name ?? ""}
                     className="size-5 rounded-full"

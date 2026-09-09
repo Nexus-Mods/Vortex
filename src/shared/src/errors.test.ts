@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import { computeErrorFingerprint, isEnvironmentalError, sanitizeFramePath } from "./errors";
+import {
+  computeErrorFingerprint,
+  getErrorStatusCode,
+  isEnvironmentalError,
+  sanitizeFramePath,
+} from "./errors";
 import { CAUSE_SEPARATOR, VortexError } from "./errors/base";
 
 // ---------------------------------------------------------------------------
@@ -518,5 +523,33 @@ describe("computeErrorFingerprint on a chained stack", () => {
     expect(computeErrorFingerprint(err.stack, VERSION)).toBe(
       computeErrorFingerprint(raw.stack, VERSION),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getErrorStatusCode
+// ---------------------------------------------------------------------------
+
+/** An error carrying its status behind a getter, as nexus-api's NexusError does. */
+const withStatus = (statusCode: unknown) =>
+  Object.defineProperty(new Error("refused"), "statusCode", { get: () => statusCode });
+
+describe("getErrorStatusCode", () => {
+  it("reads the status off an error that has one", () => {
+    expect(getErrorStatusCode(withStatus(403))).toBe(403);
+  });
+
+  it("answers null for an error without one", () => {
+    expect(getErrorStatusCode(new Error("offline"))).toBeNull();
+  });
+
+  // a status that arrived as text can't be compared with a number, so it isn't one
+  it("answers null for a status that isn't a number", () => {
+    expect(getErrorStatusCode(withStatus("403"))).toBeNull();
+  });
+
+  it("answers null for anything that isn't an error", () => {
+    expect(getErrorStatusCode({ statusCode: 403 })).toBeNull();
+    expect(getErrorStatusCode(undefined)).toBeNull();
   });
 });

@@ -32,6 +32,12 @@ const signedOut = () => ({
   persistent: {},
 });
 
+/** Credentials in hand but no account details — what an offline start leaves behind. */
+const unvalidated = () => ({
+  confidential: { account: { nexus: { APIKey: "an-api-key" } } },
+  persistent: { nexus: {} },
+});
+
 vi.mock("react-redux", async () => {
   const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
 
@@ -139,6 +145,37 @@ describe("ProfileSection", () => {
 
       expect(screen.queryByRole("menuitem", { name: /profile/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: /logout/i })).not.toBeInTheDocument();
+    });
+  });
+
+  // The credentials say signed in, so the premium slot won't offer a login button. Logging out
+  // here is the only way back to one, so the menu has to open on a generic account.
+  describe("signed in but not validated", () => {
+    beforeEach(() => {
+      store.state = unvalidated();
+    });
+
+    it("names the trigger generically", () => {
+      render(<ProfileSection />);
+      expect(screen.getByRole("button", { name: "Account" })).toBeInTheDocument();
+    });
+
+    it("still offers a way out", async () => {
+      await openMenu(/account/i);
+
+      expect(screen.getByRole("menuitem", { name: "Logout" })).toBeInTheDocument();
+      expect(screen.getByRole("menuitem", { name: "Refresh user info" })).toBeInTheDocument();
+    });
+
+    // There is no user id to open a profile for, and dropping the row must not leave the
+    // divider that separated it behind.
+    it("drops the profile row and its divider", async () => {
+      await openMenu(/account/i);
+
+      expect(
+        screen.queryByRole("menuitem", { name: "View profile on web" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getAllByRole("separator")).toHaveLength(1);
     });
   });
 });
