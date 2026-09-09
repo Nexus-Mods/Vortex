@@ -1,11 +1,18 @@
 import * as path from "node:path";
 import * as queryParser from "querystring";
 
-import { fs, log, types, util } from "@nexusmods/vortex-api";
 import PromiseBB from "bluebird";
-import turbowalk, { IEntry } from "turbowalk";
+import turbowalk, { type IEntry } from "turbowalk";
 import * as winapi from "winapi-bindings";
 import { parseStringPromise } from "xml2js";
+
+import type { IExtensionContext } from "@/types/api";
+import { GameEntryNotFound } from "@/types/IGameStore";
+import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
+
+import { log } from "../logging";
+import { readFileBOM, statAsync, readFileAsync } from "./fs";
 
 const STORE_ID = "origin";
 const STORE_NAME = "Origin";
@@ -35,12 +42,13 @@ export class MissingXMLElementError extends Error {
 //  the game's name as most games would be developed by non-EA
 //  companies.
 export declare type ManifestType = "DiPManifest" | "default";
-class OriginLauncher implements types.IGameStore {
+
+export class OriginLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private mClientPath: PromiseBB<string>;
-  private mCache: PromiseBB<types.IGameStoreEntry[]>;
+  private mCache: PromiseBB<IGameStoreEntry[]>;
 
   constructor() {
     if (process.platform === "win32") {
@@ -52,7 +60,7 @@ class OriginLauncher implements types.IGameStore {
         );
         this.mClientPath = PromiseBB.resolve(clientPath.value as string);
       } catch (err) {
-        log("info", "Origin launcher not found", { error: err.message });
+        log("info", "Origin launcher not found", { err });
         this.mClientPath = PromiseBB.resolve(undefined);
       }
     } else {
@@ -60,13 +68,13 @@ class OriginLauncher implements types.IGameStore {
     }
   }
 
+  public static create(): OriginLauncher | undefined {
+    if (process.platform === "win32") return new OriginLauncher();
+    return undefined;
+  }
+
   public launchGame(appId: string): PromiseBB<void> {
-    return this.getPosixPath(appId).then((posPath) =>
-      util.opn(posPath).catch((err) => {
-        log("debug", "Origin game launch failed", err);
-        return Promise.resolve();
-      }),
-    );
+    return this.getPosixPath(appId).then((posPath) => window.api.shell.openUrl(posPath));
   }
 
   public getPosixPath(name) {
@@ -84,32 +92,29 @@ class OriginLauncher implements types.IGameStore {
       .catch((err) => Promise.resolve(false));
   }
 
-  public findByAppId(appId: string | string[]): PromiseBB<types.IGameStoreEntry> {
+  public findByAppId(appId: string | string[]): PromiseBB<IGameStoreEntry> {
     const matcher = Array.isArray(appId)
-      ? (entry: types.IGameStoreEntry) => appId.includes(entry.appid)
-      : (entry: types.IGameStoreEntry) => appId === entry.appid;
+      ? (entry: IGameStoreEntry) => appId.includes(entry.appid)
+      : (entry: IGameStoreEntry) => appId === entry.appid;
 
     return this.allGames()
       .then((entries) => entries.find(matcher))
       .then((entry) =>
         entry === undefined
           ? Promise.reject(
-              new types.GameEntryNotFound(
-                Array.isArray(appId) ? appId.join(", ") : appId,
-                STORE_ID,
-              ),
+              new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
             )
           : Promise.resolve(entry),
       );
   }
 
-  public findByName(namePattern: string): PromiseBB<types.IGameStoreEntry> {
+  public findByName(namePattern: string): PromiseBB<IGameStoreEntry> {
     const re = new RegExp("^" + namePattern + "$");
     return this.allGames()
       .then((entries) => entries.find((entry) => re.test(entry.name)))
       .then((entry) =>
         entry === undefined
-          ? Promise.reject(new types.GameEntryNotFound(namePattern, STORE_ID))
+          ? Promise.reject(new GameEntryNotFound(namePattern, STORE_ID))
           : Promise.resolve(entry),
       );
   }
@@ -118,7 +123,7 @@ class OriginLauncher implements types.IGameStore {
     return !!this.mClientPath ? this.mClientPath : PromiseBB.resolve(undefined);
   }
 
-  public allGames(): PromiseBB<types.IGameStoreEntry[]> {
+  public allGames(): PromiseBB<IGameStoreEntry[]> {
     if (!this.mCache) {
       this.mCache = this.parseLocalContent();
     }
@@ -133,7 +138,7 @@ class OriginLauncher implements types.IGameStore {
   }
 
   private async getGameName(installerPath: string, manifestType: ManifestType): Promise<string> {
-    const installerData = await fs.readFileBOM(installerPath, "utf8");
+    const installerData = await readFileBOM(installerPath, "utf8");
     let xmlDoc;
     try {
       xmlDoc = await parseStringPromise(installerData);
@@ -155,12 +160,15 @@ class OriginLauncher implements types.IGameStore {
     return Promise.reject(new MissingXMLElementError("gameTitle(en_US)"));
   }
 
-  private parseLocalContent(): PromiseBB<types.IGameStoreEntry[]> {
+  private parseLocalContent(): PromiseBB<IGameStoreEntry[]> {
     const localData = path.join(ORIGIN_DATAPATH, "LocalContent");
     const allEntries: IEntry[] = [];
-    return turbowalk(localData, (entries) => {
+
+    const walk: PromiseBB<void> = turbowalk(localData, (entries) => {
       allEntries.push(...entries);
-    })
+    });
+
+    return walk
       .then(() => {
         // Each game can have multiple manifest files (DLC and stuff)
         //  but only 1 manifest inside each game folder will have the
@@ -171,8 +179,8 @@ class OriginLauncher implements types.IGameStore {
 
         return PromiseBB.reduce(
           manifests,
-          (accum: types.IGameStoreEntry[], manifest: IEntry) =>
-            fs.readFileAsync(manifest.filePath, { encoding: "utf-8" }).then((data) => {
+          (accum: IGameStoreEntry[], manifest: IEntry) =>
+            readFileAsync(manifest.filePath, { encoding: "utf-8" }).then((data) => {
               let query;
               try {
                 // Ignore the preceding '?'
@@ -191,8 +199,8 @@ class OriginLauncher implements types.IGameStore {
 
                 // Uninstalling Origin games does NOT remove manifest files, we need
                 //  to ensure that the installer data file exists before we do anything.
-                return fs
-                  .statAsync(installerFilepath)
+                return;
+                statAsync(installerFilepath)
                   .then(() =>
                     PromiseBB.any([
                       this.getGameName(installerFilepath, "DiPManifest"),
@@ -201,7 +209,7 @@ class OriginLauncher implements types.IGameStore {
                   )
                   .then((name) => {
                     // We found the name.
-                    const launcherEntry: types.IGameStoreEntry = {
+                    const launcherEntry: IGameStoreEntry = {
                       name,
                       appid,
                       gamePath,
@@ -248,9 +256,8 @@ class OriginLauncher implements types.IGameStore {
   }
 }
 
-function main(context: types.IExtensionContext) {
-  const instance: types.IGameStore =
-    process.platform === "win32" ? new OriginLauncher() : undefined;
+function main(context: IExtensionContext) {
+  const instance: IGameStore = process.platform === "win32" ? new OriginLauncher() : undefined;
 
   if (instance !== undefined) {
     context.registerGameStore(instance);

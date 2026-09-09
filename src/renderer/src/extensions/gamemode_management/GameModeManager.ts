@@ -5,6 +5,7 @@ import * as _ from "lodash";
 import type * as Redux from "redux";
 
 import { GoGLauncher } from "@/util/GOGLauncher";
+import { OriginLauncher } from "@/util/OriginStore";
 
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
@@ -75,6 +76,7 @@ class GameModeManager {
       Steam,
       EpicGamesLauncher,
       GoGLauncher.create(),
+      OriginLauncher.create(),
       ...gameStoreExtensions,
     ].filter(Boolean);
     this.mActiveSearch = null;
