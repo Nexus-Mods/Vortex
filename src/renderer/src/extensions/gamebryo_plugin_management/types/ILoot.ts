@@ -34,8 +34,8 @@ export interface ILootProm {
   clearConditionCacheAsync: () => Promise<void>;
   close: () => void;
   getGroupsPathAsync: (fromGroupName: string, toGroupName: string) => Promise<ICycleEdge[]>;
-  getPluginAsync: (pluginName: string) => Promise<PluginInterface>;
-  getPluginMetadataAsync: (pluginName: string) => Promise<PluginMetadata>;
+  getPluginAsync: (pluginName: string) => Promise<PluginInterface | undefined>;
+  getPluginMetadataAsync: (pluginName: string) => Promise<PluginMetadata | undefined>;
   isClosed: () => boolean;
   loadCurrentLoadOrderStateAsync: () => Promise<void>;
   loadListsAsync: (

@@ -12,6 +12,12 @@ import type { ICollectionMod } from "../extensions/collections/types/ICollection
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type LootInterface from "../extensions/gamebryo_plugin_management/autosort";
+import type { ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
+import type {
+  IPlugin,
+  IPluginsLoot,
+} from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IStateWithGamebryo } from "../extensions/gamebryo_plugin_management/types/IStateWithGamebryo";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
@@ -129,6 +135,41 @@ export type IGamebryoHarnessOpts = IGameHarnessOpts;
 export interface IGamebryoHarness extends IGameHarness {
   // read the live fake state including the gamebryo hives
   getGamebryoState: () => IStateWithGamebryo;
+}
+
+/**
+ * A controllable stand-in for a promisifyAll'd LootAsync instance: every ILootProm member as a
+ * mock. The *Async members are pre-defined, so autosort's Bluebird.promisifyAll wraps leave them
+ * untouched (they only add unused closeAsync/isClosedAsync plain functions to the object).
+ */
+export type IFakeLoot = { [K in keyof ILootProm]: Mock<ILootProm[K]> };
+
+/** What a LootInterface test arranges on top of the gamebryo harness. */
+export interface ILootHarnessOpts extends IGamebryoHarnessOpts {
+  // reject the loot construction, leaving the interface with loot undefined
+  initError?: Error;
+  // the plugin names findInvalidPlugins reports as invalid
+  invalidPlugins?: string[];
+}
+
+export interface ILootHarness extends IGamebryoHarness {
+  // the loot instance the interface holds, arranged per test
+  loot: IFakeLoot;
+  // the LootInterface under test, constructed against the fake api and awaited through init
+  lootInterface: LootInterface;
+  // create a real plugin file (the sort path stats plugin files) and return its absolute path
+  addPluginFile: (name: string) => Promise<string>;
+  // seed session.plugins.pluginList, keyed by toPluginId, with a real file per plugin (unless
+  // filePath is overridden); a spec is a file name or a name plus IPlugin overrides
+  seedPlugins: (specs: Array<string | ({ name: string } & Partial<IPlugin>)>) => Promise<void>;
+  // where readLists looks for the game's userlist.yaml (absent unless a test creates it)
+  userlistPath: string;
+  // where gameDataPath resolves for the harness game (a real, empty directory)
+  dataDir: string;
+  // emit autosort-plugins and resolve with the value the sort passed to its callback
+  sort: (manual: boolean) => Promise<Error | null>;
+  // emit plugin-details for the harness game and resolve with the answered details
+  requestDetails: (plugins: string[]) => Promise<IPluginsLoot>;
 }
 
 // What a download-adapter test arranges: the single seeded download's fields, an optional stored
