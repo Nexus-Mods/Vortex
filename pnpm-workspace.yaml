@@ -192,7 +192,6 @@ catalog:
   mixpanel-browser: 2.79.0
   modmeta-db: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
   nexus-api: github:Nexus-Mods/node-nexus-api#eeb7b953aab85bf2a336fd4999b38393a67c482a
-  node: runtime:24.17.0
   node-7z: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   normalize-url: 6.1.0
   numeral: 2.0.6
