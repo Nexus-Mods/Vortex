@@ -102,6 +102,11 @@ The answer is published as `data-reduce-motion="true"` on `<html>`
   on purpose - a component that names its own duration often depends on it - so opt
   decorative ones out with the `reduce-motion:` variant:
   `transition-[width] duration-300 reduce-motion:duration-0`.
+- Custom keyframes live in `src/stylesheets/ui/theme/animations.css`, registered as
+  `--animate-*` theme entries. Take the duration from `--default-transition-duration` for
+  the same reason as above, so the animation flattens without needing its own rule in
+  `motion.css`. A _delay_ is timing rather than motion, so keep it - a loader held back so
+  it never flashes on a short wait should still be held back.
 - **Don't use Tailwind's `motion-reduce:` / `motion-safe:` variants.** They compile to
   `prefers-reduced-motion` media queries, so they follow the OS and can't see the app's
   own setting. `reduce-motion:` is the app-aware equivalent.
