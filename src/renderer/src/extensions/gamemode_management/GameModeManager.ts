@@ -6,6 +6,7 @@ import type * as Redux from "redux";
 
 import { GoGLauncher } from "@/util/GOGLauncher";
 import { OriginLauncher } from "@/util/OriginStore";
+import { UPlayLauncher } from "@/util/UplayStore";
 
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
@@ -77,6 +78,7 @@ class GameModeManager {
       EpicGamesLauncher,
       GoGLauncher.create(),
       OriginLauncher.create(),
+      UPlayLauncher.create(),
       ...gameStoreExtensions,
     ].filter(Boolean);
     this.mActiveSearch = null;
