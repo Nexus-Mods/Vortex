@@ -1930,7 +1930,7 @@ interface IExtensionContext {
 // @public (undocumented)
 interface IExtensionDownloadInfo {
     // (undocumented)
-    fileId: number;
+    fileId?: number;
     // (undocumented)
     modId: number;
     // (undocumented)

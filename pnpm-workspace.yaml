@@ -75,7 +75,6 @@ catalog:
   "@types/js-yaml": 4.0.9
   "@types/json-socket": 0.1.21
   "@types/jsonwebtoken": 9.0.10
-  "@types/libxmljs": 0.18.13
   "@types/lodash": 4.17.24
   "@types/minimatch": 2.0.29
   "@types/minimist": 1.2.5
