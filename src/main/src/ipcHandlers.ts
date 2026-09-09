@@ -573,8 +573,8 @@ export function init() {
   // Clipboard operations
   // ============================================================================
 
-  betterIpcMain.handle("clipboard:writeText", (_event: IpcMainInvokeEvent, text: string) => {
-    clipboard.writeText(text);
+  betterIpcMain.handle("clipboard:writeText", async (_event: IpcMainInvokeEvent, text: string) => {
+    await clipboard.writeText(text);
   });
 
   betterIpcMain.handle("clipboard:readText", () => {
