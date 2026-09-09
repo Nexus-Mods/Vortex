@@ -83,16 +83,6 @@ export async function downloadAndInstallExtension(
       return false;
     }
 
-    const downloadIds = await downloadFromNexus(api, ext);
-    if (downloadIds.length === 0) {
-      throw new ProcessCanceled("No download found");
-    }
-
-    const downloadId = downloadIds[0];
-    const download = api.getState().persistent.downloads.files[downloadId];
-
-    api.store.dispatch(setDownloadModInfo(downloadId, "internal", true));
-
     // the catalog only provides metadata here; install the download without it
     let availableExtensions: IAvailableExtension[] = [];
     try {
@@ -102,6 +92,21 @@ export async function downloadAndInstallExtension(
     }
 
     const catalogEntry = findInCatalog(availableExtensions, { modId: ext.modId });
+
+    const fileId = ext.fileId ?? catalogEntry?.fileId;
+    if (fileId === undefined) {
+      throw new ProcessCanceled(`Extension with mod id ${ext.modId} is not in the catalog`);
+    }
+
+    const downloadIds = await downloadFromNexus(api, ext, fileId);
+    if (downloadIds.length === 0) {
+      throw new ProcessCanceled("No download found");
+    }
+
+    const downloadId = downloadIds[0];
+    const download = api.getState().persistent.downloads.files[downloadId];
+
+    api.store.dispatch(setDownloadModInfo(downloadId, "internal", true));
 
     const state = api.getState();
     const downloadPath = downloadPathForGame(state, SITE_ID);
@@ -154,13 +159,14 @@ function archiveFileName(ext: IExtensionDownloadInfo): string {
 async function downloadFromNexus(
   api: IExtensionApi,
   ext: IExtensionDownloadInfo,
+  fileId: number,
 ): Promise<string[]> {
   log("debug", "download from nexus", archiveFileName(ext));
   return await api.emitAndAwait<"nexus-download">(
     "nexus-download",
     SITE_ID,
     ext.modId,
-    ext.fileId,
+    fileId,
     archiveFileName(ext),
     false,
   );
