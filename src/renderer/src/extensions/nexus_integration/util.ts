@@ -1956,29 +1956,13 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
 }
 
 /**
- * Codes for "we never reached the site", as opposed to the site telling us the credentials
- * are no good. While the network is down the Disableable proxy stands in for every request
- * and rejects with ProcessCanceled, and the calls that bypass it fail with a socket error.
+ * Whether the site turned the credentials down, which is the only answer that means the
+ * session is over. nexus-api retries a 401 through a token refresh of its own and rethrows
+ * it only once that hasn't helped, so one reaching us is final; a 403 is an account we may
+ * no longer act for at all. Every other failure says nothing about the credentials.
  */
-const CONNECTION_ERROR_CODES = [
-  "EAI_AGAIN",
-  "ECONNABORTED",
-  "ECONNREFUSED",
-  "ECONNRESET",
-  "EHOSTUNREACH",
-  "ENETDOWN",
-  "ENETUNREACH",
-  "ENOTFOUND",
-  "EPIPE",
-  "ESOCKETTIMEDOUT",
-  "ETIMEDOUT",
-];
-
-const isConnectionError = (err: Error): boolean =>
-  err instanceof ProcessCanceled ||
-  err instanceof TimeoutError ||
-  CONNECTION_ERROR_CODES.includes(getErrorCode(err) ?? "") ||
-  getErrorMessage(err).includes("getaddrinfo");
+const isLoginRefused = (err: { statusCode?: number }): boolean =>
+  err.statusCode === 401 || err.statusCode === 403;
 
 /**
  * The account the access token describes on its own. All of this is signed into the token, so
@@ -2027,31 +2011,31 @@ export function updateToken(
     .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
     .catch((err) => {
-      if (isConnectionError(err)) {
-        // Being offline is not a rejected login. setOAuthCredentials keeps the credentials and
-        // only fails on the avatar lookup it makes afterwards, so the session is still good and
-        // the last known account is still the best answer we have. Clearing it here left the
-        // header with no account *and* no login button: the credentials that stay in state count
-        // as logged in, so nothing rendered the "Log in" call to action either.
-        log("info", "no connection to validate the login with, keeping the known account", {
-          message: err.message,
+      if (isLoginRefused(err)) {
+        api.showErrorNotification("Authentication failed, please log in again", err, {
+          allowReport: false,
         });
-        if (userInfoSelector(api.getState()) === undefined) {
-          // nothing persisted to keep - a first run offline, or a session an older build
-          // already wiped - so fall back to what the token itself says
-          const fromToken = userInfoFromToken(credentials.token);
-          if (fromToken !== undefined) {
-            api.store.dispatch(setUserInfo(fromToken));
-          }
-        }
+        api.store.dispatch(setUserInfo(undefined));
         api.events.emit("did-login", err);
         return false;
       }
 
-      api.showErrorNotification("Authentication failed, please log in again", err, {
-        allowReport: false,
+      // Anything else - offline, a timeout, a 500 - leaves the session untouched, and
+      // setOAuthCredentials has already kept the credentials by the time the avatar request
+      // that failed here was made, so the last known account is still the best answer we have.
+      // Clearing it left the header with no account *and* no login button, because the
+      // credentials that stay in state still count as logged in.
+      log("info", "couldn't validate the login, keeping the known account", {
+        message: err.message,
       });
-      api.store.dispatch(setUserInfo(undefined));
+      if (userInfoSelector(api.getState()) === undefined) {
+        // nothing persisted to keep - a first run offline, or a session an older build
+        // already wiped - so fall back to what the token itself says
+        const fromToken = userInfoFromToken(credentials.token);
+        if (fromToken !== undefined) {
+          api.store.dispatch(setUserInfo(fromToken));
+        }
+      }
       api.events.emit("did-login", err);
       return false;
     });
