@@ -19,6 +19,7 @@
  * Test-only: nothing in the production tree imports this module.
  */
 import { EventEmitter } from "events";
+import * as os from "os";
 import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
@@ -44,6 +45,7 @@ import { downloadPathForGame } from "../extensions/download_management/selectors
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type { IPlugin } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
@@ -52,6 +54,7 @@ import type {
   IModRequirementExt,
 } from "../extensions/health_check/types";
 import { ModFileCategory } from "../extensions/health_check/types";
+import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
@@ -73,6 +76,7 @@ import type { IProfile, IProfileMod } from "../extensions/profile_management/typ
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
 import { addToTree, Decision, deriveReducer } from "../reducers/index";
+import ReduxWatcher from "../store/ReduxWatcher";
 import type {
   CollectionModStatus,
   ICollectionInstallSession,
@@ -81,7 +85,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi, IRunOptions } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
@@ -89,6 +93,7 @@ import {
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../types/IHealthCheck";
+import type { INotification } from "../types/INotification";
 import type { IExtensionState, IState } from "../types/IState";
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
@@ -170,6 +175,15 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
     type: "",
     installationPath: "mods/mod-1",
     attributes: {},
+    ...overrides,
+  };
+}
+
+export function makePlugin(overrides: Partial<IPlugin> = {}): IPlugin {
+  return {
+    filePath: path.join(os.tmpdir(), "vortex-test-plugins", "One.esp"),
+    isNative: false,
+    deployed: true,
     ...overrides,
   };
 }
@@ -732,6 +746,12 @@ export function makeApiHarness(
     makeDriverState(overrides),
     applyMiddleware(thunkMiddleware, recorder),
   );
+  // the production state-watching mechanism over the harness store, backing api.onStateChange.
+  // setState is a real dispatch, so watchers registered before a setState fire on it. Unlike
+  // production's stateChangeHandler wrapper, watcher errors fail loud instead of being logged.
+  const watcher = new ReduxWatcher<IState>(store, (err) => {
+    throw err;
+  });
   // seed every bound slice: its spec's defaults under whatever makeDriverState placed there
   // from the overrides. Slices with no seed get plain defaults from the store's INIT dispatch.
   store.dispatch({ type: HYDRATE_REPLACE_TYPE, payload: store.getState() });
@@ -745,6 +765,9 @@ export function makeApiHarness(
   const dialogCalls: Array<{ type: DialogType; title: string }> = [];
   const errorNotifications: IApiHarness["errorNotifications"] = [];
   const notifications: IApiHarness["notifications"] = [];
+  const historyEntries: IApiHarness["historyEntries"] = [];
+  const showHistoryCalls: IApiHarness["showHistoryCalls"] = [];
+  const runExecutableCalls: IApiHarness["runExecutableCalls"] = [];
 
   const api = {
     getState: () => store.getState(),
@@ -759,10 +782,18 @@ export function makeApiHarness(
     onAsync: (event: string, cb: (...args: unknown[]) => unknown) => {
       events.on(event, cb);
     },
-    onStateChange: () => undefined,
-    sendNotification: (notification: { type: string; message: string }) => {
-      notifications.push(notification);
+    onStateChange: (statePath: string[], cb: (previous: unknown, current: unknown) => void) => {
+      watcher.on(statePath, ({ prevValue, currentValue }) => cb(prevValue, currentValue));
     },
+    sendNotification: (notification: INotification) => {
+      notifications.push(notification);
+      return notification.id ?? "test-notification";
+    },
+    runExecutable: (executable: string, args: string[], options: IRunOptions) => {
+      runExecutableCalls.push({ executable, args, options });
+      return Promise.resolve();
+    },
+    genMd5Hash: () => Promise.resolve({ md5sum: "test-md5", numBytes: 0 }),
     dismissNotification: () => undefined,
     showErrorNotification: (
       title: string,
@@ -781,7 +812,15 @@ export function makeApiHarness(
       return Promise.resolve(nextDialog);
     },
     translate: (key: string) => key,
-    ext: { awaitProfileSwitch: () => Promise.resolve() },
+    ext: {
+      awaitProfileSwitch: () => Promise.resolve(),
+      addToHistory: (stack: string, entry: IHistoryEvent) => {
+        historyEntries.push({ stack, entry });
+      },
+      showHistory: (stackId: string) => {
+        showHistoryCalls.push(stackId);
+      },
+    },
     emitAndAwait: () => Promise.resolve([]),
   } as unknown as IExtensionApi;
 
@@ -804,6 +843,9 @@ export function makeApiHarness(
     dialogCalls,
     errorNotifications,
     notifications,
+    historyEntries,
+    showHistoryCalls,
+    runExecutableCalls,
   };
 }
 

@@ -15,6 +15,7 @@ import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { IStateWithGamebryo } from "../extensions/gamebryo_plugin_management/types/IStateWithGamebryo";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
+import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
@@ -27,8 +28,9 @@ import type {
   ICollectionInstallState,
 } from "../types/collections/ICollectionInstallSession";
 import type { DialogType, IDialogResult } from "../types/IDialog";
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi, IRunOptions } from "../types/IExtensionContext";
 import type { IHealthCheckResult } from "../types/IHealthCheck";
+import type { INotification } from "../types/INotification";
 import type { IState } from "../types/IState";
 
 /** A dispatched redux-act action as the harness sees it. */
@@ -78,8 +80,14 @@ export interface IApiHarness {
   // showErrorNotification calls, recorded in order. allowReport matters: a false here is what
   // keeps the Report button off a failure the user caused or can act on themselves
   errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
-  // sendNotification calls, recorded in order
-  notifications: Array<{ type: string; message: string }>;
+  // sendNotification calls, recorded in order (full notification, so ids/actions are assertable)
+  notifications: INotification[];
+  // ext.addToHistory calls, recorded in order
+  historyEntries: Array<{ stack: string; entry: IHistoryEvent }>;
+  // ext.showHistory calls, recorded in order
+  showHistoryCalls: string[];
+  // api.runExecutable calls, recorded in order (the call is captured, nothing is spawned)
+  runExecutableCalls: Array<{ executable: string; args: string[]; options: IRunOptions }>;
 }
 
 export interface IDriverHarness extends IApiHarness {

@@ -58,12 +58,7 @@ import { testIncompatibleArchives } from "./archiveCheck";
 import LootInterface from "./autosort";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
-import { indexReducer } from "./reducers/indexlock";
-import { loadOrderReducer } from "./reducers/loadOrder";
-import { pluginsReducer } from "./reducers/plugins";
-import { settingsReducer } from "./reducers/settings";
-import userlistReducer from "./reducers/userlist";
-import userlistEditReducer from "./reducers/userlistEdit";
+import { REDUCER_BINDINGS } from "./reducers/bindings";
 import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
 import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
@@ -395,16 +390,9 @@ function register(
   context: IExtensionContextExt,
   setPluginLight: (id: string, enable: boolean) => void,
 ) {
-  context.registerReducer(["session", "plugins"], pluginsReducer);
-  context.registerReducer(["loadOrder"], loadOrderReducer);
-  context.registerReducer(["userlist"], userlistReducer);
-  context.registerReducer(["masterlist"], {
-    defaults: { globals: [], plugins: [], groups: [] },
-    reducers: {},
-  });
-  context.registerReducer(["settings", "plugins"], settingsReducer);
-  context.registerReducer(["session", "pluginDependencies"], userlistEditReducer);
-  context.registerReducer(["persistent", "plugins", "lockedIndices"], indexReducer);
+  for (const { path: statePath, reducer } of REDUCER_BINDINGS) {
+    context.registerReducer(statePath, reducer);
+  }
 
   context.registerTableAttribute("gamebryo-plugins", genLockIndexAttribute(context.api));
 

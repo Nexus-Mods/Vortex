@@ -83,7 +83,8 @@ export async function testIncompatibleArchives(api: IExtensionApi): Promise<ITes
 
 async function checkForErrors(
   api: IExtensionApi,
-  pluginsObj: { [id: string]: IPluginCombined },
+  // keyed by plugin id
+  pluginsObj: Record<string, IPluginCombined>,
 ): Promise<ITestResult> {
   // Check this is a game we want to run this check on.
   const state = api.getState<IStateWithGamebryo>();
