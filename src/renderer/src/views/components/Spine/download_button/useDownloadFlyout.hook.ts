@@ -11,6 +11,9 @@ export interface IDownloadFlyout {
   isAnnouncing: boolean;
   isOpen: boolean;
   onOpenChange: (open: boolean, reason?: OpenChangeReason) => void;
+  /** For the trigger's own hover handlers — see `onTriggerEnter`. */
+  onTriggerEnter: () => void;
+  onTriggerLeave: () => void;
 }
 
 /**
@@ -104,5 +107,14 @@ export const useDownloadFlyout = (activeIds: string[]): IDownloadFlyout => {
     [cancelAutoDismiss],
   );
 
-  return { downloadId, isAnnouncing, isOpen, onOpenChange };
+  const onTriggerEnter = useCallback(() => {
+    isPointerOnRef.current = true;
+    cancelAutoDismiss();
+  }, [cancelAutoDismiss]);
+
+  const onTriggerLeave = useCallback(() => {
+    isPointerOnRef.current = false;
+  }, []);
+
+  return { downloadId, isAnnouncing, isOpen, onOpenChange, onTriggerEnter, onTriggerLeave };
 };

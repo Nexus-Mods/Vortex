@@ -13,7 +13,7 @@ vi.mock("react-redux", async (importOriginal) => ({
     selector({ persistent: {} } as unknown as IState),
 }));
 
-import { DownloadFlyout, formatRemaining } from "./DownloadFlyout";
+import { DownloadFlyout } from "./DownloadFlyout";
 import type { DownloadEta } from "./useDownloadEta.hook";
 
 // --- Helpers ---
@@ -91,6 +91,26 @@ describe("DownloadFlyout", () => {
     expect(screen.queryByTestId("download-flyout-estimating")).not.toBeInTheDocument();
   });
 
+  // i18next isn't initialised here, so `t` hands back the key: the assertions read the
+  // string that was chosen, which is the whole difference between these two cases.
+  it("says how much is left when the download is paused", () => {
+    renderComponent({ eta: { percentRemaining: 45, status: "paused" } });
+
+    expect(screen.getByTestId("download-flyout-paused")).toHaveTextContent(
+      "Paused {{percent}}% remaining",
+    );
+    expect(screen.queryByTestId("download-flyout-remaining")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("download-flyout-estimating")).not.toBeInTheDocument();
+  });
+
+  // Without a size there is no percentage to give, but the pause itself still matters.
+  it("still says it is paused with no percentage to report", () => {
+    renderComponent({ eta: { percentRemaining: undefined, status: "paused" } });
+
+    expect(screen.getByTestId("download-flyout-paused")).toHaveTextContent("Paused");
+    expect(screen.getByTestId("download-flyout-paused")).not.toHaveTextContent("%");
+  });
+
   // The panel is still on screen for its exit transition when a download finishes, so a
   // status line that reappeared here would flash on the way out.
   it("says nothing on the status line when there is no estimate to make", () => {
@@ -106,23 +126,5 @@ describe("DownloadFlyout", () => {
     expect(screen.queryByTestId("download-flyout-name")).not.toBeInTheDocument();
     expect(screen.queryByTestId("download-flyout-estimating")).not.toBeInTheDocument();
     expect(screen.queryByTestId("download-flyout-remaining")).not.toBeInTheDocument();
-  });
-});
-
-describe("formatRemaining", () => {
-  it("drops the leading zero, so minutes read as the design has them", () => {
-    expect(formatRemaining(486)).toBe("8:06");
-  });
-
-  it("keeps two-digit minutes intact", () => {
-    expect(formatRemaining(754)).toBe("12:34");
-  });
-
-  it("keeps the hour when there is one", () => {
-    expect(formatRemaining(3723)).toBe("1:02:03");
-  });
-
-  it("rounds part-seconds up rather than down to zero", () => {
-    expect(formatRemaining(0.4)).toBe("0:01");
   });
 });

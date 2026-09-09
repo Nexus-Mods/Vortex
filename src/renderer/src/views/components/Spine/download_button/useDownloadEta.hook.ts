@@ -15,7 +15,21 @@ const MIN_SAMPLE_MS = 250;
 export type DownloadEta =
   | { status: "estimating" }
   | { status: "ready"; seconds: number }
+  | { status: "paused"; percentRemaining: number | undefined }
   | { status: "unavailable" };
+
+/**
+ * How much is left to fetch, as a whole percent, or undefined when the server never sent a
+ * size to measure against. Rounded up for the same reason the clock is: while bytes are
+ * still outstanding it shouldn't read as nothing left.
+ */
+const percentRemaining = ({ received, size }: IDownload): number | undefined => {
+  if (!size || received === undefined) {
+    return undefined;
+  }
+
+  return Math.min(100, Math.max(0, Math.ceil(((size - received) / size) * 100)));
+};
 
 /**
  * Time remaining for one download.
@@ -75,7 +89,13 @@ export const useDownloadEta = (download: IDownload | undefined): DownloadEta => 
     );
   }, [isRunning, received]);
 
-  // Paused, finishing or gone: there is no estimate to make, rather than one pending.
+  // A pause is worth announcing, and how much is left to fetch survives it — what's gone is
+  // the rate that would turn it into a time.
+  if (download?.state === "paused") {
+    return { status: "paused", percentRemaining: percentRemaining(download) };
+  }
+
+  // Finishing or gone: there is no estimate to make, rather than one pending.
   if (!isStarting) {
     return { status: "unavailable" };
   }

@@ -1,5 +1,5 @@
 import {
-  mdiAlertOctagon,
+  mdiAlertOctagonOutline,
   mdiAlertOutline,
   mdiCheckCircleOutline,
   mdiInformationOutline,
@@ -18,7 +18,7 @@ import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";
 
 const STATUS_MAP = {
-  error: { className: "text-danger-strong", icon: mdiAlertOctagon },
+  error: { className: "text-danger-strong", icon: mdiAlertOctagonOutline },
   warning: { className: "text-warning-strong", icon: mdiAlertOutline },
   success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
   info: { className: "text-info-strong", icon: mdiInformationOutline },

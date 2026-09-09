@@ -88,7 +88,8 @@ export const DownloadButton = () => {
   const { activeIds, estimatedMins, isDownloading, isPaused, progress, speedMBps } =
     useDownloadProgress();
 
-  const { downloadId, isAnnouncing, isOpen, onOpenChange } = useDownloadFlyout(activeIds);
+  const { downloadId, isAnnouncing, isOpen, onOpenChange, onTriggerEnter, onTriggerLeave } =
+    useDownloadFlyout(activeIds);
 
   const selectNamed = useMemo(() => selectDownload(downloadId), [downloadId]);
   const download = useSelector(selectNamed);
@@ -133,6 +134,8 @@ export const DownloadButton = () => {
         isActive={isActive}
         title={LABEL}
         onClick={() => selectDownloads()}
+        onMouseEnter={onTriggerEnter}
+        onMouseLeave={onTriggerLeave}
       >
         {showProgress && (
           <>
@@ -140,14 +143,14 @@ export const DownloadButton = () => {
               <Typography
                 as="span"
                 brand="none"
-                className="leading-none font-semibold"
+                className="relative z-1 leading-none font-semibold text-shadow-halo text-shadow-translucent-dark-100"
                 type="body-sm"
               >
                 {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
               </Typography>
             )}
 
-            <span className="text-[0.375rem] leading-none tracking-[1px] uppercase">
+            <span className="relative z-1 text-[0.375rem] leading-none tracking-[1px] uppercase">
               {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
             </span>
 

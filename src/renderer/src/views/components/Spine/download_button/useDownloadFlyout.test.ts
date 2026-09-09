@@ -84,6 +84,54 @@ describe("useDownloadFlyout", () => {
     expect(result.current.isOpen).toBe(true);
   });
 
+  // Hovering a panel it opened itself is invisible to `onOpenChange` - the tooltip is
+  // already open, so floating-ui has no change to report - and the countdown used to run on
+  // and close the flyout under the pointer.
+  it("holds off its countdown while the pointer is on the button", () => {
+    const { rerender, result } = renderHook(({ ids }) => useDownloadFlyout(ids), {
+      initialProps: { ids: [] as string[] },
+    });
+
+    act(() => rerender({ ids: ["dl1"] }));
+    act(() => result.current.onTriggerEnter());
+
+    act(() => vi.advanceTimersByTime(AUTO_DISMISS_MS * 2));
+
+    expect(result.current.isOpen).toBe(true);
+  });
+
+  // Leaving doesn't close it here: the tooltip's own hover-close reports that through
+  // `onOpenChange`, which is what actually takes the panel down.
+  it("does not restart the countdown when the pointer leaves", () => {
+    const { rerender, result } = renderHook(({ ids }) => useDownloadFlyout(ids), {
+      initialProps: { ids: [] as string[] },
+    });
+
+    act(() => rerender({ ids: ["dl1"] }));
+    act(() => result.current.onTriggerEnter());
+    act(() => result.current.onTriggerLeave());
+
+    act(() => vi.advanceTimersByTime(AUTO_DISMISS_MS));
+    expect(result.current.isOpen).toBe(true);
+
+    act(() => result.current.onOpenChange(false, "hover"));
+    expect(result.current.isOpen).toBe(false);
+  });
+
+  // The pointer already resting on the button when the download lands: the arrival path
+  // reads the same flag, so it never arms a countdown it would have to cancel.
+  it("never starts a countdown for a download that arrives under the pointer", () => {
+    const { rerender, result } = renderHook(({ ids }) => useDownloadFlyout(ids), {
+      initialProps: { ids: [] as string[] },
+    });
+
+    act(() => result.current.onTriggerEnter());
+    act(() => rerender({ ids: ["dl1"] }));
+
+    act(() => vi.advanceTimersByTime(AUTO_DISMISS_MS));
+    expect(result.current.isOpen).toBe(true);
+  });
+
   it("closes when the user dismisses it", () => {
     const { rerender, result } = renderHook(({ ids }) => useDownloadFlyout(ids), {
       initialProps: { ids: [] as string[] },

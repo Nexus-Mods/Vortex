@@ -18,18 +18,6 @@ interface INexusModImagery {
   picture_url?: string;
 }
 
-/**
- * Whether a thumbnail is on its way. `nexus.ids.modId` is what makes the metadata fetch
- * run at all, so without it no image is ever coming and the frame should stay empty
- * rather than sit there spinning — a manual download has no picture to wait for.
- */
-const expectsImage = (download: IDownload | undefined): boolean =>
-  download?.modInfo?.nexus?.ids?.modId !== undefined;
-
-/** "08:06" reads like a stopwatch; the design asks for "8:06". */
-export const formatRemaining = (seconds: number): string =>
-  timeToString(Math.ceil(seconds)).replace(/^0(?=\d)/, "");
-
 interface IDownloadFlyoutProps {
   download: IDownload | undefined;
   eta: DownloadEta;
@@ -52,6 +40,37 @@ export const DownloadFlyout = ({ download, eta, otherCount }: IDownloadFlyoutPro
   const hasName = !!name && !isTempDownloadName(name);
   const nexusMod = download?.modInfo?.nexus?.modInfo as INexusModImagery | undefined;
 
+  const getStatus = (): { testId: string; text: string } | undefined => {
+    switch (eta.status) {
+      case "ready":
+        return {
+          testId: "download-flyout-remaining",
+          text: t("{{time}} remaining", {
+            replace: { time: timeToString(Math.ceil(eta.seconds)) },
+          }),
+        };
+      case "paused":
+        return {
+          testId: "download-flyout-paused",
+          text:
+            eta.percentRemaining === undefined
+              ? t("Paused")
+              : t("Paused {{percent}}% remaining", {
+                  replace: { percent: eta.percentRemaining },
+                }),
+        };
+      case "estimating":
+        return {
+          testId: "download-flyout-estimating",
+          text: t("Calculating time remaining..."),
+        };
+      default:
+        return undefined;
+    }
+  };
+
+  const status = getStatus();
+
   return (
     <div className="flex h-12.5 w-full items-start gap-x-2.5 p-2">
       <AdultAwareImage
@@ -59,7 +78,7 @@ export const DownloadFlyout = ({ download, eta, otherCount }: IDownloadFlyoutPro
         className="w-7.5 rounded-xs"
         imageType="mod"
         isAdult={nexusMod?.contains_adult_content ?? false}
-        isLoading={expectsImage(download) && nexusMod?.picture_url === undefined}
+        isLoading={!!download?.modInfo?.nexus?.ids?.modId && !nexusMod?.picture_url}
         src={nexusMod?.picture_url}
       />
 
@@ -83,18 +102,14 @@ export const DownloadFlyout = ({ download, eta, otherCount }: IDownloadFlyoutPro
           )}
         </Typography>
 
-        {eta.status !== "unavailable" && (
+        {!!status && (
           <Typography
             appearance="subdued"
             as="span"
-            data-testid={
-              eta.status === "ready" ? "download-flyout-remaining" : "download-flyout-estimating"
-            }
+            data-testid={status.testId}
             typographyType="body-sm"
           >
-            {eta.status === "ready"
-              ? t("{{time}} remaining", { replace: { time: formatRemaining(eta.seconds) } })
-              : t("Calculating time remaining...")}
+            {status.text}
           </Typography>
         )}
       </div>

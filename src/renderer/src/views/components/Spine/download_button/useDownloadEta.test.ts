@@ -102,9 +102,10 @@ describe("useDownloadEta", () => {
     expect(seconds(result.current)).toBeCloseTo(9, 3);
 
     // Not "estimating": a paused download is not on its way, and the flyout would
-    // otherwise sit on "Download starting..." for as long as it stayed paused.
+    // otherwise sit on "Download starting..." for as long as it stayed paused. The pause
+    // replaces the estimate rather than leaving the last one standing.
     act(() => rerender({ dl: download(100, { state: "paused" }) }));
-    expect(result.current.status).toBe("unavailable");
+    expect(result.current).toEqual({ status: "paused", percentRemaining: 90 });
   });
 
   it("says nothing when the server never sent a size", () => {
@@ -155,4 +156,26 @@ describe("useDownloadEta", () => {
       expect(result.current.status).toBe("unavailable");
     },
   );
+
+  // A paused download keeps its place in the flyout: the bytes still say how much is left,
+  // even though the rate that would turn that into a time is gone.
+  describe("paused", () => {
+    it("reports the percent still to fetch", () => {
+      const { result } = renderEta(download(750, { state: "paused" }));
+
+      expect(result.current).toEqual({ status: "paused", percentRemaining: 25 });
+    });
+
+    it("rounds up, so outstanding bytes never read as none left", () => {
+      const { result } = renderEta(download(999, { state: "paused" }));
+
+      expect(result.current).toEqual({ status: "paused", percentRemaining: 1 });
+    });
+
+    it("has no percent to give when the server sent no size", () => {
+      const { result } = renderEta(download(750, { size: 0, state: "paused" }));
+
+      expect(result.current).toEqual({ status: "paused", percentRemaining: undefined });
+    });
+  });
 });
