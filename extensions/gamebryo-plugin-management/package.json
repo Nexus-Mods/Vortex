@@ -13,6 +13,7 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
     "@types/js-yaml": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
@@ -28,7 +29,6 @@
     "cytoscape": "catalog:",
     "cytoscape-cose-bilkent": "catalog:",
     "cytoscape-edgehandles": "catalog:",
-    "date-fns": "catalog:",
     "electron": "catalog:",
     "exe-version": "workspace:*",
     "i18next": "catalog:",
@@ -52,8 +52,7 @@
     "redux-thunk": "catalog:",
     "reselect": "catalog:",
     "shortid": "catalog:",
-    "typed-binary": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "typed-binary": "catalog:"
   },
   "optionalDependencies": {
     "loot": "catalog:"

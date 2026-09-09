@@ -137,7 +137,6 @@ catalog:
   cytoscape-cose-bilkent: 4.1.0
   cytoscape-edgehandles: 3.6.0
   d3: 5.16.0
-  date-fns: 2.30.0
   dayjs: 1.11.20
   dequal: 2.0.3
   dnd-core: 9.5.1
