@@ -5,7 +5,12 @@ import { inspect } from "node:util";
 
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { getErrorCode, getErrorMessageOrDefault, sanitizeFramePath } from "@vortex/shared";
+import {
+  computeIdentityFingerprint,
+  getErrorCode,
+  getErrorMessageOrDefault,
+  sanitizeFramePath,
+} from "@vortex/shared";
 import type { ReportableError } from "@vortex/shared/errors";
 import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/telemetry";
 import { app } from "electron";
@@ -201,6 +206,10 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
   }
 
   const error: ReportableError = {
+    title:
+      primary?.module !== undefined
+        ? `Native crash in ${primary.module}`
+        : "Native crash (unreadable dump)",
     message: describeNativeCrash(primary, unreported.length),
     code: primary?.exceptionCode ?? "native-crash",
   };
@@ -312,6 +321,41 @@ async function collectCrashDumps(): Promise<IDumpFile[]> {
   return found;
 }
 
+const CRASH_TITLES: Record<string, string> = {
+  Crash: "Unrecoverable error",
+  EarlyCrash: "Crash during startup",
+  PreviousSessionCrash: "Native crash",
+  ChildProcessGone: "Child process crashed",
+  RenderProcessGone: "Renderer process crashed",
+};
+
+/** What identifies a crash site when there is no JavaScript stack to hash. */
+const CRASH_IDENTITY_ATTRIBUTES = [
+  "crash.sourceProcess",
+  "crash.exitCode",
+  "crash.native.exceptionCode",
+  "crash.native.module",
+  "crash.native.moduleOffset",
+];
+
+/**
+ * Fingerprint for crashes without a JavaScript stack (native dumps, processes
+ * gone), so the backend dedupes and resolves them like error reports.
+ */
+export function crashFingerprint(
+  appVersion: string,
+  type: string,
+  error: ReportableError,
+  attributes: Record<string, string | number | boolean>,
+): string {
+  return computeIdentityFingerprint(
+    appVersion,
+    type,
+    error.code ?? "",
+    ...CRASH_IDENTITY_ATTRIBUTES.map((key) => String(attributes[key] ?? "")),
+  );
+}
+
 /**
  * Create a short-lived OTel provider, record a crash error span,
  * flush the export, and shut down.
@@ -345,20 +389,21 @@ export async function reportCrash(
 
   try {
     const tracer = provider.getTracer("vortex.crash");
-    const span = tracer.startSpan("crash.report", {
-      attributes: {
-        "crash.type": type,
-        "crash.sourceProcess": sourceProcess ?? "unknown",
-        "error.message": sanitizeFramePath(error.message),
-        "error.code": error.code ?? "",
-      },
-    });
+    const spanAttributes: Record<string, string | number | boolean> = {
+      "crash.type": type,
+      "crash.sourceProcess": sourceProcess ?? "unknown",
+      "error.message": sanitizeFramePath(error.message),
+      "error.code": error.code ?? "",
+      ...attributes,
+    };
+    const span = tracer.startSpan("crash.report", { attributes: spanAttributes });
 
     const errorObj = new Error(error.message);
     errorObj.stack = error.stack;
     recordErrorOnSpan(span, errorObj, app.getVersion(), context, {
-      "error.title": error.title ?? "",
-      ...attributes,
+      "error.title": error.title ?? CRASH_TITLES[type] ?? type,
+      // overridden by the stack fingerprint when the error has a stack
+      "error.fingerprint": crashFingerprint(app.getVersion(), type, error, spanAttributes),
     });
     span.end();
   } finally {
