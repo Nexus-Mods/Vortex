@@ -337,6 +337,7 @@
     "source-map-support": "catalog:",
     "string-template": "catalog:",
     "tailwindcss": "catalog:",
+    "temporal-polyfill": "catalog:",
     "tmp": "catalog:",
     "tough-cookie": "catalog:",
     "turbowalk": "catalog:",
