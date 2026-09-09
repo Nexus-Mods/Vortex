@@ -65,7 +65,8 @@ export type IExtensionWithState = IExtensionState & {
 export interface IExtensionDownloadInfo {
   name: string;
   modId: number;
-  fileId: number;
+  // game stubs and bare nxm://site/mods/<id> links only know the mod; resolved from the catalog
+  fileId?: number;
 }
 
 /**
