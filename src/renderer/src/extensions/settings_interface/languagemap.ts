@@ -1737,14 +1737,6 @@ const countryMap = {
   },
 };
 
-export function languageExists(code: string): boolean {
-  return code !== undefined && languageMap[code] !== undefined;
-}
-
-export function countryExists(code: string): boolean {
-  return code !== undefined && countryMap[code] !== undefined;
-}
-
 // keyed by lower-cased English language name; multi-name entries
 // (e.g. "Spanish; Castilian") yield one key per name
 const codeByEnglishName: Map<string, string> = (() => {
@@ -1762,22 +1754,4 @@ const codeByEnglishName: Map<string, string> = (() => {
 
 export function languageCodeByEnglishName(name: string): string | undefined {
   return codeByEnglishName.get(name.toLowerCase());
-}
-
-export function nativeLanguageName(code: string): string {
-  const language = languageMap[code];
-  if (language === undefined) {
-    return code;
-  } else {
-    return languageMap[code].nativeName;
-  }
-}
-
-export function nativeCountryName(code: string): string {
-  const country = countryMap[code];
-  if (country === undefined) {
-    return code;
-  } else {
-    return country.nativeName;
-  }
 }
