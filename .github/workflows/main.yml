@@ -45,7 +45,8 @@ jobs:
 
   build:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.code == 'true'
+    # Fails open: if the filter job itself fails, code is empty and the full build runs.
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.code != 'false') }}
 
     strategy:
       matrix:
