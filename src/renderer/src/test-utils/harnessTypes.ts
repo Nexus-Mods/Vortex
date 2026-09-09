@@ -53,6 +53,12 @@ export interface IDriverHarnessState {
   availableExtensions: Array<{ modId: number }>;
   // the cached membership (state.persistent.nexus.userInfo); undefined models "not fetched yet"
   userInfo: Partial<IValidateKeyDataV2> | undefined;
+  // the active profile id (state.settings.profiles.activeProfileId)
+  activeProfileId: string | undefined;
+  // last active profile per game, keyed by gameId (state.settings.profiles.lastActiveProfile)
+  lastActiveProfile: Record<string, string>;
+  // staging folder per game, keyed by gameId (state.settings.mods.installPath)
+  installPath: Record<string, string>;
 }
 
 export interface IApiHarness {
@@ -89,6 +95,8 @@ export interface IGameHarnessOpts {
   profileId?: string;
   // the game's installed mods, keyed by modId (state.persistent.mods[gameId])
   mods?: Record<string, IMod>;
+  // staging folder per game, keyed by gameId (state.settings.mods.installPath)
+  installPath?: Record<string, string>;
 }
 
 export interface IGameHarness extends IApiHarness {

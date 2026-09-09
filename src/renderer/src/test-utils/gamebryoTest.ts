@@ -11,20 +11,8 @@ const asGamebryo = (state: IState): IStateWithGamebryo => state as IStateWithGam
 // the extension's reducer specs, bound to the slices they own (the root loadOrder hive and
 // session.plugins); the harness seeds each from its spec's defaults
 const GAMEBRYO_BINDINGS: IHarnessReducerBinding[] = [
-  {
-    spec: loadOrderReducer,
-    read: (state) => asGamebryo(state).loadOrder,
-    write: (state, slice) => {
-      asGamebryo(state).loadOrder = slice as IStateWithGamebryo["loadOrder"];
-    },
-  },
-  {
-    spec: pluginsReducer,
-    read: (state) => asGamebryo(state).session.plugins ?? {},
-    write: (state, slice) => {
-      asGamebryo(state).session.plugins = slice as IStateWithGamebryo["session"]["plugins"];
-    },
-  },
+  { path: ["loadOrder"], reducer: loadOrderReducer },
+  { path: ["session", "plugins"], reducer: pluginsReducer },
 ];
 
 /**
@@ -34,11 +22,12 @@ const GAMEBRYO_BINDINGS: IHarnessReducerBinding[] = [
  * reducers.
  */
 export function makeGamebryoHarness(opts: IGamebryoHarnessOpts = {}): IGamebryoHarness {
-  const base = makeGameHarness(opts, GAMEBRYO_BINDINGS);
-  base.setState((draft) => {
-    // so the real installPath selector resolves a concrete staging folder
-    draft.settings.mods.installPath[base.gameId] = `C:/staging/${base.gameId}`;
-  });
+  // seed a staging folder so the real installPath selector resolves a concrete path
+  const gameId = opts.gameId ?? "skyrimse";
+  const base = makeGameHarness(
+    { installPath: { [gameId]: `C:/staging/${gameId}` }, ...opts },
+    GAMEBRYO_BINDINGS,
+  );
   return { ...base, getGamebryoState: () => asGamebryo(base.getState()) };
 }
 
