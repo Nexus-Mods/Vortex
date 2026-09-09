@@ -297,11 +297,8 @@ export interface LaunchItems {
 
 export interface LoginItemSettings {
   openAtLogin: boolean;
-  openAsHidden: boolean;
   wasOpenedAtLogin: boolean;
-  wasOpenedAsHidden: boolean;
-  restoreState: boolean;
-  status: string;
+  status: "not-registered" | "enabled" | "requires-approval" | "not-found";
   executableWillLaunchAtLogin: boolean;
   launchItems: LaunchItems[];
 }
