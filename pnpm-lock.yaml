@@ -566,9 +566,6 @@ catalogs:
     d3:
       specifier: 5.16.0
       version: 5.16.0
-    date-fns:
-      specifier: 2.30.0
-      version: 2.30.0
     dayjs:
       specifier: 1.11.20
       version: 1.11.20
@@ -1750,9 +1747,6 @@ importers:
       cytoscape-edgehandles:
         specifier: 'catalog:'
         version: 3.6.0(cytoscape@3.33.1)
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       electron:
         specifier: 'catalog:'
         version: 44.2.0(supports-color@10.2.2)
@@ -4022,9 +4016,6 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       electron:
         specifier: 'catalog:'
         version: 44.2.0(supports-color@10.2.2)
@@ -4163,9 +4154,6 @@ importers:
       d3:
         specifier: 'catalog:'
         version: 5.16.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       dayjs:
         specifier: 'catalog:'
         version: 1.11.20
@@ -4825,9 +4813,6 @@ importers:
       d3:
         specifier: 'catalog:'
         version: 5.16.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       dayjs:
         specifier: 'catalog:'
         version: 1.11.20

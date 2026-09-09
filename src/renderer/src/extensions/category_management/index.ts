@@ -1,6 +1,7 @@
 import type * as Redux from "redux";
 
 import { setDialogVisible } from "@/actions";
+import * as bcp47 from "@/bcp47";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
@@ -78,7 +79,7 @@ function init(context: IExtensionContext): boolean {
   const getCollator = (locale: string) => {
     if (collator === undefined || locale !== lang) {
       lang = locale;
-      collator = new Intl.Collator(locale, { sensitivity: "base" });
+      collator = bcp47.getCollator(locale);
     }
     return collator;
   };

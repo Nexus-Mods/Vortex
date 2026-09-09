@@ -25,6 +25,7 @@ import { getPreloadApi } from "@/util/preloadAccess";
 import { useReduceMotion } from "@/util/reduceMotion";
 import { truthy } from "@/util/util";
 
+import { displayBcp47, isValidBcp47 } from "../../bcp47";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import Toggle from "../../controls/Toggle";
@@ -49,7 +50,6 @@ import {
   setReduceMotion,
   setRelativeTimes,
 } from "./actions/interface";
-import { nativeCountryName, nativeLanguageName } from "./languagemap";
 import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
 import getText from "./texts";
 
@@ -583,19 +583,6 @@ const SettingsInterfaceMapped = translate(["common"])(
   connect(mapStateToProps, mapDispatchToProps)(SettingsInterfaceImpl),
 );
 
-function isValidLanguageCode(langId: string) {
-  if (!truthy(langId)) {
-    return false;
-  }
-  try {
-    new Date().toLocaleString(langId);
-    return true;
-  } catch (err) {
-    log("warn", "Not a valid language code", langId);
-    return false;
-  }
-}
-
 /** List the subdirectories of a base directory; a missing base yields none. */
 async function listSubdirectories(basePath: string): Promise<string[]> {
   try {
@@ -609,7 +596,10 @@ async function listSubdirectories(basePath: string): Promise<string[]> {
   }
 }
 
-async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
+async function readLocales(
+  extensions: IAvailableExtension[],
+  uiLocale: string,
+): Promise<ILanguage[]> {
   const bundledLanguages = getVortexPath("locales");
   const userLanguages = path.normalize(path.join(getVortexPath("userData"), "locales"));
 
@@ -625,7 +615,7 @@ async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage
     // providing the same language
     const keys = Array.from(
       new Set([...local, ...translationExts.map((ext) => ext.language)]),
-    ).filter((langId): langId is string => langId !== undefined && isValidLanguageCode(langId));
+    ).filter((langId): langId is string => langId !== undefined && isValidBcp47(langId));
 
     const loc = new Set(local);
     // keyed by locale code
@@ -636,14 +626,10 @@ async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage
     }
 
     return keys.map((key) => {
-      const [languageKey, countryKey] = key.split("-");
-      const language = nativeLanguageName(languageKey);
-      const country = countryKey !== undefined ? nativeCountryName(countryKey) : undefined;
-
       const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
         ? []
         : (extsByLanguage.get(key) ?? []);
-      return { key, language, country, ext };
+      return { key, displayName: displayBcp47(key, uiLocale), ext };
     });
   } catch (err) {
     log("warn", "failed to read locales", err);
@@ -670,12 +656,12 @@ function SettingsInterface(props: IBaseProps) {
 
   React.useEffect(() => {
     (async () => {
-      const langs = await readLocales(exts);
+      const langs = await readLocales(exts, lang);
       // ensure the selected language is always an option
       if (langs.length === 0) {
         langs.push({
           key: lang,
-          language: nativeLanguageName(lang),
+          displayName: displayBcp47(lang, lang),
           ext: [],
         });
       }

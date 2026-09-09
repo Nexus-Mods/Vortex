@@ -44,7 +44,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | content-type | 1.0.5 |
 | crc-32 | 1.2.2 |
 | d3 | 5.16.0 |
-| date-fns | 2.30.0 |
 | dayjs | 1.11.20 |
 | dequal | 2.0.3 |
 | dnd-core | 9.5.1 |
