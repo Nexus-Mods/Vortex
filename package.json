@@ -78,6 +78,7 @@
     "husky": "catalog:",
     "lint-staged": "catalog:",
     "minimist": "catalog:",
+    "node-abi": "catalog:",
     "nx": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
