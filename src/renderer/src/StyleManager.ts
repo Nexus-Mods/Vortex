@@ -24,9 +24,8 @@ export default class StyleManager {
       { type: "builtin", file: "thirdparty" },
       { type: "builtin", file: "desktop" },
       // collections and gamebryo plugin management are core (static) extensions; their
-      // stylesheets live in src/stylesheets and are compiled as built-in partials
-      // (inserted before "style", matching where the old setStylesheet calls placed
-      // the extendable partials).
+      // stylesheets live in src/stylesheets and are compiled as built-in partials,
+      // inserted before "style" like the extendable partials.
       { type: "builtin", file: "collections" },
       { type: "builtin", file: "gamebryo_plugin_management" },
       { type: "builtin", file: "style" },
