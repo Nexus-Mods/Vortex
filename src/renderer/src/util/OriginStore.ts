@@ -255,14 +255,3 @@ export class OriginLauncher implements IGameStore {
       });
   }
 }
-
-function main(context: IExtensionContext) {
-  const instance: IGameStore = process.platform === "win32" ? new OriginLauncher() : undefined;
-
-  if (instance !== undefined) {
-    context.registerGameStore(instance);
-  }
-  return true;
-}
-
-export default main;
