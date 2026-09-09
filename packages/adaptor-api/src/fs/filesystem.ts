@@ -258,19 +258,17 @@ export type Status = (FileStatus | DirectoryStatus) & SymLinkStatus;
 
 /** @public */
 export type StatusTime = {
-  // TODO: use Temporal API
+  /** Time when entry data was last accessed. */
+  readonly accessTime: Temporal.Instant;
 
-  /** Time in nanoseconds when entry data was last accessed. */
-  readonly accessTime: bigint;
+  /** Time when entry data was last modified. */
+  readonly modifiedTime: Temporal.Instant;
 
-  /** Time in nanoseconds when entry data was last modified. */
-  readonly modifiedTime: bigint;
+  /** Time when entry status was last changed. */
+  readonly changeTime: Temporal.Instant;
 
-  /** Time in nanoseconds when entry status was last changed. */
-  readonly changeTime: bigint;
-
-  /** Time in nanoseconds when entry was created. */
-  readonly creationTime: bigint;
+  /** Time when entry was created. */
+  readonly creationTime: Temporal.Instant;
 };
 
 /** @public */

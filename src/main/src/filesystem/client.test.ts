@@ -132,10 +132,10 @@ describe("createFileSystemClient", () => {
         id: 0n,
         deviceId: 0n,
         hardlinkCount: 1,
-        accessTime: 0n,
-        modifiedTime: 0n,
-        changeTime: 0n,
-        creationTime: 0n,
+        accessTime: Temporal.Instant.fromEpochNanoseconds(0n),
+        modifiedTime: Temporal.Instant.fromEpochNanoseconds(0n),
+        changeTime: Temporal.Instant.fromEpochNanoseconds(0n),
+        creationTime: Temporal.Instant.fromEpochNanoseconds(0n),
         isSymLink: false,
       };
       const responses = {

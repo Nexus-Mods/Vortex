@@ -408,11 +408,12 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
 }
 
 function parseTime(stats: BigIntStats): StatusTime {
+  // TODO: Node.js v26.2.0 added `Temporal.Instant` support to `fs.Stats`, replace custom code once upgraded
   const times: StatusTime = {
-    accessTime: stats.atimeNs,
-    modifiedTime: stats.mtimeNs,
-    changeTime: stats.ctimeNs,
-    creationTime: stats.birthtimeNs,
+    accessTime: Temporal.Instant.fromEpochNanoseconds(stats.atimeNs),
+    modifiedTime: Temporal.Instant.fromEpochNanoseconds(stats.mtimeNs),
+    changeTime: Temporal.Instant.fromEpochNanoseconds(stats.ctimeNs),
+    creationTime: Temporal.Instant.fromEpochNanoseconds(stats.birthtimeNs),
   };
 
   return times;

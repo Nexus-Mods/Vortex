@@ -1,3 +1,7 @@
+// TODO: remove polyfill with Node.js 26 upgrade
+import { install } from "temporal-polyfill/shim";
+install();
+
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: unknown) => {
