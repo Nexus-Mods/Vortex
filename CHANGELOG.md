@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0-beta.2] - 2026-09-09
+
+### Fixed
+
+- Signed-in session showing no account and no login button after an offline start or a failed account lookup ([#24142](https://github.com/Nexus-Mods/Vortex/pull/24142))
+- Error classification: `HTTPError` no longer lost across IPC or failing `instanceof` checks ([#24128](https://github.com/Nexus-Mods/Vortex/pull/24128))
+- Game stubs failing to install the replacement extension ([#24125](https://github.com/Nexus-Mods/Vortex/pull/24125))
+
 ## [2.7.0-beta.1] - 2026-09-07
 
 _First beta of the 2.7 release._
@@ -2308,6 +2316,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.7.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.2
 [2.7.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.1
 [2.6.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.6.3
 [2.6.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.6.2
