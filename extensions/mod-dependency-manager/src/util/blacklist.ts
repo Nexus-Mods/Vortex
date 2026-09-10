@@ -37,7 +37,7 @@ function isBlacklisted(filePath: string, game: types.IGame): boolean {
   // TODO: this could become reaaaaly slow as the blacklist gets larger...
   return getBlacklist(game).some((pattern) => {
     try {
-      return minimatch(filePath, pattern, { nocase: true });
+      return minimatch(filePath, pattern, { nocase: true, nodot: true });
     } catch (err) {
       return false;
     }
