@@ -1,4 +1,3 @@
-import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import React from "react";
 import { ListGroup } from "react-bootstrap";
@@ -13,8 +12,8 @@ interface IGamesListProps {
   type: string;
   gameMode: string;
   discoveredGames: { [id: string]: IDiscoveryResult };
-  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
-  onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
+  onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
 }
 
 export const GamesList = ({

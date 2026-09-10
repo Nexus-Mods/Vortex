@@ -1,48 +1,24 @@
-import type PromiseBB from "bluebird";
-import type { TFunction } from "i18next";
 import React from "react";
 
-import { getSafe } from "@/util/storeHelper";
-
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
-import GameThumbnail from "../views/GameThumbnail";
+import { GameCard } from "./GameCard";
 
 interface IGamesGridProps {
-  t: TFunction;
   games: IGameStored[];
+  /** Which set of registered actions the cards get: `managed` or `unmanaged`. */
   type: string;
-  gameMode: string;
-  discoveredGames: { [id: string]: IDiscoveryResult };
-  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
 }
 
-export const GamesGrid = ({
-  t,
-  games,
-  type,
-  gameMode,
-  discoveredGames,
-  onRefreshGameInfo,
-}: IGamesGridProps) => {
-  const isDiscovered = (gameId: string) =>
-    getSafe(discoveredGames, [gameId, "path"], undefined) !== undefined;
-
-  return (
-    <div className="grid-games">
-      {games.map((game) => (
-        <GameThumbnail
-          active={game.id === gameMode}
-          className="w-full!"
-          discovered={isDiscovered(game.id)}
-          game={game}
-          imageClassName="rounded-md"
-          key={game.id + "_" + (game.contributed ?? "official")}
-          t={t}
-          type={type}
-          onRefreshGameInfo={onRefreshGameInfo}
-        />
-      ))}
-    </div>
-  );
-};
+export const GamesGrid = ({ games, type, onRefreshGameInfo }: IGamesGridProps) => (
+  <div className="grid-games">
+    {games.map((game) => (
+      <GameCard
+        game={game}
+        key={game.id + "_" + (game.contributed ?? "official")}
+        type={type}
+        onRefreshGameInfo={onRefreshGameInfo}
+      />
+    ))}
+  </div>
+);

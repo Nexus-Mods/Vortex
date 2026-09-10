@@ -1,8 +1,11 @@
 import React, {
   type ButtonHTMLAttributes,
+  forwardRef,
+  type ForwardRefExoticComponent,
   type HTMLAttributes,
   type ReactNode,
   type Ref,
+  type RefAttributes,
 } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -16,17 +19,18 @@ type IBasePillProps = {
 
 type IPillDefaultProps = HTMLAttributes<HTMLDivElement> & {
   as?: never;
-  ref?: Ref<HTMLDivElement>;
 } & IBasePillProps;
 
 type IButtonPillProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   as: "button";
   className?: string;
   disabled?: boolean;
-  ref?: Ref<HTMLButtonElement>;
 } & IBasePillProps;
 
 type IPillProps = IPillDefaultProps | IButtonPillProps;
+
+type IPillElement = HTMLButtonElement | HTMLDivElement;
+type IPill = ForwardRefExoticComponent<IPillProps & RefAttributes<IPillElement>>;
 
 const getPillClasses = ({ pillType = "default" }: Pick<IBasePillProps, "pillType">) =>
   joinClasses("nxm-pill", {
@@ -47,8 +51,8 @@ const Content = ({
   </>
 );
 
-export const Pill = (allProps: IPillProps) => {
-  const { children, className, icon, iconPath, pillType, ref, ...rest } = allProps;
+export const Pill: IPill = forwardRef<IPillElement, IPillProps>((allProps, ref) => {
+  const { children, className, icon, iconPath, pillType, ...rest } = allProps;
 
   const content = <Content icon={icon} iconPath={iconPath} label={children} />;
 
@@ -79,4 +83,6 @@ export const Pill = (allProps: IPillProps) => {
       {content}
     </div>
   );
-};
+});
+
+Pill.displayName = "Pill";
