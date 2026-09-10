@@ -3,6 +3,7 @@ import { inspect } from "util";
 
 import { type Span, context, ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
 import { isEnvironmentalError, parseError, unknownToError } from "@vortex/shared";
+import type { CrashType } from "@vortex/shared/errors";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import type PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
@@ -40,7 +41,7 @@ type IErrorContext = Record<string, string>;
 const globalContext: IErrorContext = {};
 
 export function createErrorReport(
-  type: string,
+  type: CrashType,
   error: IError,
   context: IErrorContext,
   state: IState | undefined,
