@@ -8,6 +8,8 @@ const MAIN_DIR = resolve(import.meta.dirname);
 const MAIN_PACKAGE_PATH = resolve(MAIN_DIR, "package.json");
 const DIST_DIR = resolve(MAIN_DIR, "build");
 const DIST_PACKAGE_PATH = resolve(DIST_DIR, "package.json");
+// Runtimes bundled into the installer; also declared as winget dependencies by winget-release.yml.
+const RUNTIME_DEPS_PATH = resolve(MAIN_DIR, "..", "..", "runtime-dependencies.json");
 
 async function resolveDepVersions(deps, nodeModulesDir) {
   if (!deps) return deps;
@@ -36,14 +38,10 @@ async function downloadFile(url, dest) {
 
 async function prepareWin() {
   const tempDir = resolve(MAIN_DIR, "temp");
-  await downloadFile(
-    "https://aka.ms/vs/17/release/vc_redist.x64.exe",
-    resolve(tempDir, "VC_redist.x64.exe"),
-  );
-  await downloadFile(
-    "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe",
-    resolve(tempDir, "windowsdesktop-runtime-win-x64.exe"),
-  );
+  const runtimeDeps = JSON.parse(await readFile(RUNTIME_DEPS_PATH, "utf8"));
+  for (const { file, url } of runtimeDeps) {
+    await downloadFile(url, resolve(tempDir, file));
+  }
 }
 
 async function main() {
