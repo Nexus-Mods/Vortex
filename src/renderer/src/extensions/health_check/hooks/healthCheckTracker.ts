@@ -69,18 +69,12 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
 
     trackPassedViewed: () => track("health_check_passed_viewed"),
 
-    // Scan lifecycle. Emitted by the non-React api layer around every check run,
-    // manual (refresh button) or automatic (game / profile / mods / settings change).
+    // Emitted by the non-React api layer for every check run, manual (refresh button) or
+    // automatic (game / profile / mods change). There is deliberately no completion
+    // event: a scan is mostly automatic, so one per run spent a large share of the
+    // event quota to say little. See LAZ-1115.
     trackScanTriggered: (props: { is_manual: boolean; previous_issue_count: number }) =>
       track("health_check_scan_triggered", props),
-
-    trackScanCompleted: (props: {
-      duration_ms: number;
-      total_issues_found: number;
-      warning_count: number;
-      suggestion_count: number;
-      health_check_passed: boolean;
-    }) => track("health_check_scan_completed", props),
 
     trackTabSwitched: (props: { tab: HealthCheckTab; issue_count_in_tab: number }) =>
       track("health_check_tab_switched", props),
