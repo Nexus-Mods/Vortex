@@ -381,7 +381,12 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         }
       },
       return: async () => {
-        await dir.close().catch(() => undefined);
+        try {
+          await dir.close();
+        } catch {
+          // ignored
+        }
+
         return { done: true, value: undefined };
       },
     };

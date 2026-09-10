@@ -184,11 +184,21 @@ function wrapIterator(
       };
     },
     async return() {
-      await inner.return?.(undefined).catch(() => undefined);
+      try {
+        await inner.return?.(undefined);
+      } catch {
+        // ignored
+      }
+
       return { done: true, value: undefined };
     },
     async throw(err) {
-      await inner.return?.(undefined).catch(() => undefined);
+      try {
+        await inner.return?.(undefined);
+      } catch {
+        // ignored
+      }
+
       throw err;
     },
   };
