@@ -5077,6 +5077,9 @@ importers:
 
   src/shared:
     dependencies:
+      '@nexusmods/adaptor-api':
+        specifier: workspace:*
+        version: link:../../packages/adaptor-api
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1

@@ -2,6 +2,8 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { FileSystem } from "@nexusmods/adaptor-api/fs";
+
 import type { SerializedVortexError } from "../errors/serialization";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
@@ -572,6 +574,29 @@ export interface InvokeChannels {
     path: { value: string };
     regex?: string;
   }) => Promise<string>;
+
+  "fs:copy": (
+    source: string,
+    target: string,
+    options: Parameters<FileSystem["copy"]>[2],
+  ) => Promise<void>;
+  "fs:createDirectory": (path: string) => Promise<void>;
+  "fs:createLink": (
+    from: string,
+    to: string,
+    type: Parameters<FileSystem["createLink"]>[2],
+  ) => Promise<void>;
+  "fs:delete": (path: string) => Promise<void>;
+  "fs:deleteRecursive": (path: string) => Promise<void>;
+  "fs:move": (
+    source: string,
+    target: string,
+    options: Parameters<FileSystem["move"]>[2],
+  ) => Promise<void>;
+  "fs:stat": (
+    path: string,
+    options: Parameters<FileSystem["stat"]>[1],
+  ) => Promise<Awaited<ReturnType<FileSystem["stat"]>>>;
 }
 
 /** Represents all IPC-safe typed arrays */
