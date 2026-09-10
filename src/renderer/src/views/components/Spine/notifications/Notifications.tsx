@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 
 import { useExtensionContext } from "@/ExtensionProvider";
 import type { INotification, NotificationType } from "@/types/INotification";
+import { OVERLAY_ARROW_HEIGHT, OverlayArrow } from "@/ui/components/overlay_arrow/OverlayArrow";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -156,8 +157,11 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
       </PopoverButton>
 
       {popoverOpen && !!items.length && (
-        <PopoverPanel anchor={{ gap: 8, to: "right end" }} className="w-xs overflow-visible!">
-          <span className="pointer-events-none absolute bottom-6 left-0 size-2 -translate-x-1/2 translate-y-1/2 rotate-45 border-b border-l border-stroke-weak bg-surface-mid" />
+        <PopoverPanel
+          anchor={{ gap: 8 + OVERLAY_ARROW_HEIGHT, to: "right end" }}
+          className="w-xs overflow-visible!"
+        >
+          <OverlayArrow side="right" tipFromEnd={24} />
 
           <div className="max-h-[50vh] space-y-0.5 overflow-y-auto">
             {items.map((notification) => (
