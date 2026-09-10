@@ -11,7 +11,7 @@ import {
   getErrorMessageOrDefault,
   sanitizeFramePath,
 } from "@vortex/shared";
-import type { ReportableError } from "@vortex/shared/errors";
+import { type CrashType, type ReportableError, CrashTypeTitle } from "@vortex/shared/errors";
 import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/telemetry";
 import { app } from "electron";
 
@@ -57,7 +57,7 @@ export function errorToReportableError(error: Error): ReportableError {
 }
 
 interface ICrashInfo {
-  type: string;
+  type: CrashType;
   error: ReportableError;
   context?: Record<string, string>;
   reportProcess?: string;
@@ -321,14 +321,6 @@ async function collectCrashDumps(): Promise<IDumpFile[]> {
   return found;
 }
 
-const CRASH_TITLES: Record<string, string> = {
-  Crash: "Unrecoverable error",
-  EarlyCrash: "Crash during startup",
-  PreviousSessionCrash: "Native crash",
-  ChildProcessGone: "Child process crashed",
-  RenderProcessGone: "Renderer process crashed",
-};
-
 /** What identifies a crash site when there is no JavaScript stack to hash. */
 const CRASH_IDENTITY_ATTRIBUTES = [
   "crash.sourceProcess",
@@ -344,7 +336,7 @@ const CRASH_IDENTITY_ATTRIBUTES = [
  */
 export function crashFingerprint(
   appVersion: string,
-  type: string,
+  type: CrashType,
   error: ReportableError,
   attributes: Record<string, string | number | boolean>,
 ): string {
@@ -361,7 +353,7 @@ export function crashFingerprint(
  * flush the export, and shut down.
  */
 export async function reportCrash(
-  type: string,
+  type: CrashType,
   error: ReportableError,
   context?: Record<string, string>,
   sourceProcess?: string,
@@ -401,7 +393,7 @@ export async function reportCrash(
     const errorObj = new Error(error.message);
     errorObj.stack = error.stack;
     recordErrorOnSpan(span, errorObj, app.getVersion(), context, {
-      "error.title": error.title ?? CRASH_TITLES[type] ?? type,
+      "error.title": error.title ?? CrashTypeTitle[type],
       // overridden by the stack fingerprint when the error has a stack
       "error.fingerprint": crashFingerprint(app.getVersion(), type, error, spanAttributes),
     });

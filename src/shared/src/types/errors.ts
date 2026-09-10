@@ -1,5 +1,25 @@
 import { VortexError } from "../errors/base";
 
+/**
+ * A map of every crash type and it's corresponding human-readable title.
+ * @public
+ */
+export const CrashTypeTitle = {
+  Crash: "Unrecoverable error",
+  EarlyCrash: "Crash during startup",
+  PreviousSessionCrash: "Native crash",
+  ChildProcessGone: "Child process crashed",
+  RenderProcessGone: "Renderer process crashed",
+  "Installer failed": "Installer failed",
+  "Unknown error": "Unknown error",
+} as const;
+
+/**
+ * Catalog of every crash kind Vortex knows how to produce and classify.
+ * @public
+ */
+export type CrashType = keyof typeof CrashTypeTitle;
+
 export interface ReportableError {
   message: string;
   title?: string;
