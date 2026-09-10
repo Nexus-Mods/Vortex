@@ -23,6 +23,17 @@ import { useNotificationItems } from "./hooks/useNotificationItems.hook";
  */
 const QUIET_TYPES: NotificationType[] = ["activity", "silent"];
 
+/** Opens the tray as its button would, minus the focus Headless UI's handler takes. */
+const openWithoutTakingFocus = (button: HTMLButtonElement) => {
+  Object.defineProperty(button, "focus", { configurable: true, value: () => undefined });
+
+  try {
+    button.click();
+  } finally {
+    delete (button as unknown as { focus?: () => void }).focus;
+  }
+};
+
 /**
  * The pip reports the most serious thing waiting, so severities are ranked rather than
  * counted — one error among a dozen warnings still has to read as an error.
@@ -110,7 +121,7 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
     prevIdsRef.current = currentIds;
 
     if (hasNew && !popoverOpen && buttonRef.current) {
-      buttonRef.current.click();
+      openWithoutTakingFocus(buttonRef.current);
     }
   }, [notifications, popoverOpen]);
 

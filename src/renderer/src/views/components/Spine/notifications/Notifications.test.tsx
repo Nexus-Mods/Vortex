@@ -1,4 +1,5 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -46,6 +47,19 @@ const notification = (type: NotificationType): INotification => ({
   message: `a ${type}`,
 });
 
+/**
+ * Somewhere outside the component for focus to already be — the table filter or search
+ * box the user is typing in when a notification lands.
+ */
+const focusElsewhere = (tag: "button" | "input" | "textarea") => {
+  const element = document.createElement(tag);
+  element.dataset.focusStandIn = "true";
+  document.body.append(element);
+  element.focus();
+
+  return element;
+};
+
 const renderComponent = (types: NotificationType[]) => {
   mocks.notifications = types.map(notification);
   const { container } = render(<Notifications />);
@@ -61,6 +75,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.items = [];
   mocks.notifications = [];
+  document.querySelectorAll("[data-focus-stand-in]").forEach((node) => node.remove());
 });
 
 // --- Tests ---
@@ -153,6 +168,31 @@ describe("Notifications trigger", () => {
   it("still opens itself for something worth reading", () => {
     const { bell } = renderComponent(["error"]);
     expect(bell).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it.each<"input" | "textarea">(["input", "textarea"])(
+    "opens itself without taking focus from a %s the user is in",
+    (tag) => {
+      // LAZ-1065: the tray coming up on its own used to focus the bell, costing the user
+      // their place mid-sentence.
+      const field = focusElsewhere(tag);
+      const { bell } = renderComponent(["error"]);
+
+      expect(bell).toHaveAttribute("aria-expanded", "true");
+      expect(document.activeElement).toBe(field);
+    },
+  );
+
+  it("takes focus when the user opens it themselves", async () => {
+    // Only the auto-open leaves focus alone; a click on the bell is the user asking for
+    // it, and the panel is reachable from the keyboard afterwards.
+    focusElsewhere("input");
+    const { bell } = renderComponent(["activity"]);
+
+    await userEvent.click(bell);
+
+    expect(bell).toHaveAttribute("aria-expanded", "true");
+    expect(document.activeElement).toBe(bell);
   });
 
   it("closes itself once the last notification has gone", async () => {
