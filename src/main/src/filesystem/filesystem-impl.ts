@@ -171,17 +171,32 @@ function wrapIterator(
     async next() {
       const step = await inner.next();
       if (step.done === true) return { done: true, value: undefined };
-      if (includeStatus) {
-        const [native, status] = step.value as readonly [ResolvedPath, Status];
+
+      const value = step.value;
+      if (typeof value === "string") {
+        if (includeStatus)
+          throw new VortexError(
+            "Expected inner iterator to include status but received only paths",
+            { kind: "argument-invalid", argument: "includeStatus" },
+          );
+
+        return {
+          done: false,
+          value: toQualifiedEntry(rootQP, rootResolved, value),
+        };
+      } else {
+        if (!includeStatus)
+          throw new VortexError(
+            "Expected inner iterator to only provide paths but received status as well",
+            { kind: "argument-invalid", argument: "includeStatus" },
+          );
+
+        const [native, status] = value;
         return {
           done: false,
           value: [toQualifiedEntry(rootQP, rootResolved, native), status],
         };
       }
-      return {
-        done: false,
-        value: toQualifiedEntry(rootQP, rootResolved, step.value as ResolvedPath),
-      };
     },
     async return() {
       try {
