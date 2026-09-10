@@ -46,6 +46,10 @@ export function profilesPath() {
   return path.join(documentsPath(), "PlayerProfiles");
 }
 
+export function scriptExtenderPath() {
+  return path.join(documentsPath(), "Script Extender");
+}
+
 export async function fileExists(filePath: string): Promise<boolean> {
   try {
     await fs.statAsync(filePath);
